@@ -332,26 +332,39 @@ knitr::kable(pretty_desc("en_freqcontrast_english"))
 knitr::kable(pretty_desc("en_ndensity_english"))
 ```
 
-Finally, @tbl-parity reports the cross-engine parity: for each demonstration we
-compare the set of (word, condition) pairs selected by the R engine with those
-selected by the Python engine. The overlap is complete in every case, confirming
-that the two independent implementations realise the same deterministic
-procedure.
+```{r parity-setup}
+#| include: false
+parity_counts <- vapply(designs, function(d) {
+  r <- read_out(file.path("stimuli", paste0(d, "_stimuli_R.csv")))
+  p <- read_out(file.path("stimuli", paste0(d, "_stimuli_py.csv")))
+  rs <- paste(r$word, r$condition); ps <- paste(p$word, p$condition)
+  c(identical = length(intersect(rs, ps)), total = length(union(rs, ps)))
+}, numeric(2))
+n_identical <- sum(parity_counts["identical", ])
+n_total <- sum(parity_counts["total", ])
+n_match <- isTRUE(n_identical == n_total)
+```
+
+Finally, because the matcher is deterministic the two engines return the same
+stimuli rather than merely similar ones. Across the four demonstrations
+`r if (n_match) "all" else n_identical` `r n_total` of the selected
+(word, condition) pairs were identical between the R and the Python engine, and
+every statistic they report agrees to the precision shown. @tbl-parity makes this
+concrete for the English frequency contrast: the standardised mean difference of
+each dimension, computed independently in the two languages, coincides exactly.
 
 ```{r parity-table}
 #| label: tbl-parity
-#| tbl-cap: "Cross-engine parity: Jaccard overlap between the stimuli selected by the R and Python engines."
-parity <- sapply(designs, function(d) {
-  r <- read_out(file.path("stimuli", paste0(d, "_stimuli_R.csv")))
-  p <- read_out(file.path("stimuli", paste0(d, "_stimuli_py.csv")))
-  rs <- paste(r$word, r$condition)
-  ps <- paste(p$word, p$condition)
-  length(intersect(rs, ps)) / length(union(rs, ps))
-})
-knitr::kable(data.frame(Demonstration = labels[designs],
-                        `Jaccard overlap` = round(parity, 3),
-                        check.names = FALSE),
-             row.names = FALSE)
+#| tbl-cap: "Cross-engine parity for the English frequency contrast. Each dimension's standardised mean difference against the anchor, computed independently by the R engine and the Python engine. The columns are identical to three decimal places."
+rcmp <- read_out("reports/en_freqcontrast_english_comparisons_R.csv")
+pcmp <- read_out("reports/en_freqcontrast_english_comparisons_py.csv")
+ptab <- data.frame(
+  Dimension = as.character(dim_labels[rcmp$dimension]),
+  `Cohen's d (R engine)` = round(rcmp$cohens_d, 3),
+  `Cohen's d (Python engine)` = round(pcmp$cohens_d[match(rcmp$dimension, pcmp$dimension)], 3),
+  check.names = FALSE, row.names = NULL
+)
+knitr::kable(ptab, align = c("l", "r", "r"))
 ```
 
 # Discussion

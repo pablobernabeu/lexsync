@@ -2641,38 +2641,43 @@ Table 3: Descriptive statistics per condition, English neighbourhood-density co
 </figure>
 </div>
 </div>
-<p>Finally, <a href="#tbl-parity" class="quarto-xref">Table 4</a> reports the cross-engine parity: for each demonstration we compare the set of (word, condition) pairs selected by the R engine with those selected by the Python engine. The overlap is complete in every case, confirming that the two independent implementations realise the same deterministic procedure.</p>
+<p>Finally, because the matcher is deterministic the two engines return the same stimuli rather than merely similar ones. Across the four demonstrations all 216 of the selected (word, condition) pairs were identical between the R and the Python engine, and every statistic they report agrees to the precision shown. <a href="#tbl-parity" class="quarto-xref">Table 4</a> makes this concrete for the English frequency contrast: the standardised mean difference of each dimension, computed independently in the two languages, coincides exactly.</p>
 <div class="cell">
 <div id="tbl-parity" class="cell quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-tbl figure">
 <figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-parity-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Table 4: Cross-engine parity: Jaccard overlap between the stimuli selected by the R and Python engines.
+Table 4: Cross-engine parity for the English frequency contrast. Each dimension’s standardised mean difference against the anchor, computed independently by the R engine and the Python engine. The columns are identical to three decimal places.
 </figcaption>
 <div aria-describedby="tbl-parity-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <div class="cell-output-display">
 <table class="cell caption-top table table-sm table-striped small">
 <thead>
 <tr class="header">
-<th style="text-align: left;">Demonstration</th>
-<th style="text-align: right;">Jaccard overlap</th>
+<th style="text-align: left;">Dimension</th>
+<th style="text-align: right;">Cohen’s d (R engine)</th>
+<th style="text-align: right;">Cohen’s d (Python engine)</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td style="text-align: left;">English: frequency contrast</td>
-<td style="text-align: right;">1</td>
+<td style="text-align: left;">Length (letters)</td>
+<td style="text-align: right;">0.000</td>
+<td style="text-align: right;">0.000</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">English: neighbourhood contrast</td>
-<td style="text-align: right;">1</td>
+<td style="text-align: left;">Frequency (Zipf)</td>
+<td style="text-align: right;">4.670</td>
+<td style="text-align: right;">4.670</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">Spanish: frequency contrast</td>
-<td style="text-align: right;">1</td>
+<td style="text-align: left;">Neighbourhood N</td>
+<td style="text-align: right;">0.058</td>
+<td style="text-align: right;">0.058</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">Spanish: neighbourhood contrast</td>
-<td style="text-align: right;">1</td>
+<td style="text-align: left;">OLD20</td>
+<td style="text-align: right;">0.007</td>
+<td style="text-align: right;">0.007</td>
 </tr>
 </tbody>
 </table>
