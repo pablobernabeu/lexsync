@@ -1,7 +1,12 @@
 ---
-title: "lexsync: a cross-platform pipeline for multidimensional lexical optimisation and hardware-timed experiment generation"
+title: "lexsync: A cross-platform pipeline for multidimensional lexical optimisation and hardware-timed experiment generation"
 author:
   - name: Pablo Bernabeu
+    affiliations:
+      - name: Department of Education, University of Oxford
+        city: Oxford
+        country: United Kingdom
+    email: pablo.bernabeu@education.ox.ac.uk
 date: today
 abstract: |
   Psycholinguistic stimulus preparation is fragmented across tools that match
@@ -14,8 +19,10 @@ abstract: |
   dimensions (length, frequency, orthographic neighbourhood density and OLD20),
   counterbalances them, reports the realised match quality and then generates
   ready-to-run 'PsychoPy' and 'OpenSesame' experiment scripts with hardware
-  triggers injected at stimulus onset for electroencephalography. The matching
-  is deterministic, so the two engines return identical stimuli; we demonstrate
+  triggers for electroencephalography — flip-locked to stimulus onset in the
+  'PsychoPy' target and sequence-ordered in the 'OpenSesame' target. The matching
+  is deterministic, so the two engines select identical matched stimuli; we
+  demonstrate
   this on four worked examples in English and Spanish. The generation step
   requires no presentation software and no hardware, which keeps the whole
   workflow reproducible. 'lexsync' generalises the FAIR artificial-grammar
@@ -25,12 +32,12 @@ bibliography: references.bib
 csl: apa.csl
 format:
   html:
-    toc: true
+    toc: false
     number-sections: true
     df-print: kable
     embed-resources: true
   pdf:
-    toc: true
+    toc: false
     number-sections: true
     df-print: kable
     pdf-engine: xelatex
@@ -148,14 +155,14 @@ followed the word, so that only the first marker was even approximately aligned
 with stimulus onset; the others were sequence-ordered. This is a common pattern
 and an avoidable source of jitter.
 
-We present 'lexsync', a toolkit that fills these gaps. It is released as two
+We present 'lexsync', a toolkit that addresses these gaps; the onset-jitter gap is closed for the 'PsychoPy' target, which is flip-locked, while the 'OpenSesame' target remains sequence-ordered by the platform's design (see below). It is released as two
 independent but structurally identical packages — a 'CRAN'-ready R package and a
 'PyPI'-ready Python package — that share module names, function names and
 behaviour. From a corpus 'lexsync' selects matched stimuli, counterbalances and
 documents them, then writes a 'PsychoPy' script in which each onset trigger is
 bound to the exact screen flip on which the word appears, using
 `win.callOnFlip`, together with a complete 'OpenSesame' experiment. Crucially the
-matching is deterministic, so the R and Python engines return identical stimuli.
+matching is deterministic, so the R and Python engines select identical matched stimuli.
 'lexsync' generalises the materials workflow of @gonzalezalonso2025l3 into a
 reusable, FAIR-compliant tool.
 
@@ -201,15 +208,15 @@ The neighbourhood measures are computed transparently from the lexicon rather
 than taken on trust.
 
 Matching proceeds in two deterministic stages. First, a tolerance pre-filter
-keeps only candidates that fall within `mean ± k·SD` of the anchor condition on
+keeps only candidates that fall within *M* ± *k* · *SD* of the anchor condition on
 each control dimension, generalising the windowed selection of the original
 workflow. Second, every remaining condition is matched to the anchor item by
 item: each dimension is standardised, the standardised Euclidean distance from
 each candidate to the target item is computed and the nearest unused candidate is
 assigned, with ties broken by a stable, locale-independent key. Because no random
 number generator is used and string comparisons are performed in byte order in
-both engines, the R and Python packages select identical stimuli from identical
-input — a parity we verify below.
+both engines, the R and Python packages select an identical matched selection
+from identical input — a parity we verify below.
 
 ## Counterbalancing and reporting
 
@@ -253,7 +260,7 @@ presentation software is needed solely at run time.
 
 ## Reproducibility and FAIR compliance
 
-'lexsync' ships a `renv` lockfile for R and pinned requirements for Python, sets
+'lexsync' declares its dependencies in a `DESCRIPTION` file for R and pinned requirements for Python, sets
 seeds from a single configuration file, and carries a 'CITATION.cff', an MIT
 licence for the code and CC BY-SA terms for the bundled corpus derivatives with
 full attribution. The R package passes `R CMD check --as-cran`; the Python package
@@ -274,7 +281,7 @@ render time from the generated output.
 
 ```{r summary-table}
 #| label: tbl-summary
-#| tbl-cap: "Each demonstration, its manipulated dimension and the absolute standardised mean difference of the manipulated dimension and of the most-different controlled dimension. The manipulation is large in every case; the controlled dimensions remain small."
+#| tbl-cap: "*Manipulated and Controlled Standardised Mean Differences by Demonstration.* *Note.* Each demonstration, its manipulated dimension and the absolute standardised mean difference (Cohen's *d*) of the manipulated dimension and of the most-different controlled dimension. The manipulation is large in every case; the controlled dimensions remain small."
 summ <- do.call(rbind, lapply(names(controlled_map), function(des) {
   x <- comps[comps$design == des, ]
   man <- x[x$role == "Manipulated", ]
@@ -291,15 +298,16 @@ knitr::kable(summ, align = c("l", "l", "r", "r"))
 ```
 
 @tbl-summary shows that the manipulated dimension is strongly separated in every
-demonstration. The control dimensions, by contrast, are closely equated.
+demonstration. The control dimensions, by contrast, show standardised mean
+differences well below the 0.5-standard-deviation bound.
 @fig-balance plots the absolute standardised mean difference of each dimension
 against the anchor; the manipulated dimension stands far to the right of the
-0.5-standard-deviation equivalence bound (dashed line) while the controlled
+0.5-standard-deviation reference bound (dashed line) while the controlled
 dimensions cluster near zero.
 
 ```{r balance-figure}
 #| label: fig-balance
-#| fig-cap: "Absolute standardised mean difference of each dimension against the anchor condition, in each demonstration. The dashed line is the 0.5-SD equivalence bound. Manipulated dimensions (orange) lie far to the right; matched dimensions (green) cluster near zero. In the neighbourhood contrasts OLD20 is free to co-vary (purple), reflecting its known correlation with Coltheart's N."
+#| fig-cap: "*Absolute Standardised Mean Differences by Dimension and Demonstration.* *Note.* Absolute standardised mean difference (Cohen's *d*) of each dimension against the anchor condition. The dashed line is the 0.5-*SD* reference bound (the smallest effect of interest for the equivalence test). Manipulated dimensions (orange) lie far to the right; matched dimensions (green) cluster near zero. In the neighbourhood contrasts OLD20 is free to co-vary (purple), reflecting its known correlation with Coltheart's N."
 #| fig-width: 9
 #| fig-height: 5.5
 if (have_ggplot) {
@@ -311,7 +319,7 @@ if (have_ggplot) {
     facet_wrap(~design, ncol = 2) +
     scale_colour_manual(values = c("Manipulated" = "#d95f02", "Controlled" = "#1b9e77",
                                    "Free (co-varying)" = "#7570b3"), drop = FALSE) +
-    labs(x = "|Cohen's d| versus the anchor condition", y = NULL, colour = NULL) +
+    labs(x = expression("|Cohen's " * italic(d) * "| versus the anchor condition"), y = NULL, colour = NULL) +
     theme_minimal(base_size = 12) +
     theme(legend.position = "top", panel.grid.minor = element_blank(),
           strip.text = element_text(face = "bold"))
@@ -319,6 +327,27 @@ if (have_ggplot) {
   knitr::kable(comps[, c("design", "dim_label", "cohens_d", "role")])
 }
 ```
+
+The two one-sided tests (TOST) procedure that 'lexsync' reports gives a more
+conservative reading of the same control. @tbl-tost lists, for the controlled
+dimensions of each demonstration, the standardised mean difference, the
+equivalence-test *p* value and the verdict at the 0.5-*SD* bound.
+
+```{r tost-table}
+#| label: tbl-tost
+#| tbl-cap: "*Equivalence (TOST) Results for the Controlled Dimensions.* *Note.* For each demonstration's controlled (matched) dimensions: the absolute standardised mean difference against the anchor, the equivalence-test *p* value at the 0.5-*SD* bound and the verdict at the .05 level. R engine."
+tost <- comps[comps$role == "Controlled", c("design", "dim_label", "absd", "tost_p", "equivalent")]
+names(tost) <- c("Demonstration", "Dimension", "|d|", "TOST p", "Equivalent")
+knitr::kable(tost, digits = 3, row.names = FALSE)
+```
+
+Several controlled dimensions are not declared equivalent at the 0.5-*SD* bound.
+This reflects the low power of an equivalence test at the demonstration sample
+sizes (*n* = 24–30 per condition) rather than a matching failure: the
+standardised mean differences are an order of magnitude below the manipulation,
+and at the same effect sizes equivalence is declared once *n* is larger
+[@lakens2017equivalence]. We therefore report the standardised mean difference
+and the TOST together and read the latter as a conservative check.
 
 The per-condition descriptive statistics make the control concrete. In the
 English frequency contrast (@tbl-desc-freq) frequency is separated by roughly one
@@ -330,13 +359,13 @@ moves with the manipulation rather than being held constant, as expected.
 
 ```{r desc-freq}
 #| label: tbl-desc-freq
-#| tbl-cap: "Descriptive statistics per condition, English frequency contrast (R engine)."
+#| tbl-cap: "*Descriptive Statistics per Condition: English Frequency Contrast.* *Note.* R engine."
 knitr::kable(pretty_desc("en_freqcontrast_english"))
 ```
 
 ```{r desc-nd}
 #| label: tbl-desc-nd
-#| tbl-cap: "Descriptive statistics per condition, English neighbourhood-density contrast (R engine)."
+#| tbl-cap: "*Descriptive Statistics per Condition: English Neighbourhood-Density Contrast.* *Note.* R engine."
 knitr::kable(pretty_desc("en_ndensity_english"))
 ```
 
@@ -353,17 +382,20 @@ n_total <- sum(parity_counts["total", ])
 n_match <- isTRUE(n_identical == n_total)
 ```
 
-Finally, because the matcher is deterministic the two engines return the same
-stimuli rather than merely similar ones. Across the four demonstrations
+Finally, because the matcher is deterministic the two engines select the same
+matched (word, condition) pairs rather than merely similar ones (the seeded trial
+order differs, as the R and Python random-number generators do). Across the four
+demonstrations
 `r if (n_match) "all" else n_identical` `r n_total` of the selected
 (word, condition) pairs were identical between the R and the Python engine, and
 every statistic they report agrees to the precision shown. @tbl-parity makes this
 concrete for the English frequency contrast: the standardised mean difference of
-each dimension, computed independently in the two languages, coincides exactly.
+each dimension, computed independently in the two languages, coincides to the
+precision shown.
 
 ```{r parity-table}
 #| label: tbl-parity
-#| tbl-cap: "Cross-engine parity for the English frequency contrast. Each dimension's standardised mean difference against the anchor, computed independently by the R engine and the Python engine. The columns are identical to three decimal places."
+#| tbl-cap: "*Cross-Engine Parity for the English Frequency Contrast.* *Note.* Each dimension's standardised mean difference (Cohen's *d*) against the anchor, computed independently by the R and Python engines. The columns are identical to three decimal places."
 rcmp <- read_out("reports/en_freqcontrast_english_comparisons_R.csv")
 pcmp <- read_out("reports/en_freqcontrast_english_comparisons_py.csv")
 ptab <- data.frame(
@@ -383,9 +415,12 @@ multidimensional matching exists in 'LexOPS' and 'LIBRA', and precise
 presentation exists in 'PsychoPy' and 'OpenSesame', but the path from a
 multilingual corpus to a hardware-timed, cross-platform experiment has not before
 been available as a single installable, dual-language tool. Two features are
-worth emphasising. First, the deterministic matcher gives bit-for-bit agreement
-between the R and Python engines, which means a laboratory can adopt 'lexsync' in
-whichever ecosystem it prefers without fear of divergent stimuli. Second, the
+worth emphasising. First, the deterministic matcher selects identical matched
+(word, condition) sets in the R and Python engines, with the reported match
+statistics agreeing to the precision shown; only the seeded trial order, which
+depends on each language's random-number generator, differs. A laboratory can
+therefore adopt 'lexsync' in whichever ecosystem it prefers without fear of
+divergent stimulus selection. Second, the
 'PsychoPy' export upgrades the sequence-ordered triggers of the original workflow
 to genuine flip-locking, a concrete methodological improvement for ERP research.
 
@@ -416,6 +451,8 @@ and the dimension table in `config/schema.yaml`) in both packages. To add a
 presentation target, add an `export_<target>()` function in `scripting`. To add a
 corpus or a language, add an entry to `corpora/registry.yaml`; no code change is
 required for SUBTLEX-family or 'wordfreq' sources.
+
+{{< pagebreak >}}
 
 # References
 
