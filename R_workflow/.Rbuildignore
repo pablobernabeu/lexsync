@@ -1,4 +1,5 @@
 ^run_pipeline\.R$
+^cran-comments\.md$
 ^.*\.Rproj$
 ^\.Rproj\.user$
 ^\.\.Rcheck$

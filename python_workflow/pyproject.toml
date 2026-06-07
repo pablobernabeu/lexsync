@@ -7,8 +7,9 @@ name = "lexsync"
 version = "0.1.0"
 description = "Multidimensional lexical optimisation and hardware-timed experiment generation"
 readme = "README.md"
-requires-python = ">=3.9"
-license = { text = "MIT" }
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [{ name = "Pablo Bernabeu" }]
 keywords = [
   "psycholinguistics", "lexical statistics", "stimulus matching",
@@ -16,7 +17,6 @@ keywords = [
 ]
 classifiers = [
   "Programming Language :: Python :: 3",
-  "License :: OSI Approved :: MIT License",
   "Intended Audience :: Science/Research",
   "Topic :: Scientific/Engineering",
 ]

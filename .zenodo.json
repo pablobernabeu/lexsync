@@ -1,0 +1,21 @@
+{
+  "title": "lexsync: multidimensional lexical optimisation and hardware-timed experiment generation",
+  "description": "A cross-platform (R and Python) toolkit that unifies many-language lexical-corpus access, parallel multidimensional stimulus matching, counterbalancing and the automated generation of hardware-timed PsychoPy and OpenSesame experiment scripts for EEG/ERP research. Distributed as a CRAN-ready R package and a PyPI-ready Python package that produce identical matched stimuli.",
+  "upload_type": "software",
+  "access_right": "open",
+  "license": "MIT",
+  "creators": [
+    { "name": "Bernabeu, Pablo", "orcid": "0000-0000-0000-0000" }
+  ],
+  "keywords": [
+    "psycholinguistics",
+    "lexical statistics",
+    "stimulus matching",
+    "counterbalancing",
+    "EEG",
+    "ERP",
+    "PsychoPy",
+    "OpenSesame",
+    "FAIR"
+  ]
+}
