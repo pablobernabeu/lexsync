@@ -22,12 +22,20 @@ abstract: |
   workflow of an existing longitudinal study and is distributed under open
   licences with a machine-readable corpus registry.
 bibliography: references.bib
+csl: apa.csl
 format:
   html:
     toc: true
     number-sections: true
     df-print: kable
     embed-resources: true
+  pdf:
+    toc: true
+    number-sections: true
+    df-print: kable
+    pdf-engine: xelatex
+    papersize: a4
+    geometry: margin=1in
   docx: default
 execute:
   echo: false
