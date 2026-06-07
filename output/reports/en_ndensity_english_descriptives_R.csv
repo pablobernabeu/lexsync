@@ -1,5 +1,9 @@
 group,dimension,n,mean,sd,min,median,max
 dense_neighbourhood,length,24,3.792,0.884,3,4,6
 dense_neighbourhood,frequency,24,4.7,0.665,3.85,4.58,6.13
+dense_neighbourhood,n_density,24,8.708,4.217,5,7.5,23
+dense_neighbourhood,old20,24,1.438,0.227,1,1.5,1.75
 sparse_neighbourhood,length,24,3.833,0.761,3,4,5
 sparse_neighbourhood,frequency,24,4.57,0.467,4.04,4.475,5.36
+sparse_neighbourhood,n_density,24,0.583,0.504,0,1,1
+sparse_neighbourhood,old20,24,1.958,0.26,1.4,1.9,2.8

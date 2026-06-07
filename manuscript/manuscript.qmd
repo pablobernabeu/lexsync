@@ -60,6 +60,44 @@ comps <- do.call(rbind, lapply(designs, function(d) {
   x$design <- labels[[d]]
   x
 }))
+
+# Readable dimension labels and the role of each dimension in each design.
+dim_labels <- c(frequency = "Frequency (Zipf)", length = "Length (letters)",
+                n_density = "Neighbourhood N", old20 = "OLD20")
+find_cfg <- function(f) {
+  for (b in c("../config", "config")) {
+    p <- file.path(b, f); if (file.exists(p)) return(p)
+  }
+  stop(f)
+}
+cfg_files <- c(
+  "English: frequency contrast"     = "design_en_freqcontrast.yaml",
+  "English: neighbourhood contrast" = "design_en_ndensity.yaml",
+  "Spanish: frequency contrast"     = "design_es_freqcontrast.yaml",
+  "Spanish: neighbourhood contrast" = "design_es_ndensity.yaml"
+)
+controlled_map <- lapply(cfg_files, function(f) unlist(yaml::read_yaml(find_cfg(f))$match_on))
+names(controlled_map) <- names(cfg_files)
+
+comps$absd <- abs(comps$cohens_d)
+comps <- do.call(rbind, lapply(split(comps, comps$design), function(x) {
+  ctrl <- controlled_map[[x$design[1]]]
+  x$role <- ifelse(x$dimension %in% ctrl, "Controlled", "Free (co-varying)")
+  free <- which(x$role != "Controlled")
+  if (length(free)) x$role[free[which.max(x$absd[free])]] <- "Manipulated"
+  x
+}))
+comps$dim_label <- factor(dim_labels[comps$dimension],
+                          levels = c("Frequency (Zipf)", "Length (letters)", "Neighbourhood N", "OLD20"))
+comps$role <- factor(comps$role, levels = c("Manipulated", "Controlled", "Free (co-varying)"))
+
+pretty_desc <- function(d) {
+  x <- read_out(file.path("reports", paste0(d, "_descriptives_R.csv")))
+  x$group <- gsub("_", " ", x$group)
+  x$dimension <- as.character(dim_labels[x$dimension])
+  names(x) <- c("Condition", "Dimension", "n", "Mean", "SD", "Min", "Median", "Max")
+  x
+}
 ```
 
 # Introduction
@@ -228,17 +266,20 @@ render time from the generated output.
 
 ```{r summary-table}
 #| label: tbl-summary
-#| tbl-cap: "The four demonstrations, with the manipulated dimension and its standardised effect size against the anchor condition."
-manip <- data.frame(
-  Demonstration = labels[designs],
-  `Manipulated dimension` = c("frequency", "n_density", "frequency", "n_density"),
-  check.names = FALSE
-)
-manip$`|d| manipulated` <- mapply(function(d, dim) {
-  x <- comps[comps$design == labels[[d]] & comps$dimension == dim, "cohens_d"]
-  round(abs(x), 2)
-}, designs, manip$`Manipulated dimension`)
-knitr::kable(manip)
+#| tbl-cap: "Each demonstration, its manipulated dimension and the absolute standardised mean difference of the manipulated dimension and of the most-different controlled dimension. The manipulation is large in every case; the controlled dimensions remain small."
+summ <- do.call(rbind, lapply(names(controlled_map), function(des) {
+  x <- comps[comps$design == des, ]
+  man <- x[x$role == "Manipulated", ]
+  ctrl <- x[x$role == "Controlled", ]
+  data.frame(
+    Demonstration = des,
+    `Manipulated dimension` = as.character(dim_labels[man$dimension]),
+    `|d| manipulated` = round(man$absd, 2),
+    `largest |d| controlled` = round(max(ctrl$absd), 2),
+    check.names = FALSE, row.names = NULL
+  )
+}))
+knitr::kable(summ, align = c("l", "l", "r", "r"))
 ```
 
 @tbl-summary shows that the manipulated dimension is strongly separated in every
@@ -250,33 +291,45 @@ dimensions cluster near zero.
 
 ```{r balance-figure}
 #| label: fig-balance
-#| fig-cap: "Absolute standardised mean difference of each dimension against the anchor condition, by demonstration. The dashed line marks the 0.5-SD equivalence bound. Manipulated dimensions are large; controlled dimensions are near zero."
-#| fig-width: 8
-#| fig-height: 5
+#| fig-cap: "Absolute standardised mean difference of each dimension against the anchor condition, in each demonstration. The dashed line is the 0.5-SD equivalence bound. Manipulated dimensions (orange) lie far to the right; matched dimensions (green) cluster near zero. In the neighbourhood contrasts OLD20 is free to co-vary (purple), reflecting its known correlation with Coltheart's N."
+#| fig-width: 9
+#| fig-height: 5.5
 if (have_ggplot) {
   library(ggplot2)
-  comps$absd <- abs(comps$cohens_d)
-  ggplot(comps, aes(x = absd, y = dimension)) +
-    geom_vline(xintercept = 0.5, linetype = "dashed", colour = "grey50") +
-    geom_segment(aes(x = 0, xend = absd, yend = dimension)) +
-    geom_point(size = 2.4, colour = "#2c7fb8") +
-    facet_wrap(~design) +
-    labs(x = "|Cohen's d| versus the anchor condition", y = NULL) +
-    theme_minimal(base_size = 11)
+  ggplot(comps, aes(x = absd, y = dim_label, colour = role)) +
+    geom_vline(xintercept = 0.5, linetype = "dashed", colour = "grey60") +
+    geom_segment(aes(x = 0, xend = absd, yend = dim_label), linewidth = 0.7) +
+    geom_point(size = 3.1) +
+    facet_wrap(~design, ncol = 2) +
+    scale_colour_manual(values = c("Manipulated" = "#d95f02", "Controlled" = "#1b9e77",
+                                   "Free (co-varying)" = "#7570b3"), drop = FALSE) +
+    labs(x = "|Cohen's d| versus the anchor condition", y = NULL, colour = NULL) +
+    theme_minimal(base_size = 12) +
+    theme(legend.position = "top", panel.grid.minor = element_blank(),
+          strip.text = element_text(face = "bold"))
 } else {
-  knitr::kable(comps[, c("design", "dimension", "cohens_d", "equivalent")])
+  knitr::kable(comps[, c("design", "dim_label", "cohens_d", "role")])
 }
 ```
 
-The per-condition descriptive statistics for the English frequency contrast are
-shown in @tbl-descriptives: frequency is separated by roughly one and a half Zipf
-units, while length, neighbourhood density and OLD20 are almost identical across
-conditions.
+The per-condition descriptive statistics make the control concrete. In the
+English frequency contrast (@tbl-desc-freq) frequency is separated by roughly one
+and a half Zipf units while length, neighbourhood density and OLD20 are almost
+identical across conditions. In the English neighbourhood contrast
+(@tbl-desc-nd) neighbourhood density is separated by an order of magnitude with
+length and frequency held constant; OLD20, which is mathematically related to N,
+moves with the manipulation rather than being held constant, as expected.
 
-```{r descriptives-table}
-#| label: tbl-descriptives
-#| tbl-cap: "Descriptive statistics per condition for the English frequency contrast (R engine)."
-knitr::kable(read_out("reports/en_freqcontrast_english_descriptives_R.csv"))
+```{r desc-freq}
+#| label: tbl-desc-freq
+#| tbl-cap: "Descriptive statistics per condition, English frequency contrast (R engine)."
+knitr::kable(pretty_desc("en_freqcontrast_english"))
+```
+
+```{r desc-nd}
+#| label: tbl-desc-nd
+#| tbl-cap: "Descriptive statistics per condition, English neighbourhood-density contrast (R engine)."
+knitr::kable(pretty_desc("en_ndensity_english"))
 ```
 
 Finally, @tbl-parity reports the cross-engine parity: for each demonstration we

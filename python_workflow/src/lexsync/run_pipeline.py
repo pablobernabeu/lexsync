@@ -48,8 +48,9 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
                     {"conditions": ", ".join(dict.fromkeys(stim["condition"]))})
 
     # The match report is computed on the matched set before counterbalancing,
-    # so the reference condition is always the matching anchor.
-    dims = list(dict.fromkeys(["length", "frequency", *match_on]))
+    # so the reference condition is always the matching anchor. Report on every
+    # standard dimension present, so the manipulated dimension is always shown.
+    dims = [d for d in ("length", "frequency", "n_density", "old20") if d in stim.columns]
     report = match_report(stim, dims, schema)
     for msg in balance_check(stim, "condition"):
         runlog.log_step(log, "balance: " + msg)

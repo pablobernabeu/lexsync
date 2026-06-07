@@ -47,7 +47,9 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
 
   # The match report is computed on the matched set before counterbalancing, so
   # the reference condition is always the matching anchor (the first condition).
-  dims <- unique(c("length", "frequency", match_on))
+  # Report on every standard dimension present, so the manipulated dimension is
+  # always shown alongside the controlled ones.
+  dims <- intersect(c("length", "frequency", "n_density", "old20"), names(stim))
   report <- match_report(stim, dims, schema)
   for (msg in balance_check(stim, "condition")) log <- log_step(log, paste("balance:", msg))
   for (i in seq_len(nrow(report$comparisons))) {

@@ -1,3 +1,5 @@
 condition,reference,dimension,cohens_d,tost_p,equivalent
 sparse_neighbourhood,dense_neighbourhood,length,-0.051,0.0632,FALSE
 sparse_neighbourhood,dense_neighbourhood,frequency,0.226,0.1739,FALSE
+sparse_neighbourhood,dense_neighbourhood,n_density,2.706,1,FALSE
+sparse_neighbourhood,dense_neighbourhood,old20,-2.134,1,FALSE

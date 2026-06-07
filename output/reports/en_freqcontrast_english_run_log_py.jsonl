@@ -1,13 +1,13 @@
-{"time": "2026-06-07T13:33:56", "message": "loading lexicon 'corpora/derived/en.csv'", "data": null}
-{"time": "2026-06-07T13:33:56", "message": "lexicon loaded: 10000 words", "data": {"words": 10000}}
-{"time": "2026-06-07T13:33:56", "message": "pool after filters: 7230 words", "data": {"pool": 7230}}
-{"time": "2026-06-07T13:33:56", "message": "matched 60 items across 2 conditions", "data": {"conditions": "high_frequency, low_frequency"}}
-{"time": "2026-06-07T13:33:56", "message": "equivalence low_frequency vs high_frequency on 'length': d = 0.00, TOST p = 0.0288 (equivalent)", "data": null}
-{"time": "2026-06-07T13:33:56", "message": "equivalence low_frequency vs high_frequency on 'frequency': d = 4.67, TOST p = 1.0 (not shown equivalent)", "data": null}
-{"time": "2026-06-07T13:33:56", "message": "equivalence low_frequency vs high_frequency on 'n_density': d = 0.06, TOST p = 0.0462 (equivalent)", "data": null}
-{"time": "2026-06-07T13:33:56", "message": "equivalence low_frequency vs high_frequency on 'old20': d = 0.01, TOST p = 0.0305 (equivalent)", "data": null}
-{"time": "2026-06-07T13:33:56", "message": "wrote 'en_freqcontrast_english_stimuli_py.csv'", "data": {"path": "output\\stimuli\\en_freqcontrast_english_stimuli_py.csv", "rows": 60, "md5": "2f1b0ce2725c9e6245bb1cb3383c5b97"}}
-{"time": "2026-06-07T13:33:56", "message": "wrote 'en_freqcontrast_english_descriptives_py.csv'", "data": {"path": "output\\reports\\en_freqcontrast_english_descriptives_py.csv", "rows": 8, "md5": "7b75f6307de6b11528f0d5b962a1b405"}}
-{"time": "2026-06-07T13:33:56", "message": "wrote 'en_freqcontrast_english_comparisons_py.csv'", "data": {"path": "output\\reports\\en_freqcontrast_english_comparisons_py.csv", "rows": 4, "md5": "4f32c5bf52ab94f880879c10f0a7dd1d"}}
-{"time": "2026-06-07T13:33:56", "message": "wrote 'en_freqcontrast_english_psychopy.py'", "data": {"path": "output\\experiments\\en_freqcontrast_english_psychopy.py", "rows": null, "md5": "27b3ec7b98b65627694e5947227cc2bb"}}
-{"time": "2026-06-07T13:33:56", "message": "wrote 'en_freqcontrast_english.osexp'", "data": {"path": "output\\experiments\\en_freqcontrast_english.osexp", "rows": null, "md5": "bb870757c0ea761c3601f4574d6e3e2a"}}
+{"time": "2026-06-07T14:12:03", "message": "loading lexicon 'corpora/derived/en.csv'", "data": null}
+{"time": "2026-06-07T14:12:03", "message": "lexicon loaded: 10000 words", "data": {"words": 10000}}
+{"time": "2026-06-07T14:12:03", "message": "pool after filters: 7230 words", "data": {"pool": 7230}}
+{"time": "2026-06-07T14:12:03", "message": "matched 60 items across 2 conditions", "data": {"conditions": "high_frequency, low_frequency"}}
+{"time": "2026-06-07T14:12:03", "message": "equivalence low_frequency vs high_frequency on 'length': d = 0.00, TOST p = 0.0288 (equivalent)", "data": null}
+{"time": "2026-06-07T14:12:03", "message": "equivalence low_frequency vs high_frequency on 'frequency': d = 4.67, TOST p = 1.0 (not shown equivalent)", "data": null}
+{"time": "2026-06-07T14:12:03", "message": "equivalence low_frequency vs high_frequency on 'n_density': d = 0.06, TOST p = 0.0462 (equivalent)", "data": null}
+{"time": "2026-06-07T14:12:03", "message": "equivalence low_frequency vs high_frequency on 'old20': d = 0.01, TOST p = 0.0305 (equivalent)", "data": null}
+{"time": "2026-06-07T14:12:03", "message": "wrote 'en_freqcontrast_english_stimuli_py.csv'", "data": {"path": "output\\stimuli\\en_freqcontrast_english_stimuli_py.csv", "rows": 60, "md5": "2f1b0ce2725c9e6245bb1cb3383c5b97"}}
+{"time": "2026-06-07T14:12:03", "message": "wrote 'en_freqcontrast_english_descriptives_py.csv'", "data": {"path": "output\\reports\\en_freqcontrast_english_descriptives_py.csv", "rows": 8, "md5": "7b75f6307de6b11528f0d5b962a1b405"}}
+{"time": "2026-06-07T14:12:03", "message": "wrote 'en_freqcontrast_english_comparisons_py.csv'", "data": {"path": "output\\reports\\en_freqcontrast_english_comparisons_py.csv", "rows": 4, "md5": "4f32c5bf52ab94f880879c10f0a7dd1d"}}
+{"time": "2026-06-07T14:12:03", "message": "wrote 'en_freqcontrast_english_psychopy.py'", "data": {"path": "output\\experiments\\en_freqcontrast_english_psychopy.py", "rows": null, "md5": "27b3ec7b98b65627694e5947227cc2bb"}}
+{"time": "2026-06-07T14:12:03", "message": "wrote 'en_freqcontrast_english.osexp'", "data": {"path": "output\\experiments\\en_freqcontrast_english.osexp", "rows": null, "md5": "bb870757c0ea761c3601f4574d6e3e2a"}}
