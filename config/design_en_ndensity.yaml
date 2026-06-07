@@ -1,0 +1,26 @@
+# Demonstration design: English dense- versus sparse-neighbourhood contrast.
+# The two conditions differ in Coltheart's N and are matched on length and
+# frequency. (N and OLD20 are intrinsically correlated, so OLD20 is allowed to
+# vary with the manipulation rather than being matched.)
+name: en_ndensity
+language: english
+lexicon: corpora/derived/en.csv
+description: 'Dense versus sparse orthographic neighbourhoods (Coltheart''s N) in English, matched on length and frequency.'
+n_per_condition: 24
+pool_filters:
+  length: [3, 6]
+  frequency: [3.8, 7.0]
+conditions:
+  - name: dense_neighbourhood
+    define_by:
+      n_density: [5, 100]
+  - name: sparse_neighbourhood
+    define_by:
+      n_density: [0, 1]
+match_on: [length, frequency]
+counterbalance:
+  lists: 1
+timing:
+  fixation_frames: 30
+  word_frames: 30
+  isi_frames: 15

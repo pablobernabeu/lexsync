@@ -1,0 +1,4 @@
+# Optional dependency for the wordfreq connector (Connector B, ~40 languages).
+# Needed only to build lexica for languages not bundled in corpora/derived/.
+# Install with:  python -m pip install -r requirements-corpora.txt
+wordfreq==3.1.1

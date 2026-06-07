@@ -1,0 +1,68 @@
+---
+title: "Getting started with lexsync"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting started with lexsync}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+`lexsync` selects stimuli that are matched in parallel across several lexical
+dimensions and then generates the experiment scripts that present them. This
+vignette runs a small high- versus low-frequency contrast on the bundled English
+example lexicon.
+
+```{r setup}
+library(lexsync)
+schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+lex <- load_lexicon(system.file("extdata", "en_example.csv", package = "lexsync"),
+                    schema, language = "english")
+nrow(lex)
+```
+
+## Define and run a design
+
+A design names the conditions, the dimensions to match and the number of items.
+
+```{r design}
+design <- list(
+  name = "vignette_demo", language = "english", n_per_condition = 15,
+  pool_filters = list(length = c(3, 7), frequency = c(3.8, 7)),
+  conditions = list(
+    list(name = "high", define_by = list(frequency = c(5.2, 7.0))),
+    list(name = "low",  define_by = list(frequency = c(3.8, 4.4)))
+  ),
+  match_on = list("length", "n_density", "old20")
+)
+stim <- match_stimuli(lex, design, schema)
+head(stim[, c("word", "condition", "length", "frequency", "n_density", "old20")])
+```
+
+## Inspect the match quality
+
+```{r report}
+report <- match_report(stim, c("length", "frequency", "n_density", "old20"), schema)
+knitr::kable(report$descriptives, caption = "Descriptive statistics per condition")
+knitr::kable(report$comparisons, caption = "Standardised differences and equivalence tests")
+```
+
+The manipulated dimension (frequency) differs strongly, while the controlled
+dimensions (length, neighbourhood density and OLD20) are closely equated.
+
+## Generate the experiment scripts
+
+```{r export}
+out <- file.path(tempdir(), "lexsync_demo")
+dir.create(out, showWarnings = FALSE)
+files <- export_experiments(stim, design, schema, out)
+basename(unlist(files))
+```
+
+The PsychoPy script binds each onset trigger to the stimulus flip with
+`win.callOnFlip`; the OpenSesame `.osexp` sends the marker from the item that
+immediately follows the word. Neither the matching nor the script generation
+requires PsychoPy, OpenSesame or any hardware to be installed.

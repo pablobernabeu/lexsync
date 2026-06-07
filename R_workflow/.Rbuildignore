@@ -1,0 +1,7 @@
+^run_pipeline\.R$
+^.*\.Rproj$
+^\.Rproj\.user$
+^\.\.Rcheck$
+^.*\.Rcheck$
+^doc$
+^Meta$

@@ -1,0 +1,9 @@
+# Pinned runtime dependencies for the lexsync Python package (generation +
+# analysis). These are also declared, with minimum versions, in pyproject.toml;
+# this file pins the exact versions used for the demonstrations so they
+# reproduce. Install with:  python -m pip install -r requirements.txt
+pandas==3.0.3
+numpy==2.4.6
+scipy==1.17.1
+rapidfuzz==3.14.5
+PyYAML==6.0.3

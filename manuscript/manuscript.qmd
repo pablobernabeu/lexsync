@@ -1,0 +1,349 @@
+---
+title: "lexsync: a cross-platform pipeline for multidimensional lexical optimisation and hardware-timed experiment generation"
+author:
+  - name: Pablo Bernabeu
+date: today
+abstract: |
+  Psycholinguistic stimulus preparation is fragmented across tools that match
+  words, tools that present them and the separate R and Python ecosystems in
+  which those tools live. We present 'lexsync', a research-grade toolkit,
+  released as a 'CRAN'-ready R package and a structurally identical
+  'PyPI'-ready Python package, that unifies the whole path from corpus to
+  laboratory. From a word-frequency corpus in any of dozens of languages
+  'lexsync' selects stimuli that are matched in parallel across several lexical
+  dimensions (length, frequency, orthographic neighbourhood density and OLD20),
+  counterbalances them, reports the realised match quality and then generates
+  ready-to-run 'PsychoPy' and 'OpenSesame' experiment scripts with hardware
+  triggers injected at stimulus onset for electroencephalography. The matching
+  is deterministic, so the two engines return identical stimuli; we demonstrate
+  this on four worked examples in English and Spanish. The generation step
+  requires no presentation software and no hardware, which keeps the whole
+  workflow reproducible. 'lexsync' generalises the FAIR artificial-grammar
+  workflow of an existing longitudinal study and is distributed under open
+  licences with a machine-readable corpus registry.
+bibliography: references.bib
+format:
+  html:
+    toc: true
+    number-sections: true
+    df-print: kable
+    embed-resources: true
+  docx: default
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r setup}
+#| include: false
+have_ggplot <- requireNamespace("ggplot2", quietly = TRUE)
+find_out <- function(p) {
+  for (base in c("../output", "output")) {
+    f <- file.path(base, p)
+    if (file.exists(f)) return(f)
+  }
+  stop(sprintf("lexsync manuscript: output file not found: %s", p))
+}
+read_out <- function(p) read.csv(find_out(p), stringsAsFactors = FALSE, fileEncoding = "UTF-8")
+
+designs <- c("en_freqcontrast_english", "en_ndensity_english",
+             "es_freqcontrast_spanish", "es_ndensity_spanish")
+labels <- c(
+  en_freqcontrast_english = "English: frequency contrast",
+  en_ndensity_english     = "English: neighbourhood contrast",
+  es_freqcontrast_spanish = "Spanish: frequency contrast",
+  es_ndensity_spanish     = "Spanish: neighbourhood contrast"
+)
+comps <- do.call(rbind, lapply(designs, function(d) {
+  x <- read_out(file.path("reports", paste0(d, "_comparisons_R.csv")))
+  x$design <- labels[[d]]
+  x
+}))
+```
+
+# Introduction
+
+The credibility of psycholinguistic and neurolinguistic research rests on
+carefully controlled stimuli and on precise timing. Both are laborious to
+achieve, and the tools that support them are scattered. A researcher who wishes
+to contrast, say, high- and low-frequency words while equating length and
+orthographic neighbourhood typically matches the items in one program, lays out
+the trial structure in another and writes the trigger code that aligns each word
+with the electroencephalography (EEG) recording by hand. Each hand-off is an
+opportunity for error and a barrier to reuse. The 'FAIR' guiding principles
+[@wilkinson2016fair] — that research objects be findable, accessible,
+interoperable and reusable — apply as much to this preparatory machinery as to
+the data it ultimately yields, yet stimulus pipelines are seldom shared in a
+form that others can run end to end.
+
+Two families of tool address parts of the problem. The first matches or equates
+word stimuli on lexical properties. 'LexOPS' [@taylor2020lexops] generates
+controlled word lists for arbitrary factorial designs, with both per-dimension
+tolerances and weighted multivariate Euclidean matching; 'LIBRA'
+[@lintz2021libra] equates lists across conditions using a resampling algorithm;
+and 'LASTU' [@itkonen2024lastu] provides searchable access to a language-specific
+lexicon. These tools are mature and widely used, but they end at the stimulus
+list: none generates the experiment that presents it, and most are tied to a
+single language and to one programming ecosystem. The second family builds and
+runs experiments. 'PsychoPy' [@peirce2019psychopy2] and 'OpenSesame'
+[@mathot2012opensesame] offer precise spatial and temporal control over stimulus
+presentation and support the hardware triggers that ERP research requires, but
+they take the stimulus set as given and do nothing to construct or to balance it.
+
+The gap, then, is not a missing capability but a missing integration. No single,
+installable framework spans many-language corpus access, parallel
+multidimensional matching, counterbalancing and the automated generation of
+hardware-timed presentation scripts, and none does so across both the R and the
+Python ecosystems and both major open presentation platforms. A second, subtler
+gap concerns timing. In the artificial-grammar workflow that motivated this work
+[@gonzalezalonso2025l3], EEG markers were sent from an experiment item that
+followed the word, so that only the first marker was even approximately aligned
+with stimulus onset; the others were sequence-ordered. This is a common pattern
+and an avoidable source of jitter.
+
+We present 'lexsync', a toolkit that fills these gaps. It is released as two
+independent but structurally identical packages — a 'CRAN'-ready R package and a
+'PyPI'-ready Python package — that share module names, function names and
+behaviour. From a corpus 'lexsync' selects matched stimuli, counterbalances and
+documents them, then writes a 'PsychoPy' script in which each onset trigger is
+bound to the exact screen flip on which the word appears, using
+`win.callOnFlip`, together with a complete 'OpenSesame' experiment. Crucially the
+matching is deterministic, so the R and Python engines return identical stimuli.
+'lexsync' generalises the materials workflow of @gonzalezalonso2025l3 into a
+reusable, FAIR-compliant tool.
+
+# The lexsync packages
+
+## Architecture and cross-language design
+
+Each package is organised into the same modules: `querying` (load a lexicon and
+compute lexical dimensions), `matching` (the constraint engine), `counterbalancing`,
+`validation` (match-quality reporting), `scripting` (experiment generation),
+`logging` (the automated run log) and `corpora` (the registry). A single
+orchestrator, `run_pipeline`, drives them in an explicit loop over designs and
+languages, so that adding a language or a design is a matter of supplying a
+configuration file and a lexicon rather than writing code. The two packages are
+deliberately lean: the R package depends only on 'readr', 'yaml', 'stringdist'
+and 'jsonlite' beyond base R, and the Python package on 'pandas', 'numpy',
+'PyYAML', 'rapidfuzz' and 'scipy'.
+
+## A many-language corpus registry
+
+Stimuli are only as good as the corpus behind them. 'lexsync' reads a
+machine-readable registry that records, for each supported corpus, its language,
+access URL, licence and citation. Two connectors are provided. The first exposes
+the curated SUBTLEX family and the 'openlexicon' collection — for example
+SUBTLEX-UK for British English [@vanheuven2014subtlexuk], SUBTLEX-ESP for Spanish
+[@cuetos2011subtlexesp] and SUBTLEX-US [@brysbaert2009subtlexus] — each
+individually citable and redistributable under CC BY-SA terms. The second is the
+'wordfreq' package [@speer2022wordfreq], which yields frequencies for roughly
+forty languages through a single dependency. The demonstrations below build their
+English and Spanish lexica with 'wordfreq', which aggregates subtitle and web
+corpora including the SUBTLEX lists; the registry documents the curated corpora as
+alternatives. Small example lexica are bundled inside each package for offline use
+and testing, while full corpora are fetched on demand into a user cache, keeping
+the installed packages within distribution size limits.
+
+## The multidimensional matching algorithm
+
+For every word 'lexsync' records its length, its frequency and two
+orthographic-neighbourhood measures: Coltheart's N, the number of words of the
+same length differing by a single letter [@coltheart1977access], and OLD20, the
+mean Levenshtein distance to the twenty nearest neighbours [@yarkoni2008old20].
+The neighbourhood measures are computed transparently from the lexicon rather
+than taken on trust.
+
+Matching proceeds in two deterministic stages. First, a tolerance pre-filter
+keeps only candidates that fall within `mean ± k·SD` of the anchor condition on
+each control dimension, generalising the windowed selection of the original
+workflow. Second, every remaining condition is matched to the anchor item by
+item: each dimension is standardised, the standardised Euclidean distance from
+each candidate to the target item is computed and the nearest unused candidate is
+assigned, with ties broken by a stable, locale-independent key. Because no random
+number generator is used and string comparisons are performed in byte order in
+both engines, the R and Python packages select identical stimuli from identical
+input — a parity we verify below.
+
+## Counterbalancing and reporting
+
+Matched items are assigned to presentation lists and a reproducible trial order,
+and a participant table crosses any counterbalancing factors. 'lexsync' then
+writes a match-quality report — per-condition descriptive statistics for every
+dimension, standardised mean differences against the anchor and a two one-sided
+tests (TOST) equivalence test [@lakens2017equivalence] — and an automated,
+comprehensive run log recording each stage, its parameters, the seed, package and
+corpus provenance and a fingerprint of every file written. The report makes the
+realised control explicit, in the spirit of the original workflow's balance
+checks, and the run log makes a run auditable.
+
+## Hardware time-locking
+
+The 'scripting' module emits two presentation targets from the same matched
+stimuli. The 'PsychoPy' script binds each onset trigger to the stimulus flip:
+
+```python
+win.callOnFlip(port.setData, target_trigger)   # written on the onset flip
+for frame in range(WORD_DURATION_FRAMES):
+    word_stim.draw()
+    win.flip()
+    if frame == RESET_AFTER_FRAMES:
+        win.callOnFlip(port.setData, 0)
+```
+
+A mock port prints the codes when no parallel-port driver is present, so the
+script runs end to end with no hardware. The 'OpenSesame' export is a complete,
+plain-text `.osexp`, generated programmatically so that its tab-sensitive format
+is always valid and modelled on a proven-working experiment from
+@gonzalezalonso2025l3; it sends the marker from an inline script placed
+immediately after the word, supporting both a parallel-port and a serial backend
+with a test-mode fallback. The two backends differ in an instructive way: the
+'PsychoPy' path is genuinely flip-locked, whereas 'OpenSesame' sends the marker
+from the following item and is therefore sequence-ordered. We recommend a
+photodiode check in either case, but the 'PsychoPy' path removes the dominant
+source of onset jitter. Notably, neither the matching nor the script generation
+imports 'PsychoPy' or any serial library: generation only writes text, and the
+presentation software is needed solely at run time.
+
+## Reproducibility and FAIR compliance
+
+'lexsync' ships a `renv` lockfile for R and pinned requirements for Python, sets
+seeds from a single configuration file, and carries a 'CITATION.cff', an MIT
+licence for the code and CC BY-SA terms for the bundled corpus derivatives with
+full attribution. The R package passes `R CMD check --as-cran`; the Python package
+builds a wheel and a source distribution that pass `twine check`. Both ship unit
+test suites, including a mock-engine test that confirms the generated 'PsychoPy'
+script writes its onset trigger on the word's first flip and a structural
+validator for the generated `.osexp`.
+
+# Worked examples
+
+We illustrate 'lexsync' with four demonstrations: a high- versus low-frequency
+contrast and a dense- versus sparse-neighbourhood contrast, each in English and
+in Spanish, drawn from ten-thousand-word lexica. The frequency contrast matches
+items on length, neighbourhood density and OLD20; the neighbourhood contrast
+matches on length and frequency. Each demonstration was produced by both the R
+and the Python engine. All tables and figures in this section are computed at
+render time from the generated output.
+
+```{r summary-table}
+#| label: tbl-summary
+#| tbl-cap: "The four demonstrations, with the manipulated dimension and its standardised effect size against the anchor condition."
+manip <- data.frame(
+  Demonstration = labels[designs],
+  `Manipulated dimension` = c("frequency", "n_density", "frequency", "n_density"),
+  check.names = FALSE
+)
+manip$`|d| manipulated` <- mapply(function(d, dim) {
+  x <- comps[comps$design == labels[[d]] & comps$dimension == dim, "cohens_d"]
+  round(abs(x), 2)
+}, designs, manip$`Manipulated dimension`)
+knitr::kable(manip)
+```
+
+@tbl-summary shows that the manipulated dimension is strongly separated in every
+demonstration. The control dimensions, by contrast, are closely equated.
+@fig-balance plots the absolute standardised mean difference of each dimension
+against the anchor; the manipulated dimension stands far to the right of the
+0.5-standard-deviation equivalence bound (dashed line) while the controlled
+dimensions cluster near zero.
+
+```{r balance-figure}
+#| label: fig-balance
+#| fig-cap: "Absolute standardised mean difference of each dimension against the anchor condition, by demonstration. The dashed line marks the 0.5-SD equivalence bound. Manipulated dimensions are large; controlled dimensions are near zero."
+#| fig-width: 8
+#| fig-height: 5
+if (have_ggplot) {
+  library(ggplot2)
+  comps$absd <- abs(comps$cohens_d)
+  ggplot(comps, aes(x = absd, y = dimension)) +
+    geom_vline(xintercept = 0.5, linetype = "dashed", colour = "grey50") +
+    geom_segment(aes(x = 0, xend = absd, yend = dimension)) +
+    geom_point(size = 2.4, colour = "#2c7fb8") +
+    facet_wrap(~design) +
+    labs(x = "|Cohen's d| versus the anchor condition", y = NULL) +
+    theme_minimal(base_size = 11)
+} else {
+  knitr::kable(comps[, c("design", "dimension", "cohens_d", "equivalent")])
+}
+```
+
+The per-condition descriptive statistics for the English frequency contrast are
+shown in @tbl-descriptives: frequency is separated by roughly one and a half Zipf
+units, while length, neighbourhood density and OLD20 are almost identical across
+conditions.
+
+```{r descriptives-table}
+#| label: tbl-descriptives
+#| tbl-cap: "Descriptive statistics per condition for the English frequency contrast (R engine)."
+knitr::kable(read_out("reports/en_freqcontrast_english_descriptives_R.csv"))
+```
+
+Finally, @tbl-parity reports the cross-engine parity: for each demonstration we
+compare the set of (word, condition) pairs selected by the R engine with those
+selected by the Python engine. The overlap is complete in every case, confirming
+that the two independent implementations realise the same deterministic
+procedure.
+
+```{r parity-table}
+#| label: tbl-parity
+#| tbl-cap: "Cross-engine parity: Jaccard overlap between the stimuli selected by the R and Python engines."
+parity <- sapply(designs, function(d) {
+  r <- read_out(file.path("stimuli", paste0(d, "_stimuli_R.csv")))
+  p <- read_out(file.path("stimuli", paste0(d, "_stimuli_py.csv")))
+  rs <- paste(r$word, r$condition)
+  ps <- paste(p$word, p$condition)
+  length(intersect(rs, ps)) / length(union(rs, ps))
+})
+knitr::kable(data.frame(Demonstration = labels[designs],
+                        `Jaccard overlap` = round(parity, 3),
+                        check.names = FALSE),
+             row.names = FALSE)
+```
+
+# Discussion
+
+'lexsync' unifies steps that are usually performed in separate tools and separate
+languages. Its contribution is integration rather than a single new capability:
+multidimensional matching exists in 'LexOPS' and 'LIBRA', and precise
+presentation exists in 'PsychoPy' and 'OpenSesame', but the path from a
+multilingual corpus to a hardware-timed, cross-platform experiment has not before
+been available as a single installable, dual-language tool. Two features are
+worth emphasising. First, the deterministic matcher gives bit-for-bit agreement
+between the R and Python engines, which means a laboratory can adopt 'lexsync' in
+whichever ecosystem it prefers without fear of divergent stimuli. Second, the
+'PsychoPy' export upgrades the sequence-ordered triggers of the original workflow
+to genuine flip-locking, a concrete methodological improvement for ERP research.
+
+Several limitations should be stated plainly. The orthographic-neighbourhood
+measures are defined for alphabetic scripts and require adaptation for
+logographic languages. The 'OpenSesame' export is sequence-ordered rather than
+flip-locked, reflecting the platform's design; a photodiode check remains
+advisable for any onset-critical study. The demonstrations use ten-thousand-word
+lexica, which are adequate for illustration but smaller than a researcher would
+use for a definitive neighbourhood calculation; larger corpora are fetched on
+demand through the registry. Future work includes additional presentation targets,
+a graphical interface and richer lexical dimensions such as concreteness and
+age of acquisition, each of which slots into the existing module structure.
+
+# Availability and open practices
+
+'lexsync' is available as an R package and a Python package, with a shared corpus
+registry and the reproducible source of this manuscript. The code is released
+under the MIT licence and the bundled corpus derivatives under CC BY-SA 4.0, with
+full attribution and retrieval dates recorded alongside the data. The repository
+URL in the package metadata is a placeholder pending public release.
+
+## Extending lexsync
+
+In keeping with the design, extensions have well-defined insertion points. To add
+a lexical dimension, edit `compute`-style functions in `querying` (`add_neighbourhood`
+and the dimension table in `config/schema.yaml`) in both packages. To add a
+presentation target, add an `export_<target>()` function in `scripting`. To add a
+corpus or a language, add an entry to `corpora/registry.yaml`; no code change is
+required for SUBTLEX-family or 'wordfreq' sources.
+
+# References
+
+::: {#refs}
+:::

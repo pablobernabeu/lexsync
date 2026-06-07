@@ -1,0 +1,42 @@
+# --- R ---------------------------------------------------------------------
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+*.Rproj
+R_workflow/..Rcheck/
+R_workflow/*.Rcheck/
+R_workflow/*.tar.gz
+R_workflow/src/*.o
+R_workflow/src/*.so
+R_workflow/src/*.dll
+renv/library/
+R_workflow/renv/library/
+
+# --- Python ----------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+python_workflow/.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# --- Corpora (large raw downloads are fetched on demand) -------------------
+corpora/raw/*
+!corpora/raw/.gitkeep
+
+# --- Quarto render intermediates -------------------------------------------
+/.quarto/
+manuscript/.quarto/
+manuscript/manuscript_files/
+manuscript/manuscript_cache/
+
+# --- OS --------------------------------------------------------------------
+.DS_Store
+Thumbs.db

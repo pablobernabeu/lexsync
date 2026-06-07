@@ -1,0 +1,25 @@
+# Demonstration design: English high- versus low-frequency contrast.
+# The two conditions differ in frequency and are matched, item by item, on
+# length, orthographic neighbourhood density (Coltheart's N) and OLD20.
+name: en_freqcontrast
+language: english
+lexicon: corpora/derived/en.csv
+description: 'High versus low frequency English words, matched on length, neighbourhood density and OLD20.'
+n_per_condition: 30
+pool_filters:
+  length: [3, 8]
+  frequency: [3.8, 7.0]
+conditions:
+  - name: high_frequency
+    define_by:
+      frequency: [5.2, 7.0]
+  - name: low_frequency
+    define_by:
+      frequency: [3.8, 4.4]
+match_on: [length, n_density, old20]
+counterbalance:
+  lists: 1
+timing:
+  fixation_frames: 30
+  word_frames: 30
+  isi_frames: 15

@@ -1,0 +1,6 @@
+# Run-time-only dependencies, needed to RUN a generated experiment on hardware,
+# never to GENERATE one. Kept separate so the generation pipeline and its tests
+# install and run with no presentation software. Install with:
+#   python -m pip install -r requirements-experiment.txt
+psychopy
+pyserial

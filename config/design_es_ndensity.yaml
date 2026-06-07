@@ -1,0 +1,23 @@
+# Demonstration design: Spanish dense- versus sparse-neighbourhood contrast.
+name: es_ndensity
+language: spanish
+lexicon: corpora/derived/es.csv
+description: 'Dense versus sparse orthographic neighbourhoods (Coltheart''s N) in Spanish, matched on length and frequency.'
+n_per_condition: 24
+pool_filters:
+  length: [3, 6]
+  frequency: [3.8, 7.0]
+conditions:
+  - name: dense_neighbourhood
+    define_by:
+      n_density: [5, 100]
+  - name: sparse_neighbourhood
+    define_by:
+      n_density: [0, 1]
+match_on: [length, frequency]
+counterbalance:
+  lists: 1
+timing:
+  fixation_frames: 30
+  word_frames: 30
+  isi_frames: 15

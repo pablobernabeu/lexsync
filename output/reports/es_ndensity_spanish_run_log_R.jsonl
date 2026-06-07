@@ -1,0 +1,11 @@
+{"time":"2026-06-07 13:15:18.001925","message":"loading lexicon 'corpora/derived/es.csv'","data":null}
+{"time":"2026-06-07 13:15:18.026167","message":"lexicon loaded: 10000 words","data":{"words":10000}}
+{"time":"2026-06-07 13:15:18.027855","message":"pool after filters: 3934 words","data":{"pool":3934}}
+{"time":"2026-06-07 13:15:18.035034","message":"matched 48 items across 2 conditions","data":{"conditions":"dense_neighbourhood, sparse_neighbourhood"}}
+{"time":"2026-06-07 13:15:18.038327","message":"equivalence sparse_neighbourhood vs dense_neighbourhood on 'length': d = -0.06, TOST p = 0.069 (not shown equivalent)","data":null}
+{"time":"2026-06-07 13:15:18.038482","message":"equivalence sparse_neighbourhood vs dense_neighbourhood on 'frequency': d = 0.12, TOST p = 0.100 (not shown equivalent)","data":null}
+{"time":"2026-06-07 13:15:18.053758","message":"wrote 'es_ndensity_spanish_stimuli_R.csv'","data":{"path":"output/stimuli/es_ndensity_spanish_stimuli_R.csv","rows":48,"md5":"caebc912393e8d1fbae9e21059500fd5"}}
+{"time":"2026-06-07 13:15:18.063794","message":"wrote 'es_ndensity_spanish_descriptives_R.csv'","data":{"path":"output/reports/es_ndensity_spanish_descriptives_R.csv","rows":4,"md5":"26db1ca5bc4968a20b2cac4ff76a8fb2"}}
+{"time":"2026-06-07 13:15:18.07259","message":"wrote 'es_ndensity_spanish_comparisons_R.csv'","data":{"path":"output/reports/es_ndensity_spanish_comparisons_R.csv","rows":2,"md5":"3390192feefd1195dc979d0003bfa40b"}}
+{"time":"2026-06-07 13:15:18.112478","message":"wrote 'es_ndensity_spanish_psychopy.py'","data":{"path":"output/experiments/es_ndensity_spanish_psychopy.py","rows":"NA","md5":"482de3cb5213508f64a112309b07a495"}}
+{"time":"2026-06-07 13:15:18.117146","message":"wrote 'es_ndensity_spanish.osexp'","data":{"path":"output/experiments/es_ndensity_spanish.osexp","rows":"NA","md5":"b9d18212b9d82f1b58f14738e2aa5508"}}

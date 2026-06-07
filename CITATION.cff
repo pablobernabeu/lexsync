@@ -1,0 +1,38 @@
+cff-version: 1.2.0
+message: 'If you use lexsync, please cite both the software and the accompanying article.'
+title: 'lexsync: multidimensional lexical optimisation and hardware-timed experiment generation'
+abstract: >-
+  lexsync is a cross-platform, dual-language (R and Python) toolkit that unifies
+  many-language lexical-corpus access, parallel multidimensional stimulus
+  matching, counterbalancing and the automated generation of hardware-timed
+  PsychoPy and OpenSesame experiment scripts for EEG/ERP research.
+type: software
+authors:
+  # Authorship is provisional and to be finalised before submission/release.
+  - family-names: Bernabeu
+    given-names: Pablo
+    orcid: 'https://orcid.org/0000-0000-0000-0000'
+version: 0.1.0
+date-released: '2026-06-07'
+license: MIT
+# repository-code is a placeholder until the public repository is created.
+repository-code: 'https://github.com/pablobernabeu/lexsync'
+keywords:
+  - psycholinguistics
+  - lexical statistics
+  - stimulus matching
+  - counterbalancing
+  - EEG
+  - ERP
+  - PsychoPy
+  - OpenSesame
+  - FAIR
+preferred-citation:
+  type: article
+  title: 'lexsync: a cross-platform pipeline for multidimensional lexical optimisation and hardware-timed experiment generation'
+  authors:
+    - family-names: Bernabeu
+      given-names: Pablo
+  journal: 'Behavior Research Methods'
+  year: 2026
+  notes: 'Manuscript in preparation; details to be finalised on submission.'

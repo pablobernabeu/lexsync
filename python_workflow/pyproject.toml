@@ -1,0 +1,47 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "lexsync"
+version = "0.1.0"
+description = "Multidimensional lexical optimisation and hardware-timed experiment generation"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "Pablo Bernabeu" }]
+keywords = [
+  "psycholinguistics", "lexical statistics", "stimulus matching",
+  "counterbalancing", "EEG", "ERP", "PsychoPy", "OpenSesame", "FAIR",
+]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+  "Intended Audience :: Science/Research",
+  "Topic :: Scientific/Engineering",
+]
+dependencies = [
+  "pandas>=1.5",
+  "numpy>=1.23",
+  "PyYAML>=6.0",
+  "rapidfuzz>=3.0",
+  "scipy>=1.9",
+]
+
+[project.optional-dependencies]
+corpora = ["wordfreq>=3.0"]
+analysis = ["matplotlib>=3.6"]
+experiment = ["psychopy", "pyserial"]
+dev = ["pytest>=7.0", "build", "twine"]
+
+[project.scripts]
+lexsync = "lexsync.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/pablobernabeu/lexsync"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/lexsync"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/lexsync", "README.md", "LICENSE", "pyproject.toml"]

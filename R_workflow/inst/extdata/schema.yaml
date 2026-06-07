@@ -1,0 +1,58 @@
+# lexsync — global schema and defaults
+# ---------------------------------------------------------------------------
+# Every numeric constant lives here (and in the per-design configs), so adding a
+# language or a design needs a configuration file, not a change to the code.
+# This file is read identically by the R package and the Python package.
+
+seed: 2026
+
+# ---- Lexicon column contract ----------------------------------------------
+# Derived lexica (corpora/derived/*.csv and the bundled example slices) must
+# expose the 'required' columns; 'optional' columns are used when present.
+lexicon_schema:
+  required:
+    - word            # orthographic form, UTF-8, lower-case
+    - freq_zipf       # Zipf frequency (van Heuven et al., 2014); roughly 1-7
+  optional:
+    - freq_permillion # frequency per million tokens
+    - pos             # part of speech (source tag)
+    - language        # ISO 639-1 / BCP-47 code
+    - source          # corpus identifier (matches corpora/registry.yaml)
+
+# ---- Lexical dimensions ----------------------------------------------------
+# 'column' dimensions are read straight from the lexicon; 'derived' dimensions
+# are computed at load time from the orthographic form, identically in R and
+# Python (Coltheart's N and OLD20 from Levenshtein distances).
+dimensions:
+  length:    { type: derived, compute: n_letters,    unit: 'letters' }
+  frequency: { type: column,  column: freq_zipf,     unit: 'Zipf' }
+  n_density: { type: derived, compute: coltheart_n,  unit: 'neighbours' }
+  old20:     { type: derived, compute: old20,        unit: 'mean Levenshtein distance' }
+
+# ---- Default matching configuration ---------------------------------------
+matching:
+  method: standardised_euclidean   # standardised_euclidean | mahalanobis | optimal
+  # Stage 1, tolerance pre-filter: keep candidates within mean +/- k * SD of the
+  # target condition on each dimension. This generalises the original workflow's
+  # mean +/- SD/9 (frequency) and mean +/- 2*SD (letters) windows.
+  tolerance_k:
+    length: 2.0
+    frequency: 1.0
+    n_density: 2.0
+    old20: 2.0
+  # Stage 2 ranks candidates by standardised multivariate distance; ties are
+  # broken by this stable key so selection is deterministic without an RNG.
+  tie_break: [distance, word, id]
+
+# ---- Equivalence testing (reported in the descriptives) -------------------
+equivalence:
+  test: tost
+  bound_d: 0.5    # smallest effect size of interest, Cohen's d (Lakens, 2017)
+  alpha: 0.05
+
+# ---- Hardware triggers (defaults; overridable per design) -----------------
+triggers:
+  parallel_address: '0x0378'   # typical LPT1 base address
+  reset_value: 0
+  reset_after_frames: 2        # ~33 ms at 60 Hz, above the 10 ms recorder minimum
+  inter_trigger_ms: 10         # spacing of trailing markers (matches the original)

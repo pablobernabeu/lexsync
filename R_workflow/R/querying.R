@@ -1,0 +1,124 @@
+# querying.R -- load lexica, validate the column contract and compute the
+# lexical dimensions on which stimuli are matched. Written in base R to keep the
+# package's dependency surface small.
+
+#' Validate a lexicon against the schema column contract
+#'
+#' @param df A candidate lexicon data frame.
+#' @param schema The parsed schema (see `config/schema.yaml`).
+#' @return `TRUE`, invisibly; stops with an informative error otherwise.
+#' @keywords internal
+validate_lexicon <- function(df, schema) {
+  required <- unlist(schema$lexicon_schema$required, use.names = FALSE)
+  missing <- setdiff(required, names(df))
+  if (length(missing)) {
+    stop(sprintf("lexsync: lexicon is missing required column(s): %s",
+                 paste(sprintf("'%s'", missing), collapse = ", ")), call. = FALSE)
+  }
+  invisible(TRUE)
+}
+
+#' Load a lexicon from a CSV file
+#'
+#' Reads a derived lexicon, validates the column contract, lower-cases the
+#' orthographic form, removes duplicates and attaches a stable integer `id` plus
+#' the inexpensive dimensions `length` and `frequency`. The orthographic
+#' neighbourhood dimensions are added later, on the experimental pool, by
+#' [add_neighbourhood()], because they are quadratic in the size of the
+#' reference set.
+#'
+#' @param path Path to a derived lexicon CSV.
+#' @param schema The parsed schema (see `config/schema.yaml`).
+#' @param language Optional language label to record in a `language` column.
+#' @return A data frame with at least `word`, `freq_zipf`, `length`,
+#'   `frequency` and `id`.
+#' @examples
+#' \dontrun{
+#' schema <- read_config(system.file("extdata", "schema.yaml", package = "lexsync"))
+#' lex <- load_lexicon(system.file("extdata", "english_example.csv", package = "lexsync"), schema)
+#' }
+#' @export
+load_lexicon <- function(path, schema, language = NULL) {
+  df <- as.data.frame(read_csv_utf8(path), stringsAsFactors = FALSE)
+  validate_lexicon(df, schema)
+  freq_col <- schema$dimensions$frequency$column %||% "freq_zipf"
+  df$word <- tolower(trimws(as.character(df$word)))
+  keep <- !is.na(df$word) & nzchar(df$word) & !is.na(df[[freq_col]])
+  df <- df[keep, , drop = FALSE]
+  df <- df[!duplicated(df$word), , drop = FALSE]
+  # Byte-order ('radix') sort so the lexicon order is locale-independent and
+  # therefore identical to the Python engine (which sorts by UTF-8 bytes).
+  df <- df[order(df$word, method = "radix"), , drop = FALSE]
+  df$id <- seq_len(nrow(df))
+  df$length <- nchar(df$word)
+  df$frequency <- as.numeric(df[[freq_col]])
+  if (!is.null(language)) df$language <- language
+  rownames(df) <- NULL
+  df
+}
+
+#' Compute orthographic-neighbourhood dimensions (Coltheart's N and OLD20)
+#'
+#' `n_density` is Coltheart's N: the number of reference words of the same
+#' length differing by a single letter substitution (Hamming distance 1).
+#' `old20` is the mean Levenshtein distance to the 20 nearest reference words
+#' (Yarkoni, Balota & Yap, 2008). Both are computed against `reference`, which
+#' should be a large word list (typically the whole lexicon), not just the
+#' experimental pool.
+#'
+#' @param df A data frame with a `word` column.
+#' @param reference A character vector of reference words.
+#' @param n_old Neighbourhood size for OLD (default 20).
+#' @return `df` with added integer `n_density` and numeric `old20` columns.
+#' @importFrom stringdist stringdist
+#' @export
+add_neighbourhood <- function(df, reference = df$word, n_old = 20L) {
+  words <- as.character(df$word)
+  reference <- unique(as.character(reference))
+  ref_nchar <- nchar(reference)
+  n_dens <- integer(length(words))
+  old <- numeric(length(words))
+  for (i in seq_along(words)) {
+    w <- words[i]
+    same_len <- reference[ref_nchar == nchar(w)]
+    if (length(same_len)) {
+      hd <- stringdist::stringdist(w, same_len, method = "hamming")
+      n_dens[i] <- sum(hd == 1, na.rm = TRUE)
+    }
+    ld <- stringdist::stringdist(w, reference, method = "lv")
+    ld <- ld[is.finite(ld) & ld > 0]
+    if (length(ld)) {
+      k <- min(n_old, length(ld))
+      old[i] <- mean(sort(ld, partial = seq_len(k))[seq_len(k)])
+    } else {
+      old[i] <- NA_real_
+    }
+  }
+  df$n_density <- n_dens
+  df$old20 <- old
+  df
+}
+
+#' Build an experimental candidate pool by filtering a lexicon
+#'
+#' @param lexicon A lexicon data frame.
+#' @param filters A named list mapping columns to either a numeric `c(min, max)`
+#'   range or a vector of permitted values.
+#' @return The filtered lexicon.
+#' @export
+build_pool <- function(lexicon, filters = NULL) {
+  df <- lexicon
+  if (!is.null(filters)) {
+    for (col in names(filters)) {
+      if (!col %in% names(df)) next
+      rng <- unlist(filters[[col]], use.names = FALSE)
+      if (is.numeric(rng) && length(rng) == 2) {
+        df <- df[!is.na(df[[col]]) & df[[col]] >= rng[1] & df[[col]] <= rng[2], , drop = FALSE]
+      } else {
+        df <- df[!is.na(df[[col]]) & as.character(df[[col]]) %in% as.character(rng), , drop = FALSE]
+      }
+    }
+  }
+  rownames(df) <- NULL
+  df
+}
