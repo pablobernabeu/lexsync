@@ -1,5 +1,11 @@
 # lexsync
 
+<!-- badges: start -->
+[![R-CMD-check](https://github.com/pablobernabeu/lexsync/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/pablobernabeu/lexsync/actions/workflows/R-CMD-check.yaml)
+[![python-tests](https://github.com/pablobernabeu/lexsync/actions/workflows/python-tests.yaml/badge.svg)](https://github.com/pablobernabeu/lexsync/actions/workflows/python-tests.yaml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+<!-- badges: end -->
+
 **Multidimensional lexical optimisation and hardware-timed experiment generation, in R and Python.**
 
 `lexsync` is a research-grade, cross-platform toolkit for building psycholinguistic
@@ -86,6 +92,14 @@ with its licence and retrieval date, in `corpora/ATTRIBUTION.md`.
   `R_workflow/R/scripting.R` and `python_workflow/src/lexsync/scripting.py`.
 - **Add a corpus or language** — add an entry to `corpora/registry.yaml`; no code change
   is required for SUBTLEX-family or 'wordfreq' sources.
+
+## Tests and continuous integration
+
+The R package carries a `testthat` suite and the Python package a `pytest` suite,
+the latter including a mock-'PsychoPy' harness that checks the onset trigger is
+flip-locked, a structural validator for the generated 'OpenSesame' experiment and
+an R-versus-Python parity test. GitHub Actions run `R CMD check` on Ubuntu, macOS
+and Windows (R release and development) and the Python tests on Python 3.10–3.13.
 
 ## Licensing and citation
 

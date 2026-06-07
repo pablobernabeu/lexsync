@@ -1,0 +1,8 @@
+# Normalise line endings: store and check out text files as LF.
+* text=auto eol=lf
+
+# Binary files (never normalise or diff as text).
+*.png binary
+*.docx binary
+*.RData binary
+*.Rdata binary

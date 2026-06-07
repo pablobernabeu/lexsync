@@ -14,6 +14,7 @@ Description: A cross-platform toolkit that unifies many-language lexical-corpus
     stimulus flip in the generated 'PsychoPy' scripts.
 License: MIT + file LICENSE
 Encoding: UTF-8
+Language: en-GB
 Imports:
     readr,
     yaml,
@@ -25,7 +26,8 @@ Imports:
 Suggests:
     testthat (>= 3.0.0),
     knitr,
-    rmarkdown
+    rmarkdown,
+    spelling
 VignetteBuilder: knitr
 URL: https://github.com/pablobernabeu/lexsync
 BugReports: https://github.com/pablobernabeu/lexsync/issues
