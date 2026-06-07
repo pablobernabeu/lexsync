@@ -109,8 +109,25 @@ def build(lang: str, n_words: int) -> pd.DataFrame:
     return df.sort_values("word").reset_index(drop=True)
 
 
-def write_slice(df: pd.DataFrame, lang: str) -> int:
+def write_slice(df: pd.DataFrame, lang: str, target: int = 3000) -> int:
+    """Write a small, frequency-stratified example slice for the packages.
+
+    The full derived lexicon (corpora/derived/) is the realistic neighbourhood
+    reference; the installed packages bundle only this compact slice for tests
+    and examples, so they stay within distribution size limits.
+    """
     sl = df[(df.word.str.len() >= 3) & (df.word.str.len() <= 9)].copy()
+    if len(sl) > target:
+        sl = sl.assign(_bin=pd.qcut(sl.freq_zipf, 10, labels=False, duplicates="drop"))
+        per = max(1, target // max(1, sl["_bin"].nunique()))
+        parts = []
+        for _, g in sl.groupby("_bin"):
+            g = g.sort_values("word")
+            if len(g) > per:
+                idx = np.unique(np.round(np.linspace(0, len(g) - 1, per)).astype(int))
+                g = g.iloc[idx]
+            parts.append(g)
+        sl = pd.concat(parts).drop(columns="_bin")
     sl = sl.sort_values("word").reset_index(drop=True)
     for d in PACKAGE_DATA_DIRS:
         d.mkdir(parents=True, exist_ok=True)

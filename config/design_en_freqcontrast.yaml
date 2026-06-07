@@ -5,7 +5,7 @@ name: en_freqcontrast
 language: english
 lexicon: corpora/derived/en.csv
 description: 'High versus low frequency English words, matched on length, neighbourhood density and OLD20.'
-n_per_condition: 30
+n_per_condition: 80
 pool_filters:
   length: [3, 8]
   frequency: [3.8, 7.0]

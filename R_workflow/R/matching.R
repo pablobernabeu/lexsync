@@ -97,7 +97,9 @@ match_stimuli <- function(pool, design, schema, verbose = FALSE) {
     used <- rep(FALSE, nrow(cand_f))
     pick <- integer(n_take)
     for (a in seq_len(n_take)) {
-      dvec <- sqrt(rowSums(sweep(z_cand, 2, z_anchor[a, ], "-")^2))
+      # Round to absorb last-ULP floating-point differences between engines, so
+      # the stable tie-break below is itself reproducible across R and Python.
+      dvec <- round(sqrt(rowSums(sweep(z_cand, 2, z_anchor[a, ], "-")^2)), 9)
       dvec[used] <- Inf
       best <- order(dvec, cand_f$word, cand_f$id, method = "radix")[1]  # stable, locale-independent tie-break
       pick[a] <- best

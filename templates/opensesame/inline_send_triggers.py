@@ -1,10 +1,18 @@
-# lexsync OpenSesame trigger sending -- paste into an inline_script 'Run' tab.
+# lexsync OpenSesame onset-aligned word presentation -- paste into an
+# inline_script 'Run' tab. Requires inline_trigger_setup.py to have run first
+# (it defines send_trigger and var.word_duration_ms).
 # -------------------------------------------------------------------------
-# Requires inline_trigger_setup.py to have run first in the experiment (it
-# defines send_trigger). Place this inline_script immediately AFTER the target
-# word sketchpad in the sequence, so the onset marker is sent as soon as the
-# word has been shown. The loop table supplies var.target_word_trigger and
-# var.condition_trigger for each trial.
+# The word is drawn and shown HERE, and the trigger is sent immediately after
+# show() returns. Because canvas.show() blocks until the display refresh (with
+# the 'psycho'/'xpyriment' backends), the marker is written right after the
+# verified stimulus flip, time-locking it to onset -- the OpenSesame-recommended
+# method, equivalent in effect to PsychoPy's win.callOnFlip. (Sending the marker
+# from a separate item that merely follows the stimulus would add the latency of
+# an item transition and is not onset-aligned.)
 
-send_trigger(var.target_word_trigger)   # onset marker for the target word
-send_trigger(var.condition_trigger)     # condition marker
+c = Canvas()
+c.text(var.word)
+var.onset_time = c.show()            # blocks until the refresh; returns the onset
+send_trigger(var.target_word_trigger)    # onset-aligned marker
+send_trigger(var.condition_trigger)      # condition marker
+clock.sleep(var.word_duration_ms)

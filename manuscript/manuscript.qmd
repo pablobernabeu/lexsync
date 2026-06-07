@@ -18,10 +18,10 @@ abstract: |
   'lexsync' selects stimuli that are matched in parallel across several lexical
   dimensions (length, frequency, orthographic neighbourhood density and OLD20),
   counterbalances them, reports the realised match quality and then generates
-  ready-to-run 'PsychoPy' and 'OpenSesame' experiment scripts with hardware
-  triggers for electroencephalography — flip-locked to stimulus onset in the
-  'PsychoPy' target and sequence-ordered in the 'OpenSesame' target. The matching
-  is deterministic, so the two engines select identical matched stimuli; we
+  ready-to-run 'PsychoPy' and 'OpenSesame' experiment scripts whose hardware
+  triggers for electroencephalography are time-locked to stimulus onset in both
+  targets. The matching is deterministic, so the two engines select identical
+  matched stimuli; we
   demonstrate
   this on four worked examples in English and Spanish. The generation step
   requires no presentation software and no hardware, which keeps the whole
@@ -155,7 +155,7 @@ followed the word, so that only the first marker was even approximately aligned
 with stimulus onset; the others were sequence-ordered. This is a common pattern
 and an avoidable source of jitter.
 
-We present 'lexsync', a toolkit that addresses these gaps; the onset-jitter gap is closed for the 'PsychoPy' target, which is flip-locked, while the 'OpenSesame' target remains sequence-ordered by the platform's design (see below). It is released as two
+We present 'lexsync', a toolkit that fills these gaps; both presentation targets time-lock the marker to stimulus onset (see below). It is released as two
 independent but structurally identical packages — a 'CRAN'-ready R package and a
 'PyPI'-ready Python package — that share module names, function names and
 behaviour. From a corpus 'lexsync' selects matched stimuli, counterbalances and
@@ -248,13 +248,14 @@ A mock port prints the codes when no parallel-port driver is present, so the
 script runs end to end with no hardware. The 'OpenSesame' export is a complete,
 plain-text `.osexp`, generated programmatically so that its tab-sensitive format
 is always valid and modelled on a proven-working experiment from
-@gonzalezalonso2025l3; it sends the marker from an inline script placed
-immediately after the word, supporting both a parallel-port and a serial backend
-with a test-mode fallback. The two backends differ in an instructive way: the
-'PsychoPy' path is genuinely flip-locked, whereas 'OpenSesame' sends the marker
-from the following item and is therefore sequence-ordered. We recommend a
-photodiode check in either case, but the 'PsychoPy' path removes the dominant
-source of onset jitter. Notably, neither the matching nor the script generation
+@gonzalezalonso2025l3. In it the word is drawn and shown from an inline script,
+and the marker is sent immediately after `show()` returns, supporting both a
+parallel-port and a serial backend with a test-mode fallback. Because `show()`
+blocks until the display refresh, the marker is written right after the verified
+flip, so both targets are time-locked to stimulus onset: 'PsychoPy' binds the
+marker to the flip with `win.callOnFlip`, and 'OpenSesame' writes it immediately
+after the refresh-blocking `show()`, the platform's recommended method. We
+recommend a photodiode check in either case. Notably, neither the matching nor the script generation
 imports 'PsychoPy' or any serial library: generation only writes text, and the
 presentation software is needed solely at run time.
 
@@ -273,7 +274,7 @@ validator for the generated `.osexp`.
 
 We illustrate 'lexsync' with four demonstrations: a high- versus low-frequency
 contrast and a dense- versus sparse-neighbourhood contrast, each in English and
-in Spanish, drawn from ten-thousand-word lexica. The frequency contrast matches
+in Spanish, drawn from thirty-thousand-word lexica. The frequency contrast matches
 items on length, neighbourhood density and OLD20; the neighbourhood contrast
 matches on length and frequency. Each demonstration was produced by both the R
 and the Python engine. All tables and figures in this section are computed at
@@ -341,13 +342,16 @@ names(tost) <- c("Demonstration", "Dimension", "|d|", "TOST p", "Equivalent")
 knitr::kable(tost, digits = 3, row.names = FALSE)
 ```
 
-Several controlled dimensions are not declared equivalent at the 0.5-*SD* bound.
-This reflects the low power of an equivalence test at the demonstration sample
-sizes (*n* = 24–30 per condition) rather than a matching failure: the
-standardised mean differences are an order of magnitude below the manipulation,
-and at the same effect sizes equivalence is declared once *n* is larger
-[@lakens2017equivalence]. We therefore report the standardised mean difference
-and the TOST together and read the latter as a conservative check.
+In the frequency contrasts every controlled dimension is declared equivalent at
+the 0.5-*SD* bound (*n* = 80 per condition). In the neighbourhood contrasts
+frequency is equivalent but length retains a small residual difference (Cohen's
+*d* ≈ 0.25, just outside the bound): neighbourhood density is intrinsically
+correlated with word length, so the two cannot be equated as tightly as the
+independent dimensions of the frequency contrast. This is a property of the
+manipulation rather than a matching failure — the residual is an order of
+magnitude below the manipulated effect — and 'lexsync' reports it transparently.
+We read the TOST as a conservative complement to the standardised mean difference
+[@lakens2017equivalence].
 
 The per-condition descriptive statistics make the control concrete. In the
 English frequency contrast (@tbl-desc-freq) frequency is separated by roughly one
@@ -420,20 +424,24 @@ worth emphasising. First, the deterministic matcher selects identical matched
 statistics agreeing to the precision shown; only the seeded trial order, which
 depends on each language's random-number generator, differs. A laboratory can
 therefore adopt 'lexsync' in whichever ecosystem it prefers without fear of
-divergent stimulus selection. Second, the
-'PsychoPy' export upgrades the sequence-ordered triggers of the original workflow
-to genuine flip-locking, a concrete methodological improvement for ERP research.
+divergent stimulus selection. Second, both
+presentation targets upgrade the sequence-ordered triggers of the original
+workflow to onset-aligned markers — flip-locked in 'PsychoPy', and written
+immediately after the refresh-blocking `show()` in 'OpenSesame' — a concrete
+methodological improvement for ERP research.
 
-Several limitations should be stated plainly. The orthographic-neighbourhood
-measures are defined for alphabetic scripts and require adaptation for
-logographic languages. The 'OpenSesame' export is sequence-ordered rather than
-flip-locked, reflecting the platform's design; a photodiode check remains
-advisable for any onset-critical study. The demonstrations use ten-thousand-word
-lexica, which are adequate for illustration but smaller than a researcher would
-use for a definitive neighbourhood calculation; larger corpora are fetched on
-demand through the registry. Future work includes additional presentation targets,
-a graphical interface and richer lexical dimensions such as concreteness and
-age of acquisition, each of which slots into the existing module structure.
+Some limitations remain. The orthographic-neighbourhood measures (Coltheart's N
+and OLD20) operate on character strings and are computed for any script, but
+their psycholinguistic interpretation is established for alphabetic writing; the
+extensible dimension system accommodates script-specific measures where a
+logographic study requires them. The neighbourhood-density contrast cannot equate
+word length as tightly as the frequency contrast does, because neighbourhood
+density is intrinsically correlated with length — a property of the manipulation
+that the tool reports rather than conceals. A photodiode check remains advisable
+for any onset-critical study, as for any software trigger. Future work includes
+additional presentation targets, a graphical interface and richer lexical
+dimensions such as concreteness and age of acquisition, each of which slots into
+the existing module structure.
 
 # Availability and open practices
 

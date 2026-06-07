@@ -1,9 +1,9 @@
 group,dimension,n,mean,sd,min,median,max
-high_frequency,length,30,4.667,1.241,3,5,7
-high_frequency,frequency,30,5.592,0.408,5.2,5.46,6.98
-high_frequency,n_density,30,3.933,4.913,0,2,19
-high_frequency,old20,30,1.873,0.507,1,1.825,2.95
-low_frequency,length,30,4.667,1.241,3,5,7
-low_frequency,frequency,30,4.115,0.183,3.8,4.125,4.4
-low_frequency,n_density,30,3.667,4.205,0,2,13
-low_frequency,old20,30,1.87,0.5,1,1.825,2.85
+high_frequency,length,80,4.7,1.427,3,4,8
+high_frequency,frequency,80,5.578,0.369,5.2,5.455,6.98
+high_frequency,n_density,80,7.812,8.344,0,5,34
+high_frequency,old20,80,1.629,0.541,1,1.6,3.1
+low_frequency,length,80,4.662,1.35,3,4,7
+low_frequency,frequency,80,4.064,0.17,3.82,4.035,4.4
+low_frequency,n_density,80,7.513,7.48,0,5,24
+low_frequency,old20,80,1.624,0.518,1,1.6,2.7

@@ -1,5 +1,5 @@
 condition,reference,dimension,cohens_d,tost_p,equivalent
-low_frequency,high_frequency,length,0.0,0.0288,True
-low_frequency,high_frequency,frequency,4.67,1.0,False
-low_frequency,high_frequency,n_density,0.058,0.0462,True
-low_frequency,high_frequency,old20,0.007,0.0305,True
+low_frequency,high_frequency,length,0.027,0.0016,True
+low_frequency,high_frequency,frequency,5.272,1.0,False
+low_frequency,high_frequency,n_density,0.038,0.002,True
+low_frequency,high_frequency,old20,0.009,0.0011,True

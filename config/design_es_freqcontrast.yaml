@@ -3,7 +3,7 @@ name: es_freqcontrast
 language: spanish
 lexicon: corpora/derived/es.csv
 description: 'High versus low frequency Spanish words, matched on length, neighbourhood density and OLD20.'
-n_per_condition: 30
+n_per_condition: 80
 pool_filters:
   length: [3, 8]
   frequency: [3.8, 7.0]

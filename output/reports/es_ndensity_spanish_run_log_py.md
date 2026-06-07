@@ -1,8 +1,8 @@
 # lexsync run log: es_ndensity
 
 - Engine: Python 3.13.7
-- Started: 2026-06-07T14:12:04
-- Finished: 2026-06-07T14:12:04
+- Started: 2026-06-08T00:19:11
+- Finished: 2026-06-08T00:19:11
 
 ## Run metadata
 
@@ -14,34 +14,34 @@
 
 ## Steps
 
-- **2026-06-07T14:12:04** -- loading lexicon 'corpora/derived/es.csv'
-- **2026-06-07T14:12:04** -- lexicon loaded: 10000 words
-    - words: 10000
-- **2026-06-07T14:12:04** -- pool after filters: 3934 words
-    - pool: 3934
-- **2026-06-07T14:12:04** -- matched 48 items across 2 conditions
+- **2026-06-08T00:19:11** -- loading lexicon 'corpora/derived/es.csv'
+- **2026-06-08T00:19:11** -- lexicon loaded: 29999 words
+    - words: 29999
+- **2026-06-08T00:19:11** -- pool after filters: 4002 words
+    - pool: 4002
+- **2026-06-08T00:19:11** -- matched 160 items across 2 conditions
     - conditions: dense_neighbourhood, sparse_neighbourhood
-- **2026-06-07T14:12:04** -- equivalence sparse_neighbourhood vs dense_neighbourhood on 'length': d = -0.06, TOST p = 0.0686 (not shown equivalent)
-- **2026-06-07T14:12:04** -- equivalence sparse_neighbourhood vs dense_neighbourhood on 'frequency': d = 0.12, TOST p = 0.1001 (not shown equivalent)
-- **2026-06-07T14:12:04** -- equivalence sparse_neighbourhood vs dense_neighbourhood on 'n_density': d = 3.31, TOST p = 1.0 (not shown equivalent)
-- **2026-06-07T14:12:04** -- equivalence sparse_neighbourhood vs dense_neighbourhood on 'old20': d = -2.33, TOST p = 1.0 (not shown equivalent)
-- **2026-06-07T14:12:04** -- wrote 'es_ndensity_spanish_stimuli_py.csv'
+- **2026-06-08T00:19:11** -- equivalence sparse_neighbourhood vs dense_neighbourhood on 'length': d = -0.25, TOST p = 0.0607 (not shown equivalent)
+- **2026-06-08T00:19:11** -- equivalence sparse_neighbourhood vs dense_neighbourhood on 'frequency': d = 0.19, TOST p = 0.0269 (equivalent)
+- **2026-06-08T00:19:11** -- equivalence sparse_neighbourhood vs dense_neighbourhood on 'n_density': d = 2.22, TOST p = 1.0 (not shown equivalent)
+- **2026-06-08T00:19:11** -- equivalence sparse_neighbourhood vs dense_neighbourhood on 'old20': d = -2.63, TOST p = 1.0 (not shown equivalent)
+- **2026-06-08T00:19:11** -- wrote 'es_ndensity_spanish_stimuli_py.csv'
     - path: output\stimuli\es_ndensity_spanish_stimuli_py.csv
-    - rows: 48
-    - md5: 75f3bb3ea4aad70f140a27954773a604
-- **2026-06-07T14:12:04** -- wrote 'es_ndensity_spanish_descriptives_py.csv'
+    - rows: 160
+    - md5: dd1116a39435888f49cb88ca44715365
+- **2026-06-08T00:19:11** -- wrote 'es_ndensity_spanish_descriptives_py.csv'
     - path: output\reports\es_ndensity_spanish_descriptives_py.csv
     - rows: 8
-    - md5: 49f180360f17cc8ec10bd2440435018f
-- **2026-06-07T14:12:04** -- wrote 'es_ndensity_spanish_comparisons_py.csv'
+    - md5: 7b3ec4a48f2e73d4b99117c67bca0b30
+- **2026-06-08T00:19:11** -- wrote 'es_ndensity_spanish_comparisons_py.csv'
     - path: output\reports\es_ndensity_spanish_comparisons_py.csv
     - rows: 4
-    - md5: 35d9d24d3b3179e27fdd94dd8530e111
-- **2026-06-07T14:12:04** -- wrote 'es_ndensity_spanish_psychopy.py'
+    - md5: 04dd73bf68c6996586864faf12612f24
+- **2026-06-08T00:19:11** -- wrote 'es_ndensity_spanish_psychopy.py'
     - path: output\experiments\es_ndensity_spanish_psychopy.py
     - rows: None
     - md5: a83459a46cac838bccc771f99fde5463
-- **2026-06-07T14:12:04** -- wrote 'es_ndensity_spanish.osexp'
+- **2026-06-08T00:19:11** -- wrote 'es_ndensity_spanish.osexp'
     - path: output\experiments\es_ndensity_spanish.osexp
     - rows: None
-    - md5: bf92c6d68f3fc94289816de61b635ce8
+    - md5: ef620a171ab3433402fb2cf75fdadcb3

@@ -5,8 +5,8 @@ dates. Bundled derivatives are distributed under CC BY-SA 4.0 (see LICENSE-DATA)
 
 ## Demonstration corpora (bundled)
 
-- **English ('en')** — 10000 words, Zipf 3.76-7.73. Source: wordfreq (Speer, 2022; MIT), retrieved 2026-06-07. N and OLD20 computed by lexsync.
-- **Spanish ('es')** — 10000 words, Zipf 3.81-7.81. Source: wordfreq (Speer, 2022; MIT), retrieved 2026-06-07. N and OLD20 computed by lexsync.
+- **English ('en')** — 30000 words, Zipf 2.95-7.73. Source: wordfreq (Speer, 2022; MIT), retrieved 2026-06-08. N and OLD20 computed by lexsync.
+- **Spanish ('es')** — 30000 words, Zipf 3.11-7.81. Source: wordfreq (Speer, 2022; MIT), retrieved 2026-06-08. N and OLD20 computed by lexsync.
 
 ## Citations
 

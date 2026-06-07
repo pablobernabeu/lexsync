@@ -85,7 +85,9 @@ def match_stimuli(pool: pd.DataFrame, design: dict, schema: dict, verbose: bool 
         used = np.zeros(len(cand_f), dtype=bool)
         pick = np.empty(n_take, dtype=int)
         for a in range(n_take):
-            dvec = np.sqrt(((z_cand - z_anchor[a]) ** 2).sum(axis=1))
+            # Round to absorb last-ULP floating-point differences between engines,
+            # so the stable tie-break below is itself reproducible across R and Python.
+            dvec = np.round(np.sqrt(((z_cand - z_anchor[a]) ** 2).sum(axis=1)), 9)
             dvec = np.where(used, np.inf, dvec)
             best = min(range(len(cand_f)), key=lambda j: (dvec[j], words[j].encode("utf-8"), int(ids[j])))
             pick[a] = best

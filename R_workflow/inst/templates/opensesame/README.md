@@ -14,15 +14,18 @@ design:
 - `inline_trigger_setup.py` — paste into an `inline_script` **Prepare** tab at
   the start of the experiment. Opens the parallel port (default) or a serial
   port, with a test-mode fallback that prints codes when no device is present,
-  and defines `send_trigger(code)`.
-- `inline_send_triggers.py` — paste into an `inline_script` **Run** tab placed
-  immediately after the target-word sketchpad. Sends the onset marker then the
-  condition marker for each trial.
+  and defines `send_trigger(code)` and `var.word_duration_ms`.
+- `inline_send_triggers.py` — paste into an `inline_script` **Run** tab. It
+  draws and shows the target word and sends the onset marker immediately after
+  `show()` returns.
 
 The generated `.osexp` expects a loop table (CSV) beside it, providing the
 columns `word`, `target_word_trigger` and `condition_trigger` per trial.
 
-Timing note: OpenSesame sends the marker from the item that follows the word
-sketchpad, so it is sequence-ordered. The PsychoPy export instead binds the
-onset marker to the exact stimulus flip via `win.callOnFlip`. This asymmetry is
-discussed in the accompanying manuscript.
+Timing: the word is drawn and shown from inside an `inline_script`, and the
+trigger is sent immediately after `canvas.show()` returns. Because `show()`
+blocks until the display refresh (with the `psycho`/`xpyriment` backends), the
+marker is written right after the verified stimulus flip — time-locked to onset,
+the OpenSesame-recommended method and equivalent in effect to PsychoPy's
+`win.callOnFlip`. A photodiode check is still advisable for any onset-critical
+study.

@@ -36,6 +36,7 @@ define inline_script lexsync_trigger_setup
 	var.trigger_backend = u'parallel'
 	var.parallel_port_address = 0x0378
 	var.test_mode = u'no'
+	var.word_duration_ms = 500
 	import time
 	def _printer(code):
 	    print(u'[lexsync test trigger] %d' % int(code))
@@ -74,17 +75,19 @@ define sketchpad lexsync_fixation
 	set description "Fixation cross"
 	draw textline center=1 color=white font_family=mono font_size=40 html=yes show_if=always text="+" x=0 y=0 z_index=0
 
-define sketchpad lexsync_word
-	set duration 0
-	set description "Target word; onset trigger sent by the next item"
-	draw textline center=1 color=white font_family=mono font_size=40 html=yes show_if=always text="[word]" x=0 y=0 z_index=0
-
-define inline_script lexsync_send_triggers
-	set description "Send the onset trigger then the condition marker"
+define inline_script lexsync_word
+	set description "Show the word and send onset-aligned triggers"
 	set _prepare ""
 	___run__
+	# Draw the word, show it (this blocks until the display refresh and returns
+	# the onset time) and then send the onset-aligned triggers immediately. This
+	# is the OpenSesame-recommended way to time-lock a marker to stimulus onset.
+	c = Canvas()
+	c.text(var.word)
+	var.onset_time = c.show()
 	send_trigger(var.target_word_trigger)
 	send_trigger(var.condition_trigger)
+	clock.sleep(var.word_duration_ms)
 	__end__
 
 define keyboard_response lexsync_response
@@ -96,10 +99,9 @@ define keyboard_response lexsync_response
 
 define sequence lexsync_trial
 	set flush_keyboard yes
-	set description "Fixation, word with onset trigger, response"
+	set description "Fixation, word with onset-aligned triggers, response"
 	run lexsync_fixation always
 	run lexsync_word always
-	run lexsync_send_triggers always
 	run lexsync_response always
 
 define loop lexsync_loop

@@ -3,7 +3,7 @@ name: es_ndensity
 language: spanish
 lexicon: corpora/derived/es.csv
 description: 'Dense versus sparse orthographic neighbourhoods (Coltheart''s N) in Spanish, matched on length and frequency.'
-n_per_condition: 24
+n_per_condition: 80
 pool_filters:
   length: [3, 6]
   frequency: [3.8, 7.0]

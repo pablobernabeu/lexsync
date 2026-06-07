@@ -10,6 +10,7 @@
 var.trigger_backend = u'parallel'      # 'parallel' | 'serial'
 var.parallel_port_address = 0x378
 var.test_mode = u'no'
+var.word_duration_ms = 500             # how long the target word stays on screen
 
 import time
 
