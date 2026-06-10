@@ -1,0 +1,40 @@
+# Demonstration design: Mandarin Chinese high- versus low-frequency contrast.
+# This is the logographic-script demonstration. The two conditions differ in
+# frequency and are matched, item by item, on character-length and on
+# character-level orthographic neighbourhood (Coltheart's N and OLD20 computed
+# over characters rather than letters). It exercises the whole pipeline -- corpus
+# access (wordfreq 'zh'), dimension derivation, matching, counterbalancing and
+# hardware-timed script generation -- on a non-alphabetic writing system.
+#
+# 'length' here is the number of characters. Two-character words dominate the
+# language, so the pool is restricted to them; the character-neighbourhood
+# measures are the substantive orthographic control. Their finer-grained
+# psycholinguistic interpretation (radical, stroke and phonetic-radical
+# structure) is left to script-specific dimensions, which slot into the same
+# extensible dimension system.
+name: zh_freqcontrast
+language: chinese
+lexicon: corpora/derived/zh.csv
+description: 'High versus low frequency Mandarin Chinese two-character words, matched on character-length and character-level neighbourhood (N, OLD20).'
+n_per_condition: 80
+# A glyph-complete CJK font for the generated PsychoPy and OpenSesame scripts,
+# overriding the Latin default. Set this to any CJK font installed on the
+# presentation machine (e.g. 'Microsoft YaHei', 'Noto Sans CJK SC').
+font: SimHei
+pool_filters:
+  length: [2, 2]
+  frequency: [3.5, 7.0]
+conditions:
+  - name: high_frequency
+    define_by:
+      frequency: [5.0, 7.0]
+  - name: low_frequency
+    define_by:
+      frequency: [3.5, 4.2]
+match_on: [length, n_density, old20]
+counterbalance:
+  lists: 1
+timing:
+  fixation_frames: 30
+  word_frames: 30
+  isi_frames: 15

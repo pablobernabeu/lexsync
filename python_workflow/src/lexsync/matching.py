@@ -20,6 +20,60 @@ def _zmat(df: pd.DataFrame, match_on, center, scale) -> np.ndarray:
     return (m - center) / scale
 
 
+def _cap_to_overlap(df, z, other_centroid, cap):
+    """Keep the `cap` rows nearest the other condition's centroid (byte-rank ties)."""
+    if len(df) <= cap:
+        return df.reset_index(drop=True), z
+    d = np.round(np.sqrt(((z - other_centroid) ** 2).sum(axis=1)), 9)
+    order = sorted(range(len(df)), key=lambda i: (d[i], i))[:cap]
+    keep = sorted(order)
+    return df.iloc[keep].reset_index(drop=True), z[keep]
+
+
+def _match_joint(subpools, cond_names, match_on, center, scale, n, cap=1200):
+    """Select the `n` best-matched pairs jointly across two conditions.
+
+    Rather than fixing one condition and matching the other to it, this scores
+    every cross-condition pair on the control dimensions and greedily takes the
+    cheapest disjoint pairs. Only items with a good counterpart are kept, so the
+    control dimensions are equated even when the manipulation is confounded with
+    them (e.g. neighbourhood density with word length). Deterministic and
+    identical to the R engine (rounded costs; byte-rank tie-breaks).
+    """
+    s0 = subpools[0].reset_index(drop=True)
+    s1 = subpools[1].reset_index(drop=True)
+    if len(s0) == 0 or len(s1) == 0:
+        raise ValueError("lexsync: a condition has no candidates for joint matching.")
+    z0 = _zmat(s0, match_on, center, scale)
+    z1 = _zmat(s1, match_on, center, scale)
+    s0, z0 = _cap_to_overlap(s0, z0, z1.mean(axis=0), cap)
+    s1, z1 = _cap_to_overlap(s1, z1, z0.mean(axis=0), cap)
+    cost = np.round(np.sqrt(((z0[:, None, :] - z1[None, :, :]) ** 2).sum(axis=2)), 9)
+    m0, m1 = cost.shape
+    rows = np.repeat(np.arange(m0), m1)
+    cols = np.tile(np.arange(m1), m0)
+    order = np.lexsort((cols, rows, cost.ravel()))   # by cost, then row, then col
+    used0 = np.zeros(m0, dtype=bool)
+    used1 = np.zeros(m1, dtype=bool)
+    pi, pj = [], []
+    for idx in order:
+        i = int(rows[idx]); j = int(cols[idx])
+        if used0[i] or used1[j]:
+            continue
+        used0[i] = True
+        used1[j] = True
+        pi.append(i)
+        pj.append(j)
+        if len(pi) >= n:
+            break
+    a = s0.iloc[pi].copy(); a["condition"] = cond_names[0]
+    b = s1.iloc[pj].copy(); b["condition"] = cond_names[1]
+    common = [c for c in a.columns if c in b.columns]
+    out = pd.concat([a[common], b[common]], ignore_index=True)
+    out["set"] = list(range(1, len(pi) + 1)) * 2
+    return out
+
+
 def match_stimuli(pool: pd.DataFrame, design: dict, schema: dict, verbose: bool = False) -> pd.DataFrame:
     conditions = design["conditions"]
     match_on = list(design["match_on"])
@@ -36,6 +90,11 @@ def match_stimuli(pool: pd.DataFrame, design: dict, schema: dict, verbose: bool 
 
     subpools = [build_pool(pool, c["define_by"]) for c in conditions]
     cond_names = [c["name"] for c in conditions]
+
+    method = ((design.get("matching") or {}).get("method")
+              or (schema.get("matching") or {}).get("method") or "standardised_euclidean")
+    if method == "joint" and len(conditions) == 2:
+        return _match_joint(subpools, cond_names, match_on, center, scale, n)
 
     anchor_pool = subpools[0]
     if len(anchor_pool) == 0:

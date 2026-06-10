@@ -89,7 +89,7 @@ def main():
     win = visual.Window(size=(1280, 1024), color="black", units="pix", fullscr=FULLSCREEN)
     port = open_port(TRIGGER_ADDRESS)
     fixation = visual.TextStim(win, text="+", height=40, color="white")
-    word_stim = visual.TextStim(win, text="", height=48, color="white", font="Courier New")
+    word_stim = visual.TextStim(win, text="", height=48, color="white", font="{{WORD_FONT}}")
 
     win.callOnFlip(port.setData, BLOCK_START_TRIGGER)
     win.flip()

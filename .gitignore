@@ -7,6 +7,8 @@
 R_workflow/..Rcheck/
 R_workflow/*.Rcheck/
 R_workflow/*.tar.gz
+*.Rcheck/
+/lexsync_*.tar.gz
 R_workflow/src/*.o
 R_workflow/src/*.so
 R_workflow/src/*.dll

@@ -1,13 +1,13 @@
-{"time":"2026-06-08 00:19:01.045718","message":"loading lexicon 'corpora/derived/en.csv'","data":null}
-{"time":"2026-06-08 00:19:02.065416","message":"lexicon loaded: 30000 words","data":{"words":30000}}
-{"time":"2026-06-08 00:19:02.088266","message":"pool after filters: 7230 words","data":{"pool":7230}}
-{"time":"2026-06-08 00:19:02.222865","message":"matched 160 items across 2 conditions","data":{"conditions":"high_frequency, low_frequency"}}
-{"time":"2026-06-08 00:19:02.2904","message":"equivalence low_frequency vs high_frequency on 'length': d = 0.03, TOST p = 0.002 (equivalent)","data":null}
-{"time":"2026-06-08 00:19:02.290612","message":"equivalence low_frequency vs high_frequency on 'frequency': d = 5.27, TOST p = 1.000 (not shown equivalent)","data":null}
-{"time":"2026-06-08 00:19:02.290802","message":"equivalence low_frequency vs high_frequency on 'n_density': d = 0.04, TOST p = 0.002 (equivalent)","data":null}
-{"time":"2026-06-08 00:19:02.291","message":"equivalence low_frequency vs high_frequency on 'old20': d = 0.01, TOST p = 0.001 (equivalent)","data":null}
-{"time":"2026-06-08 00:19:02.334062","message":"wrote 'en_freqcontrast_english_stimuli_R.csv'","data":{"path":"output/stimuli/en_freqcontrast_english_stimuli_R.csv","rows":160,"md5":"1128d8936a37771df03a5d5368e55427"}}
-{"time":"2026-06-08 00:19:02.349279","message":"wrote 'en_freqcontrast_english_descriptives_R.csv'","data":{"path":"output/reports/en_freqcontrast_english_descriptives_R.csv","rows":8,"md5":"c206bf297a484887ee52e2745fb9ad24"}}
-{"time":"2026-06-08 00:19:02.361085","message":"wrote 'en_freqcontrast_english_comparisons_R.csv'","data":{"path":"output/reports/en_freqcontrast_english_comparisons_R.csv","rows":4,"md5":"fc4bab33cf10bf2cf9f7f230ef2ed791"}}
-{"time":"2026-06-08 00:19:02.461138","message":"wrote 'en_freqcontrast_english_psychopy.py'","data":{"path":"output/experiments/en_freqcontrast_english_psychopy.py","rows":"NA","md5":"4eda7d7f36782408f5890ff49e6acf1c"}}
-{"time":"2026-06-08 00:19:02.466715","message":"wrote 'en_freqcontrast_english.osexp'","data":{"path":"output/experiments/en_freqcontrast_english.osexp","rows":"NA","md5":"6c8909238d5f061cf420f994c4fa4b93"}}
+{"time":"2026-06-10 09:31:47.19616","message":"loading lexicon 'corpora/derived/en.csv'","data":null}
+{"time":"2026-06-10 09:31:48.88751","message":"lexicon loaded: 30000 words","data":{"words":30000}}
+{"time":"2026-06-10 09:31:48.902454","message":"pool after filters: 7230 words","data":{"pool":7230}}
+{"time":"2026-06-10 09:31:49.007323","message":"matched 160 items across 2 conditions","data":{"conditions":"high_frequency, low_frequency"}}
+{"time":"2026-06-10 09:31:49.075838","message":"equivalence low_frequency vs high_frequency on 'length': d = 0.03, TOST p = 0.002 (equivalent)","data":null}
+{"time":"2026-06-10 09:31:49.0762","message":"equivalence low_frequency vs high_frequency on 'frequency': d = 5.27, TOST p = 1.000 (not shown equivalent)","data":null}
+{"time":"2026-06-10 09:31:49.076452","message":"equivalence low_frequency vs high_frequency on 'n_density': d = 0.04, TOST p = 0.002 (equivalent)","data":null}
+{"time":"2026-06-10 09:31:49.076687","message":"equivalence low_frequency vs high_frequency on 'old20': d = 0.01, TOST p = 0.001 (equivalent)","data":null}
+{"time":"2026-06-10 09:31:49.16411","message":"wrote 'en_freqcontrast_english_stimuli_R.csv'","data":{"path":"output/stimuli/en_freqcontrast_english_stimuli_R.csv","rows":160,"md5":"1128d8936a37771df03a5d5368e55427"}}
+{"time":"2026-06-10 09:31:49.191726","message":"wrote 'en_freqcontrast_english_descriptives_R.csv'","data":{"path":"output/reports/en_freqcontrast_english_descriptives_R.csv","rows":8,"md5":"c206bf297a484887ee52e2745fb9ad24"}}
+{"time":"2026-06-10 09:31:49.216472","message":"wrote 'en_freqcontrast_english_comparisons_R.csv'","data":{"path":"output/reports/en_freqcontrast_english_comparisons_R.csv","rows":4,"md5":"fc4bab33cf10bf2cf9f7f230ef2ed791"}}
+{"time":"2026-06-10 09:31:49.423367","message":"wrote 'en_freqcontrast_english_psychopy.py'","data":{"path":"output/experiments/en_freqcontrast_english_psychopy.py","rows":"NA","md5":"4eda7d7f36782408f5890ff49e6acf1c"}}
+{"time":"2026-06-10 09:31:49.430057","message":"wrote 'en_freqcontrast_english.osexp'","data":{"path":"output/experiments/en_freqcontrast_english.osexp","rows":"NA","md5":"6c8909238d5f061cf420f994c4fa4b93"}}

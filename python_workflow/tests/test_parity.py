@@ -18,6 +18,7 @@ CASES = [
     ("en_ndensity_english", "config/design_en_ndensity.yaml"),
     ("es_freqcontrast_spanish", "config/design_es_freqcontrast.yaml"),
     ("es_ndensity_spanish", "config/design_es_ndensity.yaml"),
+    ("zh_freqcontrast_chinese", "config/design_zh_freqcontrast.yaml"),
 ]
 
 

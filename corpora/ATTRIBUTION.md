@@ -7,6 +7,7 @@ dates. Bundled derivatives are distributed under CC BY-SA 4.0 (see LICENSE-DATA)
 
 - **English ('en')** — 30000 words, Zipf 2.95-7.73. Source: wordfreq (Speer, 2022; MIT), retrieved 2026-06-08. N and OLD20 computed by lexsync.
 - **Spanish ('es')** — 30000 words, Zipf 3.11-7.81. Source: wordfreq (Speer, 2022; MIT), retrieved 2026-06-08. N and OLD20 computed by lexsync.
+- **Chinese (Mandarin) ('zh')** — 20000 words, Zipf 3.31-6.56. Source: wordfreq (Speer, 2022; MIT), retrieved 2026-06-10. N and OLD20 computed over characters by lexsync. The logographic-script demonstration.
 
 ## Citations
 

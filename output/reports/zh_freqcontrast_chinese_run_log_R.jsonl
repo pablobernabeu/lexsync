@@ -1,0 +1,13 @@
+{"time":"2026-06-10 09:31:52.164417","message":"loading lexicon 'corpora/derived/zh.csv'","data":null}
+{"time":"2026-06-10 09:31:52.241919","message":"lexicon loaded: 20000 words","data":{"words":20000}}
+{"time":"2026-06-10 09:31:52.26115","message":"pool after filters: 13613 words","data":{"pool":13613}}
+{"time":"2026-06-10 09:31:52.598434","message":"matched 160 items across 2 conditions","data":{"conditions":"high_frequency, low_frequency"}}
+{"time":"2026-06-10 09:31:52.612813","message":"equivalence low_frequency vs high_frequency on 'length': d = 0.00, TOST p = 0.000 (equivalent)","data":null}
+{"time":"2026-06-10 09:31:52.61307","message":"equivalence low_frequency vs high_frequency on 'frequency': d = 6.00, TOST p = 1.000 (not shown equivalent)","data":null}
+{"time":"2026-06-10 09:31:52.613226","message":"equivalence low_frequency vs high_frequency on 'n_density': d = 0.07, TOST p = 0.004 (equivalent)","data":null}
+{"time":"2026-06-10 09:31:52.613361","message":"equivalence low_frequency vs high_frequency on 'old20': d = 0.11, TOST p = 0.007 (equivalent)","data":null}
+{"time":"2026-06-10 09:31:52.667066","message":"wrote 'zh_freqcontrast_chinese_stimuli_R.csv'","data":{"path":"output/stimuli/zh_freqcontrast_chinese_stimuli_R.csv","rows":160,"md5":"f7d55f5ebbee261c4de1f37803e06390"}}
+{"time":"2026-06-10 09:31:52.679654","message":"wrote 'zh_freqcontrast_chinese_descriptives_R.csv'","data":{"path":"output/reports/zh_freqcontrast_chinese_descriptives_R.csv","rows":8,"md5":"ce89f99a54869edd10fb8193ca32a893"}}
+{"time":"2026-06-10 09:31:52.690685","message":"wrote 'zh_freqcontrast_chinese_comparisons_R.csv'","data":{"path":"output/reports/zh_freqcontrast_chinese_comparisons_R.csv","rows":4,"md5":"089e4f3279c1c43fa17007e624eb196b"}}
+{"time":"2026-06-10 09:31:52.811747","message":"wrote 'zh_freqcontrast_chinese_psychopy.py'","data":{"path":"output/experiments/zh_freqcontrast_chinese_psychopy.py","rows":"NA","md5":"6f15c58d8867967b660b08c4f7c22d50"}}
+{"time":"2026-06-10 09:31:52.818161","message":"wrote 'zh_freqcontrast_chinese.osexp'","data":{"path":"output/experiments/zh_freqcontrast_chinese.osexp","rows":"NA","md5":"36c1242813023044f20c1633e5b280d5"}}

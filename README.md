@@ -79,9 +79,11 @@ run on hardware. The whole demonstration therefore reproduces with no special eq
 Languages are supplied through `corpora/registry.yaml`. Two connectors are provided: a
 curated SUBTLEX-family/'openlexicon' connector (individually citable corpora under
 CC BY-SA 4.0) and an optional 'wordfreq' connector that unlocks roughly forty languages
-through a single dependency. English and Spanish are bundled and demonstrated end to
-end; further languages are fetched on demand into a user cache. Every corpus is cited,
-with its licence and retrieval date, in `corpora/ATTRIBUTION.md`.
+through a single dependency. English, Spanish and Mandarin Chinese are bundled and
+demonstrated end to end — the last as a logographic-script example, showing that the
+matching and script generation are not limited to alphabetic writing — and further
+languages are fetched on demand into a user cache. Every corpus is cited, with its
+licence and retrieval date, in `corpora/ATTRIBUTION.md`.
 
 ## Extending lexsync
 

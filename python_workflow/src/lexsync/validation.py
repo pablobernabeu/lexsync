@@ -45,6 +45,13 @@ def tost_equiv(x, y, bound_d: float = 0.5, alpha: float = 0.05) -> dict:
     if nx < 2 or ny < 2:
         return dict(p=float("nan"), equivalent=None)
     sp = math.sqrt(((nx - 1) * x.var(ddof=1) + (ny - 1) * y.var(ddof=1)) / (nx + ny - 2))
+    if sp == 0 or math.isnan(sp):
+        # Both conditions are constants (e.g. a dimension fixed by the pool, such
+        # as two-character Chinese words). They are equivalent iff they share that
+        # constant; the standardised difference is then exactly zero.
+        if float(x.mean() - y.mean()) == 0:
+            return dict(p=0.0, equivalent=True)
+        return dict(p=1.0, equivalent=False)
     se = sp * math.sqrt(1 / nx + 1 / ny)
     if se == 0 or math.isnan(se):
         return dict(p=float("nan"), equivalent=None)

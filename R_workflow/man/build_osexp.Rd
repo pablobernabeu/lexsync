@@ -4,7 +4,7 @@
 \alias{build_osexp}
 \title{Build a complete plain-text OpenSesame experiment}
 \usage{
-build_osexp(design_name, language, conditions_file, schema)
+build_osexp(design_name, language, conditions_file, schema, font = "mono")
 }
 \description{
 Build a complete plain-text OpenSesame experiment

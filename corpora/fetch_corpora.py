@@ -42,9 +42,11 @@ PACKAGE_DATA_DIRS = (
 
 LANG_NAMES = {
     "en": "English", "es": "Spanish", "fr": "French", "de": "German",
-    "nl": "Dutch", "it": "Italian", "pt": "Portuguese",
+    "nl": "Dutch", "it": "Italian", "pt": "Portuguese", "zh": "Chinese (Mandarin)",
 }
-# Letters admitted per language (lower case, accents where relevant).
+# Letters admitted per language (lower case, accents where relevant). For Chinese
+# (a logographic script) the admitted forms are runs of CJK unified ideographs,
+# and 'length' is therefore measured in characters rather than letters.
 WORD_RE = {
     "default": re.compile(r"^[a-z]+$"),
     "es": re.compile(r"^[a-záéíóúüñ]+$"),
@@ -53,11 +55,17 @@ WORD_RE = {
     "pt": re.compile(r"^[a-záàâãçéêíóôõú]+$"),
     "it": re.compile(r"^[a-zàèéìíîòóùú]+$"),
     "nl": re.compile(r"^[a-zàäéëïóöü]+$"),
+    "zh": re.compile(r"^[一-鿿]+$"),
 }
+# Word-length bounds (in characters) for the full lexicon and for the bundled
+# example slice. Chinese words are short: two-character words dominate the
+# language, so the demonstration draws on two- and three-character words.
+LEN_BOUNDS = {"default": (2, 15), "zh": (2, 3)}
+SLICE_LEN = {"default": (3, 9), "zh": (2, 3)}
 
 
 def clean_words(lang: str, n_words: int, min_len: int = 2, max_len: int = 15) -> list[str]:
-    """Return up to `n_words` cleaned, lower-case alphabetic forms by frequency."""
+    """Return up to `n_words` cleaned forms by frequency, admitted by the script."""
     rx = WORD_RE.get(lang, WORD_RE["default"])
     out: list[str] = []
     for w in wordfreq.top_n_list(lang, n_words * 3):
@@ -94,7 +102,8 @@ def neighbourhood(words: list[str], n_old: int = 20, chunk: int = 1000):
 
 
 def build(lang: str, n_words: int) -> pd.DataFrame:
-    words = clean_words(lang, n_words)
+    lo, hi = LEN_BOUNDS.get(lang, LEN_BOUNDS["default"])
+    words = clean_words(lang, n_words, min_len=lo, max_len=hi)
     zipf = [wordfreq.zipf_frequency(w, lang) for w in words]
     df = pd.DataFrame({
         "word": words,
@@ -116,7 +125,8 @@ def write_slice(df: pd.DataFrame, lang: str, target: int = 3000) -> int:
     reference; the installed packages bundle only this compact slice for tests
     and examples, so they stay within distribution size limits.
     """
-    sl = df[(df.word.str.len() >= 3) & (df.word.str.len() <= 9)].copy()
+    lo, hi = SLICE_LEN.get(lang, SLICE_LEN["default"])
+    sl = df[(df.word.str.len() >= lo) & (df.word.str.len() <= hi)].copy()
     if len(sl) > target:
         sl = sl.assign(_bin=pd.qcut(sl.freq_zipf, 10, labels=False, duplicates="drop"))
         per = max(1, target // max(1, sl["_bin"].nunique()))
@@ -135,8 +145,36 @@ def write_slice(df: pd.DataFrame, lang: str, target: int = 3000) -> int:
     return len(sl)
 
 
-def write_attribution(entries: list[str], today: str) -> None:
+# Languages whose 'length' and neighbourhood measures are character-based rather
+# than letter-based (logographic scripts).
+CHAR_BASED = {"zh"}
+
+
+def attribution_entry(lang: str, df: pd.DataFrame, date: str) -> str:
+    zmin, zmax = df.freq_zipf.min(), df.freq_zipf.max()
+    unit = "over characters " if lang in CHAR_BASED else ""
+    return (
+        f"- **{LANG_NAMES.get(lang, lang)} ('{lang}')** — {len(df)} words, "
+        f"Zipf {zmin:.2f}-{zmax:.2f}. Source: wordfreq (Speer, 2022; MIT), "
+        f"retrieved {date}. N and OLD20 computed {unit}by lexsync."
+    )
+
+
+def write_attribution(fresh_dates: dict[str, str]) -> None:
+    """Regenerate ATTRIBUTION.md from *every* derived lexicon present.
+
+    Scanning the derived directory (rather than only the languages built in the
+    current run) keeps the attribution complete when languages are added one at a
+    time. Languages built this run carry today's date; others carry the
+    modification date of their derived file.
+    """
     path = ROOT / "corpora" / "ATTRIBUTION.md"
+    entries = []
+    for csv in sorted(DERIVED.glob("*.csv")):
+        lang = csv.stem
+        df = pd.read_csv(csv, encoding="utf-8")
+        date = fresh_dates.get(lang) or datetime.date.fromtimestamp(csv.stat().st_mtime).isoformat()
+        entries.append(attribution_entry(lang, df, date))
     text = (
         "# Corpus attribution\n\n"
         "Lexical corpora used by lexsync, with their sources, licences and retrieval\n"
@@ -164,7 +202,7 @@ def main() -> None:
 
     DERIVED.mkdir(parents=True, exist_ok=True)
     today = datetime.date.today().isoformat()
-    entries: list[str] = []
+    fresh_dates: dict[str, str] = {}
     for lang in args.languages:
         print(f"[fetch_corpora] building '{lang}' (target {args.n_words} words) ...", flush=True)
         df = build(lang, args.n_words)
@@ -173,12 +211,10 @@ def main() -> None:
         n_slice = write_slice(df, lang)
         zmin, zmax = df.freq_zipf.min(), df.freq_zipf.max()
         print(f"  -> {out.name}: {len(df)} words (Zipf {zmin:.2f}-{zmax:.2f}); slice {n_slice}", flush=True)
-        entries.append(
-            f"- **{LANG_NAMES.get(lang, lang)} ('{lang}')** — {len(df)} words, "
-            f"Zipf {zmin:.2f}-{zmax:.2f}. Source: wordfreq (Speer, 2022; MIT), "
-            f"retrieved {today}. N and OLD20 computed by lexsync."
-        )
-    write_attribution(entries, today)
+        fresh_dates[lang] = today
+    # Regenerate the attribution from all derived lexica, so adding one language
+    # never drops the others.
+    write_attribution(fresh_dates)
     print("[fetch_corpora] done.", flush=True)
 
 

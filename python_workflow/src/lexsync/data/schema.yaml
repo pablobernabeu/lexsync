@@ -56,3 +56,11 @@ triggers:
   reset_value: 0
   reset_after_frames: 2        # ~33 ms at 60 Hz, above the 10 ms recorder minimum
   inter_trigger_ms: 10         # spacing of trailing markers (matches the original)
+
+# ---- Presentation defaults (overridable per design) -----------------------
+# The word font used by the generated PsychoPy and OpenSesame experiments. The
+# default is a fixed-width Latin font; set a glyph-complete font per design for
+# non-Latin scripts (for example 'SimHei' for Chinese; see design_zh_*.yaml).
+presentation:
+  font: 'Courier New'
+  opensesame_font: 'mono'      # OpenSesame font_family token (space-free)

@@ -41,3 +41,27 @@ test_that("the OpenSesame export carries both trigger backends and a test-mode f
   expect_true(grepl("serial.Serial", os, fixed = TRUE)) # serial backend
   expect_true(grepl("test_mode", os, fixed = TRUE))     # no-hardware fallback
 })
+
+test_that("a per-design font overrides the Latin default for logographic scripts", {
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  stim <- assign_triggers(data.frame(
+    word = c("自然", "回来", "三亚", "东盟"),
+    condition = c("a", "a", "b", "b"), set = c(1, 2, 1, 2), trial = 1:4,
+    length = 2L, frequency = 5, n_density = 80L, old20 = 1.0, stringsAsFactors = FALSE
+  ))
+  design <- list(name = "zh", language = "chinese", font = "SimHei", timing = list())
+  out <- tempfile("lexsync"); dir.create(out)
+
+  pytxt <- paste(readLines(export_psychopy(stim, design, schema, out), warn = FALSE), collapse = "\n")
+  expect_true(grepl('font="SimHei"', pytxt, fixed = TRUE))
+  expect_false(grepl("{{", pytxt, fixed = TRUE))
+
+  os <- readLines(export_opensesame(stim, design, schema, out), warn = FALSE)
+  expect_true(any(os == "set font_family SimHei"))
+
+  # The default remains a Latin font when no per-design font is given.
+  pytxt2 <- paste(readLines(export_psychopy(make_stim(),
+                                            list(name = "t", language = "english", timing = list()),
+                                            schema, out), warn = FALSE), collapse = "\n")
+  expect_true(grepl('font="Courier New"', pytxt2, fixed = TRUE))
+})

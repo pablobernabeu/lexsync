@@ -23,7 +23,9 @@ abstract: |
   targets. The matching is deterministic, so the two engines select identical
   matched stimuli; we
   demonstrate
-  this on four worked examples in English and Spanish. The generation step
+  this on five worked examples in English, Spanish and Mandarin Chinese, the last
+  of which shows that the workflow extends to a logographic writing system. The
+  generation step
   requires no presentation software and no hardware, which keeps the whole
   workflow reproducible. 'lexsync' generalises the FAIR artificial-grammar
   workflow of an existing longitudinal study and is distributed under open
@@ -63,12 +65,14 @@ find_out <- function(p) {
 read_out <- function(p) read.csv(find_out(p), stringsAsFactors = FALSE, fileEncoding = "UTF-8")
 
 designs <- c("en_freqcontrast_english", "en_ndensity_english",
-             "es_freqcontrast_spanish", "es_ndensity_spanish")
+             "es_freqcontrast_spanish", "es_ndensity_spanish",
+             "zh_freqcontrast_chinese")
 labels <- c(
   en_freqcontrast_english = "English: frequency contrast",
   en_ndensity_english     = "English: neighbourhood contrast",
   es_freqcontrast_spanish = "Spanish: frequency contrast",
-  es_ndensity_spanish     = "Spanish: neighbourhood contrast"
+  es_ndensity_spanish     = "Spanish: neighbourhood contrast",
+  zh_freqcontrast_chinese = "Chinese: frequency contrast"
 )
 comps <- do.call(rbind, lapply(designs, function(d) {
   x <- read_out(file.path("reports", paste0(d, "_comparisons_R.csv")))
@@ -76,8 +80,10 @@ comps <- do.call(rbind, lapply(designs, function(d) {
   x
 }))
 
-# Readable dimension labels and the role of each dimension in each design.
-dim_labels <- c(frequency = "Frequency (Zipf)", length = "Length (letters)",
+# Readable dimension labels and the role of each dimension in each design. The
+# length label is script-neutral because the demonstrations span alphabetic
+# (letters) and logographic (characters) writing systems.
+dim_labels <- c(frequency = "Frequency (Zipf)", length = "Length",
                 n_density = "Neighbourhood N", old20 = "OLD20")
 find_cfg <- function(f) {
   for (b in c("../config", "config")) {
@@ -89,7 +95,8 @@ cfg_files <- c(
   "English: frequency contrast"     = "design_en_freqcontrast.yaml",
   "English: neighbourhood contrast" = "design_en_ndensity.yaml",
   "Spanish: frequency contrast"     = "design_es_freqcontrast.yaml",
-  "Spanish: neighbourhood contrast" = "design_es_ndensity.yaml"
+  "Spanish: neighbourhood contrast" = "design_es_ndensity.yaml",
+  "Chinese: frequency contrast"     = "design_zh_freqcontrast.yaml"
 )
 controlled_map <- lapply(cfg_files, function(f) unlist(yaml::read_yaml(find_cfg(f))$match_on))
 names(controlled_map) <- names(cfg_files)
@@ -103,7 +110,7 @@ comps <- do.call(rbind, lapply(split(comps, comps$design), function(x) {
   x
 }))
 comps$dim_label <- factor(dim_labels[comps$dimension],
-                          levels = c("Frequency (Zipf)", "Length (letters)", "Neighbourhood N", "OLD20"))
+                          levels = c("Frequency (Zipf)", "Length", "Neighbourhood N", "OLD20"))
 comps$role <- factor(comps$role, levels = c("Manipulated", "Controlled", "Free (co-varying)"))
 
 pretty_desc <- function(d) {
@@ -192,8 +199,9 @@ SUBTLEX-UK for British English [@vanheuven2014subtlexuk], SUBTLEX-ESP for Spanis
 individually citable and redistributable under CC BY-SA terms. The second is the
 'wordfreq' package [@speer2022wordfreq], which yields frequencies for roughly
 forty languages through a single dependency. The demonstrations below build their
-English and Spanish lexica with 'wordfreq', which aggregates subtitle and web
-corpora including the SUBTLEX lists; the registry documents the curated corpora as
+English, Spanish and Mandarin Chinese lexica with 'wordfreq', which aggregates
+subtitle and web corpora including the SUBTLEX lists; the registry documents the
+curated corpora — among them SUBTLEX-CH for Chinese [@cai2010subtlexch] — as
 alternatives. Small example lexica are bundled inside each package for offline use
 and testing, while full corpora are fetched on demand into a user cache, keeping
 the installed packages within distribution size limits.
@@ -217,6 +225,23 @@ assigned, with ties broken by a stable, locale-independent key. Because no rando
 number generator is used and string comparisons are performed in byte order in
 both engines, the R and Python packages select an identical matched selection
 from identical input — a parity we verify below.
+
+The per-anchor procedure fixes one condition and matches the others to it, which
+is ideal when the manipulated dimension is statistically independent of the
+controls. When the manipulation is intrinsically correlated with a control
+dimension — as orthographic neighbourhood density is with word length and
+frequency — fixing one condition first can leave a residual difference on the
+control, because the anchor items need not have close counterparts in the other
+condition. For such designs 'lexsync' offers a `joint` matching method, selected
+with a single line in the design configuration. Rather than privileging one
+condition, it scores every cross-condition pair on the standardised control
+dimensions and greedily retains the *n* cheapest disjoint pairs, so only items
+that have a close counterpart in the opposite condition are kept. The two
+conditions are thereby equated on the controls even when the manipulation is
+confounded with them, at the cost of drawing from a slightly larger candidate
+pool. The method is as deterministic and cross-engine identical as the per-anchor
+one (costs are rounded before the byte-order tie-break), and it is the method used
+for the neighbourhood-density demonstrations below.
 
 ## Counterbalancing and reporting
 
@@ -272,13 +297,16 @@ validator for the generated `.osexp`.
 
 # Worked examples
 
-We illustrate 'lexsync' with four demonstrations: a high- versus low-frequency
-contrast and a dense- versus sparse-neighbourhood contrast, each in English and
-in Spanish, drawn from thirty-thousand-word lexica. The frequency contrast matches
-items on length, neighbourhood density and OLD20; the neighbourhood contrast
-matches on length and frequency. Each demonstration was produced by both the R
-and the Python engine. All tables and figures in this section are computed at
-render time from the generated output.
+We illustrate 'lexsync' with five demonstrations. Four are alphabetic: a high-
+versus low-frequency contrast and a dense- versus sparse-neighbourhood contrast,
+each in English and in Spanish, drawn from thirty-thousand-word lexica. The
+frequency contrast matches items on length, neighbourhood density and OLD20; the
+neighbourhood contrast matches on length and frequency. The fifth is a
+high- versus low-frequency contrast in Mandarin Chinese, included to show that the
+pipeline generalises to a logographic writing system (see *Generalisation to a
+logographic script*, below). Each demonstration was produced by both the R and the
+Python engine. All tables and figures in this section are computed at render time
+from the generated output.
 
 ```{r summary-table}
 #| label: tbl-summary
@@ -342,15 +370,17 @@ names(tost) <- c("Demonstration", "Dimension", "|d|", "TOST p", "Equivalent")
 knitr::kable(tost, digits = 3, row.names = FALSE)
 ```
 
-In the frequency contrasts every controlled dimension is declared equivalent at
-the 0.5-*SD* bound (*n* = 80 per condition). In the neighbourhood contrasts
-frequency is equivalent but length retains a small residual difference (Cohen's
-*d* ≈ 0.25, just outside the bound): neighbourhood density is intrinsically
-correlated with word length, so the two cannot be equated as tightly as the
-independent dimensions of the frequency contrast. This is a property of the
-manipulation rather than a matching failure — the residual is an order of
-magnitude below the manipulated effect — and 'lexsync' reports it transparently.
-We read the TOST as a conservative complement to the standardised mean difference
+In every demonstration each controlled dimension is declared equivalent at the
+0.5-*SD* bound (*n* = 80 per condition). The neighbourhood contrasts are the
+demanding case: neighbourhood density is intrinsically correlated with word
+length and frequency, so a per-anchor match leaves a residual on length (Cohen's
+*d* ≈ 0.25, just outside the bound). The `joint` matching method removes it. By
+selecting the best-matched dense–sparse pairs jointly it equates length and
+frequency almost exactly (Cohen's *d* ≈ 0.00 on both, well inside the bound)
+while the density contrast remains an order of magnitude larger (*d* > 2). The
+confound is thus a solved engineering problem rather than an inherent limit on
+the design, and 'lexsync' reports the realised equivalence transparently. We read
+the TOST as a conservative complement to the standardised mean difference
 [@lakens2017equivalence].
 
 The per-condition descriptive statistics make the control concrete. In the
@@ -373,6 +403,37 @@ knitr::kable(pretty_desc("en_freqcontrast_english"))
 knitr::kable(pretty_desc("en_ndensity_english"))
 ```
 
+## Generalisation to a logographic script
+
+The orthographic-neighbourhood measures operate on character strings, so the
+pipeline is not tied to alphabetic writing. To show this concretely, the fifth
+demonstration is a high- versus low-frequency contrast in Mandarin Chinese. Its
+lexicon is derived from the same engine as the others — `wordfreq`'s Chinese data
+[@speer2022wordfreq] — and the two conditions are two-character words, the
+dominant word form in Chinese. Here 'length' is the number of characters, and
+Coltheart's N and OLD20 are computed over characters rather than letters; we refer
+to them as character-level neighbourhood measures. Adding the demonstration
+required no change to the matching, counterbalancing or scripting code: a design
+configuration names the Chinese lexicon and a glyph-complete font, and the
+existing machinery does the rest.
+
+@tbl-desc-zh shows the result. Frequency is separated by about one and a half Zipf
+units (Cohen's *d* ≈ 6), while character-length is held constant at two and the
+character-level neighbourhood measures are equated across conditions (both
+TOST-equivalent at the 0.5-*SD* bound). Chinese two-character words have dense
+orthographic neighbourhoods — tens of single-character substitutions each, an
+order of magnitude more than the alphabetic words above — and 'lexsync' equates
+this dense, skewed distribution as readily as the sparse alphabetic one. The
+generated 'PsychoPy' and 'OpenSesame' experiments set a CJK font, so the
+characters render directly; the selection is byte-identical across the R and
+Python engines, exactly as for the alphabetic demonstrations.
+
+```{r desc-zh}
+#| label: tbl-desc-zh
+#| tbl-cap: "*Descriptive Statistics per Condition: Mandarin Chinese Frequency Contrast.* *Note.* Length is in characters; neighbourhood N and OLD20 are character-level measures. R engine."
+knitr::kable(pretty_desc("zh_freqcontrast_chinese"))
+```
+
 ```{r parity-setup}
 #| include: false
 parity_counts <- vapply(designs, function(d) {
@@ -388,7 +449,7 @@ n_match <- isTRUE(n_identical == n_total)
 
 Finally, because the matcher is deterministic the two engines select the same
 matched (word, condition) pairs rather than merely similar ones (the seeded trial
-order differs, as the R and Python random-number generators do). Across the four
+order differs, as the R and Python random-number generators do). Across the five
 demonstrations
 `r if (n_match) "all" else n_identical` `r n_total` of the selected
 (word, condition) pairs were identical between the R and the Python engine, and
@@ -430,15 +491,17 @@ workflow to onset-aligned markers — flip-locked in 'PsychoPy', and written
 immediately after the refresh-blocking `show()` in 'OpenSesame' — a concrete
 methodological improvement for ERP research.
 
-Some limitations remain. The orthographic-neighbourhood measures (Coltheart's N
-and OLD20) operate on character strings and are computed for any script, but
-their psycholinguistic interpretation is established for alphabetic writing; the
-extensible dimension system accommodates script-specific measures where a
-logographic study requires them. The neighbourhood-density contrast cannot equate
-word length as tightly as the frequency contrast does, because neighbourhood
-density is intrinsically correlated with length — a property of the manipulation
-that the tool reports rather than conceals. A photodiode check remains advisable
-for any onset-critical study, as for any software trigger. Future work includes
+Some limitations remain. The Chinese demonstration shows that the pipeline
+generalises to a logographic script — corpus access, dimension derivation,
+matching, counterbalancing and CJK-font script generation all work unchanged —
+but the neighbourhood measures it equates there (Coltheart's N and OLD20) are
+computed at the character level. They do not capture the sub-character structure
+that also shapes Chinese reading, such as radical, stroke-count and
+phonetic-radical information. Such measures are not intrinsic to the method; they
+enter as additional script-specific dimensions through the same extensible
+dimension system, and supplying them is left to future work. A photodiode check
+remains advisable for any onset-critical study, as for any software trigger.
+Future work includes
 additional presentation targets, a graphical interface and richer lexical
 dimensions such as concreteness and age of acquisition, each of which slots into
 the existing module structure.

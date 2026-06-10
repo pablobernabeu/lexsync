@@ -29,3 +29,39 @@ test_that("match_stimuli balances conditions and isolates the manipulated dimens
   expect_lt(abs(cohens_d(s$length[s$condition == "high"],
                          s$length[s$condition == "low"])), 0.3)  # length controlled
 })
+
+make_confounded_design <- function(method = NULL) {
+  # Neighbourhood density is intrinsically confounded with length and
+  # frequency, so the per-anchor matcher leaves a residual on the controls.
+  d <- list(
+    name = "tj", language = "english", n_per_condition = 20,
+    pool_filters = list(length = c(3, 7), frequency = c(3.8, 7)),
+    conditions = list(
+      list(name = "dense",  define_by = list(n_density = c(4, 100))),
+      list(name = "sparse", define_by = list(n_density = c(0, 1)))
+    ),
+    match_on = list("length", "frequency")
+  )
+  if (!is.null(method)) d$matching <- list(method = method)
+  d
+}
+
+test_that("joint matching cancels the control-dimension confound", {
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  lex <- load_lexicon(system.file("extdata", "en_example.csv", package = "lexsync"), schema, "english")
+  s <- match_stimuli(lex, make_confounded_design(method = "joint"), schema)
+  expect_equal(as.integer(table(s$condition)), c(20L, 20L))
+  expect_gt(mean(s$n_density[s$condition == "dense"]),
+            mean(s$n_density[s$condition == "sparse"]))      # density manipulated
+  for (dim in c("length", "frequency")) {                    # controls equated tightly
+    expect_lt(abs(cohens_d(s[[dim]][s$condition == "dense"],
+                           s[[dim]][s$condition == "sparse"])), 0.1)
+  }
+  # Joint matching is at least as tight as the per-anchor matcher on the confound.
+  s_std <- match_stimuli(lex, make_confounded_design(), schema)
+  d_joint <- abs(cohens_d(s$length[s$condition == "dense"],
+                          s$length[s$condition == "sparse"]))
+  d_std <- abs(cohens_d(s_std$length[s_std$condition == "dense"],
+                        s_std$length[s_std$condition == "sparse"]))
+  expect_lte(d_joint, d_std + 1e-9)
+})

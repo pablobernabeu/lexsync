@@ -18,6 +18,11 @@ conditions:
     define_by:
       n_density: [0, 1]
 match_on: [length, frequency]
+matching:
+  # Joint nearest-pair selection: choose the n best-matched dense/sparse pairs
+  # jointly, so length and frequency are equated even though they are
+  # intrinsically correlated with neighbourhood density.
+  method: joint
 counterbalance:
   lists: 1
 timing:

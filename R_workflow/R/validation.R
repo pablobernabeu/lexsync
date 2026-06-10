@@ -66,6 +66,13 @@ tost_equiv <- function(x, y, bound_d = 0.4, alpha = 0.05) {
   nx <- length(x); ny <- length(y)
   if (nx < 2 || ny < 2) return(list(p = NA_real_, equivalent = NA))
   sp <- sqrt(((nx - 1) * stats::var(x) + (ny - 1) * stats::var(y)) / (nx + ny - 2))
+  if (is.na(sp) || sp == 0) {
+    # Both conditions are constants (e.g. a dimension fixed by the pool, such as
+    # two-character Chinese words). They are equivalent iff they share that
+    # constant; the standardised difference is then exactly zero.
+    if (mean(x) - mean(y) == 0) return(list(p = 0, equivalent = TRUE))
+    return(list(p = 1, equivalent = FALSE))
+  }
   se <- sp * sqrt(1 / nx + 1 / ny)
   if (is.na(se) || se == 0) return(list(p = NA_real_, equivalent = NA))
   bound <- bound_d * sp
