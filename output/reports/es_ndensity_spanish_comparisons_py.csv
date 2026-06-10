@@ -1,5 +1,5 @@
-condition,reference,dimension,cohens_d,tost_p,equivalent
-sparse_neighbourhood,dense_neighbourhood,length,0.0,0.0009,True
-sparse_neighbourhood,dense_neighbourhood,frequency,0.0,0.0009,True
-sparse_neighbourhood,dense_neighbourhood,n_density,2.128,1.0,False
-sparse_neighbourhood,dense_neighbourhood,old20,-2.421,1.0,False
+condition,reference,dimension,cohens_d,d_ci_low,d_ci_high,tost_p,equivalent
+sparse_neighbourhood,dense_neighbourhood,length,0.0,-0.262,0.262,0.0009,True
+sparse_neighbourhood,dense_neighbourhood,frequency,0.0,-0.262,0.262,0.0009,True
+sparse_neighbourhood,dense_neighbourhood,n_density,2.128,1.866,2.389,1.0,False
+sparse_neighbourhood,dense_neighbourhood,old20,-2.421,-2.683,-2.159,1.0,False

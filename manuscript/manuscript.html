@@ -2297,7 +2297,8 @@ vertical-align: -.125em;
 </section>
 <section id="counterbalancing-and-reporting" class="level2" data-number="2.4">
 <h2 data-number="2.4" class="anchored" data-anchor-id="counterbalancing-and-reporting"><span class="header-section-number">2.4</span> Counterbalancing and reporting</h2>
-<p>Matched items are assigned to presentation lists and a reproducible trial order, and a participant table crosses any counterbalancing factors. ‘lexsync’ then writes a match-quality report — per-condition descriptive statistics for every dimension, standardised mean differences against the anchor and a two one-sided tests (TOST) equivalence test <span class="citation" data-cites="lakens2017equivalence">(<a href="#ref-lakens2017equivalence" role="doc-biblioref">Lakens, 2017</a>)</span> — and an automated, comprehensive run log recording each stage, its parameters, the seed, package and corpus provenance and a fingerprint of every file written. The report makes the realised control explicit, in the spirit of the original workflow’s balance checks, and the run log makes a run auditable.</p>
+<p>Matched items are assigned to presentation lists and a reproducible trial order, and a participant table crosses any counterbalancing factors. ‘lexsync’ then writes a match-quality report and an automated, comprehensive run log recording each stage, its parameters, the seed, package and corpus provenance and a fingerprint of every file written.</p>
+<p>The report is deliberately built around effect sizes rather than significance tests. For each controlled dimension it gives the per-condition descriptive statistics and the standardised mean difference (Cohen’s <em>d</em>) between conditions, together with a 90% confidence interval on that difference. This ordering is a considered response to a common error in nuisance control: treating a non-significant difference test as proof that a variable is matched <span class="citation" data-cites="sassenhagen2016nuisance">(<a href="#ref-sassenhagen2016nuisance" role="doc-biblioref">Sassenhagen &amp; Alday, 2016</a>)</span>. A non-significant test is not evidence of equivalence, and whether a real difference reaches significance depends on the number of items, so the conclusion “matched” can be manufactured by using few items. The standardised mean difference is, by contrast, a direct measure of the realised imbalance, and its confidence interval makes the sampling uncertainty — and hence the dependence on the number of items — explicit: with few items the interval is wide, so a small point estimate cannot be over-read, and the upper limit of the interval on |<em>d</em>| is the largest imbalance still consistent with the chosen stimuli. The report also includes a two one-sided tests (TOST) equivalence test <span class="citation" data-cites="lakens2017equivalence">(<a href="#ref-lakens2017equivalence" role="doc-biblioref">Lakens, 2017</a>)</span> as a complementary, bound-referenced verdict; the 90% interval is exactly the interval whose lying inside the bound corresponds to a TOST at the .05 level, so the two are coherent and the interval is the more transparent of the pair. Together they make the realised control explicit, in the spirit of the original workflow’s balance checks, and the run log makes a run auditable.</p>
 </section>
 <section id="hardware-time-locking" class="level2" data-number="2.5">
 <h2 data-number="2.5" class="anchored" data-anchor-id="hardware-time-locking"><span class="header-section-number">2.5</span> Hardware time-locking</h2>
@@ -2394,28 +2395,30 @@ Figure 1: <em>Absolute Standardised Mean Differences by Dimension and Demonstra
 </div>
 </div>
 </div>
-<p>The two one-sided tests (TOST) procedure that ‘lexsync’ reports gives a more conservative reading of the same control. <a href="#tbl-tost" class="quarto-xref">Table 2</a> lists, for the controlled dimensions of each demonstration, the standardised mean difference, the equivalence-test <em>p</em> value and the verdict at the 0.5-<em>SD</em> bound.</p>
+<p>The realised control is best read from the effect sizes and their intervals. <a href="#tbl-tost" class="quarto-xref">Table 2</a> lists, for the controlled dimensions of each demonstration, Cohen’s <em>d</em> against the anchor, its 90% confidence interval and the complementary TOST verdict at the 0.5-<em>SD</em> bound.</p>
 <div class="cell">
 <div id="tbl-tost" class="cell quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-tbl figure">
 <figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-tost-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Table 2: <em>Equivalence (TOST) Results for the Controlled Dimensions.</em> <em>Note.</em> For each demonstration’s controlled (matched) dimensions: the absolute standardised mean difference against the anchor, the equivalence-test <em>p</em> value at the 0.5-<em>SD</em> bound and the verdict at the .05 level. R engine.
+Table 2: <em>Realised Control on the Controlled Dimensions: Effect Sizes With Confidence Intervals and the Complementary Equivalence Test.</em> <em>Note.</em> For each demonstration’s controlled (matched) dimensions: the standardised mean difference (Cohen’s <em>d</em>) against the anchor, its 90% confidence interval, and the two one-sided tests (TOST) <em>p</em> value and verdict at the 0.5-<em>SD</em> bound. The 90% interval is the one coherent with a .05-level TOST. R engine.
 </figcaption>
 <div aria-describedby="tbl-tost-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <div class="cell-output-display">
 <table class="cell caption-top table table-sm table-striped small">
 <colgroup>
-<col style="width: 39%">
-<col style="width: 20%">
-<col style="width: 17%">
-<col style="width: 8%">
-<col style="width: 13%">
+<col style="width: 35%">
+<col style="width: 18%">
+<col style="width: 10%">
+<col style="width: 15%">
+<col style="width: 7%">
+<col style="width: 12%">
 </colgroup>
 <thead>
 <tr class="header">
 <th style="text-align: left;">Demonstration</th>
 <th style="text-align: left;">Dimension</th>
-<th style="text-align: right;">|d|</th>
+<th style="text-align: right;">Cohen’s d</th>
+<th style="text-align: left;">90% CI</th>
 <th style="text-align: right;">TOST p</th>
 <th style="text-align: left;">Equivalent</th>
 </tr>
@@ -2425,6 +2428,7 @@ Table 2: <em>Equivalence (TOST) Results for the Controlled Dimensions.</em> <em
 <td style="text-align: left;">Chinese: frequency contrast</td>
 <td style="text-align: left;">Length</td>
 <td style="text-align: right;">0.000</td>
+<td style="text-align: left;">[0.00, 0.00]</td>
 <td style="text-align: right;">0.000</td>
 <td style="text-align: left;">TRUE</td>
 </tr>
@@ -2432,6 +2436,7 @@ Table 2: <em>Equivalence (TOST) Results for the Controlled Dimensions.</em> <em
 <td style="text-align: left;">Chinese: frequency contrast</td>
 <td style="text-align: left;">Neighbourhood N</td>
 <td style="text-align: right;">0.071</td>
+<td style="text-align: left;">[-0.19, 0.33]</td>
 <td style="text-align: right;">0.004</td>
 <td style="text-align: left;">TRUE</td>
 </tr>
@@ -2439,6 +2444,7 @@ Table 2: <em>Equivalence (TOST) Results for the Controlled Dimensions.</em> <em
 <td style="text-align: left;">Chinese: frequency contrast</td>
 <td style="text-align: left;">OLD20</td>
 <td style="text-align: right;">0.106</td>
+<td style="text-align: left;">[-0.15, 0.37]</td>
 <td style="text-align: right;">0.007</td>
 <td style="text-align: left;">TRUE</td>
 </tr>
@@ -2446,6 +2452,7 @@ Table 2: <em>Equivalence (TOST) Results for the Controlled Dimensions.</em> <em
 <td style="text-align: left;">English: frequency contrast</td>
 <td style="text-align: left;">Length</td>
 <td style="text-align: right;">0.027</td>
+<td style="text-align: left;">[-0.23, 0.29]</td>
 <td style="text-align: right;">0.002</td>
 <td style="text-align: left;">TRUE</td>
 </tr>
@@ -2453,6 +2460,7 @@ Table 2: <em>Equivalence (TOST) Results for the Controlled Dimensions.</em> <em
 <td style="text-align: left;">English: frequency contrast</td>
 <td style="text-align: left;">Neighbourhood N</td>
 <td style="text-align: right;">0.038</td>
+<td style="text-align: left;">[-0.22, 0.30]</td>
 <td style="text-align: right;">0.002</td>
 <td style="text-align: left;">TRUE</td>
 </tr>
@@ -2460,6 +2468,7 @@ Table 2: <em>Equivalence (TOST) Results for the Controlled Dimensions.</em> <em
 <td style="text-align: left;">English: frequency contrast</td>
 <td style="text-align: left;">OLD20</td>
 <td style="text-align: right;">0.009</td>
+<td style="text-align: left;">[-0.25, 0.27]</td>
 <td style="text-align: right;">0.001</td>
 <td style="text-align: left;">TRUE</td>
 </tr>
@@ -2467,6 +2476,7 @@ Table 2: <em>Equivalence (TOST) Results for the Controlled Dimensions.</em> <em
 <td style="text-align: left;">English: neighbourhood contrast</td>
 <td style="text-align: left;">Length</td>
 <td style="text-align: right;">0.000</td>
+<td style="text-align: left;">[-0.26, 0.26]</td>
 <td style="text-align: right;">0.001</td>
 <td style="text-align: left;">TRUE</td>
 </tr>
@@ -2474,6 +2484,7 @@ Table 2: <em>Equivalence (TOST) Results for the Controlled Dimensions.</em> <em
 <td style="text-align: left;">English: neighbourhood contrast</td>
 <td style="text-align: left;">Frequency (Zipf)</td>
 <td style="text-align: right;">0.000</td>
+<td style="text-align: left;">[-0.26, 0.26]</td>
 <td style="text-align: right;">0.001</td>
 <td style="text-align: left;">TRUE</td>
 </tr>
@@ -2481,6 +2492,7 @@ Table 2: <em>Equivalence (TOST) Results for the Controlled Dimensions.</em> <em
 <td style="text-align: left;">Spanish: frequency contrast</td>
 <td style="text-align: left;">Length</td>
 <td style="text-align: right;">0.049</td>
+<td style="text-align: left;">[-0.21, 0.31]</td>
 <td style="text-align: right;">0.002</td>
 <td style="text-align: left;">TRUE</td>
 </tr>
@@ -2488,6 +2500,7 @@ Table 2: <em>Equivalence (TOST) Results for the Controlled Dimensions.</em> <em
 <td style="text-align: left;">Spanish: frequency contrast</td>
 <td style="text-align: left;">Neighbourhood N</td>
 <td style="text-align: right;">0.077</td>
+<td style="text-align: left;">[-0.18, 0.34]</td>
 <td style="text-align: right;">0.004</td>
 <td style="text-align: left;">TRUE</td>
 </tr>
@@ -2495,6 +2508,7 @@ Table 2: <em>Equivalence (TOST) Results for the Controlled Dimensions.</em> <em
 <td style="text-align: left;">Spanish: frequency contrast</td>
 <td style="text-align: left;">OLD20</td>
 <td style="text-align: right;">0.006</td>
+<td style="text-align: left;">[-0.26, 0.27]</td>
 <td style="text-align: right;">0.001</td>
 <td style="text-align: left;">TRUE</td>
 </tr>
@@ -2502,6 +2516,7 @@ Table 2: <em>Equivalence (TOST) Results for the Controlled Dimensions.</em> <em
 <td style="text-align: left;">Spanish: neighbourhood contrast</td>
 <td style="text-align: left;">Length</td>
 <td style="text-align: right;">0.000</td>
+<td style="text-align: left;">[-0.26, 0.26]</td>
 <td style="text-align: right;">0.001</td>
 <td style="text-align: left;">TRUE</td>
 </tr>
@@ -2509,6 +2524,7 @@ Table 2: <em>Equivalence (TOST) Results for the Controlled Dimensions.</em> <em
 <td style="text-align: left;">Spanish: neighbourhood contrast</td>
 <td style="text-align: left;">Frequency (Zipf)</td>
 <td style="text-align: right;">0.000</td>
+<td style="text-align: left;">[-0.26, 0.26]</td>
 <td style="text-align: right;">0.001</td>
 <td style="text-align: left;">TRUE</td>
 </tr>
@@ -2519,7 +2535,7 @@ Table 2: <em>Equivalence (TOST) Results for the Controlled Dimensions.</em> <em
 </figure>
 </div>
 </div>
-<p>In every demonstration each controlled dimension is declared equivalent at the 0.5-<em>SD</em> bound (<em>n</em> = 80 per condition). The neighbourhood contrasts are the demanding case: neighbourhood density is intrinsically correlated with word length and frequency, so a per-anchor match leaves a residual on length (Cohen’s <em>d</em> ≈ 0.25, just outside the bound). The <code>joint</code> matching method removes it. By selecting the best-matched dense–sparse pairs jointly it equates length and frequency almost exactly (Cohen’s <em>d</em> ≈ 0.00 on both, well inside the bound) while the density contrast remains an order of magnitude larger (<em>d</em> &gt; 2). The confound is thus a solved engineering problem rather than an inherent limit on the design, and ‘lexsync’ reports the realised equivalence transparently. We read the TOST as a conservative complement to the standardised mean difference <span class="citation" data-cites="lakens2017equivalence">(<a href="#ref-lakens2017equivalence" role="doc-biblioref">Lakens, 2017</a>)</span>.</p>
+<p>In every demonstration each controlled dimension’s 90% confidence interval lies within the 0.5-<em>SD</em> bound (<em>n</em> = 80 per condition), so the realised imbalance is small even at the interval’s far end — not merely non-significant. The TOST agrees, declaring each dimension equivalent at the .05 level, but the interval is the more informative statement because it would widen, and the claim would weaken, were the item count reduced. The neighbourhood contrasts are the demanding case: neighbourhood density is intrinsically correlated with word length and frequency, so a per-anchor match leaves a residual on length (Cohen’s <em>d</em> ≈ 0.25). The <code>joint</code> matching method removes it: by selecting the best-matched dense–sparse pairs jointly it equates length and frequency almost exactly (<em>d</em> ≈ 0.00 on both, with intervals tightly around zero) while the density contrast remains an order of magnitude larger (<em>d</em> &gt; 2). The confound is thus a solved engineering problem rather than an inherent limit on the design, and ‘lexsync’ reports the realised control transparently — effect size and interval first, equivalence test as a bound-referenced complement <span class="citation" data-cites="lakens2017equivalence sassenhagen2016nuisance">(<a href="#ref-lakens2017equivalence" role="doc-biblioref">Lakens, 2017</a>; <a href="#ref-sassenhagen2016nuisance" role="doc-biblioref">Sassenhagen &amp; Alday, 2016</a>)</span>.</p>
 <p>The per-condition descriptive statistics make the control concrete. In the English frequency contrast (<a href="#tbl-desc-freq" class="quarto-xref">Table 3</a>) frequency is separated by roughly one and a half Zipf units while length, neighbourhood density and OLD20 are almost identical across conditions. In the English neighbourhood contrast (<a href="#tbl-desc-nd" class="quarto-xref">Table 4</a>) neighbourhood density is separated by an order of magnitude with length and frequency held constant; OLD20, which is mathematically related to N, moves with the manipulation rather than being held constant, as expected.</p>
 <div class="cell">
 <div id="tbl-desc-freq" class="cell quarto-float quarto-figure quarto-figure-center anchored">
@@ -2762,7 +2778,7 @@ Table 4: <em>Descriptive Statistics per Condition: English Neighbourhood-Densit
 <section id="generalisation-to-a-logographic-script" class="level2" data-number="3.1">
 <h2 data-number="3.1" class="anchored" data-anchor-id="generalisation-to-a-logographic-script"><span class="header-section-number">3.1</span> Generalisation to a logographic script</h2>
 <p>The orthographic-neighbourhood measures operate on character strings, so the pipeline is not tied to alphabetic writing. To show this concretely, the fifth demonstration is a high- versus low-frequency contrast in Mandarin Chinese. Its lexicon is derived from the same engine as the others — <code>wordfreq</code>‘s Chinese data <span class="citation" data-cites="speer2022wordfreq">(<a href="#ref-speer2022wordfreq" role="doc-biblioref">Speer, 2022</a>)</span> — and the two conditions are two-character words, the dominant word form in Chinese. Here ’length’ is the number of characters, and Coltheart’s N and OLD20 are computed over characters rather than letters; we refer to them as character-level neighbourhood measures. Adding the demonstration required no change to the matching, counterbalancing or scripting code: a design configuration names the Chinese lexicon and a glyph-complete font, and the existing machinery does the rest.</p>
-<p><a href="#tbl-desc-zh" class="quarto-xref">Table 5</a> shows the result. Frequency is separated by about one and a half Zipf units (Cohen’s <em>d</em> ≈ 6), while character-length is held constant at two and the character-level neighbourhood measures are equated across conditions (both TOST-equivalent at the 0.5-<em>SD</em> bound). Chinese two-character words have dense orthographic neighbourhoods — tens of single-character substitutions each, an order of magnitude more than the alphabetic words above — and ‘lexsync’ equates this dense, skewed distribution as readily as the sparse alphabetic one. The generated ‘PsychoPy’ and ‘OpenSesame’ experiments set a CJK font, so the characters render directly; the selection is byte-identical across the R and Python engines, exactly as for the alphabetic demonstrations.</p>
+<p><a href="#tbl-desc-zh" class="quarto-xref">Table 5</a> shows the result. Frequency is separated by about one and a half Zipf units (Cohen’s <em>d</em> ≈ 6), while character-length is held constant at two and the character-level neighbourhood measures are equated across conditions (each with a 90% confidence interval on <em>d</em> lying within the 0.5-<em>SD</em> bound, and correspondingly TOST-equivalent). Chinese two-character words have dense orthographic neighbourhoods — tens of single-character substitutions each, an order of magnitude more than the alphabetic words above — and ‘lexsync’ equates this dense, skewed distribution as readily as the sparse alphabetic one. The generated ‘PsychoPy’ and ‘OpenSesame’ experiments set a CJK font, so the characters render directly; the selection is byte-identical across the R and Python engines, exactly as for the alphabetic demonstrations.</p>
 <div class="cell">
 <div id="tbl-desc-zh" class="cell quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-tbl figure">
@@ -2978,6 +2994,9 @@ Mathôt, S., Schreij, D., &amp; Theeuwes, J. (2012). <span>OpenSesame</span>: An
 </div>
 <div id="ref-peirce2019psychopy2" class="csl-entry" role="listitem">
 Peirce, J., Gray, J. R., Simpson, S., MacAskill, M., Höchenberger, R., Sogo, H., Kastman, E., &amp; Lindeløv, J. K. (2019). <span>PsychoPy2</span>: Experiments in behavior made easy. <em>Behavior Research Methods</em>, <em>51</em>(1), 195–203. <a href="https://doi.org/10.3758/s13428-018-01193-y">https://doi.org/10.3758/s13428-018-01193-y</a>
+</div>
+<div id="ref-sassenhagen2016nuisance" class="csl-entry" role="listitem">
+Sassenhagen, J., &amp; Alday, P. M. (2016). A common misapplication of statistical inference: <span>Nuisance</span> control with null-hypothesis significance tests. <em>Brain and Language</em>, <em>162</em>, 42–45. <a href="https://doi.org/10.1016/j.bandl.2016.08.001">https://doi.org/10.1016/j.bandl.2016.08.001</a>
 </div>
 <div id="ref-speer2022wordfreq" class="csl-entry" role="listitem">
 Speer, R. (2022). <em><span class="nocase">rspeer/wordfreq</span>: v3.0</em>. Zenodo. <a href="https://doi.org/10.5281/zenodo.7199437">https://doi.org/10.5281/zenodo.7199437</a>

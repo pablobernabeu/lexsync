@@ -247,13 +247,31 @@ for the neighbourhood-density demonstrations below.
 
 Matched items are assigned to presentation lists and a reproducible trial order,
 and a participant table crosses any counterbalancing factors. 'lexsync' then
-writes a match-quality report — per-condition descriptive statistics for every
-dimension, standardised mean differences against the anchor and a two one-sided
-tests (TOST) equivalence test [@lakens2017equivalence] — and an automated,
-comprehensive run log recording each stage, its parameters, the seed, package and
-corpus provenance and a fingerprint of every file written. The report makes the
-realised control explicit, in the spirit of the original workflow's balance
-checks, and the run log makes a run auditable.
+writes a match-quality report and an automated, comprehensive run log recording
+each stage, its parameters, the seed, package and corpus provenance and a
+fingerprint of every file written.
+
+The report is deliberately built around effect sizes rather than significance
+tests. For each controlled dimension it gives the per-condition descriptive
+statistics and the standardised mean difference (Cohen's *d*) between conditions,
+together with a 90% confidence interval on that difference. This ordering is a
+considered response to a common error in nuisance control: treating a
+non-significant difference test as proof that a variable is matched
+[@sassenhagen2016nuisance]. A non-significant test is not evidence of equivalence,
+and whether a real difference reaches significance depends on the number of items,
+so the conclusion "matched" can be manufactured by using few items. The
+standardised mean difference is, by contrast, a direct measure of the realised
+imbalance, and its confidence interval makes the sampling uncertainty — and hence
+the dependence on the number of items — explicit: with few items the interval is
+wide, so a small point estimate cannot be over-read, and the upper limit of the
+interval on \|*d*\| is the largest imbalance still consistent with the chosen
+stimuli. The report also includes a two one-sided tests (TOST) equivalence test
+[@lakens2017equivalence] as a complementary, bound-referenced verdict; the 90%
+interval is exactly the interval whose lying inside the bound corresponds to a
+TOST at the .05 level, so the two are coherent and the interval is the more
+transparent of the pair. Together they make the realised control explicit, in the
+spirit of the original workflow's balance checks, and the run log makes a run
+auditable.
 
 ## Hardware time-locking
 
@@ -357,31 +375,37 @@ if (have_ggplot) {
 }
 ```
 
-The two one-sided tests (TOST) procedure that 'lexsync' reports gives a more
-conservative reading of the same control. @tbl-tost lists, for the controlled
-dimensions of each demonstration, the standardised mean difference, the
-equivalence-test *p* value and the verdict at the 0.5-*SD* bound.
+The realised control is best read from the effect sizes and their intervals.
+@tbl-tost lists, for the controlled dimensions of each demonstration, Cohen's *d*
+against the anchor, its 90% confidence interval and the complementary TOST verdict
+at the 0.5-*SD* bound.
 
 ```{r tost-table}
 #| label: tbl-tost
-#| tbl-cap: "*Equivalence (TOST) Results for the Controlled Dimensions.* *Note.* For each demonstration's controlled (matched) dimensions: the absolute standardised mean difference against the anchor, the equivalence-test *p* value at the 0.5-*SD* bound and the verdict at the .05 level. R engine."
-tost <- comps[comps$role == "Controlled", c("design", "dim_label", "absd", "tost_p", "equivalent")]
-names(tost) <- c("Demonstration", "Dimension", "|d|", "TOST p", "Equivalent")
-knitr::kable(tost, digits = 3, row.names = FALSE)
+#| tbl-cap: "*Realised Control on the Controlled Dimensions: Effect Sizes With Confidence Intervals and the Complementary Equivalence Test.* *Note.* For each demonstration's controlled (matched) dimensions: the standardised mean difference (Cohen's *d*) against the anchor, its 90% confidence interval, and the two one-sided tests (TOST) *p* value and verdict at the 0.5-*SD* bound. The 90% interval is the one coherent with a .05-level TOST. R engine."
+tost <- comps[comps$role == "Controlled",
+              c("design", "dim_label", "cohens_d", "d_ci_low", "d_ci_high", "tost_p", "equivalent")]
+tost$ci <- sprintf("[%.2f, %.2f]", tost$d_ci_low, tost$d_ci_high)
+tab <- tost[, c("design", "dim_label", "cohens_d", "ci", "tost_p", "equivalent")]
+names(tab) <- c("Demonstration", "Dimension", "Cohen's d", "90% CI", "TOST p", "Equivalent")
+knitr::kable(tab, digits = 3, row.names = FALSE)
 ```
 
-In every demonstration each controlled dimension is declared equivalent at the
-0.5-*SD* bound (*n* = 80 per condition). The neighbourhood contrasts are the
-demanding case: neighbourhood density is intrinsically correlated with word
-length and frequency, so a per-anchor match leaves a residual on length (Cohen's
-*d* ≈ 0.25, just outside the bound). The `joint` matching method removes it. By
-selecting the best-matched dense–sparse pairs jointly it equates length and
-frequency almost exactly (Cohen's *d* ≈ 0.00 on both, well inside the bound)
-while the density contrast remains an order of magnitude larger (*d* > 2). The
-confound is thus a solved engineering problem rather than an inherent limit on
-the design, and 'lexsync' reports the realised equivalence transparently. We read
-the TOST as a conservative complement to the standardised mean difference
-[@lakens2017equivalence].
+In every demonstration each controlled dimension's 90% confidence interval lies
+within the 0.5-*SD* bound (*n* = 80 per condition), so the realised imbalance is
+small even at the interval's far end — not merely non-significant. The TOST agrees,
+declaring each dimension equivalent at the .05 level, but the interval is the more
+informative statement because it would widen, and the claim would weaken, were the
+item count reduced. The neighbourhood contrasts are the demanding case:
+neighbourhood density is intrinsically correlated with word length and frequency,
+so a per-anchor match leaves a residual on length (Cohen's *d* ≈ 0.25). The
+`joint` matching method removes it: by selecting the best-matched dense–sparse
+pairs jointly it equates length and frequency almost exactly (*d* ≈ 0.00 on both,
+with intervals tightly around zero) while the density contrast remains an order of
+magnitude larger (*d* > 2). The confound is thus a solved engineering problem
+rather than an inherent limit on the design, and 'lexsync' reports the realised
+control transparently — effect size and interval first, equivalence test as a
+bound-referenced complement [@lakens2017equivalence; @sassenhagen2016nuisance].
 
 The per-condition descriptive statistics make the control concrete. In the
 English frequency contrast (@tbl-desc-freq) frequency is separated by roughly one
@@ -419,8 +443,9 @@ existing machinery does the rest.
 
 @tbl-desc-zh shows the result. Frequency is separated by about one and a half Zipf
 units (Cohen's *d* ≈ 6), while character-length is held constant at two and the
-character-level neighbourhood measures are equated across conditions (both
-TOST-equivalent at the 0.5-*SD* bound). Chinese two-character words have dense
+character-level neighbourhood measures are equated across conditions (each with a
+90% confidence interval on *d* lying within the 0.5-*SD* bound, and
+correspondingly TOST-equivalent). Chinese two-character words have dense
 orthographic neighbourhoods — tens of single-character substitutions each, an
 order of magnitude more than the alphabetic words above — and 'lexsync' equates
 this dense, skewed distribution as readily as the sparse alphabetic one. The

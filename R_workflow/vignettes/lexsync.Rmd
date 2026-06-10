@@ -47,11 +47,18 @@ head(stim[, c("word", "condition", "length", "frequency", "n_density", "old20")]
 ```{r report}
 report <- match_report(stim, c("length", "frequency", "n_density", "old20"), schema)
 knitr::kable(report$descriptives, caption = "Descriptive statistics per condition")
-knitr::kable(report$comparisons, caption = "Standardised differences and equivalence tests")
+knitr::kable(report$comparisons,
+             caption = "Standardised mean differences with 90% confidence intervals, plus the complementary TOST equivalence test")
 ```
 
 The manipulated dimension (frequency) differs strongly, while the controlled
-dimensions (length, neighbourhood density and OLD20) are closely equated.
+dimensions (length, neighbourhood density and OLD20) are closely equated. The
+report leads with the standardised mean difference (`cohens_d`) and its 90%
+confidence interval (`d_ci_low`, `d_ci_high`): a non-significant difference test is
+not evidence of matching, and its outcome depends on the number of items, so the
+effect size and its interval — whose upper limit is the largest imbalance still
+consistent with the stimuli — are the primary summary. The TOST equivalence test
+is reported alongside as a bound-referenced verdict.
 
 ## Generate the experiment scripts
 

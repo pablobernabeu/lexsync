@@ -54,8 +54,10 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
   for (msg in balance_check(stim, "condition")) log <- log_step(log, paste("balance:", msg))
   for (i in seq_len(nrow(report$comparisons))) {
     cr <- report$comparisons[i, ]
-    log <- log_step(log, sprintf("equivalence %s vs %s on '%s': d = %.2f, TOST p = %.3f (%s)",
-                                 cr$condition, cr$reference, cr$dimension, cr$cohens_d, cr$tost_p,
+    ci <- if (!is.na(cr$d_ci_low) && !is.na(cr$d_ci_high))
+      sprintf(" [%.2f, %.2f]", cr$d_ci_low, cr$d_ci_high) else ""
+    log <- log_step(log, sprintf("equivalence %s vs %s on '%s': d = %.2f%s, TOST p = %.3f (%s)",
+                                 cr$condition, cr$reference, cr$dimension, cr$cohens_d, ci, cr$tost_p,
                                  if (isTRUE(cr$equivalent)) "equivalent" else "not shown equivalent"))
   }
 

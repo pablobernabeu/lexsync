@@ -48,6 +48,35 @@ cohens_d <- function(x, y) {
   (mean(x) - mean(y)) / sp
 }
 
+#' Cohen's d with a confidence interval, complementing the TOST verdict
+#'
+#' The interval is the `(1 - 2 * alpha)` confidence interval for the standardised
+#' mean difference; for `alpha = 0.05` this is the 90% interval that corresponds
+#' exactly to a TOST decision at the .05 level (Lakens, 2017). Reporting the
+#' interval, rather than only a binary verdict, makes the realised imbalance and
+#' its sampling uncertainty explicit and keeps the dependence on the number of
+#' items visible rather than hidden: with few items the interval is wide, so a
+#' small point estimate cannot be over-read as evidence of a small true
+#' difference (Sassenhagen & Alday, 2016).
+#'
+#' @param x,y Numeric vectors.
+#' @param alpha Significance level matching the TOST (default 0.05).
+#' @return A list with `d`, `ci_low` and `ci_high`.
+#' @importFrom stats var qt
+#' @export
+cohens_d_ci <- function(x, y, alpha = 0.05) {
+  x <- x[!is.na(x)]; y <- y[!is.na(y)]
+  nx <- length(x); ny <- length(y)
+  if (nx < 2 || ny < 2) return(list(d = 0, ci_low = NA_real_, ci_high = NA_real_))
+  sp <- sqrt(((nx - 1) * stats::var(x) + (ny - 1) * stats::var(y)) / (nx + ny - 2))
+  diff <- mean(x) - mean(y)
+  # A constant dimension carries no sampling uncertainty: a point at zero.
+  if (is.na(sp) || sp == 0) return(list(d = 0, ci_low = 0, ci_high = 0))
+  d <- diff / sp
+  margin <- stats::qt(1 - alpha, nx + ny - 2) * sqrt(1 / nx + 1 / ny)
+  list(d = d, ci_low = d - margin, ci_high = d + margin)
+}
+
 #' Two one-sided tests (TOST) of equivalence on a Cohen's d bound
 #'
 #' Reports the larger of the two one-sided p-values; a value below `alpha`
@@ -125,9 +154,11 @@ match_report <- function(stimuli, dims, schema) {
       x <- suppressWarnings(as.numeric(stimuli[stimuli$condition == anchor, dim, drop = TRUE]))
       y <- suppressWarnings(as.numeric(stimuli[stimuli$condition == cc, dim, drop = TRUE]))
       tt <- tost_equiv(x, y, bound_d = bound, alpha = alpha)
+      ci <- cohens_d_ci(x, y, alpha = alpha)
       comp[[length(comp) + 1]] <- data.frame(
         condition = cc, reference = anchor, dimension = dim,
         cohens_d = round(cohens_d(x, y), 3),
+        d_ci_low = round(ci$ci_low, 3), d_ci_high = round(ci$ci_high, 3),
         tost_p = round(tt$p, 4), equivalent = tt$equivalent,
         stringsAsFactors = FALSE
       )

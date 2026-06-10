@@ -56,8 +56,10 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
         runlog.log_step(log, "balance: " + msg)
     for _, cr in report["comparisons"].iterrows():
         verdict = "equivalent" if cr["equivalent"] else "not shown equivalent"
+        lo, hi = cr["d_ci_low"], cr["d_ci_high"]
+        ci = f" [{lo:.2f}, {hi:.2f}]" if (lo == lo and hi == hi) else ""  # NaN-safe
         runlog.log_step(log, f"equivalence {cr['condition']} vs {cr['reference']} on "
-                             f"'{cr['dimension']}': d = {cr['cohens_d']:.2f}, "
+                             f"'{cr['dimension']}': d = {cr['cohens_d']:.2f}{ci}, "
                              f"TOST p = {cr['tost_p']} ({verdict})")
 
     stim = counterbalance(stim, design, schema)

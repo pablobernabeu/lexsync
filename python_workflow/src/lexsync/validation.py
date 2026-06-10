@@ -38,6 +38,36 @@ def cohens_d(x, y) -> float:
     return float((x.mean() - y.mean()) / sp)
 
 
+def cohens_d_ci(x, y, alpha: float = 0.05) -> dict:
+    """Cohen's *d* with a confidence interval, complementing the TOST verdict.
+
+    The interval is the ``(1 - 2 * alpha)`` confidence interval for the
+    standardised mean difference; for ``alpha = 0.05`` this is the 90% interval
+    that corresponds exactly to a two one-sided tests (TOST) decision at the .05
+    level (Lakens, 2017). Reporting the interval, rather than only a binary
+    "equivalent / not" verdict, makes the realised imbalance and its sampling
+    uncertainty explicit and keeps the dependence on the number of items visible
+    rather than hidden: with few items the interval is wide, so a small point
+    estimate cannot be over-read as evidence of a small true difference
+    (Sassenhagen & Alday, 2016). The upper limit of the interval on ``|d|`` is the
+    largest imbalance still consistent with the stimuli.
+    """
+    x = np.asarray(x, dtype=float); y = np.asarray(y, dtype=float)
+    x = x[~np.isnan(x)]; y = y[~np.isnan(y)]
+    nx, ny = len(x), len(y)
+    if nx < 2 or ny < 2:
+        return dict(d=0.0, ci_low=float("nan"), ci_high=float("nan"))
+    sp = math.sqrt(((nx - 1) * x.var(ddof=1) + (ny - 1) * y.var(ddof=1)) / (nx + ny - 2))
+    diff = float(x.mean() - y.mean())
+    if sp == 0 or math.isnan(sp):
+        # A constant dimension carries no sampling uncertainty: the interval is a
+        # point at the (zero) standardised difference.
+        return dict(d=0.0, ci_low=0.0, ci_high=0.0)
+    d = diff / sp
+    margin = float(stats.t.ppf(1 - alpha, nx + ny - 2) * math.sqrt(1 / nx + 1 / ny))
+    return dict(d=float(d), ci_low=d - margin, ci_high=d + margin)
+
+
 def tost_equiv(x, y, bound_d: float = 0.5, alpha: float = 0.05) -> dict:
     x = np.asarray(x, dtype=float); y = np.asarray(y, dtype=float)
     x = x[~np.isnan(x)]; y = y[~np.isnan(y)]
@@ -88,10 +118,13 @@ def match_report(stimuli: pd.DataFrame, dims, schema: dict) -> dict:
             x = pd.to_numeric(stimuli.loc[stimuli["condition"] == anchor, dim], errors="coerce")
             y = pd.to_numeric(stimuli.loc[stimuli["condition"] == cc, dim], errors="coerce")
             tt = tost_equiv(x, y, bound, alpha)
+            ci = cohens_d_ci(x, y, alpha)
             p = tt["p"]
             rows.append(dict(
                 condition=cc, reference=anchor, dimension=dim,
                 cohens_d=round(cohens_d(x, y), 3),
+                d_ci_low=round(ci["ci_low"], 3) if ci["ci_low"] == ci["ci_low"] else None,
+                d_ci_high=round(ci["ci_high"], 3) if ci["ci_high"] == ci["ci_high"] else None,
                 tost_p=round(p, 4) if p == p else None,
                 equivalent=tt["equivalent"],
             ))
