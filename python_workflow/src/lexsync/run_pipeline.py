@@ -19,7 +19,8 @@ from .generation import build_lexdec_stimuli
 from .io_utils import read_config, slugify, write_csv_utf8
 from .matching import match_stimuli
 from .paradigms import required_fields
-from .querying import add_neighbourhood, build_pool, load_items, load_lexicon
+from .querying import (add_bigram_frequency, add_neighbourhood, build_pool,
+                       load_items, load_lexicon)
 from .scripting import export_experiments
 from .validation import balance_check, match_report
 
@@ -48,15 +49,20 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
 
     if source == "corpus":
         match_on = list(design.get("match_on") or [])
+        ref = reference_words if reference_words is not None else lex["word"].tolist()
         needed = [d for d in ("n_density", "old20") if d in match_on]
         if needed and any(d not in pool.columns for d in needed):
             runlog.log_step(log, "computing orthographic neighbourhood (N, OLD20)")
-            ref = reference_words if reference_words is not None else lex["word"].tolist()
             pool = add_neighbourhood(pool, reference=ref)
+        if "bigram_freq" in match_on and "bigram_freq" not in pool.columns:
+            runlog.log_step(log, "computing bigram frequency (phonotactic-probability proxy)")
+            pool = add_bigram_frequency(pool, reference=ref)
         stim = match_stimuli(pool, design, schema, verbose=verbose)
         runlog.log_step(log, f"matched {len(stim)} items across {stim['condition'].nunique()} conditions",
                         {"conditions": ", ".join(dict.fromkeys(stim["condition"]))})
-        dims = [d for d in ("length", "frequency", "n_density", "old20") if d in stim.columns]
+        std = ["length", "frequency", "n_density", "old20"]
+        extra = [d for d in ("n_syllables", "bigram_freq") if d in match_on]
+        dims = [d for d in std + extra if d in stim.columns]
         report = match_report(stim, dims, schema)
     elif source == "generate":
         n = design.get("n_per_condition") or design.get("n_per_cell") or 40

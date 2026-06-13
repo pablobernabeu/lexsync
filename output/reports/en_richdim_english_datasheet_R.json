@@ -1,0 +1,171 @@
+{
+  "lexsync_datasheet_version": "1.0",
+  "design": {
+    "name": "en_richdim",
+    "language": "english",
+    "paradigm": "factorial",
+    "source": "corpus",
+    "description": "High versus low frequency English words, matched on length, syllable count and bigram frequency (a phonotactic-probability proxy).",
+    "n_per_condition": 60
+  },
+  "materials_source": {
+    "type": "corpus",
+    "path": "corpora/derived/en.csv",
+    "sha256": "c20549b920d816809d11cfa673ad0df1dd70d3e73176ee66cbec18021627f65d",
+    "provenance": "see corpora/ATTRIBUTION.md for corpus licence and citation"
+  },
+  "dimensions": {
+    "length": {
+      "type": "derived",
+      "compute": "n_letters",
+      "unit": "letters"
+    },
+    "frequency": {
+      "type": "column",
+      "column": "freq_zipf",
+      "unit": "Zipf"
+    },
+    "n_density": {
+      "type": "derived",
+      "compute": "coltheart_n",
+      "unit": "neighbours"
+    },
+    "old20": {
+      "type": "derived",
+      "compute": "old20",
+      "unit": "mean Levenshtein distance"
+    },
+    "n_syllables": {
+      "type": "derived",
+      "compute": "vowel_groups",
+      "unit": "syllables (orthographic estimate)"
+    },
+    "bigram_freq": {
+      "type": "derived",
+      "compute": "mean_bigram_probability",
+      "unit": "mean positional bigram probability"
+    }
+  },
+  "selection": {
+    "method": "standardised_euclidean",
+    "match_on": [
+      "length",
+      "n_syllables",
+      "bigram_freq"
+    ],
+    "tolerance_k": {
+      "length": 2,
+      "frequency": 1,
+      "n_density": 2,
+      "old20": 2
+    }
+  },
+  "realised_control": [
+    {
+      "dimension": "length",
+      "role": "controlled",
+      "cohens_d": 0.015,
+      "ci_low": -0.287,
+      "ci_high": 0.318,
+      "tost_p": 0.0045,
+      "equivalent": true
+    },
+    {
+      "dimension": "frequency",
+      "role": "manipulated/free",
+      "cohens_d": 5.572,
+      "ci_low": 5.269,
+      "ci_high": 5.875,
+      "tost_p": 1,
+      "equivalent": false
+    },
+    {
+      "dimension": "n_density",
+      "role": "manipulated/free",
+      "cohens_d": 0.076,
+      "ci_low": -0.226,
+      "ci_high": 0.379,
+      "tost_p": 0.011,
+      "equivalent": true
+    },
+    {
+      "dimension": "old20",
+      "role": "manipulated/free",
+      "cohens_d": 0.078,
+      "ci_low": -0.224,
+      "ci_high": 0.381,
+      "tost_p": 0.0113,
+      "equivalent": true
+    },
+    {
+      "dimension": "n_syllables",
+      "role": "controlled",
+      "cohens_d": 0.174,
+      "ci_low": -0.129,
+      "ci_high": 0.477,
+      "tost_p": 0.0383,
+      "equivalent": true
+    },
+    {
+      "dimension": "bigram_freq",
+      "role": "controlled",
+      "cohens_d": 0.01,
+      "ci_low": -0.293,
+      "ci_high": 0.312,
+      "tost_p": 0.0041,
+      "equivalent": true
+    }
+  ],
+  "counterbalancing": {
+    "recipe": "factorial",
+    "lists": 1
+  },
+  "items": {
+    "n_total": 120,
+    "n_conditions": 2,
+    "conditions": [
+      "low_frequency",
+      "high_frequency"
+    ],
+    "stimuli_file": "output/stimuli/en_richdim_english_stimuli_R.csv",
+    "stimuli_sha256": "e6162ff588f232619946278c44e3298b140b4d5c382d390764349214a4f61ba1"
+  },
+  "reproducibility": {
+    "seed": 2026,
+    "versions": {
+      "engine": "R",
+      "lexsync": "0.1.0",
+      "R": "4.5.1",
+      "readr": "2.2.0",
+      "stringdist": "0.9.17",
+      "jsonlite": "2.0.0",
+      "digest": "0.6.37"
+    }
+  },
+  "artifacts": [
+    {
+      "file": "output/stimuli/en_richdim_english_stimuli_R.csv",
+      "sha256": "e6162ff588f232619946278c44e3298b140b4d5c382d390764349214a4f61ba1"
+    },
+    {
+      "file": "output/reports/en_richdim_english_descriptives_R.csv",
+      "sha256": "7e1ea164dd9aab9ec8f08163437ec21a4fc70fe280a09a77c9d0e3d23ed4f354"
+    },
+    {
+      "file": "output/reports/en_richdim_english_comparisons_R.csv",
+      "sha256": "e2c978ef5ee960ae23a8a464acea1a62dc6c1bf378bc3d03846a3a01ee2c5c41"
+    },
+    {
+      "file": "output/experiments/en_richdim_english_psychopy.py",
+      "sha256": "b49861555388609ff634712823a5c83e057edf5937c6ff4e393a285228c60e58"
+    },
+    {
+      "file": "output/experiments/en_richdim_english.osexp",
+      "sha256": "27694ccfa0bee0850285e0169860109749b5faf9f49cf2aa13343ffd8df2659b"
+    },
+    {
+      "file": "output/experiments/en_richdim_english.html",
+      "sha256": "b523cbbbf43c4c94ff2d564ec3a2f6acc1d51f7bf9775e99cb0b8c5fbd8852c8"
+    }
+  ]
+}

@@ -34,6 +34,16 @@
       "type": "derived",
       "compute": "old20",
       "unit": "mean Levenshtein distance"
+    },
+    "n_syllables": {
+      "type": "derived",
+      "compute": "vowel_groups",
+      "unit": "syllables (orthographic estimate)"
+    },
+    "bigram_freq": {
+      "type": "derived",
+      "compute": "mean_bigram_probability",
+      "unit": "mean positional bigram probability"
     }
   },
   "selection": {
@@ -100,7 +110,7 @@
       "high_frequency"
     ],
     "stimuli_file": "output/stimuli/en_freqcontrast_english_stimuli_R.csv",
-    "stimuli_sha256": "3c05e5ce1c061c615221df7b266665f16e7f6acfee0c6f8ab3673730c02694ce"
+    "stimuli_sha256": "85acf22715b0e0110e2ebb9e233ec69db96f7cd76edf7700b41d2afcce76f3ee"
   },
   "reproducibility": {
     "seed": 2026,
@@ -117,7 +127,7 @@
   "artifacts": [
     {
       "file": "output/stimuli/en_freqcontrast_english_stimuli_R.csv",
-      "sha256": "3c05e5ce1c061c615221df7b266665f16e7f6acfee0c6f8ab3673730c02694ce"
+      "sha256": "85acf22715b0e0110e2ebb9e233ec69db96f7cd76edf7700b41d2afcce76f3ee"
     },
     {
       "file": "output/reports/en_freqcontrast_english_descriptives_R.csv",

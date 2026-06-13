@@ -41,16 +41,23 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
 
   if (source == "corpus") {
     match_on <- unlist(design$match_on, use.names = FALSE)
+    ref <- reference_words %||% lex$word
     needed <- intersect(c("n_density", "old20"), match_on)
     if (length(needed) && any(!needed %in% names(pool))) {
       log <- log_step(log, "computing orthographic neighbourhood (N, OLD20)")
-      pool <- add_neighbourhood(pool, reference = reference_words %||% lex$word)
+      pool <- add_neighbourhood(pool, reference = ref)
+    }
+    if ("bigram_freq" %in% match_on && !("bigram_freq" %in% names(pool))) {
+      log <- log_step(log, "computing bigram frequency (phonotactic-probability proxy)")
+      pool <- add_bigram_frequency(pool, reference = ref)
     }
     stim <- match_stimuli(pool, design, schema, verbose = verbose)
     log <- log_step(log, sprintf("matched %d items across %d conditions",
                                  nrow(stim), length(unique(stim$condition))),
                     list(conditions = paste(unique(stim$condition), collapse = ", ")))
-    dims <- intersect(c("length", "frequency", "n_density", "old20"), names(stim))
+    std <- c("length", "frequency", "n_density", "old20")
+    extra <- intersect(c("n_syllables", "bigram_freq"), match_on)
+    dims <- intersect(c(std, extra), names(stim))
     report <- match_report(stim, dims, schema)
   } else if (source == "generate") {
     n <- design$n_per_condition %||% design$n_per_cell %||% 40L

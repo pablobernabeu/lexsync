@@ -28,6 +28,8 @@ dimensions:
   frequency: { type: column,  column: freq_zipf,     unit: 'Zipf' }
   n_density: { type: derived, compute: coltheart_n,  unit: 'neighbours' }
   old20:     { type: derived, compute: old20,        unit: 'mean Levenshtein distance' }
+  n_syllables: { type: derived, compute: vowel_groups,           unit: 'syllables (orthographic estimate)' }
+  bigram_freq: { type: derived, compute: mean_bigram_probability, unit: 'mean positional bigram probability' }
 
 # ---- Default matching configuration ---------------------------------------
 matching:

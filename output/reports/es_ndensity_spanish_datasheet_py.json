@@ -2,7 +2,7 @@
   "artifacts": [
     {
       "file": "output\\stimuli\\es_ndensity_spanish_stimuli_py.csv",
-      "sha256": "62d286816068f465d524175215b4d4c089e52d1bf942f03ae60a02c9c1dd487f"
+      "sha256": "4001094debc211925cb8bc5a1c53d5bd6fcae05d05d9c4cf14fed16cb6737456"
     },
     {
       "file": "output\\reports\\es_ndensity_spanish_descriptives_py.csv",
@@ -38,6 +38,11 @@
     "source": "corpus"
   },
   "dimensions": {
+    "bigram_freq": {
+      "compute": "mean_bigram_probability",
+      "type": "derived",
+      "unit": "mean positional bigram probability"
+    },
     "frequency": {
       "column": "freq_zipf",
       "type": "column",
@@ -53,6 +58,11 @@
       "type": "derived",
       "unit": "neighbours"
     },
+    "n_syllables": {
+      "compute": "vowel_groups",
+      "type": "derived",
+      "unit": "syllables (orthographic estimate)"
+    },
     "old20": {
       "compute": "old20",
       "type": "derived",
@@ -67,7 +77,7 @@
     "n_conditions": 2,
     "n_total": 160,
     "stimuli_file": "output\\stimuli\\es_ndensity_spanish_stimuli_py.csv",
-    "stimuli_sha256": "62d286816068f465d524175215b4d4c089e52d1bf942f03ae60a02c9c1dd487f"
+    "stimuli_sha256": "4001094debc211925cb8bc5a1c53d5bd6fcae05d05d9c4cf14fed16cb6737456"
   },
   "lexsync_datasheet_version": "1.0",
   "materials_source": {

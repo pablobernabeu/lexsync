@@ -1,8 +1,8 @@
 # lexsync run log: en_ndensity
 
 - Engine: Python 3.13.7
-- Started: 2026-06-13T22:00:39
-- Finished: 2026-06-13T22:00:40
+- Started: 2026-06-13T22:16:09
+- Finished: 2026-06-13T22:16:10
 
 ## Run metadata
 
@@ -14,46 +14,46 @@
 
 ## Steps
 
-- **2026-06-13T22:00:39** -- loading lexicon 'corpora/derived/en.csv'
-- **2026-06-13T22:00:39** -- lexicon loaded: 30000 words
+- **2026-06-13T22:16:09** -- loading lexicon 'corpora/derived/en.csv'
+- **2026-06-13T22:16:10** -- lexicon loaded: 30000 words
     - words: 30000
-- **2026-06-13T22:00:39** -- pool after filters: 4557 words
+- **2026-06-13T22:16:10** -- pool after filters: 4557 words
     - pool: 4557
-- **2026-06-13T22:00:40** -- matched 160 items across 2 conditions
+- **2026-06-13T22:16:10** -- matched 160 items across 2 conditions
     - conditions: dense_neighbourhood, sparse_neighbourhood
-- **2026-06-13T22:00:40** -- equivalence sparse_neighbourhood vs dense_neighbourhood on 'length': d = 0.00 [-0.26, 0.26], TOST p = 0.0009 (equivalent)
-- **2026-06-13T22:00:40** -- equivalence sparse_neighbourhood vs dense_neighbourhood on 'frequency': d = 0.00 [-0.26, 0.26], TOST p = 0.0009 (equivalent)
-- **2026-06-13T22:00:40** -- equivalence sparse_neighbourhood vs dense_neighbourhood on 'n_density': d = 3.11 [2.85, 3.37], TOST p = 1.0 (not shown equivalent)
-- **2026-06-13T22:00:40** -- equivalence sparse_neighbourhood vs dense_neighbourhood on 'old20': d = -2.30 [-2.56, -2.04], TOST p = 1.0 (not shown equivalent)
-- **2026-06-13T22:00:40** -- wrote 'en_ndensity_english_stimuli_py.csv'
+- **2026-06-13T22:16:10** -- equivalence sparse_neighbourhood vs dense_neighbourhood on 'length': d = 0.00 [-0.26, 0.26], TOST p = 0.0009 (equivalent)
+- **2026-06-13T22:16:10** -- equivalence sparse_neighbourhood vs dense_neighbourhood on 'frequency': d = 0.00 [-0.26, 0.26], TOST p = 0.0009 (equivalent)
+- **2026-06-13T22:16:10** -- equivalence sparse_neighbourhood vs dense_neighbourhood on 'n_density': d = 3.11 [2.85, 3.37], TOST p = 1.0 (not shown equivalent)
+- **2026-06-13T22:16:10** -- equivalence sparse_neighbourhood vs dense_neighbourhood on 'old20': d = -2.30 [-2.56, -2.04], TOST p = 1.0 (not shown equivalent)
+- **2026-06-13T22:16:10** -- wrote 'en_ndensity_english_stimuli_py.csv'
     - path: output\stimuli\en_ndensity_english_stimuli_py.csv
     - rows: 160
-    - md5: b8542de0e4688c9b4246fd0f5b875f9d
-- **2026-06-13T22:00:40** -- wrote 'en_ndensity_english_descriptives_py.csv'
+    - md5: 80f0176a9a0cd356d1db311b3b4e9474
+- **2026-06-13T22:16:10** -- wrote 'en_ndensity_english_descriptives_py.csv'
     - path: output\reports\en_ndensity_english_descriptives_py.csv
     - rows: 8
     - md5: 8cc1ceef86f156a10f0505a97bd71783
-- **2026-06-13T22:00:40** -- wrote 'en_ndensity_english_comparisons_py.csv'
+- **2026-06-13T22:16:10** -- wrote 'en_ndensity_english_comparisons_py.csv'
     - path: output\reports\en_ndensity_english_comparisons_py.csv
     - rows: 4
     - md5: 7a93f04c80a5e54f609193e3843fc637
-- **2026-06-13T22:00:40** -- wrote 'en_ndensity_english_psychopy.py'
+- **2026-06-13T22:16:10** -- wrote 'en_ndensity_english_psychopy.py'
     - path: output\experiments\en_ndensity_english_psychopy.py
     - rows: None
     - md5: 8b254968619c4889327672536fff0ad7
-- **2026-06-13T22:00:40** -- wrote 'en_ndensity_english.osexp'
+- **2026-06-13T22:16:10** -- wrote 'en_ndensity_english.osexp'
     - path: output\experiments\en_ndensity_english.osexp
     - rows: None
     - md5: 31ddd059946537b3cf64de30861215f2
-- **2026-06-13T22:00:40** -- wrote 'en_ndensity_english.html'
+- **2026-06-13T22:16:10** -- wrote 'en_ndensity_english.html'
     - path: output\experiments\en_ndensity_english.html
     - rows: None
     - md5: dc3c86a3e762d28d868d146247b28c77
-- **2026-06-13T22:00:40** -- wrote 'en_ndensity_english_datasheet_py.json'
+- **2026-06-13T22:16:10** -- wrote 'en_ndensity_english_datasheet_py.json'
     - path: output\reports\en_ndensity_english_datasheet_py.json
     - rows: None
-    - md5: 427fc988bf58f922a92a2113426dda28
-- **2026-06-13T22:00:40** -- wrote 'en_ndensity_english_datasheet_py.md'
+    - md5: eb7daf6b46606a8b792aa2e25e168f3d
+- **2026-06-13T22:16:10** -- wrote 'en_ndensity_english_datasheet_py.md'
     - path: output\reports\en_ndensity_english_datasheet_py.md
     - rows: None
     - md5: ed89ed757a533c45a9475ab8a36c3457

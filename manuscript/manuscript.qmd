@@ -26,7 +26,7 @@ abstract: |
   The matching and generation are deterministic, so the two engines select
   identical materials; we
   demonstrate
-  this on eight worked examples in English, Spanish and Mandarin Chinese — across
+  this on nine worked examples in English, Spanish and Mandarin Chinese — across
   word, pseudoword, paired and sentence stimuli — one of which shows that the
   workflow extends to a logographic writing system. The
   generation step
@@ -249,7 +249,14 @@ orthographic-neighbourhood measures: Coltheart's N, the number of words of the
 same length differing by a single letter [@coltheart1977access], and OLD20, the
 mean Levenshtein distance to the twenty nearest neighbours [@yarkoni2008old20].
 The neighbourhood measures are computed transparently from the lexicon rather
-than taken on trust.
+than taken on trust. The dimension set is open: it also includes an orthographic
+syllable estimate (the number of vowel runs) and a corpus-derived bigram-frequency
+measure that approximates phonotactic probability, and externally-sourced norms —
+concreteness, age of acquisition, valence — can be joined on through a
+norm-table connector so the matcher equates on them too. A sixth corpus
+demonstration, a frequency contrast additionally equated on syllable count and
+bigram frequency, exercises these; like all designs it is selected identically by
+the two engines.
 
 Matching proceeds in two deterministic stages. First, a tolerance pre-filter
 keeps only candidates that fall within *M* ± *k* · *SD* of the anchor condition on
@@ -402,7 +409,7 @@ validator for the generated `.osexp`.
 
 # Worked examples
 
-We illustrate 'lexsync' with eight demonstrations. The first five are
+We illustrate 'lexsync' with nine demonstrations. The first six are
 corpus-matched word contrasts; the last three exercise other paradigms. Of the
 matched contrasts, four are alphabetic: a high- versus low-frequency contrast and
 a dense- versus sparse-neighbourhood contrast, each in English and in Spanish,
@@ -410,13 +417,17 @@ drawn from thirty-thousand-word lexica. The frequency contrast matches items on
 length, neighbourhood density and OLD20; the neighbourhood contrast matches on
 length and frequency. The fifth is a high- versus low-frequency contrast in
 Mandarin Chinese, included to show that the pipeline generalises to a logographic
-writing system (see *Generalisation to a logographic script*, below). The
-remaining three — lexical decision, priming and self-paced reading — show the
-trial-event model carrying word, pseudoword, paired and sentence stimuli (see
-*Beyond word lists*, below). Each demonstration was produced by both the R and the
-Python engine. All tables and figures in this section are computed at render time
-from the generated output. The tables that follow summarise the five matched word
-contrasts, for which a controlled-versus-manipulated report is defined.
+writing system (see *Generalisation to a logographic script*, below). The sixth,
+also corpus-matched, additionally equates an orthographic syllable estimate and a
+bigram-frequency measure, exercising the richer dimensions introduced with the
+matching algorithm above. The remaining three — lexical decision, priming and
+self-paced reading — show the trial-event model carrying word, pseudoword, paired
+and sentence stimuli (see *Beyond word lists*, below). Each demonstration was
+produced by both the R and the Python engine. All tables and figures in this
+section are computed at render time from the generated output. The tables that
+follow summarise the five frequency and neighbourhood contrasts, for which a
+controlled-versus-manipulated report is defined; the remaining demonstrations are
+described in their own sections.
 
 ```{r summary-table}
 #| label: tbl-summary
@@ -668,14 +679,15 @@ Several further extensions follow directly from the motivation and slot into the
 existing module structure. The web target above could be joined by a 'PCIbex'
 reading study and by client-side hardware synchronisation (WebSerial or a
 photodiode patch), so that online studies inherit the same onset markers the
-laboratory targets write. Richer
-dimensions — phonological (syllable count, phonotactic probability), semantic
-(concreteness, age of acquisition, valence) and predictability (n-gram or
-language-model surprisal) — would broaden the designs the matcher supports.
-Finally, resampling multiple matched item sets, or sampling items per participant,
-would let a study treat its items as the random factor they are
-[@clark1973language; @yarkoni2020generalizability]. A graphical interface is a
-further possibility.
+laboratory targets write. The dimension set, already broadened beyond orthography
+to an orthographic syllable estimate and a corpus-derived bigram-frequency
+(phonotactic-probability) measure, could grow further to predictability dimensions
+(n-gram or language-model surprisal); semantic dimensions such as concreteness, age
+of acquisition and valence are already reachable through the norm-table connector,
+the norm data being fetched separately because their licences vary. Finally,
+resampling multiple matched item sets, or sampling items per participant, would let
+a study treat its items as the random factor they are [@clark1973language;
+@yarkoni2020generalizability]. A graphical interface is a further possibility.
 
 # Availability and open practices
 

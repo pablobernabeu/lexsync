@@ -1,0 +1,170 @@
+{
+  "artifacts": [
+    {
+      "file": "output\\stimuli\\en_richdim_english_stimuli_py.csv",
+      "sha256": "f819b62340a381296fddbed5016551d2da3aa4155e37907f20cb5f3e04605ca7"
+    },
+    {
+      "file": "output\\reports\\en_richdim_english_descriptives_py.csv",
+      "sha256": "9f558ed60e8476ef578aa7624d894888e4a504c98b25c404107cf504286ca4f7"
+    },
+    {
+      "file": "output\\reports\\en_richdim_english_comparisons_py.csv",
+      "sha256": "c17b2c3149fb0087bf88bb44ac695fc11bb2f2916a021d46138ff36f265966af"
+    },
+    {
+      "file": "output\\experiments\\en_richdim_english_psychopy.py",
+      "sha256": "42ea912d4b0377316ec79558fb6db67175f7013b14a69a467faa6d84c651055d"
+    },
+    {
+      "file": "output\\experiments\\en_richdim_english.osexp",
+      "sha256": "6b5780eca87699e74811fd4c23eb374d2d3b109645cab55beddfdd0b4b8618a6"
+    },
+    {
+      "file": "output\\experiments\\en_richdim_english.html",
+      "sha256": "3c3064f9a6af7228ca536cd607fd7ed9c7ede908a9c053f7591d1920c8e75781"
+    }
+  ],
+  "counterbalancing": {
+    "lists": 1,
+    "recipe": "factorial"
+  },
+  "design": {
+    "description": "High versus low frequency English words, matched on length, syllable count and bigram frequency (a phonotactic-probability proxy).",
+    "language": "english",
+    "n_per_condition": 60,
+    "name": "en_richdim",
+    "paradigm": "factorial",
+    "source": "corpus"
+  },
+  "dimensions": {
+    "bigram_freq": {
+      "compute": "mean_bigram_probability",
+      "type": "derived",
+      "unit": "mean positional bigram probability"
+    },
+    "frequency": {
+      "column": "freq_zipf",
+      "type": "column",
+      "unit": "Zipf"
+    },
+    "length": {
+      "compute": "n_letters",
+      "type": "derived",
+      "unit": "letters"
+    },
+    "n_density": {
+      "compute": "coltheart_n",
+      "type": "derived",
+      "unit": "neighbours"
+    },
+    "n_syllables": {
+      "compute": "vowel_groups",
+      "type": "derived",
+      "unit": "syllables (orthographic estimate)"
+    },
+    "old20": {
+      "compute": "old20",
+      "type": "derived",
+      "unit": "mean Levenshtein distance"
+    }
+  },
+  "items": {
+    "conditions": [
+      "high_frequency",
+      "low_frequency"
+    ],
+    "n_conditions": 2,
+    "n_total": 120,
+    "stimuli_file": "output\\stimuli\\en_richdim_english_stimuli_py.csv",
+    "stimuli_sha256": "f819b62340a381296fddbed5016551d2da3aa4155e37907f20cb5f3e04605ca7"
+  },
+  "lexsync_datasheet_version": "1.0",
+  "materials_source": {
+    "path": "corpora/derived/en.csv",
+    "provenance": "see corpora/ATTRIBUTION.md for corpus licence and citation",
+    "sha256": "c20549b920d816809d11cfa673ad0df1dd70d3e73176ee66cbec18021627f65d",
+    "type": "corpus"
+  },
+  "realised_control": [
+    {
+      "ci_high": 0.318,
+      "ci_low": -0.287,
+      "cohens_d": 0.015,
+      "dimension": "length",
+      "equivalent": true,
+      "role": "controlled",
+      "tost_p": 0.0045
+    },
+    {
+      "ci_high": 5.875,
+      "ci_low": 5.269,
+      "cohens_d": 5.572,
+      "dimension": "frequency",
+      "equivalent": false,
+      "role": "manipulated/free",
+      "tost_p": 1.0
+    },
+    {
+      "ci_high": 0.379,
+      "ci_low": -0.226,
+      "cohens_d": 0.076,
+      "dimension": "n_density",
+      "equivalent": true,
+      "role": "manipulated/free",
+      "tost_p": 0.011
+    },
+    {
+      "ci_high": 0.381,
+      "ci_low": -0.224,
+      "cohens_d": 0.078,
+      "dimension": "old20",
+      "equivalent": true,
+      "role": "manipulated/free",
+      "tost_p": 0.0113
+    },
+    {
+      "ci_high": 0.477,
+      "ci_low": -0.129,
+      "cohens_d": 0.174,
+      "dimension": "n_syllables",
+      "equivalent": true,
+      "role": "controlled",
+      "tost_p": 0.0383
+    },
+    {
+      "ci_high": 0.312,
+      "ci_low": -0.293,
+      "cohens_d": 0.01,
+      "dimension": "bigram_freq",
+      "equivalent": true,
+      "role": "controlled",
+      "tost_p": 0.0041
+    }
+  ],
+  "reproducibility": {
+    "seed": 2026,
+    "versions": {
+      "engine": "python",
+      "lexsync": "0.1.0",
+      "numpy": "2.3.2",
+      "pandas": "2.3.2",
+      "python": "3.13.7",
+      "scipy": "1.17.1"
+    }
+  },
+  "selection": {
+    "match_on": [
+      "length",
+      "n_syllables",
+      "bigram_freq"
+    ],
+    "method": "standardised_euclidean",
+    "tolerance_k": {
+      "frequency": 1.0,
+      "length": 2.0,
+      "n_density": 2.0,
+      "old20": 2.0
+    }
+  }
+}

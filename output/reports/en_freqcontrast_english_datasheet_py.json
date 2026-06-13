@@ -2,7 +2,7 @@
   "artifacts": [
     {
       "file": "output\\stimuli\\en_freqcontrast_english_stimuli_py.csv",
-      "sha256": "e2470c1438ffddc0181e11f6001f417039d3d773fd8b967caf47ae7c97906531"
+      "sha256": "ed588c5a03a4512d7d166b1522987bdac6b2727fd167ef9a4464ddb68f7d9125"
     },
     {
       "file": "output\\reports\\en_freqcontrast_english_descriptives_py.csv",
@@ -38,6 +38,11 @@
     "source": "corpus"
   },
   "dimensions": {
+    "bigram_freq": {
+      "compute": "mean_bigram_probability",
+      "type": "derived",
+      "unit": "mean positional bigram probability"
+    },
     "frequency": {
       "column": "freq_zipf",
       "type": "column",
@@ -53,6 +58,11 @@
       "type": "derived",
       "unit": "neighbours"
     },
+    "n_syllables": {
+      "compute": "vowel_groups",
+      "type": "derived",
+      "unit": "syllables (orthographic estimate)"
+    },
     "old20": {
       "compute": "old20",
       "type": "derived",
@@ -67,7 +77,7 @@
     "n_conditions": 2,
     "n_total": 160,
     "stimuli_file": "output\\stimuli\\en_freqcontrast_english_stimuli_py.csv",
-    "stimuli_sha256": "e2470c1438ffddc0181e11f6001f417039d3d773fd8b967caf47ae7c97906531"
+    "stimuli_sha256": "ed588c5a03a4512d7d166b1522987bdac6b2727fd167ef9a4464ddb68f7d9125"
   },
   "lexsync_datasheet_version": "1.0",
   "materials_source": {

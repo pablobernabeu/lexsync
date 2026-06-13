@@ -5,11 +5,21 @@ Mirrors R_workflow/R/querying.R.
 """
 from __future__ import annotations
 
+import re
+
 import numpy as np
 import pandas as pd
 from rapidfuzz.distance import Hamming, Levenshtein
 
 from .io_utils import clean_field, read_csv_utf8
+
+# Maximal runs of (possibly accented) Latin vowels approximate syllable nuclei.
+_VOWELS = re.compile(r"[aeiouyàáâãäåèéêëìíîïòóôõöøùúûüýÿ]+")
+
+
+def count_syllables(word) -> int:
+    """An orthographic syllable estimate: the number of maximal vowel runs."""
+    return len(_VOWELS.findall(str(word).lower()))
 
 
 def validate_lexicon(df: pd.DataFrame, schema: dict) -> None:
@@ -34,10 +44,55 @@ def load_lexicon(path: str, schema: dict, language: str | None = None) -> pd.Dat
             .sort_values("_k").drop(columns="_k").reset_index(drop=True))
     df["id"] = np.arange(1, len(df) + 1)
     df["length"] = df["word"].str.len()
+    df["n_syllables"] = df["word"].map(count_syllables)
     df["frequency"] = df[freq_col].astype(float)
     if language is not None:
         df["language"] = language
     return df.reset_index(drop=True)
+
+
+def add_bigram_frequency(df: pd.DataFrame, reference=None) -> pd.DataFrame:
+    """Mean positional bigram probability, a phonotactic-probability proxy.
+
+    For each word, the mean over its adjacent letter bigrams of the corpus bigram
+    probability (count divided by the total bigram count). Computed from integer
+    counts and rounded, so it is identical in the R and Python engines.
+    """
+    ref = [str(w) for w in (reference if reference is not None else df["word"].tolist())]
+    counts: dict[str, int] = {}
+    total = 0
+    for w in ref:
+        for i in range(len(w) - 1):
+            counts[w[i:i + 2]] = counts.get(w[i:i + 2], 0) + 1
+            total += 1
+    total = total or 1
+
+    def bf(w):
+        w = str(w)
+        bgs = [w[i:i + 2] for i in range(len(w) - 1)]
+        if not bgs:
+            return 0.0
+        return round(sum(counts.get(b, 0) for b in bgs) / len(bgs) / total, 9)
+
+    out = df.copy()
+    out["bigram_freq"] = out["word"].map(bf)
+    return out
+
+
+def merge_norms(lexicon: pd.DataFrame, norms, on: str = "word", columns=None) -> pd.DataFrame:
+    """Left-join a norm table (e.g. concreteness, age of acquisition, valence).
+
+    ``norms`` is a data frame or the path to a CSV with a word column and one or
+    more norm columns. This is the connector for semantic dimensions: the norm data
+    themselves are fetched separately (licensing varies), then merged here so the
+    matcher can equate on them. The join is deterministic and identical across
+    engines.
+    """
+    n = norms if isinstance(norms, pd.DataFrame) else read_csv_utf8(norms)
+    cols = list(columns) if columns else [c for c in n.columns if c != on]
+    n = n[[on] + cols].copy()
+    n[on] = n[on].astype(str).str.strip().str.lower()
+    return lexicon.merge(n.drop_duplicates(subset=on), on=on, how="left")
 
 
 def add_neighbourhood(df: pd.DataFrame, reference=None, n_old: int = 20) -> pd.DataFrame:

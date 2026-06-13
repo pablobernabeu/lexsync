@@ -1,0 +1,26 @@
+# Demonstration design: English frequency contrast with richer phonological control.
+# Beyond length, the two conditions are matched on an orthographic syllable estimate
+# and on bigram frequency (a phonotactic-probability proxy computed from the corpus),
+# showing that the matcher equates any computable lexical dimension.
+name: en_richdim
+language: english
+lexicon: corpora/derived/en.csv
+description: 'High versus low frequency English words, matched on length, syllable count and bigram frequency (a phonotactic-probability proxy).'
+n_per_condition: 60
+pool_filters:
+  length: [4, 8]
+  frequency: [3.5, 7.0]
+conditions:
+  - name: high_frequency
+    define_by:
+      frequency: [5.2, 7.0]
+  - name: low_frequency
+    define_by:
+      frequency: [3.5, 4.4]
+match_on: [length, n_syllables, bigram_freq]
+counterbalance:
+  lists: 1
+timing:
+  fixation_frames: 30
+  word_frames: 30
+  isi_frames: 15

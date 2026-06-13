@@ -34,6 +34,16 @@
       "type": "derived",
       "compute": "old20",
       "unit": "mean Levenshtein distance"
+    },
+    "n_syllables": {
+      "type": "derived",
+      "compute": "vowel_groups",
+      "unit": "syllables (orthographic estimate)"
+    },
+    "bigram_freq": {
+      "type": "derived",
+      "compute": "mean_bigram_probability",
+      "unit": "mean positional bigram probability"
     }
   },
   "selection": {
@@ -99,7 +109,7 @@
       "dense_neighbourhood"
     ],
     "stimuli_file": "output/stimuli/es_ndensity_spanish_stimuli_R.csv",
-    "stimuli_sha256": "b5dbae5965daaba5ae795ad900097daa68518f8e4b98ebbc759ff066195b3658"
+    "stimuli_sha256": "f71b883fccc6f05aaf424d119d6845e8cc12171a2c7d964ed5df6f0bde2f8e69"
   },
   "reproducibility": {
     "seed": 2026,
@@ -116,7 +126,7 @@
   "artifacts": [
     {
       "file": "output/stimuli/es_ndensity_spanish_stimuli_R.csv",
-      "sha256": "b5dbae5965daaba5ae795ad900097daa68518f8e4b98ebbc759ff066195b3658"
+      "sha256": "f71b883fccc6f05aaf424d119d6845e8cc12171a2c7d964ed5df6f0bde2f8e69"
     },
     {
       "file": "output/reports/es_ndensity_spanish_descriptives_R.csv",

@@ -1,0 +1,13 @@
+group,dimension,n,mean,sd,min,median,max
+high_frequency,length,60,5.133,1.112,4.0,5.0,8.0
+high_frequency,frequency,60,5.541,0.338,5.2,5.435,6.85
+high_frequency,n_density,60,4.25,4.707,0.0,2.5,16.0
+high_frequency,old20,60,1.804,0.534,1.0,1.775,3.2
+high_frequency,n_syllables,60,1.7,0.646,1.0,2.0,3.0
+high_frequency,bigram_freq,60,0.006,0.002,0.002,0.006,0.011
+low_frequency,length,60,5.117,1.075,4.0,5.0,7.0
+low_frequency,frequency,60,3.865,0.258,3.5,3.845,4.38
+low_frequency,n_density,60,3.917,4.001,0.0,2.0,15.0
+low_frequency,old20,60,1.769,0.339,1.05,1.8,2.8
+low_frequency,n_syllables,60,1.6,0.494,1.0,2.0,2.0
+low_frequency,bigram_freq,60,0.006,0.002,0.002,0.006,0.011

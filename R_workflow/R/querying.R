@@ -18,6 +18,23 @@ validate_lexicon <- function(df, schema) {
   invisible(TRUE)
 }
 
+# Maximal runs of (possibly accented) Latin vowels approximate syllable nuclei.
+# Accented code points are built with intToUtf8 so the R source stays ASCII (CRAN).
+.VOWELS <- paste0("[aeiouy", intToUtf8(c(
+  0xe0, 0xe1, 0xe2, 0xe3, 0xe4, 0xe5, 0xe8, 0xe9, 0xea, 0xeb, 0xec, 0xed, 0xee,
+  0xef, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6, 0xf8, 0xf9, 0xfa, 0xfb, 0xfc, 0xfd, 0xff)),
+  "]+")                          # y with acute/diaeresis
+
+#' Orthographic syllable estimate: the number of maximal vowel runs
+#' @keywords internal
+count_syllables <- function(word) {
+  word <- tolower(as.character(word))
+  vapply(word, function(w) {
+    m <- gregexpr(.VOWELS, w, perl = TRUE)[[1]]
+    if (length(m) == 1L && m[1] == -1L) 0L else length(m)
+  }, integer(1), USE.NAMES = FALSE)
+}
+
 #' Load a lexicon from a CSV file
 #'
 #' Reads a derived lexicon, validates the column contract, lower-cases the
@@ -51,6 +68,7 @@ load_lexicon <- function(path, schema, language = NULL) {
   df <- df[order(df$word, method = "radix"), , drop = FALSE]
   df$id <- seq_len(nrow(df))
   df$length <- nchar(df$word)
+  df$n_syllables <- count_syllables(df$word)
   df$frequency <- as.numeric(df[[freq_col]])
   if (!is.null(language)) df$language <- language
   rownames(df) <- NULL
@@ -97,6 +115,57 @@ add_neighbourhood <- function(df, reference = df$word, n_old = 20L) {
   df$n_density <- n_dens
   df$old20 <- old
   df
+}
+
+#' Mean positional bigram probability, a phonotactic-probability proxy
+#'
+#' For each word, the mean over its adjacent letter bigrams of the corpus bigram
+#' probability (count divided by the total bigram count). Computed from integer
+#' counts and rounded, so it is identical in the R and Python engines.
+#'
+#' @param df A data frame with a `word` column.
+#' @param reference A character vector of reference words (defaults to `df$word`).
+#' @return `df` with an added numeric `bigram_freq` column.
+#' @export
+add_bigram_frequency <- function(df, reference = NULL) {
+  ref <- as.character(if (is.null(reference)) df$word else reference)
+  pairs <- unlist(lapply(ref, function(w) {
+    n <- nchar(w)
+    if (n < 2L) character(0) else substring(w, 1:(n - 1L), 2:n)
+  }), use.names = FALSE)
+  tab <- table(pairs)
+  counts <- as.integer(tab); names(counts) <- names(tab)
+  total <- max(1L, sum(counts))
+  bf <- function(w) {
+    n <- nchar(w)
+    if (n < 2L) return(0)
+    bgs <- substring(w, 1:(n - 1L), 2:n)
+    v <- counts[bgs]; v[is.na(v)] <- 0L
+    round(sum(v) / length(bgs) / total, 9)
+  }
+  df$bigram_freq <- vapply(as.character(df$word), bf, numeric(1), USE.NAMES = FALSE)
+  df
+}
+
+#' Left-join a norm table (e.g. concreteness, age of acquisition, valence)
+#'
+#' The connector for semantic dimensions: the norm data themselves are fetched
+#' separately (licensing varies), then merged here so the matcher can equate on
+#' them. The join is deterministic and identical across engines.
+#'
+#' @param lexicon A lexicon data frame.
+#' @param norms A data frame or the path to a CSV with a word column and norms.
+#' @param on The join column (default "word").
+#' @param columns Optional norm columns to keep.
+#' @return `lexicon` with the norm columns joined on.
+#' @export
+merge_norms <- function(lexicon, norms, on = "word", columns = NULL) {
+  n <- if (is.data.frame(norms)) norms else as.data.frame(read_csv_utf8(norms), stringsAsFactors = FALSE)
+  cols <- if (!is.null(columns)) columns else setdiff(names(n), on)
+  n <- n[, c(on, cols), drop = FALSE]
+  n[[on]] <- tolower(trimws(as.character(n[[on]])))
+  n <- n[!duplicated(n[[on]]), , drop = FALSE]
+  merge(lexicon, n, by = on, all.x = TRUE, sort = FALSE)
 }
 
 #' Load a paradigm item table (prime-target pairs, sentences, ...)
