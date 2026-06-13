@@ -1,0 +1,87 @@
+{
+  "lexsync_datasheet_version": "1.0",
+  "design": {
+    "name": "en_spr",
+    "language": "english",
+    "paradigm": "self_paced_reading",
+    "source": "table",
+    "description": "Self-paced reading: grammatical versus ungrammatical sentences presented region by region, with a comprehension question.",
+    "n_per_condition": null
+  },
+  "materials_source": {
+    "type": "table",
+    "path": "items/spr_sentences_en.csv",
+    "sha256": "c754b3ac35caf2fadc8c561ef1825d8f9c47783f914471029437602c5b7ecda3",
+    "provenance": "user-supplied item table"
+  },
+  "dimensions": {
+    "length": {
+      "type": "derived",
+      "compute": "n_letters",
+      "unit": "letters"
+    },
+    "frequency": {
+      "type": "column",
+      "column": "freq_zipf",
+      "unit": "Zipf"
+    },
+    "n_density": {
+      "type": "derived",
+      "compute": "coltheart_n",
+      "unit": "neighbours"
+    },
+    "old20": {
+      "type": "derived",
+      "compute": "old20",
+      "unit": "mean Levenshtein distance"
+    }
+  },
+  "selection": {
+    "method": "item table (user-supplied)"
+  },
+  "realised_control": [],
+  "counterbalancing": {
+    "recipe": "latin_square_target",
+    "lists": 2
+  },
+  "items": {
+    "n_total": 20,
+    "n_conditions": 2,
+    "conditions": [
+      "grammatical",
+      "ungrammatical"
+    ],
+    "stimuli_file": "output/stimuli/en_spr_english_stimuli_R.csv",
+    "stimuli_sha256": "19a55a9720d799fa1a685ae4bbd5dafe5a4e617b972e507faeb19663c9144e37"
+  },
+  "reproducibility": {
+    "seed": 2026,
+    "versions": {
+      "engine": "R",
+      "lexsync": "0.1.0",
+      "R": "4.5.1",
+      "readr": "2.2.0",
+      "stringdist": "0.9.17",
+      "jsonlite": "2.0.0",
+      "digest": "0.6.37"
+    }
+  },
+  "artifacts": [
+    {
+      "file": "output/stimuli/en_spr_english_stimuli_R.csv",
+      "sha256": "19a55a9720d799fa1a685ae4bbd5dafe5a4e617b972e507faeb19663c9144e37"
+    },
+    {
+      "file": "output/experiments/en_spr_english_psychopy.py",
+      "sha256": "4e940c399a65a32d9037b3ad09498459e300574068e8d83fd0b4708ebef4947b"
+    },
+    {
+      "file": "output/experiments/en_spr_english.osexp",
+      "sha256": "b083fade0edf76d309f23b95b9ca747c4d66f9c60d5ec3a3e38f6b6493f59e02"
+    },
+    {
+      "file": "output/experiments/en_spr_english.html",
+      "sha256": "d002544b0f0a2086b35f7b5f6cf2e62ee28f6f260cdb355331309d6e01d47960"
+    }
+  ]
+}

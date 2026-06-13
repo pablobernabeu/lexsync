@@ -2,6 +2,7 @@
 """lexsync: multidimensional lexical optimisation and hardware-timed experiment generation."""
 from .corpora import fetch_corpus, list_corpora
 from .counterbalancing import counterbalance, participant_table
+from .datasheet import build_datasheet, methods_paragraph, write_datasheet
 from .generation import build_lexdec_stimuli, generate_pseudowords, make_pseudoword
 from .matching import match_stimuli
 from .paradigms import PARADIGMS, required_fields, resolve_events
@@ -19,6 +20,7 @@ __all__ = [
     "counterbalance", "participant_table", "describe_stimuli", "cohens_d",
     "cohens_d_ci", "tost_equiv", "balance_check", "match_report", "export_experiments",
     "export_psychopy", "export_opensesame", "export_jspsych", "list_corpora", "fetch_corpus",
+    "build_datasheet", "methods_paragraph", "write_datasheet",
     "run_pipeline", "run_all",
 ]
 __version__ = "0.1.0"

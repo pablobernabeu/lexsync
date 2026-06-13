@@ -1,0 +1,108 @@
+{
+  "lexsync_datasheet_version": "1.0",
+  "design": {
+    "name": "en_lexdec",
+    "language": "english",
+    "paradigm": "lexical_decision",
+    "source": "generate",
+    "description": "Lexical decision: real words versus length-matched, orthographically legal pseudowords (deterministically generated).",
+    "n_per_condition": 60
+  },
+  "materials_source": {
+    "type": "generate",
+    "path": "corpora/derived/en.csv",
+    "sha256": "c20549b920d816809d11cfa673ad0df1dd70d3e73176ee66cbec18021627f65d",
+    "provenance": "see corpora/ATTRIBUTION.md for corpus licence and citation"
+  },
+  "dimensions": {
+    "length": {
+      "type": "derived",
+      "compute": "n_letters",
+      "unit": "letters"
+    },
+    "frequency": {
+      "type": "column",
+      "column": "freq_zipf",
+      "unit": "Zipf"
+    },
+    "n_density": {
+      "type": "derived",
+      "compute": "coltheart_n",
+      "unit": "neighbours"
+    },
+    "old20": {
+      "type": "derived",
+      "compute": "old20",
+      "unit": "mean Levenshtein distance"
+    }
+  },
+  "selection": {
+    "method": "constrained letter substitution (deterministic pseudowords)",
+    "matched_on": [
+      "length"
+    ]
+  },
+  "realised_control": [
+    {
+      "dimension": "length",
+      "role": "controlled",
+      "cohens_d": 0,
+      "ci_low": -0.303,
+      "ci_high": 0.303,
+      "tost_p": 0.0036,
+      "equivalent": true
+    }
+  ],
+  "counterbalancing": {
+    "recipe": "factorial",
+    "lists": 1
+  },
+  "items": {
+    "n_total": 120,
+    "n_conditions": 2,
+    "conditions": [
+      "pseudoword",
+      "word"
+    ],
+    "stimuli_file": "output/stimuli/en_lexdec_english_stimuli_R.csv",
+    "stimuli_sha256": "364dd1d04a7eaaefe491cd4d1c24625a0d25eeba9c4e33543ed5be2163593ae4"
+  },
+  "reproducibility": {
+    "seed": 2026,
+    "versions": {
+      "engine": "R",
+      "lexsync": "0.1.0",
+      "R": "4.5.1",
+      "readr": "2.2.0",
+      "stringdist": "0.9.17",
+      "jsonlite": "2.0.0",
+      "digest": "0.6.37"
+    }
+  },
+  "artifacts": [
+    {
+      "file": "output/stimuli/en_lexdec_english_stimuli_R.csv",
+      "sha256": "364dd1d04a7eaaefe491cd4d1c24625a0d25eeba9c4e33543ed5be2163593ae4"
+    },
+    {
+      "file": "output/reports/en_lexdec_english_descriptives_R.csv",
+      "sha256": "1f2819d5fd577a3fa95ff9e68a11a75045b771c2d550ddd812f17ae457a49170"
+    },
+    {
+      "file": "output/reports/en_lexdec_english_comparisons_R.csv",
+      "sha256": "75c27823dbafaec97de74aacbc5deaf6ef3c48efde6c22c3a39ef53c68d49542"
+    },
+    {
+      "file": "output/experiments/en_lexdec_english_psychopy.py",
+      "sha256": "196c4278d21a1c6438e834be5651db9e94ef90db5fece7976b3950ed92dbbbbd"
+    },
+    {
+      "file": "output/experiments/en_lexdec_english.osexp",
+      "sha256": "02c7de92dd7f5ccc637b35728a6c3db6e253a0e44c4886b3a99f7fb200b4d6f5"
+    },
+    {
+      "file": "output/experiments/en_lexdec_english.html",
+      "sha256": "cd517be82dc31992d2cae01e578c8d2d8b2392d9537d2a67a75256fb253d2fd8"
+    }
+  ]
+}

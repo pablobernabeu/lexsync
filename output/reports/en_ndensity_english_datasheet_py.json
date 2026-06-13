@@ -1,0 +1,141 @@
+{
+  "artifacts": [
+    {
+      "file": "output\\stimuli\\en_ndensity_english_stimuli_py.csv",
+      "sha256": "c0a92950b3d6eee594f1705a5123cf5c3a5193cc60331312d3b7a199697d9aec"
+    },
+    {
+      "file": "output\\reports\\en_ndensity_english_descriptives_py.csv",
+      "sha256": "69a14d7dd18e4fe154913ad3b9ca18e6d0c9e9961b61c9ddf83da19ec41b642c"
+    },
+    {
+      "file": "output\\reports\\en_ndensity_english_comparisons_py.csv",
+      "sha256": "661b497e925c1291916958c68cff9def2c2a48a674c9225c88ee780086047307"
+    },
+    {
+      "file": "output\\experiments\\en_ndensity_english_psychopy.py",
+      "sha256": "789e75fe3172ce9bb0fdb872bfdabcb4f1950a7109ad70c6c18c13e00e219889"
+    },
+    {
+      "file": "output\\experiments\\en_ndensity_english.osexp",
+      "sha256": "6aca3ddc8bb16583aa8a9143f0e8d741f93f9e2bd0baab1532d180c0eeb90ec6"
+    },
+    {
+      "file": "output\\experiments\\en_ndensity_english.html",
+      "sha256": "33ce6a8c4c9f95227d5daf3715dfc7270b5b9f7e0d501fa72d85f2b954a2f2fe"
+    }
+  ],
+  "counterbalancing": {
+    "lists": 1,
+    "recipe": "factorial"
+  },
+  "design": {
+    "description": "Dense versus sparse orthographic neighbourhoods (Coltheart's N) in English, matched on length and frequency.",
+    "language": "english",
+    "n_per_condition": 80,
+    "name": "en_ndensity",
+    "paradigm": "factorial",
+    "source": "corpus"
+  },
+  "dimensions": {
+    "frequency": {
+      "column": "freq_zipf",
+      "type": "column",
+      "unit": "Zipf"
+    },
+    "length": {
+      "compute": "n_letters",
+      "type": "derived",
+      "unit": "letters"
+    },
+    "n_density": {
+      "compute": "coltheart_n",
+      "type": "derived",
+      "unit": "neighbours"
+    },
+    "old20": {
+      "compute": "old20",
+      "type": "derived",
+      "unit": "mean Levenshtein distance"
+    }
+  },
+  "items": {
+    "conditions": [
+      "sparse_neighbourhood",
+      "dense_neighbourhood"
+    ],
+    "n_conditions": 2,
+    "n_total": 160,
+    "stimuli_file": "output\\stimuli\\en_ndensity_english_stimuli_py.csv",
+    "stimuli_sha256": "c0a92950b3d6eee594f1705a5123cf5c3a5193cc60331312d3b7a199697d9aec"
+  },
+  "lexsync_datasheet_version": "1.0",
+  "materials_source": {
+    "path": "corpora/derived/en.csv",
+    "provenance": "see corpora/ATTRIBUTION.md for corpus licence and citation",
+    "sha256": "c20549b920d816809d11cfa673ad0df1dd70d3e73176ee66cbec18021627f65d",
+    "type": "corpus"
+  },
+  "realised_control": [
+    {
+      "ci_high": 0.262,
+      "ci_low": -0.262,
+      "cohens_d": 0.0,
+      "dimension": "length",
+      "equivalent": true,
+      "role": "controlled",
+      "tost_p": 0.0009
+    },
+    {
+      "ci_high": 0.262,
+      "ci_low": -0.262,
+      "cohens_d": 0.0,
+      "dimension": "frequency",
+      "equivalent": true,
+      "role": "controlled",
+      "tost_p": 0.0009
+    },
+    {
+      "ci_high": 3.37,
+      "ci_low": 2.847,
+      "cohens_d": 3.108,
+      "dimension": "n_density",
+      "equivalent": false,
+      "role": "manipulated/free",
+      "tost_p": 1.0
+    },
+    {
+      "ci_high": -2.042,
+      "ci_low": -2.565,
+      "cohens_d": -2.304,
+      "dimension": "old20",
+      "equivalent": false,
+      "role": "manipulated/free",
+      "tost_p": 1.0
+    }
+  ],
+  "reproducibility": {
+    "seed": 2026,
+    "versions": {
+      "engine": "python",
+      "lexsync": "0.1.0",
+      "numpy": "2.3.2",
+      "pandas": "2.3.2",
+      "python": "3.13.7",
+      "scipy": "1.17.1"
+    }
+  },
+  "selection": {
+    "match_on": [
+      "length",
+      "frequency"
+    ],
+    "method": "joint",
+    "tolerance_k": {
+      "frequency": 1.0,
+      "length": 2.0,
+      "n_density": 2.0,
+      "old20": 2.0
+    }
+  }
+}

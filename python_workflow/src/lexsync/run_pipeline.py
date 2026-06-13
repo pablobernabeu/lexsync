@@ -14,6 +14,7 @@ import os
 
 from . import logging as runlog
 from .counterbalancing import counterbalance
+from .datasheet import build_datasheet, write_datasheet
 from .generation import build_lexdec_stimuli
 from .io_utils import read_config, slugify, write_csv_utf8
 from .matching import match_stimuli
@@ -105,6 +106,20 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
     exps = export_experiments(stim, design, schema, os.path.join(outdir, "experiments"), base)
     for path in exps.values():
         runlog.log_artefact(log, path)
+
+    # A materials datasheet (machine + human readable) and a pre-registration
+    # template: the shareable provenance record the reproducibility literature asks
+    # for (Bochynska et al., 2023; Roettger, 2019).
+    source_path = items_cfg.get("path") or items_cfg.get("lexicon") or design.get("lexicon")
+    artifacts = {"stimuli": stim_path, "descriptives": desc_path,
+                 "comparisons": comp_path, "experiments": exps}
+    ds = build_datasheet(design, schema, report, stim, source_path, artifacts,
+                         schema.get("seed"), engine="python")
+    ds_json = os.path.join(outdir, "reports", f"{base}_datasheet_py.json")
+    ds_md = os.path.join(outdir, "reports", f"{base}_datasheet_py.md")
+    write_datasheet(ds, ds_json, ds_md)
+    runlog.log_artefact(log, ds_json)
+    runlog.log_artefact(log, ds_md)
 
     log_md = os.path.join(outdir, "reports", f"{base}_run_log_py.md")
     runlog.write_run_log(log, log_md, os.path.join(outdir, "reports", f"{base}_run_log_py.jsonl"))

@@ -1,0 +1,143 @@
+{
+  "lexsync_datasheet_version": "1.0",
+  "design": {
+    "name": "en_freqcontrast",
+    "language": "english",
+    "paradigm": "factorial",
+    "source": "corpus",
+    "description": "High versus low frequency English words, matched on length, neighbourhood density and OLD20.",
+    "n_per_condition": 80
+  },
+  "materials_source": {
+    "type": "corpus",
+    "path": "corpora/derived/en.csv",
+    "sha256": "c20549b920d816809d11cfa673ad0df1dd70d3e73176ee66cbec18021627f65d",
+    "provenance": "see corpora/ATTRIBUTION.md for corpus licence and citation"
+  },
+  "dimensions": {
+    "length": {
+      "type": "derived",
+      "compute": "n_letters",
+      "unit": "letters"
+    },
+    "frequency": {
+      "type": "column",
+      "column": "freq_zipf",
+      "unit": "Zipf"
+    },
+    "n_density": {
+      "type": "derived",
+      "compute": "coltheart_n",
+      "unit": "neighbours"
+    },
+    "old20": {
+      "type": "derived",
+      "compute": "old20",
+      "unit": "mean Levenshtein distance"
+    }
+  },
+  "selection": {
+    "method": "standardised_euclidean",
+    "match_on": [
+      "length",
+      "n_density",
+      "old20"
+    ],
+    "tolerance_k": {
+      "length": 2,
+      "frequency": 1,
+      "n_density": 2,
+      "old20": 2
+    }
+  },
+  "realised_control": [
+    {
+      "dimension": "length",
+      "role": "controlled",
+      "cohens_d": 0.027,
+      "ci_low": -0.235,
+      "ci_high": 0.289,
+      "tost_p": 0.0016,
+      "equivalent": true
+    },
+    {
+      "dimension": "frequency",
+      "role": "manipulated/free",
+      "cohens_d": 5.272,
+      "ci_low": 5.01,
+      "ci_high": 5.533,
+      "tost_p": 1,
+      "equivalent": false
+    },
+    {
+      "dimension": "n_density",
+      "role": "controlled",
+      "cohens_d": 0.038,
+      "ci_low": -0.224,
+      "ci_high": 0.299,
+      "tost_p": 0.002,
+      "equivalent": true
+    },
+    {
+      "dimension": "old20",
+      "role": "controlled",
+      "cohens_d": 0.009,
+      "ci_low": -0.252,
+      "ci_high": 0.271,
+      "tost_p": 0.0011,
+      "equivalent": true
+    }
+  ],
+  "counterbalancing": {
+    "recipe": "factorial",
+    "lists": 1
+  },
+  "items": {
+    "n_total": 160,
+    "n_conditions": 2,
+    "conditions": [
+      "low_frequency",
+      "high_frequency"
+    ],
+    "stimuli_file": "output/stimuli/en_freqcontrast_english_stimuli_R.csv",
+    "stimuli_sha256": "3c05e5ce1c061c615221df7b266665f16e7f6acfee0c6f8ab3673730c02694ce"
+  },
+  "reproducibility": {
+    "seed": 2026,
+    "versions": {
+      "engine": "R",
+      "lexsync": "0.1.0",
+      "R": "4.5.1",
+      "readr": "2.2.0",
+      "stringdist": "0.9.17",
+      "jsonlite": "2.0.0",
+      "digest": "0.6.37"
+    }
+  },
+  "artifacts": [
+    {
+      "file": "output/stimuli/en_freqcontrast_english_stimuli_R.csv",
+      "sha256": "3c05e5ce1c061c615221df7b266665f16e7f6acfee0c6f8ab3673730c02694ce"
+    },
+    {
+      "file": "output/reports/en_freqcontrast_english_descriptives_R.csv",
+      "sha256": "bb2878faa9568ad55c87d1cbdc97c3789be9f5a871e8206fb240536a21dbf763"
+    },
+    {
+      "file": "output/reports/en_freqcontrast_english_comparisons_R.csv",
+      "sha256": "02c0a17e02083ac36b0b20605478ab732c3a32fe257248cdd06fb9437847b58a"
+    },
+    {
+      "file": "output/experiments/en_freqcontrast_english_psychopy.py",
+      "sha256": "edb84f5265f3a89b9cef51b4cc047c7a731980936f7804577a1efd0259e788e0"
+    },
+    {
+      "file": "output/experiments/en_freqcontrast_english.osexp",
+      "sha256": "6592a17a552e3a3245f03545ac3101fa45bfa26f0a025038bedb52564eec47af"
+    },
+    {
+      "file": "output/experiments/en_freqcontrast_english.html",
+      "sha256": "d2dcdbeccd90fef4ed119703d016889e022368a0dfad4430869a8330eb14c561"
+    }
+  ]
+}

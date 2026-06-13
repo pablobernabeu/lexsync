@@ -1,0 +1,142 @@
+{
+  "lexsync_datasheet_version": "1.0",
+  "design": {
+    "name": "es_ndensity",
+    "language": "spanish",
+    "paradigm": "factorial",
+    "source": "corpus",
+    "description": "Dense versus sparse orthographic neighbourhoods (Coltheart's N) in Spanish, matched on length and frequency.",
+    "n_per_condition": 80
+  },
+  "materials_source": {
+    "type": "corpus",
+    "path": "corpora/derived/es.csv",
+    "sha256": "02732e5f00d09951b97ab8d5bdc285c321894ccb49d5c20b7afe39335a8204d9",
+    "provenance": "see corpora/ATTRIBUTION.md for corpus licence and citation"
+  },
+  "dimensions": {
+    "length": {
+      "type": "derived",
+      "compute": "n_letters",
+      "unit": "letters"
+    },
+    "frequency": {
+      "type": "column",
+      "column": "freq_zipf",
+      "unit": "Zipf"
+    },
+    "n_density": {
+      "type": "derived",
+      "compute": "coltheart_n",
+      "unit": "neighbours"
+    },
+    "old20": {
+      "type": "derived",
+      "compute": "old20",
+      "unit": "mean Levenshtein distance"
+    }
+  },
+  "selection": {
+    "method": "joint",
+    "match_on": [
+      "length",
+      "frequency"
+    ],
+    "tolerance_k": {
+      "length": 2,
+      "frequency": 1,
+      "n_density": 2,
+      "old20": 2
+    }
+  },
+  "realised_control": [
+    {
+      "dimension": "length",
+      "role": "controlled",
+      "cohens_d": 0,
+      "ci_low": -0.262,
+      "ci_high": 0.262,
+      "tost_p": 0.0009,
+      "equivalent": true
+    },
+    {
+      "dimension": "frequency",
+      "role": "controlled",
+      "cohens_d": 0,
+      "ci_low": -0.262,
+      "ci_high": 0.262,
+      "tost_p": 0.0009,
+      "equivalent": true
+    },
+    {
+      "dimension": "n_density",
+      "role": "manipulated/free",
+      "cohens_d": 2.128,
+      "ci_low": 1.866,
+      "ci_high": 2.389,
+      "tost_p": 1,
+      "equivalent": false
+    },
+    {
+      "dimension": "old20",
+      "role": "manipulated/free",
+      "cohens_d": -2.421,
+      "ci_low": -2.683,
+      "ci_high": -2.159,
+      "tost_p": 1,
+      "equivalent": false
+    }
+  ],
+  "counterbalancing": {
+    "recipe": "factorial",
+    "lists": 1
+  },
+  "items": {
+    "n_total": 160,
+    "n_conditions": 2,
+    "conditions": [
+      "sparse_neighbourhood",
+      "dense_neighbourhood"
+    ],
+    "stimuli_file": "output/stimuli/es_ndensity_spanish_stimuli_R.csv",
+    "stimuli_sha256": "b5dbae5965daaba5ae795ad900097daa68518f8e4b98ebbc759ff066195b3658"
+  },
+  "reproducibility": {
+    "seed": 2026,
+    "versions": {
+      "engine": "R",
+      "lexsync": "0.1.0",
+      "R": "4.5.1",
+      "readr": "2.2.0",
+      "stringdist": "0.9.17",
+      "jsonlite": "2.0.0",
+      "digest": "0.6.37"
+    }
+  },
+  "artifacts": [
+    {
+      "file": "output/stimuli/es_ndensity_spanish_stimuli_R.csv",
+      "sha256": "b5dbae5965daaba5ae795ad900097daa68518f8e4b98ebbc759ff066195b3658"
+    },
+    {
+      "file": "output/reports/es_ndensity_spanish_descriptives_R.csv",
+      "sha256": "4efa874227c294ef9982d35ad6768e0e9a47406f556d4610bc3239fa253059c2"
+    },
+    {
+      "file": "output/reports/es_ndensity_spanish_comparisons_R.csv",
+      "sha256": "9c2751e54c4593a01f2301e549bfd7e629cba901d5e2c1b68d86695ed515601e"
+    },
+    {
+      "file": "output/experiments/es_ndensity_spanish_psychopy.py",
+      "sha256": "539063558d498c6b4d17c05284045d0571f379f234fdb1b0843f1763d7c17e2f"
+    },
+    {
+      "file": "output/experiments/es_ndensity_spanish.osexp",
+      "sha256": "0814c158ec22f4cde30b6f4da70016d611ffab1eb7de9befc632955efbd6e31b"
+    },
+    {
+      "file": "output/experiments/es_ndensity_spanish.html",
+      "sha256": "5e304495c6304f9b2e24998bbb29d74311ea8901ac760be87e575b6937c6052b"
+    }
+  ]
+}

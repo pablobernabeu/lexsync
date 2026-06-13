@@ -1,0 +1,142 @@
+{
+  "artifacts": [
+    {
+      "file": "output\\stimuli\\zh_freqcontrast_chinese_stimuli_py.csv",
+      "sha256": "45467a6678756fb1fa5937adbc80182ca29a29596e0ac7fcf94ee83403e92f9e"
+    },
+    {
+      "file": "output\\reports\\zh_freqcontrast_chinese_descriptives_py.csv",
+      "sha256": "18e91a35fe21661b9b141fe2930e36d1fed214979892e2ae864e294ec1891394"
+    },
+    {
+      "file": "output\\reports\\zh_freqcontrast_chinese_comparisons_py.csv",
+      "sha256": "0b79eeed036f19e9f93cd1616718ca0b2eb52e9f502169867e1912c4b02361fd"
+    },
+    {
+      "file": "output\\experiments\\zh_freqcontrast_chinese_psychopy.py",
+      "sha256": "0eeb7e424f8aa39ca3ef82fa45c0a77fe16e2a7c5a32b5c57330532092dbe441"
+    },
+    {
+      "file": "output\\experiments\\zh_freqcontrast_chinese.osexp",
+      "sha256": "b82046fd7500304901ee45f71a63e19935f09e783905d357a3ff6fa58ed862f1"
+    },
+    {
+      "file": "output\\experiments\\zh_freqcontrast_chinese.html",
+      "sha256": "0af890080c705495fe1227780790a1076216b888de90c658d72cd76f650cfc75"
+    }
+  ],
+  "counterbalancing": {
+    "lists": 1,
+    "recipe": "factorial"
+  },
+  "design": {
+    "description": "High versus low frequency Mandarin Chinese two-character words, matched on character-length and character-level neighbourhood (N, OLD20).",
+    "language": "chinese",
+    "n_per_condition": 80,
+    "name": "zh_freqcontrast",
+    "paradigm": "factorial",
+    "source": "corpus"
+  },
+  "dimensions": {
+    "frequency": {
+      "column": "freq_zipf",
+      "type": "column",
+      "unit": "Zipf"
+    },
+    "length": {
+      "compute": "n_letters",
+      "type": "derived",
+      "unit": "letters"
+    },
+    "n_density": {
+      "compute": "coltheart_n",
+      "type": "derived",
+      "unit": "neighbours"
+    },
+    "old20": {
+      "compute": "old20",
+      "type": "derived",
+      "unit": "mean Levenshtein distance"
+    }
+  },
+  "items": {
+    "conditions": [
+      "low_frequency",
+      "high_frequency"
+    ],
+    "n_conditions": 2,
+    "n_total": 160,
+    "stimuli_file": "output\\stimuli\\zh_freqcontrast_chinese_stimuli_py.csv",
+    "stimuli_sha256": "45467a6678756fb1fa5937adbc80182ca29a29596e0ac7fcf94ee83403e92f9e"
+  },
+  "lexsync_datasheet_version": "1.0",
+  "materials_source": {
+    "path": "corpora/derived/zh.csv",
+    "provenance": "see corpora/ATTRIBUTION.md for corpus licence and citation",
+    "sha256": "f2616f6f34d64ebc44e0709fa6b56b9418d7902604e5a89cb605569db3ebb6e5",
+    "type": "corpus"
+  },
+  "realised_control": [
+    {
+      "ci_high": 0.0,
+      "ci_low": 0.0,
+      "cohens_d": 0.0,
+      "dimension": "length",
+      "equivalent": true,
+      "role": "controlled",
+      "tost_p": 0.0
+    },
+    {
+      "ci_high": 6.266,
+      "ci_low": 5.743,
+      "cohens_d": 6.004,
+      "dimension": "frequency",
+      "equivalent": false,
+      "role": "manipulated/free",
+      "tost_p": 1.0
+    },
+    {
+      "ci_high": 0.332,
+      "ci_low": -0.191,
+      "cohens_d": 0.071,
+      "dimension": "n_density",
+      "equivalent": true,
+      "role": "controlled",
+      "tost_p": 0.0037
+    },
+    {
+      "ci_high": 0.368,
+      "ci_low": -0.155,
+      "cohens_d": 0.106,
+      "dimension": "old20",
+      "equivalent": true,
+      "role": "controlled",
+      "tost_p": 0.0069
+    }
+  ],
+  "reproducibility": {
+    "seed": 2026,
+    "versions": {
+      "engine": "python",
+      "lexsync": "0.1.0",
+      "numpy": "2.3.2",
+      "pandas": "2.3.2",
+      "python": "3.13.7",
+      "scipy": "1.17.1"
+    }
+  },
+  "selection": {
+    "match_on": [
+      "length",
+      "n_density",
+      "old20"
+    ],
+    "method": "standardised_euclidean",
+    "tolerance_k": {
+      "frequency": 1.0,
+      "length": 2.0,
+      "n_density": 2.0,
+      "old20": 2.0
+    }
+  }
+}

@@ -1,6 +1,8 @@
-{"time":"2026-06-13 21:40:59.24146","message":"loading items 'items/spr_sentences_en.csv'","data":null}
-{"time":"2026-06-13 21:40:59.256292","message":"loaded 10 items across 2 conditions","data":{"conditions":"grammatical, ungrammatical"}}
-{"time":"2026-06-13 21:40:59.279687","message":"wrote 'en_spr_english_stimuli_R.csv'","data":{"path":"output/stimuli/en_spr_english_stimuli_R.csv","rows":20,"md5":"b344b9f0d3fc7ce7354d370e0a1f7156"}}
-{"time":"2026-06-13 21:40:59.331797","message":"wrote 'en_spr_english_psychopy.py'","data":{"path":"output/experiments/en_spr_english_psychopy.py","rows":"NA","md5":"5969f98cd78cb0dbeb371b972568aeb2"}}
-{"time":"2026-06-13 21:40:59.337072","message":"wrote 'en_spr_english.osexp'","data":{"path":"output/experiments/en_spr_english.osexp","rows":"NA","md5":"6b1d4b9e0dd8bb335f200312f4a1fd02"}}
-{"time":"2026-06-13 21:40:59.341435","message":"wrote 'en_spr_english.html'","data":{"path":"output/experiments/en_spr_english.html","rows":"NA","md5":"01a155b77947ec75e7575cd37fa58829"}}
+{"time":"2026-06-13 21:59:21.569326","message":"loading items 'items/spr_sentences_en.csv'","data":null}
+{"time":"2026-06-13 21:59:21.587163","message":"loaded 10 items across 2 conditions","data":{"conditions":"grammatical, ungrammatical"}}
+{"time":"2026-06-13 21:59:21.61378","message":"wrote 'en_spr_english_stimuli_R.csv'","data":{"path":"output/stimuli/en_spr_english_stimuli_R.csv","rows":20,"md5":"b344b9f0d3fc7ce7354d370e0a1f7156"}}
+{"time":"2026-06-13 21:59:21.665989","message":"wrote 'en_spr_english_psychopy.py'","data":{"path":"output/experiments/en_spr_english_psychopy.py","rows":"NA","md5":"5969f98cd78cb0dbeb371b972568aeb2"}}
+{"time":"2026-06-13 21:59:21.671005","message":"wrote 'en_spr_english.osexp'","data":{"path":"output/experiments/en_spr_english.osexp","rows":"NA","md5":"6b1d4b9e0dd8bb335f200312f4a1fd02"}}
+{"time":"2026-06-13 21:59:21.676684","message":"wrote 'en_spr_english.html'","data":{"path":"output/experiments/en_spr_english.html","rows":"NA","md5":"01a155b77947ec75e7575cd37fa58829"}}
+{"time":"2026-06-13 21:59:21.75521","message":"wrote 'en_spr_english_datasheet_R.json'","data":{"path":"output/reports/en_spr_english_datasheet_R.json","rows":"NA","md5":"426b89272080e21ed130e579013bafbc"}}
+{"time":"2026-06-13 21:59:21.760897","message":"wrote 'en_spr_english_datasheet_R.md'","data":{"path":"output/reports/en_spr_english_datasheet_R.md","rows":"NA","md5":"2c637dd8ca0102099a5eebdab933f616"}}

@@ -1,8 +1,8 @@
 # lexsync run log: en_spr
 
 - Engine: R 4.5.1
-- Started: 2026-06-13 21:40:59.240965
-- Finished: 2026-06-13 21:40:59.351609
+- Started: 2026-06-13 21:59:21.568653
+- Finished: 2026-06-13 21:59:21.767025
 
 ## Run metadata
 
@@ -14,22 +14,30 @@
 
 ## Steps
 
-- **2026-06-13 21:40:59.24146** -- loading items 'items/spr_sentences_en.csv'
-- **2026-06-13 21:40:59.256292** -- loaded 10 items across 2 conditions
+- **2026-06-13 21:59:21.569326** -- loading items 'items/spr_sentences_en.csv'
+- **2026-06-13 21:59:21.587163** -- loaded 10 items across 2 conditions
     - conditions: grammatical, ungrammatical
-- **2026-06-13 21:40:59.279687** -- wrote 'en_spr_english_stimuli_R.csv'
+- **2026-06-13 21:59:21.61378** -- wrote 'en_spr_english_stimuli_R.csv'
     - path: output/stimuli/en_spr_english_stimuli_R.csv
     - rows: 20
     - md5: b344b9f0d3fc7ce7354d370e0a1f7156
-- **2026-06-13 21:40:59.331797** -- wrote 'en_spr_english_psychopy.py'
+- **2026-06-13 21:59:21.665989** -- wrote 'en_spr_english_psychopy.py'
     - path: output/experiments/en_spr_english_psychopy.py
     - rows: NA
     - md5: 5969f98cd78cb0dbeb371b972568aeb2
-- **2026-06-13 21:40:59.337072** -- wrote 'en_spr_english.osexp'
+- **2026-06-13 21:59:21.671005** -- wrote 'en_spr_english.osexp'
     - path: output/experiments/en_spr_english.osexp
     - rows: NA
     - md5: 6b1d4b9e0dd8bb335f200312f4a1fd02
-- **2026-06-13 21:40:59.341435** -- wrote 'en_spr_english.html'
+- **2026-06-13 21:59:21.676684** -- wrote 'en_spr_english.html'
     - path: output/experiments/en_spr_english.html
     - rows: NA
     - md5: 01a155b77947ec75e7575cd37fa58829
+- **2026-06-13 21:59:21.75521** -- wrote 'en_spr_english_datasheet_R.json'
+    - path: output/reports/en_spr_english_datasheet_R.json
+    - rows: NA
+    - md5: 426b89272080e21ed130e579013bafbc
+- **2026-06-13 21:59:21.760897** -- wrote 'en_spr_english_datasheet_R.md'
+    - path: output/reports/en_spr_english_datasheet_R.md
+    - rows: NA
+    - md5: 2c637dd8ca0102099a5eebdab933f616

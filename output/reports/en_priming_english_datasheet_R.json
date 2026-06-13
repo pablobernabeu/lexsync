@@ -1,0 +1,87 @@
+{
+  "lexsync_datasheet_version": "1.0",
+  "design": {
+    "name": "en_priming",
+    "language": "english",
+    "paradigm": "priming",
+    "source": "table",
+    "description": "Priming: related versus unrelated prime-target pairs, Latin-square counterbalanced so each target appears once per list.",
+    "n_per_condition": null
+  },
+  "materials_source": {
+    "type": "table",
+    "path": "items/priming_pairs_en.csv",
+    "sha256": "088f506b3166368bb11b3b271a50ed33c52ba913205bcaa642c5b4ebec4a091a",
+    "provenance": "user-supplied item table"
+  },
+  "dimensions": {
+    "length": {
+      "type": "derived",
+      "compute": "n_letters",
+      "unit": "letters"
+    },
+    "frequency": {
+      "type": "column",
+      "column": "freq_zipf",
+      "unit": "Zipf"
+    },
+    "n_density": {
+      "type": "derived",
+      "compute": "coltheart_n",
+      "unit": "neighbours"
+    },
+    "old20": {
+      "type": "derived",
+      "compute": "old20",
+      "unit": "mean Levenshtein distance"
+    }
+  },
+  "selection": {
+    "method": "item table (user-supplied)"
+  },
+  "realised_control": [],
+  "counterbalancing": {
+    "recipe": "latin_square_target",
+    "lists": 2
+  },
+  "items": {
+    "n_total": 24,
+    "n_conditions": 2,
+    "conditions": [
+      "related",
+      "unrelated"
+    ],
+    "stimuli_file": "output/stimuli/en_priming_english_stimuli_R.csv",
+    "stimuli_sha256": "c7ce65dc625e22d6f59b2651b62dba24539a1c817530cbb1182780d827fe060a"
+  },
+  "reproducibility": {
+    "seed": 2026,
+    "versions": {
+      "engine": "R",
+      "lexsync": "0.1.0",
+      "R": "4.5.1",
+      "readr": "2.2.0",
+      "stringdist": "0.9.17",
+      "jsonlite": "2.0.0",
+      "digest": "0.6.37"
+    }
+  },
+  "artifacts": [
+    {
+      "file": "output/stimuli/en_priming_english_stimuli_R.csv",
+      "sha256": "c7ce65dc625e22d6f59b2651b62dba24539a1c817530cbb1182780d827fe060a"
+    },
+    {
+      "file": "output/experiments/en_priming_english_psychopy.py",
+      "sha256": "61eb0ab6c37875e833263c883ebec02b7d8dc34514e2d1a388045ac2b2bf1225"
+    },
+    {
+      "file": "output/experiments/en_priming_english.osexp",
+      "sha256": "ebb9660fae782c2cb52615b1e4c5cf6c96381324baf6fc0ad7d9ed36ee7942e8"
+    },
+    {
+      "file": "output/experiments/en_priming_english.html",
+      "sha256": "0b6989dc9421065c39d0b5e501d378cca16b8c433ad6e2308855f4a5062f1a57"
+    }
+  ]
+}

@@ -1,11 +1,13 @@
-{"time":"2026-06-13 21:40:57.489682","message":"loading lexicon 'corpora/derived/en.csv'","data":null}
-{"time":"2026-06-13 21:40:57.54064","message":"lexicon loaded: 30000 words","data":{"words":30000}}
-{"time":"2026-06-13 21:40:57.545539","message":"pool after filters: 8177 words","data":{"pool":8177}}
-{"time":"2026-06-13 21:40:58.025067","message":"generated 120 items (words + pseudowords)","data":{"conditions":"word, pseudoword"}}
-{"time":"2026-06-13 21:40:58.027292","message":"equivalence pseudoword vs word on 'length': d = 0.00 [-0.30, 0.30], TOST p = 0.004 (equivalent)","data":null}
-{"time":"2026-06-13 21:40:58.062374","message":"wrote 'en_lexdec_english_stimuli_R.csv'","data":{"path":"output/stimuli/en_lexdec_english_stimuli_R.csv","rows":120,"md5":"f1c1159431d7d91972e84aab3bf876ab"}}
-{"time":"2026-06-13 21:40:58.071707","message":"wrote 'en_lexdec_english_descriptives_R.csv'","data":{"path":"output/reports/en_lexdec_english_descriptives_R.csv","rows":2,"md5":"32ec1c8e337acb192cefd6fca36f949f"}}
-{"time":"2026-06-13 21:40:58.080936","message":"wrote 'en_lexdec_english_comparisons_R.csv'","data":{"path":"output/reports/en_lexdec_english_comparisons_R.csv","rows":1,"md5":"326701be50b673b6b9dc2bb6de64ba97"}}
-{"time":"2026-06-13 21:40:58.165845","message":"wrote 'en_lexdec_english_psychopy.py'","data":{"path":"output/experiments/en_lexdec_english_psychopy.py","rows":"NA","md5":"59aa5ade834c4d2ec8282d7ab0f715c7"}}
-{"time":"2026-06-13 21:40:58.170997","message":"wrote 'en_lexdec_english.osexp'","data":{"path":"output/experiments/en_lexdec_english.osexp","rows":"NA","md5":"5855ff2a6f113ad7daa74849cc066082"}}
-{"time":"2026-06-13 21:40:58.173338","message":"wrote 'en_lexdec_english.html'","data":{"path":"output/experiments/en_lexdec_english.html","rows":"NA","md5":"5d5726fc5dcd91314c49643b3fcaeab5"}}
+{"time":"2026-06-13 21:59:19.694651","message":"loading lexicon 'corpora/derived/en.csv'","data":null}
+{"time":"2026-06-13 21:59:19.742615","message":"lexicon loaded: 30000 words","data":{"words":30000}}
+{"time":"2026-06-13 21:59:19.747216","message":"pool after filters: 8177 words","data":{"pool":8177}}
+{"time":"2026-06-13 21:59:20.216483","message":"generated 120 items (words + pseudowords)","data":{"conditions":"word, pseudoword"}}
+{"time":"2026-06-13 21:59:20.218823","message":"equivalence pseudoword vs word on 'length': d = 0.00 [-0.30, 0.30], TOST p = 0.004 (equivalent)","data":null}
+{"time":"2026-06-13 21:59:20.246952","message":"wrote 'en_lexdec_english_stimuli_R.csv'","data":{"path":"output/stimuli/en_lexdec_english_stimuli_R.csv","rows":120,"md5":"f1c1159431d7d91972e84aab3bf876ab"}}
+{"time":"2026-06-13 21:59:20.257287","message":"wrote 'en_lexdec_english_descriptives_R.csv'","data":{"path":"output/reports/en_lexdec_english_descriptives_R.csv","rows":2,"md5":"32ec1c8e337acb192cefd6fca36f949f"}}
+{"time":"2026-06-13 21:59:20.266628","message":"wrote 'en_lexdec_english_comparisons_R.csv'","data":{"path":"output/reports/en_lexdec_english_comparisons_R.csv","rows":1,"md5":"326701be50b673b6b9dc2bb6de64ba97"}}
+{"time":"2026-06-13 21:59:20.348947","message":"wrote 'en_lexdec_english_psychopy.py'","data":{"path":"output/experiments/en_lexdec_english_psychopy.py","rows":"NA","md5":"59aa5ade834c4d2ec8282d7ab0f715c7"}}
+{"time":"2026-06-13 21:59:20.355506","message":"wrote 'en_lexdec_english.osexp'","data":{"path":"output/experiments/en_lexdec_english.osexp","rows":"NA","md5":"5855ff2a6f113ad7daa74849cc066082"}}
+{"time":"2026-06-13 21:59:20.358486","message":"wrote 'en_lexdec_english.html'","data":{"path":"output/experiments/en_lexdec_english.html","rows":"NA","md5":"5d5726fc5dcd91314c49643b3fcaeab5"}}
+{"time":"2026-06-13 21:59:20.408678","message":"wrote 'en_lexdec_english_datasheet_R.json'","data":{"path":"output/reports/en_lexdec_english_datasheet_R.json","rows":"NA","md5":"95a8b5061514d718319b42c90391c94d"}}
+{"time":"2026-06-13 21:59:20.412743","message":"wrote 'en_lexdec_english_datasheet_R.md'","data":{"path":"output/reports/en_lexdec_english_datasheet_R.md","rows":"NA","md5":"aa398cc602f99345795dd0b19da415d7"}}

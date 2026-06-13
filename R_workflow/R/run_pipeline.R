@@ -102,6 +102,19 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
   exps <- export_experiments(stim, design, schema, file.path(outdir, "experiments"), base)
   for (p in exps) log <- log_artefact(log, p)
 
+  # A materials datasheet (machine + human readable) and a pre-registration
+  # template: the shareable provenance record the reproducibility literature asks
+  # for (Bochynska et al., 2023; Roettger, 2019).
+  source_path <- items_cfg$path %||% items_cfg$lexicon %||% design$lexicon
+  artifacts <- list(stimuli = stim_path, descriptives = desc_path,
+                    comparisons = comp_path, experiments = exps)
+  ds <- build_datasheet(design, schema, report, stim, source_path, artifacts,
+                        schema$seed, engine = "R")
+  ds_json <- file.path(outdir, "reports", paste0(base, "_datasheet_R.json"))
+  ds_md <- file.path(outdir, "reports", paste0(base, "_datasheet_R.md"))
+  write_datasheet(ds, ds_json, ds_md)
+  log <- log_artefact(log, ds_json); log <- log_artefact(log, ds_md)
+
   log_md <- file.path(outdir, "reports", paste0(base, "_run_log_R.md"))
   write_run_log(log, log_md, file.path(outdir, "reports", paste0(base, "_run_log_R.jsonl")))
 

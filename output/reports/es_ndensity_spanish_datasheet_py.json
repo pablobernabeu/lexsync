@@ -1,0 +1,141 @@
+{
+  "artifacts": [
+    {
+      "file": "output\\stimuli\\es_ndensity_spanish_stimuli_py.csv",
+      "sha256": "62d286816068f465d524175215b4d4c089e52d1bf942f03ae60a02c9c1dd487f"
+    },
+    {
+      "file": "output\\reports\\es_ndensity_spanish_descriptives_py.csv",
+      "sha256": "485d96e1ab582f2329a9601cd72b8d2170eac6f115eab01ac60841339775276f"
+    },
+    {
+      "file": "output\\reports\\es_ndensity_spanish_comparisons_py.csv",
+      "sha256": "b2812a64cbfc0cdd9fb07edab791b8366e35658c97d00f4031d113bc2569a5f0"
+    },
+    {
+      "file": "output\\experiments\\es_ndensity_spanish_psychopy.py",
+      "sha256": "87edcfaf70a0252de2a9c38dd05a20e005aa311eacc6f3629a54dcc78676dcb7"
+    },
+    {
+      "file": "output\\experiments\\es_ndensity_spanish.osexp",
+      "sha256": "9bc7444e19eafa943106578ecece5737d67ae774aa7e602c4509b2675b4a8696"
+    },
+    {
+      "file": "output\\experiments\\es_ndensity_spanish.html",
+      "sha256": "b883c9f279ad320899fd02b213a6420e0e82f4af16ee6872ae5e4ad2662a5971"
+    }
+  ],
+  "counterbalancing": {
+    "lists": 1,
+    "recipe": "factorial"
+  },
+  "design": {
+    "description": "Dense versus sparse orthographic neighbourhoods (Coltheart's N) in Spanish, matched on length and frequency.",
+    "language": "spanish",
+    "n_per_condition": 80,
+    "name": "es_ndensity",
+    "paradigm": "factorial",
+    "source": "corpus"
+  },
+  "dimensions": {
+    "frequency": {
+      "column": "freq_zipf",
+      "type": "column",
+      "unit": "Zipf"
+    },
+    "length": {
+      "compute": "n_letters",
+      "type": "derived",
+      "unit": "letters"
+    },
+    "n_density": {
+      "compute": "coltheart_n",
+      "type": "derived",
+      "unit": "neighbours"
+    },
+    "old20": {
+      "compute": "old20",
+      "type": "derived",
+      "unit": "mean Levenshtein distance"
+    }
+  },
+  "items": {
+    "conditions": [
+      "sparse_neighbourhood",
+      "dense_neighbourhood"
+    ],
+    "n_conditions": 2,
+    "n_total": 160,
+    "stimuli_file": "output\\stimuli\\es_ndensity_spanish_stimuli_py.csv",
+    "stimuli_sha256": "62d286816068f465d524175215b4d4c089e52d1bf942f03ae60a02c9c1dd487f"
+  },
+  "lexsync_datasheet_version": "1.0",
+  "materials_source": {
+    "path": "corpora/derived/es.csv",
+    "provenance": "see corpora/ATTRIBUTION.md for corpus licence and citation",
+    "sha256": "02732e5f00d09951b97ab8d5bdc285c321894ccb49d5c20b7afe39335a8204d9",
+    "type": "corpus"
+  },
+  "realised_control": [
+    {
+      "ci_high": 0.262,
+      "ci_low": -0.262,
+      "cohens_d": 0.0,
+      "dimension": "length",
+      "equivalent": true,
+      "role": "controlled",
+      "tost_p": 0.0009
+    },
+    {
+      "ci_high": 0.262,
+      "ci_low": -0.262,
+      "cohens_d": 0.0,
+      "dimension": "frequency",
+      "equivalent": true,
+      "role": "controlled",
+      "tost_p": 0.0009
+    },
+    {
+      "ci_high": 2.389,
+      "ci_low": 1.866,
+      "cohens_d": 2.128,
+      "dimension": "n_density",
+      "equivalent": false,
+      "role": "manipulated/free",
+      "tost_p": 1.0
+    },
+    {
+      "ci_high": -2.159,
+      "ci_low": -2.683,
+      "cohens_d": -2.421,
+      "dimension": "old20",
+      "equivalent": false,
+      "role": "manipulated/free",
+      "tost_p": 1.0
+    }
+  ],
+  "reproducibility": {
+    "seed": 2026,
+    "versions": {
+      "engine": "python",
+      "lexsync": "0.1.0",
+      "numpy": "2.3.2",
+      "pandas": "2.3.2",
+      "python": "3.13.7",
+      "scipy": "1.17.1"
+    }
+  },
+  "selection": {
+    "match_on": [
+      "length",
+      "frequency"
+    ],
+    "method": "joint",
+    "tolerance_k": {
+      "frequency": 1.0,
+      "length": 2.0,
+      "n_density": 2.0,
+      "old20": 2.0
+    }
+  }
+}

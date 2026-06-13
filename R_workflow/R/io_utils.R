@@ -57,6 +57,17 @@ hash_file <- function(path) {
   unname(tools::md5sum(path))
 }
 
+#' SHA-256 digest of a file, the stronger fingerprint used by the datasheet
+#'
+#' @param path File path.
+#' @return A hex digest string, or `NA` when the file is absent.
+#' @importFrom digest digest
+#' @keywords internal
+sha256_file <- function(path) {
+  if (is.null(path) || is.na(path) || !file.exists(path)) return(NA_character_)
+  digest::digest(file = path, algo = "sha256")
+}
+
 #' Build a short, filesystem-safe slug
 #'
 #' Keeps generated file names short and space-free, which avoids the Windows

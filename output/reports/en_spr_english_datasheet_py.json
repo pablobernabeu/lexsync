@@ -1,0 +1,65 @@
+{
+  "artifacts": [
+    {
+      "file": "output\\stimuli\\en_spr_english_stimuli_py.csv",
+      "sha256": "af5dd44d9d77b42b7fef68ab0c0d457fb78f230b5e3ffd040dd226ad1f166e25"
+    },
+    {
+      "file": "output\\experiments\\en_spr_english_psychopy.py",
+      "sha256": "4698ed23db9ff07df29a113444c0f8984c7a6c0631d15db740fdc6c641a3ade3"
+    },
+    {
+      "file": "output\\experiments\\en_spr_english.osexp",
+      "sha256": "eb89f66ae701dd24a75bdeeb034ce4c70a78f41507924905810ef1f63fa258d3"
+    },
+    {
+      "file": "output\\experiments\\en_spr_english.html",
+      "sha256": "40ed8215e2782bd8e1e80368ce2474832fc002791f0e6271d8f3b49670e82e20"
+    }
+  ],
+  "counterbalancing": {
+    "lists": 2,
+    "recipe": "latin_square_target"
+  },
+  "design": {
+    "description": "Self-paced reading: grammatical versus ungrammatical sentences presented region by region, with a comprehension question.",
+    "language": "english",
+    "n_per_condition": null,
+    "name": "en_spr",
+    "paradigm": "self_paced_reading",
+    "source": "table"
+  },
+  "dimensions": {},
+  "items": {
+    "conditions": [
+      "ungrammatical",
+      "grammatical"
+    ],
+    "n_conditions": 2,
+    "n_total": 20,
+    "stimuli_file": "output\\stimuli\\en_spr_english_stimuli_py.csv",
+    "stimuli_sha256": "af5dd44d9d77b42b7fef68ab0c0d457fb78f230b5e3ffd040dd226ad1f166e25"
+  },
+  "lexsync_datasheet_version": "1.0",
+  "materials_source": {
+    "path": "items/spr_sentences_en.csv",
+    "provenance": "user-supplied item table",
+    "sha256": "c754b3ac35caf2fadc8c561ef1825d8f9c47783f914471029437602c5b7ecda3",
+    "type": "table"
+  },
+  "realised_control": [],
+  "reproducibility": {
+    "seed": 2026,
+    "versions": {
+      "engine": "python",
+      "lexsync": "0.1.0",
+      "numpy": "2.3.2",
+      "pandas": "2.3.2",
+      "python": "3.13.7",
+      "scipy": "1.17.1"
+    }
+  },
+  "selection": {
+    "method": "item table (user-supplied)"
+  }
+}

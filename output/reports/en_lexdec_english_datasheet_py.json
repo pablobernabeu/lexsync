@@ -1,0 +1,92 @@
+{
+  "artifacts": [
+    {
+      "file": "output\\stimuli\\en_lexdec_english_stimuli_py.csv",
+      "sha256": "7d2d93aec30e2be081618437c6f7563109384cfcfbdd921cc63f301ae0c43981"
+    },
+    {
+      "file": "output\\reports\\en_lexdec_english_descriptives_py.csv",
+      "sha256": "7b96a23c7c2bec53f6ac3d29d72de6aff710c0b2e30e203e6d1439cdd62f4983"
+    },
+    {
+      "file": "output\\reports\\en_lexdec_english_comparisons_py.csv",
+      "sha256": "0c8974406f1c3458c5a51f0db726456bff89bc90796303af43a95f349b1734ab"
+    },
+    {
+      "file": "output\\experiments\\en_lexdec_english_psychopy.py",
+      "sha256": "777267cacb6c83f39b689fcb764c27b925e6247c09cb90dad6f00a917261b398"
+    },
+    {
+      "file": "output\\experiments\\en_lexdec_english.osexp",
+      "sha256": "f41d821d61f4e438c62454cff485d62a5d51f19851e2b2e8e0b32833ebec508c"
+    },
+    {
+      "file": "output\\experiments\\en_lexdec_english.html",
+      "sha256": "6cf771fdf249e57b58f95daa982f328d4f18ca5557dc56ce099d9f618c4ed6d3"
+    }
+  ],
+  "counterbalancing": {
+    "lists": 1,
+    "recipe": "factorial"
+  },
+  "design": {
+    "description": "Lexical decision: real words versus length-matched, orthographically legal pseudowords (deterministically generated).",
+    "language": "english",
+    "n_per_condition": 60,
+    "name": "en_lexdec",
+    "paradigm": "lexical_decision",
+    "source": "generate"
+  },
+  "dimensions": {
+    "length": {
+      "compute": "n_letters",
+      "type": "derived",
+      "unit": "letters"
+    }
+  },
+  "items": {
+    "conditions": [
+      "word",
+      "pseudoword"
+    ],
+    "n_conditions": 2,
+    "n_total": 120,
+    "stimuli_file": "output\\stimuli\\en_lexdec_english_stimuli_py.csv",
+    "stimuli_sha256": "7d2d93aec30e2be081618437c6f7563109384cfcfbdd921cc63f301ae0c43981"
+  },
+  "lexsync_datasheet_version": "1.0",
+  "materials_source": {
+    "path": "corpora/derived/en.csv",
+    "provenance": "see corpora/ATTRIBUTION.md for corpus licence and citation",
+    "sha256": "c20549b920d816809d11cfa673ad0df1dd70d3e73176ee66cbec18021627f65d",
+    "type": "generate"
+  },
+  "realised_control": [
+    {
+      "ci_high": 0.303,
+      "ci_low": -0.303,
+      "cohens_d": 0.0,
+      "dimension": "length",
+      "equivalent": true,
+      "role": "controlled",
+      "tost_p": 0.0036
+    }
+  ],
+  "reproducibility": {
+    "seed": 2026,
+    "versions": {
+      "engine": "python",
+      "lexsync": "0.1.0",
+      "numpy": "2.3.2",
+      "pandas": "2.3.2",
+      "python": "3.13.7",
+      "scipy": "1.17.1"
+    }
+  },
+  "selection": {
+    "matched_on": [
+      "length"
+    ],
+    "method": "constrained letter substitution (deterministic pseudowords)"
+  }
+}

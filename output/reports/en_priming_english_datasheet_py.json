@@ -1,0 +1,65 @@
+{
+  "artifacts": [
+    {
+      "file": "output\\stimuli\\en_priming_english_stimuli_py.csv",
+      "sha256": "da3ef935d902862b9322a608912be367f9f721bdfe0eebd76ec38fc7516a95c6"
+    },
+    {
+      "file": "output\\experiments\\en_priming_english_psychopy.py",
+      "sha256": "7f58db5a22ea3d55a11362cb318128436790017b426c4870659b34ad79fa5e98"
+    },
+    {
+      "file": "output\\experiments\\en_priming_english.osexp",
+      "sha256": "bcfa66395cb5f2eb75fbe8edd844f13d336840bd09dd813141440a635a5b9277"
+    },
+    {
+      "file": "output\\experiments\\en_priming_english.html",
+      "sha256": "f0604aece18d58351e482470ca27fb3a97561fbb6621679afa35df81af5deac6"
+    }
+  ],
+  "counterbalancing": {
+    "lists": 2,
+    "recipe": "latin_square_target"
+  },
+  "design": {
+    "description": "Priming: related versus unrelated prime-target pairs, Latin-square counterbalanced so each target appears once per list.",
+    "language": "english",
+    "n_per_condition": null,
+    "name": "en_priming",
+    "paradigm": "priming",
+    "source": "table"
+  },
+  "dimensions": {},
+  "items": {
+    "conditions": [
+      "related",
+      "unrelated"
+    ],
+    "n_conditions": 2,
+    "n_total": 24,
+    "stimuli_file": "output\\stimuli\\en_priming_english_stimuli_py.csv",
+    "stimuli_sha256": "da3ef935d902862b9322a608912be367f9f721bdfe0eebd76ec38fc7516a95c6"
+  },
+  "lexsync_datasheet_version": "1.0",
+  "materials_source": {
+    "path": "items/priming_pairs_en.csv",
+    "provenance": "user-supplied item table",
+    "sha256": "088f506b3166368bb11b3b271a50ed33c52ba913205bcaa642c5b4ebec4a091a",
+    "type": "table"
+  },
+  "realised_control": [],
+  "reproducibility": {
+    "seed": 2026,
+    "versions": {
+      "engine": "python",
+      "lexsync": "0.1.0",
+      "numpy": "2.3.2",
+      "pandas": "2.3.2",
+      "python": "3.13.7",
+      "scipy": "1.17.1"
+    }
+  },
+  "selection": {
+    "method": "item table (user-supplied)"
+  }
+}

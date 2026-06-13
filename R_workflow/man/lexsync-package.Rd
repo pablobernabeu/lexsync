@@ -6,7 +6,7 @@
 \alias{lexsync-package}
 \title{lexsync: Multidimensional Lexical Optimisation and Hardware-Timed Experiment Generation}
 \description{
-A cross-platform toolkit that unifies many-language lexical-corpus access, parallel multidimensional stimulus matching, counterbalancing and the automated generation of hardware-timed 'PsychoPy' and 'OpenSesame' experiment scripts for electroencephalography and event-related potential research. It is the R member of a dual-language pair; a structurally identical 'Python' package is also provided. Stimuli are matched across several lexical dimensions (length, frequency, orthographic neighbourhood density and OLD20) by a deterministic tolerance-and-nearest-neighbour procedure, and onset triggers are bound to the stimulus flip in the generated 'PsychoPy' scripts.
+A cross-platform toolkit that unifies many-language lexical-corpus access, parallel multidimensional stimulus matching, deterministic pseudoword generation, counterbalancing and the automated generation of experiments from a declarative trial-event model, for 'PsychoPy', 'OpenSesame' and the browser ('jsPsych'). The laboratory targets bind electroencephalography onset triggers to the stimulus flip. It is the R member of a dual-language pair; a structurally identical 'Python' package is also provided. Several paradigms (factorial word contrasts, lexical decision, priming and self-paced reading) are supported, and each design is accompanied by a machine- and human-readable materials datasheet for reproducibility.
 }
 \seealso{
 Useful links:

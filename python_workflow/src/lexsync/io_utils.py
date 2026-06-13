@@ -41,6 +41,17 @@ def hash_file(path: str):
     return digest.hexdigest()
 
 
+def sha256_file(path: str):
+    """SHA-256 digest of a file, the stronger fingerprint used by the datasheet."""
+    if not path or not os.path.exists(path):
+        return None
+    digest = hashlib.sha256()
+    with open(path, "rb") as handle:
+        for chunk in iter(lambda: handle.read(8192), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
 def slugify(*parts) -> str:
     """Short, filesystem-safe slug; keeps generated names within MAX_PATH."""
     s = "_".join(str(p) for p in parts)
