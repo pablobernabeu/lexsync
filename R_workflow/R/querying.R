@@ -99,6 +99,39 @@ add_neighbourhood <- function(df, reference = df$word, n_old = 20L) {
   df
 }
 
+#' Load a paradigm item table (prime-target pairs, sentences, ...)
+#'
+#' The table must carry an `item` identifier, a `condition` label and the
+#' paradigm's presented fields. Field values are validated (no control
+#' characters; bounded length) so a crafted item cannot corrupt the generated
+#' loop table or scripts. Items are mapped to a deterministic integer `set` id
+#' (byte order), so counterbalancing matches the corpus path and the two engines.
+#'
+#' @param path Path to a UTF-8 CSV item table.
+#' @param required_fields Character vector of presented fields the paradigm needs.
+#' @return A data frame with `set`, `condition` and the item fields.
+#' @export
+load_items <- function(path, required_fields) {
+  parts <- strsplit(gsub("\\\\", "/", path), "/", fixed = TRUE)[[1]]
+  if (".." %in% parts) stop("lexsync: items path must not contain '..'.", call. = FALSE)
+  df <- as.data.frame(read_csv_utf8(path), stringsAsFactors = FALSE)
+  needed <- c("item", "condition", required_fields)
+  missing <- setdiff(needed, names(df))
+  if (length(missing)) {
+    stop(sprintf("lexsync: items table '%s' is missing column(s): %s.",
+                 path, paste(missing, collapse = ", ")), call. = FALSE)
+  }
+  for (f in intersect(required_fields, names(df))) {
+    df[[f]] <- vapply(df[[f]], function(v) clean_field(v, f), character(1))
+  }
+  items <- sort(unique(as.character(df$item)), method = "radix")
+  set_map <- stats::setNames(seq_along(items), items)
+  df$set <- unname(set_map[as.character(df$item)])
+  df$condition <- as.character(df$condition)
+  rownames(df) <- NULL
+  df
+}
+
 #' Build an experimental candidate pool by filtering a lexicon
 #'
 #' @param lexicon A lexicon data frame.

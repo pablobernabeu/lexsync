@@ -1,0 +1,21 @@
+trial,list,set,condition,sentence,question,critical_region,answer,condition_trigger,item_trigger
+1,1,2,ungrammatical,The|report|about the islands|were|detailed.,Was the report detailed?,4,f,101,42
+1,2,4,grammatical,The|bridge|near the houses|was|old.,Was the bridge new?,4,j,102,44
+2,2,1,ungrammatical,The|key|to the cabinets|were|rusty.,Was something rusty?,4,f,101,40
+2,1,10,ungrammatical,The|garden|behind the cottages|were|quiet.,Was the garden noisy?,4,j,101,41
+3,1,1,grammatical,The|key|to the cabinets|was|rusty.,Was something rusty?,4,f,102,40
+3,2,5,ungrammatical,The|picture|of the children|were|lovely.,Was something lovely?,4,f,101,45
+4,2,10,grammatical,The|garden|behind the cottages|was|quiet.,Was the garden noisy?,4,j,102,41
+4,1,7,grammatical,The|window|in the offices|was|broken.,Was something broken?,4,f,102,47
+5,2,2,grammatical,The|report|about the islands|was|detailed.,Was the report detailed?,4,f,102,42
+5,1,9,grammatical,The|letter|from the lawyers|was|urgent.,Was the letter urgent?,4,f,102,49
+6,1,4,ungrammatical,The|bridge|near the houses|were|old.,Was the bridge new?,4,j,101,44
+6,2,6,grammatical,The|recipe|for the cookies|was|simple.,Was the recipe hard?,4,j,102,46
+7,1,6,ungrammatical,The|recipe|for the cookies|were|simple.,Was the recipe hard?,4,j,101,46
+7,2,3,ungrammatical,The|author|of the novels|were|famous.,Was someone famous?,4,f,101,43
+8,2,7,ungrammatical,The|window|in the offices|were|broken.,Was something broken?,4,f,101,47
+8,1,3,grammatical,The|author|of the novels|was|famous.,Was someone famous?,4,f,102,43
+9,2,8,grammatical,The|captain|of the ships|was|brave.,Was someone brave?,4,f,102,48
+9,1,8,ungrammatical,The|captain|of the ships|were|brave.,Was someone brave?,4,f,101,48
+10,1,5,grammatical,The|picture|of the children|was|lovely.,Was something lovely?,4,f,102,45
+10,2,9,ungrammatical,The|letter|from the lawyers|were|urgent.,Was the letter urgent?,4,f,101,49

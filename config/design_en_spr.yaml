@@ -1,0 +1,15 @@
+# Demonstration paradigm: English self-paced reading.
+# Sentences differ in 'grammaticality' (subject-verb agreement, grammatical vs
+# ungrammatical). Each sentence is split into regions (delimited by '|') and presented
+# region by region, space-advanced; the critical region (the verb) carries the
+# onset-locked condition marker. A yes/no comprehension question follows. Items come
+# from a table; Latin-square counterbalancing shows each item once per list.
+name: en_spr
+language: english
+paradigm: self_paced_reading
+description: 'Self-paced reading: grammatical versus ungrammatical sentences presented region by region, with a comprehension question.'
+items:
+  source: table
+  path: items/spr_sentences_en.csv
+counterbalance:
+  lists: 2

@@ -1,0 +1,110 @@
+# paradigms.R -- the paradigm registry and the trial-event model. A paradigm is a
+# named default sequence of trial events plus the fields it requires and a
+# counterbalancing recipe. A design names a paradigm (and inherits its events) or
+# supplies an explicit `events` list; every presentation backend renders the same
+# event list, so adding a paradigm is configuration rather than backend code.
+# Identical in structure to python_workflow/src/lexsync/paradigms.py.
+
+#' The paradigm registry: default event sequences and required fields
+#'
+#' Each event is a list with `type` (fixation | text | mask | blank |
+#' region_by_region | response | question), `content` (a literal or a `{field}`
+#' reference), an optional `trigger` (an integer EEG code or the token
+#' "condition"/"item"), `onset_locked`, and response `keys`/`timeout_ms`.
+#'
+#' @keywords internal
+PARADIGMS <- list(
+  factorial = list(
+    stimulus_fields = c("word"),
+    counterbalance = "factorial",
+    events = list(
+      list(type = "fixation", content = "+", duration_frames = 30L),
+      list(type = "text", content = "{word}", duration_frames = 48L,
+           trigger = "condition", onset_locked = TRUE),
+      list(type = "response", keys = c("left", "right"), timeout_ms = 2000L),
+      list(type = "blank", duration_frames = 15L)
+    )
+  ),
+  lexical_decision = list(
+    stimulus_fields = c("target"),
+    counterbalance = "factorial",
+    events = list(
+      list(type = "fixation", content = "+", duration_frames = 30L),
+      list(type = "text", content = "{target}", duration_frames = 48L,
+           trigger = "condition", onset_locked = TRUE),
+      list(type = "response", keys = c("left", "right"), timeout_ms = 2000L),
+      list(type = "blank", duration_frames = 15L)
+    )
+  ),
+  priming = list(
+    stimulus_fields = c("prime", "target"),
+    counterbalance = "latin_square_target",
+    events = list(
+      list(type = "fixation", content = "+", duration_frames = 30L),
+      list(type = "text", content = "{prime}", duration_frames = 3L,
+           trigger = 20L, onset_locked = TRUE),
+      list(type = "mask", content = "#####", duration_frames = 2L),
+      list(type = "text", content = "{target}", duration_frames = 48L,
+           trigger = "condition", onset_locked = TRUE),
+      list(type = "response", keys = c("left", "right"), timeout_ms = 2000L),
+      list(type = "blank", duration_frames = 15L)
+    )
+  ),
+  self_paced_reading = list(
+    stimulus_fields = c("sentence", "question"),
+    counterbalance = "latin_square_target",
+    events = list(
+      list(type = "fixation", content = "+", duration_frames = 30L),
+      list(type = "region_by_region", content = "{sentence}", advance = "space",
+           critical_region_trigger = "condition"),
+      list(type = "question", content = "{question}", keys = c("f", "j"),
+           timeout_ms = 5000L),
+      list(type = "blank", duration_frames = 15L)
+    )
+  )
+)
+
+#' @keywords internal
+get_paradigm <- function(name) {
+  if (is.null(PARADIGMS[[name]])) {
+    stop(sprintf("lexsync: unknown paradigm '%s'. Known paradigms: %s.",
+                 name, paste(sort(names(PARADIGMS)), collapse = ", ")), call. = FALSE)
+  }
+  PARADIGMS[[name]]
+}
+
+#' @keywords internal
+resolve_events <- function(design) {
+  if (!is.null(design$events) && length(design$events)) return(design$events)
+  get_paradigm(design$paradigm %||% "factorial")$events
+}
+
+#' If `content` is a single braced field reference, return the bare field name
+#' @keywords internal
+content_field <- function(content) {
+  if (!is.character(content) || length(content) != 1L) return(NULL)
+  m <- regmatches(content, regexec("^\\s*\\{([A-Za-z_][A-Za-z0-9_]*)\\}\\s*$", content))[[1]]
+  if (length(m) == 2L) m[2] else NULL
+}
+
+#' The ordered, unique trial fields referenced by an event list's content
+#' @keywords internal
+referenced_fields <- function(events) {
+  fields <- character(0)
+  for (ev in events) {
+    f <- content_field(ev$content)
+    if (!is.null(f) && !(f %in% fields)) fields <- c(fields, f)
+  }
+  fields
+}
+
+#' Trial fields a design needs present in its items (paradigm + events)
+#' @keywords internal
+required_fields <- function(design) {
+  name <- design$paradigm %||% "factorial"
+  base <- if (!is.null(PARADIGMS[[name]])) PARADIGMS[[name]]$stimulus_fields else character(0)
+  for (f in referenced_fields(resolve_events(design))) {
+    if (!(f %in% base)) base <- c(base, f)
+  }
+  base
+}

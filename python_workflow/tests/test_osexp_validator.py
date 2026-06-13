@@ -46,5 +46,5 @@ def test_osexp_structurally_valid(schema, tmp_path):
 
 def test_loop_table_triggers_in_byte_range():
     lt = loop_table(_stim())
-    assert lt["target_word_trigger"].between(0, 255).all()
+    assert lt["item_trigger"].between(0, 255).all()
     assert lt["condition_trigger"].between(0, 255).all()

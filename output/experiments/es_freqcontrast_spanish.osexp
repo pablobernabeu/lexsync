@@ -36,7 +36,6 @@ define inline_script lexsync_trigger_setup
 	var.trigger_backend = u'parallel'
 	var.parallel_port_address = 0x0378
 	var.test_mode = u'no'
-	var.word_duration_ms = 500
 	import time
 	def _printer(code):
 	    print(u'[lexsync test trigger] %d' % int(code))
@@ -70,46 +69,57 @@ define inline_script lexsync_trigger_setup
 	send_trigger(0)
 	__end__
 
-define sketchpad lexsync_fixation
-	set duration 500
-	set description "Fixation cross"
-	draw textline center=1 color=white font_family=mono font_size=40 html=yes show_if=always text="+" x=0 y=0 z_index=0
-
-define inline_script lexsync_word
-	set description "Show the word and send onset-aligned triggers"
+define inline_script lexsync_e0
+	set description "Show stimulus and send onset-aligned trigger"
 	set _prepare ""
 	___run__
-	# Draw the word, show it (this blocks until the display refresh and returns
-	# the onset time) and then send the onset-aligned triggers immediately. This
-	# is the OpenSesame-recommended way to time-lock a marker to stimulus onset.
+	c = Canvas()
+	c.text(u'+')
+	var.onset_time = c.show()
+	clock.sleep(500)
+	__end__
+
+define inline_script lexsync_e1
+	set description "Show stimulus and send onset-aligned trigger"
+	set _prepare ""
+	___run__
 	c = Canvas()
 	c.text(var.word)
 	var.onset_time = c.show()
-	send_trigger(var.target_word_trigger)
 	send_trigger(var.condition_trigger)
-	clock.sleep(var.word_duration_ms)
+	clock.sleep(500)
 	__end__
 
-define keyboard_response lexsync_response
+define keyboard_response lexsync_e2
 	set timeout 2000
 	set flush yes
 	set duration keypress
 	set description "Collect a response"
 	set allowed_responses "left;right"
 
+define inline_script lexsync_e3
+	set description "Show stimulus and send onset-aligned trigger"
+	set _prepare ""
+	___run__
+	c = Canvas()
+	var.onset_time = c.show()
+	clock.sleep(250)
+	__end__
+
 define sequence lexsync_trial
 	set flush_keyboard yes
-	set description "Fixation, word with onset-aligned triggers, response"
-	run lexsync_fixation always
-	run lexsync_word always
-	run lexsync_response always
+	set description "One trial: the paradigm event sequence"
+	run lexsync_e0 always
+	run lexsync_e1 always
+	run lexsync_e2 always
+	run lexsync_e3 always
 
 define loop lexsync_loop
 	set source_file "es_freqcontrast_spanish_opensesame.csv"
 	set source file
 	set repeat 1
 	set order random
-	set description "Present each stimulus once"
+	set description "Present each item once"
 	run lexsync_trial
 
 define sequence lexsync_experiment

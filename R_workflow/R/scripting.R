@@ -1,10 +1,9 @@
-# scripting.R -- export finalised, hardware-timed experiment scripts. Two
-# targets are produced from the same matched stimuli: a runnable PsychoPy script
-# whose onset trigger is bound to the stimulus flip via win.callOnFlip, and a
-# complete plain-text OpenSesame .osexp (built programmatically so its
-# tab-sensitive format is always valid). Generation imports neither psychopy nor
-# pyserial: it only writes text. The drivers are needed only at experiment run
-# time.
+# scripting.R -- export finalised, hardware-timed experiment scripts. Both targets
+# render the same declarative trial-event sequence (see paradigms.R), so a new
+# paradigm is a configuration change, not backend code. The PsychoPy script reads
+# stimulus text as data from the conditions file and interprets an embedded EVENTS
+# list; the OpenSesame .osexp is generated block by block. Generation imports
+# neither psychopy nor pyserial: it only writes text. Mirrors scripting.py.
 
 #' Locate a bundled template file
 #' @keywords internal
@@ -17,92 +16,212 @@ find_template <- function(relpath) {
     file.path("..", "templates", relpath)
   )
   cand <- cand[nzchar(cand) & file.exists(cand)]
-  if (!length(cand)) {
-    stop(sprintf("lexsync: template '%s' not found.", relpath), call. = FALSE)
-  }
+  if (!length(cand)) stop(sprintf("lexsync: template '%s' not found.", relpath), call. = FALSE)
   cand[1]
 }
 
-#' Assign EEG trigger codes to matched stimuli
+#' Assign EEG trigger codes to stimuli
 #'
-#' Adds `condition_trigger` (101, 102, ... per condition) and a unique
-#' `target_word_trigger` per word (40-239), mirroring the trigger scheme of the
-#' original workflow.
+#' Adds `condition_trigger` (101, 102, ... per condition) and `item_trigger`
+#' (40-239 per item/`set`). Events reference these by the tokens "condition" and
+#' "item", or carry their own integer codes.
 #'
-#' @param stimuli A matched-stimuli data frame.
+#' @param stimuli A stimuli data frame.
 #' @return `stimuli` with trigger columns added.
 #' @export
 assign_triggers <- function(stimuli) {
   conds <- unique(stimuli$condition)
   stimuli$condition_trigger <- 100L + match(stimuli$condition, conds)
-  uw <- unique(stimuli$word)
-  code <- 40L + ((seq_along(uw) - 1L) %% 200L)
-  stimuli$target_word_trigger <- code[match(stimuli$word, uw)]
+  sets <- unique(stimuli$set)
+  sets <- sets[order(as.character(sets), method = "radix")]
+  code <- 40L + ((seq_along(sets) - 1L) %% 200L)
+  stimuli$item_trigger <- code[match(stimuli$set, sets)]
   stimuli
 }
 
-#' Select and order the loop-table columns an experiment reads
 #' @keywords internal
-loop_table <- function(stimuli) {
-  cols <- intersect(
-    c("trial", "list", "word", "condition", "set", "length", "frequency",
-      "n_density", "old20", "target_word_trigger", "condition_trigger"),
-    names(stimuli)
-  )
+trigger_spec <- function(value) {
+  if (is.null(value)) return(NULL)
+  if (identical(value, "condition")) return("@condition_trigger")
+  if (identical(value, "item")) return("@item_trigger")
+  as.integer(value)
+}
+
+#' Translate paradigm events into backend-neutral rendering dictionaries
+#' @keywords internal
+render_events <- function(events, timing) {
+  fix <- timing$fixation_frames
+  word <- timing$word_frames
+  isi <- timing$isi_frames
+  out <- list()
+  for (ev in events) {
+    t <- ev$type
+    r <- list(type = if (identical(t, "region_by_region")) "region" else t)
+    if (t %in% c("fixation", "text", "mask")) {
+      f <- content_field(ev$content)
+      if (!is.null(f)) r$field <- f else r$text <- as.character(ev$content %||% "")
+      frames <- ev$duration_frames %||% 1L
+      if (t == "fixation" && !is.null(fix)) {
+        frames <- fix
+      } else if (t == "text" && identical(ev$trigger, "condition") && !is.null(word)) {
+        frames <- word
+      }
+      r$frames <- as.integer(frames)
+      spec <- trigger_spec(ev$trigger)
+      if (!is.null(spec)) r$trigger <- spec
+    } else if (t == "blank") {
+      r$frames <- as.integer(if (!is.null(isi)) isi else (ev$duration_frames %||% 1L))
+    } else if (t == "region_by_region") {
+      r$field <- content_field(ev$content)
+      r$sep <- ev$sep %||% "|"
+      r$key <- ev$advance %||% "space"
+      spec <- trigger_spec(ev$critical_region_trigger)
+      if (!is.null(spec)) r$crit_trigger <- spec
+    } else if (t == "response") {
+      r$keys <- ev$keys %||% c("left", "right")
+      r$timeout <- round((ev$timeout_ms %||% 2000) / 1000, 3)
+    } else if (t == "question") {
+      r$field <- content_field(ev$content)
+      r$keys <- ev$keys %||% c("f", "j")
+      r$timeout <- round((ev$timeout_ms %||% 5000) / 1000, 3)
+    } else {
+      stop(sprintf("lexsync: unknown event type '%s'.", t), call. = FALSE)
+    }
+    out[[length(out) + 1L]] <- r
+  }
+  out
+}
+
+#' Per-trial table carrying exactly the fields the events reference
+#' @keywords internal
+loop_table <- function(stimuli, events = NULL) {
+  fields <- if (!is.null(events)) referenced_fields(events) else
+    (if ("word" %in% names(stimuli)) "word" else character(0))
+  order_cols <- c("trial", "list", "set", "condition", fields,
+                  "critical_region", "answer", "condition_trigger", "item_trigger")
+  cols <- character(0)
+  for (c in order_cols) if (c %in% names(stimuli) && !(c %in% cols)) cols <- c(cols, c)
   tab <- stimuli[, cols, drop = FALSE]
   if ("trial" %in% names(tab)) tab <- tab[order(tab$trial), , drop = FALSE]
   rownames(tab) <- NULL
   tab
 }
 
-#' Export a runnable PsychoPy script with onset-locked triggers
+#' Export a runnable PsychoPy script that interprets the event sequence
 #'
-#' @param stimuli Matched stimuli (with trigger columns; see [assign_triggers()]).
+#' @param stimuli Stimuli with trigger columns (see [assign_triggers()]).
 #' @param design A parsed design configuration.
-#' @param schema The parsed global schema (trigger settings).
+#' @param schema The parsed global schema (trigger and presentation settings).
 #' @param outdir Output directory.
 #' @param base Optional file-name stem.
 #' @return The path to the generated `.py`, invisibly.
+#' @importFrom jsonlite toJSON
 #' @export
 export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
   base <- base %||% slugify(design$name, design$language)
+  events <- resolve_events(design)
+  rendered <- render_events(events, design$timing %||% list())
   csv_name <- paste0(base, "_psychopy.csv")
-  py_name <- paste0(base, "_psychopy.py")
-  write_csv_utf8(loop_table(stimuli), file.path(outdir, csv_name))
-
+  write_csv_utf8(loop_table(stimuli, events), file.path(outdir, csv_name))
   tmpl <- paste(readLines(find_template("psychopy/trial_runner_template.py"), warn = FALSE),
                 collapse = "\n")
-  timing <- design$timing %||% list()
-  word_font <- design$font %||% schema$presentation$font %||% "Courier New"
+  triggers <- schema$triggers %||% list()
+  presentation <- schema$presentation %||% list()
   subs <- list(
     DESIGN = design$name, LANGUAGE = design$language, CONDITIONS_FILE = csv_name,
-    TRIGGER_ADDRESS = schema$triggers$parallel_address %||% "0x0378",
-    RESET_AFTER_FRAMES = schema$triggers$reset_after_frames %||% 2,
-    WORD_DURATION_FRAMES = timing$word_frames %||% 30,
-    FIXATION_FRAMES = timing$fixation_frames %||% 30,
-    ISI_FRAMES = timing$isi_frames %||% 15,
-    INTER_TRIGGER_S = (schema$triggers$inter_trigger_ms %||% 10) / 1000,
-    WORD_FONT = word_font,
-    FULLSCREEN = "False"
+    TRIGGER_ADDRESS = triggers$parallel_address %||% "0x0378",
+    RESET_AFTER_FRAMES = triggers$reset_after_frames %||% 2,
+    INTER_TRIGGER_S = (triggers$inter_trigger_ms %||% 10) / 1000,
+    WORD_FONT = design$font %||% presentation$font %||% "Courier New",
+    FULLSCREEN = "False",
+    EVENTS_JSON = as.character(jsonlite::toJSON(rendered, auto_unbox = TRUE))
   )
   for (k in names(subs)) {
     tmpl <- gsub(sprintf("{{%s}}", k), as.character(subs[[k]]), tmpl, fixed = TRUE)
   }
-  out <- file.path(outdir, py_name)
+  out <- file.path(outdir, paste0(base, "_psychopy.py"))
   writeLines(tmpl, out, useBytes = TRUE)
   invisible(out)
 }
 
-#' Build a complete plain-text OpenSesame experiment
+# ---- OpenSesame code generation ------------------------------------------
+
+.pyq <- function(s) {
+  s <- gsub("\\", "\\\\", s, fixed = TRUE)
+  s <- gsub("'", "\\'", s, fixed = TRUE)
+  paste0("u'", s, "'")
+}
+
+.content_expr <- function(ev) if (!is.null(ev$field)) paste0("var.", ev$field) else .pyq(ev$text %||% "")
+
+.trigger_expr <- function(spec) {
+  if (is.null(spec)) return(NULL)
+  if (is.character(spec) && startsWith(spec, "@")) return(paste0("var.", substring(spec, 2)))
+  as.character(as.integer(spec))
+}
+
+.inline_block <- function(name, desc, body) {
+  c(sprintf("define inline_script %s", name),
+    sprintf('\tset description "%s"', desc),
+    '\tset _prepare ""', "\t___run__", paste0("\t", body), "\t__end__", "")
+}
+
+.osexp_event_block <- function(name, ev) {
+  t <- ev$type
+  ms <- as.integer(round((ev$frames %||% 1L) * 1000 / 60))
+  if (t %in% c("fixation", "text", "mask", "blank")) {
+    body <- "c = Canvas()"
+    if (t != "blank") body <- c(body, sprintf("c.text(%s)", .content_expr(ev)))
+    body <- c(body, "var.onset_time = c.show()")
+    trig <- .trigger_expr(ev$trigger)
+    if (!is.null(trig)) body <- c(body, sprintf("send_trigger(%s)", trig))
+    body <- c(body, sprintf("clock.sleep(%d)", ms))
+    return(list(block = .inline_block(name, "Show stimulus and send onset-aligned trigger", body),
+                run = name))
+  }
+  if (t == "region") {
+    trig <- .trigger_expr(ev$crit_trigger)
+    body <- c(
+      sprintf("_regions = [r for r in var.%s.split(%s) if r != u'']", ev$field, .pyq(ev$sep %||% "|")),
+      "_crit = int(var.critical_region) if var.get(u'critical_region') is not None else 0",
+      sprintf("_kb = Keyboard(keylist=[%s], timeout=None)", .pyq(ev$key %||% "space")),
+      "for _i, _region in enumerate(_regions, start=1):",
+      "    c = Canvas(); c.text(_region); c.show()")
+    if (!is.null(trig)) body <- c(body, sprintf("    if _i == _crit: send_trigger(%s)", trig))
+    body <- c(body, "    _kb.get_key()")
+    return(list(block = .inline_block(name, "Self-paced reading region by region", body), run = name))
+  }
+  if (t == "question") {
+    keys_list <- paste(vapply(ev$keys %||% c("f", "j"), .pyq, character(1)), collapse = ", ")
+    body <- c(
+      sprintf("c = Canvas(); c.text(var.%s); c.show()", ev$field),
+      sprintf("_kb = Keyboard(keylist=[%s], timeout=%d)", keys_list,
+              as.integer((ev$timeout %||% 5) * 1000)),
+      "var.response, var.response_time = _kb.get_key()")
+    return(list(block = .inline_block(name, "Comprehension question", body), run = name))
+  }
+  if (t == "response") {
+    keys <- paste(ev$keys %||% c("left", "right"), collapse = ";")
+    block <- c(
+      sprintf("define keyboard_response %s", name),
+      paste0("\tset timeout ", as.integer((ev$timeout %||% 2) * 1000)),
+      "\tset flush yes", "\tset duration keypress",
+      '\tset description "Collect a response"',
+      sprintf('\tset allowed_responses "%s"', keys), "")
+    return(list(block = block, run = name))
+  }
+  stop(sprintf("lexsync: unknown event type '%s'.", t), call. = FALSE)
+}
+
+#' Build a complete plain-text OpenSesame experiment from rendered events
 #' @keywords internal
-build_osexp <- function(design_name, language, conditions_file, schema, font = "mono") {
+build_osexp <- function(design, conditions_file, schema, rendered, font = "mono") {
   addr <- schema$triggers$parallel_address %||% "0x378"
-  tb <- function(x) paste0("\t", x)
+  design_name <- design$name; language <- design$language
   setup <- c(
     "var.trigger_backend = u'parallel'",
     sprintf("var.parallel_port_address = %s", addr),
     "var.test_mode = u'no'",
-    "var.word_duration_ms = 500",
     "import time",
     "def _printer(code):",
     "    print(u'[lexsync test trigger] %d' % int(code))",
@@ -135,71 +254,62 @@ build_osexp <- function(design_name, language, conditions_file, schema, font = "
     "    print(u'lexsync: trigger device unavailable; test mode.')",
     "send_trigger(0)"
   )
-  present <- c(
-    "# Draw the word, show it (this blocks until the display refresh and returns",
-    "# the onset time) and then send the onset-aligned triggers immediately. This",
-    "# is the OpenSesame-recommended way to time-lock a marker to stimulus onset.",
-    "c = Canvas()",
-    "c.text(var.word)",
-    "var.onset_time = c.show()",
-    "send_trigger(var.target_word_trigger)",
-    "send_trigger(var.condition_trigger)",
-    "clock.sleep(var.word_duration_ms)"
-  )
-  lines <- c(
+
+  event_blocks <- character(0); run_names <- character(0)
+  for (i in seq_along(rendered)) {
+    eb <- .osexp_event_block(sprintf("lexsync_e%d", i - 1L), rendered[[i]])
+    event_blocks <- c(event_blocks, eb$block)
+    run_names <- c(run_names, eb$run)
+  }
+
+  header <- c(
     "---", "API: 2.1", "OpenSesame: 3.3.14", "Platform: nt", "---",
     "set width 1024", "set uniform_coordinates yes",
-    sprintf("set title \"lexsync: %s (%s)\"", design_name, language),
+    sprintf('set title "lexsync: %s (%s)"', design_name, language),
     "set subject_nr 0", "set start lexsync_experiment",
     "set sound_sample_size -16", "set sound_freq 48000", "set sound_channels 2",
     "set sound_buf_size 1024", "set sampler_backend legacy", "set round_decimals 2",
     "set mouse_backend legacy", "set keyboard_backend legacy", "set height 768",
     "set fullscreen no", "set foreground white", "set font_size 32",
-    sprintf("set font_family %s", font), "set description \"Generated by lexsync\"",
+    sprintf("set font_family %s", font), 'set description "Generated by lexsync"',
     "set coordinates uniform", "set compensation 0", "set color_backend legacy",
     "set clock_backend legacy", "set canvas_backend xpyriment", "set background black", "",
     "define inline_script lexsync_trigger_setup",
-    tb("set description \"Open the trigger device with a test-mode fallback\""),
-    tb("set _run \"\""), tb("___prepare__"), tb(setup), tb("__end__"), "",
-    "define sketchpad lexsync_fixation",
-    tb("set duration 500"), tb("set description \"Fixation cross\""),
-    tb("draw textline center=1 color=white font_family=mono font_size=40 html=yes show_if=always text=\"+\" x=0 y=0 z_index=0"), "",
-    "define inline_script lexsync_word",
-    tb("set description \"Show the word and send onset-aligned triggers\""),
-    tb("set _prepare \"\""), tb("___run__"), tb(present), tb("__end__"), "",
-    "define keyboard_response lexsync_response",
-    tb("set timeout 2000"), tb("set flush yes"), tb("set duration keypress"),
-    tb("set description \"Collect a response\""), tb("set allowed_responses \"left;right\""), "",
-    "define sequence lexsync_trial",
-    tb("set flush_keyboard yes"),
-    tb("set description \"Fixation, word with onset-aligned triggers, response\""),
-    tb("run lexsync_fixation always"), tb("run lexsync_word always"),
-    tb("run lexsync_response always"), "",
-    "define loop lexsync_loop",
-    tb(sprintf("set source_file \"%s\"", conditions_file)),
-    tb("set source file"), tb("set repeat 1"), tb("set order random"),
-    tb("set description \"Present each stimulus once\""), tb("run lexsync_trial"), "",
-    "define sequence lexsync_experiment",
-    tb("set flush_keyboard yes"),
-    tb("set description \"Top-level experiment sequence\""),
-    tb("run lexsync_trigger_setup always"), tb("run lexsync_loop always"), ""
+    '\tset description "Open the trigger device with a test-mode fallback"',
+    '\tset _run ""', "\t___prepare__", paste0("\t", setup), "\t__end__", ""
   )
-  paste(lines, collapse = "\n")
+  trial <- c(
+    "define sequence lexsync_trial",
+    "\tset flush_keyboard yes",
+    '\tset description "One trial: the paradigm event sequence"',
+    sprintf("\trun %s always", run_names), "",
+    "define loop lexsync_loop",
+    sprintf('\tset source_file "%s"', conditions_file),
+    "\tset source file", "\tset repeat 1", "\tset order random",
+    '\tset description "Present each item once"', "\trun lexsync_trial", "",
+    "define sequence lexsync_experiment",
+    "\tset flush_keyboard yes",
+    '\tset description "Top-level experiment sequence"',
+    "\trun lexsync_trigger_setup always", "\trun lexsync_loop always", ""
+  )
+  paste(c(header, event_blocks, trial), collapse = "\n")
 }
 
-#' Export a complete OpenSesame experiment and its loop table
+#' Export a complete plain-text OpenSesame experiment
 #'
 #' @inheritParams export_psychopy
 #' @return The path to the generated `.osexp`, invisibly.
 #' @export
 export_opensesame <- function(stimuli, design, schema, outdir, base = NULL) {
   base <- base %||% slugify(design$name, design$language)
+  events <- resolve_events(design)
+  rendered <- render_events(events, design$timing %||% list())
   csv_name <- paste0(base, "_opensesame.csv")
-  osexp_name <- paste0(base, ".osexp")
-  write_csv_utf8(loop_table(stimuli), file.path(outdir, csv_name))
-  os_font <- design$font %||% schema$presentation$opensesame_font %||% "mono"
-  txt <- build_osexp(design$name, design$language, csv_name, schema, font = os_font)
-  out <- file.path(outdir, osexp_name)
+  write_csv_utf8(loop_table(stimuli, events), file.path(outdir, csv_name))
+  presentation <- schema$presentation %||% list()
+  font <- design$font %||% presentation$opensesame_font %||% "mono"
+  txt <- build_osexp(design, csv_name, schema, rendered, font = font)
+  out <- file.path(outdir, paste0(base, ".osexp"))
   writeLines(txt, out, useBytes = TRUE)
   invisible(out)
 }

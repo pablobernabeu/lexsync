@@ -2,16 +2,16 @@
 % Please edit documentation in R/scripting.R
 \name{export_opensesame}
 \alias{export_opensesame}
-\title{Export a complete OpenSesame experiment and its loop table}
+\title{Export a complete plain-text OpenSesame experiment}
 \usage{
 export_opensesame(stimuli, design, schema, outdir, base = NULL)
 }
 \arguments{
-\item{stimuli}{Matched stimuli (with trigger columns; see \code{\link[=assign_triggers]{assign_triggers()}}).}
+\item{stimuli}{Stimuli with trigger columns (see \code{\link[=assign_triggers]{assign_triggers()}}).}
 
 \item{design}{A parsed design configuration.}
 
-\item{schema}{The parsed global schema (trigger settings).}
+\item{schema}{The parsed global schema (trigger and presentation settings).}
 
 \item{outdir}{Output directory.}
 
@@ -21,5 +21,5 @@ export_opensesame(stimuli, design, schema, outdir, base = NULL)
 The path to the generated \code{.osexp}, invisibly.
 }
 \description{
-Export a complete OpenSesame experiment and its loop table
+Export a complete plain-text OpenSesame experiment
 }

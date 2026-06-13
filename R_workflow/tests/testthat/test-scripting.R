@@ -9,7 +9,7 @@ make_stim <- function() {
 
 test_that("assign_triggers produces valid EEG codes", {
   stim <- make_stim()
-  expect_true(all(stim$target_word_trigger >= 40 & stim$target_word_trigger <= 239))
+  expect_true(all(stim$item_trigger >= 40 & stim$item_trigger <= 239))
   expect_setequal(unique(stim$condition_trigger), c(101, 102))
 })
 
@@ -53,7 +53,7 @@ test_that("a per-design font overrides the Latin default for logographic scripts
   out <- tempfile("lexsync"); dir.create(out)
 
   pytxt <- paste(readLines(export_psychopy(stim, design, schema, out), warn = FALSE), collapse = "\n")
-  expect_true(grepl('font="SimHei"', pytxt, fixed = TRUE))
+  expect_true(grepl('WORD_FONT = "SimHei"', pytxt, fixed = TRUE))
   expect_false(grepl("{{", pytxt, fixed = TRUE))
 
   os <- readLines(export_opensesame(stim, design, schema, out), warn = FALSE)
@@ -63,5 +63,5 @@ test_that("a per-design font overrides the Latin default for logographic scripts
   pytxt2 <- paste(readLines(export_psychopy(make_stim(),
                                             list(name = "t", language = "english", timing = list()),
                                             schema, out), warn = FALSE), collapse = "\n")
-  expect_true(grepl('font="Courier New"', pytxt2, fixed = TRUE))
+  expect_true(grepl('WORD_FONT = "Courier New"', pytxt2, fixed = TRUE))
 })

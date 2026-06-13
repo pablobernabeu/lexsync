@@ -14,9 +14,13 @@ any of dozens of languages it will select stimuli that are matched in parallel a
 several lexical dimensions (length, frequency, orthographic neighbourhood density and
 more), counterbalance them across conditions and lists, and then *generate the
 presentation script* for 'PsychoPy' or 'OpenSesame' with hardware triggers injected at
-stimulus onset for EEG/ERP synchronisation. It ships as two structurally identical,
-independently installable packages — a CRAN-ready R package and a PyPI-ready Python
-package — so a laboratory can adopt it in whichever ecosystem it already uses.
+stimulus onset for EEG/ERP synchronisation. The trial is described declaratively as a
+sequence of events, so the same engine builds **factorial word studies, lexical
+decision with deterministically generated pseudowords, priming and self-paced
+reading** from configuration rather than code, with word, pseudoword, paired and
+sentence stimuli. It ships as two structurally identical, independently installable
+packages — a CRAN-ready R package and a PyPI-ready Python package — so a laboratory can
+adopt it in whichever ecosystem it already uses.
 
 `lexsync` generalises the FAIR artificial-grammar workflow of González Alonso et al.
 (2025) into a reusable tool.
@@ -87,11 +91,16 @@ licence and retrieval date, in `corpora/ATTRIBUTION.md`.
 
 ## Extending lexsync
 
+- **Add a paradigm** — add an entry to the `PARADIGMS` registry in
+  `R_workflow/R/paradigms.R` and `python_workflow/src/lexsync/paradigms.py`, giving its
+  default trial-event sequence, required fields and counterbalancing recipe; both
+  backends then render it with no further code.
 - **Add a lexical dimension** — edit `compute_dimensions()` in `R_workflow/R/querying.R`
   and `python_workflow/src/lexsync/querying.py`, then list it under `dimensions` in
   `config/schema.yaml`.
 - **Add a presentation target** — add an `export_<target>()` function in
-  `R_workflow/R/scripting.R` and `python_workflow/src/lexsync/scripting.py`.
+  `R_workflow/R/scripting.R` and `python_workflow/src/lexsync/scripting.py` that walks
+  the same rendered event list.
 - **Add a corpus or language** — add an entry to `corpora/registry.yaml`; no code change
   is required for SUBTLEX-family or 'wordfreq' sources.
 

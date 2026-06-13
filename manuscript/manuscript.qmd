@@ -20,11 +20,15 @@ abstract: |
   counterbalances them, reports the realised match quality and then generates
   ready-to-run 'PsychoPy' and 'OpenSesame' experiment scripts whose hardware
   triggers for electroencephalography are time-locked to stimulus onset in both
-  targets. The matching is deterministic, so the two engines select identical
-  matched stimuli; we
+  targets. The trial is described declaratively as a sequence of events, so the
+  same engine builds factorial word studies, lexical decision with generated
+  pseudowords, priming and self-paced reading from configuration rather than code.
+  The matching and generation are deterministic, so the two engines select
+  identical materials; we
   demonstrate
-  this on five worked examples in English, Spanish and Mandarin Chinese, the last
-  of which shows that the workflow extends to a logographic writing system. The
+  this on eight worked examples in English, Spanish and Mandarin Chinese — across
+  word, pseudoword, paired and sentence stimuli — one of which shows that the
+  workflow extends to a logographic writing system. The
   generation step
   requires no presentation software and no hardware, which keeps the whole
   workflow reproducible. 'lexsync' generalises the FAIR artificial-grammar
@@ -137,6 +141,31 @@ interoperable and reusable — apply as much to this preparatory machinery as to
 the data it ultimately yields, yet stimulus pipelines are seldom shared in a
 form that others can run end to end.
 
+This preparatory machinery is where a quiet reproducibility problem lives.
+Surveys of open-science practice in linguistics find that experimental materials
+are rarely shared: across a broad sample only about one article in six stated
+that its materials were available, and the sharing of materials, data and
+protocols has scarcely improved over a decade [@bochynska2023reproducible]. Yet
+materials are a precondition both for replicating a result and for judging how far
+it generalises. The gap compounds an analytic one: quantitative phonetic and
+psycholinguistic work affords many undocumented choices — how a stimulus set is
+assembled, how a measure is quantified — and exploiting this flexibility inflates
+false positives [@roettger2019degrees; @roettger2019emergent;
+@coretta2023multidimensional]. Transparent, runnable, shareable materials are part
+of the remedy these authors call for.
+
+There is also a statistical reason to take materials seriously. The items in an
+experiment are a sample from a larger population of possible items, and a
+conclusion is meant to hold for that population, not merely for the words actually
+shown. Treating items as a fixed rather than a random factor inflates Type I error
+— the language-as-fixed-effect fallacy [@clark1973language] — and recent work
+recasts the same point as a *generalizability crisis*: researchers routinely model
+participants as a random factor but not stimuli, and so claim more than their
+designs license [@yarkoni2020generalizability]. A tool that makes the construction
+of a matched, balanced item set explicit, reproducible and shareable is therefore
+not a convenience but part of the methodological infrastructure that careful
+inference requires.
+
 Two families of tool address parts of the problem. The first matches or equates
 word stimuli on lexical properties. 'LexOPS' [@taylor2020lexops] generates
 controlled word lists for arbitrary factorial designs, with both per-dimension
@@ -167,23 +196,30 @@ independent but structurally identical packages — a 'CRAN'-ready R package and
 'PyPI'-ready Python package — that share module names, function names and
 behaviour. From a corpus 'lexsync' selects matched stimuli, counterbalances and
 documents them, then writes a 'PsychoPy' script in which each onset trigger is
-bound to the exact screen flip on which the word appears, using
+bound to the exact screen flip on which the critical stimulus appears, using
 `win.callOnFlip`, together with a complete 'OpenSesame' experiment. Crucially the
-matching is deterministic, so the R and Python engines select identical matched stimuli.
-'lexsync' generalises the materials workflow of @gonzalezalonso2025l3 into a
-reusable, FAIR-compliant tool.
+matching is deterministic, so the R and Python engines select identical materials.
+The trial itself is not hard-wired to a single task: a design declares an ordered
+sequence of trial *events*, and both backends render that sequence, so the same
+machinery produces a factorial word study, a lexical-decision task with generated
+pseudowords, a primed design or a self-paced reading study from configuration
+rather than new code. 'lexsync' thus generalises the materials workflow of
+@gonzalezalonso2025l3 — itself an artificial-grammar study — into a reusable,
+FAIR-compliant tool for many psycholinguistic paradigms.
 
 # The lexsync packages
 
 ## Architecture and cross-language design
 
-Each package is organised into the same modules: `querying` (load a lexicon and
-compute lexical dimensions), `matching` (the constraint engine), `counterbalancing`,
-`validation` (match-quality reporting), `scripting` (experiment generation),
-`logging` (the automated run log) and `corpora` (the registry). A single
-orchestrator, `run_pipeline`, drives them in an explicit loop over designs and
-languages, so that adding a language or a design is a matter of supplying a
-configuration file and a lexicon rather than writing code. The two packages are
+Each package is organised into the same modules: `querying` (load a lexicon or an
+item table and compute lexical dimensions), `matching` (the constraint engine),
+`generation` (deterministic pseudoword generation), `paradigms` (the trial-event
+registry), `counterbalancing`, `validation` (match-quality reporting), `scripting`
+(experiment generation), `logging` (the automated run log) and `corpora` (the
+registry). A single orchestrator, `run_pipeline`, drives them in an explicit loop
+over designs and languages, so that adding a language, a design or a paradigm is a
+matter of supplying a configuration file (and, where relevant, a lexicon or item
+table) rather than writing code. The two packages are
 deliberately lean: the R package depends only on 'readr', 'yaml', 'stringdist'
 and 'jsonlite' beyond base R, and the Python package on 'pandas', 'numpy',
 'PyYAML', 'rapidfuzz' and 'scipy'.
@@ -302,6 +338,40 @@ recommend a photodiode check in either case. Notably, neither the matching nor t
 imports 'PsychoPy' or any serial library: generation only writes text, and the
 presentation software is needed solely at run time.
 
+## Paradigm generality: the trial-event model
+
+The original workflow built one kind of trial — a fixation cross, a single word
+and a response — and wrote it into the experiment by hand. 'lexsync' replaces that
+fixed structure with a declarative one. A trial is an ordered list of *events*,
+each a small record naming its type (a fixation, a piece of text, a mask, a blank
+interval, a region-by-region passage, a response or a comprehension question), its
+content (a literal such as a fixation cross, or a reference to a field of the
+trial such as the target word or the sentence), its duration, and an optional EEG
+trigger that may be locked to the event's onset. A *paradigm* is simply a named
+default sequence of such events together with the trial fields it requires; a
+design either selects a paradigm or supplies its own event list. Both presentation
+backends iterate the same list — the 'PsychoPy' script interprets it at run time,
+the 'OpenSesame' generator emits one block per event — so adding a paradigm is a
+matter of configuration, not backend code, and the two targets stay in step by
+construction. Stimulus text is always written as data into the conditions file the
+experiment reads, never interpolated into the generated code, and every value is
+validated (no control characters; bounded length) before it is written, so a
+malformed item cannot corrupt a script.
+
+Items reach a design from one of three sources. The corpus source is the matching
+engine described above. The *table* source loads a user-supplied set of items —
+prime–target pairs, or sentences segmented into regions with a comprehension
+question — validated against the paradigm's required fields and counterbalanced by
+a Latin square that shows each item once per list in a rotated condition, so a
+target is never repeated within a list. The *generate* source builds pseudowords.
+For each real word 'lexsync' derives a length-matched, orthographically legal
+non-word by changing the fewest letters such that every resulting letter bigram is
+attested in the corpus and the form is not itself a word, choosing among the legal
+candidates the most bigram-plausible with a byte-order tie-break. This is a
+deterministic, cross-engine-reproducible relative of 'Wuggy'
+[@keuleers2010wuggy]: where Wuggy models subsyllabic structure, 'lexsync' trades
+that for exact length matching and identical output from the R and Python engines.
+
 ## Reproducibility and FAIR compliance
 
 'lexsync' declares its dependencies in a `DESCRIPTION` file for R and pinned requirements for Python, sets
@@ -315,16 +385,21 @@ validator for the generated `.osexp`.
 
 # Worked examples
 
-We illustrate 'lexsync' with five demonstrations. Four are alphabetic: a high-
-versus low-frequency contrast and a dense- versus sparse-neighbourhood contrast,
-each in English and in Spanish, drawn from thirty-thousand-word lexica. The
-frequency contrast matches items on length, neighbourhood density and OLD20; the
-neighbourhood contrast matches on length and frequency. The fifth is a
-high- versus low-frequency contrast in Mandarin Chinese, included to show that the
-pipeline generalises to a logographic writing system (see *Generalisation to a
-logographic script*, below). Each demonstration was produced by both the R and the
+We illustrate 'lexsync' with eight demonstrations. The first five are
+corpus-matched word contrasts; the last three exercise other paradigms. Of the
+matched contrasts, four are alphabetic: a high- versus low-frequency contrast and
+a dense- versus sparse-neighbourhood contrast, each in English and in Spanish,
+drawn from thirty-thousand-word lexica. The frequency contrast matches items on
+length, neighbourhood density and OLD20; the neighbourhood contrast matches on
+length and frequency. The fifth is a high- versus low-frequency contrast in
+Mandarin Chinese, included to show that the pipeline generalises to a logographic
+writing system (see *Generalisation to a logographic script*, below). The
+remaining three — lexical decision, priming and self-paced reading — show the
+trial-event model carrying word, pseudoword, paired and sentence stimuli (see
+*Beyond word lists*, below). Each demonstration was produced by both the R and the
 Python engine. All tables and figures in this section are computed at render time
-from the generated output.
+from the generated output. The tables that follow summarise the five matched word
+contrasts, for which a controlled-versus-manipulated report is defined.
 
 ```{r summary-table}
 #| label: tbl-summary
@@ -475,7 +550,7 @@ n_match <- isTRUE(n_identical == n_total)
 Finally, because the matcher is deterministic the two engines select the same
 matched (word, condition) pairs rather than merely similar ones (the seeded trial
 order differs, as the R and Python random-number generators do). Across the five
-demonstrations
+matched word contrasts
 `r if (n_match) "all" else n_identical` `r n_total` of the selected
 (word, condition) pairs were identical between the R and the Python engine, and
 every statistic they report agrees to the precision shown. @tbl-parity makes this
@@ -496,6 +571,47 @@ ptab <- data.frame(
 )
 knitr::kable(ptab, align = c("l", "r", "r"))
 ```
+
+## Beyond word lists: three paradigms
+
+```{r paradigm-setup}
+#| include: false
+lex_cmp <- read_out("reports/en_lexdec_english_comparisons_R.csv")
+lex_stim <- read_out("stimuli/en_lexdec_english_stimuli_R.csv")
+prime_stim <- read_out("stimuli/en_priming_english_stimuli_R.csv")
+spr_stim <- read_out("stimuli/en_spr_english_stimuli_R.csv")
+n_lexdec <- sum(lex_stim$condition == "word")
+lex_len_d <- lex_cmp$cohens_d[lex_cmp$dimension == "length"]
+n_prime <- length(unique(prime_stim$set))
+n_spr <- length(unique(spr_stim$set))
+para_parity <- function(base, cols) {
+  r <- read_out(paste0("stimuli/", base, "_stimuli_R.csv"))
+  p <- read_out(paste0("stimuli/", base, "_stimuli_py.csv"))
+  cols <- cols[cols %in% names(r) & cols %in% names(p)]
+  setequal(do.call(paste, r[cols]), do.call(paste, p[cols]))
+}
+para_ok <- all(
+  para_parity("en_lexdec_english", c("condition", "target")),
+  para_parity("en_priming_english", c("list", "set", "condition", "prime", "target")),
+  para_parity("en_spr_english", c("list", "set", "condition", "sentence")))
+```
+
+The same engine builds tasks that are not word lists. Three further demonstrations,
+each in English, exercise a different stimulus structure and trial procedure
+through the trial-event model. A **lexical-decision** design contrasts
+`r n_lexdec` real words with `r n_lexdec` pseudowords generated to match them in
+length; the generated non-words are orthographically legal and absent from the
+corpus, and length is equated by construction (Cohen's *d* =
+`r sprintf("%.2f", lex_len_d)`). A **priming** design draws `r n_prime`
+prime–target pairs from an item table and contrasts related with unrelated primes,
+its trial inserting a brief prime and a mask before the onset-locked target. A
+**self-paced reading** design presents `r n_spr` sentences region by region, the
+grammatical–ungrammatical manipulation falling on the onset-locked critical region
+and followed by a comprehension question. Each design compiles to a runnable
+'PsychoPy' script and a valid 'OpenSesame' experiment from the same event list, and
+the R and Python engines select `r if (para_ok) "identical" else "differing"`
+materials in every case — including, for lexical decision, the very same
+deterministically generated pseudowords.
 
 # Discussion
 
@@ -525,11 +641,28 @@ that also shapes Chinese reading, such as radical, stroke-count and
 phonetic-radical information. Such measures are not intrinsic to the method; they
 enter as additional script-specific dimensions through the same extensible
 dimension system, and supplying them is left to future work. A photodiode check
-remains advisable for any onset-critical study, as for any software trigger.
-Future work includes
-additional presentation targets, a graphical interface and richer lexical
-dimensions such as concreteness and age of acquisition, each of which slots into
-the existing module structure.
+remains advisable for any onset-critical study, as for any software trigger. The
+example item tables for the paired and sentence paradigms are deliberately small,
+intended to exercise and document the pipeline rather than to constitute validated
+materials; researchers supply their own.
+
+Several extensions follow directly from the motivation and slot into the existing
+module structure. A browser-based target — emitting the same event sequence as a
+'jsPsych' experiment, and a 'PCIbex' reading study — would let anyone reproduce the
+exact procedure online from the same materials, the largest available gain in
+reach and reproducibility. A machine- and human-readable *materials datasheet* per
+design (corpus and version, dimensions and how they were computed, the matching
+method and its realised control, item checksums, the seed and software versions),
+together with an auto-generated Methods paragraph and pre-registration template,
+would turn the run log into the kind of shareable materials record whose scarcity
+motivated this work [@bochynska2023reproducible; @roettger2019degrees]. Richer
+dimensions — phonological (syllable count, phonotactic probability), semantic
+(concreteness, age of acquisition, valence) and predictability (n-gram or
+language-model surprisal) — would broaden the designs the matcher supports.
+Finally, resampling multiple matched item sets, or sampling items per participant,
+would let a study treat its items as the random factor they are
+[@clark1973language; @yarkoni2020generalizability]. A graphical interface is a
+further possibility.
 
 # Availability and open practices
 
@@ -542,11 +675,15 @@ URL in the package metadata is a placeholder pending public release.
 ## Extending lexsync
 
 In keeping with the design, extensions have well-defined insertion points. To add
-a lexical dimension, edit `compute`-style functions in `querying` (`add_neighbourhood`
-and the dimension table in `config/schema.yaml`) in both packages. To add a
-presentation target, add an `export_<target>()` function in `scripting`. To add a
-corpus or a language, add an entry to `corpora/registry.yaml`; no code change is
-required for SUBTLEX-family or 'wordfreq' sources.
+a **paradigm**, add an entry to the registry in `paradigms` giving its default
+event sequence, the trial fields it requires and its counterbalancing recipe; both
+backends then render it with no further code. To add a **lexical dimension**, edit
+`compute`-style functions in `querying` (`add_neighbourhood` and the dimension
+table in `config/schema.yaml`) in both packages. To add a **presentation target**,
+add an `export_<target>()` function in `scripting` that walks the same rendered
+event list. To add a **corpus or language**, add an entry to
+`corpora/registry.yaml`; no code change is required for SUBTLEX-family or
+'wordfreq' sources.
 
 {{< pagebreak >}}
 

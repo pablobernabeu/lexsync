@@ -7,11 +7,11 @@
 export_experiments(stimuli, design, schema, outdir, base = NULL)
 }
 \arguments{
-\item{stimuli}{Matched stimuli (with trigger columns; see \code{\link[=assign_triggers]{assign_triggers()}}).}
+\item{stimuli}{Stimuli with trigger columns (see \code{\link[=assign_triggers]{assign_triggers()}}).}
 
 \item{design}{A parsed design configuration.}
 
-\item{schema}{The parsed global schema (trigger settings).}
+\item{schema}{The parsed global schema (trigger and presentation settings).}
 
 \item{outdir}{Output directory.}
 

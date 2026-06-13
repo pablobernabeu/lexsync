@@ -1,0 +1,5 @@
+{"time":"2026-06-13 18:21:18.702588","message":"loading items 'items/spr_sentences_en.csv'","data":null}
+{"time":"2026-06-13 18:21:18.720729","message":"loaded 10 items across 2 conditions","data":{"conditions":"grammatical, ungrammatical"}}
+{"time":"2026-06-13 18:21:18.743124","message":"wrote 'en_spr_english_stimuli_R.csv'","data":{"path":"output/stimuli/en_spr_english_stimuli_R.csv","rows":20,"md5":"b344b9f0d3fc7ce7354d370e0a1f7156"}}
+{"time":"2026-06-13 18:21:18.792242","message":"wrote 'en_spr_english_psychopy.py'","data":{"path":"output/experiments/en_spr_english_psychopy.py","rows":"NA","md5":"5969f98cd78cb0dbeb371b972568aeb2"}}
+{"time":"2026-06-13 18:21:18.797392","message":"wrote 'en_spr_english.osexp'","data":{"path":"output/experiments/en_spr_english.osexp","rows":"NA","md5":"6b1d4b9e0dd8bb335f200312f4a1fd02"}}

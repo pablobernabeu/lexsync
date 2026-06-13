@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 from rapidfuzz.distance import Hamming, Levenshtein
 
-from .io_utils import read_csv_utf8
+from .io_utils import clean_field, read_csv_utf8
 
 
 def validate_lexicon(df: pd.DataFrame, schema: dict) -> None:
@@ -61,6 +61,33 @@ def add_neighbourhood(df: pd.DataFrame, reference=None, n_old: int = 20) -> pd.D
     out["n_density"] = n_density
     out["old20"] = old
     return out
+
+
+def load_items(path: str, required_fields) -> pd.DataFrame:
+    """Load a paradigm item table (prime-target pairs, sentences, …).
+
+    The table must carry an ``item`` identifier, a ``condition`` label and the
+    paradigm's presented fields. Field values are validated (no control
+    characters; bounded length) so a crafted item cannot corrupt the generated
+    loop table or scripts. Items are mapped to a deterministic integer ``set`` id
+    (byte order) so counterbalancing matches the corpus path and the two engines.
+    """
+    parts = str(path).replace("\\", "/").split("/")
+    if ".." in parts:
+        raise ValueError("lexsync: items path must not contain '..'.")
+    df = read_csv_utf8(path)
+    needed = ["item", "condition"] + list(required_fields)
+    missing = [c for c in needed if c not in df.columns]
+    if missing:
+        raise ValueError(f"lexsync: items table '{path}' is missing column(s): {', '.join(missing)}.")
+    df = df.copy()
+    for f in [c for c in required_fields if c in df.columns]:
+        df[f] = [clean_field(v, f) for v in df[f]]
+    items = sorted(df["item"].astype(str).unique(), key=lambda s: s.encode("utf-8"))
+    set_map = {it: i + 1 for i, it in enumerate(items)}
+    df["set"] = df["item"].astype(str).map(set_map)
+    df["condition"] = df["condition"].astype(str)
+    return df.reset_index(drop=True)
 
 
 def build_pool(lexicon: pd.DataFrame, filters: dict | None = None) -> pd.DataFrame:

@@ -20,45 +20,65 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
   options(lexsync.verbose = verbose)
   schema <- read_config(schema_path)
   design <- read_config(design_path)
+  items_cfg <- design$items %||% list()
+  source <- items_cfg$source %||% "corpus"
+  paradigm <- design$paradigm %||% "factorial"
 
   log <- new_run_log(design$name, meta = list(
-    design = design$name, language = design$language, lexicon = design$lexicon,
-    seed = schema$seed %||% NA, match_on = paste(unlist(design$match_on), collapse = ", ")
+    design = design$name, language = design$language,
+    paradigm = paradigm, source = source, seed = schema$seed %||% NA
   ))
 
-  log <- log_step(log, sprintf("loading lexicon '%s'", design$lexicon))
-  lex <- load_lexicon(design$lexicon, schema, language = design$language)
-  log <- log_step(log, sprintf("lexicon loaded: %d words", nrow(lex)), list(words = nrow(lex)))
-
-  pool <- build_pool(lex, design$pool_filters)
-  log <- log_step(log, sprintf("pool after filters: %d words", nrow(pool)), list(pool = nrow(pool)))
-
-  match_on <- unlist(design$match_on, use.names = FALSE)
-  needed <- intersect(c("n_density", "old20"), match_on)
-  if (length(needed) && any(!needed %in% names(pool))) {
-    log <- log_step(log, "computing orthographic neighbourhood (N, OLD20)")
-    pool <- add_neighbourhood(pool, reference = reference_words %||% lex$word)
+  report <- NULL
+  if (source %in% c("corpus", "generate")) {
+    lexicon <- items_cfg$lexicon %||% design$lexicon
+    log <- log_step(log, sprintf("loading lexicon '%s'", lexicon))
+    lex <- load_lexicon(lexicon, schema, language = design$language)
+    log <- log_step(log, sprintf("lexicon loaded: %d words", nrow(lex)), list(words = nrow(lex)))
+    pool <- build_pool(lex, design$pool_filters)
+    log <- log_step(log, sprintf("pool after filters: %d words", nrow(pool)), list(pool = nrow(pool)))
   }
 
-  stim <- match_stimuli(pool, design, schema, verbose = verbose)
-  log <- log_step(log, sprintf("matched %d items across %d conditions",
-                               nrow(stim), length(unique(stim$condition))),
-                  list(conditions = paste(unique(stim$condition), collapse = ", ")))
+  if (source == "corpus") {
+    match_on <- unlist(design$match_on, use.names = FALSE)
+    needed <- intersect(c("n_density", "old20"), match_on)
+    if (length(needed) && any(!needed %in% names(pool))) {
+      log <- log_step(log, "computing orthographic neighbourhood (N, OLD20)")
+      pool <- add_neighbourhood(pool, reference = reference_words %||% lex$word)
+    }
+    stim <- match_stimuli(pool, design, schema, verbose = verbose)
+    log <- log_step(log, sprintf("matched %d items across %d conditions",
+                                 nrow(stim), length(unique(stim$condition))),
+                    list(conditions = paste(unique(stim$condition), collapse = ", ")))
+    dims <- intersect(c("length", "frequency", "n_density", "old20"), names(stim))
+    report <- match_report(stim, dims, schema)
+  } else if (source == "generate") {
+    n <- design$n_per_condition %||% design$n_per_cell %||% 40L
+    stim <- build_lexdec_stimuli(pool, n, reference_words = lex$word)
+    log <- log_step(log, sprintf("generated %d items (words + pseudowords)", nrow(stim)),
+                    list(conditions = paste(unique(stim$condition), collapse = ", ")))
+    report <- match_report(stim, "length", schema)
+  } else if (source == "table") {
+    path <- items_cfg$path
+    log <- log_step(log, sprintf("loading items '%s'", path))
+    stim <- load_items(path, required_fields(design))
+    log <- log_step(log, sprintf("loaded %d items across %d conditions",
+                                 length(unique(stim$set)), length(unique(stim$condition))),
+                    list(conditions = paste(unique(stim$condition), collapse = ", ")))
+  } else {
+    stop(sprintf("lexsync: unknown item source '%s'.", source), call. = FALSE)
+  }
 
-  # The match report is computed on the matched set before counterbalancing, so
-  # the reference condition is always the matching anchor (the first condition).
-  # Report on every standard dimension present, so the manipulated dimension is
-  # always shown alongside the controlled ones.
-  dims <- intersect(c("length", "frequency", "n_density", "old20"), names(stim))
-  report <- match_report(stim, dims, schema)
-  for (msg in balance_check(stim, "condition")) log <- log_step(log, paste("balance:", msg))
-  for (i in seq_len(nrow(report$comparisons))) {
-    cr <- report$comparisons[i, ]
-    ci <- if (!is.na(cr$d_ci_low) && !is.na(cr$d_ci_high))
-      sprintf(" [%.2f, %.2f]", cr$d_ci_low, cr$d_ci_high) else ""
-    log <- log_step(log, sprintf("equivalence %s vs %s on '%s': d = %.2f%s, TOST p = %.3f (%s)",
-                                 cr$condition, cr$reference, cr$dimension, cr$cohens_d, ci, cr$tost_p,
-                                 if (isTRUE(cr$equivalent)) "equivalent" else "not shown equivalent"))
+  if (!is.null(report)) {
+    for (msg in balance_check(stim, "condition")) log <- log_step(log, paste("balance:", msg))
+    for (i in seq_len(nrow(report$comparisons))) {
+      cr <- report$comparisons[i, ]
+      ci <- if (!is.na(cr$d_ci_low) && !is.na(cr$d_ci_high))
+        sprintf(" [%.2f, %.2f]", cr$d_ci_low, cr$d_ci_high) else ""
+      log <- log_step(log, sprintf("equivalence %s vs %s on '%s': d = %.2f%s, TOST p = %.3f (%s)",
+                                   cr$condition, cr$reference, cr$dimension, cr$cohens_d, ci, cr$tost_p,
+                                   if (isTRUE(cr$equivalent)) "equivalent" else "not shown equivalent"))
+    }
   }
 
   stim <- counterbalance(stim, design, schema)
@@ -71,11 +91,13 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
   stim_path <- file.path(outdir, "stimuli", paste0(base, "_stimuli_R.csv"))
   write_csv_utf8(stim, stim_path); log <- log_artefact(log, stim_path, nrow(stim))
 
-  desc_path <- file.path(outdir, "reports", paste0(base, "_descriptives_R.csv"))
-  write_csv_utf8(report$descriptives, desc_path); log <- log_artefact(log, desc_path, nrow(report$descriptives))
-
-  comp_path <- file.path(outdir, "reports", paste0(base, "_comparisons_R.csv"))
-  write_csv_utf8(report$comparisons, comp_path); log <- log_artefact(log, comp_path, nrow(report$comparisons))
+  desc_path <- comp_path <- NULL
+  if (!is.null(report)) {
+    desc_path <- file.path(outdir, "reports", paste0(base, "_descriptives_R.csv"))
+    write_csv_utf8(report$descriptives, desc_path); log <- log_artefact(log, desc_path, nrow(report$descriptives))
+    comp_path <- file.path(outdir, "reports", paste0(base, "_comparisons_R.csv"))
+    write_csv_utf8(report$comparisons, comp_path); log <- log_artefact(log, comp_path, nrow(report$comparisons))
+  }
 
   exps <- export_experiments(stim, design, schema, file.path(outdir, "experiments"), base)
   for (p in exps) log <- log_artefact(log, p)

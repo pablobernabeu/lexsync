@@ -1,0 +1,14 @@
+# Demonstration paradigm: English priming.
+# Prime-target pairs differ in 'relatedness' (related vs unrelated). Items come from
+# a table; counterbalancing is a Latin square over relatedness with each target shown
+# once per list, rotated across two lists. Trial events: fixation -> prime (brief,
+# onset-marked) -> mask -> target (onset-locked condition marker) -> response -> blank.
+name: en_priming
+language: english
+paradigm: priming
+description: 'Priming: related versus unrelated prime-target pairs, Latin-square counterbalanced so each target appears once per list.'
+items:
+  source: table
+  path: items/priming_pairs_en.csv
+counterbalance:
+  lists: 2

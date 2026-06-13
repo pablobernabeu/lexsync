@@ -7,7 +7,7 @@
 counterbalance(stimuli, design, schema)
 }
 \arguments{
-\item{stimuli}{A matched-stimuli data frame from \code{\link[=match_stimuli]{match_stimuli()}}.}
+\item{stimuli}{A stimuli data frame (matched set or loaded item table).}
 
 \item{design}{A parsed design configuration.}
 
@@ -17,5 +17,6 @@ counterbalance(stimuli, design, schema)
 \code{stimuli} with added \code{list} and \code{trial} columns.
 }
 \description{
-Assign stimuli to lists and a randomised, reproducible trial order
+Dispatches on the design's paradigm: the factorial recipe for matched word
+lists, or a Latin square over conditions for paired/sentence paradigms.
 }

@@ -1,20 +1,27 @@
 # -*- coding: utf-8 -*-
 """Export finalised, hardware-timed experiment scripts (PsychoPy + OpenSesame).
 
-Mirrors R_workflow/R/scripting.R. The OpenSesame .osexp is built line for line
-identically to the R engine. Generation imports neither psychopy nor pyserial:
-it only writes text.
+Mirrors R_workflow/R/scripting.R. Both backends render the same declarative trial
+*event* sequence (see paradigms.py), so a new paradigm is a configuration change,
+not backend code. The PsychoPy script reads stimulus text as data from the
+conditions file and interprets an embedded ``EVENTS`` list; the OpenSesame .osexp
+is generated block by block. Generation imports neither psychopy nor pyserial: it
+only writes text. The .osexp is built line for line identically to the R engine.
 """
 from __future__ import annotations
 
+import json
 import os
 
 import pandas as pd
 
 from .io_utils import slugify, write_csv_utf8
+from .paradigms import content_field, referenced_fields, resolve_events
 
-_LOOP_COLS = ["trial", "list", "word", "condition", "set", "length", "frequency",
-              "n_density", "old20", "target_word_trigger", "condition_trigger"]
+# Columns always carried in a loop table when present (besides the event fields).
+_STD_COLS = ["trial", "list", "set", "condition", "critical_region", "answer",
+             "condition_trigger", "item_trigger"]
+_FRAME_MS = 1000.0 / 60.0   # frames -> milliseconds at 60 Hz
 
 
 def find_template(relpath: str) -> str:
@@ -32,17 +39,84 @@ def find_template(relpath: str) -> str:
 
 
 def assign_triggers(stimuli: pd.DataFrame) -> pd.DataFrame:
+    """A per-condition marker and a per-item marker, both 0-255 EEG codes."""
     stimuli = stimuli.copy()
     conds = list(dict.fromkeys(stimuli["condition"]))
-    stimuli["condition_trigger"] = stimuli["condition"].map(lambda c: 100 + 1 + conds.index(c))
-    uw = list(dict.fromkeys(stimuli["word"]))
-    code = {w: 40 + (i % 200) for i, w in enumerate(uw)}
-    stimuli["target_word_trigger"] = stimuli["word"].map(code)
+    stimuli["condition_trigger"] = stimuli["condition"].map(lambda c: 101 + conds.index(c))
+    sets = sorted(stimuli["set"].unique(), key=lambda s: str(s))
+    set_code = {s: 40 + (i % 200) for i, s in enumerate(sets)}
+    stimuli["item_trigger"] = stimuli["set"].map(set_code)
     return stimuli
 
 
-def loop_table(stimuli: pd.DataFrame) -> pd.DataFrame:
-    cols = [c for c in _LOOP_COLS if c in stimuli.columns]
+def _trigger_spec(value):
+    """Translate a paradigm trigger token to a renderer spec (int or '@column')."""
+    if value is None:
+        return None
+    if value == "condition":
+        return "@condition_trigger"
+    if value == "item":
+        return "@item_trigger"
+    return int(value)
+
+
+def render_events(events: list, timing: dict) -> list:
+    """Translate paradigm events into backend-neutral rendering dictionaries.
+
+    Content becomes {field} or {text}; triggers become int / '@column'; the design
+    ``timing`` overrides the fixation, critical-word and ISI frame counts.
+    """
+    fix = (timing or {}).get("fixation_frames")
+    word = (timing or {}).get("word_frames")
+    isi = (timing or {}).get("isi_frames")
+    out = []
+    for ev in events:
+        t = ev["type"]
+        r = {"type": "region" if t == "region_by_region" else t}
+        if t in ("fixation", "text", "mask"):
+            f = content_field(ev.get("content"))
+            if f:
+                r["field"] = f
+            else:
+                r["text"] = str(ev.get("content", ""))
+            frames = ev.get("duration_frames", 1)
+            if t == "fixation" and fix is not None:
+                frames = fix
+            elif t == "text" and ev.get("trigger") == "condition" and word is not None:
+                frames = word
+            r["frames"] = int(frames)
+            spec = _trigger_spec(ev.get("trigger"))
+            if spec is not None:
+                r["trigger"] = spec
+        elif t == "blank":
+            r["frames"] = int(isi if isi is not None else ev.get("duration_frames", 1))
+        elif t == "region_by_region":
+            r["field"] = content_field(ev.get("content"))
+            r["sep"] = ev.get("sep", "|")
+            r["key"] = ev.get("advance", "space")
+            spec = _trigger_spec(ev.get("critical_region_trigger"))
+            if spec is not None:
+                r["crit_trigger"] = spec
+        elif t == "response":
+            r["keys"] = list(ev.get("keys", ["left", "right"]))
+            r["timeout"] = round(ev.get("timeout_ms", 2000) / 1000.0, 3)
+        elif t == "question":
+            r["field"] = content_field(ev.get("content"))
+            r["keys"] = list(ev.get("keys", ["f", "j"]))
+            r["timeout"] = round(ev.get("timeout_ms", 5000) / 1000.0, 3)
+        else:
+            raise ValueError(f"lexsync: unknown event type '{t}'.")
+        out.append(r)
+    return out
+
+
+def loop_table(stimuli: pd.DataFrame, events: list | None = None) -> pd.DataFrame:
+    """Per-trial table carrying exactly the fields the events reference."""
+    fields = referenced_fields(events) if events else (["word"] if "word" in stimuli.columns else [])
+    cols = []
+    for c in _STD_COLS[:4] + fields + _STD_COLS[4:]:
+        if c in stimuli.columns and c not in cols:
+            cols.append(c)
     tab = stimuli[cols].copy()
     if "trial" in tab.columns:
         tab = tab.sort_values("trial").reset_index(drop=True)
@@ -58,43 +132,111 @@ def _write_text(text: str, path: str) -> str:
 
 def export_psychopy(stimuli, design, schema, outdir, base=None) -> str:
     base = base or slugify(design["name"], design["language"])
+    events = resolve_events(design)
+    rendered = render_events(events, design.get("timing") or {})
     csv_name = f"{base}_psychopy.csv"
-    write_csv_utf8(loop_table(stimuli), os.path.join(outdir, csv_name))
+    write_csv_utf8(loop_table(stimuli, events), os.path.join(outdir, csv_name))
     with open(find_template("psychopy/trial_runner_template.py"), encoding="utf-8") as handle:
         tmpl = handle.read()
-    timing = design.get("timing") or {}
     triggers = schema.get("triggers") or {}
     presentation = schema.get("presentation") or {}
-    word_font = design.get("font") or presentation.get("font") or "Courier New"
     subs = {
         "DESIGN": design["name"], "LANGUAGE": design["language"], "CONDITIONS_FILE": csv_name,
         "TRIGGER_ADDRESS": triggers.get("parallel_address", "0x0378"),
         "RESET_AFTER_FRAMES": triggers.get("reset_after_frames", 2),
-        "WORD_DURATION_FRAMES": timing.get("word_frames", 30),
-        "FIXATION_FRAMES": timing.get("fixation_frames", 30),
-        "ISI_FRAMES": timing.get("isi_frames", 15),
         "INTER_TRIGGER_S": triggers.get("inter_trigger_ms", 10) / 1000,
-        "WORD_FONT": word_font,
+        "WORD_FONT": design.get("font") or presentation.get("font") or "Courier New",
         "FULLSCREEN": "False",
+        "EVENTS_JSON": json.dumps(rendered),
     }
     for key, value in subs.items():
         tmpl = tmpl.replace("{{" + key + "}}", str(value))
-    out = os.path.join(outdir, f"{base}_psychopy.py")
-    return _write_text(tmpl.rstrip("\n"), out)
+    return _write_text(tmpl.rstrip("\n"), os.path.join(outdir, f"{base}_psychopy.py"))
 
 
-def build_osexp(design_name: str, language: str, conditions_file: str, schema: dict,
+def _pyq(s: str) -> str:
+    """A safe single-quoted Python u-string literal for embedding in generated code."""
+    return "u'" + str(s).replace("\\", "\\\\").replace("'", "\\'") + "'"
+
+
+def _content_expr(ev: dict) -> str:
+    return f"var.{ev['field']}" if "field" in ev else _pyq(ev.get("text", ""))
+
+
+def _trigger_expr(spec) -> str | None:
+    if spec is None:
+        return None
+    if isinstance(spec, str) and spec.startswith("@"):
+        return f"var.{spec[1:]}"
+    return str(int(spec))
+
+
+def _osexp_event_block(name: str, ev: dict) -> tuple:
+    """Return (block_lines, run_name) for one rendered event."""
+    t = ev["type"]
+    ms = int(round(ev.get("frames", 1) * _FRAME_MS))
+    if t in ("fixation", "text", "mask", "blank"):
+        body = ["c = Canvas()"]
+        if t != "blank":
+            body.append(f"c.text({_content_expr(ev)})")
+        body.append("var.onset_time = c.show()")
+        trig = _trigger_expr(ev.get("trigger"))
+        if trig is not None:
+            body.append(f"send_trigger({trig})")
+        body.append(f"clock.sleep({ms})")
+        return (_inline_block(name, "Show stimulus and send onset-aligned trigger", body, run=True), name)
+    if t == "region":
+        trig = _trigger_expr(ev.get("crit_trigger"))
+        body = [
+            f"_regions = [r for r in var.{ev['field']}.split({_pyq(ev.get('sep', '|'))}) if r != u'']",
+            "_crit = int(var.critical_region) if var.get(u'critical_region') is not None else 0",
+            f"_kb = Keyboard(keylist=[{_pyq(ev.get('key', 'space'))}], timeout=None)",
+            "for _i, _region in enumerate(_regions, start=1):",
+            "    c = Canvas(); c.text(_region); c.show()",
+        ]
+        if trig is not None:
+            body.append(f"    if _i == _crit: send_trigger({trig})")
+        body.append("    _kb.get_key()")
+        return (_inline_block(name, "Self-paced reading region by region", body, run=True), name)
+    if t == "question":
+        body = [
+            f"c = Canvas(); c.text(var.{ev['field']}); c.show()",
+            f"_kb = Keyboard(keylist=[{', '.join(_pyq(k) for k in ev.get('keys', ['f', 'j']))}], "
+            f"timeout={int(ev.get('timeout', 5) * 1000)})",
+            "var.response, var.response_time = _kb.get_key()",
+        ]
+        return (_inline_block(name, "Comprehension question", body, run=True), name)
+    if t == "response":
+        keys = ";".join(ev.get("keys", ["left", "right"]))
+        block = [
+            f"define keyboard_response {name}",
+            "\tset timeout " + str(int(ev.get("timeout", 2) * 1000)),
+            "\tset flush yes", "\tset duration keypress",
+            '\tset description "Collect a response"',
+            f'\tset allowed_responses "{keys}"', "",
+        ]
+        return (block, name)
+    raise ValueError(f"lexsync: unknown event type '{t}'.")
+
+
+def _inline_block(name: str, desc: str, body: list, run: bool) -> list:
+    tab = ["\t" + b for b in body]
+    return [
+        f"define inline_script {name}",
+        f'\tset description "{desc}"',
+        '\tset _prepare ""', "\t___run__", *tab, "\t__end__", "",
+    ]
+
+
+def build_osexp(design: dict, conditions_file: str, schema: dict, rendered: list,
                 font: str = "mono") -> str:
     addr = (schema.get("triggers") or {}).get("parallel_address", "0x378")
-    def tb(seq):
-        if isinstance(seq, str):
-            return "\t" + seq
-        return ["\t" + s for s in seq]
+    design_name, language = design["name"], design["language"]
+
     setup = [
         "var.trigger_backend = u'parallel'",
         f"var.parallel_port_address = {addr}",
         "var.test_mode = u'no'",
-        "var.word_duration_ms = 500",
         "import time",
         "def _printer(code):",
         "    print(u'[lexsync test trigger] %d' % int(code))",
@@ -127,18 +269,14 @@ def build_osexp(design_name: str, language: str, conditions_file: str, schema: d
         "    print(u'lexsync: trigger device unavailable; test mode.')",
         "send_trigger(0)",
     ]
-    present = [
-        "# Draw the word, show it (this blocks until the display refresh and returns",
-        "# the onset time) and then send the onset-aligned triggers immediately. This",
-        "# is the OpenSesame-recommended way to time-lock a marker to stimulus onset.",
-        "c = Canvas()",
-        "c.text(var.word)",
-        "var.onset_time = c.show()",
-        "send_trigger(var.target_word_trigger)",
-        "send_trigger(var.condition_trigger)",
-        "clock.sleep(var.word_duration_ms)",
-    ]
-    lines = [
+
+    event_blocks, run_names = [], []
+    for i, ev in enumerate(rendered):
+        block, run_name = _osexp_event_block(f"lexsync_e{i}", ev)
+        event_blocks.extend(block)
+        run_names.append(run_name)
+
+    header = [
         "---", "API: 2.1", "OpenSesame: 3.3.14", "Platform: nt", "---",
         "set width 1024", "set uniform_coordinates yes",
         f'set title "lexsync: {design_name} ({language})"',
@@ -151,41 +289,35 @@ def build_osexp(design_name: str, language: str, conditions_file: str, schema: d
         "set coordinates uniform", "set compensation 0", "set color_backend legacy",
         "set clock_backend legacy", "set canvas_backend xpyriment", "set background black", "",
         "define inline_script lexsync_trigger_setup",
-        tb('set description "Open the trigger device with a test-mode fallback"'),
-        tb('set _run ""'), tb("___prepare__"), *tb(setup), tb("__end__"), "",
-        "define sketchpad lexsync_fixation",
-        tb("set duration 500"), tb('set description "Fixation cross"'),
-        tb('draw textline center=1 color=white font_family=mono font_size=40 html=yes show_if=always text="+" x=0 y=0 z_index=0'), "",
-        "define inline_script lexsync_word",
-        tb('set description "Show the word and send onset-aligned triggers"'),
-        tb('set _prepare ""'), tb("___run__"), *tb(present), tb("__end__"), "",
-        "define keyboard_response lexsync_response",
-        tb("set timeout 2000"), tb("set flush yes"), tb("set duration keypress"),
-        tb('set description "Collect a response"'), tb('set allowed_responses "left;right"'), "",
-        "define sequence lexsync_trial",
-        tb("set flush_keyboard yes"),
-        tb('set description "Fixation, word with onset-aligned triggers, response"'),
-        tb("run lexsync_fixation always"), tb("run lexsync_word always"),
-        tb("run lexsync_response always"), "",
-        "define loop lexsync_loop",
-        tb(f'set source_file "{conditions_file}"'),
-        tb("set source file"), tb("set repeat 1"), tb("set order random"),
-        tb('set description "Present each stimulus once"'), tb("run lexsync_trial"), "",
-        "define sequence lexsync_experiment",
-        tb("set flush_keyboard yes"),
-        tb('set description "Top-level experiment sequence"'),
-        tb("run lexsync_trigger_setup always"), tb("run lexsync_loop always"), "",
+        '\tset description "Open the trigger device with a test-mode fallback"',
+        '\tset _run ""', "\t___prepare__", *["\t" + s for s in setup], "\t__end__", "",
     ]
-    return "\n".join(lines)
+    trial = [
+        "define sequence lexsync_trial",
+        "\tset flush_keyboard yes",
+        '\tset description "One trial: the paradigm event sequence"',
+        *[f"\trun {n} always" for n in run_names], "",
+        "define loop lexsync_loop",
+        f'\tset source_file "{conditions_file}"',
+        "\tset source file", "\tset repeat 1", "\tset order random",
+        '\tset description "Present each item once"', "\trun lexsync_trial", "",
+        "define sequence lexsync_experiment",
+        "\tset flush_keyboard yes",
+        '\tset description "Top-level experiment sequence"',
+        "\trun lexsync_trigger_setup always", "\trun lexsync_loop always", "",
+    ]
+    return "\n".join(header + event_blocks + trial)
 
 
 def export_opensesame(stimuli, design, schema, outdir, base=None) -> str:
     base = base or slugify(design["name"], design["language"])
+    events = resolve_events(design)
+    rendered = render_events(events, design.get("timing") or {})
     csv_name = f"{base}_opensesame.csv"
-    write_csv_utf8(loop_table(stimuli), os.path.join(outdir, csv_name))
+    write_csv_utf8(loop_table(stimuli, events), os.path.join(outdir, csv_name))
     presentation = schema.get("presentation") or {}
     font = design.get("font") or presentation.get("opensesame_font") or "mono"
-    text = build_osexp(design["name"], design["language"], csv_name, schema, font=font)
+    text = build_osexp(design, csv_name, schema, rendered, font=font)
     return _write_text(text, os.path.join(outdir, f"{base}.osexp"))
 
 

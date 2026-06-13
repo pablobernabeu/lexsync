@@ -84,3 +84,30 @@ read_config <- function(path) {
   }
   yaml::read_yaml(path)
 }
+
+#' Validate a single stimulus value for safe inclusion in generated files
+#'
+#' Rejects control characters (including tab/newline) and over-long strings, so a
+#' crafted item cannot corrupt the generated loop table or experiment scripts.
+#' Commas and quotation marks are allowed: presented strings are written as data
+#' into a properly quoted CSV the experiment reads at run time, never interpolated
+#' into generated code. Mirrors the Python `clean_field`.
+#'
+#' @param value A value coerced to a single string.
+#' @param field Field name, for error messages.
+#' @param max_len Maximum permitted length in characters.
+#' @return The value as a plain string.
+#' @keywords internal
+clean_field <- function(value, field = "field", max_len = 1000L) {
+  s <- as.character(value)
+  # R character strings cannot themselves contain a nul byte, so guarding the
+  # remaining C0 controls and DEL covers every reachable case.
+  if (grepl("[\x01-\x1f\x7f]", s, perl = TRUE)) {
+    stop(sprintf("lexsync: stimulus '%s' contains control characters: %s", field, s),
+         call. = FALSE)
+  }
+  if (nchar(s) > max_len) {
+    stop(sprintf("lexsync: stimulus '%s' exceeds %d characters.", field, max_len), call. = FALSE)
+  }
+  s
+}

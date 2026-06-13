@@ -2,11 +2,11 @@
 % Please edit documentation in R/scripting.R
 \name{build_osexp}
 \alias{build_osexp}
-\title{Build a complete plain-text OpenSesame experiment}
+\title{Build a complete plain-text OpenSesame experiment from rendered events}
 \usage{
-build_osexp(design_name, language, conditions_file, schema, font = "mono")
+build_osexp(design, conditions_file, schema, rendered, font = "mono")
 }
 \description{
-Build a complete plain-text OpenSesame experiment
+Build a complete plain-text OpenSesame experiment from rendered events
 }
 \keyword{internal}

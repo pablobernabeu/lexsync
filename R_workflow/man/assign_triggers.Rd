@@ -2,18 +2,18 @@
 % Please edit documentation in R/scripting.R
 \name{assign_triggers}
 \alias{assign_triggers}
-\title{Assign EEG trigger codes to matched stimuli}
+\title{Assign EEG trigger codes to stimuli}
 \usage{
 assign_triggers(stimuli)
 }
 \arguments{
-\item{stimuli}{A matched-stimuli data frame.}
+\item{stimuli}{A stimuli data frame.}
 }
 \value{
 \code{stimuli} with trigger columns added.
 }
 \description{
-Adds \code{condition_trigger} (101, 102, ... per condition) and a unique
-\code{target_word_trigger} per word (40-239), mirroring the trigger scheme of the
-original workflow.
+Adds \code{condition_trigger} (101, 102, ... per condition) and \code{item_trigger}
+(40-239 per item/\code{set}). Events reference these by the tokens "condition" and
+"item", or carry their own integer codes.
 }

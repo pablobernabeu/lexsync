@@ -1,0 +1,24 @@
+# Demonstration paradigm: English lexical decision.
+# Real words (a frequency band) are contrasted with length-matched, orthographically
+# legal pseudowords generated deterministically by constrained letter substitution
+# (a cross-engine-reproducible orthographic cousin of Wuggy). The presented string
+# is the 'target'; conditions are 'word' and 'pseudoword'; each word is paired with
+# its pseudoword by 'set'. Trial events: fixation -> target (onset-locked condition
+# marker) -> response -> blank.
+name: en_lexdec
+language: english
+paradigm: lexical_decision
+description: 'Lexical decision: real words versus length-matched, orthographically legal pseudowords (deterministically generated).'
+items:
+  source: generate
+  lexicon: corpora/derived/en.csv
+n_per_condition: 60
+pool_filters:
+  length: [4, 7]
+  frequency: [3.5, 6.0]
+counterbalance:
+  lists: 1
+timing:
+  fixation_frames: 30
+  word_frames: 48
+  isi_frames: 15

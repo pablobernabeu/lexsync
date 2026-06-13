@@ -64,6 +64,7 @@ def _install_fake_psychopy():
     core.wait = lambda *_a, **_k: None
     core.quit = lambda *_a, **_k: None
     event.getKeys = lambda *_a, **_k: []
+    event.waitKeys = lambda *_a, **_k: None
 
     class ParallelPort:
         def __init__(self, *a, **k):
@@ -87,7 +88,7 @@ def _load_generated(path):
 def test_onset_trigger_is_flip_locked(schema, tmp_path):
     _install_fake_psychopy()
     stim = assign_triggers(pd.DataFrame({
-        "word": ["cat", "dog"], "condition": ["a", "b"], "set": [1, 1], "trial": [1, 2],
+        "word": ["cat", "dog"], "condition": ["a", "b"], "set": [1, 2], "trial": [1, 2],
         "length": 3, "frequency": 5, "n_density": 2, "old20": 1.5,
     }))
     design = {"name": "t", "language": "english",
@@ -95,19 +96,21 @@ def test_onset_trigger_is_flip_locked(schema, tmp_path):
     path = export_psychopy(stim, design, schema, str(tmp_path))
 
     module = _load_generated(path)
-    assert module.FIXATION_FRAMES == 3 and module.WORD_DURATION_FRAMES == 4
+    # The factorial event sequence: fixation, the critical word (onset-locked
+    # condition marker), response, blank.
+    types = [ev["type"] for ev in module.EVENTS]
+    assert types == ["fixation", "text", "response", "blank"]
 
     win = FakeWin()
     port = FakePort(win)
-    fixation = module.visual.TextStim()
-    word = module.visual.TextStim()
-    module.present_trial(win, port, fixation, word,
-                         {"word": "cat", "target_word_trigger": 40, "condition_trigger": 101})
+    text_stim = module.visual.TextStim()
+    trial = {"word": "cat", "condition_trigger": 101, "item_trigger": 40}
+    for ev in module.EVENTS:
+        module.run_event(win, port, text_stim, ev, trial)
 
-    onset_flip = module.FIXATION_FRAMES + 1            # first flip showing the word
-    assert (onset_flip, 40) in port.events            # onset trigger bound to that flip
-    assert (onset_flip, 101) not in port.events       # condition marker is sent later
-    assert word.text == "cat"
+    onset_flip = 3 + 1                                 # first flip showing the word
+    assert (onset_flip, 101) in port.events            # condition marker bound to onset
+    assert text_stim.text == "cat"
 
 
 def test_mock_port_fallback_runs(schema, tmp_path):

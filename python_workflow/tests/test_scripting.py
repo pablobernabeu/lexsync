@@ -14,7 +14,7 @@ def _stim():
 
 def test_triggers_in_range():
     s = _stim()
-    assert s["target_word_trigger"].between(40, 239).all()
+    assert s["item_trigger"].between(40, 239).all()
     assert set(s["condition_trigger"]) == {101, 102}
 
 
@@ -50,7 +50,7 @@ def test_font_is_configurable_for_logographic_scripts(schema, tmp_path):
     # so non-alphabetic scripts (here Chinese) render with a glyph-complete font.
     design = {"name": "zh", "language": "chinese", "font": "SimHei", "timing": {}}
     py = open(export_psychopy(_cjk_stim(), design, schema, str(tmp_path)), encoding="utf-8").read()
-    assert 'font="SimHei"' in py
+    assert 'WORD_FONT = "SimHei"' in py
     assert "{{" not in py
     os_lines = open(export_opensesame(_cjk_stim(), design, schema, str(tmp_path)),
                     encoding="utf-8").read().splitlines()
@@ -64,4 +64,4 @@ def test_font_is_configurable_for_logographic_scripts(schema, tmp_path):
 def test_default_font_is_latin(schema, tmp_path):
     design = {"name": "t", "language": "english", "timing": {}}
     py = open(export_psychopy(_stim(), design, schema, str(tmp_path)), encoding="utf-8").read()
-    assert 'font="Courier New"' in py
+    assert 'WORD_FONT = "Courier New"' in py

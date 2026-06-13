@@ -2,11 +2,11 @@
 % Please edit documentation in R/scripting.R
 \name{loop_table}
 \alias{loop_table}
-\title{Select and order the loop-table columns an experiment reads}
+\title{Per-trial table carrying exactly the fields the events reference}
 \usage{
-loop_table(stimuli)
+loop_table(stimuli, events = NULL)
 }
 \description{
-Select and order the loop-table columns an experiment reads
+Per-trial table carrying exactly the fields the events reference
 }
 \keyword{internal}

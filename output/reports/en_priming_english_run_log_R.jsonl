@@ -1,0 +1,5 @@
+{"time":"2026-06-13 18:21:18.015435","message":"loading items 'items/priming_pairs_en.csv'","data":null}
+{"time":"2026-06-13 18:21:18.464377","message":"loaded 12 items across 2 conditions","data":{"conditions":"related, unrelated"}}
+{"time":"2026-06-13 18:21:18.539915","message":"wrote 'en_priming_english_stimuli_R.csv'","data":{"path":"output/stimuli/en_priming_english_stimuli_R.csv","rows":24,"md5":"90d3690f7476fb2bdff3ab05d427bdda"}}
+{"time":"2026-06-13 18:21:18.674709","message":"wrote 'en_priming_english_psychopy.py'","data":{"path":"output/experiments/en_priming_english_psychopy.py","rows":"NA","md5":"408a92b7c632d29f4c56f20edc86994d"}}
+{"time":"2026-06-13 18:21:18.682868","message":"wrote 'en_priming_english.osexp'","data":{"path":"output/experiments/en_priming_english.osexp","rows":"NA","md5":"dba0f4c65e9ae391799dc953be03dfd4"}}

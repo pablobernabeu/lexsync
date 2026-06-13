@@ -1,0 +1,21 @@
+item,condition,sentence,critical_region,question,answer
+1,grammatical,The|key|to the cabinets|was|rusty.,4,Was something rusty?,f
+1,ungrammatical,The|key|to the cabinets|were|rusty.,4,Was something rusty?,f
+2,grammatical,The|author|of the novels|was|famous.,4,Was someone famous?,f
+2,ungrammatical,The|author|of the novels|were|famous.,4,Was someone famous?,f
+3,grammatical,The|bridge|near the houses|was|old.,4,Was the bridge new?,j
+3,ungrammatical,The|bridge|near the houses|were|old.,4,Was the bridge new?,j
+4,grammatical,The|picture|of the children|was|lovely.,4,Was something lovely?,f
+4,ungrammatical,The|picture|of the children|were|lovely.,4,Was something lovely?,f
+5,grammatical,The|recipe|for the cookies|was|simple.,4,Was the recipe hard?,j
+5,ungrammatical,The|recipe|for the cookies|were|simple.,4,Was the recipe hard?,j
+6,grammatical,The|window|in the offices|was|broken.,4,Was something broken?,f
+6,ungrammatical,The|window|in the offices|were|broken.,4,Was something broken?,f
+7,grammatical,The|captain|of the ships|was|brave.,4,Was someone brave?,f
+7,ungrammatical,The|captain|of the ships|were|brave.,4,Was someone brave?,f
+8,grammatical,The|letter|from the lawyers|was|urgent.,4,Was the letter urgent?,f
+8,ungrammatical,The|letter|from the lawyers|were|urgent.,4,Was the letter urgent?,f
+9,grammatical,The|garden|behind the cottages|was|quiet.,4,Was the garden noisy?,j
+9,ungrammatical,The|garden|behind the cottages|were|quiet.,4,Was the garden noisy?,j
+10,grammatical,The|report|about the islands|was|detailed.,4,Was the report detailed?,f
+10,ungrammatical,The|report|about the islands|were|detailed.,4,Was the report detailed?,f
