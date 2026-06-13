@@ -49,7 +49,7 @@ lexsync/
 ├── corpora/           many-language corpus registry + ingestion + attribution
 ├── config/            global schema + per-design configurations
 ├── output/            generated stimuli, reports and experiment scripts
-└── manuscript/        reproducible Quarto manuscript for Behavior Research Methods
+└── manuscript/        reproducible Quarto manuscript (in preparation)
 ```
 
 Both packages expose the same modules — `querying`, `matching`, `counterbalancing`,

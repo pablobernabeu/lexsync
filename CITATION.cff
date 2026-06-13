@@ -1,5 +1,5 @@
 cff-version: 1.2.0
-message: 'If you use lexsync, please cite both the software and the accompanying article.'
+message: 'If you use lexsync, please cite the software. A manuscript describing it is in preparation.'
 title: 'lexsync: multidimensional lexical optimisation and hardware-timed experiment generation'
 abstract: >-
   lexsync is a cross-platform, dual-language (R and Python) toolkit that unifies
@@ -28,11 +28,12 @@ keywords:
   - OpenSesame
   - FAIR
 preferred-citation:
-  type: article
+  # No venue is named: the manuscript has not been submitted. A journal will be
+  # added here only once the article is accepted.
+  type: unpublished
   title: 'lexsync: a cross-platform pipeline for multidimensional lexical optimisation and hardware-timed experiment generation'
   authors:
     - family-names: Bernabeu
       given-names: Pablo
-  journal: 'Behavior Research Methods'
   year: 2026
-  notes: 'Manuscript in preparation; details to be finalised on submission.'
+  notes: 'Manuscript in preparation; venue and details to be finalised on submission.'

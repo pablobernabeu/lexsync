@@ -1,16 +1,20 @@
-# Submission checklist (lexsync + the BRM manuscript)
+# Submission checklist (lexsync + the accompanying manuscript)
 
 This file collects everything needed to publish 'lexsync' and submit the
-accompanying manuscript to *Behavior Research Methods* (BRM). It is guidance, not
-an automated step; some items require your account, your identity or a network
-service and cannot be done from the build machine.
+accompanying manuscript. **No venue has been chosen yet, and the manuscript has
+not been submitted.** *Behavior Research Methods* (BRM) is the leading candidate,
+so the policy-specific steps below follow its requirements as a worked example;
+adapt them if you choose a different journal. It is guidance, not an automated
+step; some items require your account, your identity or a network service and
+cannot be done from the build machine.
 
 ## Recommended sequence
 
-BRM is a Psychonomic Society journal: it follows the TOP / Open Science **Level
-2** guidelines (materials and code must be in a **trusted repository**, with an
-**Open Practices Statement** just before the References) and uses **masked
-(double-blind) review**. That shapes the order:
+If you submit to BRM (the candidate venue): it is a Psychonomic Society journal
+that follows the TOP / Open Science **Level 2** guidelines (materials and code
+must be in a **trusted repository**, with an **Open Practices Statement** just
+before the References) and uses **masked (double-blind) review**. That shapes the
+order:
 
 1. **Public GitHub repository.** Create `github.com/<you>/lexsync`, push this
    repo, and update the URL placeholders (see below). This resolves the CRAN

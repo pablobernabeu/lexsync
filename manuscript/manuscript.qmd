@@ -26,9 +26,10 @@ abstract: |
   The matching and generation are deterministic, so the two engines select
   identical materials; we
   demonstrate
-  this on nine worked examples in English, Spanish and Mandarin Chinese — across
+  this on twelve worked examples in English, Spanish and Mandarin Chinese — across
   word, pseudoword, paired and sentence stimuli — one of which shows that the
-  workflow extends to a logographic writing system. The
+  workflow extends to a logographic writing system, while three reproduce
+  published designs from the literature. The
   generation step
   requires no presentation software and no hardware, which keeps the whole
   workflow reproducible. 'lexsync' generalises the FAIR artificial-grammar
