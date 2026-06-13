@@ -24,6 +24,20 @@
 #' @return `stimuli` with added `list` and `trial` columns.
 #' @export
 counterbalance <- function(stimuli, design, schema) {
+  # Resampled designs counterbalance each replicate (an independent item set) on
+  # its own, so trial order is numbered within each replicate.
+  if ("replicate" %in% names(stimuli) && length(unique(stimuli$replicate)) > 1L) {
+    parts <- lapply(split(stimuli, stimuli$replicate), function(g) {
+      rownames(g) <- NULL
+      .counterbalance_one(g, design, schema)
+    })
+    out <- do.call(rbind, parts); rownames(out) <- NULL
+    return(out)
+  }
+  .counterbalance_one(stimuli, design, schema)
+}
+
+.counterbalance_one <- function(stimuli, design, schema) {
   if (identical(.cb_recipe(design), "latin_square_target")) {
     return(counterbalance_latin_square(stimuli, design, schema))
   }

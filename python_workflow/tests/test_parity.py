@@ -22,6 +22,7 @@ CASES = [
     ("zh_freqcontrast_chinese", "config/design_zh_freqcontrast.yaml", ["word", "condition"]),
     ("en_lexdec_english", "config/design_en_lexdec.yaml", ["target", "condition"]),
     ("en_richdim_english", "config/design_en_richdim.yaml", ["word", "condition"]),
+    ("en_resample_english", "config/design_en_resample.yaml", ["replicate", "word", "condition"]),
     ("en_priming_english", "config/design_en_priming.yaml", ["list", "set", "condition", "prime", "target"]),
     ("en_spr_english", "config/design_en_spr.yaml", ["list", "set", "condition", "sentence"]),
 ]

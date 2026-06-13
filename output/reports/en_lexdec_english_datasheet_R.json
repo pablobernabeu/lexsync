@@ -67,6 +67,7 @@
     "recipe": "factorial",
     "lists": 1
   },
+  "resampling": null,
   "items": {
     "n_total": 120,
     "n_conditions": 2,

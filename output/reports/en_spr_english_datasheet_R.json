@@ -54,6 +54,7 @@
     "recipe": "latin_square_target",
     "lists": 2
   },
+  "resampling": null,
   "items": {
     "n_total": 20,
     "n_conditions": 2,

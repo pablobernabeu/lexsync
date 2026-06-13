@@ -65,3 +65,23 @@ test_that("joint matching cancels the control-dimension confound", {
                         s_std$length[s_std$condition == "sparse"]))
   expect_lte(d_joint, d_std + 1e-9)
 })
+
+test_that("resample_stimuli produces disjoint matched sets", {
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  lex <- load_lexicon(system.file("extdata", "en_example.csv", package = "lexsync"), schema, "english")
+  design <- list(name = "r", language = "english", n_per_condition = 5,
+    pool_filters = list(length = c(3, 7), frequency = c(3.8, 7)),
+    conditions = list(list(name = "high", define_by = list(frequency = c(5.0, 7.0))),
+                      list(name = "low", define_by = list(frequency = c(3.8, 4.4)))),
+    match_on = list("length"))
+  pool <- build_pool(lex, design$pool_filters)
+  s <- resample_stimuli(pool, design, schema, 3L)
+  expect_setequal(unique(s$replicate), c(1L, 2L, 3L))
+  for (r in unique(s$replicate)) {
+    expect_equal(sort(as.integer(table(s$condition[s$replicate == r]))), c(5L, 5L))
+  }
+  w <- split(s$word, s$replicate)
+  expect_length(intersect(w[[1]], w[[2]]), 0)
+  expect_length(intersect(w[[1]], w[[3]]), 0)
+  expect_length(intersect(w[[2]], w[[3]]), 0)
+})

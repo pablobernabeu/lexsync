@@ -30,6 +30,16 @@ def _recipe(design: dict) -> str:
 
 
 def counterbalance(stimuli: pd.DataFrame, design: dict, schema: dict) -> pd.DataFrame:
+    # Resampled designs counterbalance each replicate (an independent item set)
+    # on its own, so trial order is numbered within each replicate.
+    if "replicate" in stimuli.columns and stimuli["replicate"].nunique() > 1:
+        parts = [_counterbalance_one(g.reset_index(drop=True), design, schema)
+                 for _, g in stimuli.groupby("replicate", sort=True)]
+        return pd.concat(parts, ignore_index=True)
+    return _counterbalance_one(stimuli, design, schema)
+
+
+def _counterbalance_one(stimuli: pd.DataFrame, design: dict, schema: dict) -> pd.DataFrame:
     if _recipe(design) == "latin_square_target":
         return counterbalance_latin_square(stimuli, design, schema)
     return counterbalance_factorial(stimuli, design, schema)

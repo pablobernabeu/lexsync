@@ -1,0 +1,30 @@
+# Demonstration design: items as a random factor via resampling.
+# The same high- versus low-frequency contrast is drawn three times into disjoint,
+# independently matched item sets (no word is reused across sets). A study can then
+# run a different item sample per participant group, or show that an effect holds
+# across item samples, treating items as the random factor they are (Clark, 1973;
+# Yarkoni, 2020). The output carries a 'replicate' column.
+name: en_resample
+language: english
+lexicon: corpora/derived/en.csv
+description: 'High versus low frequency English words in three disjoint matched item sets (items as a random factor).'
+n_per_condition: 40
+pool_filters:
+  length: [4, 8]
+  frequency: [3.5, 7.0]
+conditions:
+  - name: high_frequency
+    define_by:
+      frequency: [5.2, 7.0]
+  - name: low_frequency
+    define_by:
+      frequency: [3.5, 4.4]
+match_on: [length, n_density, old20]
+resample:
+  n_sets: 3
+counterbalance:
+  lists: 1
+timing:
+  fixation_frames: 30
+  word_frames: 30
+  isi_frames: 15

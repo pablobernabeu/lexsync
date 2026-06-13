@@ -77,6 +77,8 @@ build_datasheet <- function(design, schema, report, stimuli, source_path, artifa
     counterbalancing = list(
       recipe = if (identical(source, "table")) "latin_square_target" else "factorial",
       lists = design$counterbalance$lists %||% 1L),
+    resampling = if (!is.null(design$resample))
+      list(n_sets = design$resample$n_sets, disjoint = TRUE) else NULL,
     items = list(n_total = nrow(stimuli), n_conditions = length(conditions),
                  conditions = as.list(conditions),
                  stimuli_file = artifacts$stimuli, stimuli_sha256 = sha256_file(artifacts$stimuli)),
@@ -120,8 +122,11 @@ methods_paragraph <- function(ds) {
                               "0.5-SD equivalence bound"),
                        abs(worst$cohens_d), worst$ci_low, worst$ci_high)
   }
+  resamp <- if (!is.null(ds$resampling))
+    sprintf(". %s disjoint matched item sets were drawn, so items can be treated as a random factor",
+            ds$resampling$n_sets) else ""
   cb <- ds$counterbalancing
-  tail <- sprintf(paste0(". Materials were counterbalanced into %s list(s) (%s) and generated for ",
+  tail <- sprintf(paste0(resamp, ". Materials were counterbalanced into %s list(s) (%s) and generated for ",
                          "PsychoPy, OpenSesame and jsPsych. The selection is deterministic and ",
                          "reproducible (seed %s; lexsync %s)."),
                   cb$lists, cb$recipe, ds$reproducibility$seed, ds$reproducibility$versions$lexsync)

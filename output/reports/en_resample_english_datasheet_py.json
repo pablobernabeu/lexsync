@@ -1,0 +1,156 @@
+{
+  "artifacts": [
+    {
+      "file": "output\\stimuli\\en_resample_english_stimuli_py.csv",
+      "sha256": "136c45ea01ff11fa956882f0b99becef5b0b77a9820183d46226d35ff8bee4de"
+    },
+    {
+      "file": "output\\reports\\en_resample_english_descriptives_py.csv",
+      "sha256": "587285931db545dfa60275df9df30685044dda083254e9604f4e5addafd4d74e"
+    },
+    {
+      "file": "output\\reports\\en_resample_english_comparisons_py.csv",
+      "sha256": "455bdb5016d40d01f19a255cc6d24288b810b2e0351aad556c092fad94fcb1f0"
+    },
+    {
+      "file": "output\\experiments\\en_resample_english_psychopy.py",
+      "sha256": "f6bd44e08a1a6c0fd8bafd998185cba94f7e870ef661963b0ad5a2c1ea4f4a11"
+    },
+    {
+      "file": "output\\experiments\\en_resample_english.osexp",
+      "sha256": "1a542872525cf82ae01c0864a20f4ee02795e828de5e7d775f36b0c0eeb368df"
+    },
+    {
+      "file": "output\\experiments\\en_resample_english.html",
+      "sha256": "bea5845fbef0437a59d37364138ec8afd4ad268a0dc09ea8075b6a6030d030f9"
+    }
+  ],
+  "counterbalancing": {
+    "lists": 1,
+    "recipe": "factorial"
+  },
+  "design": {
+    "description": "High versus low frequency English words in three disjoint matched item sets (items as a random factor).",
+    "language": "english",
+    "n_per_condition": 40,
+    "name": "en_resample",
+    "paradigm": "factorial",
+    "source": "corpus"
+  },
+  "dimensions": {
+    "bigram_freq": {
+      "compute": "mean_bigram_probability",
+      "type": "derived",
+      "unit": "mean positional bigram probability"
+    },
+    "frequency": {
+      "column": "freq_zipf",
+      "type": "column",
+      "unit": "Zipf"
+    },
+    "length": {
+      "compute": "n_letters",
+      "type": "derived",
+      "unit": "letters"
+    },
+    "n_density": {
+      "compute": "coltheart_n",
+      "type": "derived",
+      "unit": "neighbours"
+    },
+    "n_syllables": {
+      "compute": "vowel_groups",
+      "type": "derived",
+      "unit": "syllables (orthographic estimate)"
+    },
+    "old20": {
+      "compute": "old20",
+      "type": "derived",
+      "unit": "mean Levenshtein distance"
+    }
+  },
+  "items": {
+    "conditions": [
+      "low_frequency",
+      "high_frequency"
+    ],
+    "n_conditions": 2,
+    "n_total": 240,
+    "stimuli_file": "output\\stimuli\\en_resample_english_stimuli_py.csv",
+    "stimuli_sha256": "136c45ea01ff11fa956882f0b99becef5b0b77a9820183d46226d35ff8bee4de"
+  },
+  "lexsync_datasheet_version": "1.0",
+  "materials_source": {
+    "path": "corpora/derived/en.csv",
+    "provenance": "see corpora/ATTRIBUTION.md for corpus licence and citation",
+    "sha256": "c20549b920d816809d11cfa673ad0df1dd70d3e73176ee66cbec18021627f65d",
+    "type": "corpus"
+  },
+  "realised_control": [
+    {
+      "ci_high": 0.257,
+      "ci_low": -0.169,
+      "cohens_d": 0.044,
+      "dimension": "length",
+      "equivalent": true,
+      "role": "controlled",
+      "tost_p": 0.0002
+    },
+    {
+      "ci_high": 5.595,
+      "ci_low": 5.169,
+      "cohens_d": 5.382,
+      "dimension": "frequency",
+      "equivalent": false,
+      "role": "manipulated/free",
+      "tost_p": 1.0
+    },
+    {
+      "ci_high": 0.245,
+      "ci_low": -0.182,
+      "cohens_d": 0.032,
+      "dimension": "n_density",
+      "equivalent": true,
+      "role": "controlled",
+      "tost_p": 0.0002
+    },
+    {
+      "ci_high": 0.23,
+      "ci_low": -0.196,
+      "cohens_d": 0.017,
+      "dimension": "old20",
+      "equivalent": true,
+      "role": "controlled",
+      "tost_p": 0.0001
+    }
+  ],
+  "reproducibility": {
+    "seed": 2026,
+    "versions": {
+      "engine": "python",
+      "lexsync": "0.1.0",
+      "numpy": "2.3.2",
+      "pandas": "2.3.2",
+      "python": "3.13.7",
+      "scipy": "1.17.1"
+    }
+  },
+  "resampling": {
+    "disjoint": true,
+    "n_sets": 3
+  },
+  "selection": {
+    "match_on": [
+      "length",
+      "n_density",
+      "old20"
+    ],
+    "method": "standardised_euclidean",
+    "tolerance_k": {
+      "frequency": 1.0,
+      "length": 2.0,
+      "n_density": 2.0,
+      "old20": 2.0
+    }
+  }
+}

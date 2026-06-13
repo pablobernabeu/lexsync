@@ -289,7 +289,12 @@ for the neighbourhood-density demonstrations below.
 ## Counterbalancing and reporting
 
 Matched items are assigned to presentation lists and a reproducible trial order,
-and a participant table crosses any counterbalancing factors. 'lexsync' then
+and a participant table crosses any counterbalancing factors. A design may also
+request *resampling*: several disjoint matched item sets are drawn, no item reused
+across them, so a study can run a different item sample per participant group or
+demonstrate an effect across samples — operationalising the long-standing
+recommendation to treat items as a random factor rather than a fixed set
+[@clark1973language; @yarkoni2020generalizability]. 'lexsync' then
 writes a match-quality report and an automated, comprehensive run log recording
 each stage, its parameters, the seed, package and corpus provenance and a
 fingerprint of every file written.
@@ -684,10 +689,9 @@ to an orthographic syllable estimate and a corpus-derived bigram-frequency
 (phonotactic-probability) measure, could grow further to predictability dimensions
 (n-gram or language-model surprisal); semantic dimensions such as concreteness, age
 of acquisition and valence are already reachable through the norm-table connector,
-the norm data being fetched separately because their licences vary. Finally,
-resampling multiple matched item sets, or sampling items per participant, would let
-a study treat its items as the random factor they are [@clark1973language;
-@yarkoni2020generalizability]. A graphical interface is a further possibility.
+the norm data being fetched separately because their licences vary. Sampling matched
+item sets per participant, rather than per study, would extend the resampling
+already provided; a graphical interface is a further possibility.
 
 # Availability and open practices
 

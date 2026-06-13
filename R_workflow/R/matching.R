@@ -175,3 +175,34 @@ match_joint <- function(subpools, cond_names, match_on, center, scale_, n, cap =
   rownames(out) <- NULL
   out
 }
+
+#' Produce several disjoint matched item sets (items as a random factor)
+#'
+#' Each replicate is an independent, fully matched set drawn from the pool with the
+#' items of earlier replicates removed, so no item is reused. This lets a study
+#' treat its items as a random factor -- running different item samples across
+#' participant groups, or showing an effect holds across samples -- rather than as
+#' a fixed set (Clark, 1973; Yarkoni, 2020). Deterministic and identical to the
+#' Python engine.
+#'
+#' @param pool A candidate pool with the `match_on` dimensions present.
+#' @param design A parsed design configuration.
+#' @param schema The parsed global schema.
+#' @param n_sets Number of disjoint matched sets to draw.
+#' @param verbose Logical; passed to [match_stimuli()].
+#' @return A data frame of matched stimuli with an added `replicate` column.
+#' @export
+resample_stimuli <- function(pool, design, schema, n_sets, verbose = FALSE) {
+  used <- character(0)
+  parts <- list()
+  for (k in seq_len(as.integer(n_sets))) {
+    pk <- pool[!(pool$word %in% used), , drop = FALSE]
+    sk <- match_stimuli(pk, design, schema, verbose = verbose)
+    sk$replicate <- k
+    used <- c(used, sk$word)
+    parts[[k]] <- sk
+  }
+  out <- do.call(rbind, parts)
+  rownames(out) <- NULL
+  out
+}

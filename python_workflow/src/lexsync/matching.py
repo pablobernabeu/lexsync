@@ -160,3 +160,25 @@ def match_stimuli(pool: pd.DataFrame, design: dict, schema: dict, verbose: bool 
     out = pd.concat([s[common] for s in selected], ignore_index=True)
     out["set"] = list(range(1, n_take + 1)) * len(conditions)
     return out
+
+
+def resample_stimuli(pool: pd.DataFrame, design: dict, schema: dict,
+                     n_sets: int, verbose: bool = False) -> pd.DataFrame:
+    """Produce ``n_sets`` disjoint matched item sets (a ``replicate`` column).
+
+    Each replicate is an independent, fully matched set drawn from the pool with
+    the items of earlier replicates removed, so no item is reused. This lets a
+    study treat its items as a random factor — running different item samples
+    across participant groups, or showing an effect holds across samples — rather
+    than as a fixed set (Clark, 1973; Yarkoni, 2020). Deterministic: the matcher is
+    deterministic and the used-item set evolves identically across engines.
+    """
+    used: set = set()
+    parts = []
+    for k in range(1, int(n_sets) + 1):
+        pk = pool[~pool["word"].isin(used)].reset_index(drop=True)
+        sk = match_stimuli(pk, design, schema, verbose=verbose).copy()
+        sk["replicate"] = k
+        used |= set(sk["word"])
+        parts.append(sk)
+    return pd.concat(parts, ignore_index=True)

@@ -96,6 +96,8 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
             "recipe": "latin_square_target" if source == "table" else "factorial",
             "lists": (design.get("counterbalance") or {}).get("lists", 1),
         },
+        "resampling": ({"n_sets": (design.get("resample") or {}).get("n_sets"),
+                        "disjoint": True} if design.get("resample") else None),
         "items": {
             "n_total": int(len(stimuli)), "n_conditions": len(conditions),
             "conditions": conditions,
@@ -153,8 +155,11 @@ def methods_paragraph(ds: dict) -> str:
                    f"0.5-SD equivalence bound")
     else:
         control = ""
+    rs = ds.get("resampling")
+    resamp = (f". {rs['n_sets']} disjoint matched item sets were drawn, so items can be "
+              f"treated as a random factor" if rs else "")
     cb = ds["counterbalancing"]
-    tail = (f". Materials were counterbalanced into {cb['lists']} list(s) "
+    tail = (resamp + f". Materials were counterbalanced into {cb['lists']} list(s) "
             f"({cb['recipe']}) and generated for PsychoPy, OpenSesame and jsPsych. The "
             f"selection is deterministic and reproducible (seed "
             f"{ds['reproducibility']['seed']}; lexsync "

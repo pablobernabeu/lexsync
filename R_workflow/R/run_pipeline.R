@@ -51,10 +51,17 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
       log <- log_step(log, "computing bigram frequency (phonotactic-probability proxy)")
       pool <- add_bigram_frequency(pool, reference = ref)
     }
-    stim <- match_stimuli(pool, design, schema, verbose = verbose)
-    log <- log_step(log, sprintf("matched %d items across %d conditions",
-                                 nrow(stim), length(unique(stim$condition))),
-                    list(conditions = paste(unique(stim$condition), collapse = ", ")))
+    if (!is.null(design$resample)) {
+      stim <- resample_stimuli(pool, design, schema, design$resample$n_sets %||% 2L, verbose = verbose)
+      log <- log_step(log, sprintf("resampled %d disjoint matched sets (%d items total)",
+                                   length(unique(stim$replicate)), nrow(stim)),
+                      list(conditions = paste(unique(stim$condition), collapse = ", ")))
+    } else {
+      stim <- match_stimuli(pool, design, schema, verbose = verbose)
+      log <- log_step(log, sprintf("matched %d items across %d conditions",
+                                   nrow(stim), length(unique(stim$condition))),
+                      list(conditions = paste(unique(stim$condition), collapse = ", ")))
+    }
     std <- c("length", "frequency", "n_density", "old20")
     extra <- intersect(c("n_syllables", "bigram_freq"), match_on)
     dims <- intersect(c(std, extra), names(stim))

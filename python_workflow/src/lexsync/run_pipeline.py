@@ -17,7 +17,7 @@ from .counterbalancing import counterbalance
 from .datasheet import build_datasheet, write_datasheet
 from .generation import build_lexdec_stimuli
 from .io_utils import read_config, slugify, write_csv_utf8
-from .matching import match_stimuli
+from .matching import match_stimuli, resample_stimuli
 from .paradigms import required_fields
 from .querying import (add_bigram_frequency, add_neighbourhood, build_pool,
                        load_items, load_lexicon)
@@ -57,9 +57,17 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
         if "bigram_freq" in match_on and "bigram_freq" not in pool.columns:
             runlog.log_step(log, "computing bigram frequency (phonotactic-probability proxy)")
             pool = add_bigram_frequency(pool, reference=ref)
-        stim = match_stimuli(pool, design, schema, verbose=verbose)
-        runlog.log_step(log, f"matched {len(stim)} items across {stim['condition'].nunique()} conditions",
-                        {"conditions": ", ".join(dict.fromkeys(stim["condition"]))})
+        resample = design.get("resample")
+        if resample:
+            n_sets = resample.get("n_sets", 2)
+            stim = resample_stimuli(pool, design, schema, n_sets, verbose=verbose)
+            runlog.log_step(log, f"resampled {stim['replicate'].nunique()} disjoint matched "
+                                 f"sets ({len(stim)} items total)",
+                            {"conditions": ", ".join(dict.fromkeys(stim["condition"]))})
+        else:
+            stim = match_stimuli(pool, design, schema, verbose=verbose)
+            runlog.log_step(log, f"matched {len(stim)} items across {stim['condition'].nunique()} conditions",
+                            {"conditions": ", ".join(dict.fromkeys(stim["condition"]))})
         std = ["length", "frequency", "n_density", "old20"]
         extra = [d for d in ("n_syllables", "bigram_freq") if d in match_on]
         dims = [d for d in std + extra if d in stim.columns]

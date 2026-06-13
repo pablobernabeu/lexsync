@@ -1,0 +1,157 @@
+{
+  "lexsync_datasheet_version": "1.0",
+  "design": {
+    "name": "en_resample",
+    "language": "english",
+    "paradigm": "factorial",
+    "source": "corpus",
+    "description": "High versus low frequency English words in three disjoint matched item sets (items as a random factor).",
+    "n_per_condition": 40
+  },
+  "materials_source": {
+    "type": "corpus",
+    "path": "corpora/derived/en.csv",
+    "sha256": "c20549b920d816809d11cfa673ad0df1dd70d3e73176ee66cbec18021627f65d",
+    "provenance": "see corpora/ATTRIBUTION.md for corpus licence and citation"
+  },
+  "dimensions": {
+    "length": {
+      "type": "derived",
+      "compute": "n_letters",
+      "unit": "letters"
+    },
+    "frequency": {
+      "type": "column",
+      "column": "freq_zipf",
+      "unit": "Zipf"
+    },
+    "n_density": {
+      "type": "derived",
+      "compute": "coltheart_n",
+      "unit": "neighbours"
+    },
+    "old20": {
+      "type": "derived",
+      "compute": "old20",
+      "unit": "mean Levenshtein distance"
+    },
+    "n_syllables": {
+      "type": "derived",
+      "compute": "vowel_groups",
+      "unit": "syllables (orthographic estimate)"
+    },
+    "bigram_freq": {
+      "type": "derived",
+      "compute": "mean_bigram_probability",
+      "unit": "mean positional bigram probability"
+    }
+  },
+  "selection": {
+    "method": "standardised_euclidean",
+    "match_on": [
+      "length",
+      "n_density",
+      "old20"
+    ],
+    "tolerance_k": {
+      "length": 2,
+      "frequency": 1,
+      "n_density": 2,
+      "old20": 2
+    }
+  },
+  "realised_control": [
+    {
+      "dimension": "length",
+      "role": "controlled",
+      "cohens_d": 0.044,
+      "ci_low": -0.169,
+      "ci_high": 0.257,
+      "tost_p": 0.0002,
+      "equivalent": true
+    },
+    {
+      "dimension": "frequency",
+      "role": "manipulated/free",
+      "cohens_d": 5.382,
+      "ci_low": 5.169,
+      "ci_high": 5.595,
+      "tost_p": 1,
+      "equivalent": false
+    },
+    {
+      "dimension": "n_density",
+      "role": "controlled",
+      "cohens_d": 0.032,
+      "ci_low": -0.182,
+      "ci_high": 0.245,
+      "tost_p": 0.0002,
+      "equivalent": true
+    },
+    {
+      "dimension": "old20",
+      "role": "controlled",
+      "cohens_d": 0.017,
+      "ci_low": -0.196,
+      "ci_high": 0.23,
+      "tost_p": 0.0001,
+      "equivalent": true
+    }
+  ],
+  "counterbalancing": {
+    "recipe": "factorial",
+    "lists": 1
+  },
+  "resampling": {
+    "n_sets": 3,
+    "disjoint": true
+  },
+  "items": {
+    "n_total": 240,
+    "n_conditions": 2,
+    "conditions": [
+      "high_frequency",
+      "low_frequency"
+    ],
+    "stimuli_file": "output/stimuli/en_resample_english_stimuli_R.csv",
+    "stimuli_sha256": "81e58a3545442deea7b5c9356926d2e9a63364e4fb508c9ffebfadc0fbf85c22"
+  },
+  "reproducibility": {
+    "seed": 2026,
+    "versions": {
+      "engine": "R",
+      "lexsync": "0.1.0",
+      "R": "4.5.1",
+      "readr": "2.2.0",
+      "stringdist": "0.9.17",
+      "jsonlite": "2.0.0",
+      "digest": "0.6.37"
+    }
+  },
+  "artifacts": [
+    {
+      "file": "output/stimuli/en_resample_english_stimuli_R.csv",
+      "sha256": "81e58a3545442deea7b5c9356926d2e9a63364e4fb508c9ffebfadc0fbf85c22"
+    },
+    {
+      "file": "output/reports/en_resample_english_descriptives_R.csv",
+      "sha256": "9a28c091dd4fd26919fab675aa8012b238efdc2d1f22a5938df616145f3b55f5"
+    },
+    {
+      "file": "output/reports/en_resample_english_comparisons_R.csv",
+      "sha256": "1bd638d3f4fc54f437ad418f69941cd4744a5bc43e1c33e0b0a31a5c856dbce0"
+    },
+    {
+      "file": "output/experiments/en_resample_english_psychopy.py",
+      "sha256": "87ab1a11bcd3f733287c6f2b582e520abd48558eb8cfa5fcdfa1f8b8bbe0c6f0"
+    },
+    {
+      "file": "output/experiments/en_resample_english.osexp",
+      "sha256": "10c3ab811c320371bfce98223b30bf6ae2a7d3c316a922e6cf6c0e645b825163"
+    },
+    {
+      "file": "output/experiments/en_resample_english.html",
+      "sha256": "a1359032e2c7498d964a2e2df9b80fa10d1852ff7dabc3080a0a6e652079bcff"
+    }
+  ]
+}

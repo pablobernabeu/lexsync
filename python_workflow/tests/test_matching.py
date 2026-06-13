@@ -1,5 +1,5 @@
-from lexsync.matching import match_stimuli
-from lexsync.querying import load_lexicon
+from lexsync.matching import match_stimuli, resample_stimuli
+from lexsync.querying import build_pool, load_lexicon
 from lexsync.validation import cohens_d
 
 
@@ -70,3 +70,32 @@ def test_joint_cancels_control_confound(schema, en_lexicon_path):
     d_std = abs(cohens_d(s_std.loc[s_std.condition == "dense", "length"],
                          s_std.loc[s_std.condition == "sparse", "length"]))
     assert d_joint <= d_std + 1e-9
+
+
+def _resample_design():
+    return {
+        "name": "r", "language": "english", "n_per_condition": 5,
+        "pool_filters": {"length": [3, 7], "frequency": [3.8, 7]},
+        "conditions": [
+            {"name": "high", "define_by": {"frequency": [5.0, 7.0]}},
+            {"name": "low", "define_by": {"frequency": [3.8, 4.4]}},
+        ],
+        "match_on": ["length"],
+    }
+
+
+def test_resample_produces_disjoint_matched_sets(schema, en_lexicon_path):
+    lex = load_lexicon(en_lexicon_path, schema, "english")
+    pool = build_pool(lex, _resample_design()["pool_filters"])
+    s = resample_stimuli(pool, _resample_design(), schema, 3)
+    assert sorted(s["replicate"].unique()) == [1, 2, 3]
+    # each replicate is balanced and the manipulation is separated
+    for _, g in s.groupby("replicate"):
+        assert sorted(g["condition"].value_counts().tolist()) == [5, 5]
+        assert g.loc[g.condition == "high", "frequency"].mean() > \
+               g.loc[g.condition == "low", "frequency"].mean()
+    # no item is reused across the disjoint sets
+    words = {r: set(g["word"]) for r, g in s.groupby("replicate")}
+    assert len(words[1] & words[2]) == 0
+    assert len(words[1] & words[3]) == 0
+    assert len(words[2] & words[3]) == 0
