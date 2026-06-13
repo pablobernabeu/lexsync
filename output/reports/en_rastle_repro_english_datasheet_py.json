@@ -1,0 +1,66 @@
+{
+  "artifacts": [
+    {
+      "file": "output\\stimuli\\en_rastle_repro_english_stimuli_py.csv",
+      "sha256": "8c22dd8c3f5a384f5111e8f52b3dbaf754811f72ce7c3c2312a20e70fdb1d3e0"
+    },
+    {
+      "file": "output\\experiments\\en_rastle_repro_english_psychopy.py",
+      "sha256": "e9e58cffdfa7ea3eb86adb482152c8098cb12386d418b8859ce5ac8497822555"
+    },
+    {
+      "file": "output\\experiments\\en_rastle_repro_english.osexp",
+      "sha256": "fe35d3603a461433c04491263ab973fbbe3a2059526a2458106ec0eccafdaeeb"
+    },
+    {
+      "file": "output\\experiments\\en_rastle_repro_english.html",
+      "sha256": "91fee45ebc62c6fa6947787d4c205562efb43526f37cd58616e9b4d84f8ba1ac"
+    }
+  ],
+  "counterbalancing": {
+    "lists": 2,
+    "recipe": "latin_square_target"
+  },
+  "design": {
+    "description": "Reproducing Rastle, Davis & New (2004): masked priming contrasting transparent, opaque and orthographic (form) prime-target relationships, each against an unrelated baseline; Latin-square counterbalanced over two lists.",
+    "language": "english",
+    "n_per_condition": null,
+    "name": "en_rastle_repro",
+    "paradigm": "priming",
+    "source": "table"
+  },
+  "dimensions": {},
+  "items": {
+    "conditions": [
+      "related",
+      "unrelated"
+    ],
+    "n_conditions": 2,
+    "n_total": 24,
+    "stimuli_file": "output\\stimuli\\en_rastle_repro_english_stimuli_py.csv",
+    "stimuli_sha256": "8c22dd8c3f5a384f5111e8f52b3dbaf754811f72ce7c3c2312a20e70fdb1d3e0"
+  },
+  "lexsync_datasheet_version": "1.0",
+  "materials_source": {
+    "path": "items/rastle_priming_en.csv",
+    "provenance": "user-supplied item table",
+    "sha256": "53bd365a801a3e82fc76db625e4e928b062ceb1e082573ac913d570c343af9eb",
+    "type": "table"
+  },
+  "realised_control": [],
+  "reproducibility": {
+    "seed": 2026,
+    "versions": {
+      "engine": "python",
+      "lexsync": "0.1.0",
+      "numpy": "2.3.2",
+      "pandas": "2.3.2",
+      "python": "3.13.7",
+      "scipy": "1.17.1"
+    }
+  },
+  "resampling": null,
+  "selection": {
+    "method": "item table (user-supplied)"
+  }
+}

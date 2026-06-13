@@ -1,0 +1,152 @@
+{
+  "artifacts": [
+    {
+      "file": "output\\stimuli\\es_gender_repro_spanish_stimuli_py.csv",
+      "sha256": "eed1823fabf3d48d0e1f26b09f3523d1665993f091a405bf9269ece2148afc7e"
+    },
+    {
+      "file": "output\\reports\\es_gender_repro_spanish_descriptives_py.csv",
+      "sha256": "109c77927a7addb89dc9188f61dc944e98ef4954af9c37a1be7ef3f69429e2e8"
+    },
+    {
+      "file": "output\\reports\\es_gender_repro_spanish_comparisons_py.csv",
+      "sha256": "6e1b1d74bb344a409c2ec173465c15714d51e2c4c145011ff0e59725bd72f96d"
+    },
+    {
+      "file": "output\\experiments\\es_gender_repro_spanish_psychopy.py",
+      "sha256": "c754a6fd2f7c74803b1860f988f42a7cca89e665127f440e4541e49d8897ec2b"
+    },
+    {
+      "file": "output\\experiments\\es_gender_repro_spanish.osexp",
+      "sha256": "12d2a1027ebb85081c4580bbcedba3cc1250ea60febb0b0f3f2d39ec3f7fa6b4"
+    },
+    {
+      "file": "output\\experiments\\es_gender_repro_spanish.html",
+      "sha256": "a9753bd0cc16703777c7aa78fd9f7e427f359e9b341a0e5e41a4fb2fcadfd82f"
+    }
+  ],
+  "counterbalancing": {
+    "lists": 1,
+    "recipe": "factorial"
+  },
+  "design": {
+    "description": "Reproducing Gonzalez Alonso et al. (2025): feminine versus masculine Spanish words matched on word frequency and number of letters, the origin study's natural-language gender-assignment task.",
+    "language": "spanish",
+    "n_per_condition": 48,
+    "name": "es_gender_repro",
+    "paradigm": "factorial",
+    "source": "corpus"
+  },
+  "dimensions": {
+    "bigram_freq": {
+      "compute": "mean_bigram_probability",
+      "type": "derived",
+      "unit": "mean positional bigram probability"
+    },
+    "frequency": {
+      "column": "freq_zipf",
+      "type": "column",
+      "unit": "Zipf"
+    },
+    "length": {
+      "compute": "n_letters",
+      "type": "derived",
+      "unit": "letters"
+    },
+    "n_density": {
+      "compute": "coltheart_n",
+      "type": "derived",
+      "unit": "neighbours"
+    },
+    "n_syllables": {
+      "compute": "vowel_groups",
+      "type": "derived",
+      "unit": "syllables (orthographic estimate)"
+    },
+    "old20": {
+      "compute": "old20",
+      "type": "derived",
+      "unit": "mean Levenshtein distance"
+    }
+  },
+  "items": {
+    "conditions": [
+      "feminine",
+      "masculine"
+    ],
+    "n_conditions": 2,
+    "n_total": 96,
+    "stimuli_file": "output\\stimuli\\es_gender_repro_spanish_stimuli_py.csv",
+    "stimuli_sha256": "eed1823fabf3d48d0e1f26b09f3523d1665993f091a405bf9269ece2148afc7e"
+  },
+  "lexsync_datasheet_version": "1.0",
+  "materials_source": {
+    "path": "corpora/derived/es_gender.csv",
+    "provenance": "see corpora/ATTRIBUTION.md for corpus licence and citation",
+    "sha256": "8fd3412e73da0629e1fc8853dd49d029072b3a0dd1d72b94116fbabfc9bc7748",
+    "type": "corpus"
+  },
+  "realised_control": [
+    {
+      "ci_high": 0.339,
+      "ci_low": -0.339,
+      "cohens_d": 0.0,
+      "dimension": "length",
+      "equivalent": true,
+      "role": "controlled",
+      "tost_p": 0.0081
+    },
+    {
+      "ci_high": 0.36,
+      "ci_low": -0.319,
+      "cohens_d": 0.021,
+      "dimension": "frequency",
+      "equivalent": true,
+      "role": "controlled",
+      "tost_p": 0.0105
+    },
+    {
+      "ci_high": 0.535,
+      "ci_low": -0.143,
+      "cohens_d": 0.196,
+      "dimension": "n_density",
+      "equivalent": false,
+      "role": "manipulated/free",
+      "tost_p": 0.0697
+    },
+    {
+      "ci_high": 0.257,
+      "ci_low": -0.422,
+      "cohens_d": -0.082,
+      "dimension": "old20",
+      "equivalent": true,
+      "role": "manipulated/free",
+      "tost_p": 0.0218
+    }
+  ],
+  "reproducibility": {
+    "seed": 2026,
+    "versions": {
+      "engine": "python",
+      "lexsync": "0.1.0",
+      "numpy": "2.3.2",
+      "pandas": "2.3.2",
+      "python": "3.13.7",
+      "scipy": "1.17.1"
+    }
+  },
+  "resampling": null,
+  "selection": {
+    "match_on": [
+      "frequency",
+      "length"
+    ],
+    "method": "standardised_euclidean",
+    "tolerance_k": {
+      "frequency": 1.0,
+      "length": 2.0,
+      "n_density": 2.0,
+      "old20": 2.0
+    }
+  }
+}

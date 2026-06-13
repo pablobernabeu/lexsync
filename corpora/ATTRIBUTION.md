@@ -8,6 +8,7 @@ dates. Bundled derivatives are distributed under CC BY-SA 4.0 (see LICENSE-DATA)
 - **English ('en')** — 30000 words, Zipf 2.95-7.73. Source: wordfreq (Speer, 2022; MIT), retrieved 2026-06-08. N and OLD20 computed by lexsync.
 - **Spanish ('es')** — 30000 words, Zipf 3.11-7.81. Source: wordfreq (Speer, 2022; MIT), retrieved 2026-06-08. N and OLD20 computed by lexsync.
 - **Chinese (Mandarin) ('zh')** — 20000 words, Zipf 3.31-6.56. Source: wordfreq (Speer, 2022; MIT), retrieved 2026-06-10. N and OLD20 computed over characters by lexsync. The logographic-script demonstration.
+- **Spanish gender ('es_gender')** — 10185 words. A derivative of the 'es' corpus above, restricted to words with canonical Spanish gender endings (-a feminine, -o masculine; gerunds excluded) and tagged with a `gender` column. Used by the demonstration that reproduces the gender-assignment design of Gonzalez Alonso et al. (2025). Grammatical gender is approximated by word ending, not looked up in a lexical database (the original used EsPal; Duchon et al., 2013).
 
 ## Citations
 

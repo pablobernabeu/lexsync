@@ -78,7 +78,11 @@ def match_stimuli(pool: pd.DataFrame, design: dict, schema: dict, verbose: bool 
     conditions = design["conditions"]
     match_on = list(design["match_on"])
     n = design.get("n_per_condition") or design.get("n_per_cell") or 20
-    tol_k = schema["matching"]["tolerance_k"]
+    # Tolerance window k per dimension (window = anchor mean +/- k * SD). A design
+    # may override the schema defaults per dimension, e.g. to reproduce a published
+    # study's exact windows (Gonzalez Alonso et al. used SD/9 for frequency).
+    tol_k = dict(schema["matching"].get("tolerance_k") or {})
+    tol_k.update((design.get("matching") or {}).get("tolerance_k") or {})
 
     for d in match_on:
         if d not in pool.columns:

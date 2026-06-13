@@ -1,0 +1,98 @@
+{
+  "lexsync_datasheet_version": "1.0",
+  "design": {
+    "name": "en_rastle_repro",
+    "language": "english",
+    "paradigm": "priming",
+    "source": "table",
+    "description": "Reproducing Rastle, Davis & New (2004): masked priming contrasting transparent, opaque and orthographic (form) prime-target relationships, each against an unrelated baseline; Latin-square counterbalanced over two lists.",
+    "n_per_condition": null
+  },
+  "materials_source": {
+    "type": "table",
+    "path": "items/rastle_priming_en.csv",
+    "sha256": "53bd365a801a3e82fc76db625e4e928b062ceb1e082573ac913d570c343af9eb",
+    "provenance": "user-supplied item table"
+  },
+  "dimensions": {
+    "length": {
+      "type": "derived",
+      "compute": "n_letters",
+      "unit": "letters"
+    },
+    "frequency": {
+      "type": "column",
+      "column": "freq_zipf",
+      "unit": "Zipf"
+    },
+    "n_density": {
+      "type": "derived",
+      "compute": "coltheart_n",
+      "unit": "neighbours"
+    },
+    "old20": {
+      "type": "derived",
+      "compute": "old20",
+      "unit": "mean Levenshtein distance"
+    },
+    "n_syllables": {
+      "type": "derived",
+      "compute": "vowel_groups",
+      "unit": "syllables (orthographic estimate)"
+    },
+    "bigram_freq": {
+      "type": "derived",
+      "compute": "mean_bigram_probability",
+      "unit": "mean positional bigram probability"
+    }
+  },
+  "selection": {
+    "method": "item table (user-supplied)"
+  },
+  "realised_control": [],
+  "counterbalancing": {
+    "recipe": "latin_square_target",
+    "lists": 2
+  },
+  "resampling": null,
+  "items": {
+    "n_total": 24,
+    "n_conditions": 2,
+    "conditions": [
+      "related",
+      "unrelated"
+    ],
+    "stimuli_file": "output/stimuli/en_rastle_repro_english_stimuli_R.csv",
+    "stimuli_sha256": "6a70ffa8d148f6b666a8ec571e90f072eba0d593079c0ca7f4d3c53f3f126a80"
+  },
+  "reproducibility": {
+    "seed": 2026,
+    "versions": {
+      "engine": "R",
+      "lexsync": "0.1.0",
+      "R": "4.5.1",
+      "readr": "2.2.0",
+      "stringdist": "0.9.17",
+      "jsonlite": "2.0.0",
+      "digest": "0.6.37"
+    }
+  },
+  "artifacts": [
+    {
+      "file": "output/stimuli/en_rastle_repro_english_stimuli_R.csv",
+      "sha256": "6a70ffa8d148f6b666a8ec571e90f072eba0d593079c0ca7f4d3c53f3f126a80"
+    },
+    {
+      "file": "output/experiments/en_rastle_repro_english_psychopy.py",
+      "sha256": "d6207eb5b5b99b0cfab5b30613d326d9749e101f1f269f45ca9932fcde7bf760"
+    },
+    {
+      "file": "output/experiments/en_rastle_repro_english.osexp",
+      "sha256": "151e21e15d2f86d4913df67b21248bd83262a8d1e4f060679162d0db7e0a344a"
+    },
+    {
+      "file": "output/experiments/en_rastle_repro_english.html",
+      "sha256": "344ff717a4edcb6afad30e07a07da52399baa6d6c8a4d17e8b6f7564a7b3909c"
+    }
+  ]
+}

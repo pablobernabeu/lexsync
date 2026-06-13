@@ -1,0 +1,39 @@
+# Reproducing a published design (the origin study).
+#
+# Gonzalez Alonso et al. (2025) -- the study lexsync's workflow originates from --
+# administered a natural-language gender-assignment task in the participants' L1.
+# They topped up the study's nouns with corpus nouns, half feminine and half
+# masculine, matched to the study nouns on word frequency (window: mean +/- SD/9)
+# and number of letters (window: mean +/- 2*SD), drawing true nouns with lexical
+# gender from EsPal (Duchon et al. 2013).
+#
+# Here lexsync reproduces that design from its OWN bundled, redistributable Spanish
+# corpus (wordfreq; Speer 2022): feminine and masculine words matched on frequency
+# and length, using the SAME tolerance windows (overridden below). The bundled
+# corpus carries no lexical-gender field, so gender is approximated by the canonical
+# Spanish ending (-a feminine, -o masculine) rather than EsPal's noun gender; the
+# demonstration is therefore of the matched SELECTION and its realised control, the
+# part lexsync automates, not of the authors' exact word list.
+name: es_gender_repro
+language: spanish
+lexicon: corpora/derived/es_gender.csv
+description: 'Reproducing Gonzalez Alonso et al. (2025): feminine versus masculine Spanish words matched on word frequency and number of letters, the origin study''s natural-language gender-assignment task.'
+n_per_condition: 48
+pool_filters:
+  length: [4, 10]
+  frequency: [3.0, 6.5]
+conditions:
+  - name: feminine
+    define_by:
+      gender: [feminine]
+  - name: masculine
+    define_by:
+      gender: [masculine]
+match_on: [frequency, length]
+matching:
+  # The origin study's exact tolerance windows, reproduced per dimension.
+  tolerance_k:
+    frequency: 0.111   # mean +/- SD/9   (Gonzalez Alonso et al. 2025)
+    length: 2.0        # mean +/- 2*SD   (Gonzalez Alonso et al. 2025)
+counterbalance:
+  lists: 1

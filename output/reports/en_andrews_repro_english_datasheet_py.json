@@ -1,0 +1,225 @@
+{
+  "artifacts": [
+    {
+      "file": "output\\stimuli\\en_andrews_repro_english_stimuli_py.csv",
+      "sha256": "3d6a6e484503a336a2b1819f2c0ae62a4d45d2e8fe3c2a8b8996595b620d6ac8"
+    },
+    {
+      "file": "output\\reports\\en_andrews_repro_english_descriptives_py.csv",
+      "sha256": "6f07be15390de6e25a88606c7ed4fabf5cd22c1ce3acfa3f8cff38d3d97b4ed9"
+    },
+    {
+      "file": "output\\reports\\en_andrews_repro_english_comparisons_py.csv",
+      "sha256": "2f5a9b5c31f80f14908372528c724302a79c8fd7ba2c15d2e4a90775c268a1d9"
+    },
+    {
+      "file": "output\\experiments\\en_andrews_repro_english_psychopy.py",
+      "sha256": "ec83d36b844fe1850304669a71fb658f4f234e7d8def8a793c51bc5e28b73585"
+    },
+    {
+      "file": "output\\experiments\\en_andrews_repro_english.osexp",
+      "sha256": "bbd130d53ad883649a2fed6b9d8a82eff31535d9d272409c3f6b796d8d0bfd62"
+    },
+    {
+      "file": "output\\experiments\\en_andrews_repro_english.html",
+      "sha256": "ce5e8d1971b58b3ad14155804cdabdd0b670546735a4d392b3a46324b2c97609"
+    }
+  ],
+  "counterbalancing": {
+    "lists": 1,
+    "recipe": "factorial"
+  },
+  "design": {
+    "description": "Reproducing Andrews (1989): frequency x orthographic neighbourhood size (Coltheart's N), a 2x2 lexical-decision design with every cell matched on length.",
+    "language": "english",
+    "n_per_condition": 18,
+    "name": "en_andrews_repro",
+    "paradigm": "factorial",
+    "source": "corpus"
+  },
+  "dimensions": {
+    "bigram_freq": {
+      "compute": "mean_bigram_probability",
+      "type": "derived",
+      "unit": "mean positional bigram probability"
+    },
+    "frequency": {
+      "column": "freq_zipf",
+      "type": "column",
+      "unit": "Zipf"
+    },
+    "length": {
+      "compute": "n_letters",
+      "type": "derived",
+      "unit": "letters"
+    },
+    "n_density": {
+      "compute": "coltheart_n",
+      "type": "derived",
+      "unit": "neighbours"
+    },
+    "n_syllables": {
+      "compute": "vowel_groups",
+      "type": "derived",
+      "unit": "syllables (orthographic estimate)"
+    },
+    "old20": {
+      "compute": "old20",
+      "type": "derived",
+      "unit": "mean Levenshtein distance"
+    }
+  },
+  "items": {
+    "conditions": [
+      "HF_largeN",
+      "HF_smallN",
+      "LF_smallN",
+      "LF_largeN"
+    ],
+    "n_conditions": 4,
+    "n_total": 72,
+    "stimuli_file": "output\\stimuli\\en_andrews_repro_english_stimuli_py.csv",
+    "stimuli_sha256": "3d6a6e484503a336a2b1819f2c0ae62a4d45d2e8fe3c2a8b8996595b620d6ac8"
+  },
+  "lexsync_datasheet_version": "1.0",
+  "materials_source": {
+    "path": "corpora/derived/en.csv",
+    "provenance": "see corpora/ATTRIBUTION.md for corpus licence and citation",
+    "sha256": "c20549b920d816809d11cfa673ad0df1dd70d3e73176ee66cbec18021627f65d",
+    "type": "corpus"
+  },
+  "realised_control": [
+    {
+      "ci_high": 0.358,
+      "ci_low": -0.77,
+      "cohens_d": -0.206,
+      "dimension": "length",
+      "equivalent": false,
+      "role": "controlled",
+      "tost_p": 0.192
+    },
+    {
+      "ci_high": 0.456,
+      "ci_low": -0.672,
+      "cohens_d": -0.108,
+      "dimension": "frequency",
+      "equivalent": false,
+      "role": "manipulated/free",
+      "tost_p": 0.1238
+    },
+    {
+      "ci_high": 3.754,
+      "ci_low": 2.626,
+      "cohens_d": 3.19,
+      "dimension": "n_density",
+      "equivalent": false,
+      "role": "manipulated/free",
+      "tost_p": 1.0
+    },
+    {
+      "ci_high": -5.192,
+      "ci_low": -6.32,
+      "cohens_d": -5.756,
+      "dimension": "old20",
+      "equivalent": false,
+      "role": "manipulated/free",
+      "tost_p": 1.0
+    },
+    {
+      "ci_high": 0.663,
+      "ci_low": -0.465,
+      "cohens_d": 0.099,
+      "dimension": "length",
+      "equivalent": false,
+      "role": "controlled",
+      "tost_p": 0.1186
+    },
+    {
+      "ci_high": 5.277,
+      "ci_low": 4.15,
+      "cohens_d": 4.713,
+      "dimension": "frequency",
+      "equivalent": false,
+      "role": "manipulated/free",
+      "tost_p": 1.0
+    },
+    {
+      "ci_high": 0.666,
+      "ci_low": -0.461,
+      "cohens_d": 0.103,
+      "dimension": "n_density",
+      "equivalent": false,
+      "role": "manipulated/free",
+      "tost_p": 0.1208
+    },
+    {
+      "ci_high": 0.668,
+      "ci_low": -0.459,
+      "cohens_d": 0.104,
+      "dimension": "old20",
+      "equivalent": false,
+      "role": "manipulated/free",
+      "tost_p": 0.1218
+    },
+    {
+      "ci_high": 0.663,
+      "ci_low": -0.465,
+      "cohens_d": 0.099,
+      "dimension": "length",
+      "equivalent": false,
+      "role": "controlled",
+      "tost_p": 0.1186
+    },
+    {
+      "ci_high": 5.748,
+      "ci_low": 4.621,
+      "cohens_d": 5.185,
+      "dimension": "frequency",
+      "equivalent": false,
+      "role": "manipulated/free",
+      "tost_p": 1.0
+    },
+    {
+      "ci_high": 3.852,
+      "ci_low": 2.725,
+      "cohens_d": 3.289,
+      "dimension": "n_density",
+      "equivalent": false,
+      "role": "manipulated/free",
+      "tost_p": 1.0
+    },
+    {
+      "ci_high": -5.351,
+      "ci_low": -6.478,
+      "cohens_d": -5.914,
+      "dimension": "old20",
+      "equivalent": false,
+      "role": "manipulated/free",
+      "tost_p": 1.0
+    }
+  ],
+  "reproducibility": {
+    "seed": 2026,
+    "versions": {
+      "engine": "python",
+      "lexsync": "0.1.0",
+      "numpy": "2.3.2",
+      "pandas": "2.3.2",
+      "python": "3.13.7",
+      "scipy": "1.17.1"
+    }
+  },
+  "resampling": null,
+  "selection": {
+    "match_on": [
+      "length"
+    ],
+    "method": "standardised_euclidean",
+    "tolerance_k": {
+      "frequency": 1.0,
+      "length": 2.0,
+      "n_density": 2.0,
+      "old20": 2.0
+    }
+  }
+}

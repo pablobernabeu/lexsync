@@ -1,0 +1,226 @@
+{
+  "lexsync_datasheet_version": "1.0",
+  "design": {
+    "name": "en_andrews_repro",
+    "language": "english",
+    "paradigm": "factorial",
+    "source": "corpus",
+    "description": "Reproducing Andrews (1989): frequency x orthographic neighbourhood size (Coltheart's N), a 2x2 lexical-decision design with every cell matched on length.",
+    "n_per_condition": 18
+  },
+  "materials_source": {
+    "type": "corpus",
+    "path": "corpora/derived/en.csv",
+    "sha256": "c20549b920d816809d11cfa673ad0df1dd70d3e73176ee66cbec18021627f65d",
+    "provenance": "see corpora/ATTRIBUTION.md for corpus licence and citation"
+  },
+  "dimensions": {
+    "length": {
+      "type": "derived",
+      "compute": "n_letters",
+      "unit": "letters"
+    },
+    "frequency": {
+      "type": "column",
+      "column": "freq_zipf",
+      "unit": "Zipf"
+    },
+    "n_density": {
+      "type": "derived",
+      "compute": "coltheart_n",
+      "unit": "neighbours"
+    },
+    "old20": {
+      "type": "derived",
+      "compute": "old20",
+      "unit": "mean Levenshtein distance"
+    },
+    "n_syllables": {
+      "type": "derived",
+      "compute": "vowel_groups",
+      "unit": "syllables (orthographic estimate)"
+    },
+    "bigram_freq": {
+      "type": "derived",
+      "compute": "mean_bigram_probability",
+      "unit": "mean positional bigram probability"
+    }
+  },
+  "selection": {
+    "method": "standardised_euclidean",
+    "match_on": [
+      "length"
+    ],
+    "tolerance_k": {
+      "length": 2,
+      "frequency": 1,
+      "n_density": 2,
+      "old20": 2
+    }
+  },
+  "realised_control": [
+    {
+      "dimension": "length",
+      "role": "controlled",
+      "cohens_d": -0.206,
+      "ci_low": -0.77,
+      "ci_high": 0.358,
+      "tost_p": 0.192,
+      "equivalent": false
+    },
+    {
+      "dimension": "frequency",
+      "role": "manipulated/free",
+      "cohens_d": -0.108,
+      "ci_low": -0.672,
+      "ci_high": 0.456,
+      "tost_p": 0.1238,
+      "equivalent": false
+    },
+    {
+      "dimension": "n_density",
+      "role": "manipulated/free",
+      "cohens_d": 3.19,
+      "ci_low": 2.626,
+      "ci_high": 3.754,
+      "tost_p": 1,
+      "equivalent": false
+    },
+    {
+      "dimension": "old20",
+      "role": "manipulated/free",
+      "cohens_d": -5.756,
+      "ci_low": -6.32,
+      "ci_high": -5.192,
+      "tost_p": 1,
+      "equivalent": false
+    },
+    {
+      "dimension": "length",
+      "role": "controlled",
+      "cohens_d": 0.099,
+      "ci_low": -0.465,
+      "ci_high": 0.663,
+      "tost_p": 0.1186,
+      "equivalent": false
+    },
+    {
+      "dimension": "frequency",
+      "role": "manipulated/free",
+      "cohens_d": 4.713,
+      "ci_low": 4.15,
+      "ci_high": 5.277,
+      "tost_p": 1,
+      "equivalent": false
+    },
+    {
+      "dimension": "n_density",
+      "role": "manipulated/free",
+      "cohens_d": 0.103,
+      "ci_low": -0.461,
+      "ci_high": 0.666,
+      "tost_p": 0.1208,
+      "equivalent": false
+    },
+    {
+      "dimension": "old20",
+      "role": "manipulated/free",
+      "cohens_d": 0.104,
+      "ci_low": -0.459,
+      "ci_high": 0.668,
+      "tost_p": 0.1218,
+      "equivalent": false
+    },
+    {
+      "dimension": "length",
+      "role": "controlled",
+      "cohens_d": 0.099,
+      "ci_low": -0.465,
+      "ci_high": 0.663,
+      "tost_p": 0.1186,
+      "equivalent": false
+    },
+    {
+      "dimension": "frequency",
+      "role": "manipulated/free",
+      "cohens_d": 5.185,
+      "ci_low": 4.621,
+      "ci_high": 5.748,
+      "tost_p": 1,
+      "equivalent": false
+    },
+    {
+      "dimension": "n_density",
+      "role": "manipulated/free",
+      "cohens_d": 3.289,
+      "ci_low": 2.725,
+      "ci_high": 3.852,
+      "tost_p": 1,
+      "equivalent": false
+    },
+    {
+      "dimension": "old20",
+      "role": "manipulated/free",
+      "cohens_d": -5.914,
+      "ci_low": -6.478,
+      "ci_high": -5.351,
+      "tost_p": 1,
+      "equivalent": false
+    }
+  ],
+  "counterbalancing": {
+    "recipe": "factorial",
+    "lists": 1
+  },
+  "resampling": null,
+  "items": {
+    "n_total": 72,
+    "n_conditions": 4,
+    "conditions": [
+      "LF_largeN",
+      "HF_smallN",
+      "HF_largeN",
+      "LF_smallN"
+    ],
+    "stimuli_file": "output/stimuli/en_andrews_repro_english_stimuli_R.csv",
+    "stimuli_sha256": "c81e25e7c47f07435190ffaf630e932af3e8034d4ccc5ed5bc535d04c6217856"
+  },
+  "reproducibility": {
+    "seed": 2026,
+    "versions": {
+      "engine": "R",
+      "lexsync": "0.1.0",
+      "R": "4.5.1",
+      "readr": "2.2.0",
+      "stringdist": "0.9.17",
+      "jsonlite": "2.0.0",
+      "digest": "0.6.37"
+    }
+  },
+  "artifacts": [
+    {
+      "file": "output/stimuli/en_andrews_repro_english_stimuli_R.csv",
+      "sha256": "c81e25e7c47f07435190ffaf630e932af3e8034d4ccc5ed5bc535d04c6217856"
+    },
+    {
+      "file": "output/reports/en_andrews_repro_english_descriptives_R.csv",
+      "sha256": "c2b48fd370ad7ed3a1995c7df025712b11e945c04964176e878fd548e6bb91d0"
+    },
+    {
+      "file": "output/reports/en_andrews_repro_english_comparisons_R.csv",
+      "sha256": "63a07803e7eef67a650c405c3d49173df8667a52aa59a196cf7befbd470b2309"
+    },
+    {
+      "file": "output/experiments/en_andrews_repro_english_psychopy.py",
+      "sha256": "cb104421196b956ee1b818c2e6344bb0c0ca195ea32b9f63b98991f0c1926404"
+    },
+    {
+      "file": "output/experiments/en_andrews_repro_english.osexp",
+      "sha256": "0ddf4565e8d7d3ce57b1ce2078e3bee37fec4c2bcdc62238d74886a882c71293"
+    },
+    {
+      "file": "output/experiments/en_andrews_repro_english.html",
+      "sha256": "7ec7b5ffc10d74e51fe6dba3d00129f5cae7000b30b0b84cac26e9ac4ef18d16"
+    }
+  ]
+}

@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Pablo Bernabeu">
-<meta name="dcterms.date" content="2026-06-13">
+<meta name="dcterms.date" content="2026-06-14">
 
 <title>lexsync: A cross-platform pipeline for multidimensional lexical optimisation and hardware-timed experiment generation</title>
 <style>
@@ -2254,7 +2254,7 @@ vertical-align: -.125em;
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">June 13, 2026</p>
+      <p class="date">June 14, 2026</p>
     </div>
   </div>
   
@@ -2326,7 +2326,7 @@ vertical-align: -.125em;
 </section>
 <section id="worked-examples" class="level1" data-number="3">
 <h1 data-number="3"><span class="header-section-number">3</span> Worked examples</h1>
-<p>We illustrate ‘lexsync’ with nine demonstrations. The first six are corpus-matched word contrasts; the last three exercise other paradigms. Of the matched contrasts, four are alphabetic: a high- versus low-frequency contrast and a dense- versus sparse-neighbourhood contrast, each in English and in Spanish, drawn from thirty-thousand-word lexica. The frequency contrast matches items on length, neighbourhood density and OLD20; the neighbourhood contrast matches on length and frequency. The fifth is a high- versus low-frequency contrast in Mandarin Chinese, included to show that the pipeline generalises to a logographic writing system (see <em>Generalisation to a logographic script</em>, below). The sixth, also corpus-matched, additionally equates an orthographic syllable estimate and a bigram-frequency measure, exercising the richer dimensions introduced with the matching algorithm above. The remaining three — lexical decision, priming and self-paced reading — show the trial-event model carrying word, pseudoword, paired and sentence stimuli (see <em>Beyond word lists</em>, below). Each demonstration was produced by both the R and the Python engine. All tables and figures in this section are computed at render time from the generated output. The tables that follow summarise the five frequency and neighbourhood contrasts, for which a controlled-versus-manipulated report is defined; the remaining demonstrations are described in their own sections.</p>
+<p>We illustrate ‘lexsync’ with twelve demonstrations. The first six are corpus-matched word contrasts; the next three exercise other paradigms; and the final three reproduce designs from the published literature (see <em>Reproducing published designs</em>, below). Of the matched contrasts, four are alphabetic: a high- versus low-frequency contrast and a dense- versus sparse-neighbourhood contrast, each in English and in Spanish, drawn from thirty-thousand-word lexica. The frequency contrast matches items on length, neighbourhood density and OLD20; the neighbourhood contrast matches on length and frequency. The fifth is a high- versus low-frequency contrast in Mandarin Chinese, included to show that the pipeline generalises to a logographic writing system (see <em>Generalisation to a logographic script</em>, below). The sixth, also corpus-matched, additionally equates an orthographic syllable estimate and a bigram-frequency measure, exercising the richer dimensions introduced with the matching algorithm above. The remaining three — lexical decision, priming and self-paced reading — show the trial-event model carrying word, pseudoword, paired and sentence stimuli (see <em>Beyond word lists</em>, below). Each demonstration was produced by both the R and the Python engine. All tables and figures in this section are computed at render time from the generated output. The tables that follow summarise the five frequency and neighbourhood contrasts, for which a controlled-versus-manipulated report is defined; the remaining demonstrations are described in their own sections.</p>
 <div class="cell">
 <div id="tbl-summary" class="cell quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-tbl figure">
@@ -2956,6 +2956,62 @@ Table 6: <em>Cross-Engine Parity for the English Frequency Contrast.</em> <em>N
 <h2 data-number="3.2" class="anchored" data-anchor-id="beyond-word-lists-three-paradigms"><span class="header-section-number">3.2</span> Beyond word lists: three paradigms</h2>
 <p>The same engine builds tasks that are not word lists. Three further demonstrations, each in English, exercise a different stimulus structure and trial procedure through the trial-event model. A <strong>lexical-decision</strong> design contrasts 60 real words with 60 pseudowords generated to match them in length; the generated non-words are orthographically legal and absent from the corpus, and length is equated by construction (Cohen’s <em>d</em> = 0.00). A <strong>priming</strong> design draws 12 prime–target pairs from an item table and contrasts related with unrelated primes, its trial inserting a brief prime and a mask before the onset-locked target. A <strong>self-paced reading</strong> design presents 10 sentences region by region, the grammatical–ungrammatical manipulation falling on the onset-locked critical region and followed by a comprehension question. Each design compiles from the same event list to a runnable ‘PsychoPy’ script, a valid ‘OpenSesame’ experiment and a self-contained browser-based ‘jsPsych’ experiment, and the R and Python engines select identical materials in every case — including, for lexical decision, the very same deterministically generated pseudowords.</p>
 </section>
+<section id="reproducing-published-designs" class="level2" data-number="3.3">
+<h2 data-number="3.3" class="anchored" data-anchor-id="reproducing-published-designs"><span class="header-section-number">3.3</span> Reproducing published designs</h2>
+<p>The demonstrations so far are illustrative. To show that ‘lexsync’ reproduces designs from the published literature, we recreated three studies that span the workflow’s range: the artificial-grammar study the package originates from, a classic factorial lexical-decision design, and a masked-priming design. Each was rebuilt to the original’s matching <em>criteria</em> — its manipulated and controlled dimensions and their tolerances — from a contemporary, redistributable corpus, rather than by copying the authors’ word lists; <a href="#tbl-repro" class="quarto-xref">Table 7</a> summarises the three, and the two engines reproduce each one identically.</p>
+<div class="cell">
+<div id="tbl-repro" class="cell quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-repro-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table 7: <em>Three Published Designs Reproduced to Criteria.</em> <em>Note.</em> For each reproduction: the structure rebuilt, the number of generated items, and the largest standardised mean difference (Cohen’s <em>d</em>) remaining on a controlled (matched) dimension. The manipulations are large by construction; for Andrews these are frequency and neighbourhood size, reported in the text. The Rastle design is a priming layout with no corpus-matched control dimension.
+</figcaption>
+<div aria-describedby="tbl-repro-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output-display">
+<table class="cell caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 53%">
+<col style="width: 4%">
+<col style="width: 22%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Reproduction</th>
+<th style="text-align: left;">Design rebuilt</th>
+<th style="text-align: right;">Items</th>
+<th style="text-align: right;">Largest controlled |d|</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Gonzalez Alonso et al. (2025)</td>
+<td style="text-align: left;">Gender assignment: feminine vs masculine, matched on frequency and length</td>
+<td style="text-align: right;">96</td>
+<td style="text-align: right;">0.02</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Andrews (1989)</td>
+<td style="text-align: left;">Frequency x neighbourhood size: 2x2 lexical decision, cells matched on length</td>
+<td style="text-align: right;">72</td>
+<td style="text-align: right;">0.21</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Rastle, Davis &amp; New (2004)</td>
+<td style="text-align: left;">Masked priming: transparent / opaque / orthographic, vs unrelated baseline</td>
+<td style="text-align: right;">24</td>
+<td style="text-align: right;">—</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</figure>
+</div>
+</div>
+<p>The <strong>origin study</strong> <span class="citation" data-cites="gonzalezalonso2025l3">(<a href="#ref-gonzalezalonso2025l3" role="doc-biblioref">González Alonso et al., 2025</a>)</span> administered a natural-language gender-assignment task in which corpus nouns, half feminine and half masculine, were matched to the study’s nouns on word frequency (within mean ± <em>SD</em>/9) and number of letters (within mean ± 2 <em>SD</em>). ‘lexsync’ reproduces this design directly: the same per-dimension tolerance windows are declared in the design file and applied by the matcher, and feminine and masculine words are equated on frequency and length to a largest controlled Cohen’s <em>d</em> of 0.02 across 96 items. Because the bundled Spanish corpus carries no lexical-gender field, gender is approximated by the canonical ending (<em>-a</em>, <em>-o</em>) rather than looked up as the original did in EsPal <span class="citation" data-cites="duchon2013espal">(<a href="#ref-duchon2013espal" role="doc-biblioref">Duchon et al., 2013</a>)</span>; the demonstration is therefore of the matched selection and its realised control, the part ‘lexsync’ automates, not of the authors’ exact items.</p>
+<p><strong>Andrews (1989)</strong> <span class="citation" data-cites="andrews1989frequency">(<a href="#ref-andrews1989frequency" role="doc-biblioref">Andrews, 1989</a>)</span> crossed word frequency with orthographic neighbourhood size in a 2 × 2 lexical-decision design, holding length constant, and found that a large neighbourhood facilitates low-frequency words disproportionately. ‘lexsync’ rebuilds the factorial structure over short words, equating all four cells on length (largest controlled <em>d</em> = 0.21) while separating the manipulated dimensions widely — frequency <em>d</em> up to 5.2 and neighbourhood <em>d</em> up to 3.3. Frequencies come from a contemporary corpus rather than the Kučera–Francis counts of the original, so the realised bands differ while the factorial design does not.</p>
+<p><strong>Rastle, Davis and New (2004)</strong> <span class="citation" data-cites="rastle2004broth">(<a href="#ref-rastle2004broth" role="doc-biblioref">Rastle et al., 2004</a>)</span> used masked priming to dissociate three kinds of prime–target relationship — transparent morphological (<em>cleaner</em>–CLEAN), opaque morphological (<em>corner</em>–CORN) and purely orthographic (<em>brothel</em>–BROTH) — each against an unrelated baseline, arguing for an early morpho-orthographic segmentation stage blind to meaning. ‘lexsync’ expresses the design with its priming paradigm: 12 targets are each shown with a related prime of their assigned type and an unrelated, length-matched control, Latin-square counterbalanced across 2 lists so a target appears once per list, with the prime type carried as a between-items factor for analysis. This is a representative item set following the prime-type structure of the original, not its full materials.</p>
+</section>
 </section>
 <section id="discussion" class="level1" data-number="4">
 <h1 data-number="4"><span class="header-section-number">4</span> Discussion</h1>
@@ -2975,6 +3031,9 @@ Table 6: <em>Cross-Engine Parity for the English Frequency Contrast.</em> <em>N
 <section id="references" class="level1" data-number="6">
 <h1 data-number="6"><span class="header-section-number">6</span> References</h1>
 <div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="0" data-line-spacing="2" role="list">
+<div id="ref-andrews1989frequency" class="csl-entry" role="listitem">
+Andrews, S. (1989). Frequency and neighborhood effects on lexical access: Activation or search? <em>Journal of Experimental Psychology: Learning, Memory, and Cognition</em>, <em>15</em>(5), 802–814. <a href="https://doi.org/10.1037/0278-7393.15.5.802">https://doi.org/10.1037/0278-7393.15.5.802</a>
+</div>
 <div id="ref-bochynska2023reproducible" class="csl-entry" role="listitem">
 Bochynska, A., Keeble, L., Halfacre, C., Casillas, J. V., Champagne, I.-A., Chen, K., Röthlisberger, M., Buchanan, E. M., &amp; Roettger, T. B. (2023). Reproducible research practices and transparency across linguistics. <em>Glossa Psycholinguistics</em>, <em>2</em>(1). <a href="https://doi.org/10.5070/G6011239">https://doi.org/10.5070/G6011239</a>
 </div>
@@ -2995,6 +3054,9 @@ Coltheart, M., Davelaar, E., Jonasson, J. T., &amp; Besner, D. (1977). Access to
 </div>
 <div id="ref-cuetos2011subtlexesp" class="csl-entry" role="listitem">
 Cuetos, F., González-Nosti, M., Barbón, A., &amp; Brysbaert, M. (2011). <span>SUBTLEX-ESP</span>: <span>Spanish</span> word frequencies based on film subtitles. <em>Psic<span>ó</span>logica</em>, <em>32</em>(2), 133–143.
+</div>
+<div id="ref-duchon2013espal" class="csl-entry" role="listitem">
+Duchon, A., Perea, M., Sebastián-Gallés, N., Martí, A., &amp; Carreiras, M. (2013). <span>EsPal</span>: One-stop shopping for <span>Spanish</span> word properties. <em>Behavior Research Methods</em>, <em>45</em>(4), 1246–1258. <a href="https://doi.org/10.3758/s13428-013-0326-1">https://doi.org/10.3758/s13428-013-0326-1</a>
 </div>
 <div id="ref-gonzalezalonso2025l3" class="csl-entry" role="listitem">
 González Alonso, J., Bernabeu, P., Silva, G., DeLuca, V., Poch, C., Ivanova, I., &amp; Rothman, J. (2025). Starting from the very beginning: Unraveling third language (<span>L3</span>) development with longitudinal data from artificial language learning and <span>EEG</span>. <em>International Journal of Multilingualism</em>, <em>22</em>(1), 119–142. <a href="https://doi.org/10.1080/14790718.2024.2415993">https://doi.org/10.1080/14790718.2024.2415993</a>
@@ -3019,6 +3081,9 @@ Mathôt, S., Schreij, D., &amp; Theeuwes, J. (2012). <span>OpenSesame</span>: An
 </div>
 <div id="ref-peirce2019psychopy2" class="csl-entry" role="listitem">
 Peirce, J., Gray, J. R., Simpson, S., MacAskill, M., Höchenberger, R., Sogo, H., Kastman, E., &amp; Lindeløv, J. K. (2019). <span>PsychoPy2</span>: Experiments in behavior made easy. <em>Behavior Research Methods</em>, <em>51</em>(1), 195–203. <a href="https://doi.org/10.3758/s13428-018-01193-y">https://doi.org/10.3758/s13428-018-01193-y</a>
+</div>
+<div id="ref-rastle2004broth" class="csl-entry" role="listitem">
+Rastle, K., Davis, M. H., &amp; New, B. (2004). The broth in my brother’s brothel: Morpho-orthographic segmentation in visual word recognition. <em>Psychonomic Bulletin &amp; Review</em>, <em>11</em>(6), 1090–1098. <a href="https://doi.org/10.3758/BF03196742">https://doi.org/10.3758/BF03196742</a>
 </div>
 <div id="ref-roettger2019degrees" class="csl-entry" role="listitem">
 Roettger, T. B. (2019). Researcher degrees of freedom in phonetic research. <em>Laboratory Phonology</em>, <em>10</em>(1). <a href="https://doi.org/10.5334/labphon.147">https://doi.org/10.5334/labphon.147</a>

@@ -1,0 +1,9 @@
+group,dimension,n,mean,sd,min,median,max
+feminine,length,48,6.583,1.808,4.0,6.0,10.0
+feminine,frequency,48,3.805,0.558,3.11,3.705,5.16
+feminine,n_density,48,2.646,3.258,0.0,1.0,14.0
+feminine,old20,48,2.215,0.714,1.2,1.925,3.9
+masculine,length,48,6.583,1.808,4.0,6.0,10.0
+masculine,frequency,48,3.797,0.052,3.75,3.76,3.86
+masculine,n_density,48,2.083,2.431,0.0,1.0,8.0
+masculine,old20,48,2.272,0.675,1.45,1.975,4.4

@@ -25,6 +25,11 @@ CASES = [
     ("en_resample_english", "config/design_en_resample.yaml", ["replicate", "word", "condition"]),
     ("en_priming_english", "config/design_en_priming.yaml", ["list", "set", "condition", "prime", "target"]),
     ("en_spr_english", "config/design_en_spr.yaml", ["list", "set", "condition", "sentence"]),
+    # Reproductions of published designs.
+    ("es_gender_repro_spanish", "config/design_es_gender_repro.yaml", ["word", "condition"]),
+    ("en_andrews_repro_english", "config/design_en_andrews_repro.yaml", ["word", "condition"]),
+    ("en_rastle_repro_english", "config/design_en_rastle_repro.yaml",
+     ["list", "set", "condition", "prime", "target", "prime_type"]),
 ]
 
 

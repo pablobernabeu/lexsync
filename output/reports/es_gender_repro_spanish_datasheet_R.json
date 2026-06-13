@@ -1,0 +1,153 @@
+{
+  "lexsync_datasheet_version": "1.0",
+  "design": {
+    "name": "es_gender_repro",
+    "language": "spanish",
+    "paradigm": "factorial",
+    "source": "corpus",
+    "description": "Reproducing Gonzalez Alonso et al. (2025): feminine versus masculine Spanish words matched on word frequency and number of letters, the origin study's natural-language gender-assignment task.",
+    "n_per_condition": 48
+  },
+  "materials_source": {
+    "type": "corpus",
+    "path": "corpora/derived/es_gender.csv",
+    "sha256": "8fd3412e73da0629e1fc8853dd49d029072b3a0dd1d72b94116fbabfc9bc7748",
+    "provenance": "see corpora/ATTRIBUTION.md for corpus licence and citation"
+  },
+  "dimensions": {
+    "length": {
+      "type": "derived",
+      "compute": "n_letters",
+      "unit": "letters"
+    },
+    "frequency": {
+      "type": "column",
+      "column": "freq_zipf",
+      "unit": "Zipf"
+    },
+    "n_density": {
+      "type": "derived",
+      "compute": "coltheart_n",
+      "unit": "neighbours"
+    },
+    "old20": {
+      "type": "derived",
+      "compute": "old20",
+      "unit": "mean Levenshtein distance"
+    },
+    "n_syllables": {
+      "type": "derived",
+      "compute": "vowel_groups",
+      "unit": "syllables (orthographic estimate)"
+    },
+    "bigram_freq": {
+      "type": "derived",
+      "compute": "mean_bigram_probability",
+      "unit": "mean positional bigram probability"
+    }
+  },
+  "selection": {
+    "method": "standardised_euclidean",
+    "match_on": [
+      "frequency",
+      "length"
+    ],
+    "tolerance_k": {
+      "length": 2,
+      "frequency": 1,
+      "n_density": 2,
+      "old20": 2
+    }
+  },
+  "realised_control": [
+    {
+      "dimension": "length",
+      "role": "controlled",
+      "cohens_d": 0,
+      "ci_low": -0.339,
+      "ci_high": 0.339,
+      "tost_p": 0.0081,
+      "equivalent": true
+    },
+    {
+      "dimension": "frequency",
+      "role": "controlled",
+      "cohens_d": 0.021,
+      "ci_low": -0.319,
+      "ci_high": 0.36,
+      "tost_p": 0.0105,
+      "equivalent": true
+    },
+    {
+      "dimension": "n_density",
+      "role": "manipulated/free",
+      "cohens_d": 0.196,
+      "ci_low": -0.143,
+      "ci_high": 0.535,
+      "tost_p": 0.0697,
+      "equivalent": false
+    },
+    {
+      "dimension": "old20",
+      "role": "manipulated/free",
+      "cohens_d": -0.082,
+      "ci_low": -0.422,
+      "ci_high": 0.257,
+      "tost_p": 0.0218,
+      "equivalent": true
+    }
+  ],
+  "counterbalancing": {
+    "recipe": "factorial",
+    "lists": 1
+  },
+  "resampling": null,
+  "items": {
+    "n_total": 96,
+    "n_conditions": 2,
+    "conditions": [
+      "masculine",
+      "feminine"
+    ],
+    "stimuli_file": "output/stimuli/es_gender_repro_spanish_stimuli_R.csv",
+    "stimuli_sha256": "fac4b0cb2014f9e1a5c6bb4f1247410b1df6a287a93650e5c0a569df435cf4d2"
+  },
+  "reproducibility": {
+    "seed": 2026,
+    "versions": {
+      "engine": "R",
+      "lexsync": "0.1.0",
+      "R": "4.5.1",
+      "readr": "2.2.0",
+      "stringdist": "0.9.17",
+      "jsonlite": "2.0.0",
+      "digest": "0.6.37"
+    }
+  },
+  "artifacts": [
+    {
+      "file": "output/stimuli/es_gender_repro_spanish_stimuli_R.csv",
+      "sha256": "fac4b0cb2014f9e1a5c6bb4f1247410b1df6a287a93650e5c0a569df435cf4d2"
+    },
+    {
+      "file": "output/reports/es_gender_repro_spanish_descriptives_R.csv",
+      "sha256": "7e0f2bf841b1bbe6a612cbd5030a9b688ccd337b8f0b843afc20a8a821c4619b"
+    },
+    {
+      "file": "output/reports/es_gender_repro_spanish_comparisons_R.csv",
+      "sha256": "e46da22273644353f5eaeab8d43cd3e6f4cd43ddf3977b3f4b605a2143e25006"
+    },
+    {
+      "file": "output/experiments/es_gender_repro_spanish_psychopy.py",
+      "sha256": "bc0c1357dabba416e8142ad78e3bbbb1bb079ec03a6ccf46076ad470f648aa45"
+    },
+    {
+      "file": "output/experiments/es_gender_repro_spanish.osexp",
+      "sha256": "a403df210726c0c049c3ab3164da6440819374d4a3c96578b2e7bf49263ea6b4"
+    },
+    {
+      "file": "output/experiments/es_gender_repro_spanish.html",
+      "sha256": "148077489f4d56717e4b9c850f22893db91faa5c72068ed927bcb6489fb556c3"
+    }
+  ]
+}

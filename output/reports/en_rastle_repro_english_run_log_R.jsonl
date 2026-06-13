@@ -1,0 +1,8 @@
+{"time":"2026-06-13 23:47:59.171242","message":"loading items 'items/rastle_priming_en.csv'","data":null}
+{"time":"2026-06-13 23:47:59.209174","message":"loaded 12 items across 2 conditions","data":{"conditions":"related, unrelated"}}
+{"time":"2026-06-13 23:47:59.251599","message":"wrote 'en_rastle_repro_english_stimuli_R.csv'","data":{"path":"output/stimuli/en_rastle_repro_english_stimuli_R.csv","rows":24,"md5":"19266ba04149c73c656847efd947ebd4"}}
+{"time":"2026-06-13 23:47:59.296175","message":"wrote 'en_rastle_repro_english_psychopy.py'","data":{"path":"output/experiments/en_rastle_repro_english_psychopy.py","rows":"NA","md5":"da87147779ac527051251bdf4b9db1c8"}}
+{"time":"2026-06-13 23:47:59.302744","message":"wrote 'en_rastle_repro_english.osexp'","data":{"path":"output/experiments/en_rastle_repro_english.osexp","rows":"NA","md5":"0f1922baeba1908cef30c37eb16ed045"}}
+{"time":"2026-06-13 23:47:59.308139","message":"wrote 'en_rastle_repro_english.html'","data":{"path":"output/experiments/en_rastle_repro_english.html","rows":"NA","md5":"ca86f8b9eab83225cdae4f55c27aa981"}}
+{"time":"2026-06-13 23:47:59.363883","message":"wrote 'en_rastle_repro_english_datasheet_R.json'","data":{"path":"output/reports/en_rastle_repro_english_datasheet_R.json","rows":"NA","md5":"9e5ca4e026c5ea01813ddbaed9902fad"}}
+{"time":"2026-06-13 23:47:59.370516","message":"wrote 'en_rastle_repro_english_datasheet_R.md'","data":{"path":"output/reports/en_rastle_repro_english_datasheet_R.md","rows":"NA","md5":"a04eab32615a7ae884d5ec49ee940f17"}}

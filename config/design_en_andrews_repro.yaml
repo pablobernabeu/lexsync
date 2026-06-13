@@ -1,0 +1,42 @@
+# Reproducing a published design.
+#
+# Andrews (1989, JEP:LMC) crossed word frequency (high/low) with orthographic
+# neighbourhood size (Coltheart's N: large/small) in a 2x2 lexical-decision design,
+# holding word length constant, and found that N facilitated responses more for
+# low-frequency words. lexsync reproduces the design to the same criteria: a 2x2
+# of frequency x neighbourhood size over short words, with all four cells matched
+# on length. Frequencies come from a contemporary corpus (wordfreq; Speer 2022)
+# rather than the Kucera-Francis counts of the original, so the realised bands
+# differ, but the factorial structure and the length control are reproduced.
+name: en_andrews_repro
+language: english
+lexicon: corpora/derived/en.csv
+description: 'Reproducing Andrews (1989): frequency x orthographic neighbourhood size (Coltheart''s N), a 2x2 lexical-decision design with every cell matched on length.'
+n_per_condition: 18
+pool_filters:
+  length: [3, 5]
+  frequency: [2.0, 7.0]
+conditions:
+  - name: HF_largeN
+    define_by:
+      frequency: [5.0, 7.0]
+      n_density: [9, 100]
+  - name: HF_smallN
+    define_by:
+      frequency: [5.0, 7.0]
+      n_density: [0, 5]
+  - name: LF_largeN
+    define_by:
+      frequency: [2.5, 4.2]
+      n_density: [9, 100]
+  - name: LF_smallN
+    define_by:
+      frequency: [2.5, 4.2]
+      n_density: [0, 5]
+match_on: [length]
+counterbalance:
+  lists: 1
+timing:
+  fixation_frames: 30
+  word_frames: 30
+  isi_frames: 15

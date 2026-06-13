@@ -26,7 +26,13 @@ match_stimuli <- function(pool, design, schema, verbose = FALSE) {
   conditions <- design$conditions
   match_on <- unlist(design$match_on, use.names = FALSE)
   n <- design$n_per_condition %||% design$n_per_cell %||% 20L
+  # Tolerance window k per dimension (window = anchor mean +/- k * SD). A design
+  # may override the schema defaults per dimension, e.g. to reproduce a published
+  # study's exact windows (Gonzalez Alonso et al. used SD/9 for frequency).
   tol_k <- schema$matching$tolerance_k
+  if (!is.null(design$matching$tolerance_k)) {
+    tol_k <- utils::modifyList(tol_k, design$matching$tolerance_k)
+  }
 
   for (d in match_on) {
     if (!d %in% names(pool)) {

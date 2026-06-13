@@ -1,0 +1,17 @@
+group,dimension,n,mean,sd,min,median,max
+HF_largeN,length,18,3.611,0.608,3.0,4.0,5.0
+HF_largeN,frequency,18,5.513,0.496,5.0,5.37,6.82
+HF_largeN,n_density,18,18.222,6.567,9.0,18.5,34.0
+HF_largeN,old20,18,1.067,0.106,1.0,1.0,1.3
+HF_smallN,length,18,3.722,0.461,3.0,4.0,4.0
+HF_smallN,frequency,18,5.568,0.513,5.01,5.445,6.98
+HF_smallN,n_density,18,3.111,1.323,1.0,3.0,5.0
+HF_smallN,old20,18,1.694,0.112,1.55,1.675,1.85
+LF_largeN,length,18,3.556,0.511,3.0,4.0,4.0
+LF_largeN,frequency,18,3.488,0.352,2.97,3.445,4.11
+LF_largeN,n_density,18,17.611,5.26,10.0,19.0,29.0
+LF_largeN,old20,18,1.056,0.107,1.0,1.0,1.35
+LF_smallN,length,18,3.556,0.511,3.0,4.0,4.0
+LF_smallN,frequency,18,3.373,0.309,2.95,3.455,3.93
+LF_smallN,n_density,18,2.556,1.504,0.0,2.5,5.0
+LF_smallN,old20,18,1.725,0.117,1.55,1.7,1.95

@@ -414,8 +414,10 @@ validator for the generated `.osexp`.
 
 # Worked examples
 
-We illustrate 'lexsync' with nine demonstrations. The first six are
-corpus-matched word contrasts; the last three exercise other paradigms. Of the
+We illustrate 'lexsync' with twelve demonstrations. The first six are
+corpus-matched word contrasts; the next three exercise other paradigms; and the
+final three reproduce designs from the published literature (see *Reproducing
+published designs*, below). Of the
 matched contrasts, four are alphabetic: a high- versus low-frequency contrast and
 a dense- versus sparse-neighbourhood contrast, each in English and in Spanish,
 drawn from thirty-thousand-word lexica. The frequency contrast matches items on
@@ -646,6 +648,91 @@ self-contained browser-based 'jsPsych' experiment, and the R and Python engines
 select `r if (para_ok) "identical" else "differing"` materials in every case —
 including, for lexical decision, the very same deterministically generated
 pseudowords.
+
+## Reproducing published designs
+
+```{r repro-setup}
+#| include: false
+repro_comp <- function(d) {
+  x <- read_out(file.path("reports", paste0(d, "_comparisons_R.csv")))
+  x$absd <- abs(x$cohens_d)
+  x
+}
+gen <- repro_comp("es_gender_repro_spanish")
+gen_ctrl_d <- max(gen$absd[gen$dimension %in% c("frequency", "length")])
+gen_n <- nrow(read_out(file.path("stimuli", "es_gender_repro_spanish_stimuli_R.csv")))
+andr <- repro_comp("en_andrews_repro_english")
+and_ctrl_d <- max(andr$absd[andr$dimension == "length"])
+and_freq_d <- max(andr$absd[andr$dimension == "frequency"])
+and_nd_d   <- max(andr$absd[andr$dimension == "n_density"])
+and_n <- nrow(read_out(file.path("stimuli", "en_andrews_repro_english_stimuli_R.csv")))
+ras <- read_out(file.path("stimuli", "en_rastle_repro_english_stimuli_R.csv"))
+ras_targets <- length(unique(ras$target))
+ras_lists <- length(unique(ras$list))
+```
+
+The demonstrations so far are illustrative. To show that 'lexsync' reproduces
+designs from the published literature, we recreated three studies that span the
+workflow's range: the artificial-grammar study the package originates from, a
+classic factorial lexical-decision design, and a masked-priming design. Each was
+rebuilt to the original's matching *criteria* — its manipulated and controlled
+dimensions and their tolerances — from a contemporary, redistributable corpus,
+rather than by copying the authors' word lists; @tbl-repro summarises the three,
+and the two engines reproduce each one identically.
+
+```{r repro-table}
+#| label: tbl-repro
+#| tbl-cap: "*Three Published Designs Reproduced to Criteria.* *Note.* For each reproduction: the structure rebuilt, the number of generated items, and the largest standardised mean difference (Cohen's *d*) remaining on a controlled (matched) dimension. The manipulations are large by construction; for Andrews these are frequency and neighbourhood size, reported in the text. The Rastle design is a priming layout with no corpus-matched control dimension."
+repro_tbl <- data.frame(
+  Reproduction = c("Gonzalez Alonso et al. (2025)", "Andrews (1989)",
+                   "Rastle, Davis & New (2004)"),
+  `Design rebuilt` = c("Gender assignment: feminine vs masculine, matched on frequency and length",
+                       "Frequency x neighbourhood size: 2x2 lexical decision, cells matched on length",
+                       "Masked priming: transparent / opaque / orthographic, vs unrelated baseline"),
+  Items = c(gen_n, and_n, nrow(ras)),
+  `Largest controlled |d|` = c(sprintf("%.2f", gen_ctrl_d),
+                               sprintf("%.2f", and_ctrl_d), "—"),
+  check.names = FALSE, row.names = NULL
+)
+knitr::kable(repro_tbl, align = c("l", "l", "r", "r"))
+```
+
+The **origin study** [@gonzalezalonso2025l3] administered a natural-language
+gender-assignment task in which corpus nouns, half feminine and half masculine,
+were matched to the study's nouns on word frequency (within mean ± *SD*/9) and
+number of letters (within mean ± 2 *SD*). 'lexsync' reproduces this design
+directly: the same per-dimension tolerance windows are declared in the design file
+and applied by the matcher, and feminine and masculine words are equated on
+frequency and length to a largest controlled Cohen's *d* of
+`r sprintf("%.2f", gen_ctrl_d)` across `r gen_n` items. Because the bundled
+Spanish corpus carries no lexical-gender field, gender is approximated by the
+canonical ending (*-a*, *-o*) rather than looked up as the original did in EsPal
+[@duchon2013espal]; the demonstration is therefore of the matched selection and
+its realised control, the part 'lexsync' automates, not of the authors' exact
+items.
+
+**Andrews (1989)** [@andrews1989frequency] crossed word frequency with
+orthographic neighbourhood size in a 2 × 2 lexical-decision design, holding length
+constant, and found that a large neighbourhood facilitates low-frequency words
+disproportionately. 'lexsync' rebuilds the factorial structure over short words,
+equating all four cells on length (largest controlled *d* =
+`r sprintf("%.2f", and_ctrl_d)`) while separating the manipulated dimensions
+widely — frequency *d* up to `r sprintf("%.1f", and_freq_d)` and neighbourhood *d*
+up to `r sprintf("%.1f", and_nd_d)`. Frequencies come from a contemporary corpus
+rather than the Kučera–Francis counts of the original, so the realised bands differ
+while the factorial design does not.
+
+**Rastle, Davis and New (2004)** [@rastle2004broth] used masked priming to
+dissociate three kinds of prime–target relationship — transparent morphological
+(*cleaner*–CLEAN), opaque morphological (*corner*–CORN) and purely orthographic
+(*brothel*–BROTH) — each against an unrelated baseline, arguing for an early
+morpho-orthographic segmentation stage blind to meaning. 'lexsync' expresses the
+design with its priming paradigm: `r ras_targets` targets are each shown with a
+related prime of their assigned type and an unrelated, length-matched control,
+Latin-square counterbalanced across `r ras_lists` lists so a target appears once
+per list, with the prime type carried as a between-items factor for analysis. This
+is a representative item set following the prime-type structure of the original,
+not its full materials.
 
 # Discussion
 
