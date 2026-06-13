@@ -13,8 +13,9 @@ stimulus sets and the experiments that present them. From a word-frequency corpu
 any of dozens of languages it will select stimuli that are matched in parallel across
 several lexical dimensions (length, frequency, orthographic neighbourhood density and
 more), counterbalance them across conditions and lists, and then *generate the
-presentation script* for 'PsychoPy' or 'OpenSesame' with hardware triggers injected at
-stimulus onset for EEG/ERP synchronisation. The trial is described declaratively as a
+presentation experiment* for 'PsychoPy', 'OpenSesame' or the browser ('jsPsych') —
+the laboratory targets with hardware triggers injected at stimulus onset for EEG/ERP
+synchronisation, and the web target as a single self-contained, shareable HTML file. The trial is described declaratively as a
 sequence of events, so the same engine builds **factorial word studies, lexical
 decision with deterministically generated pseudowords, priming and self-paced
 reading** from configuration rather than code, with word, pseudoword, paired and

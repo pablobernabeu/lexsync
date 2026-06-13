@@ -2,7 +2,7 @@
 % Please edit documentation in R/scripting.R
 \name{export_experiments}
 \alias{export_experiments}
-\title{Export both presentation targets}
+\title{Export all presentation targets (PsychoPy, OpenSesame, jsPsych)}
 \usage{
 export_experiments(stimuli, design, schema, outdir, base = NULL)
 }
@@ -21,5 +21,5 @@ export_experiments(stimuli, design, schema, outdir, base = NULL)
 A named list of generated file paths.
 }
 \description{
-Export both presentation targets
+Export all presentation targets (PsychoPy, OpenSesame, jsPsych)
 }

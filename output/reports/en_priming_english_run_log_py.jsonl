@@ -1,5 +1,6 @@
-{"time": "2026-06-13T18:36:40", "message": "loading items 'items/priming_pairs_en.csv'", "data": null}
-{"time": "2026-06-13T18:36:40", "message": "loaded 12 items across 2 conditions", "data": {"conditions": "related, unrelated"}}
-{"time": "2026-06-13T18:36:40", "message": "wrote 'en_priming_english_stimuli_py.csv'", "data": {"path": "output\\stimuli\\en_priming_english_stimuli_py.csv", "rows": 24, "md5": "4d053829c5e32706c133e3fa3a6dd124"}}
-{"time": "2026-06-13T18:36:40", "message": "wrote 'en_priming_english_psychopy.py'", "data": {"path": "output\\experiments\\en_priming_english_psychopy.py", "rows": null, "md5": "76531a2b720b03dccbedeb0a6ee551cd"}}
-{"time": "2026-06-13T18:36:40", "message": "wrote 'en_priming_english.osexp'", "data": {"path": "output\\experiments\\en_priming_english.osexp", "rows": null, "md5": "f892fa2552e50544397a7da6e6b86288"}}
+{"time": "2026-06-13T21:42:26", "message": "loading items 'items/priming_pairs_en.csv'", "data": null}
+{"time": "2026-06-13T21:42:26", "message": "loaded 12 items across 2 conditions", "data": {"conditions": "related, unrelated"}}
+{"time": "2026-06-13T21:42:26", "message": "wrote 'en_priming_english_stimuli_py.csv'", "data": {"path": "output\\stimuli\\en_priming_english_stimuli_py.csv", "rows": 24, "md5": "4d053829c5e32706c133e3fa3a6dd124"}}
+{"time": "2026-06-13T21:42:26", "message": "wrote 'en_priming_english_psychopy.py'", "data": {"path": "output\\experiments\\en_priming_english_psychopy.py", "rows": null, "md5": "76531a2b720b03dccbedeb0a6ee551cd"}}
+{"time": "2026-06-13T21:42:26", "message": "wrote 'en_priming_english.osexp'", "data": {"path": "output\\experiments\\en_priming_english.osexp", "rows": null, "md5": "f892fa2552e50544397a7da6e6b86288"}}
+{"time": "2026-06-13T21:42:26", "message": "wrote 'en_priming_english.html'", "data": {"path": "output\\experiments\\en_priming_english.html", "rows": null, "md5": "3cd7559dc26406fc21c0d0b16e4db28f"}}

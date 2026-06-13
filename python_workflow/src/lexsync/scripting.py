@@ -321,9 +321,58 @@ def export_opensesame(stimuli, design, schema, outdir, base=None) -> str:
     return _write_text(text, os.path.join(outdir, f"{base}.osexp"))
 
 
+# Event-model key names (PsychoPy style) mapped to browser KeyboardEvent keys.
+_JSPSYCH_KEYS = {"left": "arrowleft", "right": "arrowright", "up": "arrowup",
+                 "down": "arrowdown", "space": " ", "return": "enter"}
+
+
+def _map_keys_for_jspsych(rendered: list) -> list:
+    out = []
+    for ev in rendered:
+        e = dict(ev)
+        if "keys" in e:
+            e["keys"] = [_JSPSYCH_KEYS.get(k, k) for k in e["keys"]]
+        if "key" in e:
+            e["key"] = _JSPSYCH_KEYS.get(e["key"], e["key"])
+        out.append(e)
+    return out
+
+
+def _json_html(obj) -> str:
+    """JSON safe to embed inside an HTML <script> (escape <, >, & and JS line seps)."""
+    return (json.dumps(obj).replace("<", "\\u003c").replace(">", "\\u003e")
+            .replace("&", "\\u0026").replace(" ", "\\u2028").replace(" ", "\\u2029"))
+
+
+def export_jspsych(stimuli, design, schema, outdir, base=None) -> str:
+    """A self-contained, browser-runnable jsPsych experiment from the event list.
+
+    The same rendered events and the trial data are embedded in one HTML file, so
+    anyone can reproduce the exact procedure online from the same materials. Onset
+    triggers are recorded in each trial's data (a browser cannot drive a parallel
+    port); online EEG synchronisation needs WebSerial/LSL or a photodiode.
+    """
+    base = base or slugify(design["name"], design["language"])
+    events = resolve_events(design)
+    rendered = _map_keys_for_jspsych(render_events(events, design.get("timing") or {}))
+    trials = loop_table(stimuli, events).to_dict(orient="records")
+    presentation = schema.get("presentation") or {}
+    font = design.get("font") or presentation.get("font") or "Courier New"
+    with open(find_template("jspsych/experiment_template.html"), encoding="utf-8") as handle:
+        tmpl = handle.read()
+    subs = {
+        "DESIGN": design["name"], "LANGUAGE": design["language"], "WORD_FONT": font,
+        "EVENTS_JSON": _json_html(rendered), "TRIALS_JSON": _json_html(trials),
+    }
+    for k, v in subs.items():
+        tmpl = tmpl.replace("{{" + k + "}}", str(v))
+    return _write_text(tmpl.rstrip("\n"), os.path.join(outdir, f"{base}.html"))
+
+
 def export_experiments(stimuli, design, schema, outdir, base=None) -> dict:
     stimuli = assign_triggers(stimuli)
     return {
         "psychopy": export_psychopy(stimuli, design, schema, outdir, base),
         "opensesame": export_opensesame(stimuli, design, schema, outdir, base),
+        "jspsych": export_jspsych(stimuli, design, schema, outdir, base),
     }

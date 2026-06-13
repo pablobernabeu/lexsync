@@ -314,7 +314,59 @@ export_opensesame <- function(stimuli, design, schema, outdir, base = NULL) {
   invisible(out)
 }
 
-#' Export both presentation targets
+# Event-model key names (PsychoPy style) mapped to browser KeyboardEvent keys.
+.JSPSYCH_KEYS <- c(left = "arrowleft", right = "arrowright", up = "arrowup",
+                   down = "arrowdown", space = " ", "return" = "enter")
+
+.map_keys_jspsych <- function(rendered) {
+  mapk <- function(k) { m <- .JSPSYCH_KEYS[k]; unname(ifelse(is.na(m), k, m)) }
+  lapply(rendered, function(e) {
+    if (!is.null(e$keys)) e$keys <- mapk(e$keys)
+    if (!is.null(e$key)) e$key <- mapk(e$key)
+    e
+  })
+}
+
+.json_html <- function(x) {
+  s <- as.character(x)
+  s <- gsub("<", "\\u003c", s, fixed = TRUE)
+  s <- gsub(">", "\\u003e", s, fixed = TRUE)
+  gsub("&", "\\u0026", s, fixed = TRUE)
+}
+
+#' Export a self-contained, browser-runnable jsPsych experiment
+#'
+#' The rendered events and the trial data are embedded in one HTML file, so anyone
+#' can reproduce the procedure online from the same materials. Onset triggers are
+#' recorded in each trial's data (a browser cannot drive a parallel port).
+#'
+#' @inheritParams export_psychopy
+#' @return The path to the generated `.html`, invisibly.
+#' @importFrom jsonlite toJSON
+#' @export
+export_jspsych <- function(stimuli, design, schema, outdir, base = NULL) {
+  base <- base %||% slugify(design$name, design$language)
+  events <- resolve_events(design)
+  rendered <- .map_keys_jspsych(render_events(events, design$timing %||% list()))
+  trials <- loop_table(stimuli, events)
+  presentation <- schema$presentation %||% list()
+  font <- design$font %||% presentation$font %||% "Courier New"
+  tmpl <- paste(readLines(find_template("jspsych/experiment_template.html"), warn = FALSE),
+                collapse = "\n")
+  subs <- list(
+    DESIGN = design$name, LANGUAGE = design$language, WORD_FONT = font,
+    EVENTS_JSON = .json_html(jsonlite::toJSON(rendered, auto_unbox = TRUE)),
+    TRIALS_JSON = .json_html(jsonlite::toJSON(trials, dataframe = "rows"))
+  )
+  for (k in names(subs)) {
+    tmpl <- gsub(sprintf("{{%s}}", k), as.character(subs[[k]]), tmpl, fixed = TRUE)
+  }
+  out <- file.path(outdir, paste0(base, ".html"))
+  writeLines(tmpl, out, useBytes = TRUE)
+  invisible(out)
+}
+
+#' Export all presentation targets (PsychoPy, OpenSesame, jsPsych)
 #'
 #' @inheritParams export_psychopy
 #' @return A named list of generated file paths.
@@ -323,6 +375,7 @@ export_experiments <- function(stimuli, design, schema, outdir, base = NULL) {
   stimuli <- assign_triggers(stimuli)
   list(
     psychopy = export_psychopy(stimuli, design, schema, outdir, base),
-    opensesame = export_opensesame(stimuli, design, schema, outdir, base)
+    opensesame = export_opensesame(stimuli, design, schema, outdir, base),
+    jspsych = export_jspsych(stimuli, design, schema, outdir, base)
   )
 }

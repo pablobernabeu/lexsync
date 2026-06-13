@@ -1,10 +1,11 @@
-{"time": "2026-06-13T18:36:40", "message": "loading lexicon 'corpora/derived/en.csv'", "data": null}
-{"time": "2026-06-13T18:36:40", "message": "lexicon loaded: 30000 words", "data": {"words": 30000}}
-{"time": "2026-06-13T18:36:40", "message": "pool after filters: 8177 words", "data": {"pool": 8177}}
-{"time": "2026-06-13T18:36:40", "message": "generated 120 items (words + pseudowords)", "data": {"conditions": "word, pseudoword"}}
-{"time": "2026-06-13T18:36:40", "message": "equivalence pseudoword vs word on 'length': d = 0.00 [-0.30, 0.30], TOST p = 0.0036 (equivalent)", "data": null}
-{"time": "2026-06-13T18:36:40", "message": "wrote 'en_lexdec_english_stimuli_py.csv'", "data": {"path": "output\\stimuli\\en_lexdec_english_stimuli_py.csv", "rows": 120, "md5": "fc7d968241ce9361cc6daad6fdc3ecb2"}}
-{"time": "2026-06-13T18:36:40", "message": "wrote 'en_lexdec_english_descriptives_py.csv'", "data": {"path": "output\\reports\\en_lexdec_english_descriptives_py.csv", "rows": 2, "md5": "61ff24fe3f286092f7c39c99edc5b454"}}
-{"time": "2026-06-13T18:36:40", "message": "wrote 'en_lexdec_english_comparisons_py.csv'", "data": {"path": "output\\reports\\en_lexdec_english_comparisons_py.csv", "rows": 1, "md5": "d649cfe19f4343501a6c16c205f472ca"}}
-{"time": "2026-06-13T18:36:40", "message": "wrote 'en_lexdec_english_psychopy.py'", "data": {"path": "output\\experiments\\en_lexdec_english_psychopy.py", "rows": null, "md5": "b45b46a0873de2a2db48569df4827ae0"}}
-{"time": "2026-06-13T18:36:40", "message": "wrote 'en_lexdec_english.osexp'", "data": {"path": "output\\experiments\\en_lexdec_english.osexp", "rows": null, "md5": "7d28b548200bfee8bf2bc4c99397436c"}}
+{"time": "2026-06-13T21:42:25", "message": "loading lexicon 'corpora/derived/en.csv'", "data": null}
+{"time": "2026-06-13T21:42:25", "message": "lexicon loaded: 30000 words", "data": {"words": 30000}}
+{"time": "2026-06-13T21:42:25", "message": "pool after filters: 8177 words", "data": {"pool": 8177}}
+{"time": "2026-06-13T21:42:26", "message": "generated 120 items (words + pseudowords)", "data": {"conditions": "word, pseudoword"}}
+{"time": "2026-06-13T21:42:26", "message": "equivalence pseudoword vs word on 'length': d = 0.00 [-0.30, 0.30], TOST p = 0.0036 (equivalent)", "data": null}
+{"time": "2026-06-13T21:42:26", "message": "wrote 'en_lexdec_english_stimuli_py.csv'", "data": {"path": "output\\stimuli\\en_lexdec_english_stimuli_py.csv", "rows": 120, "md5": "fc7d968241ce9361cc6daad6fdc3ecb2"}}
+{"time": "2026-06-13T21:42:26", "message": "wrote 'en_lexdec_english_descriptives_py.csv'", "data": {"path": "output\\reports\\en_lexdec_english_descriptives_py.csv", "rows": 2, "md5": "61ff24fe3f286092f7c39c99edc5b454"}}
+{"time": "2026-06-13T21:42:26", "message": "wrote 'en_lexdec_english_comparisons_py.csv'", "data": {"path": "output\\reports\\en_lexdec_english_comparisons_py.csv", "rows": 1, "md5": "d649cfe19f4343501a6c16c205f472ca"}}
+{"time": "2026-06-13T21:42:26", "message": "wrote 'en_lexdec_english_psychopy.py'", "data": {"path": "output\\experiments\\en_lexdec_english_psychopy.py", "rows": null, "md5": "b45b46a0873de2a2db48569df4827ae0"}}
+{"time": "2026-06-13T21:42:26", "message": "wrote 'en_lexdec_english.osexp'", "data": {"path": "output\\experiments\\en_lexdec_english.osexp", "rows": null, "md5": "7d28b548200bfee8bf2bc4c99397436c"}}
+{"time": "2026-06-13T21:42:26", "message": "wrote 'en_lexdec_english.html'", "data": {"path": "output\\experiments\\en_lexdec_english.html", "rows": null, "md5": "083e77f5788597130471e2452df7d7b5"}}
