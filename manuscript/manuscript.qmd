@@ -170,7 +170,8 @@ Two families of tool address parts of the problem. The first matches or equates
 word stimuli on lexical properties. 'LexOPS' [@taylor2020lexops] generates
 controlled word lists for arbitrary factorial designs, with both per-dimension
 tolerances and weighted multivariate Euclidean matching; 'LIBRA'
-[@lintz2021libra] equates lists across conditions using a resampling algorithm;
+[@lintz2021libra] equates lists across conditions using a genetic (evolutionary)
+algorithm;
 and 'LASTU' [@itkonen2024lastu] provides searchable access to a language-specific
 lexicon. These tools are mature and widely used, but they end at the stimulus
 list: none generates the experiment that presents it, and most are tied to a
