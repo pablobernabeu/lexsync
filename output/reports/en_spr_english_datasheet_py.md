@@ -14,7 +14,7 @@
 
 ## Methods paragraph
 
-10 items were drawn from an item table for a self_paced_reading design (English). Materials were counterbalanced into 2 list(s) (latin_square_target) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.0).
+10 items were drawn from an item table for a self_paced_reading design (English). Materials were counterbalanced into 2 list(s) (a Latin-square rotation) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.0).
 
 ## Pre-registration template
 
@@ -34,7 +34,7 @@
 - Paradigm: self_paced_reading
 
 ### Materials (from the lexsync datasheet)
-10 items were drawn from an item table for a self_paced_reading design (English). Materials were counterbalanced into 2 list(s) (latin_square_target) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.0).
+10 items were drawn from an item table for a self_paced_reading design (English). Materials were counterbalanced into 2 list(s) (a Latin-square rotation) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.0).
 
 ### Sampling plan
 - Sample size and justification:

@@ -11,7 +11,7 @@
   "materials_source": {
     "type": "corpus",
     "path": "corpora/derived/es_gender.csv",
-    "sha256": "8fd3412e73da0629e1fc8853dd49d029072b3a0dd1d72b94116fbabfc9bc7748",
+    "sha256": "0f77aec3fe307ed38f1e69e69f7c80ee93e38ffb8c0622b817fd2c26d15114d5",
     "provenance": "see corpora/ATTRIBUTION.md for corpus licence and citation"
   },
   "dimensions": {
@@ -117,11 +117,11 @@
     "versions": {
       "engine": "R",
       "lexsync": "0.1.0",
-      "R": "4.5.1",
+      "R": "4.6.0",
       "readr": "2.2.0",
       "stringdist": "0.9.17",
       "jsonlite": "2.0.0",
-      "digest": "0.6.37"
+      "digest": "0.6.39"
     }
   },
   "artifacts": [
@@ -139,7 +139,7 @@
     },
     {
       "file": "output/experiments/es_gender_repro_spanish_psychopy.py",
-      "sha256": "bc0c1357dabba416e8142ad78e3bbbb1bb079ec03a6ccf46076ad470f648aa45"
+      "sha256": "f0828dbad8d6cd6f8ab62f9e3b1727a05ae27542a84e5550d4d9095393c57bf7"
     },
     {
       "file": "output/experiments/es_gender_repro_spanish.osexp",

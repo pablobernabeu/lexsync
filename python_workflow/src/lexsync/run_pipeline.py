@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """The orchestrator. Mirrors R_workflow/R/run_pipeline.R.
 
-For each design it obtains stimuli from the configured item source -- a corpus
-(matched on lexical dimensions), generated pseudowords (lexical decision), or an
-item table (priming, self-paced reading) -- then counterbalances, writes any
+For each design it obtains stimuli from the configured item source (a corpus
+matched on lexical dimensions, generated pseudowords for lexical decision, or an
+item table for priming and self-paced reading), then counterbalances, writes any
 match-quality report and the run log, and exports the PsychoPy and OpenSesame
 scripts from the design's trial-event sequence. run_all loops over every design.
 """

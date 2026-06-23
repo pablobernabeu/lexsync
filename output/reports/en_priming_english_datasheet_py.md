@@ -14,7 +14,7 @@
 
 ## Methods paragraph
 
-12 items were drawn from an item table for a priming design (English). Materials were counterbalanced into 2 list(s) (latin_square_target) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.0).
+12 items were drawn from an item table for a priming design (English). Materials were counterbalanced into 2 list(s) (a Latin-square rotation) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.0).
 
 ## Pre-registration template
 
@@ -34,7 +34,7 @@
 - Paradigm: priming
 
 ### Materials (from the lexsync datasheet)
-12 items were drawn from an item table for a priming design (English). Materials were counterbalanced into 2 list(s) (latin_square_target) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.0).
+12 items were drawn from an item table for a priming design (English). Materials were counterbalanced into 2 list(s) (a Latin-square rotation) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.0).
 
 ### Sampling plan
 - Sample size and justification:

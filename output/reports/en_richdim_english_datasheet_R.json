@@ -136,11 +136,11 @@
     "versions": {
       "engine": "R",
       "lexsync": "0.1.0",
-      "R": "4.5.1",
+      "R": "4.6.0",
       "readr": "2.2.0",
       "stringdist": "0.9.17",
       "jsonlite": "2.0.0",
-      "digest": "0.6.37"
+      "digest": "0.6.39"
     }
   },
   "artifacts": [
@@ -158,7 +158,7 @@
     },
     {
       "file": "output/experiments/en_richdim_english_psychopy.py",
-      "sha256": "b49861555388609ff634712823a5c83e057edf5937c6ff4e393a285228c60e58"
+      "sha256": "25c078e7188d96f259391e53e0d2ba762ce6693ac19965830d2c942df7669086"
     },
     {
       "file": "output/experiments/en_richdim_english.osexp",

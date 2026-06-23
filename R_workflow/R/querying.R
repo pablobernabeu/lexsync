@@ -52,7 +52,7 @@ count_syllables <- function(word) {
 #' @examples
 #' \dontrun{
 #' schema <- read_config(system.file("extdata", "schema.yaml", package = "lexsync"))
-#' lex <- load_lexicon(system.file("extdata", "english_example.csv", package = "lexsync"), schema)
+#' lex <- load_lexicon(system.file("extdata", "en_example.csv", package = "lexsync"), schema)
 #' }
 #' @export
 load_lexicon <- function(path, schema, language = NULL) {

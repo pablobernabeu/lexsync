@@ -186,9 +186,9 @@ match_joint <- function(subpools, cond_names, match_on, center, scale_, n, cap =
 #'
 #' Each replicate is an independent, fully matched set drawn from the pool with the
 #' items of earlier replicates removed, so no item is reused. This lets a study
-#' treat its items as a random factor -- running different item samples across
-#' participant groups, or showing an effect holds across samples -- rather than as
-#' a fixed set (Clark, 1973; Yarkoni, 2020). Deterministic and identical to the
+#' treat its items as a random factor (running different item samples across
+#' participant groups, or showing an effect holds across samples) instead of treating
+#' them as a fixed set (Clark, 1973; Yarkoni, 2020). Deterministic and identical to the
 #' Python engine.
 #'
 #' @param pool A candidate pool with the `match_on` dimensions present.

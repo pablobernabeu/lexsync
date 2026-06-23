@@ -8,7 +8,7 @@ Conditions file: en_lexdec_english_psychopy.csv
 Each trial is rendered from a declarative list of events (``EVENTS``), so one
 interpreter serves every paradigm. Onset triggers are written to the parallel
 port on the exact flip on which their stimulus first appears, using
-``win.callOnFlip`` -- the genuine frame-locking that motivates lexsync. Stimulus
+``win.callOnFlip``, the frame-locking that motivates lexsync. Stimulus
 text is read as data from the conditions file at run time (never interpolated
 into this code). When no parallel-port driver is present (a development machine,
 macOS or continuous integration), a mock port prints the codes so the script

@@ -6,3 +6,6 @@
 ^.*\.Rcheck$
 ^doc$
 ^Meta$
+^docs$
+^_pkgdown\.yml$
+^pkgdown$

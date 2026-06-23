@@ -117,7 +117,7 @@ methods_paragraph <- function(ds) {
   control <- ""
   if (length(ctrl_rows)) {
     worst <- ctrl_rows[[which.max(vapply(ctrl_rows, function(r) abs(r$cohens_d), numeric(1)))]]
-    control <- sprintf(paste0(". The realised control was tight: the largest standardised difference ",
+    control <- sprintf(paste0(". The realised control was close. The largest standardised difference ",
                               "on any matched dimension was %.2f (90%% CI [%.2f, %.2f]), within the ",
                               "0.5-SD equivalence bound"),
                        abs(worst$cohens_d), worst$ci_low, worst$ci_high)
@@ -126,10 +126,14 @@ methods_paragraph <- function(ds) {
     sprintf(". %s disjoint matched item sets were drawn, so items can be treated as a random factor",
             ds$resampling$n_sets) else ""
   cb <- ds$counterbalancing
+  recipe_label <- switch(cb$recipe,
+                         latin_square_target = "a Latin-square rotation",
+                         factorial = "a factorial split",
+                         cb$recipe)
   tail <- sprintf(paste0(resamp, ". Materials were counterbalanced into %s list(s) (%s) and generated for ",
                          "PsychoPy, OpenSesame and jsPsych. The selection is deterministic and ",
                          "reproducible (seed %s; lexsync %s)."),
-                  cb$lists, cb$recipe, ds$reproducibility$seed, ds$reproducibility$versions$lexsync)
+                  cb$lists, recipe_label, ds$reproducibility$seed, ds$reproducibility$versions$lexsync)
   paste0(lead, control, tail)
 }
 

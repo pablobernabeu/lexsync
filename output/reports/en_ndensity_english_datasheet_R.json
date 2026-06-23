@@ -117,11 +117,11 @@
     "versions": {
       "engine": "R",
       "lexsync": "0.1.0",
-      "R": "4.5.1",
+      "R": "4.6.0",
       "readr": "2.2.0",
       "stringdist": "0.9.17",
       "jsonlite": "2.0.0",
-      "digest": "0.6.37"
+      "digest": "0.6.39"
     }
   },
   "artifacts": [
@@ -139,7 +139,7 @@
     },
     {
       "file": "output/experiments/en_ndensity_english_psychopy.py",
-      "sha256": "1f7c29742f4582baf90e6a62df8fe72fb9f1e43a6d42921225b5ba68fb034f26"
+      "sha256": "61f6df36e65d1cad36cfe96bb7d92b8a5bbf10712e919188bf5279b74a4a4800"
     },
     {
       "file": "output/experiments/en_ndensity_english.osexp",

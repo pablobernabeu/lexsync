@@ -2,8 +2,9 @@
 """Export finalised, hardware-timed experiment scripts (PsychoPy + OpenSesame).
 
 Mirrors R_workflow/R/scripting.R. Both backends render the same declarative trial
-*event* sequence (see paradigms.py), so a new paradigm is a configuration change,
-not backend code. The PsychoPy script reads stimulus text as data from the
+*event* sequence (see paradigms.py), so a new paradigm requires only a
+configuration change rather than new backend code. The PsychoPy script reads
+stimulus text as data from the
 conditions file and interprets an embedded ``EVENTS`` list; the OpenSesame .osexp
 is generated block by block. Generation imports neither psychopy nor pyserial: it
 only writes text. The .osexp is built line for line identically to the R engine.

@@ -172,9 +172,9 @@ def resample_stimuli(pool: pd.DataFrame, design: dict, schema: dict,
 
     Each replicate is an independent, fully matched set drawn from the pool with
     the items of earlier replicates removed, so no item is reused. This lets a
-    study treat its items as a random factor — running different item samples
-    across participant groups, or showing an effect holds across samples — rather
-    than as a fixed set (Clark, 1973; Yarkoni, 2020). Deterministic: the matcher is
+    study treat its items as a random factor (running different item samples
+    across participant groups, or showing an effect holds across samples) instead
+    of treating them as a fixed set (Clark, 1973; Yarkoni, 2020). Deterministic: the matcher is
     deterministic and the used-item set evolves identically across engines.
     """
     used: set = set()

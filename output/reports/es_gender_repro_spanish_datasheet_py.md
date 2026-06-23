@@ -6,7 +6,7 @@
 
 - **Paradigm:** factorial  |  **Item source:** corpus
 - **Description:** Reproducing Gonzalez Alonso et al. (2025): feminine versus masculine Spanish words matched on word frequency and number of letters, the origin study's natural-language gender-assignment task.
-- **Materials source:** `corpora/derived/es_gender.csv` (sha256 `8fd3412e73da0629…`)
+- **Materials source:** `corpora/derived/es_gender.csv` (sha256 `0f77aec3fe307ed3…`)
 - **Selection:** standardised_euclidean
 - **Counterbalancing:** factorial, 1 list(s)
 - **Items:** 96 rows across 2 conditions (feminine, masculine)
@@ -23,7 +23,7 @@
 
 ## Methods paragraph
 
-48 items per condition were selected from the Spanish lexicon (see corpora/ATTRIBUTION.md for corpus licence and citation) and matched item by item on frequency, length using lexsync's standardised_euclidean matcher. The realised control was tight: the largest standardised difference on any matched dimension was 0.02 (90% CI [-0.32, 0.36]), within the 0.5-SD equivalence bound. Materials were counterbalanced into 1 list(s) (factorial) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.0).
+48 items per condition were selected from the Spanish lexicon (see corpora/ATTRIBUTION.md for corpus licence and citation) and matched item by item on frequency, length using lexsync's standardised_euclidean matcher. The realised control was close. The largest standardised difference on any matched dimension was 0.02 (90% CI [-0.32, 0.36]), within the 0.5-SD equivalence bound. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.0).
 
 ## Pre-registration template
 
@@ -43,7 +43,7 @@
 - Paradigm: factorial
 
 ### Materials (from the lexsync datasheet)
-48 items per condition were selected from the Spanish lexicon (see corpora/ATTRIBUTION.md for corpus licence and citation) and matched item by item on frequency, length using lexsync's standardised_euclidean matcher. The realised control was tight: the largest standardised difference on any matched dimension was 0.02 (90% CI [-0.32, 0.36]), within the 0.5-SD equivalence bound. Materials were counterbalanced into 1 list(s) (factorial) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.0).
+48 items per condition were selected from the Spanish lexicon (see corpora/ATTRIBUTION.md for corpus licence and citation) and matched item by item on frequency, length using lexsync's standardised_euclidean matcher. The realised control was close. The largest standardised difference on any matched dimension was 0.02 (90% CI [-0.32, 0.36]), within the 0.5-SD equivalence bound. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.0).
 
 ### Sampling plan
 - Sample size and justification:

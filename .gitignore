@@ -39,6 +39,15 @@ manuscript/.quarto/
 manuscript/manuscript_files/
 manuscript/manuscript_cache/
 
+# --- pkgdown (generated site; regenerate with pkgdown::build_site) ----------
+R_workflow/docs/
+
+# --- session build/check temporaries ---------------------------------------
+/.rcheck_tmp/
+/.regen_R.log
+/.pkgdown_build.log
+/.audit_findings.txt
+
 # --- OS --------------------------------------------------------------------
 .DS_Store
 Thumbs.db

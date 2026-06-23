@@ -11,7 +11,6 @@ authors:
   # Authorship is provisional and to be finalised before submission/release.
   - family-names: Bernabeu
     given-names: Pablo
-    orcid: 'https://orcid.org/0000-0000-0000-0000'
 version: 0.1.0
 date-released: '2026-06-07'
 license: MIT

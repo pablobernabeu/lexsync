@@ -70,11 +70,11 @@
     "versions": {
       "engine": "R",
       "lexsync": "0.1.0",
-      "R": "4.5.1",
+      "R": "4.6.0",
       "readr": "2.2.0",
       "stringdist": "0.9.17",
       "jsonlite": "2.0.0",
-      "digest": "0.6.37"
+      "digest": "0.6.39"
     }
   },
   "artifacts": [
@@ -84,7 +84,7 @@
     },
     {
       "file": "output/experiments/en_rastle_repro_english_psychopy.py",
-      "sha256": "d6207eb5b5b99b0cfab5b30613d326d9749e101f1f269f45ca9932fcde7bf760"
+      "sha256": "c3d7249826402177bcfdfa48cef8849acc07d57baa9f43202cf1c070b83f9b1a"
     },
     {
       "file": "output/experiments/en_rastle_repro_english.osexp",

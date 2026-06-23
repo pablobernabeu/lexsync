@@ -1,4 +1,4 @@
-# lexsync — global schema and defaults
+# lexsync global schema and defaults
 # ---------------------------------------------------------------------------
 # Every numeric constant lives here (and in the per-design configs), so adding a
 # language or a design needs a configuration file, not a change to the code.

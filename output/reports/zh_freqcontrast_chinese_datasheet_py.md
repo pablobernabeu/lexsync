@@ -6,7 +6,7 @@
 
 - **Paradigm:** factorial  |  **Item source:** corpus
 - **Description:** High versus low frequency Mandarin Chinese two-character words, matched on character-length and character-level neighbourhood (N, OLD20).
-- **Materials source:** `corpora/derived/zh.csv` (sha256 `f2616f6f34d64ebc…`)
+- **Materials source:** `corpora/derived/zh.csv` (sha256 `74666b257c1ad7bc…`)
 - **Selection:** standardised_euclidean
 - **Counterbalancing:** factorial, 1 list(s)
 - **Items:** 160 rows across 2 conditions (low_frequency, high_frequency)
@@ -23,7 +23,7 @@
 
 ## Methods paragraph
 
-80 items per condition were selected from the Chinese lexicon (see corpora/ATTRIBUTION.md for corpus licence and citation) and matched item by item on length, n_density, old20 using lexsync's standardised_euclidean matcher. The realised control was tight: the largest standardised difference on any matched dimension was 0.11 (90% CI [-0.15, 0.37]), within the 0.5-SD equivalence bound. Materials were counterbalanced into 1 list(s) (factorial) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.0).
+80 items per condition were selected from the Chinese lexicon (see corpora/ATTRIBUTION.md for corpus licence and citation) and matched item by item on length, n_density, old20 using lexsync's standardised_euclidean matcher. The realised control was close. The largest standardised difference on any matched dimension was 0.11 (90% CI [-0.15, 0.37]), within the 0.5-SD equivalence bound. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.0).
 
 ## Pre-registration template
 
@@ -43,7 +43,7 @@
 - Paradigm: factorial
 
 ### Materials (from the lexsync datasheet)
-80 items per condition were selected from the Chinese lexicon (see corpora/ATTRIBUTION.md for corpus licence and citation) and matched item by item on length, n_density, old20 using lexsync's standardised_euclidean matcher. The realised control was tight: the largest standardised difference on any matched dimension was 0.11 (90% CI [-0.15, 0.37]), within the 0.5-SD equivalence bound. Materials were counterbalanced into 1 list(s) (factorial) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.0).
+80 items per condition were selected from the Chinese lexicon (see corpora/ATTRIBUTION.md for corpus licence and citation) and matched item by item on length, n_density, old20 using lexsync's standardised_euclidean matcher. The realised control was close. The largest standardised difference on any matched dimension was 0.11 (90% CI [-0.15, 0.37]), within the 0.5-SD equivalence bound. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.0).
 
 ### Sampling plan
 - Sample size and justification:

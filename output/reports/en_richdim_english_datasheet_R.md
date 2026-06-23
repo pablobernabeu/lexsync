@@ -10,7 +10,7 @@
 - **Selection:** standardised_euclidean
 - **Counterbalancing:** factorial, 1 list(s)
 - **Items:** 120 rows across 2 conditions (low_frequency, high_frequency)
-- **Seed:** 2026  |  **Versions:** engine R, lexsync 0.1.0, R 4.5.1, readr 2.2.0, stringdist 0.9.17, jsonlite 2.0.0, digest 0.6.37
+- **Seed:** 2026  |  **Versions:** engine R, lexsync 0.1.0, R 4.6.0, readr 2.2.0, stringdist 0.9.17, jsonlite 2.0.0, digest 0.6.39
 
 ## Realised control
 
@@ -25,7 +25,7 @@
 
 ## Methods paragraph
 
-60 items per condition were selected from the English lexicon (see corpora/ATTRIBUTION.md for corpus licence and citation) and matched item by item on length, n_syllables, bigram_freq using lexsync's standardised_euclidean matcher. The realised control was tight: the largest standardised difference on any matched dimension was 0.17 (90% CI [-0.13, 0.48]), within the 0.5-SD equivalence bound. Materials were counterbalanced into 1 list(s) (factorial) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.0).
+60 items per condition were selected from the English lexicon (see corpora/ATTRIBUTION.md for corpus licence and citation) and matched item by item on length, n_syllables, bigram_freq using lexsync's standardised_euclidean matcher. The realised control was close. The largest standardised difference on any matched dimension was 0.17 (90% CI [-0.13, 0.48]), within the 0.5-SD equivalence bound. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.0).
 
 ## Pre-registration template
 
@@ -45,7 +45,7 @@
 - Paradigm: factorial
 
 ### Materials (from the lexsync datasheet)
-60 items per condition were selected from the English lexicon (see corpora/ATTRIBUTION.md for corpus licence and citation) and matched item by item on length, n_syllables, bigram_freq using lexsync's standardised_euclidean matcher. The realised control was tight: the largest standardised difference on any matched dimension was 0.17 (90% CI [-0.13, 0.48]), within the 0.5-SD equivalence bound. Materials were counterbalanced into 1 list(s) (factorial) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.0).
+60 items per condition were selected from the English lexicon (see corpora/ATTRIBUTION.md for corpus licence and citation) and matched item by item on length, n_syllables, bigram_freq using lexsync's standardised_euclidean matcher. The realised control was close. The largest standardised difference on any matched dimension was 0.17 (90% CI [-0.13, 0.48]), within the 0.5-SD equivalence bound. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.0).
 
 ### Sampling plan
 - Sample size and justification:

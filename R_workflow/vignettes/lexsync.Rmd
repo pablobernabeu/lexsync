@@ -54,10 +54,10 @@ knitr::kable(report$comparisons,
 The manipulated dimension (frequency) differs strongly, while the controlled
 dimensions (length, neighbourhood density and OLD20) are closely equated. The
 report leads with the standardised mean difference (`cohens_d`) and its 90%
-confidence interval (`d_ci_low`, `d_ci_high`): a non-significant difference test is
-not evidence of matching, and its outcome depends on the number of items, so the
-effect size and its interval — whose upper limit is the largest imbalance still
-consistent with the stimuli — are the primary summary. The TOST equivalence test
+confidence interval (`d_ci_low`, `d_ci_high`). A non-significant difference test is
+not evidence of matching, and its outcome depends on the number of items. The
+effect size and its interval, whose upper limit is the largest imbalance still
+consistent with the stimuli, are therefore the primary summary. The TOST equivalence test
 is reported alongside as a bound-referenced verdict.
 
 ## Generate the experiment scripts
@@ -70,6 +70,6 @@ basename(unlist(files))
 ```
 
 The PsychoPy script binds each onset trigger to the stimulus flip with
-`win.callOnFlip`; the OpenSesame `.osexp` sends the marker from the item that
+`win.callOnFlip`. The OpenSesame `.osexp` sends the marker from the item that
 immediately follows the word. Neither the matching nor the script generation
 requires PsychoPy, OpenSesame or any hardware to be installed.

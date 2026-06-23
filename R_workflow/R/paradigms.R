@@ -2,7 +2,7 @@
 # named default sequence of trial events plus the fields it requires and a
 # counterbalancing recipe. A design names a paradigm (and inherits its events) or
 # supplies an explicit `events` list; every presentation backend renders the same
-# event list, so adding a paradigm is configuration rather than backend code.
+# event list, so adding a paradigm is purely a matter of configuration.
 # Identical in structure to python_workflow/src/lexsync/paradigms.py.
 
 #' The paradigm registry: default event sequences and required fields

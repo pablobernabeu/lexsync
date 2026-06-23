@@ -2,10 +2,10 @@
 """Materials datasheet and pre-registration template.
 
 A *materials datasheet* is a machine- and human-readable provenance record for a
-design: where the items came from, how they were selected and matched, the
-realised control, how they were counterbalanced, and the seeds, versions and
-checksums needed to reproduce them exactly. It is the shareable materials record
-whose scarcity motivates lexsync (Bochynska et al., 2023; Roettger, 2019). The
+design. It records where the items came from, how they were selected, matched and
+counterbalanced, the realised control, and the seeds, versions and checksums needed
+to reproduce them exactly. It is the shareable materials record whose scarcity
+motivates lexsync (Bochynska et al., 2023; Roettger, 2019). The
 module also emits an auto-filled Methods paragraph and a pre-registration
 skeleton. Mirrors R_workflow/R/datasheet.R.
 """
@@ -149,7 +149,7 @@ def methods_paragraph(ds: dict) -> str:
                  and r["ci_high"] is not None]
     if ctrl_rows:
         worst = max(ctrl_rows, key=lambda r: abs(r["cohens_d"]))
-        control = (f". The realised control was tight: the largest standardised difference on "
+        control = (f". The realised control was close. The largest standardised difference on "
                    f"any matched dimension was {abs(worst['cohens_d']):.2f} "
                    f"(90% CI [{worst['ci_low']:.2f}, {worst['ci_high']:.2f}]), within the "
                    f"0.5-SD equivalence bound")
@@ -159,8 +159,10 @@ def methods_paragraph(ds: dict) -> str:
     resamp = (f". {rs['n_sets']} disjoint matched item sets were drawn, so items can be "
               f"treated as a random factor" if rs else "")
     cb = ds["counterbalancing"]
+    recipe_label = {"latin_square_target": "a Latin-square rotation",
+                    "factorial": "a factorial split"}.get(cb["recipe"], cb["recipe"])
     tail = (resamp + f". Materials were counterbalanced into {cb['lists']} list(s) "
-            f"({cb['recipe']}) and generated for PsychoPy, OpenSesame and jsPsych. The "
+            f"({recipe_label}) and generated for PsychoPy, OpenSesame and jsPsych. The "
             f"selection is deterministic and reproducible (seed "
             f"{ds['reproducibility']['seed']}; lexsync "
             f"{ds['reproducibility']['versions']['lexsync']}).")

@@ -4,8 +4,8 @@
 A *paradigm* is a named default sequence of trial *events* plus the trial fields
 it requires and a counterbalancing recipe. A design either names a ``paradigm``
 (and inherits its event sequence) or supplies an explicit ``events`` list. Every
-presentation backend renders the same event list, so adding a paradigm is a
-matter of configuration rather than backend code.
+presentation backend renders the same event list, so adding a paradigm is purely a
+matter of configuration.
 
 An *event* is a small dictionary::
 

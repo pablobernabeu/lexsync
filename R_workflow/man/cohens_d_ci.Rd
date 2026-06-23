@@ -19,8 +19,8 @@ The interval is the \code{(1 - 2 * alpha)} confidence interval for the standardi
 mean difference; for \code{alpha = 0.05} this is the 90\% interval that corresponds
 exactly to a TOST decision at the .05 level (Lakens, 2017). Reporting the
 interval, rather than only a binary verdict, makes the realised imbalance and
-its sampling uncertainty explicit and keeps the dependence on the number of
-items visible rather than hidden: with few items the interval is wide, so a
-small point estimate cannot be over-read as evidence of a small true
-difference (Sassenhagen & Alday, 2016).
+its sampling uncertainty explicit, and keeps the dependence on the number of
+items visible. With few items the interval is wide, so a small point estimate
+cannot be over-read as evidence of a small true difference (Sassenhagen &
+Alday, 2016).
 }

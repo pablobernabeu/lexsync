@@ -11,10 +11,9 @@ cannot be done from the build machine.
 ## Recommended sequence
 
 If you submit to BRM (the candidate venue): it is a Psychonomic Society journal
-that follows the TOP / Open Science **Level 2** guidelines (materials and code
-must be in a **trusted repository**, with an **Open Practices Statement** just
-before the References) and uses **masked (double-blind) review**. That shapes the
-order:
+that follows the TOP / Open Science Level 2 guidelines (materials and code must be
+in a trusted repository, with an Open Practices Statement just before the
+References) and uses masked (double-blind) review. That shapes the order:
 
 1. **Public GitHub repository.** Create `github.com/<you>/lexsync`, push this
    repo, and update the URL placeholders (see below). This resolves the CRAN

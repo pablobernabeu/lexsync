@@ -70,11 +70,11 @@
     "versions": {
       "engine": "R",
       "lexsync": "0.1.0",
-      "R": "4.5.1",
+      "R": "4.6.0",
       "readr": "2.2.0",
       "stringdist": "0.9.17",
       "jsonlite": "2.0.0",
-      "digest": "0.6.37"
+      "digest": "0.6.39"
     }
   },
   "artifacts": [
@@ -84,7 +84,7 @@
     },
     {
       "file": "output/experiments/en_priming_english_psychopy.py",
-      "sha256": "61eb0ab6c37875e833263c883ebec02b7d8dc34514e2d1a388045ac2b2bf1225"
+      "sha256": "68aa594d4317be602adae6a06384dc25204343f0dcb10143124bea4a02f99acc"
     },
     {
       "file": "output/experiments/en_priming_english.osexp",

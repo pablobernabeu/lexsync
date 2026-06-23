@@ -14,7 +14,7 @@
     },
     {
       "file": "output\\experiments\\zh_freqcontrast_chinese_psychopy.py",
-      "sha256": "0eeb7e424f8aa39ca3ef82fa45c0a77fe16e2a7c5a32b5c57330532092dbe441"
+      "sha256": "5cd9222c760f00b1d91c2485be2cf1f06ab624ba7a7be5564f3e0055d585a6d4"
     },
     {
       "file": "output\\experiments\\zh_freqcontrast_chinese.osexp",
@@ -83,7 +83,7 @@
   "materials_source": {
     "path": "corpora/derived/zh.csv",
     "provenance": "see corpora/ATTRIBUTION.md for corpus licence and citation",
-    "sha256": "f2616f6f34d64ebc44e0709fa6b56b9418d7902604e5a89cb605569db3ebb6e5",
+    "sha256": "74666b257c1ad7bce4694a4b172796fbdc08c1414183bea5f28faa5ed3ab2fc4",
     "type": "corpus"
   },
   "realised_control": [

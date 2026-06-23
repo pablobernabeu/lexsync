@@ -83,11 +83,11 @@
     "versions": {
       "engine": "R",
       "lexsync": "0.1.0",
-      "R": "4.5.1",
+      "R": "4.6.0",
       "readr": "2.2.0",
       "stringdist": "0.9.17",
       "jsonlite": "2.0.0",
-      "digest": "0.6.37"
+      "digest": "0.6.39"
     }
   },
   "artifacts": [
@@ -105,7 +105,7 @@
     },
     {
       "file": "output/experiments/en_lexdec_english_psychopy.py",
-      "sha256": "196c4278d21a1c6438e834be5651db9e94ef90db5fece7976b3950ed92dbbbbd"
+      "sha256": "caa6356c3e6e11113b58b77a9df41cd8d3456608f75c390e5015f1f28fe7a04e"
     },
     {
       "file": "output/experiments/en_lexdec_english.osexp",

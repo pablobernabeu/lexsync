@@ -54,7 +54,7 @@ def write_run_log(log: dict, md_path: str, jsonl_path: str | None = None) -> str
             lines.append(f"- {key}: {value}")
     lines += ["", "## Steps", ""]
     for step in log["steps"]:
-        lines.append(f"- **{step['time']}** -- {step['message']}")
+        lines.append(f"- **{step['time']}**: {step['message']}")
         if step["data"]:
             for key, value in step["data"].items():
                 lines.append(f"    - {key}: {value}")

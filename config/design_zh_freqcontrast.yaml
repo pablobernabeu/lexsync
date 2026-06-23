@@ -2,9 +2,9 @@
 # This is the logographic-script demonstration. The two conditions differ in
 # frequency and are matched, item by item, on character-length and on
 # character-level orthographic neighbourhood (Coltheart's N and OLD20 computed
-# over characters rather than letters). It exercises the whole pipeline -- corpus
-# access (wordfreq 'zh'), dimension derivation, matching, counterbalancing and
-# hardware-timed script generation -- on a non-alphabetic writing system.
+# over characters rather than letters). It exercises the whole pipeline (corpus
+# access via wordfreq 'zh', dimension derivation, matching, counterbalancing and
+# hardware-timed script generation) on a non-alphabetic writing system.
 #
 # 'length' here is the number of characters. Two-character words dominate the
 # language, so the pool is restricted to them; the character-neighbourhood

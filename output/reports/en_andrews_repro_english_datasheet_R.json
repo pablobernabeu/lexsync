@@ -190,11 +190,11 @@
     "versions": {
       "engine": "R",
       "lexsync": "0.1.0",
-      "R": "4.5.1",
+      "R": "4.6.0",
       "readr": "2.2.0",
       "stringdist": "0.9.17",
       "jsonlite": "2.0.0",
-      "digest": "0.6.37"
+      "digest": "0.6.39"
     }
   },
   "artifacts": [
@@ -212,7 +212,7 @@
     },
     {
       "file": "output/experiments/en_andrews_repro_english_psychopy.py",
-      "sha256": "cb104421196b956ee1b818c2e6344bb0c0ca195ea32b9f63b98991f0c1926404"
+      "sha256": "8cd0bc0c9472c699426d741039d661c111e02216abb578ee6423b82822276c0d"
     },
     {
       "file": "output/experiments/en_andrews_repro_english.osexp",

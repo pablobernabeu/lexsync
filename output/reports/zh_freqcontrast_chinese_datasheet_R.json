@@ -11,7 +11,7 @@
   "materials_source": {
     "type": "corpus",
     "path": "corpora/derived/zh.csv",
-    "sha256": "f2616f6f34d64ebc44e0709fa6b56b9418d7902604e5a89cb605569db3ebb6e5",
+    "sha256": "74666b257c1ad7bce4694a4b172796fbdc08c1414183bea5f28faa5ed3ab2fc4",
     "provenance": "see corpora/ATTRIBUTION.md for corpus licence and citation"
   },
   "dimensions": {
@@ -118,11 +118,11 @@
     "versions": {
       "engine": "R",
       "lexsync": "0.1.0",
-      "R": "4.5.1",
+      "R": "4.6.0",
       "readr": "2.2.0",
       "stringdist": "0.9.17",
       "jsonlite": "2.0.0",
-      "digest": "0.6.37"
+      "digest": "0.6.39"
     }
   },
   "artifacts": [
@@ -140,7 +140,7 @@
     },
     {
       "file": "output/experiments/zh_freqcontrast_chinese_psychopy.py",
-      "sha256": "10893e2797df67548dcdbc9385b5e4f018adcad75fa3657e1da59b88c2e77f6f"
+      "sha256": "774dac50a14e10fd6d26c74292d94d656e205fa4843ea21c5a10c5d02dfa3729"
     },
     {
       "file": "output/experiments/zh_freqcontrast_chinese.osexp",

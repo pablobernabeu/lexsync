@@ -12,16 +12,16 @@
 stimulus sets and the experiments that present them. From a word-frequency corpus in
 any of dozens of languages it will select stimuli that are matched in parallel across
 several lexical dimensions (length, frequency, orthographic neighbourhood density and
-more), counterbalance them across conditions and lists, and then *generate the
-presentation experiment* for 'PsychoPy', 'OpenSesame' or the browser ('jsPsych') —
-the laboratory targets with hardware triggers injected at stimulus onset for EEG/ERP
-synchronisation, and the web target as a single self-contained, shareable HTML file. The trial is described declaratively as a
-sequence of events, so the same engine builds **factorial word studies, lexical
-decision with deterministically generated pseudowords, priming and self-paced
-reading** from configuration rather than code, with word, pseudoword, paired and
-sentence stimuli. It ships as two structurally identical, independently installable
-packages — a CRAN-ready R package and a PyPI-ready Python package — so a laboratory can
-adopt it in whichever ecosystem it already uses.
+more) and counterbalance them across conditions and lists. It then generates the
+presentation experiment for 'PsychoPy', 'OpenSesame' or the browser ('jsPsych'). The
+laboratory targets carry hardware triggers injected at stimulus onset for EEG/ERP
+synchronisation, and the web target is a single self-contained, shareable HTML file.
+The trial is described declaratively as a sequence of events, so the same engine
+builds factorial word studies, lexical decision with deterministically generated
+pseudowords, priming and self-paced reading from configuration rather than code, with
+word, pseudoword, paired and sentence stimuli. It ships as two structurally identical,
+independently installable packages (a CRAN-ready R package and a PyPI-ready Python
+package), so a laboratory can adopt it in whichever ecosystem it already uses.
 
 `lexsync` generalises the FAIR artificial-grammar workflow of González Alonso et al.
 (2025) into a reusable tool.
@@ -32,9 +32,9 @@ Existing tools are powerful but fragmented. Stimulus-control packages such as 'L
 'LIBRA' and 'LASTU' match words but stop short of building the experiment; experiment
 builders such as 'PsychoPy' and 'OpenSesame' present stimuli but do not match them; the
 R and Python ecosystems rarely meet; and most matching tools target a single language.
-`lexsync` closes this gap by spanning the whole path — *many-language corpus → parallel
-multidimensional matching → counterbalancing → genuinely flip-locked, cross-platform
-experiment scripts* — identically in R and Python.
+`lexsync` closes this gap by spanning the whole path, from a many-language corpus
+through parallel multidimensional matching and counterbalancing to flip-locked,
+cross-platform experiment scripts, identically in R and Python.
 
 A concrete methodological gain: the PsychoPy backend binds each onset trigger to the
 exact buffer flip on which the stimulus appears, using `win.callOnFlip`, rather than
@@ -52,9 +52,9 @@ lexsync/
 └── manuscript/        reproducible Quarto manuscript (in preparation)
 ```
 
-Both packages expose the same modules — `querying`, `matching`, `counterbalancing`,
-`scripting`, `validation`, `logging`, `corpora` — and the same orchestrator,
-`run_pipeline`.
+Both packages expose parallel modules, including `querying`, `matching`,
+`counterbalancing`, `scripting`, `validation`, `logging` and `corpora`, and the same
+orchestrator, `run_pipeline`.
 
 ## Quick start
 
@@ -76,8 +76,8 @@ python python_workflow/run_pipeline.py        # runs the demonstrations
 ```
 
 Neither the generation step nor its tests require 'PsychoPy', 'OpenSesame' or any
-parallel-port driver — those are needed only when the generated experiment is actually
-run on hardware. The whole demonstration therefore reproduces with no special equipment.
+parallel-port driver. These are needed only when the generated experiment is run on
+hardware. The whole demonstration therefore reproduces with no special equipment.
 
 ## Corpora
 
@@ -85,8 +85,8 @@ Languages are supplied through `corpora/registry.yaml`. Two connectors are provi
 curated SUBTLEX-family/'openlexicon' connector (individually citable corpora under
 CC BY-SA 4.0) and an optional 'wordfreq' connector that unlocks roughly forty languages
 through a single dependency. English, Spanish and Mandarin Chinese are bundled and
-demonstrated end to end — the last as a logographic-script example, showing that the
-matching and script generation are not limited to alphabetic writing — and further
+demonstrated end to end (the last a logographic-script example, showing that the
+matching and script generation are not limited to alphabetic writing). Further
 languages are fetched on demand into a user cache. Every corpus is cited, with its
 licence and retrieval date, in `corpora/ATTRIBUTION.md`.
 
@@ -96,9 +96,9 @@ licence and retrieval date, in `corpora/ATTRIBUTION.md`.
   `R_workflow/R/paradigms.R` and `python_workflow/src/lexsync/paradigms.py`, giving its
   default trial-event sequence, required fields and counterbalancing recipe; both
   backends then render it with no further code.
-- **Add a lexical dimension** — edit `compute_dimensions()` in `R_workflow/R/querying.R`
-  and `python_workflow/src/lexsync/querying.py`, then list it under `dimensions` in
-  `config/schema.yaml`.
+- **Add a lexical dimension** — add the computation in `R_workflow/R/querying.R` and
+  `python_workflow/src/lexsync/querying.py` (alongside `add_neighbourhood()` and
+  `add_bigram_frequency()`), then list it under `dimensions` in `config/schema.yaml`.
 - **Add a presentation target** — add an `export_<target>()` function in
   `R_workflow/R/scripting.R` and `python_workflow/src/lexsync/scripting.py` that walks
   the same rendered event list.
@@ -117,4 +117,4 @@ and Windows (R release and development) and the Python tests on Python 3.10–3.
 
 Source code is under the MIT License (`LICENSE`). Bundled corpus derivatives are under
 CC BY-SA 4.0 (`LICENSE-DATA`, `corpora/ATTRIBUTION.md`). If you use `lexsync`, please
-cite the software (`CITATION.cff`) and the accompanying article.
+cite the software (`CITATION.cff`). A manuscript describing it is in preparation.

@@ -72,7 +72,7 @@ write_run_log <- function(log, md_path, jsonl_path = NULL) {
   }
   lines <- c(lines, "", "## Steps", "")
   for (s in log$steps) {
-    lines <- c(lines, sprintf("- **%s** -- %s", s$time, s$message))
+    lines <- c(lines, sprintf("- **%s**: %s", s$time, s$message))
     if (!is.null(s$data)) {
       for (k in names(s$data)) {
         lines <- c(lines, sprintf("    - %s: %s", k, paste(s$data[[k]], collapse = ", ")))

@@ -1,8 +1,8 @@
 # lexsync run log: es_freqcontrast
 
 - Engine: Python 3.13.7
-- Started: 2026-06-13T23:55:07
-- Finished: 2026-06-13T23:55:07
+- Started: 2026-06-23T10:20:14
+- Finished: 2026-06-23T10:20:15
 
 ## Run metadata
 
@@ -14,46 +14,46 @@
 
 ## Steps
 
-- **2026-06-13T23:55:07** -- loading lexicon 'corpora/derived/es.csv'
-- **2026-06-13T23:55:07** -- lexicon loaded: 30000 words
+- **2026-06-23T10:20:14**: loading lexicon 'corpora/derived/es.csv'
+- **2026-06-23T10:20:14**: lexicon loaded: 30000 words
     - words: 30000
-- **2026-06-13T23:55:07** -- pool after filters: 7172 words
+- **2026-06-23T10:20:14**: pool after filters: 7172 words
     - pool: 7172
-- **2026-06-13T23:55:07** -- matched 160 items across 2 conditions
+- **2026-06-23T10:20:14**: matched 160 items across 2 conditions
     - conditions: high_frequency, low_frequency
-- **2026-06-13T23:55:07** -- equivalence low_frequency vs high_frequency on 'length': d = 0.05 [-0.21, 0.31], TOST p = 0.0024 (equivalent)
-- **2026-06-13T23:55:07** -- equivalence low_frequency vs high_frequency on 'frequency': d = 5.55 [5.29, 5.81], TOST p = 1.0 (not shown equivalent)
-- **2026-06-13T23:55:07** -- equivalence low_frequency vs high_frequency on 'n_density': d = 0.08 [-0.18, 0.34], TOST p = 0.0041 (equivalent)
-- **2026-06-13T23:55:07** -- equivalence low_frequency vs high_frequency on 'old20': d = 0.01 [-0.26, 0.27], TOST p = 0.0011 (equivalent)
-- **2026-06-13T23:55:07** -- wrote 'es_freqcontrast_spanish_stimuli_py.csv'
+- **2026-06-23T10:20:14**: equivalence low_frequency vs high_frequency on 'length': d = 0.05 [-0.21, 0.31], TOST p = 0.0024 (equivalent)
+- **2026-06-23T10:20:14**: equivalence low_frequency vs high_frequency on 'frequency': d = 5.55 [5.29, 5.81], TOST p = 1.0 (not shown equivalent)
+- **2026-06-23T10:20:14**: equivalence low_frequency vs high_frequency on 'n_density': d = 0.08 [-0.18, 0.34], TOST p = 0.0041 (equivalent)
+- **2026-06-23T10:20:14**: equivalence low_frequency vs high_frequency on 'old20': d = 0.01 [-0.26, 0.27], TOST p = 0.0011 (equivalent)
+- **2026-06-23T10:20:15**: wrote 'es_freqcontrast_spanish_stimuli_py.csv'
     - path: output\stimuli\es_freqcontrast_spanish_stimuli_py.csv
     - rows: 160
     - md5: 99cb8a7c11731730a4f516f07dee932b
-- **2026-06-13T23:55:07** -- wrote 'es_freqcontrast_spanish_descriptives_py.csv'
+- **2026-06-23T10:20:15**: wrote 'es_freqcontrast_spanish_descriptives_py.csv'
     - path: output\reports\es_freqcontrast_spanish_descriptives_py.csv
     - rows: 8
     - md5: 39ab32df0422848e430490693e909303
-- **2026-06-13T23:55:07** -- wrote 'es_freqcontrast_spanish_comparisons_py.csv'
+- **2026-06-23T10:20:15**: wrote 'es_freqcontrast_spanish_comparisons_py.csv'
     - path: output\reports\es_freqcontrast_spanish_comparisons_py.csv
     - rows: 4
     - md5: 080825223c6c60489cad313d8cf88a46
-- **2026-06-13T23:55:07** -- wrote 'es_freqcontrast_spanish_psychopy.py'
+- **2026-06-23T10:20:15**: wrote 'es_freqcontrast_spanish_psychopy.py'
     - path: output\experiments\es_freqcontrast_spanish_psychopy.py
     - rows: None
-    - md5: e7559fe027b7d432e00dbc2c962b3f1a
-- **2026-06-13T23:55:07** -- wrote 'es_freqcontrast_spanish.osexp'
+    - md5: 6cdee30fd7faa7ca2dcf1576696daa55
+- **2026-06-23T10:20:15**: wrote 'es_freqcontrast_spanish.osexp'
     - path: output\experiments\es_freqcontrast_spanish.osexp
     - rows: None
     - md5: 5fcc2c64c3a9bb725a4b8e1b2565d493
-- **2026-06-13T23:55:07** -- wrote 'es_freqcontrast_spanish.html'
+- **2026-06-23T10:20:15**: wrote 'es_freqcontrast_spanish.html'
     - path: output\experiments\es_freqcontrast_spanish.html
     - rows: None
     - md5: f7784cdcf794ae96fedf2e3f7877b673
-- **2026-06-13T23:55:07** -- wrote 'es_freqcontrast_spanish_datasheet_py.json'
+- **2026-06-23T10:20:15**: wrote 'es_freqcontrast_spanish_datasheet_py.json'
     - path: output\reports\es_freqcontrast_spanish_datasheet_py.json
     - rows: None
-    - md5: 867ce00a5b541ae1f8f751328f7fc89b
-- **2026-06-13T23:55:07** -- wrote 'es_freqcontrast_spanish_datasheet_py.md'
+    - md5: a96a647f18e9449835d7096b273fef67
+- **2026-06-23T10:20:15**: wrote 'es_freqcontrast_spanish_datasheet_py.md'
     - path: output\reports\es_freqcontrast_spanish_datasheet_py.md
     - rows: None
-    - md5: a8c434b5ff7274df3849465308f155c5
+    - md5: f3d9e926b13effa3f93042bafe0aba01

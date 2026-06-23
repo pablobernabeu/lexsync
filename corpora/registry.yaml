@@ -126,7 +126,7 @@ wordfreq_connector:
   connector: wordfreq
   status: supported
   description: 'Programmatic word frequencies for ~40 languages via the wordfreq package; lexsync derives length, N and OLD20 itself.'
-  licence: 'MIT (package code); aggregated data of mixed provenance — see wordfreq documentation'
+  licence: 'MIT (package code); aggregated data of mixed provenance (see wordfreq documentation)'
   citation_key: speer2022wordfreq
   citation: 'Speer (2022). rspeer/wordfreq v3.0. Zenodo. doi:10.5281/zenodo.7199437'
   languages: [en, es, fr, de, nl, it, pt, pl, el, ru, uk, ar, fa, he, hi, bn, zh, ja, ko, id, ms, tr, sv, nb, da, fi, cs, ro, hu, ca]

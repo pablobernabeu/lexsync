@@ -118,11 +118,11 @@
     "versions": {
       "engine": "R",
       "lexsync": "0.1.0",
-      "R": "4.5.1",
+      "R": "4.6.0",
       "readr": "2.2.0",
       "stringdist": "0.9.17",
       "jsonlite": "2.0.0",
-      "digest": "0.6.37"
+      "digest": "0.6.39"
     }
   },
   "artifacts": [
@@ -140,7 +140,7 @@
     },
     {
       "file": "output/experiments/es_freqcontrast_spanish_psychopy.py",
-      "sha256": "f4c9ea80edcefeca7765ef1bade66f303ed512c5498a77512eb2701f5c3d98f2"
+      "sha256": "790db633e313c692e1755670d1c13fa27e10ac91ea13f3fbfcec90a47dd91f58"
     },
     {
       "file": "output/experiments/es_freqcontrast_spanish.osexp",

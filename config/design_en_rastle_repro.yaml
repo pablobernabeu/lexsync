@@ -7,12 +7,12 @@
 #                                               (an -er ending) but not meaning;
 #   - orthographic / form    (brothel-BROTH):   shares form only, with no morpheme
 #                                               boundary and no meaning.
-# Their result -- equal priming for transparent and opaque, none for form -- argued
+# Their result (equal priming for transparent and opaque, none for form) argued
 # for an early morpho-orthographic decomposition stage blind to meaning.
 #
 # lexsync expresses the design with its priming paradigm: each target appears with a
-# related prime (of its assigned prime_type) and an unrelated, length-matched control,
-# Latin-square counterbalanced so a target is seen once per list. prime_type
+# related prime (of its assigned prime_type) and an unrelated, length-matched control.
+# Latin-square counterbalancing ensures a target is seen once per list. prime_type
 # (transparent | opaque | form) is the between-items factor carried for analysis.
 # This is a representative item set following the prime-type STRUCTURE of Rastle et
 # al. (2004), not their full 840-prime materials.
