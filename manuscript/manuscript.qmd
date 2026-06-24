@@ -780,12 +780,16 @@ to an orthographic syllable estimate and a corpus-derived bigram-frequency
 of acquisition and valence are already reachable through the norm-table connector,
 the norm data being fetched separately because their licences vary. Sampling matched
 item sets per participant, rather than per study, would extend the resampling
-already provided; a graphical interface is a further possibility.
+already provided.
 
 # Availability and open practices
 
 'lexsync' is available as an R package and a Python package, with a shared corpus
-registry and the reproducible source of this manuscript. The code is released
+registry and the reproducible source of this manuscript. A browser application for
+each engine (a Shiny app for the R package and a Streamlit app for the Python one)
+lets a researcher assemble a design, run the verified pipeline and export the design
+configuration together with the R, Python and command-line code that reproduces it,
+so the interface itself yields shareable, reproducible artefacts. The code is released
 under the MIT licence and the bundled corpus derivatives under CC BY-SA 4.0, with
 full attribution and retrieval dates recorded alongside the data. The repository
 URL in the package metadata is a placeholder pending public release.

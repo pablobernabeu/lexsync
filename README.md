@@ -49,6 +49,7 @@ lexsync/
 ├── corpora/           many-language corpus registry + ingestion + attribution
 ├── config/            global schema + per-design configurations
 ├── output/            generated stimuli, reports and experiment scripts
+├── apps/              browser apps (Streamlit + Shiny) that export reproducible code
 └── manuscript/        reproducible Quarto manuscript (in preparation)
 ```
 
@@ -78,6 +79,21 @@ python python_workflow/run_pipeline.py        # runs the demonstrations
 Neither the generation step nor its tests require 'PsychoPy', 'OpenSesame' or any
 parallel-port driver. These are needed only when the generated experiment is run on
 hardware. The whole demonstration therefore reproduces with no special equipment.
+
+## Web apps
+
+Two browser front-ends in `apps/` let a researcher assemble a design without writing
+code, run the verified pipeline and view the matched stimuli, the realised-control
+report and the materials datasheet. Each one also exports the design configuration
+and the one-line R, Python and command-line code that reproduces the operation, so
+the interface produces shareable, reproducible artefacts rather than a black box. A
+Streamlit app wraps the Python engine and a Shiny app wraps the R engine; the two
+select byte-identical stimuli. See `apps/README.md` for details.
+
+```bash
+streamlit run apps/python_streamlit/lexsync_app.py             # Python
+Rscript -e "shiny::runApp('apps/r_shiny', port = 8502)"        # R
+```
 
 ## Corpora
 
