@@ -29,7 +29,8 @@ Suggests:
     testthat (>= 3.0.0),
     knitr,
     rmarkdown,
-    spelling
+    spelling,
+    clue
 VignetteBuilder: knitr
 URL: https://github.com/pablobernabeu/lexsync
 BugReports: https://github.com/pablobernabeu/lexsync/issues

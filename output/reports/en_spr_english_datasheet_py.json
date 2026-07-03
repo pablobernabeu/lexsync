@@ -66,6 +66,7 @@
   },
   "resampling": null,
   "selection": {
+    "cross_engine": "n/a (user-supplied items)",
     "method": "item table (user-supplied)"
   }
 }

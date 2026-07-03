@@ -47,7 +47,8 @@
     }
   },
   "selection": {
-    "method": "item table (user-supplied)"
+    "method": "item table (user-supplied)",
+    "cross_engine": "n/a (user-supplied items)"
   },
   "analysis": {
     "response": "the trial outcome (e.g. reaction time or accuracy)",

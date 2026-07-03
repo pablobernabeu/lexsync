@@ -7,6 +7,11 @@
 * Browser (jsPsych) experiments gain a welcome/instructions screen, per-row item
   metadata (condition, item id, list), and a completion screen that saves the
   collected data as a CSV download.
+* Two new matching methods: `mahalanobis` (a covariance-aware distance that
+  down-weights correlated dimensions) and `optimal` (a globally optimal assignment
+  for two-condition designs, using the suggested `clue` package). Unlike the
+  default methods, these use a covariance inverse and an assignment solver, so the
+  R and Python engines agree closely but not byte-for-byte on them.
 * See the top-level `CHANGELOG.md` for the full, cross-language history and the
   planned methodological roadmap.
 

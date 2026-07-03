@@ -19,6 +19,17 @@ DATASHEET_VERSION <- "1.0"
   v
 }
 
+# Whether the R and Python engines select byte-identical materials. The
+# deterministic methods are byte-identical; mahalanobis and optimal are the
+# exception (covariance inverse / assignment solver; see matching.R). Mirrors
+# datasheet.py.
+.cross_engine <- function(method, source) {
+  if (identical(source, "table")) return("n/a (user-supplied items)")
+  if (!is.null(method) && method %in% c("mahalanobis", "optimal"))
+    return("approximate (platform linear algebra)")
+  "byte-identical"
+}
+
 .controlled_dims <- function(design, source) {
   if (identical(source, "corpus")) unlist(design$match_on, use.names = FALSE)
   else if (identical(source, "generate")) "length"
@@ -88,6 +99,7 @@ build_datasheet <- function(design, schema, report, stimuli, source_path, artifa
   }
   if (!is.null(candidate_pool) && source %in% c("corpus", "generate"))
     selection$candidate_pool <- candidate_pool
+  selection$cross_engine <- .cross_engine(selection$method, source)
 
   list(
     lexsync_datasheet_version = DATASHEET_VERSION,
@@ -175,7 +187,12 @@ methods_paragraph <- function(ds) {
                                   "candidates, and the selection was deterministic and blind ",
                                   "to any outcome measure"), as.integer(min(sizes)))
   }
-  paste0(lead, control, pool_note, tail)
+  ce <- ds$selection$cross_engine %||% ""
+  ce_note <- if (startsWith(ce, "approximate"))
+    paste0(". This design's matching method uses a covariance inverse or an assignment ",
+           "solver, so the R and Python engines select equivalent but not byte-identical ",
+           "materials") else ""
+  paste0(lead, control, pool_note, ce_note, tail)
 }
 
 #' @keywords internal
@@ -212,6 +229,7 @@ render_datasheet_md <- function(ds) {
     sprintf("- **Materials source:** `%s` (sha256 `%s...`)", ds$materials_source$path,
             substring(ds$materials_source$sha256 %||% "", 1, 16)),
     sprintf("- **Selection:** %s", ds$selection$method),
+    sprintf("- **Cross-engine determinism:** %s", ds$selection$cross_engine %||% "byte-identical"),
     sprintf("- **Counterbalancing:** %s, %s list(s)", ds$counterbalancing$recipe,
             ds$counterbalancing$lists),
     sprintf("- **Items:** %s rows across %s conditions (%s)", ds$items$n_total,

@@ -170,6 +170,7 @@
         "n_candidates": 7479
       }
     ],
+    "cross_engine": "byte-identical",
     "match_on": [
       "length",
       "n_syllables",

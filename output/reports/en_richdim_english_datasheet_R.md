@@ -8,6 +8,7 @@
 - **Description:** High versus low frequency English words, matched on length, syllable count and bigram frequency (a phonotactic-probability proxy).
 - **Materials source:** `corpora/derived/en.csv` (sha256 `c20549b920d81680...`)
 - **Selection:** standardised_euclidean
+- **Cross-engine determinism:** byte-identical
 - **Counterbalancing:** factorial, 1 list(s)
 - **Items:** 120 rows across 2 conditions (low_frequency, high_frequency)
 - **Seed:** 2026  |  **Versions:** engine R, lexsync 0.1.0, R 4.6.0, readr 2.2.0, stringdist 0.9.17, jsonlite 2.0.0, digest 0.6.39

@@ -66,6 +66,37 @@ test_that("joint matching cancels the control-dimension confound", {
   expect_lte(d_joint, d_std + 1e-9)
 })
 
+test_that("mahalanobis matching balances and is deterministic within an engine", {
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  lex <- load_lexicon(system.file("extdata", "en_example.csv", package = "lexsync"), schema, "english")
+  d <- make_design(); d$matching <- list(method = "mahalanobis")
+  s <- match_stimuli(lex, d, schema)
+  expect_equal(as.integer(table(s$condition)), c(10L, 10L))
+  expect_gt(mean(s$frequency[s$condition == "high"]), mean(s$frequency[s$condition == "low"]))
+  for (dim in c("length", "n_density", "old20")) {           # correlated controls balanced
+    expect_lt(abs(cohens_d(s[[dim]][s$condition == "high"],
+                           s[[dim]][s$condition == "low"])), 0.5)
+  }
+  # deterministic within an engine (cross-engine identity is not guaranteed here)
+  expect_identical(s$word, match_stimuli(lex, d, schema)$word)
+})
+
+test_that("optimal matching equates the confound and is deterministic within an engine", {
+  skip_if_not_installed("clue")
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  lex <- load_lexicon(system.file("extdata", "en_example.csv", package = "lexsync"), schema, "english")
+  s <- match_stimuli(lex, make_confounded_design(method = "optimal"), schema)
+  expect_equal(as.integer(table(s$condition)), c(20L, 20L))
+  expect_gt(mean(s$n_density[s$condition == "dense"]),
+            mean(s$n_density[s$condition == "sparse"]))
+  for (dim in c("length", "frequency")) {
+    expect_lt(abs(cohens_d(s[[dim]][s$condition == "dense"],
+                           s[[dim]][s$condition == "sparse"])), 0.15)
+  }
+  expect_identical(s$word,
+                   match_stimuli(lex, make_confounded_design(method = "optimal"), schema)$word)
+})
+
 test_that("resample_stimuli produces disjoint matched sets", {
   schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
   lex <- load_lexicon(system.file("extdata", "en_example.csv", package = "lexsync"), schema, "english")

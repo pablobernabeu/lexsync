@@ -8,6 +8,7 @@
 - **Description:** Dense versus sparse orthographic neighbourhoods (Coltheart's N) in Spanish, matched on length and frequency.
 - **Materials source:** `corpora/derived/es.csv` (sha256 `02732e5f00d09951…`)
 - **Selection:** joint
+- **Cross-engine determinism:** byte-identical
 - **Counterbalancing:** factorial, 1 list(s)
 - **Items:** 160 rows across 2 conditions (sparse_neighbourhood, dense_neighbourhood)
 - **Seed:** 2026  |  **Versions:** engine python, lexsync 0.1.0, python 3.13.7, pandas 2.3.2, numpy 2.3.2, scipy 1.17.1

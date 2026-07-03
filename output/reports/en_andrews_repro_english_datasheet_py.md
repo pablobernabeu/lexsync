@@ -8,6 +8,7 @@
 - **Description:** Reproducing Andrews (1989): frequency x orthographic neighbourhood size (Coltheart's N), a 2x2 lexical-decision design with every cell matched on length.
 - **Materials source:** `corpora/derived/en.csv` (sha256 `c20549b920d81680…`)
 - **Selection:** standardised_euclidean
+- **Cross-engine determinism:** byte-identical
 - **Counterbalancing:** factorial, 1 list(s)
 - **Items:** 72 rows across 4 conditions (HF_largeN, HF_smallN, LF_smallN, LF_largeN)
 - **Seed:** 2026  |  **Versions:** engine python, lexsync 0.1.0, python 3.13.7, pandas 2.3.2, numpy 2.3.2, scipy 1.17.1

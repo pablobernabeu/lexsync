@@ -302,12 +302,14 @@ if paradigm == "factorial":
     )
     c1, c2 = st.columns(2)
     with c1:
+        methods = ["standardised_euclidean", "joint", "mahalanobis", "optimal"]
         method = st.radio(
-            "Matching method", ["standardised_euclidean", "joint"],
-            index=0 if method_default == "standardised_euclidean" else 1,
-            help="Joint matching selects the best-matched cross-condition pairs and "
-                 "cancels a control that is intrinsically confounded with the "
-                 "manipulation (two conditions only).",
+            "Matching method", methods,
+            index=methods.index(method_default) if method_default in methods else 0,
+            help="joint/optimal pair two conditions (optimal is globally best); "
+                 "mahalanobis down-weights correlated dimensions. mahalanobis and "
+                 "optimal use a covariance inverse / assignment solver, so the R and "
+                 "Python engines agree closely but not byte-for-byte on them.",
         )
     with c2:
         n_sets = st.number_input("Resampled disjoint sets (0 = off)", 0, 20, 0,

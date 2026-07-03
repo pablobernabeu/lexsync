@@ -271,6 +271,18 @@ number generator is used and string comparisons are performed in byte order in
 both engines, the R and Python packages select an identical matched selection
 from identical input, a parity we verify below.
 
+Two further matching methods can be selected when a design needs them. A
+covariance-aware (Mahalanobis) distance replaces the standardised Euclidean metric
+with one weighted by the inverse of the control dimensions' correlation matrix, so
+it down-weights dimensions that are correlated, such as length and orthographic
+neighbourhood, rather than counting their shared variance more than once. A
+globally optimal assignment, for a two-condition design, minimises the total
+distance over the whole pairing instead of taking the locally cheapest pair at each
+step. Both rely on a linear-algebra routine, a matrix inverse and an assignment
+solver respectively, whose last bits differ between the R and Python backends, so
+on these two methods the engines select equivalent but not byte-identical
+materials; each datasheet records which case applies.
+
 The per-anchor procedure fixes one condition and matches the others to it, which
 is ideal when the manipulated dimension is statistically independent of the
 controls. When the manipulation is intrinsically correlated with a control

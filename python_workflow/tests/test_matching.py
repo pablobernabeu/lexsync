@@ -72,6 +72,36 @@ def test_joint_cancels_control_confound(schema, en_lexicon_path):
     assert d_joint <= d_std + 1e-9
 
 
+def test_mahalanobis_matches_and_is_deterministic(schema, en_lexicon_path):
+    lex = load_lexicon(en_lexicon_path, schema, "english")
+    d = _design()
+    d["matching"] = {"method": "mahalanobis"}
+    s = match_stimuli(lex, d, schema)
+    assert sorted(s["condition"].value_counts().tolist()) == [10, 10]
+    assert s.loc[s.condition == "high", "frequency"].mean() > \
+           s.loc[s.condition == "low", "frequency"].mean()
+    # the covariance-aware metric keeps the correlated controls balanced
+    for dim in ("length", "n_density", "old20"):
+        assert abs(cohens_d(s.loc[s.condition == "high", dim],
+                            s.loc[s.condition == "low", dim])) < 0.5, dim
+    # deterministic within an engine (cross-engine identity is not guaranteed here)
+    assert list(s["word"]) == list(match_stimuli(lex, d, schema)["word"])
+
+
+def test_optimal_matches_confound_and_is_deterministic(schema, en_lexicon_path):
+    lex = load_lexicon(en_lexicon_path, schema, "english")
+    s = match_stimuli(lex, _confounded_design(method="optimal"), schema)
+    assert sorted(s["condition"].value_counts().tolist()) == [20, 20]
+    assert s.loc[s.condition == "dense", "n_density"].mean() > \
+           s.loc[s.condition == "sparse", "n_density"].mean()
+    # optimal assignment equates the controls tightly, like joint
+    for dim in ("length", "frequency"):
+        assert abs(cohens_d(s.loc[s.condition == "dense", dim],
+                            s.loc[s.condition == "sparse", dim])) < 0.15, dim
+    assert list(s["word"]) == list(
+        match_stimuli(lex, _confounded_design(method="optimal"), schema)["word"])
+
+
 def _resample_design():
     return {
         "name": "r", "language": "english", "n_per_condition": 5,

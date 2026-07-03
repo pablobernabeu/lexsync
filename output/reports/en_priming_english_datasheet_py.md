@@ -8,6 +8,7 @@
 - **Description:** Priming: related versus unrelated prime-target pairs, Latin-square counterbalanced so each target appears once per list.
 - **Materials source:** `items/priming_pairs_en.csv` (sha256 `088f506b3166368b…`)
 - **Selection:** item table (user-supplied)
+- **Cross-engine determinism:** n/a (user-supplied items)
 - **Counterbalancing:** latin_square_target, 2 list(s)
 - **Items:** 24 rows across 2 conditions (related, unrelated)
 - **Seed:** 2026  |  **Versions:** engine python, lexsync 0.1.0, python 3.13.7, pandas 2.3.2, numpy 2.3.2, scipy 1.17.1

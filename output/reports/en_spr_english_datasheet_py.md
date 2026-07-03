@@ -8,6 +8,7 @@
 - **Description:** Self-paced reading: grammatical versus ungrammatical sentences presented region by region, with a comprehension question.
 - **Materials source:** `items/spr_sentences_en.csv` (sha256 `c754b3ac35caf2fa…`)
 - **Selection:** item table (user-supplied)
+- **Cross-engine determinism:** n/a (user-supplied items)
 - **Counterbalancing:** latin_square_target, 2 list(s)
 - **Items:** 20 rows across 2 conditions (ungrammatical, grammatical)
 - **Seed:** 2026  |  **Versions:** engine python, lexsync 0.1.0, python 3.13.7, pandas 2.3.2, numpy 2.3.2, scipy 1.17.1

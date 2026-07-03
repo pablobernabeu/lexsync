@@ -13,8 +13,9 @@ the same way in either ecosystem.
 Both cover the corpus-matching workflow (conditions defined by numeric windows or by
 a categorical column, including full 2x2 cells), the lexical-decision paradigm with
 generated pseudowords, and the item-table paradigms (priming and self-paced
-reading), along with the matching method, per-dimension tolerance windows,
-counterbalancing and item resampling.
+reading), along with the four matching methods (standardised Euclidean, joint,
+Mahalanobis and optimal), per-dimension tolerance windows, counterbalancing and item
+resampling.
 
 ## Python (Streamlit)
 
@@ -51,3 +52,7 @@ The app opens at <http://localhost:8502>.
 - The reproducible-code panel writes clean relative paths (for example
   `corpora/derived/en.csv`), so the exported configuration and one-line call run
   unchanged from the repository root.
+- The `standardised_euclidean` and `joint` methods select byte-identical stimuli in
+  both engines; `mahalanobis` and `optimal` use a covariance inverse / assignment
+  solver, so the two engines agree closely but not byte-for-byte (the datasheet tab
+  reports which case applies). The `optimal` method needs the R `clue` package.

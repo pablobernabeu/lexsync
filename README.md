@@ -137,16 +137,30 @@ flip-locked, a structural validator for the generated 'OpenSesame' experiment an
 an R-versus-Python parity test. GitHub Actions run `R CMD check` on Ubuntu, macOS
 and Windows (R release and development) and the Python tests on Python 3.10–3.13.
 
+## Matching methods
+
+Four matching methods are available, set with `matching.method` in a design: the
+default `standardised_euclidean` (greedy nearest-neighbour on z-scored
+dimensions), `joint` (optimal-greedy pairing for a two-condition design),
+`mahalanobis` (a covariance-aware distance that down-weights correlated
+dimensions; Rubin, 1980; Stuart, 2010) and `optimal` (globally optimal assignment
+for two conditions; Gu and Rosenbaum, 1993). The R and Python engines select
+byte-identical stimuli for `standardised_euclidean` and `joint`. The `mahalanobis`
+and `optimal` methods are not guaranteed byte-identical across engines, because
+they use a covariance-matrix inverse and an assignment solver whose last bits can
+differ between the two linear-algebra backends: in practice `mahalanobis` usually
+still agrees exactly, while `optimal` selects an equally-optimal but often
+different set. Each run's datasheet records which case applies.
+
 ## Roadmap
 
 lexsync sits within a mature ecosystem of stimulus tools (LexOPS, Match, SOS and
 LIBRA for matching; Wuggy for pseudowords). Planned extensions (tracked in
-`CHANGELOG.md`) include a covariance-aware (Mahalanobis)
-matching option for correlated dimensions (Rubin, 1980; Stuart, 2010), optimal
-(assignment) matching alongside the current greedy selection, distributional
-balance diagnostics, and continuous-design support with a regression template
-(Liben-Nowell et al., 2019). The cross-engine byte-identical guarantee is a hard
-constraint on which algorithms can be adopted.
+`CHANGELOG.md`) include distributional balance diagnostics, continuous-design
+support with a regression template (Liben-Nowell et al., 2019), and richer
+pseudoword generation (Wuggy-style; Keuleers and Brysbaert, 2010). The cross-engine
+byte-identical guarantee for the deterministic methods is a hard constraint on
+which algorithms can be adopted as defaults.
 
 ## Licensing and citation
 

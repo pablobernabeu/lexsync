@@ -68,7 +68,8 @@
         "condition": "low_frequency",
         "n_candidates": 4689
       }
-    ]
+    ],
+    "cross_engine": "byte-identical"
   },
   "analysis": {
     "response": "the trial outcome (e.g. reaction time or accuracy)",

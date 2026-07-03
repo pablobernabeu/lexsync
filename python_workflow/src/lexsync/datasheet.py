@@ -35,6 +35,21 @@ def _versions(engine: str) -> dict:
     return out
 
 
+def _cross_engine(method, source: str) -> str:
+    """Whether the R and Python engines select byte-identical materials.
+
+    The deterministic methods are byte-identical; ``mahalanobis`` and ``optimal``
+    are the exception, because they use a covariance-matrix inverse and an
+    assignment solver whose last bits differ between the two linear-algebra
+    backends (see matching.py).
+    """
+    if source == "table":
+        return "n/a (user-supplied items)"
+    if method in ("mahalanobis", "optimal"):
+        return "approximate (platform linear algebra)"
+    return "byte-identical"
+
+
 def _controlled(design: dict, source: str) -> list:
     if source == "corpus":
         return list(design.get("match_on") or [])
@@ -110,6 +125,7 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
         selection = {"method": "item table (user-supplied)"}
     if candidate_pool is not None and source in ("corpus", "generate"):
         selection["candidate_pool"] = candidate_pool
+    selection["cross_engine"] = _cross_engine(selection.get("method"), source)
 
     dims = {d: schema["dimensions"][d] for d in schema.get("dimensions", {})
             if d in controlled or source == "corpus"}
@@ -213,7 +229,12 @@ def methods_paragraph(ds: dict) -> str:
             pool_note = (f". The smallest condition was selected from {min(sizes)} "
                          "eligible candidates, and the selection was deterministic and "
                          "blind to any outcome measure")
-    return lead + control + pool_note + tail
+    ce_note = ""
+    if str((ds.get("selection") or {}).get("cross_engine", "")).startswith("approximate"):
+        ce_note = (". This design's matching method uses a covariance inverse or an "
+                   "assignment solver, so the R and Python engines select equivalent "
+                   "but not byte-identical materials")
+    return lead + control + pool_note + ce_note + tail
 
 
 def prereg_template(ds: dict) -> str:
@@ -245,6 +266,7 @@ def render_datasheet_md(ds: dict) -> str:
              f"- **Materials source:** `{ds['materials_source']['path']}` "
              f"(sha256 `{(ds['materials_source']['sha256'] or '')[:16]}…`)",
              f"- **Selection:** {ds['selection']['method']}",
+             f"- **Cross-engine determinism:** {ds['selection'].get('cross_engine', 'byte-identical')}",
              f"- **Counterbalancing:** {ds['counterbalancing']['recipe']}, "
              f"{ds['counterbalancing']['lists']} list(s)",
              f"- **Items:** {ds['items']['n_total']} rows across "

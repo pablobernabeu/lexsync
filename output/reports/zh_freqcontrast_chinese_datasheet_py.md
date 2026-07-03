@@ -8,6 +8,7 @@
 - **Description:** High versus low frequency Mandarin Chinese two-character words, matched on character-length and character-level neighbourhood (N, OLD20).
 - **Materials source:** `corpora/derived/zh.csv` (sha256 `74666b257c1ad7bc…`)
 - **Selection:** standardised_euclidean
+- **Cross-engine determinism:** byte-identical
 - **Counterbalancing:** factorial, 1 list(s)
 - **Items:** 160 rows across 2 conditions (low_frequency, high_frequency)
 - **Seed:** 2026  |  **Versions:** engine python, lexsync 0.1.0, python 3.13.7, pandas 2.3.2, numpy 2.3.2, scipy 1.17.1

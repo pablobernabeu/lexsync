@@ -145,7 +145,7 @@ server <- function(input, output, session) {
         fluidRow(
           column(4, numericInput("n", "Items per condition", 80, 4, 400, 2)),
           column(4, selectInput("method", "Matching method",
-                                c("standardised_euclidean", "joint"))),
+                                c("standardised_euclidean", "joint", "mahalanobis", "optimal"))),
           column(4, numericInput("nsets", "Resampled disjoint sets (0 = off)", 0, 0, 20, 1))
         ),
         selectizeInput("match_on", "Match on (controlled dimensions)", choices = DIMENSIONS,

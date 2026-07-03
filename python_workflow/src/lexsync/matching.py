@@ -6,6 +6,16 @@ followed by standardised nearest-neighbour assignment with a stable tie-break.
 The same standardisation (sample SD), the same even-spread anchor selection and
 the same tie-break order are used as in R, so the two engines return matching
 selections from identical input.
+
+Cross-engine determinism. The default methods (``standardised_euclidean`` and
+``joint``) use no floating-point operation whose last bit differs across
+platforms, so the R and Python engines select byte-identical stimuli. The
+optional ``mahalanobis`` and ``optimal`` methods are the exception: they rely on
+a covariance-matrix inverse and a linear-assignment solver respectively, whose
+last-bit results differ between the R and Python linear-algebra backends (the
+LAPACK build behind the matrix inverse, and the assignment algorithm itself). The
+two engines therefore agree closely but are not guaranteed byte-for-byte on those
+two methods.
 """
 from __future__ import annotations
 
@@ -74,6 +84,59 @@ def _match_joint(subpools, cond_names, match_on, center, scale, n, cap=1200):
     return out
 
 
+def _maha_metric(z_pool: np.ndarray, ridge: float = 1e-6) -> np.ndarray:
+    """The metric matrix for Mahalanobis distance in standardised space.
+
+    Returns the inverse of the pool's correlation matrix (the covariance of the
+    z-scored dimensions), so the distance down-weights correlated dimensions
+    instead of double-counting the variance they share (Rubin, 1980; Stuart,
+    2010). A small ridge keeps the matrix invertible when dimensions are nearly
+    collinear. This inverse is a linear-algebra operation, so its last bits, and
+    hence occasionally a matched item under a near-tie, may differ from the R
+    engine (see the module note).
+    """
+    if z_pool.shape[1] == 1:
+        return np.array([[1.0]])
+    c = np.atleast_2d(np.corrcoef(z_pool, rowvar=False))
+    c = np.nan_to_num(c, nan=0.0)          # a constant dimension -> treat as uncorrelated
+    np.fill_diagonal(c, 1.0)
+    c = c + ridge * np.eye(c.shape[0])
+    return np.linalg.inv(c)
+
+
+def _match_optimal(subpools, cond_names, match_on, center, scale, n, cap=1200):
+    """Optimal (minimum-total-distance) pairing for a two-condition design.
+
+    Unlike the greedy ``joint`` matcher, this solves the linear-assignment problem
+    globally, so it minimises the summed pair distance rather than taking the
+    cheapest disjoint pair at each step; it produces fewer poorly matched pairs
+    (Gu & Rosenbaum, 1993; Hansen & Klopfer, 2006). The assignment solver's tie
+    handling differs between engines, so the two agree closely but not byte-for-byte.
+    """
+    from scipy.optimize import linear_sum_assignment
+    s0 = subpools[0].reset_index(drop=True)
+    s1 = subpools[1].reset_index(drop=True)
+    if len(s0) == 0 or len(s1) == 0:
+        raise ValueError("lexsync: a condition has no candidates for optimal matching.")
+    z0 = _zmat(s0, match_on, center, scale)
+    z1 = _zmat(s1, match_on, center, scale)
+    s0, z0 = _cap_to_overlap(s0, z0, z1.mean(axis=0), cap)
+    s1, z1 = _cap_to_overlap(s1, z1, z0.mean(axis=0), cap)
+    cost = np.round(np.sqrt(((z0[:, None, :] - z1[None, :, :]) ** 2).sum(axis=2)), 9)
+    row_ind, col_ind = linear_sum_assignment(cost)      # complete min-cost matching
+    pair_cost = cost[row_ind, col_ind]
+    order = sorted(range(len(row_ind)),
+                   key=lambda t: (pair_cost[t], int(row_ind[t]), int(col_ind[t])))[:n]
+    pi = [int(row_ind[t]) for t in order]
+    pj = [int(col_ind[t]) for t in order]
+    a = s0.iloc[pi].copy(); a["condition"] = cond_names[0]
+    b = s1.iloc[pj].copy(); b["condition"] = cond_names[1]
+    common = [c for c in a.columns if c in b.columns]
+    out = pd.concat([a[common], b[common]], ignore_index=True)
+    out["set"] = list(range(1, len(pi) + 1)) * 2
+    return out
+
+
 def match_stimuli(pool: pd.DataFrame, design: dict, schema: dict, verbose: bool = False) -> pd.DataFrame:
     conditions = design["conditions"]
     match_on = list(design["match_on"])
@@ -99,6 +162,10 @@ def match_stimuli(pool: pd.DataFrame, design: dict, schema: dict, verbose: bool 
               or (schema.get("matching") or {}).get("method") or "standardised_euclidean")
     if method == "joint" and len(conditions) == 2:
         return _match_joint(subpools, cond_names, match_on, center, scale, n)
+    if method == "optimal" and len(conditions) == 2:
+        return _match_optimal(subpools, cond_names, match_on, center, scale, n)
+    # A covariance-aware metric for Mahalanobis matching (None -> plain Euclidean).
+    metric = _maha_metric(_zmat(pool, match_on, center, scale)) if method == "mahalanobis" else None
 
     anchor_pool = subpools[0]
     if len(anchor_pool) == 0:
@@ -150,7 +217,11 @@ def match_stimuli(pool: pd.DataFrame, design: dict, schema: dict, verbose: bool 
         for a in range(n_take):
             # Round to absorb last-ULP floating-point differences between engines,
             # so the stable tie-break below is itself reproducible across R and Python.
-            dvec = np.round(np.sqrt(((z_cand - z_anchor[a]) ** 2).sum(axis=1)), 9)
+            delta = z_cand - z_anchor[a]
+            if metric is None:
+                dvec = np.round(np.sqrt((delta ** 2).sum(axis=1)), 9)
+            else:
+                dvec = np.round(np.sqrt(np.maximum((delta @ metric * delta).sum(axis=1), 0.0)), 9)
             dvec = np.where(used, np.inf, dvec)
             best = min(range(len(cand_f)), key=lambda j: (dvec[j], words[j].encode("utf-8"), int(ids[j])))
             pick[a] = best

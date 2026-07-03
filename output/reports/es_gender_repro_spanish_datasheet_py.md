@@ -8,6 +8,7 @@
 - **Description:** Reproducing Gonzalez Alonso et al. (2025): feminine versus masculine Spanish words matched on word frequency and number of letters, the origin study's natural-language gender-assignment task.
 - **Materials source:** `corpora/derived/es_gender.csv` (sha256 `0f77aec3fe307ed3…`)
 - **Selection:** standardised_euclidean
+- **Cross-engine determinism:** byte-identical
 - **Counterbalancing:** factorial, 1 list(s)
 - **Items:** 96 rows across 2 conditions (feminine, masculine)
 - **Seed:** 2026  |  **Versions:** engine python, lexsync 0.1.0, python 3.13.7, pandas 2.3.2, numpy 2.3.2, scipy 1.17.1

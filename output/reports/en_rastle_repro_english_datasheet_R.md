@@ -8,6 +8,7 @@
 - **Description:** Reproducing Rastle, Davis & New (2004): masked priming contrasting transparent, opaque and orthographic (form) prime-target relationships, each against an unrelated baseline; Latin-square counterbalanced over two lists.
 - **Materials source:** `items/rastle_priming_en.csv` (sha256 `53bd365a801a3e82...`)
 - **Selection:** item table (user-supplied)
+- **Cross-engine determinism:** n/a (user-supplied items)
 - **Counterbalancing:** latin_square_target, 2 list(s)
 - **Items:** 24 rows across 2 conditions (related, unrelated)
 - **Seed:** 2026  |  **Versions:** engine R, lexsync 0.1.0, R 4.6.0, readr 2.2.0, stringdist 0.9.17, jsonlite 2.0.0, digest 0.6.39

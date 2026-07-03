@@ -1,8 +1,8 @@
 # lexsync run log: es_ndensity
 
 - Engine: R 4.6.0
-- Started: 2026-07-03 00:09:02.379832
-- Finished: 2026-07-03 00:09:03.357455
+- Started: 2026-07-03 08:07:55.452926
+- Finished: 2026-07-03 08:07:56.344562
 
 ## Run metadata
 
@@ -14,46 +14,46 @@
 
 ## Steps
 
-- **2026-07-03 00:09:02.384583**: loading lexicon 'corpora/derived/es.csv'
-- **2026-07-03 00:09:02.787171**: lexicon loaded: 30000 words
+- **2026-07-03 08:07:55.456604**: loading lexicon 'corpora/derived/es.csv'
+- **2026-07-03 08:07:55.756237**: lexicon loaded: 30000 words
     - words: 30000
-- **2026-07-03 00:09:02.794269**: pool after filters: 4002 words
+- **2026-07-03 08:07:55.765269**: pool after filters: 4002 words
     - pool: 4002
-- **2026-07-03 00:09:03.080217**: matched 160 items across 2 conditions
+- **2026-07-03 08:07:56.055617**: matched 160 items across 2 conditions
     - conditions: dense_neighbourhood, sparse_neighbourhood
-- **2026-07-03 00:09:03.093845**: equivalence sparse_neighbourhood vs dense_neighbourhood on 'length': d = 0.00 [-0.26, 0.26], TOST p = 0.001 (equivalent)
-- **2026-07-03 00:09:03.099414**: equivalence sparse_neighbourhood vs dense_neighbourhood on 'frequency': d = 0.00 [-0.26, 0.26], TOST p = 0.001 (equivalent)
-- **2026-07-03 00:09:03.103361**: equivalence sparse_neighbourhood vs dense_neighbourhood on 'n_density': d = 2.13 [1.87, 2.39], TOST p = 1.000 (not shown equivalent)
-- **2026-07-03 00:09:03.106285**: equivalence sparse_neighbourhood vs dense_neighbourhood on 'old20': d = -2.42 [-2.68, -2.16], TOST p = 1.000 (not shown equivalent)
-- **2026-07-03 00:09:03.131366**: wrote 'es_ndensity_spanish_stimuli_R.csv'
+- **2026-07-03 08:07:56.068679**: equivalence sparse_neighbourhood vs dense_neighbourhood on 'length': d = 0.00 [-0.26, 0.26], TOST p = 0.001 (equivalent)
+- **2026-07-03 08:07:56.074343**: equivalence sparse_neighbourhood vs dense_neighbourhood on 'frequency': d = 0.00 [-0.26, 0.26], TOST p = 0.001 (equivalent)
+- **2026-07-03 08:07:56.080325**: equivalence sparse_neighbourhood vs dense_neighbourhood on 'n_density': d = 2.13 [1.87, 2.39], TOST p = 1.000 (not shown equivalent)
+- **2026-07-03 08:07:56.085402**: equivalence sparse_neighbourhood vs dense_neighbourhood on 'old20': d = -2.42 [-2.68, -2.16], TOST p = 1.000 (not shown equivalent)
+- **2026-07-03 08:07:56.120823**: wrote 'es_ndensity_spanish_stimuli_R.csv'
     - path: output/stimuli/es_ndensity_spanish_stimuli_R.csv
     - rows: 160
     - md5: e83015fd5f924a081e6f9b38c5b353ef
-- **2026-07-03 00:09:03.147496**: wrote 'es_ndensity_spanish_descriptives_R.csv'
+- **2026-07-03 08:07:56.13678**: wrote 'es_ndensity_spanish_descriptives_R.csv'
     - path: output/reports/es_ndensity_spanish_descriptives_R.csv
     - rows: 8
     - md5: 9fc1bba7309f3a8ec77099714b0eab0e
-- **2026-07-03 00:09:03.164938**: wrote 'es_ndensity_spanish_comparisons_R.csv'
+- **2026-07-03 08:07:56.151745**: wrote 'es_ndensity_spanish_comparisons_R.csv'
     - path: output/reports/es_ndensity_spanish_comparisons_R.csv
     - rows: 4
     - md5: f05264def44245723768e6f42f9361c1
-- **2026-07-03 00:09:03.240376**: wrote 'es_ndensity_spanish_psychopy.py'
+- **2026-07-03 08:07:56.23113**: wrote 'es_ndensity_spanish_psychopy.py'
     - path: output/experiments/es_ndensity_spanish_psychopy.py
     - rows: NA
     - md5: cb6952b0f8ca30cdbfbf85a98749fbe3
-- **2026-07-03 00:09:03.249941**: wrote 'es_ndensity_spanish.osexp'
+- **2026-07-03 08:07:56.23964**: wrote 'es_ndensity_spanish.osexp'
     - path: output/experiments/es_ndensity_spanish.osexp
     - rows: NA
     - md5: 23ed39b25c54c03959c8084708921cf4
-- **2026-07-03 00:09:03.260381**: wrote 'es_ndensity_spanish.html'
+- **2026-07-03 08:07:56.246873**: wrote 'es_ndensity_spanish.html'
     - path: output/experiments/es_ndensity_spanish.html
     - rows: NA
     - md5: 1eaf6555a8ed9a387a842cb5d07acaf4
-- **2026-07-03 00:09:03.333468**: wrote 'es_ndensity_spanish_datasheet_R.json'
+- **2026-07-03 08:07:56.318028**: wrote 'es_ndensity_spanish_datasheet_R.json'
     - path: output/reports/es_ndensity_spanish_datasheet_R.json
     - rows: NA
-    - md5: 5142e949ad06b6900c360083910a3d2b
-- **2026-07-03 00:09:03.346387**: wrote 'es_ndensity_spanish_datasheet_R.md'
+    - md5: 8ee074c6e8b8ffa05495053da16d58ac
+- **2026-07-03 08:07:56.33049**: wrote 'es_ndensity_spanish_datasheet_R.md'
     - path: output/reports/es_ndensity_spanish_datasheet_R.md
     - rows: NA
-    - md5: d851c922343abf4ef5a505725416b621
+    - md5: 4ba772ba73269804e5038bdaea39711b

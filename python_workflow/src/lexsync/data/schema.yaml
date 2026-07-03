@@ -33,7 +33,15 @@ dimensions:
 
 # ---- Default matching configuration ---------------------------------------
 matching:
-  method: standardised_euclidean   # standardised_euclidean | mahalanobis | optimal
+  method: standardised_euclidean
+  # method options:
+  #   standardised_euclidean  greedy nearest-neighbour on z-scored dimensions (default)
+  #   joint                   optimal-greedy pairing for a two-condition design
+  #   mahalanobis             covariance-aware distance; down-weights correlated dimensions
+  #   optimal                 globally optimal (assignment) pairing for two conditions
+  # standardised_euclidean and joint are byte-identical across the R and Python
+  # engines; mahalanobis and optimal use a covariance inverse / assignment solver,
+  # so the two engines agree closely but not byte-for-byte.
   # Stage 1, tolerance pre-filter: keep candidates within mean +/- k * SD of the
   # target condition on each dimension. This generalises the original workflow's
   # mean +/- SD/9 (frequency) and mean +/- 2*SD (letters) windows.

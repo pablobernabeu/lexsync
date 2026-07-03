@@ -8,6 +8,7 @@
 - **Description:** High versus low frequency English words in three disjoint matched item sets (items as a random factor).
 - **Materials source:** `corpora/derived/en.csv` (sha256 `c20549b920d81680...`)
 - **Selection:** standardised_euclidean
+- **Cross-engine determinism:** byte-identical
 - **Counterbalancing:** factorial, 1 list(s)
 - **Items:** 240 rows across 2 conditions (high_frequency, low_frequency)
 - **Seed:** 2026  |  **Versions:** engine R, lexsync 0.1.0, R 4.6.0, readr 2.2.0, stringdist 0.9.17, jsonlite 2.0.0, digest 0.6.39

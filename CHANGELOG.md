@@ -26,6 +26,14 @@ no function signature changes.
   every recorded row, and end with a completion screen that saves the collected
   data as a CSV download — so a generated experiment gathers usable,
   self-describing data with no server.
+- Two new matching methods (set with `matching.method`): **mahalanobis**, a
+  covariance-aware distance that down-weights correlated control dimensions
+  (Rubin, 1980; Stuart, 2010), and **optimal**, a globally optimal assignment for
+  two-condition designs (Gu & Rosenbaum, 1993; Hansen & Klopfer, 2006). Unlike the
+  deterministic default methods, these use a covariance-matrix inverse and an
+  assignment solver, so the R and Python engines select equivalent but not
+  byte-identical materials; the datasheet records this per design (a new
+  `cross_engine` field). Adds the `clue` package to the R Suggests.
 - `codemeta.json` (machine-readable software metadata) and this changelog.
 
 ### Changed
@@ -42,14 +50,6 @@ no function signature changes.
 Grounded in a review of the matching literature and competitor tools (LexOPS,
 Match, SOS, LIBRA, Wuggy):
 
-- **Mahalanobis / covariance-aware distance** as a matching option, since the
-  control dimensions are correlated and standardised Euclidean double-counts
-  shared variance (Rubin, 1980; Stuart, 2010). Deferred because a covariance
-  inverse is not guaranteed byte-identical across the R and Python linear-algebra
-  backends, which would break cross-engine parity, so it needs a determinism-safe
-  implementation first.
-- **Optimal / global (assignment) matching** alongside the current greedy
-  nearest-neighbour selection (Gu & Rosenbaum, 1993; Hansen & Klopfer, 2006).
 - **Distributional balance diagnostics** (e.g. variance ratio) in addition to
   the mean-based Cohen's d and TOST already reported.
 - **Continuous (non-dichotomised) designs** with a regression/mixed-model

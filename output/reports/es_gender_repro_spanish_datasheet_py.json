@@ -152,6 +152,7 @@
         "n_candidates": 4164
       }
     ],
+    "cross_engine": "byte-identical",
     "match_on": [
       "frequency",
       "length"

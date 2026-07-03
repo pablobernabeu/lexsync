@@ -56,7 +56,8 @@
         "condition": "words in band",
         "n_candidates": 8177
       }
-    ]
+    ],
+    "cross_engine": "byte-identical"
   },
   "analysis": {
     "response": "the trial outcome (e.g. reaction time or accuracy)",

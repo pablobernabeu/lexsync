@@ -4,6 +4,12 @@
 # nearest-neighbour assignment with a stable tie-break. Because no random number
 # generator is used, the R and Python engines return identical selections from
 # identical input.
+#
+# Cross-engine determinism: the default methods (standardised_euclidean, joint) are
+# byte-identical across the R and Python engines. The optional mahalanobis and
+# optimal methods are the exception -- they use a covariance-matrix inverse and a
+# linear-assignment solver whose last bits differ between the two linear-algebra
+# backends, so those two agree closely but not byte-for-byte.
 
 #' Match stimuli across conditions on several lexical dimensions
 #'
@@ -57,6 +63,11 @@ match_stimuli <- function(pool, design, schema, verbose = FALSE) {
   if (identical(method, "joint") && length(conditions) == 2L) {
     return(match_joint(subpools, cond_names, match_on, center, scale_, n))
   }
+  if (identical(method, "optimal") && length(conditions) == 2L) {
+    return(match_optimal(subpools, cond_names, match_on, center, scale_, n))
+  }
+  # A covariance-aware metric for Mahalanobis matching (NULL -> plain Euclidean).
+  metric <- if (identical(method, "mahalanobis")) .maha_metric(zmat(pool)) else NULL
 
   # --- Anchor condition: deterministic even spread -------------------------
   anchor_pool <- subpools[[1]]
@@ -110,7 +121,12 @@ match_stimuli <- function(pool, design, schema, verbose = FALSE) {
     for (a in seq_len(n_take)) {
       # Round to absorb last-ULP floating-point differences between engines, so
       # the stable tie-break below is itself reproducible across R and Python.
-      dvec <- round(sqrt(rowSums(sweep(z_cand, 2, z_anchor[a, ], "-")^2)), 9)
+      delta <- sweep(z_cand, 2, z_anchor[a, ], "-")
+      if (is.null(metric)) {
+        dvec <- round(sqrt(rowSums(delta^2)), 9)
+      } else {
+        dvec <- round(sqrt(pmax(rowSums((delta %*% metric) * delta), 0)), 9)
+      }
       dvec[used] <- Inf
       best <- order(dvec, cand_f$word, cand_f$id, method = "radix")[1]  # stable, locale-independent tie-break
       pick[a] <- best
@@ -178,6 +194,73 @@ match_joint <- function(subpools, cond_names, match_on, center, scale_, n, cap =
   common <- intersect(names(a), names(b))
   out <- rbind(a[, common, drop = FALSE], b[, common, drop = FALSE])
   out$set <- rep(seq_len(length(pick0)), times = 2)
+  rownames(out) <- NULL
+  out
+}
+
+# The metric matrix for Mahalanobis distance in standardised space: the inverse of
+# the pool's correlation matrix, so the distance down-weights correlated dimensions
+# instead of double-counting their shared variance (Rubin, 1980; Stuart, 2010). A
+# small ridge keeps it invertible under near collinearity. Uses a matrix inverse,
+# so not byte-identical to the Python engine (see the file header).
+.maha_metric <- function(z_pool, ridge = 1e-6) {
+  if (ncol(z_pool) == 1L) return(matrix(1, 1, 1))
+  cmat <- stats::cor(z_pool)
+  cmat[is.na(cmat)] <- 0        # a constant dimension -> treat as uncorrelated
+  diag(cmat) <- 1
+  solve(cmat + ridge * diag(ncol(cmat)))
+}
+
+#' Optimal (minimum-total-distance) pairing for a two-condition design
+#'
+#' Solves the linear-assignment problem globally rather than greedily, so it
+#' minimises the summed pair distance and leaves fewer poorly matched pairs (Gu and
+#' Rosenbaum, 1993; Hansen and Klopfer, 2006). Needs the 'clue' package. The
+#' solver's tie handling differs from the Python engine's, so the two agree closely
+#' but not byte-for-byte.
+#'
+#' @keywords internal
+match_optimal <- function(subpools, cond_names, match_on, center, scale_, n, cap = 1200L) {
+  if (!requireNamespace("clue", quietly = TRUE)) {
+    stop("lexsync: matching method 'optimal' needs the 'clue' package (install.packages('clue')).",
+         call. = FALSE)
+  }
+  s0 <- subpools[[1]]; s1 <- subpools[[2]]
+  if (nrow(s0) == 0 || nrow(s1) == 0) {
+    stop("lexsync: a condition has no candidates for optimal matching.", call. = FALSE)
+  }
+  zof <- function(df) {
+    m <- as.matrix(df[, match_on, drop = FALSE])
+    sweep(sweep(m, 2, center, "-"), 2, scale_, "/")
+  }
+  cap_overlap <- function(df, z, centroid) {
+    if (nrow(df) <= cap) return(list(df = df, z = z))
+    d <- round(sqrt(rowSums(sweep(z, 2, centroid, "-")^2)), 9)
+    ord <- order(d, seq_len(nrow(df)), method = "radix")[seq_len(cap)]
+    keep <- sort(ord)
+    list(df = df[keep, , drop = FALSE], z = z[keep, , drop = FALSE])
+  }
+  z0 <- zof(s0); z1 <- zof(s1)
+  o0 <- cap_overlap(s0, z0, colMeans(z1)); s0 <- o0$df; z0 <- o0$z
+  o1 <- cap_overlap(s1, z1, colMeans(z0)); s1 <- o1$df; z1 <- o1$z
+  m0 <- nrow(z0); m1 <- nrow(z1)
+  cost <- matrix(0, m0, m1)
+  for (d in seq_len(ncol(z0))) cost <- cost + outer(z0[, d], z1[, d], "-")^2
+  cost <- round(sqrt(cost), 9)
+  # clue::solve_LSAP needs nrow <= ncol; solve on the transpose otherwise.
+  if (m0 <= m1) {
+    asg <- as.integer(clue::solve_LSAP(cost)); ri <- seq_len(m0); ci <- asg
+  } else {
+    asg <- as.integer(clue::solve_LSAP(t(cost))); ci <- seq_len(m1); ri <- asg
+  }
+  pair_cost <- cost[cbind(ri, ci)]
+  ord <- order(pair_cost, ri, ci, method = "radix")[seq_len(min(n, length(ri)))]
+  pi <- ri[ord]; pj <- ci[ord]
+  a <- s0[pi, , drop = FALSE]; a$condition <- cond_names[1]
+  b <- s1[pj, , drop = FALSE]; b$condition <- cond_names[2]
+  common <- intersect(names(a), names(b))
+  out <- rbind(a[, common, drop = FALSE], b[, common, drop = FALSE])
+  out$set <- rep(seq_len(length(pi)), times = 2)
   rownames(out) <- NULL
   out
 }

@@ -1,16 +1,16 @@
-{"time": "2026-07-03T00:10:12", "message": "loading lexicon 'corpora/derived/en.csv'", "data": null}
-{"time": "2026-07-03T00:10:12", "message": "lexicon loaded: 30000 words", "data": {"words": 30000}}
-{"time": "2026-07-03T00:10:12", "message": "pool after filters: 10205 words", "data": {"pool": 10205}}
-{"time": "2026-07-03T00:10:12", "message": "resampled 3 disjoint matched sets (240 items total)", "data": {"conditions": "high_frequency, low_frequency"}}
-{"time": "2026-07-03T00:10:12", "message": "equivalence low_frequency vs high_frequency on 'length': d = 0.04 [-0.17, 0.26], TOST p = 0.0002 (equivalent)", "data": null}
-{"time": "2026-07-03T00:10:12", "message": "equivalence low_frequency vs high_frequency on 'frequency': d = 5.38 [5.17, 5.59], TOST p = 1.0 (not shown equivalent)", "data": null}
-{"time": "2026-07-03T00:10:12", "message": "equivalence low_frequency vs high_frequency on 'n_density': d = 0.03 [-0.18, 0.24], TOST p = 0.0002 (equivalent)", "data": null}
-{"time": "2026-07-03T00:10:12", "message": "equivalence low_frequency vs high_frequency on 'old20': d = 0.02 [-0.20, 0.23], TOST p = 0.0001 (equivalent)", "data": null}
-{"time": "2026-07-03T00:10:12", "message": "wrote 'en_resample_english_stimuli_py.csv'", "data": {"path": "output\\stimuli\\en_resample_english_stimuli_py.csv", "rows": 240, "md5": "f48c8647fc8f7b6171e32806aee5b0fd"}}
-{"time": "2026-07-03T00:10:12", "message": "wrote 'en_resample_english_descriptives_py.csv'", "data": {"path": "output\\reports\\en_resample_english_descriptives_py.csv", "rows": 8, "md5": "e6ad81211f7bfea3c421af401978a0d0"}}
-{"time": "2026-07-03T00:10:12", "message": "wrote 'en_resample_english_comparisons_py.csv'", "data": {"path": "output\\reports\\en_resample_english_comparisons_py.csv", "rows": 4, "md5": "871c7931f6e159bd3ade6ea2a06356fc"}}
-{"time": "2026-07-03T00:10:12", "message": "wrote 'en_resample_english_psychopy.py'", "data": {"path": "output\\experiments\\en_resample_english_psychopy.py", "rows": null, "md5": "869f8aa36d67bd4e99cbfa91fe5e7818"}}
-{"time": "2026-07-03T00:10:12", "message": "wrote 'en_resample_english.osexp'", "data": {"path": "output\\experiments\\en_resample_english.osexp", "rows": null, "md5": "445b28b98ea666f0fd8d53f47dd660ad"}}
-{"time": "2026-07-03T00:10:12", "message": "wrote 'en_resample_english.html'", "data": {"path": "output\\experiments\\en_resample_english.html", "rows": null, "md5": "b33f72bb48eb42d9a4794ba12c93284f"}}
-{"time": "2026-07-03T00:10:12", "message": "wrote 'en_resample_english_datasheet_py.json'", "data": {"path": "output\\reports\\en_resample_english_datasheet_py.json", "rows": null, "md5": "89137771aefd69800b4ff2c93c733cc5"}}
-{"time": "2026-07-03T00:10:12", "message": "wrote 'en_resample_english_datasheet_py.md'", "data": {"path": "output\\reports\\en_resample_english_datasheet_py.md", "rows": null, "md5": "b8a899c13cdec18f7616afa720b539a7"}}
+{"time": "2026-07-03T08:08:17", "message": "loading lexicon 'corpora/derived/en.csv'", "data": null}
+{"time": "2026-07-03T08:08:17", "message": "lexicon loaded: 30000 words", "data": {"words": 30000}}
+{"time": "2026-07-03T08:08:17", "message": "pool after filters: 10205 words", "data": {"pool": 10205}}
+{"time": "2026-07-03T08:08:18", "message": "resampled 3 disjoint matched sets (240 items total)", "data": {"conditions": "high_frequency, low_frequency"}}
+{"time": "2026-07-03T08:08:18", "message": "equivalence low_frequency vs high_frequency on 'length': d = 0.04 [-0.17, 0.26], TOST p = 0.0002 (equivalent)", "data": null}
+{"time": "2026-07-03T08:08:18", "message": "equivalence low_frequency vs high_frequency on 'frequency': d = 5.38 [5.17, 5.59], TOST p = 1.0 (not shown equivalent)", "data": null}
+{"time": "2026-07-03T08:08:18", "message": "equivalence low_frequency vs high_frequency on 'n_density': d = 0.03 [-0.18, 0.24], TOST p = 0.0002 (equivalent)", "data": null}
+{"time": "2026-07-03T08:08:18", "message": "equivalence low_frequency vs high_frequency on 'old20': d = 0.02 [-0.20, 0.23], TOST p = 0.0001 (equivalent)", "data": null}
+{"time": "2026-07-03T08:08:18", "message": "wrote 'en_resample_english_stimuli_py.csv'", "data": {"path": "output\\stimuli\\en_resample_english_stimuli_py.csv", "rows": 240, "md5": "f48c8647fc8f7b6171e32806aee5b0fd"}}
+{"time": "2026-07-03T08:08:18", "message": "wrote 'en_resample_english_descriptives_py.csv'", "data": {"path": "output\\reports\\en_resample_english_descriptives_py.csv", "rows": 8, "md5": "e6ad81211f7bfea3c421af401978a0d0"}}
+{"time": "2026-07-03T08:08:18", "message": "wrote 'en_resample_english_comparisons_py.csv'", "data": {"path": "output\\reports\\en_resample_english_comparisons_py.csv", "rows": 4, "md5": "871c7931f6e159bd3ade6ea2a06356fc"}}
+{"time": "2026-07-03T08:08:18", "message": "wrote 'en_resample_english_psychopy.py'", "data": {"path": "output\\experiments\\en_resample_english_psychopy.py", "rows": null, "md5": "869f8aa36d67bd4e99cbfa91fe5e7818"}}
+{"time": "2026-07-03T08:08:18", "message": "wrote 'en_resample_english.osexp'", "data": {"path": "output\\experiments\\en_resample_english.osexp", "rows": null, "md5": "445b28b98ea666f0fd8d53f47dd660ad"}}
+{"time": "2026-07-03T08:08:18", "message": "wrote 'en_resample_english.html'", "data": {"path": "output\\experiments\\en_resample_english.html", "rows": null, "md5": "b33f72bb48eb42d9a4794ba12c93284f"}}
+{"time": "2026-07-03T08:08:18", "message": "wrote 'en_resample_english_datasheet_py.json'", "data": {"path": "output\\reports\\en_resample_english_datasheet_py.json", "rows": null, "md5": "3300ef8227c315f4b58f44c854287f1f"}}
+{"time": "2026-07-03T08:08:18", "message": "wrote 'en_resample_english_datasheet_py.md'", "data": {"path": "output\\reports\\en_resample_english_datasheet_py.md", "rows": null, "md5": "030747721adb10d00b684a2ad88393ac"}}
