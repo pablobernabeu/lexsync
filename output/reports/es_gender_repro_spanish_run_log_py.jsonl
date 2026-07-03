@@ -1,16 +1,16 @@
-{"time": "2026-07-03T08:08:18", "message": "loading lexicon 'corpora/derived/es_gender.csv'", "data": null}
-{"time": "2026-07-03T08:08:18", "message": "lexicon loaded: 10185 words", "data": {"words": 10185}}
-{"time": "2026-07-03T08:08:18", "message": "pool after filters: 9294 words", "data": {"pool": 9294}}
-{"time": "2026-07-03T08:08:18", "message": "matched 96 items across 2 conditions", "data": {"conditions": "feminine, masculine"}}
-{"time": "2026-07-03T08:08:18", "message": "equivalence masculine vs feminine on 'length': d = 0.00 [-0.34, 0.34], TOST p = 0.0081 (equivalent)", "data": null}
-{"time": "2026-07-03T08:08:18", "message": "equivalence masculine vs feminine on 'frequency': d = 0.02 [-0.32, 0.36], TOST p = 0.0105 (equivalent)", "data": null}
-{"time": "2026-07-03T08:08:18", "message": "equivalence masculine vs feminine on 'n_density': d = 0.20 [-0.14, 0.54], TOST p = 0.0697 (not shown equivalent)", "data": null}
-{"time": "2026-07-03T08:08:18", "message": "equivalence masculine vs feminine on 'old20': d = -0.08 [-0.42, 0.26], TOST p = 0.0218 (equivalent)", "data": null}
-{"time": "2026-07-03T08:08:18", "message": "wrote 'es_gender_repro_spanish_stimuli_py.csv'", "data": {"path": "output\\stimuli\\es_gender_repro_spanish_stimuli_py.csv", "rows": 96, "md5": "bf89f49ee4dc53431afd28fd9f6a1d84"}}
-{"time": "2026-07-03T08:08:18", "message": "wrote 'es_gender_repro_spanish_descriptives_py.csv'", "data": {"path": "output\\reports\\es_gender_repro_spanish_descriptives_py.csv", "rows": 8, "md5": "eee99458d1cc3e42141a6199ad8449c2"}}
-{"time": "2026-07-03T08:08:18", "message": "wrote 'es_gender_repro_spanish_comparisons_py.csv'", "data": {"path": "output\\reports\\es_gender_repro_spanish_comparisons_py.csv", "rows": 4, "md5": "6e2ddcbbf55e803e2df75e8ad8779bd6"}}
-{"time": "2026-07-03T08:08:18", "message": "wrote 'es_gender_repro_spanish_psychopy.py'", "data": {"path": "output\\experiments\\es_gender_repro_spanish_psychopy.py", "rows": null, "md5": "36b3d95901780b1d3c19e269db9f3997"}}
-{"time": "2026-07-03T08:08:18", "message": "wrote 'es_gender_repro_spanish.osexp'", "data": {"path": "output\\experiments\\es_gender_repro_spanish.osexp", "rows": null, "md5": "41ef86bd2adc0b5a8fc5e53e6f5ca060"}}
-{"time": "2026-07-03T08:08:18", "message": "wrote 'es_gender_repro_spanish.html'", "data": {"path": "output\\experiments\\es_gender_repro_spanish.html", "rows": null, "md5": "c1346d5981e318c7edd0bad44bb6ba56"}}
-{"time": "2026-07-03T08:08:18", "message": "wrote 'es_gender_repro_spanish_datasheet_py.json'", "data": {"path": "output\\reports\\es_gender_repro_spanish_datasheet_py.json", "rows": null, "md5": "4684e253d986fdfb28d36a2917a7b085"}}
-{"time": "2026-07-03T08:08:18", "message": "wrote 'es_gender_repro_spanish_datasheet_py.md'", "data": {"path": "output\\reports\\es_gender_repro_spanish_datasheet_py.md", "rows": null, "md5": "cfa54246abdaec546a9997d939a02409"}}
+{"time": "2026-07-03T10:38:39", "message": "loading lexicon 'corpora/derived/es_gender.csv'", "data": null}
+{"time": "2026-07-03T10:38:39", "message": "lexicon loaded: 10185 words", "data": {"words": 10185}}
+{"time": "2026-07-03T10:38:39", "message": "pool after filters: 9294 words", "data": {"pool": 9294}}
+{"time": "2026-07-03T10:38:39", "message": "matched 96 items across 2 conditions", "data": {"conditions": "feminine, masculine"}}
+{"time": "2026-07-03T10:38:39", "message": "equivalence masculine vs feminine on 'length': d = 0.00 [-0.34, 0.34], TOST p = 0.0081 (equivalent)", "data": null}
+{"time": "2026-07-03T10:38:39", "message": "equivalence masculine vs feminine on 'frequency': d = 0.02 [-0.32, 0.36], TOST p = 0.0105 (equivalent)", "data": null}
+{"time": "2026-07-03T10:38:39", "message": "equivalence masculine vs feminine on 'n_density': d = 0.20 [-0.14, 0.54], TOST p = 0.0697 (not shown equivalent)", "data": null}
+{"time": "2026-07-03T10:38:39", "message": "equivalence masculine vs feminine on 'old20': d = -0.08 [-0.42, 0.26], TOST p = 0.0218 (equivalent)", "data": null}
+{"time": "2026-07-03T10:38:39", "message": "wrote 'es_gender_repro_spanish_stimuli_py.csv'", "data": {"path": "output\\stimuli\\es_gender_repro_spanish_stimuli_py.csv", "rows": 96, "md5": "bf89f49ee4dc53431afd28fd9f6a1d84"}}
+{"time": "2026-07-03T10:38:39", "message": "wrote 'es_gender_repro_spanish_descriptives_py.csv'", "data": {"path": "output\\reports\\es_gender_repro_spanish_descriptives_py.csv", "rows": 8, "md5": "eee99458d1cc3e42141a6199ad8449c2"}}
+{"time": "2026-07-03T10:38:39", "message": "wrote 'es_gender_repro_spanish_comparisons_py.csv'", "data": {"path": "output\\reports\\es_gender_repro_spanish_comparisons_py.csv", "rows": 4, "md5": "509483dfd611d2994ef60e725dc4c266"}}
+{"time": "2026-07-03T10:38:39", "message": "wrote 'es_gender_repro_spanish_psychopy.py'", "data": {"path": "output\\experiments\\es_gender_repro_spanish_psychopy.py", "rows": null, "md5": "36b3d95901780b1d3c19e269db9f3997"}}
+{"time": "2026-07-03T10:38:39", "message": "wrote 'es_gender_repro_spanish.osexp'", "data": {"path": "output\\experiments\\es_gender_repro_spanish.osexp", "rows": null, "md5": "41ef86bd2adc0b5a8fc5e53e6f5ca060"}}
+{"time": "2026-07-03T10:38:39", "message": "wrote 'es_gender_repro_spanish.html'", "data": {"path": "output\\experiments\\es_gender_repro_spanish.html", "rows": null, "md5": "c1346d5981e318c7edd0bad44bb6ba56"}}
+{"time": "2026-07-03T10:38:39", "message": "wrote 'es_gender_repro_spanish_datasheet_py.json'", "data": {"path": "output\\reports\\es_gender_repro_spanish_datasheet_py.json", "rows": null, "md5": "8b95782c1bdd43da56dba7908f509206"}}
+{"time": "2026-07-03T10:38:39", "message": "wrote 'es_gender_repro_spanish_datasheet_py.md'", "data": {"path": "output\\reports\\es_gender_repro_spanish_datasheet_py.md", "rows": null, "md5": "4d118ea86243af331e0ab12fd1d1b02a"}}

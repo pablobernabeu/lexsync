@@ -20,12 +20,12 @@
 
 ## Realised control
 
-| Dimension | Role | Cohen's d | 90% CI | TOST p | Equivalent |
-|---|---|---|---|---|---|
-| length | controlled | 0.04 | [-0.17, 0.26] | 0.0002 | True |
-| frequency | manipulated/free | 5.38 | [5.17, 5.59] | 1.0 | False |
-| n_density | controlled | 0.03 | [-0.18, 0.24] | 0.0002 | True |
-| old20 | controlled | 0.02 | [-0.20, 0.23] | 0.0001 | True |
+| Dimension | Role | Cohen's d | 90% CI | Var ratio | TOST p | Equivalent |
+|---|---|---|---|---|---|---|
+| length | controlled | 0.04 | [-0.17, 0.26] | 0.86 | 0.0002 | True |
+| frequency | manipulated/free | 5.38 | [5.17, 5.59] | 0.58 | 1.0 | False |
+| n_density | controlled | 0.03 | [-0.18, 0.24] | 0.86 | 0.0002 | True |
+| old20 | controlled | 0.02 | [-0.20, 0.23] | 0.90 | 0.0001 | True |
 
 ## Suggested analysis
 

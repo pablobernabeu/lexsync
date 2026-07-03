@@ -83,6 +83,7 @@
       "cohens_d": 0,
       "ci_low": 0,
       "ci_high": 0,
+      "var_ratio": 1,
       "tost_p": 0,
       "equivalent": true
     },
@@ -92,6 +93,7 @@
       "cohens_d": 6.004,
       "ci_low": 5.743,
       "ci_high": 6.266,
+      "var_ratio": 0.468,
       "tost_p": 1,
       "equivalent": false
     },
@@ -101,6 +103,7 @@
       "cohens_d": 0.071,
       "ci_low": -0.191,
       "ci_high": 0.332,
+      "var_ratio": 0.648,
       "tost_p": 0.0037,
       "equivalent": true
     },
@@ -110,6 +113,7 @@
       "cohens_d": 0.106,
       "ci_low": -0.155,
       "ci_high": 0.368,
+      "var_ratio": 0.442,
       "tost_p": 0.0069,
       "equivalent": true
     }
@@ -152,7 +156,7 @@
     },
     {
       "file": "output/reports/zh_freqcontrast_chinese_comparisons_R.csv",
-      "sha256": "ed84eceac64a93cd500e5b9afc6dfd51320c0d6db5761e0b867fbcf4e6c2f19e"
+      "sha256": "63bc2f8397e0a20a53a24036ff7f6fbc42dc7a30abc570f71a8e1746540b848a"
     },
     {
       "file": "output/experiments/zh_freqcontrast_chinese_psychopy.py",

@@ -15,7 +15,7 @@
     },
     {
       "file": "output\\reports\\en_andrews_repro_english_comparisons_py.csv",
-      "sha256": "2f5a9b5c31f80f14908372528c724302a79c8fd7ba2c15d2e4a90775c268a1d9"
+      "sha256": "256032ea489d90f2d802374398bd98f33d08d594de6274ba58379730c2e65163"
     },
     {
       "file": "output\\experiments\\en_andrews_repro_english_psychopy.py",
@@ -101,7 +101,8 @@
       "dimension": "length",
       "equivalent": false,
       "role": "controlled",
-      "tost_p": 0.192
+      "tost_p": 0.192,
+      "var_ratio": 0.575
     },
     {
       "ci_high": 0.456,
@@ -110,7 +111,8 @@
       "dimension": "frequency",
       "equivalent": false,
       "role": "manipulated/free",
-      "tost_p": 0.1238
+      "tost_p": 0.1238,
+      "var_ratio": 1.072
     },
     {
       "ci_high": 3.754,
@@ -119,7 +121,8 @@
       "dimension": "n_density",
       "equivalent": false,
       "role": "manipulated/free",
-      "tost_p": 1.0
+      "tost_p": 1.0,
+      "var_ratio": 0.041
     },
     {
       "ci_high": -5.192,
@@ -128,7 +131,8 @@
       "dimension": "old20",
       "equivalent": false,
       "role": "manipulated/free",
-      "tost_p": 1.0
+      "tost_p": 1.0,
+      "var_ratio": 1.129
     },
     {
       "ci_high": 0.663,
@@ -137,7 +141,8 @@
       "dimension": "length",
       "equivalent": false,
       "role": "controlled",
-      "tost_p": 0.1186
+      "tost_p": 0.1186,
+      "var_ratio": 0.708
     },
     {
       "ci_high": 5.277,
@@ -146,7 +151,8 @@
       "dimension": "frequency",
       "equivalent": false,
       "role": "manipulated/free",
-      "tost_p": 1.0
+      "tost_p": 1.0,
+      "var_ratio": 0.503
     },
     {
       "ci_high": 0.666,
@@ -155,7 +161,8 @@
       "dimension": "n_density",
       "equivalent": false,
       "role": "manipulated/free",
-      "tost_p": 0.1208
+      "tost_p": 0.1208,
+      "var_ratio": 0.641
     },
     {
       "ci_high": 0.668,
@@ -164,7 +171,8 @@
       "dimension": "old20",
       "equivalent": false,
       "role": "manipulated/free",
-      "tost_p": 0.1218
+      "tost_p": 0.1218,
+      "var_ratio": 1.023
     },
     {
       "ci_high": 0.663,
@@ -173,7 +181,8 @@
       "dimension": "length",
       "equivalent": false,
       "role": "controlled",
-      "tost_p": 0.1186
+      "tost_p": 0.1186,
+      "var_ratio": 0.708
     },
     {
       "ci_high": 5.748,
@@ -182,7 +191,8 @@
       "dimension": "frequency",
       "equivalent": false,
       "role": "manipulated/free",
-      "tost_p": 1.0
+      "tost_p": 1.0,
+      "var_ratio": 0.387
     },
     {
       "ci_high": 3.852,
@@ -191,7 +201,8 @@
       "dimension": "n_density",
       "equivalent": false,
       "role": "manipulated/free",
-      "tost_p": 1.0
+      "tost_p": 1.0,
+      "var_ratio": 0.052
     },
     {
       "ci_high": -5.351,
@@ -200,7 +211,8 @@
       "dimension": "old20",
       "equivalent": false,
       "role": "manipulated/free",
-      "tost_p": 1.0
+      "tost_p": 1.0,
+      "var_ratio": 1.217
     }
   ],
   "reproducibility": {

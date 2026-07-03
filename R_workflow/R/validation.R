@@ -114,6 +114,26 @@ tost_equiv <- function(x, y, bound_d = 0.4, alpha = 0.05) {
   list(p = p, equivalent = isTRUE(p < alpha))
 }
 
+#' Variance ratio: a distributional balance check
+#'
+#' The ratio of a condition's variance to the reference's, complementing the
+#' mean-based Cohen's d and TOST. Two conditions can share a mean yet differ in
+#' spread and still confound, which a mean-based statistic misses (Armstrong,
+#' Watson & Plaut, 2012; Austin, 2009). A ratio near 1 is balanced; a common
+#' heuristic flags ratios outside roughly 0.5 to 2.
+#'
+#' @param cond,ref Numeric vectors (condition and reference).
+#' @return The variance ratio, or `NA` when a variance is undefined.
+#' @importFrom stats var
+#' @export
+variance_ratio <- function(cond, ref) {
+  cond <- cond[!is.na(cond)]; ref <- ref[!is.na(ref)]
+  if (length(cond) < 2 || length(ref) < 2) return(NA_real_)
+  v_ref <- stats::var(ref)
+  if (v_ref == 0) return(if (stats::var(cond) == 0) 1 else NA_real_)
+  as.numeric(stats::var(cond) / v_ref)
+}
+
 #' Check that the levels of given columns occur equally often
 #'
 #' @param stimuli A stimuli data frame.
@@ -155,10 +175,12 @@ match_report <- function(stimuli, dims, schema) {
       y <- suppressWarnings(as.numeric(stimuli[stimuli$condition == cc, dim, drop = TRUE]))
       tt <- tost_equiv(x, y, bound_d = bound, alpha = alpha)
       ci <- cohens_d_ci(x, y, alpha = alpha)
+      vr <- variance_ratio(y, x)
       comp[[length(comp) + 1]] <- data.frame(
         condition = cc, reference = anchor, dimension = dim,
         cohens_d = round(cohens_d(x, y), 3),
         d_ci_low = round(ci$ci_low, 3), d_ci_high = round(ci$ci_high, 3),
+        var_ratio = if (is.na(vr)) NA_real_ else round(vr, 3),
         tost_p = round(tt$p, 4), equivalent = tt$equivalent,
         stringsAsFactors = FALSE
       )

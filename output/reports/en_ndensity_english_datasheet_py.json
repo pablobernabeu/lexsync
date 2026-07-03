@@ -15,7 +15,7 @@
     },
     {
       "file": "output\\reports\\en_ndensity_english_comparisons_py.csv",
-      "sha256": "661b497e925c1291916958c68cff9def2c2a48a674c9225c88ee780086047307"
+      "sha256": "220b9a8395bc11a45043906c5b35039cc5e1f74c3dcf89755c92d0419bd488ee"
     },
     {
       "file": "output\\experiments\\en_ndensity_english_psychopy.py",
@@ -99,7 +99,8 @@
       "dimension": "length",
       "equivalent": true,
       "role": "controlled",
-      "tost_p": 0.0009
+      "tost_p": 0.0009,
+      "var_ratio": 1.0
     },
     {
       "ci_high": 0.262,
@@ -108,7 +109,8 @@
       "dimension": "frequency",
       "equivalent": true,
       "role": "controlled",
-      "tost_p": 0.0009
+      "tost_p": 0.0009,
+      "var_ratio": 1.0
     },
     {
       "ci_high": 3.37,
@@ -117,7 +119,8 @@
       "dimension": "n_density",
       "equivalent": false,
       "role": "manipulated/free",
-      "tost_p": 1.0
+      "tost_p": 1.0,
+      "var_ratio": 0.02
     },
     {
       "ci_high": -2.042,
@@ -126,7 +129,8 @@
       "dimension": "old20",
       "equivalent": false,
       "role": "manipulated/free",
-      "tost_p": 1.0
+      "tost_p": 1.0,
+      "var_ratio": 1.639
     }
   ],
   "reproducibility": {

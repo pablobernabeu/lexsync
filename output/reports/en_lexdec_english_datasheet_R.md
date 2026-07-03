@@ -20,9 +20,9 @@
 
 ## Realised control
 
-| Dimension | Role | Cohen's d | 90% CI | TOST p | Equivalent |
-|---|---|---|---|---|---|
-| length | controlled | 0.00 | [-0.30, 0.30] | 0.0036 | TRUE |
+| Dimension | Role | Cohen's d | 90% CI | Var ratio | TOST p | Equivalent |
+|---|---|---|---|---|---|---|
+| length | controlled | 0.00 | [-0.30, 0.30] | 1.00 | 0.0036 | TRUE |
 
 ## Suggested analysis
 

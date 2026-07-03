@@ -83,6 +83,7 @@
       "cohens_d": 0.044,
       "ci_low": -0.169,
       "ci_high": 0.257,
+      "var_ratio": 0.862,
       "tost_p": 0.0002,
       "equivalent": true
     },
@@ -92,6 +93,7 @@
       "cohens_d": 5.382,
       "ci_low": 5.169,
       "ci_high": 5.595,
+      "var_ratio": 0.585,
       "tost_p": 1,
       "equivalent": false
     },
@@ -101,6 +103,7 @@
       "cohens_d": 0.032,
       "ci_low": -0.182,
       "ci_high": 0.245,
+      "var_ratio": 0.865,
       "tost_p": 0.0002,
       "equivalent": true
     },
@@ -110,6 +113,7 @@
       "cohens_d": 0.017,
       "ci_low": -0.196,
       "ci_high": 0.23,
+      "var_ratio": 0.898,
       "tost_p": 0.0001,
       "equivalent": true
     }
@@ -155,7 +159,7 @@
     },
     {
       "file": "output/reports/en_resample_english_comparisons_R.csv",
-      "sha256": "1bd638d3f4fc54f437ad418f69941cd4744a5bc43e1c33e0b0a31a5c856dbce0"
+      "sha256": "e047a5f5eba0c289a494dc865b32c9d925f3b333f8ee85a16ae66bac06631f8a"
     },
     {
       "file": "output/experiments/en_resample_english_psychopy.py",

@@ -92,6 +92,25 @@ def tost_equiv(x, y, bound_d: float = 0.5, alpha: float = 0.05) -> dict:
     return dict(p=float(p), equivalent=bool(p < alpha))
 
 
+def variance_ratio(cond, ref):
+    """Ratio of a condition's variance to the reference's: a distributional
+    balance check that complements the mean-based Cohen's d and TOST.
+
+    Two conditions can share a mean yet differ in spread and still confound, which
+    a mean-based statistic misses (Armstrong, Watson & Plaut, 2012; Austin, 2009).
+    A ratio near 1 is balanced; a common heuristic flags ratios outside about
+    [0.5, 2] as unequal spread. Returns ``None`` when a variance is undefined.
+    """
+    cond = np.asarray(cond, dtype=float); ref = np.asarray(ref, dtype=float)
+    cond = cond[~np.isnan(cond)]; ref = ref[~np.isnan(ref)]
+    if len(cond) < 2 or len(ref) < 2:
+        return None
+    v_ref = ref.var(ddof=1)
+    if v_ref == 0:
+        return 1.0 if cond.var(ddof=1) == 0 else None
+    return float(cond.var(ddof=1) / v_ref)
+
+
 def balance_check(stimuli: pd.DataFrame, columns) -> list:
     if isinstance(columns, str):
         columns = [columns]
@@ -119,12 +138,14 @@ def match_report(stimuli: pd.DataFrame, dims, schema: dict) -> dict:
             y = pd.to_numeric(stimuli.loc[stimuli["condition"] == cc, dim], errors="coerce")
             tt = tost_equiv(x, y, bound, alpha)
             ci = cohens_d_ci(x, y, alpha)
+            vr = variance_ratio(y, x)
             p = tt["p"]
             rows.append(dict(
                 condition=cc, reference=anchor, dimension=dim,
                 cohens_d=round(cohens_d(x, y), 3),
                 d_ci_low=round(ci["ci_low"], 3) if ci["ci_low"] == ci["ci_low"] else None,
                 d_ci_high=round(ci["ci_high"], 3) if ci["ci_high"] == ci["ci_high"] else None,
+                var_ratio=round(vr, 3) if vr is not None else None,
                 tost_p=round(p, 4) if p == p else None,
                 equivalent=tt["equivalent"],
             ))

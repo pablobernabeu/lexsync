@@ -15,7 +15,7 @@
     },
     {
       "file": "output\\reports\\zh_freqcontrast_chinese_comparisons_py.csv",
-      "sha256": "0b79eeed036f19e9f93cd1616718ca0b2eb52e9f502169867e1912c4b02361fd"
+      "sha256": "8a0c87b85d8c76eb353ab5099a4f35600d528793d18c9db55c3ad9d660ac3ec2"
     },
     {
       "file": "output\\experiments\\zh_freqcontrast_chinese_psychopy.py",
@@ -99,7 +99,8 @@
       "dimension": "length",
       "equivalent": true,
       "role": "controlled",
-      "tost_p": 0.0
+      "tost_p": 0.0,
+      "var_ratio": 1.0
     },
     {
       "ci_high": 6.266,
@@ -108,7 +109,8 @@
       "dimension": "frequency",
       "equivalent": false,
       "role": "manipulated/free",
-      "tost_p": 1.0
+      "tost_p": 1.0,
+      "var_ratio": 0.468
     },
     {
       "ci_high": 0.332,
@@ -117,7 +119,8 @@
       "dimension": "n_density",
       "equivalent": true,
       "role": "controlled",
-      "tost_p": 0.0037
+      "tost_p": 0.0037,
+      "var_ratio": 0.648
     },
     {
       "ci_high": 0.368,
@@ -126,7 +129,8 @@
       "dimension": "old20",
       "equivalent": true,
       "role": "controlled",
-      "tost_p": 0.0069
+      "tost_p": 0.0069,
+      "var_ratio": 0.442
     }
   ],
   "reproducibility": {

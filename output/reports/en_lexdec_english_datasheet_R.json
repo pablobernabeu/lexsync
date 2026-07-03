@@ -71,6 +71,7 @@
       "cohens_d": 0,
       "ci_low": -0.303,
       "ci_high": 0.303,
+      "var_ratio": 1,
       "tost_p": 0.0036,
       "equivalent": true
     }
@@ -113,7 +114,7 @@
     },
     {
       "file": "output/reports/en_lexdec_english_comparisons_R.csv",
-      "sha256": "75c27823dbafaec97de74aacbc5deaf6ef3c48efde6c22c3a39ef53c68d49542"
+      "sha256": "6bcaa6b4973497028fc576c42052dd96c2a7f575c841ff400ee5df7e8d692444"
     },
     {
       "file": "output/experiments/en_lexdec_english_psychopy.py",

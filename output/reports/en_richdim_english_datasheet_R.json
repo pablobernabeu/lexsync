@@ -83,6 +83,7 @@
       "cohens_d": 0.015,
       "ci_low": -0.287,
       "ci_high": 0.318,
+      "var_ratio": 0.935,
       "tost_p": 0.0045,
       "equivalent": true
     },
@@ -92,6 +93,7 @@
       "cohens_d": 5.572,
       "ci_low": 5.269,
       "ci_high": 5.875,
+      "var_ratio": 0.579,
       "tost_p": 1,
       "equivalent": false
     },
@@ -101,6 +103,7 @@
       "cohens_d": 0.076,
       "ci_low": -0.226,
       "ci_high": 0.379,
+      "var_ratio": 0.723,
       "tost_p": 0.011,
       "equivalent": true
     },
@@ -110,6 +113,7 @@
       "cohens_d": 0.078,
       "ci_low": -0.224,
       "ci_high": 0.381,
+      "var_ratio": 0.404,
       "tost_p": 0.0113,
       "equivalent": true
     },
@@ -119,6 +123,7 @@
       "cohens_d": 0.174,
       "ci_low": -0.129,
       "ci_high": 0.477,
+      "var_ratio": 0.585,
       "tost_p": 0.0383,
       "equivalent": true
     },
@@ -128,6 +133,7 @@
       "cohens_d": 0.01,
       "ci_low": -0.293,
       "ci_high": 0.312,
+      "var_ratio": 0.96,
       "tost_p": 0.0041,
       "equivalent": true
     }
@@ -170,7 +176,7 @@
     },
     {
       "file": "output/reports/en_richdim_english_comparisons_R.csv",
-      "sha256": "e2c978ef5ee960ae23a8a464acea1a62dc6c1bf378bc3d03846a3a01ee2c5c41"
+      "sha256": "d72dad9d360b720375c380a3f1d3688ae71cf6e4a0c27d1cb4a220dd384f065b"
     },
     {
       "file": "output/experiments/en_richdim_english_psychopy.py",

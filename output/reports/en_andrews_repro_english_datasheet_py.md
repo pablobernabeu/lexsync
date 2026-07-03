@@ -20,20 +20,20 @@
 
 ## Realised control
 
-| Dimension | Role | Cohen's d | 90% CI | TOST p | Equivalent |
-|---|---|---|---|---|---|
-| length | controlled | -0.21 | [-0.77, 0.36] | 0.192 | False |
-| frequency | manipulated/free | -0.11 | [-0.67, 0.46] | 0.1238 | False |
-| n_density | manipulated/free | 3.19 | [2.63, 3.75] | 1.0 | False |
-| old20 | manipulated/free | -5.76 | [-6.32, -5.19] | 1.0 | False |
-| length | controlled | 0.10 | [-0.47, 0.66] | 0.1186 | False |
-| frequency | manipulated/free | 4.71 | [4.15, 5.28] | 1.0 | False |
-| n_density | manipulated/free | 0.10 | [-0.46, 0.67] | 0.1208 | False |
-| old20 | manipulated/free | 0.10 | [-0.46, 0.67] | 0.1218 | False |
-| length | controlled | 0.10 | [-0.47, 0.66] | 0.1186 | False |
-| frequency | manipulated/free | 5.18 | [4.62, 5.75] | 1.0 | False |
-| n_density | manipulated/free | 3.29 | [2.73, 3.85] | 1.0 | False |
-| old20 | manipulated/free | -5.91 | [-6.48, -5.35] | 1.0 | False |
+| Dimension | Role | Cohen's d | 90% CI | Var ratio | TOST p | Equivalent |
+|---|---|---|---|---|---|---|
+| length | controlled | -0.21 | [-0.77, 0.36] | 0.57 | 0.192 | False |
+| frequency | manipulated/free | -0.11 | [-0.67, 0.46] | 1.07 | 0.1238 | False |
+| n_density | manipulated/free | 3.19 | [2.63, 3.75] | 0.04 | 1.0 | False |
+| old20 | manipulated/free | -5.76 | [-6.32, -5.19] | 1.13 | 1.0 | False |
+| length | controlled | 0.10 | [-0.47, 0.66] | 0.71 | 0.1186 | False |
+| frequency | manipulated/free | 4.71 | [4.15, 5.28] | 0.50 | 1.0 | False |
+| n_density | manipulated/free | 0.10 | [-0.46, 0.67] | 0.64 | 0.1208 | False |
+| old20 | manipulated/free | 0.10 | [-0.46, 0.67] | 1.02 | 0.1218 | False |
+| length | controlled | 0.10 | [-0.47, 0.66] | 0.71 | 0.1186 | False |
+| frequency | manipulated/free | 5.18 | [4.62, 5.75] | 0.39 | 1.0 | False |
+| n_density | manipulated/free | 3.29 | [2.73, 3.85] | 0.05 | 1.0 | False |
+| old20 | manipulated/free | -5.91 | [-6.48, -5.35] | 1.22 | 1.0 | False |
 
 ## Suggested analysis
 

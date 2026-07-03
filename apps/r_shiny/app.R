@@ -294,7 +294,7 @@ server <- function(input, output, session) {
         c <- b$comparisons
         c$`90% CI` <- sprintf("[%.2f, %.2f]", c$d_ci_low, c$d_ci_high)
         cols <- intersect(c("condition", "reference", "dimension", "cohens_d", "90% CI",
-                            "tost_p", "equivalent"), names(c))
+                            "var_ratio", "tost_p", "equivalent"), names(c))
         DT::datatable(c[, cols], rownames = FALSE, options = list(dom = "t"))
       }),
       renderPlot({

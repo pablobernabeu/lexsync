@@ -414,7 +414,7 @@ if "bundle" in st.session_state:
             if {"d_ci_low", "d_ci_high"}.issubset(show.columns):
                 show["90% CI"] = show.apply(lambda r: f"[{r['d_ci_low']:.2f}, {r['d_ci_high']:.2f}]", axis=1)
             cols = [c for c in ["condition", "reference", "dimension", "cohens_d", "90% CI",
-                                "tost_p", "equivalent"] if c in show.columns]
+                                "var_ratio", "tost_p", "equivalent"] if c in show.columns]
             st.markdown("**Effect size and equivalence per controlled dimension** "
                         "(Cohen's *d* against the anchor, 90% CI, and the TOST verdict).")
             st.dataframe(show[cols], use_container_width=True)

@@ -2,6 +2,7 @@ import pandas as pd
 
 from lexsync.validation import (
     balance_check, cohens_d, cohens_d_ci, describe_stimuli, tost_equiv,
+    variance_ratio,
 )
 
 
@@ -46,6 +47,14 @@ def test_cohens_d_ci_constant_dimension_is_a_point():
     # A dimension fixed by the pool (e.g. two-character words) has no uncertainty.
     ci = cohens_d_ci([2, 2, 2, 2], [2, 2, 2, 2])
     assert ci == {"d": 0.0, "ci_low": 0.0, "ci_high": 0.0}
+
+
+def test_variance_ratio():
+    assert abs(variance_ratio([1, 2, 3, 4], [1, 2, 3, 4]) - 1.0) < 1e-9  # equal spread
+    assert variance_ratio([0, 5, 10, 15], [4, 5, 6, 7]) > 1              # condition wider
+    assert variance_ratio([4, 5, 6, 7], [0, 5, 10, 15]) < 1             # condition narrower
+    assert variance_ratio([1, 2, 3], [5, 5, 5]) is None                  # constant reference
+    assert variance_ratio([5, 5, 5], [2, 2, 2]) == 1.0                   # both constant
 
 
 def test_describe_and_balance():

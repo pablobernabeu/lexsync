@@ -20,14 +20,14 @@
 
 ## Realised control
 
-| Dimension | Role | Cohen's d | 90% CI | TOST p | Equivalent |
-|---|---|---|---|---|---|
-| length | controlled | 0.01 | [-0.29, 0.32] | 0.0045 | TRUE |
-| frequency | manipulated/free | 5.57 | [5.27, 5.88] | 1 | FALSE |
-| n_density | manipulated/free | 0.08 | [-0.23, 0.38] | 0.011 | TRUE |
-| old20 | manipulated/free | 0.08 | [-0.22, 0.38] | 0.0113 | TRUE |
-| n_syllables | controlled | 0.17 | [-0.13, 0.48] | 0.0383 | TRUE |
-| bigram_freq | controlled | 0.01 | [-0.29, 0.31] | 0.0041 | TRUE |
+| Dimension | Role | Cohen's d | 90% CI | Var ratio | TOST p | Equivalent |
+|---|---|---|---|---|---|---|
+| length | controlled | 0.01 | [-0.29, 0.32] | 0.94 | 0.0045 | TRUE |
+| frequency | manipulated/free | 5.57 | [5.27, 5.88] | 0.58 | 1 | FALSE |
+| n_density | manipulated/free | 0.08 | [-0.23, 0.38] | 0.72 | 0.011 | TRUE |
+| old20 | manipulated/free | 0.08 | [-0.22, 0.38] | 0.40 | 0.0113 | TRUE |
+| n_syllables | controlled | 0.17 | [-0.13, 0.48] | 0.58 | 0.0383 | TRUE |
+| bigram_freq | controlled | 0.01 | [-0.29, 0.31] | 0.96 | 0.0041 | TRUE |
 
 ## Suggested analysis
 

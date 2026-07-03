@@ -37,6 +37,14 @@ test_that("cohens_d_ci is a point for a constant dimension", {
   expect_equal(c(ci$d, ci$ci_low, ci$ci_high), c(0, 0, 0))
 })
 
+test_that("variance_ratio flags unequal spread", {
+  expect_equal(variance_ratio(c(1, 2, 3, 4), c(1, 2, 3, 4)), 1)       # equal spread
+  expect_gt(variance_ratio(c(0, 5, 10, 15), c(4, 5, 6, 7)), 1)        # condition wider
+  expect_lt(variance_ratio(c(4, 5, 6, 7), c(0, 5, 10, 15)), 1)        # condition narrower
+  expect_true(is.na(variance_ratio(c(1, 2, 3), c(5, 5, 5))))          # constant reference
+  expect_equal(variance_ratio(c(5, 5, 5), c(2, 2, 2)), 1)             # both constant
+})
+
 test_that("describe_stimuli summarises per group", {
   df <- data.frame(condition = c("a", "a", "b", "b"), x = c(1, 2, 3, 4), stringsAsFactors = FALSE)
   d <- describe_stimuli(df, "x")

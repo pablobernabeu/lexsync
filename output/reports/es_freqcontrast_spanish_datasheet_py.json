@@ -15,7 +15,7 @@
     },
     {
       "file": "output\\reports\\es_freqcontrast_spanish_comparisons_py.csv",
-      "sha256": "dee77f77250ad2a1727078a6b21e9c80ee2862f99b6a771c0af145b586597828"
+      "sha256": "99035975fef91e4814f59684c329fc1cf833840b2c63b6dc5ef84f586559a607"
     },
     {
       "file": "output\\experiments\\es_freqcontrast_spanish_psychopy.py",
@@ -99,7 +99,8 @@
       "dimension": "length",
       "equivalent": true,
       "role": "controlled",
-      "tost_p": 0.0024
+      "tost_p": 0.0024,
+      "var_ratio": 0.83
     },
     {
       "ci_high": 5.808,
@@ -108,7 +109,8 @@
       "dimension": "frequency",
       "equivalent": false,
       "role": "manipulated/free",
-      "tost_p": 1.0
+      "tost_p": 1.0,
+      "var_ratio": 0.298
     },
     {
       "ci_high": 0.339,
@@ -117,7 +119,8 @@
       "dimension": "n_density",
       "equivalent": true,
       "role": "controlled",
-      "tost_p": 0.0041
+      "tost_p": 0.0041,
+      "var_ratio": 0.61
     },
     {
       "ci_high": 0.268,
@@ -126,7 +129,8 @@
       "dimension": "old20",
       "equivalent": true,
       "role": "controlled",
-      "tost_p": 0.0011
+      "tost_p": 0.0011,
+      "var_ratio": 0.959
     }
   ],
   "reproducibility": {

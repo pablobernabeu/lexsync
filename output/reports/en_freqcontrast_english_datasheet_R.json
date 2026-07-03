@@ -83,6 +83,7 @@
       "cohens_d": 0.027,
       "ci_low": -0.235,
       "ci_high": 0.289,
+      "var_ratio": 0.895,
       "tost_p": 0.0016,
       "equivalent": true
     },
@@ -92,6 +93,7 @@
       "cohens_d": 5.272,
       "ci_low": 5.01,
       "ci_high": 5.533,
+      "var_ratio": 0.213,
       "tost_p": 1,
       "equivalent": false
     },
@@ -101,6 +103,7 @@
       "cohens_d": 0.038,
       "ci_low": -0.224,
       "ci_high": 0.299,
+      "var_ratio": 0.804,
       "tost_p": 0.002,
       "equivalent": true
     },
@@ -110,6 +113,7 @@
       "cohens_d": 0.009,
       "ci_low": -0.252,
       "ci_high": 0.271,
+      "var_ratio": 0.914,
       "tost_p": 0.0011,
       "equivalent": true
     }
@@ -152,7 +156,7 @@
     },
     {
       "file": "output/reports/en_freqcontrast_english_comparisons_R.csv",
-      "sha256": "02c0a17e02083ac36b0b20605478ab732c3a32fe257248cdd06fb9437847b58a"
+      "sha256": "5231caf378b817ca87c034ab6fdbf057b45f3965e7d3c20a15606f8b2643c7ee"
     },
     {
       "file": "output/experiments/en_freqcontrast_english_psychopy.py",

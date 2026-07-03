@@ -82,6 +82,7 @@
       "cohens_d": 0,
       "ci_low": -0.262,
       "ci_high": 0.262,
+      "var_ratio": 1,
       "tost_p": 0.0009,
       "equivalent": true
     },
@@ -91,6 +92,7 @@
       "cohens_d": 0,
       "ci_low": -0.262,
       "ci_high": 0.262,
+      "var_ratio": 1,
       "tost_p": 0.0009,
       "equivalent": true
     },
@@ -100,6 +102,7 @@
       "cohens_d": 2.128,
       "ci_low": 1.866,
       "ci_high": 2.389,
+      "var_ratio": 0.01,
       "tost_p": 1,
       "equivalent": false
     },
@@ -109,6 +112,7 @@
       "cohens_d": -2.421,
       "ci_low": -2.683,
       "ci_high": -2.159,
+      "var_ratio": 0.739,
       "tost_p": 1,
       "equivalent": false
     }
@@ -151,7 +155,7 @@
     },
     {
       "file": "output/reports/es_ndensity_spanish_comparisons_R.csv",
-      "sha256": "9c2751e54c4593a01f2301e549bfd7e629cba901d5e2c1b68d86695ed515601e"
+      "sha256": "d91dd418778eb73b46ad0429f52d96dfb0cbf227e4ec3450ad475950d64c3c11"
     },
     {
       "file": "output/experiments/es_ndensity_spanish_psychopy.py",

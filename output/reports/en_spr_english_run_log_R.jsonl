@@ -1,8 +1,8 @@
-{"time":"2026-07-03 08:07:54.056322","message":"loading items 'items/spr_sentences_en.csv'","data":null}
-{"time":"2026-07-03 08:07:54.070964","message":"loaded 10 items across 2 conditions","data":{"conditions":"grammatical, ungrammatical"}}
-{"time":"2026-07-03 08:07:54.091754","message":"wrote 'en_spr_english_stimuli_R.csv'","data":{"path":"output/stimuli/en_spr_english_stimuli_R.csv","rows":20,"md5":"b344b9f0d3fc7ce7354d370e0a1f7156"}}
-{"time":"2026-07-03 08:07:54.142696","message":"wrote 'en_spr_english_psychopy.py'","data":{"path":"output/experiments/en_spr_english_psychopy.py","rows":"NA","md5":"d97dd5d6e82afd877cf5c14612cc559d"}}
-{"time":"2026-07-03 08:07:54.153453","message":"wrote 'en_spr_english.osexp'","data":{"path":"output/experiments/en_spr_english.osexp","rows":"NA","md5":"6b1d4b9e0dd8bb335f200312f4a1fd02"}}
-{"time":"2026-07-03 08:07:54.162706","message":"wrote 'en_spr_english.html'","data":{"path":"output/experiments/en_spr_english.html","rows":"NA","md5":"2ae1e114de6f430304f18df93755636f"}}
-{"time":"2026-07-03 08:07:54.214632","message":"wrote 'en_spr_english_datasheet_R.json'","data":{"path":"output/reports/en_spr_english_datasheet_R.json","rows":"NA","md5":"79a7b07a31cd9fabc0cdb1bc1050e0a9"}}
-{"time":"2026-07-03 08:07:54.224689","message":"wrote 'en_spr_english_datasheet_R.md'","data":{"path":"output/reports/en_spr_english_datasheet_R.md","rows":"NA","md5":"bc4bf57b7754c6293c6d2e5ddd2b2080"}}
+{"time":"2026-07-03 10:37:00.514563","message":"loading items 'items/spr_sentences_en.csv'","data":null}
+{"time":"2026-07-03 10:37:00.531909","message":"loaded 10 items across 2 conditions","data":{"conditions":"grammatical, ungrammatical"}}
+{"time":"2026-07-03 10:37:00.553803","message":"wrote 'en_spr_english_stimuli_R.csv'","data":{"path":"output/stimuli/en_spr_english_stimuli_R.csv","rows":20,"md5":"b344b9f0d3fc7ce7354d370e0a1f7156"}}
+{"time":"2026-07-03 10:37:00.615582","message":"wrote 'en_spr_english_psychopy.py'","data":{"path":"output/experiments/en_spr_english_psychopy.py","rows":"NA","md5":"d97dd5d6e82afd877cf5c14612cc559d"}}
+{"time":"2026-07-03 10:37:00.62767","message":"wrote 'en_spr_english.osexp'","data":{"path":"output/experiments/en_spr_english.osexp","rows":"NA","md5":"6b1d4b9e0dd8bb335f200312f4a1fd02"}}
+{"time":"2026-07-03 10:37:00.640033","message":"wrote 'en_spr_english.html'","data":{"path":"output/experiments/en_spr_english.html","rows":"NA","md5":"2ae1e114de6f430304f18df93755636f"}}
+{"time":"2026-07-03 10:37:00.717465","message":"wrote 'en_spr_english_datasheet_R.json'","data":{"path":"output/reports/en_spr_english_datasheet_R.json","rows":"NA","md5":"79a7b07a31cd9fabc0cdb1bc1050e0a9"}}
+{"time":"2026-07-03 10:37:00.728835","message":"wrote 'en_spr_english_datasheet_R.md'","data":{"path":"output/reports/en_spr_english_datasheet_R.md","rows":"NA","md5":"bc4bf57b7754c6293c6d2e5ddd2b2080"}}

@@ -15,7 +15,7 @@
     },
     {
       "file": "output\\reports\\en_lexdec_english_comparisons_py.csv",
-      "sha256": "0c8974406f1c3458c5a51f0db726456bff89bc90796303af43a95f349b1734ab"
+      "sha256": "91da17964f4e52ba020e350da2aa34c8641b74ad5b112868e0df86d5d33067ca"
     },
     {
       "file": "output\\experiments\\en_lexdec_english_psychopy.py",
@@ -74,7 +74,8 @@
       "dimension": "length",
       "equivalent": true,
       "role": "controlled",
-      "tost_p": 0.0036
+      "tost_p": 0.0036,
+      "var_ratio": 1.0
     }
   ],
   "reproducibility": {

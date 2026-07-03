@@ -15,7 +15,7 @@
     },
     {
       "file": "output\\reports\\es_ndensity_spanish_comparisons_py.csv",
-      "sha256": "b2812a64cbfc0cdd9fb07edab791b8366e35658c97d00f4031d113bc2569a5f0"
+      "sha256": "8c93dbe716d6eba47b969a4fd5db1c500c045a2a460e5e0ac00978f7cee1a6be"
     },
     {
       "file": "output\\experiments\\es_ndensity_spanish_psychopy.py",
@@ -99,7 +99,8 @@
       "dimension": "length",
       "equivalent": true,
       "role": "controlled",
-      "tost_p": 0.0009
+      "tost_p": 0.0009,
+      "var_ratio": 1.0
     },
     {
       "ci_high": 0.262,
@@ -108,7 +109,8 @@
       "dimension": "frequency",
       "equivalent": true,
       "role": "controlled",
-      "tost_p": 0.0009
+      "tost_p": 0.0009,
+      "var_ratio": 1.0
     },
     {
       "ci_high": 2.389,
@@ -117,7 +119,8 @@
       "dimension": "n_density",
       "equivalent": false,
       "role": "manipulated/free",
-      "tost_p": 1.0
+      "tost_p": 1.0,
+      "var_ratio": 0.01
     },
     {
       "ci_high": -2.159,
@@ -126,7 +129,8 @@
       "dimension": "old20",
       "equivalent": false,
       "role": "manipulated/free",
-      "tost_p": 1.0
+      "tost_p": 1.0,
+      "var_ratio": 0.739
     }
   ],
   "reproducibility": {

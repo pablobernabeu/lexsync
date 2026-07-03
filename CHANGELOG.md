@@ -34,6 +34,11 @@ no function signature changes.
   assignment solver, so the R and Python engines select equivalent but not
   byte-identical materials; the datasheet records this per design (a new
   `cross_engine` field). Adds the `clue` package to the R Suggests.
+- Distributional balance diagnostic: the realised-control report and datasheet now
+  carry a **variance ratio** per dimension (condition variance / reference
+  variance) alongside Cohen's d and TOST, because two conditions can share a mean
+  yet differ in spread and still confound (Armstrong, Watson & Plaut, 2012; Austin,
+  2009).
 - `codemeta.json` (machine-readable software metadata) and this changelog.
 
 ### Changed
@@ -50,8 +55,6 @@ no function signature changes.
 Grounded in a review of the matching literature and competitor tools (LexOPS,
 Match, SOS, LIBRA, Wuggy):
 
-- **Distributional balance diagnostics** (e.g. variance ratio) in addition to
-  the mean-based Cohen's d and TOST already reported.
 - **Continuous (non-dichotomised) designs** with a regression/mixed-model
   template, following the controlled-subset critique (Liben-Nowell et al., 2019).
 - Richer pseudoword generation (Wuggy-style subsyllabic recombination; Keuleers &

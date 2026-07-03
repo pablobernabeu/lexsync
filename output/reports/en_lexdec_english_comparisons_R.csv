@@ -1,2 +1,2 @@
-condition,reference,dimension,cohens_d,d_ci_low,d_ci_high,tost_p,equivalent
-pseudoword,word,length,0,-0.303,0.303,0.0036,TRUE
+condition,reference,dimension,cohens_d,d_ci_low,d_ci_high,var_ratio,tost_p,equivalent
+pseudoword,word,length,0,-0.303,0.303,1,0.0036,TRUE

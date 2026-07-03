@@ -339,7 +339,8 @@ Finally, each design is accompanied by a *materials datasheet*, a machine-readab
 JSON record and a human-readable Markdown summary of its provenance. The record
 covers the corpus or item table and its checksum, the dimensions and how they were
 computed, the selection or matching method and its parameters, the realised control
-(the effect sizes, intervals and equivalence verdicts above), the counterbalancing
+(the effect sizes and their intervals, a variance-ratio check on the spread, and the
+equivalence verdicts), the counterbalancing
 recipe, and the seed, software versions and file checksums needed to reproduce the
 materials exactly. It records, in addition, the size of the candidate pool each
 condition was selected from, so that item selection is auditable rather than

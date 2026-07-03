@@ -7,6 +7,8 @@
 * Browser (jsPsych) experiments gain a welcome/instructions screen, per-row item
   metadata (condition, item id, list), and a completion screen that saves the
   collected data as a CSV download.
+* The realised-control report and datasheet gain a variance ratio per dimension,
+  a distributional balance check that complements Cohen's d and TOST.
 * Two new matching methods: `mahalanobis` (a covariance-aware distance that
   down-weights correlated dimensions) and `optimal` (a globally optimal assignment
   for two-condition designs, using the suggested `clue` package). Unlike the

@@ -82,6 +82,7 @@ build_datasheet <- function(design, schema, report, stimuli, source_path, artifa
         role = if (cmp$dimension[i] %in% controlled) "controlled" else "manipulated/free",
         cohens_d = .r4(cmp$cohens_d[i]),
         ci_low = .r4(cmp$d_ci_low[i]), ci_high = .r4(cmp$d_ci_high[i]),
+        var_ratio = .r4(cmp$var_ratio[i]),
         tost_p = .r4(cmp$tost_p[i]),
         equivalent = if (is.na(cmp$equivalent[i])) NULL else isTRUE(cmp$equivalent[i])
       )
@@ -248,13 +249,14 @@ render_datasheet_md <- function(ds) {
   }
   if (length(ds$realised_control)) {
     lines <- c(lines, "## Realised control", "",
-               "| Dimension | Role | Cohen's d | 90% CI | TOST p | Equivalent |",
-               "|---|---|---|---|---|---|")
+               "| Dimension | Role | Cohen's d | 90% CI | Var ratio | TOST p | Equivalent |",
+               "|---|---|---|---|---|---|---|")
     for (r in ds$realised_control) {
       ci <- if (!is.null(r$ci_low)) sprintf("[%.2f, %.2f]", r$ci_low, r$ci_high) else "--"
       dstr <- if (is.null(r$cohens_d)) "--" else sprintf("%.2f", r$cohens_d)
-      lines <- c(lines, sprintf("| %s | %s | %s | %s | %s | %s |", r$dimension, r$role,
-                                dstr, ci, r$tost_p %||% "--", r$equivalent %||% "--"))
+      vr <- if (is.null(r$var_ratio)) "--" else sprintf("%.2f", r$var_ratio)
+      lines <- c(lines, sprintf("| %s | %s | %s | %s | %s | %s | %s |", r$dimension, r$role,
+                                dstr, ci, vr, r$tost_p %||% "--", r$equivalent %||% "--"))
     }
     lines <- c(lines, "")
   }

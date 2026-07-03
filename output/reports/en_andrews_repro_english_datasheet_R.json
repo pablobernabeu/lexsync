@@ -89,6 +89,7 @@
       "cohens_d": -0.206,
       "ci_low": -0.77,
       "ci_high": 0.358,
+      "var_ratio": 0.575,
       "tost_p": 0.192,
       "equivalent": false
     },
@@ -98,6 +99,7 @@
       "cohens_d": -0.108,
       "ci_low": -0.672,
       "ci_high": 0.456,
+      "var_ratio": 1.072,
       "tost_p": 0.1238,
       "equivalent": false
     },
@@ -107,6 +109,7 @@
       "cohens_d": 3.19,
       "ci_low": 2.626,
       "ci_high": 3.754,
+      "var_ratio": 0.041,
       "tost_p": 1,
       "equivalent": false
     },
@@ -116,6 +119,7 @@
       "cohens_d": -5.756,
       "ci_low": -6.32,
       "ci_high": -5.192,
+      "var_ratio": 1.129,
       "tost_p": 1,
       "equivalent": false
     },
@@ -125,6 +129,7 @@
       "cohens_d": 0.099,
       "ci_low": -0.465,
       "ci_high": 0.663,
+      "var_ratio": 0.708,
       "tost_p": 0.1186,
       "equivalent": false
     },
@@ -134,6 +139,7 @@
       "cohens_d": 4.713,
       "ci_low": 4.15,
       "ci_high": 5.277,
+      "var_ratio": 0.503,
       "tost_p": 1,
       "equivalent": false
     },
@@ -143,6 +149,7 @@
       "cohens_d": 0.103,
       "ci_low": -0.461,
       "ci_high": 0.666,
+      "var_ratio": 0.641,
       "tost_p": 0.1208,
       "equivalent": false
     },
@@ -152,6 +159,7 @@
       "cohens_d": 0.104,
       "ci_low": -0.459,
       "ci_high": 0.668,
+      "var_ratio": 1.023,
       "tost_p": 0.1218,
       "equivalent": false
     },
@@ -161,6 +169,7 @@
       "cohens_d": 0.099,
       "ci_low": -0.465,
       "ci_high": 0.663,
+      "var_ratio": 0.708,
       "tost_p": 0.1186,
       "equivalent": false
     },
@@ -170,6 +179,7 @@
       "cohens_d": 5.185,
       "ci_low": 4.621,
       "ci_high": 5.748,
+      "var_ratio": 0.387,
       "tost_p": 1,
       "equivalent": false
     },
@@ -179,6 +189,7 @@
       "cohens_d": 3.289,
       "ci_low": 2.725,
       "ci_high": 3.852,
+      "var_ratio": 0.052,
       "tost_p": 1,
       "equivalent": false
     },
@@ -188,6 +199,7 @@
       "cohens_d": -5.914,
       "ci_low": -6.478,
       "ci_high": -5.351,
+      "var_ratio": 1.217,
       "tost_p": 1,
       "equivalent": false
     }
@@ -232,7 +244,7 @@
     },
     {
       "file": "output/reports/en_andrews_repro_english_comparisons_R.csv",
-      "sha256": "63a07803e7eef67a650c405c3d49173df8667a52aa59a196cf7befbd470b2309"
+      "sha256": "48a25773f75fbc0ed76e61fd7c0bab3e19de24314ea1e758180cf39f2e925782"
     },
     {
       "file": "output/experiments/en_andrews_repro_english_psychopy.py",

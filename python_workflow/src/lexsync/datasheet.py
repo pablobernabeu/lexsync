@@ -109,6 +109,7 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
                 "role": "controlled" if r["dimension"] in controlled else "manipulated/free",
                 "cohens_d": _num(r["cohens_d"]),
                 "ci_low": _num(r.get("d_ci_low")), "ci_high": _num(r.get("d_ci_high")),
+                "var_ratio": _num(r.get("var_ratio")),
                 "tost_p": _num(r.get("tost_p")), "equivalent": _bool(r.get("equivalent")),
             })
 
@@ -286,13 +287,14 @@ def render_datasheet_md(ds: dict) -> str:
                   "(Forster, 2000; Simmons et al., 2011).", ""]
     if ds["realised_control"]:
         lines += ["## Realised control", "",
-                  "| Dimension | Role | Cohen's d | 90% CI | TOST p | Equivalent |",
-                  "|---|---|---|---|---|---|"]
+                  "| Dimension | Role | Cohen's d | 90% CI | Var ratio | TOST p | Equivalent |",
+                  "|---|---|---|---|---|---|---|"]
         for r in ds["realised_control"]:
             ci = (f"[{r['ci_low']:.2f}, {r['ci_high']:.2f}]"
                   if r["ci_low"] is not None else "—")
             d_str = "—" if r["cohens_d"] is None else f"{r['cohens_d']:.2f}"
-            lines.append(f"| {r['dimension']} | {r['role']} | {d_str} | {ci} | "
+            vr = "—" if r.get("var_ratio") is None else f"{r['var_ratio']:.2f}"
+            lines.append(f"| {r['dimension']} | {r['role']} | {d_str} | {ci} | {vr} | "
                          f"{r['tost_p']} | {r['equivalent']} |")
         lines.append("")
     a = ds.get("analysis")

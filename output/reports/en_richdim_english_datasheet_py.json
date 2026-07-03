@@ -15,7 +15,7 @@
     },
     {
       "file": "output\\reports\\en_richdim_english_comparisons_py.csv",
-      "sha256": "c17b2c3149fb0087bf88bb44ac695fc11bb2f2916a021d46138ff36f265966af"
+      "sha256": "92ed3efdc133e2721db53fb432c769d90634861b7d632d39b9d9cbf64ff5a895"
     },
     {
       "file": "output\\experiments\\en_richdim_english_psychopy.py",
@@ -99,7 +99,8 @@
       "dimension": "length",
       "equivalent": true,
       "role": "controlled",
-      "tost_p": 0.0045
+      "tost_p": 0.0045,
+      "var_ratio": 0.935
     },
     {
       "ci_high": 5.875,
@@ -108,7 +109,8 @@
       "dimension": "frequency",
       "equivalent": false,
       "role": "manipulated/free",
-      "tost_p": 1.0
+      "tost_p": 1.0,
+      "var_ratio": 0.579
     },
     {
       "ci_high": 0.379,
@@ -117,7 +119,8 @@
       "dimension": "n_density",
       "equivalent": true,
       "role": "manipulated/free",
-      "tost_p": 0.011
+      "tost_p": 0.011,
+      "var_ratio": 0.723
     },
     {
       "ci_high": 0.381,
@@ -126,7 +129,8 @@
       "dimension": "old20",
       "equivalent": true,
       "role": "manipulated/free",
-      "tost_p": 0.0113
+      "tost_p": 0.0113,
+      "var_ratio": 0.404
     },
     {
       "ci_high": 0.477,
@@ -135,7 +139,8 @@
       "dimension": "n_syllables",
       "equivalent": true,
       "role": "controlled",
-      "tost_p": 0.0383
+      "tost_p": 0.0383,
+      "var_ratio": 0.585
     },
     {
       "ci_high": 0.312,
@@ -144,7 +149,8 @@
       "dimension": "bigram_freq",
       "equivalent": true,
       "role": "controlled",
-      "tost_p": 0.0041
+      "tost_p": 0.0041,
+      "var_ratio": 0.96
     }
   ],
   "reproducibility": {
