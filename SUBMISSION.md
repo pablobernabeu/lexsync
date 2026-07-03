@@ -41,8 +41,9 @@ DOI'd archive satisfies the availability requirement.
 - `R_workflow/DESCRIPTION`, `python_workflow/pyproject.toml`, `CITATION.cff`,
   `.zenodo.json`, `README.md`: real repository URL and ORCID.
 - Confirm **authorship**. The metadata currently lists a single author for a
-  tool that generalises a seven-author study (González Alonso et al., 2025);
-  decide the author/contributor list and the manuscript byline.
+  general-purpose tool; decide the author/contributor list and the manuscript
+  byline (one of the twelve reproduced designs is from a seven-author study,
+  González Alonso et al., 2025, so weigh any contribution from that work).
 
 ## CRAN pre-submission checklist (R package, `R_workflow/`)
 

@@ -12,6 +12,11 @@
 - **Items:** 24 rows across 2 conditions (related, unrelated)
 - **Seed:** 2026  |  **Versions:** engine python, lexsync 0.1.0, python 3.13.7, pandas 2.3.2, numpy 2.3.2, scipy 1.17.1
 
+## Suggested analysis
+
+- **Model:** `response ~ condition + (1 + condition | subject) + (1 + condition | item)` — where the response is the trial outcome (e.g. reaction time or accuracy).
+- Crossed random effects for subjects and items guard against the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). Begin with this maximal structure (Barr et al., 2013) and reduce it if the model does not converge (Matuschek et al., 2017); fit with lme4 in R or pymer4/statsmodels in Python.
+
 ## Methods paragraph
 
 12 items were drawn from an item table for a priming design (English). Materials were counterbalanced into 2 list(s) (a Latin-square rotation) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.0).
@@ -41,7 +46,8 @@
 - Stopping rule:
 
 ### Analysis plan
-- Statistical model:
+- Statistical model: response ~ condition + (1 + condition | subject) + (1 + condition | item)
+  (Crossed random effects for subjects and items guard against the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). Begin with this maximal structure (Barr et al., 2013) and reduce it if the model does not converge (Matuschek et al., 2017); fit with lme4 in R or pymer4/statsmodels in Python.)
 - Inference criteria:
 - Treatment of items (e.g. items as a random factor):
 

@@ -12,8 +12,14 @@ build_datasheet(
   source_path,
   artifacts,
   seed,
-  engine = "R"
+  engine = "R",
+  candidate_pool = NULL
 )
+}
+\arguments{
+\item{candidate_pool}{Optional list of per-condition candidate-pool sizes
+(\code{list(condition, n_candidates)}) recording how many items satisfied each
+condition's window before matching; reported for selection transparency.}
 }
 \description{
 Assemble the materials datasheet for one design

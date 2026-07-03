@@ -12,6 +12,11 @@
 - **Items:** 72 rows across 4 conditions (LF_largeN, HF_smallN, HF_largeN, LF_smallN)
 - **Seed:** 2026  |  **Versions:** engine R, lexsync 0.1.0, R 4.6.0, readr 2.2.0, stringdist 0.9.17, jsonlite 2.0.0, digest 0.6.39
 
+## Selection transparency
+
+- **Candidate pool** (items satisfying each condition's window before matching): HF_largeN: 251, HF_smallN: 258, LF_largeN: 1875, LF_smallN: 3462.
+- Selection is deterministic given the seed and blind to any outcome measure, so it is reproducible and free of item-selection bias (Forster, 2000; Simmons et al., 2011).
+
 ## Realised control
 
 | Dimension | Role | Cohen's d | 90% CI | TOST p | Equivalent |
@@ -29,9 +34,14 @@
 | n_density | manipulated/free | 3.29 | [2.73, 3.85] | 1 | FALSE |
 | old20 | manipulated/free | -5.91 | [-6.48, -5.35] | 1 | FALSE |
 
+## Suggested analysis
+
+- **Model:** `response ~ condition + (1 + condition | subject) + (1 | item)` -- where the response is the trial outcome (e.g. reaction time or accuracy).
+- Crossed random effects for subjects and items guard against the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). Begin with this maximal structure (Barr et al., 2013) and reduce it if the model does not converge (Matuschek et al., 2017); fit with lme4 in R or pymer4/statsmodels in Python.
+
 ## Methods paragraph
 
-18 items per condition were selected from the English lexicon (see corpora/ATTRIBUTION.md for corpus licence and citation) and matched item by item on length using lexsync's standardised_euclidean matcher. The realised control was close. The largest standardised difference on any matched dimension was 0.21 (90% CI [-0.77, 0.36]), within the 0.5-SD equivalence bound. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.0).
+18 items per condition were selected from the English lexicon (see corpora/ATTRIBUTION.md for corpus licence and citation) and matched item by item on length using lexsync's standardised_euclidean matcher. The realised control was close. The largest standardised difference on any matched dimension was 0.21 (90% CI [-0.77, 0.36]), within the 0.5-SD equivalence bound. The smallest condition was selected from 251 eligible candidates, and the selection was deterministic and blind to any outcome measure. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.0).
 
 ## Pre-registration template
 
@@ -51,14 +61,15 @@
 - Paradigm: factorial
 
 ### Materials (from the lexsync datasheet)
-18 items per condition were selected from the English lexicon (see corpora/ATTRIBUTION.md for corpus licence and citation) and matched item by item on length using lexsync's standardised_euclidean matcher. The realised control was close. The largest standardised difference on any matched dimension was 0.21 (90% CI [-0.77, 0.36]), within the 0.5-SD equivalence bound. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.0).
+18 items per condition were selected from the English lexicon (see corpora/ATTRIBUTION.md for corpus licence and citation) and matched item by item on length using lexsync's standardised_euclidean matcher. The realised control was close. The largest standardised difference on any matched dimension was 0.21 (90% CI [-0.77, 0.36]), within the 0.5-SD equivalence bound. The smallest condition was selected from 251 eligible candidates, and the selection was deterministic and blind to any outcome measure. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.0).
 
 ### Sampling plan
 - Sample size and justification:
 - Stopping rule:
 
 ### Analysis plan
-- Statistical model:
+- Statistical model: response ~ condition + (1 + condition | subject) + (1 | item)
+  (Crossed random effects for subjects and items guard against the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). Begin with this maximal structure (Barr et al., 2013) and reduce it if the model does not converge (Matuschek et al., 2017); fit with lme4 in R or pymer4/statsmodels in Python.)
 - Inference criteria:
 - Treatment of items (e.g. items as a random factor):
 

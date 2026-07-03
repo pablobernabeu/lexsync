@@ -1,0 +1,18 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "lexsync-shiny",
+      "runtimeExecutable": "Rscript",
+      "runtimeArgs": ["apps/r_shiny/run.R", "8502"],
+      "port": 8502
+    },
+    {
+      "name": "lexsync-streamlit",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "streamlit", "run", "apps/python_streamlit/lexsync_app.py",
+                      "--server.port", "8501", "--server.headless", "true"],
+      "port": 8501
+    }
+  ]
+}

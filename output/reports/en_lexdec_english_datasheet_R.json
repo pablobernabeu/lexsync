@@ -50,7 +50,18 @@
     "method": "constrained letter substitution (deterministic pseudowords)",
     "matched_on": [
       "length"
+    ],
+    "candidate_pool": [
+      {
+        "condition": "words in band",
+        "n_candidates": 8177
+      }
     ]
+  },
+  "analysis": {
+    "response": "the trial outcome (e.g. reaction time or accuracy)",
+    "suggested_model": "response ~ lexicality + (1 + lexicality | subject) + (1 | item)",
+    "note": "Crossed random effects for subjects and items guard against the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). Begin with this maximal structure (Barr et al., 2013) and reduce it if the model does not converge (Matuschek et al., 2017); fit with lme4 in R or pymer4/statsmodels in Python."
   },
   "realised_control": [
     {
@@ -113,7 +124,7 @@
     },
     {
       "file": "output/experiments/en_lexdec_english.html",
-      "sha256": "cd517be82dc31992d2cae01e578c8d2d8b2392d9537d2a67a75256fb253d2fd8"
+      "sha256": "1f5d2ca089d743c1a692924ddc9695b2e069f0ee4a6696fcbec8d10d80a969f9"
     }
   ]
 }

@@ -32,9 +32,9 @@ abstract: |
   published designs from the literature. The
   generation step
   requires no presentation software and no hardware, which keeps the whole
-  workflow reproducible. 'lexsync' generalises the FAIR artificial-grammar
-  workflow of an existing longitudinal study and is distributed under open
-  licences with a machine-readable corpus registry.
+  workflow reproducible. 'lexsync' is general-purpose and treats the stimulus set
+  as a reproducible artefact, distributed under open licences with a
+  machine-readable corpus registry.
 bibliography: references.bib
 csl: apa.csl
 format:
@@ -186,11 +186,11 @@ installable framework spans many-language corpus access, parallel
 multidimensional matching, counterbalancing and the automated generation of
 hardware-timed presentation scripts, and none does so across both the R and the
 Python ecosystems and both major open presentation platforms. A second, subtler
-gap concerns timing. In the artificial-grammar workflow that motivated this work
-[@gonzalezalonso2025l3], EEG markers were sent from an experiment item that
-followed the word, so that only the first marker was even approximately aligned
-with stimulus onset; the others were sequence-ordered. This is a common pattern
-and an avoidable source of jitter.
+gap concerns timing. In one longitudinal artificial-grammar EEG study, for
+instance [@gonzalezalonso2025l3], EEG markers were sent from an experiment item
+that followed the word, so that only the first marker was even approximately
+aligned with stimulus onset; the others were sequence-ordered. This is a common
+pattern and an avoidable source of jitter.
 
 We present 'lexsync', a toolkit that fills these gaps; both presentation targets time-lock the marker to stimulus onset (see below). It is released as two
 independent but structurally identical packages (a 'CRAN'-ready R package and a
@@ -204,9 +204,9 @@ The trial itself is not hard-wired to a single task: a design declares an ordere
 sequence of trial *events*, and both backends render that sequence, so the same
 machinery produces a factorial word study, a lexical-decision task with generated
 pseudowords, a primed design or a self-paced reading study from configuration
-rather than new code. 'lexsync' thus generalises the materials workflow of
-@gonzalezalonso2025l3, itself an artificial-grammar study, into a reusable,
-FAIR-compliant tool for many psycholinguistic paradigms.
+rather than new code. 'lexsync' is thus a reusable, FAIR-compliant tool for many
+psycholinguistic paradigms and languages, not a single study's script; the
+longitudinal study above is one of twelve worked examples it reproduces.
 
 # The lexsync packages
 
@@ -329,7 +329,11 @@ covers the corpus or item table and its checksum, the dimensions and how they we
 computed, the selection or matching method and its parameters, the realised control
 (the effect sizes, intervals and equivalence verdicts above), the counterbalancing
 recipe, and the seed, software versions and file checksums needed to reproduce the
-materials exactly. The datasheet also emits an auto-filled Methods paragraph and a
+materials exactly. It records, in addition, the size of the candidate pool each
+condition was selected from, so that item selection is auditable rather than
+opaque, and a suggested crossed mixed-model formula that treats items as a random
+factor [@clark1973language], with which it fills the pre-registration analysis
+plan. The datasheet also emits an auto-filled Methods paragraph and a
 pre-registration template with its Materials section completed. This is a direct
 response to the finding that experimental materials are rarely shared in a usable
 form [@bochynska2023reproducible; @roettger2019degrees]: the materials, the

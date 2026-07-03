@@ -58,7 +58,22 @@
       "frequency": 1,
       "n_density": 2,
       "old20": 2
-    }
+    },
+    "candidate_pool": [
+      {
+        "condition": "high_frequency",
+        "n_candidates": 466
+      },
+      {
+        "condition": "low_frequency",
+        "n_candidates": 4689
+      }
+    ]
+  },
+  "analysis": {
+    "response": "the trial outcome (e.g. reaction time or accuracy)",
+    "suggested_model": "response ~ condition + (1 + condition | subject) + (1 | item)",
+    "note": "Crossed random effects for subjects and items guard against the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). Begin with this maximal structure (Barr et al., 2013) and reduce it if the model does not converge (Matuschek et al., 2017); fit with lme4 in R or pymer4/statsmodels in Python."
   },
   "realised_control": [
     {
@@ -148,7 +163,7 @@
     },
     {
       "file": "output/experiments/es_freqcontrast_spanish.html",
-      "sha256": "be8fbf849e050c0992264a7b5b8f3236f5a0b304789c9812dde5d2344f495e57"
+      "sha256": "202cd0f10578de079bee1ee6be71ec252bff2ce7ae43cc1f32ad7dbd3d392e7f"
     }
   ]
 }

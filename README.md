@@ -23,8 +23,12 @@ word, pseudoword, paired and sentence stimuli. It ships as two structurally iden
 independently installable packages (a CRAN-ready R package and a PyPI-ready Python
 package), so a laboratory can adopt it in whichever ecosystem it already uses.
 
-`lexsync` generalises the FAIR artificial-grammar workflow of González Alonso et al.
-(2025) into a reusable tool.
+Beyond matching, `lexsync` treats the stimulus set as a reproducible research
+artefact. Every run is deterministic and seeded and selects byte-identical stimuli
+from either engine. Each run also ships a machine- and human-readable materials
+datasheet: its provenance, checksums, the realised control (effect size, confidence
+interval and equivalence test) and a pre-registration skeleton. A design can
+therefore be shared and reproduced rather than only described in prose.
 
 ## Why lexsync
 
@@ -104,7 +108,11 @@ through a single dependency. English, Spanish and Mandarin Chinese are bundled a
 demonstrated end to end (the last a logographic-script example, showing that the
 matching and script generation are not limited to alphabetic writing). Further
 languages are fetched on demand into a user cache. Every corpus is cited, with its
-licence and retrieval date, in `corpora/ATTRIBUTION.md`.
+licence and retrieval date, in `corpora/ATTRIBUTION.md`. The bundled corpora are a
+fixed, checksummed snapshot, so the demonstrations reproduce with no download;
+'wordfreq' itself was frozen in 2024 (a stable snapshot of usage through roughly
+2021), which makes fetched corpora reproducible rather than drifting under a live
+source.
 
 ## Extending lexsync
 
@@ -128,6 +136,17 @@ the latter including a mock-'PsychoPy' harness that checks the onset trigger is
 flip-locked, a structural validator for the generated 'OpenSesame' experiment and
 an R-versus-Python parity test. GitHub Actions run `R CMD check` on Ubuntu, macOS
 and Windows (R release and development) and the Python tests on Python 3.10–3.13.
+
+## Roadmap
+
+lexsync sits within a mature ecosystem of stimulus tools (LexOPS, Match, SOS and
+LIBRA for matching; Wuggy for pseudowords). Planned extensions (tracked in
+`CHANGELOG.md`) include a covariance-aware (Mahalanobis)
+matching option for correlated dimensions (Rubin, 1980; Stuart, 2010), optimal
+(assignment) matching alongside the current greedy selection, distributional
+balance diagnostics, and continuous-design support with a regression template
+(Liben-Nowell et al., 2019). The cross-engine byte-identical guarantee is a hard
+constraint on which algorithms can be adopted.
 
 ## Licensing and citation
 

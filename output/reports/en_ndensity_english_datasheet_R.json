@@ -57,7 +57,22 @@
       "frequency": 1,
       "n_density": 2,
       "old20": 2
-    }
+    },
+    "candidate_pool": [
+      {
+        "condition": "dense_neighbourhood",
+        "n_candidates": 1821
+      },
+      {
+        "condition": "sparse_neighbourhood",
+        "n_candidates": 1528
+      }
+    ]
+  },
+  "analysis": {
+    "response": "the trial outcome (e.g. reaction time or accuracy)",
+    "suggested_model": "response ~ condition + (1 + condition | subject) + (1 | item)",
+    "note": "Crossed random effects for subjects and items guard against the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). Begin with this maximal structure (Barr et al., 2013) and reduce it if the model does not converge (Matuschek et al., 2017); fit with lme4 in R or pymer4/statsmodels in Python."
   },
   "realised_control": [
     {
@@ -147,7 +162,7 @@
     },
     {
       "file": "output/experiments/en_ndensity_english.html",
-      "sha256": "5ef7836102083415c731490ee0ee3debba5cba1f376ee5cfc00f992d250ceff8"
+      "sha256": "b1a41a79af25505b9ef4ff82d283914c7e2e5ec1074a1cbc132456e6769fc590"
     }
   ]
 }

@@ -1,0 +1,57 @@
+{
+  "@context": "https://doi.org/10.5063/schema/codemeta-2.0",
+  "@type": "SoftwareSourceCode",
+  "identifier": "lexsync",
+  "name": "lexsync: multidimensional lexical optimisation and hardware-timed experiment generation",
+  "description": "A cross-platform, dual-language (R and Python) toolkit that unifies many-language lexical-corpus access, parallel multidimensional stimulus matching, counterbalancing, item resampling, deterministic pseudoword generation and the automated generation of hardware-timed PsychoPy, OpenSesame and jsPsych experiment scripts. The R and Python engines select byte-identical stimuli, and every run ships a machine- and human-readable materials datasheet (provenance, checksums, realised control).",
+  "applicationCategory": "Psycholinguistics",
+  "codeRepository": "https://github.com/pablobernabeu/lexsync",
+  "programmingLanguage": [
+    "R",
+    "Python"
+  ],
+  "runtimePlatform": [
+    "R",
+    "Python 3"
+  ],
+  "license": "https://spdx.org/licenses/MIT.html",
+  "version": "0.1.0",
+  "softwareVersion": "0.1.0",
+  "developmentStatus": "active",
+  "dateCreated": "2026-06-07",
+  "dateModified": "2026-07-03",
+  "keywords": [
+    "psycholinguistics",
+    "lexical statistics",
+    "stimulus matching",
+    "counterbalancing",
+    "pseudoword generation",
+    "EEG",
+    "ERP",
+    "PsychoPy",
+    "OpenSesame",
+    "jsPsych",
+    "FAIR",
+    "reproducibility"
+  ],
+  "author": [
+    {
+      "@type": "Person",
+      "givenName": "Pablo",
+      "familyName": "Bernabeu",
+      "@id": "https://orcid.org/0000-0003-1083-2460"
+    }
+  ],
+  "maintainer": [
+    {
+      "@type": "Person",
+      "givenName": "Pablo",
+      "familyName": "Bernabeu",
+      "@id": "https://orcid.org/0000-0003-1083-2460"
+    }
+  ],
+  "citation": "See CITATION.cff. A manuscript describing lexsync is in preparation.",
+  "readme": "https://github.com/pablobernabeu/lexsync/blob/main/README.md",
+  "issueTracker": "https://github.com/pablobernabeu/lexsync/issues",
+  "referencePublication": "Manuscript in preparation."
+}

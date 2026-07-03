@@ -29,7 +29,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-corpora = ["wordfreq>=3.0"]
+corpora = ["wordfreq>=3.0,<4"]   # frozen 3.x line: a stable ~2021 language snapshot
 analysis = ["matplotlib>=3.6"]
 experiment = ["psychopy", "pyserial"]
 dev = ["pytest>=7.0", "build", "twine"]

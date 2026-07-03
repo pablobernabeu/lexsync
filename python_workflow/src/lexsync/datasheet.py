@@ -43,9 +43,45 @@ def _controlled(design: dict, source: str) -> list:
     return []
 
 
+def _analysis(design: dict, source: str) -> dict:
+    """A suggested crossed mixed-model formula for the design.
+
+    Handing the user an items-crossed model guards against the
+    language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008): items are
+    a random sample of the language, so an analysis that treats them as fixed
+    over-generalises. The manipulated factor is within subjects (each participant
+    sees every condition) and, for corpus/lexical-decision designs, between items
+    (each item belongs to one condition), so items take a random intercept; in the
+    counterbalanced table paradigms the factor is within items too, so items also
+    take a random slope.
+    """
+    paradigm = design.get("paradigm", "factorial")
+    if source == "generate" or paradigm == "lexical_decision":
+        factor, item_re = "lexicality", "(1 | item)"
+    elif paradigm in ("priming", "self_paced_reading"):
+        factor, item_re = "condition", "(1 + condition | item)"
+    else:
+        factor, item_re = "condition", "(1 | item)"
+    return {
+        "response": "the trial outcome (e.g. reaction time or accuracy)",
+        "suggested_model": f"response ~ {factor} + (1 + {factor} | subject) + {item_re}",
+        "note": ("Crossed random effects for subjects and items guard against the "
+                 "language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). "
+                 "Begin with this maximal structure (Barr et al., 2013) and reduce it "
+                 "if the model does not converge (Matuschek et al., 2017); fit with "
+                 "lme4 in R or pymer4/statsmodels in Python."),
+    }
+
+
 def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
-                    seed, engine="python") -> dict:
-    """Assemble the datasheet dictionary from the pipeline's objects."""
+                    seed, engine="python", candidate_pool=None) -> dict:
+    """Assemble the datasheet dictionary from the pipeline's objects.
+
+    ``candidate_pool`` (optional) is a list of ``{"condition", "n_candidates"}``
+    recording how many items satisfied each condition's window before matching --
+    the size of the discretionary pool the selection drew from, reported so that
+    item-selection bias is auditable (Forster, 2000; Simmons et al., 2011).
+    """
     source = (design.get("items") or {}).get("source", "corpus")
     controlled = _controlled(design, source)
     conditions = list(dict.fromkeys(stimuli["condition"]))
@@ -72,6 +108,8 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
                      "matched_on": ["length"]}
     else:
         selection = {"method": "item table (user-supplied)"}
+    if candidate_pool is not None and source in ("corpus", "generate"):
+        selection["candidate_pool"] = candidate_pool
 
     dims = {d: schema["dimensions"][d] for d in schema.get("dimensions", {})
             if d in controlled or source == "corpus"}
@@ -91,6 +129,7 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
         },
         "dimensions": dims,
         "selection": selection,
+        "analysis": _analysis(design, source),
         "realised_control": realised,
         "counterbalancing": {
             "recipe": "latin_square_target" if source == "table" else "factorial",
@@ -166,7 +205,15 @@ def methods_paragraph(ds: dict) -> str:
             f"selection is deterministic and reproducible (seed "
             f"{ds['reproducibility']['seed']}; lexsync "
             f"{ds['reproducibility']['versions']['lexsync']}).")
-    return lead + control + tail
+    cp = (ds.get("selection") or {}).get("candidate_pool")
+    pool_note = ""
+    if cp:
+        sizes = [c["n_candidates"] for c in cp if c.get("n_candidates") is not None]
+        if sizes:
+            pool_note = (f". The smallest condition was selected from {min(sizes)} "
+                         "eligible candidates, and the selection was deterministic and "
+                         "blind to any outcome measure")
+    return lead + control + pool_note + tail
 
 
 def prereg_template(ds: dict) -> str:
@@ -180,7 +227,9 @@ def prereg_template(ds: dict) -> str:
         f"- Paradigm: {ds['design']['paradigm']}\n\n"
         "### Materials (from the lexsync datasheet)\n" + methods_paragraph(ds) + "\n\n"
         "### Sampling plan\n- Sample size and justification:\n- Stopping rule:\n\n"
-        "### Analysis plan\n- Statistical model:\n- Inference criteria:\n"
+        "### Analysis plan\n- Statistical model: "
+        + ds["analysis"]["suggested_model"] + "\n  (" + ds["analysis"]["note"] + ")\n"
+        "- Inference criteria:\n"
         "- Treatment of items (e.g. items as a random factor):\n"
     )
 
@@ -203,6 +252,16 @@ def render_datasheet_md(ds: dict) -> str:
              f"({', '.join(ds['items']['conditions'])})",
              f"- **Seed:** {ds['reproducibility']['seed']}  |  **Versions:** "
              + ", ".join(f"{k} {v}" for k, v in ds["reproducibility"]["versions"].items()), ""]
+    cp = (ds.get("selection") or {}).get("candidate_pool")
+    if cp:
+        parts = ", ".join(f"{c['condition']}: {c['n_candidates']}" for c in cp
+                          if "condition" in c and "n_candidates" in c)
+        lines += ["## Selection transparency", "",
+                  "- **Candidate pool** (items satisfying each condition's window before "
+                  f"matching): {parts}.",
+                  "- Selection is deterministic given the seed and blind to any outcome "
+                  "measure, so it is reproducible and free of item-selection bias "
+                  "(Forster, 2000; Simmons et al., 2011).", ""]
     if ds["realised_control"]:
         lines += ["## Realised control", "",
                   "| Dimension | Role | Cohen's d | 90% CI | TOST p | Equivalent |",
@@ -214,6 +273,12 @@ def render_datasheet_md(ds: dict) -> str:
             lines.append(f"| {r['dimension']} | {r['role']} | {d_str} | {ci} | "
                          f"{r['tost_p']} | {r['equivalent']} |")
         lines.append("")
+    a = ds.get("analysis")
+    if a:
+        lines += ["## Suggested analysis", "",
+                  f"- **Model:** `{a['suggested_model']}` — where the response is "
+                  f"{a['response']}.",
+                  f"- {a['note']}", ""]
     lines += ["## Methods paragraph", "", methods_paragraph(ds), "", prereg_template(ds)]
     return "\n".join(lines)
 

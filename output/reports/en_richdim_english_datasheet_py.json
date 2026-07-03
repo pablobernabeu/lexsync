@@ -1,4 +1,9 @@
 {
+  "analysis": {
+    "note": "Crossed random effects for subjects and items guard against the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). Begin with this maximal structure (Barr et al., 2013) and reduce it if the model does not converge (Matuschek et al., 2017); fit with lme4 in R or pymer4/statsmodels in Python.",
+    "response": "the trial outcome (e.g. reaction time or accuracy)",
+    "suggested_model": "response ~ condition + (1 + condition | subject) + (1 | item)"
+  },
   "artifacts": [
     {
       "file": "output\\stimuli\\en_richdim_english_stimuli_py.csv",
@@ -22,7 +27,7 @@
     },
     {
       "file": "output\\experiments\\en_richdim_english.html",
-      "sha256": "3c3064f9a6af7228ca536cd607fd7ed9c7ede908a9c053f7591d1920c8e75781"
+      "sha256": "79712f8871772589c783c015957e5ba2b19e13f46b6443837f06cc0b3f54f1a7"
     }
   ],
   "counterbalancing": {
@@ -155,6 +160,16 @@
   },
   "resampling": null,
   "selection": {
+    "candidate_pool": [
+      {
+        "condition": "high_frequency",
+        "n_candidates": 462
+      },
+      {
+        "condition": "low_frequency",
+        "n_candidates": 7479
+      }
+    ],
     "match_on": [
       "length",
       "n_syllables",

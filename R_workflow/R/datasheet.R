@@ -27,10 +27,37 @@ DATASHEET_VERSION <- "1.0"
 
 .r4 <- function(v) if (is.null(v) || is.na(v)) NULL else round(as.numeric(v), 4)
 
+# A suggested crossed mixed-model formula for the design. Handing the user an
+# items-crossed model guards against the language-as-fixed-effect fallacy
+# (Clark, 1973; Baayen et al., 2008): items are a random sample of the language,
+# so an analysis that treats them as fixed over-generalises. Mirrors datasheet.py.
+.analysis_R <- function(design, source) {
+  paradigm <- design$paradigm %||% "factorial"
+  if (identical(source, "generate") || identical(paradigm, "lexical_decision")) {
+    factor <- "lexicality"; item_re <- "(1 | item)"
+  } else if (paradigm %in% c("priming", "self_paced_reading")) {
+    factor <- "condition"; item_re <- "(1 + condition | item)"
+  } else {
+    factor <- "condition"; item_re <- "(1 | item)"
+  }
+  list(
+    response = "the trial outcome (e.g. reaction time or accuracy)",
+    suggested_model = sprintf("response ~ %s + (1 + %s | subject) + %s", factor, factor, item_re),
+    note = paste0("Crossed random effects for subjects and items guard against the ",
+                  "language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). ",
+                  "Begin with this maximal structure (Barr et al., 2013) and reduce it ",
+                  "if the model does not converge (Matuschek et al., 2017); fit with ",
+                  "lme4 in R or pymer4/statsmodels in Python.")
+  )
+}
+
 #' Assemble the materials datasheet for one design
+#' @param candidate_pool Optional list of per-condition candidate-pool sizes
+#'   (`list(condition, n_candidates)`) recording how many items satisfied each
+#'   condition's window before matching; reported for selection transparency.
 #' @keywords internal
 build_datasheet <- function(design, schema, report, stimuli, source_path, artifacts,
-                            seed, engine = "R") {
+                            seed, engine = "R", candidate_pool = NULL) {
   source <- design$items$source %||% "corpus"
   controlled <- .controlled_dims(design, source)
   conditions <- unique(as.character(stimuli$condition))
@@ -59,6 +86,8 @@ build_datasheet <- function(design, schema, report, stimuli, source_path, artifa
   } else {
     list(method = "item table (user-supplied)")
   }
+  if (!is.null(candidate_pool) && source %in% c("corpus", "generate"))
+    selection$candidate_pool <- candidate_pool
 
   list(
     lexsync_datasheet_version = DATASHEET_VERSION,
@@ -73,6 +102,7 @@ build_datasheet <- function(design, schema, report, stimuli, source_path, artifa
       else "user-supplied item table"),
     dimensions = schema$dimensions,
     selection = selection,
+    analysis = .analysis_R(design, source),
     realised_control = realised,
     counterbalancing = list(
       recipe = if (identical(source, "table")) "latin_square_target" else "factorial",
@@ -134,7 +164,18 @@ methods_paragraph <- function(ds) {
                          "PsychoPy, OpenSesame and jsPsych. The selection is deterministic and ",
                          "reproducible (seed %s; lexsync %s)."),
                   cb$lists, recipe_label, ds$reproducibility$seed, ds$reproducibility$versions$lexsync)
-  paste0(lead, control, tail)
+  cp <- ds$selection$candidate_pool
+  pool_note <- ""
+  if (!is.null(cp) && length(cp)) {
+    sizes <- vapply(cp, function(x) if (is.null(x$n_candidates)) NA_real_ else as.numeric(x$n_candidates),
+                    numeric(1))
+    sizes <- sizes[!is.na(sizes)]
+    if (length(sizes))
+      pool_note <- sprintf(paste0(". The smallest condition was selected from %d eligible ",
+                                  "candidates, and the selection was deterministic and blind ",
+                                  "to any outcome measure"), as.integer(min(sizes)))
+  }
+  paste0(lead, control, pool_note, tail)
 }
 
 #' @keywords internal
@@ -149,7 +190,9 @@ prereg_template <- function(ds) {
     sprintf("- Paradigm: %s\n\n", ds$design$paradigm),
     "### Materials (from the lexsync datasheet)\n", methods_paragraph(ds), "\n\n",
     "### Sampling plan\n- Sample size and justification:\n- Stopping rule:\n\n",
-    "### Analysis plan\n- Statistical model:\n- Inference criteria:\n",
+    sprintf("### Analysis plan\n- Statistical model: %s\n  (%s)\n",
+            ds$analysis$suggested_model, ds$analysis$note),
+    "- Inference criteria:\n",
     "- Treatment of items (e.g. items as a random factor):\n")
 }
 
@@ -174,6 +217,17 @@ render_datasheet_md <- function(ds) {
     sprintf("- **Items:** %s rows across %s conditions (%s)", ds$items$n_total,
             ds$items$n_conditions, paste(unlist(ds$items$conditions), collapse = ", ")),
     sprintf("- **Seed:** %s  |  **Versions:** %s", ds$reproducibility$seed, versions), "")
+  cp <- ds$selection$candidate_pool
+  if (!is.null(cp) && length(cp)) {
+    parts <- paste(vapply(cp, function(x) sprintf("%s: %s", x$condition, x$n_candidates),
+                          character(1)), collapse = ", ")
+    lines <- c(lines, "## Selection transparency", "",
+               sprintf(paste0("- **Candidate pool** (items satisfying each condition's window ",
+                              "before matching): %s."), parts),
+               paste0("- Selection is deterministic given the seed and blind to any outcome ",
+                      "measure, so it is reproducible and free of item-selection bias ",
+                      "(Forster, 2000; Simmons et al., 2011)."), "")
+  }
   if (length(ds$realised_control)) {
     lines <- c(lines, "## Realised control", "",
                "| Dimension | Role | Cohen's d | 90% CI | TOST p | Equivalent |",
@@ -185,6 +239,12 @@ render_datasheet_md <- function(ds) {
                                 dstr, ci, r$tost_p %||% "--", r$equivalent %||% "--"))
     }
     lines <- c(lines, "")
+  }
+  a <- ds$analysis
+  if (!is.null(a)) {
+    lines <- c(lines, "## Suggested analysis", "",
+               sprintf("- **Model:** `%s` -- where the response is %s.", a$suggested_model, a$response),
+               paste0("- ", a$note), "")
   }
   lines <- c(lines, "## Methods paragraph", "", methods_paragraph(ds), "", prereg_template(ds))
   paste(lines, collapse = "\n")

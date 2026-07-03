@@ -1,24 +1,24 @@
-{"time": "2026-06-24T09:01:37", "message": "loading lexicon 'corpora/derived/en.csv'", "data": null}
-{"time": "2026-06-24T09:01:37", "message": "lexicon loaded: 30000 words", "data": {"words": 30000}}
-{"time": "2026-06-24T09:01:37", "message": "pool after filters: 7960 words", "data": {"pool": 7960}}
-{"time": "2026-06-24T09:01:37", "message": "matched 72 items across 4 conditions", "data": {"conditions": "HF_largeN, HF_smallN, LF_largeN, LF_smallN"}}
-{"time": "2026-06-24T09:01:37", "message": "equivalence HF_smallN vs HF_largeN on 'length': d = -0.21 [-0.77, 0.36], TOST p = 0.192 (not shown equivalent)", "data": null}
-{"time": "2026-06-24T09:01:37", "message": "equivalence HF_smallN vs HF_largeN on 'frequency': d = -0.11 [-0.67, 0.46], TOST p = 0.1238 (not shown equivalent)", "data": null}
-{"time": "2026-06-24T09:01:37", "message": "equivalence HF_smallN vs HF_largeN on 'n_density': d = 3.19 [2.63, 3.75], TOST p = 1.0 (not shown equivalent)", "data": null}
-{"time": "2026-06-24T09:01:37", "message": "equivalence HF_smallN vs HF_largeN on 'old20': d = -5.76 [-6.32, -5.19], TOST p = 1.0 (not shown equivalent)", "data": null}
-{"time": "2026-06-24T09:01:37", "message": "equivalence LF_largeN vs HF_largeN on 'length': d = 0.10 [-0.47, 0.66], TOST p = 0.1186 (not shown equivalent)", "data": null}
-{"time": "2026-06-24T09:01:37", "message": "equivalence LF_largeN vs HF_largeN on 'frequency': d = 4.71 [4.15, 5.28], TOST p = 1.0 (not shown equivalent)", "data": null}
-{"time": "2026-06-24T09:01:37", "message": "equivalence LF_largeN vs HF_largeN on 'n_density': d = 0.10 [-0.46, 0.67], TOST p = 0.1208 (not shown equivalent)", "data": null}
-{"time": "2026-06-24T09:01:37", "message": "equivalence LF_largeN vs HF_largeN on 'old20': d = 0.10 [-0.46, 0.67], TOST p = 0.1218 (not shown equivalent)", "data": null}
-{"time": "2026-06-24T09:01:37", "message": "equivalence LF_smallN vs HF_largeN on 'length': d = 0.10 [-0.47, 0.66], TOST p = 0.1186 (not shown equivalent)", "data": null}
-{"time": "2026-06-24T09:01:37", "message": "equivalence LF_smallN vs HF_largeN on 'frequency': d = 5.18 [4.62, 5.75], TOST p = 1.0 (not shown equivalent)", "data": null}
-{"time": "2026-06-24T09:01:37", "message": "equivalence LF_smallN vs HF_largeN on 'n_density': d = 3.29 [2.73, 3.85], TOST p = 1.0 (not shown equivalent)", "data": null}
-{"time": "2026-06-24T09:01:37", "message": "equivalence LF_smallN vs HF_largeN on 'old20': d = -5.91 [-6.48, -5.35], TOST p = 1.0 (not shown equivalent)", "data": null}
-{"time": "2026-06-24T09:01:37", "message": "wrote 'en_andrews_repro_english_stimuli_py.csv'", "data": {"path": "output\\stimuli\\en_andrews_repro_english_stimuli_py.csv", "rows": 72, "md5": "fdeabeedd9f42f75fd3e073309222f08"}}
-{"time": "2026-06-24T09:01:37", "message": "wrote 'en_andrews_repro_english_descriptives_py.csv'", "data": {"path": "output\\reports\\en_andrews_repro_english_descriptives_py.csv", "rows": 16, "md5": "727dcfa052cdbbb4e5cc3a9abe6d9449"}}
-{"time": "2026-06-24T09:01:37", "message": "wrote 'en_andrews_repro_english_comparisons_py.csv'", "data": {"path": "output\\reports\\en_andrews_repro_english_comparisons_py.csv", "rows": 12, "md5": "b878d151ff18e059ac5cc2dd18bb9dcf"}}
-{"time": "2026-06-24T09:01:37", "message": "wrote 'en_andrews_repro_english_psychopy.py'", "data": {"path": "output\\experiments\\en_andrews_repro_english_psychopy.py", "rows": null, "md5": "eba0de79b5e2abbdb6f95eb65550816f"}}
-{"time": "2026-06-24T09:01:37", "message": "wrote 'en_andrews_repro_english.osexp'", "data": {"path": "output\\experiments\\en_andrews_repro_english.osexp", "rows": null, "md5": "5719ab9207e280638f2b39f4b8d43a71"}}
-{"time": "2026-06-24T09:01:37", "message": "wrote 'en_andrews_repro_english.html'", "data": {"path": "output\\experiments\\en_andrews_repro_english.html", "rows": null, "md5": "6823ddb3aefa37e7c07df6849176ba02"}}
-{"time": "2026-06-24T09:01:37", "message": "wrote 'en_andrews_repro_english_datasheet_py.json'", "data": {"path": "output\\reports\\en_andrews_repro_english_datasheet_py.json", "rows": null, "md5": "ceafd12edc5afb449f66ea6cbc025908"}}
-{"time": "2026-06-24T09:01:37", "message": "wrote 'en_andrews_repro_english_datasheet_py.md'", "data": {"path": "output\\reports\\en_andrews_repro_english_datasheet_py.md", "rows": null, "md5": "587deb46237d9a1da5697b1fb133930f"}}
+{"time": "2026-07-03T00:10:13", "message": "loading lexicon 'corpora/derived/en.csv'", "data": null}
+{"time": "2026-07-03T00:10:13", "message": "lexicon loaded: 30000 words", "data": {"words": 30000}}
+{"time": "2026-07-03T00:10:13", "message": "pool after filters: 7960 words", "data": {"pool": 7960}}
+{"time": "2026-07-03T00:10:13", "message": "matched 72 items across 4 conditions", "data": {"conditions": "HF_largeN, HF_smallN, LF_largeN, LF_smallN"}}
+{"time": "2026-07-03T00:10:13", "message": "equivalence HF_smallN vs HF_largeN on 'length': d = -0.21 [-0.77, 0.36], TOST p = 0.192 (not shown equivalent)", "data": null}
+{"time": "2026-07-03T00:10:13", "message": "equivalence HF_smallN vs HF_largeN on 'frequency': d = -0.11 [-0.67, 0.46], TOST p = 0.1238 (not shown equivalent)", "data": null}
+{"time": "2026-07-03T00:10:13", "message": "equivalence HF_smallN vs HF_largeN on 'n_density': d = 3.19 [2.63, 3.75], TOST p = 1.0 (not shown equivalent)", "data": null}
+{"time": "2026-07-03T00:10:13", "message": "equivalence HF_smallN vs HF_largeN on 'old20': d = -5.76 [-6.32, -5.19], TOST p = 1.0 (not shown equivalent)", "data": null}
+{"time": "2026-07-03T00:10:13", "message": "equivalence LF_largeN vs HF_largeN on 'length': d = 0.10 [-0.47, 0.66], TOST p = 0.1186 (not shown equivalent)", "data": null}
+{"time": "2026-07-03T00:10:13", "message": "equivalence LF_largeN vs HF_largeN on 'frequency': d = 4.71 [4.15, 5.28], TOST p = 1.0 (not shown equivalent)", "data": null}
+{"time": "2026-07-03T00:10:13", "message": "equivalence LF_largeN vs HF_largeN on 'n_density': d = 0.10 [-0.46, 0.67], TOST p = 0.1208 (not shown equivalent)", "data": null}
+{"time": "2026-07-03T00:10:13", "message": "equivalence LF_largeN vs HF_largeN on 'old20': d = 0.10 [-0.46, 0.67], TOST p = 0.1218 (not shown equivalent)", "data": null}
+{"time": "2026-07-03T00:10:13", "message": "equivalence LF_smallN vs HF_largeN on 'length': d = 0.10 [-0.47, 0.66], TOST p = 0.1186 (not shown equivalent)", "data": null}
+{"time": "2026-07-03T00:10:13", "message": "equivalence LF_smallN vs HF_largeN on 'frequency': d = 5.18 [4.62, 5.75], TOST p = 1.0 (not shown equivalent)", "data": null}
+{"time": "2026-07-03T00:10:13", "message": "equivalence LF_smallN vs HF_largeN on 'n_density': d = 3.29 [2.73, 3.85], TOST p = 1.0 (not shown equivalent)", "data": null}
+{"time": "2026-07-03T00:10:13", "message": "equivalence LF_smallN vs HF_largeN on 'old20': d = -5.91 [-6.48, -5.35], TOST p = 1.0 (not shown equivalent)", "data": null}
+{"time": "2026-07-03T00:10:13", "message": "wrote 'en_andrews_repro_english_stimuli_py.csv'", "data": {"path": "output\\stimuli\\en_andrews_repro_english_stimuli_py.csv", "rows": 72, "md5": "fdeabeedd9f42f75fd3e073309222f08"}}
+{"time": "2026-07-03T00:10:13", "message": "wrote 'en_andrews_repro_english_descriptives_py.csv'", "data": {"path": "output\\reports\\en_andrews_repro_english_descriptives_py.csv", "rows": 16, "md5": "727dcfa052cdbbb4e5cc3a9abe6d9449"}}
+{"time": "2026-07-03T00:10:13", "message": "wrote 'en_andrews_repro_english_comparisons_py.csv'", "data": {"path": "output\\reports\\en_andrews_repro_english_comparisons_py.csv", "rows": 12, "md5": "b878d151ff18e059ac5cc2dd18bb9dcf"}}
+{"time": "2026-07-03T00:10:13", "message": "wrote 'en_andrews_repro_english_psychopy.py'", "data": {"path": "output\\experiments\\en_andrews_repro_english_psychopy.py", "rows": null, "md5": "eba0de79b5e2abbdb6f95eb65550816f"}}
+{"time": "2026-07-03T00:10:13", "message": "wrote 'en_andrews_repro_english.osexp'", "data": {"path": "output\\experiments\\en_andrews_repro_english.osexp", "rows": null, "md5": "5719ab9207e280638f2b39f4b8d43a71"}}
+{"time": "2026-07-03T00:10:13", "message": "wrote 'en_andrews_repro_english.html'", "data": {"path": "output\\experiments\\en_andrews_repro_english.html", "rows": null, "md5": "6f77dd964e03061cd20b7be20b90e02e"}}
+{"time": "2026-07-03T00:10:13", "message": "wrote 'en_andrews_repro_english_datasheet_py.json'", "data": {"path": "output\\reports\\en_andrews_repro_english_datasheet_py.json", "rows": null, "md5": "95bedb8dd706f55761edff17fcec4bc7"}}
+{"time": "2026-07-03T00:10:13", "message": "wrote 'en_andrews_repro_english_datasheet_py.md'", "data": {"path": "output\\reports\\en_andrews_repro_english_datasheet_py.md", "rows": null, "md5": "fba2142edcdb01d726243e61fcd56ce0"}}

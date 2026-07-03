@@ -127,8 +127,15 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
     source_path = items_cfg.get("path") or items_cfg.get("lexicon") or design.get("lexicon")
     artifacts = {"stimuli": stim_path, "descriptives": desc_path,
                  "comparisons": comp_path, "experiments": exps}
+    candidate_pool = None
+    if source == "corpus":
+        candidate_pool = [{"condition": c["name"],
+                           "n_candidates": int(len(build_pool(pool, c["define_by"])))}
+                          for c in (design.get("conditions") or [])]
+    elif source == "generate":
+        candidate_pool = [{"condition": "words in band", "n_candidates": int(len(pool))}]
     ds = build_datasheet(design, schema, report, stim, source_path, artifacts,
-                         schema.get("seed"), engine="python")
+                         schema.get("seed"), engine="python", candidate_pool=candidate_pool)
     ds_json = os.path.join(outdir, "reports", f"{base}_datasheet_py.json")
     ds_md = os.path.join(outdir, "reports", f"{base}_datasheet_py.md")
     write_datasheet(ds, ds_json, ds_md)

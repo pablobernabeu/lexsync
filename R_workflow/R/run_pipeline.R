@@ -122,8 +122,15 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
   source_path <- items_cfg$path %||% items_cfg$lexicon %||% design$lexicon
   artifacts <- list(stimuli = stim_path, descriptives = desc_path,
                     comparisons = comp_path, experiments = exps)
+  candidate_pool <- NULL
+  if (identical(source, "corpus")) {
+    candidate_pool <- lapply(design$conditions, function(cnd)
+      list(condition = cnd$name, n_candidates = nrow(build_pool(pool, cnd$define_by))))
+  } else if (identical(source, "generate")) {
+    candidate_pool <- list(list(condition = "words in band", n_candidates = nrow(pool)))
+  }
   ds <- build_datasheet(design, schema, report, stim, source_path, artifacts,
-                        schema$seed, engine = "R")
+                        schema$seed, engine = "R", candidate_pool = candidate_pool)
   ds_json <- file.path(outdir, "reports", paste0(base, "_datasheet_R.json"))
   ds_md <- file.path(outdir, "reports", paste0(base, "_datasheet_R.md"))
   write_datasheet(ds, ds_json, ds_md)
