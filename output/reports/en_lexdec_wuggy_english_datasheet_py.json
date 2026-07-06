@@ -1,0 +1,106 @@
+{
+  "analysis": {
+    "note": "Crossed random effects for subjects and items guard against the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). Begin with this maximal structure (Barr et al., 2013) and reduce it if the model does not converge (Matuschek et al., 2017); fit with lme4 in R or pymer4/statsmodels in Python.",
+    "response": "the trial outcome (e.g. reaction time or accuracy)",
+    "suggested_model": "response ~ lexicality + (1 + lexicality | subject) + (1 | item)"
+  },
+  "artifacts": [
+    {
+      "file": "output\\stimuli\\en_lexdec_wuggy_english_stimuli_py.csv",
+      "sha256": "34d58a7f0ae21561b40e8e17153602e299e93b613f8bf0d6afe4f97c2d21763d"
+    },
+    {
+      "file": "output\\reports\\en_lexdec_wuggy_english_descriptives_py.csv",
+      "sha256": "7b96a23c7c2bec53f6ac3d29d72de6aff710c0b2e30e203e6d1439cdd62f4983"
+    },
+    {
+      "file": "output\\reports\\en_lexdec_wuggy_english_comparisons_py.csv",
+      "sha256": "91da17964f4e52ba020e350da2aa34c8641b74ad5b112868e0df86d5d33067ca"
+    },
+    {
+      "file": "output\\experiments\\en_lexdec_wuggy_english_psychopy.py",
+      "sha256": "4498377588d141623abad41f6762bf6a6b99a2c84b279d00f181306fa8b0099b"
+    },
+    {
+      "file": "output\\experiments\\en_lexdec_wuggy_english.osexp",
+      "sha256": "5667a2dba5886992cea39924e8206270963dc21671be80455e8f74b97b5f19f0"
+    },
+    {
+      "file": "output\\experiments\\en_lexdec_wuggy_english.html",
+      "sha256": "91fddd10dca23848249cec7fe23ab0dcdae267d0fa02c572e9fdddbae504bd15"
+    }
+  ],
+  "counterbalancing": {
+    "lists": 1,
+    "recipe": "factorial"
+  },
+  "design": {
+    "description": "Lexical decision with subsyllabic (Wuggy-style) pseudowords: real words versus length-matched pseudowords built by swapping whole onset/nucleus/coda constituents.",
+    "language": "english",
+    "n_per_condition": 60,
+    "name": "en_lexdec_wuggy",
+    "paradigm": "lexical_decision",
+    "source": "generate"
+  },
+  "dimensions": {
+    "length": {
+      "compute": "n_letters",
+      "type": "derived",
+      "unit": "letters"
+    }
+  },
+  "items": {
+    "conditions": [
+      "word",
+      "pseudoword"
+    ],
+    "n_conditions": 2,
+    "n_total": 120,
+    "stimuli_file": "output\\stimuli\\en_lexdec_wuggy_english_stimuli_py.csv",
+    "stimuli_sha256": "34d58a7f0ae21561b40e8e17153602e299e93b613f8bf0d6afe4f97c2d21763d"
+  },
+  "lexsync_datasheet_version": "1.0",
+  "materials_source": {
+    "path": "corpora/derived/en.csv",
+    "provenance": "see corpora/ATTRIBUTION.md for corpus licence and citation",
+    "sha256": "c20549b920d816809d11cfa673ad0df1dd70d3e73176ee66cbec18021627f65d",
+    "type": "generate"
+  },
+  "realised_control": [
+    {
+      "ci_high": 0.303,
+      "ci_low": -0.303,
+      "cohens_d": 0.0,
+      "dimension": "length",
+      "equivalent": true,
+      "role": "controlled",
+      "tost_p": 0.0036,
+      "var_ratio": 1.0
+    }
+  ],
+  "reproducibility": {
+    "seed": 2026,
+    "versions": {
+      "engine": "python",
+      "lexsync": "0.1.0",
+      "numpy": "2.3.2",
+      "pandas": "2.3.2",
+      "python": "3.13.7",
+      "scipy": "1.17.1"
+    }
+  },
+  "resampling": null,
+  "selection": {
+    "candidate_pool": [
+      {
+        "condition": "words in band",
+        "n_candidates": 8177
+      }
+    ],
+    "cross_engine": "byte-identical",
+    "matched_on": [
+      "length"
+    ],
+    "method": "constrained letter substitution (deterministic pseudowords)"
+  }
+}

@@ -1,0 +1,13 @@
+{"time":"2026-07-06 10:27:20.495049","message":"loading lexicon 'corpora/derived/en.csv'","data":null}
+{"time":"2026-07-06 10:27:21.053836","message":"lexicon loaded: 30000 words","data":{"words":30000}}
+{"time":"2026-07-06 10:27:21.072402","message":"pool after filters: 8177 words","data":{"pool":8177}}
+{"time":"2026-07-06 10:27:29.997882","message":"generated 120 items (words + pseudowords, subsyllabic)","data":{"conditions":"word, pseudoword"}}
+{"time":"2026-07-06 10:27:30.008743","message":"equivalence pseudoword vs word on 'length': d = 0.00 [-0.30, 0.30], TOST p = 0.004 (equivalent)","data":null}
+{"time":"2026-07-06 10:27:30.047277","message":"wrote 'en_lexdec_wuggy_english_stimuli_R.csv'","data":{"path":"output/stimuli/en_lexdec_wuggy_english_stimuli_R.csv","rows":120,"md5":"3440f3f6428dad5a11814ff82e9b08d7"}}
+{"time":"2026-07-06 10:27:30.068723","message":"wrote 'en_lexdec_wuggy_english_descriptives_R.csv'","data":{"path":"output/reports/en_lexdec_wuggy_english_descriptives_R.csv","rows":2,"md5":"32ec1c8e337acb192cefd6fca36f949f"}}
+{"time":"2026-07-06 10:27:30.091245","message":"wrote 'en_lexdec_wuggy_english_comparisons_R.csv'","data":{"path":"output/reports/en_lexdec_wuggy_english_comparisons_R.csv","rows":1,"md5":"08fc5207d0e20aa470e1b3cf332e5830"}}
+{"time":"2026-07-06 10:27:30.204211","message":"wrote 'en_lexdec_wuggy_english_psychopy.py'","data":{"path":"output/experiments/en_lexdec_wuggy_english_psychopy.py","rows":"NA","md5":"bc1045a529fdfb1b22f786205c7fc79d"}}
+{"time":"2026-07-06 10:27:30.21643","message":"wrote 'en_lexdec_wuggy_english.osexp'","data":{"path":"output/experiments/en_lexdec_wuggy_english.osexp","rows":"NA","md5":"610c9bd9ffb03d9a3cccdb63f402278b"}}
+{"time":"2026-07-06 10:27:30.230319","message":"wrote 'en_lexdec_wuggy_english.html'","data":{"path":"output/experiments/en_lexdec_wuggy_english.html","rows":"NA","md5":"9e75fc70a624d912843c0263b8256f40"}}
+{"time":"2026-07-06 10:27:30.331577","message":"wrote 'en_lexdec_wuggy_english_datasheet_R.json'","data":{"path":"output/reports/en_lexdec_wuggy_english_datasheet_R.json","rows":"NA","md5":"79ad6a4981ddcf7b1acdeb59b0fc50c5"}}
+{"time":"2026-07-06 10:27:30.343605","message":"wrote 'en_lexdec_wuggy_english_datasheet_R.md'","data":{"path":"output/reports/en_lexdec_wuggy_english_datasheet_R.md","rows":"NA","md5":"a6d83137de1991786847a8e96716c585"}}

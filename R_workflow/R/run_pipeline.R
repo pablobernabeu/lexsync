@@ -79,8 +79,9 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
     }
   } else if (source == "generate") {
     n <- design$n_per_condition %||% design$n_per_cell %||% 40L
-    stim <- build_lexdec_stimuli(pool, n, reference_words = lex$word)
-    log <- log_step(log, sprintf("generated %d items (words + pseudowords)", nrow(stim)),
+    gen_method <- items_cfg$generation$method %||% "letter_substitution"
+    stim <- build_lexdec_stimuli(pool, n, reference_words = lex$word, method = gen_method)
+    log <- log_step(log, sprintf("generated %d items (words + pseudowords, %s)", nrow(stim), gen_method),
                     list(conditions = paste(unique(stim$condition), collapse = ", ")))
     report <- match_report(stim, "length", schema)
   } else if (source == "table") {

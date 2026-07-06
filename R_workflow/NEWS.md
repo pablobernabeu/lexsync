@@ -9,6 +9,11 @@
   collected data as a CSV download.
 * The realised-control report and datasheet gain a variance ratio per dimension,
   a distributional balance check that complements Cohen's d and TOST.
+* Wuggy-style subsyllabic pseudoword generation (opt-in `items.generation.method:
+  subsyllabic`): whole onset/nucleus/coda constituents are swapped for attested
+  same-role, same-length alternatives, preserving syllabic structure and length.
+  Byte-identical across engines; the default letter-substitution generator is
+  unchanged.
 * Continuous (non-dichotomised) design mode: declare a `continuous` block and
   `select_continuous_stimuli()` spans a predictor's range evenly while holding the
   controls near-constant, with predictor-control correlations and a regression

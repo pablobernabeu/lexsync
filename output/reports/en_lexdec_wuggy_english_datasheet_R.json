@@ -1,0 +1,132 @@
+{
+  "lexsync_datasheet_version": "1.0",
+  "design": {
+    "name": "en_lexdec_wuggy",
+    "language": "english",
+    "paradigm": "lexical_decision",
+    "source": "generate",
+    "description": "Lexical decision with subsyllabic (Wuggy-style) pseudowords: real words versus length-matched pseudowords built by swapping whole onset/nucleus/coda constituents.",
+    "n_per_condition": 60
+  },
+  "materials_source": {
+    "type": "generate",
+    "path": "corpora/derived/en.csv",
+    "sha256": "c20549b920d816809d11cfa673ad0df1dd70d3e73176ee66cbec18021627f65d",
+    "provenance": "see corpora/ATTRIBUTION.md for corpus licence and citation"
+  },
+  "dimensions": {
+    "length": {
+      "type": "derived",
+      "compute": "n_letters",
+      "unit": "letters"
+    },
+    "frequency": {
+      "type": "column",
+      "column": "freq_zipf",
+      "unit": "Zipf"
+    },
+    "n_density": {
+      "type": "derived",
+      "compute": "coltheart_n",
+      "unit": "neighbours"
+    },
+    "old20": {
+      "type": "derived",
+      "compute": "old20",
+      "unit": "mean Levenshtein distance"
+    },
+    "n_syllables": {
+      "type": "derived",
+      "compute": "vowel_groups",
+      "unit": "syllables (orthographic estimate)"
+    },
+    "bigram_freq": {
+      "type": "derived",
+      "compute": "mean_bigram_probability",
+      "unit": "mean positional bigram probability"
+    }
+  },
+  "selection": {
+    "method": "constrained letter substitution (deterministic pseudowords)",
+    "matched_on": [
+      "length"
+    ],
+    "candidate_pool": [
+      {
+        "condition": "words in band",
+        "n_candidates": 8177
+      }
+    ],
+    "cross_engine": "byte-identical"
+  },
+  "analysis": {
+    "response": "the trial outcome (e.g. reaction time or accuracy)",
+    "suggested_model": "response ~ lexicality + (1 + lexicality | subject) + (1 | item)",
+    "note": "Crossed random effects for subjects and items guard against the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). Begin with this maximal structure (Barr et al., 2013) and reduce it if the model does not converge (Matuschek et al., 2017); fit with lme4 in R or pymer4/statsmodels in Python."
+  },
+  "realised_control": [
+    {
+      "dimension": "length",
+      "role": "controlled",
+      "cohens_d": 0,
+      "ci_low": -0.303,
+      "ci_high": 0.303,
+      "var_ratio": 1,
+      "tost_p": 0.0036,
+      "equivalent": true
+    }
+  ],
+  "counterbalancing": {
+    "recipe": "factorial",
+    "lists": 1
+  },
+  "resampling": null,
+  "items": {
+    "n_total": 120,
+    "n_conditions": 2,
+    "conditions": [
+      "pseudoword",
+      "word"
+    ],
+    "stimuli_file": "output/stimuli/en_lexdec_wuggy_english_stimuli_R.csv",
+    "stimuli_sha256": "5a5b081f9c736f541e1bb6d6b6fe31b4f5a7cc8a6446ce923fad40692be2a312"
+  },
+  "reproducibility": {
+    "seed": 2026,
+    "versions": {
+      "engine": "R",
+      "lexsync": "0.1.0",
+      "R": "4.6.0",
+      "readr": "2.2.0",
+      "stringdist": "0.9.17",
+      "jsonlite": "2.0.0",
+      "digest": "0.6.39"
+    }
+  },
+  "artifacts": [
+    {
+      "file": "output/stimuli/en_lexdec_wuggy_english_stimuli_R.csv",
+      "sha256": "5a5b081f9c736f541e1bb6d6b6fe31b4f5a7cc8a6446ce923fad40692be2a312"
+    },
+    {
+      "file": "output/reports/en_lexdec_wuggy_english_descriptives_R.csv",
+      "sha256": "1f2819d5fd577a3fa95ff9e68a11a75045b771c2d550ddd812f17ae457a49170"
+    },
+    {
+      "file": "output/reports/en_lexdec_wuggy_english_comparisons_R.csv",
+      "sha256": "6bcaa6b4973497028fc576c42052dd96c2a7f575c841ff400ee5df7e8d692444"
+    },
+    {
+      "file": "output/experiments/en_lexdec_wuggy_english_psychopy.py",
+      "sha256": "0aade9cb03dc8d4864b38ac3824c9107d7da8d3749f2bc3f2d8e4d7dd6214b09"
+    },
+    {
+      "file": "output/experiments/en_lexdec_wuggy_english.osexp",
+      "sha256": "c1dfb47eedaded445a8568c26c867bf594b0a09090831378169998349eca55e4"
+    },
+    {
+      "file": "output/experiments/en_lexdec_wuggy_english.html",
+      "sha256": "4889fcbc58901cce78920b17b67fd0aee6b86f50d6f616e31d4fbfd439309d64"
+    }
+  ]
+}

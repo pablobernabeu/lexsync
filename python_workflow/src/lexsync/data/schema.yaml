@@ -32,6 +32,13 @@ dimensions:
   bigram_freq: { type: derived, compute: mean_bigram_probability, unit: 'mean positional bigram probability' }
 
 # ---- Default matching configuration ---------------------------------------
+# Pseudoword generation (the lexical_decision paradigm) is chosen per design under
+# items.generation.method:
+#   letter_substitution  change the fewest single letters, keeping bigrams attested (default)
+#   subsyllabic          swap whole onset/nucleus/coda constituents (Wuggy-style; Keuleers
+#                        & Brysbaert, 2010)
+# Both preserve length and select byte-identical stimuli across the R and Python engines.
+
 matching:
   method: standardised_euclidean
   # method options:

@@ -34,6 +34,15 @@ no function signature changes.
   assignment solver, so the R and Python engines select equivalent but not
   byte-identical materials; the datasheet records this per design (a new
   `cross_engine` field). Adds the `clue` package to the R Suggests.
+- Wuggy-style subsyllabic pseudoword generation, opt-in via
+  `items.generation.method: subsyllabic` (the default `letter_substitution` is
+  unchanged). Each word is split into onset/nucleus/coda constituents and whole
+  constituents are swapped for attested same-role, same-length alternatives, so
+  the pseudowords preserve syllabic structure (a deterministic orthographic
+  approximation of Wuggy; Keuleers & Brysbaert, 2010). Length is preserved, a
+  word with no legal swap falls back to letter substitution, and the selection is
+  byte-identical across the R and Python engines. See
+  `config/design_en_lexdec_wuggy.yaml`.
 - Continuous (non-dichotomised) design mode: declare a `continuous:` block (a
   predictor and the controls to hold constant) instead of discrete `conditions`,
   and lexsync selects a set that spans the predictor's range evenly while keeping
@@ -59,14 +68,16 @@ no function signature changes.
   that it is a stable snapshot of language usage through roughly 2021 (see
   `corpora/ATTRIBUTION.md`).
 
-### Planned (state-of-the-art roadmap)
+### Planned
 
-Grounded in a review of the matching literature and competitor tools (LexOPS,
-Match, SOS, LIBRA, Wuggy):
-
-- Richer pseudoword generation (Wuggy-style subsyllabic recombination; Keuleers &
-  Brysbaert, 2010) and further norm connectors (ELP, concreteness, age of
-  acquisition).
+The state-of-the-art roadmap from the initial competitor and literature review is
+now delivered (covariance-aware and optimal matching, a distributional balance
+diagnostic, continuous designs, and Wuggy-style pseudowords). Further norm
+dimensions (concreteness, age of acquisition, English Lexicon Project behavioural
+measures) are supported today through the `merge_norms` connector, which joins any
+word-keyed norm table so the matcher can equate on it. Future directions include
+more bundled languages and, should a determinism-safe implementation be found,
+promoting a covariance-aware distance to the default.
 
 ## [0.1.0] - 2026-06-07
 

@@ -163,6 +163,18 @@ reports the predictor's span, the predictor-control correlations and a suggested
 regression model, and the two engines select byte-identical stimuli. See
 `config/design_en_freqcontinuous.yaml`.
 
+## Pseudoword generation
+
+The lexical-decision paradigm generates a length-matched pseudoword for each word.
+Two methods are available via `items.generation.method`: the default
+`letter_substitution` (change the fewest single letters, keeping every bigram
+attested) and `subsyllabic` (split each word into onset/nucleus/coda constituents
+and swap whole constituents for attested same-role, same-length alternatives, so
+the pseudowords keep their syllabic structure, a deterministic orthographic
+approximation of Wuggy; Keuleers and Brysbaert, 2010). Both preserve length and
+select byte-identical stimuli across the two engines. See
+`config/design_en_lexdec_wuggy.yaml`.
+
 ## Roadmap
 
 lexsync sits within a mature ecosystem of stimulus tools (LexOPS, Match, SOS and

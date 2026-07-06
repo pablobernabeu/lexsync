@@ -84,8 +84,10 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
             report = match_report(stim, dims, schema)
     elif source == "generate":
         n = design.get("n_per_condition") or design.get("n_per_cell") or 40
-        stim = build_lexdec_stimuli(pool, n, reference_words=lex["word"].tolist())
-        runlog.log_step(log, f"generated {len(stim)} items (words + pseudowords)",
+        gen_method = (items_cfg.get("generation") or {}).get("method", "letter_substitution")
+        stim = build_lexdec_stimuli(pool, n, reference_words=lex["word"].tolist(),
+                                    method=gen_method)
+        runlog.log_step(log, f"generated {len(stim)} items (words + pseudowords, {gen_method})",
                         {"conditions": ", ".join(dict.fromkeys(stim["condition"]))})
         report = match_report(stim, ["length"], schema)
     elif source == "table":

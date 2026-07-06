@@ -4,7 +4,12 @@
 \alias{build_lexdec_stimuli}
 \title{Assemble a word-vs-pseudoword lexical-decision set from a candidate pool}
 \usage{
-build_lexdec_stimuli(pool, n, reference_words = NULL)
+build_lexdec_stimuli(
+  pool,
+  n,
+  reference_words = NULL,
+  method = "letter_substitution"
+)
 }
 \description{
 Real words are drawn by an even spread across the byte-ordered pool, then a
