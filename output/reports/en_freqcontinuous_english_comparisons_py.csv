@@ -1,0 +1,5 @@
+dimension,role,pearson_r,predictor_span
+frequency,predictor,,3.05
+length,control,-0.165,3.05
+n_density,control,-0.049,3.05
+old20,control,-0.077,3.05

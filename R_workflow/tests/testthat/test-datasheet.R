@@ -52,3 +52,24 @@ test_that("datasheet builds for a table source without a report", {
   expect_identical(ds$counterbalancing$recipe, "latin_square_target")
   expect_true(grepl("item table", methods_paragraph(ds), fixed = TRUE))
 })
+
+test_that("datasheet emits a regression model for a continuous design", {
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  stim <- data.frame(word = c("a", "b", "c", "d"), condition = "continuous",
+                     frequency = c(2, 3, 4, 5), length = c(3, 4, 3, 4),
+                     n_density = c(1, 2, 1, 2), old20 = c(1.5, 1.6, 1.5, 1.6),
+                     stringsAsFactors = FALSE)
+  design <- list(name = "c", language = "english",
+                 continuous = list(predictor = "frequency",
+                                   controls = list("length", "n_density", "old20")),
+                 match_on = list("length", "n_density", "old20"),
+                 n_per_condition = 4, counterbalance = list(lists = 1))
+  rep <- match_report_continuous(stim, "frequency", c("length", "n_density", "old20"), schema)
+  ds <- build_datasheet(design, schema, rep, stim, "x.csv",
+                        list(stimuli = NULL, experiments = list()), 2026, engine = "R")
+  expect_identical(ds$analysis$suggested_model,
+                   "response ~ frequency + length + n_density + old20 + (1 + frequency | subject) + (1 | item)")
+  expect_identical(ds$realised_control[[1]]$role, "predictor")
+  expect_true("predictor" %in% names(ds$selection))
+  expect_true(grepl("span frequency", methods_paragraph(ds), fixed = TRUE))
+})

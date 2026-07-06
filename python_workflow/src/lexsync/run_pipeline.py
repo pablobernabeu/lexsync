@@ -17,12 +17,12 @@ from .counterbalancing import counterbalance
 from .datasheet import build_datasheet, write_datasheet
 from .generation import build_lexdec_stimuli
 from .io_utils import read_config, slugify, write_csv_utf8
-from .matching import match_stimuli, resample_stimuli
+from .matching import match_stimuli, resample_stimuli, select_continuous_stimuli
 from .paradigms import required_fields
 from .querying import (add_bigram_frequency, add_neighbourhood, build_pool,
                        load_items, load_lexicon)
 from .scripting import export_experiments
-from .validation import balance_check, match_report
+from .validation import balance_check, match_report, match_report_continuous
 
 
 def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
@@ -32,10 +32,12 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
     items_cfg = design.get("items") or {}
     source = items_cfg.get("source", "corpus")
     paradigm = design.get("paradigm", "factorial")
+    is_continuous = source == "corpus" and bool(design.get("continuous"))
 
     log = runlog.new_run_log(design["name"], meta={
         "design": design["name"], "language": design["language"],
         "paradigm": paradigm, "source": source, "seed": schema.get("seed"),
+        "mode": "continuous" if is_continuous else "conditions",
     })
 
     report = None
@@ -57,21 +59,29 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
         if "bigram_freq" in match_on and "bigram_freq" not in pool.columns:
             runlog.log_step(log, "computing bigram frequency (phonotactic-probability proxy)")
             pool = add_bigram_frequency(pool, reference=ref)
-        resample = design.get("resample")
-        if resample:
-            n_sets = resample.get("n_sets", 2)
-            stim = resample_stimuli(pool, design, schema, n_sets, verbose=verbose)
-            runlog.log_step(log, f"resampled {stim['replicate'].nunique()} disjoint matched "
-                                 f"sets ({len(stim)} items total)",
-                            {"conditions": ", ".join(dict.fromkeys(stim["condition"]))})
+        if is_continuous:
+            predictor = design["continuous"]["predictor"]
+            controls = list(design["continuous"].get("controls") or [])
+            stim = select_continuous_stimuli(pool, design, schema, verbose=verbose)
+            runlog.log_step(log, f"selected {len(stim)} items spanning '{predictor}' "
+                                 f"(continuous design)", {"predictor": predictor})
+            report = match_report_continuous(stim, predictor, controls, schema)
         else:
-            stim = match_stimuli(pool, design, schema, verbose=verbose)
-            runlog.log_step(log, f"matched {len(stim)} items across {stim['condition'].nunique()} conditions",
-                            {"conditions": ", ".join(dict.fromkeys(stim["condition"]))})
-        std = ["length", "frequency", "n_density", "old20"]
-        extra = [d for d in ("n_syllables", "bigram_freq") if d in match_on]
-        dims = [d for d in std + extra if d in stim.columns]
-        report = match_report(stim, dims, schema)
+            resample = design.get("resample")
+            if resample:
+                n_sets = resample.get("n_sets", 2)
+                stim = resample_stimuli(pool, design, schema, n_sets, verbose=verbose)
+                runlog.log_step(log, f"resampled {stim['replicate'].nunique()} disjoint matched "
+                                     f"sets ({len(stim)} items total)",
+                                {"conditions": ", ".join(dict.fromkeys(stim["condition"]))})
+            else:
+                stim = match_stimuli(pool, design, schema, verbose=verbose)
+                runlog.log_step(log, f"matched {len(stim)} items across {stim['condition'].nunique()} conditions",
+                                {"conditions": ", ".join(dict.fromkeys(stim["condition"]))})
+            std = ["length", "frequency", "n_density", "old20"]
+            extra = [d for d in ("n_syllables", "bigram_freq") if d in match_on]
+            dims = [d for d in std + extra if d in stim.columns]
+            report = match_report(stim, dims, schema)
     elif source == "generate":
         n = design.get("n_per_condition") or design.get("n_per_cell") or 40
         stim = build_lexdec_stimuli(pool, n, reference_words=lex["word"].tolist())
@@ -91,13 +101,19 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
     if report is not None:
         for msg in balance_check(stim, "condition"):
             runlog.log_step(log, "balance: " + msg)
-        for _, cr in report["comparisons"].iterrows():
-            verdict = "equivalent" if cr["equivalent"] else "not shown equivalent"
-            lo, hi = cr["d_ci_low"], cr["d_ci_high"]
-            ci = f" [{lo:.2f}, {hi:.2f}]" if (lo == lo and hi == hi) else ""  # NaN-safe
-            runlog.log_step(log, f"equivalence {cr['condition']} vs {cr['reference']} on "
-                                 f"'{cr['dimension']}': d = {cr['cohens_d']:.2f}{ci}, "
-                                 f"TOST p = {cr['tost_p']} ({verdict})")
+        if is_continuous:
+            for _, cr in report["comparisons"].iterrows():
+                if cr["role"] == "control":
+                    runlog.log_step(log, f"continuous: '{cr['dimension']}' correlation with "
+                                         f"the predictor r = {cr['pearson_r']}")
+        else:
+            for _, cr in report["comparisons"].iterrows():
+                verdict = "equivalent" if cr["equivalent"] else "not shown equivalent"
+                lo, hi = cr["d_ci_low"], cr["d_ci_high"]
+                ci = f" [{lo:.2f}, {hi:.2f}]" if (lo == lo and hi == hi) else ""  # NaN-safe
+                runlog.log_step(log, f"equivalence {cr['condition']} vs {cr['reference']} on "
+                                     f"'{cr['dimension']}': d = {cr['cohens_d']:.2f}{ci}, "
+                                     f"TOST p = {cr['tost_p']} ({verdict})")
 
     stim = counterbalance(stim, design, schema)
 
@@ -128,7 +144,9 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
     artifacts = {"stimuli": stim_path, "descriptives": desc_path,
                  "comparisons": comp_path, "experiments": exps}
     candidate_pool = None
-    if source == "corpus":
+    if is_continuous:
+        candidate_pool = [{"condition": "continuous", "n_candidates": int(len(pool))}]
+    elif source == "corpus":
         candidate_pool = [{"condition": c["name"],
                            "n_candidates": int(len(build_pool(pool, c["define_by"])))}
                           for c in (design.get("conditions") or [])]

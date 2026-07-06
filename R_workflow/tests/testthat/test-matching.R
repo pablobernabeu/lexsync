@@ -97,6 +97,49 @@ test_that("optimal matching equates the confound and is deterministic within an 
                    match_stimuli(lex, make_confounded_design(method = "optimal"), schema)$word)
 })
 
+make_continuous_design <- function() {
+  list(name = "cont", language = "english", n_per_condition = 40,
+    pool_filters = list(length = c(3, 8), frequency = c(3.8, 7.0)),
+    continuous = list(predictor = "frequency",
+                      controls = list("length", "n_density", "old20")),
+    match_on = list("length", "n_density", "old20"),
+    matching = list(tolerance_k = list(length = 1.5, n_density = 1.5, old20 = 1.5)))
+}
+
+test_that("select_continuous_stimuli spans the predictor and decorrelates controls", {
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  lex <- load_lexicon(system.file("extdata", "en_example.csv", package = "lexsync"), schema, "english")
+  pool <- build_pool(lex, make_continuous_design()$pool_filters)
+  s <- select_continuous_stimuli(pool, make_continuous_design(), schema)
+  expect_true(all(s$condition == "continuous"))
+  expect_equal(s$set, seq_len(nrow(s)))
+  for (cc in c("length", "n_density", "old20")) {
+    expect_lt(abs(suppressWarnings(stats::cor(s$frequency, s[[cc]]))), 0.6)
+  }
+  # deterministic within an engine
+  expect_identical(s$word, select_continuous_stimuli(pool, make_continuous_design(), schema)$word)
+})
+
+test_that("select_continuous_stimuli is driven by byte order, not row order", {
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  lex <- load_lexicon(system.file("extdata", "en_example.csv", package = "lexsync"), schema, "english")
+  pool <- build_pool(lex, make_continuous_design()$pool_filters)
+  a <- select_continuous_stimuli(pool, make_continuous_design(), schema)
+  b <- select_continuous_stimuli(pool[rev(seq_len(nrow(pool))), , drop = FALSE],
+                                 make_continuous_design(), schema)
+  expect_setequal(a$word, b$word)
+})
+
+test_that("select_continuous_stimuli rejects the predictor appearing in controls", {
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  lex <- load_lexicon(system.file("extdata", "en_example.csv", package = "lexsync"), schema, "english")
+  pool <- build_pool(lex, make_continuous_design()$pool_filters)
+  d <- make_continuous_design()
+  d$continuous$controls <- list("frequency", "length")
+  d$match_on <- list("frequency", "length")
+  expect_error(select_continuous_stimuli(pool, d, schema), "must not also appear")
+})
+
 test_that("resample_stimuli produces disjoint matched sets", {
   schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
   lex <- load_lexicon(system.file("extdata", "en_example.csv", package = "lexsync"), schema, "english")

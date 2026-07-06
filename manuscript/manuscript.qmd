@@ -283,6 +283,15 @@ solver respectively, whose last bits differ between the R and Python backends, s
 on these two methods the engines select equivalent but not byte-identical
 materials; each datasheet records which case applies.
 
+A design may also be declared *continuous* rather than dichotomised. Instead of
+splitting a variable into conditions and matching, lexsync selects a set that
+spans the variable's range evenly while holding the control dimensions
+near-constant, so the variable stays continuous and is analysed by regression or a
+mixed model rather than a between-condition contrast. This is the recommended
+alternative to matched dichotomies, which lose power and admit selection
+artefacts; the datasheet reports the realised span, the predictor-control
+correlations and a suggested regression model.
+
 The per-anchor procedure fixes one condition and matches the others to it, which
 is ideal when the manipulated dimension is statistically independent of the
 controls. When the manipulation is intrinsically correlated with a control

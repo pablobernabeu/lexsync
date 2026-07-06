@@ -1,6 +1,9 @@
-from lexsync.matching import match_stimuli, resample_stimuli
+import pytest
+
+from lexsync.matching import (match_stimuli, resample_stimuli,
+                              select_continuous_stimuli)
 from lexsync.querying import build_pool, load_lexicon
-from lexsync.validation import cohens_d
+from lexsync.validation import _pearson, cohens_d
 
 
 def _design():
@@ -100,6 +103,62 @@ def test_optimal_matches_confound_and_is_deterministic(schema, en_lexicon_path):
                             s.loc[s.condition == "sparse", dim])) < 0.15, dim
     assert list(s["word"]) == list(
         match_stimuli(lex, _confounded_design(method="optimal"), schema)["word"])
+
+
+def _continuous_design():
+    return {
+        "name": "cont", "language": "english", "n_per_condition": 40,
+        "pool_filters": {"length": [3, 8], "frequency": [3.8, 7.0]},
+        "continuous": {"predictor": "frequency",
+                       "controls": ["length", "n_density", "old20"]},
+        "match_on": ["length", "n_density", "old20"],
+        "matching": {"tolerance_k": {"length": 1.5, "n_density": 1.5, "old20": 1.5}},
+    }
+
+
+def _continuous_pool(schema, en_lexicon_path):
+    # The bundled example lexicon already carries n_density and old20.
+    lex = load_lexicon(en_lexicon_path, schema, "english")
+    return build_pool(lex, _continuous_design()["pool_filters"])
+
+
+def test_select_continuous_spans_and_decorrelates(schema, en_lexicon_path):
+    pool = _continuous_pool(schema, en_lexicon_path)
+    s = select_continuous_stimuli(pool, _continuous_design(), schema)
+    assert (s["condition"] == "continuous").all()
+    assert list(s["set"]) == list(range(1, len(s) + 1))
+    # banding holds the controls low-correlated with the predictor (a loose
+    # sanity bound on the small example lexicon; the full corpus reaches ~0.17)
+    for c in ("length", "n_density", "old20"):
+        assert abs(_pearson(s["frequency"].to_numpy(), s[c].to_numpy())) < 0.6, c
+    # deterministic within an engine
+    assert list(s["word"]) == list(
+        select_continuous_stimuli(pool, _continuous_design(), schema)["word"])
+
+
+def test_select_continuous_driven_by_byte_order_not_row_order(schema, en_lexicon_path):
+    pool = _continuous_pool(schema, en_lexicon_path)
+    a = select_continuous_stimuli(pool, _continuous_design(), schema)
+    b = select_continuous_stimuli(pool.iloc[::-1].reset_index(drop=True),
+                                  _continuous_design(), schema)
+    assert set(a["word"]) == set(b["word"])
+
+
+def test_select_continuous_requires_match_on_equals_controls(schema, en_lexicon_path):
+    pool = _continuous_pool(schema, en_lexicon_path)
+    d = _continuous_design()
+    d["match_on"] = ["length", "n_density"]     # != continuous.controls
+    with pytest.raises(ValueError):
+        select_continuous_stimuli(pool, d, schema)
+
+
+def test_select_continuous_rejects_predictor_in_controls(schema, en_lexicon_path):
+    pool = _continuous_pool(schema, en_lexicon_path)
+    d = _continuous_design()
+    d["continuous"]["controls"] = ["frequency", "length"]   # predictor is a control
+    d["match_on"] = ["frequency", "length"]
+    with pytest.raises(ValueError, match="must not also appear"):
+        select_continuous_stimuli(pool, d, schema)
 
 
 def _resample_design():

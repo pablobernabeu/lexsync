@@ -237,6 +237,81 @@ def match_stimuli(pool: pd.DataFrame, design: dict, schema: dict, verbose: bool 
     return out
 
 
+def select_continuous_stimuli(pool: pd.DataFrame, design: dict, schema: dict,
+                              verbose: bool = False) -> pd.DataFrame:
+    """Select a set that spans a continuous predictor, holding controls constant.
+
+    Instead of dichotomising the predictor into conditions and matching, items are
+    chosen to cover the predictor's range evenly while the control dimensions are
+    held within a tolerance band, so they stay near-constant and near-uncorrelated
+    with the predictor. The set is analysed by regression / mixed models rather
+    than by between-condition contrasts, which avoids the loss of power and the
+    selection artefacts of matched dichotomies (Kuperman, 2015; Liben-Nowell et
+    al., 2019).
+
+    Two deterministic passes reuse the matcher's even-spread primitive, so the R
+    and Python engines select byte-identical stimuli: an even spread over the
+    predictor defines a tolerance window on each control; the pool is filtered to
+    that window; a second even spread over the filtered pool is the selection.
+    There is no per-item matching and no random number generator.
+    """
+    cfg = design["continuous"]
+    predictor = cfg["predictor"]
+    controls = list(cfg.get("controls") or [])
+    match_on = list(design.get("match_on") or [])
+    if not controls:
+        raise ValueError("lexsync: a continuous design needs at least one control "
+                         "dimension (continuous.controls must be non-empty).")
+    if predictor in controls:
+        raise ValueError(f"lexsync: the continuous predictor '{predictor}' must not "
+                         "also appear in continuous.controls.")
+    if sorted(match_on) != sorted(controls):
+        raise ValueError("lexsync: for a continuous design, match_on must equal "
+                         "continuous.controls.")
+    for d in [predictor] + controls:
+        if d not in pool.columns:
+            raise ValueError(f"lexsync: dimension '{d}' is absent from the pool.")
+    n = design.get("n_per_condition") or design.get("n_per_cell") or 60
+    tol_k = dict(schema["matching"].get("tolerance_k") or {})
+    tol_k.update((design.get("matching") or {}).get("tolerance_k") or {})
+
+    def even_spread(df):
+        df = (df.assign(_k=df["word"].map(lambda w: w.encode("utf-8")))
+              .sort_values([predictor, "_k"], kind="mergesort")
+              .drop(columns="_k").reset_index(drop=True))
+        if len(df) == 0:
+            return df
+        n_take = min(n, len(df))
+        idx = np.unique(np.round(np.linspace(1, len(df), n_take)).astype(int))
+        return df.iloc[idx - 1].reset_index(drop=True)
+
+    # Pass 1: an even spread over the whole pool defines the control windows.
+    spread = even_spread(pool)
+    if len(spread) == 0:
+        raise ValueError("lexsync: the pool is empty for the continuous design.")
+    win = {}
+    for d in controls:
+        m = spread[d].mean()
+        s = spread[d].std(ddof=1)
+        k = tol_k.get(d, 2)
+        win[d] = (m - k * s, m + k * s)
+    keep = np.ones(len(pool), dtype=bool)
+    for d in controls:
+        col = pool[d].to_numpy()
+        keep &= (col >= win[d][0]) & (col <= win[d][1])
+    filtered = pool[keep]
+    if len(filtered) < n:
+        if verbose:
+            print(f"lexsync: {len(filtered)} items within the control windows "
+                  f"(< {n} needed); relaxing to the full pool.")
+        filtered = pool
+    # Pass 2: an even spread over the filtered pool is the selection.
+    sel = even_spread(filtered).copy()
+    sel["condition"] = "continuous"
+    sel["set"] = list(range(1, len(sel) + 1))
+    return sel
+
+
 def resample_stimuli(pool: pd.DataFrame, design: dict, schema: dict,
                      n_sets: int, verbose: bool = False) -> pd.DataFrame:
     """Produce ``n_sets`` disjoint matched item sets (a ``replicate`` column).

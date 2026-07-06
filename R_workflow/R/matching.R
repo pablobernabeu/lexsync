@@ -265,6 +265,85 @@ match_optimal <- function(subpools, cond_names, match_on, center, scale_, n, cap
   out
 }
 
+#' Select a set spanning a continuous predictor, holding controls constant
+#'
+#' Instead of dichotomising the predictor into conditions and matching, items are
+#' chosen to cover the predictor's range evenly while the control dimensions are
+#' held within a tolerance band, so they stay near-constant and near-uncorrelated
+#' with the predictor. The set is analysed by regression / mixed models rather than
+#' between-condition contrasts (Kuperman, 2015; Liben-Nowell et al., 2019). Two
+#' deterministic even-spread passes make the R and Python engines select
+#' byte-identical stimuli. Mirrors select_continuous_stimuli in matching.py.
+#'
+#' @param pool A candidate pool with the predictor and control dimensions present.
+#' @param design A parsed design configuration carrying a `continuous` block.
+#' @param schema The parsed global schema (tolerance windows).
+#' @param verbose Logical; report a window relaxation.
+#' @return A data frame of selected stimuli (condition "continuous", set 1..n).
+#' @importFrom stats sd
+#' @export
+select_continuous_stimuli <- function(pool, design, schema, verbose = FALSE) {
+  cfg <- design$continuous
+  predictor <- cfg$predictor
+  controls <- unlist(cfg$controls, use.names = FALSE)
+  match_on <- unlist(design$match_on, use.names = FALSE)
+  if (length(controls) == 0) {
+    stop("lexsync: a continuous design needs at least one control dimension (continuous.controls must be non-empty).",
+         call. = FALSE)
+  }
+  if (predictor %in% controls) {
+    stop(sprintf("lexsync: the continuous predictor '%s' must not also appear in continuous.controls.",
+                 predictor), call. = FALSE)
+  }
+  if (!identical(sort(match_on), sort(controls))) {
+    stop("lexsync: for a continuous design, match_on must equal continuous.controls.",
+         call. = FALSE)
+  }
+  for (d in c(predictor, controls)) {
+    if (!d %in% names(pool)) {
+      stop(sprintf("lexsync: dimension '%s' is absent from the pool.", d), call. = FALSE)
+    }
+  }
+  n <- design$n_per_condition %||% design$n_per_cell %||% 60L
+  tol_k <- schema$matching$tolerance_k
+  if (!is.null(design$matching$tolerance_k)) {
+    tol_k <- utils::modifyList(tol_k, design$matching$tolerance_k)
+  }
+  even_spread <- function(df) {
+    if (nrow(df) == 0) return(df)
+    df <- df[order(df[[predictor]], df$word, method = "radix"), , drop = FALSE]
+    n_take <- min(n, nrow(df))
+    idx <- unique(round(seq(1, nrow(df), length.out = n_take)))
+    df[idx, , drop = FALSE]
+  }
+  # Pass 1: an even spread over the whole pool defines the control windows.
+  spread <- even_spread(pool)
+  if (nrow(spread) == 0) stop("lexsync: the pool is empty for the continuous design.", call. = FALSE)
+  win <- lapply(controls, function(d) {
+    m <- mean(spread[[d]], na.rm = TRUE)
+    s <- stats::sd(spread[[d]], na.rm = TRUE)
+    k <- tol_k[[d]] %||% 2
+    c(m - k * s, m + k * s)
+  })
+  names(win) <- controls
+  keep <- rep(TRUE, nrow(pool))
+  for (d in controls) keep <- keep & pool[[d]] >= win[[d]][1] & pool[[d]] <= win[[d]][2]
+  filtered <- pool[keep, , drop = FALSE]
+  if (nrow(filtered) < n) {
+    if (verbose) {
+      message(sprintf("lexsync: %d items within the control windows (< %d needed); relaxing to the full pool.",
+                      nrow(filtered), n))
+    }
+    filtered <- pool
+  }
+  # Pass 2: an even spread over the filtered pool is the selection.
+  sel <- even_spread(filtered)
+  sel$condition <- "continuous"
+  sel$set <- seq_len(nrow(sel))
+  rownames(sel) <- NULL
+  sel
+}
+
 #' Produce several disjoint matched item sets (items as a random factor)
 #'
 #' Each replicate is an independent, fully matched set drawn from the pool with the

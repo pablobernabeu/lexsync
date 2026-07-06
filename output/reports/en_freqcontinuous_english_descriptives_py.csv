@@ -1,0 +1,5 @@
+group,dimension,n,mean,sd,min,median,max
+continuous,frequency,80,4.422,0.54,3.8,4.29,6.85
+continuous,length,80,5.475,0.981,4.0,5.0,7.0
+continuous,n_density,80,2.175,2.417,0.0,1.0,10.0
+continuous,old20,80,1.942,0.343,1.4,1.85,2.75

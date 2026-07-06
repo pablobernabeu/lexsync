@@ -1,0 +1,147 @@
+{
+  "analysis": {
+    "note": "The predictor is kept continuous and analysed by regression or a mixed model rather than dichotomised (Kuperman, 2015; Liben-Nowell et al., 2019); the controls enter as covariates. Crossed random effects for subjects and items guard the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008); reduce the structure if it does not converge (Matuschek et al., 2017).",
+    "response": "the trial outcome (e.g. reaction time or accuracy)",
+    "suggested_model": "response ~ frequency + length + n_density + old20 + (1 + frequency | subject) + (1 | item)"
+  },
+  "artifacts": [
+    {
+      "file": "output\\stimuli\\en_freqcontinuous_english_stimuli_py.csv",
+      "sha256": "988abe868bed897f62222f5e5a202148a321a07e4275378eb531208863bc6253"
+    },
+    {
+      "file": "output\\reports\\en_freqcontinuous_english_descriptives_py.csv",
+      "sha256": "3811c7901d5d14ebafde2a95eeb52ea57350be8d09d8ce1f1494ebe9b26c60af"
+    },
+    {
+      "file": "output\\reports\\en_freqcontinuous_english_comparisons_py.csv",
+      "sha256": "ed0daacb89e56182367c651f6dc0d83c5935d49df419bb872e7fb72701c46048"
+    },
+    {
+      "file": "output\\experiments\\en_freqcontinuous_english_psychopy.py",
+      "sha256": "628eb9a7fec6779fa9a6b84f0cc3bd5ce4a557f9fc7fdad58ed08ed86606167a"
+    },
+    {
+      "file": "output\\experiments\\en_freqcontinuous_english.osexp",
+      "sha256": "9da90b1f9e0f94bdacde5586f102d82d75760d866f58272f4b0767c9a7460dfe"
+    },
+    {
+      "file": "output\\experiments\\en_freqcontinuous_english.html",
+      "sha256": "f693b0523cdccd7e0b54c7e9f17cc4577c683ce78c0ddfadbaa1d5d832c6ce0b"
+    }
+  ],
+  "counterbalancing": {
+    "lists": 1,
+    "recipe": "factorial"
+  },
+  "design": {
+    "description": "English words spanning the frequency range continuously, with length, neighbourhood density and OLD20 held near-constant, for regression / mixed-model analysis.",
+    "language": "english",
+    "n_per_condition": 80,
+    "name": "en_freqcontinuous",
+    "paradigm": "factorial",
+    "source": "corpus"
+  },
+  "dimensions": {
+    "bigram_freq": {
+      "compute": "mean_bigram_probability",
+      "type": "derived",
+      "unit": "mean positional bigram probability"
+    },
+    "frequency": {
+      "column": "freq_zipf",
+      "type": "column",
+      "unit": "Zipf"
+    },
+    "length": {
+      "compute": "n_letters",
+      "type": "derived",
+      "unit": "letters"
+    },
+    "n_density": {
+      "compute": "coltheart_n",
+      "type": "derived",
+      "unit": "neighbours"
+    },
+    "n_syllables": {
+      "compute": "vowel_groups",
+      "type": "derived",
+      "unit": "syllables (orthographic estimate)"
+    },
+    "old20": {
+      "compute": "old20",
+      "type": "derived",
+      "unit": "mean Levenshtein distance"
+    }
+  },
+  "items": {
+    "conditions": [
+      "continuous"
+    ],
+    "n_conditions": 1,
+    "n_total": 80,
+    "stimuli_file": "output\\stimuli\\en_freqcontinuous_english_stimuli_py.csv",
+    "stimuli_sha256": "988abe868bed897f62222f5e5a202148a321a07e4275378eb531208863bc6253"
+  },
+  "lexsync_datasheet_version": "1.0",
+  "materials_source": {
+    "path": "corpora/derived/en.csv",
+    "provenance": "see corpora/ATTRIBUTION.md for corpus licence and citation",
+    "sha256": "c20549b920d816809d11cfa673ad0df1dd70d3e73176ee66cbec18021627f65d",
+    "type": "corpus"
+  },
+  "realised_control": [
+    {
+      "dimension": "frequency",
+      "pearson_r": null,
+      "predictor_span": 3.05,
+      "role": "predictor"
+    },
+    {
+      "dimension": "length",
+      "pearson_r": -0.165,
+      "predictor_span": 3.05,
+      "role": "control"
+    },
+    {
+      "dimension": "n_density",
+      "pearson_r": -0.049,
+      "predictor_span": 3.05,
+      "role": "control"
+    },
+    {
+      "dimension": "old20",
+      "pearson_r": -0.077,
+      "predictor_span": 3.05,
+      "role": "control"
+    }
+  ],
+  "reproducibility": {
+    "seed": 2026,
+    "versions": {
+      "engine": "python",
+      "lexsync": "0.1.0",
+      "numpy": "2.3.2",
+      "pandas": "2.3.2",
+      "python": "3.13.7",
+      "scipy": "1.17.1"
+    }
+  },
+  "resampling": null,
+  "selection": {
+    "candidate_pool": [
+      {
+        "condition": "continuous",
+        "n_candidates": 7230
+      }
+    ],
+    "controls": [
+      "length",
+      "n_density",
+      "old20"
+    ],
+    "cross_engine": "byte-identical",
+    "method": "continuous even-spread (predictor spanned, controls banded)",
+    "predictor": "frequency"
+  }
+}

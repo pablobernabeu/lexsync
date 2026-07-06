@@ -45,6 +45,20 @@ test_that("variance_ratio flags unequal spread", {
   expect_equal(variance_ratio(c(5, 5, 5), c(2, 2, 2)), 1)             # both constant
 })
 
+test_that("match_report_continuous returns predictor and control rows", {
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  stim <- data.frame(word = c("a", "b", "c", "d"), condition = "continuous",
+                     frequency = c(2, 3, 4, 5), length = c(3, 4, 3, 4),
+                     n_density = c(1, 2, 1, 2), old20 = c(1.5, 1.6, 1.5, 1.6),
+                     stringsAsFactors = FALSE)
+  rep <- match_report_continuous(stim, "frequency", c("length", "n_density", "old20"), schema)
+  expect_true(all(c("descriptives", "comparisons") %in% names(rep)))
+  cmp <- rep$comparisons
+  expect_identical(names(cmp), c("dimension", "role", "pearson_r", "predictor_span"))
+  expect_identical(cmp$role, c("predictor", "control", "control", "control"))
+  expect_equal(cmp$predictor_span[1], 3)
+})
+
 test_that("describe_stimuli summarises per group", {
   df <- data.frame(condition = c("a", "a", "b", "b"), x = c(1, 2, 3, 4), stringsAsFactors = FALSE)
   d <- describe_stimuli(df, "x")

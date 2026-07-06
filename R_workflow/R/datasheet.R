@@ -43,6 +43,22 @@ DATASHEET_VERSION <- "1.0"
 # (Clark, 1973; Baayen et al., 2008): items are a random sample of the language,
 # so an analysis that treats them as fixed over-generalises. Mirrors datasheet.py.
 .analysis_R <- function(design, source) {
+  cont <- design$continuous
+  if (!is.null(cont)) {
+    predictor <- cont$predictor
+    controls <- unlist(cont$controls, use.names = FALSE)
+    fixed <- paste(c(predictor, controls), collapse = " + ")
+    return(list(
+      response = "the trial outcome (e.g. reaction time or accuracy)",
+      suggested_model = sprintf("response ~ %s + (1 + %s | subject) + (1 | item)", fixed, predictor),
+      note = paste0("The predictor is kept continuous and analysed by regression or a ",
+                    "mixed model rather than dichotomised (Kuperman, 2015; Liben-Nowell ",
+                    "et al., 2019); the controls enter as covariates. Crossed random ",
+                    "effects for subjects and items guard the language-as-fixed-effect ",
+                    "fallacy (Clark, 1973; Baayen et al., 2008); reduce the structure if ",
+                    "it does not converge (Matuschek et al., 2017).")
+    ))
+  }
   paradigm <- design$paradigm %||% "factorial"
   if (identical(source, "generate") || identical(paradigm, "lexical_decision")) {
     factor <- "lexicality"; item_re <- "(1 | item)"
@@ -70,6 +86,7 @@ DATASHEET_VERSION <- "1.0"
 build_datasheet <- function(design, schema, report, stimuli, source_path, artifacts,
                             seed, engine = "R", candidate_pool = NULL) {
   source <- design$items$source %||% "corpus"
+  is_continuous <- identical(source, "corpus") && !is.null(design$continuous)
   controlled <- .controlled_dims(design, source)
   conditions <- unique(as.character(stimuli$condition))
 
@@ -77,19 +94,31 @@ build_datasheet <- function(design, schema, report, stimuli, source_path, artifa
   if (!is.null(report)) {
     cmp <- report$comparisons
     for (i in seq_len(nrow(cmp))) {
-      realised[[length(realised) + 1L]] <- list(
-        dimension = cmp$dimension[i],
-        role = if (cmp$dimension[i] %in% controlled) "controlled" else "manipulated/free",
-        cohens_d = .r4(cmp$cohens_d[i]),
-        ci_low = .r4(cmp$d_ci_low[i]), ci_high = .r4(cmp$d_ci_high[i]),
-        var_ratio = .r4(cmp$var_ratio[i]),
-        tost_p = .r4(cmp$tost_p[i]),
-        equivalent = if (is.na(cmp$equivalent[i])) NULL else isTRUE(cmp$equivalent[i])
-      )
+      if (is_continuous) {
+        realised[[length(realised) + 1L]] <- list(
+          dimension = cmp$dimension[i], role = cmp$role[i],
+          pearson_r = .r4(cmp$pearson_r[i]),
+          predictor_span = .r4(cmp$predictor_span[i])
+        )
+      } else {
+        realised[[length(realised) + 1L]] <- list(
+          dimension = cmp$dimension[i],
+          role = if (cmp$dimension[i] %in% controlled) "controlled" else "manipulated/free",
+          cohens_d = .r4(cmp$cohens_d[i]),
+          ci_low = .r4(cmp$d_ci_low[i]), ci_high = .r4(cmp$d_ci_high[i]),
+          var_ratio = .r4(cmp$var_ratio[i]),
+          tost_p = .r4(cmp$tost_p[i]),
+          equivalent = if (is.na(cmp$equivalent[i])) NULL else isTRUE(cmp$equivalent[i])
+        )
+      }
     }
   }
 
-  selection <- if (identical(source, "corpus")) {
+  selection <- if (is_continuous) {
+    list(method = "continuous even-spread (predictor spanned, controls banded)",
+         predictor = design$continuous$predictor,
+         controls = as.list(unlist(design$continuous$controls, use.names = FALSE)))
+  } else if (identical(source, "corpus")) {
     list(method = design$matching$method %||% schema$matching$method %||% "standardised_euclidean",
          match_on = as.list(controlled), tolerance_k = schema$matching$tolerance_k)
   } else if (identical(source, "generate")) {
@@ -142,6 +171,33 @@ methods_paragraph <- function(ds) {
   src <- ds$materials_source$type
   n <- d$n_per_condition
   lang <- paste0(toupper(substring(d$language, 1, 1)), substring(d$language, 2))
+  sel <- ds$selection
+  if (!is.null(sel$predictor)) {
+    predictor <- sel$predictor
+    controls <- paste(unlist(sel$controls), collapse = ", ")
+    rc <- ds$realised_control
+    span <- NULL; rs <- numeric(0)
+    for (r in rc) {
+      if (!is.null(r$predictor_span) && is.null(span)) span <- r$predictor_span
+      if (!is.null(r$pearson_r)) rs <- c(rs, abs(r$pearson_r))
+    }
+    span_str <- if (!is.null(span)) sprintf(" (a span of %.2f)", span) else ""
+    # Report |r| at 3 dp (its stored precision) so the text is identical across
+    # engines; a 2-dp format of, say, 0.165 rounds to 0.16 in R and 0.17 in Python.
+    corr_str <- if (length(rs))
+      sprintf(", and the largest predictor-control correlation was |r| = %.3f", max(rs)) else ""
+    cb <- ds$counterbalancing
+    recipe_label <- switch(cb$recipe, latin_square_target = "a Latin-square rotation",
+                           factorial = "a factorial split", cb$recipe)
+    return(sprintf(paste0("%s %s items were selected to span %s%s continuously while holding ",
+                          "%s near-constant%s, for analysis by regression or a mixed model rather ",
+                          "than a between-condition contrast (Kuperman, 2015; Liben-Nowell et al., ",
+                          "2019). Materials were counterbalanced into %s list(s) (%s) and generated ",
+                          "for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and ",
+                          "reproducible (seed %s; lexsync %s)."),
+                   n, lang, predictor, span_str, controls, corr_str, cb$lists, recipe_label,
+                   ds$reproducibility$seed, ds$reproducibility$versions$lexsync))
+  }
   if (identical(src, "corpus")) {
     ctrl <- paste(unlist(ds$selection$match_on), collapse = ", ")
     lead <- sprintf(paste0("%s items per condition were selected from the %s lexicon (%s) and ",
@@ -247,7 +303,17 @@ render_datasheet_md <- function(ds) {
                       "measure, so it is reproducible and free of item-selection bias ",
                       "(Forster, 2000; Simmons et al., 2011)."), "")
   }
-  if (length(ds$realised_control)) {
+  if (length(ds$realised_control) && !is.null(ds$selection$predictor)) {
+    lines <- c(lines, "## Realised control (continuous predictor)", "",
+               "| Dimension | Role | r with predictor | Predictor span |",
+               "|---|---|---|---|")
+    for (r in ds$realised_control) {
+      rr <- if (is.null(r$pearson_r)) "--" else sprintf("%.3f", r$pearson_r)
+      sp <- if (is.null(r$predictor_span)) "--" else sprintf("%.3f", r$predictor_span)
+      lines <- c(lines, sprintf("| %s | %s | %s | %s |", r$dimension, r$role, rr, sp))
+    }
+    lines <- c(lines, "")
+  } else if (length(ds$realised_control)) {
     lines <- c(lines, "## Realised control", "",
                "| Dimension | Role | Cohen's d | 90% CI | Var ratio | TOST p | Equivalent |",
                "|---|---|---|---|---|---|---|")

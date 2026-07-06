@@ -152,6 +152,17 @@ differ between the two linear-algebra backends: in practice `mahalanobis` usuall
 still agrees exactly, while `optimal` selects an equally-optimal but often
 different set. Each run's datasheet records which case applies.
 
+## Continuous designs
+
+A design may declare a `continuous:` block (a predictor and the controls to hold
+constant) instead of discrete `conditions`. lexsync then selects a set that spans
+the predictor's range evenly while keeping the controls near-constant and
+near-uncorrelated with it, for analysis by regression or a mixed model rather than
+a matched dichotomy (Kuperman, 2015; Liben-Nowell et al., 2019). The datasheet
+reports the predictor's span, the predictor-control correlations and a suggested
+regression model, and the two engines select byte-identical stimuli. See
+`config/design_en_freqcontinuous.yaml`.
+
 ## Roadmap
 
 lexsync sits within a mature ecosystem of stimulus tools (LexOPS, Match, SOS and

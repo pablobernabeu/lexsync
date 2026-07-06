@@ -1,9 +1,27 @@
 import pandas as pd
 
 from lexsync.validation import (
-    balance_check, cohens_d, cohens_d_ci, describe_stimuli, tost_equiv,
-    variance_ratio,
+    balance_check, cohens_d, cohens_d_ci, describe_stimuli, match_report_continuous,
+    tost_equiv, variance_ratio,
 )
+
+
+def _cont_stim():
+    return pd.DataFrame({
+        "word": ["a", "b", "c", "d"], "condition": "continuous",
+        "frequency": [2.0, 3.0, 4.0, 5.0], "length": [3, 4, 3, 4],
+        "n_density": [1, 2, 1, 2], "old20": [1.5, 1.6, 1.5, 1.6],
+    })
+
+
+def test_match_report_continuous_shape(schema):
+    rep = match_report_continuous(_cont_stim(), "frequency",
+                                  ["length", "n_density", "old20"], schema)
+    assert set(rep) == {"descriptives", "comparisons"}
+    c = rep["comparisons"]
+    assert list(c.columns) == ["dimension", "role", "pearson_r", "predictor_span"]
+    assert list(c["role"]) == ["predictor", "control", "control", "control"]
+    assert c.loc[c.dimension == "frequency", "predictor_span"].iloc[0] == 3.0
 
 
 def test_cohens_d():

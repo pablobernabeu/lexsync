@@ -1,0 +1,41 @@
+# Continuous (non-dichotomised) frequency design. Instead of splitting frequency
+# into high and low conditions and matching, items are selected to span the full
+# frequency range evenly while length, neighbourhood density and OLD20 are held
+# near-constant (and so near-uncorrelated with frequency). The set is analysed by
+# regression or a linear mixed-effects model rather than a between-condition
+# contrast, which keeps the predictor continuous and avoids the power loss and
+# selection artefacts of matched dichotomies (Kuperman, 2015; Liben-Nowell et
+# al., 2019). It reuses the same lexicon and pool as design_en_freqcontrast.yaml,
+# so the dichotomised and continuous approaches are directly comparable.
+name: en_freqcontinuous
+language: english
+lexicon: corpora/derived/en.csv
+description: 'English words spanning the frequency range continuously, with length, neighbourhood density and OLD20 held near-constant, for regression / mixed-model analysis.'
+
+# Total number of items (reuses the n_per_condition key; there is one implicit group).
+n_per_condition: 80
+
+pool_filters:
+  length: [3, 8]
+  frequency: [3.8, 7.0]
+
+# Declares the continuous mode (mutually exclusive with `conditions`).
+#   predictor: the dimension spanned evenly (the experimental regressor).
+#   controls:  the dimensions held near-constant; must equal match_on.
+continuous:
+  predictor: frequency
+  controls: [length, n_density, old20]
+
+match_on: [length, n_density, old20]
+
+# Per-control window half-width (mean +/- k * SD of the even-spread set). Tighter k
+# holds the controls more tightly (lower predictor-control correlation) at the cost
+# of a smaller eligible pool.
+matching:
+  tolerance_k:
+    length: 1.5
+    n_density: 1.5
+    old20: 1.5
+
+counterbalance:
+  lists: 1

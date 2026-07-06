@@ -1,0 +1,148 @@
+{
+  "lexsync_datasheet_version": "1.0",
+  "design": {
+    "name": "en_freqcontinuous",
+    "language": "english",
+    "paradigm": "factorial",
+    "source": "corpus",
+    "description": "English words spanning the frequency range continuously, with length, neighbourhood density and OLD20 held near-constant, for regression / mixed-model analysis.",
+    "n_per_condition": 80
+  },
+  "materials_source": {
+    "type": "corpus",
+    "path": "corpora/derived/en.csv",
+    "sha256": "c20549b920d816809d11cfa673ad0df1dd70d3e73176ee66cbec18021627f65d",
+    "provenance": "see corpora/ATTRIBUTION.md for corpus licence and citation"
+  },
+  "dimensions": {
+    "length": {
+      "type": "derived",
+      "compute": "n_letters",
+      "unit": "letters"
+    },
+    "frequency": {
+      "type": "column",
+      "column": "freq_zipf",
+      "unit": "Zipf"
+    },
+    "n_density": {
+      "type": "derived",
+      "compute": "coltheart_n",
+      "unit": "neighbours"
+    },
+    "old20": {
+      "type": "derived",
+      "compute": "old20",
+      "unit": "mean Levenshtein distance"
+    },
+    "n_syllables": {
+      "type": "derived",
+      "compute": "vowel_groups",
+      "unit": "syllables (orthographic estimate)"
+    },
+    "bigram_freq": {
+      "type": "derived",
+      "compute": "mean_bigram_probability",
+      "unit": "mean positional bigram probability"
+    }
+  },
+  "selection": {
+    "method": "continuous even-spread (predictor spanned, controls banded)",
+    "predictor": "frequency",
+    "controls": [
+      "length",
+      "n_density",
+      "old20"
+    ],
+    "candidate_pool": [
+      {
+        "condition": "continuous",
+        "n_candidates": 7230
+      }
+    ],
+    "cross_engine": "byte-identical"
+  },
+  "analysis": {
+    "response": "the trial outcome (e.g. reaction time or accuracy)",
+    "suggested_model": "response ~ frequency + length + n_density + old20 + (1 + frequency | subject) + (1 | item)",
+    "note": "The predictor is kept continuous and analysed by regression or a mixed model rather than dichotomised (Kuperman, 2015; Liben-Nowell et al., 2019); the controls enter as covariates. Crossed random effects for subjects and items guard the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008); reduce the structure if it does not converge (Matuschek et al., 2017)."
+  },
+  "realised_control": [
+    {
+      "dimension": "frequency",
+      "role": "predictor",
+      "pearson_r": null,
+      "predictor_span": 3.05
+    },
+    {
+      "dimension": "length",
+      "role": "control",
+      "pearson_r": -0.165,
+      "predictor_span": 3.05
+    },
+    {
+      "dimension": "n_density",
+      "role": "control",
+      "pearson_r": -0.049,
+      "predictor_span": 3.05
+    },
+    {
+      "dimension": "old20",
+      "role": "control",
+      "pearson_r": -0.077,
+      "predictor_span": 3.05
+    }
+  ],
+  "counterbalancing": {
+    "recipe": "factorial",
+    "lists": 1
+  },
+  "resampling": null,
+  "items": {
+    "n_total": 80,
+    "n_conditions": 1,
+    "conditions": [
+      "continuous"
+    ],
+    "stimuli_file": "output/stimuli/en_freqcontinuous_english_stimuli_R.csv",
+    "stimuli_sha256": "e6d774bfdb205422acd907bb049353366f1590f6bf1988974e77fddcf2e3f96f"
+  },
+  "reproducibility": {
+    "seed": 2026,
+    "versions": {
+      "engine": "R",
+      "lexsync": "0.1.0",
+      "R": "4.6.0",
+      "readr": "2.2.0",
+      "stringdist": "0.9.17",
+      "jsonlite": "2.0.0",
+      "digest": "0.6.39"
+    }
+  },
+  "artifacts": [
+    {
+      "file": "output/stimuli/en_freqcontinuous_english_stimuli_R.csv",
+      "sha256": "e6d774bfdb205422acd907bb049353366f1590f6bf1988974e77fddcf2e3f96f"
+    },
+    {
+      "file": "output/reports/en_freqcontinuous_english_descriptives_R.csv",
+      "sha256": "92a987779a35c135481770525defa6aefccd6c2c9be6571a057ef609f8d4b8ad"
+    },
+    {
+      "file": "output/reports/en_freqcontinuous_english_comparisons_R.csv",
+      "sha256": "f7b643a52ba5980aa944c070e073595ea27953b62f7e10981be85c686bf4cec5"
+    },
+    {
+      "file": "output/experiments/en_freqcontinuous_english_psychopy.py",
+      "sha256": "e0a9b57470dee857545ffbc0b7679719e28f44b4ad626da7df948889a61b6a38"
+    },
+    {
+      "file": "output/experiments/en_freqcontinuous_english.osexp",
+      "sha256": "37a4320be23b65f22d6c56a6e56705b1e9f4572c05841f6bc0c7d30629816512"
+    },
+    {
+      "file": "output/experiments/en_freqcontinuous_english.html",
+      "sha256": "04d086d29e0590d50f14144f55bf0bfdd00b947a82ca66e7c1e562f555d93316"
+    }
+  ]
+}

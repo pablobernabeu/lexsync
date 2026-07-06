@@ -34,6 +34,15 @@ no function signature changes.
   assignment solver, so the R and Python engines select equivalent but not
   byte-identical materials; the datasheet records this per design (a new
   `cross_engine` field). Adds the `clue` package to the R Suggests.
+- Continuous (non-dichotomised) design mode: declare a `continuous:` block (a
+  predictor and the controls to hold constant) instead of discrete `conditions`,
+  and lexsync selects a set that spans the predictor's range evenly while keeping
+  the controls near-constant and near-uncorrelated with it, for regression or
+  mixed-model analysis rather than a matched dichotomy (Kuperman, 2015;
+  Liben-Nowell et al., 2019). The datasheet reports the predictor span and the
+  predictor-control correlations and suggests a regression model. The selection is
+  byte-identical across the R and Python engines. See
+  `config/design_en_freqcontinuous.yaml`.
 - Distributional balance diagnostic: the realised-control report and datasheet now
   carry a **variance ratio** per dimension (condition variance / reference
   variance) alongside Cohen's d and TOST, because two conditions can share a mean
@@ -55,8 +64,6 @@ no function signature changes.
 Grounded in a review of the matching literature and competitor tools (LexOPS,
 Match, SOS, LIBRA, Wuggy):
 
-- **Continuous (non-dichotomised) designs** with a regression/mixed-model
-  template, following the controlled-subset critique (Liben-Nowell et al., 2019).
 - Richer pseudoword generation (Wuggy-style subsyllabic recombination; Keuleers &
   Brysbaert, 2010) and further norm connectors (ELP, concreteness, age of
   acquisition).

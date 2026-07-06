@@ -23,10 +23,12 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
   items_cfg <- design$items %||% list()
   source <- items_cfg$source %||% "corpus"
   paradigm <- design$paradigm %||% "factorial"
+  is_continuous <- identical(source, "corpus") && !is.null(design$continuous)
 
   log <- new_run_log(design$name, meta = list(
     design = design$name, language = design$language,
-    paradigm = paradigm, source = source, seed = schema$seed %||% NA
+    paradigm = paradigm, source = source, seed = schema$seed %||% NA,
+    mode = if (is_continuous) "continuous" else "conditions"
   ))
 
   report <- NULL
@@ -51,21 +53,30 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
       log <- log_step(log, "computing bigram frequency (phonotactic-probability proxy)")
       pool <- add_bigram_frequency(pool, reference = ref)
     }
-    if (!is.null(design$resample)) {
-      stim <- resample_stimuli(pool, design, schema, design$resample$n_sets %||% 2L, verbose = verbose)
-      log <- log_step(log, sprintf("resampled %d disjoint matched sets (%d items total)",
-                                   length(unique(stim$replicate)), nrow(stim)),
-                      list(conditions = paste(unique(stim$condition), collapse = ", ")))
+    if (is_continuous) {
+      predictor <- design$continuous$predictor
+      controls <- unlist(design$continuous$controls, use.names = FALSE)
+      stim <- select_continuous_stimuli(pool, design, schema, verbose = verbose)
+      log <- log_step(log, sprintf("selected %d items spanning '%s' (continuous design)",
+                                   nrow(stim), predictor), list(predictor = predictor))
+      report <- match_report_continuous(stim, predictor, controls, schema)
     } else {
-      stim <- match_stimuli(pool, design, schema, verbose = verbose)
-      log <- log_step(log, sprintf("matched %d items across %d conditions",
-                                   nrow(stim), length(unique(stim$condition))),
-                      list(conditions = paste(unique(stim$condition), collapse = ", ")))
+      if (!is.null(design$resample)) {
+        stim <- resample_stimuli(pool, design, schema, design$resample$n_sets %||% 2L, verbose = verbose)
+        log <- log_step(log, sprintf("resampled %d disjoint matched sets (%d items total)",
+                                     length(unique(stim$replicate)), nrow(stim)),
+                        list(conditions = paste(unique(stim$condition), collapse = ", ")))
+      } else {
+        stim <- match_stimuli(pool, design, schema, verbose = verbose)
+        log <- log_step(log, sprintf("matched %d items across %d conditions",
+                                     nrow(stim), length(unique(stim$condition))),
+                        list(conditions = paste(unique(stim$condition), collapse = ", ")))
+      }
+      std <- c("length", "frequency", "n_density", "old20")
+      extra <- intersect(c("n_syllables", "bigram_freq"), match_on)
+      dims <- intersect(c(std, extra), names(stim))
+      report <- match_report(stim, dims, schema)
     }
-    std <- c("length", "frequency", "n_density", "old20")
-    extra <- intersect(c("n_syllables", "bigram_freq"), match_on)
-    dims <- intersect(c(std, extra), names(stim))
-    report <- match_report(stim, dims, schema)
   } else if (source == "generate") {
     n <- design$n_per_condition %||% design$n_per_cell %||% 40L
     stim <- build_lexdec_stimuli(pool, n, reference_words = lex$word)
@@ -85,13 +96,22 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
 
   if (!is.null(report)) {
     for (msg in balance_check(stim, "condition")) log <- log_step(log, paste("balance:", msg))
-    for (i in seq_len(nrow(report$comparisons))) {
-      cr <- report$comparisons[i, ]
-      ci <- if (!is.na(cr$d_ci_low) && !is.na(cr$d_ci_high))
-        sprintf(" [%.2f, %.2f]", cr$d_ci_low, cr$d_ci_high) else ""
-      log <- log_step(log, sprintf("equivalence %s vs %s on '%s': d = %.2f%s, TOST p = %.3f (%s)",
-                                   cr$condition, cr$reference, cr$dimension, cr$cohens_d, ci, cr$tost_p,
-                                   if (isTRUE(cr$equivalent)) "equivalent" else "not shown equivalent"))
+    if (is_continuous) {
+      for (i in seq_len(nrow(report$comparisons))) {
+        cr <- report$comparisons[i, ]
+        if (identical(cr$role, "control"))
+          log <- log_step(log, sprintf("continuous: '%s' correlation with the predictor r = %s",
+                                       cr$dimension, format(cr$pearson_r)))
+      }
+    } else {
+      for (i in seq_len(nrow(report$comparisons))) {
+        cr <- report$comparisons[i, ]
+        ci <- if (!is.na(cr$d_ci_low) && !is.na(cr$d_ci_high))
+          sprintf(" [%.2f, %.2f]", cr$d_ci_low, cr$d_ci_high) else ""
+        log <- log_step(log, sprintf("equivalence %s vs %s on '%s': d = %.2f%s, TOST p = %.3f (%s)",
+                                     cr$condition, cr$reference, cr$dimension, cr$cohens_d, ci, cr$tost_p,
+                                     if (isTRUE(cr$equivalent)) "equivalent" else "not shown equivalent"))
+      }
     }
   }
 
@@ -123,7 +143,9 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
   artifacts <- list(stimuli = stim_path, descriptives = desc_path,
                     comparisons = comp_path, experiments = exps)
   candidate_pool <- NULL
-  if (identical(source, "corpus")) {
+  if (is_continuous) {
+    candidate_pool <- list(list(condition = "continuous", n_candidates = nrow(pool)))
+  } else if (identical(source, "corpus")) {
     candidate_pool <- lapply(design$conditions, function(cnd)
       list(condition = cnd$name, n_candidates = nrow(build_pool(pool, cnd$define_by))))
   } else if (identical(source, "generate")) {

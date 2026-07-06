@@ -9,6 +9,10 @@
   collected data as a CSV download.
 * The realised-control report and datasheet gain a variance ratio per dimension,
   a distributional balance check that complements Cohen's d and TOST.
+* Continuous (non-dichotomised) design mode: declare a `continuous` block and
+  `select_continuous_stimuli()` spans a predictor's range evenly while holding the
+  controls near-constant, with predictor-control correlations and a regression
+  suggested-model in the datasheet. Byte-identical across the R and Python engines.
 * Two new matching methods: `mahalanobis` (a covariance-aware distance that
   down-weights correlated dimensions) and `optimal` (a globally optimal assignment
   for two-condition designs, using the suggested `clue` package). Unlike the

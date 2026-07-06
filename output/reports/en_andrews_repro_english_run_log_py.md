@@ -1,8 +1,8 @@
 # lexsync run log: en_andrews_repro
 
 - Engine: Python 3.13.7
-- Started: 2026-07-03T10:38:39
-- Finished: 2026-07-03T10:38:40
+- Started: 2026-07-06T08:57:16
+- Finished: 2026-07-06T08:57:16
 
 ## Run metadata
 
@@ -11,57 +11,58 @@
 - paradigm: factorial
 - source: corpus
 - seed: 2026
+- mode: conditions
 
 ## Steps
 
-- **2026-07-03T10:38:39**: loading lexicon 'corpora/derived/en.csv'
-- **2026-07-03T10:38:39**: lexicon loaded: 30000 words
+- **2026-07-06T08:57:16**: loading lexicon 'corpora/derived/en.csv'
+- **2026-07-06T08:57:16**: lexicon loaded: 30000 words
     - words: 30000
-- **2026-07-03T10:38:39**: pool after filters: 7960 words
+- **2026-07-06T08:57:16**: pool after filters: 7960 words
     - pool: 7960
-- **2026-07-03T10:38:40**: matched 72 items across 4 conditions
+- **2026-07-06T08:57:16**: matched 72 items across 4 conditions
     - conditions: HF_largeN, HF_smallN, LF_largeN, LF_smallN
-- **2026-07-03T10:38:40**: equivalence HF_smallN vs HF_largeN on 'length': d = -0.21 [-0.77, 0.36], TOST p = 0.192 (not shown equivalent)
-- **2026-07-03T10:38:40**: equivalence HF_smallN vs HF_largeN on 'frequency': d = -0.11 [-0.67, 0.46], TOST p = 0.1238 (not shown equivalent)
-- **2026-07-03T10:38:40**: equivalence HF_smallN vs HF_largeN on 'n_density': d = 3.19 [2.63, 3.75], TOST p = 1.0 (not shown equivalent)
-- **2026-07-03T10:38:40**: equivalence HF_smallN vs HF_largeN on 'old20': d = -5.76 [-6.32, -5.19], TOST p = 1.0 (not shown equivalent)
-- **2026-07-03T10:38:40**: equivalence LF_largeN vs HF_largeN on 'length': d = 0.10 [-0.47, 0.66], TOST p = 0.1186 (not shown equivalent)
-- **2026-07-03T10:38:40**: equivalence LF_largeN vs HF_largeN on 'frequency': d = 4.71 [4.15, 5.28], TOST p = 1.0 (not shown equivalent)
-- **2026-07-03T10:38:40**: equivalence LF_largeN vs HF_largeN on 'n_density': d = 0.10 [-0.46, 0.67], TOST p = 0.1208 (not shown equivalent)
-- **2026-07-03T10:38:40**: equivalence LF_largeN vs HF_largeN on 'old20': d = 0.10 [-0.46, 0.67], TOST p = 0.1218 (not shown equivalent)
-- **2026-07-03T10:38:40**: equivalence LF_smallN vs HF_largeN on 'length': d = 0.10 [-0.47, 0.66], TOST p = 0.1186 (not shown equivalent)
-- **2026-07-03T10:38:40**: equivalence LF_smallN vs HF_largeN on 'frequency': d = 5.18 [4.62, 5.75], TOST p = 1.0 (not shown equivalent)
-- **2026-07-03T10:38:40**: equivalence LF_smallN vs HF_largeN on 'n_density': d = 3.29 [2.73, 3.85], TOST p = 1.0 (not shown equivalent)
-- **2026-07-03T10:38:40**: equivalence LF_smallN vs HF_largeN on 'old20': d = -5.91 [-6.48, -5.35], TOST p = 1.0 (not shown equivalent)
-- **2026-07-03T10:38:40**: wrote 'en_andrews_repro_english_stimuli_py.csv'
+- **2026-07-06T08:57:16**: equivalence HF_smallN vs HF_largeN on 'length': d = -0.21 [-0.77, 0.36], TOST p = 0.192 (not shown equivalent)
+- **2026-07-06T08:57:16**: equivalence HF_smallN vs HF_largeN on 'frequency': d = -0.11 [-0.67, 0.46], TOST p = 0.1238 (not shown equivalent)
+- **2026-07-06T08:57:16**: equivalence HF_smallN vs HF_largeN on 'n_density': d = 3.19 [2.63, 3.75], TOST p = 1.0 (not shown equivalent)
+- **2026-07-06T08:57:16**: equivalence HF_smallN vs HF_largeN on 'old20': d = -5.76 [-6.32, -5.19], TOST p = 1.0 (not shown equivalent)
+- **2026-07-06T08:57:16**: equivalence LF_largeN vs HF_largeN on 'length': d = 0.10 [-0.47, 0.66], TOST p = 0.1186 (not shown equivalent)
+- **2026-07-06T08:57:16**: equivalence LF_largeN vs HF_largeN on 'frequency': d = 4.71 [4.15, 5.28], TOST p = 1.0 (not shown equivalent)
+- **2026-07-06T08:57:16**: equivalence LF_largeN vs HF_largeN on 'n_density': d = 0.10 [-0.46, 0.67], TOST p = 0.1208 (not shown equivalent)
+- **2026-07-06T08:57:16**: equivalence LF_largeN vs HF_largeN on 'old20': d = 0.10 [-0.46, 0.67], TOST p = 0.1218 (not shown equivalent)
+- **2026-07-06T08:57:16**: equivalence LF_smallN vs HF_largeN on 'length': d = 0.10 [-0.47, 0.66], TOST p = 0.1186 (not shown equivalent)
+- **2026-07-06T08:57:16**: equivalence LF_smallN vs HF_largeN on 'frequency': d = 5.18 [4.62, 5.75], TOST p = 1.0 (not shown equivalent)
+- **2026-07-06T08:57:16**: equivalence LF_smallN vs HF_largeN on 'n_density': d = 3.29 [2.73, 3.85], TOST p = 1.0 (not shown equivalent)
+- **2026-07-06T08:57:16**: equivalence LF_smallN vs HF_largeN on 'old20': d = -5.91 [-6.48, -5.35], TOST p = 1.0 (not shown equivalent)
+- **2026-07-06T08:57:16**: wrote 'en_andrews_repro_english_stimuli_py.csv'
     - path: output\stimuli\en_andrews_repro_english_stimuli_py.csv
     - rows: 72
     - md5: fdeabeedd9f42f75fd3e073309222f08
-- **2026-07-03T10:38:40**: wrote 'en_andrews_repro_english_descriptives_py.csv'
+- **2026-07-06T08:57:16**: wrote 'en_andrews_repro_english_descriptives_py.csv'
     - path: output\reports\en_andrews_repro_english_descriptives_py.csv
     - rows: 16
     - md5: 727dcfa052cdbbb4e5cc3a9abe6d9449
-- **2026-07-03T10:38:40**: wrote 'en_andrews_repro_english_comparisons_py.csv'
+- **2026-07-06T08:57:16**: wrote 'en_andrews_repro_english_comparisons_py.csv'
     - path: output\reports\en_andrews_repro_english_comparisons_py.csv
     - rows: 12
     - md5: 0ee221a4b824e69e6b2bdd5cc3a839fc
-- **2026-07-03T10:38:40**: wrote 'en_andrews_repro_english_psychopy.py'
+- **2026-07-06T08:57:16**: wrote 'en_andrews_repro_english_psychopy.py'
     - path: output\experiments\en_andrews_repro_english_psychopy.py
     - rows: None
     - md5: eba0de79b5e2abbdb6f95eb65550816f
-- **2026-07-03T10:38:40**: wrote 'en_andrews_repro_english.osexp'
+- **2026-07-06T08:57:16**: wrote 'en_andrews_repro_english.osexp'
     - path: output\experiments\en_andrews_repro_english.osexp
     - rows: None
     - md5: 5719ab9207e280638f2b39f4b8d43a71
-- **2026-07-03T10:38:40**: wrote 'en_andrews_repro_english.html'
+- **2026-07-06T08:57:16**: wrote 'en_andrews_repro_english.html'
     - path: output\experiments\en_andrews_repro_english.html
     - rows: None
     - md5: 6f77dd964e03061cd20b7be20b90e02e
-- **2026-07-03T10:38:40**: wrote 'en_andrews_repro_english_datasheet_py.json'
+- **2026-07-06T08:57:16**: wrote 'en_andrews_repro_english_datasheet_py.json'
     - path: output\reports\en_andrews_repro_english_datasheet_py.json
     - rows: None
     - md5: 8bfe8f89642e6283bf11c4818066be3b
-- **2026-07-03T10:38:40**: wrote 'en_andrews_repro_english_datasheet_py.md'
+- **2026-07-06T08:57:16**: wrote 'en_andrews_repro_english_datasheet_py.md'
     - path: output\reports\en_andrews_repro_english_datasheet_py.md
     - rows: None
     - md5: e015793f3ba1cf072f90dac15165042a

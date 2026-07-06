@@ -5,7 +5,7 @@ import pandas as pd
 
 from lexsync.datasheet import (build_datasheet, methods_paragraph,
                                render_datasheet_md, write_datasheet)
-from lexsync.validation import match_report
+from lexsync.validation import match_report, match_report_continuous
 
 
 def _stim():
@@ -56,6 +56,30 @@ def test_write_datasheet_emits_json_and_prereg(schema, tmp_path):
     assert loaded["lexsync_datasheet_version"] == "1.0"
     md = open(mp, encoding="utf-8").read()
     assert "Pre-registration template" in md and "Materials (from the lexsync datasheet)" in md
+
+
+def test_datasheet_continuous_model_and_rows(schema):
+    stim = pd.DataFrame({
+        "word": ["a", "b", "c", "d"], "condition": "continuous",
+        "frequency": [2.0, 3.0, 4.0, 5.0], "length": [3, 4, 3, 4],
+        "n_density": [1, 2, 1, 2], "old20": [1.5, 1.6, 1.5, 1.6],
+    })
+    design = {"name": "c", "language": "english",
+              "continuous": {"predictor": "frequency",
+                             "controls": ["length", "n_density", "old20"]},
+              "match_on": ["length", "n_density", "old20"], "n_per_condition": 4,
+              "counterbalance": {"lists": 1}}
+    rep = match_report_continuous(stim, "frequency", ["length", "n_density", "old20"], schema)
+    ds = build_datasheet(design, schema, rep, stim, "corpora/derived/en.csv",
+                         {"stimuli": None, "experiments": {}}, 2026, engine="python")
+    assert ds["analysis"]["suggested_model"] == (
+        "response ~ frequency + length + n_density + old20 "
+        "+ (1 + frequency | subject) + (1 | item)")
+    assert ds["realised_control"][0]["role"] == "predictor"
+    assert "pearson_r" in ds["realised_control"][1]
+    assert "predictor" in ds["selection"]
+    assert "span frequency" in methods_paragraph(ds)
+    assert "r with predictor" in render_datasheet_md(ds)
 
 
 def test_datasheet_without_report_table_source(schema):

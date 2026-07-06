@@ -188,3 +188,47 @@ match_report <- function(stimuli, dims, schema) {
   }
   list(descriptives = desc, comparisons = do.call(rbind, comp))
 }
+
+# Pearson correlation from raw sums, rounded to 9 dp so it is byte-comparable across
+# the R and Python engines (not stats::cor). Mirrors validation.py _pearson.
+.pearson <- function(x, y) {
+  ok <- !(is.na(x) | is.na(y)); x <- x[ok]; y <- y[ok]
+  if (length(x) < 2) return(NA_real_)
+  dx <- x - mean(x); dy <- y - mean(y)
+  denom <- sqrt(sum(dx * dx) * sum(dy * dy))
+  if (denom == 0) return(0)
+  round(sum(dx * dy) / denom, 9)
+}
+
+#' Realised-control report for a continuous design
+#'
+#' Returns the same list shape as [match_report()] (`descriptives` + `comparisons`),
+#' but the comparisons describe a continuous predictor: its realised span and, for
+#' each control, the Pearson correlation with the predictor (near zero when the
+#' control is held constant). Mirrors match_report_continuous in validation.py.
+#'
+#' @param stimuli A stimuli data frame (a single "continuous" group).
+#' @param predictor The spanned predictor dimension.
+#' @param controls Character vector of control dimensions.
+#' @param schema The parsed global schema.
+#' @return A list with `descriptives` and `comparisons` data frames.
+#' @export
+match_report_continuous <- function(stimuli, predictor, controls, schema) {
+  desc <- describe_stimuli(stimuli, c(predictor, controls), by = "condition")
+  pv <- suppressWarnings(as.numeric(stimuli[[predictor]]))
+  valid <- pv[!is.na(pv)]
+  # NA (not -Inf) when the predictor has no span, so both engines agree.
+  span <- if (length(valid) >= 2) round(max(valid) - min(valid), 3) else NA_real_
+  rows <- list(data.frame(dimension = predictor, role = "predictor",
+                          pearson_r = NA_real_, predictor_span = span,
+                          stringsAsFactors = FALSE))
+  for (cc in controls) {
+    cv <- suppressWarnings(as.numeric(stimuli[[cc]]))
+    r <- .pearson(pv, cv)
+    rows[[length(rows) + 1L]] <- data.frame(
+      dimension = cc, role = "control",
+      pearson_r = if (is.na(r)) NA_real_ else round(r, 3),
+      predictor_span = span, stringsAsFactors = FALSE)
+  }
+  list(descriptives = desc, comparisons = do.call(rbind, rows))
+}

@@ -70,6 +70,21 @@ def _analysis(design: dict, source: str) -> dict:
     counterbalanced table paradigms the factor is within items too, so items also
     take a random slope.
     """
+    cont = design.get("continuous")
+    if cont:
+        predictor = cont["predictor"]
+        controls = list(cont.get("controls") or [])
+        fixed = " + ".join([predictor] + controls)
+        return {
+            "response": "the trial outcome (e.g. reaction time or accuracy)",
+            "suggested_model": f"response ~ {fixed} + (1 + {predictor} | subject) + (1 | item)",
+            "note": ("The predictor is kept continuous and analysed by regression or a "
+                     "mixed model rather than dichotomised (Kuperman, 2015; Liben-Nowell "
+                     "et al., 2019); the controls enter as covariates. Crossed random "
+                     "effects for subjects and items guard the language-as-fixed-effect "
+                     "fallacy (Clark, 1973; Baayen et al., 2008); reduce the structure if "
+                     "it does not converge (Matuschek et al., 2017)."),
+        }
     paradigm = design.get("paradigm", "factorial")
     if source == "generate" or paradigm == "lexical_decision":
         factor, item_re = "lexicality", "(1 | item)"
@@ -98,22 +113,34 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
     item-selection bias is auditable (Forster, 2000; Simmons et al., 2011).
     """
     source = (design.get("items") or {}).get("source", "corpus")
+    is_continuous = source == "corpus" and bool(design.get("continuous"))
     controlled = _controlled(design, source)
     conditions = list(dict.fromkeys(stimuli["condition"]))
 
     realised = []
     if report is not None:
         for _, r in report["comparisons"].iterrows():
-            realised.append({
-                "dimension": r["dimension"],
-                "role": "controlled" if r["dimension"] in controlled else "manipulated/free",
-                "cohens_d": _num(r["cohens_d"]),
-                "ci_low": _num(r.get("d_ci_low")), "ci_high": _num(r.get("d_ci_high")),
-                "var_ratio": _num(r.get("var_ratio")),
-                "tost_p": _num(r.get("tost_p")), "equivalent": _bool(r.get("equivalent")),
-            })
+            if is_continuous:
+                realised.append({
+                    "dimension": r["dimension"], "role": r["role"],
+                    "pearson_r": _num(r.get("pearson_r")),
+                    "predictor_span": _num(r.get("predictor_span")),
+                })
+            else:
+                realised.append({
+                    "dimension": r["dimension"],
+                    "role": "controlled" if r["dimension"] in controlled else "manipulated/free",
+                    "cohens_d": _num(r["cohens_d"]),
+                    "ci_low": _num(r.get("d_ci_low")), "ci_high": _num(r.get("d_ci_high")),
+                    "var_ratio": _num(r.get("var_ratio")),
+                    "tost_p": _num(r.get("tost_p")), "equivalent": _bool(r.get("equivalent")),
+                })
 
-    if source == "corpus":
+    if is_continuous:
+        selection = {"method": "continuous even-spread (predictor spanned, controls banded)",
+                     "predictor": design["continuous"]["predictor"],
+                     "controls": list(design["continuous"].get("controls") or [])}
+    elif source == "corpus":
         selection = {"method": ((design.get("matching") or {}).get("method")
                                 or (schema.get("matching") or {}).get("method")
                                 or "standardised_euclidean"),
@@ -189,6 +216,30 @@ def methods_paragraph(ds: dict) -> str:
     src = ds["materials_source"]["type"]
     n = d["n_per_condition"]
     lang = d["language"].capitalize()
+    sel = ds.get("selection") or {}
+    if "predictor" in sel:
+        predictor = sel["predictor"]
+        controls = ", ".join(sel.get("controls") or []) or "the control dimensions"
+        rc = ds.get("realised_control") or []
+        span = next((r.get("predictor_span") for r in rc if r.get("predictor_span") is not None), None)
+        rs = [abs(r["pearson_r"]) for r in rc
+              if r.get("pearson_r") is not None and r["pearson_r"] == r["pearson_r"]]
+        span_str = f" (a span of {span:.2f})" if span is not None else ""
+        # Report |r| at 3 dp (its stored precision) so the text is identical across
+        # engines; a 2-dp format of, say, 0.165 rounds to 0.17 in Python and 0.16 in R.
+        corr_str = (f", and the largest predictor-control correlation was |r| = {max(rs):.3f}"
+                    if rs else "")
+        cb = ds["counterbalancing"]
+        recipe_label = {"latin_square_target": "a Latin-square rotation",
+                        "factorial": "a factorial split"}.get(cb["recipe"], cb["recipe"])
+        return (f"{n} {lang} items were selected to span {predictor}{span_str} continuously "
+                f"while holding {controls} near-constant{corr_str}, for analysis by regression "
+                f"or a mixed model rather than a between-condition contrast (Kuperman, 2015; "
+                f"Liben-Nowell et al., 2019). Materials were counterbalanced into "
+                f"{cb['lists']} list(s) ({recipe_label}) and generated for PsychoPy, "
+                f"OpenSesame and jsPsych. The selection is deterministic and reproducible "
+                f"(seed {ds['reproducibility']['seed']}; lexsync "
+                f"{ds['reproducibility']['versions']['lexsync']}).")
     if src == "corpus":
         ctrl = ", ".join(ds["selection"]["match_on"]) or "the control dimensions"
         lead = (f"{n} items per condition were selected from the {lang} lexicon "
@@ -285,7 +336,16 @@ def render_datasheet_md(ds: dict) -> str:
                   "- Selection is deterministic given the seed and blind to any outcome "
                   "measure, so it is reproducible and free of item-selection bias "
                   "(Forster, 2000; Simmons et al., 2011).", ""]
-    if ds["realised_control"]:
+    if ds["realised_control"] and "predictor" in (ds.get("selection") or {}):
+        lines += ["## Realised control (continuous predictor)", "",
+                  "| Dimension | Role | r with predictor | Predictor span |",
+                  "|---|---|---|---|"]
+        for r in ds["realised_control"]:
+            rr = "—" if r.get("pearson_r") is None else f"{r['pearson_r']:.3f}"
+            sp = "—" if r.get("predictor_span") is None else f"{r['predictor_span']:.3f}"
+            lines.append(f"| {r['dimension']} | {r['role']} | {rr} | {sp} |")
+        lines.append("")
+    elif ds["realised_control"]:
         lines += ["## Realised control", "",
                   "| Dimension | Role | Cohen's d | 90% CI | Var ratio | TOST p | Equivalent |",
                   "|---|---|---|---|---|---|---|"]

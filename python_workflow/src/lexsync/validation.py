@@ -150,3 +150,43 @@ def match_report(stimuli: pd.DataFrame, dims, schema: dict) -> dict:
                 equivalent=tt["equivalent"],
             ))
     return dict(descriptives=desc, comparisons=pd.DataFrame(rows))
+
+
+def _pearson(x, y):
+    """Pearson correlation from raw sums, rounded to 9 dp so it is byte-comparable
+    across the R and Python engines (not scipy/numpy's wrapper)."""
+    x = np.asarray(x, dtype=float); y = np.asarray(y, dtype=float)
+    m = ~(np.isnan(x) | np.isnan(y))
+    x = x[m]; y = y[m]
+    if len(x) < 2:
+        return None
+    dx = x - x.mean(); dy = y - y.mean()
+    denom = math.sqrt(float((dx * dx).sum()) * float((dy * dy).sum()))
+    if denom == 0:
+        return 0.0
+    return round(float((dx * dy).sum() / denom), 9)
+
+
+def match_report_continuous(stimuli, predictor, controls, schema) -> dict:
+    """Realised-control report for a continuous design.
+
+    Returns the same ``{descriptives, comparisons}`` shape as :func:`match_report`,
+    so the pipeline and datasheet stay uniform, but the comparisons describe a
+    continuous predictor instead of a between-condition contrast: the predictor's
+    realised span and, for each control, its Pearson correlation with the predictor
+    (near zero when the control is held constant). The set is meant for regression /
+    mixed-model analysis, not equivalence tests.
+    """
+    desc = describe_stimuli(stimuli, [predictor] + controls)
+    pv = pd.to_numeric(stimuli[predictor], errors="coerce").to_numpy(dtype=float)
+    valid = pv[~np.isnan(pv)]
+    # None (not NaN) when the predictor has no span, so both engines agree.
+    span = round(float(valid.max() - valid.min()), 3) if len(valid) >= 2 else None
+    rows = [dict(dimension=predictor, role="predictor", pearson_r=None, predictor_span=span)]
+    for c in controls:
+        cv = pd.to_numeric(stimuli[c], errors="coerce").to_numpy(dtype=float)
+        r = _pearson(pv, cv)
+        rows.append(dict(dimension=c, role="control",
+                         pearson_r=round(r, 3) if r is not None else None,
+                         predictor_span=span))
+    return dict(descriptives=desc, comparisons=pd.DataFrame(rows))
