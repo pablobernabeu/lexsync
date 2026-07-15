@@ -6,7 +6,15 @@
 \usage{
 generate_pseudowords(base_words, reference_words)
 }
+\arguments{
+\item{base_words}{Character vector of words to derive pseudowords from.}
+
+\item{reference_words}{Character vector (typically the full lexicon) that
+supplies the bigram statistics and the real word forms to avoid.}
+}
+\value{
+A data frame with columns \code{base_word} and \code{pseudoword}.
+}
 \description{
 A length-matched pseudoword for each base word (byte-order processing)
 }
-\keyword{internal}

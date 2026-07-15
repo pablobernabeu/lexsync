@@ -186,8 +186,8 @@ def write_attribution(fresh_dates: dict[str, str]) -> None:
         "- van Heuven, W. J. B., Mandera, P., Keuleers, E., & Brysbaert, M. (2014). "
         "SUBTLEX-UK. Quarterly Journal of Experimental Psychology, 67(6), 1176-1190. "
         "https://doi.org/10.1080/17470218.2013.850521\n"
-        "- Cuetos, F., Gonzalez-Nosti, M., Barbon, A., & Brysbaert, M. (2011). "
-        "SUBTLEX-ESP. Psicologica, 32(2), 133-143.\n"
+        "- Cuetos, F., González-Nosti, M., Barbón, A., & Brysbaert, M. (2011). "
+        "SUBTLEX-ESP. Psicológica, 32(2), 133-143.\n"
         "- See corpora/registry.yaml for the full list of curated, individually "
         "citable SUBTLEX/openlexicon corpora that lexsync supports.\n"
     )

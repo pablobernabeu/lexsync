@@ -80,15 +80,24 @@ def fetch_corpus(name: str, registry_path: str | None = None, n_words: int = 100
     if name in (wf.get("languages") or []):
         df = build_wordfreq_lexicon(name, n_words)
         dest = os.path.join(cache_dir(), f"{name}_wordfreq.csv")
-        df.to_csv(dest, index=False, encoding="utf-8")
+        # LF explicitly: pandas otherwise follows os.linesep, and the cached
+        # lexicon's bytes (and any checksum of them) must not depend on the OS.
+        df.to_csv(dest, index=False, encoding="utf-8", lineterminator="\n")
         print(f"lexsync: built '{name}' via wordfreq. Please cite: {wf.get('citation', '')}")
         return dest
     entry = (reg.get("corpora") or {}).get(name)
     if not entry:
         raise ValueError(f"lexsync: corpus '{name}' is not in the registry.")
-    url = entry.get("openlexicon") or entry.get("url")
+    # Only 'openlexicon' names a delimited file; 'url' is the landing page, and
+    # downloading that would silently cache an HTML document as <name>.csv.
+    url = entry.get("openlexicon")
     if not url:
-        raise ValueError(f"lexsync: corpus '{name}' has no downloadable URL; see registry.yaml.")
+        raise ValueError(
+            f"lexsync: corpus '{name}' registers only a landing page "
+            f"({entry.get('url', 'see registry.yaml')}); lexsync cannot download it "
+            f"automatically. Retrieve the delimited file manually and pass it to "
+            f"load_lexicon()."
+        )
     import urllib.request
     dest = os.path.join(cache_dir(), f"{name}.csv")
     urllib.request.urlretrieve(url, dest)

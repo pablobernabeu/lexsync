@@ -7,6 +7,10 @@
 # A corpus is promoted to 'supported'/'validated' only after its citation has
 # been verified against Crossref or the official record, and its licence checked.
 #
+# The two URL keys are not interchangeable:
+#   url         -> the corpus's human-facing landing page (citation/provenance only)
+#   openlexicon -> a directly downloadable delimited file; fetch_corpus() requires this
+#
 # 'connector' selects the ingestion path:
 #   openlexicon -> a SUBTLEX-family/openlexicon delimited file (Connector A)
 #   wordfreq    -> the wordfreq Python package, ~40 languages (Connector B)
@@ -27,8 +31,7 @@ corpora:
   subtlex_uk:
     language: { name: 'English (British)', iso: en-GB }
     connector: openlexicon
-    status: validated
-    bundled: true
+    status: supported
     url: 'http://crr.ugent.be/programs-data/subtitle-frequencies'
     openlexicon: 'https://raw.githubusercontent.com/chrplr/openlexicon/master/datasets-info/SUBTLEX-UK/SUBTLEX-UK.csv'
     licence: 'CC BY-SA 4.0 (Brysbaert terms)'
@@ -39,12 +42,11 @@ corpora:
   subtlex_esp:
     language: { name: 'Spanish', iso: es }
     connector: openlexicon
-    status: validated
-    bundled: true
+    status: listed
     url: 'http://crr.ugent.be/programs-data/subtitle-frequencies'
     licence: 'CC BY-SA 4.0 (Brysbaert terms)'
     citation_key: cuetos2011subtlexesp
-    citation: 'Cuetos, Gonzalez-Nosti, Barbon & Brysbaert (2011). SUBTLEX-ESP. Psicologica, 32(2), 133-143.'
+    citation: 'Cuetos, González-Nosti, Barbón & Brysbaert (2011). SUBTLEX-ESP. Psicológica, 32(2), 133-143.'
     columns: { word: 'Word', freq_permillion: 'FreqPerMillion', pos: 'pos' }
 
   subtlex_us:

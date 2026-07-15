@@ -202,13 +202,18 @@ export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
   }
   if (t == "response") {
     keys <- paste(ev$keys %||% c("left", "right"), collapse = ";")
+    # A keyboard_response draws nothing, so the preceding canvas would stay up for
+    # the whole response window. Blank it first, so the stimulus offsets at its own
+    # duration as it does in the PsychoPy and jsPsych targets.
     block <- c(
+      .inline_block(sprintf("%s_blank", name), "Clear the screen for the response window",
+                    c("c = Canvas()", "c.show()")),
       sprintf("define keyboard_response %s", name),
       paste0("\tset timeout ", as.integer((ev$timeout %||% 2) * 1000)),
       "\tset flush yes", "\tset duration keypress",
       '\tset description "Collect a response"',
       sprintf('\tset allowed_responses "%s"', keys), "")
-    return(list(block = block, run = name))
+    return(list(block = block, run = c(sprintf("%s_blank", name), name)))
   }
   stop(sprintf("lexsync: unknown event type '%s'.", t), call. = FALSE)
 }
@@ -285,7 +290,10 @@ build_osexp <- function(design, conditions_file, schema, rendered, font = "mono"
     sprintf("\trun %s always", run_names), "",
     "define loop lexsync_loop",
     sprintf('\tset source_file "%s"', conditions_file),
-    "\tset source file", "\tset repeat 1", "\tset order random",
+    # Sequential, so the loop presents the seeded trial order the CSV is sorted
+    # by; OpenSesame's default (random) would discard it and diverge from the
+    # PsychoPy and jsPsych targets.
+    "\tset source file", "\tset repeat 1", "\tset order sequential",
     '\tset description "Present each item once"', "\trun lexsync_trial", "",
     "define sequence lexsync_experiment",
     "\tset flush_keyboard yes",
@@ -314,6 +322,26 @@ export_opensesame <- function(stimuli, design, schema, outdir, base = NULL) {
   invisible(out)
 }
 
+# BCP 47 tags for the human-readable language labels the designs carry, covering the
+# languages the corpus connectors derive lexica for (corpora/fetch_corpora.py).
+.BCP47_TAGS <- c(english = "en", spanish = "es", french = "fr", german = "de",
+                 dutch = "nl", italian = "it", portuguese = "pt",
+                 chinese = "zh", `chinese (mandarin)` = "zh")
+
+# The design's BCP 47 tag for the generated HTML lang attribute. `language` is a
+# free-text label ("english"), which is not a valid tag, so it is mapped. A design
+# may state `language_tag` outright, and a label that is already tag-shaped ("en",
+# "en-GB") is taken as given. Anything else becomes "und" (BCP 47 "undetermined"):
+# registered, and unlike lang="english" resolvable by a validator or a screen reader.
+.language_tag <- function(design) {
+  tag <- design$language_tag
+  if (!is.null(tag) && nzchar(as.character(tag))) return(as.character(tag))
+  label <- trimws(as.character(design$language %||% ""))
+  if (grepl("^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$", label, perl = TRUE)) return(label)
+  m <- .BCP47_TAGS[tolower(label)]
+  if (is.na(m)) "und" else unname(m)
+}
+
 # Event-model key names (PsychoPy style) mapped to browser KeyboardEvent keys.
 .JSPSYCH_KEYS <- c(left = "arrowleft", right = "arrowright", up = "arrowup",
                    down = "arrowdown", space = " ", "return" = "enter")
@@ -334,11 +362,15 @@ export_opensesame <- function(stimuli, design, schema, outdir, base = NULL) {
   gsub("&", "\\u0026", s, fixed = TRUE)
 }
 
-#' Export a self-contained, browser-runnable jsPsych experiment
+#' Export a browser-runnable jsPsych experiment
 #'
 #' The rendered events and the trial data are embedded in one HTML file, so anyone
-#' can reproduce the procedure online from the same materials. Onset triggers are
-#' recorded in each trial's data (a browser cannot drive a parallel port).
+#' can reproduce the procedure online from the same materials. The jsPsych library
+#' and stylesheet are loaded from a CDN, so the machine running the file needs an
+#' internet connection; the trial data are embedded and the responses are saved
+#' locally, so no server is required either to run it or to collect them. Onset
+#' triggers are recorded in each trial's data (a browser cannot drive a parallel
+#' port).
 #'
 #' @inheritParams export_psychopy
 #' @return The path to the generated `.html`, invisibly.
@@ -354,7 +386,8 @@ export_jspsych <- function(stimuli, design, schema, outdir, base = NULL) {
   tmpl <- paste(readLines(find_template("jspsych/experiment_template.html"), warn = FALSE),
                 collapse = "\n")
   subs <- list(
-    DESIGN = design$name, LANGUAGE = design$language, WORD_FONT = font,
+    DESIGN = design$name, LANGUAGE = design$language,
+    LANGUAGE_TAG = .language_tag(design), WORD_FONT = font,
     EVENTS_JSON = .json_html(jsonlite::toJSON(rendered, auto_unbox = TRUE)),
     TRIALS_JSON = .json_html(jsonlite::toJSON(trials, dataframe = "rows"))
   )

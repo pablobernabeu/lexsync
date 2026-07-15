@@ -58,19 +58,22 @@ matching:
     n_density: 2.0
     old20: 2.0
   # Stage 2 ranks candidates by standardised multivariate distance; ties are
-  # broken by this stable key so selection is deterministic without an RNG.
-  tie_break: [distance, word, id]
+  # broken by (distance, word bytes, id), fixed in matching.py / matching.R.
+  # That order is not configurable: the byte-order tie-break is what makes the
+  # two engines select identical stimuli without an RNG.
 
 # ---- Equivalence testing (reported in the descriptives) -------------------
+# Equivalence is assessed by two one-sided tests (TOST), fixed in validation.py /
+# validation.R; only the bound and alpha below are configurable.
 equivalence:
-  test: tost
   bound_d: 0.5    # smallest effect size of interest, Cohen's d (Lakens, 2017)
   alpha: 0.05
 
 # ---- Hardware triggers (defaults; overridable per design) -----------------
+# Triggers are reset to 0 after reset_after_frames; the reset value is fixed in
+# the emitted PsychoPy and OpenSesame code (scripting.py / scripting.R).
 triggers:
   parallel_address: '0x0378'   # typical LPT1 base address
-  reset_value: 0
   reset_after_frames: 2        # ~33 ms at 60 Hz, above the 10 ms recorder minimum
   inter_trigger_ms: 10         # spacing of trailing markers (matches the original)
 

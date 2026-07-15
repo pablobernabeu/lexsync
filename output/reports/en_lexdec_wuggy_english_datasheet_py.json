@@ -7,27 +7,27 @@
   "artifacts": [
     {
       "file": "output\\stimuli\\en_lexdec_wuggy_english_stimuli_py.csv",
-      "sha256": "34d58a7f0ae21561b40e8e17153602e299e93b613f8bf0d6afe4f97c2d21763d"
+      "sha256": "a08872f6032434f1bebf5e0dd367baeed6e4abf54911f629f1933da04eee625b"
     },
     {
       "file": "output\\reports\\en_lexdec_wuggy_english_descriptives_py.csv",
-      "sha256": "7b96a23c7c2bec53f6ac3d29d72de6aff710c0b2e30e203e6d1439cdd62f4983"
+      "sha256": "08212417217a1e48dd402ae305ac33579c7bde084846e7f68e00f064081f6e23"
     },
     {
       "file": "output\\reports\\en_lexdec_wuggy_english_comparisons_py.csv",
-      "sha256": "91da17964f4e52ba020e350da2aa34c8641b74ad5b112868e0df86d5d33067ca"
+      "sha256": "47af54eb495601dd3631239a5a729a0f8281506f48c76083b5d6d121642afd2b"
     },
     {
       "file": "output\\experiments\\en_lexdec_wuggy_english_psychopy.py",
-      "sha256": "4498377588d141623abad41f6762bf6a6b99a2c84b279d00f181306fa8b0099b"
+      "sha256": "a608ffbca2eabc03a9b35f21591ea68e5f05c6b39a44e02a77f42fda363e35fd"
     },
     {
       "file": "output\\experiments\\en_lexdec_wuggy_english.osexp",
-      "sha256": "5667a2dba5886992cea39924e8206270963dc21671be80455e8f74b97b5f19f0"
+      "sha256": "dbffd819b4dbb098b6deb5b89eeb465e5fe92dcb53220641e473075f231ef227"
     },
     {
       "file": "output\\experiments\\en_lexdec_wuggy_english.html",
-      "sha256": "91fddd10dca23848249cec7fe23ab0dcdae267d0fa02c572e9fdddbae504bd15"
+      "sha256": "c427d4c5c20fffa645309cb9701249d65f39c5a06d31365fe7415d3f1849b801"
     }
   ],
   "counterbalancing": {
@@ -57,7 +57,7 @@
     "n_conditions": 2,
     "n_total": 120,
     "stimuli_file": "output\\stimuli\\en_lexdec_wuggy_english_stimuli_py.csv",
-    "stimuli_sha256": "34d58a7f0ae21561b40e8e17153602e299e93b613f8bf0d6afe4f97c2d21763d"
+    "stimuli_sha256": "a08872f6032434f1bebf5e0dd367baeed6e4abf54911f629f1933da04eee625b"
   },
   "lexsync_datasheet_version": "1.0",
   "materials_source": {
@@ -98,9 +98,10 @@
       }
     ],
     "cross_engine": "byte-identical",
+    "generation_method": "subsyllabic",
     "matched_on": [
       "length"
     ],
-    "method": "constrained letter substitution (deterministic pseudowords)"
+    "method": "subsyllabic constituent swap (Wuggy-style, deterministic pseudowords)"
   }
 }

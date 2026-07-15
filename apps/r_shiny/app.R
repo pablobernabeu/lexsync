@@ -18,6 +18,9 @@ library(DT)
 library(lexsync)
 
 DIMENSIONS <- c("length", "frequency", "n_density", "old20", "n_syllables", "bigram_freq")
+# The engine's pseudoword generators (items.generation.method). The first is the
+# engine default, so the design only names a method when the other is chosen.
+GENERATION_METHODS <- c("letter_substitution", "subsyllabic")
 DIM_LABEL <- c(length = "Length", frequency = "Frequency (Zipf)", n_density = "Neighbourhood N",
                old20 = "OLD20", n_syllables = "Syllables", bigram_freq = "Bigram frequency")
 PARADIGMS <- c(
@@ -72,6 +75,50 @@ preset_df <- function(preset) {
 }
 
 clean_yaml <- function(design) yaml::as.yaml(design, indent = 2)
+
+#' Keep the dimensions the user gave a positive tolerance k
+#'
+#' A k of zero means "leave the schema default for this dimension alone". Carried
+#' into the design it would instead pin the pre-filter window to zero width and
+#' admit no candidate at all, so it is dropped here rather than written out.
+#'
+#' @param values Named list of dimension -> k, in the order the dimensions are matched on.
+#' @return The subset with k > 0, order preserved.
+positive_tolerances <- function(values)
+  Filter(function(k) length(k) == 1L && !is.na(k) && k > 0, values)
+
+#' Archive the contents of `outdir` into `file`
+#'
+#' Prefers the zip package, which is pure C: utils::zip shells out to the binary
+#' named by R_ZIPCMD, which a stock R for Windows does not ship (it arrives with
+#' Rtools) and which reports failure only as a warning, so an unguarded call turns
+#' the download into a silently empty archive. The fallback keeps the app working
+#' where the zip package is absent but a zip tool is on the path.
+#'
+#' @param file Path the archive is written to.
+#' @param outdir Directory whose contents are archived, relative to its own root.
+#' @return `file`, invisibly.
+write_bundle_zip <- function(file, outdir) {
+  if (requireNamespace("zip", quietly = TRUE)) {
+    # include_directories = FALSE keeps the entry list to files alone, matching the
+    # archive the Streamlit app builds by walking its output directory.
+    zip::zipr(file, files = list.files(outdir), root = outdir, include_directories = FALSE)
+    return(invisible(file))
+  }
+  if (!nzchar(Sys.which(Sys.getenv("R_ZIPCMD", "zip"))))
+    stop("Cannot build the download: no zip tool is available. Install the zip ",
+         "package (install.packages(\"zip\")), or set R_ZIPCMD to a zip executable ",
+         "(on Windows, Rtools supplies one).", call. = FALSE)
+  wd <- getwd(); on.exit(setwd(wd))
+  setwd(outdir)
+  status <- utils::zip(file, files = list.files(".", recursive = TRUE))
+  if (!identical(as.integer(status), 0L))
+    stop("Cannot build the download: the zip tool at '",
+         Sys.which(Sys.getenv("R_ZIPCMD", "zip")), "' exited with status ", status,
+         ". Install the zip package (install.packages(\"zip\")) to remove the ",
+         "dependency on an external zip tool.", call. = FALSE)
+  invisible(file)
+}
 
 reproduction_code <- function(design, cfg) {
   list(
@@ -150,12 +197,17 @@ server <- function(input, output, session) {
         ),
         selectizeInput("match_on", "Match on (controlled dimensions)", choices = DIMENSIONS,
                        selected = c("length", "n_density", "old20"), multiple = TRUE),
+        uiOutput("tolerance_ui"),
         numericInput("lists", "Counterbalancing lists", 1, 1, 16, 1)
       ),
       if (p == "lexical_decision") tagList(
         numericInput("n", "Items per condition (words = pseudowords)", 60, 4, 200, 2),
+        selectInput("gen_method", "Pseudoword generation method", GENERATION_METHODS),
         helpText("Real words in the band are paired with deterministically generated, ",
-                 "orthographically legal pseudowords matched on length.")
+                 "orthographically legal pseudowords matched on length. ",
+                 "letter_substitution changes the fewest single letters, keeping every ",
+                 "bigram attested; subsyllabic swaps whole onset/nucleus/coda ",
+                 "constituents (Wuggy-style; Keuleers & Brysbaert, 2010).")
       ),
       if (p %in% c("priming", "self_paced_reading")) tagList(
         h4("Item table"),
@@ -174,6 +226,27 @@ server <- function(input, output, session) {
     DT::datatable(conds(), editable = TRUE, rownames = FALSE,
                   options = list(dom = "t", ordering = FALSE, pageLength = 8))
   })
+
+  output$tolerance_ui <- renderUI({
+    dims <- input$match_on
+    if (!length(dims)) return(NULL)
+    accordion(
+      open = FALSE,
+      accordion_panel(
+        "Advanced: per-dimension tolerance windows (mean ± k·SD)",
+        helpText("Override the schema defaults; e.g. frequency 0.111 reproduces the ",
+                 "mean ± SD/9 window of González Alonso et al. (2025). Zero leaves the ",
+                 "schema default for that dimension in place."),
+        lapply(dims, function(d)
+          numericInput(paste0("tol_", d), sprintf("k for %s", DIM_LABEL[[d]]),
+                       0, 0, 10, 0.05))
+      )
+    )
+  })
+
+  tolerance_k <- function()
+    positive_tolerances(stats::setNames(
+      lapply(input$match_on, function(d) input[[paste0("tol_", d)]]), input$match_on))
 
   build_design <- function() {
     p <- PARADIGMS[[input$paradigm]]
@@ -210,11 +283,15 @@ server <- function(input, output, session) {
       d$n_per_condition <- as.integer(input$n)
       d$match_on <- as.list(input$match_on)
       d$matching <- list(method = input$method)
+      tol <- tolerance_k()
+      if (length(tol)) d$matching$tolerance_k <- tol
       if (!is.null(input$nsets) && input$nsets >= 2) d$resample <- list(n_sets = as.integer(input$nsets))
       d$counterbalance <- list(lists = as.integer(input$lists))
     } else if (p == "lexical_decision") {
       d$paradigm <- "lexical_decision"
       d$items <- list(source = "generate")
+      if (!is.null(input$gen_method) && input$gen_method != GENERATION_METHODS[[1]])
+        d$items$generation <- list(method = input$gen_method)
       d$n_per_condition <- as.integer(input$n)
       d$counterbalance <- list(lists = 1L)
     } else if (p %in% c("priming", "self_paced_reading")) {
@@ -348,11 +425,9 @@ server <- function(input, output, session) {
   output$dl_zip <- downloadHandler(
     filename = function() paste0(bundle()$design$name, "_lexsync.zip"),
     content = function(file) {
-      b <- bundle(); wd <- getwd(); on.exit(setwd(wd))
-      cfgfile <- file.path(b$outdir, b$cfg)
-      writeLines(clean_yaml(b$design), cfgfile)
-      setwd(b$outdir)
-      utils::zip(file, files = list.files(".", recursive = TRUE))
+      b <- bundle()
+      writeLines(clean_yaml(b$design), file.path(b$outdir, b$cfg))
+      write_bundle_zip(file, b$outdir)
     }
   )
 }

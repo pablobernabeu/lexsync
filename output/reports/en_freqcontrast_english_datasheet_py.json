@@ -7,27 +7,27 @@
   "artifacts": [
     {
       "file": "output\\stimuli\\en_freqcontrast_english_stimuli_py.csv",
-      "sha256": "ed588c5a03a4512d7d166b1522987bdac6b2727fd167ef9a4464ddb68f7d9125"
+      "sha256": "c44728af862554060611697f90849de55d5a74447b8fb9492cfee823cef0a2b4"
     },
     {
       "file": "output\\reports\\en_freqcontrast_english_descriptives_py.csv",
-      "sha256": "cd5c3771d94753ddf605b63ec53d1f72e5f7dfbb963300fc73b2ac9b0080ee3d"
+      "sha256": "334f5b975c04a89e1bb11aafc50b5736cd689627e8e37ac670e17be3776aa596"
     },
     {
       "file": "output\\reports\\en_freqcontrast_english_comparisons_py.csv",
-      "sha256": "3e7945e56625089d3f3005c6362c56165a382f061618f82bd6916e3edc71a10a"
+      "sha256": "be6a3c1c5e2c40520d400e8e1d938a97ab7e4d9404bded017b96a4fcd7f3e184"
     },
     {
       "file": "output\\experiments\\en_freqcontrast_english_psychopy.py",
-      "sha256": "2e27aab91f07ddcac99dfdf966717eca163cefe870e27d92c6142432575cfa71"
+      "sha256": "51dd038d9d528ab4a2cb0b34b9b0f88cae07894b2c3c2d3a7a8a3b495273d82c"
     },
     {
       "file": "output\\experiments\\en_freqcontrast_english.osexp",
-      "sha256": "ce2fbf9cd7365022e9fffb10e94bca9aaa1ac048947f08e5aa54c3cca09d4569"
+      "sha256": "60b349f83e8ae265db3e42f12e531beef58dec616cf278a15867dfdbd20d6905"
     },
     {
       "file": "output\\experiments\\en_freqcontrast_english.html",
-      "sha256": "bb30ca84f3fe4840ada4547c6927b7997e7add171f11ac4e1095c764931145a6"
+      "sha256": "4d30c7523400588160d78707e57095c20d7d78d845700d90f473f0ed21d7aa46"
     }
   ],
   "counterbalancing": {
@@ -82,7 +82,7 @@
     "n_conditions": 2,
     "n_total": 160,
     "stimuli_file": "output\\stimuli\\en_freqcontrast_english_stimuli_py.csv",
-    "stimuli_sha256": "ed588c5a03a4512d7d166b1522987bdac6b2727fd167ef9a4464ddb68f7d9125"
+    "stimuli_sha256": "c44728af862554060611697f90849de55d5a74447b8fb9492cfee823cef0a2b4"
   },
   "lexsync_datasheet_version": "1.0",
   "materials_source": {

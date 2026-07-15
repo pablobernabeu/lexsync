@@ -2,7 +2,9 @@
 
 Regenerates the Python stimuli for a design and compares them to the committed R
 reference under output/stimuli/. Skips gracefully if the R reference is absent
-(e.g. when the package is tested in isolation from the repository).
+(e.g. when the package is tested in isolation from the repository); CI sets
+LEXSYNC_REQUIRE_PARITY=1 to turn those skips into failures, so a job that was
+meant to run both engines cannot pass by quietly skipping.
 """
 import os
 
@@ -13,35 +15,54 @@ from lexsync.run_pipeline import run_pipeline
 
 REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 
-# base -> (design config, identity columns that must match across engines)
+# When the repository is present both engines must be compared; only a standalone
+# install of the package may skip.
+REQUIRE_PARITY = os.environ.get("LEXSYNC_REQUIRE_PARITY") == "1"
+
+# base -> (design config, identity columns that must match across engines).
+# `set` is the matcher's pairing -- it records which item was matched to which --
+# so it is an identity column throughout: every word appears once per design, and
+# without `set` the comparison would place no constraint at all on the pairing.
 CASES = [
-    ("en_freqcontrast_english", "config/design_en_freqcontrast.yaml", ["word", "condition"]),
-    ("en_ndensity_english", "config/design_en_ndensity.yaml", ["word", "condition"]),
-    ("es_freqcontrast_spanish", "config/design_es_freqcontrast.yaml", ["word", "condition"]),
-    ("es_ndensity_spanish", "config/design_es_ndensity.yaml", ["word", "condition"]),
-    ("zh_freqcontrast_chinese", "config/design_zh_freqcontrast.yaml", ["word", "condition"]),
-    ("en_lexdec_english", "config/design_en_lexdec.yaml", ["target", "condition"]),
-    ("en_lexdec_wuggy_english", "config/design_en_lexdec_wuggy.yaml", ["target", "condition"]),
-    ("en_richdim_english", "config/design_en_richdim.yaml", ["word", "condition"]),
+    ("en_freqcontrast_english", "config/design_en_freqcontrast.yaml", ["word", "condition", "set"]),
+    ("en_ndensity_english", "config/design_en_ndensity.yaml", ["word", "condition", "set"]),
+    ("es_freqcontrast_spanish", "config/design_es_freqcontrast.yaml", ["word", "condition", "set"]),
+    ("es_ndensity_spanish", "config/design_es_ndensity.yaml", ["word", "condition", "set"]),
+    ("zh_freqcontrast_chinese", "config/design_zh_freqcontrast.yaml", ["word", "condition", "set"]),
+    ("en_lexdec_english", "config/design_en_lexdec.yaml", ["target", "condition", "set"]),
+    ("en_lexdec_wuggy_english", "config/design_en_lexdec_wuggy.yaml", ["target", "condition", "set"]),
+    ("en_richdim_english", "config/design_en_richdim.yaml", ["word", "condition", "set"]),
     ("en_freqcontinuous_english", "config/design_en_freqcontinuous.yaml",
      ["word", "condition", "set"]),
-    ("en_resample_english", "config/design_en_resample.yaml", ["replicate", "word", "condition"]),
+    ("en_resample_english", "config/design_en_resample.yaml",
+     ["replicate", "word", "condition", "set"]),
     ("en_priming_english", "config/design_en_priming.yaml", ["list", "set", "condition", "prime", "target"]),
     ("en_spr_english", "config/design_en_spr.yaml", ["list", "set", "condition", "sentence"]),
     # Reproductions of published designs.
-    ("es_gender_repro_spanish", "config/design_es_gender_repro.yaml", ["word", "condition"]),
-    ("en_andrews_repro_english", "config/design_en_andrews_repro.yaml", ["word", "condition"]),
+    ("es_gender_repro_spanish", "config/design_es_gender_repro.yaml", ["word", "condition", "set"]),
+    ("en_andrews_repro_english", "config/design_en_andrews_repro.yaml", ["word", "condition", "set"]),
     ("en_rastle_repro_english", "config/design_en_rastle_repro.yaml",
      ["list", "set", "condition", "prime", "target", "prime_type"]),
 ]
+
+# Trial order is drawn from each engine's own seeded generator (see the
+# counterbalancing module docstring): reproducible within an engine, not across
+# them. It is therefore outside the parity contract and excluded from the value
+# comparison, and the rows are sorted before comparison rather than compared in
+# file order, which is trial order.
+ORDER_COLS = {"trial"}
 
 
 @pytest.mark.parametrize("base,design,cols", CASES)
 def test_r_python_parity(base, design, cols):
     r_ref = os.path.join(REPO, "output", "stimuli", f"{base}_stimuli_R.csv")
     if not os.path.exists(r_ref):
+        if REQUIRE_PARITY:
+            pytest.fail(f"R reference missing for {base}; the R pipeline did not run")
         pytest.skip("R reference output not present; run the R pipeline first")
     if not os.path.exists(os.path.join(REPO, design)):
+        if REQUIRE_PARITY:
+            pytest.fail(f"design config missing: {design}")
         pytest.skip("repository design configs not present")
 
     cwd = os.getcwd()
@@ -53,9 +74,30 @@ def test_r_python_parity(base, design, cols):
 
     r = pd.read_csv(r_ref)
     p = pd.read_csv(os.path.join(REPO, "output", "stimuli", f"{base}_stimuli_py.csv"))
-    cols = [c for c in cols if c in r.columns and c in p.columns]
-    r_set = set(map(tuple, r[cols].astype(str).values))
-    p_set = set(map(tuple, p[cols].astype(str).values))
-    assert r_set == p_set, (
-        f"parity mismatch for {base}: {len(r_set & p_set)}/{len(r_set)} identical"
+
+    # A column vanishing from one engine's output must fail, not quietly narrow
+    # the comparison.
+    missing = [c for c in cols if c not in r.columns or c not in p.columns]
+    assert not missing, f"{base}: identity columns absent from an engine's output: {missing}"
+
+    r_rows = r[cols].astype(str).sort_values(cols).reset_index(drop=True)
+    p_rows = p[cols].astype(str).sort_values(cols).reset_index(drop=True)
+    assert r_rows.equals(p_rows), (
+        f"parity mismatch for {base}: {len(r_rows)} R rows vs {len(p_rows)} Python rows; "
+        f"identity columns {cols} differ"
     )
+
+    # Matching the selection and the pairing is necessary but not sufficient: the
+    # dimensions each engine computes at run time (n_syllables, bigram_freq,
+    # n_density, old20) are exported to the stimuli CSV and must agree too. Every
+    # shipped design matches with `standardised_euclidean` or `joint`, both of
+    # which are byte-identical across the engines; were a design here to use
+    # `mahalanobis` or `optimal`, whose cross-engine identity is not guaranteed,
+    # it would need an explicit numeric tolerance instead of this exact test.
+    m = r.merge(p, on=cols, suffixes=("_r", "_p"))
+    assert len(m) == len(r), f"{base}: identity key {cols} is not unique across engines"
+    shared = [c for c in r.columns
+              if c in p.columns and c not in cols and c not in ORDER_COLS]
+    for c in shared:
+        n_bad = int((m[f"{c}_r"].astype(str) != m[f"{c}_p"].astype(str)).sum())
+        assert n_bad == 0, f"{base}: column '{c}' differs across engines in {n_bad}/{len(m)} rows"

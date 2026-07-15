@@ -2,7 +2,7 @@
 % Please edit documentation in R/scripting.R
 \name{export_jspsych}
 \alias{export_jspsych}
-\title{Export a self-contained, browser-runnable jsPsych experiment}
+\title{Export a browser-runnable jsPsych experiment}
 \usage{
 export_jspsych(stimuli, design, schema, outdir, base = NULL)
 }
@@ -22,6 +22,10 @@ The path to the generated \code{.html}, invisibly.
 }
 \description{
 The rendered events and the trial data are embedded in one HTML file, so anyone
-can reproduce the procedure online from the same materials. Onset triggers are
-recorded in each trial's data (a browser cannot drive a parallel port).
+can reproduce the procedure online from the same materials. The jsPsych library
+and stylesheet are loaded from a CDN, so the machine running the file needs an
+internet connection; the trial data are embedded and the responses are saved
+locally, so no server is required either to run it or to collect them. Onset
+triggers are recorded in each trial's data (a browser cannot drive a parallel
+port).
 }

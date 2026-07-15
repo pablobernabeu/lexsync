@@ -2,7 +2,8 @@ Package: lexsync
 Type: Package
 Title: Multidimensional Lexical Optimisation and Hardware-Timed Experiment Generation
 Version: 0.1.0
-Authors@R: person("Pablo", "Bernabeu", email = "pcbernabeu@gmail.com", role = c("aut", "cre"))
+Authors@R: person("Pablo", "Bernabeu", email = "pcbernabeu@gmail.com", role = c("aut", "cre"),
+    comment = c(ORCID = "0000-0003-1083-2460"))
 Description: A cross-platform toolkit that unifies many-language lexical-corpus
     access, parallel multidimensional stimulus matching, deterministic pseudoword
     generation, counterbalancing and the automated generation of experiments from a
@@ -20,6 +21,7 @@ Imports:
     readr,
     yaml,
     stringdist,
+    stringi,
     jsonlite,
     digest,
     stats,
@@ -30,7 +32,11 @@ Suggests:
     knitr,
     rmarkdown,
     spelling,
-    clue
+    clue,
+    shiny,
+    bslib,
+    DT,
+    zip
 VignetteBuilder: knitr
 URL: https://github.com/pablobernabeu/lexsync
 BugReports: https://github.com/pablobernabeu/lexsync/issues

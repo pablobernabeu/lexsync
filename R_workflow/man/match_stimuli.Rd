@@ -15,7 +15,7 @@ match_stimuli(pool, design, schema, verbose = FALSE)
 
 \item{schema}{The parsed global schema (tolerances live here).}
 
-\item{verbose}{Logical; report tolerance relaxations.}
+\item{verbose}{Logical; report tolerance relaxations and a shrunk anchor.}
 }
 \value{
 A data frame of selected stimuli with a \code{condition} label and a \code{set}

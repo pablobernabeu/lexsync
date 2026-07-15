@@ -122,7 +122,7 @@ define loop lexsync_loop
 	set source_file "en_spr_english_opensesame.csv"
 	set source file
 	set repeat 1
-	set order random
+	set order sequential
 	set description "Present each item once"
 	run lexsync_trial
 

@@ -11,6 +11,14 @@ test_that("tost_equiv flags closely matched samples as equivalent", {
   expect_true(isTRUE(tt$equivalent))
 })
 
+test_that("tost_equiv defaults to the schema's 0.5 bound", {
+  # The bound is the schema's smallest effect size of interest (Lakens, 2017);
+  # pinned here because every other test passes bound_d explicitly. The p-value is
+  # the same literal asserted in test_validation.py, so the engines cannot drift apart.
+  expect_identical(formals(tost_equiv)$bound_d, 0.5)
+  expect_equal(round(tost_equiv(10:19, 11:20)$p, 9), 0.354383811)
+})
+
 test_that("cohens_d_ci brackets the point estimate and matches cohens_d", {
   x <- rep(c(5, 6, 7, 8), 10); y <- rep(c(1, 2, 3, 4), 10)
   ci <- cohens_d_ci(x, y)
@@ -64,6 +72,23 @@ test_that("describe_stimuli summarises per group", {
   d <- describe_stimuli(df, "x")
   expect_true(all(c("group", "dimension", "n", "mean", "sd") %in% names(d)))
   expect_equal(nrow(d), 2)
+})
+
+test_that("describe_stimuli groups in order of first appearance", {
+  # Not locale-collated order: this is the order validation.py's groupby(sort = FALSE)
+  # yields, and the order in which match_report() takes its anchor from unique().
+  df <- data.frame(condition = c("b", "b", "a", "a"), x = c(1, 2, 3, 4), stringsAsFactors = FALSE)
+  expect_identical(describe_stimuli(df, "x")$group, c("b", "a"))
+})
+
+test_that("describe_stimuli reports an all-NA dimension as missing, not infinite", {
+  df <- data.frame(condition = c("a", "a"), x = c(NA_real_, NA_real_))
+  d <- describe_stimuli(df, "x")
+  expect_identical(d$n, 0L)
+  expect_true(is.na(d$min))
+  expect_true(is.na(d$max))
+  expect_false(is.infinite(d$min))
+  expect_false(is.infinite(d$max))
 })
 
 test_that("balance_check detects imbalance", {

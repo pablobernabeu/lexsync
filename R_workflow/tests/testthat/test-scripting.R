@@ -42,6 +42,38 @@ test_that("the OpenSesame export carries both trigger backends and a test-mode f
   expect_true(grepl("test_mode", os, fixed = TRUE))     # no-hardware fallback
 })
 
+test_that("the OpenSesame loop follows the computed trial order", {
+  # The loop table is sorted on the seeded `trial` column, and all three targets
+  # must present that order; OpenSesame's default (`order random`) would reshuffle.
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  out <- tempfile("lexsync"); dir.create(out)
+  os <- readLines(export_opensesame(make_stim(), list(name = "t", language = "english"),
+                                    schema, out), warn = FALSE)
+  expect_true("\tset order sequential" %in% os)
+  expect_false("\tset order random" %in% os)
+})
+
+test_that("all targets offset the stimulus before the response window", {
+  # The stimulus offsets at its own duration, not at the participant's keypress:
+  # PsychoPy flips an empty window and OpenSesame shows an empty canvas, both
+  # before the response is collected, matching jsPsych's empty `response` stimulus.
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  design <- list(name = "t", language = "english", timing = list())
+  out <- tempfile("lexsync"); dir.create(out)
+
+  pytxt <- paste(readLines(export_psychopy(make_stim(), design, schema, out), warn = FALSE),
+                 collapse = "\n")
+  expect_true(grepl("        win.flip()\n        keys = event.waitKeys(", pytxt, fixed = TRUE))
+
+  os <- readLines(export_opensesame(make_stim(), design, schema, out), warn = FALSE)
+  expect_true("define inline_script lexsync_e2_blank" %in% os)
+  expect_true("define keyboard_response lexsync_e2" %in% os)
+  expect_identical(grep("^\trun lexsync_e", os, value = TRUE),
+                   c("\trun lexsync_e0 always", "\trun lexsync_e1 always",
+                     "\trun lexsync_e2_blank always", "\trun lexsync_e2 always",
+                     "\trun lexsync_e3 always"))
+})
+
 test_that("a per-design font overrides the Latin default for logographic scripts", {
   schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
   stim <- assign_triggers(data.frame(

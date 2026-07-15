@@ -7,27 +7,27 @@
   "artifacts": [
     {
       "file": "output\\stimuli\\zh_freqcontrast_chinese_stimuli_py.csv",
-      "sha256": "a7558f22dd8c16b79d6b32c70349e1f2dc6eed8c4887a536ea09ae4a1da15dc6"
+      "sha256": "b81174314550fcbe81e1659d98e6483d1f0b6d99c311fa66846c010635fefc09"
     },
     {
       "file": "output\\reports\\zh_freqcontrast_chinese_descriptives_py.csv",
-      "sha256": "18e91a35fe21661b9b141fe2930e36d1fed214979892e2ae864e294ec1891394"
+      "sha256": "63a495cadbf6d2c5a359d26cc0c21acf3e189b8951cf3be84b914977bd8df0a0"
     },
     {
       "file": "output\\reports\\zh_freqcontrast_chinese_comparisons_py.csv",
-      "sha256": "8a0c87b85d8c76eb353ab5099a4f35600d528793d18c9db55c3ad9d660ac3ec2"
+      "sha256": "fd8586d18129f73e2abc1dc65b606b9e321744113a606eacb4927568cdb3759c"
     },
     {
       "file": "output\\experiments\\zh_freqcontrast_chinese_psychopy.py",
-      "sha256": "5cd9222c760f00b1d91c2485be2cf1f06ab624ba7a7be5564f3e0055d585a6d4"
+      "sha256": "b2d40e0e68cda6864c0ea6c4c1e41d56364d356359ad8015aba7ad5bb2f71660"
     },
     {
       "file": "output\\experiments\\zh_freqcontrast_chinese.osexp",
-      "sha256": "b82046fd7500304901ee45f71a63e19935f09e783905d357a3ff6fa58ed862f1"
+      "sha256": "7b5d64a82a0726b7680f39fdf004ef36b28bae8a4a4e4ba8e5f9f30947f0844d"
     },
     {
       "file": "output\\experiments\\zh_freqcontrast_chinese.html",
-      "sha256": "ad04d283a3f535b610ca31d0d55199a5ab51fee710b67912e51205a12e8ea867"
+      "sha256": "ea66cee2bd5c90ffd15cea891e5ae2c07a8b83036250bf0e5006b009642a8b16"
     }
   ],
   "counterbalancing": {
@@ -82,7 +82,7 @@
     "n_conditions": 2,
     "n_total": 160,
     "stimuli_file": "output\\stimuli\\zh_freqcontrast_chinese_stimuli_py.csv",
-    "stimuli_sha256": "a7558f22dd8c16b79d6b32c70349e1f2dc6eed8c4887a536ea09ae4a1da15dc6"
+    "stimuli_sha256": "b81174314550fcbe81e1659d98e6483d1f0b6d99c311fa66846c010635fefc09"
   },
   "lexsync_datasheet_version": "1.0",
   "materials_source": {

@@ -31,6 +31,9 @@ PKG_DIR = os.path.dirname(lexsync.__file__)
 SCHEMA_PATH = os.path.join(PKG_DIR, "data", "schema.yaml")
 
 DIMENSIONS = ["length", "frequency", "n_density", "old20", "n_syllables", "bigram_freq"]
+# The engine's pseudoword generators (items.generation.method). The first is the
+# engine default, so the design only names a method when the other is chosen.
+GENERATION_METHODS = ["letter_substitution", "subsyllabic"]
 DIM_LABEL = {
     "length": "Length", "frequency": "Frequency (Zipf)", "n_density": "Neighbourhood N",
     "old20": "OLD20", "n_syllables": "Syllables", "bigram_freq": "Bigram frequency",
@@ -133,10 +136,54 @@ def run_design(design: dict, lexicon_abs: str | None, items_abs: str | None) -> 
     return bundle
 
 
-def make_zip(design: dict, design_filename: str, bundle: dict) -> bytes:
+def positive_tolerances(values: dict) -> dict:
+    """Keep the dimensions the user gave a positive tolerance k.
+
+    A k of zero means "leave the schema default for this dimension alone". Carried
+    into the design it would instead pin the pre-filter window to zero width and
+    admit no candidate at all, so it is dropped here rather than written out.
+
+    Parameters
+    ----------
+    values : dict
+        Dimension name -> k, in the order the dimensions are matched on.
+
+    Returns
+    -------
+    dict
+        The subset with k > 0, order preserved.
+    """
+    return {d: float(k) for d, k in values.items() if k is not None and k > 0}
+
+
+def make_zip(design: dict, design_filename: str, bundle: dict,
+             extra_files: dict | None = None) -> bytes:
+    """Archive the design, every generated artefact, and any uploaded input.
+
+    Parameters
+    ----------
+    design : dict
+        The design as shown to the user, carrying repository-relative paths.
+    design_filename : str
+        Name the design YAML takes inside the archive.
+    bundle : dict
+        A :func:`run_design` result; its ``outdir`` is walked for artefacts.
+    extra_files : dict, optional
+        Maps a design-relative path (``corpora/mine.csv``) to the absolute path of
+        the file to store there. An uploaded lexicon or item table lives only in a
+        temporary directory, so without this the design would name a path that the
+        bundle does not supply and the export would not reproduce the run.
+
+    Returns
+    -------
+    bytes
+        The zip archive.
+    """
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
         z.writestr(design_filename, yaml_block(design))
+        for rel, full in (extra_files or {}).items():
+            z.write(full, rel)
         out = bundle["outdir"]
         for root, _dirs, files in os.walk(out):
             for f in files:
@@ -180,6 +227,10 @@ with st.sidebar:
 design: dict = {"name": name, "language": language}
 lexicon_abs = None
 items_abs = None
+# Design-relative path -> absolute temp path, for inputs the user uploaded and the
+# repository therefore does not hold. Recorded where the upload is written, so the
+# key is by construction the same string the design names.
+uploaded_inputs: dict = {}
 
 # --------------------------------------------------------- corpus / generate UI
 if paradigm in ("factorial", "lexical_decision"):
@@ -198,6 +249,7 @@ if paradigm in ("factorial", "lexical_decision"):
             with open(lexicon_abs, "wb") as fh:
                 fh.write(up.getbuffer())
             design["lexicon"] = f"corpora/{up.name}"
+            uploaded_inputs[design["lexicon"]] = lexicon_abs
     else:
         lexicon_abs = corpora[corpus_choice]
         design["lexicon"] = f"corpora/derived/{corpus_choice}.csv"
@@ -318,12 +370,11 @@ if paradigm == "factorial":
     matching = {"method": method}
     with st.expander("Advanced: per-dimension tolerance windows (mean ± k·SD)"):
         st.caption("Override the schema defaults; e.g. frequency 0.111 reproduces the "
-                   "mean ± SD/9 window of Gonzalez Alonso et al. (2025).")
-        tol = {}
-        for d in design["match_on"]:
-            v = st.number_input(f"k for {DIM_LABEL[d]}", 0.0, 10.0, 0.0, step=0.05, key=f"tol_{d}")
-            if v > 0:
-                tol[d] = v
+                   "mean ± SD/9 window of González Alonso et al. (2025).")
+        tol = positive_tolerances({
+            d: st.number_input(f"k for {DIM_LABEL[d]}", 0.0, 10.0, 0.0, step=0.05, key=f"tol_{d}")
+            for d in design["match_on"]
+        })
         if tol:
             matching["tolerance_k"] = tol
     design["matching"] = matching
@@ -335,6 +386,15 @@ elif paradigm == "lexical_decision":
     design["paradigm"] = "lexical_decision"
     design["items"] = {"source": "generate"}  # lexicon comes from the top-level field
     design["n_per_condition"] = st.number_input("Items per condition (words = pseudowords)", 4, 200, 60, step=2)
+    gen_method = st.selectbox(
+        "Pseudoword generation method", GENERATION_METHODS,
+        help="letter_substitution changes the fewest single letters, keeping every "
+             "bigram attested; subsyllabic swaps whole onset/nucleus/coda constituents "
+             "(Wuggy-style; Keuleers & Brysbaert, 2010). Both are deterministic, so "
+             "the two engines generate identical pseudowords.",
+    )
+    if gen_method != GENERATION_METHODS[0]:
+        design["items"]["generation"] = {"method": gen_method}
     design["counterbalance"] = {"lists": 1}
     st.caption("Real words in the frequency/length band are paired with deterministically "
                "generated, orthographically legal pseudowords matched on length.")
@@ -360,6 +420,7 @@ elif paradigm in ("priming", "self_paced_reading"):
             with open(items_abs, "wb") as fh:
                 fh.write(up.getbuffer())
             design["items"] = {"source": "table", "path": f"items/{up.name}"}
+            uploaded_inputs[design["items"]["path"]] = items_abs
             st.dataframe(pd.read_csv(items_abs).head(8), use_container_width=True)
     design["counterbalance"] = {"lists": st.number_input("Counterbalancing lists", 1, 16, 2)}
 
@@ -389,6 +450,7 @@ if run:
             st.session_state["bundle"] = bundle
             st.session_state["design"] = design
             st.session_state["design_filename"] = design_filename
+            st.session_state["uploaded_inputs"] = uploaded_inputs
             st.success(f"Done — {len(bundle['stimuli'])} rows selected.")
         except Exception as exc:  # surface pipeline errors to the user
             st.session_state.pop("bundle", None)
@@ -398,6 +460,8 @@ if "bundle" in st.session_state:
     bundle = st.session_state["bundle"]
     design = st.session_state["design"]
     design_filename = st.session_state["design_filename"]
+    extra_files = {rel: full for rel, full in st.session_state.get("uploaded_inputs", {}).items()
+                   if os.path.exists(full)}
     tabs = st.tabs(["Stimuli", "Realised control", "Datasheet", "Experiment scripts",
                     "Reproducible code", "Download"])
 
@@ -456,14 +520,22 @@ if "bundle" in st.session_state:
         st.code(code["cli"], language="bash")
         st.caption("The R and Python engines select byte-identical stimuli from this "
                    "configuration; only the seeded trial order differs by ecosystem.")
+        if extra_files:
+            st.warning(
+                "This design names " + ", ".join(f"`{p}`" for p in extra_files) +
+                ", which you uploaded and the repository does not hold. The Download "
+                "tab's bundle carries the file at that path: extract the bundle at the "
+                "repository root before running the code above."
+            )
 
     with tabs[5]:
-        zip_bytes = make_zip(design, design_filename, bundle)
+        zip_bytes = make_zip(design, design_filename, bundle, extra_files)
         st.download_button(
             "Download everything (design + stimuli + report + datasheet + scripts)",
             zip_bytes, file_name=f"{design['name']}_lexsync.zip", mime="application/zip",
             type="primary",
         )
-        st.caption("A self-contained bundle: the design YAML and every generated artefact.")
+        st.caption("A self-contained bundle: the design YAML, every generated artefact, "
+                   "and any lexicon or item table you uploaded, at the path the design names.")
 else:
     st.info("Configure a design in the sidebar and panels above, then press **Run design**.")

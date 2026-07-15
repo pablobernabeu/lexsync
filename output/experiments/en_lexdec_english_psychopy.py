@@ -107,7 +107,10 @@ def run_event(win, port, text_stim, ev, trial):
         if etype == "question":
             text_stim.text = trial.get(ev["field"], "")
             text_stim.draw()
-            win.flip()
+        # A question presents its own prompt; a response draws nothing, so the same
+        # flip clears the preceding stimulus, which therefore offsets at its own
+        # duration rather than lingering for the whole response window.
+        win.flip()
         keys = event.waitKeys(keyList=list(ev.get("keys", [])) + ["escape"],
                               maxWait=float(ev.get("timeout", 2.0)))
         if keys and "escape" in keys:

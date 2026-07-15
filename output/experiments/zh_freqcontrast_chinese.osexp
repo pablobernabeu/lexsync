@@ -90,6 +90,14 @@ define inline_script lexsync_e1
 	clock.sleep(500)
 	__end__
 
+define inline_script lexsync_e2_blank
+	set description "Clear the screen for the response window"
+	set _prepare ""
+	___run__
+	c = Canvas()
+	c.show()
+	__end__
+
 define keyboard_response lexsync_e2
 	set timeout 2000
 	set flush yes
@@ -111,6 +119,7 @@ define sequence lexsync_trial
 	set description "One trial: the paradigm event sequence"
 	run lexsync_e0 always
 	run lexsync_e1 always
+	run lexsync_e2_blank always
 	run lexsync_e2 always
 	run lexsync_e3 always
 
@@ -118,7 +127,7 @@ define loop lexsync_loop
 	set source_file "zh_freqcontrast_chinese_opensesame.csv"
 	set source file
 	set repeat 1
-	set order random
+	set order sequential
 	set description "Present each item once"
 	run lexsync_trial
 

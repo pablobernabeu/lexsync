@@ -6,7 +6,12 @@
 \usage{
 required_fields(design)
 }
+\arguments{
+\item{design}{A parsed design list.}
+}
+\value{
+Character vector of the item fields the design's trials reference.
+}
 \description{
 Trial fields a design needs present in its items (paradigm + events)
 }
-\keyword{internal}

@@ -4,12 +4,13 @@
 \alias{tost_equiv}
 \title{Two one-sided tests (TOST) of equivalence on a Cohen's d bound}
 \usage{
-tost_equiv(x, y, bound_d = 0.4, alpha = 0.05)
+tost_equiv(x, y, bound_d = 0.5, alpha = 0.05)
 }
 \arguments{
 \item{x, y}{Numeric vectors.}
 
-\item{bound_d}{Smallest effect size of interest (Cohen's d).}
+\item{bound_d}{Smallest effect size of interest (Cohen's d); defaults to the
+schema value of 0.5 (Lakens, 2017).}
 
 \item{alpha}{Significance level.}
 }

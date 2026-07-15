@@ -4,8 +4,10 @@ title: 'lexsync: multidimensional lexical optimisation and hardware-timed experi
 abstract: >-
   lexsync is a cross-platform, dual-language (R and Python) toolkit that unifies
   many-language lexical-corpus access, parallel multidimensional stimulus
-  matching, counterbalancing and the automated generation of hardware-timed
-  PsychoPy and OpenSesame experiment scripts for EEG/ERP research.
+  matching, counterbalancing, item resampling, deterministic pseudoword
+  generation and the automated generation of hardware-timed PsychoPy,
+  OpenSesame and jsPsych experiment scripts for EEG/ERP and browser-based
+  research.
 type: software
 authors:
   # Authorship is provisional and to be finalised before submission/release.
@@ -22,10 +24,12 @@ keywords:
   - lexical statistics
   - stimulus matching
   - counterbalancing
+  - pseudoword generation
   - EEG
   - ERP
   - PsychoPy
   - OpenSesame
+  - jsPsych
   - FAIR
 preferred-citation:
   # No venue is named: the manuscript has not been submitted. A journal will be

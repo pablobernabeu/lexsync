@@ -16,7 +16,7 @@ merge_norms(lexicon, norms, on = "word", columns = NULL)
 \item{columns}{Optional norm columns to keep.}
 }
 \value{
-\code{lexicon} with the norm columns joined on.
+\code{lexicon} with the norm columns joined on, in the lexicon's row order.
 }
 \description{
 The connector for semantic dimensions: the norm data themselves are fetched

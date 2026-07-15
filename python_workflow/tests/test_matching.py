@@ -1,3 +1,5 @@
+import numpy as np
+import pandas as pd
 import pytest
 
 from lexsync.matching import (match_stimuli, resample_stimuli,
@@ -159,6 +161,72 @@ def test_select_continuous_rejects_predictor_in_controls(schema, en_lexicon_path
     d["match_on"] = ["frequency", "length"]
     with pytest.raises(ValueError, match="must not also appear"):
         select_continuous_stimuli(pool, d, schema)
+
+
+def _tiny_schema():
+    return {"matching": {"method": "standardised_euclidean", "tolerance_k": {}}}
+
+
+def _na_pool():
+    # The two missing-concreteness rows lead the low subpool deliberately: a matcher
+    # that ranks a NaN distance by row order rather than last would pick them first.
+    return pd.DataFrame({
+        "id": [1, 2, 3, 4, 5, 6, 7, 8],
+        "word": ["lac", "lad", "laa", "lab", "laz", "hab", "hac", "had"],
+        "frequency": [2.0, 2.5, 1.0, 1.5, 3.0, 5.0, 6.0, 7.0],
+        "concreteness": [np.nan, np.nan, 3.0, 2.95, 9.0, 3.0, 3.1, 2.9],
+    })
+
+
+def _na_design(n=3):
+    return {
+        "name": "na", "language": "english", "n_per_condition": n,
+        "conditions": [
+            {"name": "high", "define_by": {"frequency": [5.0, 7.0]}},
+            {"name": "low", "define_by": {"frequency": [1.0, 3.0]}},
+        ],
+        "match_on": ["concreteness"],
+    }
+
+
+def test_missing_dimension_rows_are_dropped_and_ranked_last():
+    # Pins the same contract as test-matching.R: only two low candidates fall inside
+    # the anchor window, so the window relaxes, and the NaN rows must never be chosen
+    # ahead of a real one. The R and Python engines must agree word for word.
+    s = match_stimuli(_na_pool(), _na_design(), _tiny_schema())
+    assert list(s.loc[s.condition == "high", "word"]) == ["hab", "hac", "had"]
+    assert list(s.loc[s.condition == "low", "word"]) == ["laa", "lab", "laz"]
+    assert not s["concreteness"].isna().any()
+
+
+def test_undersized_condition_raises_instead_of_duplicating():
+    # Five anchors but only two low candidates: the greedy assignment would exhaust
+    # the low pool and re-pick its first word for sets 3 to 5.
+    pool = pd.DataFrame({
+        "id": [1, 2, 3, 4, 5, 6, 7],
+        "word": ["laa", "lab", "hab", "hac", "had", "hae", "haf"],
+        "frequency": [1.0, 1.5, 5.0, 5.5, 6.0, 6.5, 7.0],
+        "concreteness": [3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0],
+    })
+    with pytest.raises(ValueError, match="condition 'low' has only 2 candidate"):
+        match_stimuli(pool, _na_design(n=5), _tiny_schema())
+
+
+def test_unknown_method_raises(schema, en_lexicon_path):
+    lex = load_lexicon(en_lexicon_path, schema, "english")
+    d = _design()
+    d["matching"] = {"method": "jiont"}
+    with pytest.raises(ValueError, match="unknown matching method 'jiont'"):
+        match_stimuli(lex, d, schema)
+
+
+def test_joint_rejects_designs_without_exactly_two_conditions(schema, en_lexicon_path):
+    lex = load_lexicon(en_lexicon_path, schema, "english")
+    d = _design()
+    d["matching"] = {"method": "joint"}
+    d["conditions"].append({"name": "mid", "define_by": {"frequency": [4.4, 5.2]}})
+    with pytest.raises(ValueError, match="requires exactly two conditions"):
+        match_stimuli(lex, d, schema)
 
 
 def _resample_design():

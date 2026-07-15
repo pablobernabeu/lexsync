@@ -38,7 +38,14 @@ bigram_counts <- function(words) {
 #' Searches single-letter substitutions first, then two-letter substitutions;
 #' candidates are ranked by summed bigram frequency with a byte-order tie-break,
 #' so the choice is deterministic and identical across engines.
-#' @keywords internal
+#'
+#' @param word The base word to derive the pseudoword from.
+#' @param bigrams Named integer vector of bigram counts, from [bigram_counts()].
+#' @param lexset Environment used as a set of the real word forms a pseudoword
+#'   must avoid.
+#' @param usedset Environment used as a set of the pseudowords already taken.
+#' @return A single pseudoword string, or `NULL` if no legal candidate exists.
+#' @export
 make_pseudoword <- function(word, bigrams, lexset, usedset) {
   word <- as.character(word)
   L <- nchar(word)
@@ -77,7 +84,12 @@ make_pseudoword <- function(word, bigrams, lexset, usedset) {
 }
 
 #' A length-matched pseudoword for each base word (byte-order processing)
-#' @keywords internal
+#'
+#' @param base_words Character vector of words to derive pseudowords from.
+#' @param reference_words Character vector (typically the full lexicon) that
+#'   supplies the bigram statistics and the real word forms to avoid.
+#' @return A data frame with columns `base_word` and `pseudoword`.
+#' @export
 generate_pseudowords <- function(base_words, reference_words) {
   base <- as.character(base_words)
   bigrams <- bigram_counts(reference_words)
@@ -110,7 +122,7 @@ generate_pseudowords <- function(base_words, reference_words) {
 #' in generation.py.
 #' @keywords internal
 segment_subsyllabic <- function(word) {
-  w <- tolower(as.character(word))
+  w <- .lower_invariant(word)
   # Subsyllabic segmentation is an orthographic model for Latin a-z words; any word
   # with a character outside a-z returns an empty list so the caller falls back to
   # letter substitution (keeps the engines in step; avoids multi-byte edge cases).
@@ -235,7 +247,15 @@ generate_pseudowords_subsyllabic <- function(base_words, reference_words) {
 #' lexicon) supplies the bigram statistics and the real-word list a pseudoword
 #' must avoid. The presented string is the `target` column; conditions are `word`
 #' and `pseudoword` and `set` pairs them.
-#' @keywords internal
+#'
+#' @param pool Data frame of candidate words, e.g. from [build_pool()].
+#' @param n Number of real words to select.
+#' @param reference_words Character vector supplying the bigram statistics and
+#'   the real word forms a pseudoword must avoid; defaults to the pool's words.
+#' @param method Pseudoword generator: `"letter_substitution"` (default) or
+#'   `"subsyllabic"` (Wuggy-style; Keuleers and Brysbaert, 2010).
+#' @return A stimulus data frame with `target`, `condition` and `set` columns.
+#' @export
 build_lexdec_stimuli <- function(pool, n, reference_words = NULL, method = "letter_substitution") {
   pool <- pool[order(pool$word, method = "radix"), , drop = FALSE]
   # The pseudoword generators are defined for Latin a-z words; skip others.

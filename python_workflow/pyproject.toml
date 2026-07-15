@@ -13,7 +13,8 @@ license-files = ["LICENSE"]
 authors = [{ name = "Pablo Bernabeu" }]
 keywords = [
   "psycholinguistics", "lexical statistics", "stimulus matching",
-  "counterbalancing", "EEG", "ERP", "PsychoPy", "OpenSesame", "FAIR",
+  "counterbalancing", "pseudoword generation", "EEG", "ERP",
+  "PsychoPy", "OpenSesame", "jsPsych", "FAIR",
 ]
 classifiers = [
   "Programming Language :: Python :: 3",
@@ -30,7 +31,6 @@ dependencies = [
 
 [project.optional-dependencies]
 corpora = ["wordfreq>=3.0,<4"]   # frozen 3.x line: a stable ~2021 language snapshot
-analysis = ["matplotlib>=3.6"]
 experiment = ["psychopy", "pyserial"]
 dev = ["pytest>=7.0", "build", "twine"]
 

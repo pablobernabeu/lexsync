@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="english">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <title>lexsync: en_lexdec_wuggy</title>
@@ -9,11 +9,15 @@
 
     Each trial is rendered from the same declarative event list (EVENTS) as the
     PsychoPy and OpenSesame targets; the trial data are embedded (TRIALS), so this
-    is a single self-contained file that runs by opening it in a browser, with no
-    server. A welcome screen precedes the trials and a completion screen follows
-    them. Every recorded row carries the item's design fields (condition, item id,
-    counterbalancing list and so on) alongside the onset marker (the 'marker'
-    field), so responses can be scored without re-joining to the stimulus table.
+    is a single file that runs by opening it in a browser, with no server. The
+    jsPsych library and stylesheet are loaded from a CDN (unpkg), so the machine
+    running it needs an internet connection; to run offline, download jspsych@7.3.4,
+    the html-keyboard-response plugin and jspsych.css and point the three tags below
+    at the local copies. A welcome screen precedes the trials and a completion
+    screen follows them. Every recorded row carries the item's design fields
+    (condition, item id, counterbalancing list and so on) alongside the onset
+    marker (the 'marker' field), so responses can be scored without re-joining to
+    the stimulus table.
     When the run finishes the data are offered as a CSV download (jsPsych
     localSave), so no server is required to collect them. A browser cannot drive a
     parallel port, so for online EEG synchronisation route the marker through

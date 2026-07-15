@@ -1,0 +1,39 @@
+# DESCRIPTION is hand-maintained and other artefacts (the README, the sibling
+# citation files) treat it as the source of truth, so these tests pin its
+# contract: Imports names exactly the namespaces the R sources call
+# unconditionally, and the author record carries the same ORCID as
+# codemeta.json, CITATION.cff and .zenodo.json.
+
+description_fields <- function() {
+  path <- file.path("..", "..", "DESCRIPTION")
+  if (!file.exists(path)) skip("The source DESCRIPTION is not in this tree.")
+  as.list(read.dcf(path)[1, ])
+}
+
+parse_deps <- function(field) {
+  # Strip version requirements such as "testthat (>= 3.0.0)".
+  deps <- trimws(strsplit(field, ",")[[1]])
+  sub("\\s*\\(.*\\)$", "", deps)
+}
+
+test_that("Imports matches the namespaces the R code uses unconditionally", {
+  imports <- parse_deps(description_fields()$Imports)
+  # stringi backs .lower_invariant(), the case fold behind every byte-order
+  # tie-break; jsonlite and digest back the datasheet checksums. All are
+  # called with :: outside any requireNamespace guard.
+  expect_setequal(imports, c("readr", "yaml", "stringdist", "stringi",
+                             "jsonlite", "digest", "stats", "tools", "utils"))
+})
+
+test_that("guarded and test-only packages are declared in Suggests, not Imports", {
+  suggests <- parse_deps(description_fields()$Suggests)
+  # clue is guarded by requireNamespace() in matching.R; zip, shiny, bslib and
+  # DT are exercised only by test-apps.R, which skips when they are absent.
+  expect_true(all(c("clue", "zip", "shiny", "bslib", "DT") %in% suggests))
+  expect_false(any(c("dplyr", "tidyr", "stringr") %in% suggests))
+})
+
+test_that("the author record carries the ORCID shared by the citation files", {
+  authors <- description_fields()[["Authors@R"]]
+  expect_match(authors, "0000-0003-1083-2460", fixed = TRUE)
+})

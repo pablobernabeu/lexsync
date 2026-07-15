@@ -18,6 +18,25 @@ validate_lexicon <- function(df, schema) {
   invisible(TRUE)
 }
 
+#' Lower-case a character vector under the Unicode default case mapping
+#'
+#' Base R's `tolower()` hands case mapping to the C library, so it is both
+#' locale- and platform-dependent (see `?chartr`): under a C or 8-bit locale it
+#' leaves accented capitals uncased, and even under a UTF-8 locale it applies
+#' only the simple mappings, rendering Greek final sigma as U+03C3 and dropping
+#' the dot of U+0130. Python's `str.lower()` always applies the Unicode default
+#' *full* mapping, giving U+03C2 and i + U+0307 respectively. `word` is the
+#' canonical key behind every byte-order tie-break, so the engines must fold
+#' case identically; pinning ICU to the root locale ("und") reproduces Python's
+#' mapping exactly and removes the ambient locale from the result.
+#'
+#' @param x A character vector, or a vector coercible to one.
+#' @return A character vector, lower-cased; `NA` is preserved.
+#' @keywords internal
+.lower_invariant <- function(x) {
+  stringi::stri_trans_tolower(as.character(x), locale = "und")
+}
+
 # Maximal runs of (possibly accented) Latin vowels approximate syllable nuclei.
 # Accented code points are built with intToUtf8 so the R source stays ASCII (CRAN).
 .VOWELS <- paste0("[aeiouy", intToUtf8(c(
@@ -26,9 +45,12 @@ validate_lexicon <- function(df, schema) {
   "]+")                          # y with acute/diaeresis
 
 #' Orthographic syllable estimate: the number of maximal vowel runs
-#' @keywords internal
+#'
+#' @param word Character vector of word forms.
+#' @return Integer vector: the estimated syllable count of each word.
+#' @export
 count_syllables <- function(word) {
-  word <- tolower(as.character(word))
+  word <- .lower_invariant(word)
   vapply(word, function(w) {
     m <- gregexpr(.VOWELS, w, perl = TRUE)[[1]]
     if (length(m) == 1L && m[1] == -1L) 0L else length(m)
@@ -59,7 +81,7 @@ load_lexicon <- function(path, schema, language = NULL) {
   df <- as.data.frame(read_csv_utf8(path), stringsAsFactors = FALSE)
   validate_lexicon(df, schema)
   freq_col <- schema$dimensions$frequency$column %||% "freq_zipf"
-  df$word <- tolower(trimws(as.character(df$word)))
+  df$word <- .lower_invariant(trimws(as.character(df$word)))
   keep <- !is.na(df$word) & nzchar(df$word) & !is.na(df[[freq_col]])
   df <- df[keep, , drop = FALSE]
   df <- df[!duplicated(df$word), , drop = FALSE]
@@ -157,15 +179,27 @@ add_bigram_frequency <- function(df, reference = NULL) {
 #' @param norms A data frame or the path to a CSV with a word column and norms.
 #' @param on The join column (default "word").
 #' @param columns Optional norm columns to keep.
-#' @return `lexicon` with the norm columns joined on.
+#' @return `lexicon` with the norm columns joined on, in the lexicon's row order.
 #' @export
 merge_norms <- function(lexicon, norms, on = "word", columns = NULL) {
   n <- if (is.data.frame(norms)) norms else as.data.frame(read_csv_utf8(norms), stringsAsFactors = FALSE)
   cols <- if (!is.null(columns)) columns else setdiff(names(n), on)
   n <- n[, c(on, cols), drop = FALSE]
-  n[[on]] <- tolower(trimws(as.character(n[[on]])))
+  n[[on]] <- .lower_invariant(trimws(as.character(n[[on]])))
+  # merge() would pair a missing key with a missing lexicon key, whereas the
+  # Python engine's NaN never compares equal; drop it so neither engine joins on it.
+  n <- n[!is.na(n[[on]]), , drop = FALSE]
   n <- n[!duplicated(n[[on]]), , drop = FALSE]
-  merge(lexicon, n, by = on, all.x = TRUE, sort = FALSE)
+  # merge(sort = FALSE) does not mean "keep x's order" -- it leaves the order
+  # unspecified, and in practice sends unmatched rows last. Carry an explicit row
+  # id through the join and restore it, so the result is the caller's own lexicon
+  # order, as pandas' left join gives.
+  lexicon[["..lexsync_row"]] <- seq_len(nrow(lexicon))
+  out <- merge(lexicon, n, by = on, all.x = TRUE, sort = FALSE)
+  out <- out[order(out[["..lexsync_row"]]),
+             setdiff(names(out), "..lexsync_row"), drop = FALSE]
+  rownames(out) <- NULL
+  out
 }
 
 #' Load a paradigm item table (prime-target pairs, sentences, ...)

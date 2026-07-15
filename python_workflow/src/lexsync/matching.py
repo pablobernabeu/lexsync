@@ -24,6 +24,10 @@ import pandas as pd
 
 from .querying import build_pool
 
+# Fixed order, as documented in schema.yaml; not sorted(), because the R mirror's
+# sort() on character vectors is locale-collated and the two error messages must agree.
+_KNOWN_METHODS = ("standardised_euclidean", "joint", "mahalanobis", "optimal")
+
 
 def _zmat(df: pd.DataFrame, match_on, center, scale) -> np.ndarray:
     m = df[match_on].to_numpy(dtype=float)
@@ -160,6 +164,14 @@ def match_stimuli(pool: pd.DataFrame, design: dict, schema: dict, verbose: bool 
 
     method = ((design.get("matching") or {}).get("method")
               or (schema.get("matching") or {}).get("method") or "standardised_euclidean")
+    if method not in _KNOWN_METHODS:
+        raise ValueError(f"lexsync: unknown matching method '{method}'. "
+                         f"Known methods: {', '.join(_KNOWN_METHODS)}.")
+    if method in ("joint", "optimal") and len(conditions) != 2:
+        # Both are pairwise matchers; falling back to the anchor matcher here would
+        # make the datasheet's recorded method differ from the one actually used.
+        raise ValueError(f"lexsync: matching method '{method}' requires exactly two "
+                         f"conditions, got {len(conditions)}.")
     if method == "joint" and len(conditions) == 2:
         return _match_joint(subpools, cond_names, match_on, center, scale, n)
     if method == "optimal" and len(conditions) == 2:
@@ -180,6 +192,9 @@ def match_stimuli(pool: pd.DataFrame, design: dict, schema: dict, verbose: bool 
     anchor = anchor_pool.iloc[idx1 - 1].copy()
     anchor["condition"] = cond_names[0]
     n_take = len(anchor)
+    if verbose and n_take < n:
+        print(f"lexsync: anchor condition '{cond_names[0]}' yields only {n_take} items; "
+              f"n_per_condition is {n}.")
     z_anchor = _zmat(anchor, match_on, center, scale)
 
     win = {}
@@ -208,6 +223,13 @@ def match_stimuli(pool: pd.DataFrame, design: dict, schema: dict, verbose: bool 
                 print(f"lexsync: condition '{cname}' has {len(cand_f)} candidates within tolerance "
                       f"(< {n_take} needed); relaxing the window.")
             cand_f = cand
+        if len(cand_f) < n_take:
+            # The assignment below would otherwise re-pick an exhausted pool's first
+            # item (every remaining distance is Inf, so the tie-break decides), and
+            # emit the same word in several sets.
+            raise ValueError(f"lexsync: condition '{cname}' has only {len(cand_f)} candidate(s) "
+                             f"but {n_take} are needed; widen pool_filters/define_by or lower "
+                             f"n_per_condition.")
         cand_f = cand_f.reset_index(drop=True)
         z_cand = _zmat(cand_f, match_on, center, scale)
         words = cand_f["word"].to_numpy()
@@ -223,7 +245,14 @@ def match_stimuli(pool: pd.DataFrame, design: dict, schema: dict, verbose: bool 
             else:
                 dvec = np.round(np.sqrt(np.maximum((delta @ metric * delta).sum(axis=1), 0.0)), 9)
             dvec = np.where(used, np.inf, dvec)
-            best = min(range(len(cand_f)), key=lambda j: (dvec[j], words[j].encode("utf-8"), int(ids[j])))
+            # A relaxed window can admit a row whose matched dimension is missing, and
+            # its distance is NaN. Rank those last, as R's order(na.last = TRUE) does:
+            # a bare min() over NaN keeps whichever row it saw first, so the selection
+            # would otherwise depend on pool row order and diverge from the R engine.
+            nan_last = np.isnan(dvec)
+            best = min(range(len(cand_f)),
+                       key=lambda j: (bool(nan_last[j]), 0.0 if nan_last[j] else dvec[j],
+                                      words[j].encode("utf-8"), int(ids[j])))
             pick[a] = best
             used[best] = True
         sel = cand_f.iloc[pick].copy()

@@ -13,6 +13,6 @@
 c = Canvas()
 c.text(var.word)
 var.onset_time = c.show()            # blocks until the refresh; returns the onset
-send_trigger(var.target_word_trigger)    # onset-aligned marker
+send_trigger(var.item_trigger)           # onset-aligned per-item marker
 send_trigger(var.condition_trigger)      # condition marker
 clock.sleep(var.word_duration_ms)

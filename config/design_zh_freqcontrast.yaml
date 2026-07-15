@@ -19,7 +19,9 @@ description: 'High versus low frequency Mandarin Chinese two-character words, ma
 n_per_condition: 80
 # A glyph-complete CJK font for the generated PsychoPy and OpenSesame scripts,
 # overriding the Latin default. Set this to any CJK font installed on the
-# presentation machine (e.g. 'Microsoft YaHei', 'Noto Sans CJK SC').
+# presentation machine whose family name is space-free (e.g. 'SimSun', 'KaiTi'):
+# the name is emitted verbatim as the OpenSesame 'set font_family' token, which
+# takes a single unquoted word (see 'opensesame_font' in schema.yaml).
 font: SimHei
 pool_filters:
   length: [2, 2]

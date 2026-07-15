@@ -7,27 +7,27 @@
   "artifacts": [
     {
       "file": "output\\stimuli\\en_freqcontinuous_english_stimuli_py.csv",
-      "sha256": "988abe868bed897f62222f5e5a202148a321a07e4275378eb531208863bc6253"
+      "sha256": "b3b0045fd14da108ab42ab105b851a91404284be6b4e71b5ce65a8f127c5b0e3"
     },
     {
       "file": "output\\reports\\en_freqcontinuous_english_descriptives_py.csv",
-      "sha256": "3811c7901d5d14ebafde2a95eeb52ea57350be8d09d8ce1f1494ebe9b26c60af"
+      "sha256": "652d2df54e9d77598843de08cb2bdf54f4b39f9ac07a505b78f6019b64195507"
     },
     {
       "file": "output\\reports\\en_freqcontinuous_english_comparisons_py.csv",
-      "sha256": "ed0daacb89e56182367c651f6dc0d83c5935d49df419bb872e7fb72701c46048"
+      "sha256": "f7b643a52ba5980aa944c070e073595ea27953b62f7e10981be85c686bf4cec5"
     },
     {
       "file": "output\\experiments\\en_freqcontinuous_english_psychopy.py",
-      "sha256": "628eb9a7fec6779fa9a6b84f0cc3bd5ce4a557f9fc7fdad58ed08ed86606167a"
+      "sha256": "6ce75aa861d5e87c68edb7c6fc8b538e8bfda0329f9c145a3b9d8b8c1cd4e35e"
     },
     {
       "file": "output\\experiments\\en_freqcontinuous_english.osexp",
-      "sha256": "9da90b1f9e0f94bdacde5586f102d82d75760d866f58272f4b0767c9a7460dfe"
+      "sha256": "6deb70a4a36061ae926af8b9fbc03342a50b41690ded925a36ebc2354474205f"
     },
     {
       "file": "output\\experiments\\en_freqcontinuous_english.html",
-      "sha256": "f693b0523cdccd7e0b54c7e9f17cc4577c683ce78c0ddfadbaa1d5d832c6ce0b"
+      "sha256": "7d597843c3755131ff73a128a6fb22a4c0e17a73c7fc3fe59a5671488450a8d2"
     }
   ],
   "counterbalancing": {
@@ -81,7 +81,7 @@
     "n_conditions": 1,
     "n_total": 80,
     "stimuli_file": "output\\stimuli\\en_freqcontinuous_english_stimuli_py.csv",
-    "stimuli_sha256": "988abe868bed897f62222f5e5a202148a321a07e4275378eb531208863bc6253"
+    "stimuli_sha256": "b3b0045fd14da108ab42ab105b851a91404284be6b4e71b5ce65a8f127c5b0e3"
   },
   "lexsync_datasheet_version": "1.0",
   "materials_source": {
@@ -142,6 +142,12 @@
     ],
     "cross_engine": "byte-identical",
     "method": "continuous even-spread (predictor spanned, controls banded)",
-    "predictor": "frequency"
+    "predictor": "frequency",
+    "tolerance_k": {
+      "frequency": 1.0,
+      "length": 1.5,
+      "n_density": 1.5,
+      "old20": 1.5
+    }
   }
 }

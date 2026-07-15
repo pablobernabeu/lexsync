@@ -13,6 +13,29 @@
   if (is.null(p)) "factorial" else (p$counterbalance %||% "factorial")
 }
 
+# set.seed() reseeds the caller's global stream, which a package must not do
+# (Writing R Extensions); the shuffles below save the stream and put it back on
+# exit. A session that had never drawn a random number must end with no
+# .Random.seed at all, hence the removal branch.
+.save_seed <- function() {
+  if (exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) {
+    get(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
+  } else {
+    NULL
+  }
+}
+
+.restore_seed <- function(old) {
+  if (is.null(old)) {
+    if (exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) {
+      rm(".Random.seed", envir = .GlobalEnv)
+    }
+  } else {
+    assign(".Random.seed", old, envir = .GlobalEnv)
+  }
+  invisible(NULL)
+}
+
 #' Assign stimuli to lists and a randomised, reproducible trial order
 #'
 #' Dispatches on the design's paradigm: the factorial recipe for matched word
@@ -52,10 +75,14 @@ counterbalance_factorial <- function(stimuli, design, schema) {
   stimuli$list <- 1L
   if (n_lists > 1) {
     sets <- sort(unique(stimuli$set))
-    list_of_set <- ((sets - 1L) %% n_lists) + 1L
+    # Deal by set RANK, not by set value, so the deal does not depend on `set`
+    # being contiguous and starting at 1 (Python's enumerate() does the same).
+    list_of_set <- ((seq_along(sets) - 1L) %% n_lists) + 1L
     stimuli$list <- list_of_set[match(stimuli$set, sets)]
   }
 
+  old_seed <- .save_seed()
+  on.exit(.restore_seed(old_seed), add = TRUE)
   set.seed(seed)
   order_within <- function(df) {
     df <- df[sample(nrow(df)), , drop = FALSE]
@@ -83,6 +110,8 @@ counterbalance_latin_square <- function(stimuli, design, schema) {
   n_lists <- design$counterbalance$lists %||% n_cond
   sets <- sort(unique(stimuli$set))
 
+  old_seed <- .save_seed()
+  on.exit(.restore_seed(old_seed), add = TRUE)
   set.seed(seed)
   parts <- list()
   for (li in seq_len(n_lists) - 1L) {

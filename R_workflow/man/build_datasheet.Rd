@@ -17,11 +17,31 @@ build_datasheet(
 )
 }
 \arguments{
+\item{design}{A parsed design list.}
+
+\item{schema}{The parsed global schema (\code{schema.yaml}).}
+
+\item{report}{Match report data frame, from \code{\link[=match_report]{match_report()}} or
+\code{\link[=match_report_continuous]{match_report_continuous()}}, or \code{NULL} for generated or tabled items.}
+
+\item{stimuli}{The selected stimulus data frame.}
+
+\item{source_path}{Path of the lexicon or item table the stimuli came from.}
+
+\item{artifacts}{Named list of the artifact paths written for the design
+(stimuli, descriptives, comparisons, experiments).}
+
+\item{seed}{The integer seed recorded for the counterbalanced trial order.}
+
+\item{engine}{Engine label recorded in the record (default \code{"R"}).}
+
 \item{candidate_pool}{Optional list of per-condition candidate-pool sizes
 (\code{list(condition, n_candidates)}) recording how many items satisfied each
 condition's window before matching; reported for selection transparency.}
 }
+\value{
+The datasheet as a nested list, ready for \code{\link[=write_datasheet]{write_datasheet()}}.
+}
 \description{
 Assemble the materials datasheet for one design
 }
-\keyword{internal}

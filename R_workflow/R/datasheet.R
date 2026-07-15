@@ -7,6 +7,14 @@
 
 DATASHEET_VERSION <- "1.0"
 
+# Datasheet labels for the pseudoword generators in generation.R, keyed by the
+# items.generation.method token. Kept character-for-character identical to
+# _GENERATION_LABELS in datasheet.py so the two engines' records stay comparable.
+.GENERATION_LABELS <- list(
+  letter_substitution = "constrained letter substitution (deterministic pseudowords)",
+  subsyllabic = "subsyllabic constituent swap (Wuggy-style, deterministic pseudowords)"
+)
+
 .versions_R <- function(engine) {
   v <- list(engine = engine,
             lexsync = tryCatch(as.character(utils::packageVersion("lexsync")),
@@ -28,6 +36,17 @@ DATASHEET_VERSION <- "1.0"
   if (!is.null(method) && method %in% c("mahalanobis", "optimal"))
     return("approximate (platform linear algebra)")
   "byte-identical"
+}
+
+# The tolerance windows the matcher actually applied. Resolved exactly as
+# match_stimuli resolves them (schema defaults, overridden per dimension by the
+# design), so the datasheet records the windows that were used rather than the
+# defaults that a design may have replaced. Mirrors datasheet.py.
+.resolve_tolerance_k <- function(design, schema) {
+  tol_k <- schema$matching$tolerance_k %||% list()
+  if (!is.null(design$matching$tolerance_k))
+    tol_k <- utils::modifyList(tol_k, design$matching$tolerance_k)
+  tol_k
 }
 
 .controlled_dims <- function(design, source) {
@@ -79,10 +98,22 @@ DATASHEET_VERSION <- "1.0"
 }
 
 #' Assemble the materials datasheet for one design
+#'
+#' @param design A parsed design list.
+#' @param schema The parsed global schema (`schema.yaml`).
+#' @param report Match report data frame, from [match_report()] or
+#'   [match_report_continuous()], or `NULL` for generated or tabled items.
+#' @param stimuli The selected stimulus data frame.
+#' @param source_path Path of the lexicon or item table the stimuli came from.
+#' @param artifacts Named list of the artifact paths written for the design
+#'   (stimuli, descriptives, comparisons, experiments).
+#' @param seed The integer seed recorded for the counterbalanced trial order.
+#' @param engine Engine label recorded in the record (default `"R"`).
 #' @param candidate_pool Optional list of per-condition candidate-pool sizes
 #'   (`list(condition, n_candidates)`) recording how many items satisfied each
 #'   condition's window before matching; reported for selection transparency.
-#' @keywords internal
+#' @return The datasheet as a nested list, ready for [write_datasheet()].
+#' @export
 build_datasheet <- function(design, schema, report, stimuli, source_path, artifacts,
                             seed, engine = "R", candidate_pool = NULL) {
   source <- design$items$source %||% "corpus"
@@ -115,14 +146,20 @@ build_datasheet <- function(design, schema, report, stimuli, source_path, artifa
   }
 
   selection <- if (is_continuous) {
+    # The controls are banded by the same tolerance windows the matcher uses, so
+    # the record states them here too; without them the banding is unreproducible.
     list(method = "continuous even-spread (predictor spanned, controls banded)",
          predictor = design$continuous$predictor,
-         controls = as.list(unlist(design$continuous$controls, use.names = FALSE)))
+         controls = as.list(unlist(design$continuous$controls, use.names = FALSE)),
+         tolerance_k = .resolve_tolerance_k(design, schema))
   } else if (identical(source, "corpus")) {
     list(method = design$matching$method %||% schema$matching$method %||% "standardised_euclidean",
-         match_on = as.list(controlled), tolerance_k = schema$matching$tolerance_k)
+         match_on = as.list(controlled), tolerance_k = .resolve_tolerance_k(design, schema))
   } else if (identical(source, "generate")) {
-    list(method = "constrained letter substitution (deterministic pseudowords)",
+    gen_method <- design$items$generation$method %||% "letter_substitution"
+    list(method = .GENERATION_LABELS[[gen_method]] %||%
+           paste0(gen_method, " (deterministic pseudowords)"),
+         generation_method = gen_method,
          matched_on = list("length"))
   } else {
     list(method = "item table (user-supplied)")
@@ -142,7 +179,13 @@ build_datasheet <- function(design, schema, report, stimuli, source_path, artifa
       provenance = if (source %in% c("corpus", "generate"))
         "see corpora/ATTRIBUTION.md for corpus licence and citation"
       else "user-supplied item table"),
-    dimensions = schema$dimensions,
+    # A corpus design draws on every schema dimension; a generate or table design
+    # reports only the ones it controlled, so the record does not claim dimensions
+    # that played no part in the selection. Mirrors datasheet.py. The `[` form
+    # keeps the names attribute, so an empty result is a named list() and
+    # serialises as {} rather than [], matching Python.
+    dimensions = schema$dimensions[names(schema$dimensions) %in% controlled |
+                                     identical(source, "corpus")],
     selection = selection,
     analysis = .analysis_R(design, source),
     realised_control = realised,
@@ -165,7 +208,11 @@ build_datasheet <- function(design, schema, report, stimuli, source_path, artifa
     unlist(artifacts$experiments, use.names = FALSE))
 }
 
-#' @keywords internal
+#' A ready-to-adapt methods paragraph rendered from a datasheet
+#'
+#' @param ds A datasheet list, from [build_datasheet()].
+#' @return A single character string describing the materials procedure.
+#' @export
 methods_paragraph <- function(ds) {
   d <- ds$design
   src <- ds$materials_source$type
@@ -336,7 +383,13 @@ render_datasheet_md <- function(ds) {
   paste(lines, collapse = "\n")
 }
 
-#' @keywords internal
+#' Write a datasheet to a JSON record and a Markdown rendering
+#'
+#' @param ds A datasheet list, from [build_datasheet()].
+#' @param json_path Output path for the machine-readable JSON record.
+#' @param md_path Output path for the human-readable Markdown rendering.
+#' @return Invisibly, the two paths written.
+#' @export
 write_datasheet <- function(ds, json_path, md_path) {
   dir.create(dirname(json_path), recursive = TRUE, showWarnings = FALSE)
   writeLines(jsonlite::toJSON(ds, auto_unbox = TRUE, pretty = TRUE, null = "null", na = "null"),

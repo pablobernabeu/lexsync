@@ -25,8 +25,13 @@ def read_csv_utf8(path: str) -> pd.DataFrame:
 
 
 def write_csv_utf8(x: pd.DataFrame, path: str) -> str:
+    # Pin LF: pandas defaults `lineterminator` to os.linesep, so the same selection
+    # would be stamped with a different SHA-256 on Windows than on Linux. The
+    # datasheet advertises those digests as provenance, so they must depend on the
+    # content alone. LF is also readr's terminator on every platform, keeping the
+    # two engines to one convention.
     os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
-    x.to_csv(path, index=False, encoding="utf-8")
+    x.to_csv(path, index=False, encoding="utf-8", lineterminator="\n")
     return path
 
 

@@ -6,7 +6,12 @@
 \usage{
 count_syllables(word)
 }
+\arguments{
+\item{word}{Character vector of word forms.}
+}
+\value{
+Integer vector: the estimated syllable count of each word.
+}
 \description{
 Orthographic syllable estimate: the number of maximal vowel runs
 }
-\keyword{internal}

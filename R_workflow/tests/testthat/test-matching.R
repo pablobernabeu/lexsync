@@ -140,6 +140,71 @@ test_that("select_continuous_stimuli rejects the predictor appearing in controls
   expect_error(select_continuous_stimuli(pool, d, schema), "must not also appear")
 })
 
+tiny_schema <- function() {
+  list(matching = list(method = "standardised_euclidean", tolerance_k = list()))
+}
+
+na_pool <- function() {
+  # The two missing-concreteness rows lead the low subpool deliberately: a matcher
+  # that ranks an NA distance by row order rather than last would pick them first.
+  data.frame(
+    id = 1:8,
+    word = c("lac", "lad", "laa", "lab", "laz", "hab", "hac", "had"),
+    frequency = c(2.0, 2.5, 1.0, 1.5, 3.0, 5.0, 6.0, 7.0),
+    concreteness = c(NA, NA, 3.0, 2.95, 9.0, 3.0, 3.1, 2.9),
+    stringsAsFactors = FALSE
+  )
+}
+
+na_design <- function(n = 3L) {
+  list(name = "na", language = "english", n_per_condition = n,
+       conditions = list(
+         list(name = "high", define_by = list(frequency = c(5.0, 7.0))),
+         list(name = "low",  define_by = list(frequency = c(1.0, 3.0)))
+       ),
+       match_on = list("concreteness"))
+}
+
+test_that("rows missing a matched dimension are dropped and ranked last", {
+  # Pins the same contract as test_matching.py: only two low candidates fall inside
+  # the anchor window, so the window relaxes, and the NA rows must never be chosen
+  # ahead of a real one. The R and Python engines must agree word for word.
+  s <- match_stimuli(na_pool(), na_design(), tiny_schema())
+  expect_identical(s$word[s$condition == "high"], c("hab", "hac", "had"))
+  expect_identical(s$word[s$condition == "low"], c("laa", "lab", "laz"))
+  expect_false(any(is.na(s$concreteness)))
+})
+
+test_that("an undersized condition raises rather than duplicating words", {
+  # Five anchors but only two low candidates: the greedy assignment would exhaust
+  # the low pool and re-pick its first word for sets 3 to 5.
+  pool <- data.frame(
+    id = 1:7,
+    word = c("laa", "lab", "hab", "hac", "had", "hae", "haf"),
+    frequency = c(1.0, 1.5, 5.0, 5.5, 6.0, 6.5, 7.0),
+    concreteness = rep(3.0, 7),
+    stringsAsFactors = FALSE
+  )
+  expect_error(match_stimuli(pool, na_design(5L), tiny_schema()),
+               "condition 'low' has only 2 candidate")
+})
+
+test_that("an unknown matching method is an error, not a silent fallback", {
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  lex <- load_lexicon(system.file("extdata", "en_example.csv", package = "lexsync"), schema, "english")
+  d <- make_design(); d$matching <- list(method = "jiont")
+  expect_error(match_stimuli(lex, d, schema), "unknown matching method 'jiont'")
+})
+
+test_that("joint matching rejects a design without exactly two conditions", {
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  lex <- load_lexicon(system.file("extdata", "en_example.csv", package = "lexsync"), schema, "english")
+  d <- make_design()
+  d$matching <- list(method = "joint")
+  d$conditions[[3]] <- list(name = "mid", define_by = list(frequency = c(4.4, 5.2)))
+  expect_error(match_stimuli(lex, d, schema), "requires exactly two conditions")
+})
+
 test_that("resample_stimuli produces disjoint matched sets", {
   schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
   lex <- load_lexicon(system.file("extdata", "en_example.csv", package = "lexsync"), schema, "english")

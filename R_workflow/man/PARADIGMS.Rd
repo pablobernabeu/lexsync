@@ -3,6 +3,11 @@
 \name{PARADIGMS}
 \alias{PARADIGMS}
 \title{The paradigm registry: default event sequences and required fields}
+\format{
+A named list with one entry per paradigm (\code{factorial},
+\code{lexical_decision}, \code{priming}, \code{self_paced_reading}), each holding
+\code{stimulus_fields}, a \code{counterbalance} recipe and an \code{events} list.
+}
 \usage{
 PARADIGMS
 }
@@ -12,4 +17,3 @@ region_by_region | response | question), \code{content} (a literal or a \code{{f
 reference), an optional \code{trigger} (an integer EEG code or the token
 "condition"/"item"), \code{onset_locked}, and response \code{keys}/\code{timeout_ms}.
 }
-\keyword{internal}

@@ -23,7 +23,7 @@
 #' @param design A parsed design configuration (conditions, `match_on`,
 #'   `n_per_condition`/`n_per_cell`).
 #' @param schema The parsed global schema (tolerances live here).
-#' @param verbose Logical; report tolerance relaxations.
+#' @param verbose Logical; report tolerance relaxations and a shrunk anchor.
 #' @return A data frame of selected stimuli with a `condition` label and a `set`
 #'   index pairing matched items across conditions.
 #' @importFrom stats sd
@@ -60,6 +60,19 @@ match_stimuli <- function(pool, design, schema, verbose = FALSE) {
   cond_names <- vapply(conditions, function(cd) cd$name, character(1))
 
   method <- design$matching$method %||% schema$matching$method %||% "standardised_euclidean"
+  # Fixed order, as documented in schema.yaml; not sort(), which is locale-collated
+  # on character vectors and would drift from the Python engine's message.
+  known_methods <- c("standardised_euclidean", "joint", "mahalanobis", "optimal")
+  if (!method %in% known_methods) {
+    stop(sprintf("lexsync: unknown matching method '%s'. Known methods: %s.",
+                 method, paste(known_methods, collapse = ", ")), call. = FALSE)
+  }
+  if (method %in% c("joint", "optimal") && length(conditions) != 2L) {
+    # Both are pairwise matchers; falling back to the anchor matcher here would make
+    # the datasheet's recorded method differ from the one actually used.
+    stop(sprintf("lexsync: matching method '%s' requires exactly two conditions, got %d.",
+                 method, length(conditions)), call. = FALSE)
+  }
   if (identical(method, "joint") && length(conditions) == 2L) {
     return(match_joint(subpools, cond_names, match_on, center, scale_, n))
   }
@@ -82,6 +95,10 @@ match_stimuli <- function(pool, design, schema, verbose = FALSE) {
   anchor <- anchor_pool[idx, , drop = FALSE]
   anchor$condition <- cond_names[1]
   n_take <- nrow(anchor)
+  if (verbose && n_take < n) {
+    message(sprintf("lexsync: anchor condition '%s' yields only %d items; n_per_condition is %d.",
+                    cond_names[1], n_take, n))
+  }
   z_anchor <- zmat(anchor)
 
   # Tolerance windows from the anchor distribution (Stage 1 pre-filter).
@@ -105,7 +122,10 @@ match_stimuli <- function(pool, design, schema, verbose = FALSE) {
     }
     # Stage 1: tolerance pre-filter.
     keep <- rep(TRUE, nrow(cand))
-    for (d in match_on) keep <- keep & cand[[d]] >= win[[d]][1] & cand[[d]] <= win[[d]][2]
+    # Drop a row missing a matched dimension, as the Python engine does: NA >= x is
+    # NA, and cand[NA, ] injects an all-NA filler row that would inflate the count
+    # the relaxation guard below tests.
+    for (d in match_on) keep <- keep & !is.na(cand[[d]]) & cand[[d]] >= win[[d]][1] & cand[[d]] <= win[[d]][2]
     cand_f <- cand[keep, , drop = FALSE]
     if (nrow(cand_f) < n_take) {
       if (verbose) {
@@ -113,6 +133,14 @@ match_stimuli <- function(pool, design, schema, verbose = FALSE) {
                         cname, nrow(cand_f), n_take))
       }
       cand_f <- cand
+    }
+    if (nrow(cand_f) < n_take) {
+      # The assignment below would otherwise re-pick an exhausted pool's first item
+      # (every remaining distance is Inf, so the tie-break decides), and emit the
+      # same word in several sets.
+      stop(sprintf(paste0("lexsync: condition '%s' has only %d candidate(s) but %d are needed; ",
+                          "widen pool_filters/define_by or lower n_per_condition."),
+                   cname, nrow(cand_f), n_take), call. = FALSE)
     }
     # Stage 2: standardised nearest-neighbour assignment, greedy, no replacement.
     z_cand <- zmat(cand_f)
@@ -327,7 +355,9 @@ select_continuous_stimuli <- function(pool, design, schema, verbose = FALSE) {
   })
   names(win) <- controls
   keep <- rep(TRUE, nrow(pool))
-  for (d in controls) keep <- keep & pool[[d]] >= win[[d]][1] & pool[[d]] <= win[[d]][2]
+  # As in match_stimuli: an NA on a control must drop the row rather than index an
+  # all-NA filler row into `filtered` and inflate the count tested just below.
+  for (d in controls) keep <- keep & !is.na(pool[[d]]) & pool[[d]] >= win[[d]][1] & pool[[d]] <= win[[d]][2]
   filtered <- pool[keep, , drop = FALSE]
   if (nrow(filtered) < n) {
     if (verbose) {

@@ -21,6 +21,22 @@ def _design():
             "n_per_condition": 2, "counterbalance": {"lists": 1}}
 
 
+def _gen_stim():
+    return pd.DataFrame({
+        "word": ["cat", "dog", "cag", "dop"],
+        "condition": ["word", "word", "pseudoword", "pseudoword"],
+        "set": [1, 2, 1, 2], "length": 3,
+    })
+
+
+def _gen_design(method=None):
+    items = {"source": "generate", "lexicon": "corpora/derived/en.csv"}
+    if method is not None:
+        items["generation"] = {"method": method}
+    return {"name": "g", "language": "english", "paradigm": "lexical_decision",
+            "items": items, "n_per_condition": 2, "counterbalance": {"lists": 1}}
+
+
 def test_datasheet_structure_and_realised_control(schema):
     stim = _stim()
     report = match_report(stim, ["length", "frequency", "n_density", "old20"], schema)
@@ -68,6 +84,7 @@ def test_datasheet_continuous_model_and_rows(schema):
               "continuous": {"predictor": "frequency",
                              "controls": ["length", "n_density", "old20"]},
               "match_on": ["length", "n_density", "old20"], "n_per_condition": 4,
+              "matching": {"tolerance_k": {"length": 1.5}},
               "counterbalance": {"lists": 1}}
     rep = match_report_continuous(stim, "frequency", ["length", "n_density", "old20"], schema)
     ds = build_datasheet(design, schema, rep, stim, "corpora/derived/en.csv",
@@ -78,6 +95,9 @@ def test_datasheet_continuous_model_and_rows(schema):
     assert ds["realised_control"][0]["role"] == "predictor"
     assert "pearson_r" in ds["realised_control"][1]
     assert "predictor" in ds["selection"]
+    # The control bands the matcher applied are part of the record.
+    assert ds["selection"]["tolerance_k"]["length"] == 1.5
+    assert ds["selection"]["tolerance_k"]["old20"] == 2.0
     assert "span frequency" in methods_paragraph(ds)
     assert "r with predictor" in render_datasheet_md(ds)
 
@@ -94,3 +114,49 @@ def test_datasheet_without_report_table_source(schema):
     assert ds["realised_control"] == []
     assert ds["counterbalancing"]["recipe"] == "latin_square_target"
     assert "item table" in methods_paragraph(ds)
+    assert ds["dimensions"] == {}
+
+
+def test_datasheet_records_the_tolerance_windows_the_matcher_applied(schema):
+    # The design-level override is what match_stimuli applies, so it is what the
+    # provenance record must state; the schema defaults survive for the rest.
+    design = _design()
+    design["matching"] = {"tolerance_k": {"frequency": 0.111}}
+    ds = build_datasheet(design, schema, None, _stim(), "x.csv",
+                         {"stimuli": None, "experiments": {}}, 2026)
+    assert ds["selection"]["tolerance_k"]["frequency"] == 0.111
+    assert ds["selection"]["tolerance_k"]["length"] == 2.0
+    plain = build_datasheet(_design(), schema, None, _stim(), "x.csv",
+                            {"stimuli": None, "experiments": {}}, 2026)
+    assert plain["selection"]["tolerance_k"]["frequency"] == 1.0
+
+
+def test_datasheet_names_the_generator_that_ran(schema):
+    ds = build_datasheet(_gen_design("subsyllabic"), schema, None, _gen_stim(), "x.csv",
+                         {"stimuli": None, "experiments": {}}, 2026)
+    assert ds["selection"]["generation_method"] == "subsyllabic"
+    assert ds["selection"]["method"] == (
+        "subsyllabic constituent swap (Wuggy-style, deterministic pseudowords)")
+    assert "subsyllabic constituent swap" in methods_paragraph(ds)
+    default = build_datasheet(_gen_design(), schema, None, _gen_stim(), "x.csv",
+                              {"stimuli": None, "experiments": {}}, 2026)
+    assert default["selection"]["generation_method"] == "letter_substitution"
+    assert default["selection"]["method"] == (
+        "constrained letter substitution (deterministic pseudowords)")
+
+
+def test_datasheet_dimensions_are_filtered_to_the_controlled_ones(schema):
+    gen = build_datasheet(_gen_design("subsyllabic"), schema, None, _gen_stim(), "x.csv",
+                          {"stimuli": None, "experiments": {}}, 2026)
+    assert set(gen["dimensions"]) == {"length"}
+    corpus = build_datasheet(_design(), schema, None, _stim(), "x.csv",
+                             {"stimuli": None, "experiments": {}}, 2026)
+    assert set(corpus["dimensions"]) == set(schema["dimensions"])
+
+
+def test_datasheet_reads_the_lexsync_version_from_package_metadata(schema, monkeypatch):
+    import importlib.metadata
+    monkeypatch.setattr(importlib.metadata, "version", lambda name: "9.9.9")
+    ds = build_datasheet(_design(), schema, None, _stim(), "x.csv",
+                         {"stimuli": None, "experiments": {}}, 2026)
+    assert ds["reproducibility"]["versions"]["lexsync"] == "9.9.9"

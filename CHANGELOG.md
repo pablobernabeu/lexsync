@@ -24,11 +24,11 @@ no function signature changes.
 - Browser (jsPsych) experiments now open with a welcome/instructions screen,
   attach each item's design fields (condition, item id, counterbalancing list) to
   every recorded row, and end with a completion screen that saves the collected
-  data as a CSV download — so a generated experiment gathers usable,
+  data as a CSV download, so a generated experiment gathers usable,
   self-describing data with no server.
-- Two new matching methods (set with `matching.method`): **mahalanobis**, a
+- Two new matching methods (set with `matching.method`): `mahalanobis`, a
   covariance-aware distance that down-weights correlated control dimensions
-  (Rubin, 1980; Stuart, 2010), and **optimal**, a globally optimal assignment for
+  (Rubin, 1980; Stuart, 2010), and `optimal`, a globally optimal assignment for
   two-condition designs (Gu & Rosenbaum, 1993; Hansen & Klopfer, 2006). Unlike the
   deterministic default methods, these use a covariance-matrix inverse and an
   assignment solver, so the R and Python engines select equivalent but not
@@ -72,7 +72,7 @@ no function signature changes.
 
 The state-of-the-art roadmap from the initial competitor and literature review is
 now delivered (covariance-aware and optimal matching, a distributional balance
-diagnostic, continuous designs, and Wuggy-style pseudowords). Further norm
+diagnostic, continuous designs and Wuggy-style pseudowords). Further norm
 dimensions (concreteness, age of acquisition, English Lexicon Project behavioural
 measures) are supported today through the `merge_norms` connector, which joins any
 word-keyed norm table so the matcher can equate on it. Future directions include

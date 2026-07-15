@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 
 import pandas as pd
 
@@ -173,7 +174,7 @@ def _trigger_expr(spec) -> str | None:
 
 
 def _osexp_event_block(name: str, ev: dict) -> tuple:
-    """Return (block_lines, run_name) for one rendered event."""
+    """Return (block_lines, run_names) for one rendered event."""
     t = ev["type"]
     ms = int(round(ev.get("frames", 1) * _FRAME_MS))
     if t in ("fixation", "text", "mask", "blank"):
@@ -185,7 +186,8 @@ def _osexp_event_block(name: str, ev: dict) -> tuple:
         if trig is not None:
             body.append(f"send_trigger({trig})")
         body.append(f"clock.sleep({ms})")
-        return (_inline_block(name, "Show stimulus and send onset-aligned trigger", body, run=True), name)
+        return (_inline_block(name, "Show stimulus and send onset-aligned trigger", body, run=True),
+                [name])
     if t == "region":
         trig = _trigger_expr(ev.get("crit_trigger"))
         body = [
@@ -198,7 +200,7 @@ def _osexp_event_block(name: str, ev: dict) -> tuple:
         if trig is not None:
             body.append(f"    if _i == _crit: send_trigger({trig})")
         body.append("    _kb.get_key()")
-        return (_inline_block(name, "Self-paced reading region by region", body, run=True), name)
+        return (_inline_block(name, "Self-paced reading region by region", body, run=True), [name])
     if t == "question":
         body = [
             f"c = Canvas(); c.text(var.{ev['field']}); c.show()",
@@ -206,17 +208,22 @@ def _osexp_event_block(name: str, ev: dict) -> tuple:
             f"timeout={int(ev.get('timeout', 5) * 1000)})",
             "var.response, var.response_time = _kb.get_key()",
         ]
-        return (_inline_block(name, "Comprehension question", body, run=True), name)
+        return (_inline_block(name, "Comprehension question", body, run=True), [name])
     if t == "response":
         keys = ";".join(ev.get("keys", ["left", "right"]))
-        block = [
+        # A keyboard_response draws nothing, so the preceding canvas would stay up for
+        # the whole response window. Blank it first, so the stimulus offsets at its own
+        # duration as it does in the PsychoPy and jsPsych targets.
+        block = _inline_block(f"{name}_blank", "Clear the screen for the response window",
+                              ["c = Canvas()", "c.show()"], run=True)
+        block += [
             f"define keyboard_response {name}",
             "\tset timeout " + str(int(ev.get("timeout", 2) * 1000)),
             "\tset flush yes", "\tset duration keypress",
             '\tset description "Collect a response"',
             f'\tset allowed_responses "{keys}"', "",
         ]
-        return (block, name)
+        return (block, [f"{name}_blank", name])
     raise ValueError(f"lexsync: unknown event type '{t}'.")
 
 
@@ -273,9 +280,9 @@ def build_osexp(design: dict, conditions_file: str, schema: dict, rendered: list
 
     event_blocks, run_names = [], []
     for i, ev in enumerate(rendered):
-        block, run_name = _osexp_event_block(f"lexsync_e{i}", ev)
+        block, names = _osexp_event_block(f"lexsync_e{i}", ev)
         event_blocks.extend(block)
-        run_names.append(run_name)
+        run_names.extend(names)
 
     header = [
         "---", "API: 2.1", "OpenSesame: 3.3.14", "Platform: nt", "---",
@@ -300,7 +307,10 @@ def build_osexp(design: dict, conditions_file: str, schema: dict, rendered: list
         *[f"\trun {n} always" for n in run_names], "",
         "define loop lexsync_loop",
         f'\tset source_file "{conditions_file}"',
-        "\tset source file", "\tset repeat 1", "\tset order random",
+        # Sequential, so the loop presents the seeded trial order the CSV is sorted
+        # by; OpenSesame's default (random) would discard it and diverge from the
+        # PsychoPy and jsPsych targets.
+        "\tset source file", "\tset repeat 1", "\tset order sequential",
         '\tset description "Present each item once"', "\trun lexsync_trial", "",
         "define sequence lexsync_experiment",
         "\tset flush_keyboard yes",
@@ -320,6 +330,41 @@ def export_opensesame(stimuli, design, schema, outdir, base=None) -> str:
     font = design.get("font") or presentation.get("opensesame_font") or "mono"
     text = build_osexp(design, csv_name, schema, rendered, font=font)
     return _write_text(text, os.path.join(outdir, f"{base}.osexp"))
+
+
+# BCP 47 tags for the human-readable language labels the designs carry, covering the
+# languages the corpus connectors derive lexica for (corpora/fetch_corpora.py).
+_BCP47_TAGS = {"english": "en", "spanish": "es", "french": "fr", "german": "de",
+               "dutch": "nl", "italian": "it", "portuguese": "pt",
+               "chinese": "zh", "chinese (mandarin)": "zh"}
+_BCP47_SHAPE = re.compile(r"^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$")
+
+
+def _language_tag(design: dict) -> str:
+    """The design's BCP 47 tag for the generated HTML ``lang`` attribute.
+
+    ``language`` is a free-text label ("english"), which is not a valid tag, so it is
+    mapped. A design may state ``language_tag`` outright, and a label that is already
+    tag-shaped ("en", "en-GB") is taken as given. Anything else becomes ``und``
+    (BCP 47 "undetermined"): registered, and unlike ``lang="english"`` resolvable.
+
+    Parameters
+    ----------
+    design : dict
+        A parsed design configuration.
+
+    Returns
+    -------
+    str
+        A well-formed BCP 47 language tag.
+    """
+    tag = design.get("language_tag")
+    if tag:
+        return str(tag)
+    label = str(design.get("language") or "").strip()
+    if _BCP47_SHAPE.match(label):
+        return label
+    return _BCP47_TAGS.get(label.lower(), "und")
 
 
 # Event-model key names (PsychoPy style) mapped to browser KeyboardEvent keys.
@@ -346,12 +391,15 @@ def _json_html(obj) -> str:
 
 
 def export_jspsych(stimuli, design, schema, outdir, base=None) -> str:
-    """A self-contained, browser-runnable jsPsych experiment from the event list.
+    """A browser-runnable jsPsych experiment from the event list.
 
     The same rendered events and the trial data are embedded in one HTML file, so
-    anyone can reproduce the exact procedure online from the same materials. Onset
-    triggers are recorded in each trial's data (a browser cannot drive a parallel
-    port); online EEG synchronisation needs WebSerial/LSL or a photodiode.
+    anyone can reproduce the exact procedure online from the same materials. The
+    jsPsych library and stylesheet are loaded from a CDN, so the machine running the
+    file needs an internet connection; the trial data are embedded and the responses
+    are saved locally, so no server is required either to run it or to collect them.
+    Onset triggers are recorded in each trial's data (a browser cannot drive a
+    parallel port); online EEG synchronisation needs WebSerial/LSL or a photodiode.
     """
     base = base or slugify(design["name"], design["language"])
     events = resolve_events(design)
@@ -362,7 +410,8 @@ def export_jspsych(stimuli, design, schema, outdir, base=None) -> str:
     with open(find_template("jspsych/experiment_template.html"), encoding="utf-8") as handle:
         tmpl = handle.read()
     subs = {
-        "DESIGN": design["name"], "LANGUAGE": design["language"], "WORD_FONT": font,
+        "DESIGN": design["name"], "LANGUAGE": design["language"],
+        "LANGUAGE_TAG": _language_tag(design), "WORD_FONT": font,
         "EVENTS_JSON": _json_html(rendered), "TRIALS_JSON": _json_html(trials),
     }
     for k, v in subs.items():

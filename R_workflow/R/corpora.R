@@ -70,10 +70,14 @@ fetch_corpus <- function(name, registry_path = NULL, dest = NULL) {
   if (is.null(entry)) {
     stop(sprintf("lexsync: corpus '%s' is not in the registry.", name), call. = FALSE)
   }
-  url <- entry$openlexicon %||% entry$url
+  # Only 'openlexicon' names a delimited file; 'url' is the landing page, and
+  # downloading that would silently cache an HTML document as <name>.csv.
+  url <- entry$openlexicon
   if (is.null(url)) {
-    stop(sprintf("lexsync: corpus '%s' has no downloadable URL; see corpora/registry.yaml.", name),
-         call. = FALSE)
+    stop(sprintf(paste0("lexsync: corpus '%s' registers only a landing page (%s); lexsync ",
+                        "cannot download it automatically. Retrieve the delimited file ",
+                        "manually and pass it to load_lexicon()."),
+                 name, entry$url %||% "see corpora/registry.yaml"), call. = FALSE)
   }
   dest <- dest %||% file.path(lexsync_cache_dir(), paste0(name, ".csv"))
   utils::download.file(url, dest, mode = "wb", quiet = TRUE)

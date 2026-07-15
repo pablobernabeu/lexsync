@@ -96,7 +96,10 @@ def counterbalance_latin_square(stimuli: pd.DataFrame, design: dict, schema: dic
 
 def participant_table(factors: dict, n_participants: int) -> pd.DataFrame:
     keys = list(factors.keys())
-    grid = list(product(*[factors[k] for k in keys]))
+    # R's expand.grid() varies the first factor fastest, itertools.product the
+    # last; cross the reversed keys and unreverse each cell so a participant
+    # number is allocated the same cell by either engine.
+    grid = [cell[::-1] for cell in product(*[factors[k] for k in reversed(keys)])]
     rows = [dict(zip(keys, grid[i % len(grid)])) for i in range(n_participants)]
     df = pd.DataFrame(rows)
     df["participant"] = np.arange(1, n_participants + 1)

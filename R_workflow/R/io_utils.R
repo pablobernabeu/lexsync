@@ -14,7 +14,7 @@
 #' Read a UTF-8 CSV file
 #'
 #' @param path Path to a CSV file.
-#' @return A [tibble][tibble::tibble] data frame.
+#' @return A data frame (a tibble), as returned by [readr::read_csv()].
 #' @importFrom readr read_csv locale
 #' @keywords internal
 read_csv_utf8 <- function(path) {

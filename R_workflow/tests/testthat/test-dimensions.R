@@ -24,3 +24,25 @@ test_that("merge_norms joins case-insensitively and marks missing", {
   expect_equal(out$concreteness[out$word == "cat"], 4.9)
   expect_true(is.na(out$concreteness[out$word == "xyz"]))
 })
+
+# Pins the same contract as test_merge_norms_preserves_lexicon_order in the
+# Python engine's test_querying.py. Norms covering only a later subset of the
+# lexicon is the arrangement that makes merge(sort = FALSE) reorder the result.
+test_that("merge_norms preserves the lexicon's row order", {
+  lex <- data.frame(word = c("a", "b", "c", "d"), freq = 1:4, stringsAsFactors = FALSE)
+  norms <- data.frame(word = c("d", "b"), conc = c(1, 2), stringsAsFactors = FALSE)
+  out <- merge_norms(lex, norms)
+  expect_identical(out$word, c("a", "b", "c", "d"))
+  expect_identical(out$freq, 1:4)
+  expect_equal(out$conc, c(NA, 2, NA, 1))
+  expect_identical(names(out), c("word", "freq", "conc"))
+  expect_identical(rownames(out), as.character(1:4))
+})
+
+test_that("merge_norms does not join on a missing key", {
+  lex <- data.frame(word = c("cat", NA), stringsAsFactors = FALSE)
+  norms <- data.frame(word = c("cat", NA), conc = c(1, 2), stringsAsFactors = FALSE)
+  out <- merge_norms(lex, norms)
+  expect_identical(out$word, c("cat", NA))
+  expect_equal(out$conc, c(1, NA))
+})

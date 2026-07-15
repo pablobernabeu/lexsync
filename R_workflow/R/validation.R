@@ -11,18 +11,25 @@
 #' @importFrom stats sd median
 #' @export
 describe_stimuli <- function(stimuli, dims, by = "condition") {
-  groups <- split(stimuli, stimuli[[by]])
+  # Group in order of first appearance: split() alone coerces to a factor whose
+  # levels are locale-collated sort(unique(x)), which diverges from validation.py's
+  # groupby(sort = FALSE) and from the anchor match_report() takes from unique().
+  by_vals <- as.character(stimuli[[by]])
+  groups <- split(stimuli, factor(by_vals, levels = unique(by_vals)))
   rows <- list()
   for (g in names(groups)) {
     d <- groups[[g]]
     for (dim in dims) {
       x <- suppressWarnings(as.numeric(d[[dim]]))
+      xv <- x[!is.na(x)]
       rows[[length(rows) + 1]] <- data.frame(
-        group = g, dimension = dim, n = sum(!is.na(x)),
+        group = g, dimension = dim, n = length(xv),
         mean = mean(x, na.rm = TRUE), sd = stats::sd(x, na.rm = TRUE),
-        min = suppressWarnings(min(x, na.rm = TRUE)),
+        # NA (not Inf/-Inf, which is what min/max of an empty vector give) when a
+        # dimension is entirely missing, so both engines agree.
+        min = if (length(xv)) min(xv) else NA_real_,
         median = stats::median(x, na.rm = TRUE),
-        max = suppressWarnings(max(x, na.rm = TRUE)),
+        max = if (length(xv)) max(xv) else NA_real_,
         stringsAsFactors = FALSE
       )
     }
@@ -85,12 +92,13 @@ cohens_d_ci <- function(x, y, alpha = 0.05) {
 #' TOST is reported alongside the standardised mean difference (Lakens, 2017).
 #'
 #' @param x,y Numeric vectors.
-#' @param bound_d Smallest effect size of interest (Cohen's d).
+#' @param bound_d Smallest effect size of interest (Cohen's d); defaults to the
+#'   schema value of 0.5 (Lakens, 2017).
 #' @param alpha Significance level.
 #' @return A list with `p` and logical `equivalent`.
 #' @importFrom stats var pt
 #' @export
-tost_equiv <- function(x, y, bound_d = 0.4, alpha = 0.05) {
+tost_equiv <- function(x, y, bound_d = 0.5, alpha = 0.05) {
   x <- x[!is.na(x)]; y <- y[!is.na(y)]
   nx <- length(x); ny <- length(y)
   if (nx < 2 || ny < 2) return(list(p = NA_real_, equivalent = NA))
@@ -166,7 +174,7 @@ match_report <- function(stimuli, dims, schema) {
   conds <- unique(stimuli$condition)
   anchor <- conds[1]
   desc <- describe_stimuli(stimuli, dims, by = "condition")
-  bound <- schema$equivalence$bound_d %||% 0.4
+  bound <- schema$equivalence$bound_d %||% 0.5
   alpha <- schema$equivalence$alpha %||% 0.05
   comp <- list()
   for (cc in conds[-1]) {

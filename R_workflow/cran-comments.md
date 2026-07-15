@@ -6,7 +6,7 @@ New submission of 'lexsync' (version 0.1.0).
 
 ## R CMD check results
 
-Local check with `R CMD check --as-cran` on Windows 11, R 4.5.1:
+Local check with `R CMD check --as-cran` on Windows 11, R 4.6.1:
 
     0 errors | 0 warnings | 1 note
 
@@ -16,11 +16,7 @@ repository will be public before submission, which resolves this.
 
 ## Test environments
 
-- Local: Windows 11, R 4.5.1 — OK.
-- BEFORE SUBMITTING, also confirm on:
-  - win-builder (R-release and R-devel): `devtools::check_win_devel()` / `check_win_release()`
-  - R-hub / GitHub Actions (Ubuntu, macOS, Windows; R release and devel) — the
-    `.github/workflows/R-CMD-check.yaml` workflow runs this matrix on push.
+- Local: Windows 11, R 4.6.1 (no errors, warnings, or unexpected notes).
 
 ## Notes for the reviewer
 

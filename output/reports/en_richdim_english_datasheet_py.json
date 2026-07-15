@@ -7,27 +7,27 @@
   "artifacts": [
     {
       "file": "output\\stimuli\\en_richdim_english_stimuli_py.csv",
-      "sha256": "f819b62340a381296fddbed5016551d2da3aa4155e37907f20cb5f3e04605ca7"
+      "sha256": "6e8a1233780e69bf9e04498f6164cd09a4d439a83ed9542bfb2646588ae1b2da"
     },
     {
       "file": "output\\reports\\en_richdim_english_descriptives_py.csv",
-      "sha256": "9f558ed60e8476ef578aa7624d894888e4a504c98b25c404107cf504286ca4f7"
+      "sha256": "b97a74bd83afa742ddcd18152798b8930bf7271db91c68827a86143fcfb7f42d"
     },
     {
       "file": "output\\reports\\en_richdim_english_comparisons_py.csv",
-      "sha256": "92ed3efdc133e2721db53fb432c769d90634861b7d632d39b9d9cbf64ff5a895"
+      "sha256": "4fc7e8f4a7fbf5772f40687f1409b61d0168b261031ded94c62b2b93a9ba0829"
     },
     {
       "file": "output\\experiments\\en_richdim_english_psychopy.py",
-      "sha256": "cbeec8c9cdbf10bc7d8b06c864b79c088962464e40952c5e52443498e8a29da8"
+      "sha256": "2242d3a0e22def2d851ffd2bceffe096a78599bff073243da85bc8e2d51c8ccf"
     },
     {
       "file": "output\\experiments\\en_richdim_english.osexp",
-      "sha256": "6b5780eca87699e74811fd4c23eb374d2d3b109645cab55beddfdd0b4b8618a6"
+      "sha256": "d4ec5604862aa6ff7c3165a6faf7e7f0d6adffe0057bdbe140637a7a311ba6c8"
     },
     {
       "file": "output\\experiments\\en_richdim_english.html",
-      "sha256": "79712f8871772589c783c015957e5ba2b19e13f46b6443837f06cc0b3f54f1a7"
+      "sha256": "3e9b460aba9e03bdb731820cdcb59655e5e9c671ce5fb7d60cfa7eafa5dcc592"
     }
   ],
   "counterbalancing": {
@@ -82,7 +82,7 @@
     "n_conditions": 2,
     "n_total": 120,
     "stimuli_file": "output\\stimuli\\en_richdim_english_stimuli_py.csv",
-    "stimuli_sha256": "f819b62340a381296fddbed5016551d2da3aa4155e37907f20cb5f3e04605ca7"
+    "stimuli_sha256": "6e8a1233780e69bf9e04498f6164cd09a4d439a83ed9542bfb2646588ae1b2da"
   },
   "lexsync_datasheet_version": "1.0",
   "materials_source": {

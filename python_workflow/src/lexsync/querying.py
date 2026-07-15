@@ -34,9 +34,13 @@ def load_lexicon(path: str, schema: dict, language: str | None = None) -> pd.Dat
     df = read_csv_utf8(path)
     validate_lexicon(df, schema)
     freq_col = (schema.get("dimensions", {}).get("frequency", {}) or {}).get("column") or "freq_zipf"
-    df = df.copy()
+    # Filter before coercing: astype(str) renders a missing word as the literal
+    # string "nan", which survives both guards below, whereas the R engine (where
+    # as.character(NA) stays NA) drops the row. Coercing first would therefore
+    # desynchronise the two engines' row counts and shift every subsequent id.
+    df = df[df["word"].notna() & df[freq_col].notna()].copy()
     df["word"] = df["word"].astype(str).str.strip().str.lower()
-    df = df[df["word"].notna() & (df["word"] != "") & df[freq_col].notna()]
+    df = df[df["word"] != ""]
     df = df.drop_duplicates(subset="word")
     # Sort by UTF-8 byte order so the lexicon order is locale-independent and
     # identical to the R engine (which uses a 'radix' byte-order sort).
@@ -86,11 +90,14 @@ def merge_norms(lexicon: pd.DataFrame, norms, on: str = "word", columns=None) ->
     more norm columns. This is the connector for semantic dimensions: the norm data
     themselves are fetched separately (licensing varies), then merged here so the
     matcher can equate on them. The join is deterministic and identical across
-    engines.
+    engines, and preserves the lexicon's row order.
     """
     n = norms if isinstance(norms, pd.DataFrame) else read_csv_utf8(norms)
     cols = list(columns) if columns else [c for c in n.columns if c != on]
-    n = n[[on] + cols].copy()
+    # Drop missing keys before coercing, for the reason given in load_lexicon: a
+    # NaN key would otherwise join on the literal string "nan".
+    n = n[[on] + cols]
+    n = n[n[on].notna()].copy()
     n[on] = n[on].astype(str).str.strip().str.lower()
     return lexicon.merge(n.drop_duplicates(subset=on), on=on, how="left")
 

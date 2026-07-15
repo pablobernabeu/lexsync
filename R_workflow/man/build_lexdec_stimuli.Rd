@@ -11,6 +11,20 @@ build_lexdec_stimuli(
   method = "letter_substitution"
 )
 }
+\arguments{
+\item{pool}{Data frame of candidate words, e.g. from \code{\link[=build_pool]{build_pool()}}.}
+
+\item{n}{Number of real words to select.}
+
+\item{reference_words}{Character vector supplying the bigram statistics and
+the real word forms a pseudoword must avoid; defaults to the pool's words.}
+
+\item{method}{Pseudoword generator: \code{"letter_substitution"} (default) or
+\code{"subsyllabic"} (Wuggy-style; Keuleers and Brysbaert, 2010).}
+}
+\value{
+A stimulus data frame with \code{target}, \code{condition} and \code{set} columns.
+}
 \description{
 Real words are drawn by an even spread across the byte-ordered pool, then a
 length-matched pseudoword is generated for each. \code{reference_words} (the full
@@ -18,4 +32,3 @@ lexicon) supplies the bigram statistics and the real-word list a pseudoword
 must avoid. The presented string is the \code{target} column; conditions are \code{word}
 and \code{pseudoword} and \code{set} pairs them.
 }
-\keyword{internal}

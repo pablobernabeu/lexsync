@@ -6,8 +6,8 @@ builds the file programmatically so that its tab-sensitive structure is always
 valid; it is modelled on a proven-working experiment from González Alonso et
 al. (2025).
 
-The two Python snippets here are the trigger code that the generated `.osexp`
-embeds inline. They are provided separately so you can paste them into an
+The two Python snippets here mirror the trigger code that the generated `.osexp`
+builds inline. They are provided separately so you can paste them into an
 existing OpenSesame experiment if you prefer to wire triggers into your own
 design:
 
@@ -19,8 +19,13 @@ design:
   draws and shows the target word and sends the onset marker immediately after
   `show()` returns.
 
-The generated `.osexp` expects a loop table (CSV) beside it, providing the
-columns `word`, `target_word_trigger` and `condition_trigger` per trial.
+The generated `.osexp` expects a loop table (CSV) beside it. Each row carries the
+stimulus fields that design's events reference (`word` for the single-word
+designs, `prime` and `target` for priming, `sentence` and `question` for
+self-paced reading), plus the `condition_trigger` and `item_trigger` markers that
+`assign_triggers` adds. The snippet above sends `item_trigger`; adjust the
+variable if you paste it into a design whose loop table names its markers
+differently.
 
 Timing: the word is drawn and shown from inside an `inline_script`, and the
 trigger is sent immediately after `canvas.show()` returns. Because `show()`

@@ -7,14 +7,14 @@ Multidimensional lexical optimisation and hardware-timed experiment generation.
 them and generates the 'PsychoPy' and 'OpenSesame' scripts that present them, with
 hardware triggers injected at stimulus onset for EEG/ERP synchronisation. It is the
 Python member of a dual-language pair; a structurally identical R package is also
-provided, and the two engines produce identical matched stimuli.
+provided, and the two engines produce identical matched stimuli (byte-identical
+for the deterministic matching methods; see the repository README).
 
 ## Install
 
 ```bash
 pip install lexsync                 # core
 pip install "lexsync[corpora]"      # + wordfreq connector (~40 languages)
-pip install "lexsync[analysis]"     # + matplotlib for figures
 ```
 
 The `experiment` extra (`psychopy`, `pyserial`) is needed only to *run* a generated
@@ -27,7 +27,8 @@ import yaml, lexsync
 schema = yaml.safe_load(open("config/schema.yaml"))
 lex = lexsync.load_lexicon("corpora/derived/en.csv", schema, "english")
 design = yaml.safe_load(open("config/design_en_freqcontrast.yaml"))
-stim = lexsync.match_stimuli(lex, design, schema)
+pool = lexsync.build_pool(lex, design["pool_filters"])
+stim = lexsync.match_stimuli(pool, design, schema)
 report = lexsync.match_report(stim, ["length", "frequency", "n_density", "old20"], schema)
 lexsync.export_experiments(lexsync.scripting.assign_triggers(stim), design, schema, "output/experiments")
 ```

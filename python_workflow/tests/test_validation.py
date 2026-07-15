@@ -1,3 +1,7 @@
+import inspect
+import math
+
+import numpy as np
 import pandas as pd
 
 from lexsync.validation import (
@@ -33,6 +37,14 @@ def test_tost_equivalent_for_matched_samples():
     x = [4, 5, 6] * 20
     y = [4, 5, 6] * 20
     assert tost_equiv(x, y, bound_d=0.5)["equivalent"] is True
+
+
+def test_tost_default_bound_is_the_schema_bound():
+    # The bound is the schema's smallest effect size of interest (Lakens, 2017);
+    # pinned here because every other test passes bound_d explicitly. The p-value is
+    # the same literal asserted in test-validation.R, so the engines cannot drift apart.
+    assert inspect.signature(tost_equiv).parameters["bound_d"].default == 0.5
+    assert round(tost_equiv(range(10, 20), range(11, 21))["p"], 9) == 0.354383811
 
 
 def test_cohens_d_ci_brackets_point_estimate():
@@ -82,3 +94,20 @@ def test_describe_and_balance():
     assert len(d) == 2
     assert len(balance_check(pd.DataFrame({"condition": ["a", "a", "a", "b"]}), "condition")) == 1
     assert len(balance_check(pd.DataFrame({"condition": ["a", "a", "b", "b"]}), "condition")) == 0
+
+
+def test_describe_stimuli_groups_in_first_appearance_order():
+    # Not sorted order: this is the order validation.R's appearance-ordered factor
+    # yields, and the order in which match_report() takes its anchor.
+    df = pd.DataFrame({"condition": ["b", "b", "a", "a"], "x": [1, 2, 3, 4]})
+    assert list(describe_stimuli(df, ["x"])["group"]) == ["b", "a"]
+
+
+def test_describe_stimuli_all_na_dimension_is_missing_not_infinite():
+    df = pd.DataFrame({"condition": ["a", "a"], "x": [np.nan, np.nan]})
+    d = describe_stimuli(df, ["x"])
+    assert d["n"].iloc[0] == 0
+    assert math.isnan(d["min"].iloc[0])
+    assert math.isnan(d["max"].iloc[0])
+    assert not math.isinf(d["min"].iloc[0])
+    assert not math.isinf(d["max"].iloc[0])

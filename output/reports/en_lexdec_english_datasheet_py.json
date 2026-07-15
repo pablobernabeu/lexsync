@@ -7,27 +7,27 @@
   "artifacts": [
     {
       "file": "output\\stimuli\\en_lexdec_english_stimuli_py.csv",
-      "sha256": "7d2d93aec30e2be081618437c6f7563109384cfcfbdd921cc63f301ae0c43981"
+      "sha256": "92af719e92b630f2d95354e677206e8710dcdb983dc10380c24c41f3c643c9d9"
     },
     {
       "file": "output\\reports\\en_lexdec_english_descriptives_py.csv",
-      "sha256": "7b96a23c7c2bec53f6ac3d29d72de6aff710c0b2e30e203e6d1439cdd62f4983"
+      "sha256": "08212417217a1e48dd402ae305ac33579c7bde084846e7f68e00f064081f6e23"
     },
     {
       "file": "output\\reports\\en_lexdec_english_comparisons_py.csv",
-      "sha256": "91da17964f4e52ba020e350da2aa34c8641b74ad5b112868e0df86d5d33067ca"
+      "sha256": "47af54eb495601dd3631239a5a729a0f8281506f48c76083b5d6d121642afd2b"
     },
     {
       "file": "output\\experiments\\en_lexdec_english_psychopy.py",
-      "sha256": "5d75b8e86ddf23373bf20cb96a7c2cf1c25abe280cb27d6da4a3c59a8ae44f3b"
+      "sha256": "d093a894450d5c3f5a85e0ee713da9500a305bee4bd77c63887c953e542575ee"
     },
     {
       "file": "output\\experiments\\en_lexdec_english.osexp",
-      "sha256": "f41d821d61f4e438c62454cff485d62a5d51f19851e2b2e8e0b32833ebec508c"
+      "sha256": "5959b9fa0c429fddc6cd18f2990ac50f91a4851a5892ddb7e0deaafdb229a3a9"
     },
     {
       "file": "output\\experiments\\en_lexdec_english.html",
-      "sha256": "c12900851432e6f52dd805ad9d922e592b6ee36dd701656a85c3a345072b2770"
+      "sha256": "0140c991e06f5165e03971ec3eaf31a02d48dd4f9619d6e654e21d1d4540ecb9"
     }
   ],
   "counterbalancing": {
@@ -57,7 +57,7 @@
     "n_conditions": 2,
     "n_total": 120,
     "stimuli_file": "output\\stimuli\\en_lexdec_english_stimuli_py.csv",
-    "stimuli_sha256": "7d2d93aec30e2be081618437c6f7563109384cfcfbdd921cc63f301ae0c43981"
+    "stimuli_sha256": "92af719e92b630f2d95354e677206e8710dcdb983dc10380c24c41f3c643c9d9"
   },
   "lexsync_datasheet_version": "1.0",
   "materials_source": {
@@ -98,6 +98,7 @@
       }
     ],
     "cross_engine": "byte-identical",
+    "generation_method": "letter_substitution",
     "matched_on": [
       "length"
     ],

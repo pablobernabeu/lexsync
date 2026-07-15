@@ -4,9 +4,9 @@ This file collects everything needed to publish 'lexsync' and submit the
 accompanying manuscript. **No venue has been chosen yet, and the manuscript has
 not been submitted.** *Behavior Research Methods* (BRM) is the leading candidate,
 so the policy-specific steps below follow its requirements as a worked example;
-adapt them if you choose a different journal. It is guidance, not an automated
-step; some items require your account, your identity or a network service and
-cannot be done from the build machine.
+adapt them if you choose a different journal. This checklist is guidance rather
+than an automated process. Some items require your account, your identity or a
+network service, and cannot be done from the build machine.
 
 ## Recommended sequence
 
@@ -38,8 +38,9 @@ DOI'd archive satisfies the availability requirement.
 
 ## Before anything is public: update placeholders
 
-- `R_workflow/DESCRIPTION`, `python_workflow/pyproject.toml`, `CITATION.cff`,
-  `.zenodo.json`, `README.md`: real repository URL and ORCID.
+- The repository URL and ORCID are now recorded consistently in
+  `R_workflow/DESCRIPTION`, `python_workflow/pyproject.toml`, `CITATION.cff`,
+  `.zenodo.json` and `README.md`; confirm both are correct before release.
 - Confirm **authorship**. The metadata currently lists a single author for a
   general-purpose tool; decide the author/contributor list and the manuscript
   byline (one of the twelve reproduced designs is from a seven-author study,
@@ -51,8 +52,8 @@ DOI'd archive satisfies the availability requirement.
       warnings, 1 (new-submission) NOTE.
 - [x] testthat suite passes; HTML vignette builds; roxygen docs complete.
 - [ ] Run **win-builder** R-release and R-devel (`devtools::check_win_release()`,
-      `check_win_devel()`), and the CI matrix (Ubuntu/macOS/Windows, R devel) —
-      `.github/workflows/R-CMD-check.yaml`.
+      `check_win_devel()`), and the CI matrix (Ubuntu, macOS and Windows under R
+      release, plus Ubuntu under R-devel) — `.github/workflows/R-CMD-check.yaml`.
 - [ ] Make the GitHub URL valid (repo public) so the URL NOTE clears.
 - [ ] `cran-comments.md` is filled in (see `R_workflow/cran-comments.md`).
 - [ ] Consider a spelling WORDLIST for 'PsychoPy', 'OpenSesame' and British

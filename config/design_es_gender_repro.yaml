@@ -33,7 +33,7 @@ match_on: [frequency, length]
 matching:
   # The origin study's exact tolerance windows, reproduced per dimension.
   tolerance_k:
-    frequency: 0.111   # mean +/- SD/9   (Gonzalez Alonso et al. 2025)
-    length: 2.0        # mean +/- 2*SD   (Gonzalez Alonso et al. 2025)
+    frequency: 0.1111111111111111   # mean +/- SD/9   (Gonzalez Alonso et al. 2025)
+    length: 2.0                     # mean +/- 2*SD   (Gonzalez Alonso et al. 2025)
 counterbalance:
   lists: 1

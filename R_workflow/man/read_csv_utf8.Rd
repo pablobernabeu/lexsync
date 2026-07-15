@@ -10,7 +10,7 @@ read_csv_utf8(path)
 \item{path}{Path to a CSV file.}
 }
 \value{
-A \link[tibble:tibble]{tibble} data frame.
+A data frame (a tibble), as returned by \code{\link[readr:read_csv]{readr::read_csv()}}.
 }
 \description{
 Read a UTF-8 CSV file

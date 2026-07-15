@@ -18,9 +18,28 @@ from .io_utils import sha256_file
 
 DATASHEET_VERSION = "1.0"
 
+# Datasheet labels for the pseudoword generators in generation.py, keyed by the
+# items.generation.method token. Kept character-for-character identical to
+# .GENERATION_LABELS in datasheet.R so the two engines' records stay comparable.
+_GENERATION_LABELS = {
+    "letter_substitution": "constrained letter substitution (deterministic pseudowords)",
+    "subsyllabic": "subsyllabic constituent swap (Wuggy-style, deterministic pseudowords)",
+}
+
+
+def _lexsync_version() -> str:
+    """The installed lexsync version, mirroring datasheet.R's packageVersion lookup."""
+    try:
+        from importlib.metadata import version
+        return version("lexsync")
+    except Exception:
+        # Deferred: __init__ imports this module before it binds __version__.
+        from . import __version__
+        return __version__
+
 
 def _versions(engine: str) -> dict:
-    out = {"engine": engine, "lexsync": "0.1.0"}
+    out = {"engine": engine, "lexsync": _lexsync_version()}
     if engine == "python":
         import numpy as np
         import pandas as pd
@@ -48,6 +67,18 @@ def _cross_engine(method, source: str) -> str:
     if method in ("mahalanobis", "optimal"):
         return "approximate (platform linear algebra)"
     return "byte-identical"
+
+
+def _resolve_tolerance_k(design: dict, schema: dict) -> dict:
+    """The tolerance windows the matcher actually applied.
+
+    Resolved exactly as match_stimuli resolves them (schema defaults, overridden
+    per dimension by the design), so the datasheet records the windows that were
+    used rather than the defaults that a design may have replaced.
+    """
+    tol_k = dict((schema.get("matching") or {}).get("tolerance_k") or {})
+    tol_k.update((design.get("matching") or {}).get("tolerance_k") or {})
+    return tol_k
 
 
 def _controlled(design: dict, source: str) -> list:
@@ -137,18 +168,25 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
                 })
 
     if is_continuous:
+        # The controls are banded by the same tolerance windows the matcher uses, so
+        # the record states them here too; without them the banding is unreproducible.
         selection = {"method": "continuous even-spread (predictor spanned, controls banded)",
                      "predictor": design["continuous"]["predictor"],
-                     "controls": list(design["continuous"].get("controls") or [])}
+                     "controls": list(design["continuous"].get("controls") or []),
+                     "tolerance_k": _resolve_tolerance_k(design, schema)}
     elif source == "corpus":
         selection = {"method": ((design.get("matching") or {}).get("method")
                                 or (schema.get("matching") or {}).get("method")
                                 or "standardised_euclidean"),
                      "match_on": controlled,
-                     "tolerance_k": (schema.get("matching") or {}).get("tolerance_k")}
+                     "tolerance_k": _resolve_tolerance_k(design, schema)}
     elif source == "generate":
-        selection = {"method": "constrained letter substitution (deterministic pseudowords)",
-                     "matched_on": ["length"]}
+        gen_method = ((design.get("items") or {}).get("generation") or {}).get(
+            "method", "letter_substitution")
+        selection = {"method": _GENERATION_LABELS.get(
+            gen_method, f"{gen_method} (deterministic pseudowords)"),
+            "generation_method": gen_method,
+            "matched_on": ["length"]}
     else:
         selection = {"method": "item table (user-supplied)"}
     if candidate_pool is not None and source in ("corpus", "generate"):

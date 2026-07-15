@@ -12,7 +12,10 @@
 #' reference), an optional `trigger` (an integer EEG code or the token
 #' "condition"/"item"), `onset_locked`, and response `keys`/`timeout_ms`.
 #'
-#' @keywords internal
+#' @format A named list with one entry per paradigm (`factorial`,
+#'   `lexical_decision`, `priming`, `self_paced_reading`), each holding
+#'   `stimulus_fields`, a `counterbalance` recipe and an `events` list.
+#' @export
 PARADIGMS <- list(
   factorial = list(
     stimulus_fields = c("word"),
@@ -73,7 +76,11 @@ get_paradigm <- function(name) {
   PARADIGMS[[name]]
 }
 
-#' @keywords internal
+#' The design's trial event list: its own `events`, else its paradigm's
+#'
+#' @param design A parsed design list.
+#' @return The list of trial events the design presents.
+#' @export
 resolve_events <- function(design) {
   if (!is.null(design$events) && length(design$events)) return(design$events)
   get_paradigm(design$paradigm %||% "factorial")$events
@@ -99,7 +106,10 @@ referenced_fields <- function(events) {
 }
 
 #' Trial fields a design needs present in its items (paradigm + events)
-#' @keywords internal
+#'
+#' @param design A parsed design list.
+#' @return Character vector of the item fields the design's trials reference.
+#' @export
 required_fields <- function(design) {
   name <- design$paradigm %||% "factorial"
   base <- if (!is.null(PARADIGMS[[name]])) PARADIGMS[[name]]$stimulus_fields else character(0)

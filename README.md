@@ -15,7 +15,8 @@ several lexical dimensions (length, frequency, orthographic neighbourhood densit
 more) and counterbalance them across conditions and lists. It then generates the
 presentation experiment for 'PsychoPy', 'OpenSesame' or the browser ('jsPsych'). The
 laboratory targets carry hardware triggers injected at stimulus onset for EEG/ERP
-synchronisation, and the web target is a single self-contained, shareable HTML file.
+synchronisation, and the web target is a single shareable HTML file (the jsPsych
+library itself loads from a CDN, so the first run needs an internet connection).
 The trial is described declaratively as a sequence of events, so the same engine
 builds factorial word studies, lexical decision with deterministically generated
 pseudowords, priming and self-paced reading from configuration rather than code, with
@@ -33,16 +34,16 @@ therefore be shared and reproduced rather than only described in prose.
 ## Why lexsync
 
 Existing tools are powerful but fragmented. Stimulus-control packages such as 'LexOPS',
-'LIBRA' and 'LASTU' match words but stop short of building the experiment; experiment
-builders such as 'PsychoPy' and 'OpenSesame' present stimuli but do not match them; the
-R and Python ecosystems rarely meet; and most matching tools target a single language.
-`lexsync` closes this gap by spanning the whole path, from a many-language corpus
-through parallel multidimensional matching and counterbalancing to flip-locked,
-cross-platform experiment scripts, identically in R and Python.
+'LIBRA' and 'LASTU' match words but stop short of building the experiment, while
+experiment builders such as 'PsychoPy' and 'OpenSesame' present stimuli but do not
+match them. The R and Python ecosystems rarely meet, and most matching tools target a
+single language. `lexsync` closes this gap by spanning the whole path, from a
+many-language corpus through parallel multidimensional matching and counterbalancing to
+flip-locked, cross-platform experiment scripts, identically in R and Python.
 
-A concrete methodological gain: the PsychoPy backend binds each onset trigger to the
-exact buffer flip on which the stimulus appears, using `win.callOnFlip`, rather than
-sending it from a later, sequence-ordered item.
+The PsychoPy backend offers one concrete methodological gain: it binds each onset
+trigger to the exact buffer flip on which the stimulus appears, using `win.callOnFlip`,
+rather than sending it from a later, sequence-ordered item.
 
 ## Repository layout
 
@@ -52,6 +53,8 @@ lexsync/
 ├── python_workflow/   PyPI-ready Python package 'lexsync'
 ├── corpora/           many-language corpus registry + ingestion + attribution
 ├── config/            global schema + per-design configurations
+├── items/             example item tables (priming pairs, SPR sentences)
+├── templates/         experiment script templates (PsychoPy, OpenSesame, jsPsych)
 ├── output/            generated stimuli, reports and experiment scripts
 ├── apps/              browser apps (Streamlit + Shiny) that export reproducible code
 └── manuscript/        reproducible Quarto manuscript (in preparation)
@@ -65,11 +68,11 @@ orchestrator, `run_pipeline`.
 
 ### R
 
-```r
-install.packages(c('dplyr','tidyr','stringr','readr','yaml','stringdist'))
+```bash
+Rscript -e "install.packages(c('readr','yaml','stringdist','jsonlite','digest'))"
 # from the repository root:
-source('R_workflow/run_pipeline.R')          # runs the demonstrations
-# or, once installed:  lexsync::run_pipeline('config/design_en_freqcontrast.yaml')
+Rscript R_workflow/run_pipeline.R             # runs the demonstrations
+# or, once installed:  Rscript -e "lexsync::run_pipeline('config/design_en_freqcontrast.yaml')"
 ```
 
 ### Python
@@ -107,8 +110,13 @@ CC BY-SA 4.0) and an optional 'wordfreq' connector that unlocks roughly forty la
 through a single dependency. English, Spanish and Mandarin Chinese are bundled and
 demonstrated end to end (the last a logographic-script example, showing that the
 matching and script generation are not limited to alphabetic writing). Further
-languages are fetched on demand into a user cache. Every corpus is cited, with its
-licence and retrieval date, in `corpora/ATTRIBUTION.md`. The bundled corpora are a
+languages are fetched on demand into a user cache, though not equally from both
+engines. The 'openlexicon' connector is available in R and Python alike, whereas
+'wordfreq' is Python-only: `lexsync fetch <language>` derives those lexica from the
+Python package, and the R package can read the result as an ordinary corpus but cannot
+build one itself. An R-only laboratory therefore reaches the wider language set only
+through lexica derived elsewhere. Every corpus is cited, with its licence and
+retrieval date, in `corpora/ATTRIBUTION.md`. The bundled corpora are a
 fixed, checksummed snapshot, so the demonstrations reproduce with no download;
 'wordfreq' itself was frozen in 2024 (a stable snapshot of usage through roughly
 2021), which makes fetched corpora reproducible rather than drifting under a live
@@ -135,7 +143,8 @@ The R package carries a `testthat` suite and the Python package a `pytest` suite
 the latter including a mock-'PsychoPy' harness that checks the onset trigger is
 flip-locked, a structural validator for the generated 'OpenSesame' experiment and
 an R-versus-Python parity test. GitHub Actions run `R CMD check` on Ubuntu, macOS
-and Windows (R release and development) and the Python tests on Python 3.10–3.13.
+and Windows under R release, on Ubuntu additionally under R-devel, and the Python
+tests on Python 3.10–3.13.
 
 ## Matching methods
 
@@ -178,15 +187,42 @@ select byte-identical stimuli across the two engines. See
 ## Roadmap
 
 lexsync sits within a mature ecosystem of stimulus tools (LexOPS, Match, SOS and
-LIBRA for matching; Wuggy for pseudowords). Planned extensions (tracked in
-`CHANGELOG.md`) include distributional balance diagnostics, continuous-design
-support with a regression template (Liben-Nowell et al., 2019), and richer
-pseudoword generation (Wuggy-style; Keuleers and Brysbaert, 2010). The cross-engine
-byte-identical guarantee for the deterministic methods is a hard constraint on
-which algorithms can be adopted as defaults.
+LIBRA for matching; Wuggy for pseudowords). The roadmap drawn from that initial
+competitor and literature review is now delivered: covariance-aware and optimal
+matching, a distributional balance diagnostic, continuous designs, and Wuggy-style
+pseudowords. Further norm dimensions (concreteness, age of acquisition, English
+Lexicon Project behavioural measures) are supported today through the `merge_norms`
+connector, which joins any word-keyed norm table so the matcher can equate on it.
+Future directions (tracked in `CHANGELOG.md`) are more bundled languages and, should
+a determinism-safe implementation be found, promoting a covariance-aware distance to
+the default. The cross-engine byte-identical guarantee for the deterministic methods
+is a hard constraint on which algorithms can be adopted as defaults.
 
 ## Licensing and citation
 
 Source code is under the MIT License (`LICENSE`). Bundled corpus derivatives are under
 CC BY-SA 4.0 (`LICENSE-DATA`, `corpora/ATTRIBUTION.md`). If you use `lexsync`, please
 cite the software (`CITATION.cff`). A manuscript describing it is in preparation.
+
+## References
+
+Gu, X. S., & Rosenbaum, P. R. (1993). Comparison of multivariate matching methods:
+Structures, distances, and algorithms. *Journal of Computational and Graphical
+Statistics*, *2*(4), 405–420. https://doi.org/10.1080/10618600.1993.10474623
+
+Keuleers, E., & Brysbaert, M. (2010). Wuggy: A multilingual pseudoword generator.
+*Behavior Research Methods*, *42*(3), 627–633. https://doi.org/10.3758/BRM.42.3.627
+
+Kuperman, V. (2015). Virtual experiments in megastudies: A case study of language
+and emotion. *Quarterly Journal of Experimental Psychology*, *68*(8), 1693–1710.
+https://doi.org/10.1080/17470218.2014.989865
+
+Liben-Nowell, D., Strand, J., Sharp, A., Wexler, T., & Woods, K. (2019). The danger
+of testing by selecting controlled subsets, with applications to spoken-word
+recognition. *Journal of Cognition*, *2*(1), Article 2. https://doi.org/10.5334/joc.51
+
+Rubin, D. B. (1980). Bias reduction using Mahalanobis-metric matching. *Biometrics*,
+*36*(2), 293–298. https://doi.org/10.2307/2529981
+
+Stuart, E. A. (2010). Matching methods for causal inference: A review and a look
+forward. *Statistical Science*, *25*(1), 1–21. https://doi.org/10.1214/09-STS313
