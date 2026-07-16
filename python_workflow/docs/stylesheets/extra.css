@@ -1,0 +1,27 @@
+/* Site rules that are not brand tokens. The Meridian identity lives in
+   brand.css; this file holds only what lexsync's own content needs, and is
+   loaded after it. */
+
+/* ---- API reference (mkdocstrings) --------------------------------------- */
+/* mkdocstrings-python renders each object's signature as an inline <code>
+   inside its doc-heading, not as a separate block. lexsync's signatures run
+   long (build_datasheet's is 129 characters over nine parameters), so on this
+   column they wrap over three lines, and an inline code background paints one
+   ragged box per line fragment. Setting the signature as a block collapses
+   those into a single box with a straight edge. It wraps at the commas on its
+   own; no word-breaking is added, which would fragment an argument name. */
+.md-typeset .doc-heading > code {
+  display: block;
+  padding: .45em .7em;
+  border-radius: 8px;
+  line-height: 1.7;
+}
+
+/* The signature is now a self-contained box, so the rule that brand.css puts
+   under every h2 (right for a prose section heading) becomes a second, weaker
+   separator directly beneath it. Drop it for object headings only; ordinary
+   h2s on the page keep theirs. */
+.md-typeset h2.doc-heading {
+  border-bottom: none;
+  padding-bottom: 0;
+}

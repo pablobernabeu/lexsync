@@ -52,10 +52,33 @@ list_corpora <- function(registry_path = NULL) {
   )
 }
 
+# Does the file open with '<', i.e. an HTML or XML document? Mirrors
+# _starts_with_markup() in python_workflow/src/lexsync/corpora.py. A delimited
+# file opens on data; a login wall, a redirect stub or a 404 page served with a
+# 200 status opens on a tag, and would otherwise be cached as <name>.csv and
+# resurface much later as an unintelligible schema error.
+.starts_with_markup <- function(path) {
+  bytes <- readBin(path, "raw", n = 512L)
+  bom <- as.raw(c(0xEF, 0xBB, 0xBF))
+  if (length(bytes) >= 3L && identical(bytes[1:3], bom)) bytes <- bytes[-(1:3)]
+  ws <- as.raw(c(0x20, 0x09, 0x0A, 0x0D, 0x0B, 0x0C))
+  first <- which(!(bytes %in% ws))
+  length(first) > 0L && identical(bytes[first[1]], as.raw(0x3C))
+}
+
+.stop_download <- function(name, url, detail) {
+  stop(sprintf(paste0("lexsync: could not download corpus '%s' from %s (%s). Check the URL ",
+                      "in registry.yaml, or download the file manually and pass it to ",
+                      "load_lexicon()."),
+               name, url, detail), call. = FALSE)
+}
+
 #' Download a CSV-format registered corpus into the cache
 #'
-#' Suitable for Connector A corpora that expose a delimited file. The download
-#' is recorded so it can be cited; consult [list_corpora()] for the citation.
+#' Suitable for Connector A corpora that expose a delimited file. The URL's
+#' scheme and the downloaded file's first bytes are checked before the file is
+#' kept. The download is recorded so it can be cited; consult [list_corpora()]
+#' for the citation.
 #'
 #' @param name A corpus name present in the registry.
 #' @param registry_path Optional path to `registry.yaml`.
@@ -79,8 +102,28 @@ fetch_corpus <- function(name, registry_path = NULL, dest = NULL) {
                         "manually and pass it to load_lexicon()."),
                  name, entry$url %||% "see corpora/registry.yaml"), call. = FALSE)
   }
+  # A registry is editable, and fetch_corpus() writes wherever it points, so a
+  # 'file://' or 'ftp://' entry would read a local path under the guise of a
+  # download. Only the two schemes a corpus is published over are honoured.
+  if (!grepl("^https?://", url, ignore.case = TRUE)) {
+    stop(sprintf("lexsync: corpus '%s' registers a non-http(s) URL (%s); refusing to download.",
+                 name, url), call. = FALSE)
+  }
   dest <- dest %||% file.path(lexsync_cache_dir(), paste0(name, ".csv"))
-  utils::download.file(url, dest, mode = "wb", quiet = TRUE)
+  # download.file() reports a failed transfer as a warning under some methods and
+  # as an error under others, so both are branded.
+  tryCatch(
+    utils::download.file(url, dest, mode = "wb", quiet = TRUE),
+    error = function(e) .stop_download(name, url, conditionMessage(e)),
+    warning = function(w) .stop_download(name, url, conditionMessage(w))
+  )
+  if (.starts_with_markup(dest)) {
+    unlink(dest)
+    stop(sprintf(paste0("lexsync: corpus '%s' returned an HTML page, not a delimited file ",
+                        "(%s); the registry URL may have rotted. Retrieve the delimited file ",
+                        "manually and pass it to load_lexicon()."),
+                 name, url), call. = FALSE)
+  }
   message(sprintf("lexsync: downloaded '%s'. Please cite: %s", name, entry$citation %||% "(see registry)"))
   invisible(dest)
 }

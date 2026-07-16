@@ -1,3 +1,35 @@
+# Every code point Python's str.strip() removes, i.e. every one whose
+# str.isspace() is true: the Unicode White_Space property plus the C0
+# information separators U+001C-U+001F. test_querying.py pins this same list
+# against str.strip() itself, so the two engines are held to one definition.
+STRIPPED <- c(0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x1C, 0x1D, 0x1E, 0x1F, 0x20,
+              0x85, 0xA0, 0x1680, 0x2000:0x200A, 0x2028, 0x2029, 0x202F,
+              0x205F, 0x3000)
+# Format characters, not whitespace: a zero-width space, a Mongolian vowel
+# separator and a word joiner must survive in both engines.
+KEPT <- c(0x200B, 0x180E, 0x2060)
+
+# The lexicon fixtures carry non-ASCII, so write the bytes rather than trusting
+# the session's native encoding to render them (Windows).
+write_utf8 <- function(text, path) {
+  con <- file(path, open = "wb")
+  on.exit(close(con), add = TRUE)
+  writeBin(charToRaw(enc2utf8(text)), con)
+}
+
+test_that(".trim_invariant strips exactly the whitespace Python strips", {
+  padded <- vapply(STRIPPED, function(cp) paste0(intToUtf8(cp), "x", intToUtf8(cp)),
+                   character(1))
+  expect_identical(.trim_invariant(padded), rep("x", length(STRIPPED)))
+
+  kept <- vapply(KEPT, function(cp) paste0(intToUtf8(cp), "x", intToUtf8(cp)),
+                 character(1))
+  expect_identical(.trim_invariant(kept), kept)
+
+  expect_identical(.trim_invariant(NA_character_), NA_character_)
+  expect_identical(.trim_invariant("  "), "")
+})
+
 test_that("load_lexicon validates and computes basic dimensions", {
   schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
   path <- system.file("extdata", "en_example.csv", package = "lexsync")
@@ -34,6 +66,73 @@ test_that("load_lexicon drops rows whose word is missing", {
   expect_identical(lex$id, 1:3)
 })
 
+# Pins the same contract as test_load_lexicon_strips_unicode_whitespace in the
+# Python engine's test_querying.py. The word is the canonical key behind every
+# byte-order tie-break, so base R's trimws() -- which leaves a no-break space or
+# a form feed in place where Python's str.strip() removes them -- would key,
+# sort and number such a lexicon differently from the Python engine.
+test_that("load_lexicon strips the whitespace Python strips", {
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  path <- tempfile(fileext = ".csv")
+  on.exit(unlink(path), add = TRUE)
+  # A no-break space, a form feed and an ideographic space: none is trimws()'s.
+  pad <- intToUtf8(c(0xA0, 0x0C, 0x3000))
+  write_utf8(paste0("word,freq_zipf\n",
+                    "\"", pad, "dog", pad, "\",5.0\n",
+                    "\" cat \",4.0\n"), path)
+  lex <- load_lexicon(path, schema)
+  expect_identical(lex$word, c("cat", "dog"))
+  expect_identical(lex$length, c(3L, 3L))
+  expect_identical(lex$id, 1:2)
+})
+
+# Pins the same contract as test_load_lexicon_keeps_zero_width_characters: the
+# mirror of the above, stopping the Unicode trim from over-reaching.
+test_that("load_lexicon keeps zero-width characters", {
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  path <- tempfile(fileext = ".csv")
+  on.exit(unlink(path), add = TRUE)
+  zw <- intToUtf8(0x200B)
+  write_utf8(paste0("word,freq_zipf\n\"", zw, "dog", zw, "\",5.0\n"), path)
+  lex <- load_lexicon(path, schema)
+  expect_identical(lex$word, paste0(zw, "dog", zw))
+  expect_identical(lex$length, 5L)
+})
+
+# Pins the same contract as test_merge_norms_trims_the_join_key in the Python
+# engine's test_querying.py: the join key gets the lexicon's own trim and
+# case-fold, so a padded norm table still joins in both engines.
+test_that("merge_norms joins on the same cleaned key", {
+  nbsp <- intToUtf8(0xA0)
+  lex <- data.frame(word = c("cat", "dog"), stringsAsFactors = FALSE)
+  norms <- data.frame(word = c(paste0(nbsp, "CAT", nbsp), " dog"),
+                      conc = c(1.0, 2.0), stringsAsFactors = FALSE)
+  out <- merge_norms(lex, norms)
+  expect_identical(out$conc, c(1.0, 2.0))
+})
+
+# Pins the same contract as test_load_lexicon_reports_an_empty_lexicon in the
+# Python engine's test_querying.py. R used to die on base R's "replacement has 1
+# row, data has 0" (from `df$language <- language`) while Python handed back an
+# empty frame; both engines now raise the same message, naming the file.
+test_that("load_lexicon reports a lexicon left with no rows", {
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  bodies <- list(
+    "header-only"     = "word,freq_zipf",
+    "no-words"        = c("word,freq_zipf", ",1.0", "NA,2.0"),
+    "no-frequencies"  = c("word,freq_zipf", "cat,")
+  )
+  for (nm in names(bodies)) {
+    path <- tempfile(fileext = ".csv")
+    on.exit(unlink(path), add = TRUE)
+    writeLines(bodies[[nm]], path)
+    expect_error(load_lexicon(path, schema, language = "english"),
+                 "has no usable rows", info = nm)
+    # The crash was reachable only with `language`; the error must not be.
+    expect_error(load_lexicon(path, schema), "has no usable rows", info = nm)
+  }
+})
+
 test_that(".lower_invariant reproduces Unicode default casing whatever the locale", {
   # Written as code points so the source stays ASCII (CRAN), and so the expected
   # Greek final sigma (U+03C2) and dotted-I expansion are unambiguous.
@@ -51,6 +150,36 @@ test_that(".lower_invariant reproduces Unicode default casing whatever the local
           "cannot switch to the C locale on this platform")
   on.exit(Sys.setlocale("LC_CTYPE", old), add = TRUE)
   expect_identical(.lower_invariant(upper), lower)
+})
+
+# Pins the same contract as test_load_items_trims_ascii_whitespace in the Python
+# engine's test_querying.py. readr strips this padding before R ever sees it and
+# pandas does not, so the Python engine trims to match; the assertion holds both
+# to the trimmed value rather than to either reader's default.
+test_that("load_items trims the ASCII whitespace readr trims", {
+  path <- tempfile(fileext = ".csv")
+  on.exit(unlink(path), add = TRUE)
+  writeLines(c("item,condition,target",
+               "\"  i2  \",\"  related  \",\"  padded target  \"",
+               "\"\ti1\t\",\"\tunrelated\t\",\"\ttab padded\t\""), path)
+  items <- load_items(path, "target")
+  expect_identical(items$target, c("padded target", "tab padded"))
+  expect_identical(items$condition, c("related", "unrelated"))
+  # The set id is byte order over the trimmed item, so the padding must not
+  # decide it: trimmed, 'i1' sorts before 'i2'.
+  expect_identical(items$set, c(2L, 1L))
+})
+
+# Pins the same contract as test_load_items_keeps_non_ascii_whitespace: a
+# no-break space is not ASCII whitespace, neither reader touches it, so the
+# engines agree without trimming it. This is the boundary of the trim above.
+test_that("load_items keeps non-ASCII whitespace", {
+  path <- tempfile(fileext = ".csv")
+  on.exit(unlink(path), add = TRUE)
+  nbsp <- intToUtf8(0xA0)
+  write_utf8(paste0("item,condition,target\ni1,related,\"", nbsp, "cat", nbsp, "\"\n"), path)
+  items <- load_items(path, "target")
+  expect_identical(items$target, paste0(nbsp, "cat", nbsp))
 })
 
 test_that("missing required columns raise an informative error", {

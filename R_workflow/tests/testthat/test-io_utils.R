@@ -38,3 +38,21 @@ test_that("clean_field rejects control characters but allows commas and quotes",
 test_that("slugify is lower-case and path-safe", {
   expect_identical(slugify("En Lexdec", "English!"), "en_lexdec_english")
 })
+
+# Pins the same contract as test_slugify_is_locale_invariant in the Python
+# engine's test_io_utils.py. Every artifact path in both engines is built from
+# slugify(), so a locale-sensitive fold would write this design's files under a
+# name the Python engine never produces. Base `tolower()` maps "I" to the
+# dotless "i" under a Turkish or Azeri locale, taking the slug out of ASCII --
+# and it does so after the reduction to [A-Za-z0-9_], which is why that
+# reduction does not make the fold safe by itself.
+test_that("slugify folds case whatever the locale", {
+  expect_identical(slugify("STUDY_I"), "study_i")
+
+  old <- Sys.getlocale("LC_CTYPE")
+  turkish <- suppressWarnings(Sys.setlocale("LC_CTYPE", "Turkish"))
+  skip_if(!nzchar(turkish), "cannot switch to a Turkish locale on this platform")
+  on.exit(Sys.setlocale("LC_CTYPE", old), add = TRUE)
+  expect_identical(slugify("STUDY_I"), "study_i")
+  expect_identical(slugify("En Lexdec", "English!"), "en_lexdec_english")
+})

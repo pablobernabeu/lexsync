@@ -205,7 +205,7 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
             "n_per_condition": design.get("n_per_condition") or design.get("n_per_cell"),
         },
         "materials_source": {
-            "type": source, "path": source_path, "sha256": sha256_file(source_path),
+            "type": source, "path": _posix(source_path), "sha256": sha256_file(source_path),
             "provenance": "see corpora/ATTRIBUTION.md for corpus licence and citation"
             if source in ("corpus", "generate") else "user-supplied item table",
         },
@@ -222,13 +222,24 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
         "items": {
             "n_total": int(len(stimuli)), "n_conditions": len(conditions),
             "conditions": conditions,
-            "stimuli_file": artifacts.get("stimuli"),
+            "stimuli_file": _posix(artifacts.get("stimuli")),
             "stimuli_sha256": sha256_file(artifacts.get("stimuli")),
         },
         "reproducibility": {"seed": seed, "versions": _versions(engine)},
-        "artifacts": [{"file": p, "sha256": sha256_file(p)}
+        "artifacts": [{"file": _posix(p), "sha256": sha256_file(p)}
                       for p in _artifact_paths(artifacts) if p],
     }
+
+
+def _posix(path):
+    """Record a path in POSIX form, as R's file.path() already produces.
+
+    os.path.join gives backslashes on Windows, which would make the datasheet -- a
+    record meant to travel with the materials and be read anywhere -- describe the
+    machine that happened to build it, and disagree with the R engine's record of the
+    same file.
+    """
+    return path.replace("\\", "/") if isinstance(path, str) else path
 
 
 def _artifact_paths(artifacts: dict) -> list:

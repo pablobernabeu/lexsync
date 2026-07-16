@@ -32,7 +32,10 @@ dependencies = [
 [project.optional-dependencies]
 corpora = ["wordfreq>=3.0,<4"]   # frozen 3.x line: a stable ~2021 language snapshot
 experiment = ["psychopy", "pyserial"]
-dev = ["pytest>=7.0", "build", "twine"]
+# streamlit backs test_apps.py: without it those tests importorskip themselves and
+# the app they cover goes unguarded in CI, so it belongs with the rest of what the
+# suite needs to run.
+dev = ["pytest>=7.0", "build", "twine", "streamlit>=1.30"]
 
 [project.scripts]
 lexsync = "lexsync.cli:main"

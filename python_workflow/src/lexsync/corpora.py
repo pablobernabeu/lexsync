@@ -68,11 +68,31 @@ def build_wordfreq_lexicon(language: str, n_words: int = 10000,
     return df[df.freq_zipf > 0].sort_values("word").reset_index(drop=True)
 
 
+_BOM = b"\xef\xbb\xbf"
+_LEADING_WS = b" \t\n\r\v\f"
+
+
+def _starts_with_markup(path: str) -> bool:
+    """Does the file open with '<', i.e. an HTML or XML document?
+
+    Mirrors .starts_with_markup() in R_workflow/R/corpora.R. A delimited file
+    opens on data; a login wall, a redirect stub or a 404 page served with a 200
+    status opens on a tag, and would otherwise be cached as <name>.csv and
+    resurface much later as an unintelligible schema error.
+    """
+    with open(path, "rb") as handle:
+        head = handle.read(512)
+    if head.startswith(_BOM):
+        head = head[len(_BOM):]
+    return head.lstrip(_LEADING_WS).startswith(b"<")
+
+
 def fetch_corpus(name: str, registry_path: str | None = None, n_words: int = 10000) -> str:
     """Fetch a registered corpus into the cache.
 
     If `name` is a language code supported by the wordfreq connector, a lexicon
-    is built with wordfreq. Otherwise the corpus's registered URL is downloaded.
+    is built with wordfreq. Otherwise the corpus's registered URL is downloaded,
+    once its scheme and its first bytes have been checked.
     """
     with open(_registry_path(registry_path), encoding="utf-8") as handle:
         reg = yaml.safe_load(handle)
@@ -98,8 +118,31 @@ def fetch_corpus(name: str, registry_path: str | None = None, n_words: int = 100
             f"automatically. Retrieve the delimited file manually and pass it to "
             f"load_lexicon()."
         )
+    # A registry is editable, and fetch_corpus() writes wherever it points, so a
+    # 'file://' or 'ftp://' entry would read a local path under the guise of a
+    # download. Only the two schemes a corpus is published over are honoured.
+    if not re.match(r"https?://", url, re.IGNORECASE):
+        raise ValueError(
+            f"lexsync: corpus '{name}' registers a non-http(s) URL ({url}); "
+            f"refusing to download."
+        )
+    import urllib.error
     import urllib.request
     dest = os.path.join(cache_dir(), f"{name}.csv")
-    urllib.request.urlretrieve(url, dest)
+    try:
+        urllib.request.urlretrieve(url, dest)
+    except (urllib.error.URLError, OSError) as exc:
+        raise RuntimeError(
+            f"lexsync: could not download corpus '{name}' from {url} ({exc}). "
+            f"Check the URL in registry.yaml, or download the file manually and "
+            f"pass it to load_lexicon()."
+        ) from exc
+    if _starts_with_markup(dest):
+        os.remove(dest)
+        raise ValueError(
+            f"lexsync: corpus '{name}' returned an HTML page, not a delimited file "
+            f"({url}); the registry URL may have rotted. Retrieve the delimited file "
+            f"manually and pass it to load_lexicon()."
+        )
     print(f"lexsync: downloaded '{name}'. Please cite: {entry.get('citation', '(see registry)')}")
     return dest

@@ -140,7 +140,7 @@ export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
     tmpl <- gsub(sprintf("{{%s}}", k), as.character(subs[[k]]), tmpl, fixed = TRUE)
   }
   out <- file.path(outdir, paste0(base, "_psychopy.py"))
-  writeLines(tmpl, out, useBytes = TRUE)
+  write_lines_lf(tmpl, out)
   invisible(out)
 }
 
@@ -318,7 +318,7 @@ export_opensesame <- function(stimuli, design, schema, outdir, base = NULL) {
   font <- design$font %||% presentation$opensesame_font %||% "mono"
   txt <- build_osexp(design, csv_name, schema, rendered, font = font)
   out <- file.path(outdir, paste0(base, ".osexp"))
-  writeLines(txt, out, useBytes = TRUE)
+  write_lines_lf(txt, out)
   invisible(out)
 }
 
@@ -338,7 +338,7 @@ export_opensesame <- function(stimuli, design, schema, outdir, base = NULL) {
   if (!is.null(tag) && nzchar(as.character(tag))) return(as.character(tag))
   label <- trimws(as.character(design$language %||% ""))
   if (grepl("^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$", label, perl = TRUE)) return(label)
-  m <- .BCP47_TAGS[tolower(label)]
+  m <- .BCP47_TAGS[.lower_invariant(label)]
   if (is.na(m)) "und" else unname(m)
 }
 
@@ -349,8 +349,10 @@ export_opensesame <- function(stimuli, design, schema, outdir, base = NULL) {
 .map_keys_jspsych <- function(rendered) {
   mapk <- function(k) { m <- .JSPSYCH_KEYS[k]; unname(ifelse(is.na(m), k, m)) }
   lapply(rendered, function(e) {
-    if (!is.null(e$keys)) e$keys <- mapk(e$keys)
-    if (!is.null(e$key)) e$key <- mapk(e$key)
+    # [[ ]], not $: `$` partial-matches on a list, so `e$key` returns the value of
+    # `keys` and the assignment then adds a `key` the Python engine never emits.
+    if (!is.null(e[["keys"]])) e[["keys"]] <- mapk(e[["keys"]])
+    if (!is.null(e[["key"]])) e[["key"]] <- mapk(e[["key"]])
     e
   })
 }
@@ -395,7 +397,7 @@ export_jspsych <- function(stimuli, design, schema, outdir, base = NULL) {
     tmpl <- gsub(sprintf("{{%s}}", k), as.character(subs[[k]]), tmpl, fixed = TRUE)
   }
   out <- file.path(outdir, paste0(base, ".html"))
-  writeLines(tmpl, out, useBytes = TRUE)
+  write_lines_lf(tmpl, out)
   invisible(out)
 }
 

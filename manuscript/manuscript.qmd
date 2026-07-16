@@ -200,11 +200,12 @@ stimulus appears, together with a complete 'OpenSesame' experiment. Crucially
 the default matching methods are deterministic, so the R and Python engines
 select identical materials.
 The trial itself is not hard-wired to a single task: a design declares an ordered
-sequence of trial *events*, and both backends render that sequence, so the same
-machinery produces a factorial word study, a lexical-decision task with generated
-pseudowords, a primed design or a self-paced reading study from configuration
-rather than new code. 'lexsync' is thus a reusable, FAIR-compliant tool for many
-psycholinguistic paradigms and languages rather than a single study's script.
+sequence of trial *events*, and each presentation backend renders that sequence,
+so the same machinery produces a factorial word study, a lexical-decision task
+with generated pseudowords, a primed design or a self-paced reading study from
+configuration rather than new code. 'lexsync' is thus a reusable, FAIR-compliant
+tool for many psycholinguistic paradigms and languages rather than a single
+study's script.
 The longitudinal study above is one of twelve worked examples, and one of the
 three that rebuild a published design.
 
@@ -222,8 +223,8 @@ over designs and languages, so that adding a language, a design or a paradigm is
 matter of supplying a configuration file (and, where relevant, a lexicon or item
 table) rather than writing code. The two packages are
 deliberately lean: the R package depends only on 'readr', 'yaml', 'stringdist',
-'jsonlite' and 'digest' beyond base R, and the Python package on 'pandas', 'numpy',
-'PyYAML', 'rapidfuzz' and 'scipy'.
+'stringi', 'jsonlite' and 'digest' beyond base R, and the Python package on
+'pandas', 'numpy', 'PyYAML', 'rapidfuzz' and 'scipy'.
 
 ## A many-language corpus registry
 
@@ -279,10 +280,10 @@ neighbourhood, rather than counting their shared variance more than once
 [@rubin1980bias; @stuart2010matching]. A globally optimal assignment, for a
 two-condition design, minimises the total distance over the whole pairing instead
 of taking the locally cheapest pair at each step [@gu1993comparison;
-@hansen2006optimal]. Both rely on a linear-algebra routine, a matrix inverse and an assignment
-solver respectively, whose last bits differ between the R and Python backends, so
-on these two methods the engines select equivalent but not byte-identical
-materials; each datasheet records which case applies.
+@hansen2006optimal]. Both rely on a linear-algebra routine (a matrix inverse and
+an assignment solver respectively) whose last bits differ between the R and
+Python backends, so on these two methods the engines select equivalent but not
+byte-identical materials; each datasheet records which case applies.
 
 A design may also be declared *continuous* rather than dichotomised. Instead of
 splitting a variable into conditions and matching, lexsync selects a set that
@@ -424,7 +425,7 @@ engine described above. The *table* source loads a user-supplied set of items
 (prime–target pairs, or sentences segmented into regions with a comprehension
 question), validated against the paradigm's required fields and counterbalanced by
 a Latin square that shows each item once per list in a rotated condition, so a
-target is never repeated within a list. The *generate* source builds pseudowords,
+target is never repeated within a list. The *generate* source builds pseudowords
 by one of two methods set in `items.generation.method`. The default,
 `letter_substitution`, derives a length-matched, orthographically legal non-word
 for each real word by changing the fewest letters such that every resulting
@@ -784,7 +785,7 @@ statistics agreeing to the precision shown; only the seeded trial order, which
 depends on each language's random-number generator, differs. A laboratory can
 therefore adopt 'lexsync' in whichever ecosystem it prefers without fear of
 divergent stimulus selection. Second, both
-presentation targets upgrade the sequence-ordered triggers of the original
+laboratory targets upgrade the sequence-ordered triggers of the original
 workflow to onset-aligned markers (flip-locked in 'PsychoPy', and written
 immediately after the refresh-blocking `show()` in 'OpenSesame'), a concrete
 methodological improvement for ERP research.
@@ -833,11 +834,11 @@ URL in the package metadata is a placeholder pending public release.
 In keeping with the design, extensions have well-defined insertion points. To add
 a paradigm, add an entry to the registry in `paradigms` giving its default
 event sequence, the trial fields it requires and its counterbalancing recipe, and
-both backends then render it with no further code. To add a lexical dimension,
-compute it in `querying` (alongside `add_neighbourhood`) and list it in the
-dimension table in `config/schema.yaml`, in both packages. To add a presentation
-target, add an `export_<target>()` function in `scripting` that walks the same
-rendered event list. To add a corpus or language, add an entry to
+all three presentation backends then render it with no further code. To add a
+lexical dimension, compute it in `querying` (alongside `add_neighbourhood`) and
+list it in the dimension table in `config/schema.yaml`, in both packages. To add
+a presentation target, add an `export_<target>()` function in `scripting` that
+walks the same rendered event list. To add a corpus or language, add an entry to
 `corpora/registry.yaml`, and no code change is required for SUBTLEX-family or
 'wordfreq' sources.
 

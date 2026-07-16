@@ -14,38 +14,7 @@
     "sha256": "088f506b3166368bb11b3b271a50ed33c52ba913205bcaa642c5b4ebec4a091a",
     "provenance": "user-supplied item table"
   },
-  "dimensions": {
-    "length": {
-      "type": "derived",
-      "compute": "n_letters",
-      "unit": "letters"
-    },
-    "frequency": {
-      "type": "column",
-      "column": "freq_zipf",
-      "unit": "Zipf"
-    },
-    "n_density": {
-      "type": "derived",
-      "compute": "coltheart_n",
-      "unit": "neighbours"
-    },
-    "old20": {
-      "type": "derived",
-      "compute": "old20",
-      "unit": "mean Levenshtein distance"
-    },
-    "n_syllables": {
-      "type": "derived",
-      "compute": "vowel_groups",
-      "unit": "syllables (orthographic estimate)"
-    },
-    "bigram_freq": {
-      "type": "derived",
-      "compute": "mean_bigram_probability",
-      "unit": "mean positional bigram probability"
-    }
-  },
+  "dimensions": {},
   "selection": {
     "method": "item table (user-supplied)",
     "cross_engine": "n/a (user-supplied items)"
@@ -90,15 +59,15 @@
     },
     {
       "file": "output/experiments/en_priming_english_psychopy.py",
-      "sha256": "68aa594d4317be602adae6a06384dc25204343f0dcb10143124bea4a02f99acc"
+      "sha256": "ca9d04ba4ca4878cf5dcf3ea1b7ef65e86bfd5d47ea8617bedf2c5b7ac857d8f"
     },
     {
       "file": "output/experiments/en_priming_english.osexp",
-      "sha256": "ebb9660fae782c2cb52615b1e4c5cf6c96381324baf6fc0ad7d9ed36ee7942e8"
+      "sha256": "feea0fb91005360b755cf44333258aeb8bc94150218383809d7ded039d58e0fc"
     },
     {
       "file": "output/experiments/en_priming_english.html",
-      "sha256": "e351d1901350b0df5595caa0b031acfbd4a5c6a591139e5f3568815774a11d27"
+      "sha256": "6ce67a1b510d25a2ccd8168ebefd5078d80c83187be868e3a421bebeba702c18"
     }
   ]
 }

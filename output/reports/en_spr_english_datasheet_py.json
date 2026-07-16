@@ -6,20 +6,20 @@
   },
   "artifacts": [
     {
-      "file": "output\\stimuli\\en_spr_english_stimuli_py.csv",
+      "file": "output/stimuli/en_spr_english_stimuli_py.csv",
       "sha256": "4507001cb36d64d5d8aa2df19bf94f4946706e03342210044dfe255f844c3ee6"
     },
     {
-      "file": "output\\experiments\\en_spr_english_psychopy.py",
-      "sha256": "c5dd2da70c4d487c313e0bfbd089939d06da96971c0baf1c8806bbaffb636a14"
+      "file": "output/experiments/en_spr_english_psychopy.py",
+      "sha256": "4799c74f31ceb8f297672ec6cd0c948150d4aae002d92c1164131d8dc5afea6f"
     },
     {
-      "file": "output\\experiments\\en_spr_english.osexp",
+      "file": "output/experiments/en_spr_english.osexp",
       "sha256": "d6227b11074522a985c4bd40a8771e5b581fca29d14a7a4b27defb7a4cee80a4"
     },
     {
-      "file": "output\\experiments\\en_spr_english.html",
-      "sha256": "6ea2e774b483c367563f7ec057baafe82b45b8828d987c50175e39d70ec85696"
+      "file": "output/experiments/en_spr_english.html",
+      "sha256": "786d022cf5c87fa1d33e6acd9c99cd78e89b39c99ae39c2f248be6a4fa027dfc"
     }
   ],
   "counterbalancing": {
@@ -42,7 +42,7 @@
     ],
     "n_conditions": 2,
     "n_total": 20,
-    "stimuli_file": "output\\stimuli\\en_spr_english_stimuli_py.csv",
+    "stimuli_file": "output/stimuli/en_spr_english_stimuli_py.csv",
     "stimuli_sha256": "4507001cb36d64d5d8aa2df19bf94f4946706e03342210044dfe255f844c3ee6"
   },
   "lexsync_datasheet_version": "1.0",

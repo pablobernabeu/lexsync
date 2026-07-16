@@ -6,28 +6,28 @@
   },
   "artifacts": [
     {
-      "file": "output\\stimuli\\es_ndensity_spanish_stimuli_py.csv",
+      "file": "output/stimuli/es_ndensity_spanish_stimuli_py.csv",
       "sha256": "ad6879b15137aa8f1b9c342fa4b4e069ec79e07c4d21b15e602d7a032d8d5e57"
     },
     {
-      "file": "output\\reports\\es_ndensity_spanish_descriptives_py.csv",
+      "file": "output/reports/es_ndensity_spanish_descriptives_py.csv",
       "sha256": "92111a367ff9b4d885454d4ca96ece568488124717b668acfee5c81ae1a35c7c"
     },
     {
-      "file": "output\\reports\\es_ndensity_spanish_comparisons_py.csv",
+      "file": "output/reports/es_ndensity_spanish_comparisons_py.csv",
       "sha256": "5eca245eac6dedc698ec4d05c165551c4fb0938dcb4230f5a5da42015cbf27ab"
     },
     {
-      "file": "output\\experiments\\es_ndensity_spanish_psychopy.py",
-      "sha256": "b21ef1fcaafbf73f2b521153f5624df15386d792bbcf4a7caac3834ec0a1beeb"
+      "file": "output/experiments/es_ndensity_spanish_psychopy.py",
+      "sha256": "c9a7ac3172492eb71a9154d3eedbcba4598f633bdd0a13f31a5c4db34172ecea"
     },
     {
-      "file": "output\\experiments\\es_ndensity_spanish.osexp",
+      "file": "output/experiments/es_ndensity_spanish.osexp",
       "sha256": "12ab9011cacbd513eab2369ec4e65d8bcff3b91b68af0c1ac8fefafaa99c6103"
     },
     {
-      "file": "output\\experiments\\es_ndensity_spanish.html",
-      "sha256": "561a6379508c4d5617d618d2e4fc14cfd5cecdbbe3f987112313f39d77ba39a4"
+      "file": "output/experiments/es_ndensity_spanish.html",
+      "sha256": "b2b3454b3a5982adfb02326b8cd88083d7bb5fe8d4fedf24e035929ad78bc7df"
     }
   ],
   "counterbalancing": {
@@ -81,7 +81,7 @@
     ],
     "n_conditions": 2,
     "n_total": 160,
-    "stimuli_file": "output\\stimuli\\es_ndensity_spanish_stimuli_py.csv",
+    "stimuli_file": "output/stimuli/es_ndensity_spanish_stimuli_py.csv",
     "stimuli_sha256": "ad6879b15137aa8f1b9c342fa4b4e069ec79e07c4d21b15e602d7a032d8d5e57"
   },
   "lexsync_datasheet_version": "1.0",

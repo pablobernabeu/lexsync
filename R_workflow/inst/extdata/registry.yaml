@@ -3,6 +3,8 @@
 # Each entry documents an accessible, reusable and citable lexical corpus.
 #   status: validated -> bundled example slice + demonstrated end to end
 #   status: supported -> fetched on demand into the user cache (not redistributed)
+#   status: manual    -> citation, licence and landing page verified live, but the
+#                        publisher offers no delimited file, so a human retrieves it
 #   status: listed    -> citation/licence/URL pending live verification
 # A corpus is promoted to 'supported'/'validated' only after its citation has
 # been verified against Crossref or the official record, and its licence checked.
@@ -31,19 +33,23 @@ corpora:
   subtlex_uk:
     language: { name: 'English (British)', iso: en-GB }
     connector: openlexicon
-    status: supported
-    url: 'http://crr.ugent.be/programs-data/subtitle-frequencies'
-    openlexicon: 'https://raw.githubusercontent.com/chrplr/openlexicon/master/datasets-info/SUBTLEX-UK/SUBTLEX-UK.csv'
+    status: manual
+    url: 'https://psychology.nottingham.ac.uk/subtlex-uk/'
     licence: 'CC BY-SA 4.0 (Brysbaert terms)'
     citation_key: vanheuven2014subtlexuk
     citation: 'van Heuven, Mandera, Keuleers & Brysbaert (2014). SUBTLEX-UK. Quarterly Journal of Experimental Psychology, 67(6), 1176-1190. doi:10.1080/17470218.2013.850521'
     columns: { word: 'Spelling', freq_zipf: 'LogFreq(Zipf)', pos: 'DomPoS' }
+    notes: >-
+      Published only as zipped xlsx/txt archives, which the delimited-file
+      connector cannot ingest, so no 'openlexicon' key: download
+      SUBTLEX-UK.txt.zip from the landing page, unzip it, and pass the file to
+      load_lexicon(). The 'columns' map above names its columns.
 
   subtlex_esp:
     language: { name: 'Spanish', iso: es }
     connector: openlexicon
     status: listed
-    url: 'http://crr.ugent.be/programs-data/subtitle-frequencies'
+    url: 'https://osf.io/xp6sz/'
     licence: 'CC BY-SA 4.0 (Brysbaert terms)'
     citation_key: cuetos2011subtlexesp
     citation: 'Cuetos, González-Nosti, Barbón & Brysbaert (2011). SUBTLEX-ESP. Psicológica, 32(2), 133-143.'
@@ -53,7 +59,7 @@ corpora:
     language: { name: 'English (American)', iso: en-US }
     connector: openlexicon
     status: listed
-    url: 'http://crr.ugent.be/programs-data/subtitle-frequencies'
+    url: 'https://www.ugent.be/pp/experimentele-psychologie/en/research/documents/subtlexus'
     licence: 'CC BY-SA 4.0 (Brysbaert terms)'
     citation_key: brysbaert2009subtlexus
     citation: 'Brysbaert & New (2009). Behavior Research Methods, 41(4), 977-990. doi:10.3758/BRM.41.4.977'

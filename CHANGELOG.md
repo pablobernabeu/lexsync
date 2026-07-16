@@ -67,6 +67,62 @@ no function signature changes.
 - Pinned the optional `wordfreq` connector to the frozen 3.x line and documented
   that it is a stable snapshot of language usage through roughly 2021 (see
   `corpora/ATTRIBUTION.md`).
+- An unknown `matching.method`, and a candidate pool too small for the requested
+  `n_per_condition`, now raise an actionable error in both engines instead of
+  silently degrading to a default method or a short set. Code that relied on the
+  old fallback will now stop.
+- `stringi` is a new hard dependency of the R package (Imports). The canonical
+  word key is case-folded with ICU at the root locale, so both engines derive it
+  byte for byte alike whatever the machine's locale. `shiny`, `bslib`, `DT` and
+  `zip` join Suggests for the Shiny app.
+- Ten R functions are newly exported, matching the Python package's public
+  surface: `PARADIGMS`, `build_datasheet`, `build_lexdec_stimuli`,
+  `count_syllables`, `generate_pseudowords`, `make_pseudoword`,
+  `methods_paragraph`, `required_fields`, `resolve_events` and `write_datasheet`.
+- OpenSesame experiments now present trials in the seeded counterbalanced order.
+  They were previously shuffled again at run time, so the order that ran was not
+  the order the pipeline generated and recorded.
+- R's `tost_equiv()` equivalence bound now defaults to `bound_d = 0.5`, matching
+  the Python engine, which already used 0.5. The R default was 0.4, so the bound
+  is wider and an R-side equivalence test is now easier to pass. Reported TOST
+  verdicts can change for the same data.
+- `describe_stimuli()` orders its rows by each group's first appearance in R, as
+  pandas already did, so the two engines' descriptives files agree row for row.
+  This changes the row order of R-generated descriptives.
+- The Python engine pins LF line terminators when writing CSVs, which readr
+  already did, so a datasheet's checksums no longer depend on the platform that
+  wrote the file.
+- Selected stimuli are byte-unchanged for all 15 bundled designs.
+
+### Fixed
+
+- A word missing from a lexicon row became the literal string `"nan"` in Python
+  while R dropped the row. Both engines now drop it before string coercion.
+- `participant_table()` crosses its factors in `expand.grid()` order in both
+  engines, so either allocates the same cell to a given participant number.
+- `merge_norms()` preserves the lexicon's row order in R, as pandas does.
+- R's seeded counterbalancing saves and restores the caller's RNG state, so
+  running a design no longer perturbs the calling script's random stream.
+- Datasheets record the tolerance windows and the pseudoword generator that
+  actually ran, filter dimensions identically in both engines, and report the
+  running package version rather than a hardcoded string.
+- The matcher raises rather than re-picking an already-used row when a relaxed
+  window re-admits candidates that are missing a matched dimension. Such a
+  candidate has no defined distance, so it ranks last and is never assigned, yet
+  it still counted towards the pool-size guard. An NA-depleted pool could
+  therefore pass the guard and go on to emit the same word in several sets.
+- An anchor of a single item gives a tolerance window of NA, which left R's
+  pre-filter undecided and indexed all-NA filler rows into the candidate set, so
+  R selected an empty stimulus row where Python relaxed the window and selected a
+  real word. R now resolves an undecided comparison to FALSE, as Python does.
+- The generated PsychoPy script and OpenSesame experiment are now byte-identical
+  across the two engines. Python's embedded event JSON padded its separators and
+  wrote a whole-number timeout as `2.0` where jsonlite writes `2`. The trial
+  lists remain engine-specific, because trial order is drawn from each language's
+  own seeded generator.
+- Documentation no longer describes the jsPsych output as self-contained. The
+  jsPsych library loads from a CDN, so the machine running the file needs an
+  internet connection.
 
 ### Planned
 

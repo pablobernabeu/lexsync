@@ -230,6 +230,14 @@ def match_stimuli(pool: pd.DataFrame, design: dict, schema: dict, verbose: bool 
             raise ValueError(f"lexsync: condition '{cname}' has only {len(cand_f)} candidate(s) "
                              f"but {n_take} are needed; widen pool_filters/define_by or lower "
                              f"n_per_condition.")
+        # Relaxing the window re-admits rows missing a matched dimension. Their distance
+        # is NaN and they rank last, so they are never assigned; counting them would let an
+        # NA-depleted pool past the guard above and back into re-picking used rows.
+        usable = int(cand_f[match_on].notna().all(axis=1).sum())
+        if usable < n_take:
+            raise ValueError(f"lexsync: condition '{cname}' has only {usable} usable candidate(s) "
+                             f"complete on the matched dimensions but {n_take} are needed; widen "
+                             f"pool_filters/define_by or lower n_per_condition.")
         cand_f = cand_f.reset_index(drop=True)
         z_cand = _zmat(cand_f, match_on, center, scale)
         words = cand_f["word"].to_numpy()

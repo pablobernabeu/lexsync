@@ -101,3 +101,17 @@ def test_r_python_parity(base, design, cols):
     for c in shared:
         n_bad = int((m[f"{c}_r"].astype(str) != m[f"{c}_p"].astype(str)).sum())
         assert n_bad == 0, f"{base}: column '{c}' differs across engines in {n_bad}/{len(m)} rows"
+
+
+def test_events_json_is_serialised_as_jsonlite_would():
+    """The generated PsychoPy script and OpenSesame experiment must match the R
+    engine's byte for byte, and the embedded event JSON is where they most easily
+    drift: jsonlite pads no separators and drops a whole number's fractional part, so a
+    2000 ms timeout must serialise as 2, not 2.0. A CI step runs both engines into
+    separate directories and compares those two files; this pins the rule it relies on.
+    """
+    from lexsync.scripting import _json_r
+    assert _json_r([{"type": "response", "keys": ["left", "right"], "timeout": 2.0}]) == (
+        '[{"type":"response","keys":["left","right"],"timeout":2}]')
+    # A genuinely fractional timeout keeps its decimal part in both engines.
+    assert _json_r({"timeout": 2.5}) == '{"timeout":2.5}'

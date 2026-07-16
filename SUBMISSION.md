@@ -38,18 +38,24 @@ DOI'd archive satisfies the availability requirement.
 
 ## Before anything is public: update placeholders
 
-- The repository URL and ORCID are now recorded consistently in
-  `R_workflow/DESCRIPTION`, `python_workflow/pyproject.toml`, `CITATION.cff`,
-  `.zenodo.json` and `README.md`; confirm both are correct before release.
+- The repository URL is recorded in `R_workflow/DESCRIPTION`,
+  `python_workflow/pyproject.toml`, `CITATION.cff` and `codemeta.json`, and appears in
+  the `README.md` badge links. The ORCID is recorded in `R_workflow/DESCRIPTION`,
+  `CITATION.cff`, `.zenodo.json` and `codemeta.json`. PEP 621 defines no ORCID field,
+  so `pyproject.toml` carries the URL alone, and Zenodo takes the repository link from
+  the GitHub release rather than from `.zenodo.json`.
+  `python_workflow/tests/test_metadata.py` pins the values the files share. Confirm
+  both are correct before release.
 - Confirm **authorship**. The metadata currently lists a single author for a
-  general-purpose tool; decide the author/contributor list and the manuscript
-  byline (one of the twelve reproduced designs is from a seven-author study,
-  González Alonso et al., 2025, so weigh any contribution from that work).
+  general-purpose tool. Decide the author/contributor list and the manuscript
+  byline (one of the three published designs the worked examples reproduce is from a
+  seven-author study, González Alonso et al., 2025, so weigh any contribution from
+  that work).
 
 ## CRAN pre-submission checklist (R package, `R_workflow/`)
 
-- [x] `R CMD check --as-cran` passes locally (Windows, R 4.5.1): 0 errors, 0
-      warnings, 1 (new-submission) NOTE.
+- [x] `R CMD check --as-cran` passes locally (Windows 11, R 4.6.1): 0 errors, 0
+      warnings, 1 (new-submission) NOTE (see `R_workflow/cran-comments.md`).
 - [x] testthat suite passes; HTML vignette builds; roxygen docs complete.
 - [ ] Run **win-builder** R-release and R-devel (`devtools::check_win_release()`,
       `check_win_devel()`), and the CI matrix (Ubuntu, macOS and Windows under R

@@ -56,3 +56,17 @@ test_that("jsPsych export escapes HTML in stimulus data", {
                                          schema, out), warn = FALSE), collapse = "\n")
   expect_false(grepl("</script><b>x", html, fixed = TRUE))
 })
+
+test_that("key mapping does not invent a 'key' element on a response event", {
+  # `$` partial-matches on a list, so `e$key` returns the value of `keys`, and the
+  # guarded assignment then adds a `key` the Python engine never emits: the two
+  # engines' jsPsych timelines diverged on every response event. Exact-match [[ ]]
+  # is what keeps them in step; test_scripting.py pins the same shape.
+  ev <- list(list(type = "response", keys = c("left", "right"), timeout = 2))
+  mapped <- lexsync:::.map_keys_jspsych(ev)[[1]]
+  expect_identical(names(mapped), c("type", "keys", "timeout"))
+  expect_identical(mapped$keys, c("arrowleft", "arrowright"))
+  # A region event does carry a real `key`, which must still be mapped.
+  reg <- list(list(type = "region", field = "sentence", sep = "|", key = "space"))
+  expect_identical(lexsync:::.map_keys_jspsych(reg)[[1]][["key"]], " ")
+})

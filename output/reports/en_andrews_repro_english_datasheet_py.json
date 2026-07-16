@@ -6,28 +6,28 @@
   },
   "artifacts": [
     {
-      "file": "output\\stimuli\\en_andrews_repro_english_stimuli_py.csv",
+      "file": "output/stimuli/en_andrews_repro_english_stimuli_py.csv",
       "sha256": "be9c8b04683090ea8302a396a8f7b3e7bee77336f759c29e9846d0422fb0f80a"
     },
     {
-      "file": "output\\reports\\en_andrews_repro_english_descriptives_py.csv",
+      "file": "output/reports/en_andrews_repro_english_descriptives_py.csv",
       "sha256": "47a09259f07bacf9927bdfec2c19ad3df82b555ae1bd8815b743f7a329dabaae"
     },
     {
-      "file": "output\\reports\\en_andrews_repro_english_comparisons_py.csv",
+      "file": "output/reports/en_andrews_repro_english_comparisons_py.csv",
       "sha256": "a0cfc615fd5ffea709fd434a67b4516063f590bdee13e3e2e8fe8fbb7b81c44c"
     },
     {
-      "file": "output\\experiments\\en_andrews_repro_english_psychopy.py",
-      "sha256": "4697dc9438ed2c2a8a4deb79b40ba4032269721f25a5c9870e41fd19cd6fffb5"
+      "file": "output/experiments/en_andrews_repro_english_psychopy.py",
+      "sha256": "5a2535ebc3e48c2700b6ebc4c6137c09bd43b3e3cf2601b23834549a30e517bd"
     },
     {
-      "file": "output\\experiments\\en_andrews_repro_english.osexp",
+      "file": "output/experiments/en_andrews_repro_english.osexp",
       "sha256": "0a5114dab714cead8a4688e1406c81319e99f04f48dc7ffd6ca44ddc97b9e9b0"
     },
     {
-      "file": "output\\experiments\\en_andrews_repro_english.html",
-      "sha256": "e46bda113215ce79da02bfe45c21e0e87608e9da203042995bdde664f3eb5c53"
+      "file": "output/experiments/en_andrews_repro_english.html",
+      "sha256": "e083514f45b4970bb27548a588e5133e9329feeeebba1df99c06c7b7dcc74961"
     }
   ],
   "counterbalancing": {
@@ -83,7 +83,7 @@
     ],
     "n_conditions": 4,
     "n_total": 72,
-    "stimuli_file": "output\\stimuli\\en_andrews_repro_english_stimuli_py.csv",
+    "stimuli_file": "output/stimuli/en_andrews_repro_english_stimuli_py.csv",
     "stimuli_sha256": "be9c8b04683090ea8302a396a8f7b3e7bee77336f759c29e9846d0422fb0f80a"
   },
   "lexsync_datasheet_version": "1.0",

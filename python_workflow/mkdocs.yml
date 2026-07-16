@@ -1,0 +1,122 @@
+site_name: lexsync (Python)
+site_description: Multidimensional lexical optimisation and hardware-timed experiment generation. Select matched stimuli from a corpus in any of dozens of languages and generate the experiment that presents them.
+site_author: Pablo Bernabeu
+site_url: https://pablobernabeu.github.io/lexsync/python/
+repo_url: https://github.com/pablobernabeu/lexsync
+# The licence link is absolute: the copyright line renders on every page, and a
+# relative link would resolve against nested pages and break.
+# The badges are the repository's own (see README.md): the two continuous-integration
+# workflows that check the R and the Python engine, and the source licence. There is
+# no Zenodo DOI badge, because lexsync has no deposited DOI (see CITATION.cff).
+copyright: >-
+  <span class="mrd-footer-badges">
+  <a href="https://github.com/pablobernabeu/lexsync/actions/workflows/R-CMD-check.yaml"><img src="https://github.com/pablobernabeu/lexsync/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check"></a>
+  <a href="https://github.com/pablobernabeu/lexsync/actions/workflows/python-tests.yaml"><img src="https://github.com/pablobernabeu/lexsync/actions/workflows/python-tests.yaml/badge.svg" alt="python-tests"></a>
+  <a href="https://opensource.org/license/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
+  </span>
+  Developed by <a href="https://pablobernabeu.github.io">Pablo Bernabeu</a>.
+  Open, reproducible research software in R and Python. Released under the
+  <a href="https://pablobernabeu.github.io/lexsync/python/licence/">MIT licence</a>.
+
+theme:
+  name: material
+  custom_dir: overrides
+  logo: assets/logo.svg
+  # The family's other sites point this at a PNG twin of the logo. lexsync has no
+  # raster logo, and every browser that Material supports takes an SVG icon, so the
+  # one asset serves both the header and the tab.
+  favicon: assets/logo.svg
+  font:
+    text: Inter
+    code: JetBrains Mono
+  # The header and footer are held at the deep-navy brand ink in both schemes
+  # (primary: black is the closest preset, retuned to the exact navy in
+  # stylesheets/brand.css); accent carries the warm amber.
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: black
+      accent: amber
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: black
+      accent: amber
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - toc.follow
+    - content.code.copy
+    - search.suggest
+    - search.highlight
+
+extra_css:
+  - stylesheets/brand.css
+  - stylesheets/extra.css
+
+# The demonstration experiment is reached through the header pill
+# (overrides/partials/header.html), matching the family convention, so it does not
+# repeat in the nav. The three guides follow the workflow arc, from selecting
+# stimuli to presenting them, then to the guarantees that hold across both engines,
+# and are the twins of the R package's vignettes of the same names.
+nav:
+  - Home: index.md
+  - Getting started: getting-started.md
+  - Guides:
+      - Matching and designs: matching-and-designs.md
+      - Experiments and triggers: experiments-and-triggers.md
+      - Reproducibility and parity: reproducibility-and-parity.md
+  - API reference: api.md
+  - Changelog: changelog.md
+  - Licence: licence.md
+  - About: about.md
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          # Relative to this file, so the documented objects are the ones in this
+          # working tree rather than whatever lexsync happens to be installed.
+          paths: [src]
+          options:
+            show_root_heading: true
+            docstring_style: google
+            # api.md groups 43 objects under eleven h2 sections, mirroring the R
+            # package's reference index. At mkdocstrings' default level the object
+            # headings would also be h2, flattening the table of contents into one
+            # list in which no object shows which group it belongs to.
+            heading_level: 3
+
+markdown_extensions:
+  - admonition
+  - pymdownx.highlight
+  - pymdownx.superfences
+  # attr_list carries the classes that brand.css styles: the home page's call-to-action
+  # buttons (.md-button) and the tagline under the title (.mrd-tagline). Without it the
+  # attribute lists render as literal braces.
+  - attr_list
+  # Snippets embeds the repository's LICENSE and CHANGELOG.md into the licence and
+  # changelog pages, so neither page can drift from the file it reports.
+  # pymdown-extensions ships with mkdocs-material. base_path is listed explicitly
+  # because the two files sit at different levels: LICENSE beside this config, the
+  # changelog at the root of the monorepo, which the default base_path never reaches.
+  - pymdownx.snippets:
+      check_paths: true
+      base_path:
+        - .
+        - ..
+
+# Build with:  pip install mkdocs-material "mkdocstrings[python]" && mkdocs build
+
+# The released version shown beside the title in the header (updated on release).
+# It tracks pyproject.toml's version, and the R package is released in lockstep.
+extra:
+  version: "0.1.0"

@@ -212,6 +212,45 @@ def test_undersized_condition_raises_instead_of_duplicating():
         match_stimuli(pool, _na_design(n=5), _tiny_schema())
 
 
+def test_na_depleted_condition_raises_instead_of_duplicating():
+    # The raw row count clears n_per_condition, but only two rows carry the matched
+    # dimension. The rest rank last on a NaN distance and are never assigned, so the
+    # greedy pass would exhaust the usable rows and re-pick them. Pinned identically
+    # in test-matching.R.
+    pool = pd.DataFrame({
+        "id": [1, 2, 3, 4, 5, 6, 7, 8, 9],
+        "word": ["laa", "lab", "lac", "lad", "lae", "hab", "hac", "had", "hae"],
+        "frequency": [1.0, 1.5, 2.0, 2.5, 3.0, 5.0, 5.5, 6.0, 6.5],
+        "concreteness": [3.0, 3.1, np.nan, np.nan, np.nan, 3.0, 3.1, 2.9, 3.2],
+    })
+    with pytest.raises(ValueError, match="condition 'low' has only 2 usable candidate"):
+        match_stimuli(pool, _na_design(n=4), _tiny_schema())
+
+
+def test_single_item_anchor_relaxes_rather_than_selecting_na():
+    # An anchor of one item gives sd = NA, so every tolerance bound is NaN and each
+    # comparison is False: the window relaxes and a real word is selected. The R engine
+    # reaches the same row only because keep[is.na(keep)] <- FALSE resolves the NA the
+    # bounds introduce; test-matching.R pins this same expectation.
+    pool = pd.DataFrame({
+        "id": [1, 2, 3, 4, 5],
+        "word": ["aaa", "bbb", "ccc", "ddd", "eee"],
+        "frequency": [1.0, 2.0, 3.0, 4.0, 5.0],
+        "concreteness": [3.0, 3.1, 3.2, 3.3, 3.4],
+    })
+    design = {
+        "name": "one", "language": "english", "n_per_condition": 1,
+        "conditions": [
+            {"name": "high", "define_by": {"frequency": [1.0, 1.0]}},
+            {"name": "low", "define_by": {"frequency": [2.0, 5.0]}},
+        ],
+        "match_on": ["concreteness"],
+    }
+    s = match_stimuli(pool, design, _tiny_schema())
+    assert list(s.loc[s.condition == "low", "word"]) == ["bbb"]
+    assert not s["word"].isna().any()
+
+
 def test_unknown_method_raises(schema, en_lexicon_path):
     lex = load_lexicon(en_lexicon_path, schema, "english")
     d = _design()

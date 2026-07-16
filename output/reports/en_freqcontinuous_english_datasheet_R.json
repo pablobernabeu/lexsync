@@ -54,6 +54,12 @@
       "n_density",
       "old20"
     ],
+    "tolerance_k": {
+      "length": 1.5,
+      "frequency": 1,
+      "n_density": 1.5,
+      "old20": 1.5
+    },
     "candidate_pool": [
       {
         "condition": "continuous",
@@ -134,15 +140,15 @@
     },
     {
       "file": "output/experiments/en_freqcontinuous_english_psychopy.py",
-      "sha256": "e0a9b57470dee857545ffbc0b7679719e28f44b4ad626da7df948889a61b6a38"
+      "sha256": "e2858cdde2585bc604f949b02f3e478d721186a7b0c10a83915b188ea77800bb"
     },
     {
       "file": "output/experiments/en_freqcontinuous_english.osexp",
-      "sha256": "37a4320be23b65f22d6c56a6e56705b1e9f4572c05841f6bc0c7d30629816512"
+      "sha256": "6deb70a4a36061ae926af8b9fbc03342a50b41690ded925a36ebc2354474205f"
     },
     {
       "file": "output/experiments/en_freqcontinuous_english.html",
-      "sha256": "04d086d29e0590d50f14144f55bf0bfdd00b947a82ca66e7c1e562f555d93316"
+      "sha256": "d86c59e8a71a785c8896c2714d2cb3cc61b742a26781b4484a83eca52b8b017e"
     }
   ]
 }

@@ -189,6 +189,45 @@ test_that("an undersized condition raises rather than duplicating words", {
                "condition 'low' has only 2 candidate")
 })
 
+test_that("an NA-depleted condition raises rather than duplicating words", {
+  # The raw row count clears n_per_condition, but only two rows carry the matched
+  # dimension. The rest rank last on an NA distance and are never assigned, so the
+  # greedy pass would exhaust the usable rows and re-pick them. Pinned identically in
+  # test_matching.py.
+  pool <- data.frame(
+    id = 1:9,
+    word = c("laa", "lab", "lac", "lad", "lae", "hab", "hac", "had", "hae"),
+    frequency = c(1.0, 1.5, 2.0, 2.5, 3.0, 5.0, 5.5, 6.0, 6.5),
+    concreteness = c(3.0, 3.1, NA, NA, NA, 3.0, 3.1, 2.9, 3.2),
+    stringsAsFactors = FALSE
+  )
+  expect_error(match_stimuli(pool, na_design(4L), tiny_schema()),
+               "condition 'low' has only 2 usable candidate")
+})
+
+test_that("a single-item anchor relaxes the window rather than selecting NA", {
+  # An anchor of one item gives sd = NA, so every tolerance bound is NA. Without
+  # keep[is.na(keep)] <- FALSE the whole vector goes NA and cand[keep, ] indexes
+  # all-NA filler rows, which clear both count guards and are then selected. Python
+  # compares False against NaN and relaxes; test_matching.py pins the same word.
+  pool <- data.frame(
+    id = 1:5,
+    word = c("aaa", "bbb", "ccc", "ddd", "eee"),
+    frequency = c(1.0, 2.0, 3.0, 4.0, 5.0),
+    concreteness = c(3.0, 3.1, 3.2, 3.3, 3.4),
+    stringsAsFactors = FALSE
+  )
+  design <- list(name = "one", language = "english", n_per_condition = 1L,
+                 conditions = list(
+                   list(name = "high", define_by = list(frequency = c(1.0, 1.0))),
+                   list(name = "low",  define_by = list(frequency = c(2.0, 5.0)))
+                 ),
+                 match_on = list("concreteness"))
+  s <- match_stimuli(pool, design, tiny_schema())
+  expect_identical(s$word[s$condition == "low"], "bbb")
+  expect_false(any(is.na(s$word)))
+})
+
 test_that("an unknown matching method is an error, not a silent fallback", {
   schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
   lex <- load_lexicon(system.file("extdata", "en_example.csv", package = "lexsync"), schema, "english")

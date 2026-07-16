@@ -38,7 +38,7 @@ Suggests:
     DT,
     zip
 VignetteBuilder: knitr
-URL: https://github.com/pablobernabeu/lexsync
+URL: https://github.com/pablobernabeu/lexsync, https://pablobernabeu.github.io/lexsync/r
 BugReports: https://github.com/pablobernabeu/lexsync/issues
 Roxygen: list(markdown = TRUE)
 Config/testthat/edition: 3

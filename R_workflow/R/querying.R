@@ -37,6 +37,30 @@ validate_lexicon <- function(df, schema) {
   stringi::stri_trans_tolower(as.character(x), locale = "und")
 }
 
+# Python's `str.strip()` removes every code point whose `str.isspace()` is true:
+# the Unicode White_Space property plus the C0 information separators
+# U+001C-U+001F, and nothing else (U+200B, being a format character, stays).
+# ICU's `\p{WHITE_SPACE}` is that set less the four separators, so naming them
+# alongside it reproduces Python's set exactly.
+.WHITESPACE <- "[^\\p{WHITE_SPACE}\\x{1c}-\\x{1f}]"
+
+#' Strip leading and trailing whitespace under the Unicode definition
+#'
+#' Base R's `trimws()` removes only space, tab, carriage return and line feed,
+#' leaving a no-break space, a form feed or an ideographic space in place, where
+#' Python's `str.strip()` removes all of them. `word` is the canonical key
+#' behind every byte-order tie-break, so a lexicon padded with any of those
+#' characters would otherwise key, sort and number differently in the two
+#' engines. As with [.lower_invariant()], the fix is to pin R to Python's
+#' Unicode semantics.
+#'
+#' @param x A character vector, or a vector coercible to one.
+#' @return A character vector, trimmed; `NA` is preserved.
+#' @keywords internal
+.trim_invariant <- function(x) {
+  stringi::stri_trim_both(as.character(x), pattern = .WHITESPACE)
+}
+
 # Maximal runs of (possibly accented) Latin vowels approximate syllable nuclei.
 # Accented code points are built with intToUtf8 so the R source stays ASCII (CRAN).
 .VOWELS <- paste0("[aeiouy", intToUtf8(c(
@@ -81,10 +105,19 @@ load_lexicon <- function(path, schema, language = NULL) {
   df <- as.data.frame(read_csv_utf8(path), stringsAsFactors = FALSE)
   validate_lexicon(df, schema)
   freq_col <- schema$dimensions$frequency$column %||% "freq_zipf"
-  df$word <- .lower_invariant(trimws(as.character(df$word)))
+  df$word <- .lower_invariant(.trim_invariant(df$word))
   keep <- !is.na(df$word) & nzchar(df$word) & !is.na(df[[freq_col]])
   df <- df[keep, , drop = FALSE]
   df <- df[!duplicated(df$word), , drop = FALSE]
+  # Every downstream step reads at least one row, and `df$language <- language`
+  # below fails first with base R's "replacement has 1 row, data has 0", which
+  # names neither the lexicon nor the cause. Say what is wrong while the path is
+  # still in scope; the Python engine raises the same message here.
+  if (!nrow(df)) {
+    stop(sprintf(paste("lexsync: lexicon '%s' has no usable rows: it is empty,",
+                       "or every row is missing 'word' or '%s'."),
+                 path, freq_col), call. = FALSE)
+  }
   # Byte-order ('radix') sort so the lexicon order is locale-independent and
   # therefore identical to the Python engine (which sorts by UTF-8 bytes).
   df <- df[order(df$word, method = "radix"), , drop = FALSE]
@@ -185,7 +218,7 @@ merge_norms <- function(lexicon, norms, on = "word", columns = NULL) {
   n <- if (is.data.frame(norms)) norms else as.data.frame(read_csv_utf8(norms), stringsAsFactors = FALSE)
   cols <- if (!is.null(columns)) columns else setdiff(names(n), on)
   n <- n[, c(on, cols), drop = FALSE]
-  n[[on]] <- .lower_invariant(trimws(as.character(n[[on]])))
+  n[[on]] <- .lower_invariant(.trim_invariant(n[[on]]))
   # merge() would pair a missing key with a missing lexicon key, whereas the
   # Python engine's NaN never compares equal; drop it so neither engine joins on it.
   n <- n[!is.na(n[[on]]), , drop = FALSE]
@@ -224,13 +257,23 @@ load_items <- function(path, required_fields) {
     stop(sprintf("lexsync: items table '%s' is missing column(s): %s.",
                  path, paste(missing, collapse = ", ")), call. = FALSE)
   }
+  # readr trims ASCII whitespace from every field (trim_ws defaults to TRUE) and
+  # pandas trims nothing, so the same padded table would yield different stimulus
+  # text, set ids and condition labels per engine. Trimming here, rather than
+  # switching the reader off, keeps one definition of a field's value in both
+  # sources: readr's trim_ws also drives its type inference, so disabling it
+  # would read a padded ' 3.5 ' as text in R while pandas still parsed a float.
+  # Only ASCII whitespace is trimmed, because that is all readr removes -- a
+  # no-break space survives in both engines, so they still agree.
+  trim <- function(x) trimws(as.character(x), whitespace = "[ \t\r\n]")
   for (f in intersect(required_fields, names(df))) {
-    df[[f]] <- vapply(df[[f]], function(v) clean_field(v, f), character(1))
+    df[[f]] <- vapply(df[[f]], function(v) clean_field(trim(v), f), character(1))
   }
-  items <- sort(unique(as.character(df$item)), method = "radix")
+  item_key <- trim(df$item)
+  items <- sort(unique(item_key), method = "radix")
   set_map <- stats::setNames(seq_along(items), items)
-  df$set <- unname(set_map[as.character(df$item)])
-  df$condition <- as.character(df$condition)
+  df$set <- unname(set_map[item_key])
+  df$condition <- trim(df$condition)
   rownames(df) <- NULL
   df
 }

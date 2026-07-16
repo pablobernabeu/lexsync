@@ -6,28 +6,28 @@
   },
   "artifacts": [
     {
-      "file": "output\\stimuli\\en_resample_english_stimuli_py.csv",
+      "file": "output/stimuli/en_resample_english_stimuli_py.csv",
       "sha256": "4007f82b6f14dd957e6f50a1a50b6da8ce23ff7b0da4190bfb83327d89224646"
     },
     {
-      "file": "output\\reports\\en_resample_english_descriptives_py.csv",
+      "file": "output/reports/en_resample_english_descriptives_py.csv",
       "sha256": "b790b14b18c1981ed9585f19bdd43f042aaa19e01c281af3bb4f126878794a42"
     },
     {
-      "file": "output\\reports\\en_resample_english_comparisons_py.csv",
+      "file": "output/reports/en_resample_english_comparisons_py.csv",
       "sha256": "910ab5aa825d3971612f9d432792a42525ceb6595aba013c027e257a9be18a05"
     },
     {
-      "file": "output\\experiments\\en_resample_english_psychopy.py",
-      "sha256": "9097edb0f32ab2ff10c5c5e3014db087ed3791d75c959afde5fb29848a195b89"
+      "file": "output/experiments/en_resample_english_psychopy.py",
+      "sha256": "bc6fa9d66d96366818d54d96d0b99a8f2da55ba4793acf87618719ff4c8e6833"
     },
     {
-      "file": "output\\experiments\\en_resample_english.osexp",
+      "file": "output/experiments/en_resample_english.osexp",
       "sha256": "9bd3142c70d125b671a9fdccfa5c34a688987a68ccd26ddf292d455880761980"
     },
     {
-      "file": "output\\experiments\\en_resample_english.html",
-      "sha256": "72d6450bbfcc7291cafe81536c9895fcc48ee1c8c66d3761d9b8da526cae8319"
+      "file": "output/experiments/en_resample_english.html",
+      "sha256": "718c00eb9d28028e316bd1ac1433a302a139e73822f5d059393f8c90cb5dab5f"
     }
   ],
   "counterbalancing": {
@@ -81,7 +81,7 @@
     ],
     "n_conditions": 2,
     "n_total": 240,
-    "stimuli_file": "output\\stimuli\\en_resample_english_stimuli_py.csv",
+    "stimuli_file": "output/stimuli/en_resample_english_stimuli_py.csv",
     "stimuli_sha256": "4007f82b6f14dd957e6f50a1a50b6da8ce23ff7b0da4190bfb83327d89224646"
   },
   "lexsync_datasheet_version": "1.0",

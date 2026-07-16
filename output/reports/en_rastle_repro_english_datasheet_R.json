@@ -14,38 +14,7 @@
     "sha256": "53bd365a801a3e82fc76db625e4e928b062ceb1e082573ac913d570c343af9eb",
     "provenance": "user-supplied item table"
   },
-  "dimensions": {
-    "length": {
-      "type": "derived",
-      "compute": "n_letters",
-      "unit": "letters"
-    },
-    "frequency": {
-      "type": "column",
-      "column": "freq_zipf",
-      "unit": "Zipf"
-    },
-    "n_density": {
-      "type": "derived",
-      "compute": "coltheart_n",
-      "unit": "neighbours"
-    },
-    "old20": {
-      "type": "derived",
-      "compute": "old20",
-      "unit": "mean Levenshtein distance"
-    },
-    "n_syllables": {
-      "type": "derived",
-      "compute": "vowel_groups",
-      "unit": "syllables (orthographic estimate)"
-    },
-    "bigram_freq": {
-      "type": "derived",
-      "compute": "mean_bigram_probability",
-      "unit": "mean positional bigram probability"
-    }
-  },
+  "dimensions": {},
   "selection": {
     "method": "item table (user-supplied)",
     "cross_engine": "n/a (user-supplied items)"
@@ -90,15 +59,15 @@
     },
     {
       "file": "output/experiments/en_rastle_repro_english_psychopy.py",
-      "sha256": "c3d7249826402177bcfdfa48cef8849acc07d57baa9f43202cf1c070b83f9b1a"
+      "sha256": "57dc3dc00707d1b8674dd3356cc0a9eabdc2f412103532910d7024705cb35f61"
     },
     {
       "file": "output/experiments/en_rastle_repro_english.osexp",
-      "sha256": "151e21e15d2f86d4913df67b21248bd83262a8d1e4f060679162d0db7e0a344a"
+      "sha256": "f45773c11203ed2dbb416f1ca8e11cf9107cb4a0caddae648b8a8f33460ef2e1"
     },
     {
       "file": "output/experiments/en_rastle_repro_english.html",
-      "sha256": "9f71fe454af0d51c005d6a23c15a2e6a49d656a055174d97a3efc28988e49e6f"
+      "sha256": "5d0645f799726feb3af3ed8d6ac3a201d0d76f4cb320fc0e044b8320172fe92d"
     }
   ]
 }

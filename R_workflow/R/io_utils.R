@@ -42,6 +42,26 @@ write_csv_utf8 <- function(x, path) {
   invisible(path)
 }
 
+#' Write text to a file with LF line endings on every platform
+#'
+#' `writeLines(x, path)` opens the path in text mode, so on Windows R turns every
+#' newline into CRLF. The generated experiment scripts are compared against the
+#' Python engine's byte for byte, and their checksums are published in the
+#' materials datasheet, so their bytes must not record which operating system
+#' produced them. A binary connection writes the string as given.
+#'
+#' @param x A character vector of lines.
+#' @param path Output path; parent directories are created as needed.
+#' @return `path`, invisibly.
+#' @keywords internal
+write_lines_lf <- function(x, path) {
+  dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE)
+  con <- file(path, open = "wb")
+  on.exit(close(con), add = TRUE)
+  writeLines(x, con, useBytes = TRUE, sep = "\n")
+  invisible(path)
+}
+
 #' MD5 digest of a file, for provenance logging
 #'
 #' MD5 (from base \pkg{tools}) is used as a lightweight content fingerprint; it
@@ -80,7 +100,11 @@ slugify <- function(...) {
   s <- paste(c(...), collapse = "_")
   s <- gsub("[^A-Za-z0-9]+", "_", s)
   s <- gsub("_+", "_", s)
-  tolower(gsub("^_|_$", "", s))
+  # Reducing to ASCII first does not make base `tolower()` safe here: under a
+  # Turkish or Azeri locale it maps "I" to the dotless i (U+0131), so the slug
+  # would leave ASCII and this design's artifacts would be written under a name
+  # the Python engine never produces. Case-fold as [.lower_invariant()] does.
+  .lower_invariant(gsub("^_|_$", "", s))
 }
 
 #' Read a YAML configuration file

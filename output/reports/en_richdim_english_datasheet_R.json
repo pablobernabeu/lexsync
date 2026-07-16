@@ -180,15 +180,15 @@
     },
     {
       "file": "output/experiments/en_richdim_english_psychopy.py",
-      "sha256": "25c078e7188d96f259391e53e0d2ba762ce6693ac19965830d2c942df7669086"
+      "sha256": "3019504f913998599312f98b48df17751242389fa8cded15fc0bc35dfab78632"
     },
     {
       "file": "output/experiments/en_richdim_english.osexp",
-      "sha256": "27694ccfa0bee0850285e0169860109749b5faf9f49cf2aa13343ffd8df2659b"
+      "sha256": "d4ec5604862aa6ff7c3165a6faf7e7f0d6adffe0057bdbe140637a7a311ba6c8"
     },
     {
       "file": "output/experiments/en_richdim_english.html",
-      "sha256": "0f19c9ef2c25ca36585114f81061978396ecc65fc9e22b55efdf8e291ccee9b9"
+      "sha256": "cdaac2318d4d40cc39491ba399b6de7856eae22cf99929d9d270c328a6afb74f"
     }
   ]
 }

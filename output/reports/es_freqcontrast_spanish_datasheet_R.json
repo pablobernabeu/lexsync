@@ -160,15 +160,15 @@
     },
     {
       "file": "output/experiments/es_freqcontrast_spanish_psychopy.py",
-      "sha256": "790db633e313c692e1755670d1c13fa27e10ac91ea13f3fbfcec90a47dd91f58"
+      "sha256": "849319867f3636756f4a5f92c4b1a587cc6cbe6acd6124dfcdfe63e005211fd0"
     },
     {
       "file": "output/experiments/es_freqcontrast_spanish.osexp",
-      "sha256": "c5ed772e71f1e21cd4eda50ed43f264e1f46d05ed2277355b87d79e59731c269"
+      "sha256": "12a7f4f93eeb79b1e6b50dc491076038bd15763a46812a20a41913256cb21507"
     },
     {
       "file": "output/experiments/es_freqcontrast_spanish.html",
-      "sha256": "202cd0f10578de079bee1ee6be71ec252bff2ce7ae43cc1f32ad7dbd3d392e7f"
+      "sha256": "21b7ed433441842e1f0ba1d74d46491140640e5348531dba6c6d82d7fde6b81c"
     }
   ]
 }

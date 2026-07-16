@@ -149,7 +149,7 @@ def export_psychopy(stimuli, design, schema, outdir, base=None) -> str:
         "INTER_TRIGGER_S": triggers.get("inter_trigger_ms", 10) / 1000,
         "WORD_FONT": design.get("font") or presentation.get("font") or "Courier New",
         "FULLSCREEN": "False",
-        "EVENTS_JSON": json.dumps(rendered),
+        "EVENTS_JSON": _json_r(rendered),
     }
     for key, value in subs.items():
         tmpl = tmpl.replace("{{" + key + "}}", str(value))
@@ -384,9 +384,28 @@ def _map_keys_for_jspsych(rendered: list) -> list:
     return out
 
 
+def _json_r(obj) -> str:
+    """Serialise as R's jsonlite::toJSON(auto_unbox = TRUE) does.
+
+    The generated experiment embeds this JSON, so the two engines emit byte-identical
+    scripts only if they agree here. jsonlite writes no separator padding and cannot be
+    made to, and it drops a whole number's fractional part (a 2000 ms timeout becomes 2,
+    not 2.0), so Python is the side that conforms.
+    """
+    def integral(o):
+        if isinstance(o, float) and o.is_integer():
+            return int(o)
+        if isinstance(o, dict):
+            return {k: integral(v) for k, v in o.items()}
+        if isinstance(o, list):
+            return [integral(v) for v in o]
+        return o
+    return json.dumps(integral(obj), separators=(",", ":"))
+
+
 def _json_html(obj) -> str:
     """JSON safe to embed inside an HTML <script> (escape <, >, & and JS line seps)."""
-    return (json.dumps(obj).replace("<", "\\u003c").replace(">", "\\u003e")
+    return (_json_r(obj).replace("<", "\\u003c").replace(">", "\\u003e")
             .replace("&", "\\u0026").replace(" ", "\\u2028").replace(" ", "\\u2029"))
 
 

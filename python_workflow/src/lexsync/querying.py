@@ -16,6 +16,13 @@ from .io_utils import clean_field, read_csv_utf8
 # Maximal runs of (possibly accented) Latin vowels approximate syllable nuclei.
 _VOWELS = re.compile(r"[aeiouyàáâãäåèéêëìíîïòóôõöøùúûüýÿ]+")
 
+# readr trims ASCII whitespace from every field (trim_ws defaults to TRUE) and
+# pandas trims nothing, so the same padded item table would otherwise yield
+# different stimulus text, set ids and condition labels per engine. This pins the
+# set readr removes; R_workflow/R/querying.R states the same trim, and explains
+# why the reader's own trim_ws is left alone.
+_ASCII_WS = " \t\r\n"
+
 
 def count_syllables(word) -> int:
     """An orthographic syllable estimate: the number of maximal vowel runs."""
@@ -42,6 +49,15 @@ def load_lexicon(path: str, schema: dict, language: str | None = None) -> pd.Dat
     df["word"] = df["word"].astype(str).str.strip().str.lower()
     df = df[df["word"] != ""]
     df = df.drop_duplicates(subset="word")
+    # An empty selection is never what the caller meant, and it fails far from
+    # here: pandas would hand back a well-formed frame of nothing, while the R
+    # engine dies on base R's "replacement has 1 row, data has 0". Both engines
+    # raise this message instead, while the path is still in scope.
+    if df.empty:
+        raise ValueError(
+            f"lexsync: lexicon '{path}' has no usable rows: it is empty, "
+            f"or every row is missing 'word' or '{freq_col}'."
+        )
     # Sort by UTF-8 byte order so the lexicon order is locale-independent and
     # identical to the R engine (which uses a 'radix' byte-order sort).
     df = (df.assign(_k=df["word"].map(lambda w: w.encode("utf-8")))
@@ -144,11 +160,12 @@ def load_items(path: str, required_fields) -> pd.DataFrame:
         raise ValueError(f"lexsync: items table '{path}' is missing column(s): {', '.join(missing)}.")
     df = df.copy()
     for f in [c for c in required_fields if c in df.columns]:
-        df[f] = [clean_field(v, f) for v in df[f]]
-    items = sorted(df["item"].astype(str).unique(), key=lambda s: s.encode("utf-8"))
+        df[f] = [clean_field(str(v).strip(_ASCII_WS), f) for v in df[f]]
+    item_key = df["item"].astype(str).str.strip(_ASCII_WS)
+    items = sorted(item_key.unique(), key=lambda s: s.encode("utf-8"))
     set_map = {it: i + 1 for i, it in enumerate(items)}
-    df["set"] = df["item"].astype(str).map(set_map)
-    df["condition"] = df["condition"].astype(str)
+    df["set"] = item_key.map(set_map)
+    df["condition"] = df["condition"].astype(str).str.strip(_ASCII_WS)
     return df.reset_index(drop=True)
 
 

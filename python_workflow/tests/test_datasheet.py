@@ -160,3 +160,13 @@ def test_datasheet_reads_the_lexsync_version_from_package_metadata(schema, monke
     ds = build_datasheet(_design(), schema, None, _stim(), "x.csv",
                          {"stimuli": None, "experiments": {}}, 2026)
     assert ds["reproducibility"]["versions"]["lexsync"] == "9.9.9"
+
+
+def test_artifact_paths_are_recorded_in_posix_form():
+    # The datasheet travels with the materials, so it must not record the separator of
+    # whichever machine built it, nor disagree with the R engine's record of the same
+    # file. os.path.join gives backslashes on Windows; _posix normalises them.
+    from lexsync.datasheet import _posix
+    assert _posix(r"output\stimuli\x_R.csv") == "output/stimuli/x_R.csv"
+    assert _posix("output/stimuli/x_R.csv") == "output/stimuli/x_R.csv"
+    assert _posix(None) is None

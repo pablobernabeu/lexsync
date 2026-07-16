@@ -1,0 +1,344 @@
+---
+title: "Experiments, paradigms and EEG triggers"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Experiments, paradigms and EEG triggers}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+Once a stimulus set exists, something has to present it. `lexsync` generates that
+experiment rather than leaving it to be built by hand, and it does so from a
+declarative description of the trial. A trial is a list of events, each event
+says what appears and for how long and whether a hardware trigger rides on its
+onset, and each presentation target is an interpreter of that same list. The
+arrangement is what lets one engine serve several paradigms and three targets: a
+new paradigm is a new event list, not new backend code.
+
+This vignette covers the event model, the paradigm registry, the three targets
+and how they differ, the trigger timing that motivates the design, and how to add
+a paradigm. It runs on the bundled English example lexicon and writes everything
+to a temporary directory.
+
+```{r setup}
+library(lexsync)
+schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+lex <- load_lexicon(system.file("extdata", "en_example.csv", package = "lexsync"),
+                    schema, language = "english")
+pool <- build_pool(lex, list(length = c(3, 7), frequency = c(3.8, 7.0)))
+
+design <- list(
+  name = "vignette_experiment", language = "english", n_per_condition = 12,
+  paradigm = "factorial",
+  conditions = list(
+    list(name = "high", define_by = list(frequency = c(5.2, 7.0))),
+    list(name = "low",  define_by = list(frequency = c(3.8, 4.4)))
+  ),
+  match_on = list("length", "n_density", "old20"),
+  counterbalance = list(lists = 1)
+)
+stim <- match_stimuli(pool, design, schema)
+stim <- counterbalance(stim, design, schema)
+head(stim[, c("trial", "list", "set", "condition", "word")], 3)
+```
+
+## The trial-event model
+
+A design's trial is a list of events. Each event is a plain list whose `type`
+selects the behaviour and whose remaining fields parameterise it. The factorial
+paradigm's default sequence is a fixation cross, the word, a response window and
+a blank.
+
+```{r events}
+events <- resolve_events(design)
+str(events)
+```
+
+`resolve_events()` is the accessor the backends use, and it embodies the
+precedence rule: a design's own `events` list wins, and only if there is none does
+the design inherit its paradigm's default sequence. The seven event types are
+`fixation`, `text`, `mask`, `blank`, `region_by_region`, `response` and
+`question`. The first four draw something (or nothing, for `blank`) for a fixed
+number of frames. `response` and `question` collect a keypress. `region_by_region`
+presents a segmented sentence one region at a time, advancing on a key.
+
+Durations are given in frames rather than milliseconds. A frame is a display
+refresh, so 48 frames is 800 ms only on a 60 Hz display, and this is deliberate:
+a visual stimulus can only ever appear on a refresh, so a duration expressed in
+frames is a duration the hardware can actually honour, whereas a duration in
+milliseconds is a request that gets rounded to one. The `timeout_ms` of a
+response window is in milliseconds, because a response deadline is not tied to
+the refresh.
+
+### Content and field references
+
+An event's `content` is either a literal or a reference to a column of the trial
+table. A reference is a single field name in braces, and it is what makes an
+event list a template rather than a fixed script.
+
+```{r content}
+lapply(events[1:2], function(ev) ev$content)
+```
+
+The fixation event's content is the literal `+`, which every trial shows.
+The text event's content is `{word}`, so each trial shows its own row's `word`
+column. `required_fields()` resolves the references into the columns a design's
+items must actually carry, which is how a design's item table is validated before
+anything is generated.
+
+```{r required-fields}
+required_fields(design)
+required_fields(list(paradigm = "priming"))
+required_fields(list(paradigm = "self_paced_reading"))
+```
+
+Presented strings are always carried as data. Each target writes a trial table and
+reads the strings from it at run time; they are never interpolated into generated
+code. That is why an apostrophe in a stimulus cannot break a generated script, and
+it is enforced on the way in: `load_items()` rejects control characters and
+over-long values in the fields a paradigm presents.
+
+### Triggers on an event
+
+An event may carry a `trigger`. Three forms are accepted, and the choice of form
+is the choice of what the EEG marker will mean.
+
+```{r triggers-in-events}
+priming_events <- PARADIGMS$priming$events
+or_dash <- function(x) if (is.null(x)) "-" else as.character(x)
+data.frame(
+  type = vapply(priming_events, function(e) e$type, character(1)),
+  content = vapply(priming_events, function(e) or_dash(e$content), character(1)),
+  trigger = vapply(priming_events, function(e) or_dash(e$trigger), character(1))
+)
+```
+
+The literal integer 20 on the prime marks every prime with the same code, since
+what is being timestamped is the prime's appearance rather than its identity. The
+token `"condition"` on the target resolves per trial to that trial's condition
+code, which is the marker an ERP analysis will epoch on. The token `"item"`
+resolves to a per-item code. Events with no trigger send nothing.
+
+The tokens are resolved by `assign_triggers()`, which computes the codes and adds
+them as columns.
+
+```{r assign-triggers}
+trig <- assign_triggers(stim)
+unique(trig[, c("condition", "condition_trigger")])
+range(trig$item_trigger)
+```
+
+Condition codes start at 101 and count up in order of first appearance.
+Item codes run from 40 upwards and wrap at 200 values, so a design with more than
+200 items reuses item codes, which is a real constraint of an 8-bit parallel port
+rather than a limitation of the package: a code is one byte, and the block markers
+254 and 255 are reserved. Condition codes stay unique regardless, so the analysis
+that matters is unaffected.
+
+## The paradigm registry
+
+A paradigm bundles a default event sequence with the fields it needs and the
+recipe for counterbalancing it. `PARADIGMS` is the registry, and it is exported,
+so it can be read to see exactly what a design will inherit.
+
+```{r registry}
+names(PARADIGMS)
+data.frame(
+  paradigm = names(PARADIGMS),
+  fields = vapply(PARADIGMS, function(p) paste(p$stimulus_fields, collapse = ", "), character(1)),
+  counterbalance = vapply(PARADIGMS, function(p) p$counterbalance, character(1)),
+  n_events = vapply(PARADIGMS, function(p) length(p$events), integer(1)),
+  row.names = NULL
+)
+```
+
+`factorial` shows a matched word per trial. `lexical_decision` is the same shape
+but presents a `target`, which is a real word or a generated pseudoword.
+`priming` adds a brief prime and a mask before the target. `self_paced_reading`
+replaces the word event with a region-by-region sentence and adds a comprehension
+question.
+
+The `counterbalance` entry is the part that is easy to overlook and important to
+get right. The factorial recipe shows every matched item and splits the matched
+sets across lists. The Latin-square recipe exists because `priming` and
+`self_paced_reading` have a property the word paradigms do not: the same target
+appears in more than one condition. Showing a participant both the related and the
+unrelated version of one target would let them see the manipulation. The Latin
+square gives each item exactly one condition per list and rotates it across lists,
+so no target repeats within a list and conditions stay balanced.
+
+```{r counterbalance-recipes}
+table(list = stim$list, condition = stim$condition)
+```
+
+## The three presentation targets
+
+The same rendered event list feeds all three exporters, so the procedure is the
+same in each. What differs is what the platform can do.
+
+```{r export}
+out <- file.path(tempdir(), "lexsync_experiment")
+dir.create(out, showWarnings = FALSE)
+files <- export_experiments(stim, design, schema, out)
+basename(unlist(files))
+```
+
+`export_experiments()` calls `assign_triggers()` first, then each exporter, and
+returns the three experiment scripts. The directory holds more than that, and the
+difference is the interesting part.
+
+```{r export-dir}
+list.files(out)
+```
+
+PsychoPy and OpenSesame each got their own trial table and read it at run time,
+which is why two CSVs appear alongside the three scripts. The jsPsych target has
+no second file, because it embeds its trials in the HTML. That single file is
+enough to reproduce the procedure in a browser.
+
+PsychoPy is the reference target. The generated script carries the event list as
+embedded JSON and interprets it, and it writes onset triggers to the parallel port
+locked to the flip. It is the target to use for EEG.
+
+OpenSesame is generated as a complete plain-text `.osexp`, block by block, with
+each event becoming an inline script. It gets its trigger by a different route,
+discussed below, and it opens the trigger device with a fallback: if no parallel
+port or serial device is available, it prints the codes instead of failing, so the
+experiment still runs on a machine without the hardware.
+
+jsPsych is the browser target. A browser cannot address a parallel port, so the
+trigger codes are recorded into each trial's data rather than sent. That makes it
+suitable for behavioural work, for piloting and for sharing a procedure, and not
+for EEG. The generated HTML embeds the events and the trials and saves responses
+locally, so no server is needed; the jsPsych library itself loads from a CDN, so
+the first run needs an internet connection.
+
+Two smaller differences are worth knowing. The OpenSesame loop is written as
+`sequential` on purpose, because its default is random, which would discard the
+seeded trial order and make the three targets present different sequences. And
+the jsPsych exporter maps the event model's key names onto browser key names, so
+`left` becomes `arrowleft`, since the same event list has to mean the same thing
+to a browser as to PsychoPy.
+
+```{r loop-table}
+psychopy_csv <- file.path(out, "vignette_experiment_english_psychopy.csv")
+names(read.csv(psychopy_csv))
+```
+
+The trial table carries exactly the columns the events reference plus the
+bookkeeping ones. A field no event mentions is not exported, which keeps the
+generated table minimal and means the trial table is itself a readable statement
+of what the experiment uses.
+
+## Trigger timing and the flip lock
+
+This is the part that justifies generating the experiment at all. An ERP is
+averaged over epochs cut around a marker, so the marker's timing error propagates
+straight into the waveform. If the trigger is sent when the code decides to draw
+the stimulus rather than when the display actually shows it, the error is the
+interval between those two moments, which is up to one refresh (about 17 ms at
+60 Hz) plus whatever the drawing code took, and it is variable from trial to
+trial. A constant offset can be subtracted afterwards. Jitter cannot: it smears
+the average and shrinks the component you are measuring.
+
+The generated PsychoPy script never sends a trigger from the drawing sequence.
+It registers the write with the window, to be executed on the next flip:
+
+```
+win.callOnFlip(port.setData, trigger)
+```
+
+`callOnFlip` defers the call until the flip that puts the stimulus on screen, so
+the port write happens in the same operation that makes the stimulus visible.
+That is the guarantee, and it is a property of the generated code rather than of
+the stimulus set. The Python package's test suite pins it, driving the generated
+script against a mock PsychoPy window and a mock port and asserting that the
+trigger is bound to the flip rather than sent alongside it.
+
+The reset is handled the same way. A recorder needs the line to return to zero
+before the next code, so the script schedules a write of 0 on a later flip.
+
+```{r trigger-settings}
+str(schema$triggers)
+```
+
+`reset_after_frames` is 2, which is about 33 ms at 60 Hz and comfortably above
+the 10 ms minimum most recorders need to register a pulse. `inter_trigger_ms`
+spaces any trailing markers. `parallel_address` is the LPT1 base address on a
+typical laboratory machine, and it is a schema value because it is a property of
+the machine rather than of the design.
+
+OpenSesame reaches the same place by a different route, and the difference is
+worth being explicit about. It has no `callOnFlip`, so the generated inline script
+sends the trigger on the line after `c.show()`:
+
+```
+var.onset_time = c.show()
+send_trigger(var.condition_trigger)
+```
+
+This is sound because `show()` blocks until the display refresh and returns at it,
+so the next statement runs immediately after the stimulus becomes visible. The
+residual offset is the few microseconds of the return and the port write, and it
+is a constant rather than jitter. It is a close second to the flip lock rather
+than identical to it, which is why PsychoPy is the reference target for EEG.
+
+Neither generation nor its tests import PsychoPy, pyserial or any port driver.
+Generation only writes text. The hardware is needed to *run* an experiment, not to
+build one, which is what lets the whole demonstration reproduce on a laptop.
+
+## Adding a paradigm
+
+A design can override the event list outright, and this is the route that needs no
+change to the package. The events below present a word twice with a mask between,
+which no registered paradigm does, and both `text` events are triggered so the
+recording can distinguish the two presentations.
+
+```{r custom-events}
+custom <- design
+custom$name <- "vignette_custom"
+custom$events <- list(
+  list(type = "fixation", content = "+", duration_frames = 30L),
+  list(type = "text", content = "{word}", duration_frames = 12L,
+       trigger = 30L, onset_locked = TRUE),
+  list(type = "mask", content = "#####", duration_frames = 6L),
+  list(type = "text", content = "{word}", duration_frames = 48L,
+       trigger = "condition", onset_locked = TRUE),
+  list(type = "response", keys = c("left", "right"), timeout_ms = 2000L),
+  list(type = "blank", duration_frames = 15L)
+)
+required_fields(custom)
+custom_files <- export_experiments(stim, custom, schema, out)
+basename(unlist(custom_files))
+```
+
+Nothing in the backends changed. All three targets rendered a sequence they had
+never seen, because each one walks the event list rather than knowing the
+paradigm. The design also inherits a consequence of declaring its own events: a
+design with an explicit `events` list counterbalances factorially, since the
+Latin-square recipe belongs to the registered paradigms that need it.
+
+To add a paradigm for reuse rather than for one design, add an entry to the
+`PARADIGMS` registry in `R/paradigms.R`, giving its `stimulus_fields`, its
+`counterbalance` recipe and its `events`, and add the matching entry to
+`python_workflow/src/lexsync/paradigms.py` so that the two engines stay in step.
+Designs can then name it. The registry is a plain named list and the entries above
+are the pattern to copy.
+
+Adding a presentation target is the mirror image: write an `export_<target>()`
+that walks the same rendered event list, and it will serve every paradigm at once.
+
+## References
+
+Mathôt, S., Schreij, D., & Theeuwes, J. (2012). OpenSesame: An open-source,
+graphical experiment builder for the social sciences. *Behavior Research
+Methods*, *44*(2), 314-324. https://doi.org/10.3758/s13428-011-0168-7
+
+Peirce, J., Gray, J. R., Simpson, S., MacAskill, M., Höchenberger, R., Sogo, H.,
+Kastman, E., & Lindeløv, J. K. (2019). PsychoPy2: Experiments in behavior made
+easy. *Behavior Research Methods*, *51*(1), 195-203.
+https://doi.org/10.3758/s13428-018-01193-y

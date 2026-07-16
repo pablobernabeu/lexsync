@@ -49,3 +49,13 @@ def test_clean_field_allows_commas_and_quotes():
 
 def test_slugify_is_lowercase_and_path_safe():
     assert slugify("En Lexdec", "English!") == "en_lexdec_english"
+
+
+# Pins the same contract as "slugify folds case whatever the locale" in the R
+# engine's test-io_utils.R, where base tolower() folded "I" to the dotless "i"
+# under a Turkish locale and wrote the design's artifacts under a name this
+# engine never produces. str.lower() is already locale-invariant; the assertion
+# is what the R engine is now held to.
+def test_slugify_is_locale_invariant():
+    assert slugify("STUDY_I") == "study_i"
+    assert slugify("En Lexdec", "English!").isascii()

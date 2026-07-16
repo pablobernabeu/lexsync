@@ -1,0 +1,388 @@
+# Matching and designs
+
+Selecting stimuli is the part of an experiment that most often decides what the experiment can
+show, and it is the part that is least often written down. This guide follows a set from the corpus
+to the finished selection: how a lexicon becomes a candidate pool, which dimensions can be equated,
+what the four matching methods actually do, how to read the report that says whether the matching
+worked, and what to do instead when dichotomising a predictor is the wrong move.
+
+The examples run against the lexicon bundled with the package, so you can paste them into a session
+and get the output shown. Only the norm-merging sketch needs a file of your own.
+
+```python
+from importlib.resources import files
+
+import yaml
+
+import lexsync
+
+data = files("lexsync") / "data"
+schema = yaml.safe_load((data / "schema.yaml").read_text(encoding="utf-8"))
+lexicon = lexsync.load_lexicon(str(data / "en_example.csv"), schema, language="english")
+```
+
+## From lexicon to pool
+
+`load_lexicon` reads a derived corpus and does rather more than parse a CSV. It checks the column
+contract from the schema, which requires `word` and `freq_zipf` and nothing else. It drops rows with
+a missing word or frequency, lower-cases and strips the rest, and removes duplicates. Then it sorts
+the whole table by the UTF-8 bytes of the word and numbers the rows from one.
+
+That sort is the quiet load-bearing step. Sorting by bytes rather than by the platform's collation
+means the lexicon comes out in the same order on a German laptop and an English continuous
+integration runner, and in the same order as the R engine, which sorts the same way. Everything
+downstream inherits it, including the `id` column, which is the last tie-break in the matcher.
+
+Three columns are derived on the way in: `length` in characters, `n_syllables` from vowel runs, and
+`frequency`, which is whatever column the schema's `dimensions.frequency.column` names, by default
+`freq_zipf`.
+
+```python
+print(lexicon.head(3).to_string(index=False))
+```
+
+```text
+word  freq_zipf language   source  n_density  old20  id  length  n_syllables  frequency
+ aaa       3.77  english wordfreq         19    1.0   1       3            1       3.77
+ aac       3.00  english wordfreq         22    1.0   2       3            1       3.00
+ aap       3.47  english wordfreq         21    1.0   3       3            1       3.47
+```
+
+`build_pool` narrows that lexicon to the candidates a design will consider. A two-element numeric
+range is read as an inclusive `[min, max]` band, and anything else is read as a set of allowed
+values, compared as strings. Rows missing the filtered column are dropped, and a filter naming a
+column the lexicon does not have is skipped without complaint.
+
+```python
+pool = lexsync.build_pool(lexicon, {"length": [3, 8], "frequency": [3.8, 7.0]})
+print(len(pool))    # 911
+```
+
+The pool step is not optional even though nothing enforces it. `match_stimuli` never looks at a
+design's `pool_filters`; it matches over whatever frame you hand it. A script that skips
+`build_pool` therefore matches over the entire lexicon and silently ignores the design's bands, and
+the selection will look plausible while answering a different question. The package's own test suite
+pins this, checking that the README's example calls `build_pool` before matching.
+
+## The dimensions
+
+Six dimensions are declared in the schema. Two are read from the lexicon or computed at load time,
+and four have to be derived from the orthographic forms before a design can match on them.
+
+| Dimension | Unit | Where it comes from |
+| --- | --- | --- |
+| `length` | letters | Derived at load time from the word. |
+| `frequency` | Zipf | The lexicon's `freq_zipf` column (van Heuven et al., 2014). |
+| `n_density` | neighbours | `add_neighbourhood`: Coltheart's N, same-length single substitutions. |
+| `old20` | mean Levenshtein distance | `add_neighbourhood`: the mean distance to the 20 nearest words. |
+| `n_syllables` | syllables | Derived at load time by counting maximal vowel runs. |
+| `bigram_freq` | mean positional bigram probability | `add_bigram_frequency`, a phonotactic-probability proxy. |
+
+`add_neighbourhood` computes both neighbourhood measures against a reference word list, which
+should normally be the full lexicon rather than the pool, since a word's neighbours do not stop
+existing because your design excluded them. The pipeline passes the full lexicon for exactly that
+reason, and computes these only when the design's `match_on` asks for them, because the calculation
+is quadratic in the reference size and easily the slowest step in a run.
+
+`add_bigram_frequency` averages, over a word's adjacent letter bigrams, the corpus probability of
+each. It works from integer counts and rounds the result to nine decimal places, which keeps
+it identical in the two engines instead of merely close.
+
+`count_syllables` is honest about being an estimate. It counts maximal runs of Latin vowels, which
+is an orthographic approximation and not phonological syllabification.
+
+```python
+print([lexsync.count_syllables(w) for w in ["cat", "banana", "strength", "idea"]])
+# [1, 3, 1, 2]
+```
+
+`strength` returning 1 and `idea` returning 2 shows both the method and its limits in one line.
+
+The set of dimensions is not closed. `merge_norms` left-joins any word-keyed norm table, which is
+the connector for anything the corpus does not carry: concreteness, age of acquisition, valence, or
+the English Lexicon Project's behavioural measures. The norm data are fetched separately, because
+their licensing varies, and merged here so the matcher can equate on the new column as if it had
+been there all along.
+
+```python
+lexicon = lexsync.merge_norms(lexicon, "norms/concreteness_en.csv", on="word",
+                              columns=["concreteness"])
+# then: match_on: [length, frequency, concreteness]
+```
+
+The join drops missing keys before coercing them, preserves the lexicon's row order and takes the
+first row per key, so it is deterministic and both engines produce the same table.
+
+## How matching works
+
+`match_stimuli` runs in two stages, and understanding the split explains most of its behaviour.
+
+First it standardises. Every matched dimension is z-scored against the whole pool's mean and sample
+standard deviation, so a distance in letters and a distance in Zipf units become comparable. A
+dimension with zero or undefined spread gets a scale of 1 rather than producing infinities.
+
+Then it picks an anchor. The first condition in the design is the anchor, and its subpool is sorted
+by the first dimension its `define_by` mentions, with a byte-order tie-break, after which the
+selection is an even spread across that sorted subpool rather than its top *n*. Taking the top *n*
+would pile the anchor into one corner of its own band; the even spread makes the anchor
+representative of the condition it is meant to define.
+
+The anchor's realised mean and standard deviation on each matched dimension then set a tolerance
+window, mean ± *k* × SD, where *k* comes from `matching.tolerance_k` in the schema and may be
+overridden per dimension by the design. The defaults are 2.0 for `length`, `n_density` and `old20`,
+and 1.0 for `frequency`. Each remaining condition is filtered to its window, and then every anchor
+item is assigned its nearest unused candidate by standardised distance.
+
+The assignment is where determinism is bought. Distances are rounded to nine decimal places before
+they are compared, which absorbs last-bit floating-point differences between the two engines. Ties
+are broken by the word's UTF-8 bytes and then by its lexicon id. Candidates already used are pushed
+to infinity, and candidates whose matched dimensions are missing rank last rather than first, which
+is what R's `order(na.last = TRUE)` does and what a naive `min()` over NaN would get wrong.
+
+Two guards are worth knowing about because they turn silent corruption into an error. If a condition
+has fewer candidates inside its window than the anchor has items, the window is relaxed to the whole
+subpool, and `verbose=True` says so. If even the relaxed subpool is too small, or if too few of its
+rows are complete on the matched dimensions, `match_stimuli` raises rather than proceeding. Without
+the second check an exhausted pool would let the tie-break re-pick the same word into several sets.
+
+### The four methods
+
+The method is set with `matching.method` in a design, or globally in the schema.
+
+| Method | What it does | Conditions | Cross-engine |
+| --- | --- | --- | --- |
+| `standardised_euclidean` | Greedy nearest neighbour on z-scored dimensions, anchored on the first condition. The default. | Any number | Byte-identical |
+| `joint` | Scores every cross-condition pair and greedily takes the cheapest disjoint ones. | Exactly two | Byte-identical |
+| `mahalanobis` | Nearest neighbour under a covariance-aware distance that down-weights correlated dimensions. | Any number | Equivalent, not guaranteed identical |
+| `optimal` | Solves the linear-assignment problem globally, minimising total pair distance. | Exactly two | Equivalent, not guaranteed identical |
+
+`joint` differs from the default in what it is allowed to discard. The anchored matcher fixes the
+first condition and then finds the best counterpart for each of its items, so a bad anchor item
+drags a bad pair into the set. `joint` keeps only items that have a good counterpart, which matters
+when the manipulation is confounded with a control, neighbourhood density with word length being the
+standard case. Both conditions are first capped to the 1200 rows nearest the other condition's
+centroid, which keeps the all-pairs cost matrix tractable, and the cap itself is applied with the
+same rounded-distance and byte-rank tie-breaks as everything else.
+
+`mahalanobis` uses the inverse of the pool's correlation matrix in standardised space as its metric,
+with a small ridge to survive near-collinear dimensions, so that two dimensions measuring much the
+same thing are not counted twice (Rubin, 1980; Stuart, 2010). `optimal` minimises the summed pair
+distance instead of taking the locally cheapest pair at each step, which produces fewer badly
+matched pairs than a greedy rule (Gu & Rosenbaum, 1993).
+
+Both of these carry the parity caveat. A matrix inverse and an assignment solver are the two places
+where the R and Python linear-algebra backends can disagree in their last bits, and an assignment
+solver's tie handling differs outright. The engines agree closely, and `mahalanobis` usually agrees
+exactly, but neither is guaranteed byte-for-byte. `optimal` in particular tends to select an equally
+optimal but different set. Each run's datasheet records which case applies.
+
+Comparing them on the same pool shows how little separates them when the pool is generous:
+
+```python
+pool = lexsync.build_pool(lexicon, {"length": [4, 8], "frequency": [3.5, 7.0]})
+design = {
+    "name": "methods", "language": "english", "n_per_condition": 40,
+    "conditions": [
+        {"name": "high_frequency", "define_by": {"frequency": [5.2, 7.0]}},
+        {"name": "low_frequency", "define_by": {"frequency": [3.5, 4.4]}},
+    ],
+    "match_on": ["length", "n_density", "old20"],
+}
+
+for method in ["standardised_euclidean", "joint", "mahalanobis", "optimal"]:
+    stimuli = lexsync.match_stimuli(pool, {**design, "matching": {"method": method}}, schema)
+    report = lexsync.match_report(stimuli, ["length", "n_density", "old20"], schema)
+    print(method, [round(d, 3) for d in report["comparisons"]["cohens_d"]])
+```
+
+```text
+standardised_euclidean [0.023, 0.036, 0.014]
+joint [0.0, 0.0, 0.0]
+mahalanobis [0.046, 0.024, 0.017]
+optimal [0.0, 0.0, 0.0]
+```
+
+The two pairwise methods reach exact equality on all three controls here, because a pool of this size
+contains, for most anchor words, a low-frequency counterpart with the same length, the same
+neighbourhood count and the same OLD20. The default and the covariance-aware method leave a
+standardised difference in the third decimal place. None of these differences would matter to a
+result. The default remains the default because it is byte-identical across engines and generalises
+past two conditions, and that is the trade lexsync makes: an algorithm is adopted as a default only
+if it can keep the guarantee.
+
+## Reading the report
+
+`match_report` is what turns a selection into a claim you can defend. It returns a dictionary with
+two frames. `descriptives` gives n, mean, SD, minimum, median and maximum per condition per
+dimension. `comparisons` contrasts every other condition against the first on each dimension.
+
+```python
+stimuli = lexsync.match_stimuli(pool, design, schema)
+report = lexsync.match_report(stimuli, ["length", "frequency", "n_density", "old20"], schema)
+print(report["comparisons"].to_string(index=False))
+```
+
+Four numbers per row, each answering something the others cannot.
+
+`cohens_d` is the standardised mean difference, using the pooled standard deviation. `d_ci_low` and
+`d_ci_high` bound it with the 90% interval that corresponds exactly to a two one-sided tests
+decision at the .05 level (Lakens, 2017). The interval is reported rather than only a verdict
+because it keeps the dependence on item count visible: with few items the interval is wide, so a
+small point estimate cannot be read as evidence that the true difference is small (Sassenhagen &
+Alday, 2016). Its upper limit is the largest imbalance still consistent with the stimuli you have.
+
+`tost_p` and `equivalent` come from two one-sided tests against the schema's `equivalence.bound_d`,
+0.5 by default, at `equivalence.alpha`. This is the test that matches what a matched design is
+claiming. A non-significant *t*-test says the data failed to show a difference, which is not the same
+as showing there is none. TOST says the difference is smaller than the bound you declared uninteresting.
+
+`var_ratio` is the condition's variance over the reference's. It is there because everything above
+is about means, and two conditions can share a mean while differing in spread, which still confounds
+(Armstrong, Watson & Plaut, 2012; Austin, 2009). A ratio near 1 is balanced; a common heuristic
+treats anything outside roughly [0.5, 2] as unequal spread. It returns `None` when a variance is
+undefined.
+
+Two smaller functions round this out. `describe_stimuli` gives the descriptives alone, grouped by any
+column you like, not just `condition`. `balance_check` reports columns whose value counts are
+unequal, which is how the pipeline notices an unbalanced condition and writes it into the run log.
+
+```python
+print(lexsync.balance_check(stimuli, "condition"))    # [] when balanced
+```
+
+## Continuous designs
+
+Splitting a continuous predictor into high and low conditions throws away information, costs power
+and can introduce selection artefacts (Kuperman, 2015; Liben-Nowell et al., 2019). A design can
+declare a `continuous` block instead of `conditions`, and select a set that spans the predictor
+evenly while holding the controls near-constant, for analysis by regression or a mixed model.
+
+```python
+design = {
+    "name": "continuous", "language": "english", "n_per_condition": 60,
+    "continuous": {"predictor": "frequency", "controls": ["length", "n_density", "old20"]},
+    "match_on": ["length", "n_density", "old20"],
+    "matching": {"tolerance_k": {"length": 1.5, "n_density": 1.5, "old20": 1.5}},
+}
+pool = lexsync.build_pool(lexicon, {"length": [3, 8], "frequency": [3.8, 7.0]})
+stimuli = lexsync.select_continuous_stimuli(pool, design, schema)
+report = lexsync.match_report_continuous(stimuli, "frequency", ["length", "n_density", "old20"],
+                                         schema)
+print(report["comparisons"].to_string(index=False))
+```
+
+```text
+dimension      role  pearson_r  predictor_span
+frequency predictor        NaN            3.05
+   length   control     -0.195            3.05
+n_density   control      0.100            3.05
+    old20   control     -0.140            3.05
+```
+
+The selection is two deterministic passes, with no per-item matching and no random numbers. An even
+spread over the predictor across the whole pool sets a tolerance window on each control; the pool is
+filtered to those windows; a second even spread over the filtered pool is the selection. Because
+both passes reuse the matcher's even-spread primitive, the two engines select byte-identical stimuli
+here as well.
+
+`match_report_continuous` returns the same `{descriptives, comparisons}` shape as `match_report`, so
+the pipeline and the datasheet stay uniform, but the comparisons describe a predictor rather than a
+contrast. The predictor's realised span replaces the effect size, and each control's Pearson
+correlation with the predictor replaces the equivalence verdict. Those correlations are what you
+report: at *k* = 1.5 the three controls sit between −0.195 and 0.100, which is the sense in which
+they are held constant. Tightening *k* pushes them nearer zero at the cost of a smaller eligible
+pool.
+
+`match_on` must equal `continuous.controls`, the predictor must not appear among the controls, and
+there must be at least one control. All three are checked, and a design that breaks one of them
+raises instead of being quietly tolerated.
+
+## Items as a random factor
+
+A stimulus set is a sample from a language, not a fixed property of it, and analysing one set as if
+it were fixed over-generalises (Clark, 1973; Yarkoni, 2020). `resample_stimuli` produces several
+disjoint, independently matched sets from one pool, so a study can run a different sample per
+participant group, or show that an effect survives a change of items.
+
+```python
+pool = lexsync.build_pool(lexicon, {"length": [4, 8], "frequency": [3.5, 7.0]})
+design = {
+    "name": "resample", "language": "english", "n_per_condition": 20,
+    "conditions": [
+        {"name": "high_frequency", "define_by": {"frequency": [5.2, 7.0]}},
+        {"name": "low_frequency", "define_by": {"frequency": [3.5, 4.4]}},
+    ],
+    "match_on": ["length", "n_density", "old20"],
+}
+stimuli = lexsync.resample_stimuli(pool, design, schema, n_sets=3)
+print(stimuli["word"].nunique(), len(stimuli))    # 120 120
+```
+
+Each replicate is fully matched in its own right, drawn from the pool with every earlier replicate's
+items removed, and marked with a `replicate` column. No word is reused, which the equal counts above
+confirm. In a design file this is `resample: {n_sets: 3}`, and the counterbalancer then treats each
+replicate as an independent set and numbers trial order within it. The whole thing stays
+deterministic because the matcher is deterministic and the used-item set evolves identically in both
+engines.
+
+Expect this to exhaust a small pool. Three sets of 20 per condition need 120 distinct words that all
+satisfy their bands, and a pool that comfortably supports one set may raise on the third.
+
+## Pseudowords
+
+Lexical decision needs non-words, and the usual difficulty is that they must be orthographically
+plausible without being real. `build_lexdec_stimuli` draws real words by an even spread across the
+byte-ordered pool, then generates a length-matched pseudoword for each.
+
+```python
+pool = lexsync.build_pool(lexicon, {"length": [4, 7], "frequency": [3.5, 6.0]})
+stimuli = lexsync.build_lexdec_stimuli(pool, n=8, reference_words=lexicon["word"].tolist())
+print(stimuli[["target", "condition", "length", "set"]].head(3).to_string(index=False))
+```
+
+The presented string is `target`, the conditions are `word` and `pseudoword`, and `set` pairs each
+word with its non-word twin. `reference_words` should be the full lexicon: it supplies the bigram
+statistics and the list of real forms a pseudoword must avoid, and defaults to the pool when
+omitted, which is rarely what you want.
+
+Two methods are available, chosen per design under `items.generation.method`.
+
+`letter_substitution`, the default, changes as few letters as possible subject to three constraints:
+every resulting bigram must be attested in the corpus, the form must not be a real word or one
+already generated, and the length must be preserved exactly. Single substitutions are searched
+first, then pairs as a fallback. Among the legal candidates the most bigram-plausible wins, with a
+byte-order tie-break.
+
+`subsyllabic` splits each word into onset, nucleus and coda constituents and swaps whole
+constituents for attested alternatives of the same role and length, so the pseudowords keep their
+syllabic structure. Codas and nuclei are changed before onsets, which carry the most identifying
+orthography. Roughly two thirds of a word's constituents are targeted, each swap preserves length,
+and a word with no legal swap falls back to letter substitution, so every word yields a pseudoword.
+It is a deterministic orthographic approximation of Wuggy (Keuleers & Brysbaert, 2010), trading
+Wuggy's phonological model for exact length matching and cross-engine reproducibility.
+
+```python
+subsyllabic = lexsync.build_lexdec_stimuli(
+    pool, n=8, reference_words=lexicon["word"].tolist(), method="subsyllabic")
+```
+
+Both generators process base words in byte order, so the set of already-used pseudowords evolves
+identically in R and Python, and both select byte-identical stimuli. Both are also orthographic
+models defined for a–z words: `build_lexdec_stimuli` filters the pool to those, and
+`segment_subsyllabic` returns nothing for a word with an accent, a hyphen or a digit, which sends it
+down the letter-substitution path. That is why lexical decision is demonstrated in English rather
+than in the Chinese design.
+
+`generate_pseudowords` and `make_pseudoword` are available directly if you want the forms without the
+lexical-decision scaffolding around them.
+
+```python
+pairs = lexsync.generate_pseudowords(["house", "table"], lexicon["word"].tolist())
+print(pairs.to_string(index=False))
+```
+
+```text
+base_word pseudoword
+    house      hoese
+    table      talle
+```

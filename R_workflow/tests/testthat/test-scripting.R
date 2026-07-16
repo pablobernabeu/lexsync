@@ -97,3 +97,17 @@ test_that("a per-design font overrides the Latin default for logographic scripts
                                             schema, out), warn = FALSE), collapse = "\n")
   expect_true(grepl('WORD_FONT = "Courier New"', pytxt2, fixed = TRUE))
 })
+
+# Pins the same verdict as _language_tag in the Python engine's scripting.py on a
+# label whose folding the two case mappings disagree about. Base R's tolower()
+# applies only the simple mapping, folding U+0130 to a bare "i" so the lookup hits
+# and the tag becomes "it"; Python's str.lower() applies the Unicode default full
+# mapping, giving i + U+0307, which misses and yields "und". Routing the lookup
+# through .lower_invariant() (ICU, root locale) reproduces Python here, and under a
+# Turkish or Azeri locale, where tolower("I") would otherwise give a dotless "i"
+# and lose "ITALIAN" too. The label is built with intToUtf8 so the source stays
+# ASCII (CRAN).
+test_that("the BCP 47 lookup folds case as the Python engine does", {
+  expect_identical(.language_tag(list(language = "ITALIAN")), "it")
+  expect_identical(.language_tag(list(language = paste0(intToUtf8(0x130), "TALIAN"))), "und")
+})

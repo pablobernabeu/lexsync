@@ -159,15 +159,15 @@
     },
     {
       "file": "output/experiments/es_ndensity_spanish_psychopy.py",
-      "sha256": "fd5a94772e152e2b3589dbe8d22fdf583965b5d8af5f0161a61fe180364c6f5a"
+      "sha256": "c9a7ac3172492eb71a9154d3eedbcba4598f633bdd0a13f31a5c4db34172ecea"
     },
     {
       "file": "output/experiments/es_ndensity_spanish.osexp",
-      "sha256": "0814c158ec22f4cde30b6f4da70016d611ffab1eb7de9befc632955efbd6e31b"
+      "sha256": "12ab9011cacbd513eab2369ec4e65d8bcff3b91b68af0c1ac8fefafaa99c6103"
     },
     {
       "file": "output/experiments/es_ndensity_spanish.html",
-      "sha256": "7ac61ef3aef75c6fcea47e3547e0353ba1dc530fdfdd10cdfed2da0a182bef40"
+      "sha256": "5108c707a2e9c6b8c0ae794720e7c68440aa87426b1c24ab16fdf79738150187"
     }
   ]
 }

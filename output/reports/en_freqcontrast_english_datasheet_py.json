@@ -6,28 +6,28 @@
   },
   "artifacts": [
     {
-      "file": "output\\stimuli\\en_freqcontrast_english_stimuli_py.csv",
+      "file": "output/stimuli/en_freqcontrast_english_stimuli_py.csv",
       "sha256": "c44728af862554060611697f90849de55d5a74447b8fb9492cfee823cef0a2b4"
     },
     {
-      "file": "output\\reports\\en_freqcontrast_english_descriptives_py.csv",
+      "file": "output/reports/en_freqcontrast_english_descriptives_py.csv",
       "sha256": "334f5b975c04a89e1bb11aafc50b5736cd689627e8e37ac670e17be3776aa596"
     },
     {
-      "file": "output\\reports\\en_freqcontrast_english_comparisons_py.csv",
+      "file": "output/reports/en_freqcontrast_english_comparisons_py.csv",
       "sha256": "be6a3c1c5e2c40520d400e8e1d938a97ab7e4d9404bded017b96a4fcd7f3e184"
     },
     {
-      "file": "output\\experiments\\en_freqcontrast_english_psychopy.py",
-      "sha256": "51dd038d9d528ab4a2cb0b34b9b0f88cae07894b2c3c2d3a7a8a3b495273d82c"
+      "file": "output/experiments/en_freqcontrast_english_psychopy.py",
+      "sha256": "b5d45fbffe5139e44892f226fddbe2ec858eb8380ef86eb300cea2021ea22efc"
     },
     {
-      "file": "output\\experiments\\en_freqcontrast_english.osexp",
+      "file": "output/experiments/en_freqcontrast_english.osexp",
       "sha256": "60b349f83e8ae265db3e42f12e531beef58dec616cf278a15867dfdbd20d6905"
     },
     {
-      "file": "output\\experiments\\en_freqcontrast_english.html",
-      "sha256": "4d30c7523400588160d78707e57095c20d7d78d845700d90f473f0ed21d7aa46"
+      "file": "output/experiments/en_freqcontrast_english.html",
+      "sha256": "1b46d9b3ab9ad0d5fee725be0e55ac08cbeb0a09ccc8f34cd00a50fd70bd979f"
     }
   ],
   "counterbalancing": {
@@ -81,7 +81,7 @@
     ],
     "n_conditions": 2,
     "n_total": 160,
-    "stimuli_file": "output\\stimuli\\en_freqcontrast_english_stimuli_py.csv",
+    "stimuli_file": "output/stimuli/en_freqcontrast_english_stimuli_py.csv",
     "stimuli_sha256": "c44728af862554060611697f90849de55d5a74447b8fb9492cfee823cef0a2b4"
   },
   "lexsync_datasheet_version": "1.0",

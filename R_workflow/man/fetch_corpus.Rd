@@ -17,6 +17,8 @@ fetch_corpus(name, registry_path = NULL, dest = NULL)
 The path to the downloaded file, invisibly.
 }
 \description{
-Suitable for Connector A corpora that expose a delimited file. The download
-is recorded so it can be cited; consult \code{\link[=list_corpora]{list_corpora()}} for the citation.
+Suitable for Connector A corpora that expose a delimited file. The URL's
+scheme and the downloaded file's first bytes are checked before the file is
+kept. The download is recorded so it can be cited; consult \code{\link[=list_corpora]{list_corpora()}}
+for the citation.
 }

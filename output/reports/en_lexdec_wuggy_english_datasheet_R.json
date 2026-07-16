@@ -19,35 +19,11 @@
       "type": "derived",
       "compute": "n_letters",
       "unit": "letters"
-    },
-    "frequency": {
-      "type": "column",
-      "column": "freq_zipf",
-      "unit": "Zipf"
-    },
-    "n_density": {
-      "type": "derived",
-      "compute": "coltheart_n",
-      "unit": "neighbours"
-    },
-    "old20": {
-      "type": "derived",
-      "compute": "old20",
-      "unit": "mean Levenshtein distance"
-    },
-    "n_syllables": {
-      "type": "derived",
-      "compute": "vowel_groups",
-      "unit": "syllables (orthographic estimate)"
-    },
-    "bigram_freq": {
-      "type": "derived",
-      "compute": "mean_bigram_probability",
-      "unit": "mean positional bigram probability"
     }
   },
   "selection": {
-    "method": "constrained letter substitution (deterministic pseudowords)",
+    "method": "subsyllabic constituent swap (Wuggy-style, deterministic pseudowords)",
+    "generation_method": "subsyllabic",
     "matched_on": [
       "length"
     ],
@@ -110,7 +86,7 @@
     },
     {
       "file": "output/reports/en_lexdec_wuggy_english_descriptives_R.csv",
-      "sha256": "1f2819d5fd577a3fa95ff9e68a11a75045b771c2d550ddd812f17ae457a49170"
+      "sha256": "d0375323da7709ae71a516e328c07c1d03e49020b58ace90bab3ea3cbdb9c913"
     },
     {
       "file": "output/reports/en_lexdec_wuggy_english_comparisons_R.csv",
@@ -118,15 +94,15 @@
     },
     {
       "file": "output/experiments/en_lexdec_wuggy_english_psychopy.py",
-      "sha256": "0aade9cb03dc8d4864b38ac3824c9107d7da8d3749f2bc3f2d8e4d7dd6214b09"
+      "sha256": "05f522d678bd137b676d2fbc86f3eda3b060ea2ec11f8f7efa59c49c13700d6d"
     },
     {
       "file": "output/experiments/en_lexdec_wuggy_english.osexp",
-      "sha256": "c1dfb47eedaded445a8568c26c867bf594b0a09090831378169998349eca55e4"
+      "sha256": "dbffd819b4dbb098b6deb5b89eeb465e5fe92dcb53220641e473075f231ef227"
     },
     {
       "file": "output/experiments/en_lexdec_wuggy_english.html",
-      "sha256": "4889fcbc58901cce78920b17b67fd0aee6b86f50d6f616e31d4fbfd439309d64"
+      "sha256": "bdf209e175edcd51e4c81eafe6fb839900f1b522fcfe7fb26310c47d720239aa"
     }
   ]
 }

@@ -1,0 +1,79 @@
+# Builds the documentation for both packages and deploys them as one site:
+# the pkgdown reference under /r, the mkdocs reference under /python, the hub
+# landing page at the root, and the generated jsPsych experiments under /demos.
+name: docs
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'R_workflow/**'
+      - 'python_workflow/**'
+      # The demos are staged straight from the committed artefacts, so a design or
+      # corpus change can alter what the site publishes without touching either
+      # package.
+      - 'output/experiments/**'
+      - '.github/workflows/docs.yml'
+      - '.github/landing.html'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: docs-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # Pandoc renders the vignette, which pkgdown turns into the Articles tab.
+      - uses: r-lib/actions/setup-pandoc@v2
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          working-directory: R_workflow
+          extra-packages: any::pkgdown, local::.
+
+      - name: Build pkgdown site
+        run: Rscript -e 'pkgdown::build_site("R_workflow", new_process = FALSE, install = FALSE)'
+
+      - name: Stage pkgdown under site/r
+        run: |
+          mkdir -p site
+          cp -r R_workflow/docs site/r
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Build mkdocs site
+        run: |
+          python -m pip install --quiet -e ./python_workflow "mkdocs-material" "mkdocstrings[python]"
+          cd python_workflow && mkdocs build --strict -d ../site/python
+
+      - name: Write landing page
+        run: |
+          cp R_workflow/man/figures/logo.svg site/logo.svg
+          cp .github/landing.html site/index.html
+
+      # The browser experiments are committed artefacts of the pipeline, so this
+      # stages them rather than rebuilding: running the pipeline here would risk
+      # publishing something other than what the repository records. The landing
+      # page and the mkdocs header's Demo link both resolve into this directory.
+      - name: Stage the generated jsPsych experiments under site/demos
+        run: |
+          mkdir -p site/demos
+          cp output/experiments/*.html site/demos/
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./site
+          force_orphan: true

@@ -6,28 +6,28 @@
   },
   "artifacts": [
     {
-      "file": "output\\stimuli\\es_gender_repro_spanish_stimuli_py.csv",
+      "file": "output/stimuli/es_gender_repro_spanish_stimuli_py.csv",
       "sha256": "bab9f9baeaa96ad05d5f1a727268c028b9b15301b5387d4856b33c81b819a305"
     },
     {
-      "file": "output\\reports\\es_gender_repro_spanish_descriptives_py.csv",
+      "file": "output/reports/es_gender_repro_spanish_descriptives_py.csv",
       "sha256": "24abbdde8b2d9d2127ba260af6c068628cd76c4a0dab811f884f133b11da1cdb"
     },
     {
-      "file": "output\\reports\\es_gender_repro_spanish_comparisons_py.csv",
+      "file": "output/reports/es_gender_repro_spanish_comparisons_py.csv",
       "sha256": "b1fed707228ef3c73918ca5a58c447f1d0073083383dd71b1687380adc1fdb74"
     },
     {
-      "file": "output\\experiments\\es_gender_repro_spanish_psychopy.py",
-      "sha256": "c5b125139a8a64d731c17550561ec3c54c18441908b4e3c7c19cd3746c81b92f"
+      "file": "output/experiments/es_gender_repro_spanish_psychopy.py",
+      "sha256": "16aab01b57dd0a69f2d142f872de2a090accd11f13d27bf3ff1f03834d917366"
     },
     {
-      "file": "output\\experiments\\es_gender_repro_spanish.osexp",
+      "file": "output/experiments/es_gender_repro_spanish.osexp",
       "sha256": "f7ac0623a4f0f8cccabaf74cd3c639b5bf4e41c90f9b3272b3286842a2dce1cd"
     },
     {
-      "file": "output\\experiments\\es_gender_repro_spanish.html",
-      "sha256": "62b1bf690e90986dd80953f52da6bdf137f5a5e0509b7581a7561fb849d9f837"
+      "file": "output/experiments/es_gender_repro_spanish.html",
+      "sha256": "799370e7875cd2236c6119f3e699febaeee1e1c1b5c3ed3fe64aeeb7bec84091"
     }
   ],
   "counterbalancing": {
@@ -81,7 +81,7 @@
     ],
     "n_conditions": 2,
     "n_total": 96,
-    "stimuli_file": "output\\stimuli\\es_gender_repro_spanish_stimuli_py.csv",
+    "stimuli_file": "output/stimuli/es_gender_repro_spanish_stimuli_py.csv",
     "stimuli_sha256": "bab9f9baeaa96ad05d5f1a727268c028b9b15301b5387d4856b33c81b819a305"
   },
   "lexsync_datasheet_version": "1.0",

@@ -124,8 +124,11 @@ match_stimuli <- function(pool, design, schema, verbose = FALSE) {
     keep <- rep(TRUE, nrow(cand))
     # Drop a row missing a matched dimension, as the Python engine does: NA >= x is
     # NA, and cand[NA, ] injects an all-NA filler row that would inflate the count
-    # the relaxation guard below tests.
+    # the relaxation guard below tests. The window itself can also be NA (an anchor
+    # of one item has sd = NA), which makes `keep` NA even where the candidate is
+    # present, so resolve NA to FALSE rather than relying on the !is.na() conjunct.
     for (d in match_on) keep <- keep & !is.na(cand[[d]]) & cand[[d]] >= win[[d]][1] & cand[[d]] <= win[[d]][2]
+    keep[is.na(keep)] <- FALSE            # NaN comparisons are FALSE in the Python engine
     cand_f <- cand[keep, , drop = FALSE]
     if (nrow(cand_f) < n_take) {
       if (verbose) {
@@ -141,6 +144,16 @@ match_stimuli <- function(pool, design, schema, verbose = FALSE) {
       stop(sprintf(paste0("lexsync: condition '%s' has only %d candidate(s) but %d are needed; ",
                           "widen pool_filters/define_by or lower n_per_condition."),
                    cname, nrow(cand_f), n_take), call. = FALSE)
+    }
+    # Relaxing the window re-admits rows missing a matched dimension. Their distance
+    # is NA and they rank last, so they are never assigned; counting them would let an
+    # NA-depleted pool past the guard above and back into re-picking used rows.
+    usable <- sum(stats::complete.cases(cand_f[, match_on, drop = FALSE]))
+    if (usable < n_take) {
+      stop(sprintf(paste0("lexsync: condition '%s' has only %d usable candidate(s) complete on the ",
+                          "matched dimensions but %d are needed; widen pool_filters/define_by or ",
+                          "lower n_per_condition."),
+                   cname, usable, n_take), call. = FALSE)
     }
     # Stage 2: standardised nearest-neighbour assignment, greedy, no replacement.
     z_cand <- zmat(cand_f)
@@ -356,8 +369,10 @@ select_continuous_stimuli <- function(pool, design, schema, verbose = FALSE) {
   names(win) <- controls
   keep <- rep(TRUE, nrow(pool))
   # As in match_stimuli: an NA on a control must drop the row rather than index an
-  # all-NA filler row into `filtered` and inflate the count tested just below.
+  # all-NA filler row into `filtered` and inflate the count tested just below. A
+  # one-item spread also gives sd = NA, making `keep` NA through the window bounds.
   for (d in controls) keep <- keep & !is.na(pool[[d]]) & pool[[d]] >= win[[d]][1] & pool[[d]] <= win[[d]][2]
+  keep[is.na(keep)] <- FALSE            # NaN comparisons are FALSE in the Python engine
   filtered <- pool[keep, , drop = FALSE]
   if (nrow(filtered) < n) {
     if (verbose) {

@@ -6,28 +6,28 @@
   },
   "artifacts": [
     {
-      "file": "output\\stimuli\\en_freqcontinuous_english_stimuli_py.csv",
+      "file": "output/stimuli/en_freqcontinuous_english_stimuli_py.csv",
       "sha256": "b3b0045fd14da108ab42ab105b851a91404284be6b4e71b5ce65a8f127c5b0e3"
     },
     {
-      "file": "output\\reports\\en_freqcontinuous_english_descriptives_py.csv",
+      "file": "output/reports/en_freqcontinuous_english_descriptives_py.csv",
       "sha256": "652d2df54e9d77598843de08cb2bdf54f4b39f9ac07a505b78f6019b64195507"
     },
     {
-      "file": "output\\reports\\en_freqcontinuous_english_comparisons_py.csv",
+      "file": "output/reports/en_freqcontinuous_english_comparisons_py.csv",
       "sha256": "f7b643a52ba5980aa944c070e073595ea27953b62f7e10981be85c686bf4cec5"
     },
     {
-      "file": "output\\experiments\\en_freqcontinuous_english_psychopy.py",
-      "sha256": "6ce75aa861d5e87c68edb7c6fc8b538e8bfda0329f9c145a3b9d8b8c1cd4e35e"
+      "file": "output/experiments/en_freqcontinuous_english_psychopy.py",
+      "sha256": "e2858cdde2585bc604f949b02f3e478d721186a7b0c10a83915b188ea77800bb"
     },
     {
-      "file": "output\\experiments\\en_freqcontinuous_english.osexp",
+      "file": "output/experiments/en_freqcontinuous_english.osexp",
       "sha256": "6deb70a4a36061ae926af8b9fbc03342a50b41690ded925a36ebc2354474205f"
     },
     {
-      "file": "output\\experiments\\en_freqcontinuous_english.html",
-      "sha256": "7d597843c3755131ff73a128a6fb22a4c0e17a73c7fc3fe59a5671488450a8d2"
+      "file": "output/experiments/en_freqcontinuous_english.html",
+      "sha256": "5172977fabb1a1d6414772d53f6afbb3318f30701b4419cb5db31fd0b5b6225a"
     }
   ],
   "counterbalancing": {
@@ -80,7 +80,7 @@
     ],
     "n_conditions": 1,
     "n_total": 80,
-    "stimuli_file": "output\\stimuli\\en_freqcontinuous_english_stimuli_py.csv",
+    "stimuli_file": "output/stimuli/en_freqcontinuous_english_stimuli_py.csv",
     "stimuli_sha256": "b3b0045fd14da108ab42ab105b851a91404284be6b4e71b5ce65a8f127c5b0e3"
   },
   "lexsync_datasheet_version": "1.0",

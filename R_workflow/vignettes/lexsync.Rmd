@@ -16,6 +16,14 @@ dimensions and then generates the experiment scripts that present them. This
 vignette runs a small high- versus low-frequency contrast on the bundled English
 example lexicon.
 
+The selection is deterministic, and it ships as two independent packages, one for
+R and one for Python, which select byte-identical stimuli from the same lexicon
+and design. No random number generator is involved: the engines agree because
+every ordering is by byte and every tie is broken by a rule both apply. This holds
+for the default matching methods; the optional `mahalanobis` and `optimal` methods
+are equivalent but not byte-identical, because a covariance inverse and an
+assignment solver differ in their last bits between the two platforms.
+
 ```{r setup}
 library(lexsync)
 schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
@@ -47,6 +55,9 @@ head(stim[, c("word", "condition", "length", "frequency", "n_density", "old20")]
 
 ## Inspect the match quality
 
+Matching always returns a set, so the report is what tells you whether the set is
+any good. It belongs before anything is generated from the stimuli.
+
 ```{r report}
 report <- match_report(stim, c("length", "frequency", "n_density", "old20"), schema)
 knitr::kable(report$descriptives, caption = "Descriptive statistics per condition")
@@ -65,6 +76,9 @@ is reported alongside as a bound-referenced verdict.
 
 ## Generate the experiment scripts
 
+The trial is described once, as a sequence of events, and each presentation target
+renders that same description. One call therefore produces all three.
+
 ```{r export}
 out <- file.path(tempdir(), "lexsync_demo")
 dir.create(out, showWarnings = FALSE)
@@ -72,8 +86,25 @@ files <- export_experiments(stim, design, schema, out)
 basename(unlist(files))
 ```
 
-The PsychoPy script binds each onset trigger to the stimulus flip with
-`win.callOnFlip`. The OpenSesame `.osexp` draws and shows the word inside an
-`inline_script` and sends the marker immediately after `show()` returns, which
-it does at the display refresh. Neither the matching nor the script generation
-requires PsychoPy, OpenSesame or any hardware to be installed.
+Three experiments are generated from one description of the trial. The PsychoPy
+script binds each onset trigger to the stimulus flip with `win.callOnFlip`. The
+OpenSesame `.osexp` draws and shows the word inside an `inline_script` and sends
+the marker immediately after `show()` returns, which it does at the display
+refresh. The jsPsych HTML runs the same procedure in a browser and records the
+trigger codes in the trial data, since a browser cannot address a parallel port.
+Neither the matching nor the script generation requires PsychoPy, OpenSesame or
+any hardware to be installed.
+
+## Where next
+
+The pipeline does all of the above in one call. `run_pipeline()` on a design
+configuration writes the stimuli, the reports, the three experiments, a materials
+datasheet recording the provenance and realised control of the run, and a run log.
+
+Three further articles go into depth. *Matching, dimensions and designs* covers
+the lexical dimensions and their units, the four matching methods and when each
+one suits, tolerance windows, continuous designs and how to read the validation
+report. *Experiments, paradigms and EEG triggers* covers the trial-event model,
+the paradigm registry, the three presentation targets and the flip-locked trigger
+timing. *Reproducibility, parity and the materials datasheet* covers the
+cross-engine guarantee, how it is achieved and where it stops.

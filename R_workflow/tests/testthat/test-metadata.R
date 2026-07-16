@@ -37,3 +37,17 @@ test_that("the author record carries the ORCID shared by the citation files", {
   authors <- description_fields()[["Authors@R"]]
   expect_match(authors, "0000-0003-1083-2460", fixed = TRUE)
 })
+
+test_that("the README's R install line names every third-party Import", {
+  # The quick start is the first thing a new user runs, and DESCRIPTION is the only
+  # source of truth for what it must install. Adding an Import without amending the
+  # README leaves a documented command that fails on a fresh library, which is how
+  # stringi went missing; base packages ship with R and are excluded.
+  readme <- file.path("..", "..", "..", "README.md")
+  if (!file.exists(readme)) skip("The repository README is not in this tree.")
+  line <- grep("install.packages", readLines(readme, warn = FALSE), value = TRUE)[1]
+  expect_true(!is.na(line))
+  third_party <- setdiff(parse_deps(description_fields()$Imports),
+                         c("stats", "tools", "utils", "methods", "grDevices", "graphics"))
+  for (pkg in third_party) expect_match(line, sprintf("'%s'", pkg), fixed = TRUE)
+})

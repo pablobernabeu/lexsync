@@ -39,8 +39,10 @@ manuscript/.quarto/
 manuscript/manuscript_files/
 manuscript/manuscript_cache/
 
-# --- pkgdown (generated site; regenerate with pkgdown::build_site) ----------
+# --- Documentation sites (generated; the docs workflow rebuilds and deploys) -
 R_workflow/docs/
+python_workflow/site/
+/site/
 
 # --- session build/check temporaries ---------------------------------------
 /.rcheck_tmp/

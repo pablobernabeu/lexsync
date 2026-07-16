@@ -19,35 +19,11 @@
       "type": "derived",
       "compute": "n_letters",
       "unit": "letters"
-    },
-    "frequency": {
-      "type": "column",
-      "column": "freq_zipf",
-      "unit": "Zipf"
-    },
-    "n_density": {
-      "type": "derived",
-      "compute": "coltheart_n",
-      "unit": "neighbours"
-    },
-    "old20": {
-      "type": "derived",
-      "compute": "old20",
-      "unit": "mean Levenshtein distance"
-    },
-    "n_syllables": {
-      "type": "derived",
-      "compute": "vowel_groups",
-      "unit": "syllables (orthographic estimate)"
-    },
-    "bigram_freq": {
-      "type": "derived",
-      "compute": "mean_bigram_probability",
-      "unit": "mean positional bigram probability"
     }
   },
   "selection": {
     "method": "constrained letter substitution (deterministic pseudowords)",
+    "generation_method": "letter_substitution",
     "matched_on": [
       "length"
     ],
@@ -110,7 +86,7 @@
     },
     {
       "file": "output/reports/en_lexdec_english_descriptives_R.csv",
-      "sha256": "1f2819d5fd577a3fa95ff9e68a11a75045b771c2d550ddd812f17ae457a49170"
+      "sha256": "d0375323da7709ae71a516e328c07c1d03e49020b58ace90bab3ea3cbdb9c913"
     },
     {
       "file": "output/reports/en_lexdec_english_comparisons_R.csv",
@@ -118,15 +94,15 @@
     },
     {
       "file": "output/experiments/en_lexdec_english_psychopy.py",
-      "sha256": "caa6356c3e6e11113b58b77a9df41cd8d3456608f75c390e5015f1f28fe7a04e"
+      "sha256": "31068bc057d13ee091a089ed7413dd6a7973ccf2e10840faa11e380394f51e6a"
     },
     {
       "file": "output/experiments/en_lexdec_english.osexp",
-      "sha256": "02c7de92dd7f5ccc637b35728a6c3db6e253a0e44c4886b3a99f7fb200b4d6f5"
+      "sha256": "5959b9fa0c429fddc6cd18f2990ac50f91a4851a5892ddb7e0deaafdb229a3a9"
     },
     {
       "file": "output/experiments/en_lexdec_english.html",
-      "sha256": "1f5d2ca089d743c1a692924ddc9695b2e069f0ee4a6696fcbec8d10d80a969f9"
+      "sha256": "6777ecb302e337d807d2039e322c33ee53d94784ba7e2d0d5da7d38b2ff44b91"
     }
   ]
 }

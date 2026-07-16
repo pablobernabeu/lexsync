@@ -58,7 +58,20 @@ jobs:
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           working-directory: R_workflow
-          extra-packages: local::./R_workflow
+          extra-packages: |
+            any::testthat
+            local::./R_workflow
+
+      # R CMD check runs the suite from an installed copy, where the repository
+      # files are absent and every repo-coupled test skips itself. Running the
+      # suite once from the source tree is what actually exercises them, so
+      # assert none of them skipped rather than trusting a green tick.
+      - name: Run the R suite from the source tree
+        run: |
+          Rscript -e 'res <- as.data.frame(testthat::test_local("R_workflow", reporter = "summary"));
+                      cat(sprintf("FAIL %d | SKIP %d | PASS %d\n", sum(res$failed), sum(res$skipped), sum(res$passed)));
+                      if (sum(res$failed) > 0) stop("R test failures");
+                      if (sum(res$skipped) > 0) stop("A repo-coupled R test skipped; it is guarding nothing here.")'
 
       - uses: actions/setup-python@v5
         with:
@@ -80,3 +93,18 @@ jobs:
           LEXSYNC_REQUIRE_PARITY: '1'
         run: python -m pytest tests/test_parity.py -q
         working-directory: python_workflow
+
+      # Both engines write experiments to the same paths, so a diff against the
+      # committed tree only ever compares the last engine to run against itself. Run
+      # each into its own directory and compare them directly. The generated scripts
+      # must match byte for byte; the trial lists (the *.csv loop tables, and the
+      # TRIALS array the .html embeds) carry the seeded order, which is engine-specific
+      # by design because R's sample() and numpy's PCG64 cannot agree on a permutation.
+      - name: Fail if the two engines generated different experiment scripts
+        run: |
+          Rscript -e 'library(lexsync); run_pipeline("config/design_en_lexdec.yaml", "config/schema.yaml", "/tmp/eng_r")'
+          python -c "from lexsync.run_pipeline import run_pipeline; run_pipeline('config/design_en_lexdec.yaml','config/schema.yaml','/tmp/eng_py')"
+          for f in en_lexdec_english_psychopy.py en_lexdec_english.osexp; do
+            cmp "/tmp/eng_r/experiments/$f" "/tmp/eng_py/experiments/$f" \
+              || { echo "::error::the engines generated different $f"; exit 1; }
+          done

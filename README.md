@@ -16,7 +16,8 @@ more) and counterbalance them across conditions and lists. It then generates the
 presentation experiment for 'PsychoPy', 'OpenSesame' or the browser ('jsPsych'). The
 laboratory targets carry hardware triggers injected at stimulus onset for EEG/ERP
 synchronisation, and the web target is a single shareable HTML file (the jsPsych
-library itself loads from a CDN, so the first run needs an internet connection).
+library itself loads from a CDN, so the machine running it needs an internet
+connection).
 The trial is described declaratively as a sequence of events, so the same engine
 builds factorial word studies, lexical decision with deterministically generated
 pseudowords, priming and self-paced reading from configuration rather than code, with
@@ -37,9 +38,13 @@ Existing tools are powerful but fragmented. Stimulus-control packages such as 'L
 'LIBRA' and 'LASTU' match words but stop short of building the experiment, while
 experiment builders such as 'PsychoPy' and 'OpenSesame' present stimuli but do not
 match them. The R and Python ecosystems rarely meet, and most matching tools target a
-single language. `lexsync` closes this gap by spanning the whole path, from a
-many-language corpus through parallel multidimensional matching and counterbalancing to
-flip-locked, cross-platform experiment scripts, identically in R and Python.
+single language. `lexsync` closes this gap by spanning the whole path in both languages,
+from a many-language corpus through parallel multidimensional matching and
+counterbalancing to flip-locked, cross-platform experiment scripts. The two engines
+select byte-identical stimuli and deal them into the same lists and conditions. Trial
+order within a list is drawn from each language's own seeded generator, so the order,
+and the condition trigger codes that follow first appearance in it, are reproducible
+from a seed within an engine rather than across the two.
 
 The PsychoPy backend offers one concrete methodological gain: it binds each onset
 trigger to the exact buffer flip on which the stimulus appears, using `win.callOnFlip`,
@@ -69,7 +74,7 @@ orchestrator, `run_pipeline`.
 ### R
 
 ```bash
-Rscript -e "install.packages(c('readr','yaml','stringdist','jsonlite','digest'))"
+Rscript -e "install.packages(c('readr','yaml','stringdist','stringi','jsonlite','digest'))"
 # from the repository root:
 Rscript R_workflow/run_pipeline.R             # runs the demonstrations
 # or, once installed:  Rscript -e "lexsync::run_pipeline('config/design_en_freqcontrast.yaml')"

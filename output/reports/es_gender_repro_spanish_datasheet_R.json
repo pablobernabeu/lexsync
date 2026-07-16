@@ -54,7 +54,7 @@
     ],
     "tolerance_k": {
       "length": 2,
-      "frequency": 1,
+      "frequency": 0.1111,
       "n_density": 2,
       "old20": 2
     },
@@ -159,15 +159,15 @@
     },
     {
       "file": "output/experiments/es_gender_repro_spanish_psychopy.py",
-      "sha256": "f0828dbad8d6cd6f8ab62f9e3b1727a05ae27542a84e5550d4d9095393c57bf7"
+      "sha256": "16aab01b57dd0a69f2d142f872de2a090accd11f13d27bf3ff1f03834d917366"
     },
     {
       "file": "output/experiments/es_gender_repro_spanish.osexp",
-      "sha256": "a403df210726c0c049c3ab3164da6440819374d4a3c96578b2e7bf49263ea6b4"
+      "sha256": "f7ac0623a4f0f8cccabaf74cd3c639b5bf4e41c90f9b3272b3286842a2dce1cd"
     },
     {
       "file": "output/experiments/es_gender_repro_spanish.html",
-      "sha256": "17d72f0a6a96026da7c6bf0c68bb0eff24209b1d9ba0518df0ba73bdc629ef81"
+      "sha256": "c42560753a4f53ecd70152f1ab987147a792c7c9c1e9691723929da6316e360d"
     }
   ]
 }

@@ -1,0 +1,434 @@
+// ---------------------------------------------------------------------------
+// Meridian — the shared documentation brand for Pablo Bernabeu's packages.
+//
+// An editorial, academic-press identity layered on top of pkgdown's Bootstrap 5
+// scaffolding: a deep-navy ink, a violet primary, a warm amber accent and a warm
+// paper background, with a Spectral / Inter / JetBrains Mono type system. The
+// data-figure palette (viridis) is deliberately left alone.
+//
+// This file is additive. It sets brand tokens as CSS custom properties, maps
+// them onto Bootstrap's own --bs-* variables so the existing components inherit
+// them, and restyles a few surfaces (navbar, hero, cards, footer). It does not
+// remove or rename any pkgdown structure. The twin mkdocs site carries the same
+// tokens in python_workflow/docs/stylesheets/brand.css.
+//
+// Per-package accent: override --brand-primary / --brand-primary-ink below (for
+// example theoryforge's teal) to retune the family without touching the layout.
+// lexsync's is a deep violet, chosen at theoryforge's own perceptual lightness
+// (CIE L* 41.8) so the two sites read at the same weight; contrast against the
+// paper is 5.79:1, against the teal's 5.78:1.
+// ---------------------------------------------------------------------------
+
+:root {
+  // Core palette (sampled from the hex logo: navy ground, violet edge, warm accent)
+  --brand-ink:          #0E2233;  // deep navy — navbar, footer, dark ground
+  --brand-ink-raised:   #16324a;  // raised navy surface
+  --brand-violet:       #9A6BE0;  // brand violet — borders, edges, dark-mode links
+  --brand-primary:      #7C4EA3;  // accessible deep violet — links, buttons (light)
+  --brand-primary-ink:  #643B87;  // pressed
+  --brand-violet-light: #C3ADE8;  // violet for dark backgrounds
+  --brand-amber:        #E8A33D;  // warm accent — the Demo link, hover, rules
+  --brand-amber-light:  #F2B860;
+  --brand-amber-dark:   #9C5A00;  // AA-contrast amber for link hover on light paper
+  --brand-paper:        #FBFAF6;  // warm off-white page
+  --brand-card:         #FFFFFF;
+  --brand-border:       #E7E1D5;  // warm hairline
+  --brand-body:         #1D2A32;  // ink body text
+  --brand-muted:        #5A6771;
+
+  // Type system. The family faces stay first; the CJK faces close each stack
+  // because lexsync bundles and demonstrates a Mandarin Chinese corpus, so a
+  // stimulus table or a code block can carry Han characters (七十, 受到) that
+  // Inter, Spectral and JetBrains Mono do not cover. Without the fallback those
+  // glyphs land on the browser's last-resort font and set at a different size
+  // and weight from the Latin around them.
+  --brand-cjk-fallback:  "Noto Sans CJK SC", "Microsoft YaHei", "PingFang SC",
+                          "Hiragino Sans GB", "Source Han Sans SC";
+  --bs-body-font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+                          Roboto, Helvetica, Arial, var(--brand-cjk-fallback),
+                          sans-serif;
+  --bs-font-monospace:   "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo,
+                          Consolas, "Liberation Mono", "Noto Sans Mono CJK SC",
+                          "Microsoft YaHei", "PingFang SC", monospace;
+  --brand-heading-font:  "Spectral", Georgia, "Times New Roman",
+                          var(--brand-cjk-fallback), serif;
+}
+
+// --- Light mode surface -----------------------------------------------------
+[data-bs-theme="light"] {
+  --bs-body-bg:          var(--brand-paper);
+  --bs-body-color:       var(--brand-body);
+  --bs-secondary-color:  var(--brand-muted);
+  --bs-link-color:       var(--brand-primary);
+  --bs-link-color-rgb:   124, 78, 163;
+  --bs-link-hover-color: var(--brand-amber-dark);
+  --bs-border-color:     var(--brand-border);
+  --bs-emphasis-color:   var(--brand-ink);
+}
+
+// --- Dark mode surface ------------------------------------------------------
+[data-bs-theme="dark"] {
+  --brand-paper:  #0B1B29;
+  --brand-card:   #12283C;
+  --brand-border: #23415c;
+  --brand-body:   #D7E0E6;
+  --brand-muted:  #8CA1AE;
+
+  --bs-body-bg:          #0B1B29;
+  --bs-body-color:       #D7E0E6;
+  --bs-secondary-color:  #8CA1AE;
+  --bs-link-color:       var(--brand-violet-light);
+  --bs-link-color-rgb:   195, 173, 232;
+  --bs-link-hover-color: var(--brand-amber-light);
+  --bs-border-color:     #23415c;
+  --bs-emphasis-color:   #FFFFFF;
+}
+
+body {
+  font-family: var(--bs-body-font-family);
+  font-size: 1.02rem;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+// --- Headings: Spectral, the editorial signal -------------------------------
+h1, h2, h3, h4, h5, h6,
+.navbar-brand,
+.template-home .page-header h1 {
+  font-family: var(--brand-heading-font);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--brand-ink);
+}
+[data-bs-theme="dark"] h1,
+[data-bs-theme="dark"] h2,
+[data-bs-theme="dark"] h3,
+[data-bs-theme="dark"] h4 { color: #EAF1F4; }
+// The home hero title carries a higher-specificity light-mode colour (below),
+// so its dark-mode colour must match that specificity to take effect; without
+// this the wordmark stays deep-navy on the dark page and all but disappears.
+[data-bs-theme="dark"] .template-home .page-header h1 { color: #EAF1F4; }
+
+h1 { font-size: 2.35rem; }
+h2 {
+  font-size: 1.6rem;
+  margin-top: 2.4rem;
+  padding-bottom: .3rem;
+  border-bottom: 1px solid var(--bs-border-color);
+}
+h3 { font-size: 1.25rem; margin-top: 1.8rem; }
+
+// The parenthetical language tag in the hero title, e.g. "lexsync (R)", which
+// distinguishes this site from the Python package's twin.
+.template-home .page-header h1 small,
+.template-home .page-header h1 .language-tag {
+  font-family: var(--bs-body-font-family);
+  font-weight: 400;
+  color: var(--brand-muted);
+  font-size: .55em;
+  letter-spacing: 0;
+}
+
+// ---------------------------------------------------------------------------
+// Navbar — always the deep-navy ink band with a violet underline, in both modes
+// ---------------------------------------------------------------------------
+.navbar {
+  background-color: var(--brand-ink) !important;
+  border-bottom: 3px solid var(--brand-violet);
+  --bs-navbar-color: rgba(255, 255, 255, .74);
+  --bs-navbar-hover-color: #ffffff;
+  --bs-navbar-active-color: #ffffff;
+  --bs-navbar-brand-color: #ffffff;
+  --bs-navbar-brand-hover-color: #ffffff;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, .25);
+}
+.navbar .navbar-brand { color: #fff; font-weight: 600; letter-spacing: -0.01em; }
+.navbar .nav-link { color: rgba(255, 255, 255, .78); font-weight: 500; }
+.navbar .nav-link:hover,
+.navbar .nav-link:focus,
+.navbar .nav-link.active { color: #fff; }
+
+// Accent the Demo link (it carries the fa-play icon) in warm amber
+.navbar .nav-item:has(.fa-play) .nav-link,
+.navbar .nav-link:has(.fa-play) {
+  color: var(--brand-amber);
+  font-weight: 600;
+}
+.navbar .nav-item:has(.fa-play) .nav-link:hover,
+.navbar .nav-link:has(.fa-play):hover { color: var(--brand-amber-light); }
+// Give the Demo link room to breathe before the search box that follows it.
+.navbar .navbar-nav .nav-item:has(.fa-play) { margin-right: .9rem; }
+
+// The icon buttons on the right (search, github, light switch)
+.navbar .navbar-nav .nav-link .fa,
+.navbar #search-input { color: rgba(255, 255, 255, .85); }
+.navbar-nav .dropdown-menu { border-color: var(--bs-border-color); }
+// Dropdown rows: a clear brand-tinted hover, legible in both modes.
+.navbar .dropdown-menu {
+  --bs-dropdown-link-hover-bg: rgba(154, 107, 224, .14);
+  --bs-dropdown-link-hover-color: var(--brand-primary-ink);
+  --bs-dropdown-link-active-bg: var(--brand-primary);
+  --bs-dropdown-link-active-color: #fff;
+}
+[data-bs-theme="dark"] .navbar .dropdown-menu {
+  --bs-dropdown-link-hover-bg: rgba(195, 173, 232, .18);
+  --bs-dropdown-link-hover-color: #EAF1F4;
+}
+
+// ---------------------------------------------------------------------------
+// Home hero
+// ---------------------------------------------------------------------------
+.template-home .page-header {
+  border-bottom: none;
+  margin-bottom: 1.4rem;
+  padding-top: .5rem;
+}
+.template-home .page-header h1 { font-size: 2.9rem; margin-bottom: .2rem; }
+
+// The lead paragraph (first paragraph after the title) set larger and calmer
+.template-home main > .row > .col-md-9 > p:first-of-type,
+.template-home .contents > p:first-of-type {
+  font-size: 1.18rem;
+  line-height: 1.6;
+  color: var(--brand-muted);
+}
+
+// Badges row (R-CMD-check, python-tests, licence)
+.template-home .contents .badge,
+.template-home img[src*="badge"] { margin: 0 .15rem .35rem 0; }
+
+// Logo in the hero
+.template-home .page-header img,
+img.logo { filter: drop-shadow(0 6px 18px rgba(14, 34, 51, .18)); }
+
+// ---------------------------------------------------------------------------
+// Sidebar (home + article table of contents)
+// ---------------------------------------------------------------------------
+#pkgdown-sidebar,
+aside {
+  font-size: .93rem;
+}
+#pkgdown-sidebar h2,
+aside h2 {
+  font-family: var(--bs-body-font-family);
+  font-size: .78rem;
+  text-transform: uppercase;
+  letter-spacing: .09em;
+  font-weight: 600;
+  color: var(--brand-muted);
+  border-bottom: none;
+  margin-top: 1.4rem;
+}
+
+// ---------------------------------------------------------------------------
+// Reference index — treat each function group as a card
+// ---------------------------------------------------------------------------
+.template-reference-index .section {
+  background: var(--brand-card);
+  border: 1px solid var(--bs-border-color);
+  border-radius: 12px;
+  padding: 1.1rem 1.3rem .4rem;
+  margin-bottom: 1.4rem;
+  box-shadow: 0 1px 2px rgba(14, 34, 51, .04);
+}
+.template-reference-index .section > h2 {
+  margin-top: .2rem;
+  border-bottom: none;
+  color: var(--brand-primary);
+}
+[data-bs-theme="dark"] .template-reference-index .section > h2 { color: var(--brand-violet-light); }
+// pkgdown can emit a group as a heading section (with an empty dl) followed
+// by a headless section holding the functions; joined here so heading and
+// functions read as one card.
+.template-reference-index .section.level2:has(> h2):has(+ .section.level2 > dl:first-child) {
+  margin-bottom: 0;
+  border-bottom: none;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  // Nonzero padding, or the description's bottom margin collapses out of the
+  // card and reopens the gap this rule closes.
+  padding-bottom: .1rem;
+}
+.template-reference-index .section.level2:not(:has(> h2)) {
+  margin-top: 0;
+  border-top: none;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+.template-reference-index .section > dl:empty { display: none; }
+
+.template-reference-index .section > h2::before {
+  content: "";
+  display: inline-block;
+  width: .55rem; height: .55rem;
+  margin-right: .55rem;
+  border-radius: 2px;
+  background: var(--brand-amber);
+  vertical-align: middle;
+}
+
+// ---------------------------------------------------------------------------
+// Code
+// ---------------------------------------------------------------------------
+code, pre, kbd, samp { font-family: var(--bs-font-monospace); }
+code { font-size: .875em; }
+pre {
+  background: var(--brand-ink);
+  color: #E7EDF0;
+  border-radius: 10px;
+  border: 1px solid rgba(154, 107, 224, .25);
+  padding: .85rem 1rem;
+  // Code and output read at the size of the surrounding prose (1rem against
+  // the 1.02rem body compensates for the wider monospace); long lines scroll
+  // inside the block where they cannot fit.
+  font-size: 1rem;
+  line-height: 1.5;
+  overflow-x: auto;
+  max-width: 100%;
+}
+pre code { color: inherit; background: none; }
+// Source chunks read a touch smaller than the output and the prose, so a typical
+// line fits the narrower home and article columns without horizontal scrolling.
+// Only .sourceCode blocks (the highlighted input) are affected; output stays at
+// prose size. Both the pre and its code carry the size so the two do not compound.
+pre.sourceCode, pre.sourceCode code { font-size: .85rem; }
+// The pre's overflow-x makes it a block formatting context, which shrinks
+// beside the floated hex logo; without the same treatment the copy button's
+// wrapper stays full width and the button strands outside the block.
+div.sourceCode { display: flow-root; }
+:not(pre) > code {
+  background: rgba(154, 107, 224, .10);
+  color: var(--brand-primary-ink);
+  border-radius: 4px;
+  padding: .1rem .35rem;
+}
+[data-bs-theme="dark"] :not(pre) > code { color: var(--brand-violet-light); background: rgba(195, 173, 232, .12); }
+
+// The code block is deep-navy in BOTH modes, but pkgdown's light-mode syntax
+// colours are tuned for a light background and wash out on it (comments come
+// out near-black, for instance). Re-map the tokens to one high-contrast,
+// brand-coherent palette that reads the same in light and dark. The selector
+// `pre.sourceCode code span.X` matches pkgdown's dark rule specificity, and,
+// being appended after it, wins in both modes.
+pre.sourceCode code {
+  span.co, span.do { color: #8FA9B5; font-style: italic; }              // comments
+  span.st, span.sc, span.ss, span.vs, span.ch, span.bu,
+  span.im { color: #9DE0A6; }                                           // strings
+  span.fu { color: #F2B860; }                                           // function calls
+  span.kw, span.cf, span.dt { color: #F2B860; font-weight: 600; }       // keywords, control
+  span.op { color: #AAB7BF; }                                           // operators
+  span.dv, span.fl, span.bn, span.an, span.in { color: #CBD6A6; }       // numbers
+  span.cn, span.cv, span.at, span.ot { color: #A98CE0; }                // constants (TRUE/NULL), args
+  span.va { color: #DCE6EC; }                                           // variables
+  span.al, span.er, span.wa { color: #F0888F; }                         // warnings, errors
+  span.pp { color: #D6C2E8; }                                           // preprocessor
+}
+
+// ---------------------------------------------------------------------------
+// Blockquotes / callouts (the citation block, notes)
+// ---------------------------------------------------------------------------
+blockquote {
+  border-left: 3px solid var(--brand-amber);
+  background: rgba(232, 163, 61, .07);
+  padding: .75rem 1rem;
+  border-radius: 0 8px 8px 0;
+  color: var(--brand-body);
+}
+blockquote p:last-child { margin-bottom: 0; }
+
+// ---------------------------------------------------------------------------
+// Tables
+// ---------------------------------------------------------------------------
+.contents table, table.table {
+  border: 1px solid var(--bs-border-color);
+  border-radius: 10px;
+  // A wide table scrolls inside its own box on a narrow viewport instead of
+  // stretching the page; fit-content keeps a narrow table at its natural
+  // width despite the block display.
+  display: block;
+  width: fit-content;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-bottom: 1.6rem;
+}
+.contents table thead th, table.table thead th {
+  background: var(--brand-ink);
+  color: #fff;
+  font-family: var(--bs-body-font-family);
+  font-weight: 600;
+  border-bottom: none;
+}
+// An inline code span in a table cell (a dimension name, a config key, a
+// function argument) has no internal whitespace, so a narrow column would
+// otherwise be fragmented mid-word.
+.contents table td code, .contents table th code { white-space: nowrap; }
+
+// Breathing room beneath figures (a plot renders as a lone image in its
+// paragraph).
+.contents p > img:only-child { margin-bottom: .7rem; }
+
+// ---------------------------------------------------------------------------
+// Buttons / links inside content
+// ---------------------------------------------------------------------------
+.btn-primary {
+  --bs-btn-bg: var(--brand-primary);
+  --bs-btn-border-color: var(--brand-primary);
+  --bs-btn-hover-bg: var(--brand-primary-ink);
+  --bs-btn-hover-border-color: var(--brand-primary-ink);
+  --bs-btn-active-bg: var(--brand-primary-ink);
+}
+// Outline buttons take their colour from --bs-primary, too dark on the navy
+// dark-mode page; use the light violet so the control stays legible.
+[data-bs-theme="dark"] .btn-outline-primary {
+  --bs-btn-color: var(--brand-violet-light);
+  --bs-btn-border-color: var(--brand-violet-light);
+  --bs-btn-hover-color: var(--brand-ink);
+  --bs-btn-hover-bg: var(--brand-violet-light);
+  --bs-btn-hover-border-color: var(--brand-violet-light);
+}
+a { text-underline-offset: .15em; }
+// Content links: underline on hover so the highlight is unmistakable in both
+// modes, on top of the amber hover colour set through --bs-link-hover-color.
+main a:hover, .contents a:hover, #pkgdown-sidebar a:hover { text-decoration: underline; }
+
+// ---------------------------------------------------------------------------
+// Footer — the deep-navy signature band
+// ---------------------------------------------------------------------------
+footer {
+  margin-top: 3rem;
+  // Full-bleed: the navy band and its content span the whole viewport,
+  // escaping pkgdown's centred container, and the two footer sentences
+  // read as left-aligned rows.
+  display: block;
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  padding: 2rem clamp(1rem, 2.5vw, 2rem) 2.4rem;
+  background: var(--brand-ink);
+  border-top: 3px solid var(--brand-violet);
+  color: rgba(255, 255, 255, .78);
+}
+
+// The 100vw band overshoots the content area by the scrollbar width; clip
+// that overshoot rather than growing a horizontal scrollbar (page content
+// never needs one: wide code blocks scroll inside their own box).
+body { overflow-x: hidden; }
+
+// pkgdown's own stylesheet floats the two blocks side by side; both read
+// as full-width, left-aligned rows instead.
+footer .pkgdown-footer-left,
+footer .pkgdown-footer-right {
+  float: none;
+  display: block;
+  width: 100%;
+  text-align: left;
+}
+footer .pkgdown-footer-right { margin-top: .3rem; }
+footer a { color: var(--brand-amber-light); }
+footer a:hover { color: #fff; }
+footer .pkgdown-footer-left,
+footer .pkgdown-footer-right { font-size: .92rem; }
+
+// Keep inline code readable inside the dark footer
+footer :not(pre) > code { background: rgba(255, 255, 255, .10); color: #E7EDF0; }
