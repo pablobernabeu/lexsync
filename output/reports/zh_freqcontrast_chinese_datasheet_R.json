@@ -131,7 +131,7 @@
       "high_frequency"
     ],
     "stimuli_file": "output/stimuli/zh_freqcontrast_chinese_stimuli_R.csv",
-    "stimuli_sha256": "110850e963f399cdfb87c2c7b414314bbcbcc6f240d66bb01a31ad431bc457bd"
+    "stimuli_sha256": "420ee4894b66286c71a165cfa3ddb22fb02cdece56200baa4fbbf714c61f0e69"
   },
   "reproducibility": {
     "seed": 2026,
@@ -148,7 +148,7 @@
   "artifacts": [
     {
       "file": "output/stimuli/zh_freqcontrast_chinese_stimuli_R.csv",
-      "sha256": "110850e963f399cdfb87c2c7b414314bbcbcc6f240d66bb01a31ad431bc457bd"
+      "sha256": "420ee4894b66286c71a165cfa3ddb22fb02cdece56200baa4fbbf714c61f0e69"
     },
     {
       "file": "output/reports/zh_freqcontrast_chinese_descriptives_R.csv",
@@ -168,7 +168,7 @@
     },
     {
       "file": "output/experiments/zh_freqcontrast_chinese.html",
-      "sha256": "03e47746ab27a1768fe5c5155e31176b4daf222f5bdaf4123f9e8f7321cea14d"
+      "sha256": "98b053cc2879e6cf5c412eabde1483a6972fd4ce1b7557e3b183f00f501519be"
     }
   ]
 }

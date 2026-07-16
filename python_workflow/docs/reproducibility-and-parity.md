@@ -11,9 +11,13 @@ makes it hold, where it stops, how it is tested, and what a run writes down abou
 
 ## The guarantee
 
-For the deterministic matching methods, the R and Python engines select byte-identical stimuli from
-identical input. Not statistically equivalent sets, not sets that agree to several decimal places.
-The same words, paired the same way, assigned to the same conditions.
+For the deterministic matching methods, the R and Python engines produce byte-identical output from
+identical input, and the guarantee has three layers. The selection: the same words, paired the same
+way, assigned to the same conditions and lists. The computed dimensions: every value an engine
+derives at run time and writes into the stimuli CSV. And the full generated experiment: the
+PsychoPy script, the OpenSesame experiment, the jsPsych page and both loop tables, trial order
+included. Not statistically equivalent sets, not files that agree to several decimal places. The
+same bytes.
 
 That is a stronger claim than it may look, because the two engines share no code. They are separate
 implementations, in different languages, on different linear-algebra stacks, and each is a package
@@ -26,11 +30,12 @@ legitimately choose either of two answers.
 The guarantee is not a property that the code happens to have. It is a set of decisions, most of
 which cost something, and each of which closes off a way for the two engines to drift apart.
 
-There is no random number generator in the selection path. Not a seeded one, none at all. Wherever a
-naive implementation would sample, lexsync spreads evenly. The matcher's anchor is an even spread
-across the sorted subpool, the continuous selector is two even spreads, and `build_lexdec_stimuli`
-draws its real words the same way. A seeded generator would be reproducible within an engine, but
-R's and NumPy's differ, so it would not cross the gap.
+There is no random number generator anywhere in the package. Not a seeded one, none at all.
+Wherever a naive implementation would sample, lexsync spreads evenly or hashes. The matcher's
+anchor is an even spread across the sorted subpool, the continuous selector is two even spreads,
+`build_lexdec_stimuli` draws its real words the same way, and trial order is a keyed hash of the
+design, described below. A seeded generator would be reproducible within an engine, but R's and
+NumPy's differ, so it would not cross the gap.
 
 Every ordering is by UTF-8 bytes. The lexicon is sorted that way at load time, item tables are
 mapped to set ids that way, pseudoword base words are processed that way, and the matcher's
@@ -66,12 +71,23 @@ Derived quantities are computed from integers. Bigram probabilities come from in
 rounded, and the subsyllabic constituent inventory is integer counts keyed by role and length, so it
 is order-independent. Neither depends on the order in which the corpus was accumulated.
 
-The generated PsychoPy script and OpenSesame experiment are byte-identical as well. The place they
-could drift is the event JSON embedded in the script, since jsonlite pads no separators and drops a
-whole number's fractional part, serialising a 2000 ms timeout as `2` rather than `2.0`; Python is
-the side that conforms. The trial lists are the exception. The loop tables, and the `TRIALS` array
-the browser experiment embeds, carry the counterbalanced order, which each engine draws from its own
-generator, so those files differ. The section below says why.
+The generated experiments are byte-identical as well, all of them: the PsychoPy script, the
+OpenSesame experiment, the jsPsych page and both loop tables, seventy-five files across the fifteen
+worked designs. One place they could drift is the event JSON embedded in the PsychoPy script, since
+jsonlite pads no separators and drops a whole number's fractional part, serialising a 2000 ms
+timeout as `2` rather than `2.0`; Python is the side that conforms.
+
+The other place is trial order, which until recently was the one artefact the engines could not
+share. Each shuffled with its own seeded generator, R with `sample()` and Python with NumPy's
+PCG64, and the same seed could not give the same permutation, so the loop tables, and the `TRIALS`
+array the browser experiment embeds, used to differ. Both engines now order the trials of a list by
+a keyed hash instead: each row is ranked by the SHA-256 digest of
+`seed|replicate|list|set|condition`, a tuple that identifies the trial uniquely under either
+counterbalancing recipe. Distinct inputs to SHA-256 behave as independent uniform draws, so
+ordering by the digest realises a seeded random permutation, but as a pure function of the design.
+The same bytes come out of both engines on any platform, there is no generator state to save or
+restore, a different seed still gives a different order, and the order remains random in the sense
+a reviewer cares about, with no systematic position effects.
 
 Some of these are visible in the design surface, and deliberately so. The tie-break order in the
 matcher is fixed at distance, then word bytes, then id, and is not configurable, because it is
@@ -80,7 +96,7 @@ guarantee an option.
 
 ## Where it stops
 
-Three exceptions, all of them documented rather than incidental.
+Two exceptions, both of them documented rather than incidental.
 
 `mahalanobis` and `optimal` are not covered. The first inverts a covariance matrix and the second
 solves a linear-assignment problem, and those are the two places where the R and Python
@@ -95,9 +111,10 @@ says as much: a covariance-aware distance is promoted to the default only if a d
 implementation is found. The guarantee is a hard constraint on which algorithms can be adopted, not
 a nice property that the current defaults happen to have.
 
-Trial order is not covered. It comes from each engine's own seeded generator, so it is reproducible
-within an engine, given `schema.seed`, and not across the two. The parity contract covers which
-items were selected, how they were paired and how they were assigned to conditions and lists.
+Trial order is no longer on this list. Earlier versions drew it from each engine's own seeded
+generator, reproducible within an engine, given `schema.seed`, and never across the two. The
+keyed-hash shuffle retired that exception: the permutation is part of the byte-identical surface,
+and the parity suite compares the `trial` column along with everything else.
 
 Corpus versions are not magic. A design pins the lexicon file it reads, and the bundled corpora are
 a fixed, checksummed snapshot, so the demonstrations reproduce with no download. The optional
@@ -120,7 +137,8 @@ columns, which are `word` or `target`, `condition` and `set`, must match as a se
 in there deliberately: it records which item was matched to which, and without it the test would
 place no constraint on the pairing at all. Then every other shared column is compared value by
 value, because the dimensions each engine computes at run time end up in the stimuli CSV and must
-agree too. `trial` is excluded, being outside the contract.
+agree too. `trial` is among them, now that the keyed-hash shuffle has brought order inside the
+contract.
 
 Continuous integration closes the loopholes that would let this pass without meaning anything.
 `LEXSYNC_REQUIRE_PARITY=1` turns the graceful skip into a failure, so a job meant to run both

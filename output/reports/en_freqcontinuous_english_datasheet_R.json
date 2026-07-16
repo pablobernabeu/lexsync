@@ -111,7 +111,7 @@
       "continuous"
     ],
     "stimuli_file": "output/stimuli/en_freqcontinuous_english_stimuli_R.csv",
-    "stimuli_sha256": "e6d774bfdb205422acd907bb049353366f1590f6bf1988974e77fddcf2e3f96f"
+    "stimuli_sha256": "8151a0787d989557463f4d2ac5e1c11f5bb943283774da0ed66748724f54da2a"
   },
   "reproducibility": {
     "seed": 2026,
@@ -128,7 +128,7 @@
   "artifacts": [
     {
       "file": "output/stimuli/en_freqcontinuous_english_stimuli_R.csv",
-      "sha256": "e6d774bfdb205422acd907bb049353366f1590f6bf1988974e77fddcf2e3f96f"
+      "sha256": "8151a0787d989557463f4d2ac5e1c11f5bb943283774da0ed66748724f54da2a"
     },
     {
       "file": "output/reports/en_freqcontinuous_english_descriptives_R.csv",
@@ -148,7 +148,7 @@
     },
     {
       "file": "output/experiments/en_freqcontinuous_english.html",
-      "sha256": "d86c59e8a71a785c8896c2714d2cb3cc61b742a26781b4484a83eca52b8b017e"
+      "sha256": "3ced5d8d9e5cf1ae5d55c60a5a4079d148f66f4dd6933b6812b6c92fa108ea83"
     }
   ]
 }

@@ -88,8 +88,9 @@ event sequence, or supplies its own `events`.
 
 ## Counterbalancing
 
-Two recipes are available, and the paradigm chooses between them. Trial order comes from a seeded
-generator, so it is reproducible within an engine but, unlike the selection, not across the two.
+Two recipes are available, and the paradigm chooses between them. Trial order comes from a seeded,
+keyed-hash shuffle, a pure function of the design rather than a draw from a generator, so the same
+seed gives the same order in both engines.
 
 ::: lexsync.counterbalance
 

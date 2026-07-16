@@ -19,16 +19,18 @@ two are documented separately but built from one repository and released under o
 [API reference](api.md){ .md-button }
 [The R package](https://pablobernabeu.github.io/lexsync/r/){ .md-button }
 
-## The two engines select the same stimuli
+## The two engines produce the same experiment
 
-The headline property is that the R and Python engines select byte-identical stimuli. Nothing in
-the selection path draws a random number. Distances are rounded before they are compared, ties are
-broken by UTF-8 byte order and then by row id, and the lexicon itself is sorted by byte order at
-load time, so neither the platform's locale nor the last bit of a floating-point sum can change
-which words come out. A laboratory can therefore run the R package and a collaborator the Python
-one, and the materials will agree rather than merely resemble each other. Continuous integration
-checks this on fifteen worked designs across English, Spanish and Mandarin Chinese, comparing the
-regenerated Python selection against the committed R reference.
+The headline property is that the R and Python engines produce byte-identical output: the same
+stimuli, and the same generated experiment down to the trial order. Nothing in the package draws a
+random number. Distances are rounded before they are compared, ties are broken by UTF-8 byte order
+and then by row id, the lexicon itself is sorted by byte order at load time, and trial order comes
+from a keyed hash of the design rather than from a generator, so neither the platform's locale nor
+the last bit of a floating-point sum can change what comes out. A laboratory can therefore run the
+R package and a collaborator the Python one, and the materials will agree rather than merely
+resemble each other. Continuous integration checks this on fifteen worked designs across English,
+Spanish and Mandarin Chinese, comparing the regenerated Python output against the committed R
+reference.
 
 !!! note "Two documented exceptions"
 
@@ -40,9 +42,11 @@ regenerated Python selection against the committed R reference.
     equally optimal but different set. Every run's materials datasheet records which case applies,
     so the distinction travels with the stimuli instead of living only in this paragraph.
 
-Trial order is a separate matter. It is drawn from each engine's own seeded generator, which makes
-it reproducible within an engine but not across the two. The parity contract covers which items
-were selected and how they were paired and assigned to conditions, not the order they are shown in.
+Trial order used to be the one exception, drawn from each engine's own seeded generator and never
+the same across the two. It is now ranked by the SHA-256 digest of each trial's seed, replicate,
+list, set and condition, a pure function of the design, so both engines emit the same permutation
+byte for byte while the order stays seed-dependent and free of systematic position effects. The
+parity contract covers the whole generated experiment, not only the selection.
 
 ## Install
 

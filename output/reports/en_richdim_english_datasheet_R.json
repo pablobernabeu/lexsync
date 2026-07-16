@@ -151,7 +151,7 @@
       "high_frequency"
     ],
     "stimuli_file": "output/stimuli/en_richdim_english_stimuli_R.csv",
-    "stimuli_sha256": "e6162ff588f232619946278c44e3298b140b4d5c382d390764349214a4f61ba1"
+    "stimuli_sha256": "36329804d813e465700b7a1777cf2da35d689ce6f4624857615b67515340f373"
   },
   "reproducibility": {
     "seed": 2026,
@@ -168,7 +168,7 @@
   "artifacts": [
     {
       "file": "output/stimuli/en_richdim_english_stimuli_R.csv",
-      "sha256": "e6162ff588f232619946278c44e3298b140b4d5c382d390764349214a4f61ba1"
+      "sha256": "36329804d813e465700b7a1777cf2da35d689ce6f4624857615b67515340f373"
     },
     {
       "file": "output/reports/en_richdim_english_descriptives_R.csv",
@@ -188,7 +188,7 @@
     },
     {
       "file": "output/experiments/en_richdim_english.html",
-      "sha256": "cdaac2318d4d40cc39491ba399b6de7856eae22cf99929d9d270c328a6afb74f"
+      "sha256": "a7b2fa1e45c955d06aecb7c23f1b2c79c47ddd1417ca5b231d3c4d719ea0998f"
     }
   ]
 }

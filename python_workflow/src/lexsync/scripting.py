@@ -121,7 +121,10 @@ def loop_table(stimuli: pd.DataFrame, events: list | None = None) -> pd.DataFram
             cols.append(c)
     tab = stimuli[cols].copy()
     if "trial" in tab.columns:
-        tab = tab.sort_values("trial").reset_index(drop=True)
+        # Stable, as R's order() is: `trial` repeats across lists (and across a
+        # resampled design's replicates), and on those ties the rows must keep
+        # their incoming order or the two engines write different loop tables.
+        tab = tab.sort_values("trial", kind="stable").reset_index(drop=True)
     return tab
 
 
@@ -389,8 +392,9 @@ def _json_r(obj) -> str:
 
     The generated experiment embeds this JSON, so the two engines emit byte-identical
     scripts only if they agree here. jsonlite writes no separator padding and cannot be
-    made to, and it drops a whole number's fractional part (a 2000 ms timeout becomes 2,
-    not 2.0), so Python is the side that conforms.
+    made to, it drops a whole number's fractional part (a 2000 ms timeout becomes 2,
+    not 2.0), and it writes non-ASCII text as raw UTF-8 where json.dumps defaults to
+    \\uXXXX escapes, so Python is the side that conforms on all three counts.
     """
     def integral(o):
         if isinstance(o, float) and o.is_integer():
@@ -400,7 +404,7 @@ def _json_r(obj) -> str:
         if isinstance(o, list):
             return [integral(v) for v in o]
         return o
-    return json.dumps(integral(obj), separators=(",", ":"))
+    return json.dumps(integral(obj), separators=(",", ":"), ensure_ascii=False)
 
 
 def _json_html(obj) -> str:

@@ -7,7 +7,7 @@
   "artifacts": [
     {
       "file": "output/stimuli/en_resample_english_stimuli_py.csv",
-      "sha256": "4007f82b6f14dd957e6f50a1a50b6da8ce23ff7b0da4190bfb83327d89224646"
+      "sha256": "704b2400390f01b74bde385538d80fb19c2b06ea854e256c0988833ae88bc7e0"
     },
     {
       "file": "output/reports/en_resample_english_descriptives_py.csv",
@@ -27,7 +27,7 @@
     },
     {
       "file": "output/experiments/en_resample_english.html",
-      "sha256": "718c00eb9d28028e316bd1ac1433a302a139e73822f5d059393f8c90cb5dab5f"
+      "sha256": "1e8a9108b02a6bc130439fdc7dbffaed59fd04968bfe1b0cfc9b5add34101890"
     }
   ],
   "counterbalancing": {
@@ -82,7 +82,7 @@
     "n_conditions": 2,
     "n_total": 240,
     "stimuli_file": "output/stimuli/en_resample_english_stimuli_py.csv",
-    "stimuli_sha256": "4007f82b6f14dd957e6f50a1a50b6da8ce23ff7b0da4190bfb83327d89224646"
+    "stimuli_sha256": "704b2400390f01b74bde385538d80fb19c2b06ea854e256c0988833ae88bc7e0"
   },
   "lexsync_datasheet_version": "1.0",
   "materials_source": {

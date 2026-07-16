@@ -10,7 +10,7 @@
 - **Selection:** item table (user-supplied)
 - **Cross-engine determinism:** n/a (user-supplied items)
 - **Counterbalancing:** latin_square_target, 2 list(s)
-- **Items:** 20 rows across 2 conditions (grammatical, ungrammatical)
+- **Items:** 20 rows across 2 conditions (ungrammatical, grammatical)
 - **Seed:** 2026  |  **Versions:** engine R, lexsync 0.1.0, R 4.6.1, readr 2.2.0, stringdist 0.9.17, jsonlite 2.0.0, digest 0.6.39
 
 ## Suggested analysis

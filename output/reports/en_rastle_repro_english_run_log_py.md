@@ -1,8 +1,8 @@
 # lexsync run log: en_rastle_repro
 
 - Engine: Python 3.13.7
-- Started: 2026-07-16T16:40:08
-- Finished: 2026-07-16T16:40:08
+- Started: 2026-07-17T01:54:58
+- Finished: 2026-07-17T01:54:58
 
 ## Run metadata
 
@@ -15,30 +15,30 @@
 
 ## Steps
 
-- **2026-07-16T16:40:08**: loading items 'items/rastle_priming_en.csv'
-- **2026-07-16T16:40:08**: loaded 12 items across 2 conditions
+- **2026-07-17T01:54:58**: loading items 'items/rastle_priming_en.csv'
+- **2026-07-17T01:54:58**: loaded 12 items across 2 conditions
     - conditions: related, unrelated
-- **2026-07-16T16:40:08**: wrote 'en_rastle_repro_english_stimuli_py.csv'
+- **2026-07-17T01:54:58**: wrote 'en_rastle_repro_english_stimuli_py.csv'
     - path: output\stimuli\en_rastle_repro_english_stimuli_py.csv
     - rows: 24
-    - md5: 6419e6db12574368d73a3b9783b24ee4
-- **2026-07-16T16:40:08**: wrote 'en_rastle_repro_english_psychopy.py'
+    - md5: 3f0b27cc792db7c4971b4627b5e24899
+- **2026-07-17T01:54:58**: wrote 'en_rastle_repro_english_psychopy.py'
     - path: output\experiments\en_rastle_repro_english_psychopy.py
     - rows: None
     - md5: d7d371e4085537b1540916a356346e7b
-- **2026-07-16T16:40:08**: wrote 'en_rastle_repro_english.osexp'
+- **2026-07-17T01:54:58**: wrote 'en_rastle_repro_english.osexp'
     - path: output\experiments\en_rastle_repro_english.osexp
     - rows: None
     - md5: 9284d0e6f35c9d03cd94e31170cad54f
-- **2026-07-16T16:40:08**: wrote 'en_rastle_repro_english.html'
+- **2026-07-17T01:54:58**: wrote 'en_rastle_repro_english.html'
     - path: output\experiments\en_rastle_repro_english.html
     - rows: None
-    - md5: 443f5a1c0f47315c9469a87ec7132da6
-- **2026-07-16T16:40:08**: wrote 'en_rastle_repro_english_datasheet_py.json'
+    - md5: 2d6ff22201bf8c6a6a5db1d56a3dac56
+- **2026-07-17T01:54:58**: wrote 'en_rastle_repro_english_datasheet_py.json'
     - path: output\reports\en_rastle_repro_english_datasheet_py.json
     - rows: None
-    - md5: 8d722f1e7afbfa9218ee549ebde17664
-- **2026-07-16T16:40:08**: wrote 'en_rastle_repro_english_datasheet_py.md'
+    - md5: 2ed26925d7fef8f5ae0f1ca34b210836
+- **2026-07-17T01:54:58**: wrote 'en_rastle_repro_english_datasheet_py.md'
     - path: output\reports\en_rastle_repro_english_datasheet_py.md
     - rows: None
     - md5: cf84dad54af024a941f1aa38be6797b6

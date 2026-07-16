@@ -7,7 +7,7 @@
   "artifacts": [
     {
       "file": "output/stimuli/en_freqcontrast_english_stimuli_py.csv",
-      "sha256": "c44728af862554060611697f90849de55d5a74447b8fb9492cfee823cef0a2b4"
+      "sha256": "bce843e0e150d31a0778892623d7a2da6a17f54ca4e517f93f4adc5276bd9907"
     },
     {
       "file": "output/reports/en_freqcontrast_english_descriptives_py.csv",
@@ -27,7 +27,7 @@
     },
     {
       "file": "output/experiments/en_freqcontrast_english.html",
-      "sha256": "1b46d9b3ab9ad0d5fee725be0e55ac08cbeb0a09ccc8f34cd00a50fd70bd979f"
+      "sha256": "d2db2dd093ec3a8a4aad1a31fff5c18c0e76ffe24bc643ed9b7f6c05aaa2b72b"
     }
   ],
   "counterbalancing": {
@@ -82,7 +82,7 @@
     "n_conditions": 2,
     "n_total": 160,
     "stimuli_file": "output/stimuli/en_freqcontrast_english_stimuli_py.csv",
-    "stimuli_sha256": "c44728af862554060611697f90849de55d5a74447b8fb9492cfee823cef0a2b4"
+    "stimuli_sha256": "bce843e0e150d31a0778892623d7a2da6a17f54ca4e517f93f4adc5276bd9907"
   },
   "lexsync_datasheet_version": "1.0",
   "materials_source": {

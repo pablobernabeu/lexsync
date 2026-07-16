@@ -126,11 +126,11 @@
     "n_total": 160,
     "n_conditions": 2,
     "conditions": [
-      "sparse_neighbourhood",
-      "dense_neighbourhood"
+      "dense_neighbourhood",
+      "sparse_neighbourhood"
     ],
     "stimuli_file": "output/stimuli/en_ndensity_english_stimuli_R.csv",
-    "stimuli_sha256": "0f99a2d2c32ef3b3e142a9a3c727338f01ac6ded3ec9a515c7c8fd91042606c6"
+    "stimuli_sha256": "9b9164e7708f68ea3519e9fcd9389bf903b4e34aba987902b0881de57a22488f"
   },
   "reproducibility": {
     "seed": 2026,
@@ -147,7 +147,7 @@
   "artifacts": [
     {
       "file": "output/stimuli/en_ndensity_english_stimuli_R.csv",
-      "sha256": "0f99a2d2c32ef3b3e142a9a3c727338f01ac6ded3ec9a515c7c8fd91042606c6"
+      "sha256": "9b9164e7708f68ea3519e9fcd9389bf903b4e34aba987902b0881de57a22488f"
     },
     {
       "file": "output/reports/en_ndensity_english_descriptives_R.csv",
@@ -167,7 +167,7 @@
     },
     {
       "file": "output/experiments/en_ndensity_english.html",
-      "sha256": "e8b9099632eaf00ba54b33e75da9d633b2f6a7eee725f1ab51efa97b03a4777a"
+      "sha256": "8ce1ea1916e973069a41f12248e6fa1f5942f3f2b36ff97249904a7e608cf498"
     }
   ]
 }

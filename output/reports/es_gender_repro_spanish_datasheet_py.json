@@ -7,7 +7,7 @@
   "artifacts": [
     {
       "file": "output/stimuli/es_gender_repro_spanish_stimuli_py.csv",
-      "sha256": "bab9f9baeaa96ad05d5f1a727268c028b9b15301b5387d4856b33c81b819a305"
+      "sha256": "ea82b29ac1adeb7bb0fc3a2f32c1740162dbc2d49afc861f5d801523cad81949"
     },
     {
       "file": "output/reports/es_gender_repro_spanish_descriptives_py.csv",
@@ -27,7 +27,7 @@
     },
     {
       "file": "output/experiments/es_gender_repro_spanish.html",
-      "sha256": "799370e7875cd2236c6119f3e699febaeee1e1c1b5c3ed3fe64aeeb7bec84091"
+      "sha256": "3ec93911703e255ac382697fa60ffccd9d61db5a3fabc1ed73094b7bc07c11a4"
     }
   ],
   "counterbalancing": {
@@ -76,13 +76,13 @@
   },
   "items": {
     "conditions": [
-      "feminine",
-      "masculine"
+      "masculine",
+      "feminine"
     ],
     "n_conditions": 2,
     "n_total": 96,
     "stimuli_file": "output/stimuli/es_gender_repro_spanish_stimuli_py.csv",
-    "stimuli_sha256": "bab9f9baeaa96ad05d5f1a727268c028b9b15301b5387d4856b33c81b819a305"
+    "stimuli_sha256": "ea82b29ac1adeb7bb0fc3a2f32c1740162dbc2d49afc861f5d801523cad81949"
   },
   "lexsync_datasheet_version": "1.0",
   "materials_source": {

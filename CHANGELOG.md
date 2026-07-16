@@ -61,6 +61,25 @@ no function signature changes.
 
 ### Changed
 
+- **Breaking:** trial order within each counterbalancing list is now produced by
+  a seeded, keyed-hash shuffle shared by both engines. Each row is ranked by the
+  SHA-256 digest of `seed|replicate|list|set|condition`, a tuple that identifies
+  the trial uniquely under either counterbalancing recipe, so the permutation is
+  a pure function of the design: the same bytes from R and Python on any
+  platform, and a different order for every seed. Previously R shuffled with
+  `sample()` (Mersenne Twister) and Python with numpy's PCG64, so the same seed
+  could never give the same permutation and the trial lists were the one
+  engine-specific artefact. All 75 generated experiment files (the PsychoPy
+  script, OpenSesame experiment, jsPsych page and both loop-table CSVs, for all
+  15 bundled designs) are now byte-identical across the engines, and the CI
+  parity gate now compares the `trial` column of the stimuli CSVs as well.
+  Stimulus selection, pairing and lists are unchanged, but every design's trial
+  order changes relative to the previous artefacts, because the keyed-hash
+  permutation differs from the ones the old generators drew. Trial order remains
+  seeded and randomised in the sense that matters for position effects, and the
+  package no longer touches any random-number generator, so there is no
+  generator state to save or restore and a run cannot perturb the calling
+  script's random stream.
 - Repositioned the project as a general-purpose psycholinguistics toolkit rather
   than a generalisation of one study. The longitudinal EEG study it grew from is
   now presented as one of twelve worked examples it reproduces.
@@ -101,8 +120,6 @@ no function signature changes.
 - `participant_table()` crosses its factors in `expand.grid()` order in both
   engines, so either allocates the same cell to a given participant number.
 - `merge_norms()` preserves the lexicon's row order in R, as pandas does.
-- R's seeded counterbalancing saves and restores the caller's RNG state, so
-  running a design no longer perturbs the calling script's random stream.
 - Datasheets record the tolerance windows and the pseudoword generator that
   actually ran, filter dimensions identically in both engines, and report the
   running package version rather than a hardcoded string.
@@ -117,9 +134,9 @@ no function signature changes.
   real word. R now resolves an undecided comparison to FALSE, as Python does.
 - The generated PsychoPy script and OpenSesame experiment are now byte-identical
   across the two engines. Python's embedded event JSON padded its separators and
-  wrote a whole-number timeout as `2.0` where jsonlite writes `2`. The trial
-  lists remain engine-specific, because trial order is drawn from each language's
-  own seeded generator.
+  wrote a whole-number timeout as `2.0` where jsonlite writes `2`. (The trial
+  lists are covered by the keyed-hash shuffle under Changed, which makes every
+  generated file byte-identical.)
 - Documentation no longer describes the jsPsych output as self-contained. The
   jsPsych library loads from a CDN, so the machine running the file needs an
   internet connection.

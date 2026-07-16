@@ -96,15 +96,12 @@ jobs:
 
       # Both engines write experiments to the same paths, so a diff against the
       # committed tree only ever compares the last engine to run against itself. Run
-      # each into its own directory and compare them directly. The generated scripts
-      # must match byte for byte; the trial lists (the *.csv loop tables, and the
-      # TRIALS array the .html embeds) carry the seeded order, which is engine-specific
-      # by design because R's sample() and numpy's PCG64 cannot agree on a permutation.
-      - name: Fail if the two engines generated different experiment scripts
+      # each into its own directory and compare everything directly: the keyed-hash
+      # shuffle makes the trial order itself engine-identical, so every generated
+      # file, scripts and trial lists alike, must match byte for byte.
+      - name: Fail if the two engines generated different experiments
         run: |
-          Rscript -e 'library(lexsync); run_pipeline("config/design_en_lexdec.yaml", "config/schema.yaml", "/tmp/eng_r")'
-          python -c "from lexsync.run_pipeline import run_pipeline; run_pipeline('config/design_en_lexdec.yaml','config/schema.yaml','/tmp/eng_py')"
-          for f in en_lexdec_english_psychopy.py en_lexdec_english.osexp; do
-            cmp "/tmp/eng_r/experiments/$f" "/tmp/eng_py/experiments/$f" \
-              || { echo "::error::the engines generated different $f"; exit 1; }
-          done
+          Rscript -e 'library(lexsync); run_all("config", "config/schema.yaml", "/tmp/eng_r")'
+          python -c "from lexsync.run_pipeline import run_all; run_all('config','config/schema.yaml','/tmp/eng_py')"
+          diff -r /tmp/eng_r/experiments /tmp/eng_py/experiments \
+            || { echo "::error::the engines generated different experiments"; exit 1; }

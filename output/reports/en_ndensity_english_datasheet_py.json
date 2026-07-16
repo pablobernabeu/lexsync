@@ -7,7 +7,7 @@
   "artifacts": [
     {
       "file": "output/stimuli/en_ndensity_english_stimuli_py.csv",
-      "sha256": "527c761d30786701ed894b43915fc5b559cd9b4da8d72d995c65b10386573397"
+      "sha256": "ae8e390fb662e56962a09dc8905467dab1a81b7911e3d3e9cfa5a22059e699ab"
     },
     {
       "file": "output/reports/en_ndensity_english_descriptives_py.csv",
@@ -27,7 +27,7 @@
     },
     {
       "file": "output/experiments/en_ndensity_english.html",
-      "sha256": "4598a9e6fa2309cae372d08c9f17c624a758fee2b8f32e49aaf9be0549b05454"
+      "sha256": "8ce1ea1916e973069a41f12248e6fa1f5942f3f2b36ff97249904a7e608cf498"
     }
   ],
   "counterbalancing": {
@@ -76,13 +76,13 @@
   },
   "items": {
     "conditions": [
-      "sparse_neighbourhood",
-      "dense_neighbourhood"
+      "dense_neighbourhood",
+      "sparse_neighbourhood"
     ],
     "n_conditions": 2,
     "n_total": 160,
     "stimuli_file": "output/stimuli/en_ndensity_english_stimuli_py.csv",
-    "stimuli_sha256": "527c761d30786701ed894b43915fc5b559cd9b4da8d72d995c65b10386573397"
+    "stimuli_sha256": "ae8e390fb662e56962a09dc8905467dab1a81b7911e3d3e9cfa5a22059e699ab"
   },
   "lexsync_datasheet_version": "1.0",
   "materials_source": {

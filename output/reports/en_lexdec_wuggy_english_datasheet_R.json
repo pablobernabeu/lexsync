@@ -65,7 +65,7 @@
       "word"
     ],
     "stimuli_file": "output/stimuli/en_lexdec_wuggy_english_stimuli_R.csv",
-    "stimuli_sha256": "5a5b081f9c736f541e1bb6d6b6fe31b4f5a7cc8a6446ce923fad40692be2a312"
+    "stimuli_sha256": "bf4beb027f5f1a2894c93c987325be27a223bc9b776e3aad812b8469507f1c8e"
   },
   "reproducibility": {
     "seed": 2026,
@@ -82,7 +82,7 @@
   "artifacts": [
     {
       "file": "output/stimuli/en_lexdec_wuggy_english_stimuli_R.csv",
-      "sha256": "5a5b081f9c736f541e1bb6d6b6fe31b4f5a7cc8a6446ce923fad40692be2a312"
+      "sha256": "bf4beb027f5f1a2894c93c987325be27a223bc9b776e3aad812b8469507f1c8e"
     },
     {
       "file": "output/reports/en_lexdec_wuggy_english_descriptives_R.csv",
@@ -102,7 +102,7 @@
     },
     {
       "file": "output/experiments/en_lexdec_wuggy_english.html",
-      "sha256": "bdf209e175edcd51e4c81eafe6fb839900f1b522fcfe7fb26310c47d720239aa"
+      "sha256": "39bc22e8c369d879de82a44b2521f80ec96b33e08795efcf8b8f7290e0adf69f"
     }
   ]
 }

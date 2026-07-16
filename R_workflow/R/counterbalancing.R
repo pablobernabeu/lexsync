@@ -3,7 +3,8 @@
 # (every matched item shown, lists split the matched sets) and
 # `latin_square_target` for paired/sentence paradigms (each item appears once per
 # list in one rotated condition, so a target is never repeated within a list).
-# Trial order within a list is shuffled with a seeded generator. Mirrors
+# Trial order within a list comes from a seeded, keyed-hash shuffle, so the R and
+# Python engines produce the same order byte for byte. Mirrors
 # python_workflow/src/lexsync/counterbalancing.py.
 
 .cb_recipe <- function(design) {
@@ -13,27 +14,25 @@
   if (is.null(p)) "factorial" else (p$counterbalance %||% "factorial")
 }
 
-# set.seed() reseeds the caller's global stream, which a package must not do
-# (Writing R Extensions); the shuffles below save the stream and put it back on
-# exit. A session that had never drawn a random number must end with no
-# .Random.seed at all, hence the removal branch.
-.save_seed <- function() {
-  if (exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) {
-    get(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
-  } else {
-    NULL
-  }
-}
-
-.restore_seed <- function(old) {
-  if (is.null(old)) {
-    if (exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) {
-      rm(".Random.seed", envir = .GlobalEnv)
-    }
-  } else {
-    assign(".Random.seed", old, envir = .GlobalEnv)
-  }
-  invisible(NULL)
+# A trial's position within its list is decided by a keyed hash, not a random
+# number generator: each row is ranked by the SHA-256 digest of
+# "seed|replicate|list|set|condition", a tuple that identifies the trial uniquely
+# under either recipe. Distinct inputs to SHA-256 behave as independent uniform
+# draws, so ordering by the digest realises a seeded random permutation, but as a
+# pure function of the design: the same bytes from the R and Python engines on any
+# platform, no generator state to save or restore, and a different order for every
+# seed. R's own sample() and numpy's PCG64 could never agree on a permutation,
+# which used to be the one engine-specific artefact in an otherwise byte-identical
+# pipeline. The replicate term keeps independently counterbalanced item sets from
+# sharing one permutation pattern.
+.shuffle_deterministic <- function(df, seed) {
+  rep_id <- if ("replicate" %in% names(df)) df$replicate else 0L
+  key <- sprintf("%s|%s|%s|%s|%s", seed, rep_id, df$list, df$set, df$condition)
+  rank <- vapply(key, function(k) digest::digest(k, algo = "sha256", serialize = FALSE),
+                 character(1), USE.NAMES = FALSE)
+  df <- df[order(rank, method = "radix"), , drop = FALSE]
+  df$trial <- seq_len(nrow(df))
+  df
 }
 
 #' Assign stimuli to lists and a randomised, reproducible trial order
@@ -81,16 +80,8 @@ counterbalance_factorial <- function(stimuli, design, schema) {
     stimuli$list <- list_of_set[match(stimuli$set, sets)]
   }
 
-  old_seed <- .save_seed()
-  on.exit(.restore_seed(old_seed), add = TRUE)
-  set.seed(seed)
-  order_within <- function(df) {
-    df <- df[sample(nrow(df)), , drop = FALSE]
-    df$trial <- seq_len(nrow(df))
-    df
-  }
   parts <- split(stimuli, stimuli$list)
-  stimuli <- do.call(rbind, lapply(parts, order_within))
+  stimuli <- do.call(rbind, lapply(parts, .shuffle_deterministic, seed = seed))
   rownames(stimuli) <- NULL
   stimuli
 }
@@ -110,9 +101,6 @@ counterbalance_latin_square <- function(stimuli, design, schema) {
   n_lists <- design$counterbalance$lists %||% n_cond
   sets <- sort(unique(stimuli$set))
 
-  old_seed <- .save_seed()
-  on.exit(.restore_seed(old_seed), add = TRUE)
-  set.seed(seed)
   parts <- list()
   for (li in seq_len(n_lists) - 1L) {
     rows <- vector("list", length(sets))
@@ -127,8 +115,7 @@ counterbalance_latin_square <- function(stimuli, design, schema) {
     }
     df <- do.call(rbind, rows)
     df$list <- li + 1L
-    df <- df[sample(nrow(df)), , drop = FALSE]
-    df$trial <- seq_len(nrow(df))
+    df <- .shuffle_deterministic(df, seed)
     parts[[length(parts) + 1L]] <- df
   }
   out <- do.call(rbind, parts)

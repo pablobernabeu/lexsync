@@ -45,8 +45,21 @@
 * OpenSesame experiments now present trials in the seeded counterbalanced order.
   The order was previously randomised again at run time, so what ran was not what
   the pipeline generated and recorded.
-* `counterbalance()` saves and restores the caller's RNG state, so a seeded run no
-  longer perturbs the calling script's random stream.
+* Breaking change: trial order within each counterbalancing list now comes from
+  a seeded, keyed-hash shuffle shared with the Python engine. Each row is ranked
+  by the SHA-256 digest of `seed|replicate|list|set|condition`, a tuple that
+  identifies the trial uniquely under either counterbalancing recipe, so the
+  permutation is a pure function of the design: byte-identical from both engines
+  on any platform, and different for every seed. Previously the order was drawn
+  from `sample()`, which could never match numpy's generator for the same seed,
+  so the trial lists were the one engine-specific artefact. All 75 generated
+  experiment files across the 15 bundled designs are now byte-identical across
+  the engines, and the parity gate now compares the `trial` column of the
+  stimuli CSVs. Stimulus selection, pairing and lists are unchanged, but every
+  design's trial order changes relative to the previous artefacts. The package
+  no longer uses R's random-number generator at all, so a seeded run cannot
+  perturb the calling script's random stream and there is no RNG state to save
+  or restore.
 * `merge_norms()` preserves the lexicon's row order, and `participant_table()`
   crosses factors in `expand.grid()` order in both engines.
 * Datasheets record the tolerance windows and pseudoword generator that actually
@@ -61,9 +74,9 @@
   row when the tolerance window is NA (an anchor of a single item gives `sd = NA`).
   An undecided comparison now resolves to `FALSE`, as it does in Python, so the
   window is relaxed and a real word is selected.
-* The generated PsychoPy script and OpenSesame experiment are now byte-identical
-  to the Python engine's. Trial lists remain engine-specific, because trial order
-  is drawn from R's own seeded generator.
+* The generated PsychoPy script, OpenSesame experiment and jsPsych page are now
+  byte-identical to the Python engine's, trial lists included (see the keyed-hash
+  shuffle entry above).
 * Selected stimuli are unchanged for all 15 bundled designs.
 * See the top-level `CHANGELOG.md` for the full, cross-language history and the
   planned methodological roadmap.

@@ -81,8 +81,9 @@ marker.
 
 ## Counterbalancing
 
-`counterbalance` picks a recipe from the design's paradigm and applies it. Trial order is shuffled
-within each list by a generator seeded from `schema.seed`, and a `trial` column numbers the result.
+`counterbalance` picks a recipe from the design's paradigm and applies it. Trial order within each
+list comes from a keyed-hash shuffle seeded by `schema.seed`, and a `trial` column numbers the
+result.
 
 The rest of this page follows one small design through to its three exported experiments. It runs
 against the bundled lexicon, so the output shown is the output you will get.
@@ -130,10 +131,10 @@ print(stimuli[["trial", "list", "set", "condition", "word"]].head(3).to_string(i
 ```
 
 ```text
- trial  list  set      condition   word
-     1     1    1  low_frequency   myth
-     2     1    2 high_frequency street
-     3     1    4  low_frequency  sings
+ trial  list  set      condition  word
+     1     1    4 high_frequency water
+     2     1    1 high_frequency  knew
+     3     1    3 high_frequency  fact
 ```
 
 A design with a `replicate` column, from `resample_stimuli`, is counterbalanced replicate by
@@ -158,12 +159,14 @@ print(lexsync.participant_table({"list": [1, 2], "order": ["forward", "reverse"]
 The grid is crossed with the first factor varying fastest, matching R's `expand.grid`, so both
 engines put participant 3 in the same cell.
 
-!!! warning "Trial order is not part of the parity contract"
+!!! note "Trial order is part of the parity contract"
 
-    The selection, the pairing and the condition assignment are byte-identical across the engines.
-    Trial order is not, because it comes from each engine's own seeded random generator, and R's and
-    NumPy's differ. Order is reproducible within an engine, given the seed. If you need the two
-    engines to present items in the same order, sort the loop table yourself.
+    The selection, the pairing, the condition assignment and the trial order are all byte-identical
+    across the engines. The shuffle draws no random number, since R's and NumPy's generators could
+    never agree on a permutation. Each trial is instead ranked by the SHA-256 digest of its seed,
+    replicate, list, set and condition, so the order is a pure function of the design: the same
+    bytes from either engine on any platform, a different order for every seed, and no systematic
+    position effects.
 
 ## Triggers
 
@@ -180,10 +183,10 @@ print(assign_triggers(stimuli)[["word", "condition", "condition_trigger", "item_
 ```
 
 ```text
-  word      condition  condition_trigger  item_trigger
-  myth  low_frequency                101            40
-street high_frequency                102            41
- sings  low_frequency                101            43
+ word      condition  condition_trigger  item_trigger
+water high_frequency                101            43
+ knew high_frequency                101            40
+ fact high_frequency                101            42
 ```
 
 The codes land in the loop table as `condition_trigger` and `item_trigger`, and the event's
@@ -191,9 +194,9 @@ The codes land in the loop table as `condition_trigger` and `item_trigger`, and 
 
 ```text
 trial,list,set,condition,word,condition_trigger,item_trigger
-1,1,1,low_frequency,myth,101,40
-2,1,2,high_frequency,street,102,41
-3,1,4,low_frequency,sings,101,43
+1,1,4,high_frequency,water,101,43
+2,1,1,high_frequency,knew,101,40
+3,1,3,high_frequency,fact,101,42
 ```
 
 The schema sets the hardware defaults: `triggers.parallel_address` (`0x0378`, a typical LPT1 base

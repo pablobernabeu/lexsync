@@ -213,13 +213,13 @@
     "n_total": 72,
     "n_conditions": 4,
     "conditions": [
-      "LF_largeN",
       "HF_smallN",
       "HF_largeN",
+      "LF_largeN",
       "LF_smallN"
     ],
     "stimuli_file": "output/stimuli/en_andrews_repro_english_stimuli_R.csv",
-    "stimuli_sha256": "c81e25e7c47f07435190ffaf630e932af3e8034d4ccc5ed5bc535d04c6217856"
+    "stimuli_sha256": "8eb4efce71ba544a64d2113a66f34b43f0d12239551351eac6a9416ce30e2f2d"
   },
   "reproducibility": {
     "seed": 2026,
@@ -236,7 +236,7 @@
   "artifacts": [
     {
       "file": "output/stimuli/en_andrews_repro_english_stimuli_R.csv",
-      "sha256": "c81e25e7c47f07435190ffaf630e932af3e8034d4ccc5ed5bc535d04c6217856"
+      "sha256": "8eb4efce71ba544a64d2113a66f34b43f0d12239551351eac6a9416ce30e2f2d"
     },
     {
       "file": "output/reports/en_andrews_repro_english_descriptives_R.csv",
@@ -256,7 +256,7 @@
     },
     {
       "file": "output/experiments/en_andrews_repro_english.html",
-      "sha256": "f5aa05dc033c1237189e6f84cb77fbe0b22944ed4d07a8db5b5ad0c1c8b8b22b"
+      "sha256": "5204959a5082cac338f6263e73c6df9e96b8aff625187dded4abdef6cf8ea826"
     }
   ]
 }

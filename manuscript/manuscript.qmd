@@ -23,12 +23,12 @@ abstract: |
   stimulus onset. The trial is described declaratively as a sequence of events, so the
   same engine builds factorial word studies, lexical decision with generated
   pseudowords, priming and self-paced reading from configuration rather than code.
-  The default matching methods and the pseudoword generation are deterministic,
-  so the two engines select the same stimuli. We demonstrate this on twelve
-  worked examples in English, Spanish and Mandarin Chinese (across word,
-  pseudoword, paired and sentence stimuli), one of which shows that the workflow
-  extends to a logographic writing system, while three reproduce published
-  designs from the literature. The generation step
+  The default matching methods, the pseudoword generation and the trial order
+  are deterministic, so the two engines produce byte-identical experiments. We
+  demonstrate this on twelve worked examples in English, Spanish and Mandarin
+  Chinese (across word, pseudoword, paired and sentence stimuli), one of which
+  shows that the workflow extends to a logographic writing system, while three
+  reproduce published designs from the literature. The generation step
   requires no presentation software and no hardware, which keeps the whole
   workflow reproducible. 'lexsync' is general-purpose and treats the stimulus set
   as a reproducible artefact, distributed under open licences with a
@@ -197,8 +197,9 @@ behaviour. From a corpus 'lexsync' selects matched stimuli, counterbalances and
 documents them. It then writes a 'PsychoPy' script in which each onset trigger is
 bound, using `win.callOnFlip`, to the exact screen flip on which the critical
 stimulus appears, together with a complete 'OpenSesame' experiment. Crucially
-the default matching methods are deterministic, so the R and Python engines
-select identical materials.
+the default matching methods and the trial ordering are deterministic, so the
+R and Python engines select identical materials, order them identically and
+write byte-identical experiment files.
 The trial itself is not hard-wired to a single task: a design declares an ordered
 sequence of trial *events*, and each presentation backend renders that sequence,
 so the same machinery produces a factorial word study, a lexical-decision task
@@ -315,7 +316,20 @@ for the neighbourhood-density demonstrations below.
 ## Counterbalancing and reporting
 
 Matched items are assigned to presentation lists and a reproducible trial order,
-and a participant table crosses any counterbalancing factors. A design may also
+and a participant table crosses any counterbalancing factors. The trial order
+within each list comes from a seeded, keyed-hash shuffle: each trial is ranked
+by the SHA-256 digest of the string `seed|replicate|list|set|condition`, a
+tuple that identifies it uniquely under either counterbalancing recipe.
+Distinct inputs to SHA-256 behave as independent uniform draws, so ranking by
+the digest realises a seeded random permutation, yet the permutation is a pure
+function of the design. A different seed gives a different order, and the same
+seed gives the same order, byte for byte, from both engines on any platform.
+No random-number generator is involved anywhere in the package, so there is no
+generator state to save or restore. The permutation is uniform, which is what
+makes it a legitimate randomisation rather than a merely reproducible one: over
+a range of seeds, each item's mean serial position sits at the centre of its
+list and each item reaches every position about equally often, a property the
+test suite pins. A design may also
 request *resampling*: several disjoint matched item sets are drawn, no item reused
 across them, so a study can run a different item sample per participant group or
 demonstrate an effect across samples, operationalising the long-standing
@@ -620,12 +634,13 @@ n_match <- isTRUE(n_identical == n_total)
 ```
 
 Finally, because the matcher is deterministic the two engines select the same
-matched (word, condition) pairs rather than merely similar ones (the seeded trial
-order differs, as the R and Python random-number generators do). Across the five
-matched word contrasts
+matched (word, condition) pairs rather than merely similar ones, and because
+the trial order is a keyed-hash function of the design they also place those
+pairs in the same order. Across the five matched word contrasts
 `r if (n_match) paste("all", n_total) else paste(n_identical, "of", n_total)` selected
-(word, condition) pairs were identical between the R and the Python engine, and
-every statistic they report agrees to the precision shown. @tbl-parity makes this
+(word, condition) pairs were identical between the R and the Python engine,
+every statistic they report agrees to the precision shown, and every generated
+experiment file is byte-identical between the engines. @tbl-parity makes this
 concrete for the English frequency contrast: the standardised mean difference of
 each dimension, computed independently in the two languages, coincides to the
 precision shown.
@@ -781,9 +796,11 @@ multilingual corpus to a hardware-timed, cross-platform experiment has not befor
 been available as a single installable, dual-language tool. Two features are
 worth emphasising. First, the deterministic matcher selects identical matched
 (word, condition) sets in the R and Python engines, with the reported match
-statistics agreeing to the precision shown; only the seeded trial order, which
-depends on each language's random-number generator, differs. A laboratory can
-therefore adopt 'lexsync' in whichever ecosystem it prefers without fear of
+statistics agreeing to the precision shown, and the keyed-hash trial order
+makes every generated experiment file byte-identical between them; the sole
+exceptions remain the covariance-aware (Mahalanobis) and optimal matching
+methods, whose linear-algebra backends differ in their last bits. A laboratory
+can therefore adopt 'lexsync' in whichever ecosystem it prefers without fear of
 divergent stimulus selection. Second, both
 laboratory targets upgrade the sequence-ordered triggers of the original
 workflow to onset-aligned markers (flip-locked in 'PsychoPy', and written

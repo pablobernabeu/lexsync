@@ -45,12 +45,13 @@ CASES = [
      ["list", "set", "condition", "prime", "target", "prime_type"]),
 ]
 
-# Trial order is drawn from each engine's own seeded generator (see the
-# counterbalancing module docstring): reproducible within an engine, not across
-# them. It is therefore outside the parity contract and excluded from the value
-# comparison, and the rows are sorted before comparison rather than compared in
-# file order, which is trial order.
-ORDER_COLS = {"trial"}
+# Trial order is part of the parity contract: the keyed-hash shuffle (see the
+# counterbalancing module docstring) makes it a pure function of the design, so
+# the two engines must agree on every row's `trial` exactly as they must on every
+# other value. Rows are still sorted on the identity columns before comparison,
+# because the engines may legitimately differ in how they ORDER the rows of the
+# stimuli CSV itself; the `trial` value each row carries is what is pinned.
+ORDER_COLS: set = set()
 
 
 @pytest.mark.parametrize("base,design,cols", CASES)

@@ -131,7 +131,7 @@
       "high_frequency"
     ],
     "stimuli_file": "output/stimuli/es_freqcontrast_spanish_stimuli_R.csv",
-    "stimuli_sha256": "9e964c582d1acbedcecf3afe9bf6b7faf29b5059f906f390dd50b0a3a5366e84"
+    "stimuli_sha256": "b54cc7620b347008feabb5e84f432c0a72e6b5f0add3d83eabef9fea259f8be8"
   },
   "reproducibility": {
     "seed": 2026,
@@ -148,7 +148,7 @@
   "artifacts": [
     {
       "file": "output/stimuli/es_freqcontrast_spanish_stimuli_R.csv",
-      "sha256": "9e964c582d1acbedcecf3afe9bf6b7faf29b5059f906f390dd50b0a3a5366e84"
+      "sha256": "b54cc7620b347008feabb5e84f432c0a72e6b5f0add3d83eabef9fea259f8be8"
     },
     {
       "file": "output/reports/es_freqcontrast_spanish_descriptives_R.csv",
@@ -168,7 +168,7 @@
     },
     {
       "file": "output/experiments/es_freqcontrast_spanish.html",
-      "sha256": "21b7ed433441842e1f0ba1d74d46491140640e5348531dba6c6d82d7fde6b81c"
+      "sha256": "75ffa6955fab764ac7b9e5932433c555667901c9277d680cbcd05938f3fcf3e8"
     }
   ]
 }

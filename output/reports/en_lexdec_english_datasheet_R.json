@@ -65,7 +65,7 @@
       "word"
     ],
     "stimuli_file": "output/stimuli/en_lexdec_english_stimuli_R.csv",
-    "stimuli_sha256": "364dd1d04a7eaaefe491cd4d1c24625a0d25eeba9c4e33543ed5be2163593ae4"
+    "stimuli_sha256": "d27f33049ffcdcd9d36aef11fd18179d878137751f7efbe72d7d7c13895290d3"
   },
   "reproducibility": {
     "seed": 2026,
@@ -82,7 +82,7 @@
   "artifacts": [
     {
       "file": "output/stimuli/en_lexdec_english_stimuli_R.csv",
-      "sha256": "364dd1d04a7eaaefe491cd4d1c24625a0d25eeba9c4e33543ed5be2163593ae4"
+      "sha256": "d27f33049ffcdcd9d36aef11fd18179d878137751f7efbe72d7d7c13895290d3"
     },
     {
       "file": "output/reports/en_lexdec_english_descriptives_R.csv",
@@ -102,7 +102,7 @@
     },
     {
       "file": "output/experiments/en_lexdec_english.html",
-      "sha256": "6777ecb302e337d807d2039e322c33ee53d94784ba7e2d0d5da7d38b2ff44b91"
+      "sha256": "cc05f5cc86fd6bcd3fb943019174e59fdfb3c611e2ce195bd3930a1514ea96ff"
     }
   ]
 }

@@ -15,9 +15,9 @@ A stimulus set is usually described rather than shared. The methods section says
 the words were matched on length and frequency, and the set itself, the criteria
 that produced it and the code that applied them are not recoverable from the
 paper. `lexsync` treats the set as an artefact instead of a description: the
-selection is deterministic, the R and Python engines select the same items from
-the same input, and each run emits a provenance record with the checksums needed
-to verify it.
+selection and the trial order are deterministic, the R and Python engines produce
+the same artefacts from the same input, and each run emits a provenance record
+with the checksums needed to verify it.
 
 This vignette explains the guarantee and its limits, the mechanisms that achieve
 it, the continuous-integration test that keeps it honest, and the two records a
@@ -43,12 +43,13 @@ design <- list(
 
 ## What is guaranteed
 
-The claim is narrow and worth stating exactly. Given the same lexicon and the
-same design, the R and Python engines select byte-identical stimuli under the
+The claim is worth stating exactly. Given the same lexicon and the same design,
+the R and Python engines produce byte-identical stimuli under the
 `standardised_euclidean` and `joint` matching methods, under continuous selection,
-and under both pseudoword generators. The claim covers which items are chosen and
-how they are paired. It does not cover the order they are presented in, and it is
-not guaranteed for the `mahalanobis` and `optimal` methods.
+and under both pseudoword generators. The claim covers which items are chosen, how
+they are paired and the order they are presented in, so the generated experiments
+are byte-identical in full. The only exceptions are the `mahalanobis` and
+`optimal` matching methods.
 
 Within one engine, selection is a pure function of its input.
 
@@ -64,19 +65,20 @@ because every operation that could depend on the ambient environment has been
 pinned. The interesting question is why the *Python* engine also agrees, since
 the two implementations share no code.
 
-## How byte-identical selection is achieved
+## How byte-identical output is achieved
 
 Cross-engine identity is not an accident of two careful translations. Each
 mechanism below closes a specific way the engines could otherwise drift.
 
-**No random number generator in the selection.** The obvious way to choose 15
-items from 700 is to sample them. `lexsync` never does. The anchor condition is
-chosen by an even spread across its sorted subpool, taking positions along the
-whole range rather than a random subset, and every later item is determined by a
-distance. A seeded RNG would not help here, because R's Mersenne-Twister stream
-and NumPy's are different streams: the same seed gives different draws, so any
-sampling step would break parity by construction. Determinism through absence is
-the only option that survives two languages.
+**No random number generator anywhere.** The obvious way to choose 15 items from
+700 is to sample them. `lexsync` never does. The anchor condition is chosen by an
+even spread across its sorted subpool, taking positions along the whole range
+rather than a random subset, and every later item is determined by a distance. A
+seeded RNG would not help here, because R's Mersenne-Twister stream and NumPy's
+are different streams: the same seed gives different draws, so any sampling step
+would break parity by construction. Determinism through absence is the only
+option that survives two languages, and it now extends to trial order, whose
+shuffle is described below.
 
 ```{r even-spread}
 anchor_pool <- pool[pool$frequency >= 5.2 & pool$frequency <= 7.0, ]
@@ -143,12 +145,21 @@ rather than a preference.
 in both engines, including the `unique()`, which matters when the pool is smaller
 than the requested n and the rounding produces a repeated index.
 
-### What is not covered: trial order
+### Trial order: a seeded shuffle without a generator
 
-Trial order is the honest exception, and it sits inside the pipeline rather than
-outside it. Order is drawn from a seeded generator, which makes it reproducible
-*within* an engine, and R's generator is not Python's, so the two engines produce
-different orders from the same seed.
+Trial order used to be the honest exception. Each engine drew the order from its
+own seeded generator, R's Mersenne-Twister against NumPy's PCG64, and the same
+seed could not give the same permutation, so an order was reproducible within an
+engine and different between the engines. That exception is retired. Order is now
+decided by a keyed hash: each row of a list is ranked by the SHA-256 digest of
+`seed|replicate|list|set|condition`, a tuple that identifies the trial uniquely
+under either counterbalancing recipe. Distinct inputs to SHA-256 behave as
+independent uniform draws, so sorting rows by their digests realises a seeded
+random permutation, and because a digest is a pure function of its input, the
+permutation is a pure function of the design: the same bytes from both engines on
+any platform, no generator state to save or restore, and a different order for
+every seed. The implementation is `.shuffle_deterministic()` in
+`R/counterbalancing.R`, mirrored in the Python engine's `counterbalancing.py`.
 
 ```{r trial-order}
 stim <- counterbalance(match_stimuli(pool, design, schema), design, schema)
@@ -157,17 +168,18 @@ same <- counterbalance(match_stimuli(pool, design, schema), design, schema)
 identical(stim$trial, same$trial)
 ```
 
-Order is reproducible from the seed on a given engine, which is what a
-replication of your study needs. It is deliberately outside the cross-engine
-contract, and the parity test excludes the `trial` column for exactly this reason.
-This is a defensible line: which items constitute the materials is a property of
-the design, whereas the order they happen to be shuffled into is a property of the
-run, and participants are normally given different orders anyway.
+The order is still randomised in the sense a study needs: an item's properties
+bear no systematic relation to its position, and a different seed gives a
+different order. What changed is that the permutation is engine-invariant, so it
+sits inside the cross-engine contract rather than outside it, and the guarantee
+reaches the generated experiments whole: for every shipped design, the PsychoPy
+script, the OpenSesame file, the jsPsych page and both loop-table CSVs are
+byte-identical across the engines.
 
 One detail worth noting for anyone embedding `lexsync` in a longer script:
-counterbalancing seeds the generator, but it saves the caller's random state
-first and restores it on exit, so calling it does not disturb the stream your own
-code is drawing from.
+counterbalancing no longer touches the random number generator at all, since
+nothing in the package consults one, so calling it cannot disturb the stream your
+own code is drawing from.
 
 ## The documented exceptions
 
@@ -227,8 +239,9 @@ The comparison is on identity columns: the word or target, the condition and the
 `set` index. Including `set` is what makes the test meaningful rather than
 cosmetic, since without it the engines could select the same items and pair them
 differently and still pass. Having matched on those, the test then checks every
-other shared column, so the dimensions each engine computes at run time
-(`n_density`, `old20`, `n_syllables`, `bigram_freq`) must also agree.
+other shared column, so the `trial` position and the dimensions each engine
+computes at run time (`n_density`, `old20`, `n_syllables`, `bigram_freq`) must
+also agree.
 
 Three details keep the gate from passing vacuously. The test skips when the R
 reference output is absent, since the Python package can be installed on its own,

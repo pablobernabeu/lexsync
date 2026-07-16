@@ -5,12 +5,12 @@ Mirrors R_workflow/R/counterbalancing.R. Two recipes are provided: the original
 ``factorial`` one (every matched item is shown, lists split the matched sets) and
 ``latin_square_target`` for paired/sentence paradigms (each item appears once per
 list in one rotated condition, so a target is never repeated within a list). Trial
-order within a list is shuffled with a seeded generator; the seed makes it
-reproducible within an engine (the R and Python RNGs differ, so order — but not
-the matched selection or the condition assignment — may differ between them).
+order within a list comes from a seeded, keyed-hash shuffle, so the R and Python
+engines produce the same order byte for byte.
 """
 from __future__ import annotations
 
+import hashlib
 from itertools import product
 
 import numpy as np
@@ -27,6 +27,27 @@ def _recipe(design: dict) -> str:
         return get_paradigm(name).get("counterbalance", "factorial")
     except ValueError:
         return "factorial"
+
+
+def _shuffle_deterministic(df: pd.DataFrame, seed) -> pd.DataFrame:
+    """Order the trials of one list by a keyed hash, not a random number generator.
+
+    Each row is ranked by the SHA-256 digest of "seed|replicate|list|set|condition",
+    a tuple that identifies the trial uniquely under either recipe. Distinct inputs
+    to SHA-256 behave as independent uniform draws, so ordering by the digest
+    realises a seeded random permutation, but as a pure function of the design: the
+    same bytes from the R and Python engines on any platform, and a different order
+    for every seed. R's sample() and numpy's PCG64 could never agree on a
+    permutation, which used to be the one engine-specific artefact in an otherwise
+    byte-identical pipeline. The replicate term keeps independently counterbalanced
+    item sets from sharing one permutation pattern.
+    """
+    rep = df["replicate"] if "replicate" in df.columns else [0] * len(df)
+    ranks = [hashlib.sha256(f"{seed}|{r}|{l}|{s}|{c}".encode("utf-8")).hexdigest()
+             for r, l, s, c in zip(rep, df["list"], df["set"], df["condition"])]
+    df = df.iloc[np.argsort(ranks, kind="stable")].copy()
+    df["trial"] = np.arange(1, len(df) + 1)
+    return df
 
 
 def counterbalance(stimuli: pd.DataFrame, design: dict, schema: dict) -> pd.DataFrame:
@@ -54,12 +75,8 @@ def counterbalance_factorial(stimuli: pd.DataFrame, design: dict, schema: dict) 
         sets = sorted(stimuli["set"].unique())
         mapping = {s: (i % n_lists) + 1 for i, s in enumerate(sets)}
         stimuli["list"] = stimuli["set"].map(mapping)
-    rng = np.random.default_rng(seed)
-    parts = []
-    for _, df in stimuli.groupby("list", sort=True):
-        df = df.iloc[rng.permutation(len(df))].copy()
-        df["trial"] = np.arange(1, len(df) + 1)
-        parts.append(df)
+    parts = [_shuffle_deterministic(df, seed)
+             for _, df in stimuli.groupby("list", sort=True)]
     return pd.concat(parts, ignore_index=True)
 
 
@@ -76,7 +93,6 @@ def counterbalance_latin_square(stimuli: pd.DataFrame, design: dict, schema: dic
     n_cond = len(conds)
     n_lists = (design.get("counterbalance") or {}).get("lists", n_cond)
     sets = sorted(stimuli["set"].unique())
-    rng = np.random.default_rng(seed)
     parts = []
     for li in range(n_lists):
         rows = []
@@ -88,8 +104,7 @@ def counterbalance_latin_square(stimuli: pd.DataFrame, design: dict, schema: dic
             rows.append(row.iloc[0])
         df = pd.DataFrame(rows).reset_index(drop=True)
         df["list"] = li + 1
-        df = df.iloc[rng.permutation(len(df))].reset_index(drop=True)
-        df["trial"] = np.arange(1, len(df) + 1)
+        df = _shuffle_deterministic(df, seed).reset_index(drop=True)
         parts.append(df)
     return pd.concat(parts, ignore_index=True)
 

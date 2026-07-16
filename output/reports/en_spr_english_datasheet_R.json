@@ -34,11 +34,11 @@
     "n_total": 20,
     "n_conditions": 2,
     "conditions": [
-      "grammatical",
-      "ungrammatical"
+      "ungrammatical",
+      "grammatical"
     ],
     "stimuli_file": "output/stimuli/en_spr_english_stimuli_R.csv",
-    "stimuli_sha256": "19a55a9720d799fa1a685ae4bbd5dafe5a4e617b972e507faeb19663c9144e37"
+    "stimuli_sha256": "f1078869328bc97d1e22a179033c9f4fcd0f0e3cd83d985dd66b3c37f5b75f5d"
   },
   "reproducibility": {
     "seed": 2026,
@@ -55,7 +55,7 @@
   "artifacts": [
     {
       "file": "output/stimuli/en_spr_english_stimuli_R.csv",
-      "sha256": "19a55a9720d799fa1a685ae4bbd5dafe5a4e617b972e507faeb19663c9144e37"
+      "sha256": "f1078869328bc97d1e22a179033c9f4fcd0f0e3cd83d985dd66b3c37f5b75f5d"
     },
     {
       "file": "output/experiments/en_spr_english_psychopy.py",
@@ -67,7 +67,7 @@
     },
     {
       "file": "output/experiments/en_spr_english.html",
-      "sha256": "662b1ab32edcd00857963721ac35c0ad007a34e921bce2c228cbd824015e59ac"
+      "sha256": "bc7b60609e0c8b075eab5ba0453e01904ba17fc9bface2cf3dbd1ecd771d269e"
     }
   ]
 }

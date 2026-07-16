@@ -1,21 +1,21 @@
 item,condition,sentence,critical_region,question,answer,set,list,trial
 10,ungrammatical,The|report|about the islands|were|detailed.,4,Was the report detailed?,f,2,1,1
-9,ungrammatical,The|garden|behind the cottages|were|quiet.,4,Was the garden noisy?,j,10,1,2
-1,grammatical,The|key|to the cabinets|was|rusty.,4,Was something rusty?,f,1,1,3
-6,grammatical,The|window|in the offices|was|broken.,4,Was something broken?,f,7,1,4
-8,grammatical,The|letter|from the lawyers|was|urgent.,4,Was the letter urgent?,f,9,1,5
-3,ungrammatical,The|bridge|near the houses|were|old.,4,Was the bridge new?,j,4,1,6
-5,ungrammatical,The|recipe|for the cookies|were|simple.,4,Was the recipe hard?,j,6,1,7
+8,grammatical,The|letter|from the lawyers|was|urgent.,4,Was the letter urgent?,f,9,1,2
+6,grammatical,The|window|in the offices|was|broken.,4,Was something broken?,f,7,1,3
+1,grammatical,The|key|to the cabinets|was|rusty.,4,Was something rusty?,f,1,1,4
+5,ungrammatical,The|recipe|for the cookies|were|simple.,4,Was the recipe hard?,j,6,1,5
+9,ungrammatical,The|garden|behind the cottages|were|quiet.,4,Was the garden noisy?,j,10,1,6
+3,ungrammatical,The|bridge|near the houses|were|old.,4,Was the bridge new?,j,4,1,7
 2,grammatical,The|author|of the novels|was|famous.,4,Was someone famous?,f,3,1,8
-7,ungrammatical,The|captain|of the ships|were|brave.,4,Was someone brave?,f,8,1,9
-4,grammatical,The|picture|of the children|was|lovely.,4,Was something lovely?,f,5,1,10
-3,grammatical,The|bridge|near the houses|was|old.,4,Was the bridge new?,j,4,2,1
-1,ungrammatical,The|key|to the cabinets|were|rusty.,4,Was something rusty?,f,1,2,2
-4,ungrammatical,The|picture|of the children|were|lovely.,4,Was something lovely?,f,5,2,3
+4,grammatical,The|picture|of the children|was|lovely.,4,Was something lovely?,f,5,1,9
+7,ungrammatical,The|captain|of the ships|were|brave.,4,Was someone brave?,f,8,1,10
+7,grammatical,The|captain|of the ships|was|brave.,4,Was someone brave?,f,8,2,1
+6,ungrammatical,The|window|in the offices|were|broken.,4,Was something broken?,f,7,2,2
+10,grammatical,The|report|about the islands|was|detailed.,4,Was the report detailed?,f,2,2,3
 9,grammatical,The|garden|behind the cottages|was|quiet.,4,Was the garden noisy?,j,10,2,4
-10,grammatical,The|report|about the islands|was|detailed.,4,Was the report detailed?,f,2,2,5
-5,grammatical,The|recipe|for the cookies|was|simple.,4,Was the recipe hard?,j,6,2,6
-2,ungrammatical,The|author|of the novels|were|famous.,4,Was someone famous?,f,3,2,7
-6,ungrammatical,The|window|in the offices|were|broken.,4,Was something broken?,f,7,2,8
-7,grammatical,The|captain|of the ships|was|brave.,4,Was someone brave?,f,8,2,9
-8,ungrammatical,The|letter|from the lawyers|were|urgent.,4,Was the letter urgent?,f,9,2,10
+2,ungrammatical,The|author|of the novels|were|famous.,4,Was someone famous?,f,3,2,5
+3,grammatical,The|bridge|near the houses|was|old.,4,Was the bridge new?,j,4,2,6
+8,ungrammatical,The|letter|from the lawyers|were|urgent.,4,Was the letter urgent?,f,9,2,7
+5,grammatical,The|recipe|for the cookies|was|simple.,4,Was the recipe hard?,j,6,2,8
+4,ungrammatical,The|picture|of the children|were|lovely.,4,Was something lovely?,f,5,2,9
+1,ungrammatical,The|key|to the cabinets|were|rusty.,4,Was something rusty?,f,1,2,10

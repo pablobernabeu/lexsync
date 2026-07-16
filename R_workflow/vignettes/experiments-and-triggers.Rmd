@@ -219,10 +219,12 @@ the first run needs an internet connection.
 
 Two smaller differences are worth knowing. The OpenSesame loop is written as
 `sequential` on purpose, because its default is random, which would discard the
-seeded trial order and make the three targets present different sequences. And
-the jsPsych exporter maps the event model's key names onto browser key names, so
-`left` becomes `arrowleft`, since the same event list has to mean the same thing
-to a browser as to PsychoPy.
+seeded trial order and make the three targets present different sequences. The
+order is worth protecting, since it is computed from the design by a keyed-hash
+shuffle and is identical in the R and Python engines. And the jsPsych exporter
+maps the event model's key names onto browser key names, so `left` becomes
+`arrowleft`, since the same event list has to mean the same thing to a browser as
+to PsychoPy.
 
 ```{r loop-table}
 psychopy_csv <- file.path(out, "vignette_experiment_english_psychopy.csv")

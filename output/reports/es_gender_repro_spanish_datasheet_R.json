@@ -130,7 +130,7 @@
       "feminine"
     ],
     "stimuli_file": "output/stimuli/es_gender_repro_spanish_stimuli_R.csv",
-    "stimuli_sha256": "fac4b0cb2014f9e1a5c6bb4f1247410b1df6a287a93650e5c0a569df435cf4d2"
+    "stimuli_sha256": "eb7d3011aaa498cc50263f2636e20ec4be0b7950194d29ea8c2832ef70c837be"
   },
   "reproducibility": {
     "seed": 2026,
@@ -147,7 +147,7 @@
   "artifacts": [
     {
       "file": "output/stimuli/es_gender_repro_spanish_stimuli_R.csv",
-      "sha256": "fac4b0cb2014f9e1a5c6bb4f1247410b1df6a287a93650e5c0a569df435cf4d2"
+      "sha256": "eb7d3011aaa498cc50263f2636e20ec4be0b7950194d29ea8c2832ef70c837be"
     },
     {
       "file": "output/reports/es_gender_repro_spanish_descriptives_R.csv",
@@ -167,7 +167,7 @@
     },
     {
       "file": "output/experiments/es_gender_repro_spanish.html",
-      "sha256": "c42560753a4f53ecd70152f1ab987147a792c7c9c1e9691723929da6316e360d"
+      "sha256": "3ec93911703e255ac382697fa60ffccd9d61db5a3fabc1ed73094b7bc07c11a4"
     }
   ]
 }

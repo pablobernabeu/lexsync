@@ -7,7 +7,7 @@
   "artifacts": [
     {
       "file": "output/stimuli/es_ndensity_spanish_stimuli_py.csv",
-      "sha256": "ad6879b15137aa8f1b9c342fa4b4e069ec79e07c4d21b15e602d7a032d8d5e57"
+      "sha256": "97cbe147a712c0c40d4a41d61a04682ac9681e11dc8ad3fd2dd54133ef0af0b4"
     },
     {
       "file": "output/reports/es_ndensity_spanish_descriptives_py.csv",
@@ -27,7 +27,7 @@
     },
     {
       "file": "output/experiments/es_ndensity_spanish.html",
-      "sha256": "b2b3454b3a5982adfb02326b8cd88083d7bb5fe8d4fedf24e035929ad78bc7df"
+      "sha256": "d4ee52910281178048ed0edb74f4f6997bf88dea78b8670d958d898e725f49cd"
     }
   ],
   "counterbalancing": {
@@ -76,13 +76,13 @@
   },
   "items": {
     "conditions": [
-      "sparse_neighbourhood",
-      "dense_neighbourhood"
+      "dense_neighbourhood",
+      "sparse_neighbourhood"
     ],
     "n_conditions": 2,
     "n_total": 160,
     "stimuli_file": "output/stimuli/es_ndensity_spanish_stimuli_py.csv",
-    "stimuli_sha256": "ad6879b15137aa8f1b9c342fa4b4e069ec79e07c4d21b15e602d7a032d8d5e57"
+    "stimuli_sha256": "97cbe147a712c0c40d4a41d61a04682ac9681e11dc8ad3fd2dd54133ef0af0b4"
   },
   "lexsync_datasheet_version": "1.0",
   "materials_source": {

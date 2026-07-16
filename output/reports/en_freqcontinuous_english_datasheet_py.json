@@ -7,7 +7,7 @@
   "artifacts": [
     {
       "file": "output/stimuli/en_freqcontinuous_english_stimuli_py.csv",
-      "sha256": "b3b0045fd14da108ab42ab105b851a91404284be6b4e71b5ce65a8f127c5b0e3"
+      "sha256": "fef3b0bf928069905a023fdb02aa9a3fccca73b65da325daa154b51aec5b8fb0"
     },
     {
       "file": "output/reports/en_freqcontinuous_english_descriptives_py.csv",
@@ -27,7 +27,7 @@
     },
     {
       "file": "output/experiments/en_freqcontinuous_english.html",
-      "sha256": "5172977fabb1a1d6414772d53f6afbb3318f30701b4419cb5db31fd0b5b6225a"
+      "sha256": "3ced5d8d9e5cf1ae5d55c60a5a4079d148f66f4dd6933b6812b6c92fa108ea83"
     }
   ],
   "counterbalancing": {
@@ -81,7 +81,7 @@
     "n_conditions": 1,
     "n_total": 80,
     "stimuli_file": "output/stimuli/en_freqcontinuous_english_stimuli_py.csv",
-    "stimuli_sha256": "b3b0045fd14da108ab42ab105b851a91404284be6b4e71b5ce65a8f127c5b0e3"
+    "stimuli_sha256": "fef3b0bf928069905a023fdb02aa9a3fccca73b65da325daa154b51aec5b8fb0"
   },
   "lexsync_datasheet_version": "1.0",
   "materials_source": {

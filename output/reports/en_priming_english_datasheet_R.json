@@ -38,7 +38,7 @@
       "unrelated"
     ],
     "stimuli_file": "output/stimuli/en_priming_english_stimuli_R.csv",
-    "stimuli_sha256": "c7ce65dc625e22d6f59b2651b62dba24539a1c817530cbb1182780d827fe060a"
+    "stimuli_sha256": "b55d8efbca8eb1f2a50c7f1fdb6832f59b83823c0dc8c939161004666c94a271"
   },
   "reproducibility": {
     "seed": 2026,
@@ -55,7 +55,7 @@
   "artifacts": [
     {
       "file": "output/stimuli/en_priming_english_stimuli_R.csv",
-      "sha256": "c7ce65dc625e22d6f59b2651b62dba24539a1c817530cbb1182780d827fe060a"
+      "sha256": "b55d8efbca8eb1f2a50c7f1fdb6832f59b83823c0dc8c939161004666c94a271"
     },
     {
       "file": "output/experiments/en_priming_english_psychopy.py",
@@ -67,7 +67,7 @@
     },
     {
       "file": "output/experiments/en_priming_english.html",
-      "sha256": "6ce67a1b510d25a2ccd8168ebefd5078d80c83187be868e3a421bebeba702c18"
+      "sha256": "194ad1d631861a92086a04b5d74cd1cac1bcbe1fec5711e2cd9b8ff064fe45f1"
     }
   ]
 }

@@ -10,7 +10,7 @@
 - **Selection:** standardised_euclidean
 - **Cross-engine determinism:** byte-identical
 - **Counterbalancing:** factorial, 1 list(s)
-- **Items:** 72 rows across 4 conditions (HF_largeN, HF_smallN, LF_smallN, LF_largeN)
+- **Items:** 72 rows across 4 conditions (HF_smallN, HF_largeN, LF_largeN, LF_smallN)
 - **Seed:** 2026  |  **Versions:** engine python, lexsync 0.1.0, python 3.13.7, pandas 2.3.2, numpy 2.3.2, scipy 1.17.1
 
 ## Selection transparency

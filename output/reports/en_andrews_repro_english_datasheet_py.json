@@ -7,7 +7,7 @@
   "artifacts": [
     {
       "file": "output/stimuli/en_andrews_repro_english_stimuli_py.csv",
-      "sha256": "be9c8b04683090ea8302a396a8f7b3e7bee77336f759c29e9846d0422fb0f80a"
+      "sha256": "3ce88a7a6eb814bd3d7e4a380a02866817a9939c8788874ce8d096efd425b92e"
     },
     {
       "file": "output/reports/en_andrews_repro_english_descriptives_py.csv",
@@ -27,7 +27,7 @@
     },
     {
       "file": "output/experiments/en_andrews_repro_english.html",
-      "sha256": "e083514f45b4970bb27548a588e5133e9329feeeebba1df99c06c7b7dcc74961"
+      "sha256": "5204959a5082cac338f6263e73c6df9e96b8aff625187dded4abdef6cf8ea826"
     }
   ],
   "counterbalancing": {
@@ -76,15 +76,15 @@
   },
   "items": {
     "conditions": [
-      "HF_largeN",
       "HF_smallN",
-      "LF_smallN",
-      "LF_largeN"
+      "HF_largeN",
+      "LF_largeN",
+      "LF_smallN"
     ],
     "n_conditions": 4,
     "n_total": 72,
     "stimuli_file": "output/stimuli/en_andrews_repro_english_stimuli_py.csv",
-    "stimuli_sha256": "be9c8b04683090ea8302a396a8f7b3e7bee77336f759c29e9846d0422fb0f80a"
+    "stimuli_sha256": "3ce88a7a6eb814bd3d7e4a380a02866817a9939c8788874ce8d096efd425b92e"
   },
   "lexsync_datasheet_version": "1.0",
   "materials_source": {

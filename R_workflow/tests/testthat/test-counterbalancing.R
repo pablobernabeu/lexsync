@@ -44,6 +44,9 @@ test_that("counterbalance_factorial deals lists by set rank", {
 })
 
 test_that("counterbalance leaves the caller's RNG stream untouched", {
+  # The keyed-hash shuffle draws no random numbers, so the caller's stream must
+  # be exactly where they left it: a stronger guarantee than the save-and-restore
+  # this once tested, and the reason no RNG may reappear in this path.
   stim <- data.frame(
     word = c("a", "b", "c", "d"), condition = c("x", "x", "y", "y"),
     set = c(1, 2, 1, 2), stringsAsFactors = FALSE
@@ -55,6 +58,8 @@ test_that("counterbalance leaves the caller's RNG stream untouched", {
 })
 
 test_that("counterbalance creates no .Random.seed when the caller had none", {
+  # A session that has never drawn a random number must still have none after a
+  # full counterbalance: proof that the shuffle touches no random state at all.
   stim <- data.frame(
     word = c("a", "b", "c", "d"), condition = c("x", "x", "y", "y"),
     set = c(1, 2, 1, 2), stringsAsFactors = FALSE
@@ -64,4 +69,20 @@ test_that("counterbalance creates no .Random.seed when the caller had none", {
   }
   counterbalance(stim, list(counterbalance = list(lists = 1)), list(seed = 1))
   expect_false(exists(".Random.seed", envir = globalenv(), inherits = FALSE))
+})
+
+test_that("the keyed-hash shuffle gives both engines the same trial order", {
+  # The hash of "seed|replicate|list|set|condition" decides each trial's position,
+  # so the order is a pure function of the design and the two engines must produce
+  # it byte for byte. test_counterbalancing.py pins these same words against these
+  # same trials; a change to the key format or the digest breaks both suites.
+  stim <- data.frame(word = letters[1:8], condition = rep(c("x", "y"), 4),
+                     set = rep(1:4, each = 2), stringsAsFactors = FALSE)
+  out <- counterbalance(stim, list(counterbalance = list(lists = 2)), list(seed = 2026))
+  out <- out[order(out$list, out$trial), , drop = FALSE]
+  expect_identical(out$word, c("b", "f", "e", "a", "c", "g", "h", "d"))
+  # A different seed is a different permutation.
+  out2 <- counterbalance(stim, list(counterbalance = list(lists = 2)), list(seed = 1))
+  out2 <- out2[order(out2$list, out2$trial), , drop = FALSE]
+  expect_false(identical(out$word, out2$word))
 })

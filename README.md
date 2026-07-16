@@ -41,10 +41,11 @@ match them. The R and Python ecosystems rarely meet, and most matching tools tar
 single language. `lexsync` closes this gap by spanning the whole path in both languages,
 from a many-language corpus through parallel multidimensional matching and
 counterbalancing to flip-locked, cross-platform experiment scripts. The two engines
-select byte-identical stimuli and deal them into the same lists and conditions. Trial
-order within a list is drawn from each language's own seeded generator, so the order,
-and the condition trigger codes that follow first appearance in it, are reproducible
-from a seed within an engine rather than across the two.
+select byte-identical stimuli, deal them into the same lists and conditions, and order
+the trials identically, so the generated experiment files themselves match byte for
+byte. Nothing in the package draws a random number: trial order comes from a keyed
+hash of the design and the seed, which is what lets a seeded shuffle mean the same
+thing in both languages.
 
 The PsychoPy backend offers one concrete methodological gain: it binds each onset
 trigger to the exact buffer flip on which the stimulus appears, using `win.callOnFlip`,

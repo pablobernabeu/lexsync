@@ -7,7 +7,7 @@
   "artifacts": [
     {
       "file": "output/stimuli/en_lexdec_english_stimuli_py.csv",
-      "sha256": "92af719e92b630f2d95354e677206e8710dcdb983dc10380c24c41f3c643c9d9"
+      "sha256": "d27f33049ffcdcd9d36aef11fd18179d878137751f7efbe72d7d7c13895290d3"
     },
     {
       "file": "output/reports/en_lexdec_english_descriptives_py.csv",
@@ -27,7 +27,7 @@
     },
     {
       "file": "output/experiments/en_lexdec_english.html",
-      "sha256": "6c59117c615c1284fbde106bed31a033369f192b409486a0e76972fcb2714f54"
+      "sha256": "cc05f5cc86fd6bcd3fb943019174e59fdfb3c611e2ce195bd3930a1514ea96ff"
     }
   ],
   "counterbalancing": {
@@ -51,13 +51,13 @@
   },
   "items": {
     "conditions": [
-      "word",
-      "pseudoword"
+      "pseudoword",
+      "word"
     ],
     "n_conditions": 2,
     "n_total": 120,
     "stimuli_file": "output/stimuli/en_lexdec_english_stimuli_py.csv",
-    "stimuli_sha256": "92af719e92b630f2d95354e677206e8710dcdb983dc10380c24c41f3c643c9d9"
+    "stimuli_sha256": "d27f33049ffcdcd9d36aef11fd18179d878137751f7efbe72d7d7c13895290d3"
   },
   "lexsync_datasheet_version": "1.0",
   "materials_source": {

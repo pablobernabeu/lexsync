@@ -130,11 +130,11 @@
     "n_total": 240,
     "n_conditions": 2,
     "conditions": [
-      "high_frequency",
-      "low_frequency"
+      "low_frequency",
+      "high_frequency"
     ],
     "stimuli_file": "output/stimuli/en_resample_english_stimuli_R.csv",
-    "stimuli_sha256": "81e58a3545442deea7b5c9356926d2e9a63364e4fb508c9ffebfadc0fbf85c22"
+    "stimuli_sha256": "b51397019b42e5efbd18154a45a5ce5db62296403ecfc8d1ecb7d75f3581b79b"
   },
   "reproducibility": {
     "seed": 2026,
@@ -151,7 +151,7 @@
   "artifacts": [
     {
       "file": "output/stimuli/en_resample_english_stimuli_R.csv",
-      "sha256": "81e58a3545442deea7b5c9356926d2e9a63364e4fb508c9ffebfadc0fbf85c22"
+      "sha256": "b51397019b42e5efbd18154a45a5ce5db62296403ecfc8d1ecb7d75f3581b79b"
     },
     {
       "file": "output/reports/en_resample_english_descriptives_R.csv",
@@ -171,7 +171,7 @@
     },
     {
       "file": "output/experiments/en_resample_english.html",
-      "sha256": "ea53d5bc677eeef3d531ee35fc321f48b91f6bafb0b9e7595487cf1e1dfec35a"
+      "sha256": "1e8a9108b02a6bc130439fdc7dbffaed59fd04968bfe1b0cfc9b5add34101890"
     }
   ]
 }
