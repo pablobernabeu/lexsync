@@ -1,13 +1,13 @@
-{"time": "2026-07-17T01:54:54", "message": "loading lexicon 'corpora/derived/en.csv'", "data": null}
-{"time": "2026-07-17T01:54:54", "message": "lexicon loaded: 30000 words", "data": {"words": 30000}}
-{"time": "2026-07-17T01:54:54", "message": "pool after filters: 8177 words", "data": {"pool": 8177}}
-{"time": "2026-07-17T01:54:55", "message": "generated 120 items (words + pseudowords, subsyllabic)", "data": {"conditions": "word, pseudoword"}}
-{"time": "2026-07-17T01:54:55", "message": "equivalence pseudoword vs word on 'length': d = 0.00 [-0.30, 0.30], TOST p = 0.0036 (equivalent)", "data": null}
-{"time": "2026-07-17T01:54:55", "message": "wrote 'en_lexdec_wuggy_english_stimuli_py.csv'", "data": {"path": "output\\stimuli\\en_lexdec_wuggy_english_stimuli_py.csv", "rows": 120, "md5": "ab374e1c83a16a0968aee04c9e33ea09"}}
-{"time": "2026-07-17T01:54:55", "message": "wrote 'en_lexdec_wuggy_english_descriptives_py.csv'", "data": {"path": "output\\reports\\en_lexdec_wuggy_english_descriptives_py.csv", "rows": 2, "md5": "55d3ccf930676c4c1aa014a978686499"}}
-{"time": "2026-07-17T01:54:55", "message": "wrote 'en_lexdec_wuggy_english_comparisons_py.csv'", "data": {"path": "output\\reports\\en_lexdec_wuggy_english_comparisons_py.csv", "rows": 1, "md5": "8eddef3e2860a7d5443f8f9fc6e844a5"}}
-{"time": "2026-07-17T01:54:55", "message": "wrote 'en_lexdec_wuggy_english_psychopy.py'", "data": {"path": "output\\experiments\\en_lexdec_wuggy_english_psychopy.py", "rows": null, "md5": "f54f888dd9916375e39710880eeef2cc"}}
-{"time": "2026-07-17T01:54:55", "message": "wrote 'en_lexdec_wuggy_english.osexp'", "data": {"path": "output\\experiments\\en_lexdec_wuggy_english.osexp", "rows": null, "md5": "4f6288b5b84d236e490c58ff0162e832"}}
-{"time": "2026-07-17T01:54:55", "message": "wrote 'en_lexdec_wuggy_english.html'", "data": {"path": "output\\experiments\\en_lexdec_wuggy_english.html", "rows": null, "md5": "d486b0d2dcc5e2bea85da9db0b352ed0"}}
-{"time": "2026-07-17T01:54:55", "message": "wrote 'en_lexdec_wuggy_english_datasheet_py.json'", "data": {"path": "output\\reports\\en_lexdec_wuggy_english_datasheet_py.json", "rows": null, "md5": "1d8e14c1c003e4ddc8859cc8443fce1a"}}
-{"time": "2026-07-17T01:54:55", "message": "wrote 'en_lexdec_wuggy_english_datasheet_py.md'", "data": {"path": "output\\reports\\en_lexdec_wuggy_english_datasheet_py.md", "rows": null, "md5": "3e993cc19f54520e7b713f5e252bbdc7"}}
+{"time": "2026-07-23T00:27:49", "message": "loading lexicon 'corpora/derived/en.csv'", "data": null}
+{"time": "2026-07-23T00:27:49", "message": "lexicon loaded: 30000 words", "data": {"words": 30000}}
+{"time": "2026-07-23T00:27:49", "message": "pool after filters: 8177 words", "data": {"pool": 8177}}
+{"time": "2026-07-23T00:27:49", "message": "generated 120 items (words + pseudowords, subsyllabic)", "data": {"conditions": "word, pseudoword"}}
+{"time": "2026-07-23T00:27:49", "message": "equivalence pseudoword vs word on 'length': d = 0.00 [-0.30, 0.30], TOST p = 0.0036 (equivalent)", "data": null}
+{"time": "2026-07-23T00:27:49", "message": "wrote 'en_lexdec_wuggy_english_stimuli_py.csv'", "data": {"path": "output\\stimuli\\en_lexdec_wuggy_english_stimuli_py.csv", "rows": 120, "md5": "ab374e1c83a16a0968aee04c9e33ea09"}}
+{"time": "2026-07-23T00:27:49", "message": "wrote 'en_lexdec_wuggy_english_descriptives_py.csv'", "data": {"path": "output\\reports\\en_lexdec_wuggy_english_descriptives_py.csv", "rows": 2, "md5": "55d3ccf930676c4c1aa014a978686499"}}
+{"time": "2026-07-23T00:27:49", "message": "wrote 'en_lexdec_wuggy_english_comparisons_py.csv'", "data": {"path": "output\\reports\\en_lexdec_wuggy_english_comparisons_py.csv", "rows": 1, "md5": "8eddef3e2860a7d5443f8f9fc6e844a5"}}
+{"time": "2026-07-23T00:27:49", "message": "wrote 'en_lexdec_wuggy_english_psychopy.py'", "data": {"path": "output\\experiments\\en_lexdec_wuggy_english_psychopy.py", "rows": null, "md5": "f54f888dd9916375e39710880eeef2cc"}}
+{"time": "2026-07-23T00:27:49", "message": "wrote 'en_lexdec_wuggy_english.osexp'", "data": {"path": "output\\experiments\\en_lexdec_wuggy_english.osexp", "rows": null, "md5": "4f6288b5b84d236e490c58ff0162e832"}}
+{"time": "2026-07-23T00:27:49", "message": "wrote 'en_lexdec_wuggy_english.html'", "data": {"path": "output\\experiments\\en_lexdec_wuggy_english.html", "rows": null, "md5": "d486b0d2dcc5e2bea85da9db0b352ed0"}}
+{"time": "2026-07-23T00:27:49", "message": "wrote 'en_lexdec_wuggy_english_datasheet_py.json'", "data": {"path": "output\\reports\\en_lexdec_wuggy_english_datasheet_py.json", "rows": null, "md5": "1d8e14c1c003e4ddc8859cc8443fce1a"}}
+{"time": "2026-07-23T00:27:49", "message": "wrote 'en_lexdec_wuggy_english_datasheet_py.md'", "data": {"path": "output\\reports\\en_lexdec_wuggy_english_datasheet_py.md", "rows": null, "md5": "3e993cc19f54520e7b713f5e252bbdc7"}}
