@@ -8,7 +8,7 @@ vignette: >
 ---
 
 ```{r, include = FALSE}
-knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+knitr::opts_chunk$set(collapse = FALSE, comment = "")
 ```
 
 A stimulus set is usually described rather than shared. The methods section says
@@ -25,9 +25,13 @@ run leaves behind.
 
 ```{r setup}
 library(lexsync)
-schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
-lex <- load_lexicon(system.file("extdata", "en_example.csv", package = "lexsync"),
-                    schema, language = "english")
+schema <- yaml::read_yaml(
+  system.file("extdata", "schema.yaml", package = "lexsync")
+)
+lex <- load_lexicon(
+  system.file("extdata", "en_example.csv", package = "lexsync"),
+  schema, language = "english"
+)
 pool <- build_pool(lex, list(length = c(3, 7), frequency = c(3.8, 7.0)))
 
 design <- list(
@@ -82,7 +86,9 @@ shuffle is described below.
 
 ```{r even-spread}
 anchor_pool <- pool[pool$frequency >= 5.2 & pool$frequency <= 7.0, ]
-anchor_pool <- anchor_pool[order(anchor_pool$frequency, anchor_pool$word, method = "radix"), ]
+anchor_pool <- anchor_pool[
+  order(anchor_pool$frequency, anchor_pool$word, method = "radix"),
+]
 idx <- unique(round(seq(1, nrow(anchor_pool), length.out = 15)))
 idx
 ```
@@ -212,9 +218,11 @@ document the exception, and record it per run.
 maha <- design
 maha$matching <- list(method = "mahalanobis")
 maha_stim <- match_stimuli(pool, maha, schema)
-maha_ds <- build_datasheet(maha, schema, NULL, maha_stim,
-                           system.file("extdata", "en_example.csv", package = "lexsync"),
-                           list(stimuli = NA_character_), schema$seed)
+maha_ds <- build_datasheet(
+  maha, schema, NULL, maha_stim,
+  system.file("extdata", "en_example.csv", package = "lexsync"),
+  list(stimuli = NA_character_), schema$seed
+)
 maha_ds$selection$cross_engine
 ```
 
@@ -266,7 +274,9 @@ and the degrees of freedom in preparing them are large enough to matter
 ```{r datasheet}
 out <- file.path(tempdir(), "lexsync_repro")
 dir.create(out, showWarnings = FALSE)
-report <- match_report(stim, c("frequency", "length", "n_density", "old20"), schema)
+report <- match_report(
+  stim, c("frequency", "length", "n_density", "old20"), schema
+)
 stim_path <- file.path(out, "stimuli.csv")
 write.csv(stim, stim_path, row.names = FALSE)
 
@@ -276,7 +286,10 @@ ds <- build_datasheet(
   artifacts = list(stimuli = stim_path),
   seed = schema$seed,
   candidate_pool = lapply(design$conditions, function(cnd)
-    list(condition = cnd$name, n_candidates = nrow(build_pool(pool, cnd$define_by))))
+    list(
+      condition = cnd$name,
+      n_candidates = nrow(build_pool(pool, cnd$define_by))
+    ))
 )
 names(ds)
 ```
@@ -347,7 +360,9 @@ the bound.
 pre-registration skeleton with its materials section already filled in.
 
 ```{r write-datasheet}
-paths <- write_datasheet(ds, file.path(out, "datasheet.json"), file.path(out, "datasheet.md"))
+paths <- write_datasheet(
+  ds, file.path(out, "datasheet.json"), file.path(out, "datasheet.md")
+)
 md <- readLines(file.path(out, "datasheet.md"))
 grep("^#", md, value = TRUE)
 ```
@@ -372,8 +387,15 @@ shape and not a substitute for thinking about the analysis.
 The datasheet records what a run produced. The run log records what it did.
 
 ```{r run-log}
-log <- new_run_log("vignette_repro", meta = list(seed = schema$seed, language = "english"))
-log <- log_step(log, sprintf("lexicon loaded: %d words", nrow(lex)), list(words = nrow(lex)))
+log <- new_run_log(
+  "vignette_repro",
+  meta = list(seed = schema$seed, language = "english")
+)
+log <- log_step(
+  log,
+  sprintf("lexicon loaded: %d words", nrow(lex)),
+  list(words = nrow(lex))
+)
 log <- log_step(log, sprintf("pool after filters: %d words", nrow(pool)))
 log <- log_artefact(log, stim_path, rows = nrow(stim))
 log_md <- write_run_log(log, file.path(out, "run_log.md"),

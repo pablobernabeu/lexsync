@@ -80,6 +80,13 @@ nav:
 
 plugins:
   - search
+  # Runs the example blocks at build time and embeds their real output, so the
+  # guides show results like a knitted R vignette and cannot drift from the code.
+  # Unlike mkdocstrings below, this imports lexsync the ordinary way, so the
+  # package has to be importable when the site is built: the docs workflow does
+  # `pip install -e ./python_workflow`, and a local build without that needs
+  # PYTHONPATH=src.
+  - markdown-exec
   - mkdocstrings:
       handlers:
         python:
@@ -97,7 +104,10 @@ plugins:
 
 markdown_extensions:
   - admonition
-  - pymdownx.highlight
+  - pymdownx.highlight:
+      # Tag each block with its language, so brand.css can tell output pasted
+      # into a `text` fence from a source block and style it as output.
+      pygments_lang_class: true
   - pymdownx.superfences
   # attr_list carries the classes that brand.css styles: the home page's call-to-action
   # buttons (.md-button) and the tagline under the title (.mrd-tagline). Without it the

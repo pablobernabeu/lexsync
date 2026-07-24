@@ -8,7 +8,7 @@ vignette: >
 ---
 
 ```{r, include = FALSE}
-knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+knitr::opts_chunk$set(collapse = FALSE, comment = "")
 ```
 
 Choosing stimuli is a constrained selection problem. One lexical property is
@@ -26,10 +26,17 @@ Everything below runs on the English example lexicon bundled with the package, a
 
 ```{r setup}
 library(lexsync)
-schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
-lex <- load_lexicon(system.file("extdata", "en_example.csv", package = "lexsync"),
-                    schema, language = "english")
-head(lex[, c("word", "frequency", "length", "n_syllables", "n_density", "old20")], 4)
+schema <- yaml::read_yaml(
+  system.file("extdata", "schema.yaml", package = "lexsync")
+)
+lex <- load_lexicon(
+  system.file("extdata", "en_example.csv", package = "lexsync"),
+  schema, language = "english"
+)
+head(
+  lex[, c("word", "frequency", "length", "n_syllables", "n_density", "old20")],
+  4
+)
 ```
 
 ## The lexical dimensions
@@ -93,7 +100,9 @@ filters.
 
 ```{r neighbourhood}
 sample_words <- lex[lex$word %in% c("cat", "dog", "house", "rhythm"), ]
-add_neighbourhood(sample_words, reference = lex$word)[, c("word", "n_density", "old20")]
+add_neighbourhood(
+  sample_words, reference = lex$word
+)[, c("word", "n_density", "old20")]
 ```
 
 `add_bigram_frequency()` works the same way, and `merge_norms()` joins any
@@ -153,7 +162,13 @@ design <- list(
   match_on = list("length", "n_density", "old20")
 )
 stim <- match_stimuli(pool, design, schema)
-head(stim[stim$set %in% 1:3, c("set", "condition", "word", "frequency", "length", "old20")], 6)
+head(
+  stim[
+    stim$set %in% 1:3,
+    c("set", "condition", "word", "frequency", "length", "old20")
+  ],
+  6
+)
 ```
 
 Because the anchor is spread across its own subpool, the order of the conditions
@@ -210,7 +225,9 @@ summarise_method <- function(method) {
   d <- design
   d$matching <- list(method = method)
   s <- match_stimuli(pool, d, schema)
-  cmp <- match_report(s, c("frequency", "length", "n_density", "old20"), schema)$comparisons
+  cmp <- match_report(
+    s, c("frequency", "length", "n_density", "old20"), schema
+  )$comparisons
   controls <- cmp[cmp$dimension != "frequency", ]
   high <- s$frequency[s$condition == "high"]
   low  <- s$frequency[s$condition == "low"]
@@ -339,9 +356,14 @@ span and the controls to hold still, and the two must agree with `match_on`.
 cont_design <- list(
   name = "vignette_continuous", language = "english", n_per_condition = 60,
   pool_filters = pool_filters,
-  continuous = list(predictor = "frequency", controls = c("length", "n_density", "old20")),
+  continuous = list(
+    predictor = "frequency",
+    controls = c("length", "n_density", "old20")
+  ),
   match_on = list("length", "n_density", "old20"),
-  matching = list(tolerance_k = list(length = 1.5, n_density = 1.5, old20 = 1.5))
+  matching = list(
+    tolerance_k = list(length = 1.5, n_density = 1.5, old20 = 1.5)
+  )
 )
 cont <- select_continuous_stimuli(pool, cont_design, schema)
 nrow(cont)
@@ -355,8 +377,10 @@ predictor's range while the controls stay near-constant, and therefore
 near-uncorrelated with the predictor, which is what the regression needs.
 
 ```{r continuous-report}
-cont_report <- match_report_continuous(cont, "frequency",
-                                       c("length", "n_density", "old20"), schema)
+cont_report <- match_report_continuous(
+  cont, "frequency",
+  c("length", "n_density", "old20"), schema
+)
 cont_report$comparisons
 ```
 
@@ -378,8 +402,13 @@ mean, SD, minimum, median and maximum for each dimension, which is the table tha
 belongs in a paper's materials section.
 
 ```{r report-desc}
-report <- match_report(stim, c("frequency", "length", "n_density", "old20"), schema)
-knitr::kable(report$descriptives, caption = "Descriptive statistics per condition")
+report <- match_report(
+  stim, c("frequency", "length", "n_density", "old20"), schema
+)
+knitr::kable(
+  report$descriptives,
+  caption = "Descriptive statistics per condition"
+)
 ```
 
 The comparisons contrast every other condition against the anchor on every
@@ -387,8 +416,13 @@ dimension, and they carry the four statistics that answer whether the matching
 worked.
 
 ```{r report-comp}
-knitr::kable(report$comparisons,
-             caption = "Realised control: standardised differences with 90% intervals, variance ratios and TOST verdicts")
+knitr::kable(
+  report$comparisons,
+  caption = paste(
+    "Realised control: standardised differences with 90% intervals,",
+    "variance ratios and TOST verdicts"
+  )
+)
 ```
 
 `cohens_d` is the standardised mean difference against the anchor, using the
@@ -466,7 +500,10 @@ materials.
 ```{r resample}
 reps <- resample_stimuli(pool, design, schema, n_sets = 2)
 table(reps$replicate, reps$condition)
-length(intersect(reps$word[reps$replicate == 1], reps$word[reps$replicate == 2]))
+length(intersect(
+  reps$word[reps$replicate == 1],
+  reps$word[reps$replicate == 2]
+))
 ```
 
 Each replicate is matched independently against the pool with the earlier

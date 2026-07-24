@@ -8,7 +8,7 @@ vignette: >
 ---
 
 ```{r, include = FALSE}
-knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+knitr::opts_chunk$set(collapse = FALSE, comment = "")
 ```
 
 `lexsync` selects stimuli that are matched in parallel across several lexical
@@ -26,9 +26,13 @@ assignment solver differ in their last bits between the two platforms.
 
 ```{r setup}
 library(lexsync)
-schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
-lex <- load_lexicon(system.file("extdata", "en_example.csv", package = "lexsync"),
-                    schema, language = "english")
+schema <- yaml::read_yaml(
+  system.file("extdata", "schema.yaml", package = "lexsync")
+)
+lex <- load_lexicon(
+  system.file("extdata", "en_example.csv", package = "lexsync"),
+  schema, language = "english"
+)
 nrow(lex)
 ```
 
@@ -50,7 +54,9 @@ design <- list(
 )
 pool <- build_pool(lex, design$pool_filters)
 stim <- match_stimuli(pool, design, schema)
-head(stim[, c("word", "condition", "length", "frequency", "n_density", "old20")])
+head(stim[, c(
+  "word", "condition", "length", "frequency", "n_density", "old20"
+)])
 ```
 
 ## Inspect the match quality
@@ -59,10 +65,20 @@ Matching always returns a set, so the report is what tells you whether the set i
 any good. It belongs before anything is generated from the stimuli.
 
 ```{r report}
-report <- match_report(stim, c("length", "frequency", "n_density", "old20"), schema)
-knitr::kable(report$descriptives, caption = "Descriptive statistics per condition")
-knitr::kable(report$comparisons,
-             caption = "Standardised mean differences with 90% confidence intervals, plus the complementary TOST equivalence test")
+report <- match_report(
+  stim, c("length", "frequency", "n_density", "old20"), schema
+)
+knitr::kable(
+  report$descriptives,
+  caption = "Descriptive statistics per condition"
+)
+knitr::kable(
+  report$comparisons,
+  caption = paste(
+    "Standardised mean differences with 90% confidence intervals, plus the",
+    "complementary TOST equivalence test"
+  )
+)
 ```
 
 The manipulated dimension (frequency) differs strongly, while the controlled

@@ -162,6 +162,7 @@ travels with a set, and it exists because the reproducibility literature keeps a
 (Bochynska et al., 2023; Roettger, 2019).
 
 ```python
+# illustrative: needs a clone's config directory and writes the run into the working tree
 paths = lexsync.run_pipeline("config/design_en_freqcontrast.yaml")
 # output/reports/en_freqcontrast_english_datasheet_py.json
 # output/reports/en_freqcontrast_english_datasheet_py.md
@@ -231,6 +232,7 @@ dimensions were derived, how many items were matched, the equivalence verdict on
 every artefact written with its row count and MD5.
 
 ```python
+# illustrative: writes run_log.md and run_log.jsonl into the working tree
 from lexsync import logging as runlog
 
 log = runlog.new_run_log("my_design", meta={"seed": 2026})

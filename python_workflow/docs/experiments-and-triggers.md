@@ -12,18 +12,11 @@ The core idea is small. A trial is a list of events, and an event is a dictionar
 paradigm is expressed as code in a backend, which is what allows a new paradigm to be a
 configuration change rather than three new renderers.
 
-```python
+```python exec="1" source="material-block" result="text" session="experiments"
 import lexsync
 
 for event in lexsync.resolve_events({"paradigm": "lexical_decision"}):
     print(event)
-```
-
-```text
-{'type': 'fixation', 'content': '+', 'duration_frames': 30}
-{'type': 'text', 'content': '{target}', 'duration_frames': 48, 'trigger': 'condition', 'onset_locked': True}
-{'type': 'response', 'keys': ['left', 'right'], 'timeout_ms': 2000}
-{'type': 'blank', 'duration_frames': 15}
 ```
 
 An event's `type` is one of `fixation`, `text`, `mask`, `blank`, `region_by_region`, `response` or
@@ -52,9 +45,9 @@ counterbalancing recipe and its default event sequence.
 `required_fields` tells you what a design's items must carry: the paradigm's own fields, plus any
 extra field its events reference.
 
-```python
-print(lexsync.required_fields({"paradigm": "priming"}))          # ['prime', 'target']
-print(lexsync.required_fields({"paradigm": "self_paced_reading"}))  # ['sentence', 'question']
+```python exec="1" source="material-block" result="text" session="experiments"
+print(lexsync.required_fields({"paradigm": "priming"}))
+print(lexsync.required_fields({"paradigm": "self_paced_reading"}))
 ```
 
 Adding a paradigm means adding an entry to `PARADIGMS` in both engines, with its event sequence, its
@@ -88,7 +81,7 @@ result.
 The rest of this page follows one small design through to its three exported experiments. It runs
 against the bundled lexicon, so the output shown is the output you will get.
 
-```python
+```python exec="1" source="material-block" session="experiments"
 from importlib.resources import files
 
 import yaml
@@ -97,7 +90,9 @@ import lexsync
 
 data = files("lexsync") / "data"
 schema = yaml.safe_load((data / "schema.yaml").read_text(encoding="utf-8"))
-lexicon = lexsync.load_lexicon(str(data / "en_example.csv"), schema, language="english")
+lexicon = lexsync.load_lexicon(
+    str(data / "en_example.csv"), schema, language="english"
+)
 
 design = {
     "name": "demo", "language": "english", "n_per_condition": 6,
@@ -125,16 +120,13 @@ rotated by the list number, so no target repeats within a list and conditions st
 items rotate through them. With `counterbalance.lists` unset, the number of lists equals the number
 of conditions, which is the fully counterbalanced case.
 
-```python
+```python exec="1" source="material-block" result="text" session="experiments"
 stimuli = lexsync.counterbalance(stimuli, design, schema)
-print(stimuli[["trial", "list", "set", "condition", "word"]].head(3).to_string(index=False))
-```
-
-```text
- trial  list  set      condition  word
-     1     1    4 high_frequency water
-     2     1    1 high_frequency  knew
-     3     1    3 high_frequency  fact
+print(
+    stimuli[["trial", "list", "set", "condition", "word"]]
+    .head(3)
+    .to_string(index=False)
+)
 ```
 
 A design with a `replicate` column, from `resample_stimuli`, is counterbalanced replicate by
@@ -143,17 +135,13 @@ replicate, and trial order is numbered within each.
 `participant_table` allocates participants to the cells of any crossed factors, cycling through the
 grid so the allocation stays balanced whatever the participant count.
 
-```python
-print(lexsync.participant_table({"list": [1, 2], "order": ["forward", "reverse"]}, 4)
-      .to_string(index=False))
-```
-
-```text
- list   order  participant
-    1 forward            1
-    2 forward            2
-    1 reverse            3
-    2 reverse            4
+```python exec="1" source="material-block" result="text" session="experiments"
+print(
+    lexsync.participant_table(
+        {"list": [1, 2], "order": ["forward", "reverse"]}, 4
+    )
+    .to_string(index=False)
+)
 ```
 
 The grid is crossed with the first factor varying fastest, matching R's `expand.grid`, so both
@@ -175,18 +163,16 @@ condition marker starts at 101 and counts up per condition; the item marker star
 after 200 sets. `export_experiments` calls it for you, so you only need it directly if you are
 exporting one target at a time.
 
-```python
+```python exec="1" source="material-block" result="text" session="experiments"
 from lexsync.scripting import assign_triggers
 
-print(assign_triggers(stimuli)[["word", "condition", "condition_trigger", "item_trigger"]]
-      .head(3).to_string(index=False))
-```
-
-```text
- word      condition  condition_trigger  item_trigger
-water high_frequency                101            43
- knew high_frequency                101            40
- fact high_frequency                101            42
+print(
+    assign_triggers(stimuli)[
+        ["word", "condition", "condition_trigger", "item_trigger"]
+    ]
+    .head(3)
+    .to_string(index=False)
+)
 ```
 
 The codes land in the loop table as `condition_trigger` and `item_trigger`, and the event's
@@ -209,7 +195,10 @@ markers). A design can override them.
 `export_experiments` writes all three from the same rendered event list and returns their paths.
 
 ```python
-paths = lexsync.export_experiments(stimuli, design, schema, outdir="output/experiments")
+# illustrative: writes three experiment files into the working directory
+paths = lexsync.export_experiments(
+    stimuli, design, schema, outdir="output/experiments"
+)
 # {'psychopy': '.../demo_english_psychopy.py',
 #  'opensesame': '.../demo_english.osexp',
 #  'jspsych': '.../demo_english.html'}
@@ -227,6 +216,7 @@ JSON, so one interpreter serves every paradigm.
 The trigger is written on the exact buffer flip on which the stimulus first appears:
 
 ```python
+# illustrative: an excerpt of the generated script, needing a PsychoPy window and port
 def show_frames(win, stim, frames, port, trigger):
     """Draw ``stim`` for ``frames`` flips; if a trigger is given, lock it to onset."""
     if trigger is not None:

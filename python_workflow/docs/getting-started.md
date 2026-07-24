@@ -51,7 +51,7 @@ live, drifting source would quietly stop reproducing.
 
 ### Check that it worked
 
-```python
+```python exec="1" source="material-block" result="text" session="getting-started"
 import lexsync
 
 print(lexsync.__version__)
@@ -197,7 +197,7 @@ engines agree without an RNG. Making it an option would make the guarantee an op
 A copy of the schema and of a small English, Spanish and Chinese lexicon is bundled inside the
 installed package, which is how the examples throughout these guides run without a clone:
 
-```python
+```python exec="1" source="material-block" result="text" session="getting-started"
 from importlib.resources import files
 
 import yaml
@@ -205,7 +205,6 @@ import yaml
 data = files("lexsync") / "data"
 schema = yaml.safe_load((data / "schema.yaml").read_text(encoding="utf-8"))
 print(sorted(p.name for p in data.iterdir()))
-# ['en_example.csv', 'es_example.csv', 'registry.yaml', 'schema.yaml', 'zh_example.csv']
 ```
 
 The bundled lexica are 3000-word slices meant for examples and tests. The full derived corpora live
@@ -219,6 +218,7 @@ datasheet in both JSON and Markdown, a run log in both Markdown and JSON Lines, 
 experiment scripts with their loop tables.
 
 ```python
+# illustrative: needs a clone with config/, and writes files under output/
 import lexsync
 
 paths = lexsync.run_pipeline("config/design_en_freqcontrast.yaml")

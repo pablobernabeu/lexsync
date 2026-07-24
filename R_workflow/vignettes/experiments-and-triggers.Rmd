@@ -8,7 +8,7 @@ vignette: >
 ---
 
 ```{r, include = FALSE}
-knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+knitr::opts_chunk$set(collapse = FALSE, comment = "")
 ```
 
 Once a stimulus set exists, something has to present it. `lexsync` generates that
@@ -26,9 +26,13 @@ to a temporary directory.
 
 ```{r setup}
 library(lexsync)
-schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
-lex <- load_lexicon(system.file("extdata", "en_example.csv", package = "lexsync"),
-                    schema, language = "english")
+schema <- yaml::read_yaml(
+  system.file("extdata", "schema.yaml", package = "lexsync")
+)
+lex <- load_lexicon(
+  system.file("extdata", "en_example.csv", package = "lexsync"),
+  schema, language = "english"
+)
 pool <- build_pool(lex, list(length = c(3, 7), frequency = c(3.8, 7.0)))
 
 design <- list(
@@ -112,7 +116,9 @@ priming_events <- PARADIGMS$priming$events
 or_dash <- function(x) if (is.null(x)) "-" else as.character(x)
 data.frame(
   type = vapply(priming_events, function(e) e$type, character(1)),
-  content = vapply(priming_events, function(e) or_dash(e$content), character(1)),
+  content = vapply(
+    priming_events, function(e) or_dash(e$content), character(1)
+  ),
   trigger = vapply(priming_events, function(e) or_dash(e$trigger), character(1))
 )
 ```
@@ -149,8 +155,14 @@ so it can be read to see exactly what a design will inherit.
 names(PARADIGMS)
 data.frame(
   paradigm = names(PARADIGMS),
-  fields = vapply(PARADIGMS, function(p) paste(p$stimulus_fields, collapse = ", "), character(1)),
-  counterbalance = vapply(PARADIGMS, function(p) p$counterbalance, character(1)),
+  fields = vapply(
+    PARADIGMS,
+    function(p) paste(p$stimulus_fields, collapse = ", "),
+    character(1)
+  ),
+  counterbalance = vapply(
+    PARADIGMS, function(p) p$counterbalance, character(1)
+  ),
   n_events = vapply(PARADIGMS, function(p) length(p$events), integer(1)),
   row.names = NULL
 )

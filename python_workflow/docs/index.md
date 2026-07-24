@@ -68,7 +68,7 @@ example below runs immediately after installation, with no corpus to download an
 configure. It contrasts high- with low-frequency words while equating them, item by item, on length,
 orthographic neighbourhood density and OLD20.
 
-```python
+```python exec="1" source="material-block" result="text" session="index"
 from importlib.resources import files
 
 import yaml
@@ -91,24 +91,20 @@ design = {
     "counterbalance": {"lists": 1},
 }
 
-lexicon = lexsync.load_lexicon(str(data / "en_example.csv"), schema, language="english")
+lexicon = lexsync.load_lexicon(
+    str(data / "en_example.csv"), schema, language="english"
+)
 pool = lexsync.build_pool(lexicon, design["pool_filters"])
 stimuli = lexsync.match_stimuli(pool, design, schema)
 
-report = lexsync.match_report(stimuli, ["length", "frequency", "n_density", "old20"], schema)
+report = lexsync.match_report(
+    stimuli, ["length", "frequency", "n_density", "old20"], schema
+)
 print(report["comparisons"].to_string(index=False))
 ```
 
 The report is the point of the exercise. It states what the matching actually achieved rather than
 asserting that it worked:
-
-```text
-    condition      reference dimension  cohens_d  d_ci_low  d_ci_high  var_ratio  tost_p  equivalent
-low_frequency high_frequency    length     0.013    -0.290      0.316      0.874  0.0044        True
-low_frequency high_frequency frequency     5.915     5.612      6.218      0.307  1.0000       False
-low_frequency high_frequency n_density     0.049    -0.254      0.352      0.710  0.0075        True
-low_frequency high_frequency     old20     0.022    -0.280      0.325      0.897  0.0050        True
-```
 
 Frequency, the manipulation, separates the conditions by nearly six standard deviations and is not
 equivalent, which is what a frequency contrast is for. The three control dimensions each pass a
@@ -120,10 +116,13 @@ Adding the experiment is two more calls. `counterbalance` assigns lists and a se
 and `export_experiments` writes all three targets from the same event list:
 
 ```python
+# illustrative: writes the generated experiment files into the working directory
 import os
 
 stimuli = lexsync.counterbalance(stimuli, design, schema)
-paths = lexsync.export_experiments(stimuli, design, schema, outdir="output/experiments")
+paths = lexsync.export_experiments(
+    stimuli, design, schema, outdir="output/experiments"
+)
 print(sorted(os.path.basename(p) for p in paths.values()))
 ```
 

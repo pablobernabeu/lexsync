@@ -9,7 +9,7 @@ worked, and what to do instead when dichotomising a predictor is the wrong move.
 The examples run against the lexicon bundled with the package, so you can paste them into a session
 and get the output shown. Only the norm-merging sketch needs a file of your own.
 
-```python
+```python exec="1" source="material-block" session="matching"
 from importlib.resources import files
 
 import yaml
@@ -18,7 +18,9 @@ import lexsync
 
 data = files("lexsync") / "data"
 schema = yaml.safe_load((data / "schema.yaml").read_text(encoding="utf-8"))
-lexicon = lexsync.load_lexicon(str(data / "en_example.csv"), schema, language="english")
+lexicon = lexsync.load_lexicon(
+    str(data / "en_example.csv"), schema, language="english"
+)
 ```
 
 ## From lexicon to pool
@@ -37,15 +39,8 @@ Three columns are derived on the way in: `length` in characters, `n_syllables` f
 `frequency`, which is whatever column the schema's `dimensions.frequency.column` names, by default
 `freq_zipf`.
 
-```python
+```python exec="1" source="material-block" result="text" session="matching"
 print(lexicon.head(3).to_string(index=False))
-```
-
-```text
-word  freq_zipf language   source  n_density  old20  id  length  n_syllables  frequency
- aaa       3.77  english wordfreq         19    1.0   1       3            1       3.77
- aac       3.00  english wordfreq         22    1.0   2       3            1       3.00
- aap       3.47  english wordfreq         21    1.0   3       3            1       3.47
 ```
 
 `build_pool` narrows that lexicon to the candidates a design will consider. A two-element numeric
@@ -53,9 +48,9 @@ range is read as an inclusive `[min, max]` band, and anything else is read as a 
 values, compared as strings. Rows missing the filtered column are dropped, and a filter naming a
 column the lexicon does not have is skipped without complaint.
 
-```python
+```python exec="1" source="material-block" result="text" session="matching"
 pool = lexsync.build_pool(lexicon, {"length": [3, 8], "frequency": [3.8, 7.0]})
-print(len(pool))    # 911
+print(len(pool))
 ```
 
 The pool step is not optional even though nothing enforces it. `match_stimuli` never looks at a
@@ -91,9 +86,10 @@ it identical in the two engines instead of merely close.
 `count_syllables` is honest about being an estimate. It counts maximal runs of Latin vowels, which
 is an orthographic approximation and not phonological syllabification.
 
-```python
-print([lexsync.count_syllables(w) for w in ["cat", "banana", "strength", "idea"]])
-# [1, 3, 1, 2]
+```python exec="1" source="material-block" result="text" session="matching"
+print(
+    [lexsync.count_syllables(w) for w in ["cat", "banana", "strength", "idea"]]
+)
 ```
 
 `strength` returning 1 and `idea` returning 2 shows both the method and its limits in one line.
@@ -105,6 +101,7 @@ their licensing varies, and merged here so the matcher can equate on the new col
 been there all along.
 
 ```python
+# illustrative: needs a norm table of your own at norms/concreteness_en.csv
 lexicon = lexsync.merge_norms(lexicon, "norms/concreteness_en.csv", on="word",
                               columns=["concreteness"])
 # then: match_on: [length, frequency, concreteness]
@@ -178,7 +175,7 @@ optimal but different set. Each run's datasheet records which case applies.
 
 Comparing them on the same pool shows how little separates them when the pool is generous:
 
-```python
+```python exec="1" source="material-block" result="text" session="matching"
 pool = lexsync.build_pool(lexicon, {"length": [4, 8], "frequency": [3.5, 7.0]})
 design = {
     "name": "methods", "language": "english", "n_per_condition": 40,
@@ -190,16 +187,13 @@ design = {
 }
 
 for method in ["standardised_euclidean", "joint", "mahalanobis", "optimal"]:
-    stimuli = lexsync.match_stimuli(pool, {**design, "matching": {"method": method}}, schema)
-    report = lexsync.match_report(stimuli, ["length", "n_density", "old20"], schema)
+    stimuli = lexsync.match_stimuli(
+        pool, {**design, "matching": {"method": method}}, schema
+    )
+    report = lexsync.match_report(
+        stimuli, ["length", "n_density", "old20"], schema
+    )
     print(method, [round(d, 3) for d in report["comparisons"]["cohens_d"]])
-```
-
-```text
-standardised_euclidean [0.023, 0.036, 0.014]
-joint [0.0, 0.0, 0.0]
-mahalanobis [0.046, 0.024, 0.017]
-optimal [0.0, 0.0, 0.0]
 ```
 
 The two pairwise methods reach exact equality on all three controls here, because a pool of this size
@@ -216,9 +210,11 @@ if it can keep the guarantee.
 two frames. `descriptives` gives n, mean, SD, minimum, median and maximum per condition per
 dimension. `comparisons` contrasts every other condition against the first on each dimension.
 
-```python
+```python exec="1" source="material-block" result="text" session="matching"
 stimuli = lexsync.match_stimuli(pool, design, schema)
-report = lexsync.match_report(stimuli, ["length", "frequency", "n_density", "old20"], schema)
+report = lexsync.match_report(
+    stimuli, ["length", "frequency", "n_density", "old20"], schema
+)
 print(report["comparisons"].to_string(index=False))
 ```
 
@@ -246,8 +242,8 @@ Two smaller functions round this out. `describe_stimuli` gives the descriptives 
 column you like, not just `condition`. `balance_check` reports columns whose value counts are
 unequal, which is how the pipeline notices an unbalanced condition and writes it into the run log.
 
-```python
-print(lexsync.balance_check(stimuli, "condition"))    # [] when balanced
+```python exec="1" source="material-block" result="text" session="matching"
+print(lexsync.balance_check(stimuli, "condition"))    # empty when balanced
 ```
 
 ## Continuous designs
@@ -257,26 +253,24 @@ and can introduce selection artefacts (Kuperman, 2015; Liben-Nowell et al., 2019
 declare a `continuous` block instead of `conditions`, and select a set that spans the predictor
 evenly while holding the controls near-constant, for analysis by regression or a mixed model.
 
-```python
+```python exec="1" source="material-block" result="text" session="matching"
 design = {
     "name": "continuous", "language": "english", "n_per_condition": 60,
-    "continuous": {"predictor": "frequency", "controls": ["length", "n_density", "old20"]},
+    "continuous": {
+        "predictor": "frequency",
+        "controls": ["length", "n_density", "old20"]
+    },
     "match_on": ["length", "n_density", "old20"],
-    "matching": {"tolerance_k": {"length": 1.5, "n_density": 1.5, "old20": 1.5}},
+    "matching": {
+        "tolerance_k": {"length": 1.5, "n_density": 1.5, "old20": 1.5}
+    },
 }
 pool = lexsync.build_pool(lexicon, {"length": [3, 8], "frequency": [3.8, 7.0]})
 stimuli = lexsync.select_continuous_stimuli(pool, design, schema)
-report = lexsync.match_report_continuous(stimuli, "frequency", ["length", "n_density", "old20"],
-                                         schema)
+report = lexsync.match_report_continuous(
+    stimuli, "frequency", ["length", "n_density", "old20"], schema
+)
 print(report["comparisons"].to_string(index=False))
-```
-
-```text
-dimension      role  pearson_r  predictor_span
-frequency predictor        NaN            3.05
-   length   control     -0.195            3.05
-n_density   control      0.100            3.05
-    old20   control     -0.140            3.05
 ```
 
 The selection is two deterministic passes, with no per-item matching and no random numbers. An even
@@ -304,7 +298,7 @@ it were fixed over-generalises (Clark, 1973; Yarkoni, 2020). `resample_stimuli` 
 disjoint, independently matched sets from one pool, so a study can run a different sample per
 participant group, or show that an effect survives a change of items.
 
-```python
+```python exec="1" source="material-block" result="text" session="matching"
 pool = lexsync.build_pool(lexicon, {"length": [4, 8], "frequency": [3.5, 7.0]})
 design = {
     "name": "resample", "language": "english", "n_per_condition": 20,
@@ -315,7 +309,7 @@ design = {
     "match_on": ["length", "n_density", "old20"],
 }
 stimuli = lexsync.resample_stimuli(pool, design, schema, n_sets=3)
-print(stimuli["word"].nunique(), len(stimuli))    # 120 120
+print(stimuli["word"].nunique(), len(stimuli))
 ```
 
 Each replicate is fully matched in its own right, drawn from the pool with every earlier replicate's
@@ -334,10 +328,15 @@ Lexical decision needs non-words, and the usual difficulty is that they must be 
 plausible without being real. `build_lexdec_stimuli` draws real words by an even spread across the
 byte-ordered pool, then generates a length-matched pseudoword for each.
 
-```python
+```python exec="1" source="material-block" result="text" session="matching"
 pool = lexsync.build_pool(lexicon, {"length": [4, 7], "frequency": [3.5, 6.0]})
-stimuli = lexsync.build_lexdec_stimuli(pool, n=8, reference_words=lexicon["word"].tolist())
-print(stimuli[["target", "condition", "length", "set"]].head(3).to_string(index=False))
+stimuli = lexsync.build_lexdec_stimuli(
+    pool, n=8, reference_words=lexicon["word"].tolist()
+)
+print(
+    stimuli[["target", "condition", "length", "set"]]
+    .head(3).to_string(index=False)
+)
 ```
 
 The presented string is `target`, the conditions are `word` and `pseudoword`, and `set` pairs each
@@ -361,7 +360,7 @@ and a word with no legal swap falls back to letter substitution, so every word y
 It is a deterministic orthographic approximation of Wuggy (Keuleers & Brysbaert, 2010), trading
 Wuggy's phonological model for exact length matching and cross-engine reproducibility.
 
-```python
+```python exec="1" source="material-block" session="matching"
 subsyllabic = lexsync.build_lexdec_stimuli(
     pool, n=8, reference_words=lexicon["word"].tolist(), method="subsyllabic")
 ```
@@ -376,13 +375,9 @@ than in the Chinese design.
 `generate_pseudowords` and `make_pseudoword` are available directly if you want the forms without the
 lexical-decision scaffolding around them.
 
-```python
-pairs = lexsync.generate_pseudowords(["house", "table"], lexicon["word"].tolist())
+```python exec="1" source="material-block" result="text" session="matching"
+pairs = lexsync.generate_pseudowords(
+    ["house", "table"], lexicon["word"].tolist()
+)
 print(pairs.to_string(index=False))
-```
-
-```text
-base_word pseudoword
-    house      hoese
-    table      talle
 ```
