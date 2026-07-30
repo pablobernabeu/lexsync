@@ -7,19 +7,19 @@
   "artifacts": [
     {
       "file": "output/stimuli/en_andrews_repro_english_stimuli_py.csv",
-      "sha256": "3ce88a7a6eb814bd3d7e4a380a02866817a9939c8788874ce8d096efd425b92e"
+      "sha256": "8eb4efce71ba544a64d2113a66f34b43f0d12239551351eac6a9416ce30e2f2d"
     },
     {
       "file": "output/reports/en_andrews_repro_english_descriptives_py.csv",
-      "sha256": "47a09259f07bacf9927bdfec2c19ad3df82b555ae1bd8815b743f7a329dabaae"
+      "sha256": "c2b48fd370ad7ed3a1995c7df025712b11e945c04964176e878fd548e6bb91d0"
     },
     {
       "file": "output/reports/en_andrews_repro_english_comparisons_py.csv",
-      "sha256": "a0cfc615fd5ffea709fd434a67b4516063f590bdee13e3e2e8fe8fbb7b81c44c"
+      "sha256": "48a25773f75fbc0ed76e61fd7c0bab3e19de24314ea1e758180cf39f2e925782"
     },
     {
       "file": "output/experiments/en_andrews_repro_english_psychopy.py",
-      "sha256": "5a2535ebc3e48c2700b6ebc4c6137c09bd43b3e3cf2601b23834549a30e517bd"
+      "sha256": "e6e4b4302c2b6e80275add808f01bc8175750dce4f434ad90bd19480473fa561"
     },
     {
       "file": "output/experiments/en_andrews_repro_english.osexp",
@@ -27,7 +27,7 @@
     },
     {
       "file": "output/experiments/en_andrews_repro_english.html",
-      "sha256": "5204959a5082cac338f6263e73c6df9e96b8aff625187dded4abdef6cf8ea826"
+      "sha256": "054a2a799a54ce5d26ee6ab3e0a8071467ebd5e2110321235cd1101ed1875176"
     }
   ],
   "counterbalancing": {
@@ -84,9 +84,9 @@
     "n_conditions": 4,
     "n_total": 72,
     "stimuli_file": "output/stimuli/en_andrews_repro_english_stimuli_py.csv",
-    "stimuli_sha256": "3ce88a7a6eb814bd3d7e4a380a02866817a9939c8788874ce8d096efd425b92e"
+    "stimuli_sha256": "8eb4efce71ba544a64d2113a66f34b43f0d12239551351eac6a9416ce30e2f2d"
   },
-  "lexsync_datasheet_version": "1.0",
+  "lexsync_datasheet_version": "1.1",
   "materials_source": {
     "path": "corpora/derived/en.csv",
     "provenance": "see corpora/ATTRIBUTION.md for corpus licence and citation",
@@ -215,6 +215,7 @@
       "var_ratio": 1.217
     }
   ],
+  "relational": null,
   "reproducibility": {
     "seed": 2026,
     "versions": {

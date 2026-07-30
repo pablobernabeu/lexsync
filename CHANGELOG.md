@@ -12,6 +12,58 @@ no function signature changes.
 
 ### Added
 
+- **Practice and filler blocks.** A design may declare `practice:` and `fillers:` item
+  tables. Those trials are presented but not analysed, so the pipeline splits: the
+  stimuli file and the reports are written from the main rows, the generated experiments
+  from every presented trial. Practice comes first as its own run; fillers are
+  INTERLEAVED with the main trials rather than appended, because a block of fillers at
+  the end is not a filler but a second block a participant can tell apart. Both appear in
+  every list, and both are recorded in the datasheet with their checksums. A design
+  declaring neither is unaffected, down to not gaining a `block` column.
+- A **`feedback` trial event**, and a **`blocks:`** key restricting any event to named
+  blocks. Together they give feedback during practice and not during the task, which is
+  the usual arrangement: feedback teaches the response mapping, and would contaminate the
+  reaction times it is measuring. The item's `answer` column holds the correct *key*, so
+  scoring is a string comparison with nothing to look up, and a timeout is reported
+  separately from a wrong key because on a timed task they mean different things.
+  Implemented for PsychoPy, OpenSesame and jsPsych: the PsychoPy runner now returns the
+  pressed key so it can be scored, the OpenSesame emitter guards the restricted script
+  inline, jsPsych reads the response from its own data store, and each pauses at a block
+  boundary.
+- New paradigm **`categorisation`**: a category cue, then the word to judge against it.
+  The cue is a trial event rather than one-off instructions, because the category varies
+  by trial, which is what separates a property of the word from the demands of the task.
+  `answer` holds the correct response *key*, so the data are scoreable with a string
+  comparison. Counterbalanced by Latin-square rotation, so a participant never sees the
+  same target twice.
+- **`counterbalance.optimise`** (off by default): item sets are assigned to
+  counterbalancing lists so the lists are equated on the declared dimensions, rather than
+  dealt by set rank, which balances nothing. The search is a steepest-descent exchange of
+  set pairs with an all-integer objective and a keyed-hash tie-break, so it uses no
+  random number generator and both engines produce the same assignment. On the shipped
+  demo it takes the per-list spread in neighbourhood density from 113 to 1. Exported as
+  `balance_lists()`.
+- New item source **`pool`**: a supplied candidate word list goes through the matcher,
+  validation and datasheet without having to masquerade as a corpus lexicon. Exported as
+  `load_pool()`. The neighbourhood dimensions are computed against the *lexicon's* words
+  rather than the supplied list, because a word's neighbours are its neighbours in the
+  language and not among the hundred words a study happens to use.
+- A **byte-level parity test** over every generated value artefact, plus a compensated
+  summation shared by both engines. See Fixed.
+- A design may name norm tables in a **`norms:` block**. They are joined onto the
+  lexicon before the candidate pool is built, so a semantic dimension the corpus
+  does not carry (concreteness, age of acquisition, valence) can be filtered on,
+  matched on or spanned like any other dimension. No norm data is bundled: licences
+  vary, and the citation is the user's to honour.
+- **Datasheet version 1.1.** Every joined norm table is recorded with its checksum,
+  its join key and its per-column coverage, because a norm table can supply the very
+  variable a design manipulates and a selection over columns of unstated origin is
+  not reproducible from the record that exists to make it so. Coverage is recorded
+  because an uncovered word gets a missing value that the tolerance windows then
+  drop from the pool. A pair-keyed design also gains a `relational` block: the
+  members, the pair count (`items.n_total` counts rows, which is one per pair per
+  condition), the member lexicon and its checksum, and the member-level dimensions
+  listed separately from the relational ones.
 - Materials datasheet now records **selection transparency**: the candidate-pool
   size per condition (how many items satisfied each condition's window before
   matching). Reporting the size of the discretionary pool makes item-selection
@@ -61,6 +113,15 @@ no function signature changes.
 
 ### Changed
 
+- `selection.cross_engine` in the datasheet no longer reports "n/a (user-supplied
+  items)" for a **pair-keyed continuous design**. That design does perform a
+  selection over the item table, and the selection is byte-identical across engines,
+  so the previous answer understated the guarantee on the one path where a reader
+  most needs it. A plain item-table design, which selects nothing, still reports
+  "n/a".
+- `merge_norms()` returns the lexicon with the norm columns appended, in the
+  lexicon's own row *and column* order, and looks the key up positionally rather than
+  through a merge, so neither engine has any freedom left about the result's shape.
 - **Breaking:** trial order within each counterbalancing list is now produced by
   a seeded, keyed-hash shuffle shared by both engines. Each row is ranked by the
   SHA-256 digest of `seed|replicate|list|set|condition`, a tuple that identifies
@@ -115,6 +176,65 @@ no function signature changes.
 
 ### Fixed
 
+- **The Python engine embedded a bare `NaN` in the generated jsPsych experiment**, where
+  a trial had no value for a field that another block supplies -- a main-block trial in a
+  design whose practice items carry an `answer`. `NaN` is not valid JSON, and the R
+  engine dropped the key instead, so the two engines' experiments differed byte for byte.
+  Both now drop it, which is also the honest rendering: a trial with no correct answer
+  has none. Found by running the two engines into separate directories; both write the
+  shared experiment files to one path, so a normal run has the second silently overwrite
+  the first.
+- **The generated artefacts were not byte-identical across the engines, and the parity
+  test could not see it.** It read both CSVs back with a parser and compared the values,
+  under which `1` and `1.0` are the same number; 13 of the 18 shipped designs differed
+  byte for byte while the gate stayed green. Three of the differences were serialisation
+  — a whole number written `1` by readr and `1.0` by pandas, a boolean written `FALSE` and
+  `False`, a value below 1e-3 written `9e-4` and `0.0009` — and one was not: two reported
+  means differed in the last decimal the descriptives publish, because numpy sums
+  pairwise and R's `mean()` uses a two-pass long-double algorithm, and the true value sat
+  on a rounding boundary. Every reduction in the package now uses one Neumaier
+  compensated summation written out in both engines, so their agreement follows from
+  IEEE-754 requiring addition and subtraction to be correctly rounded rather than from a
+  measurement of two libraries' internals. **No R golden moved:** R's two-pass mean was
+  already the correctly-rounded one, so the fix brought the Python engine into line.
+  Artefacts are now compared as bytes, not as parsed values.
+- **A response key coded `f` was silently turned into `FALSE`.** `readr` reads a column
+  whose values are all `f`, `t`, `T` or `F` as logical while pandas keeps the string, so
+  an item table using the commonest two-choice key pair had its correct answer corrupted
+  in the R engine and not the Python one. Measured on readr 2.2.0: `f`, `t`, `T` and `F`
+  infer as logical; `j`, `y` and `n` do not. Item tables now read the condition label and
+  the paradigm's presented fields as text in both engines.
+- **The datasheet was truncating its own provenance.** `jsonlite::toJSON` defaults to four
+  digits, so a design declaring `tolerance_k: 0.1111111111111111` had it recorded as
+  `0.1111`, which does not reproduce the run the record exists to describe. Most fields
+  escaped only because they are deliberately rounded on the way in. Both engines now
+  write the JSON at 15 significant digits.
+- The matcher's z-scoring centre and scale also go through the compensated reductions.
+  Selection was robust to the difference for a structural reason — a distance is between
+  z-vectors, so a shift in the centre cancels and a change of scale cannot reorder
+  candidates — but robust-for-a-reason is not identical-by-construction, and the change
+  was verified to move no design's selection.
+- **`merge_norms()` column order differed between engines.** R's `merge()` hoists the
+  join column to position 1 while `pandas.merge` keeps the left frame's order, so the
+  two engines returned different column order whenever `on` was not already the first
+  column. Measured on both engines, then removed structurally rather than repaired.
+- **`merge_norms()` case-folded only one side of the join key.** A lexicon holding
+  `Dog` against a norm table holding `dog` matched nothing, and the design carried on
+  with an all-missing dimension. Both engines agreed on that wrong answer, which is
+  why no parity test could have caught it. The lexicon's own spelling is preserved:
+  `word` is the byte-order tie-break behind every selection.
+- **A colliding norm column was silently renamed.** R's `merge()` produced
+  `frequency.x` / `frequency.y` and pandas `frequency_x` / `frequency_y`, so a design
+  matching on `frequency` found neither, in either engine. It is now an error naming
+  the clash.
+- **The R engine wrote its datasheet and Markdown run log with CRLF on Windows**
+  while the Python engine wrote LF, because `write_datasheet()` and `write_run_log()`
+  used a text-mode connection rather than the package's LF-pinning writer. The
+  datasheet is the provenance artefact; its bytes must not record which machine
+  produced it.
+- **`add_pair_overlap()` and `resolve_trial_timing()` were not exported from the R
+  package.** Both were marked for export and documented, but `NAMESPACE` had not been
+  regenerated, so `library(lexsync)` did not make them available.
 - A word missing from a lexicon row became the literal string `"nan"` in Python
   while R dropped the row. Both engines now drop it before string coercion.
 - `participant_table()` crosses its factors in `expand.grid()` order in both

@@ -9,3 +9,10 @@
 ^docs$
 ^_pkgdown\.yml$
 ^pkgdown$
+# CRAN wants the `License: MIT + file LICENSE` stub, not the full text. LICENSE.md
+# exists only so pkgdown builds LICENSE.html, which the footer and the home
+# sidebar link; without it pkgdown emits LICENSE-text.html carrying the two-line
+# stub and no licence at all.
+^LICENSE\.md$
+# Community files, mirrored for pkgdown; not part of the R distribution.
+^\.github$

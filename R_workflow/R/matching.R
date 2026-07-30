@@ -48,8 +48,8 @@ match_stimuli <- function(pool, design, schema, verbose = FALSE) {
 
   # Standardisation statistics taken from the whole pool, so scaling is stable
   # and identical across conditions.
-  center <- vapply(match_on, function(d) mean(pool[[d]], na.rm = TRUE), numeric(1))
-  scale_ <- vapply(match_on, function(d) stats::sd(pool[[d]], na.rm = TRUE), numeric(1))
+  center <- vapply(match_on, function(d) .exact_mean(pool[[d]][!is.na(pool[[d]])]), numeric(1))
+  scale_ <- vapply(match_on, function(d) .exact_sd(pool[[d]][!is.na(pool[[d]])]), numeric(1))
   scale_[is.na(scale_) | scale_ == 0] <- 1
   zmat <- function(df) {
     m <- as.matrix(df[, match_on, drop = FALSE])
@@ -103,8 +103,8 @@ match_stimuli <- function(pool, design, schema, verbose = FALSE) {
 
   # Tolerance windows from the anchor distribution (Stage 1 pre-filter).
   win <- lapply(match_on, function(d) {
-    m <- mean(anchor[[d]], na.rm = TRUE)
-    s <- stats::sd(anchor[[d]], na.rm = TRUE)
+    m <- .exact_mean(anchor[[d]][!is.na(anchor[[d]])])
+    s <- .exact_sd(anchor[[d]][!is.na(anchor[[d]])])
     k <- tol_k[[d]] %||% 2
     c(m - k * s, m + k * s)
   })
@@ -256,7 +256,7 @@ match_joint <- function(subpools, cond_names, match_on, center, scale_, n, cap =
 #'
 #' Solves the linear-assignment problem globally rather than greedily, so it
 #' minimises the summed pair distance and leaves fewer poorly matched pairs (Gu and
-#' Rosenbaum, 1993; Hansen and Klopfer, 2006). Needs the 'clue' package. The
+#' Rosenbaum, 1993; Hansen & Klopfer, 2006). Needs the 'clue' package. The
 #' solver's tie handling differs from the Python engine's, so the two agree closely
 #' but not byte-for-byte.
 #'
@@ -323,7 +323,9 @@ match_optimal <- function(subpools, cond_names, match_on, center, scale_, n, cap
 #' @return A data frame of selected stimuli (condition "continuous", set 1..n).
 #' @importFrom stats sd
 #' @export
-select_continuous_stimuli <- function(pool, design, schema, verbose = FALSE) {
+select_continuous_stimuli <- function(pool, design, schema, verbose = FALSE,
+                                      key = "word", label = "continuous",
+                                      renumber_sets = TRUE) {
   cfg <- design$continuous
   predictor <- cfg$predictor
   controls <- unlist(cfg$controls, use.names = FALSE)
@@ -350,9 +352,18 @@ select_continuous_stimuli <- function(pool, design, schema, verbose = FALSE) {
   if (!is.null(design$matching$tolerance_k)) {
     tol_k <- utils::modifyList(tol_k, design$matching$tolerance_k)
   }
+  if (!(key %in% names(pool))) {
+    stop(sprintf("lexsync: the continuous tie-break column '%s' is absent from the pool.", key),
+         call. = FALSE)
+  }
   even_spread <- function(df) {
     if (nrow(df) == 0) return(df)
-    df <- df[order(df[[predictor]], df$word, method = "radix"), , drop = FALSE]
+    # `key` is the deterministic tie-break when two rows share a predictor value.
+    # It is `word` for a corpus pool and `set` for a collapsed pair table, where no
+    # `word` column exists. Note `df[[key]]` rather than `df$word`: `$`
+    # partial-matches on a data frame, so a joined `word.frequency` with no bare
+    # `word` would silently sort by it in R while Python raised KeyError.
+    df <- df[order(df[[predictor]], df[[key]], method = "radix"), , drop = FALSE]
     n_take <- min(n, nrow(df))
     idx <- unique(round(seq(1, nrow(df), length.out = n_take)))
     df[idx, , drop = FALSE]
@@ -361,8 +372,8 @@ select_continuous_stimuli <- function(pool, design, schema, verbose = FALSE) {
   spread <- even_spread(pool)
   if (nrow(spread) == 0) stop("lexsync: the pool is empty for the continuous design.", call. = FALSE)
   win <- lapply(controls, function(d) {
-    m <- mean(spread[[d]], na.rm = TRUE)
-    s <- stats::sd(spread[[d]], na.rm = TRUE)
+    m <- .exact_mean(spread[[d]][!is.na(spread[[d]])])
+    s <- .exact_sd(spread[[d]][!is.na(spread[[d]])])
     k <- tol_k[[d]] %||% 2
     c(m - k * s, m + k * s)
   })
@@ -383,8 +394,11 @@ select_continuous_stimuli <- function(pool, design, schema, verbose = FALSE) {
   }
   # Pass 2: an even spread over the filtered pool is the selection.
   sel <- even_spread(filtered)
-  sel$condition <- "continuous"
-  sel$set <- seq_len(nrow(sel))
+  # A pair table already carries its own `condition` and `set`, which the Latin
+  # square and the trial-order digest depend on, so the pair path passes
+  # label = NULL and renumber_sets = FALSE to leave both alone.
+  if (!is.null(label)) sel$condition <- label
+  if (isTRUE(renumber_sets)) sel$set <- seq_len(nrow(sel))
   rownames(sel) <- NULL
   sel
 }
@@ -395,7 +409,7 @@ select_continuous_stimuli <- function(pool, design, schema, verbose = FALSE) {
 #' items of earlier replicates removed, so no item is reused. This lets a study
 #' treat its items as a random factor (running different item samples across
 #' participant groups, or showing an effect holds across samples) instead of treating
-#' them as a fixed set (Clark, 1973; Yarkoni, 2020). Deterministic and identical to the
+#' them as a fixed set (Clark, 1973; Yarkoni, 2022). Deterministic and identical to the
 #' Python engine.
 #'
 #' @param pool A candidate pool with the `match_on` dimensions present.

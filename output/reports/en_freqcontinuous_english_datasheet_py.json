@@ -7,11 +7,11 @@
   "artifacts": [
     {
       "file": "output/stimuli/en_freqcontinuous_english_stimuli_py.csv",
-      "sha256": "fef3b0bf928069905a023fdb02aa9a3fccca73b65da325daa154b51aec5b8fb0"
+      "sha256": "8151a0787d989557463f4d2ac5e1c11f5bb943283774da0ed66748724f54da2a"
     },
     {
       "file": "output/reports/en_freqcontinuous_english_descriptives_py.csv",
-      "sha256": "652d2df54e9d77598843de08cb2bdf54f4b39f9ac07a505b78f6019b64195507"
+      "sha256": "92a987779a35c135481770525defa6aefccd6c2c9be6571a057ef609f8d4b8ad"
     },
     {
       "file": "output/reports/en_freqcontinuous_english_comparisons_py.csv",
@@ -19,7 +19,7 @@
     },
     {
       "file": "output/experiments/en_freqcontinuous_english_psychopy.py",
-      "sha256": "e2858cdde2585bc604f949b02f3e478d721186a7b0c10a83915b188ea77800bb"
+      "sha256": "469ecb7a834210821e6b6b58f271bd8328cdfd4476080f048822ff6a0fc5315d"
     },
     {
       "file": "output/experiments/en_freqcontinuous_english.osexp",
@@ -27,7 +27,7 @@
     },
     {
       "file": "output/experiments/en_freqcontinuous_english.html",
-      "sha256": "3ced5d8d9e5cf1ae5d55c60a5a4079d148f66f4dd6933b6812b6c92fa108ea83"
+      "sha256": "e2a111fa708005b0056d2a914a0b815e4bbe23fdca723ca61fcce58de550e5cc"
     }
   ],
   "counterbalancing": {
@@ -81,9 +81,9 @@
     "n_conditions": 1,
     "n_total": 80,
     "stimuli_file": "output/stimuli/en_freqcontinuous_english_stimuli_py.csv",
-    "stimuli_sha256": "fef3b0bf928069905a023fdb02aa9a3fccca73b65da325daa154b51aec5b8fb0"
+    "stimuli_sha256": "8151a0787d989557463f4d2ac5e1c11f5bb943283774da0ed66748724f54da2a"
   },
-  "lexsync_datasheet_version": "1.0",
+  "lexsync_datasheet_version": "1.1",
   "materials_source": {
     "path": "corpora/derived/en.csv",
     "provenance": "see corpora/ATTRIBUTION.md for corpus licence and citation",
@@ -116,6 +116,7 @@
       "role": "control"
     }
   ],
+  "relational": null,
   "reproducibility": {
     "seed": 2026,
     "versions": {

@@ -1,6 +1,6 @@
 # Materials datasheet -- es_ndensity (spanish)
 
-*lexsync datasheet v1.0; R engine.*
+*lexsync datasheet v1.1; R engine.*
 
 ## Provenance
 

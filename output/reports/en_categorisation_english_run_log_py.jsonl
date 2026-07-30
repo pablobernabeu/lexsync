@@ -1,0 +1,8 @@
+{"time": "2026-07-30T15:23:43", "message": "loading items 'items/categorisation_en.csv'", "data": null}
+{"time": "2026-07-30T15:23:43", "message": "loaded 16 items across 2 conditions", "data": {"conditions": "narrow, broad"}}
+{"time": "2026-07-30T15:23:43", "message": "wrote 'en_categorisation_english_stimuli_py.csv'", "data": {"path": "output\\stimuli\\en_categorisation_english_stimuli_py.csv", "rows": 32, "md5": "5875c5e4de8add0e2689720265c9b9e5"}}
+{"time": "2026-07-30T15:23:43", "message": "wrote 'en_categorisation_english_psychopy.py'", "data": {"path": "output\\experiments\\en_categorisation_english_psychopy.py", "rows": null, "md5": "d2377a0514a100f4e4a0b7fd90d4b16c"}}
+{"time": "2026-07-30T15:23:43", "message": "wrote 'en_categorisation_english.osexp'", "data": {"path": "output\\experiments\\en_categorisation_english.osexp", "rows": null, "md5": "b0e35559349ec27f561db4b45a393f78"}}
+{"time": "2026-07-30T15:23:43", "message": "wrote 'en_categorisation_english.html'", "data": {"path": "output\\experiments\\en_categorisation_english.html", "rows": null, "md5": "8e60cd423a2a49cb637ae0c8c4daffb6"}}
+{"time": "2026-07-30T15:23:43", "message": "wrote 'en_categorisation_english_datasheet_py.json'", "data": {"path": "output\\reports\\en_categorisation_english_datasheet_py.json", "rows": null, "md5": "26e9bc75367a59b2d16f634a79b12d6d"}}
+{"time": "2026-07-30T15:23:43", "message": "wrote 'en_categorisation_english_datasheet_py.md'", "data": {"path": "output\\reports\\en_categorisation_english_datasheet_py.md", "rows": null, "md5": "561ef59aca303cb1177c616c028a63fc"}}

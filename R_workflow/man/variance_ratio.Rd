@@ -15,7 +15,7 @@ The variance ratio, or \code{NA} when a variance is undefined.
 \description{
 The ratio of a condition's variance to the reference's, complementing the
 mean-based Cohen's d and TOST. Two conditions can share a mean yet differ in
-spread and still confound, which a mean-based statistic misses (Armstrong,
-Watson & Plaut, 2012; Austin, 2009). A ratio near 1 is balanced; a common
+spread and still confound, which a mean-based statistic misses
+(Armstrong et al., 2012; Austin, 2009). A ratio near 1 is balanced; a common
 heuristic flags ratios outside roughly 0.5 to 2.
 }

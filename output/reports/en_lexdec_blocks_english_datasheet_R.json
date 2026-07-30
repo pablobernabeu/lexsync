@@ -1,0 +1,132 @@
+{
+  "lexsync_datasheet_version": "1.1",
+  "design": {
+    "name": "en_lexdec_blocks",
+    "language": "english",
+    "paradigm": "lexical_decision",
+    "source": "generate",
+    "description": "English lexical decision with a feedback-bearing practice block and interleaved fillers, neither of which is analysed.",
+    "n_per_condition": 20
+  },
+  "materials_source": {
+    "type": "generate",
+    "path": "corpora/derived/en.csv",
+    "sha256": "c20549b920d816809d11cfa673ad0df1dd70d3e73176ee66cbec18021627f65d",
+    "provenance": "see corpora/ATTRIBUTION.md for corpus licence and citation"
+  },
+  "dimensions": {
+    "length": {
+      "type": "derived",
+      "compute": "n_letters",
+      "unit": "letters"
+    }
+  },
+  "selection": {
+    "method": "constrained letter substitution (deterministic pseudowords)",
+    "generation_method": "letter_substitution",
+    "matched_on": [
+      "length"
+    ],
+    "candidate_pool": [
+      {
+        "condition": "words in band",
+        "n_candidates": 8177
+      }
+    ],
+    "cross_engine": "byte-identical"
+  },
+  "relational": null,
+  "analysis": {
+    "response": "the trial outcome (e.g. reaction time or accuracy)",
+    "suggested_model": "response ~ lexicality + (1 + lexicality | subject) + (1 | item)",
+    "note": "Crossed random effects for subjects and items guard against the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). Begin with this maximal structure (Barr et al., 2013) and reduce it if the model does not converge (Matuschek et al., 2017); fit with lme4 in R or pymer4/statsmodels in Python."
+  },
+  "realised_control": [
+    {
+      "dimension": "length",
+      "role": "controlled",
+      "cohens_d": 0,
+      "ci_low": -0.533,
+      "ci_high": 0.533,
+      "var_ratio": 1,
+      "tost_p": 0.0611,
+      "equivalent": false
+    }
+  ],
+  "counterbalancing": {
+    "recipe": "factorial",
+    "lists": 1,
+    "blocks": {
+      "blocks": [
+        {
+          "block": "main",
+          "n_per_list": 40
+        },
+        {
+          "block": "filler",
+          "n_per_list": 8,
+          "path": "items/fillers_en_lexdec.csv",
+          "sha256": "692b31b1b008c6ee7e81727c9353d839008abcd70bed28c55c6e9846f25a4e5d",
+          "placement": "interleaved with the main trials by the seeded order"
+        },
+        {
+          "block": "practice",
+          "n_per_list": 8,
+          "path": "items/practice_en_lexdec.csv",
+          "sha256": "d38d3503941c758abaddd6d453cebb4697a1d1c2e70b16afc1e6847f17749615",
+          "placement": "before the main trials"
+        }
+      ],
+      "analysed": "main"
+    }
+  },
+  "resampling": null,
+  "items": {
+    "n_total": 40,
+    "n_conditions": 2,
+    "conditions": [
+      "pseudoword",
+      "word"
+    ],
+    "stimuli_file": "output/stimuli/en_lexdec_blocks_english_stimuli_R.csv",
+    "stimuli_sha256": "ca9c63f17f5bdc019e694cd56f4ee1b2c4915f7b470ee9d90ca871000318cd74"
+  },
+  "reproducibility": {
+    "seed": 2026,
+    "versions": {
+      "engine": "R",
+      "lexsync": "0.1.0",
+      "R": "4.6.1",
+      "readr": "2.2.0",
+      "stringdist": "0.9.17",
+      "jsonlite": "2.0.0",
+      "digest": "0.6.39"
+    }
+  },
+  "artifacts": [
+    {
+      "file": "output/stimuli/en_lexdec_blocks_english_stimuli_R.csv",
+      "sha256": "ca9c63f17f5bdc019e694cd56f4ee1b2c4915f7b470ee9d90ca871000318cd74"
+    },
+    {
+      "file": "output/reports/en_lexdec_blocks_english_descriptives_R.csv",
+      "sha256": "caf2c7d172f564d2012b309496c0c498dc9c121f9287264ebad968821b898249"
+    },
+    {
+      "file": "output/reports/en_lexdec_blocks_english_comparisons_R.csv",
+      "sha256": "5bc33a65c07f6bba8a005416b39910acf762d97b655620376a04932410ee28a7"
+    },
+    {
+      "file": "output/experiments/en_lexdec_blocks_english_psychopy.py",
+      "sha256": "2ab021bdaaa0f9d502a62fcf1570d8fb7031dac6b22f8e358909f73d1fa6f9c7"
+    },
+    {
+      "file": "output/experiments/en_lexdec_blocks_english.osexp",
+      "sha256": "21f1216c1b514000374866403c5c025593b7372069bce8e654e2a6e9df3b3f6c"
+    },
+    {
+      "file": "output/experiments/en_lexdec_blocks_english.html",
+      "sha256": "f7353158d29e3148485bf268e634971f22025fca343006968e63aa8965bcc44f"
+    }
+  ]
+}

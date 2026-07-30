@@ -21,14 +21,48 @@ for event in lexsync.resolve_events({"paradigm": "lexical_decision"}):
 
 An event's `type` is one of `fixation`, `text`, `mask`, `blank`, `region_by_region`, `response` or
 `question`. Its `content` is either a literal, such as `"+"` or `"#####"`, or a field reference in
-braces, such as `"{target}"`, which is filled per trial from the loop table. `duration_frames`
-counts flips at 60 Hz rather than milliseconds, because a frame is the unit the display actually
-has. `trigger` is an integer EEG code, or the token `condition` or `item`, and `onset_locked` asks
-for it to be written on the event's onset flip.
+braces, such as `"{target}"`, which is filled per trial from the loop table. `duration_ms` is the
+event's length in milliseconds, the unit all three targets present, so a design means the same
+interval wherever it runs; the PsychoPy script measures the display's refresh at start-up and
+converts it to the nearest whole number of flips. `duration_frames` is still accepted for designs
+written before that change and is converted at `presentation.assumed_refresh_hz`. `trigger` is an
+integer EEG code, or the token `condition` or `item`, and `onset_locked` asks for it to be written
+on the event's onset flip.
 
 `resolve_events` returns a design's `events` list if it has one, and otherwise the default sequence
 of the paradigm it names, defaulting to `factorial`. Supplying `events` explicitly is how you build
 a trial the registry does not have.
+
+
+## Timing that varies from trial to trial
+
+A duration need not be the same on every trial. An event may instead declare a
+`duration:` block, in one of two forms:
+
+```yaml
+- type: text
+  content: '{prime}'
+  duration: {from_column: soa_ms}            # read per trial from the items
+- type: blank
+  duration: {jitter: [400, 800], as: iti_ms} # drawn per trial, in milliseconds
+```
+
+The two exist for different reasons. A duration read from a column is a
+manipulated variable: the stimulus-onset asynchrony of a priming study is the
+lever that separates automatic from strategic processing, so it belongs in the
+item table and in the analysis. A jittered duration is not manipulated at all; it
+decorrelates the design matrix, as EEG and fMRI designs routinely require.
+
+Neither draws a random number. A jittered value is a uniform integer keyed on the
+seed, the column name, the list, the set and the condition, so both engines
+realise the same milliseconds and a rerun reproduces them. Naming the column in
+the key is what makes two jittered events draw independently rather than sharing
+one value.
+
+Either form writes the realised milliseconds into the stimuli table and the loop
+table, which is the point: timing that varies is a variable the analysis needs,
+not presentation detail. `config/design_en_priming_jitter.yaml` is a worked
+example carrying both.
 
 ## The four paradigms
 
@@ -186,9 +220,10 @@ trial,list,set,condition,word,condition_trigger,item_trigger
 ```
 
 The schema sets the hardware defaults: `triggers.parallel_address` (`0x0378`, a typical LPT1 base
-address), `triggers.reset_after_frames` (2, about 33 ms at 60 Hz, comfortably above the 10 ms
-minimum recorders need to see), and `triggers.inter_trigger_ms` (10, the spacing of trailing
-markers). A design can override them.
+address), `triggers.trigger_hold_ms` (50, comfortably above the 10 ms minimum recorders need to
+see, and converted to whole flips against the measured refresh so it does not shorten on a fast
+display), and `triggers.inter_trigger_ms` (10, the spacing of trailing markers). A design can
+override them. The older `triggers.reset_after_frames` is still accepted and converted.
 
 ## The three targets
 
@@ -209,9 +244,10 @@ demonstration, and the test suite, reproduce on a machine with no laboratory har
 
 ### PsychoPy
 
-The PsychoPy export is where the methodological argument for lexsync lives. The script reads its
-stimulus text as data from the conditions CSV beside it, and interprets an `EVENTS` list embedded as
-JSON, so one interpreter serves every paradigm.
+The PsychoPy export ([Peirce et al., 2019](references.md#peirce-2019)) is where the methodological
+argument for lexsync lives. The script reads its stimulus text as data from the conditions CSV
+beside it, and interprets an `EVENTS` list embedded as JSON, so one interpreter serves every
+paradigm.
 
 The trigger is written on the exact buffer flip on which the stimulus first appears:
 
@@ -234,8 +270,9 @@ def show_frames(win, stim, frames, port, trigger):
 `win.callOnFlip` queues the port write against the next flip, so the code goes out with the photons
 rather than from a later component that merely runs soon afterwards. The common alternative, sending
 the trigger from a separate sequence-ordered item, inherits whatever jitter sits between that item
-and the flip. The reset is queued the same way, on the flip `reset_after_frames` later, with a
-direct write as the fallback when the stimulus is shorter than the reset window.
+and the flip. The reset is queued the same way, one flip before the hold expires so that it lands
+on the flip that ends it, with a direct write as the fallback when the stimulus is shorter than the
+hold.
 
 Stimulus text is never interpolated into the script, only read from the CSV at run time, so nothing
 in a stimulus can become code. When no parallel-port driver is present, on a development laptop, on
@@ -246,8 +283,8 @@ that the onset trigger is flip-locked.
 ### OpenSesame
 
 The `.osexp` is generated block by block rather than from a template, and the result is a normal
-OpenSesame experiment: a trigger-setup inline script, one inline script per event, a sequence and a
-loop.
+OpenSesame experiment ([Mathôt et al., 2012](references.md#mathot-2012)): a trigger-setup inline
+script, one inline script per event, a sequence and a loop.
 
 ```text
 define inline_script lexsync_e1

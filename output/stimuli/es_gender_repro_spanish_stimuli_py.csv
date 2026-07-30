@@ -14,7 +14,7 @@ graduado,3.75,spanish,"wordfreq (Speer 2022); gender by canonical -o/-a ending, 
 arquero,3.75,spanish,"wordfreq (Speer 2022); gender by canonical -o/-a ending, gerunds excluded",0,2.75,masculine,790,7,3,3.75,masculine,8,1,13
 fierro,3.76,spanish,"wordfreq (Speer 2022); gender by canonical -o/-a ending, gerunds excluded",2,1.85,masculine,4263,6,2,3.76,masculine,30,1,14
 niego,3.85,spanish,"wordfreq (Speer 2022); gender by canonical -o/-a ending, gerunds excluded",5,1.75,masculine,6640,5,2,3.85,masculine,48,1,15
-prieto,3.75,spanish,"wordfreq (Speer 2022); gender by canonical -o/-a ending, gerunds excluded",0,2.0,masculine,7744,6,2,3.75,masculine,22,1,16
+prieto,3.75,spanish,"wordfreq (Speer 2022); gender by canonical -o/-a ending, gerunds excluded",0,2,masculine,7744,6,2,3.75,masculine,22,1,16
 amlo,3.86,spanish,"wordfreq (Speer 2022); gender by canonical -o/-a ending, gerunds excluded",0,1.9,masculine,517,4,2,3.86,masculine,3,1,17
 alza,4.13,spanish,"wordfreq (Speer 2022); gender by canonical -o/-a ending, gerunds excluded",6,1.6,feminine,469,4,2,4.13,feminine,3,1,18
 trago,3.86,spanish,"wordfreq (Speer 2022); gender by canonical -o/-a ending, gerunds excluded",8,1.5,masculine,9549,5,2,3.86,masculine,28,1,19
@@ -53,7 +53,7 @@ retina,3.29,spanish,"wordfreq (Speer 2022); gender by canonical -o/-a ending, ge
 fortaleza,4.29,spanish,"wordfreq (Speer 2022); gender by canonical -o/-a ending, gerunds excluded",0,3.3,feminine,4364,9,4,4.29,feminine,21,1,52
 mesita,3.21,spanish,"wordfreq (Speer 2022); gender by canonical -o/-a ending, gerunds excluded",1,1.95,feminine,6226,6,3,3.21,feminine,30,1,53
 caldo,3.75,spanish,"wordfreq (Speer 2022); gender by canonical -o/-a ending, gerunds excluded",5,1.65,masculine,1503,5,2,3.75,masculine,45,1,54
-china,5.0,spanish,"wordfreq (Speer 2022); gender by canonical -o/-a ending, gerunds excluded",2,1.75,feminine,1899,5,2,5.0,feminine,10,1,55
+china,5,spanish,"wordfreq (Speer 2022); gender by canonical -o/-a ending, gerunds excluded",2,1.75,feminine,1899,5,2,5,feminine,10,1,55
 alumnado,3.75,spanish,"wordfreq (Speer 2022); gender by canonical -o/-a ending, gerunds excluded",0,2.75,masculine,465,8,4,3.75,masculine,12,1,56
 expulsado,3.86,spanish,"wordfreq (Speer 2022); gender by canonical -o/-a ending, gerunds excluded",1,2.55,masculine,4118,9,4,3.86,masculine,21,1,57
 burro,3.86,spanish,"wordfreq (Speer 2022); gender by canonical -o/-a ending, gerunds excluded",3,1.8,masculine,1413,5,2,3.86,masculine,7,1,58

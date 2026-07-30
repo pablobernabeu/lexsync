@@ -22,6 +22,14 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
+# The z-scoring centre and scale go through the reproducible reductions, not numpy's.
+# Selection was robust to the difference for a structural reason worth stating: a
+# distance is computed between z-VECTORS, so a shift in the centre cancels in the
+# difference, a change of scale is a monotone rescaling that cannot reorder candidates,
+# and the distances are rounded to nine places on top of that. Even so, "robust for a
+# reason" is not the same as "identical by construction", and the latter is what the
+# package claims. Switching these was verified to change no design's selection.
+from .io_utils import _exact_mean, _exact_sd
 from .querying import build_pool
 
 # Fixed order, as documented in schema.yaml; not sorted(), because the R mirror's
@@ -155,8 +163,8 @@ def match_stimuli(pool: pd.DataFrame, design: dict, schema: dict, verbose: bool 
         if d not in pool.columns:
             raise ValueError(f"lexsync: dimension '{d}' is absent from the pool.")
 
-    center = np.array([pool[d].mean() for d in match_on], dtype=float)
-    scale = np.array([pool[d].std(ddof=1) for d in match_on], dtype=float)
+    center = np.array([_exact_mean(pool[d].dropna()) for d in match_on], dtype=float)
+    scale = np.array([_exact_sd(pool[d].dropna()) for d in match_on], dtype=float)
     scale[np.isnan(scale) | (scale == 0)] = 1.0
 
     subpools = [build_pool(pool, c["define_by"]) for c in conditions]
@@ -199,8 +207,8 @@ def match_stimuli(pool: pd.DataFrame, design: dict, schema: dict, verbose: bool 
 
     win = {}
     for d in match_on:
-        m = anchor[d].mean()
-        s = anchor[d].std(ddof=1)
+        m = _exact_mean(anchor[d].dropna())
+        s = _exact_sd(anchor[d].dropna())
         k = tol_k.get(d, 2)
         win[d] = (m - k * s, m + k * s)
 
@@ -275,7 +283,9 @@ def match_stimuli(pool: pd.DataFrame, design: dict, schema: dict, verbose: bool 
 
 
 def select_continuous_stimuli(pool: pd.DataFrame, design: dict, schema: dict,
-                              verbose: bool = False) -> pd.DataFrame:
+                              verbose: bool = False, key: str = "word",
+                              label: str | None = "continuous",
+                              renumber_sets: bool = True) -> pd.DataFrame:
     """Select a set that spans a continuous predictor, holding controls constant.
 
     Instead of dichotomising the predictor into conditions and matching, items are
@@ -308,12 +318,22 @@ def select_continuous_stimuli(pool: pd.DataFrame, design: dict, schema: dict,
     for d in [predictor] + controls:
         if d not in pool.columns:
             raise ValueError(f"lexsync: dimension '{d}' is absent from the pool.")
+    if key not in pool.columns:
+        raise ValueError(
+            "lexsync: the continuous tie-break column '%s' is absent from the pool." % key)
     n = design.get("n_per_condition") or design.get("n_per_cell") or 60
     tol_k = dict(schema["matching"].get("tolerance_k") or {})
     tol_k.update((design.get("matching") or {}).get("tolerance_k") or {})
 
     def even_spread(df):
-        df = (df.assign(_k=df["word"].map(lambda w: w.encode("utf-8")))
+        # `key` is the deterministic tie-break when two rows share a predictor
+        # value: `word` for a corpus pool, `set` for a collapsed pair table where
+        # no `word` column exists. A text key is compared as UTF-8 BYTES, which is
+        # what R's radix sort does; a numeric key is compared numerically in both.
+        k = df[key]
+        if pd.api.types.is_object_dtype(k) or pd.api.types.is_string_dtype(k):
+            k = k.map(lambda w: str(w).encode("utf-8"))
+        df = (df.assign(_k=k)
               .sort_values([predictor, "_k"], kind="mergesort")
               .drop(columns="_k").reset_index(drop=True))
         if len(df) == 0:
@@ -328,8 +348,8 @@ def select_continuous_stimuli(pool: pd.DataFrame, design: dict, schema: dict,
         raise ValueError("lexsync: the pool is empty for the continuous design.")
     win = {}
     for d in controls:
-        m = spread[d].mean()
-        s = spread[d].std(ddof=1)
+        m = _exact_mean(spread[d].dropna())
+        s = _exact_sd(spread[d].dropna())
         k = tol_k.get(d, 2)
         win[d] = (m - k * s, m + k * s)
     keep = np.ones(len(pool), dtype=bool)
@@ -344,8 +364,13 @@ def select_continuous_stimuli(pool: pd.DataFrame, design: dict, schema: dict,
         filtered = pool
     # Pass 2: an even spread over the filtered pool is the selection.
     sel = even_spread(filtered).copy()
-    sel["condition"] = "continuous"
-    sel["set"] = list(range(1, len(sel) + 1))
+    # A pair table already carries its own `condition` and `set`, which the Latin
+    # square and the trial-order digest depend on, so the pair path passes
+    # label=None and renumber_sets=False to leave both alone.
+    if label is not None:
+        sel["condition"] = label
+    if renumber_sets:
+        sel["set"] = list(range(1, len(sel) + 1))
     return sel
 
 
@@ -357,7 +382,7 @@ def resample_stimuli(pool: pd.DataFrame, design: dict, schema: dict,
     the items of earlier replicates removed, so no item is reused. This lets a
     study treat its items as a random factor (running different item samples
     across participant groups, or showing an effect holds across samples) instead
-    of treating them as a fixed set (Clark, 1973; Yarkoni, 2020). Deterministic: the matcher is
+    of treating them as a fixed set (Clark, 1973; Yarkoni, 2022). Deterministic: the matcher is
     deterministic and the used-item set evolves identically across engines.
     """
     used: set = set()

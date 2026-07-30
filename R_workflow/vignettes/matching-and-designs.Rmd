@@ -116,6 +116,34 @@ merged <- merge_norms(lex, aoa)
 merged[merged$word %in% aoa$word, c("word", "frequency", "aoa")]
 ```
 
+The join is case- and whitespace-insensitive on both sides, keeps the lexicon's own
+row and column order, and refuses a norm column whose name already exists on the
+lexicon rather than renaming it. A silent rename is the worst available outcome: it
+leaves the dimension the design matches on under a name nothing looks for.
+
+In a design you do not call this yourself. Name the tables in a `norms:` block and
+the pipeline joins them before the pool is built, so a norm column can be filtered
+on, matched on or spanned like any other dimension.
+
+```yaml
+norms:
+  - path: norms/en_concreteness.csv
+    on: word                  # optional join key, default 'word'
+    columns: [concreteness]   # optional; default every column but the key
+
+pool_filters:
+  concreteness: [2.0, 5.0]
+match_on: [length, concreteness]
+```
+
+lexsync ships no norm data: licences vary, and the citation is yours to honour.
+What it does do is record what you joined. Every table appears in the materials
+datasheet with its checksum and its per-column coverage, because a norm table can
+supply the very variable a design manipulates, and a selection over columns of
+unstated origin is not reproducible from the record that exists to make it so.
+Coverage is recorded for a related reason: a word the table does not cover gets a
+missing value, and the tolerance windows then drop it from the pool.
+
 ## Pool filters
 
 A pool filter narrows the lexicon before any matching happens. It states what
@@ -515,33 +543,34 @@ across replicates; the report will show it if it does.
 
 Clark, H. H. (1973). The language-as-fixed-effect fallacy: A critique of language
 statistics in psychological research. *Journal of Verbal Learning and Verbal
-Behavior*, *12*(4), 335-359. https://doi.org/10.1016/S0022-5371(73)80014-3
+Behavior*, *12*(4), 335–359. https://doi.org/10.1016/S0022-5371(73)80014-3
 
 Coltheart, M., Davelaar, E., Jonasson, J. T., & Besner, D. (1977). Access to the
-internal lexicon. In *Attention and Performance VI* (pp. 535-555).
+internal lexicon. In S. Dornic (Ed.), *Attention and Performance VI*
+(pp. 535–555). Erlbaum.
 
 González Alonso, J., Bernabeu, P., Silva, G., DeLuca, V., Poch, C., Ivanova, I., &
 Rothman, J. (2025). Starting from the very beginning: Unraveling third language
 (L3) development with longitudinal data from artificial language learning and
-EEG. *International Journal of Multilingualism*, *22*(1), 119-142.
+EEG. *International Journal of Multilingualism*, *22*(1), 119–142.
 https://doi.org/10.1080/14790718.2024.2415993
 
 Gu, X. S., & Rosenbaum, P. R. (1993). Comparison of multivariate matching
 methods: Structures, distances, and algorithms. *Journal of Computational and
-Graphical Statistics*, *2*(4), 405-420.
+Graphical Statistics*, *2*(4), 405–420.
 https://doi.org/10.1080/10618600.1993.10474623
 
 Hansen, B. B., & Klopfer, S. O. (2006). Optimal full matching and related designs
 via network flows. *Journal of Computational and Graphical Statistics*, *15*(3),
-609-627. https://doi.org/10.1198/106186006X137047
+609–627. https://doi.org/10.1198/106186006X137047
 
 Kuperman, V. (2015). Virtual experiments in megastudies: A case study of language
-and emotion. *Quarterly Journal of Experimental Psychology*, *68*(8), 1693-1710.
+and emotion. *Quarterly Journal of Experimental Psychology*, *68*(8), 1693–1710.
 https://doi.org/10.1080/17470218.2014.989865
 
-Lakens, D. (2017). Equivalence tests: A practical primer for t tests,
+Lakens, D. (2017). Equivalence tests: A practical primer for *t* tests,
 correlations, and meta-analyses. *Social Psychological and Personality Science*,
-*8*(4), 355-362. https://doi.org/10.1177/1948550617697177
+*8*(4), 355–362. https://doi.org/10.1177/1948550617697177
 
 Liben-Nowell, D., Strand, J., Sharp, A., Wexler, T., & Woods, K. (2019). The
 danger of testing by selecting controlled subsets, with applications to
@@ -549,23 +578,23 @@ spoken-word recognition. *Journal of Cognition*, *2*(1), Article 2.
 https://doi.org/10.5334/joc.51
 
 Rubin, D. B. (1980). Bias reduction using Mahalanobis-metric matching.
-*Biometrics*, *36*(2), 293-298. https://doi.org/10.2307/2529981
+*Biometrics*, *36*(2), 293–298. https://doi.org/10.2307/2529981
 
 Sassenhagen, J., & Alday, P. M. (2016). A common misapplication of statistical
 inference: Nuisance control with null-hypothesis significance tests. *Brain and
-Language*, *162*, 42-45. https://doi.org/10.1016/j.bandl.2016.08.001
+Language*, *162*, 42–45. https://doi.org/10.1016/j.bandl.2016.08.001
 
 Stuart, E. A. (2010). Matching methods for causal inference: A review and a look
-forward. *Statistical Science*, *25*(1), 1-21. https://doi.org/10.1214/09-STS313
+forward. *Statistical Science*, *25*(1), 1–21. https://doi.org/10.1214/09-STS313
 
 van Heuven, W. J. B., Mandera, P., Keuleers, E., & Brysbaert, M. (2014).
 SUBTLEX-UK: A new and improved word frequency database for British English.
-*Quarterly Journal of Experimental Psychology*, *67*(6), 1176-1190.
+*Quarterly Journal of Experimental Psychology*, *67*(6), 1176–1190.
 https://doi.org/10.1080/17470218.2013.850521
 
 Yarkoni, T. (2022). The generalizability crisis. *Behavioral and Brain Sciences*,
-*45*, e1. https://doi.org/10.1017/S0140525X20001685
+*45*, Article e1. https://doi.org/10.1017/S0140525X20001685
 
 Yarkoni, T., Balota, D., & Yap, M. (2008). Moving beyond Coltheart's N: A new
 measure of orthographic similarity. *Psychonomic Bulletin & Review*, *15*(5),
-971-979. https://doi.org/10.3758/pbr.15.5.971
+971–979. https://doi.org/10.3758/PBR.15.5.971

@@ -1,6 +1,6 @@
 # Materials datasheet -- es_gender_repro (spanish)
 
-*lexsync datasheet v1.0; R engine.*
+*lexsync datasheet v1.1; R engine.*
 
 ## Provenance
 

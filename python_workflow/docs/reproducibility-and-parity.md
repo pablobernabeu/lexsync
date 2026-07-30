@@ -159,7 +159,7 @@ tests run on Python 3.10 to 3.13.
 
 Every run writes a datasheet, in JSON for machines and Markdown for people. It is the record that
 travels with a set, and it exists because the reproducibility literature keeps asking for one
-(Bochynska et al., 2023; Roettger, 2019).
+([Bochynska et al., 2023](references.md#bochynska-2023); [Roettger, 2019](references.md#roettger-2019)).
 
 ```python
 # illustrative: needs a clone's config directory and writes the run into the working tree
@@ -195,16 +195,18 @@ materials learns it from the materials.
 Selection transparency records how many items satisfied each condition's window before matching. For
 this design the answer is 544 high-frequency candidates and 4295 low-frequency ones. That number is
 the size of the discretionary pool the selection drew from, and reporting it makes item-selection
-bias auditable (Forster, 2000; Simmons et al., 2011). A set of 80 chosen from 544 is
-a different object from a set of 80 chosen from 85.
+bias auditable ([Forster, 2000](references.md#forster-2000);
+[Simmons et al., 2011](references.md#simmons-2011)). A set of 80 chosen from 544 is a different
+object from a set of 80 chosen from 85.
 
 The realised control is a table, not a claim, giving each dimension its role, Cohen's *d*, the 90%
 interval, the variance ratio, the TOST *p* and the verdict. The suggested analysis is a crossed
 mixed-model formula, `response ~ condition + (1 + condition | subject) + (1 | item)`, which is there
-to guard against the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008): items are
-a sample of the language, and an analysis that treats them as fixed over-generalises. The maximal
-structure is suggested (Barr et al., 2013) with the advice to reduce it if it does not converge
-(Matuschek et al., 2017).
+to guard against the language-as-fixed-effect fallacy ([Clark, 1973](references.md#clark-1973);
+[Baayen et al., 2008](references.md#baayen-2008)): items are a sample of the language, and an
+analysis that treats them as fixed over-generalises. The maximal structure is suggested
+([Barr et al., 2013](references.md#barr-2013)) with the advice to reduce it if it does not converge
+([Matuschek et al., 2017](references.md#matuschek-2017)).
 
 `methods_paragraph` turns the datasheet into prose you can paste into a Methods section, filled from
 the numbers above. The pipeline writes it into the Markdown datasheet, and you can call it on a

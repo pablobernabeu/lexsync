@@ -67,9 +67,9 @@ and four have to be derived from the orthographic forms before a design can matc
 | Dimension | Unit | Where it comes from |
 | --- | --- | --- |
 | `length` | letters | Derived at load time from the word. |
-| `frequency` | Zipf | The lexicon's `freq_zipf` column (van Heuven et al., 2014). |
-| `n_density` | neighbours | `add_neighbourhood`: Coltheart's N, same-length single substitutions. |
-| `old20` | mean Levenshtein distance | `add_neighbourhood`: the mean distance to the 20 nearest words. |
+| `frequency` | Zipf | The lexicon's `freq_zipf` column ([van Heuven et al., 2014](references.md#van-heuven-2014)). |
+| `n_density` | neighbours | `add_neighbourhood`: Coltheart's N, same-length single substitutions ([Coltheart et al., 1977](references.md#coltheart-1977)). |
+| `old20` | mean Levenshtein distance | `add_neighbourhood`: the mean distance to the 20 nearest words ([Yarkoni et al., 2008](references.md#yarkoni-2008)). |
 | `n_syllables` | syllables | Derived at load time by counting maximal vowel runs. |
 | `bigram_freq` | mean positional bigram probability | `add_bigram_frequency`, a phonotactic-probability proxy. |
 
@@ -107,8 +107,34 @@ lexicon = lexsync.merge_norms(lexicon, "norms/concreteness_en.csv", on="word",
 # then: match_on: [length, frequency, concreteness]
 ```
 
-The join drops missing keys before coercing them, preserves the lexicon's row order and takes the
-first row per key, so it is deterministic and both engines produce the same table.
+The join drops missing keys, takes the first row per key, and is case- and whitespace-insensitive on
+both sides. The result is the lexicon itself with columns appended, in its own row and column order,
+which is what makes the two engines agree structurally rather than by repair: `pandas.merge` and R's
+`merge()` disagree about where the key column lands and about how they disambiguate a name clash. A
+clash is refused rather than renamed, because a silent rename leaves the dimension the design matches
+on under a name nothing looks for.
+
+In a design you do not call this yourself. Name the tables in a `norms:` block and the pipeline joins
+them before the pool is built, so a norm column can be filtered on, matched on or spanned like any
+other dimension.
+
+```yaml
+norms:
+  - path: norms/concreteness_en.csv
+    on: word                  # optional join key, default 'word'
+    columns: [concreteness]   # optional; default every column but the key
+
+pool_filters:
+  concreteness: [2.0, 5.0]
+match_on: [length, concreteness]
+```
+
+lexsync ships no norm data: licences vary, and the citation is yours to honour. What it does do is
+record what you joined. Every table appears in the materials datasheet with its checksum and its
+per-column coverage, because a norm table can supply the very variable a design manipulates, and a
+selection over columns of unstated origin is not reproducible from the record that exists to make it
+so. Coverage is recorded for a related reason: a word the table does not cover gets a missing value,
+and the tolerance windows then drop it from the pool.
 
 ## How matching works
 
@@ -163,9 +189,10 @@ same rounded-distance and byte-rank tie-breaks as everything else.
 
 `mahalanobis` uses the inverse of the pool's correlation matrix in standardised space as its metric,
 with a small ridge to survive near-collinear dimensions, so that two dimensions measuring much the
-same thing are not counted twice (Rubin, 1980; Stuart, 2010). `optimal` minimises the summed pair
-distance instead of taking the locally cheapest pair at each step, which produces fewer badly
-matched pairs than a greedy rule (Gu & Rosenbaum, 1993).
+same thing are not counted twice ([Rubin, 1980](references.md#rubin-1980);
+[Stuart, 2010](references.md#stuart-2010)). `optimal` minimises the summed pair distance instead of
+taking the locally cheapest pair at each step, which produces fewer badly matched pairs than a
+greedy rule ([Gu & Rosenbaum, 1993](references.md#gu-1993)).
 
 Both of these carry the parity caveat. A matrix inverse and an assignment solver are the two places
 where the R and Python linear-algebra backends can disagree in their last bits, and an assignment
@@ -222,10 +249,11 @@ Four numbers per row, each answering something the others cannot.
 
 `cohens_d` is the standardised mean difference, using the pooled standard deviation. `d_ci_low` and
 `d_ci_high` bound it with the 90% interval that corresponds exactly to a two one-sided tests
-decision at the .05 level (Lakens, 2017). The interval is reported rather than only a verdict
-because it keeps the dependence on item count visible: with few items the interval is wide, so a
-small point estimate cannot be read as evidence that the true difference is small (Sassenhagen &
-Alday, 2016). Its upper limit is the largest imbalance still consistent with the stimuli you have.
+decision at the .05 level ([Lakens, 2017](references.md#lakens-2017)). The interval is reported
+rather than only a verdict because it keeps the dependence on item count visible: with few items the
+interval is wide, so a small point estimate cannot be read as evidence that the true difference is
+small ([Sassenhagen & Alday, 2016](references.md#sassenhagen-2016)). Its upper limit is the largest
+imbalance still consistent with the stimuli you have.
 
 `tost_p` and `equivalent` come from two one-sided tests against the schema's `equivalence.bound_d`,
 0.5 by default, at `equivalence.alpha`. This is the test that matches what a matched design is
@@ -234,9 +262,9 @@ as showing there is none. TOST says the difference is smaller than the bound you
 
 `var_ratio` is the condition's variance over the reference's. It is there because everything above
 is about means, and two conditions can share a mean while differing in spread, which still confounds
-(Armstrong, Watson & Plaut, 2012; Austin, 2009). A ratio near 1 is balanced; a common heuristic
-treats anything outside roughly [0.5, 2] as unequal spread. It returns `None` when a variance is
-undefined.
+([Armstrong et al., 2012](references.md#armstrong-2012);
+[Austin, 2009](references.md#austin-2009)). A ratio near 1 is balanced; a common heuristic treats
+anything outside roughly [0.5, 2] as unequal spread. It returns `None` when a variance is undefined.
 
 Two smaller functions round this out. `describe_stimuli` gives the descriptives alone, grouped by any
 column you like, not just `condition`. `balance_check` reports columns whose value counts are
@@ -249,9 +277,10 @@ print(lexsync.balance_check(stimuli, "condition"))    # empty when balanced
 ## Continuous designs
 
 Splitting a continuous predictor into high and low conditions throws away information, costs power
-and can introduce selection artefacts (Kuperman, 2015; Liben-Nowell et al., 2019). A design can
-declare a `continuous` block instead of `conditions`, and select a set that spans the predictor
-evenly while holding the controls near-constant, for analysis by regression or a mixed model.
+and can introduce selection artefacts ([Kuperman, 2015](references.md#kuperman-2015);
+[Liben-Nowell et al., 2019](references.md#liben-nowell-2019)). A design can declare a `continuous`
+block instead of `conditions`, and select a set that spans the predictor evenly while holding the
+controls near-constant, for analysis by regression or a mixed model.
 
 ```python exec="1" source="material-block" result="text" session="matching"
 design = {
@@ -294,9 +323,10 @@ raises instead of being quietly tolerated.
 ## Items as a random factor
 
 A stimulus set is a sample from a language, not a fixed property of it, and analysing one set as if
-it were fixed over-generalises (Clark, 1973; Yarkoni, 2020). `resample_stimuli` produces several
-disjoint, independently matched sets from one pool, so a study can run a different sample per
-participant group, or show that an effect survives a change of items.
+it were fixed over-generalises ([Clark, 1973](references.md#clark-1973);
+[Yarkoni, 2022](references.md#yarkoni-2022)). `resample_stimuli` produces several disjoint,
+independently matched sets from one pool, so a study can run a different sample per participant
+group, or show that an effect survives a change of items.
 
 ```python exec="1" source="material-block" result="text" session="matching"
 pool = lexsync.build_pool(lexicon, {"length": [4, 8], "frequency": [3.5, 7.0]})
@@ -357,8 +387,9 @@ constituents for attested alternatives of the same role and length, so the pseud
 syllabic structure. Codas and nuclei are changed before onsets, which carry the most identifying
 orthography. Roughly two thirds of a word's constituents are targeted, each swap preserves length,
 and a word with no legal swap falls back to letter substitution, so every word yields a pseudoword.
-It is a deterministic orthographic approximation of Wuggy (Keuleers & Brysbaert, 2010), trading
-Wuggy's phonological model for exact length matching and cross-engine reproducibility.
+It is a deterministic orthographic approximation of Wuggy
+([Keuleers & Brysbaert, 2010](references.md#keuleers-2010)), trading Wuggy's phonological model for
+exact length matching and cross-engine reproducibility.
 
 ```python exec="1" source="material-block" session="matching"
 subsyllabic = lexsync.build_lexdec_stimuli(

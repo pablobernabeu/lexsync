@@ -475,9 +475,11 @@ def show_frames(win, stim, frames, port, trigger):
         port.setData(0)
 ```
 
-The code is held for `triggers.reset_after_frames` frames, two by default in the
-schema, and the reset is itself bound to a flip. An event that does not last
-beyond that window clears the port directly as it ends.
+The code is held for `triggers.trigger_hold_ms`, 50 ms by default, which the
+generated script converts to whole flips against the refresh rate it measures, and
+the reset is itself bound to a flip. Holding it in milliseconds rather than in
+frames is what keeps the pulse above the recorder's minimum on a fast display. An
+event that does not last beyond that window clears the port directly as it ends.
 
 A mock port prints the codes when no parallel-port driver is present, so the
 script runs end to end with no hardware. The 'OpenSesame' export is a complete,
@@ -509,14 +511,15 @@ presentation backends iterate the same list. The 'PsychoPy' script interprets it
 at run time, the 'OpenSesame' generator emits one block per event, and the
 'jsPsych' generator builds a browser timeline from it. Adding a paradigm is
 therefore a matter of configuration rather than backend code, and all three
-targets present the same events in the same order. Durations are the one place
-where the targets can come apart. Every event length is declared in refresh
-frames, and the 'PsychoPy' script counts frames on whatever display is in use,
-whereas the 'OpenSesame' and 'jsPsych' generators convert that frame count to
-milliseconds at an assumed 60 Hz. On a display of another refresh rate the two
-therefore no longer describe the same interval, and the discrepancy is
-proportionally largest for the briefest events, such as the prime and the mask of
-the masked-priming paradigm. On the 'OpenSesame' target the onset code is also
+targets present the same events in the same order. Every event length is declared
+in milliseconds, which is the unit all three targets schedule, so a design
+describes the same interval on any display. The 'OpenSesame' and 'jsPsych'
+generators emit that duration directly. The 'PsychoPy' script measures the
+display's refresh rate when it starts and converts each duration into the nearest
+whole number of flips, so the stimulus still appears on a refresh and the onset
+trigger is still bound to it, while the realised duration tracks the declared one
+at any refresh rate. What remains is a quantisation of at most half a frame, which
+the materials datasheet records. On the 'OpenSesame' target the onset code is also
 held for 10 ms before it is reset, and that wait lengthens the event it marks by
 the same amount. This concerns the presentation targets only. The generated files
 themselves remain byte-identical between the R and Python engines, which emit the

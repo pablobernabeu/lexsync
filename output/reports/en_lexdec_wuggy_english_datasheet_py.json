@@ -11,15 +11,15 @@
     },
     {
       "file": "output/reports/en_lexdec_wuggy_english_descriptives_py.csv",
-      "sha256": "08212417217a1e48dd402ae305ac33579c7bde084846e7f68e00f064081f6e23"
+      "sha256": "d0375323da7709ae71a516e328c07c1d03e49020b58ace90bab3ea3cbdb9c913"
     },
     {
       "file": "output/reports/en_lexdec_wuggy_english_comparisons_py.csv",
-      "sha256": "47af54eb495601dd3631239a5a729a0f8281506f48c76083b5d6d121642afd2b"
+      "sha256": "6bcaa6b4973497028fc576c42052dd96c2a7f575c841ff400ee5df7e8d692444"
     },
     {
       "file": "output/experiments/en_lexdec_wuggy_english_psychopy.py",
-      "sha256": "05f522d678bd137b676d2fbc86f3eda3b060ea2ec11f8f7efa59c49c13700d6d"
+      "sha256": "0ddafd1272ce445112888164813efffc5e610dd13fd6d3ede1f46a7f66df7d6b"
     },
     {
       "file": "output/experiments/en_lexdec_wuggy_english.osexp",
@@ -27,7 +27,7 @@
     },
     {
       "file": "output/experiments/en_lexdec_wuggy_english.html",
-      "sha256": "39bc22e8c369d879de82a44b2521f80ec96b33e08795efcf8b8f7290e0adf69f"
+      "sha256": "427ea49195d1be40b0e1ee2673810b8100baa73432dd38c86513633a17b4b539"
     }
   ],
   "counterbalancing": {
@@ -59,7 +59,7 @@
     "stimuli_file": "output/stimuli/en_lexdec_wuggy_english_stimuli_py.csv",
     "stimuli_sha256": "bf4beb027f5f1a2894c93c987325be27a223bc9b776e3aad812b8469507f1c8e"
   },
-  "lexsync_datasheet_version": "1.0",
+  "lexsync_datasheet_version": "1.1",
   "materials_source": {
     "path": "corpora/derived/en.csv",
     "provenance": "see corpora/ATTRIBUTION.md for corpus licence and citation",
@@ -78,6 +78,7 @@
       "var_ratio": 1.0
     }
   ],
+  "relational": null,
   "reproducibility": {
     "seed": 2026,
     "versions": {

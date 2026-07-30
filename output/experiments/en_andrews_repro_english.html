@@ -39,9 +39,8 @@
 </head>
 <body></body>
 <script>
-  const EVENTS = [{"type":"fixation","text":"+","frames":30},{"type":"text","field":"word","frames":30,"trigger":"@condition_trigger"},{"type":"response","keys":["arrowleft","arrowright"],"timeout":2},{"type":"blank","frames":15}];
+  const EVENTS = [{"type":"fixation","text":"+","ms":500},{"type":"text","field":"word","ms":500,"trigger":"@condition_trigger"},{"type":"response","keys":["arrowleft","arrowright"],"timeout":2},{"type":"blank","ms":250}];
   const TRIALS = [{"trial":1,"list":1,"set":4,"condition":"HF_smallN","word":"able","condition_trigger":101,"item_trigger":52},{"trial":2,"list":1,"set":10,"condition":"HF_largeN","word":"pay","condition_trigger":102,"item_trigger":41},{"trial":3,"list":1,"set":10,"condition":"HF_smallN","word":"army","condition_trigger":101,"item_trigger":41},{"trial":4,"list":1,"set":16,"condition":"LF_largeN","word":"bans","condition_trigger":103,"item_trigger":47},{"trial":5,"list":1,"set":17,"condition":"LF_largeN","word":"abi","condition_trigger":103,"item_trigger":48},{"trial":6,"list":1,"set":15,"condition":"HF_smallN","word":"city","condition_trigger":101,"item_trigger":46},{"trial":7,"list":1,"set":5,"condition":"HF_smallN","word":"also","condition_trigger":101,"item_trigger":53},{"trial":8,"list":1,"set":12,"condition":"LF_largeN","word":"bain","condition_trigger":103,"item_trigger":43},{"trial":9,"list":1,"set":17,"condition":"HF_largeN","word":"her","condition_trigger":102,"item_trigger":48},{"trial":10,"list":1,"set":12,"condition":"LF_smallN","word":"aclu","condition_trigger":104,"item_trigger":43},{"trial":11,"list":1,"set":18,"condition":"HF_smallN","word":"door","condition_trigger":101,"item_trigger":49},{"trial":12,"list":1,"set":1,"condition":"HF_smallN","word":"off","condition_trigger":101,"item_trigger":40},{"trial":13,"list":1,"set":7,"condition":"LF_smallN","word":"acer","condition_trigger":104,"item_trigger":55},{"trial":14,"list":1,"set":18,"condition":"LF_smallN","word":"bmx","condition_trigger":104,"item_trigger":49},{"trial":15,"list":1,"set":17,"condition":"LF_smallN","word":"blu","condition_trigger":104,"item_trigger":48},{"trial":16,"list":1,"set":4,"condition":"HF_largeN","word":"hell","condition_trigger":102,"item_trigger":52},{"trial":17,"list":1,"set":1,"condition":"LF_largeN","word":"aaa","condition_trigger":103,"item_trigger":40},{"trial":18,"list":1,"set":8,"condition":"HF_largeN","word":"art","condition_trigger":102,"item_trigger":56},{"trial":19,"list":1,"set":2,"condition":"LF_largeN","word":"aac","condition_trigger":103,"item_trigger":50},{"trial":20,"list":1,"set":6,"condition":"HF_largeN","word":"king","condition_trigger":102,"item_trigger":54},{"trial":21,"list":1,"set":5,"condition":"LF_largeN","word":"ares","condition_trigger":103,"item_trigger":53},{"trial":22,"list":1,"set":18,"condition":"HF_largeN","word":"was","condition_trigger":102,"item_trigger":49},{"trial":23,"list":1,"set":8,"condition":"HF_smallN","word":"why","condition_trigger":101,"item_trigger":56},{"trial":24,"list":1,"set":6,"condition":"HF_smallN","word":"anti","condition_trigger":101,"item_trigger":54},{"trial":25,"list":1,"set":3,"condition":"HF_smallN","word":"two","condition_trigger":101,"item_trigger":51},{"trial":26,"list":1,"set":9,"condition":"HF_smallN","word":"you","condition_trigger":101,"item_trigger":57},{"trial":27,"list":1,"set":18,"condition":"LF_largeN","word":"abs","condition_trigger":103,"item_trigger":49},{"trial":28,"list":1,"set":2,"condition":"HF_largeN","word":"box","condition_trigger":102,"item_trigger":50},{"trial":29,"list":1,"set":8,"condition":"LF_smallN","word":"bff","condition_trigger":104,"item_trigger":56},{"trial":30,"list":1,"set":10,"condition":"LF_largeN","word":"abe","condition_trigger":103,"item_trigger":41},{"trial":31,"list":1,"set":16,"condition":"HF_smallN","word":"club","condition_trigger":101,"item_trigger":47},{"trial":32,"list":1,"set":13,"condition":"HF_smallN","word":"blue","condition_trigger":101,"item_trigger":44},{"trial":33,"list":1,"set":4,"condition":"LF_smallN","word":"abba","condition_trigger":104,"item_trigger":52},{"trial":34,"list":1,"set":9,"condition":"HF_largeN","word":"ask","condition_trigger":102,"item_trigger":57},{"trial":35,"list":1,"set":14,"condition":"HF_smallN","word":"body","condition_trigger":101,"item_trigger":45},{"trial":36,"list":1,"set":6,"condition":"LF_largeN","word":"aung","condition_trigger":103,"item_trigger":54},{"trial":37,"list":1,"set":2,"condition":"LF_smallN","word":"aww","condition_trigger":104,"item_trigger":50},{"trial":38,"list":1,"set":7,"condition":"HF_largeN","word":"shot","condition_trigger":102,"item_trigger":55},{"trial":39,"list":1,"set":4,"condition":"LF_largeN","word":"ames","condition_trigger":103,"item_trigger":52},{"trial":40,"list":1,"set":14,"condition":"HF_largeN","word":"come","condition_trigger":102,"item_trigger":45},{"trial":41,"list":1,"set":12,"condition":"HF_largeN","word":"seen","condition_trigger":102,"item_trigger":43},{"trial":42,"list":1,"set":14,"condition":"LF_largeN","word":"bale","condition_trigger":103,"item_trigger":45},{"trial":43,"list":1,"set":16,"condition":"LF_smallN","word":"adhd","condition_trigger":104,"item_trigger":47},{"trial":44,"list":1,"set":15,"condition":"LF_largeN","word":"bane","condition_trigger":103,"item_trigger":46},{"trial":45,"list":1,"set":1,"condition":"LF_smallN","word":"afb","condition_trigger":104,"item_trigger":40},{"trial":46,"list":1,"set":13,"condition":"LF_smallN","word":"acne","condition_trigger":104,"item_trigger":44},{"trial":47,"list":1,"set":7,"condition":"HF_smallN","word":"area","condition_trigger":101,"item_trigger":55},{"trial":48,"list":1,"set":13,"condition":"LF_largeN","word":"bake","condition_trigger":103,"item_trigger":44},{"trial":49,"list":1,"set":1,"condition":"HF_largeN","word":"ass","condition_trigger":102,"item_trigger":40},{"trial":50,"list":1,"set":3,"condition":"LF_largeN","word":"aap","condition_trigger":103,"item_trigger":51},{"trial":51,"list":1,"set":9,"condition":"LF_smallN","word":"bhp","condition_trigger":104,"item_trigger":57},{"trial":52,"list":1,"set":11,"condition":"LF_largeN","word":"bail","condition_trigger":103,"item_trigger":42},{"trial":53,"list":1,"set":14,"condition":"LF_smallN","word":"acre","condition_trigger":104,"item_trigger":45},{"trial":54,"list":1,"set":11,"condition":"HF_smallN","word":"away","condition_trigger":101,"item_trigger":42},{"trial":55,"list":1,"set":8,"condition":"LF_largeN","word":"aba","condition_trigger":103,"item_trigger":56},{"trial":56,"list":1,"set":5,"condition":"HF_largeN","word":"lives","condition_trigger":102,"item_trigger":53},{"trial":57,"list":1,"set":7,"condition":"LF_largeN","word":"babe","condition_trigger":103,"item_trigger":55},{"trial":58,"list":1,"set":5,"condition":"LF_smallN","word":"abby","condition_trigger":104,"item_trigger":53},{"trial":59,"list":1,"set":12,"condition":"HF_smallN","word":"baby","condition_trigger":101,"item_trigger":43},{"trial":60,"list":1,"set":3,"condition":"LF_smallN","word":"bbq","condition_trigger":104,"item_trigger":51},{"trial":61,"list":1,"set":10,"condition":"LF_smallN","word":"bjp","condition_trigger":104,"item_trigger":41},{"trial":62,"list":1,"set":17,"condition":"HF_smallN","word":"damn","condition_trigger":101,"item_trigger":48},{"trial":63,"list":1,"set":11,"condition":"HF_largeN","word":"less","condition_trigger":102,"item_trigger":42},{"trial":64,"list":1,"set":2,"condition":"HF_smallN","word":"own","condition_trigger":101,"item_trigger":50},{"trial":65,"list":1,"set":16,"condition":"HF_largeN","word":"then","condition_trigger":102,"item_trigger":47},{"trial":66,"list":1,"set":3,"condition":"HF_largeN","word":"sir","condition_trigger":102,"item_trigger":51},{"trial":67,"list":1,"set":13,"condition":"HF_largeN","word":"done","condition_trigger":102,"item_trigger":44},{"trial":68,"list":1,"set":11,"condition":"LF_smallN","word":"ache","condition_trigger":104,"item_trigger":42},{"trial":69,"list":1,"set":15,"condition":"HF_largeN","word":"take","condition_trigger":102,"item_trigger":46},{"trial":70,"list":1,"set":6,"condition":"LF_smallN","word":"abel","condition_trigger":104,"item_trigger":54},{"trial":71,"list":1,"set":9,"condition":"LF_largeN","word":"abd","condition_trigger":103,"item_trigger":57},{"trial":72,"list":1,"set":15,"condition":"LF_smallN","word":"aden","condition_trigger":104,"item_trigger":46}];
-  const FRAME_MS = 1000 / 60;
   // A filename for the saved data, derived from the page title so no design value
   // is interpolated into JavaScript; non-filename characters become underscores.
   const DATA_FILE = document.title.replace(/[^A-Za-z0-9_.-]+/g, "_") + ".csv";
@@ -97,22 +96,73 @@
     });
   })();
 
+  // Whether an event runs on a given trial. An event may name the blocks it belongs to;
+  // feedback during practice and not during the main task is the case this exists for.
+  function eventApplies(ev, trial) {
+    if (!ev.blocks || !ev.blocks.length) return true;
+    return ev.blocks.map(String).indexOf(String(trial.block || "main")) !== -1;
+  }
+
+  let previousBlock = null;
   for (const trial of TRIALS) {
+    // A pause wherever the block changes. Unlike the PsychoPy and OpenSesame runners,
+    // which decide this at run time from the loop table, the browser timeline is built
+    // here and now, so the break is simply inserted where the boundary is.
+    const thisBlock = String(trial.block || "main");
+    if (previousBlock !== null && thisBlock !== previousBlock) {
+      timeline.push({
+        type: jsPsychHtmlKeyboardResponse,
+        stimulus: "<div class='lexsync-note'>"
+          + (thisBlock === "main"
+             ? "<h1>End of practice</h1><p>The practice trials are over. The task itself "
+               + "begins now.</p>"
+             : "<h1>Pause</h1><p>Take a short break if you need one.</p>")
+          + "<p class='go'>Press the space bar to continue.</p></div>",
+        choices: [" "],
+        data: { lexsync_event: "block_break", block: thisBlock }
+      });
+    }
+    previousBlock = thisBlock;
+
     // Attach the item's fields to every recorded row (spread first, so the event's
     // own keys below always win on any name clash).
     for (const ev of EVENTS) {
-      if (ev.type === "fixation" || ev.type === "text" || ev.type === "mask") {
+      if (!eventApplies(ev, trial)) {
+        continue;
+      } else if (ev.type === "feedback") {
+        // The item's `answer` column holds the KEY that is correct, so scoring is a
+        // string comparison. jsPsych records the pressed key on the preceding response
+        // trial, so the verdict is computed when this screen is built, from the data
+        // store rather than from a variable threaded through the loop.
+        timeline.push({
+          type: jsPsychHtmlKeyboardResponse,
+          choices: "NO_KEYS",
+          trial_duration: ev.ms || 0,
+          stimulus: function () {
+            const scored = jsPsych.data.get().filter({ lexsync_scored: true })
+              .last(1).values();
+            const pressed = scored.length ? scored[0].response : null;
+            const want = String(trial[ev.answer] === undefined ? "" : trial[ev.answer]).trim();
+            const text = (pressed === null || pressed === undefined)
+              ? (ev.no_response || "Too slow")
+              : (String(pressed).trim() === want ? (ev.correct || "Correct")
+                                                 : (ev.incorrect || "Incorrect"));
+            return stim(text);
+          },
+          data: Object.assign({}, trial, { lexsync_event: "feedback" })
+        });
+      } else if (ev.type === "fixation" || ev.type === "text" || ev.type === "mask") {
         timeline.push({
           type: jsPsychHtmlKeyboardResponse,
           stimulus: stim(content(ev, trial)),
           choices: "NO_KEYS",
-          trial_duration: Math.round((ev.frames || 1) * FRAME_MS),
+          trial_duration: ev.ms_column ? Number(trial[ev.ms_column]) : (ev.ms || 0),
           data: Object.assign({}, trial, { lexsync_event: ev.type, marker: resolveTrigger(ev.trigger, trial) })
         });
       } else if (ev.type === "blank") {
         timeline.push({
           type: jsPsychHtmlKeyboardResponse, stimulus: "", choices: "NO_KEYS",
-          trial_duration: Math.round((ev.frames || 1) * FRAME_MS),
+          trial_duration: ev.ms_column ? Number(trial[ev.ms_column]) : (ev.ms || 0),
           data: Object.assign({}, trial, { lexsync_event: "blank" })
         });
       } else if (ev.type === "region") {
@@ -132,7 +182,9 @@
           type: jsPsychHtmlKeyboardResponse, stimulus: "",
           choices: ev.keys || ["ArrowLeft", "ArrowRight"],
           trial_duration: ev.timeout ? Math.round(ev.timeout * 1000) : null,
-          data: Object.assign({}, trial, { lexsync_event: "response" })
+          // lexsync_scored marks the rows a feedback screen may read a key from, so it
+          // finds the response for ITS trial rather than whatever screen ran last.
+          data: Object.assign({}, trial, { lexsync_event: "response", lexsync_scored: true })
         });
       } else if (ev.type === "question") {
         timeline.push({
@@ -140,7 +192,7 @@
           stimulus: stim(content(ev, trial)),
           choices: ev.keys || ["f", "j"],
           trial_duration: ev.timeout ? Math.round(ev.timeout * 1000) : null,
-          data: Object.assign({}, trial, { lexsync_event: "question" })
+          data: Object.assign({}, trial, { lexsync_event: "question", lexsync_scored: true })
         });
       }
     }

@@ -1,5 +1,5 @@
 {
-  "lexsync_datasheet_version": "1.0",
+  "lexsync_datasheet_version": "1.1",
   "design": {
     "name": "en_freqcontrast",
     "language": "english",
@@ -71,6 +71,7 @@
     ],
     "cross_engine": "byte-identical"
   },
+  "relational": null,
   "analysis": {
     "response": "the trial outcome (e.g. reaction time or accuracy)",
     "suggested_model": "response ~ condition + (1 + condition | subject) + (1 | item)",
@@ -160,7 +161,7 @@
     },
     {
       "file": "output/experiments/en_freqcontrast_english_psychopy.py",
-      "sha256": "b5d45fbffe5139e44892f226fddbe2ec858eb8380ef86eb300cea2021ea22efc"
+      "sha256": "ae3da258db99fa108ef8568b87a586ef64d74bfd59d9c9a0352f7644fe9403bd"
     },
     {
       "file": "output/experiments/en_freqcontrast_english.osexp",
@@ -168,7 +169,7 @@
     },
     {
       "file": "output/experiments/en_freqcontrast_english.html",
-      "sha256": "d2db2dd093ec3a8a4aad1a31fff5c18c0e76ffe24bc643ed9b7f6c05aaa2b72b"
+      "sha256": "2617dff4d8144a5d2bbf1f74cabe9d02a46396a721c9e86061e27625fbace6eb"
     }
   ]
 }

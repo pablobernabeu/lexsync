@@ -1,0 +1,9 @@
+item,condition,target,answer
+1,word,bridge,f
+2,word,tundra,f
+3,word,marble,f
+4,word,candle,f
+5,pseudoword,plimth,j
+6,pseudoword,strunk,j
+7,pseudoword,blorge,j
+8,pseudoword,vantle,j

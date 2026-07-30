@@ -39,9 +39,8 @@
 </head>
 <body></body>
 <script>
-  const EVENTS = [{"type":"fixation","text":"+","frames":30},{"type":"region","field":"sentence","sep":"|","key":" ","crit_trigger":"@condition_trigger"},{"type":"question","field":"question","keys":["f","j"],"timeout":5},{"type":"blank","frames":15}];
+  const EVENTS = [{"type":"fixation","text":"+","ms":500},{"type":"region","field":"sentence","sep":"|","key":" ","crit_trigger":"@condition_trigger"},{"type":"question","field":"question","keys":["f","j"],"timeout":5},{"type":"blank","ms":250}];
   const TRIALS = [{"trial":1,"list":1,"set":2,"condition":"ungrammatical","sentence":"The|report|about the islands|were|detailed.","question":"Was the report detailed?","critical_region":4,"answer":"f","condition_trigger":101,"item_trigger":42},{"trial":1,"list":2,"set":8,"condition":"grammatical","sentence":"The|captain|of the ships|was|brave.","question":"Was someone brave?","critical_region":4,"answer":"f","condition_trigger":102,"item_trigger":48},{"trial":2,"list":1,"set":9,"condition":"grammatical","sentence":"The|letter|from the lawyers|was|urgent.","question":"Was the letter urgent?","critical_region":4,"answer":"f","condition_trigger":102,"item_trigger":49},{"trial":2,"list":2,"set":7,"condition":"ungrammatical","sentence":"The|window|in the offices|were|broken.","question":"Was something broken?","critical_region":4,"answer":"f","condition_trigger":101,"item_trigger":47},{"trial":3,"list":1,"set":7,"condition":"grammatical","sentence":"The|window|in the offices|was|broken.","question":"Was something broken?","critical_region":4,"answer":"f","condition_trigger":102,"item_trigger":47},{"trial":3,"list":2,"set":2,"condition":"grammatical","sentence":"The|report|about the islands|was|detailed.","question":"Was the report detailed?","critical_region":4,"answer":"f","condition_trigger":102,"item_trigger":42},{"trial":4,"list":1,"set":1,"condition":"grammatical","sentence":"The|key|to the cabinets|was|rusty.","question":"Was something rusty?","critical_region":4,"answer":"f","condition_trigger":102,"item_trigger":40},{"trial":4,"list":2,"set":10,"condition":"grammatical","sentence":"The|garden|behind the cottages|was|quiet.","question":"Was the garden noisy?","critical_region":4,"answer":"j","condition_trigger":102,"item_trigger":41},{"trial":5,"list":1,"set":6,"condition":"ungrammatical","sentence":"The|recipe|for the cookies|were|simple.","question":"Was the recipe hard?","critical_region":4,"answer":"j","condition_trigger":101,"item_trigger":46},{"trial":5,"list":2,"set":3,"condition":"ungrammatical","sentence":"The|author|of the novels|were|famous.","question":"Was someone famous?","critical_region":4,"answer":"f","condition_trigger":101,"item_trigger":43},{"trial":6,"list":1,"set":10,"condition":"ungrammatical","sentence":"The|garden|behind the cottages|were|quiet.","question":"Was the garden noisy?","critical_region":4,"answer":"j","condition_trigger":101,"item_trigger":41},{"trial":6,"list":2,"set":4,"condition":"grammatical","sentence":"The|bridge|near the houses|was|old.","question":"Was the bridge new?","critical_region":4,"answer":"j","condition_trigger":102,"item_trigger":44},{"trial":7,"list":1,"set":4,"condition":"ungrammatical","sentence":"The|bridge|near the houses|were|old.","question":"Was the bridge new?","critical_region":4,"answer":"j","condition_trigger":101,"item_trigger":44},{"trial":7,"list":2,"set":9,"condition":"ungrammatical","sentence":"The|letter|from the lawyers|were|urgent.","question":"Was the letter urgent?","critical_region":4,"answer":"f","condition_trigger":101,"item_trigger":49},{"trial":8,"list":1,"set":3,"condition":"grammatical","sentence":"The|author|of the novels|was|famous.","question":"Was someone famous?","critical_region":4,"answer":"f","condition_trigger":102,"item_trigger":43},{"trial":8,"list":2,"set":6,"condition":"grammatical","sentence":"The|recipe|for the cookies|was|simple.","question":"Was the recipe hard?","critical_region":4,"answer":"j","condition_trigger":102,"item_trigger":46},{"trial":9,"list":1,"set":5,"condition":"grammatical","sentence":"The|picture|of the children|was|lovely.","question":"Was something lovely?","critical_region":4,"answer":"f","condition_trigger":102,"item_trigger":45},{"trial":9,"list":2,"set":5,"condition":"ungrammatical","sentence":"The|picture|of the children|were|lovely.","question":"Was something lovely?","critical_region":4,"answer":"f","condition_trigger":101,"item_trigger":45},{"trial":10,"list":1,"set":8,"condition":"ungrammatical","sentence":"The|captain|of the ships|were|brave.","question":"Was someone brave?","critical_region":4,"answer":"f","condition_trigger":101,"item_trigger":48},{"trial":10,"list":2,"set":1,"condition":"ungrammatical","sentence":"The|key|to the cabinets|were|rusty.","question":"Was something rusty?","critical_region":4,"answer":"f","condition_trigger":101,"item_trigger":40}];
-  const FRAME_MS = 1000 / 60;
   // A filename for the saved data, derived from the page title so no design value
   // is interpolated into JavaScript; non-filename characters become underscores.
   const DATA_FILE = document.title.replace(/[^A-Za-z0-9_.-]+/g, "_") + ".csv";
@@ -97,22 +96,73 @@
     });
   })();
 
+  // Whether an event runs on a given trial. An event may name the blocks it belongs to;
+  // feedback during practice and not during the main task is the case this exists for.
+  function eventApplies(ev, trial) {
+    if (!ev.blocks || !ev.blocks.length) return true;
+    return ev.blocks.map(String).indexOf(String(trial.block || "main")) !== -1;
+  }
+
+  let previousBlock = null;
   for (const trial of TRIALS) {
+    // A pause wherever the block changes. Unlike the PsychoPy and OpenSesame runners,
+    // which decide this at run time from the loop table, the browser timeline is built
+    // here and now, so the break is simply inserted where the boundary is.
+    const thisBlock = String(trial.block || "main");
+    if (previousBlock !== null && thisBlock !== previousBlock) {
+      timeline.push({
+        type: jsPsychHtmlKeyboardResponse,
+        stimulus: "<div class='lexsync-note'>"
+          + (thisBlock === "main"
+             ? "<h1>End of practice</h1><p>The practice trials are over. The task itself "
+               + "begins now.</p>"
+             : "<h1>Pause</h1><p>Take a short break if you need one.</p>")
+          + "<p class='go'>Press the space bar to continue.</p></div>",
+        choices: [" "],
+        data: { lexsync_event: "block_break", block: thisBlock }
+      });
+    }
+    previousBlock = thisBlock;
+
     // Attach the item's fields to every recorded row (spread first, so the event's
     // own keys below always win on any name clash).
     for (const ev of EVENTS) {
-      if (ev.type === "fixation" || ev.type === "text" || ev.type === "mask") {
+      if (!eventApplies(ev, trial)) {
+        continue;
+      } else if (ev.type === "feedback") {
+        // The item's `answer` column holds the KEY that is correct, so scoring is a
+        // string comparison. jsPsych records the pressed key on the preceding response
+        // trial, so the verdict is computed when this screen is built, from the data
+        // store rather than from a variable threaded through the loop.
+        timeline.push({
+          type: jsPsychHtmlKeyboardResponse,
+          choices: "NO_KEYS",
+          trial_duration: ev.ms || 0,
+          stimulus: function () {
+            const scored = jsPsych.data.get().filter({ lexsync_scored: true })
+              .last(1).values();
+            const pressed = scored.length ? scored[0].response : null;
+            const want = String(trial[ev.answer] === undefined ? "" : trial[ev.answer]).trim();
+            const text = (pressed === null || pressed === undefined)
+              ? (ev.no_response || "Too slow")
+              : (String(pressed).trim() === want ? (ev.correct || "Correct")
+                                                 : (ev.incorrect || "Incorrect"));
+            return stim(text);
+          },
+          data: Object.assign({}, trial, { lexsync_event: "feedback" })
+        });
+      } else if (ev.type === "fixation" || ev.type === "text" || ev.type === "mask") {
         timeline.push({
           type: jsPsychHtmlKeyboardResponse,
           stimulus: stim(content(ev, trial)),
           choices: "NO_KEYS",
-          trial_duration: Math.round((ev.frames || 1) * FRAME_MS),
+          trial_duration: ev.ms_column ? Number(trial[ev.ms_column]) : (ev.ms || 0),
           data: Object.assign({}, trial, { lexsync_event: ev.type, marker: resolveTrigger(ev.trigger, trial) })
         });
       } else if (ev.type === "blank") {
         timeline.push({
           type: jsPsychHtmlKeyboardResponse, stimulus: "", choices: "NO_KEYS",
-          trial_duration: Math.round((ev.frames || 1) * FRAME_MS),
+          trial_duration: ev.ms_column ? Number(trial[ev.ms_column]) : (ev.ms || 0),
           data: Object.assign({}, trial, { lexsync_event: "blank" })
         });
       } else if (ev.type === "region") {
@@ -132,7 +182,9 @@
           type: jsPsychHtmlKeyboardResponse, stimulus: "",
           choices: ev.keys || ["ArrowLeft", "ArrowRight"],
           trial_duration: ev.timeout ? Math.round(ev.timeout * 1000) : null,
-          data: Object.assign({}, trial, { lexsync_event: "response" })
+          // lexsync_scored marks the rows a feedback screen may read a key from, so it
+          // finds the response for ITS trial rather than whatever screen ran last.
+          data: Object.assign({}, trial, { lexsync_event: "response", lexsync_scored: true })
         });
       } else if (ev.type === "question") {
         timeline.push({
@@ -140,7 +192,7 @@
           stimulus: stim(content(ev, trial)),
           choices: ev.keys || ["f", "j"],
           trial_duration: ev.timeout ? Math.round(ev.timeout * 1000) : null,
-          data: Object.assign({}, trial, { lexsync_event: "question" })
+          data: Object.assign({}, trial, { lexsync_event: "question", lexsync_scored: true })
         });
       }
     }

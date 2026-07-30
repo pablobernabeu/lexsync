@@ -11,6 +11,11 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 
+# Every reduction in this module goes through these rather than through numpy or
+# pandas. Two designs' reported means used to differ between the engines in the last
+# published decimal because numpy sums pairwise and R's mean() does not; see io_utils.
+from .io_utils import _exact_mean, _exact_sd, _exact_sum, _exact_var
+
 
 def describe_stimuli(stimuli: pd.DataFrame, dims, by: str = "condition") -> pd.DataFrame:
     rows = []
@@ -19,7 +24,7 @@ def describe_stimuli(stimuli: pd.DataFrame, dims, by: str = "condition") -> pd.D
             x = pd.to_numeric(d[dim], errors="coerce").dropna()
             rows.append(dict(
                 group=g, dimension=dim, n=int(x.size),
-                mean=round(float(x.mean()), 3), sd=round(float(x.std(ddof=1)), 3),
+                mean=round(_exact_mean(x), 3), sd=round(_exact_sd(x), 3),
                 min=round(float(x.min()), 3), median=round(float(x.median()), 3),
                 max=round(float(x.max()), 3),
             ))
@@ -32,10 +37,10 @@ def cohens_d(x, y) -> float:
     nx, ny = len(x), len(y)
     if nx < 2 or ny < 2:
         return 0.0
-    sp = math.sqrt(((nx - 1) * x.var(ddof=1) + (ny - 1) * y.var(ddof=1)) / (nx + ny - 2))
+    sp = math.sqrt(((nx - 1) * _exact_var(x) + (ny - 1) * _exact_var(y)) / (nx + ny - 2))
     if sp == 0 or math.isnan(sp):
         return 0.0
-    return float((x.mean() - y.mean()) / sp)
+    return float((_exact_mean(x) - _exact_mean(y)) / sp)
 
 
 def cohens_d_ci(x, y, alpha: float = 0.05) -> dict:
@@ -57,8 +62,8 @@ def cohens_d_ci(x, y, alpha: float = 0.05) -> dict:
     nx, ny = len(x), len(y)
     if nx < 2 or ny < 2:
         return dict(d=0.0, ci_low=float("nan"), ci_high=float("nan"))
-    sp = math.sqrt(((nx - 1) * x.var(ddof=1) + (ny - 1) * y.var(ddof=1)) / (nx + ny - 2))
-    diff = float(x.mean() - y.mean())
+    sp = math.sqrt(((nx - 1) * _exact_var(x) + (ny - 1) * _exact_var(y)) / (nx + ny - 2))
+    diff = float(_exact_mean(x) - _exact_mean(y))
     if sp == 0 or math.isnan(sp):
         # A constant dimension carries no sampling uncertainty: the interval is a
         # point at the (zero) standardised difference.
@@ -74,12 +79,12 @@ def tost_equiv(x, y, bound_d: float = 0.5, alpha: float = 0.05) -> dict:
     nx, ny = len(x), len(y)
     if nx < 2 or ny < 2:
         return dict(p=float("nan"), equivalent=None)
-    sp = math.sqrt(((nx - 1) * x.var(ddof=1) + (ny - 1) * y.var(ddof=1)) / (nx + ny - 2))
+    sp = math.sqrt(((nx - 1) * _exact_var(x) + (ny - 1) * _exact_var(y)) / (nx + ny - 2))
     if sp == 0 or math.isnan(sp):
         # Both conditions are constants (e.g. a dimension fixed by the pool, such
         # as two-character Chinese words). They are equivalent iff they share that
         # constant; the standardised difference is then exactly zero.
-        if float(x.mean() - y.mean()) == 0:
+        if float(_exact_mean(x) - _exact_mean(y)) == 0:
             return dict(p=0.0, equivalent=True)
         return dict(p=1.0, equivalent=False)
     se = sp * math.sqrt(1 / nx + 1 / ny)
@@ -87,7 +92,7 @@ def tost_equiv(x, y, bound_d: float = 0.5, alpha: float = 0.05) -> dict:
         return dict(p=float("nan"), equivalent=None)
     bound = bound_d * sp
     dfree = nx + ny - 2
-    diff = x.mean() - y.mean()
+    diff = _exact_mean(x) - _exact_mean(y)
     p = max(stats.t.sf((diff + bound) / se, dfree), stats.t.cdf((diff - bound) / se, dfree))
     return dict(p=float(p), equivalent=bool(p < alpha))
 
@@ -105,10 +110,10 @@ def variance_ratio(cond, ref):
     cond = cond[~np.isnan(cond)]; ref = ref[~np.isnan(ref)]
     if len(cond) < 2 or len(ref) < 2:
         return None
-    v_ref = ref.var(ddof=1)
+    v_ref = _exact_var(ref)
     if v_ref == 0:
-        return 1.0 if cond.var(ddof=1) == 0 else None
-    return float(cond.var(ddof=1) / v_ref)
+        return 1.0 if _exact_var(cond) == 0 else None
+    return float(_exact_var(cond) / v_ref)
 
 
 def balance_check(stimuli: pd.DataFrame, columns) -> list:
@@ -160,11 +165,11 @@ def _pearson(x, y):
     x = x[m]; y = y[m]
     if len(x) < 2:
         return None
-    dx = x - x.mean(); dy = y - y.mean()
-    denom = math.sqrt(float((dx * dx).sum()) * float((dy * dy).sum()))
+    dx = x - _exact_mean(x); dy = y - _exact_mean(y)
+    denom = math.sqrt(_exact_sum(dx * dx) * _exact_sum(dy * dy))
     if denom == 0:
         return 0.0
-    return round(float((dx * dy).sum() / denom), 9)
+    return round(_exact_sum(dx * dy) / denom, 9)
 
 
 def match_report_continuous(stimuli, predictor, controls, schema) -> dict:

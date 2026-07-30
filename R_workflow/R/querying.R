@@ -135,7 +135,7 @@ load_lexicon <- function(path, schema, language = NULL) {
 #' `n_density` is Coltheart's N: the number of reference words of the same
 #' length differing by a single letter substitution (Hamming distance 1).
 #' `old20` is the mean Levenshtein distance to the 20 nearest reference words
-#' (Yarkoni, Balota & Yap, 2008). Both are computed against `reference`, which
+#' (Yarkoni et al., 2008). Both are computed against `reference`, which
 #' should be a large word list (typically the whole lexicon), not just the
 #' experimental pool.
 #'
@@ -172,6 +172,46 @@ add_neighbourhood <- function(df, reference = df$word, n_old = 20L) {
   df
 }
 
+#' Orthographic overlap between the two members of each pair
+#'
+#' Adds two columns. `pair.lev` is the Levenshtein distance between the pair's two
+#' orthographic forms, and `pair.overlap` is `1 - lev / max(nchar)`, the proportion
+#' of the longer form the two share. Overlap is the standard confound control in a
+#' priming design: a related pair that also shares letters confounds semantic
+#' relatedness with orthographic similarity.
+#'
+#' Both engines return identical values, and the reasons are worth stating because
+#' they are the constraints on any future relational dimension. The core is an
+#' integer edit distance, and `stringdist(method = "lv")` and rapidfuzz's
+#' `Levenshtein.distance` agree exactly, including on decomposed Unicode and CJK,
+#' which is the same cross-library agreement `add_neighbourhood()` already stakes
+#' `old20` on. Length is counted in code points, `nchar()`'s default and Python's
+#' `len()`, never in bytes. The arithmetic uses only `-` and `/`, which IEEE-754
+#' mandates be correctly rounded, and the result is rounded to nine decimal places,
+#' the constant used everywhere else in the package. A degenerate pair of two empty
+#' forms returns 0 rather than `0/0`, because a NaN would be sorted and compared and
+#' would then drop the row from one engine's control window but not the other's.
+#'
+#' @param df A pair table.
+#' @param prime,target Column names holding the two orthographic forms.
+#' @return `df` with `pair.lev` and `pair.overlap` added.
+#' @importFrom stringdist stringdist
+#' @export
+add_pair_overlap <- function(df, prime = "prime", target = "target") {
+  for (col in c(prime, target)) {
+    if (!(col %in% names(df))) {
+      stop(sprintf("lexsync: add_pair_overlap needs column '%s'.", col), call. = FALSE)
+    }
+  }
+  a <- .lower_invariant(.trim_invariant(as.character(df[[prime]])))
+  b <- .lower_invariant(.trim_invariant(as.character(df[[target]])))
+  lev <- as.integer(stringdist::stringdist(a, b, method = "lv"))
+  den <- pmax(nchar(a), nchar(b))
+  df[["pair.lev"]] <- lev
+  df[["pair.overlap"]] <- ifelse(den == 0L, 0, round(1 - lev / den, 9))
+  df
+}
+
 #' Mean positional bigram probability, a phonotactic-probability proxy
 #'
 #' For each word, the mean over its adjacent letter bigrams of the corpus bigram
@@ -202,37 +242,216 @@ add_bigram_frequency <- function(df, reference = NULL) {
   df
 }
 
+# The join key, normalised identically on both sides of the join and in both
+# engines: trimmed and case-folded under Python's Unicode semantics (see
+# .trim_invariant and .lower_invariant), which is also exactly what load_lexicon
+# does to `word`. A missing value stays missing, so it never joins: R's merge()
+# pairs NA with NA, whereas a pandas NaN never compares equal to itself.
+.norm_key <- function(x) .lower_invariant(.trim_invariant(x))
+
 #' Left-join a norm table (e.g. concreteness, age of acquisition, valence)
 #'
 #' The connector for semantic dimensions: the norm data themselves are fetched
 #' separately (licensing varies), then merged here so the matcher can equate on
 #' them. The join is deterministic and identical across engines.
 #'
+#' The result is the lexicon itself with the norm columns appended, and the key is
+#' looked up positionally rather than through `merge()`. That is what makes the two
+#' engines agree structurally rather than by repair afterwards, because `merge()`
+#' and `pandas.merge` were measured to diverge in three ways, each of them silent:
+#' R hoists the `by` column to position 1 while pandas keeps the left frame's
+#' order, so the column order differed whenever `on` was not already first; R
+#' disambiguates a colliding column name with `.x`/`.y` and pandas with `_x`/`_y`,
+#' and either way a dimension the design matches on disappears under a name
+#' nothing looks for; and `merge(sort = FALSE)` leaves the row order unspecified
+#' rather than keeping x's. A positional lookup has none of those degrees of
+#' freedom: the output is the input plus columns, in both engines. A colliding
+#' name is now an error instead.
+#'
+#' The key is trimmed and case-folded on *both* sides. Only the norm table's side
+#' was normalised before, so a lexicon holding `Dog` matched nothing and the design
+#' carried on with an all-`NA` dimension -- and because both engines agreed on that
+#' wrong answer, no parity test could have caught it. The lexicon's own spelling is
+#' preserved rather than folded in place: `word` is the byte-order tie-break behind
+#' every selection, so the join must not rewrite it.
+#'
 #' @param lexicon A lexicon data frame.
 #' @param norms A data frame or the path to a CSV with a word column and norms.
 #' @param on The join column (default "word").
 #' @param columns Optional norm columns to keep.
-#' @return `lexicon` with the norm columns joined on, in the lexicon's row order.
+#' @return `lexicon` with the norm columns appended, in the lexicon's own row and
+#'   column order. Rows with no matching norm get `NA`.
 #' @export
 merge_norms <- function(lexicon, norms, on = "word", columns = NULL) {
   n <- if (is.data.frame(norms)) norms else as.data.frame(read_csv_utf8(norms), stringsAsFactors = FALSE)
-  cols <- if (!is.null(columns)) columns else setdiff(names(n), on)
-  n <- n[, c(on, cols), drop = FALSE]
-  n[[on]] <- .lower_invariant(.trim_invariant(n[[on]]))
-  # merge() would pair a missing key with a missing lexicon key, whereas the
-  # Python engine's NaN never compares equal; drop it so neither engine joins on it.
-  n <- n[!is.na(n[[on]]), , drop = FALSE]
-  n <- n[!duplicated(n[[on]]), , drop = FALSE]
-  # merge(sort = FALSE) does not mean "keep x's order" -- it leaves the order
-  # unspecified, and in practice sends unmatched rows last. Carry an explicit row
-  # id through the join and restore it, so the result is the caller's own lexicon
-  # order, as pandas' left join gives.
-  lexicon[["..lexsync_row"]] <- seq_len(nrow(lexicon))
-  out <- merge(lexicon, n, by = on, all.x = TRUE, sort = FALSE)
-  out <- out[order(out[["..lexsync_row"]]),
-             setdiff(names(out), "..lexsync_row"), drop = FALSE]
+  if (!(on %in% names(lexicon)))
+    stop(sprintf("lexsync: merge_norms needs join column '%s' on the lexicon.", on),
+         call. = FALSE)
+  if (!(on %in% names(n)))
+    stop(sprintf("lexsync: merge_norms needs join column '%s' on the norm table.", on),
+         call. = FALSE)
+  cols <- if (!is.null(columns)) unlist(columns, use.names = FALSE) else setdiff(names(n), on)
+  absent <- setdiff(cols, names(n))
+  if (length(absent))
+    stop(sprintf("lexsync: the norm table has no column(s): %s.",
+                 paste(sprintf("'%s'", absent), collapse = ", ")), call. = FALSE)
+  # Silently renaming the clash, as both merges do, is the worst outcome available:
+  # a design matching on `frequency` would find neither `frequency.x` nor
+  # `frequency_x` and would fail far from the cause, or match on the norm table's
+  # column believing it was the lexicon's.
+  clash <- intersect(cols, names(lexicon))
+  if (length(clash))
+    stop(sprintf(paste("lexsync: norm column(s) %s already exist on the lexicon.",
+                       "Rename them in the norm table, or name the ones you want",
+                       "in `columns`."),
+                 paste(sprintf("'%s'", clash), collapse = ", ")), call. = FALSE)
+  key <- .norm_key(n[[on]])
+  keep <- !is.na(key) & !duplicated(key)
+  idx <- match(.norm_key(lexicon[[on]]), key[keep])
+  add <- n[keep, cols, drop = FALSE]
+  out <- lexicon
+  # Indexing by NA yields NA of the column's own type, which is a left join.
+  for (cl in cols) out[[cl]] <- add[[cl]][idx]
   rownames(out) <- NULL
   out
+}
+
+# ---- The design's `norms:` block --------------------------------------------
+# A design may name norm tables to be joined onto the lexicon before the pool is
+# built, so `pool_filters`, `match_on` and a continuous `predictor` can all refer to
+# a semantic dimension lexsync does not compute:
+#
+#   norms:
+#     - path: norms/en_concreteness.csv
+#       on: word                  # optional join key, default 'word'
+#       columns: [concreteness]   # optional; default every column but the key
+#
+# The join itself is merge_norms(). What this adds is provenance, and that is not a
+# nicety: a norm table can carry the very variable a design manipulates, so a
+# datasheet that did not name the file and its checksum would describe a selection
+# over columns whose origin is recorded nowhere. The loader hands the records back
+# for build_datasheet() to write down.
+#
+# Coverage is recorded per column rather than per file, because one table can cover a
+# dimension well and another badly, and an unmatched row becomes an NA that the
+# tolerance windows then drop from the pool without saying so.
+
+# YAML gives a sequence of mappings as an unnamed list of named lists, and a single
+# bare mapping as one named list. Writing one entry as a bare mapping is the obvious
+# thing to do, so accept both shapes. `names()` of an unnamed list is NULL and
+# `"path" %in% NULL` is FALSE, which distinguishes them without indexing an unnamed
+# list by name (an error, not NULL).
+#' @keywords internal
+.norm_specs <- function(design) {
+  specs <- design[["norms"]] %||% list()
+  if (length(specs) && "path" %in% names(specs)) specs <- list(specs)
+  specs
+}
+
+#' @keywords internal
+.apply_norms <- function(lex, design) {
+  records <- list()
+  for (spec in .norm_specs(design)) {
+    path <- spec[["path"]]
+    if (is.null(path))
+      stop("lexsync: every entry under `norms:` needs a `path`.", call. = FALSE)
+    parts <- strsplit(gsub("\\\\", "/", path), "/", fixed = TRUE)[[1]]
+    if (".." %in% parts)
+      stop("lexsync: norms path must not contain '..'.", call. = FALSE)
+    on <- spec[["on"]] %||% "word"
+    cols <- if (is.null(spec[["columns"]])) NULL else unlist(spec[["columns"]], use.names = FALSE)
+    before <- names(lex)
+    lex <- merge_norms(lex, path, on = on, columns = cols)
+    added <- setdiff(names(lex), before)
+    records[[length(records) + 1L]] <- list(
+      path = path, sha256 = sha256_file(path), on = on,
+      columns = lapply(added, function(cl)
+        list(column = cl, n_matched = sum(!is.na(lex[[cl]])), n_total = nrow(lex))))
+  }
+  list(lexicon = lex, provenance = records)
+}
+
+#' Load a supplied candidate pool of words and give it the matcher's dimensions
+#'
+#' A researcher who already has a curated word list -- from a previous study, a
+#' norming session, a colleague -- should not have to dress it up as a corpus lexicon
+#' to get lexsync's matching, validation and datasheet. This reads such a list and
+#' returns something the matcher accepts.
+#'
+#' The list needs only a `word` column. Length and the syllable estimate are derived
+#' from the form. Everything else is either supplied on the list itself or looked up:
+#' with `lexicon` given, the corpus dimensions (frequency above all) are joined for
+#' those words, and a word the lexicon does not have is a hard error rather than an
+#' `NA`, because the tolerance windows drop `NA` rows silently and the pool would
+#' then be smaller than the user believes it is.
+#'
+#' The returned `reference` matters as much as the pool. `n_density` and `old20` are
+#' properties of a word in its *language*, not among the handful of words a study
+#' happens to use, so computing them against a 200-word supplied list would give
+#' numbers that mean nothing. When a lexicon is given, the reference is the lexicon's
+#' words; only without one does it fall back to the pool itself.
+#'
+#' @param path Path to a UTF-8 CSV with at least a `word` column.
+#' @param schema The parsed schema (used when a lexicon is loaded).
+#' @param lexicon Optional path to a derived lexicon to draw dimensions from.
+#' @param language Optional language label recorded in a `language` column.
+#' @return A list with `pool` (the data frame, carrying `word`, `id`, `length`,
+#'   `n_syllables` and any joined or supplied dimensions) and `reference` (the word
+#'   vector the neighbourhood dimensions should be computed against).
+#' @export
+load_pool <- function(path, schema, lexicon = NULL, language = NULL) {
+  parts <- strsplit(gsub("\\\\", "/", path), "/", fixed = TRUE)[[1]]
+  if (".." %in% parts) stop("lexsync: pool path must not contain '..'.", call. = FALSE)
+  df <- as.data.frame(read_csv_utf8(path), stringsAsFactors = FALSE)
+  if (!("word" %in% names(df))) {
+    stop(sprintf("lexsync: supplied pool '%s' is missing the required 'word' column.",
+                 path), call. = FALSE)
+  }
+  # The same normalisation load_lexicon applies, for the same reason: `word` is the
+  # canonical key behind every byte-order tie-break, so the two engines must fold and
+  # trim it identically before anything is sorted or numbered by it.
+  df$word <- .lower_invariant(.trim_invariant(df$word))
+  df <- df[!is.na(df$word) & nzchar(df$word), , drop = FALSE]
+  df <- df[!duplicated(df$word), , drop = FALSE]
+  if (!nrow(df)) {
+    stop(sprintf("lexsync: supplied pool '%s' has no usable rows: it is empty, or every row is missing 'word'.",
+                 path), call. = FALSE)
+  }
+  df <- df[order(df$word, method = "radix"), , drop = FALSE]
+  rownames(df) <- NULL
+
+  reference <- df$word
+  if (!is.null(lexicon)) {
+    lex <- load_lexicon(lexicon, schema, language = language)
+    reference <- lex$word
+    # `id` is the lexicon's own row number, meaningless once the pool is a subset.
+    dims <- setdiff(names(lex), c("word", "language", "source", "id"))
+    clash <- intersect(dims, names(df))
+    if (length(clash)) {
+      stop(sprintf(paste("lexsync: supplied pool '%s' already has column(s) %s, which the",
+                         "lexicon would also supply. Rename or drop them, so it is",
+                         "unambiguous which values the matcher used."),
+                   path, paste(sprintf("'%s'", sort(clash, method = "radix")), collapse = ", ")),
+           call. = FALSE)
+    }
+    absent <- setdiff(df$word, lex$word)
+    if (length(absent)) {
+      shown <- head(sort(absent, method = "radix"), 5L)
+      stop(sprintf("lexsync: %d word(s) of supplied pool '%s' are absent from lexicon '%s': %s%s.",
+                   length(absent), path, lexicon,
+                   paste(sprintf("'%s'", shown), collapse = ", "),
+                   if (length(absent) > length(shown)) ", ..." else ""), call. = FALSE)
+    }
+    idx <- match(df$word, lex$word)
+    for (d in dims) df[[d]] <- lex[[d]][idx]
+  }
+  # Derived after any join, so a lexicon cannot overwrite them with its own copies.
+  df$length <- nchar(df$word)
+  df$n_syllables <- count_syllables(df$word)
+  if (!is.null(language)) df$language <- language
+  df$id <- seq_len(nrow(df))
+  rownames(df) <- NULL
+  list(pool = df, reference = reference)
 }
 
 #' Load a paradigm item table (prime-target pairs, sentences, ...)
@@ -250,7 +469,12 @@ merge_norms <- function(lexicon, norms, on = "word", columns = NULL) {
 load_items <- function(path, required_fields) {
   parts <- strsplit(gsub("\\\\", "/", path), "/", fixed = TRUE)[[1]]
   if (".." %in% parts) stop("lexsync: items path must not contain '..'.", call. = FALSE)
-  df <- as.data.frame(read_csv_utf8(path), stringsAsFactors = FALSE)
+  # The condition label and the paradigm's presented fields are read as text, never
+  # type-guessed: readr reads a column of `f` or `t` as logical, which silently turned
+  # a design's `answer: f` response key into FALSE here while the Python engine kept
+  # "f". See read_csv_utf8.
+  df <- as.data.frame(read_csv_utf8(path, as_character = c("condition", required_fields)),
+                      stringsAsFactors = FALSE)
   needed <- c("item", "condition", required_fields)
   missing <- setdiff(needed, names(df))
   if (length(missing)) {

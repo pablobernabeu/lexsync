@@ -11,7 +11,7 @@
     },
     {
       "file": "output/experiments/en_spr_english_psychopy.py",
-      "sha256": "4799c74f31ceb8f297672ec6cd0c948150d4aae002d92c1164131d8dc5afea6f"
+      "sha256": "31f2c9f74d34edca6f577b2abb541dc4dc53ed3f7759628baed6c88b8f4a501c"
     },
     {
       "file": "output/experiments/en_spr_english.osexp",
@@ -19,7 +19,7 @@
     },
     {
       "file": "output/experiments/en_spr_english.html",
-      "sha256": "bc7b60609e0c8b075eab5ba0453e01904ba17fc9bface2cf3dbd1ecd771d269e"
+      "sha256": "7d086a08c564a6d6421093f0132b702ed683646be32b823f379b59b30eabbeb0"
     }
   ],
   "counterbalancing": {
@@ -45,7 +45,7 @@
     "stimuli_file": "output/stimuli/en_spr_english_stimuli_py.csv",
     "stimuli_sha256": "f1078869328bc97d1e22a179033c9f4fcd0f0e3cd83d985dd66b3c37f5b75f5d"
   },
-  "lexsync_datasheet_version": "1.0",
+  "lexsync_datasheet_version": "1.1",
   "materials_source": {
     "path": "items/spr_sentences_en.csv",
     "provenance": "user-supplied item table",
@@ -53,6 +53,7 @@
     "type": "table"
   },
   "realised_control": [],
+  "relational": null,
   "reproducibility": {
     "seed": 2026,
     "versions": {

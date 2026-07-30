@@ -8,7 +8,8 @@ uses, so a name can be found in the same place on either site.
 
 Everything listed under a group heading is importable straight from `lexsync`, with a handful of
 exceptions that are noted where they appear and are reached through their own module. Guides with
-worked examples are linked from the [home page](index.md).
+worked examples are linked from the [home page](index.md), and the published work that these entries
+cite is listed in full on the [references page](references.md).
 
 ## Corpora and lexica
 

@@ -13,7 +13,10 @@ build_datasheet(
   artifacts,
   seed,
   engine = "R",
-  candidate_pool = NULL
+  candidate_pool = NULL,
+  norms = NULL,
+  balance = NULL,
+  blocks = NULL
 )
 }
 \arguments{
@@ -38,6 +41,19 @@ build_datasheet(
 \item{candidate_pool}{Optional list of per-condition candidate-pool sizes
 (\code{list(condition, n_candidates)}) recording how many items satisfied each
 condition's window before matching; reported for selection transparency.}
+
+\item{norms}{Optional list of norm-table provenance records, from the design's
+\verb{norms:} block (see the pipeline). Each names a file, its sha256, the join key
+and the per-column coverage. Recorded because a norm table can supply the very
+variable a design manipulates, so a record that omitted it would describe a
+selection over columns of unstated origin.}
+
+\item{balance}{Optional balance-optimiser report, from \code{\link[=balance_lists]{balance_lists()}}.
+Recorded because it decides which items each participant sees.}
+
+\item{blocks}{Optional practice/filler block report. Recorded because those
+trials are presented but not analysed, so the presented and analysed counts
+differ and the record must say why.}
 }
 \value{
 The datasheet as a nested list, ready for \code{\link[=write_datasheet]{write_datasheet()}}.

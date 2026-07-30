@@ -1,0 +1,17 @@
+trial,list,set,condition,prime,target,condition_trigger,item_trigger
+1,1,11,related,pepper,salt,101,40
+1,2,6,unrelated,pencil,king,102,44
+2,1,8,related,cold,hot,101,46
+2,2,5,related,dog,cat,101,43
+3,1,9,unrelated,river,black,102,47
+3,2,8,unrelated,paper,hot,102,46
+4,1,5,unrelated,table,cat,102,43
+4,2,11,unrelated,engine,salt,102,40
+5,1,7,unrelated,planet,bread,102,45
+5,2,12,related,night,day,101,41
+6,1,6,related,queen,king,101,44
+6,2,4,unrelated,tractor,cup,102,42
+7,1,12,unrelated,carpet,day,102,41
+7,2,7,related,butter,bread,101,45
+8,1,4,related,saucer,cup,101,42
+8,2,9,related,white,black,101,47

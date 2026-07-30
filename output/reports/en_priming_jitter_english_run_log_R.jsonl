@@ -1,0 +1,8 @@
+{"time":"2026-07-30 15:20:53.048631","message":"loading items 'items/priming_pairs_en_soa.csv'","data":null}
+{"time":"2026-07-30 15:20:53.10855","message":"loaded 12 items across 2 conditions","data":{"conditions":"related, unrelated"}}
+{"time":"2026-07-30 15:20:53.140202","message":"wrote 'en_priming_jitter_english_stimuli_R.csv'","data":{"path":"output/stimuli/en_priming_jitter_english_stimuli_R.csv","rows":24,"md5":"7c498659e1f5f33335f3ee3e5cce8e45"}}
+{"time":"2026-07-30 15:20:53.233542","message":"wrote 'en_priming_jitter_english_psychopy.py'","data":{"path":"output/experiments/en_priming_jitter_english_psychopy.py","rows":"NA","md5":"c687e30a79ea9d73eb947b01e56088e6"}}
+{"time":"2026-07-30 15:20:53.24362","message":"wrote 'en_priming_jitter_english.osexp'","data":{"path":"output/experiments/en_priming_jitter_english.osexp","rows":"NA","md5":"384dccebd9d3b783f43d9684aeea5a61"}}
+{"time":"2026-07-30 15:20:53.253406","message":"wrote 'en_priming_jitter_english.html'","data":{"path":"output/experiments/en_priming_jitter_english.html","rows":"NA","md5":"606b9c271c794289d56e9cf578cc6e42"}}
+{"time":"2026-07-30 15:20:53.347493","message":"wrote 'en_priming_jitter_english_datasheet_R.json'","data":{"path":"output/reports/en_priming_jitter_english_datasheet_R.json","rows":"NA","md5":"c45715ad93d57f67e7b8612adb373557"}}
+{"time":"2026-07-30 15:20:53.360069","message":"wrote 'en_priming_jitter_english_datasheet_R.md'","data":{"path":"output/reports/en_priming_jitter_english_datasheet_R.md","rows":"NA","md5":"44721b10f0422409ed0a1a8c11e1626b"}}

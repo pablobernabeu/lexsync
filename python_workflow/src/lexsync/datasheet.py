@@ -14,9 +14,15 @@ from __future__ import annotations
 import json
 import platform
 
-from .io_utils import sha256_file
+from .io_utils import _is_continuous, sha256_file
 
-DATASHEET_VERSION = "1.0"
+# 1.1 added `materials_source["norms"]` (the design's joined norm tables, with their
+# checksums and per-column coverage) and, for a pair-keyed design, a `relational`
+# block plus an honest `selection["cross_engine"]`. Both were required by the rule
+# that anything affecting item selection is recorded here: a norm table can carry the
+# manipulated variable itself, and the pair path performs a real selection that the
+# record used to describe as "n/a (user-supplied items)".
+DATASHEET_VERSION = "1.1"
 
 # Datasheet labels for the pseudoword generators in generation.py, keyed by the
 # items.generation.method token. Kept character-for-character identical to
@@ -54,19 +60,69 @@ def _versions(engine: str) -> dict:
     return out
 
 
-def _cross_engine(method, source: str) -> str:
+def _cross_engine(method, source: str, selected: bool = False) -> str:
     """Whether the R and Python engines select byte-identical materials.
 
     The deterministic methods are byte-identical; ``mahalanobis`` and ``optimal``
     are the exception, because they use a covariance-matrix inverse and an
     assignment solver whose last bits differ between the two linear-algebra
     backends (see matching.py).
+
+    ``selected`` distinguishes the two things an item table can now mean. A plain
+    table design does no selection, so there is nothing for the engines to agree on
+    and the honest answer is "n/a". A pair-keyed continuous design selects over that
+    table, and that selection was measured to be byte-identical -- so answering "n/a"
+    there understated the guarantee, on the one path where a reader most needs it.
     """
-    if source == "table":
+    if source == "table" and not selected:
         return "n/a (user-supplied items)"
     if method in ("mahalanobis", "optimal"):
         return "approximate (platform linear algebra)"
     return "byte-identical"
+
+
+def _relational_record(design: dict, stimuli) -> dict | None:
+    """The pair-keyed part of the record, or None for a design that is not pair-keyed.
+
+    Derived from the design and the realised stimuli rather than passed in, so both
+    engines compute it from the same two objects and cannot disagree about it.
+
+    Three of these fields answer questions the rest of the datasheet gets wrong for a
+    pair design. ``n_pairs`` is stated because ``items["n_total"]`` counts ROWS, which
+    is one per pair per condition, so a reader comparing it against the design's
+    ``n_per_condition`` would find it doubled. The member lexicon is named and
+    checksummed because it is where every member-level control came from, and nothing
+    else in the record mentions it -- ``materials_source`` names the item table. And
+    the member dimensions are separated from the relational ones because they are
+    different kinds of variable: ``target.frequency`` is a property of one word,
+    ``pair.overlap`` is a property of the pair, and only the second is unavailable
+    from any word-level norm database. Mirrors datasheet.R.
+    """
+    items_cfg = design.get("items") or {}
+    members = list(items_cfg.get("members") or [])
+    if not members:
+        return None
+    cols = list(stimuli.columns)
+    # The union over members, not the first member's alone. join_member_norms gives
+    # every member the same dimensions, so the sets coincide in anything the pipeline
+    # produced; taking the union means a hand-built frame cannot report an empty list
+    # merely because the first member happens to carry no prefixed column.
+    # startswith, not a regex: a member name is user-supplied and may contain a
+    # character a regex would read as syntax.
+    member_dims = set()
+    for m in members:
+        prefix = m + "."
+        member_dims.update(c[len(prefix):] for c in cols if c.startswith(prefix))
+    lexicon = items_cfg.get("lexicon") or design.get("lexicon")
+    return {
+        "members": members,
+        "n_pairs": int(stimuli["set"].nunique()),
+        "member_lexicon": lexicon,
+        "member_lexicon_sha256": sha256_file(lexicon),
+        "member_dimensions": sorted(member_dims, key=lambda s: s.encode("utf-8")),
+        "relational_dimensions": sorted((c for c in cols if c.startswith("pair.")),
+                                        key=lambda s: s.encode("utf-8")),
+    }
 
 
 def _resolve_tolerance_k(design: dict, schema: dict) -> dict:
@@ -82,7 +138,9 @@ def _resolve_tolerance_k(design: dict, schema: dict) -> dict:
 
 
 def _controlled(design: dict, source: str) -> list:
-    if source == "corpus":
+    # A supplied pool goes through the same matcher as a corpus, so it controls the same
+    # dimensions; only the origin of the candidate words differs.
+    if source in ("corpus", "pool"):
         return list(design.get("match_on") or [])
     if source == "generate":
         return ["length"]
@@ -135,17 +193,28 @@ def _analysis(design: dict, source: str) -> dict:
 
 
 def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
-                    seed, engine="python", candidate_pool=None) -> dict:
+                    seed, engine="python", candidate_pool=None, norms=None,
+                    balance=None, blocks=None) -> dict:
     """Assemble the datasheet dictionary from the pipeline's objects.
 
     ``candidate_pool`` (optional) is a list of ``{"condition", "n_candidates"}``
     recording how many items satisfied each condition's window before matching --
     the size of the discretionary pool the selection drew from, reported so that
     item-selection bias is auditable (Forster, 2000; Simmons et al., 2011).
+
+    ``norms`` (optional) is a list of norm-table provenance records from the design's
+    ``norms:`` block. Each names a file, its sha256, the join key and the per-column
+    coverage. Recorded because a norm table can supply the very variable a design
+    manipulates, so a record that omitted it would describe a selection over columns
+    of unstated origin.
+
+    ``balance`` (optional) is the balance-optimiser report from ``balance_lists``.
+    Recorded because it decides which items each participant sees.
     """
     source = (design.get("items") or {}).get("source", "corpus")
-    is_continuous = source == "corpus" and bool(design.get("continuous"))
+    is_continuous = _is_continuous(design)
     controlled = _controlled(design, source)
+    relational = _relational_record(design, stimuli)
     conditions = list(dict.fromkeys(stimuli["condition"]))
 
     realised = []
@@ -174,7 +243,7 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
                      "predictor": design["continuous"]["predictor"],
                      "controls": list(design["continuous"].get("controls") or []),
                      "tolerance_k": _resolve_tolerance_k(design, schema)}
-    elif source == "corpus":
+    elif source in ("corpus", "pool"):
         selection = {"method": ((design.get("matching") or {}).get("method")
                                 or (schema.get("matching") or {}).get("method")
                                 or "standardised_euclidean"),
@@ -191,10 +260,58 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
         selection = {"method": "item table (user-supplied)"}
     if candidate_pool is not None and source in ("corpus", "generate"):
         selection["candidate_pool"] = candidate_pool
-    selection["cross_engine"] = _cross_engine(selection.get("method"), source)
+    # A pair-keyed continuous design does select, over the item table.
+    selection["cross_engine"] = _cross_engine(
+        selection.get("method"), source, selected=is_continuous and relational is not None)
 
+    if source in ("corpus", "generate"):
+        provenance = "see corpora/ATTRIBUTION.md for corpus licence and citation"
+    elif source == "pool":
+        provenance = "user-supplied word pool, matched by lexsync"
+    else:
+        provenance = "user-supplied item table"
+    materials_source = {
+        "type": source, "path": _posix(source_path), "sha256": sha256_file(source_path),
+        "provenance": provenance,
+    }
+    # A supplied pool usually draws its dimensions from a corpus lexicon, and that
+    # lexicon is where every matched value came from, so it is named and checksummed
+    # here: `path` above records only the word list itself.
+    if source == "pool":
+        dim_lex = (design.get("items") or {}).get("lexicon") or design.get("lexicon")
+        materials_source["dimensions_from"] = (
+            dim_lex if dim_lex else "the supplied pool's own columns (no lexicon given)")
+        if dim_lex:
+            materials_source["dimensions_sha256"] = sha256_file(dim_lex)
+    # Added only when present, so a design with no `norms:` block gets no key at all
+    # rather than a "norms": null that every datasheet would then carry. Matches the R
+    # engine, where assigning NULL to a list element removes it.
+    if norms:
+        materials_source["norms"] = norms
+
+    # A corpus design draws on every schema dimension, and so does a pair-keyed
+    # design: every lexicon dimension is joined onto each member. A generate or plain
+    # table design reports only the ones it controlled, so the record does not claim
+    # dimensions that played no part in the selection.
+    all_dims = source in ("corpus", "pool") or relational is not None
     dims = {d: schema["dimensions"][d] for d in schema.get("dimensions", {})
-            if d in controlled or source == "corpus"}
+            if all_dims or d in controlled}
+
+    # The balance report is added only when the optimiser ran, for the same reason the
+    # norms record is: a key that is null on every design that does not use the feature
+    # is noise in a research artefact.
+    counterbalancing = {
+        "recipe": "latin_square_target" if source == "table" else "factorial",
+        "lists": (design.get("counterbalance") or {}).get("lists", 1),
+    }
+    if balance:
+        counterbalancing["optimise"] = balance
+    # Practice and filler trials change what a participant sees but not what is
+    # analysed, so the record has to state both counts: a reader comparing the stimuli
+    # file against the experiment would otherwise find them a different length with no
+    # explanation.
+    if blocks:
+        counterbalancing["blocks"] = blocks
 
     return {
         "lexsync_datasheet_version": DATASHEET_VERSION,
@@ -204,19 +321,13 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
             "description": design.get("description"),
             "n_per_condition": design.get("n_per_condition") or design.get("n_per_cell"),
         },
-        "materials_source": {
-            "type": source, "path": _posix(source_path), "sha256": sha256_file(source_path),
-            "provenance": "see corpora/ATTRIBUTION.md for corpus licence and citation"
-            if source in ("corpus", "generate") else "user-supplied item table",
-        },
+        "materials_source": materials_source,
         "dimensions": dims,
         "selection": selection,
+        "relational": relational,
         "analysis": _analysis(design, source),
         "realised_control": realised,
-        "counterbalancing": {
-            "recipe": "latin_square_target" if source == "table" else "factorial",
-            "lists": (design.get("counterbalance") or {}).get("lists", 1),
-        },
+        "counterbalancing": counterbalancing,
         "resampling": ({"n_sets": (design.get("resample") or {}).get("n_sets"),
                         "disjoint": True} if design.get("resample") else None),
         "items": {
@@ -260,12 +371,32 @@ def _bool(v):
     return None if v is None or (isinstance(v, float) and v != v) else bool(v)
 
 
+def _norms_note(ds: dict) -> str:
+    """The norm tables named in the Methods prose.
+
+    Basenames only: the full paths and checksums are in the datasheet, and a paper's
+    Methods section wants the source, not the directory it happened to sit in on one
+    machine. Mirrors .norms_note in datasheet.R.
+    """
+    norms = (ds.get("materials_source") or {}).get("norms")
+    if not norms:
+        return ""
+    files = ", ".join(str(t["path"]).replace("\\", "/").rsplit("/", 1)[-1] for t in norms)
+    return (" Norm dimensions were joined from %s, whose checksums and per-column "
+            "coverage are recorded in the datasheet." % files)
+
+
 def methods_paragraph(ds: dict) -> str:
     d = ds["design"]
     src = ds["materials_source"]["type"]
     n = d["n_per_condition"]
     lang = d["language"].capitalize()
     sel = ds.get("selection") or {}
+    # What was selected. A pair design's unit is the pair, and its `n_per_condition`
+    # counts pairs, so calling them "items" would misreport the size of the materials
+    # by a factor of the number of conditions.
+    rel = ds.get("relational")
+    unit = "items" if not rel else "-".join(rel["members"]) + " pairs"
     if "predictor" in sel:
         predictor = sel["predictor"]
         controls = ", ".join(sel.get("controls") or []) or "the control dimensions"
@@ -281,11 +412,11 @@ def methods_paragraph(ds: dict) -> str:
         cb = ds["counterbalancing"]
         recipe_label = {"latin_square_target": "a Latin-square rotation",
                         "factorial": "a factorial split"}.get(cb["recipe"], cb["recipe"])
-        return (f"{n} {lang} items were selected to span {predictor}{span_str} continuously "
+        return (f"{n} {lang} {unit} were selected to span {predictor}{span_str} continuously "
                 f"while holding {controls} near-constant{corr_str}, for analysis by regression "
                 f"or a mixed model rather than a between-condition contrast (Kuperman, 2015; "
-                f"Liben-Nowell et al., 2019). Materials were counterbalanced into "
-                f"{cb['lists']} list(s) ({recipe_label}) and generated for PsychoPy, "
+                f"Liben-Nowell et al., 2019).{_norms_note(ds)} Materials were counterbalanced "
+                f"into {cb['lists']} list(s) ({recipe_label}) and generated for PsychoPy, "
                 f"OpenSesame and jsPsych. The selection is deterministic and reproducible "
                 f"(seed {ds['reproducibility']['seed']}; lexsync "
                 f"{ds['reproducibility']['versions']['lexsync']}).")
@@ -294,6 +425,15 @@ def methods_paragraph(ds: dict) -> str:
         lead = (f"{n} items per condition were selected from the {lang} lexicon "
                 f"({ds['materials_source']['provenance']}) and matched item by item on "
                 f"{ctrl} using lexsync's {ds['selection']['method']} matcher")
+    elif src == "pool":
+        # A supplied pool is matched exactly as a corpus is; what differs, and what the
+        # Methods section has to say, is that the candidate words were chosen by the
+        # researcher rather than drawn from the whole lexicon.
+        ctrl = ", ".join(ds["selection"]["match_on"]) or "the control dimensions"
+        lead = (f"{n} {lang} items per condition were selected from a supplied candidate "
+                f"pool and matched item by item on {ctrl} using lexsync's "
+                f"{ds['selection']['method']} matcher, with the matched dimensions taken "
+                f"from {ds['materials_source']['dimensions_from']}")
     elif src == "generate":
         lead = (f"{n} real {lang} words and {n} length-matched pseudowords "
                 f"(generated by {ds['selection']['method']}) were assembled for a "
@@ -335,7 +475,14 @@ def methods_paragraph(ds: dict) -> str:
         ce_note = (". This design's matching method uses a covariance inverse or an "
                    "assignment solver, so the R and Python engines select equivalent "
                    "but not byte-identical materials")
-    return lead + control + pool_note + ce_note + tail
+    bal = (ds.get("counterbalancing") or {}).get("optimise")
+    bal_note = "" if not bal else (
+        ". Item sets were assigned to lists so as to equate the lists on %s rather than "
+        "by an arbitrary deal, by a deterministic integer search (%d swap(s); imbalance "
+        "reduced from %d to %d)"
+        % (", ".join(bal["dimensions"]), bal["n_swaps"],
+           bal["cost_before"], bal["cost_after"]))
+    return lead + control + pool_note + ce_note + bal_note + tail + _norms_note(ds)
 
 
 def prereg_template(ds: dict) -> str:
@@ -365,16 +512,71 @@ def render_datasheet_md(ds: dict) -> str:
              f"- **Paradigm:** {d['paradigm']}  |  **Item source:** {d['source']}",
              f"- **Description:** {d.get('description') or '—'}",
              f"- **Materials source:** `{ds['materials_source']['path']}` "
-             f"(sha256 `{(ds['materials_source']['sha256'] or '')[:16]}…`)",
-             f"- **Selection:** {ds['selection']['method']}",
-             f"- **Cross-engine determinism:** {ds['selection'].get('cross_engine', 'byte-identical')}",
-             f"- **Counterbalancing:** {ds['counterbalancing']['recipe']}, "
-             f"{ds['counterbalancing']['lists']} list(s)",
-             f"- **Items:** {ds['items']['n_total']} rows across "
-             f"{ds['items']['n_conditions']} conditions "
-             f"({', '.join(ds['items']['conditions'])})",
-             f"- **Seed:** {ds['reproducibility']['seed']}  |  **Versions:** "
-             + ", ".join(f"{k} {v}" for k, v in ds["reproducibility"]["versions"].items()), ""]
+             f"(sha256 `{(ds['materials_source']['sha256'] or '')[:16]}…`)"]
+    # Where a supplied pool's matched values came from. Without this the record names
+    # only the word list, and the numbers every control rests on have no stated origin.
+    # Appended here rather than inserted at an index, so the position stays right if a
+    # line above it is ever added or removed.
+    dim_from = (ds.get("materials_source") or {}).get("dimensions_from")
+    if dim_from:
+        dim_sha = (ds.get("materials_source") or {}).get("dimensions_sha256")
+        lines.append("- **Dimensions from:** `%s`%s"
+                     % (dim_from, "" if not dim_sha else " (sha256 `%s…`)" % dim_sha[:16]))
+    lines += [
+        f"- **Selection:** {ds['selection']['method']}",
+        f"- **Cross-engine determinism:** {ds['selection'].get('cross_engine', 'byte-identical')}",
+        f"- **Counterbalancing:** {ds['counterbalancing']['recipe']}, "
+        f"{ds['counterbalancing']['lists']} list(s)",
+        f"- **Items:** {ds['items']['n_total']} rows across "
+        f"{ds['items']['n_conditions']} conditions "
+        f"({', '.join(ds['items']['conditions'])})",
+        f"- **Seed:** {ds['reproducibility']['seed']}  |  **Versions:** "
+        + ", ".join(f"{k} {v}" for k, v in ds["reproducibility"]["versions"].items()), ""]
+    # Norm tables, with their checksums and coverage. A dimension covering only part of
+    # the lexicon matters to a reader: the uncovered rows carry NaN and are dropped by
+    # the tolerance windows, so coverage is part of how the pool was defined.
+    nrm = (ds.get("materials_source") or {}).get("norms")
+    if nrm:
+        lines += ["## Joined norms", "",
+                  "| File | Key | Column | Coverage | sha256 |", "|---|---|---|---|---|"]
+        for t in nrm:
+            for cl in t["columns"]:
+                lines.append(f"| `{t['path']}` | {t['on']} | {cl['column']} | "
+                             f"{cl['n_matched']} / {cl['n_total']} | "
+                             f"`{(t.get('sha256') or '')[:16]}…` |")
+        lines.append("")
+    # Balance-aware list assignment. Reported because it decides which items each
+    # participant sees, and the before/after costs are what make the claim checkable
+    # rather than a bare assertion that the lists are balanced.
+    bal = (ds.get("counterbalancing") or {}).get("optimise")
+    if bal:
+        lines += ["## Balanced list assignment", "",
+                  "- **Balanced on:** " + ", ".join(bal["dimensions"]),
+                  "- **Imbalance:** %d before, %d after, in %d swap(s)"
+                  % (bal["cost_before"], bal["cost_after"], bal["n_swaps"]),
+                  "- **Cost unit:** " + bal["cost_unit"],
+                  ("- The search stopped at its pass bound rather than at a local "
+                   "optimum, so a higher `counterbalance.max_passes` may balance the "
+                   "lists further.") if bal.get("max_passes_reached") else
+                  ("- The search ran to a local optimum: no single exchange of two item "
+                   "sets between lists would reduce the imbalance further."),
+                  ("- The search is a deterministic integer descent with a keyed-hash "
+                   "tie-break, so it uses no random number generator and the R and "
+                   "Python engines produce the same assignment."), ""]
+    rel = ds.get("relational")
+    if rel:
+        lines += ["## Pair-keyed items", "",
+                  f"- **Members:** {', '.join(rel['members'])}  |  "
+                  f"**Pairs:** {rel['n_pairs']}",
+                  f"- **Member lexicon:** `{rel['member_lexicon']}` "
+                  f"(sha256 `{(rel.get('member_lexicon_sha256') or '')[:16]}…`)",
+                  "- **Member-level dimensions** (one word): "
+                  + ", ".join(rel["member_dimensions"]),
+                  "- **Relational dimensions** (the pair): "
+                  + ", ".join(rel["relational_dimensions"]),
+                  "- Selection ran on one row per pair and the result was re-expanded, so "
+                  "every condition row of every chosen pair is present and the Latin-square "
+                  "rotation is complete.", ""]
     cp = (ds.get("selection") or {}).get("candidate_pool")
     if cp:
         parts = ", ".join(f"{c['condition']}: {c['n_candidates']}" for c in cp
@@ -416,11 +618,35 @@ def render_datasheet_md(ds: dict) -> str:
     return "\n".join(lines)
 
 
+def _at_15_significant_digits(o):
+    """Round every float in the record to 15 significant digits.
+
+    The R engine writes this JSON with jsonlite, whose numeric precision is a single
+    setting for the whole document; 15 significant digits (``digits = NA``) is R's full
+    display precision and the closest common ground. Without this the two engines'
+    records disagreed on any value that had not already been rounded on the way in --
+    a `tolerance_k` of 1/9 was written to 16 digits here and 15 there -- so a reader
+    diffing the two records saw a difference that meant nothing.
+
+    Fifteen digits is ample for a provenance record: every value in it either came from
+    a human-written design file or was deliberately rounded to four places. The design
+    file remains the authoritative source for an exact re-run.
+    """
+    if isinstance(o, float):
+        return float("%.15g" % o)
+    if isinstance(o, dict):
+        return {k: _at_15_significant_digits(v) for k, v in o.items()}
+    if isinstance(o, list):
+        return [_at_15_significant_digits(v) for v in o]
+    return o
+
+
 def write_datasheet(ds: dict, json_path: str, md_path: str) -> tuple:
     import os
     os.makedirs(os.path.dirname(json_path) or ".", exist_ok=True)
     with open(json_path, "w", encoding="utf-8", newline="\n") as handle:
-        json.dump(ds, handle, indent=2, ensure_ascii=False, sort_keys=True)
+        json.dump(_at_15_significant_digits(ds), handle, indent=2, ensure_ascii=False,
+                  sort_keys=True)
         handle.write("\n")
     with open(md_path, "w", encoding="utf-8", newline="\n") as handle:
         handle.write(render_datasheet_md(ds) + "\n")

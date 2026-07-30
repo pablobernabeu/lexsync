@@ -74,14 +74,10 @@
   <img class="logo" src="logo.svg" alt="lexsync hex logo">
   <h1>lexsync</h1>
   <p class="lead">Multidimensional lexical optimisation and hardware-timed experiment generation.
-  From a word-frequency corpus in any of dozens of languages, lexsync selects stimuli matched
-  across several lexical dimensions, counterbalances them, and generates the experiment that
-  presents them for PsychoPy, OpenSesame or the browser. The R and Python engines select
-  byte-identical stimuli under the deterministic matching methods, and continuous integration
-  checks that across all fifteen worked designs. Two methods are a documented exception. The
-  <code>mahalanobis</code> and <code>optimal</code> methods rely on a covariance-matrix inverse
-  and an assignment solver whose last bits can differ between the two linear-algebra backends,
-  so there the engines select equivalent sets rather than identical ones.</p>
+  Twin, feature-parity packages that select stimuli matched across several lexical dimensions from
+  a corpus in any of dozens of languages, counterbalance them, and generate the experiment that
+  presents them for PsychoPy, OpenSesame or the browser. The R and Python engines produce
+  byte-identical materials.</p>
   <div class="cards">
     <a class="card r" href="r/index.html">
       <div class="card-head">
@@ -103,12 +99,10 @@
   <h2 class="section-h">Run a generated experiment</h2>
   <p class="section-lead">Every worked design in the repository ships as a browser experiment, written by
   the same pipeline that emits the PsychoPy and OpenSesame scripts and rendered from the same declarative
-  event list. These are build artefacts rather than mock-ups. Each one is a single HTML file carrying its
-  own trial list, so it runs by being opened. Two contrasting paradigms are below, and the other thirteen are
-  published beside them, among them
-  <a href="demos/en_priming_english.html">related versus unrelated priming</a> and a
-  <a href="demos/zh_freqcontrast_chinese.html">Mandarin Chinese frequency contrast</a> on a logographic
-  script.</p>
+  event list. These are build artefacts rather than mock-ups: each is a single HTML file carrying its own
+  trial list, so it runs by being opened. Two contrasting paradigms are below, and
+  <a href="demos/">all fifteen are listed together</a>, among them related versus unrelated priming and a
+  Mandarin Chinese frequency contrast on a logographic script.</p>
   <div class="cards">
     <a class="card demo" href="demos/en_lexdec_english.html">
       <div class="card-head">

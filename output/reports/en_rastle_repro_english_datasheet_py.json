@@ -11,7 +11,7 @@
     },
     {
       "file": "output/experiments/en_rastle_repro_english_psychopy.py",
-      "sha256": "57dc3dc00707d1b8674dd3356cc0a9eabdc2f412103532910d7024705cb35f61"
+      "sha256": "e8692810c2f2f5f1625a75f44fc8056e063f750e05f1a940a9e928e096dd78c8"
     },
     {
       "file": "output/experiments/en_rastle_repro_english.osexp",
@@ -19,7 +19,7 @@
     },
     {
       "file": "output/experiments/en_rastle_repro_english.html",
-      "sha256": "1ac60974e8c9d72e2fe2b5b71688ad3024a0774fe5e4ed536bc94e8204ac671a"
+      "sha256": "8ecfd36345d0ac819a5542dff5e6e7278267518944d1d30b36c4307da1b86a64"
     }
   ],
   "counterbalancing": {
@@ -45,7 +45,7 @@
     "stimuli_file": "output/stimuli/en_rastle_repro_english_stimuli_py.csv",
     "stimuli_sha256": "fe1a1ee921eebb9429580b57eeb8c3c8728ce581687c2b2a78a34bcedb21d2f0"
   },
-  "lexsync_datasheet_version": "1.0",
+  "lexsync_datasheet_version": "1.1",
   "materials_source": {
     "path": "items/rastle_priming_en.csv",
     "provenance": "user-supplied item table",
@@ -53,6 +53,7 @@
     "type": "table"
   },
   "realised_control": [],
+  "relational": null,
   "reproducibility": {
     "seed": 2026,
     "versions": {

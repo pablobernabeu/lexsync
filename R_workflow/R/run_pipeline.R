@@ -23,7 +23,7 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
   items_cfg <- design$items %||% list()
   source <- items_cfg$source %||% "corpus"
   paradigm <- design$paradigm %||% "factorial"
-  is_continuous <- identical(source, "corpus") && !is.null(design$continuous)
+  is_continuous <- .is_continuous(design)
 
   log <- new_run_log(design$name, meta = list(
     design = design$name, language = design$language,
@@ -32,18 +32,57 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
   ))
 
   report <- NULL
-  if (source %in% c("corpus", "generate")) {
-    lexicon <- items_cfg$lexicon %||% design$lexicon
-    log <- log_step(log, sprintf("loading lexicon '%s'", lexicon))
-    lex <- load_lexicon(lexicon, schema, language = design$language)
-    log <- log_step(log, sprintf("lexicon loaded: %d words", nrow(lex)), list(words = nrow(lex)))
+  pair_eligible <- NULL
+  norms <- list()
+
+  # The design's `norms:` tables are joined onto the lexicon before the pool is
+  # built, so a filter, a matched dimension or a continuous predictor may name a
+  # semantic dimension lexsync does not compute. The records come back with the
+  # lexicon and go into the datasheet: a norm table can carry the manipulated
+  # variable itself, so the run is not reproducible from a record that does not name
+  # the file and its checksum.
+  join_norms <- function(lex, log) {
+    joined <- .apply_norms(lex, design)
+    norms <<- joined$provenance
+    for (rec in joined$provenance) {
+      log <- log_step(log, sprintf("joined %d norm column(s) from '%s'",
+                                   length(rec$columns), rec$path),
+                      list(norms = rec$path, sha256 = rec$sha256))
+    }
+    list(lexicon = joined$lexicon, log = log)
+  }
+
+  ref_words <- NULL
+  if (source %in% c("corpus", "generate", "pool")) {
+    if (identical(source, "pool")) {
+      # A supplied word list, given the matcher's dimensions rather than dressed up as
+      # a corpus lexicon. `reference` comes back separately because the neighbourhood
+      # dimensions are properties of the language, not of the supplied list.
+      pool_path <- items_cfg$path
+      lexicon <- items_cfg$lexicon %||% design$lexicon
+      log <- log_step(log, sprintf("loading supplied pool '%s'", pool_path))
+      lp <- load_pool(pool_path, schema, lexicon = lexicon, language = design$language)
+      lex <- lp$pool
+      ref_words <- lp$reference
+      log <- log_step(log, sprintf("supplied pool: %d words%s", nrow(lex),
+                                   if (is.null(lexicon)) ""
+                                   else sprintf(" (dimensions from '%s')", lexicon)),
+                      list(words = nrow(lex), lexicon = lexicon %||% NA_character_))
+    } else {
+      lexicon <- items_cfg$lexicon %||% design$lexicon
+      log <- log_step(log, sprintf("loading lexicon '%s'", lexicon))
+      lex <- load_lexicon(lexicon, schema, language = design$language)
+      log <- log_step(log, sprintf("lexicon loaded: %d words", nrow(lex)), list(words = nrow(lex)))
+      ref_words <- lex$word
+    }
+    jn <- join_norms(lex, log); lex <- jn$lexicon; log <- jn$log
     pool <- build_pool(lex, design$pool_filters)
     log <- log_step(log, sprintf("pool after filters: %d words", nrow(pool)), list(pool = nrow(pool)))
   }
 
-  if (source == "corpus") {
+  if (source %in% c("corpus", "pool")) {
     match_on <- unlist(design$match_on, use.names = FALSE)
-    ref <- reference_words %||% lex$word
+    ref <- reference_words %||% ref_words
     needed <- intersect(c("n_density", "old20"), match_on)
     if (length(needed) && any(!needed %in% names(pool))) {
       log <- log_step(log, "computing orthographic neighbourhood (N, OLD20)")
@@ -91,8 +130,33 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
     log <- log_step(log, sprintf("loaded %d items across %d conditions",
                                  length(unique(stim$set)), length(unique(stim$condition))),
                     list(conditions = paste(unique(stim$condition), collapse = ", ")))
+    members <- unlist(items_cfg$members %||% list(), use.names = FALSE)
+    if (length(members)) {
+      # Load the member lexicon here rather than inside .join_member_norms, so the
+      # design's `norms:` block reaches the members too: a semantic predictor such as
+      # `target.concreteness` needs the norm columns present before they are prefixed.
+      mem_lexicon <- .member_lexicon_path(items_cfg, design)
+      log <- log_step(log, sprintf("loading member lexicon '%s'", mem_lexicon))
+      mem_lex <- load_lexicon(mem_lexicon, schema, language = design$language)
+      jn <- join_norms(mem_lex, log); mem_lex <- jn$lexicon; log <- jn$log
+      stim <- .join_member_norms(stim, members, items_cfg, design, schema, lex = mem_lex)
+      log <- log_step(log, sprintf("joined word-level norms onto %s", paste(members, collapse = " and ")))
+      if (all(c("prime", "target") %in% members)) {
+        stim <- add_pair_overlap(stim, members[1], members[2])
+        log <- log_step(log, "computed relational dimensions (pair.lev, pair.overlap)")
+      }
+      if (is_continuous) {
+        res <- .select_continuous_pairs(stim, items_cfg, design, schema, verbose)
+        stim <- res$stim; report <- res$report; pair_eligible <- res$n_eligible
+        log <- log_step(log, sprintf("selected %d pairs spanning '%s' (%d eligible)",
+                                     length(unique(stim$set)), design$continuous$predictor,
+                                     res$n_eligible),
+                        list(sets = length(unique(stim$set)), eligible = res$n_eligible))
+      }
+    }
   } else {
-    stop(sprintf("lexsync: unknown item source '%s'.", source), call. = FALSE)
+    stop(sprintf("lexsync: unknown item source '%s'. Known sources: corpus, pool, generate, table.",
+                 source), call. = FALSE)
   }
 
   if (!is.null(report)) {
@@ -116,7 +180,53 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
     }
   }
 
-  stim <- counterbalance(stim, design, schema)
+  # Balance-aware list assignment, when the design asks for it. Off by default,
+  # because it changes which items a participant sees. The Latin-square recipe
+  # rejects it: there every item is in every list already.
+  list_of_set <- NULL
+  balance <- NULL
+  if (isTRUE(design$counterbalance$optimise)) {
+    bl <- balance_lists(stim, design, schema)
+    list_of_set <- bl$list_of_set
+    balance <- bl$report
+    log <- log_step(log, sprintf(
+      "balanced %d item sets across %d lists on %s: cost %s -> %s in %d swap(s)",
+      length(list_of_set), design$counterbalance$lists %||% 1L,
+      paste(unlist(balance$dimensions), collapse = ", "),
+      format(balance$cost_before, scientific = FALSE),
+      format(balance$cost_after, scientific = FALSE), balance$n_swaps),
+      list(cost_before = balance$cost_before, cost_after = balance$cost_after,
+           swaps = balance$n_swaps))
+    if (isTRUE(balance$max_passes_reached)) {
+      log <- log_step(log, paste("balance: the pass bound was reached, so the search",
+                                 "stopped before it ran out of improving swaps"))
+    }
+  }
+  stim <- counterbalance(stim, design, schema, list_of_set)
+  # Practice and filler trials are presented but not analysed, so the frame splits here:
+  # the experiment is generated from every presented trial, the stimuli file and the
+  # reports from the main ones. A design declaring neither block is unaffected, down to
+  # not gaining a `block` column.
+  blk <- .add_blocks(stim, design, schema)
+  blocks <- blk$report
+  # Realise any per-trial duration before the stimuli are written, so a jittered
+  # or item-driven interval is recorded as a variable rather than living only
+  # inside the generated script. Run on the presented set, so practice and filler
+  # trials get their own realised durations too.
+  presented <- resolve_trial_timing(blk$presented, design, schema)
+  stim <- if (is.null(blocks)) presented
+          else presented[presented$block == .BLOCK_MAIN, , drop = FALSE]
+  rownames(stim) <- NULL
+  if (!is.null(blocks)) {
+    for (b in blocks$blocks) {
+      log <- log_step(log, sprintf("block '%s': %d trial(s) per list%s", b$block,
+                                   b$n_per_list,
+                                   if (is.null(b$placement)) "" else paste0(", ", b$placement)),
+                      list(block = b$block, n_per_list = b$n_per_list))
+    }
+    log <- log_step(log, sprintf("presented %d trial(s); %d analysed",
+                                 nrow(presented), nrow(stim)))
+  }
 
   base <- slugify(design$name, design$language)
   for (sub in c("stimuli", "reports", "experiments")) {
@@ -134,7 +244,9 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
     write_csv_utf8(report$comparisons, comp_path); log <- log_artefact(log, comp_path, nrow(report$comparisons))
   }
 
-  exps <- export_experiments(stim, design, schema, file.path(outdir, "experiments"), base)
+  # Generated from the PRESENTED set: the experiment runs the practice and filler
+  # trials too, even though they are absent from the stimuli file above.
+  exps <- export_experiments(presented, design, schema, file.path(outdir, "experiments"), base)
   for (p in exps) log <- log_artefact(log, p)
 
   # A materials datasheet (machine + human readable) and a pre-registration
@@ -144,16 +256,22 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
   artifacts <- list(stimuli = stim_path, descriptives = desc_path,
                     comparisons = comp_path, experiments = exps)
   candidate_pool <- NULL
-  if (is_continuous) {
+  if (is_continuous && identical(source, "table")) {
+    # A pair design has no word pool. Its candidates are the item sets that passed
+    # the filters on every one of their rows, counted at set granularity.
+    candidate_pool <- list(list(condition = "eligible pairs",
+                                n_candidates = pair_eligible %||% NA_integer_))
+  } else if (is_continuous) {
     candidate_pool <- list(list(condition = "continuous", n_candidates = nrow(pool)))
-  } else if (identical(source, "corpus")) {
+  } else if (source %in% c("corpus", "pool")) {
     candidate_pool <- lapply(design$conditions, function(cnd)
       list(condition = cnd$name, n_candidates = nrow(build_pool(pool, cnd$define_by))))
   } else if (identical(source, "generate")) {
     candidate_pool <- list(list(condition = "words in band", n_candidates = nrow(pool)))
   }
   ds <- build_datasheet(design, schema, report, stim, source_path, artifacts,
-                        schema$seed, engine = "R", candidate_pool = candidate_pool)
+                        schema$seed, engine = "R", candidate_pool = candidate_pool,
+                        norms = norms, balance = balance, blocks = blocks)
   ds_json <- file.path(outdir, "reports", paste0(base, "_datasheet_R.json"))
   ds_md <- file.path(outdir, "reports", paste0(base, "_datasheet_R.md"))
   write_datasheet(ds, ds_json, ds_md)

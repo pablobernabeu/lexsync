@@ -158,7 +158,8 @@ design's bands.
 
 `conditions` is a list, each with a `name` and a `define_by` block that carves the condition out of
 the pool by the same filter syntax. Two conditions make a contrast; four make the 2 × 2 that
-`config/design_en_andrews_repro.yaml` uses to reproduce Andrews (1989). A design may instead declare
+`config/design_en_andrews_repro.yaml` uses to reproduce
+[Andrews (1989)](references.md#andrews-1989). A design may instead declare
 a `continuous` block and dispense with conditions altogether, which
 [Matching and designs](matching-and-designs.md) covers.
 
@@ -172,7 +173,8 @@ tolerance window on each dimension. Overriding a single dimension is common when
 published study's exact windows.
 
 `counterbalance.lists` sets the number of lists. `timing` overrides the fixation, critical-word and
-inter-stimulus frame counts, which are frames at 60 Hz rather than milliseconds. `font` overrides
+inter-stimulus durations in milliseconds (`fixation_ms`, `word_ms`, `isi_ms`; the older
+`*_frames` forms are still accepted and converted at `presentation.assumed_refresh_hz`). `font` overrides
 the presentation font, which matters for a non-Latin script: `config/design_zh_freqcontrast.yaml`
 sets `SimHei`, because the Latin default has no glyphs for Han characters.
 

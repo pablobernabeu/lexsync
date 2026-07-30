@@ -1,0 +1,4 @@
+group,dimension,n,mean,sd,min,median,max
+related,target.frequency,8,5.091,0.474,4.5,5.135,5.95
+related,target.length,8,3.75,0.886,3,3.5,5
+related,pair.overlap,8,0.073,0.104,0,0,0.25

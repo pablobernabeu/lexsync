@@ -1,5 +1,82 @@
 # lexsync (development version)
 
+* Practice and filler blocks. A design may declare `practice:` and `fillers:` item
+  tables; those trials are presented but not analysed, so the stimuli file and the
+  reports are written from the main rows while the generated experiments run every
+  trial. Practice comes first; fillers are interleaved with the main trials rather than
+  appended, because a block of fillers at the end is not a filler but a second block a
+  participant can tell apart. A design declaring neither is unaffected, down to not
+  gaining a `block` column.
+* A `feedback` trial event, and a `blocks:` key that restricts any event to named
+  blocks. Together these give feedback during practice and not during the task, which is
+  the usual arrangement: feedback teaches the mapping, and would contaminate the reaction
+  times it is measuring. Implemented for PsychoPy, OpenSesame and jsPsych alike. The
+  PsychoPy runner now returns the pressed key so it can be scored, and each runner pauses
+  at a block boundary.
+* **The Python engine embedded a bare `NaN` in the generated jsPsych experiment** where a
+  trial had no value for a field another block supplies (a main-block trial in a design
+  whose practice items carry an `answer`). That is not valid JSON, and the R engine
+  dropped the key instead, so the two engines' experiments differed. Both now drop it.
+* **The generated artefacts were not byte-identical across the engines, and the parity
+  test could not see it.** It read both CSVs back with a parser and compared the values,
+  under which `1` and `1.0` are the same number; 13 of the 18 shipped designs differed
+  byte for byte while the gate stayed green. Three differences were serialisation (a
+  whole number written `1` and `1.0`, a boolean written `FALSE` and `False`, a small
+  value written `9e-4` and `0.0009`) and one was not: two reported means differed in the
+  last decimal published, because numpy sums pairwise and R's `mean()` does not. Every
+  reduction in the package now uses one compensated-summation algorithm written out in
+  both engines, whose agreement follows from IEEE-754 rather than from measurement; the
+  writers agree on every value; and the artefacts are now compared as bytes. No R
+  golden moved: R's two-pass mean was already the correctly-rounded one.
+* **A response key coded `f` was silently turned into `FALSE`.** `readr` reads a column
+  whose values are all `f`, `t`, `T` or `F` as logical, while pandas keeps the string, so
+  an item table using the commonest two-choice key pair had its correct answer corrupted
+  in one engine. Item tables now read the condition label and the paradigm's presented
+  fields as text in both engines.
+* `jsonlite`'s default of four digits was truncating the datasheet: a design declaring
+  `tolerance_k: 0.1111111111111111` had it recorded as `0.1111`, which does not reproduce
+  the run the record exists to describe. The JSON is now written at full display
+  precision, and the Python engine writes the same precision.
+* New paradigm `categorisation`: a category cue, then the word to judge against it, with
+  `answer` holding the correct response key so the data are scoreable. Counterbalanced by
+  Latin-square rotation, so a participant never sees the same target twice.
+* `counterbalance.optimise` (off by default) assigns item sets to lists so the lists are
+  equated on the declared dimensions, instead of dealing them by rank. The search is a
+  deterministic integer descent with a keyed-hash tie-break, so it uses no random number
+  generator and both engines produce the same assignment. `balance_lists()` is exported.
+* New item source `pool`: a supplied word list goes through the matcher without having
+  to masquerade as a corpus lexicon. `load_pool()` is exported. The neighbourhood
+  dimensions are computed against the lexicon's words rather than the supplied list,
+  because a word's neighbours are its neighbours in the language.
+* A design may name norm tables in a `norms:` block. They are joined onto the
+  lexicon before the candidate pool is built, so a semantic dimension the corpus
+  does not carry (concreteness, age of acquisition, valence) can be filtered on,
+  matched on or spanned like any other. No norm data is bundled; every joined table
+  is recorded in the materials datasheet with its checksum and its per-column
+  coverage, because a norm table can supply the very variable a design manipulates.
+* Datasheet version 1.1. It adds `materials_source$norms` and, for a pair-keyed
+  design, a `relational` block naming the members, the pair count, the member
+  lexicon and its checksum, and the member-level dimensions separately from the
+  relational ones. `selection$cross_engine` no longer reports
+  "n/a (user-supplied items)" for a pair-keyed continuous design: that design does
+  perform a selection, and it is byte-identical across engines.
+* `merge_norms()` returns the lexicon with the norm columns appended, in the
+  lexicon's own row *and column* order. It previously used `merge()`, which hoists
+  the join column to position 1 where pandas keeps the left frame's order, so the
+  two engines disagreed on column order whenever `on` was not already first. The
+  join key is now also case- and whitespace-folded on the lexicon's side, not only
+  the norm table's: a lexicon holding `Dog` used to match nothing and leave an
+  all-`NA` dimension. A norm column whose name already exists on the lexicon is now
+  an error rather than being renamed to `frequency.x` / `frequency.y`, which left
+  the matched dimension under a name nothing looks for.
+* `write_datasheet()` and `write_run_log()` now write LF on every platform. They
+  used a text-mode connection, so on Windows the datasheet, its Markdown rendering
+  and the Markdown run log came out CRLF while the Python engine's twins were LF.
+  The datasheet is the provenance record; its bytes no longer depend on the machine
+  that built it.
+* `add_pair_overlap()` and `resolve_trial_timing()` are now actually exported. Both
+  were marked for export and documented, but the `NAMESPACE` had not been
+  regenerated, so `library(lexsync)` did not make them available.
 * The materials datasheet now reports the candidate-pool size per condition
   (selection transparency, making item-selection bias auditable) and a suggested
   crossed mixed-model formula that guards against the language-as-fixed-effect

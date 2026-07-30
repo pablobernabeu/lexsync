@@ -70,13 +70,20 @@ the design inherit its paradigm's default sequence. The seven event types are
 number of frames. `response` and `question` collect a keypress. `region_by_region`
 presents a segmented sentence one region at a time, advancing on a key.
 
-Durations are given in frames rather than milliseconds. A frame is a display
-refresh, so 48 frames is 800 ms only on a 60 Hz display, and this is deliberate:
-a visual stimulus can only ever appear on a refresh, so a duration expressed in
-frames is a duration the hardware can actually honour, whereas a duration in
-milliseconds is a request that gets rounded to one. The `timeout_ms` of a
-response window is in milliseconds, because a response deadline is not tied to
-the refresh.
+Durations are given in milliseconds, as `duration_ms`. That is the unit a
+methods section reports and the unit all three targets present, so a design means
+the same interval wherever it runs. A visual stimulus can still only appear on a
+refresh, so the PsychoPy script measures the display's refresh rate when it starts
+and converts each duration into the nearest whole number of flips: 50 ms is three
+flips at 60 Hz and seven at 144 Hz. The trigger stays bound to the flip, and the
+residual quantisation is reported rather than hidden.
+
+A duration may also be given as `duration_frames`, which designs written before
+this change still use. A frame count is converted to milliseconds when the design
+loads, at `presentation.assumed_refresh_hz` in the schema (60 by default), so it
+means the rate the count was written for rather than the rate the experiment runs
+at. The `timeout_ms` of a response window has always been in milliseconds,
+because a response deadline is not tied to the refresh.
 
 ### Content and field references
 
@@ -145,6 +152,37 @@ rather than a limitation of the package: a code is one byte, and the block marke
 254 and 255 are reserved. Condition codes stay unique regardless, so the analysis
 that matters is unaffected.
 
+
+### Timing that varies from trial to trial
+
+A duration need not be the same on every trial. An event may instead declare a
+`duration:` block, in one of two forms:
+
+```yaml
+- type: text
+  content: '{prime}'
+  duration: {from_column: soa_ms}            # read per trial from the items
+- type: blank
+  duration: {jitter: [400, 800], as: iti_ms} # drawn per trial, in milliseconds
+```
+
+The two exist for different reasons. A duration read from a column is a
+manipulated variable: the stimulus-onset asynchrony of a priming study is the
+lever that separates automatic from strategic processing, so it belongs in the
+item table and in the analysis. A jittered duration is not manipulated at all; it
+decorrelates the design matrix, as EEG and fMRI designs routinely require.
+
+Neither draws a random number. A jittered value is a uniform integer keyed on the
+seed, the column name, the list, the set and the condition, so both engines
+realise the same milliseconds and a rerun reproduces them. Naming the column in
+the key is what makes two jittered events draw independently rather than sharing
+one value.
+
+Either form writes the realised milliseconds into the stimuli table and the loop
+table, which is the point: timing that varies is a variable the analysis needs,
+not presentation detail. `config/design_en_priming_jitter.yaml` is a worked
+example carrying both.
+
 ## The paradigm registry
 
 A paradigm bundles a default event sequence with the fields it needs and the
@@ -212,15 +250,17 @@ which is why two CSVs appear alongside the three scripts. The jsPsych target has
 no second file, because it embeds its trials in the HTML. That single file is
 enough to reproduce the procedure in a browser.
 
-PsychoPy is the reference target. The generated script carries the event list as
-embedded JSON and interprets it, and it writes onset triggers to the parallel port
-locked to the flip. It is the target to use for EEG.
+PsychoPy (Peirce et al., 2019) is the reference target. The generated script
+carries the event list as embedded JSON and interprets it, and it writes onset
+triggers to the parallel port locked to the flip. It is the target to use for
+EEG.
 
-OpenSesame is generated as a complete plain-text `.osexp`, block by block, with
-each event becoming an inline script. It gets its trigger by a different route,
-discussed below, and it opens the trigger device with a fallback: if no parallel
-port or serial device is available, it prints the codes instead of failing, so the
-experiment still runs on a machine without the hardware.
+OpenSesame (Mathôt et al., 2012) is generated as a complete plain-text `.osexp`,
+block by block, with each event becoming an inline script. It gets its trigger by
+a different route, discussed below, and it opens the trigger device with a
+fallback: if no parallel port or serial device is available, it prints the codes
+instead of failing, so the experiment still runs on a machine without the
+hardware.
 
 jsPsych is the browser target. A browser cannot address a parallel port, so the
 trigger codes are recorded into each trial's data rather than sent. That makes it
@@ -280,8 +320,12 @@ before the next code, so the script schedules a write of 0 on a later flip.
 str(schema$triggers)
 ```
 
-`reset_after_frames` is 2, which is about 33 ms at 60 Hz and comfortably above
-the 10 ms minimum most recorders need to register a pulse. `inter_trigger_ms`
+`trigger_hold_ms` is 50, comfortably above the 10 ms minimum most recorders need
+to register a pulse. The script converts it to whole flips against the refresh it
+measures, so the pulse stays about 50 ms whether the display runs at 60 Hz or at
+240 Hz; as a frame count it used to shorten with the refresh, reaching 12.5 ms at
+240 Hz. The older `reset_after_frames` is still accepted and converted.
+`inter_trigger_ms`
 spaces any trailing markers. `parallel_address` is the LPT1 base address on a
 typical laboratory machine, and it is a schema value because it is a property of
 the machine rather than of the design.
@@ -350,9 +394,9 @@ that walks the same rendered event list, and it will serve every paradigm at onc
 
 Mathôt, S., Schreij, D., & Theeuwes, J. (2012). OpenSesame: An open-source,
 graphical experiment builder for the social sciences. *Behavior Research
-Methods*, *44*(2), 314-324. https://doi.org/10.3758/s13428-011-0168-7
+Methods*, *44*(2), 314–324. https://doi.org/10.3758/s13428-011-0168-7
 
 Peirce, J., Gray, J. R., Simpson, S., MacAskill, M., Höchenberger, R., Sogo, H.,
 Kastman, E., & Lindeløv, J. K. (2019). PsychoPy2: Experiments in behavior made
-easy. *Behavior Research Methods*, *51*(1), 195-203.
+easy. *Behavior Research Methods*, *51*(1), 195–203.
 https://doi.org/10.3758/s13428-018-01193-y

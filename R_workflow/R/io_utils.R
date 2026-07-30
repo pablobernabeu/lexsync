@@ -17,12 +17,37 @@
 #' @return A data frame (a tibble), as returned by [readr::read_csv()].
 #' @importFrom readr read_csv locale
 #' @keywords internal
-read_csv_utf8 <- function(path) {
+read_csv_utf8 <- function(path, as_character = character(0)) {
   if (!file.exists(path)) {
     stop(sprintf("lexsync: file not found: '%s'", path), call. = FALSE)
   }
+  # `as_character` names columns whose type must NOT be guessed. readr reads a column
+  # whose values are all `f`, `t`, `T` or `F` as LOGICAL, so an item table coding its
+  # two response keys as f and j had `answer` turned into FALSE -- while pandas kept the
+  # string "f". Measured, not supposed: readr 2.2.0 reads f and t as logical and j, y
+  # and n as character, which is the worst possible split because f/j and t/f are the
+  # two commonest key pairs in a two-choice task. The paradigm's presented fields are
+  # therefore read as text; every other column keeps its inferred type, so a numeric
+  # column a design filters on still arrives numeric.
+  col_types <- NULL
+  if (length(as_character)) {
+    # Only name columns the file actually has: readr warns about a parser for a column
+    # that is not there, and a caller naming a paradigm's required fields cannot know
+    # whether the table supplies them -- reporting the missing column is load_items's
+    # job, and its message says which ones. Reading the header alone costs one line.
+    header <- names(readr::read_csv(path, n_max = 0, show_col_types = FALSE,
+                                    progress = FALSE,
+                                    locale = readr::locale(encoding = "UTF-8")))
+    want <- intersect(as_character, header)
+    if (length(want)) {
+      col_types <- do.call(readr::cols, c(stats::setNames(
+        replicate(length(want), readr::col_character(), simplify = FALSE),
+        want), list(.default = readr::col_guess())))
+    }
+  }
   readr::read_csv(
     path,
+    col_types = col_types,
     show_col_types = FALSE,
     progress = FALSE,
     locale = readr::locale(encoding = "UTF-8")
@@ -62,6 +87,64 @@ write_lines_lf <- function(x, path) {
   invisible(path)
 }
 
+# ---- Reproducible reductions -----------------------------------------------
+# A sum, mean and variance that give the same bits in the R and Python engines.
+#
+# This is not pedantry; it was a live bug. Two designs' reported means differed between
+# the engines in the last decimal place the descriptives publish -- 1.448 against 1.447
+# -- because R's mean() uses a two-pass long-double algorithm while numpy sums
+# pairwise, and the true value happened to sit on a rounding boundary. Summing 20000
+# identical doubles was measured to give three different answers across R's sum(),
+# math.fsum, numpy's pairwise sum and a naive loop, so no language's built-in reduction
+# can be relied on for a cross-engine artefact.
+#
+# Neumaier compensated summation is used instead, written out in plain double
+# arithmetic in both engines. Every operation is +, -, abs or a comparison, and
+# IEEE-754 requires + and - to be correctly rounded, so the two engines execute the
+# same sequence of exactly-specified operations and cannot disagree. That is an
+# argument rather than a measurement, which is what relying on R's long-double
+# accumulator amounted to. Mirrors io_utils.py.
+
+#' @keywords internal
+.exact_sum <- function(x) {
+  s <- 0; comp <- 0
+  for (v in as.numeric(x)) {
+    t <- s + v
+    # The larger magnitude keeps its low bits; the smaller one's are what get lost, so
+    # the correction is computed from whichever term is smaller.
+    comp <- comp + if (abs(s) >= abs(v)) ((s - t) + v) else ((v - t) + s)
+    s <- t
+  }
+  s + comp
+}
+
+#' @keywords internal
+.exact_mean <- function(x) {
+  x <- as.numeric(x)
+  if (!length(x)) return(NA_real_)
+  .exact_sum(x) / length(x)
+}
+
+# Two-pass variance: the mean first, then the compensated sum of squared deviations.
+# The textbook one-pass form (sum of squares minus n times the squared mean) is
+# catastrophically cancelling for data far from zero and would differ between engines
+# by far more than a last bit.
+#' @keywords internal
+.exact_var <- function(x) {
+  x <- as.numeric(x)
+  n <- length(x)
+  if (n < 2L) return(NA_real_)
+  d <- x - .exact_mean(x)
+  .exact_sum(d * d) / (n - 1L)
+}
+
+#' @keywords internal
+.exact_sd <- function(x) {
+  v <- .exact_var(x)
+  # sqrt is correctly rounded under IEEE-754, so it adds no divergence.
+  if (is.na(v)) NA_real_ else sqrt(v)
+}
+
 #' MD5 digest of a file, for provenance logging
 #'
 #' MD5 (from base \pkg{tools}) is used as a lightweight content fingerprint; it
@@ -86,6 +169,81 @@ hash_file <- function(path) {
 sha256_file <- function(path) {
   if (is.null(path) || is.na(path) || !file.exists(path)) return(NA_character_)
   digest::digest(file = path, algo = "sha256")
+}
+
+# Is this design a continuous (non-dichotomised) selection?
+#
+# One predicate rather than four copies of the same expression. It was repeated
+# verbatim in run_pipeline.R, datasheet.R and both Python twins, which is how a
+# `continuous:` block under `items.source: table` came to be silently inert in all
+# four places at once. `generate` stays excluded deliberately: a continuous block
+# there would push a word/pseudoword frame into the selector.
+# Must stay identical to _is_continuous in python_workflow/src/lexsync/io_utils.py.
+#' @keywords internal
+.is_continuous <- function(design) {
+  src <- (design$items$source %||% "corpus")
+  if (!is.null(design$continuous) && identical(src, "generate")) {
+    stop("lexsync: a 'continuous' block cannot be combined with items.source 'generate'.",
+         call. = FALSE)
+  }
+  !is.null(design$continuous) && src %in% c("corpus", "table")
+}
+
+# Render one component of a hash key. Never interpolate a number directly: R
+# prints 42.0 as "42" and Python as "42.0", and a pandas column silently promoted
+# to float64 by a single missing value would otherwise change every digest and so
+# every realised duration. Integral values go through %d in both engines.
+# Must stay identical to _key_part in python_workflow/src/lexsync/io_utils.py.
+#' @keywords internal
+.key_part <- function(x) {
+  if (is.numeric(x)) {
+    ok <- is.finite(x) & x == floor(x)
+    out <- character(length(x))
+    out[ok] <- sprintf("%d", as.integer(x[ok]))
+    out[!ok] <- sprintf("%.17g", x[!ok])
+    return(out)
+  }
+  as.character(x)
+}
+
+# A uniform variate in [0, 1) derived from a keyed SHA-256 digest.
+#
+# This is how lexsync gets anything that looks stochastic without a generator:
+# jittered durations, and any future search that needs a candidate order. The
+# scheme is chosen for exact reproducibility across the two engines rather than
+# for elegance, and every part of it is load-bearing.
+#
+# Thirteen hex digits give a 52-bit integer, which a double represents exactly;
+# dividing by 2^52 is exact because the divisor is a power of two. The result is
+# therefore the same bits in R and Python rather than merely close. Fourteen
+# digits or more would round up to exactly 1.0, and `lo + floor(u * n)` would
+# then silently return `hi + 1`. R needs two chunks because `strtoi` returns NA
+# above 2^31 - 1.
+#
+# Only +, -, * and / are used downstream. IEEE-754 mandates those to be
+# correctly rounded, so they agree on any conforming platform; `exp`, `log` and
+# `^` do not, and were measured to differ between R and Python by one unit in
+# the last place. Must stay identical to hash_unit() in
+# python_workflow/src/lexsync/io_utils.py.
+#' @importFrom digest digest
+#' @keywords internal
+hash_unit <- function(key) {
+  # enc2utf8 because digest(serialize = FALSE) hashes the stored bytes: a
+  # latin1-marked string read from a user's CSV would otherwise give a different
+  # digest from the same characters in Python.
+  h <- vapply(enc2utf8(as.character(key)),
+              function(k) digest::digest(k, algo = "sha256", serialize = FALSE),
+              character(1), USE.NAMES = FALSE)
+  (strtoi(substr(h, 1L, 7L), 16L) * 16777216 + strtoi(substr(h, 8L, 13L), 16L)) /
+    4503599627370496
+}
+
+# A uniform integer in [lo, hi], both ends included, from a keyed digest.
+#' @keywords internal
+hash_int_range <- function(key, lo, hi) {
+  lo <- as.integer(lo); hi <- as.integer(hi)
+  if (any(hi < lo)) stop("lexsync: jitter range must have hi >= lo.", call. = FALSE)
+  as.integer(lo + floor(hash_unit(key) * (hi - lo + 1)))
 }
 
 #' Build a short, filesystem-safe slug

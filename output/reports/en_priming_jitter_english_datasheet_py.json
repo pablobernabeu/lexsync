@@ -1,0 +1,73 @@
+{
+  "analysis": {
+    "note": "Crossed random effects for subjects and items guard against the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). Begin with this maximal structure (Barr et al., 2013) and reduce it if the model does not converge (Matuschek et al., 2017); fit with lme4 in R or pymer4/statsmodels in Python.",
+    "response": "the trial outcome (e.g. reaction time or accuracy)",
+    "suggested_model": "response ~ condition + (1 + condition | subject) + (1 + condition | item)"
+  },
+  "artifacts": [
+    {
+      "file": "output/stimuli/en_priming_jitter_english_stimuli_py.csv",
+      "sha256": "72aaa8ee8d28c35792e306ad6b7981566e8ca89c9f5a158719f5c68ed02ed307"
+    },
+    {
+      "file": "output/experiments/en_priming_jitter_english_psychopy.py",
+      "sha256": "fdac313aa3128d0af09d1ee0482c0375c0c42db2d854d809e7f9cbdbed9af864"
+    },
+    {
+      "file": "output/experiments/en_priming_jitter_english.osexp",
+      "sha256": "102fbead7dcfefd1a2f0b309b544ab750b687b244f6ad7bcbdd125b2f01cc7db"
+    },
+    {
+      "file": "output/experiments/en_priming_jitter_english.html",
+      "sha256": "46faa6ba463bf8d6ab47e1cdafa43ad39aa3db1c5c21f086f0defb1cf2024660"
+    }
+  ],
+  "counterbalancing": {
+    "lists": 2,
+    "recipe": "latin_square_target"
+  },
+  "design": {
+    "description": "Priming with a per-trial stimulus-onset asynchrony read from the items and a jittered inter-trial interval, both recorded as trial-level variables.",
+    "language": "english",
+    "n_per_condition": null,
+    "name": "en_priming_jitter",
+    "paradigm": "priming",
+    "source": "table"
+  },
+  "dimensions": {},
+  "items": {
+    "conditions": [
+      "related",
+      "unrelated"
+    ],
+    "n_conditions": 2,
+    "n_total": 24,
+    "stimuli_file": "output/stimuli/en_priming_jitter_english_stimuli_py.csv",
+    "stimuli_sha256": "72aaa8ee8d28c35792e306ad6b7981566e8ca89c9f5a158719f5c68ed02ed307"
+  },
+  "lexsync_datasheet_version": "1.1",
+  "materials_source": {
+    "path": "items/priming_pairs_en_soa.csv",
+    "provenance": "user-supplied item table",
+    "sha256": "305b3a91aa29671307aee0bdfe044f5ea48a00b3e63197a7110eba8d31da30ac",
+    "type": "table"
+  },
+  "realised_control": [],
+  "relational": null,
+  "reproducibility": {
+    "seed": 2026,
+    "versions": {
+      "engine": "python",
+      "lexsync": "0.1.0",
+      "numpy": "2.3.2",
+      "pandas": "2.3.2",
+      "python": "3.13.7",
+      "scipy": "1.17.1"
+    }
+  },
+  "resampling": null,
+  "selection": {
+    "cross_engine": "n/a (user-supplied items)",
+    "method": "item table (user-supplied)"
+  }
+}

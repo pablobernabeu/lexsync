@@ -1,0 +1,76 @@
+# Lexical decision with practice and filler trials: the experiment runs more than the
+# study analyses.
+#
+# Everything else in lexsync treats one frame as both the materials record and the thing
+# that runs. That holds only while the two are the same trials, and they usually are not.
+# Practice exists to settle the participant into the task and is discarded before
+# analysis. Fillers exist to dilute the manipulation so the participant cannot guess it,
+# and are likewise not analysed. Both must reach the generated experiment; neither belongs
+# in the stimuli file, the descriptives or the realised control.
+#
+# So the pipeline splits: the stimuli CSV and the reports are written from the main rows,
+# and the PsychoPy, OpenSesame and jsPsych experiments are generated from every presented
+# trial. A `block` column marks which is which, and it appears only because this design
+# declares these blocks.
+#
+# Where each block goes is a methodological choice, not a convenience. Practice comes
+# first, as its own run. Fillers are INTERLEAVED with the main trials rather than appended,
+# because a block of fillers at the end is not a filler at all -- it is a second block the
+# participant can tell apart. They are merged in before the order is drawn, so one
+# deterministic shuffle mixes them through, which does renumber the main trials. That is
+# correct: adding fillers changes the sequence, and the stimuli file records where each
+# item actually appeared.
+#
+# The practice block gets feedback and the main block does not, which is the usual
+# arrangement: feedback teaches the mapping during practice, and would contaminate
+# reaction times in the task itself. That is expressed by the `blocks:` key on the
+# feedback event, since the event list is global to the design.
+name: en_lexdec_blocks
+language: english
+paradigm: lexical_decision
+description: 'English lexical decision with a feedback-bearing practice block and interleaved fillers, neither of which is analysed.'
+
+items:
+  source: generate
+  lexicon: corpora/derived/en.csv
+  generation:
+    method: letter_substitution
+
+n_per_condition: 20
+
+pool_filters:
+  length: [4, 7]
+  frequency: [3.5, 6.0]
+
+practice:
+  path: items/practice_en_lexdec.csv
+
+fillers:
+  path: items/fillers_en_lexdec.csv
+
+# The paradigm's own events, plus feedback restricted to practice. Naming `events`
+# replaces the paradigm default entirely, so the four standard events are repeated here.
+events:
+  - type: fixation
+    content: '+'
+    duration_ms: 500
+  - type: text
+    content: '{target}'
+    duration_ms: 800
+    trigger: condition
+    onset_locked: true
+  - type: response
+    keys: [f, j]
+    timeout_ms: 2000
+  - type: feedback
+    answer: answer
+    correct: 'Correct'
+    incorrect: 'Incorrect'
+    no_response: 'Too slow'
+    duration_ms: 600
+    blocks: [practice]
+  - type: blank
+    duration_ms: 250
+
+counterbalance:
+  lists: 1

@@ -7,19 +7,19 @@
   "artifacts": [
     {
       "file": "output/stimuli/en_richdim_english_stimuli_py.csv",
-      "sha256": "8a7420a18c5f9c3ac14c57a303e67eff9fd90a3b644d85a1f1904b7bbf140f05"
+      "sha256": "36329804d813e465700b7a1777cf2da35d689ce6f4624857615b67515340f373"
     },
     {
       "file": "output/reports/en_richdim_english_descriptives_py.csv",
-      "sha256": "b97a74bd83afa742ddcd18152798b8930bf7271db91c68827a86143fcfb7f42d"
+      "sha256": "7e1ea164dd9aab9ec8f08163437ec21a4fc70fe280a09a77c9d0e3d23ed4f354"
     },
     {
       "file": "output/reports/en_richdim_english_comparisons_py.csv",
-      "sha256": "4fc7e8f4a7fbf5772f40687f1409b61d0168b261031ded94c62b2b93a9ba0829"
+      "sha256": "d72dad9d360b720375c380a3f1d3688ae71cf6e4a0c27d1cb4a220dd384f065b"
     },
     {
       "file": "output/experiments/en_richdim_english_psychopy.py",
-      "sha256": "3019504f913998599312f98b48df17751242389fa8cded15fc0bc35dfab78632"
+      "sha256": "b423eb4f2a351c6744c976354ea4361742d0f0d5c9db52cb61e04593aa5176b1"
     },
     {
       "file": "output/experiments/en_richdim_english.osexp",
@@ -27,7 +27,7 @@
     },
     {
       "file": "output/experiments/en_richdim_english.html",
-      "sha256": "a7b2fa1e45c955d06aecb7c23f1b2c79c47ddd1417ca5b231d3c4d719ea0998f"
+      "sha256": "99efc2e729bb16c4c23061e1c880a1c696769ae540f058f0338e34b8486bc552"
     }
   ],
   "counterbalancing": {
@@ -82,9 +82,9 @@
     "n_conditions": 2,
     "n_total": 120,
     "stimuli_file": "output/stimuli/en_richdim_english_stimuli_py.csv",
-    "stimuli_sha256": "8a7420a18c5f9c3ac14c57a303e67eff9fd90a3b644d85a1f1904b7bbf140f05"
+    "stimuli_sha256": "36329804d813e465700b7a1777cf2da35d689ce6f4624857615b67515340f373"
   },
-  "lexsync_datasheet_version": "1.0",
+  "lexsync_datasheet_version": "1.1",
   "materials_source": {
     "path": "corpora/derived/en.csv",
     "provenance": "see corpora/ATTRIBUTION.md for corpus licence and citation",
@@ -153,6 +153,7 @@
       "var_ratio": 0.96
     }
   ],
+  "relational": null,
   "reproducibility": {
     "seed": 2026,
     "versions": {

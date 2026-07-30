@@ -1,0 +1,25 @@
+citHeader("To cite lexsync in publications, use:")
+
+# No DOI: lexsync has not been archived on Zenodo yet (.zenodo.json is prepared
+# but no release has been published), and a manuscript describing it is still in
+# preparation. Add the Zenodo concept DOI here, and to CITATION.cff and both
+# About pages, once the first release mints one.
+bibentry(
+  bibtype  = "Manual",
+  title    = "{lexsync}: Multidimensional lexical optimisation and hardware-timed experiment generation",
+  author   = person("Pablo", "Bernabeu", comment = c(ORCID = "0000-0003-1083-2460")),
+  year     = "2026",
+  note     = sprintf("R package version %s", meta$Version),
+  url      = "https://github.com/pablobernabeu/lexsync",
+  textVersion = paste0(
+    "Bernabeu, P. (2026). lexsync: Multidimensional lexical optimisation and ",
+    "hardware-timed experiment generation. R package version ", meta$Version, ". ",
+    "https://github.com/pablobernabeu/lexsync"
+  )
+)
+
+citFooter(
+  "Please cite the corpus as well as the software. Each bundled corpus is ",
+  "credited, with its licence and retrieval date, in corpora/ATTRIBUTION.md, ",
+  "and every run's datasheet records the source file it read and its SHA-256."
+)

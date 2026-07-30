@@ -42,6 +42,9 @@ lexsync = "lexsync.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/pablobernabeu/lexsync"
+Documentation = "https://pablobernabeu.github.io/lexsync/python/"
+Issues = "https://github.com/pablobernabeu/lexsync/issues"
+"R twin" = "https://pablobernabeu.github.io/lexsync/r/"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/lexsync"]

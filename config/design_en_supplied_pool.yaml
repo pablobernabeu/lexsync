@@ -1,0 +1,52 @@
+# A supplied candidate pool: the researcher brings the word list, lexsync does the
+# matching.
+#
+# The other corpus-based designs draw their candidates from a whole derived lexicon and
+# narrow it with `pool_filters`. That is the right way round when any word of the
+# language will do. It is the wrong way round when the candidate set is itself a
+# research decision: a list from a previous study, from a norming session, or one
+# restricted to a semantic category that no lexical filter can express. Such a list used
+# to have to masquerade as a lexicon, which meant inventing a `freq_zipf` column for it,
+# or else skip matching entirely by going in as `items.source: table`.
+#
+# `items.source: pool` takes the list as it is. It needs only a `word` column; length and
+# the syllable estimate are derived from the form, and `items.lexicon` supplies the rest
+# (frequency, neighbourhood density, OLD20) by lookup. A word the lexicon does not have
+# is a hard error rather than a missing value, because the tolerance windows drop rows
+# with missing values silently and the pool would then be smaller than it appears.
+#
+# One subtlety is worth stating because getting it wrong would quietly invalidate the
+# controls. `n_density` and `old20` are properties of a word in its LANGUAGE, not among
+# the 131 words of this list, so they are computed against the lexicon's words rather
+# than the pool's. A supplied pool with no lexicon falls back to itself, which is why a
+# lexicon is given here.
+name: en_supplied_pool
+language: english
+description: 'Concrete nouns from a supplied candidate pool, split by frequency and matched item by item on length, neighbourhood density and OLD20.'
+
+items:
+  source: pool
+  path: items/pool_en_concrete_nouns.csv
+  # Where the dimensions come from, and the reference set for the neighbourhood
+  # measures. Without it the pool would have to carry every matched dimension itself.
+  lexicon: corpora/derived/en.csv
+
+n_per_condition: 20
+
+conditions:
+  - name: higher_frequency
+    define_by:
+      frequency: [4.4, 7.0]
+  - name: lower_frequency
+    define_by:
+      frequency: [2.0, 4.2]
+
+match_on: [length, n_density, old20]
+
+counterbalance:
+  lists: 1
+
+timing:
+  fixation_ms: 500
+  word_ms: 500
+  isi_ms: 250

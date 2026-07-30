@@ -13,6 +13,11 @@ on:
       # corpus change can alter what the site publishes without touching either
       # package.
       - 'output/experiments/**'
+      # The design configurations name the published demos, and the changelog is
+      # embedded verbatim into the Python site's changelog page by a pymdownx
+      # snippet. Without these two the site can lag a committed change.
+      - 'config/design_*.yaml'
+      - 'CHANGELOG.md'
       - '.github/workflows/docs.yml'
       - '.github/landing.html'
   workflow_dispatch:
@@ -43,6 +48,29 @@ jobs:
       - name: Build pkgdown site
         run: Rscript -e 'pkgdown::build_site("R_workflow", new_process = FALSE, install = FALSE)'
 
+      - name: Remove the redundant, unrendered licence stub page
+        # pkgdown always renders the bare LICENSE file (needed for CRAN's
+        # "MIT + file LICENSE" field) to its own orphaned page, alongside the full
+        # text built from LICENSE.md. Keep only the full-text page live -- the one
+        # the footer and the home sidebar link -- and drop the markdown copy
+        # pkgdown leaves beside the stub. The rest of the family prunes it here too.
+        #
+        # The sitemap entry goes with the page. pkgdown writes sitemap.xml before
+        # this step runs, so deleting the page alone would leave a <loc> advertising
+        # a URL that 404s -- and a sitemap is read by search engines, which is the
+        # one audience that would then follow it. pkgdown emits one <url> per line,
+        # so a line filter removes exactly that entry.
+        run: |
+          rm -f R_workflow/docs/LICENSE-text.html R_workflow/docs/LICENSE-text.md
+          if [ -f R_workflow/docs/sitemap.xml ]; then
+            grep -v '/LICENSE-text\.html<' R_workflow/docs/sitemap.xml > R_workflow/docs/sitemap.new || true
+            if [ -s R_workflow/docs/sitemap.new ]; then
+              mv R_workflow/docs/sitemap.new R_workflow/docs/sitemap.xml
+            else
+              rm -f R_workflow/docs/sitemap.new
+            fi
+          fi
+
       - name: Stage pkgdown under site/r
         run: |
           mkdir -p site
@@ -70,6 +98,13 @@ jobs:
         run: |
           mkdir -p site/demos
           cp output/experiments/*.html site/demos/
+
+      # GitHub Pages serves no directory listing, so without this only the demos
+      # linked from the landing page are reachable and the rest are published but
+      # invisible. The index is generated from the design configurations rather
+      # than written by hand, so it cannot fall behind the set of designs.
+      - name: Build an index for the published demos
+        run: python .github/build_demo_index.py
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4

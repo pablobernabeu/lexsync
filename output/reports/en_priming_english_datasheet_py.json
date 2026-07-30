@@ -11,7 +11,7 @@
     },
     {
       "file": "output/experiments/en_priming_english_psychopy.py",
-      "sha256": "ca9d04ba4ca4878cf5dcf3ea1b7ef65e86bfd5d47ea8617bedf2c5b7ac857d8f"
+      "sha256": "c42d243b229c80e1a0772bfebc8b5e2fd190c97b680808f9013326e88a4012e1"
     },
     {
       "file": "output/experiments/en_priming_english.osexp",
@@ -19,7 +19,7 @@
     },
     {
       "file": "output/experiments/en_priming_english.html",
-      "sha256": "194ad1d631861a92086a04b5d74cd1cac1bcbe1fec5711e2cd9b8ff064fe45f1"
+      "sha256": "a236746294888bbb9d7a083aaa71448c62300843168166ead29768658d316708"
     }
   ],
   "counterbalancing": {
@@ -45,7 +45,7 @@
     "stimuli_file": "output/stimuli/en_priming_english_stimuli_py.csv",
     "stimuli_sha256": "b55d8efbca8eb1f2a50c7f1fdb6832f59b83823c0dc8c939161004666c94a271"
   },
-  "lexsync_datasheet_version": "1.0",
+  "lexsync_datasheet_version": "1.1",
   "materials_source": {
     "path": "items/priming_pairs_en.csv",
     "provenance": "user-supplied item table",
@@ -53,6 +53,7 @@
     "type": "table"
   },
   "realised_control": [],
+  "relational": null,
   "reproducibility": {
     "seed": 2026,
     "versions": {

@@ -20,7 +20,7 @@ add_neighbourhood(df, reference = df$word, n_old = 20L)
 \code{n_density} is Coltheart's N: the number of reference words of the same
 length differing by a single letter substitution (Hamming distance 1).
 \code{old20} is the mean Levenshtein distance to the 20 nearest reference words
-(Yarkoni, Balota & Yap, 2008). Both are computed against \code{reference}, which
+(Yarkoni et al., 2008). Both are computed against \code{reference}, which
 should be a large word list (typically the whole lexicon), not just the
 experimental pool.
 }

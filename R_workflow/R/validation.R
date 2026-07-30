@@ -24,7 +24,7 @@ describe_stimuli <- function(stimuli, dims, by = "condition") {
       xv <- x[!is.na(x)]
       rows[[length(rows) + 1]] <- data.frame(
         group = g, dimension = dim, n = length(xv),
-        mean = mean(x, na.rm = TRUE), sd = stats::sd(x, na.rm = TRUE),
+        mean = .exact_mean(xv), sd = .exact_sd(xv),
         # NA (not Inf/-Inf, which is what min/max of an empty vector give) when a
         # dimension is entirely missing, so both engines agree.
         min = if (length(xv)) min(xv) else NA_real_,
@@ -50,9 +50,9 @@ cohens_d <- function(x, y) {
   x <- x[!is.na(x)]; y <- y[!is.na(y)]
   nx <- length(x); ny <- length(y)
   if (nx < 2 || ny < 2) return(0)
-  sp <- sqrt(((nx - 1) * stats::var(x) + (ny - 1) * stats::var(y)) / (nx + ny - 2))
+  sp <- sqrt(((nx - 1) * .exact_var(x) + (ny - 1) * .exact_var(y)) / (nx + ny - 2))
   if (is.na(sp) || sp == 0) return(0)
-  (mean(x) - mean(y)) / sp
+  (.exact_mean(x) - .exact_mean(y)) / sp
 }
 
 #' Cohen's d with a confidence interval, complementing the TOST verdict
@@ -75,8 +75,8 @@ cohens_d_ci <- function(x, y, alpha = 0.05) {
   x <- x[!is.na(x)]; y <- y[!is.na(y)]
   nx <- length(x); ny <- length(y)
   if (nx < 2 || ny < 2) return(list(d = 0, ci_low = NA_real_, ci_high = NA_real_))
-  sp <- sqrt(((nx - 1) * stats::var(x) + (ny - 1) * stats::var(y)) / (nx + ny - 2))
-  diff <- mean(x) - mean(y)
+  sp <- sqrt(((nx - 1) * .exact_var(x) + (ny - 1) * .exact_var(y)) / (nx + ny - 2))
+  diff <- .exact_mean(x) - .exact_mean(y)
   # A constant dimension carries no sampling uncertainty: a point at zero.
   if (is.na(sp) || sp == 0) return(list(d = 0, ci_low = 0, ci_high = 0))
   d <- diff / sp
@@ -102,19 +102,19 @@ tost_equiv <- function(x, y, bound_d = 0.5, alpha = 0.05) {
   x <- x[!is.na(x)]; y <- y[!is.na(y)]
   nx <- length(x); ny <- length(y)
   if (nx < 2 || ny < 2) return(list(p = NA_real_, equivalent = NA))
-  sp <- sqrt(((nx - 1) * stats::var(x) + (ny - 1) * stats::var(y)) / (nx + ny - 2))
+  sp <- sqrt(((nx - 1) * .exact_var(x) + (ny - 1) * .exact_var(y)) / (nx + ny - 2))
   if (is.na(sp) || sp == 0) {
     # Both conditions are constants (e.g. a dimension fixed by the pool, such as
     # two-character Chinese words). They are equivalent iff they share that
     # constant; the standardised difference is then exactly zero.
-    if (mean(x) - mean(y) == 0) return(list(p = 0, equivalent = TRUE))
+    if (.exact_mean(x) - .exact_mean(y) == 0) return(list(p = 0, equivalent = TRUE))
     return(list(p = 1, equivalent = FALSE))
   }
   se <- sp * sqrt(1 / nx + 1 / ny)
   if (is.na(se) || se == 0) return(list(p = NA_real_, equivalent = NA))
   bound <- bound_d * sp
   dfree <- nx + ny - 2
-  diff <- mean(x) - mean(y)
+  diff <- .exact_mean(x) - .exact_mean(y)
   t_low <- (diff + bound) / se
   t_high <- (diff - bound) / se
   p <- max(stats::pt(t_low, dfree, lower.tail = FALSE),
@@ -126,8 +126,8 @@ tost_equiv <- function(x, y, bound_d = 0.5, alpha = 0.05) {
 #'
 #' The ratio of a condition's variance to the reference's, complementing the
 #' mean-based Cohen's d and TOST. Two conditions can share a mean yet differ in
-#' spread and still confound, which a mean-based statistic misses (Armstrong,
-#' Watson & Plaut, 2012; Austin, 2009). A ratio near 1 is balanced; a common
+#' spread and still confound, which a mean-based statistic misses
+#' (Armstrong et al., 2012; Austin, 2009). A ratio near 1 is balanced; a common
 #' heuristic flags ratios outside roughly 0.5 to 2.
 #'
 #' @param cond,ref Numeric vectors (condition and reference).
@@ -137,9 +137,9 @@ tost_equiv <- function(x, y, bound_d = 0.5, alpha = 0.05) {
 variance_ratio <- function(cond, ref) {
   cond <- cond[!is.na(cond)]; ref <- ref[!is.na(ref)]
   if (length(cond) < 2 || length(ref) < 2) return(NA_real_)
-  v_ref <- stats::var(ref)
-  if (v_ref == 0) return(if (stats::var(cond) == 0) 1 else NA_real_)
-  as.numeric(stats::var(cond) / v_ref)
+  v_ref <- .exact_var(ref)
+  if (v_ref == 0) return(if (.exact_var(cond) == 0) 1 else NA_real_)
+  as.numeric(.exact_var(cond) / v_ref)
 }
 
 #' Check that the levels of given columns occur equally often
@@ -202,10 +202,10 @@ match_report <- function(stimuli, dims, schema) {
 .pearson <- function(x, y) {
   ok <- !(is.na(x) | is.na(y)); x <- x[ok]; y <- y[ok]
   if (length(x) < 2) return(NA_real_)
-  dx <- x - mean(x); dy <- y - mean(y)
-  denom <- sqrt(sum(dx * dx) * sum(dy * dy))
+  dx <- x - .exact_mean(x); dy <- y - .exact_mean(y)
+  denom <- sqrt(.exact_sum(dx * dx) * .exact_sum(dy * dy))
   if (denom == 0) return(0)
-  round(sum(dx * dy) / denom, 9)
+  round(.exact_sum(dx * dy) / denom, 9)
 }
 
 #' Realised-control report for a continuous design

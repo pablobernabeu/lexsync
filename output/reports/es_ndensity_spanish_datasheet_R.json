@@ -1,5 +1,5 @@
 {
-  "lexsync_datasheet_version": "1.0",
+  "lexsync_datasheet_version": "1.1",
   "design": {
     "name": "es_ndensity",
     "language": "spanish",
@@ -70,6 +70,7 @@
     ],
     "cross_engine": "byte-identical"
   },
+  "relational": null,
   "analysis": {
     "response": "the trial outcome (e.g. reaction time or accuracy)",
     "suggested_model": "response ~ condition + (1 + condition | subject) + (1 | item)",
@@ -159,7 +160,7 @@
     },
     {
       "file": "output/experiments/es_ndensity_spanish_psychopy.py",
-      "sha256": "c9a7ac3172492eb71a9154d3eedbcba4598f633bdd0a13f31a5c4db34172ecea"
+      "sha256": "54bf044d125c1e180110efc46597325ec7c2503919a124bfc4ee41760d072bd3"
     },
     {
       "file": "output/experiments/es_ndensity_spanish.osexp",
@@ -167,7 +168,7 @@
     },
     {
       "file": "output/experiments/es_ndensity_spanish.html",
-      "sha256": "d4ee52910281178048ed0edb74f4f6997bf88dea78b8670d958d898e725f49cd"
+      "sha256": "f2984ccfc240883e9eb6580e4cfe4a9d377920026d9b1d596ece6084c6b55cad"
     }
   ]
 }

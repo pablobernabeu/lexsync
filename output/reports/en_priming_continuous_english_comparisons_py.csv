@@ -1,0 +1,4 @@
+dimension,role,pearson_r,predictor_span
+target.frequency,predictor,,1.45
+target.length,control,-0.292,1.45
+pair.overlap,control,-0.227,1.45

@@ -1,5 +1,5 @@
 {
-  "title": "lexsync: multidimensional lexical optimisation and hardware-timed experiment generation",
+  "title": "lexsync: Multidimensional lexical optimisation and hardware-timed experiment generation",
   "description": "A cross-platform (R and Python) toolkit that unifies many-language lexical-corpus access, parallel multidimensional stimulus matching, counterbalancing, item resampling, deterministic pseudoword generation and the automated generation of hardware-timed PsychoPy, OpenSesame and jsPsych experiment scripts for EEG/ERP and browser-based research. Distributed as a CRAN-ready R package and a PyPI-ready Python package that produce identical matched stimuli.",
   "upload_type": "software",
   "access_right": "open",

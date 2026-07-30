@@ -1,6 +1,6 @@
 # Materials datasheet — es_ndensity (spanish)
 
-*lexsync datasheet v1.0; python engine.*
+*lexsync datasheet v1.1; python engine.*
 
 ## Provenance
 

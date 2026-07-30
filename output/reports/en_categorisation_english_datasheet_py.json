@@ -1,0 +1,73 @@
+{
+  "analysis": {
+    "note": "Crossed random effects for subjects and items guard against the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). Begin with this maximal structure (Barr et al., 2013) and reduce it if the model does not converge (Matuschek et al., 2017); fit with lme4 in R or pymer4/statsmodels in Python.",
+    "response": "the trial outcome (e.g. reaction time or accuracy)",
+    "suggested_model": "response ~ condition + (1 + condition | subject) + (1 | item)"
+  },
+  "artifacts": [
+    {
+      "file": "output/stimuli/en_categorisation_english_stimuli_py.csv",
+      "sha256": "9610d97fc11575205e384e5f736251ad7da05efff6cd2c3bdb722f45e99be6a9"
+    },
+    {
+      "file": "output/experiments/en_categorisation_english_psychopy.py",
+      "sha256": "f1946751f35dd94dfb94d1b301ca38144775613e1fae6e4aee600c6686806eac"
+    },
+    {
+      "file": "output/experiments/en_categorisation_english.osexp",
+      "sha256": "5b180d45fe8d38c6b93668fd856d632c7c0b605743d0dfd14260a69b15e1cc4d"
+    },
+    {
+      "file": "output/experiments/en_categorisation_english.html",
+      "sha256": "b87e81edf7771e38ebdb52531d86e13d7fc1ce2f87e011d12c4c5d9ef1e38e72"
+    }
+  ],
+  "counterbalancing": {
+    "lists": 2,
+    "recipe": "latin_square_target"
+  },
+  "design": {
+    "description": "Cued semantic categorisation: concrete nouns judged against a narrow or a broad category cue, Latin-square counterbalanced over two lists so no target repeats within a list.",
+    "language": "english",
+    "n_per_condition": null,
+    "name": "en_categorisation",
+    "paradigm": "categorisation",
+    "source": "table"
+  },
+  "dimensions": {},
+  "items": {
+    "conditions": [
+      "narrow",
+      "broad"
+    ],
+    "n_conditions": 2,
+    "n_total": 32,
+    "stimuli_file": "output/stimuli/en_categorisation_english_stimuli_py.csv",
+    "stimuli_sha256": "9610d97fc11575205e384e5f736251ad7da05efff6cd2c3bdb722f45e99be6a9"
+  },
+  "lexsync_datasheet_version": "1.1",
+  "materials_source": {
+    "path": "items/categorisation_en.csv",
+    "provenance": "user-supplied item table",
+    "sha256": "fc39af1c03cebc104114caadb6872f62d13b51b26bcfdb99ec25f1e07087df9e",
+    "type": "table"
+  },
+  "realised_control": [],
+  "relational": null,
+  "reproducibility": {
+    "seed": 2026,
+    "versions": {
+      "engine": "python",
+      "lexsync": "0.1.0",
+      "numpy": "2.3.2",
+      "pandas": "2.3.2",
+      "python": "3.13.7",
+      "scipy": "1.17.1"
+    }
+  },
+  "resampling": null,
+  "selection": {
+    "cross_engine": "n/a (user-supplied items)",
+    "method": "item table (user-supplied)"
+  }
+}

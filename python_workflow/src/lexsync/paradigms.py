@@ -72,6 +72,33 @@ PARADIGMS = {
             {"type": "blank", "duration_frames": _ISI},
         ],
     },
+    # Cued semantic categorisation: a category question, then the word to judge against
+    # it. The cue is what distinguishes this from lexical decision, and it is a separate
+    # event rather than instructions shown once, because the category varies by trial --
+    # which is the point of the paradigm. Crossing the same words with different cues is
+    # how a categorisation study separates a property of the word from the demands of
+    # the task (a robin is a bird quickly and an animal slowly).
+    #
+    # `answer` holds the KEY that is correct for the trial, not a label, so scoring is a
+    # string comparison against the recorded response with nothing to look up. It is a
+    # field of the item table like any other; the paradigm requires it so that a design
+    # cannot generate an unscoreable categorisation experiment.
+    "categorisation": {
+        "stimulus_fields": ["target", "category", "answer"],
+        # latin_square_target, not factorial. Each item carries both cues, so the
+        # factorial recipe would give a participant the same target twice -- and the
+        # second presentation would be a repetition-priming trial, not a categorisation
+        # trial. The rotation gives each target once per list, under one cue.
+        "counterbalance": "latin_square_target",
+        "events": [
+            {"type": "fixation", "content": "+", "duration_ms": 500},
+            {"type": "text", "content": "{category}", "duration_ms": 750},
+            {"type": "text", "content": "{target}", "duration_ms": 800,
+             "trigger": "condition", "onset_locked": True},
+            {"type": "response", "keys": ["f", "j"], "timeout_ms": 2500},
+            {"type": "blank", "duration_ms": 250},
+        ],
+    },
     # Self-paced reading: a sentence presented region by region (space-advanced),
     # with the critical region carrying the condition marker, then a yes/no
     # comprehension question.

@@ -1,0 +1,54 @@
+# Priming with variable timing: a per-trial stimulus-onset asynchrony read from
+# the item table, and a jittered inter-trial interval.
+#
+# Two things vary from trial to trial here, and they vary for different reasons.
+# The prime's duration is the SOA, the theoretical lever that separates automatic
+# from strategic priming, so it is a manipulated variable read from the items
+# (`from_column`) and analysed as a predictor. The blank that ends the trial is
+# jittered only to decorrelate the design matrix, as EEG and fMRI designs
+# routinely do, so it is drawn from a range rather than specified per item.
+#
+# Neither draws a random number. A jittered value is a uniform integer keyed on
+# the seed, the column name, the list, the set and the condition, so the R and
+# Python engines realise the same milliseconds and a rerun reproduces them. Both
+# realised values are written into the stimuli table, which is what makes the
+# timing a variable the analysis can use rather than undocumented noise.
+name: en_priming_jitter
+language: english
+paradigm: priming
+description: 'Priming with a per-trial stimulus-onset asynchrony read from the items and a jittered inter-trial interval, both recorded as trial-level variables.'
+
+items:
+  source: table
+  path: items/priming_pairs_en_soa.csv
+
+# The paradigm's default event sequence, with two durations made per-trial. The
+# prime keeps its own trigger (20), so the design's `word_*` timing override does
+# not reach it; that override applies only to the target.
+events:
+  - type: fixation
+    content: '+'
+    duration_ms: 500
+  - type: text
+    content: '{prime}'
+    duration: {from_column: soa_ms}
+    trigger: 20
+    onset_locked: true
+  - type: mask
+    content: '#####'
+    duration_ms: 33
+  - type: text
+    content: '{target}'
+    duration_ms: 800
+    trigger: condition
+    onset_locked: true
+  - type: response
+    keys: [left, right]
+    timeout_ms: 2000
+  # Jittered 400-800 ms. The realised value is written to `iti_ms`, which travels
+  # in the stimuli table and the loop table alike.
+  - type: blank
+    duration: {jitter: [400, 800], as: iti_ms}
+
+counterbalance:
+  lists: 2

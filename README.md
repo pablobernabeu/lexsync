@@ -1,29 +1,32 @@
-# lexsync
+# lexsync <img src="R_workflow/man/figures/logo.svg" align="right" height="139" alt="" />
 
 <!-- badges: start -->
 [![R-CMD-check](https://github.com/pablobernabeu/lexsync/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/pablobernabeu/lexsync/actions/workflows/R-CMD-check.yaml)
 [![python-tests](https://github.com/pablobernabeu/lexsync/actions/workflows/python-tests.yaml/badge.svg)](https://github.com/pablobernabeu/lexsync/actions/workflows/python-tests.yaml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/license/MIT)
 <!-- badges: end -->
 
-**Multidimensional lexical optimisation and hardware-timed experiment generation, in R and Python.**
+Multidimensional lexical optimisation and hardware-timed experiment generation, in
+R and Python.
 
-`lexsync` is a research-grade, cross-platform toolkit for building psycholinguistic
-stimulus sets and the experiments that present them. From a word-frequency corpus in
-any of dozens of languages it will select stimuli that are matched in parallel across
-several lexical dimensions (length, frequency, orthographic neighbourhood density and
-more) and counterbalance them across conditions and lists. It then generates the
+`lexsync` is a cross-platform toolkit for building psycholinguistic stimulus sets
+and the experiments that present them. From a word-frequency corpus in any of dozens
+of languages it will select stimuli that are matched in parallel across several
+lexical dimensions (length, frequency, orthographic neighbourhood density and more)
+and counterbalance them across conditions and lists. It then generates the
 presentation experiment for 'PsychoPy', 'OpenSesame' or the browser ('jsPsych'). The
 laboratory targets carry hardware triggers injected at stimulus onset for EEG/ERP
 synchronisation, and the web target is a single shareable HTML file (the jsPsych
 library itself loads from a CDN, so the machine running it needs an internet
 connection).
+
 The trial is described declaratively as a sequence of events, so the same engine
 builds factorial word studies, lexical decision with deterministically generated
 pseudowords, priming and self-paced reading from configuration rather than code, with
 word, pseudoword, paired and sentence stimuli. It ships as two structurally identical,
-independently installable packages (a CRAN-ready R package and a PyPI-ready Python
-package), so a laboratory can adopt it in whichever ecosystem it already uses.
+independently installable packages, a CRAN-ready R package and a PyPI-ready Python
+package, so a laboratory can adopt it in whichever ecosystem it already uses.
 
 Beyond matching, `lexsync` treats the stimulus set as a reproducible research
 artefact. Every run is deterministic and seeded and selects byte-identical stimuli
@@ -32,18 +35,32 @@ datasheet: its provenance, checksums, the realised control (effect size, confide
 interval and equivalence test) and a pre-registration skeleton. A design can
 therefore be shared and reproduced rather than only described in prose.
 
+## Documentation
+
+The documentation for both packages is published at
+[pablobernabeu.github.io/lexsync](https://pablobernabeu.github.io/lexsync/):
+
+- R package (pkgdown): <https://pablobernabeu.github.io/lexsync/r/>
+- Python package (mkdocs): <https://pablobernabeu.github.io/lexsync/python/>
+
+Each site carries the complete function reference alongside guides to matching and
+designs, to experiments and triggers, and to reproducibility and parity. Every worked
+design in this repository also ships as a browser experiment, published beside the
+documentation. The [lexical-decision
+demonstration](https://pablobernabeu.github.io/lexsync/demos/en_lexdec_english.html)
+runs with nothing to install.
+
 ## Why lexsync
 
-Existing tools are powerful but fragmented. Stimulus-control packages such as 'LexOPS',
+Existing tools are capable but fragmented. Stimulus-control packages such as 'LexOPS',
 'LIBRA' and 'LASTU' match words but stop short of building the experiment, while
 experiment builders such as 'PsychoPy' and 'OpenSesame' present stimuli but do not
 match them. The R and Python ecosystems rarely meet, and most matching tools target a
-single language. `lexsync` closes this gap by spanning the whole path in both languages,
-from a many-language corpus through parallel multidimensional matching and
-counterbalancing to flip-locked, cross-platform experiment scripts. The two engines
-select byte-identical stimuli, deal them into the same lists and conditions, and order
-the trials identically, so the generated experiment files themselves match byte for
-byte. Nothing in the package draws a random number: trial order comes from a keyed
+single language. `lexsync` spans the whole path in both languages, from a
+many-language corpus through parallel multidimensional matching and counterbalancing
+to flip-locked, cross-platform experiment scripts. The two engines select
+byte-identical stimuli, deal them into the same lists and conditions, and order the
+trials identically, so the generated experiment files themselves match byte for byte. Nothing in the package draws a random number: trial order comes from a keyed
 hash of the design and the seed, which is what lets a seeded shuffle mean the same
 thing in both languages.
 
@@ -52,6 +69,9 @@ trigger to the exact buffer flip on which the stimulus appears, using `win.callO
 rather than sending it from a later, sequence-ordered item.
 
 ## Repository layout
+
+The two packages sit side by side, with the corpora, configurations, item tables and
+generated output they share held at the root:
 
 ```
 lexsync/
@@ -72,7 +92,12 @@ orchestrator, `run_pipeline`.
 
 ## Quick start
 
-### R
+The two blocks below run the bundled demonstration designs end to end from a checkout
+of this repository, writing the matched stimuli, the reports and the generated
+experiments into `output/`. Either engine produces the same result, so run whichever
+language you work in.
+
+In R:
 
 ```bash
 Rscript -e "install.packages(c('readr','yaml','stringdist','stringi','jsonlite','digest'))"
@@ -81,13 +106,21 @@ Rscript R_workflow/run_pipeline.R             # runs the demonstrations
 # or, once installed:  Rscript -e "lexsync::run_pipeline('config/design_en_freqcontrast.yaml')"
 ```
 
-### Python
+In Python:
 
 ```bash
 python -m pip install -e "python_workflow[dev]"
 python python_workflow/run_pipeline.py        # runs the demonstrations
 # or, once installed:  lexsync run config/design_en_freqcontrast.yaml
 ```
+
+The R line above installs that package's required dependencies. One matching method,
+`optimal`, additionally needs `clue` for its assignment solver. The Python engine
+reaches the same solver through `scipy`, which it requires anyway.
+
+To install the packages themselves rather than run them from a checkout, see
+[`R_workflow/README.md`](R_workflow/README.md) and
+[`python_workflow/README.md`](python_workflow/README.md).
 
 Neither the generation step nor its tests require 'PsychoPy', 'OpenSesame' or any
 parallel-port driver. These are needed only when the generated experiment is run on
@@ -99,9 +132,9 @@ Two browser front-ends in `apps/` let a researcher assemble a design without wri
 code, run the verified pipeline and view the matched stimuli, the realised-control
 report and the materials datasheet. Each one also exports the design configuration
 and the one-line R, Python and command-line code that reproduces the operation, so
-the interface produces shareable, reproducible artefacts rather than a black box. A
-Streamlit app wraps the Python engine and a Shiny app wraps the R engine; the two
-select byte-identical stimuli. See `apps/README.md` for details.
+the interface yields shareable artefacts rather than results a reader cannot retrace.
+A Streamlit app wraps the Python engine and a Shiny app wraps the R engine, and the
+two select byte-identical stimuli. See `apps/README.md` for details.
 
 ```bash
 streamlit run apps/python_streamlit/lexsync_app.py             # Python
@@ -112,10 +145,12 @@ Rscript -e "shiny::runApp('apps/r_shiny', port = 8502)"        # R
 
 Languages are supplied through `corpora/registry.yaml`. Two connectors are provided: a
 curated SUBTLEX-family/'openlexicon' connector (individually citable corpora under
-CC BY-SA 4.0) and an optional 'wordfreq' connector that unlocks roughly forty languages
-through a single dependency. English, Spanish and Mandarin Chinese are bundled and
-demonstrated end to end (the last a logographic-script example, showing that the
-matching and script generation are not limited to alphabetic writing). Further
+CC BY-SA 4.0) and a 'wordfreq' connector that reaches roughly forty languages through a
+single dependency. English, Spanish and Mandarin Chinese are bundled and demonstrated
+end to end (the last a logographic-script example, showing that the matching and script
+generation are not limited to alphabetic writing). Those three come from 'wordfreq',
+not from the openlexicon connector, and carry its CC BY-SA 4.0 data terms; the
+registry's SUBTLEX entries are separate corpora a user loads directly. Further
 languages are fetched on demand into a user cache, though not equally from both
 engines. The 'openlexicon' connector is available in R and Python alike, whereas
 'wordfreq' is Python-only: `lexsync fetch <language>` derives those lexica from the
@@ -123,25 +158,31 @@ Python package, and the R package can read the result as an ordinary corpus but 
 build one itself. An R-only laboratory therefore reaches the wider language set only
 through lexica derived elsewhere. Every corpus is cited, with its licence and
 retrieval date, in `corpora/ATTRIBUTION.md`. The bundled corpora are a
-fixed, checksummed snapshot, so the demonstrations reproduce with no download;
-'wordfreq' itself was frozen in 2024 (a stable snapshot of usage through roughly
-2021), which makes fetched corpora reproducible rather than drifting under a live
-source.
+fixed, checksummed snapshot, so the demonstrations reproduce with no download.
+'wordfreq' itself was frozen in 2024, giving a stable snapshot of usage through
+roughly 2021, which makes fetched corpora reproducible rather than drifting under a
+live source.
 
 ## Extending lexsync
 
-- **Add a paradigm** — add an entry to the `PARADIGMS` registry in
-  `R_workflow/R/paradigms.R` and `python_workflow/src/lexsync/paradigms.py`, giving its
-  default trial-event sequence, required fields and counterbalancing recipe; both
-  backends then render it with no further code.
-- **Add a lexical dimension** — add the computation in `R_workflow/R/querying.R` and
-  `python_workflow/src/lexsync/querying.py` (alongside `add_neighbourhood()` and
-  `add_bigram_frequency()`), then list it under `dimensions` in `config/schema.yaml`.
-- **Add a presentation target** — add an `export_<target>()` function in
-  `R_workflow/R/scripting.R` and `python_workflow/src/lexsync/scripting.py` that walks
-  the same rendered event list.
-- **Add a corpus or language** — add an entry to `corpora/registry.yaml`; no code change
-  is required for SUBTLEX-family or 'wordfreq' sources.
+Each extension point is a pair of parallel edits, one in each engine, and the rest of
+the pipeline picks the addition up without further change.
+
+To add a paradigm, add an entry to the `PARADIGMS` registry in
+`R_workflow/R/paradigms.R` and `python_workflow/src/lexsync/paradigms.py`, giving its
+default trial-event sequence, required fields and counterbalancing recipe. Both
+backends then render it with no further code.
+
+To add a lexical dimension, add the computation in `R_workflow/R/querying.R` and
+`python_workflow/src/lexsync/querying.py`, alongside `add_neighbourhood()` and
+`add_bigram_frequency()`, then list it under `dimensions` in `config/schema.yaml`.
+
+To add a presentation target, add an `export_<target>()` function in
+`R_workflow/R/scripting.R` and `python_workflow/src/lexsync/scripting.py` that walks
+the same rendered event list.
+
+To add a corpus or language, add an entry to `corpora/registry.yaml`. No code change
+is required for SUBTLEX-family or 'wordfreq' sources.
 
 ## Tests and continuous integration
 
@@ -159,7 +200,7 @@ default `standardised_euclidean` (greedy nearest-neighbour on z-scored
 dimensions), `joint` (optimal-greedy pairing for a two-condition design),
 `mahalanobis` (a covariance-aware distance that down-weights correlated
 dimensions; Rubin, 1980; Stuart, 2010) and `optimal` (globally optimal assignment
-for two conditions; Gu and Rosenbaum, 1993). The R and Python engines select
+for two conditions; Gu & Rosenbaum, 1993). The R and Python engines select
 byte-identical stimuli for `standardised_euclidean` and `joint`. The `mahalanobis`
 and `optimal` methods are not guaranteed byte-identical across engines, because
 they use a covariance-matrix inverse and an assignment solver whose last bits can
@@ -186,17 +227,17 @@ Two methods are available via `items.generation.method`: the default
 attested) and `subsyllabic` (split each word into onset/nucleus/coda constituents
 and swap whole constituents for attested same-role, same-length alternatives, so
 the pseudowords keep their syllabic structure, a deterministic orthographic
-approximation of Wuggy; Keuleers and Brysbaert, 2010). Both preserve length and
+approximation of Wuggy; Keuleers & Brysbaert, 2010). Both preserve length and
 select byte-identical stimuli across the two engines. See
 `config/design_en_lexdec_wuggy.yaml`.
 
 ## Roadmap
 
-lexsync sits within a mature ecosystem of stimulus tools (LexOPS, Match, SOS and
-LIBRA for matching; Wuggy for pseudowords). The roadmap drawn from that initial
-competitor and literature review is now delivered: covariance-aware and optimal
-matching, a distributional balance diagnostic, continuous designs, and Wuggy-style
-pseudowords. Further norm dimensions (concreteness, age of acquisition, English
+lexsync sits within an established ecosystem of stimulus tools: LexOPS, Match, SOS
+and LIBRA for matching, and Wuggy for pseudowords. The roadmap drawn from that
+initial competitor and literature review is now delivered, covering covariance-aware
+and optimal matching, a distributional balance diagnostic, continuous designs and
+Wuggy-style pseudowords. Further norm dimensions (concreteness, age of acquisition, English
 Lexicon Project behavioural measures) are supported today through the `merge_norms`
 connector, which joins any word-keyed norm table so the matcher can equate on it.
 Future directions (tracked in `CHANGELOG.md`) are more bundled languages and, should
@@ -204,11 +245,30 @@ a determinism-safe implementation be found, promoting a covariance-aware distanc
 the default. The cross-engine byte-identical guarantee for the deterministic methods
 is a hard constraint on which algorithms can be adopted as defaults.
 
-## Licensing and citation
+## Citation
 
-Source code is under the MIT License (`LICENSE`). Bundled corpus derivatives are under
-CC BY-SA 4.0 (`LICENSE-DATA`, `corpora/ATTRIBUTION.md`). If you use `lexsync`, please
-cite the software (`CITATION.cff`). A manuscript describing it is in preparation.
+If you use `lexsync`, please cite the software. The authoritative record is
+[`CITATION.cff`](CITATION.cff), which GitHub renders into several formats through its
+'Cite this repository' button, and each package's About page carries the same citation
+as a formatted reference. A manuscript describing lexsync is in preparation.
+
+Cite the corpus as well as the software. The corpora are third-party work with their
+own terms, and each is credited, with its licence and retrieval date, in
+[`corpora/ATTRIBUTION.md`](corpora/ATTRIBUTION.md). Each run's datasheet records which
+source file it read, and its SHA-256.
+
+## Licence
+
+The source code is under the MIT licence ([`LICENSE`](LICENSE)). The bundled corpus
+derivatives are not covered by it: they are released under CC BY-SA 4.0, as recorded
+in [`LICENSE-DATA`](LICENSE-DATA).
+
+## Contributing
+
+Issues and pull requests are welcome, on the [issue
+tracker](https://github.com/pablobernabeu/lexsync/issues). A report that includes the
+design YAML and the run log is one someone can act on, since between them they pin the
+inputs and every step that ran.
 
 ## References
 

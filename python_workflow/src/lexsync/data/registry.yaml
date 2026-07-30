@@ -134,7 +134,12 @@ wordfreq_connector:
   connector: wordfreq
   status: supported
   description: 'Programmatic word frequencies for ~40 languages via the wordfreq package; lexsync derives length, N and OLD20 itself.'
-  licence: 'MIT (package code); aggregated data of mixed provenance (see wordfreq documentation)'
+  # Two different licences, and the data one is what matters for redistribution:
+  # wordfreq's code is Apache-2.0 (it was MIT up to 3.0.2 and relicensed at
+  # 3.0.3, which the >=3.0,<4 pin spans), while its data files are
+  # redistributable under CC BY-SA 4.0. See LICENSE-DATA, which also records the
+  # SUBTLEX credit that wordfreq's terms require of anything derived from it.
+  licence: 'Apache-2.0 (package code); CC BY-SA 4.0 (data files)'
   citation_key: speer2022wordfreq
   citation: 'Speer (2022). rspeer/wordfreq v3.0. Zenodo. doi:10.5281/zenodo.7199437'
   languages: [en, es, fr, de, nl, it, pt, pl, el, ru, uk, ar, fa, he, hi, bn, zh, ja, ko, id, ms, tr, sv, nb, da, fi, cs, ro, hu, ca]

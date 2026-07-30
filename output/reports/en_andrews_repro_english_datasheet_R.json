@@ -1,5 +1,5 @@
 {
-  "lexsync_datasheet_version": "1.0",
+  "lexsync_datasheet_version": "1.1",
   "design": {
     "name": "en_andrews_repro",
     "language": "english",
@@ -77,6 +77,7 @@
     ],
     "cross_engine": "byte-identical"
   },
+  "relational": null,
   "analysis": {
     "response": "the trial outcome (e.g. reaction time or accuracy)",
     "suggested_model": "response ~ condition + (1 + condition | subject) + (1 | item)",
@@ -248,7 +249,7 @@
     },
     {
       "file": "output/experiments/en_andrews_repro_english_psychopy.py",
-      "sha256": "5a2535ebc3e48c2700b6ebc4c6137c09bd43b3e3cf2601b23834549a30e517bd"
+      "sha256": "e6e4b4302c2b6e80275add808f01bc8175750dce4f434ad90bd19480473fa561"
     },
     {
       "file": "output/experiments/en_andrews_repro_english.osexp",
@@ -256,7 +257,7 @@
     },
     {
       "file": "output/experiments/en_andrews_repro_english.html",
-      "sha256": "5204959a5082cac338f6263e73c6df9e96b8aff625187dded4abdef6cf8ea826"
+      "sha256": "054a2a799a54ce5d26ee6ab3e0a8071467ebd5e2110321235cd1101ed1875176"
     }
   ]
 }

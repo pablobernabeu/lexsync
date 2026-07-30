@@ -4,7 +4,15 @@
 \alias{select_continuous_stimuli}
 \title{Select a set spanning a continuous predictor, holding controls constant}
 \usage{
-select_continuous_stimuli(pool, design, schema, verbose = FALSE)
+select_continuous_stimuli(
+  pool,
+  design,
+  schema,
+  verbose = FALSE,
+  key = "word",
+  label = "continuous",
+  renumber_sets = TRUE
+)
 }
 \arguments{
 \item{pool}{A candidate pool with the predictor and control dimensions present.}

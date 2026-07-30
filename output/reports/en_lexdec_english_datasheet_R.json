@@ -1,5 +1,5 @@
 {
-  "lexsync_datasheet_version": "1.0",
+  "lexsync_datasheet_version": "1.1",
   "design": {
     "name": "en_lexdec",
     "language": "english",
@@ -35,6 +35,7 @@
     ],
     "cross_engine": "byte-identical"
   },
+  "relational": null,
   "analysis": {
     "response": "the trial outcome (e.g. reaction time or accuracy)",
     "suggested_model": "response ~ lexicality + (1 + lexicality | subject) + (1 | item)",
@@ -94,7 +95,7 @@
     },
     {
       "file": "output/experiments/en_lexdec_english_psychopy.py",
-      "sha256": "31068bc057d13ee091a089ed7413dd6a7973ccf2e10840faa11e380394f51e6a"
+      "sha256": "ea54fe94a02efd0275ec59eb8b446bc2dd10bdada77c29814abdea4856240391"
     },
     {
       "file": "output/experiments/en_lexdec_english.osexp",
@@ -102,7 +103,7 @@
     },
     {
       "file": "output/experiments/en_lexdec_english.html",
-      "sha256": "cc05f5cc86fd6bcd3fb943019174e59fdfb3c611e2ce195bd3930a1514ea96ff"
+      "sha256": "4b712f2bffe6c7b3f1f607e517ce4805600478c8b173b05b7dbc869057f9bf5a"
     }
   ]
 }
