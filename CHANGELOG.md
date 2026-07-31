@@ -176,6 +176,51 @@ no function signature changes.
 
 ### Fixed
 
+- **A generated OpenSesame experiment carrying a `feedback` event or a `blocks:`
+  restriction would not run at all.** The emitter wrote `unicode(...)` into the inline
+  script, a Python 2 builtin that OpenSesame 3.3's Python 3 workspace does not inject, so
+  the experiment died with `NameError` on the first trial regardless of which block that
+  trial belonged to. The same scripts passed `None` as a `var.get()` default, which
+  OpenSesame's var_store cannot distinguish from no default and so raises on rather than
+  returning. Both spellings are now pinned by a test in each engine, and a `feedback`
+  event with no preceding `response` or `question` is refused at generation time rather
+  than failing three different ways at run time.
+- **The three rounding policies in play disagreed.** Measured over 210,000 values
+  including every three-decimal halfway case in range: R's `round()` disagrees with
+  Python's builtin `round()`, Python's builtin disagrees with `numpy.round()`, and even
+  R's `sprintf("%.3f")` disagrees with Python's `"%.3f"` on 274 of them, because R's
+  delegates to the platform C library. The descriptives path paired R's `round` with
+  Python's builtin and the distance path paired it with numpy's, so no artefact value was
+  safe. Both engines now use one rounder defined by its arithmetic — scale, truncate,
+  step away from zero at a half — every operation of which IEEE-754 either mandates
+  correctly rounded or makes exact. Some reported values move by one in the last
+  published digit; no selection changes.
+- **A hash-key component that cannot be rendered identically is now refused.** A blank
+  `condition` cell, a routine data error that neither reader rejects, rendered `"NA"` in R
+  and `"nan"` in Python, so the two engines produced different trial orders from the same
+  design — reproducibly, and with nothing to signal it. `TRUE`/`True`, `Inf`/`inf` and
+  `NA`/`None` diverged the same way. Booleans now get a pinned spelling; missing and
+  non-finite values raise, because a reproducible order over a meaningless key is worse
+  than a stop.
+- The overlap-cap centroid in the `joint` and `optimal` matchers used `colMeans` and
+  numpy's `.mean`, not the compensated reduction the rest of the z-scoring uses. The cap
+  fires for the shipped `en_ndensity` and `es_ndensity` designs, so it decides which
+  candidates reach matching. Verified to change no design's selection.
+- **`R CMD check --as-cran` had a WARNING and an undocumented NOTE**, while
+  `cran-comments.md` claimed "0 errors | 0 warnings | 1 note". `select_continuous_stimuli()`
+  documented four of its seven arguments; `head()` was called without an import, so a user
+  who defined their own would have had it called by the package. Both fixed, and the check
+  is now clean at 0/0/1.
+- **The package's only example could never have worked.** It called `read_config()`, which
+  is not exported, from inside a `\dontrun{}` that R CMD check therefore never ran. The
+  example now uses only exported API, runs offline against bundled data, and the package
+  has executable examples on its main entry points rather than none.
+- Three factual corrections, each verified against the source. The SUBTLEX-PT registry
+  entry cited `10.3758/s13428-014-0511-x`, which Crossref resolves to an unrelated
+  psychometrics program by different authors. The matching vignette placed Zipf 7 at a
+  thousand occurrences per million rather than ten thousand, contradicting its own lower
+  anchor. A design comment attributed "840-prime materials" to Rastle et al. (2004);
+  that paper used 150 prime-target pairs and the figure appears nowhere in it.
 - **The Python engine embedded a bare `NaN` in the generated jsPsych experiment**, where
   a trial had no value for a field that another block supplies -- a main-block trial in a
   design whose practice items carry an `answer`. `NaN` is not valid JSON, and the R

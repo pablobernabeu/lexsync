@@ -70,3 +70,27 @@ test_that("the reductions agree with R's own on well-conditioned data", {
   expect_equal(lexsync:::.exact_var(set_free), stats::var(set_free), tolerance = 1e-15)
   expect_equal(lexsync:::.exact_sd(set_free), stats::sd(set_free), tolerance = 1e-15)
 })
+
+
+test_that("the shared decimal rounder is pinned", {
+  # No pairing of built-ins agrees. Measured over 210,000 values including every 3-dp
+  # halfway case in range: R's round() disagrees with Python's builtin round(), Python's
+  # builtin disagrees with numpy's, and even R's sprintf("%.3f") disagrees with Python's
+  # "%.3f" on 274 of them. So the rounder is defined by its arithmetic instead, and both
+  # engines compute the same double by construction. test_exact_reductions.py asserts
+  # these same values.
+  expect_identical(lexsync:::.round_dp(7.8125, 3), 7.813)   # half AWAY from zero
+  expect_identical(lexsync:::.round_dp(-7.8125, 3), -7.813) # and away for negatives
+  expect_identical(lexsync:::.round_dp(2.5, 0), 3)
+  expect_identical(lexsync:::.round_dp(-2.5, 0), -3)
+  expect_identical(lexsync:::.round_dp(1.0005, 3), 1.001)
+  expect_identical(lexsync:::.round_dp(4.2505, 3), 4.251)
+  expect_identical(lexsync:::.round_dp(0, 3), 0)
+  # R's own round() would give the half-to-even answer on the first of these, which is
+  # exactly the divergence this replaces.
+  expect_false(identical(round(7.8125, 3), lexsync:::.round_dp(7.8125, 3)))
+  # Vectorised, and non-finite values pass through rather than becoming nonsense.
+  expect_identical(lexsync:::.round_dp(c(1.0005, 2.0005), 3), c(1.001, 2.001))
+  expect_true(is.na(lexsync:::.round_dp(NA_real_, 3)))
+  expect_identical(lexsync:::.round_dp(Inf, 3), Inf)
+})

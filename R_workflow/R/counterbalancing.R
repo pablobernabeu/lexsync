@@ -406,6 +406,8 @@ counterbalance_latin_square <- function(stimuli, design, schema) {
 #' @param factors A named list of factors, each a vector of levels.
 #' @param n_participants Number of participants to allocate.
 #' @return A data frame with one row per participant.
+#' @examples
+#' participant_table(list(list = 1:2, order = c("a", "b")), 6)
 #' @export
 participant_table <- function(factors, n_participants) {
   grid <- expand.grid(factors, stringsAsFactors = FALSE)

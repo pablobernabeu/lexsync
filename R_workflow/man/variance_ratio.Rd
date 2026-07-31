@@ -19,3 +19,6 @@ spread and still confound, which a mean-based statistic misses
 (Armstrong et al., 2012; Austin, 2009). A ratio near 1 is balanced; a common
 heuristic flags ratios outside roughly 0.5 to 2.
 }
+\examples{
+variance_ratio(c(1, 2, 3, 4), c(1, 2, 3, 8))
+}

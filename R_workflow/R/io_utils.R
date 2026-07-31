@@ -145,6 +145,39 @@ write_lines_lf <- function(x, path) {
   if (is.na(v)) NA_real_ else sqrt(v)
 }
 
+# ---- One decimal rounder, shared by both engines ---------------------------
+#
+# No pairing of built-ins works. Measured over 210,000 values including every 3-dp
+# halfway case in range: R's round() disagrees with Python's builtin round(), Python's
+# builtin disagrees with numpy's round(), and even R's sprintf("%.3f") disagrees with
+# Python's "%.3f" on 274 of them, because R's delegates to the platform C library while
+# Python's is correctly rounded. So a value rounded for an artefact cannot be handed to
+# any language's own rounder.
+#
+# This one is defined by its arithmetic instead: scale, truncate toward zero, then step
+# away from zero when the remainder reaches a half. Every operation is *, -, /, trunc,
+# abs or a comparison, all of which IEEE-754 either mandates correctly rounded or makes
+# exact, so both engines compute the same double from the same input by construction.
+#
+# It rounds the SCALED double rather than the true decimal value, which for a tie that
+# is not exactly representable is a choice rather than a theorem. That is the same
+# trade-off the balance optimiser's quantisation already makes, and it is the right way
+# round: reproducible across engines matters more here than agreeing with what a
+# calculator would say about a value that was never exactly a half.
+# Must stay identical to _round_dp in python_workflow/src/lexsync/io_utils.py.
+#' @keywords internal
+.round_dp <- function(x, dp) {
+  p <- 10^dp
+  y <- as.numeric(x) * p
+  t <- trunc(y)
+  r <- y - t
+  # sign(y) rather than 1: a negative value must step away from zero too.
+  adj <- ifelse(is.finite(r) & abs(r) >= 0.5, sign(y), 0)
+  out <- (t + adj) / p
+  out[!is.finite(y)] <- as.numeric(x)[!is.finite(y)]
+  out
+}
+
 #' MD5 digest of a file, for provenance logging
 #'
 #' MD5 (from base \pkg{tools}) is used as a lightweight content fingerprint; it
@@ -196,8 +229,32 @@ sha256_file <- function(path) {
 # Must stay identical to _key_part in python_workflow/src/lexsync/io_utils.py.
 #' @keywords internal
 .key_part <- function(x) {
+  # A component that cannot be rendered identically in both engines must never be
+  # silently hashed. Measured: a missing value rendered "NA" here and "nan" in Python,
+  # TRUE/FALSE against True/False, Inf against inf. A blank `condition` cell is a
+  # routine data error that neither reader rejects, and it produced a DIFFERENT trial
+  # order in each engine -- reproducibly, and with nothing to signal it.
+  #
+  # Raising beats picking a spelling. A missing condition, set or list is always a data
+  # error, and a reproducible order computed over a meaningless key is worse than a
+  # stop. Booleans do get a pinned spelling, because they are legitimate: R's
+  # as.character gives "TRUE" and Python's str gives "True", so the spelling is fixed
+  # here rather than left to each language.
+  # Must stay identical to _key_part in python_workflow/src/lexsync/io_utils.py.
+  if (anyNA(x)) {
+    stop(paste("lexsync: a hash-key component is missing, so the trial order cannot be",
+               "made identical across engines. Check the items table for a blank",
+               "condition, set or list cell."), call. = FALSE)
+  }
+  if (is.logical(x)) return(ifelse(x, "TRUE", "FALSE"))
   if (is.numeric(x)) {
-    ok <- is.finite(x) & x == floor(x)
+    if (any(!is.finite(x))) {
+      stop("lexsync: a hash-key component is not finite, so it cannot be keyed.",
+           call. = FALSE)
+    }
+    # The integer bound matters: as.integer() beyond it yields NA with a warning, which
+    # would put an empty component into the key.
+    ok <- x == floor(x) & abs(x) <= .Machine$integer.max
     out <- character(length(x))
     out[ok] <- sprintf("%d", as.integer(x[ok]))
     out[!ok] <- sprintf("%.17g", x[!ok])

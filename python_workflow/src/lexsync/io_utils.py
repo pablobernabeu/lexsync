@@ -188,6 +188,41 @@ def _exact_sd(x):
     return v if v != v else math.sqrt(v)
 
 
+# ---- One decimal rounder, shared by both engines ---------------------------
+#
+# No pairing of built-ins works. Measured over 210,000 values including every 3-dp
+# halfway case in range: Python's builtin round() disagrees with R's round(), numpy's
+# round() disagrees with both, and even Python's "%.3f" disagrees with R's
+# sprintf("%.3f") on 274 of them, because R's delegates to the platform C library while
+# this one is correctly rounded. So a value rounded for an artefact cannot be handed to
+# any language's own rounder.
+#
+# This one is defined by its arithmetic instead: scale, truncate toward zero, then step
+# away from zero when the remainder reaches a half. Every operation is *, -, /, trunc,
+# abs or a comparison, all of which IEEE-754 either mandates correctly rounded or makes
+# exact, so both engines compute the same double from the same input by construction.
+#
+# It rounds the SCALED double rather than the true decimal value, which for a tie that
+# is not exactly representable is a choice rather than a theorem. That is the same
+# trade-off the balance optimiser's quantisation already makes, and it is the right way
+# round: reproducible across engines matters more here than agreeing with what a
+# calculator would say about a value that was never exactly a half.
+# Must stay identical to .round_dp in R_workflow/R/io_utils.R.
+
+
+def _round_dp(x, dp: int) -> float:
+    v = float(x)
+    if v != v or v in (float("inf"), float("-inf")):
+        return v
+    p = 10.0 ** dp
+    y = v * p
+    t = math.trunc(y)
+    r = y - t
+    # The step is away from zero, so a negative value moves down, not up.
+    adj = (1 if y > 0 else -1) if abs(r) >= 0.5 else 0
+    return (t + adj) / p
+
+
 def hash_file(path: str):
     """MD5 digest of a file, for provenance logging (matches the R engine)."""
     if not os.path.exists(path):
@@ -231,17 +266,43 @@ def _is_continuous(design: dict) -> bool:
 def _key_part(x) -> str:
     """Render one component of a hash key.
 
-    Never interpolate a number directly: R prints 42.0 as "42" and Python as
-    "42.0", and a pandas column silently promoted to float64 by a single missing
-    value would otherwise change every digest and so every realised duration.
-    Integral values go through %d in both engines. Must stay identical to
-    .key_part in R_workflow/R/io_utils.R.
+    Never interpolate a number directly: R prints 42.0 as "42" and Python as "42.0",
+    and a pandas column silently promoted to float64 by a single missing value would
+    otherwise change every digest and so every realised duration.
+
+    A component that cannot be rendered identically in both engines must never be
+    silently hashed. Measured: a missing value rendered "nan" here and "NA" in R,
+    True/False against TRUE/FALSE, inf against Inf. A blank ``condition`` cell is a
+    routine data error that neither reader rejects, and it produced a DIFFERENT trial
+    order in each engine -- reproducibly, and with nothing to signal it.
+
+    Raising beats picking a spelling. A missing condition, set or list is always a data
+    error, and a reproducible order computed over a meaningless key is worse than a
+    stop. Booleans do get a pinned spelling, because they are legitimate: the spelling
+    is fixed to R's here rather than left to each language.
+
+    Must stay identical to .key_part in R_workflow/R/io_utils.R.
     """
+    if x is None:
+        raise ValueError(
+            "lexsync: a hash-key component is missing, so the trial order cannot be "
+            "made identical across engines. Check the items table for a blank "
+            "condition, set or list cell.")
     if isinstance(x, bool):
-        return str(x)
+        return "TRUE" if x else "FALSE"
     if isinstance(x, (int, float)):
         f = float(x)
-        if f == f and f not in (float("inf"), float("-inf")) and f.is_integer():
+        if f != f:
+            raise ValueError(
+                "lexsync: a hash-key component is missing, so the trial order cannot be "
+                "made identical across engines. Check the items table for a blank "
+                "condition, set or list cell.")
+        if f in (float("inf"), float("-inf")):
+            raise ValueError(
+                "lexsync: a hash-key component is not finite, so it cannot be keyed.")
+        # The integer bound matters: R's as.integer() beyond it yields NA, which would
+        # put an empty component into the key.
+        if f.is_integer() and abs(f) <= 2147483647:
             return "%d" % int(f)
         return "%.17g" % f
     return str(x)

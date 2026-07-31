@@ -77,7 +77,7 @@
     .lower_invariant(.trim_invariant(as.character(stim[[m]])))), use.names = FALSE))
   missing <- setdiff(forms, lex$word)
   if (length(missing)) {
-    shown <- head(sort(missing, method = "radix"), 5L)
+    shown <- utils::head(sort(missing, method = "radix"), 5L)
     stop(sprintf("lexsync: %d member form(s) are absent from lexicon '%s': %s%s.",
                  length(missing), lexicon,
                  paste(sprintf("'%s'", shown), collapse = ", "),

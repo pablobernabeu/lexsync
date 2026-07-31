@@ -186,6 +186,15 @@ match_stimuli <- function(pool, design, schema, verbose = FALSE) {
   out
 }
 
+# Column means for the overlap-cap centroid, through the compensated reduction rather
+# than colMeans. The cap decides which candidates survive into matching -- it fires for
+# the shipped en_ndensity and es_ndensity designs -- so a centroid that differs in the
+# last bits between engines is a selection difference waiting to happen, not a rounding
+# curiosity. Mirrors _exact_colmeans in matching.py.
+.exact_colmeans <- function(z) {
+  vapply(seq_len(ncol(z)), function(j) .exact_mean(z[, j]), numeric(1))
+}
+
 #' Joint nearest-pair matching for a two-condition design
 #'
 #' Selects the `n` best-matched pairs across the two conditions, keeping only
@@ -213,8 +222,8 @@ match_joint <- function(subpools, cond_names, match_on, center, scale_, n, cap =
     list(df = df[keep, , drop = FALSE], z = z[keep, , drop = FALSE])
   }
   z0 <- zof(s0); z1 <- zof(s1)
-  o0 <- cap_overlap(s0, z0, colMeans(z1)); s0 <- o0$df; z0 <- o0$z
-  o1 <- cap_overlap(s1, z1, colMeans(z0)); s1 <- o1$df; z1 <- o1$z
+  o0 <- cap_overlap(s0, z0, .exact_colmeans(z1)); s0 <- o0$df; z0 <- o0$z
+  o1 <- cap_overlap(s1, z1, .exact_colmeans(z0)); s1 <- o1$df; z1 <- o1$z
   m0 <- nrow(z0); m1 <- nrow(z1)
   cost <- matrix(0, m0, m1)
   for (d in seq_len(ncol(z0))) cost <- cost + outer(z0[, d], z1[, d], "-")^2
@@ -282,8 +291,8 @@ match_optimal <- function(subpools, cond_names, match_on, center, scale_, n, cap
     list(df = df[keep, , drop = FALSE], z = z[keep, , drop = FALSE])
   }
   z0 <- zof(s0); z1 <- zof(s1)
-  o0 <- cap_overlap(s0, z0, colMeans(z1)); s0 <- o0$df; z0 <- o0$z
-  o1 <- cap_overlap(s1, z1, colMeans(z0)); s1 <- o1$df; z1 <- o1$z
+  o0 <- cap_overlap(s0, z0, .exact_colmeans(z1)); s0 <- o0$df; z0 <- o0$z
+  o1 <- cap_overlap(s1, z1, .exact_colmeans(z0)); s1 <- o1$df; z1 <- o1$z
   m0 <- nrow(z0); m1 <- nrow(z1)
   cost <- matrix(0, m0, m1)
   for (d in seq_len(ncol(z0))) cost <- cost + outer(z0[, d], z1[, d], "-")^2
@@ -320,6 +329,17 @@ match_optimal <- function(subpools, cond_names, match_on, center, scale_, n, cap
 #' @param design A parsed design configuration carrying a `continuous` block.
 #' @param schema The parsed global schema (tolerance windows).
 #' @param verbose Logical; report a window relaxation.
+#' @param key Column used as the selection unit and the byte-order tie-break, by
+#'   default `"word"`. The pair-keyed path passes `"set"`: after a pair table is
+#'   collapsed to one row per item set there is no `word` column, and `set` is unique
+#'   per row, integer, and already derived deterministically.
+#' @param label Value written into the result's `condition` column, or `NULL` to leave
+#'   the existing conditions alone. The pair path passes `NULL`, because its rows
+#'   already carry the design's own conditions and overwriting them would destroy the
+#'   contrast the design exists to test.
+#' @param renumber_sets Logical; renumber the selected rows `1..n`. The pair path
+#'   passes `FALSE`, because its `set` ids have to survive selection for the result to
+#'   be re-expanded back to the full pair table.
 #' @return A data frame of selected stimuli (condition "continuous", set 1..n).
 #' @importFrom stats sd
 #' @export

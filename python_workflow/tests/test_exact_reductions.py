@@ -115,3 +115,35 @@ def test_the_scientific_helper_is_normalised_and_unpadded():
     # Python's own form pads the exponent ("1e-05"); readr does not.
     assert _readr_sci(1e-5) == "1e-5"
     assert _readr_sci(0.00025) == "2.5e-4"
+
+
+@pytest.mark.parametrize("value,dp,expected", [
+    (7.8125, 3, 7.813),     # half AWAY from zero
+    (-7.8125, 3, -7.813),   # and away for negatives
+    (2.5, 0, 3.0),
+    (-2.5, 0, -3.0),
+    (1.0005, 3, 1.001),
+    (4.2505, 3, 4.251),
+    (0.0, 3, 0.0),
+])
+def test_the_shared_decimal_rounder_is_pinned(value, dp, expected):
+    """No pairing of built-ins agrees. Measured over 210,000 values including every 3-dp
+    halfway case in range: Python's builtin round() disagrees with R's round(), numpy's
+    disagrees with both, and even Python's "%.3f" disagrees with R's sprintf("%.3f") on
+    274 of them. So the rounder is defined by its arithmetic instead, and both engines
+    compute the same double by construction. test-exact-reductions.R asserts these same
+    values."""
+    from lexsync.io_utils import _round_dp
+    assert _round_dp(value, dp) == expected
+
+
+def test_the_shared_rounder_differs_from_the_builtins_where_expected():
+    """The divergence this replaces, stated so it cannot quietly come back."""
+    import numpy as np
+
+    from lexsync.io_utils import _round_dp
+    assert _round_dp(7.8125, 3) != round(7.8125, 3)          # builtin: half to even
+    assert _round_dp(4.2505, 3) != float(np.round(4.2505, 3))
+    # Non-finite values pass through rather than becoming nonsense.
+    assert _round_dp(float("inf"), 3) == float("inf")
+    assert _round_dp(float("nan"), 3) != _round_dp(float("nan"), 3)

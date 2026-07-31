@@ -18,3 +18,9 @@ The filtered lexicon.
 \description{
 Build an experimental candidate pool by filtering a lexicon
 }
+\examples{
+schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+lex <- load_lexicon(system.file("extdata", "en_example.csv", package = "lexsync"),
+                    schema)
+nrow(build_pool(lex, list(length = c(4, 6), frequency = c(4, 6))))
+}

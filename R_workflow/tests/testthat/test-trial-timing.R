@@ -107,3 +107,22 @@ test_that("key parts render integral doubles the way Python does", {
   expect_equal(lexsync:::.key_part("related"), "related")
   expect_equal(lexsync:::.key_part(2.5), "2.5")
 })
+
+
+test_that("a hash-key component that cannot be rendered identically is refused", {
+  # Measured divergence before this: a missing value rendered "NA" here and "nan" in
+  # Python, TRUE/FALSE against True/False, Inf against inf. A blank `condition` cell is a
+  # routine data error that neither reader rejects, and it produced a DIFFERENT trial
+  # order in each engine -- reproducibly, with nothing to signal it.
+  expect_error(lexsync:::.key_part(NA), "missing")
+  expect_error(lexsync:::.key_part(c(1, NA)), "missing")
+  expect_error(lexsync:::.key_part(NA_character_), "missing")
+  expect_error(lexsync:::.key_part(Inf), "not finite")
+  # Booleans are legitimate, so they get a pinned spelling rather than a refusal.
+  # test_trial_timing.py asserts the same two strings.
+  expect_identical(lexsync:::.key_part(TRUE), "TRUE")
+  expect_identical(lexsync:::.key_part(FALSE), "FALSE")
+  # A value past the integer range would make as.integer() return NA, which would put
+  # an empty component into the key.
+  expect_identical(lexsync:::.key_part(3e9), "3000000000")
+})

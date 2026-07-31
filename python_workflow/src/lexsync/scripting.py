@@ -207,6 +207,20 @@ def render_events(events: list, timing: dict, hz: float = 60) -> list:
     fix_ms, fix = timing.get("fixation_ms"), timing.get("fixation_frames")
     word_ms, word = timing.get("word_ms"), timing.get("word_frames")
     isi_ms, isi = timing.get("isi_ms"), timing.get("isi_frames")
+    # A feedback event scores the key the participant pressed, so something must have
+    # collected one first. With no preceding response or question the OpenSesame runner
+    # raises on the unset variable, PsychoPy compares against None and jsPsych finds no
+    # scored row -- three different confusing failures at run time, for one design error
+    # that is obvious here.
+    seen_response = False
+    for i, ev in enumerate(events, start=1):
+        ty = ev.get("type")
+        if ty in ("response", "question"):
+            seen_response = True
+        if ty == "feedback" and not seen_response:
+            raise ValueError(
+                "lexsync: event %d is a feedback event, but no response or question "
+                "event precedes it, so there is no response to score." % i)
     out = []
     for i, ev in enumerate(events, start=1):
         t = ev["type"]
@@ -349,6 +363,21 @@ def _trigger_expr(spec) -> str | None:
     return str(int(spec))
 
 
+# The Python that OpenSesame's inline_script actually runs.
+#
+# Two spellings below are forced by OpenSesame's runtime and were both wrong at first:
+#
+# `str`, never `unicode`. OpenSesame 3.3 and later run inline scripts in a Python 3
+# workspace and inject only a fixed set of globals (exp, var, pool, items, clock, log and
+# a small API); `unicode` is a Python 2 builtin and is not among them, so every emitted
+# guard and feedback script died with NameError on the first trial.
+#
+# `var.get(name, u'')`, never `var.get(name, None)`. OpenSesame's var_store.get ends
+# `elif default is not None: val = default / else: raise VariableDoesNotExist(var)`, so
+# passing None explicitly is indistinguishable from passing no default and RAISES rather
+# than yielding None. A non-None sentinel is the only default that works.
+
+
 def _osexp_block_guard(body: list, blocks) -> list:
     """Restrict an inline script's body to the named blocks.
 
@@ -360,7 +389,7 @@ def _osexp_block_guard(body: list, blocks) -> list:
     if not blocks:
         return body
     wanted = ", ".join(_pyq(str(b)) for b in blocks)
-    return ["if unicode(var.get(u'block', u'main')) in [%s]:" % wanted] +            ["    " + line for line in body]
+    return ["if str(var.get(u'block', u'main')) in [%s]:" % wanted] +            ["    " + line for line in body]
 
 
 def _osexp_event_block(name: str, ev: dict) -> tuple:
@@ -393,7 +422,7 @@ def _osexp_event_block(name: str, ev: dict) -> tuple:
         trig = _trigger_expr(ev.get("crit_trigger"))
         body = [
             f"_regions = [r for r in var.{ev['field']}.split({_pyq(ev.get('sep', '|'))}) if r != u'']",
-            "_crit = int(var.critical_region) if var.get(u'critical_region') is not None else 0",
+            "_crit = int(var.get(u'critical_region', 0) or 0)",
             f"_kb = Keyboard(keylist=[{_pyq(ev.get('key', 'space'))}], timeout=None)",
             "for _i, _region in enumerate(_regions, start=1):",
             "    c = Canvas(); c.text(_region); c.show()",
@@ -418,10 +447,10 @@ def _osexp_event_block(name: str, ev: dict) -> tuple:
         # comparison. A timeout leaves the response None, which is reported separately
         # because on a timed task it means something different from a wrong key.
         body = [
-            "_want = unicode(var.get(u'%s', u'')).strip()" % ev.get("answer", "answer"),
-            "_got = var.get(u'response', None)",
-            "if _got is None: _msg = %s" % _pyq(ev.get("no_response", "Too slow")),
-            "elif unicode(_got).strip() == _want: _msg = %s" % _pyq(ev.get("correct", "Correct")),
+            "_want = str(var.get(u'%s', u'')).strip()" % ev.get("answer", "answer"),
+            "_got = var.get(u'response', u'')",
+            "if _got is None or _got == u'': _msg = %s" % _pyq(ev.get("no_response", "Too slow")),
+            "elif str(_got).strip() == _want: _msg = %s" % _pyq(ev.get("correct", "Correct")),
             "else: _msg = %s" % _pyq(ev.get("incorrect", "Incorrect")),
             "c = Canvas(); c.text(_msg); c.show()",
             "clock.sleep(%s)" % sleep_arg,

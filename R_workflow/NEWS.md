@@ -1,5 +1,39 @@
 # lexsync (development version)
 
+* **A generated OpenSesame experiment with a `feedback` event or a `blocks:` restriction
+  would not run.** The emitter wrote `unicode(...)`, a Python 2 builtin that OpenSesame's
+  Python 3 inline workspace does not provide, so the experiment died with `NameError` on
+  the first trial. It also passed `None` as a `var.get()` default, which OpenSesame
+  cannot distinguish from no default and so raises on rather than returning. Both are
+  fixed, both spellings are now pinned by a test, and a `feedback` event with no
+  preceding `response` or `question` is refused at generation time instead of failing
+  three different ways at run time.
+* **One decimal rounder, shared by both engines.** No pairing of built-ins agreed:
+  measured over 210,000 values including every three-decimal halfway case in range, R's
+  `round()` disagrees with Python's builtin, Python's builtin disagrees with numpy's, and
+  even R's `sprintf("%.3f")` disagrees with Python's `"%.3f"` on 274 of them. Reported
+  statistics are now rounded by an arithmetic definition both engines compute
+  identically. Some values move by one in the last published digit; no selection changes.
+* A hash-key component that cannot be rendered identically in both engines is now
+  refused rather than hashed. A blank `condition` cell — a routine data error neither
+  reader rejects — rendered `"NA"` in R and `"nan"` in Python, so the two engines
+  produced different trial orders from the same design, reproducibly and with nothing to
+  signal it. Booleans get a pinned spelling rather than a refusal.
+* The overlap-cap centroid in the `joint` and `optimal` matchers goes through the
+  compensated reduction. The cap really fires on shipped designs, so it decides which
+  candidates reach matching; verified to change no design's selection.
+* `R CMD check --as-cran` is clean: **0 errors, 0 warnings, 1 note** (the standard
+  new-submission note). Fixed on the way: three undocumented arguments on
+  `select_continuous_stimuli()`, an unqualified `utils::head()`, and the package's only
+  example, which called an unexported function from inside `\dontrun{}` and so could
+  never have worked if a user copied it. The package now has executable, offline
+  examples, and `cran-comments.md` no longer misstates the check result.
+* Three factual corrections. The SUBTLEX-PT registry entry cited a DOI that resolves to
+  an unrelated psychometrics paper. The matching vignette put Zipf 7 at a thousand
+  occurrences per million rather than ten thousand, contradicting its own lower anchor.
+  A design comment attributed "840-prime materials" to Rastle et al. (2004), a figure
+  that appears nowhere in that paper.
+
 * Practice and filler blocks. A design may declare `practice:` and `fillers:` item
   tables; those trials are presented but not analysed, so the stimuli file and the
   reports are written from the main rows while the generated experiments run every

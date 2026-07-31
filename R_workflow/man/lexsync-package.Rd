@@ -14,7 +14,7 @@ A cross-platform toolkit that unifies many-language lexical-corpus access, paral
 Useful links:
 \itemize{
   \item \url{https://github.com/pablobernabeu/lexsync}
-  \item \url{https://pablobernabeu.github.io/lexsync/r}
+  \item \url{https://pablobernabeu.github.io/lexsync/r/}
   \item Report bugs at \url{https://github.com/pablobernabeu/lexsync/issues}
 }
 

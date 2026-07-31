@@ -61,7 +61,8 @@ knitr::kable(data.frame(
 `length` is the character count of the orthographic form. `frequency` is the Zipf
 value read from the lexicon's `freq_zipf` column, a log-scaled measure on which
 roughly 1 is a word occurring once per hundred million tokens and 7 a word
-occurring a thousand times per million (van Heuven et al., 2014); it is
+occurring ten thousand times per million. The value is the base-10 logarithm of
+the frequency per billion words (van Heuven et al., 2014). It is
 preferred to raw counts because it is linear in the log space in which frequency
 effects are approximately linear, and because it is comparable across corpora of
 different sizes. `n_density` is Coltheart's N, the count of same-length words

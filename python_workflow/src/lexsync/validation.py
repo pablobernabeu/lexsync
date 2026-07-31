@@ -14,7 +14,8 @@ from scipy import stats
 # Every reduction in this module goes through these rather than through numpy or
 # pandas. Two designs' reported means used to differ between the engines in the last
 # published decimal because numpy sums pairwise and R's mean() does not; see io_utils.
-from .io_utils import _exact_mean, _exact_sd, _exact_sum, _exact_var
+from .io_utils import (_exact_mean, _exact_sd, _exact_sum, _exact_var,
+                       _round_dp)
 
 
 def describe_stimuli(stimuli: pd.DataFrame, dims, by: str = "condition") -> pd.DataFrame:
@@ -24,9 +25,9 @@ def describe_stimuli(stimuli: pd.DataFrame, dims, by: str = "condition") -> pd.D
             x = pd.to_numeric(d[dim], errors="coerce").dropna()
             rows.append(dict(
                 group=g, dimension=dim, n=int(x.size),
-                mean=round(_exact_mean(x), 3), sd=round(_exact_sd(x), 3),
-                min=round(float(x.min()), 3), median=round(float(x.median()), 3),
-                max=round(float(x.max()), 3),
+                mean=_round_dp(_exact_mean(x), 3), sd=_round_dp(_exact_sd(x), 3),
+                min=_round_dp(float(x.min()), 3), median=_round_dp(float(x.median()), 3),
+                max=_round_dp(float(x.max()), 3),
             ))
     return pd.DataFrame(rows)
 
@@ -147,11 +148,11 @@ def match_report(stimuli: pd.DataFrame, dims, schema: dict) -> dict:
             p = tt["p"]
             rows.append(dict(
                 condition=cc, reference=anchor, dimension=dim,
-                cohens_d=round(cohens_d(x, y), 3),
-                d_ci_low=round(ci["ci_low"], 3) if ci["ci_low"] == ci["ci_low"] else None,
-                d_ci_high=round(ci["ci_high"], 3) if ci["ci_high"] == ci["ci_high"] else None,
-                var_ratio=round(vr, 3) if vr is not None else None,
-                tost_p=round(p, 4) if p == p else None,
+                cohens_d=_round_dp(cohens_d(x, y), 3),
+                d_ci_low=_round_dp(ci["ci_low"], 3) if ci["ci_low"] == ci["ci_low"] else None,
+                d_ci_high=_round_dp(ci["ci_high"], 3) if ci["ci_high"] == ci["ci_high"] else None,
+                var_ratio=_round_dp(vr, 3) if vr is not None else None,
+                tost_p=_round_dp(p, 4) if p == p else None,
                 equivalent=tt["equivalent"],
             ))
     return dict(descriptives=desc, comparisons=pd.DataFrame(rows))
@@ -169,7 +170,7 @@ def _pearson(x, y):
     denom = math.sqrt(_exact_sum(dx * dx) * _exact_sum(dy * dy))
     if denom == 0:
         return 0.0
-    return round(_exact_sum(dx * dy) / denom, 9)
+    return _round_dp(_exact_sum(dx * dy) / denom, 9)
 
 
 def match_report_continuous(stimuli, predictor, controls, schema) -> dict:
@@ -186,12 +187,12 @@ def match_report_continuous(stimuli, predictor, controls, schema) -> dict:
     pv = pd.to_numeric(stimuli[predictor], errors="coerce").to_numpy(dtype=float)
     valid = pv[~np.isnan(pv)]
     # None (not NaN) when the predictor has no span, so both engines agree.
-    span = round(float(valid.max() - valid.min()), 3) if len(valid) >= 2 else None
+    span = _round_dp(float(valid.max() - valid.min()), 3) if len(valid) >= 2 else None
     rows = [dict(dimension=predictor, role="predictor", pearson_r=None, predictor_span=span)]
     for c in controls:
         cv = pd.to_numeric(stimuli[c], errors="coerce").to_numpy(dtype=float)
         r = _pearson(pv, cv)
         rows.append(dict(dimension=c, role="control",
-                         pearson_r=round(r, 3) if r is not None else None,
+                         pearson_r=_round_dp(r, 3) if r is not None else None,
                          predictor_span=span))
     return dict(descriptives=desc, comparisons=pd.DataFrame(rows))

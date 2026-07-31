@@ -22,6 +22,20 @@ select_continuous_stimuli(
 \item{schema}{The parsed global schema (tolerance windows).}
 
 \item{verbose}{Logical; report a window relaxation.}
+
+\item{key}{Column used as the selection unit and the byte-order tie-break, by
+default \code{"word"}. The pair-keyed path passes \code{"set"}: after a pair table is
+collapsed to one row per item set there is no \code{word} column, and \code{set} is unique
+per row, integer, and already derived deterministically.}
+
+\item{label}{Value written into the result's \code{condition} column, or \code{NULL} to leave
+the existing conditions alone. The pair path passes \code{NULL}, because its rows
+already carry the design's own conditions and overwriting them would destroy the
+contrast the design exists to test.}
+
+\item{renumber_sets}{Logical; renumber the selected rows \verb{1..n}. The pair path
+passes \code{FALSE}, because its \code{set} ids have to survive selection for the result to
+be re-expanded back to the full pair table.}
 }
 \value{
 A data frame of selected stimuli (condition "continuous", set 1..n).

@@ -19,3 +19,6 @@ Crosses the supplied counterbalancing factors and replicates the cells to
 cover \code{n_participants}, generalising the \code{expand.grid()} + replication pattern
 of the original workflow's \code{participant_parameters.R}.
 }
+\examples{
+participant_table(list(list = 1:2, order = c("a", "b")), 6)
+}

@@ -42,6 +42,15 @@ def _zmat(df: pd.DataFrame, match_on, center, scale) -> np.ndarray:
     return (m - center) / scale
 
 
+def _exact_colmeans(z):
+    """Column means for the overlap-cap centroid, through the compensated reduction
+    rather than numpy's. The cap decides which candidates survive into matching -- it
+    fires for the shipped en_ndensity and es_ndensity designs -- so a centroid that
+    differs in the last bits between engines is a selection difference waiting to
+    happen, not a rounding curiosity. Mirrors .exact_colmeans in matching.R."""
+    return np.array([_exact_mean(z[:, j]) for j in range(z.shape[1])], dtype=float)
+
+
 def _cap_to_overlap(df, z, other_centroid, cap):
     """Keep the `cap` rows nearest the other condition's centroid (byte-rank ties)."""
     if len(df) <= cap:
@@ -68,8 +77,8 @@ def _match_joint(subpools, cond_names, match_on, center, scale, n, cap=1200):
         raise ValueError("lexsync: a condition has no candidates for joint matching.")
     z0 = _zmat(s0, match_on, center, scale)
     z1 = _zmat(s1, match_on, center, scale)
-    s0, z0 = _cap_to_overlap(s0, z0, z1.mean(axis=0), cap)
-    s1, z1 = _cap_to_overlap(s1, z1, z0.mean(axis=0), cap)
+    s0, z0 = _cap_to_overlap(s0, z0, _exact_colmeans(z1), cap)
+    s1, z1 = _cap_to_overlap(s1, z1, _exact_colmeans(z0), cap)
     cost = np.round(np.sqrt(((z0[:, None, :] - z1[None, :, :]) ** 2).sum(axis=2)), 9)
     m0, m1 = cost.shape
     rows = np.repeat(np.arange(m0), m1)
@@ -132,8 +141,8 @@ def _match_optimal(subpools, cond_names, match_on, center, scale, n, cap=1200):
         raise ValueError("lexsync: a condition has no candidates for optimal matching.")
     z0 = _zmat(s0, match_on, center, scale)
     z1 = _zmat(s1, match_on, center, scale)
-    s0, z0 = _cap_to_overlap(s0, z0, z1.mean(axis=0), cap)
-    s1, z1 = _cap_to_overlap(s1, z1, z0.mean(axis=0), cap)
+    s0, z0 = _cap_to_overlap(s0, z0, _exact_colmeans(z1), cap)
+    s1, z1 = _cap_to_overlap(s1, z1, _exact_colmeans(z0), cap)
     cost = np.round(np.sqrt(((z0[:, None, :] - z1[None, :, :]) ** 2).sum(axis=2)), 9)
     row_ind, col_ind = linear_sum_assignment(cost)      # complete min-cost matching
     pair_cost = cost[row_ind, col_ind]

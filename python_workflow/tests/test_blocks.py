@@ -199,3 +199,27 @@ def test_a_missing_value_drops_the_key_rather_than_emitting_nan():
     # A present value is untouched, including a whole-number float (jsonlite drops the
     # fractional part, so 2.0 must serialise as 2).
     assert _json_r({"a": 2.0, "b": 2.5}) == '{"a":2,"b":2.5}'
+
+
+def test_the_opensesame_emitter_writes_python_3():
+    """str, not unicode: OpenSesame 3.3+ runs inline scripts in a Python 3 workspace and
+    does not inject the Python 2 builtin, so the earlier spelling died with NameError on
+    the first trial of any design using a feedback event or a blocks restriction. And
+    var.get(name, None) is indistinguishable from no default in OpenSesame's var_store,
+    which RAISES rather than yielding None."""
+    from lexsync.scripting import _osexp_event_block
+    ev = render_events(_feedback_design()["events"], {}, 60)
+    lines, _ = _osexp_event_block("ev_fb", ev[-1])
+    txt = "\n".join(lines)
+    assert "if str(var.get(u'block', u'main')) in [u'practice']:" in txt
+    assert "unicode(" not in txt
+    assert "var.get(u'response', None)" not in txt
+
+
+def test_a_feedback_event_with_nothing_to_score_is_refused():
+    ev = [{"type": "text", "content": "{target}", "duration_ms": 800},
+          {"type": "feedback", "answer": "answer", "duration_ms": 600}]
+    with pytest.raises(ValueError, match="no response or question event"):
+        render_events(ev, {}, 60)
+    ok = [ev[0], {"type": "response", "keys": ["f", "j"], "timeout_ms": 2000}, ev[1]]
+    assert len(render_events(ok, {}, 60)) == 3

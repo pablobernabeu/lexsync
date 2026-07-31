@@ -110,3 +110,24 @@ def test_key_parts_render_integral_floats_like_r_does():
     assert _key_part(-7.0) == "-7"
     assert _key_part("related") == "related"
     assert _key_part(2.5) == "2.5"
+
+
+def test_a_hash_key_component_that_cannot_be_rendered_identically_is_refused():
+    """Measured divergence before this: a missing value rendered "nan" here and "NA" in
+    R, True/False against TRUE/FALSE, inf against Inf. A blank `condition` cell is a
+    routine data error that neither reader rejects, and it produced a DIFFERENT trial
+    order in each engine -- reproducibly, with nothing to signal it."""
+    import pytest
+    from lexsync.io_utils import _key_part
+    for bad in (None, float("nan")):
+        with pytest.raises(ValueError, match="missing"):
+            _key_part(bad)
+    with pytest.raises(ValueError, match="not finite"):
+        _key_part(float("inf"))
+    # Booleans are legitimate, so they get a pinned spelling rather than a refusal.
+    # test-trial-timing.R asserts the same two strings.
+    assert _key_part(True) == "TRUE"
+    assert _key_part(False) == "FALSE"
+    # A value past the integer range would make R's as.integer() return NA, which would
+    # put an empty component into the key.
+    assert _key_part(3e9) == "3000000000"

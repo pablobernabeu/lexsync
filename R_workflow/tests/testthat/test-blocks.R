@@ -152,8 +152,15 @@ test_that("the OpenSesame emitter guards a restricted event and refuses an impos
   ev <- lexsync:::render_events(blk_feedback_events(), list(), 60)
   blockdef <- lexsync:::.osexp_event_block("ev_fb", ev[[length(ev)]])
   txt <- paste(blockdef$block, collapse = "\n")
-  expect_true(grepl("if unicode(var.get(u'block', u'main')) in [u'practice']:",
+  # str, not unicode: OpenSesame 3.3+ runs inline scripts in a Python 3 workspace and
+  # does not inject the Python 2 builtin, so the earlier spelling died with NameError on
+  # the first trial of any design using a feedback event or a blocks restriction.
+  expect_true(grepl("if str(var.get(u'block', u'main')) in [u'practice']:",
                     txt, fixed = TRUE))
+  expect_false(grepl("unicode(", txt, fixed = TRUE))
+  # var.get(name, None) is indistinguishable from no default in OpenSesame's var_store
+  # and RAISES; only a non-None sentinel yields a value.
+  expect_false(grepl("var.get(u'response', None)", txt, fixed = TRUE))
   # A keyboard_response is not an inline script, so the guard cannot reach it; saying so
   # beats emitting an experiment that ignores the restriction.
   resp <- ev[[2]]; resp$blocks <- list("practice")
@@ -186,4 +193,19 @@ test_that("a missing value drops the key rather than emitting NaN", {
   # A whole-number double loses its fractional part, which is why the Python engine has
   # to conform rather than the other way round.
   expect_identical(j(list(a = 2, b = 2.5)), '{"a":2,"b":2.5}')
+})
+
+
+test_that("a feedback event with nothing to score is refused", {
+  # With no preceding response or question the OpenSesame runner raises on the unset
+  # variable, PsychoPy compares against None and jsPsych finds no scored row: three
+  # different confusing run-time failures for one design error that is obvious at
+  # generation time.
+  ev <- list(list(type = "text", content = "{target}", duration_ms = 800L),
+             list(type = "feedback", answer = "answer", duration_ms = 600L))
+  expect_error(lexsync:::render_events(ev, list(), 60), "no response or question event")
+  # With one, it renders.
+  ok <- append(ev, list(list(type = "response", keys = c("f", "j"), timeout_ms = 2000L)),
+               after = 1L)
+  expect_length(lexsync:::render_events(ok, list(), 60), 3L)
 })

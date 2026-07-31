@@ -36,7 +36,7 @@ describe_stimuli <- function(stimuli, dims, by = "condition") {
   }
   out <- do.call(rbind, rows)
   numcols <- c("mean", "sd", "min", "median", "max")
-  out[numcols] <- lapply(out[numcols], function(v) round(v, 3))
+  out[numcols] <- lapply(out[numcols], function(v) .round_dp(v, 3))
   out
 }
 
@@ -45,6 +45,8 @@ describe_stimuli <- function(stimuli, dims, by = "condition") {
 #' @param x,y Numeric vectors.
 #' @return The standardised mean difference, or 0 when undefined.
 #' @importFrom stats var
+#' @examples
+#' cohens_d(c(5, 6, 7, 8), c(5, 6, 7, 9))
 #' @export
 cohens_d <- function(x, y) {
   x <- x[!is.na(x)]; y <- y[!is.na(y)]
@@ -133,6 +135,8 @@ tost_equiv <- function(x, y, bound_d = 0.5, alpha = 0.05) {
 #' @param cond,ref Numeric vectors (condition and reference).
 #' @return The variance ratio, or `NA` when a variance is undefined.
 #' @importFrom stats var
+#' @examples
+#' variance_ratio(c(1, 2, 3, 4), c(1, 2, 3, 8))
 #' @export
 variance_ratio <- function(cond, ref) {
   cond <- cond[!is.na(cond)]; ref <- ref[!is.na(ref)]
@@ -186,10 +190,10 @@ match_report <- function(stimuli, dims, schema) {
       vr <- variance_ratio(y, x)
       comp[[length(comp) + 1]] <- data.frame(
         condition = cc, reference = anchor, dimension = dim,
-        cohens_d = round(cohens_d(x, y), 3),
-        d_ci_low = round(ci$ci_low, 3), d_ci_high = round(ci$ci_high, 3),
-        var_ratio = if (is.na(vr)) NA_real_ else round(vr, 3),
-        tost_p = round(tt$p, 4), equivalent = tt$equivalent,
+        cohens_d = .round_dp(cohens_d(x, y), 3),
+        d_ci_low = .round_dp(ci$ci_low, 3), d_ci_high = .round_dp(ci$ci_high, 3),
+        var_ratio = if (is.na(vr)) NA_real_ else .round_dp(vr, 3),
+        tost_p = .round_dp(tt$p, 4), equivalent = tt$equivalent,
         stringsAsFactors = FALSE
       )
     }
@@ -205,7 +209,7 @@ match_report <- function(stimuli, dims, schema) {
   dx <- x - .exact_mean(x); dy <- y - .exact_mean(y)
   denom <- sqrt(.exact_sum(dx * dx) * .exact_sum(dy * dy))
   if (denom == 0) return(0)
-  round(.exact_sum(dx * dy) / denom, 9)
+  .round_dp(.exact_sum(dx * dy) / denom, 9)
 }
 
 #' Realised-control report for a continuous design
@@ -226,7 +230,7 @@ match_report_continuous <- function(stimuli, predictor, controls, schema) {
   pv <- suppressWarnings(as.numeric(stimuli[[predictor]]))
   valid <- pv[!is.na(pv)]
   # NA (not -Inf) when the predictor has no span, so both engines agree.
-  span <- if (length(valid) >= 2) round(max(valid) - min(valid), 3) else NA_real_
+  span <- if (length(valid) >= 2) .round_dp(max(valid) - min(valid), 3) else NA_real_
   rows <- list(data.frame(dimension = predictor, role = "predictor",
                           pearson_r = NA_real_, predictor_span = span,
                           stringsAsFactors = FALSE))
@@ -235,7 +239,7 @@ match_report_continuous <- function(stimuli, predictor, controls, schema) {
     r <- .pearson(pv, cv)
     rows[[length(rows) + 1L]] <- data.frame(
       dimension = cc, role = "control",
-      pearson_r = if (is.na(r)) NA_real_ else round(r, 3),
+      pearson_r = if (is.na(r)) NA_real_ else .round_dp(r, 3),
       predictor_span = span, stringsAsFactors = FALSE)
   }
   list(descriptives = desc, comparisons = do.call(rbind, rows))

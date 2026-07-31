@@ -72,6 +72,8 @@ validate_lexicon <- function(df, schema) {
 #'
 #' @param word Character vector of word forms.
 #' @return Integer vector: the estimated syllable count of each word.
+#' @examples
+#' count_syllables(c("cat", "table", "beautiful"))
 #' @export
 count_syllables <- function(word) {
   word <- .lower_invariant(word)
@@ -96,10 +98,12 @@ count_syllables <- function(word) {
 #' @return A data frame with at least `word`, `freq_zipf`, `length`,
 #'   `frequency` and `id`.
 #' @examples
-#' \dontrun{
-#' schema <- read_config(system.file("extdata", "schema.yaml", package = "lexsync"))
-#' lex <- load_lexicon(system.file("extdata", "en_example.csv", package = "lexsync"), schema)
-#' }
+#' # Both inputs are bundled with the package, so this runs offline and touches
+#' # nothing outside the installation.
+#' schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+#' lex <- load_lexicon(system.file("extdata", "en_example.csv", package = "lexsync"),
+#'                     schema)
+#' head(lex[, c("word", "frequency", "length", "n_syllables")])
 #' @export
 load_lexicon <- function(path, schema, language = NULL) {
   df <- as.data.frame(read_csv_utf8(path), stringsAsFactors = FALSE)
@@ -436,7 +440,7 @@ load_pool <- function(path, schema, lexicon = NULL, language = NULL) {
     }
     absent <- setdiff(df$word, lex$word)
     if (length(absent)) {
-      shown <- head(sort(absent, method = "radix"), 5L)
+      shown <- utils::head(sort(absent, method = "radix"), 5L)
       stop(sprintf("lexsync: %d word(s) of supplied pool '%s' are absent from lexicon '%s': %s%s.",
                    length(absent), path, lexicon,
                    paste(sprintf("'%s'", shown), collapse = ", "),
@@ -508,6 +512,11 @@ load_items <- function(path, required_fields) {
 #' @param filters A named list mapping columns to either a numeric `c(min, max)`
 #'   range or a vector of permitted values.
 #' @return The filtered lexicon.
+#' @examples
+#' schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+#' lex <- load_lexicon(system.file("extdata", "en_example.csv", package = "lexsync"),
+#'                     schema)
+#' nrow(build_pool(lex, list(length = c(4, 6), frequency = c(4, 6))))
 #' @export
 build_pool <- function(lexicon, filters = NULL) {
   df <- lexicon

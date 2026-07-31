@@ -189,6 +189,21 @@ render_events <- function(events, timing, hz = 60) {
   word_ms <- timing$word_ms;    word <- timing$word_frames
   isi_ms <- timing$isi_ms;      isi <- timing$isi_frames
   out <- list()
+  # A feedback event scores the key the participant pressed, so something must have
+  # collected one first. With no preceding response or question the OpenSesame runner
+  # raises on the unset variable, PsychoPy compares against None and jsPsych finds no
+  # scored row -- three different confusing failures at run time, for one design error
+  # that is obvious here.
+  seen_response <- FALSE
+  for (i in seq_along(events)) {
+    ty <- events[[i]]$type
+    if (ty %in% c("response", "question")) seen_response <- TRUE
+    if (identical(ty, "feedback") && !seen_response) {
+      stop(sprintf(paste("lexsync: event %d is a feedback event, but no response or",
+                         "question event precedes it, so there is no response to score."),
+                   i), call. = FALSE)
+    }
+  }
   for (i in seq_along(events)) {
     ev <- events[[i]]
     t <- ev$type
@@ -342,6 +357,20 @@ export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
     '\tset _prepare ""', "\t___run__", paste0("\t", body), "\t__end__", "")
 }
 
+# The Python that OpenSesame's inline_script actually runs.
+#
+# Two spellings here are forced by OpenSesame's runtime and were both wrong at first:
+#
+# `str`, never `unicode`. OpenSesame 3.3 and later run inline scripts in a Python 3
+# workspace and inject only a fixed set of globals (exp, var, pool, items, clock, log
+# and a small API); `unicode` is a Python 2 builtin and is not among them, so every
+# emitted guard and feedback script died with NameError on the first trial.
+#
+# `var.get(name, u'')`, never `var.get(name, None)`. OpenSesame's var_store.get ends
+# `elif default is not None: val = default / else: raise VariableDoesNotExist(var)`, so
+# passing None explicitly is indistinguishable from passing no default and RAISES rather
+# than yielding None. A non-None sentinel is the only default that works.
+
 # Restrict an inline script's body to the named blocks.
 #
 # The guard goes INSIDE the script rather than on the sequence's `run` line. OpenSesame
@@ -352,7 +381,7 @@ export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
 .osexp_block_guard <- function(body, blocks) {
   if (is.null(blocks) || !length(blocks)) return(body)
   wanted <- paste(vapply(as.character(unlist(blocks)), .pyq, character(1)), collapse = ", ")
-  c(sprintf("if unicode(var.get(u'block', u'main')) in [%s]:", wanted),
+  c(sprintf("if str(var.get(u'block', u'main')) in [%s]:", wanted),
     paste0("    ", body))
 }
 
@@ -388,7 +417,7 @@ export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
     trig <- .trigger_expr(ev$crit_trigger)
     body <- c(
       sprintf("_regions = [r for r in var.%s.split(%s) if r != u'']", ev$field, .pyq(ev$sep %||% "|")),
-      "_crit = int(var.critical_region) if var.get(u'critical_region') is not None else 0",
+      "_crit = int(var.get(u'critical_region', 0) or 0)",
       sprintf("_kb = Keyboard(keylist=[%s], timeout=None)", .pyq(ev$key %||% "space")),
       "for _i, _region in enumerate(_regions, start=1):",
       "    c = Canvas(); c.text(_region); c.show()")
@@ -413,10 +442,10 @@ export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
     # comparison. A timeout leaves the response None, which is reported separately
     # because on a timed task it means something different from a wrong key.
     body <- c(
-      sprintf("_want = unicode(var.get(u'%s', u'')).strip()", ev[["answer"]] %||% "answer"),
-      "_got = var.get(u'response', None)",
-      sprintf("if _got is None: _msg = %s", .pyq(ev[["no_response"]] %||% "Too slow")),
-      sprintf("elif unicode(_got).strip() == _want: _msg = %s",
+      sprintf("_want = str(var.get(u'%s', u'')).strip()", ev[["answer"]] %||% "answer"),
+      "_got = var.get(u'response', u'')",
+      sprintf("if _got is None or _got == u'': _msg = %s", .pyq(ev[["no_response"]] %||% "Too slow")),
+      sprintf("elif str(_got).strip() == _want: _msg = %s",
               .pyq(ev[["correct"]] %||% "Correct")),
       sprintf("else: _msg = %s", .pyq(ev[["incorrect"]] %||% "Incorrect")),
       "c = Canvas(); c.text(_msg); c.show()",

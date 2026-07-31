@@ -108,7 +108,7 @@ DATASHEET_VERSION <- "1.1"
   else character(0)
 }
 
-.r4 <- function(v) if (is.null(v) || is.na(v)) NULL else round(as.numeric(v), 4)
+.r4 <- function(v) if (is.null(v) || is.na(v)) NULL else .round_dp(as.numeric(v), 4)
 
 # A suggested crossed mixed-model formula for the design. Handing the user an
 # items-crossed model guards against the language-as-fixed-effect fallacy

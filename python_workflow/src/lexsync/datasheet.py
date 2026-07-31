@@ -14,7 +14,7 @@ from __future__ import annotations
 import json
 import platform
 
-from .io_utils import _is_continuous, sha256_file
+from .io_utils import _is_continuous, _round_dp, sha256_file
 
 # 1.1 added `materials_source["norms"]` (the design's joined norm tables, with their
 # checksums and per-column coverage) and, for a pair-keyed design, a `relational`
@@ -362,7 +362,7 @@ def _artifact_paths(artifacts: dict) -> list:
 
 def _num(v):
     try:
-        return None if v is None or v != v else round(float(v), 4)
+        return None if v is None or v != v else _round_dp(float(v), 4)
     except (TypeError, ValueError):
         return None
 

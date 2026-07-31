@@ -126,7 +126,7 @@ corpora:
     status: listed
     licence: 'CC BY-SA 4.0 (Brysbaert terms)'
     citation_key: soares2015subtlexpt
-    citation: 'Soares et al. (2015). SUBTLEX-PT. Behavior Research Methods, 47(4), 1065-1081. doi:10.3758/s13428-014-0511-x'
+    citation: 'Soares, Machado, Costa, Iriarte, Simoes, de Almeida, Comesana & Perea (2015). On the advantages of word frequency and contextual diversity measures extracted from subtitles: The case of Portuguese. Quarterly Journal of Experimental Psychology, 68(4), 680-696. doi:10.1080/17470218.2014.964271'
     columns: { word: 'word', freq_zipf: 'zipf' }
 
 # Connector B: one dependency, many languages.

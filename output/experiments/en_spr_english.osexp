@@ -84,7 +84,7 @@ define inline_script lexsync_e1
 	set _prepare ""
 	___run__
 	_regions = [r for r in var.sentence.split(u'|') if r != u'']
-	_crit = int(var.critical_region) if var.get(u'critical_region') is not None else 0
+	_crit = int(var.get(u'critical_region', 0) or 0)
 	_kb = Keyboard(keylist=[u'space'], timeout=None)
 	for _i, _region in enumerate(_regions, start=1):
 	    c = Canvas(); c.text(_region); c.show()

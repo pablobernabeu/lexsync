@@ -1,17 +1,17 @@
-{"time": "2026-07-30T15:23:40", "message": "loading lexicon 'corpora/derived/en.csv'", "data": null}
-{"time": "2026-07-30T15:23:40", "message": "lexicon loaded: 30000 words", "data": {"words": 30000}}
-{"time": "2026-07-30T15:23:40", "message": "pool after filters: 7230 words", "data": {"pool": 7230}}
-{"time": "2026-07-30T15:23:40", "message": "matched 80 items across 2 conditions", "data": {"conditions": "high_frequency, low_frequency"}}
-{"time": "2026-07-30T15:23:40", "message": "equivalence low_frequency vs high_frequency on 'length': d = 0.02 [-0.35, 0.39], TOST p = 0.0178 (equivalent)", "data": null}
-{"time": "2026-07-30T15:23:40", "message": "equivalence low_frequency vs high_frequency on 'frequency': d = 5.05 [4.68, 5.43], TOST p = 1.0 (not shown equivalent)", "data": null}
-{"time": "2026-07-30T15:23:40", "message": "equivalence low_frequency vs high_frequency on 'n_density': d = 0.05 [-0.32, 0.42], TOST p = 0.0237 (equivalent)", "data": null}
-{"time": "2026-07-30T15:23:40", "message": "equivalence low_frequency vs high_frequency on 'old20': d = 0.05 [-0.32, 0.43], TOST p = 0.0246 (equivalent)", "data": null}
-{"time": "2026-07-30T15:23:40", "message": "balanced 40 item sets across 4 lists on length, n_density, old20, frequency: cost 1121480 -> 53820 in 10 swap(s)", "data": {"cost_before": 1121480, "cost_after": 53820, "swaps": 10}}
-{"time": "2026-07-30T15:23:40", "message": "wrote 'en_balanced_lists_english_stimuli_py.csv'", "data": {"path": "output\\stimuli\\en_balanced_lists_english_stimuli_py.csv", "rows": 80, "md5": "ea6027af81e16cad2979e4e8c1afe7a2"}}
-{"time": "2026-07-30T15:23:40", "message": "wrote 'en_balanced_lists_english_descriptives_py.csv'", "data": {"path": "output\\reports\\en_balanced_lists_english_descriptives_py.csv", "rows": 8, "md5": "0773a3bf93269e14568726dfea032629"}}
-{"time": "2026-07-30T15:23:40", "message": "wrote 'en_balanced_lists_english_comparisons_py.csv'", "data": {"path": "output\\reports\\en_balanced_lists_english_comparisons_py.csv", "rows": 4, "md5": "7325496b862eca567636088fd953eea3"}}
-{"time": "2026-07-30T15:23:40", "message": "wrote 'en_balanced_lists_english_psychopy.py'", "data": {"path": "output\\experiments\\en_balanced_lists_english_psychopy.py", "rows": null, "md5": "27a96761cd60bfc463da1a2a9b6ad759"}}
-{"time": "2026-07-30T15:23:40", "message": "wrote 'en_balanced_lists_english.osexp'", "data": {"path": "output\\experiments\\en_balanced_lists_english.osexp", "rows": null, "md5": "22c24451fbd512e17ba8d8f8923ca3d3"}}
-{"time": "2026-07-30T15:23:40", "message": "wrote 'en_balanced_lists_english.html'", "data": {"path": "output\\experiments\\en_balanced_lists_english.html", "rows": null, "md5": "923c9ac521c938fc87e92796bfd0c0ae"}}
-{"time": "2026-07-30T15:23:40", "message": "wrote 'en_balanced_lists_english_datasheet_py.json'", "data": {"path": "output\\reports\\en_balanced_lists_english_datasheet_py.json", "rows": null, "md5": "c9b69ecd3eb22f8f8e1456ff571065b2"}}
-{"time": "2026-07-30T15:23:40", "message": "wrote 'en_balanced_lists_english_datasheet_py.md'", "data": {"path": "output\\reports\\en_balanced_lists_english_datasheet_py.md", "rows": null, "md5": "b338dc3f3a94fbce18f63288edf73bbc"}}
+{"time": "2026-07-31T21:50:11", "message": "loading lexicon 'corpora/derived/en.csv'", "data": null}
+{"time": "2026-07-31T21:50:11", "message": "lexicon loaded: 30000 words", "data": {"words": 30000}}
+{"time": "2026-07-31T21:50:11", "message": "pool after filters: 7230 words", "data": {"pool": 7230}}
+{"time": "2026-07-31T21:50:11", "message": "matched 80 items across 2 conditions", "data": {"conditions": "high_frequency, low_frequency"}}
+{"time": "2026-07-31T21:50:11", "message": "equivalence low_frequency vs high_frequency on 'length': d = 0.02 [-0.35, 0.39], TOST p = 0.0178 (equivalent)", "data": null}
+{"time": "2026-07-31T21:50:11", "message": "equivalence low_frequency vs high_frequency on 'frequency': d = 5.05 [4.68, 5.43], TOST p = 1.0 (not shown equivalent)", "data": null}
+{"time": "2026-07-31T21:50:11", "message": "equivalence low_frequency vs high_frequency on 'n_density': d = 0.05 [-0.32, 0.42], TOST p = 0.0237 (equivalent)", "data": null}
+{"time": "2026-07-31T21:50:11", "message": "equivalence low_frequency vs high_frequency on 'old20': d = 0.05 [-0.32, 0.43], TOST p = 0.0246 (equivalent)", "data": null}
+{"time": "2026-07-31T21:50:11", "message": "balanced 40 item sets across 4 lists on length, n_density, old20, frequency: cost 1121480 -> 53820 in 10 swap(s)", "data": {"cost_before": 1121480, "cost_after": 53820, "swaps": 10}}
+{"time": "2026-07-31T21:50:11", "message": "wrote 'en_balanced_lists_english_stimuli_py.csv'", "data": {"path": "output\\stimuli\\en_balanced_lists_english_stimuli_py.csv", "rows": 80, "md5": "ea6027af81e16cad2979e4e8c1afe7a2"}}
+{"time": "2026-07-31T21:50:11", "message": "wrote 'en_balanced_lists_english_descriptives_py.csv'", "data": {"path": "output\\reports\\en_balanced_lists_english_descriptives_py.csv", "rows": 8, "md5": "0773a3bf93269e14568726dfea032629"}}
+{"time": "2026-07-31T21:50:11", "message": "wrote 'en_balanced_lists_english_comparisons_py.csv'", "data": {"path": "output\\reports\\en_balanced_lists_english_comparisons_py.csv", "rows": 4, "md5": "7325496b862eca567636088fd953eea3"}}
+{"time": "2026-07-31T21:50:11", "message": "wrote 'en_balanced_lists_english_psychopy.py'", "data": {"path": "output\\experiments\\en_balanced_lists_english_psychopy.py", "rows": null, "md5": "27a96761cd60bfc463da1a2a9b6ad759"}}
+{"time": "2026-07-31T21:50:11", "message": "wrote 'en_balanced_lists_english.osexp'", "data": {"path": "output\\experiments\\en_balanced_lists_english.osexp", "rows": null, "md5": "22c24451fbd512e17ba8d8f8923ca3d3"}}
+{"time": "2026-07-31T21:50:11", "message": "wrote 'en_balanced_lists_english.html'", "data": {"path": "output\\experiments\\en_balanced_lists_english.html", "rows": null, "md5": "923c9ac521c938fc87e92796bfd0c0ae"}}
+{"time": "2026-07-31T21:50:11", "message": "wrote 'en_balanced_lists_english_datasheet_py.json'", "data": {"path": "output\\reports\\en_balanced_lists_english_datasheet_py.json", "rows": null, "md5": "c9b69ecd3eb22f8f8e1456ff571065b2"}}
+{"time": "2026-07-31T21:50:11", "message": "wrote 'en_balanced_lists_english_datasheet_py.md'", "data": {"path": "output\\reports\\en_balanced_lists_english_datasheet_py.md", "rows": null, "md5": "b338dc3f3a94fbce18f63288edf73bbc"}}

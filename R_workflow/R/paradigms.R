@@ -108,6 +108,9 @@ get_paradigm <- function(name) {
 #'
 #' @param design A parsed design list.
 #' @return The list of trial events the design presents.
+#' @examples
+#' vapply(resolve_events(list(paradigm = "lexical_decision")),
+#'        function(e) e$type, character(1))
 #' @export
 resolve_events <- function(design) {
   if (!is.null(design$events) && length(design$events)) return(design$events)
@@ -137,6 +140,8 @@ referenced_fields <- function(events) {
 #'
 #' @param design A parsed design list.
 #' @return Character vector of the item fields the design's trials reference.
+#' @examples
+#' required_fields(list(paradigm = "categorisation"))
 #' @export
 required_fields <- function(design) {
   name <- design$paradigm %||% "factorial"

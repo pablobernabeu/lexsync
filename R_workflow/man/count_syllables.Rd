@@ -15,3 +15,6 @@ Integer vector: the estimated syllable count of each word.
 \description{
 Orthographic syllable estimate: the number of maximal vowel runs
 }
+\examples{
+count_syllables(c("cat", "table", "beautiful"))
+}

@@ -109,11 +109,11 @@ define inline_script lexsync_e3
 	set description "Practice feedback"
 	set _prepare ""
 	___run__
-	if unicode(var.get(u'block', u'main')) in [u'practice']:
-	    _want = unicode(var.get(u'answer', u'')).strip()
-	    _got = var.get(u'response', None)
-	    if _got is None: _msg = u'Too slow'
-	    elif unicode(_got).strip() == _want: _msg = u'Correct'
+	if str(var.get(u'block', u'main')) in [u'practice']:
+	    _want = str(var.get(u'answer', u'')).strip()
+	    _got = var.get(u'response', u'')
+	    if _got is None or _got == u'': _msg = u'Too slow'
+	    elif str(_got).strip() == _want: _msg = u'Correct'
 	    else: _msg = u'Incorrect'
 	    c = Canvas(); c.text(_msg); c.show()
 	    clock.sleep(600)
