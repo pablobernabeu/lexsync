@@ -128,6 +128,16 @@ frames_to_ms <- function(frames, hz) {
   stop("lexsync: a duration block needs either 'from_column' or 'jitter'.", call. = FALSE)
 }
 
+# An event's response keys, validated. OpenSesame writes them into
+# `set allowed_responses "a;b"`, one line of a line-oriented format, so a key holding a
+# quote closed the string and a newline ended the line -- and the rest became new
+# top-level items in the experiment, including an inline_script whose body runs.
+#' @keywords internal
+.keys_of <- function(ev, default) {
+  keys <- ev$keys %||% default
+  vapply(as.character(unlist(keys)), clean_key, character(1), USE.NAMES = FALSE)
+}
+
 #' Realise per-trial event durations onto the stimuli table
 #'
 #' An event may declare a duration that varies from trial to trial, either read
@@ -238,11 +248,11 @@ render_events <- function(events, timing, hz = 60) {
       spec <- trigger_spec(ev$critical_region_trigger)
       if (!is.null(spec)) r$crit_trigger <- spec
     } else if (t == "response") {
-      r$keys <- ev$keys %||% c("left", "right")
+      r$keys <- .keys_of(ev, c("left", "right"))
       r$timeout <- round((ev$timeout_ms %||% 2000) / 1000, 3)
     } else if (t == "question") {
       r$field <- content_field(ev$content)
-      r$keys <- ev$keys %||% c("f", "j")
+      r$keys <- .keys_of(ev, c("f", "j"))
       r$timeout <- round((ev$timeout_ms %||% 5000) / 1000, 3)
     } else if (t == "feedback") {
       # Feedback compares the key the participant pressed against the key the item says
@@ -317,11 +327,13 @@ export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
   triggers <- schema$triggers %||% list()
   presentation <- schema$presentation %||% list()
   subs <- list(
-    DESIGN = design$name, LANGUAGE = design$language, CONDITIONS_FILE = csv_name,
-    TRIGGER_ADDRESS = triggers$parallel_address %||% "0x0378",
+    DESIGN = clean_meta(design$name, "the design's `name`"),
+    LANGUAGE = clean_meta(design$language, "the design's `language`"),
+    CONDITIONS_FILE = csv_name,
+    TRIGGER_ADDRESS = clean_port(triggers$parallel_address %||% "0x0378"),
     TRIGGER_HOLD_MS = sprintf("%.17g", .trigger_hold_ms(schema)),
     INTER_TRIGGER_S = (triggers$inter_trigger_ms %||% 10) / 1000,
-    WORD_FONT = design$font %||% presentation$font %||% "Courier New",
+    WORD_FONT = clean_meta(design$font %||% presentation$font %||% "Courier New", "the font"),
     FULLSCREEN = "False",
     # The fallback used only when the script cannot measure the display.
     ASSUMED_REFRESH_HZ = sprintf("%.17g", .refresh_hz(schema)),
@@ -338,8 +350,15 @@ export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
 # ---- OpenSesame code generation ------------------------------------------
 
 .pyq <- function(s) {
+  # A newline had to be escaped as well as the backslash and the quote. An .osexp is a
+  # line-oriented format whose inline scripts are delimited by their own lines, so a raw
+  # newline in a value did not merely break the literal: it closed the script block and
+  # let the rest of the value start a new top-level item in the emitted experiment.
   s <- gsub("\\", "\\\\", s, fixed = TRUE)
   s <- gsub("'", "\\'", s, fixed = TRUE)
+  s <- gsub("\n", "\\n", s, fixed = TRUE)
+  s <- gsub("\r", "\\r", s, fixed = TRUE)
+  s <- gsub("\t", "\\t", s, fixed = TRUE)
   paste0("u'", s, "'")
 }
 
@@ -400,7 +419,8 @@ export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
   # scripting.py, since the two engines write the same .osexp.
   # [[ ]], not $: `$` partial-matches on a list, so `ev$ms` would return the value
   # of `ms_column` for a per-trial duration and emit the column name as a literal.
-  sleep_arg <- if (!is.null(ev[["ms_column"]])) sprintf("int(var.%s)", ev[["ms_column"]]) else
+  sleep_arg <- if (!is.null(ev[["ms_column"]]))
+    sprintf("int(var.%s)", clean_column(ev[["ms_column"]], "a jittered duration's `as`")) else
     sprintf("%d", as.integer(ev[["ms"]] %||% 0L))
   if (t %in% c("fixation", "text", "mask", "blank")) {
     body <- "c = Canvas()"
@@ -442,7 +462,8 @@ export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
     # comparison. A timeout leaves the response None, which is reported separately
     # because on a timed task it means something different from a wrong key.
     body <- c(
-      sprintf("_want = str(var.get(u'%s', u'')).strip()", ev[["answer"]] %||% "answer"),
+      sprintf("_want = str(var.get(u'%s', u'')).strip()",
+              clean_column(ev[["answer"]] %||% "answer", "a feedback event's `answer`")),
       "_got = var.get(u'response', u'')",
       sprintf("if _got is None or _got == u'': _msg = %s", .pyq(ev[["no_response"]] %||% "Too slow")),
       sprintf("elif str(_got).strip() == _want: _msg = %s",
@@ -474,8 +495,13 @@ export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
 #' Build a complete plain-text OpenSesame experiment from rendered events
 #' @keywords internal
 build_osexp <- function(design, conditions_file, schema, rendered, font = "mono") {
-  addr <- schema$triggers$parallel_address %||% "0x378"
-  design_name <- design$name; language <- design$language
+  addr <- clean_port(schema$triggers$parallel_address %||% "0x378")
+  design_name <- clean_meta(design$name, "the design's `name`")
+  language <- clean_meta(design$language, "the design's `language`")
+  # `set font_family <font>` takes the value unquoted on its own line, so it is guarded
+  # here rather than at the caller: an .osexp is line-oriented and a newline would add
+  # items to the experiment.
+  font <- clean_meta(font, "the font")
   setup <- c(
     "var.trigger_backend = u'parallel'",
     sprintf("var.parallel_port_address = %s", addr),
@@ -587,8 +613,13 @@ export_opensesame <- function(stimuli, design, schema, outdir, base = NULL) {
 # "en-GB") is taken as given. Anything else becomes "und" (BCP 47 "undetermined"):
 # registered, and unlike lang="english" resolvable by a validator or a screen reader.
 .language_tag <- function(design) {
-  tag <- design$language_tag
-  if (!is.null(tag) && nzchar(as.character(tag))) return(as.character(tag))
+  # The shape check applies to a STATED tag too. It used to be returned verbatim, so
+  # `language_tag: 'en"><script>...'` reached the lang attribute of the generated HTML
+  # intact -- the one input to this function that an attacker would actually choose.
+  tag <- trimws(as.character(design$language_tag %||% ""))
+  if (nzchar(tag)) {
+    return(if (grepl("^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$", tag, perl = TRUE)) tag else "und")
+  }
   label <- trimws(as.character(design$language %||% ""))
   if (grepl("^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$", label, perl = TRUE)) return(label)
   m <- .BCP47_TAGS[.lower_invariant(label)]
@@ -614,7 +645,14 @@ export_opensesame <- function(stimuli, design, schema, outdir, base = NULL) {
   s <- as.character(x)
   s <- gsub("<", "\\u003c", s, fixed = TRUE)
   s <- gsub(">", "\\u003e", s, fixed = TRUE)
-  gsub("&", "\\u0026", s, fixed = TRUE)
+  s <- gsub("&", "\\u0026", s, fixed = TRUE)
+  # U+2028 and U+2029 terminate a line in JavaScript but are not ASCII controls, so
+  # clean_field passes them, and a raw one inside a <script> string literal is a
+  # SyntaxError before ES2019. The Python twin escaped them and this did not, so the
+  # same design produced different bytes from the two engines. Written as escape
+  # sequences rather than literal characters so this file stays pure ASCII.
+  s <- gsub("\u2028", "\\u2028", s, fixed = TRUE)
+  gsub("\u2029", "\\u2029", s, fixed = TRUE)
 }
 
 #' Export a browser-runnable jsPsych experiment
@@ -642,8 +680,9 @@ export_jspsych <- function(stimuli, design, schema, outdir, base = NULL) {
   tmpl <- paste(readLines(find_template("jspsych/experiment_template.html"), warn = FALSE),
                 collapse = "\n")
   subs <- list(
-    DESIGN = design$name, LANGUAGE = design$language,
-    LANGUAGE_TAG = .language_tag(design), WORD_FONT = font,
+    DESIGN = clean_meta(design$name, "the design's `name`"),
+    LANGUAGE = clean_meta(design$language, "the design's `language`"),
+    LANGUAGE_TAG = .language_tag(design), WORD_FONT = clean_meta(font, "the font"),
     EVENTS_JSON = .json_html(jsonlite::toJSON(rendered, auto_unbox = TRUE)),
     TRIALS_JSON = .json_html(jsonlite::toJSON(trials, dataframe = "rows"))
   )

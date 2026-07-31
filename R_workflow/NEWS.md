@@ -1,5 +1,35 @@
 # lexsync (development version)
 
+* **A design file could execute code on the machine that ran it.** A design is meant to
+  be shared, and the recipient runs it and then opens the generated PsychoPy script,
+  OpenSesame experiment or jsPsych page. Stimulus text was always safe: it travels in the
+  loop-table CSV the experiment reads at run time. Design *metadata* was not. The name,
+  language label, font, parallel-port address and the column names on jitter and feedback
+  events were substituted straight into code and markup positions, so a quote or an angle
+  bracket there stopped being text and became syntax, and a crafted design could run
+  arbitrary code on a lab machine or in the origin of a hosted browser study. These are
+  now validated rather than escaped -- one rule in both engines, which leaves every
+  legitimate value byte-identical -- a port address must be an address, a column name must
+  be an identifier, and a stated `language_tag` is shape-checked rather than passed
+  through. `.pyq()` escapes newlines now as well: an `.osexp` is line-oriented, so a raw
+  newline closed the inline-script block and let the rest of the value start a new
+  top-level item. Pinned by `test-injection.R`. No generated artefact changed.
+  Adversarially attacking that fix then found four ways through it, all now closed and
+  pinned. The largest: a response event's `keys` were joined into OpenSesame's
+  `set allowed_responses "a;b"` with no validation at all, and that is one line of a
+  line-oriented format -- so a key holding a double quote closed the string, a newline
+  ended the line, and the rest of the value became new top-level items in the
+  experiment, including an `inline_script` whose body OpenSesame runs. Keys are
+  validated now. The shape guards were also anchored with `$`, which in both Python's
+  `re` and R's PCRE matches just before a final newline, so a port address ending in
+  one passed the check; they are anchored at end-of-string now. A scalar
+  `keys: space` or `blocks: practice` was
+  iterated character by character in Python and kept whole in R, so one design gave two
+  different allowed-response lists and a block-restricted event ran everywhere in one
+  engine and nowhere in the other. And R's HTML escape did not cover U+2028/U+2029,
+  which end a line in JavaScript but are not ASCII controls: Python escaped them, R did
+  not, so the same design produced different bytes and R's `<script>` was a syntax
+  error before ES2019.
 * **A browser experiment could score a feedback screen against the previous trial's
   keypress.** The jsPsych feedback screen looked up "the last row marked scoreable",
   which is that trial's response only when the trial has one. An event may be restricted
@@ -184,7 +214,7 @@
   on any platform, and different for every seed. Previously the order was drawn
   from `sample()`, which could never match numpy's generator for the same seed,
   so the trial lists were the one engine-specific artefact. All 75 generated
-  experiment files across the 15 bundled designs are now byte-identical across
+  experiment files across the 15 designs bundled at the time are now byte-identical across
   the engines, and the parity gate now compares the `trial` column of the
   stimuli CSVs. Stimulus selection, pairing and lists are unchanged, but every
   design's trial order changes relative to the previous artefacts. The package
@@ -208,7 +238,7 @@
 * The generated PsychoPy script, OpenSesame experiment and jsPsych page are now
   byte-identical to the Python engine's, trial lists included (see the keyed-hash
   shuffle entry above).
-* Selected stimuli are unchanged for all 15 bundled designs.
+* Selected stimuli are unchanged for all 15 designs bundled at the time.
 * See the top-level `CHANGELOG.md` for the full, cross-language history and the
   planned methodological roadmap.
 

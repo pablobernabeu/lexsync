@@ -420,3 +420,99 @@ def clean_field(value, field: str = "field", max_len: int = 1000) -> str:
     if len(s) > max_len:
         raise ValueError(f"lexsync: stimulus '{field}' exceeds {max_len} characters.")
     return s
+
+
+# Characters that can leave a data position and start a code one. A stimulus may
+# contain any of these, because a stimulus is written to a CSV the experiment reads at
+# run time; a value that is INTERPOLATED INTO the generated script or markup may not.
+#   ' " \ backtick  end a Python or JavaScript string literal
+#   < > &           open a tag or entity in the generated HTML
+#   { } ;           end a CSS declaration, or a template placeholder
+#   $               begins a JavaScript template substitution
+_UNSAFE_META_RE = re.compile(r"""['"\\`<>&{};$]""")
+# A trigger address is a port number, written bare into `TRIGGER_ADDRESS = {{...}}`.
+# \Z and not $: in both Python's re and R's PCRE, `$` also matches just BEFORE a final
+# newline, so a value ending in one satisfied a `$`-anchored shape check and carried
+# that newline into a line-oriented .osexp, splitting the inline script it landed in.
+# Anchoring at end-of-string is the whole guard here.
+_PORT_RE = re.compile(r"\A(0[xX][0-9A-Fa-f]{1,8}|[0-9]{1,10})\Z")
+# A column name is written into `var.<name>` and `trial[<name>]`, so it must be a
+# plain identifier in both languages.
+_COLUMN_RE = re.compile(r"\A[A-Za-z_][A-Za-z0-9_]*\Z")
+# A response key is written into OpenSesame's `set allowed_responses "a;b"`, into a
+# PsychoPy key list and into a jsPsych `choices` array. Key names are short tokens.
+_KEY_RE = re.compile(r"\A[A-Za-z0-9_ +]{1,20}\Z")
+
+
+def clean_meta(value, field: str = "value", max_len: int = 200) -> str:
+    """Validate a metadata value that is interpolated into generated code or markup.
+
+    A design's name, language label and font are not stimuli. They do not travel in the
+    loop table that the experiment reads at run time; they are substituted directly into
+    the PsychoPy script, the OpenSesame inline Python and the jsPsych HTML, so a quote or
+    an angle bracket there stops being text and starts being syntax. A design file is
+    meant to be shared and re-run by someone else -- that is the point of the format --
+    which makes an unvalidated one an executable payload rather than a configuration.
+
+    Refusing beats escaping here. Escaping correctly would mean three different escapes
+    for three targets in two engines, six places to get subtly wrong, and it would change
+    the bytes the two engines write; refusing is one rule that leaves every legitimate
+    value ("en_lexdec", "english", "Courier New", "SimHei") byte-identical. It follows
+    the same precedent as the hash-key and CSV-writer guards: when a value cannot be
+    handled safely, name it and stop.
+    """
+    s = str(value)
+    if _CTRL_RE.search(s):
+        raise ValueError(
+            "lexsync: %s contains control characters, and it is written into the "
+            "generated experiment scripts: %r" % (field, s))
+    if len(s) > max_len:
+        raise ValueError("lexsync: %s exceeds %d characters." % (field, max_len))
+    bad = _UNSAFE_META_RE.search(s)
+    if bad:
+        raise ValueError(
+            "lexsync: %s contains %r, which cannot be written safely into the generated "
+            "PsychoPy, OpenSesame and jsPsych files, because it would end a string "
+            "literal or open a tag there. Use letters, digits, spaces and -_.() in a "
+            "design's name, language and font. Offending value: %r"
+            % (field, bad.group(0), s))
+    return s
+
+
+def clean_port(value, field: str = "triggers.parallel_address") -> str:
+    """Validate a parallel-port address, which is written into the script unquoted."""
+    s = str(value)
+    if not _PORT_RE.match(s):
+        raise ValueError(
+            "lexsync: %s must be a port address such as 0x0378 or 888, not %r. It is "
+            "written into the generated experiment as a bare number." % (field, s))
+    return s
+
+
+def clean_key(value, field: str = "an event's `keys`") -> str:
+    """Validate one response key, which is written into the generated experiments.
+
+    OpenSesame takes the keys as `set allowed_responses "a;b"` on one line of a
+    line-oriented format, so a key containing a quote closed the string and a newline
+    ended the line -- and the rest of the value became new top-level items in the
+    experiment, including an inline_script whose body runs. This is the one input the
+    metadata guards missed, and three independent reviewers found it.
+    """
+    s = str(value)
+    if not _KEY_RE.match(s):
+        raise ValueError(
+            "lexsync: %s must be a key name such as 'f', 'space' or 'left', not %r. Keys "
+            "are written into the generated experiments as an allowed-response list."
+            % (field, s))
+    return s
+
+
+def clean_column(value, field: str = "column") -> str:
+    """Validate a loop-table column name, which is written into generated code."""
+    s = str(value)
+    if not _COLUMN_RE.match(s):
+        raise ValueError(
+            "lexsync: %s must be a plain column name (letters, digits and underscore, "
+            "not starting with a digit), not %r. It is written into the generated "
+            "experiment as a variable reference." % (field, s))
+    return s

@@ -14,7 +14,7 @@ lexsync is not yet on PyPI. Until a release is published, install it straight fr
 pip install "git+https://github.com/pablobernabeu/lexsync.git#subdirectory=python_workflow"
 ```
 
-That gives you the library and the `lexsync` console script. If you want the fifteen worked designs,
+That gives you the library and the `lexsync` console script. If you want the 21 worked designs,
 the derived corpora and the committed outputs as well, clone the repository and install the package
 in editable mode from inside it:
 

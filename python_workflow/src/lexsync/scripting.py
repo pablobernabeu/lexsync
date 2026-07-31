@@ -17,7 +17,8 @@ import re
 
 import pandas as pd
 
-from .io_utils import _key_part, hash_int_range, slugify, write_csv_utf8
+from .io_utils import (_key_part, clean_column, clean_key, clean_meta, clean_port,
+                       hash_int_range, slugify, write_csv_utf8)
 from .paradigms import content_field, referenced_fields, resolve_events
 
 # Columns always carried in a loop table when present (besides the event fields).
@@ -114,6 +115,20 @@ def assign_triggers(stimuli: pd.DataFrame) -> pd.DataFrame:
     set_code = {s: 40 + (i % 200) for i, s in enumerate(sets)}
     stimuli["item_trigger"] = stimuli["set"].map(set_code)
     return stimuli
+
+
+def _keys_of(ev: dict, default: list) -> list:
+    """An event's response keys, normalised and validated.
+
+    A YAML scalar (`keys: space`) arrives as a str, and `list("space")` is five
+    one-character keys, while R keeps the scalar whole -- so one design produced two
+    different allowed-response lists. Each key is then validated because OpenSesame
+    writes them into `set allowed_responses "a;b"`, one line of a line-oriented format.
+    """
+    keys = ev.get("keys", default)
+    if isinstance(keys, str):
+        keys = [keys]
+    return [clean_key(k) for k in keys]
 
 
 def _trigger_spec(value):
@@ -262,11 +277,11 @@ def render_events(events: list, timing: dict, hz: float = 60) -> list:
             if spec is not None:
                 r["crit_trigger"] = spec
         elif t == "response":
-            r["keys"] = list(ev.get("keys", ["left", "right"]))
+            r["keys"] = _keys_of(ev, ["left", "right"])
             r["timeout"] = round(ev.get("timeout_ms", 2000) / 1000.0, 3)
         elif t == "question":
             r["field"] = content_field(ev.get("content"))
-            r["keys"] = list(ev.get("keys", ["f", "j"]))
+            r["keys"] = _keys_of(ev, ["f", "j"])
             r["timeout"] = round(ev.get("timeout_ms", 5000) / 1000.0, 3)
         elif t == "feedback":
             # Feedback compares the key the participant pressed against the key the item
@@ -285,7 +300,13 @@ def render_events(events: list, timing: dict, hz: float = 60) -> list:
         # the restriction has to travel with the event and be applied per trial at run
         # time, rather than by generating a second event list.
         if ev.get("blocks"):
-            r["blocks"] = [str(b) for b in ev["blocks"]]
+            # A scalar `blocks: practice` is a str, and iterating it yields
+            # characters, so the OpenSesame guard compared against "p", "r", ... and
+            # never matched -- the event silently ran in every block in Python and
+            # only in the named one in R.
+            blks = ev["blocks"]
+            blks = [blks] if isinstance(blks, str) else list(blks)
+            r["blocks"] = [str(b) for b in blks]
         out.append(r)
     return out
 
@@ -330,12 +351,18 @@ def export_psychopy(stimuli, design, schema, outdir, base=None) -> str:
         tmpl = handle.read()
     triggers = schema.get("triggers") or {}
     presentation = schema.get("presentation") or {}
+    # These land in CODE positions -- a module docstring, a bare assignment, a string
+    # literal -- so they are validated rather than escaped. Escaping would need three
+    # different rules for three targets in two engines; see clean_meta in io_utils.
     subs = {
-        "DESIGN": design["name"], "LANGUAGE": design["language"], "CONDITIONS_FILE": csv_name,
-        "TRIGGER_ADDRESS": triggers.get("parallel_address", "0x0378"),
+        "DESIGN": clean_meta(design["name"], "the design's `name`"),
+        "LANGUAGE": clean_meta(design["language"], "the design's `language`"),
+        "CONDITIONS_FILE": csv_name,
+        "TRIGGER_ADDRESS": clean_port(triggers.get("parallel_address", "0x0378")),
         "TRIGGER_HOLD_MS": "%.17g" % _trigger_hold_ms(schema),
         "INTER_TRIGGER_S": triggers.get("inter_trigger_ms", 10) / 1000,
-        "WORD_FONT": design.get("font") or presentation.get("font") or "Courier New",
+        "WORD_FONT": clean_meta(
+            design.get("font") or presentation.get("font") or "Courier New", "the font"),
         "FULLSCREEN": "False",
         # The fallback used only when the script cannot measure the display.
         "ASSUMED_REFRESH_HZ": "%.17g" % _refresh_hz(schema),
@@ -347,8 +374,15 @@ def export_psychopy(stimuli, design, schema, outdir, base=None) -> str:
 
 
 def _pyq(s: str) -> str:
-    """A safe single-quoted Python u-string literal for embedding in generated code."""
-    return "u'" + str(s).replace("\\", "\\\\").replace("'", "\\'") + "'"
+    """A safe single-quoted Python u-string literal for embedding in generated code.
+
+    A newline had to be escaped as well as the backslash and the quote. An .osexp is a
+    line-oriented format whose inline scripts are delimited by their own lines, so a raw
+    newline in a value did not merely break the literal: it closed the script block and
+    let the rest of the value start a new top-level item in the emitted experiment.
+    """
+    return ("u'" + str(s).replace("\\", "\\\\").replace("'", "\\'")
+            .replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t") + "'")
 
 
 def _content_expr(ev: dict) -> str:
@@ -405,7 +439,8 @@ def _osexp_event_block(name: str, ev: dict) -> tuple:
     # A fixed duration is a literal; one that varies per trial reads the loop-table
     # column, which OpenSesame exposes on `var`. Must match .osexp_event_block in
     # scripting.R, since the two engines write the same .osexp.
-    sleep_arg = ("int(var.%s)" % ev["ms_column"]) if ev.get("ms_column") else str(int(ev.get("ms", 0)))
+    sleep_arg = ("int(var.%s)" % clean_column(ev["ms_column"], "a jittered duration's `as`")
+                 if ev.get("ms_column") else str(int(ev.get("ms", 0))))
     if t in ("fixation", "text", "mask", "blank"):
         body = ["c = Canvas()"]
         if t != "blank":
@@ -447,7 +482,8 @@ def _osexp_event_block(name: str, ev: dict) -> tuple:
         # comparison. A timeout leaves the response None, which is reported separately
         # because on a timed task it means something different from a wrong key.
         body = [
-            "_want = str(var.get(u'%s', u'')).strip()" % ev.get("answer", "answer"),
+            "_want = str(var.get(u'%s', u'')).strip()"
+            % clean_column(ev.get("answer", "answer"), "a feedback event's `answer`"),
             "_got = var.get(u'response', u'')",
             "if _got is None or _got == u'': _msg = %s" % _pyq(ev.get("no_response", "Too slow")),
             "elif str(_got).strip() == _want: _msg = %s" % _pyq(ev.get("correct", "Correct")),
@@ -486,8 +522,13 @@ def _inline_block(name: str, desc: str, body: list, run: bool) -> list:
 
 def build_osexp(design: dict, conditions_file: str, schema: dict, rendered: list,
                 font: str = "mono") -> str:
-    addr = (schema.get("triggers") or {}).get("parallel_address", "0x378")
-    design_name, language = design["name"], design["language"]
+    addr = clean_port((schema.get("triggers") or {}).get("parallel_address", "0x378"))
+    design_name = clean_meta(design["name"], "the design's `name`")
+    language = clean_meta(design["language"], "the design's `language`")
+    # `set font_family <font>` takes the value unquoted on its own line, so it is
+    # guarded here rather than at the caller: an .osexp is line-oriented and a newline
+    # would add items to the experiment.
+    font = clean_meta(font, "the font")
 
     setup = [
         "var.trigger_backend = u'parallel'",
@@ -606,9 +647,12 @@ def _language_tag(design: dict) -> str:
     str
         A well-formed BCP 47 language tag.
     """
-    tag = design.get("language_tag")
+    # The shape check applies to a STATED tag too. It used to be returned verbatim, so
+    # `language_tag: 'en"><script>...'` reached the lang attribute of the generated HTML
+    # intact -- the one input to this function that an attacker would actually choose.
+    tag = str(design.get("language_tag") or "").strip()
     if tag:
-        return str(tag)
+        return tag if _BCP47_SHAPE.match(tag) else "und"
     label = str(design.get("language") or "").strip()
     if _BCP47_SHAPE.match(label):
         return label
@@ -685,9 +729,15 @@ def export_jspsych(stimuli, design, schema, outdir, base=None) -> str:
     font = design.get("font") or presentation.get("font") or "Courier New"
     with open(find_template("jspsych/experiment_template.html"), encoding="utf-8") as handle:
         tmpl = handle.read()
+    # DESIGN lands in <title> and a comment, LANGUAGE_TAG in a lang attribute, WORD_FONT
+    # inside a CSS font-family declaration. Only the two JSON blobs are escaped by
+    # _json_html; the rest are validated, since a quote or an angle bracket in any of
+    # them would leave its attribute or rule and start markup in a page that collects
+    # participant responses.
     subs = {
-        "DESIGN": design["name"], "LANGUAGE": design["language"],
-        "LANGUAGE_TAG": _language_tag(design), "WORD_FONT": font,
+        "DESIGN": clean_meta(design["name"], "the design's `name`"),
+        "LANGUAGE": clean_meta(design["language"], "the design's `language`"),
+        "LANGUAGE_TAG": _language_tag(design), "WORD_FONT": clean_meta(font, "the font"),
         "EVENTS_JSON": _json_html(rendered), "TRIALS_JSON": _json_html(trials),
     }
     for k, v in subs.items():

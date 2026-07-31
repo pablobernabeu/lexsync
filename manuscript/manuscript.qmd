@@ -25,7 +25,7 @@ abstract: |
   pseudowords, priming and self-paced reading from configuration rather than code.
   The default matching methods, the pseudoword generation and the trial order
   are deterministic, so the two engines produce byte-identical experiments. We
-  demonstrate this on fifteen worked examples in English, Spanish and Mandarin
+  demonstrate this on 21 worked examples in English, Spanish and Mandarin
   Chinese (across word, pseudoword, paired and sentence stimuli), one of which
   shows that the workflow extends to a logographic writing system, while three
   reproduce published designs from the literature. The generation step
@@ -211,7 +211,7 @@ study, a lexical-decision task with generated pseudowords, a primed design or a
 self-paced reading study from configuration rather than new code. 'lexsync' is
 thus a reusable, FAIR-compliant tool for many psycholinguistic paradigms and
 languages rather than a single study's script. The longitudinal study above is
-one of fifteen worked examples, and one of the three that rebuild a published
+one of 21 worked examples, and one of the three that rebuild a published
 design.
 
 # The lexsync packages

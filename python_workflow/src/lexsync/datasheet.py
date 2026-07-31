@@ -265,7 +265,9 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
         selection.get("method"), source, selected=is_continuous and relational is not None)
 
     if source in ("corpus", "generate"):
-        provenance = "see corpora/ATTRIBUTION.md for corpus licence and citation"
+        provenance = ("wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence "
+                      "and citation at https://github.com/pablobernabeu/lexsync/blob/"
+                      "main/corpora/ATTRIBUTION.md")
     elif source == "pool":
         provenance = "user-supplied word pool, matched by lexsync"
     else:

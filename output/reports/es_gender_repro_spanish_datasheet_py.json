@@ -87,7 +87,7 @@
   "lexsync_datasheet_version": "1.1",
   "materials_source": {
     "path": "corpora/derived/es_gender.csv",
-    "provenance": "see corpora/ATTRIBUTION.md for corpus licence and citation",
+    "provenance": "wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md",
     "sha256": "0f77aec3fe307ed38f1e69e69f7c80ee93e38ffb8c0622b817fd2c26d15114d5",
     "type": "corpus"
   },

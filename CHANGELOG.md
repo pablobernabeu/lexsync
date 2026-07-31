@@ -131,8 +131,8 @@ no function signature changes.
   `sample()` (Mersenne Twister) and Python with numpy's PCG64, so the same seed
   could never give the same permutation and the trial lists were the one
   engine-specific artefact. All 75 generated experiment files (the PsychoPy
-  script, OpenSesame experiment, jsPsych page and both loop-table CSVs, for all
-  15 bundled designs) are now byte-identical across the engines, and the CI
+  script, OpenSesame experiment, jsPsych page and both loop-table CSVs, for the
+  15 designs bundled at the time) are now byte-identical across the engines, and the CI
   parity gate now compares the `trial` column of the stimuli CSVs as well.
   Stimulus selection, pairing and lists are unchanged, but every design's trial
   order changes relative to the previous artefacts, because the keyed-hash
@@ -172,10 +172,62 @@ no function signature changes.
 - The Python engine pins LF line terminators when writing CSVs, which readr
   already did, so a datasheet's checksums no longer depend on the platform that
   wrote the file.
-- Selected stimuli are byte-unchanged for all 15 bundled designs.
+- Selected stimuli are byte-unchanged for all 15 designs bundled at the time.
+
+### Security
+
+- **A design file could execute code on the machine that ran it.** A design is meant to
+  be shared -- posted with a pre-registration, attached to a paper, handed to a
+  collaborator running the other engine -- and the recipient runs it and then opens the
+  generated PsychoPy script, OpenSesame experiment or jsPsych page, which is the only
+  thing those files are for. Stimulus text was always safe, because it travels in the
+  loop-table CSV the experiment reads at run time. Design *metadata* was not: the name,
+  language label, font, parallel-port address and the column names on jitter and feedback
+  events were substituted straight into code and markup positions, so a quote or an angle
+  bracket there stopped being text and became syntax. A crafted design could therefore run
+  arbitrary Python on a lab machine attached to EEG hardware and participant data, or
+  arbitrary JavaScript in the origin of a hosted browser study, where it could read every
+  response collected. The apps made it worse by exposing the design name, language and
+  font as free-text fields.
+
+  These values are now validated rather than escaped, in both engines: escaping correctly
+  would mean three different rules for three targets in two engines, six places to get
+  subtly wrong, whereas one rule leaves every legitimate value byte-identical. A port
+  address must be an address, a column name must be an identifier, and a stated
+  `language_tag` is shape-checked instead of being passed through verbatim. `.pyq()` also
+  escapes newlines now: an `.osexp` is line-oriented, so a raw newline did not merely
+  break a string literal, it closed the inline-script block and let the rest of the value
+  start a new top-level item in the experiment. Pinned by `test_injection.py` and
+  `test-injection.R`, which assert refusal for seven payload shapes across all three
+  targets and confirm the shipped designs' own names, labels and fonts still pass. No
+  generated artefact changed.
+  Adversarially attacking that fix then found four ways through it, all now closed and
+  pinned. The largest: a response event's `keys` were joined into OpenSesame's
+  `set allowed_responses "a;b"` with no validation at all, and that is one line of a
+  line-oriented format -- so a key holding a double quote closed the string, a newline
+  ended the line, and the rest of the value became new top-level items in the
+  experiment, including an `inline_script` whose body OpenSesame runs. Keys are
+  validated now. The shape guards were also anchored with `$`, which in both Python's
+  `re` and R's PCRE matches just before a final newline, so a port address ending in
+  one passed the check; they are anchored at end-of-string now. A scalar
+  `keys: space` or `blocks: practice` was
+  iterated character by character in Python and kept whole in R, so one design gave two
+  different allowed-response lists and a block-restricted event ran everywhere in one
+  engine and nowhere in the other. And R's HTML escape did not cover U+2028/U+2029,
+  which end a line in JavaScript but are not ASCII controls: Python escaped them, R did
+  not, so the same design produced different bytes and R's `<script>` was a syntax
+  error before ES2019.
 
 ### Fixed
 
+- **The R-versus-Python parity gate had not run since 15 July.** `setup-r-dependencies`
+  is invoked with `working-directory: R_workflow` and also asked for
+  `local::./R_workflow`, which resolved to `R_workflow/R_workflow` and failed. Because it
+  failed at the dependency-install step, every step after it was *skipped* rather than
+  run: the R suite, the reference regeneration, the drift check and the engine
+  comparison. The badge went red, but the gate that enforces the headline byte-identity
+  claim had simply stopped executing. Now `local::.`, which is what `docs.yml` always
+  used.
 - **A browser experiment could score a feedback screen against the previous trial's
   keypress.** The jsPsych feedback screen looked up "the last row marked scoreable",
   which is that trial's response only when the trial has one. An event may be restricted

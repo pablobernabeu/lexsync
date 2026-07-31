@@ -238,7 +238,9 @@ build_datasheet <- function(design, schema, report, stimuli, source_path, artifa
   materials_source <- list(
     type = source, path = source_path, sha256 = sha256_file(source_path),
     provenance = if (source %in% c("corpus", "generate"))
-      "see corpora/ATTRIBUTION.md for corpus licence and citation"
+      paste0("wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and ",
+             "citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/",
+             "ATTRIBUTION.md")
     else if (identical(source, "pool"))
       "user-supplied word pool, matched by lexsync"
     else "user-supplied item table")

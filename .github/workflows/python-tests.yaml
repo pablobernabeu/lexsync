@@ -57,10 +57,16 @@ jobs:
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
+          # `local::.`, not `local::./R_workflow`: working-directory already places the
+          # action in R_workflow, so the longer form resolved to R_workflow/R_workflow,
+          # failed at the dependency-install step and took the job down with it. Every
+          # parity step below was then SKIPPED rather than run, so the gate that
+          # enforces the byte-identity claim stopped executing while the badge merely
+          # went red. docs.yml has always used the short form.
           working-directory: R_workflow
           extra-packages: |
             any::testthat
-            local::./R_workflow
+            local::.
 
       # R CMD check runs the suite from an installed copy, where the repository
       # files are absent and every repo-coupled test skips itself. Running the

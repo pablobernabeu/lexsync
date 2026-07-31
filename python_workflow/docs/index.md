@@ -10,8 +10,9 @@ dimensions, counterbalances them across conditions and lists, and writes the
 experiment that runs them on PsychoPy, OpenSesame or in the browser through
 jsPsych, with EEG triggers bound to the flip on which the stimulus appears. A
 trial is described declaratively, so factorial word studies, lexical decision with
-generated pseudowords, priming and self-paced reading all come out of the same
-engine and the same configuration file.
+generated pseudowords, priming, self-paced reading and cued categorisation all come
+out of the same engine and the same configuration file, as do the practice and
+filler blocks that run but are not analysed.
 
 This is the feature-parity twin of [the R package](https://pablobernabeu.github.io/lexsync/r/) of
 the same name, which offers the same workflow in R. The two are documented separately but built
@@ -27,7 +28,7 @@ same generated experiment down to the trial order. Nothing in the package draws 
 random number, so neither the platform's locale nor the last bit of a
 floating-point sum can change what comes out. A laboratory can run the R package
 and a collaborator the Python one, and the materials will agree rather than merely
-resemble each other. Continuous integration checks this on fifteen worked designs
+resemble each other. Continuous integration checks this on 21 worked designs
 across English, Spanish and Mandarin Chinese.
 
 Two matching methods are a documented exception: `mahalanobis` and `optimal` rely
@@ -48,7 +49,7 @@ pip install "git+https://github.com/pablobernabeu/lexsync.git#subdirectory=pytho
 Once a release is published, `pip install lexsync` will do the same. Generating an experiment needs
 neither PsychoPy nor a parallel-port driver, only the core dependencies above. See
 [Getting started](getting-started.md) for the optional extras and for the clone-based install that
-the fifteen worked designs expect.
+the 21 worked designs expect.
 
 ## Sixty seconds
 

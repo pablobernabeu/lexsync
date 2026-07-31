@@ -12,7 +12,7 @@
     "type": "corpus",
     "path": "corpora/derived/es.csv",
     "sha256": "02732e5f00d09951b97ab8d5bdc285c321894ccb49d5c20b7afe39335a8204d9",
-    "provenance": "see corpora/ATTRIBUTION.md for corpus licence and citation"
+    "provenance": "wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md"
   },
   "dimensions": {
     "length": {

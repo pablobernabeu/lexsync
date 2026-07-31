@@ -72,7 +72,7 @@ rounded, and the subsyllabic constituent inventory is integer counts keyed by ro
 is order-independent. Neither depends on the order in which the corpus was accumulated.
 
 The generated experiments are byte-identical as well, all of them: the PsychoPy script, the
-OpenSesame experiment, the jsPsych page and both loop tables, seventy-five files across the fifteen
+OpenSesame experiment, the jsPsych page and both loop tables, 105 files across the 21
 worked designs. One place they could drift is the event JSON embedded in the PsychoPy script, since
 jsonlite pads no separators and drops a whole number's fractional part, serialising a 2000 ms
 timeout as `2` rather than `2.0`; Python is the side that conforms.
@@ -125,7 +125,7 @@ source file will at least tell you that it changed.
 
 ## How it is tested
 
-The claim is checked rather than asserted. `tests/test_parity.py` carries fifteen cases, one per
+The claim is checked rather than asserted. `tests/test_parity.py` carries 21 cases, one per
 worked design, spanning English, Spanish and Mandarin Chinese and covering every item source and
 every paradigm: frequency and neighbourhood contrasts, lexical decision under both pseudoword
 generators, the continuous design, resampling, priming, self-paced reading and three reproductions

@@ -415,3 +415,115 @@ clean_field <- function(value, field = "field", max_len = 1000L) {
   }
   s
 }
+
+# Characters that can leave a data position and start a code one. A stimulus may hold
+# any of these, because a stimulus is written to a CSV the experiment reads at run time;
+# a value INTERPOLATED INTO the generated script or markup may not.
+#   ' " \ backtick  end a Python or JavaScript string literal
+#   < > &           open a tag or entity in the generated HTML
+#   { } ;           end a CSS declaration, or a template placeholder
+#   $               begins a JavaScript template substitution
+.UNSAFE_META <- "['\"\\\\`<>&{};$]"
+# \z and not $: in PCRE (and in Python's re) `$` also matches just BEFORE a final
+# newline, so a value ending in one satisfied a `$`-anchored shape check and carried
+# that newline into a line-oriented .osexp, splitting the inline script it landed in.
+# Anchoring at end-of-string is the whole guard here.
+.PORT_SHAPE <- "^(0[xX][0-9A-Fa-f]{1,8}|[0-9]{1,10})\\z"
+.COLUMN_SHAPE <- "^[A-Za-z_][A-Za-z0-9_]*\\z"
+# A response key is written into OpenSesame's `set allowed_responses "a;b"`, into a
+# PsychoPy key list and into a jsPsych `choices` array. Key names are short tokens.
+.KEY_SHAPE <- "^[A-Za-z0-9_ +]{1,20}\\z"
+
+#' Validate a metadata value interpolated into generated code or markup
+#'
+#' A design's name, language label and font are not stimuli. They do not travel in the
+#' loop table the experiment reads at run time; they are substituted straight into the
+#' PsychoPy script, the OpenSesame inline Python and the jsPsych HTML, so a quote or an
+#' angle bracket there stops being text and becomes syntax. A design file is meant to be
+#' shared and re-run by someone else, which is what makes an unvalidated one an
+#' executable payload rather than a configuration.
+#'
+#' Refusing beats escaping. Escaping correctly would mean three different escapes for
+#' three targets in two engines, six places to get subtly wrong, and it would change the
+#' bytes the two engines write; refusing is one rule that leaves every legitimate value
+#' ("en_lexdec", "english", "Courier New", "SimHei") byte-identical. Mirrors the Python
+#' `clean_meta`.
+#'
+#' @param value A value coerced to a single string.
+#' @param field Field name, for error messages.
+#' @param max_len Maximum permitted length in characters.
+#' @return The value as a plain string.
+#' @keywords internal
+clean_meta <- function(value, field = "value", max_len = 200L) {
+  s <- as.character(value)
+  if (grepl("[\x01-\x1f\x7f]", s, perl = TRUE)) {
+    stop(sprintf(paste("lexsync: %s contains control characters, and it is written into",
+                       "the generated experiment scripts: %s"), field, s), call. = FALSE)
+  }
+  if (nchar(s) > max_len) {
+    stop(sprintf("lexsync: %s exceeds %d characters.", field, max_len), call. = FALSE)
+  }
+  if (grepl(.UNSAFE_META, s, perl = TRUE)) {
+    bad <- regmatches(s, regexpr(.UNSAFE_META, s, perl = TRUE))
+    stop(sprintf(paste("lexsync: %s contains '%s', which cannot be written safely into",
+                       "the generated PsychoPy, OpenSesame and jsPsych files, because it",
+                       "would end a string literal or open a tag there. Use letters,",
+                       "digits, spaces and -_.() in a design's name, language and font.",
+                       "Offending value: %s"), field, bad, s), call. = FALSE)
+  }
+  s
+}
+
+#' Validate a parallel-port address, which is written into the script unquoted
+#'
+#' @param value A value coerced to a single string.
+#' @param field Field name, for error messages.
+#' @return The value as a plain string.
+#' @keywords internal
+clean_port <- function(value, field = "triggers.parallel_address") {
+  s <- as.character(value)
+  if (!grepl(.PORT_SHAPE, s, perl = TRUE)) {
+    stop(sprintf(paste("lexsync: %s must be a port address such as 0x0378 or 888, not",
+                       "'%s'. It is written into the generated experiment as a bare",
+                       "number."), field, s), call. = FALSE)
+  }
+  s
+}
+
+#' Validate one response key, which is written into the generated experiments
+#'
+#' OpenSesame takes the keys as `set allowed_responses "a;b"` on one line of a
+#' line-oriented format, so a key containing a quote closed the string and a newline
+#' ended the line, and the rest of the value became new top-level items in the
+#' experiment, including an inline_script whose body runs.
+#'
+#' @param value A value coerced to a single string.
+#' @param field Field name, for error messages.
+#' @return The value as a plain string.
+#' @keywords internal
+clean_key <- function(value, field = "an event's `keys`") {
+  s <- as.character(value)
+  if (!grepl(.KEY_SHAPE, s, perl = TRUE)) {
+    stop(sprintf(paste("lexsync: %s must be a key name such as 'f', 'space' or 'left',",
+                       "not '%s'. Keys are written into the generated experiments as an",
+                       "allowed-response list."), field, s), call. = FALSE)
+  }
+  s
+}
+
+#' Validate a loop-table column name, which is written into generated code
+#'
+#' @param value A value coerced to a single string.
+#' @param field Field name, for error messages.
+#' @return The value as a plain string.
+#' @keywords internal
+clean_column <- function(value, field = "column") {
+  s <- as.character(value)
+  if (!grepl(.COLUMN_SHAPE, s, perl = TRUE)) {
+    stop(sprintf(paste("lexsync: %s must be a plain column name (letters, digits and",
+                       "underscore, not starting with a digit), not '%s'. It is written",
+                       "into the generated experiment as a variable reference."),
+                 field, s), call. = FALSE)
+  }
+  s
+}

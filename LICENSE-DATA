@@ -1,10 +1,11 @@
 Data licensing for lexsync
 ==========================
 
-The lexsync *source code* is released under the MIT License (see LICENSE).
-The *lexical corpora* that lexsync bundles or fetches are independent works
-with their own terms, summarised here and documented per corpus, with full
-citations and retrieval dates, in 'corpora/ATTRIBUTION.md'.
+The MIT License in LICENSE covers the lexsync *source code* only: the R package
+under R_workflow/ and the Python package under python_workflow/. The lexical
+corpora that lexsync bundles or fetches are NOT covered by it; they are
+independent works with their own terms, summarised here and documented per
+corpus, with full citations and retrieval dates, in 'corpora/ATTRIBUTION.md'.
 
 Bundled derivatives
 -------------------
