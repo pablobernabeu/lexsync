@@ -11,6 +11,7 @@ import hashlib
 import math
 import os
 import re
+from decimal import Decimal
 
 import pandas as pd
 import yaml
@@ -60,6 +61,36 @@ def _readr_sci(v: float) -> str:
     return ("-" if neg else "") + head + "e" + str(exp10)
 
 
+# Where readr leaves fixed notation for large magnitudes, measured the same way the 1e-3
+# threshold at the other end was: readr 2.2.0 writes 5e14, 9.99e14 and 999999999999999
+# fixed, and 1e15, 1.5e15 and 1.25e15 in scientific.
+_READR_BIG = 1e15
+# Above 2**49 consecutive doubles are more than 0.1 apart, so a single decimal digit can
+# round-trip -- and two different ones can round-trip to the SAME double. Below that they
+# cannot, so the shortest form is unique and both engines must print it.
+_READR_TIE = float(2 ** 49)
+
+
+def _shortest_digits_ambiguous(v: float) -> bool:
+    """Whether more than one decimal string of the shortest length round-trips to ``v``.
+
+    ``repr`` gives *a* shortest round-tripping decimal, not *the* one: where the gap
+    between neighbouring doubles exceeds the last digit's place value, the string one
+    step up or down parses back to the same double, and R and Python then disagree about
+    which to print. readr writes 1000000000000000.25 as "1000000000000000.3" and Python
+    gives "1000000000000000.2"; both are correct and neither can be reformatted into the
+    other, because the digits themselves differ. Detecting the tie exactly beats refusing
+    a magnitude wholesale, since 562949953421312.5 is above the threshold and has only
+    one shortest form.
+    """
+    s = repr(abs(v))
+    if "e" in s or "." not in s:
+        return False
+    step = Decimal(1).scaleb(-len(s.partition(".")[2]))
+    d = Decimal(s)
+    return float(d + step) == abs(v) or float(d - step) == abs(v)
+
+
 def _readr_cell(v):
     """One cell rendered as readr renders it.
 
@@ -81,12 +112,17 @@ def _readr_cell(v):
     0.0011, 0.0012, 0.0099 and 0.00999 in fixed notation and 0.00099, 0.0009999,
     1e-4, 1.2e-4, 2.5e-5 and 9.99999e-4 in scientific.
 
-    readr's rule at the OTHER end -- where it starts preferring scientific for large
-    magnitudes -- resisted a clean characterisation (it writes 1e14 fixed but 1.5e15
-    as "15e14"), so it is deliberately not reproduced. No lexsync artefact goes near
-    that range: frequencies are Zipf values under 8, counts and durations under 1e6.
-    If one ever did, the byte-parity test would fail rather than the difference
-    passing unnoticed, which is the outcome that matters.
+    A value at or above 1e15 is refused rather than written. readr leaves fixed notation
+    there, and its layout beyond it could not be reproduced: it writes 1.5e16 as "15e15"
+    with an integer mantissa, the largest double as "17976931348623157e292", but the
+    double nearest 5e22 as "4.9999999999999996e+22", a padded form with more digits than
+    round-tripping needs. No rule fitted all three. Nothing lexsync computes goes near
+    that range -- frequencies are Zipf values under 8, counts and durations under 1e6 --
+    but a joined norm table, a supplied pool or an item table may carry any column the
+    user likes, and those columns are written straight into the stimuli CSV. Leaving the
+    range unhandled meant the guarantee held for the shipped designs, which the
+    byte-parity test covers, and failed silently for the user's own data, which nothing
+    covers. An error naming the value is the honest outcome.
 
     Missing values become the empty string, matching ``readr::write_csv(na = "")``.
     """
@@ -97,10 +133,20 @@ def _readr_cell(v):
     if isinstance(v, float):
         if v != v:                      # NaN
             return ""
-        # A float that is exactly a whole number and small enough to be one: drop the
-        # trailing ".0". `is_integer` is exact, and 2**53 is where consecutive integers
-        # stop being representable, beyond which repr is the honest rendering anyway.
-        if v.is_integer() and abs(v) < 2 ** 53:
+        if abs(v) >= _READR_BIG:
+            raise ValueError(
+                "lexsync: %r is too large to write identically from both engines. Above "
+                "1e15 readr's number format could not be reproduced exactly, so the R "
+                "and Python CSVs would differ with nothing to signal it. Scale the "
+                "column, or carry it as text." % v)
+        if abs(v) >= _READR_TIE and not v.is_integer() and _shortest_digits_ambiguous(v):
+            raise ValueError(
+                "lexsync: %r has more than one shortest decimal form, and the R and "
+                "Python engines print different ones, so the two CSVs would differ with "
+                "nothing to signal it. Round the column, or carry it as text." % v)
+        # A float that is exactly a whole number: drop the trailing ".0". Below 1e15
+        # every such double is well under 2**53, so int() is exact.
+        if v.is_integer():
             return str(int(v))
         if v != 0 and abs(v) < 1e-3:
             return _readr_sci(v)

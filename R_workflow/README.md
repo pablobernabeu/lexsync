@@ -14,8 +14,9 @@ experiment that runs them on 'PsychoPy', 'OpenSesame' or in the browser through
 'jsPsych'. The two laboratory targets carry electroencephalography triggers
 bound to the buffer flip on which the stimulus appears. A trial is described
 declaratively, as a sequence of events, so factorial word contrasts, lexical
-decision with generated pseudowords, priming and self-paced reading all come out
-of the same engine and the same configuration file.
+decision with generated pseudowords, priming, self-paced reading and cued
+categorisation all come out of the same engine and the same configuration file,
+as do the practice and filler blocks that run but are not analysed.
 
 This is the feature-parity twin of [the Python
 package](https://pablobernabeu.github.io/lexsync/python/) of the same name, which

@@ -1,5 +1,25 @@
 # lexsync (development version)
 
+* **A browser experiment could score a feedback screen against the previous trial's
+  keypress.** The jsPsych feedback screen looked up "the last row marked scoreable",
+  which is that trial's response only when the trial has one. An event may be restricted
+  to a block, so a design running the response event in one block and feedback in another
+  leaves a trial with no response row of its own, and the screen then reported a verdict
+  computed from an earlier trial's key. Each trial's rows now carry its own identifier and
+  the screen matches on it. The generated HTML changed for all 21 designs; no stimulus
+  selection changed.
+* **A large number in a user's own column was written differently by the two engines.**
+  `write_csv_utf8()` reproduced readr's format for small magnitudes and left the top end
+  alone, since nothing lexsync computes reaches it. Nothing lexsync computes does; a
+  joined norm table, a supplied pool or an item table carries whatever columns the user
+  has, and those go straight into the stimuli CSV, so the guarantee held for the shipped
+  designs and failed silently for the user's own data. readr's layout above 1e15 could not
+  be reproduced in Python -- it writes 1.5e16 as `15e15`, the largest double as
+  `17976931348623157e292`, and the double nearest 5e22 as `4.9999999999999996e+22` -- so
+  both engines now refuse such a value, naming the column, rather than one accepting it
+  and the two writing different bytes. A value with two equally short decimal forms is
+  refused for the same reason. Everything verified to render identically, across 465
+  values compared against readr's own output, writes as before.
 * **A generated OpenSesame experiment with a `feedback` event or a `blocks:` restriction
   would not run.** The emitter wrote `unicode(...)`, a Python 2 builtin that OpenSesame's
   Python 3 inline workspace does not provide, so the experiment died with `NameError` on

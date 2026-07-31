@@ -23,14 +23,16 @@ connection).
 
 The trial is described declaratively as a sequence of events, so the same engine
 builds factorial word studies, lexical decision with deterministically generated
-pseudowords, priming and self-paced reading from configuration rather than code, with
-word, pseudoword, paired and sentence stimuli. It ships as two structurally identical,
+pseudowords, priming, self-paced reading and cued categorisation from configuration
+rather than code, with word, pseudoword, paired and sentence stimuli, and with
+practice and filler blocks that run but are not analysed. It ships as two structurally identical,
 independently installable packages, a CRAN-ready R package and a PyPI-ready Python
 package, so a laboratory can adopt it in whichever ecosystem it already uses.
 
 Beyond matching, `lexsync` treats the stimulus set as a reproducible research
-artefact. Every run is deterministic and seeded and selects byte-identical stimuli
-from either engine. Each run also ships a machine- and human-readable materials
+artefact. Every run is deterministic and seeded, and under the two deterministic
+matching methods it selects byte-identical stimuli from either engine. Each run
+also ships a machine- and human-readable materials
 datasheet: its provenance, checksums, the realised control (effect size, confidence
 interval and equivalence test) and a pre-registration skeleton. A design can
 therefore be shared and reproduced rather than only described in prose.
@@ -58,11 +60,14 @@ experiment builders such as 'PsychoPy' and 'OpenSesame' present stimuli but do n
 match them. The R and Python ecosystems rarely meet, and most matching tools target a
 single language. `lexsync` spans the whole path in both languages, from a
 many-language corpus through parallel multidimensional matching and counterbalancing
-to flip-locked, cross-platform experiment scripts. The two engines select
-byte-identical stimuli, deal them into the same lists and conditions, and order the
-trials identically, so the generated experiment files themselves match byte for byte. Nothing in the package draws a random number: trial order comes from a keyed
-hash of the design and the seed, which is what lets a seeded shuffle mean the same
-thing in both languages.
+to flip-locked, cross-platform experiment scripts. Under the two deterministic
+matching methods the two engines select byte-identical stimuli, deal them into the
+same lists and conditions, and order the trials identically, so the generated
+experiment files themselves match byte for byte; the two linear-algebra methods
+agree closely without carrying that guarantee, and each run's datasheet records
+which case applies. Nothing in the package draws a random number: trial order comes
+from a keyed hash of the design and the seed, which is what lets a seeded shuffle
+mean the same thing in both languages.
 
 The PsychoPy backend offers one concrete methodological gain: it binds each onset
 trigger to the exact buffer flip on which the stimulus appears, using `win.callOnFlip`,

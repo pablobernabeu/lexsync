@@ -94,3 +94,37 @@ test_that("the shared decimal rounder is pinned", {
   expect_true(is.na(lexsync:::.round_dp(NA_real_, 3)))
   expect_identical(lexsync:::.round_dp(Inf, 3), Inf)
 })
+
+# ---- The CSV writer's magnitude limits -------------------------------------
+
+test_that("the writer accepts what readr and Python render identically", {
+  # Each expected string is readr's own output, asserted so that a readr change breaks
+  # this suite as well as the Python one. test_exact_reductions.py pins the same values.
+  path <- file.path(tempdir(), "ok.csv")
+  x <- data.frame(v = c(5e14, 999999999999999, 100000000000000.5, 562949953421312.5))
+  expect_silent(write_csv_utf8(x, path))
+  expect_equal(readLines(path)[-1],
+               c("500000000000000", "999999999999999",
+                 "100000000000000.5", "562949953421312.5"))
+})
+
+test_that("a magnitude the two engines cannot agree on is refused", {
+  # readr writes 1.5e16 as "15e15" with an integer mantissa, the largest double as
+  # "17976931348623157e292", and the double nearest 5e22 as "4.9999999999999996e+22".
+  # No rule fits all three, so Python cannot reproduce the layout and the value is
+  # refused in BOTH engines rather than accepted by one and rejected by the other.
+  path <- file.path(tempdir(), "big.csv")
+  for (v in c(1e15, 1.5e16, 5e22, -1e15)) {
+    expect_error(write_csv_utf8(data.frame(norm = c(1, v)), path),
+                 "too large to write identically", fixed = TRUE)
+  }
+})
+
+test_that("a value with two shortest decimal forms is refused", {
+  # 1000000000000000.25 round-trips from both "...0.3" (readr's choice) and "...0.2"
+  # (Python's). The digits differ, so no reformatting reconciles them.
+  expect_error(
+    write_csv_utf8(data.frame(v = 1000000000000000.25),
+                   file.path(tempdir(), "tie.csv")),
+    "too large to write identically", fixed = TRUE)
+})

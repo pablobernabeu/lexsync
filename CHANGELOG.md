@@ -176,6 +176,31 @@ no function signature changes.
 
 ### Fixed
 
+- **A browser experiment could score a feedback screen against the previous trial's
+  keypress.** The jsPsych feedback screen looked up "the last row marked scoreable",
+  which is that trial's response only when the trial has one. An event may be restricted
+  to a block, so a design that runs the response event in one block and feedback in
+  another leaves a trial with no response row of its own, and the screen then reported a
+  verdict computed from an earlier trial's key. Each trial's rows now carry its own
+  identifier and the screen matches on it, so a trial with no response of its own reports
+  none. The generated HTML changed for all 21 designs; no stimulus selection changed.
+- **A large number in a user's own column was written differently by the two engines.**
+  The CSV writer reproduced readr's format for small magnitudes and left the top end
+  alone, on the grounds that nothing lexsync computes reaches it. Nothing lexsync
+  computes does; a joined norm table, a supplied pool or an item table carries whatever
+  columns the user has, and those go straight into the stimuli CSV. So the guarantee held
+  for the shipped designs, which the byte-parity test covers, and failed silently for the
+  user's own data, which nothing covers. The divergence started lower than assumed: readr
+  writes 1e15 as `1e15` where the Python writer wrote it in full, and a value of exactly
+  2^53 picked up a trailing `.0` in one engine only. readr's layout beyond 1e15 could not
+  be reproduced -- it writes 1.5e16 as `15e15`, the largest double as
+  `17976931348623157e292`, and the double nearest 5e22 as `4.9999999999999996e+22`, and
+  no rule fits all three -- so both engines now refuse such a value, naming the column,
+  rather than one accepting it and the two writing different bytes. A value with two
+  equally short decimal forms is refused for the same reason: readr prints
+  1000000000000000.25 as `...0.3` and Python as `...0.2`, and the digits themselves
+  differ. Everything the two engines were verified to render identically, across 465
+  values compared against readr's own output, still writes as before.
 - **A generated OpenSesame experiment carrying a `feedback` event or a `blocks:`
   restriction would not run at all.** The emitter wrote `unicode(...)` into the inline
   script, a Python 2 builtin that OpenSesame 3.3's Python 3 workspace does not inject, so

@@ -64,11 +64,13 @@ str(events)
 
 `resolve_events()` is the accessor the backends use, and it embodies the
 precedence rule: a design's own `events` list wins, and only if there is none does
-the design inherit its paradigm's default sequence. The seven event types are
-`fixation`, `text`, `mask`, `blank`, `region_by_region`, `response` and
-`question`. The first four draw something (or nothing, for `blank`) for a fixed
+the design inherit its paradigm's default sequence. The eight event types are
+`fixation`, `text`, `mask`, `blank`, `region_by_region`, `response`, `question`
+and `feedback`. The first four draw something (or nothing, for `blank`) for a fixed
 number of frames. `response` and `question` collect a keypress. `region_by_region`
 presents a segmented sentence one region at a time, advancing on a key.
+`feedback` scores the keypress just collected and reports it, and is described
+under practice blocks below.
 
 Durations are given in milliseconds, as `duration_ms`. That is the unit a
 methods section reports and the unit all three targets present, so a design means
@@ -210,20 +212,142 @@ data.frame(
 but presents a `target`, which is a real word or a generated pseudoword.
 `priming` adds a brief prime and a mask before the target. `self_paced_reading`
 replaces the word event with a region-by-region sentence and adds a comprehension
-question.
+question. `categorisation` shows a category cue and then the word to judge against
+it.
+
+That last one is worth a paragraph, because what separates it from lexical
+decision is not the shape of the trial but where the question lives. The cue is a
+trial event rather than a line of instructions shown once, since the category
+varies from trial to trial, and crossing one word with two cues is how a
+categorisation study separates a property of the word from the demands of the
+task. A robin is a bird quickly and an animal slowly, and only the question
+changed. Its `answer` field holds the key that is correct on the trial, not a
+label, so scoring is a string comparison against the recorded response with
+nothing to look up in whatever language the analysis is written in. The paradigm
+requires the field, which means an unscoreable categorisation experiment cannot be
+generated.
 
 The `counterbalance` entry is the part that is easy to overlook and important to
 get right. The factorial recipe shows every matched item and splits the matched
-sets across lists. The Latin-square recipe exists because `priming` and
-`self_paced_reading` have a property the word paradigms do not: the same target
-appears in more than one condition. Showing a participant both the related and the
-unrelated version of one target would let them see the manipulation. The Latin
-square gives each item exactly one condition per list and rotates it across lists,
-so no target repeats within a list and conditions stay balanced.
+sets across lists. The Latin-square recipe exists because `priming`,
+`self_paced_reading` and `categorisation` have a property the word paradigms do
+not: the same target appears in more than one condition. Showing a participant
+both the related and the unrelated version of one target would let them see the
+manipulation, and showing the same word under both category cues would make the
+second presentation a repetition-priming trial rather than a categorisation trial.
+The Latin square gives each item exactly one condition per list and rotates it
+across lists, so no target repeats within a list and conditions stay balanced.
 
 ```{r counterbalance-recipes}
 table(list = stim$list, condition = stim$condition)
 ```
+
+### Balanced list assignment
+
+The factorial deal sends set 1 to list 1, set 2 to list 2 and so on. That is
+reproducible, but it balances nothing: every *n*th set lands in the same list, so
+a dimension that happens to vary smoothly across sets is dealt out unevenly, and
+where each list goes to a different group of participants, the unevenness is
+confounded with the group.
+
+`counterbalance.optimise` searches instead for an assignment whose lists have
+near-equal totals on the dimensions you name, by exchanging pairs of item sets
+between lists. List sizes are preserved, since a swap trades one set for another.
+
+```yaml
+counterbalance:
+  lists: 4
+  optimise: true
+  balance_on: [length, n_density, old20, frequency]
+```
+
+`balance_on` defaults to `match_on`, and the example widens it deliberately.
+Frequency is the manipulated variable and so is not matched on, but it is
+manipulated *within* a list, since every list holds both conditions. Equating the
+lists on its total therefore costs the manipulation nothing and removes a
+difference between the participant groups who receive different lists. Naming only
+the matched dimensions leaves frequency dealt arbitrarily, and measurably so: on
+the shipped design the optimiser then improves the three named dimensions and
+makes frequency worse than the arbitrary deal had it. Balance what you want
+equated across lists, which is usually everything.
+
+This is a steepest descent to a local optimum, not a global search. What it
+guarantees is that no single exchange would improve matters further, and the
+datasheet records the imbalance before and after, so the improvement is checkable
+rather than asserted. The objective is all-integer and ties are broken by the
+seeded keyed hash rather than by position, which is what keeps the two engines on
+the same assignment and stops list 1 being favoured for being numbered first.
+
+It is off by default, and stays off. Switching it on changes which items a
+participant sees, so it has to be a design decision rather than something a
+package upgrade does to a study that is already running. It is refused on a
+Latin-square design, where every item already appears in every list and the lists
+are balanced on the items by construction. `balance_lists()` runs the search alone
+if you want the assignment without applying it, and
+`design_en_balanced_lists.yaml` is the worked example.
+
+## Practice, fillers and feedback
+
+Everything above treats one frame as both the materials record and the thing that
+runs. That holds only while the two are the same trials, and they usually are not.
+Practice exists to settle the participant into the task and is discarded before
+analysis; fillers exist to dilute the manipulation so the participant cannot guess
+it, and are likewise not analysed. Both have to reach the generated experiment,
+and neither belongs in the stimuli file, the descriptives or the realised control.
+
+So the pipeline splits. The stimuli CSV and the reports are written from the main
+rows; the PsychoPy, OpenSesame and jsPsych experiments are generated from every
+presented trial. A `block` column marks which is which, and it appears only when a
+design declares the blocks, so a design without them keeps exactly the columns it
+had.
+
+```yaml
+practice:
+  path: items/practice_en_lexdec.csv
+fillers:
+  path: items/fillers_en_lexdec.csv
+```
+
+Where each block goes is a methodological choice rather than a convenience.
+Practice comes first, as its own run, shuffled within itself so participants do
+not all meet the practice items in one order. Fillers are interleaved with the
+main trials rather than appended, because a block of fillers at the end is not a
+filler at all: it is a second block the participant can tell apart. They are
+merged in before the order is drawn, so one deterministic shuffle mixes them
+through, which does renumber the main trials. That is correct, since adding
+fillers changes the sequence and the stimuli file records where each item actually
+appeared. Both blocks appear in every list and neither is counterbalanced, because
+they carry no manipulation to rotate and every participant should get the same
+practice.
+
+Each block's item table is read with the same validation as any other, and given a
+`set` range that cannot collide with the main items, which a naive read would not
+manage since practice item 1 and main item 1 would both be set 1. The counts and
+the tables' checksums go into the datasheet, because what the participant saw is
+part of the materials even when it is not part of the analysis.
+
+A `feedback` event scores the trial and shows the result. It reads the field named
+by `answer`, compares it as a string with the key the participant pressed, and
+displays `correct`, `incorrect` or `no_response` for `duration_ms`.
+
+```yaml
+- type: feedback
+  answer: answer
+  correct: 'Correct'
+  incorrect: 'Incorrect'
+  no_response: 'Too slow'
+  duration_ms: 600
+  blocks: [practice]
+```
+
+`blocks:` restricts an event to the named blocks, and this is its main use:
+feedback teaches the mapping during practice, and would contaminate reaction times
+in the task itself. The restriction has to be expressed on the event because the
+event list is global to the design. Since a feedback event scores a keypress,
+something before it must have collected one; a design whose feedback event has no
+preceding `response` or `question` is refused when the experiment is generated
+rather than failing three different ways at run time.
+`design_en_lexdec_blocks.yaml` puts all of this together.
 
 ## The three presentation targets
 

@@ -178,7 +178,12 @@ def test_the_jspsych_export_carries_the_filter_and_the_break(schema, tmp_path):
     assert '"blocks":["practice"]' in html
     assert "eventApplies" in html            # the per-trial filter
     assert "block_break" in html             # the boundary screen
-    assert "lexsync_scored" in html          # feedback finds ITS trial's response
+    assert "lexsync_scored: trialUid" in html   # feedback finds ITS trial's response
+    # The counter, not a "last scored row" search. A response event restricted to a
+    # block leaves its trial with no scored row of its own, and the old lookup then
+    # silently scored the previous trial's keypress.
+    assert "lexsync_scored: true" not in html
+    assert "const trialUid = ++trialCounter;" in html
     assert "{{" not in html
 
 

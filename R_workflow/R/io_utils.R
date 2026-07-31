@@ -54,6 +54,59 @@ read_csv_utf8 <- function(path, as_character = character(0)) {
   )
 }
 
+# Where readr leaves fixed notation. Beyond it readr's layout could not be reproduced
+# in Python: it writes 1.5e16 as "15e15", the largest double as "17976931348623157e292",
+# and the double nearest 5e22 as "4.9999999999999996e+22", and no single rule fits all
+# three. Above 2^49 consecutive doubles are more than 0.1 apart, so two different
+# one-decimal strings can round-trip to the same double and the engines print different
+# ones: readr writes 1000000000000000.25 as "...0.3" where Python gives "...0.2".
+.READR_BIG <- 1e15
+.READR_TIE <- 2^49
+
+#' Refuse a value the two engines could not write identically
+#'
+#' Nothing lexsync computes reaches these magnitudes -- frequencies are Zipf values
+#' under 8, counts and durations under 1e6 -- but a joined norm table, a supplied pool
+#' or an item table may carry any column the user likes, and those columns go straight
+#' into the stimuli CSV. The guard lives in both engines so that a design is refused by
+#' each rather than accepted by one, which would be a difference of its own.
+#'
+#' @param x A data frame about to be written.
+#' @return `x`, invisibly, or an error.
+#' @keywords internal
+.check_csv_writable <- function(x) {
+  for (nm in names(x)) {
+    col <- x[[nm]]
+    if (!is.numeric(col) || is.integer(col)) next
+    v <- col[is.finite(col)]
+    if (!length(v)) next
+    big <- v[abs(v) >= .READR_BIG]
+    if (length(big)) {
+      stop(sprintf(paste("lexsync: column '%s' holds %s, which is too large to write",
+                         "identically from both engines. Above 1e15 readr's number",
+                         "format could not be reproduced in Python, so the R and Python",
+                         "CSVs would differ with nothing to signal it. Scale the column,",
+                         "or carry it as text."), nm, format(big[1], digits = 17)),
+           call. = FALSE)
+    }
+    # The shortest decimal is unique below 2^49, so only this band needs the check.
+    tie <- v[abs(v) >= .READR_TIE & v != trunc(v)]
+    for (t in tie) {
+      s <- format(t, digits = 15)
+      dp <- nchar(sub("^[^.]*\\.?", "", s))
+      if (dp && (identical(as.numeric(sprintf("%.*f", dp, t + 10^(-dp))), t) ||
+                 identical(as.numeric(sprintf("%.*f", dp, t - 10^(-dp))), t))) {
+        stop(sprintf(paste("lexsync: column '%s' holds %s, which has more than one",
+                           "shortest decimal form. The R and Python engines print",
+                           "different ones, so the two CSVs would differ with nothing to",
+                           "signal it. Round the column, or carry it as text."),
+                     nm, s), call. = FALSE)
+      }
+    }
+  }
+  invisible(x)
+}
+
 #' Write a data frame to a BOM-free UTF-8 CSV file
 #'
 #' @param x A data frame.
@@ -62,6 +115,7 @@ read_csv_utf8 <- function(path, as_character = character(0)) {
 #' @importFrom readr write_csv
 #' @keywords internal
 write_csv_utf8 <- function(x, path) {
+  .check_csv_writable(x)
   dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE)
   readr::write_csv(x, path, na = "")
   invisible(path)

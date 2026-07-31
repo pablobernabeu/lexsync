@@ -101,14 +101,14 @@ def test_booleans_and_missing_values():
     assert _readr_cell(None) == ""
 
 
-def test_the_large_magnitude_rule_is_a_known_and_deliberate_gap():
-    # readr writes 1e15 as "1e15" and 1.5e15 as "15e14", a rule that resisted clean
-    # characterisation, so it is not reproduced. Asserting the divergence keeps it a
-    # documented decision rather than an oversight that looks like a bug later. No
-    # lexsync artefact reaches this range, and test_byte_parity.py would fail if one
-    # ever did.
-    assert _readr_cell(1e15) == "1000000000000000"   # readr writes "1e15"
-    assert float(_readr_cell(1e15)) == 1e15          # still round-trips
+def test_the_large_magnitude_gap_is_now_an_error_rather_than_a_divergence():
+    # This used to assert the divergence: readr wrote "1e15" and this writer wrote
+    # "1000000000000000", and the gap was accepted because no shipped design reaches
+    # that range. That protected the repository's own designs, which test_byte_parity.py
+    # covers, and not a user's joined norm column, which nothing covers. The value is
+    # refused by both engines now. The tests at the end of this file pin the boundary.
+    with pytest.raises(ValueError):
+        _readr_cell(1e15)
 
 
 def test_the_scientific_helper_is_normalised_and_unpadded():
@@ -147,3 +147,57 @@ def test_the_shared_rounder_differs_from_the_builtins_where_expected():
     # Non-finite values pass through rather than becoming nonsense.
     assert _round_dp(float("inf"), 3) == float("inf")
     assert _round_dp(float("nan"), 3) != _round_dp(float("nan"), 3)
+
+
+# ---- The CSV writer's magnitude limits -------------------------------------------
+
+
+@pytest.mark.parametrize("value,expected", [
+    (5e14, "500000000000000"),          # readr keeps fixed notation up to 1e15
+    (999999999999999.0, "999999999999999"),
+    (100000000000000.5, "100000000000000.5"),
+    (562949953421312.5, "562949953421312.5"),   # above 2**49, but unambiguous
+    (0.0009, "9e-4"),
+    (0.00012, "1.2e-4"),
+    (1.0, "1"),
+])
+def test_the_writer_matches_readr_where_it_can(value, expected):
+    """Each expected string was read off readr 2.2.0's own write_csv output, not
+    assumed. test-exact-reductions.R writes the same values through readr and asserts
+    the same strings, so a readr change breaks both suites rather than one."""
+    from lexsync.io_utils import _readr_cell
+    assert _readr_cell(value) == expected
+
+
+@pytest.mark.parametrize("value", [1e15, 1.5e16, 5e22, 1.7976931348623157e308, -1e15])
+def test_the_writer_refuses_magnitudes_it_cannot_reproduce(value):
+    """readr's layout above 1e15 could not be reproduced: 1.5e16 comes out "15e15" with
+    an integer mantissa, the largest double "17976931348623157e292", but the double
+    nearest 5e22 "4.9999999999999996e+22" -- more digits than round-tripping needs. No
+    rule fits all three, so the value is refused rather than written differently by the
+    two engines. Nothing lexsync computes reaches this range; a joined norm table can."""
+    from lexsync.io_utils import _readr_cell
+    with pytest.raises(ValueError, match="too large to write identically"):
+        _readr_cell(value)
+
+
+def test_the_writer_refuses_an_ambiguous_shortest_decimal():
+    """1000000000000000.25 has two shortest forms that both round-trip. readr prints
+    ...0.3 and Python's repr gives ...0.2, and no reformatting reconciles them because
+    the digits differ. Caught here rather than in a user's diff."""
+    from lexsync.io_utils import _readr_cell, _shortest_digits_ambiguous
+    assert _shortest_digits_ambiguous(1000000000000000.25)
+    assert not _shortest_digits_ambiguous(562949953421312.5)
+    with pytest.raises(ValueError):
+        _readr_cell(1000000000000000.25)
+
+
+def test_a_large_value_is_refused_on_the_way_into_a_csv(tmp_path):
+    """The guard has to bite where user data actually arrives: a norm column joined onto
+    the lexicon is written straight into the stimuli CSV."""
+    import pandas as pd
+
+    from lexsync.io_utils import write_csv_utf8
+    df = pd.DataFrame({"word": ["a", "b"], "norm": [1.0, 2e15]})
+    with pytest.raises(ValueError, match="too large to write identically"):
+        write_csv_utf8(df, str(tmp_path / "x.csv"))

@@ -27,6 +27,8 @@ derived lexicon or a prepared item table into the frame everything else expects.
 
 ::: lexsync.load_items
 
+::: lexsync.load_pool
+
 ::: lexsync.merge_norms
 
 ## Lexical dimensions
@@ -50,6 +52,8 @@ step rather than a convenience.
 ::: lexsync.build_pool
 
 ::: lexsync.match_stimuli
+
+::: lexsync.add_pair_overlap
 
 ::: lexsync.resample_stimuli
 
@@ -78,7 +82,7 @@ Python engines.
 ## Paradigms and trial events
 
 A trial is a list of event dictionaries rather than backend code, which is what lets one engine serve
-four paradigms and three presentation targets. A design either names a paradigm and inherits its
+five paradigms and three presentation targets. A design either names a paradigm and inherits its
 event sequence, or supplies its own `events`.
 
 ::: lexsync.PARADIGMS
@@ -87,13 +91,18 @@ event sequence, or supplies its own `events`.
 
 ::: lexsync.required_fields
 
+::: lexsync.resolve_trial_timing
+
 ## Counterbalancing
 
 Two recipes are available, and the paradigm chooses between them. Trial order comes from a seeded,
 keyed-hash shuffle, a pure function of the design rather than a draw from a generator, so the same
-seed gives the same order in both engines.
+seed gives the same order in both engines. `balance_lists` is the optional search for a list
+assignment whose lists are equated on the item dimensions, rather than dealt by set rank.
 
 ::: lexsync.counterbalance
+
+::: lexsync.balance_lists
 
 ::: lexsync.participant_table
 

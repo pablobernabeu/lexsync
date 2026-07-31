@@ -59,6 +59,39 @@ design's `pool_filters`; it matches over whatever frame you hand it. A script th
 the selection will look plausible while answering a different question. The package's own test suite
 pins this, checking that the README's example calls `build_pool` before matching.
 
+## Supplied item pools
+
+Narrowing a whole lexicon is the right way round when any word of the language will do. It is the
+wrong way round when the candidate set is itself a research decision: a list from a previous study,
+from a norming session, or one restricted to a semantic category that no lexical filter can express.
+Such a list used to have to masquerade as a lexicon, which meant inventing a `freq_zipf` column for
+it, or else skip matching entirely by going in as `items.source: table`.
+
+`items.source: pool` takes the list as it is.
+
+```yaml
+items:
+  source: pool
+  path: items/pool_en_concrete_nouns.csv
+  lexicon: corpora/derived/en.csv
+```
+
+The list needs only a `word` column. Length and the syllable estimate are derived from the form, and
+`items.lexicon` supplies the rest, frequency above all, by lookup. A word the lexicon does not have
+is a hard error rather than a missing value, because the tolerance windows drop rows with missing
+values silently and the pool would then be smaller than it appears to be.
+
+One subtlety would quietly invalidate the controls if it went the other way. `n_density` and `old20`
+are properties of a word in its *language*, not among the 131 words of a supplied list, so they are
+computed against the lexicon's words rather than the pool's. A supplied pool with no lexicon falls
+back to itself, which is why one is given above. `load_pool` returns both parts of that,
+`{"pool": ..., "reference": ...}`, if you are calling it directly rather than through a design.
+
+Everything downstream is unchanged: the same conditions, the same `match_on`, the same report, the
+same datasheet. What differs is only where the candidates came from, and the datasheet records the
+list's checksum so that is answerable later. `config/design_en_supplied_pool.yaml` is a worked
+example.
+
 ## The dimensions
 
 Six dimensions are declared in the schema. Two are read from the lexicon or computed at load time,

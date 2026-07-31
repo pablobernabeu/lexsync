@@ -104,7 +104,14 @@
   }
 
   let previousBlock = null;
+  let trialCounter = 0;
   for (const trial of TRIALS) {
+    // Identifies this trial's rows in the data store. A feedback screen has to score the
+    // key pressed on ITS OWN trial, and eventApplies can drop a response event from a
+    // block, so a trial can reach feedback with no response row of its own. Reading "the
+    // last scored row" would then silently score the previous trial's keypress; keying
+    // on the loop position reports no response instead, which is the honest outcome.
+    const trialUid = ++trialCounter;
     // A pause wherever the block changes. Unlike the PsychoPy and OpenSesame runners,
     // which decide this at run time from the loop table, the browser timeline is built
     // here and now, so the break is simply inserted where the boundary is.
@@ -139,7 +146,7 @@
           choices: "NO_KEYS",
           trial_duration: ev.ms || 0,
           stimulus: function () {
-            const scored = jsPsych.data.get().filter({ lexsync_scored: true })
+            const scored = jsPsych.data.get().filter({ lexsync_scored: trialUid })
               .last(1).values();
             const pressed = scored.length ? scored[0].response : null;
             const want = String(trial[ev.answer] === undefined ? "" : trial[ev.answer]).trim();
@@ -182,9 +189,9 @@
           type: jsPsychHtmlKeyboardResponse, stimulus: "",
           choices: ev.keys || ["ArrowLeft", "ArrowRight"],
           trial_duration: ev.timeout ? Math.round(ev.timeout * 1000) : null,
-          // lexsync_scored marks the rows a feedback screen may read a key from, so it
-          // finds the response for ITS trial rather than whatever screen ran last.
-          data: Object.assign({}, trial, { lexsync_event: "response", lexsync_scored: true })
+          // lexsync_scored carries this trial's id, so a feedback screen finds the
+          // response for ITS trial rather than whatever screen ran last.
+          data: Object.assign({}, trial, { lexsync_event: "response", lexsync_scored: trialUid })
         });
       } else if (ev.type === "question") {
         timeline.push({
@@ -192,7 +199,7 @@
           stimulus: stim(content(ev, trial)),
           choices: ev.keys || ["f", "j"],
           trial_duration: ev.timeout ? Math.round(ev.timeout * 1000) : null,
-          data: Object.assign({}, trial, { lexsync_event: "question", lexsync_scored: true })
+          data: Object.assign({}, trial, { lexsync_event: "question", lexsync_scored: trialUid })
         });
       }
     }

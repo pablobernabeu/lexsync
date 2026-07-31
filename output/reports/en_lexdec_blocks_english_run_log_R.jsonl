@@ -1,17 +1,17 @@
-{"time":"2026-07-31 21:48:16.483741","message":"loading lexicon 'corpora/derived/en.csv'","data":null}
-{"time":"2026-07-31 21:48:16.821597","message":"lexicon loaded: 30000 words","data":{"words":30000}}
-{"time":"2026-07-31 21:48:16.833027","message":"pool after filters: 8177 words","data":{"pool":8177}}
-{"time":"2026-07-31 21:48:17.277035","message":"generated 40 items (words + pseudowords, letter_substitution)","data":{"conditions":"word, pseudoword"}}
-{"time":"2026-07-31 21:48:17.285318","message":"equivalence pseudoword vs word on 'length': d = 0.00 [-0.53, 0.53], TOST p = 0.061 (not shown equivalent)","data":null}
-{"time":"2026-07-31 21:48:17.338941","message":"block 'main': 40 trial(s) per list","data":{"block":"main","n_per_list":40}}
-{"time":"2026-07-31 21:48:17.343151","message":"block 'filler': 8 trial(s) per list, interleaved with the main trials by the seeded order","data":{"block":"filler","n_per_list":8}}
-{"time":"2026-07-31 21:48:17.346628","message":"block 'practice': 8 trial(s) per list, before the main trials","data":{"block":"practice","n_per_list":8}}
-{"time":"2026-07-31 21:48:17.350168","message":"presented 56 trial(s); 40 analysed","data":null}
-{"time":"2026-07-31 21:48:17.372761","message":"wrote 'en_lexdec_blocks_english_stimuli_R.csv'","data":{"path":"output/stimuli/en_lexdec_blocks_english_stimuli_R.csv","rows":40,"md5":"e8cebfaae793fa0fd06361f08ab299a7"}}
-{"time":"2026-07-31 21:48:17.391048","message":"wrote 'en_lexdec_blocks_english_descriptives_R.csv'","data":{"path":"output/reports/en_lexdec_blocks_english_descriptives_R.csv","rows":2,"md5":"3367654215186214d386f99c675b7c91"}}
-{"time":"2026-07-31 21:48:17.406133","message":"wrote 'en_lexdec_blocks_english_comparisons_R.csv'","data":{"path":"output/reports/en_lexdec_blocks_english_comparisons_R.csv","rows":1,"md5":"546cefb81ae05b5cc1e2d0e3d0d49349"}}
-{"time":"2026-07-31 21:48:17.485857","message":"wrote 'en_lexdec_blocks_english_psychopy.py'","data":{"path":"output/experiments/en_lexdec_blocks_english_psychopy.py","rows":"NA","md5":"0f893d30fa6aa2bc1a23c20e9c16322d"}}
-{"time":"2026-07-31 21:48:17.495469","message":"wrote 'en_lexdec_blocks_english.osexp'","data":{"path":"output/experiments/en_lexdec_blocks_english.osexp","rows":"NA","md5":"be77372684e9531418f679dea3294e09"}}
-{"time":"2026-07-31 21:48:17.502509","message":"wrote 'en_lexdec_blocks_english.html'","data":{"path":"output/experiments/en_lexdec_blocks_english.html","rows":"NA","md5":"83d4a189e3f3113381ba6db1fd431b6e"}}
-{"time":"2026-07-31 21:48:17.577806","message":"wrote 'en_lexdec_blocks_english_datasheet_R.json'","data":{"path":"output/reports/en_lexdec_blocks_english_datasheet_R.json","rows":"NA","md5":"b928ef5f3988b9440ce01924fa1f9aaa"}}
-{"time":"2026-07-31 21:48:17.587847","message":"wrote 'en_lexdec_blocks_english_datasheet_R.md'","data":{"path":"output/reports/en_lexdec_blocks_english_datasheet_R.md","rows":"NA","md5":"4f1ff40fccfb2f4af3cb4e7d3c0df482"}}
+{"time":"2026-07-31 22:35:05.809903","message":"loading lexicon 'corpora/derived/en.csv'","data":null}
+{"time":"2026-07-31 22:35:06.248565","message":"lexicon loaded: 30000 words","data":{"words":30000}}
+{"time":"2026-07-31 22:35:06.262403","message":"pool after filters: 8177 words","data":{"pool":8177}}
+{"time":"2026-07-31 22:35:06.884097","message":"generated 40 items (words + pseudowords, letter_substitution)","data":{"conditions":"word, pseudoword"}}
+{"time":"2026-07-31 22:35:06.894851","message":"equivalence pseudoword vs word on 'length': d = 0.00 [-0.53, 0.53], TOST p = 0.061 (not shown equivalent)","data":null}
+{"time":"2026-07-31 22:35:06.951918","message":"block 'main': 40 trial(s) per list","data":{"block":"main","n_per_list":40}}
+{"time":"2026-07-31 22:35:06.956384","message":"block 'filler': 8 trial(s) per list, interleaved with the main trials by the seeded order","data":{"block":"filler","n_per_list":8}}
+{"time":"2026-07-31 22:35:06.961273","message":"block 'practice': 8 trial(s) per list, before the main trials","data":{"block":"practice","n_per_list":8}}
+{"time":"2026-07-31 22:35:06.964687","message":"presented 56 trial(s); 40 analysed","data":null}
+{"time":"2026-07-31 22:35:06.983553","message":"wrote 'en_lexdec_blocks_english_stimuli_R.csv'","data":{"path":"output/stimuli/en_lexdec_blocks_english_stimuli_R.csv","rows":40,"md5":"e8cebfaae793fa0fd06361f08ab299a7"}}
+{"time":"2026-07-31 22:35:06.999568","message":"wrote 'en_lexdec_blocks_english_descriptives_R.csv'","data":{"path":"output/reports/en_lexdec_blocks_english_descriptives_R.csv","rows":2,"md5":"3367654215186214d386f99c675b7c91"}}
+{"time":"2026-07-31 22:35:07.014596","message":"wrote 'en_lexdec_blocks_english_comparisons_R.csv'","data":{"path":"output/reports/en_lexdec_blocks_english_comparisons_R.csv","rows":1,"md5":"546cefb81ae05b5cc1e2d0e3d0d49349"}}
+{"time":"2026-07-31 22:35:07.0941","message":"wrote 'en_lexdec_blocks_english_psychopy.py'","data":{"path":"output/experiments/en_lexdec_blocks_english_psychopy.py","rows":"NA","md5":"0f893d30fa6aa2bc1a23c20e9c16322d"}}
+{"time":"2026-07-31 22:35:07.102663","message":"wrote 'en_lexdec_blocks_english.osexp'","data":{"path":"output/experiments/en_lexdec_blocks_english.osexp","rows":"NA","md5":"be77372684e9531418f679dea3294e09"}}
+{"time":"2026-07-31 22:35:07.110754","message":"wrote 'en_lexdec_blocks_english.html'","data":{"path":"output/experiments/en_lexdec_blocks_english.html","rows":"NA","md5":"b5fd647854a780f8f04b95f11136e995"}}
+{"time":"2026-07-31 22:35:07.197675","message":"wrote 'en_lexdec_blocks_english_datasheet_R.json'","data":{"path":"output/reports/en_lexdec_blocks_english_datasheet_R.json","rows":"NA","md5":"662e30ba5342fd49f926b502b0cb2325"}}
+{"time":"2026-07-31 22:35:07.206053","message":"wrote 'en_lexdec_blocks_english_datasheet_R.md'","data":{"path":"output/reports/en_lexdec_blocks_english_datasheet_R.md","rows":"NA","md5":"4f1ff40fccfb2f4af3cb4e7d3c0df482"}}

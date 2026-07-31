@@ -129,12 +129,14 @@ task.
 interface and the anatomy of a design file, which is where most of the work is
 done. From there the three guides follow the arc of a study.
 
-- [Matching and designs](matching-and-designs.md): the pool, the four matching
-  methods, the continuous alternative to dichotomising a predictor, resampling
-  items as a random factor, and pseudoword generation.
+- [Matching and designs](matching-and-designs.md): the pool, whether drawn from a
+  lexicon or supplied as a list of your own, the four matching methods, the
+  continuous alternative to dichotomising a predictor, resampling items as a random
+  factor, and pseudoword generation.
 - [Experiments and triggers](experiments-and-triggers.md): the declarative trial
-  model, the four paradigms, counterbalancing, and the three presentation targets,
-  including where the EEG trigger is written and why that placement matters.
+  model, the five paradigms, counterbalancing, practice and filler blocks, and the
+  three presentation targets, including where the EEG trigger is written and why
+  that placement matters.
 - [Reproducibility and parity](reproducibility-and-parity.md): what the
   byte-identical guarantee promises, how it is enforced, and the materials
   datasheet that carries a set's provenance.
