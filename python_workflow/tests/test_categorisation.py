@@ -19,6 +19,7 @@ test-categorisation.R asserts the same properties.
 """
 import os
 
+import pandas as pd
 import pytest
 import yaml
 
@@ -75,7 +76,13 @@ def test_required_fields_include_the_cue_and_the_answer(design):
 def test_the_answer_key_is_read_as_text_not_a_boolean(design):
     items = load_items(ITEMS, required_fields(design))
     assert set(items["answer"]) == {"f"}
-    assert items["answer"].dtype == object
+    # Assert the property, not pandas' storage for it. Text lived in an `object`
+    # column until pandas 3 made `str` the default dtype, at which point
+    # `dtype == object` began failing on every Python that resolves to pandas 3
+    # while the column was exactly as much text as before. What must hold is that
+    # it is text and not boolean.
+    assert not pd.api.types.is_bool_dtype(items["answer"])
+    assert all(isinstance(v, str) for v in items["answer"])
     # The whole point: not the string "FALSE" and not the boolean False.
     assert "FALSE" not in set(items["answer"])
     assert False not in set(items["answer"])

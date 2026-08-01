@@ -81,7 +81,16 @@ test_that("slugify folds case whatever the locale", {
   expect_identical(slugify("STUDY_I"), "study_i")
 
   old <- Sys.getlocale("LC_CTYPE")
-  turkish <- suppressWarnings(Sys.setlocale("LC_CTYPE", "Turkish"))
+  # "Turkish" is the Windows spelling of this locale and resolves nowhere else, so
+  # on a Linux runner the test skipped every time and guarded nothing -- which the
+  # CI step's zero-skip assertion then reported as a failure. Try each platform's
+  # name for the same locale; CI generates tr_TR.UTF-8, so the skip does not fire
+  # there and the fold is actually exercised.
+  turkish <- ""
+  for (nm in c("Turkish", "tr_TR.UTF-8", "tr_TR.utf8", "tr_TR")) {
+    turkish <- suppressWarnings(Sys.setlocale("LC_CTYPE", nm))
+    if (nzchar(turkish)) break
+  }
   skip_if(!nzchar(turkish), "cannot switch to a Turkish locale on this platform")
   on.exit(Sys.setlocale("LC_CTYPE", old), add = TRUE)
   expect_identical(slugify("STUDY_I"), "study_i")

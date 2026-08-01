@@ -40,10 +40,9 @@ corpora/raw/*
 !corpora/raw/.gitkeep
 
 # --- Quarto render intermediates -------------------------------------------
+# The manuscript itself now lives in the private-lexsync repository; this rule
+# stays because the vignettes and the docs sites can still leave a .quarto cache.
 /.quarto/
-manuscript/.quarto/
-manuscript/manuscript_files/
-manuscript/manuscript_cache/
 
 # --- Documentation sites (generated; the docs workflow rebuilds and deploys) -
 R_workflow/docs/

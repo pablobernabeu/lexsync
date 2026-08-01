@@ -50,6 +50,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # slugify() must fold case identically whatever the locale, because base
+      # tolower() maps "I" to a dotless "i" under Turkish and would take a design's
+      # slug out of ASCII. The test that proves it needs the locale to exist, and a
+      # bare runner has only C and en_US, so it skipped here and guarded nothing.
+      - name: Generate the Turkish locale the slugify test needs
+        run: sudo locale-gen tr_TR.UTF-8 && sudo update-locale
+
       - uses: r-lib/actions/setup-r@v2
         with:
           r-version: 'release'

@@ -87,8 +87,7 @@ lexsync/
 ├── items/             example item tables (priming pairs, SPR sentences)
 ├── templates/         experiment script templates (PsychoPy, OpenSesame, jsPsych)
 ├── output/            generated stimuli, reports and experiment scripts
-├── apps/              browser apps (Streamlit + Shiny) that export reproducible code
-└── manuscript/        reproducible Quarto manuscript (in preparation)
+└── apps/              browser apps (Streamlit + Shiny) that export reproducible code
 ```
 
 Both packages expose parallel modules, including `querying`, `matching`,

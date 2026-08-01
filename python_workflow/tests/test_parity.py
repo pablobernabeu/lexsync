@@ -134,7 +134,16 @@ def test_r_python_parity(base, design, cols):
     shared = [c for c in r.columns
               if c in p.columns and c not in cols and c not in ORDER_COLS]
     for c in shared:
-        n_bad = int((m[f"{c}_r"].astype(str) != m[f"{c}_p"].astype(str)).sum())
+        a, b = m[f"{c}_r"], m[f"{c}_p"]
+        # Missing on both sides is agreement, and that has to be stated rather than
+        # relied on. Until pandas 3, `astype(str)` rendered a missing value as the
+        # literal "nan", so two of them compared equal by accident; pandas 3 keeps it
+        # missing, NaN != NaN, and a column legitimately empty in both engines --
+        # `item`, on a design whose main block generates its own items -- reported
+        # every row as differing while the two files were byte-identical.
+        both_missing = a.isna().to_numpy() & b.isna().to_numpy()
+        differs = (a.astype(str) != b.astype(str)).fillna(True).to_numpy()
+        n_bad = int((differs & ~both_missing).sum())
         assert n_bad == 0, f"{base}: column '{c}' differs across engines in {n_bad}/{len(m)} rows"
 
 
