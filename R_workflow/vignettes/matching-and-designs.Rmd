@@ -208,6 +208,67 @@ same report, the same datasheet. What differs is only where the candidates came
 from, and the datasheet records the list's checksum so that stays answerable
 later. `design_en_supplied_pool.yaml` is a worked example.
 
+## Relational designs, where the item is a pair
+
+A priming study's theoretical variable is a property of the *pair*, such as
+distributional similarity or associative strength, while its nuisance variables
+are properties of each *member*: frequency, length, neighbourhood. A design could
+previously have matching, or its own item table, but not both, so a relational
+design had to be assembled by hand.
+
+`items.members` promotes an ordinary item table to a pair-keyed one.
+
+```yaml
+items:
+  source: table
+  path: items/priming_pairs_en.csv
+  members: [prime, target]          # the two word fields
+  lexicon: corpora/derived/en.csv   # where each member's norms are looked up
+  anchor_condition: related         # whose row represents the pair during selection
+```
+
+Each member's word-level norms are joined from the lexicon and prefixed, giving
+`prime.frequency`, `target.length` and so on. The prefix leads rather than trails
+for a reason specific to R: `prime.frequency` is safe because `df$prime` still
+exact-matches the bare `prime` column, whereas `frequency.prime` would be a
+partial-matching hazard. Those prefixed names are usable wherever a dimension is:
+in `pool_filters`, in `match_on`, as a `continuous` predictor or as a control.
+
+`pair.overlap` is a relational dimension lexsync computes itself, the proportion
+of the longer form the two members share, and `pair.lev` is their Levenshtein
+distance. Orthographic overlap is the standard confound control in a priming
+design, since a related pair that also shares letters confounds semantic
+relatedness with orthographic similarity. `add_pair_overlap()` adds both directly
+if you are working outside a design. A predictor that cannot be computed from the
+forms alone, such as cosine similarity or forward associative strength, arrives
+instead as an extra column on the item table and is used like any other.
+
+```yaml
+n_per_condition: 8                  # counts PAIRS: 8 pairs, 16 rows, 8 per list
+pool_filters:
+  target.length: [3, 7]
+  target.frequency: [3.0, 6.0]
+continuous:
+  predictor: target.frequency
+  controls: [target.length, pair.overlap]
+match_on: [target.length, pair.overlap]
+```
+
+Two rules follow from the item being a pair rather than a row. A filter applies to
+a pair only if *every* one of its rows passes, and selection runs over one row per
+pair, the `anchor_condition`, defaulting to the byte-first condition, with the
+result re-expanded afterwards so every condition row of every chosen pair
+survives. Neither is an optimisation. A filter on `target.frequency` applied row
+by row would keep a pair's related row and drop its unrelated one, leaving a set
+the Latin-square counterbalancer cannot complete.
+
+A member name may not be one of `word`, `id`, `set`, `list`, `trial`, `condition`,
+`replicate` or `item`, which the engines read directly, and a design using one is
+refused. The datasheet gains a `relational` block recording the members, the pair
+count, the member lexicon and its checksum, and the member-level dimensions
+separately from the relational ones. `design_en_priming_continuous.yaml` is the
+worked example, and its own comments go further into why each rule is there.
+
 ## Conditions, the anchor and matched sets
 
 A condition is a named region of the pool, given by `define_by`, which is read
@@ -250,9 +311,11 @@ z-scoring each `match_on` dimension against the whole pool, so that a letter and
 Zipf unit become comparable. They differ in what they minimise it over.
 
 `standardised_euclidean`, the default, walks the anchor items in order and gives
-each one its nearest unused counterpart, greedily. It is the only method that
-generalises to more than two conditions, and it preserves the anchor's even
-spread exactly, because the anchor is selected before any matching happens.
+each one its nearest unused counterpart, greedily. It is anchored, so like
+`mahalanobis` it generalises past two conditions; `joint` and `optimal` score
+cross-condition pairs and are refused with anything other than exactly two. It
+preserves the anchor's even spread exactly, because the anchor is selected
+before any matching happens.
 
 `joint` abandons the anchor. It scores every cross-condition pair, then takes the
 best-matched pairs in ascending order of distance until it has enough, so an item
@@ -359,6 +422,11 @@ permissive, admitting most of a normal distribution, and it is meant as a
 backstop against a wild counterpart rather than as the mechanism of control; the
 distance ranking within the window does the work. A design tightens it per
 dimension, and only the named dimensions are overridden.
+
+The window belongs to the anchored path, so it is what `standardised_euclidean`
+and `mahalanobis` apply. `joint` and `optimal` score cross-condition pairs
+directly and never read `tolerance_k` at all, which is worth knowing before
+tightening a window and finding the selection unmoved.
 
 ```{r tolerance-override}
 tight <- design
@@ -552,6 +620,70 @@ balance_check(stim, "condition")
 balance_check(rbind(stim, stim[1, ]), "condition")
 ```
 
+## Pseudowords
+
+Lexical decision needs non-words, and the difficulty is that they must be
+orthographically plausible without being real. `build_lexdec_stimuli()` draws real
+words by an even spread across the byte-ordered pool, then generates a
+length-matched pseudoword for each.
+
+```{r lexdec}
+lexdec_pool <- build_pool(lex, list(length = c(4, 7), frequency = c(3.5, 6.0)))
+stim_lexdec <- build_lexdec_stimuli(
+  lexdec_pool, n = 8, reference_words = lex$word
+)
+head(stim_lexdec[, c("target", "condition", "length", "set")], 4)
+```
+
+The presented string is `target`, the conditions are `word` and `pseudoword`, and
+`set` pairs each word with its non-word twin. `reference_words` should be the full
+lexicon: it supplies the bigram statistics and the list of real forms a pseudoword
+must avoid, and it defaults to the pool when omitted, which is rarely what you
+want.
+
+Two methods are available, chosen per design under `items.generation.method`.
+
+`letter_substitution`, the default, changes as few letters as possible subject to
+three constraints: every resulting bigram must be attested in the corpus, the form
+must not be a real word or one already generated, and the length must be preserved
+exactly. Single substitutions are searched first, then pairs as a fallback. Among
+the legal candidates the most bigram-plausible wins, with a byte-order tie-break.
+
+`subsyllabic` splits each word into onset, nucleus and coda constituents and swaps
+whole constituents for attested alternatives of the same role and length, so the
+pseudowords keep their syllabic structure. Codas and nuclei are changed before
+onsets, which carry the most identifying orthography. Roughly two thirds of a
+word's constituents are targeted, each swap preserves length, and a word with no
+legal swap falls back to letter substitution, so every word yields a pseudoword.
+It is a deterministic orthographic approximation of Wuggy (Keuleers & Brysbaert,
+2010), trading Wuggy's phonological model for exact length matching and
+cross-engine reproducibility.
+
+```{r subsyllabic}
+head(build_lexdec_stimuli(
+  lexdec_pool, n = 8, reference_words = lex$word, method = "subsyllabic"
+)[, c("target", "condition", "set")], 4)
+```
+
+Both generators process base words in byte order, so the set of already-used
+pseudowords evolves identically in the two engines and both select byte-identical
+stimuli. Both are also orthographic models defined for a-z words:
+`build_lexdec_stimuli()` filters the pool to those, and the subsyllabic segmenter
+returns nothing for a word with an accent, a hyphen or a digit, which sends it
+down the letter-substitution path. That is why lexical decision is demonstrated in
+English rather than in the Chinese design.
+
+`generate_pseudowords()` and `make_pseudoword()` are available directly if you
+want the forms without the lexical-decision scaffolding around them.
+
+```{r pseudowords}
+generate_pseudowords(c("house", "table"), lex$word)
+```
+
+In a design this is `items.source: generate`, with the method under
+`items.generation.method`. `design_en_lexdec.yaml` and `design_en_lexdec_wuggy.yaml`
+are the two worked examples.
+
 ## Items as a random factor
 
 A matched set is one sample from the language, and an analysis that treats its
@@ -601,6 +733,10 @@ https://doi.org/10.1080/10618600.1993.10474623
 Hansen, B. B., & Klopfer, S. O. (2006). Optimal full matching and related designs
 via network flows. *Journal of Computational and Graphical Statistics*, *15*(3),
 609–627. https://doi.org/10.1198/106186006X137047
+
+Keuleers, E., & Brysbaert, M. (2010). Wuggy: A multilingual pseudoword
+generator. *Behavior Research Methods*, *42*(3), 627–633.
+https://doi.org/10.3758/BRM.42.3.627
 
 Kuperman, V. (2015). Virtual experiments in megastudies: A case study of language
 and emotion. *Quarterly Journal of Experimental Psychology*, *68*(8), 1693–1710.

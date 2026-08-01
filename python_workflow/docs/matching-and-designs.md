@@ -92,10 +92,67 @@ same datasheet. What differs is only where the candidates came from, and the dat
 list's checksum so that is answerable later. `config/design_en_supplied_pool.yaml` is a worked
 example.
 
+## Relational designs, where the item is a pair
+
+A priming study's theoretical variable is a property of the *pair* -- distributional similarity,
+associative strength -- while its nuisance variables are properties of each *member*: frequency,
+length, neighbourhood. A design could previously have matching, or its own item table, but not both,
+so a relational design had to be assembled by hand.
+
+`items.members` promotes an ordinary item table to a pair-keyed one.
+
+```yaml
+items:
+  source: table
+  path: items/priming_pairs_en.csv
+  members: [prime, target]          # the two word fields
+  lexicon: corpora/derived/en.csv   # where each member's norms are looked up
+  anchor_condition: related         # whose row represents the pair during selection
+```
+
+Each member's word-level norms are joined from the lexicon and prefixed, giving `prime.frequency`,
+`target.length` and so on. The prefix leads rather than trails for a reason specific to R:
+`prime.frequency` is safe because R's `df$prime` still exact-matches the bare `prime` column, whereas
+`frequency.prime` would be a partial-matching hazard. Those prefixed names are then usable wherever a
+dimension is: in `pool_filters`, in `match_on`, as a `continuous.predictor` or as a control.
+
+`pair.overlap` is a relational dimension lexsync computes itself, the proportion of the longer form
+the two members share, and `pair.lev` is their Levenshtein distance. Orthographic overlap is the
+standard confound control in a priming design, since a related pair that also shares letters
+confounds semantic relatedness with orthographic similarity. `add_pair_overlap` adds both directly if
+you are working outside a design. A predictor that cannot be computed from the forms alone -- cosine
+similarity, forward associative strength -- arrives instead as an extra column on the item table and
+is used like any other.
+
+```yaml
+n_per_condition: 8                  # counts PAIRS: 8 pairs, 16 rows, 8 per list over 2 lists
+pool_filters:
+  target.length: [3, 7]
+  target.frequency: [3.0, 6.0]
+continuous:
+  predictor: target.frequency
+  controls: [target.length, pair.overlap]
+match_on: [target.length, pair.overlap]
+```
+
+Two rules follow from the item being a pair rather than a row. A filter applies to a pair only if
+*every* one of its rows passes, and selection runs over one row per pair -- the `anchor_condition`,
+defaulting to the byte-first condition -- with the result re-expanded afterwards so every condition
+row of every chosen pair survives. Neither is an optimisation. A filter on `target.frequency` applied
+row by row would keep a pair's related row and drop its unrelated one, leaving a set the Latin-square
+counterbalancer cannot complete.
+
+A member name may not be one of `word`, `id`, `set`, `list`, `trial`, `condition`, `replicate` or
+`item`, which the engines read directly, and a design using one is refused. The datasheet gains a
+`relational` block recording the members, the pair count, the member lexicon and its checksum, and
+the member-level dimensions separately from the relational ones.
+`config/design_en_priming_continuous.yaml` is the worked example, and its own comments go further
+into why each rule is there.
+
 ## The dimensions
 
-Six dimensions are declared in the schema. Two are read from the lexicon or computed at load time,
-and four have to be derived from the orthographic forms before a design can match on them.
+Six dimensions are declared in the schema. Three are read from the lexicon or computed at load
+time, and three have to be derived from the orthographic forms before a design can match on them.
 
 | Dimension | Unit | Where it comes from |
 | --- | --- | --- |
@@ -185,7 +242,9 @@ representative of the condition it is meant to define.
 
 The anchor's realised mean and standard deviation on each matched dimension then set a tolerance
 window, mean ± *k* × SD, where *k* comes from `matching.tolerance_k` in the schema and may be
-overridden per dimension by the design. The defaults are 2.0 for `length`, `n_density` and `old20`,
+overridden per dimension by the design. This is the anchored path, so it is what
+`standardised_euclidean` and `mahalanobis` do; `joint` and `optimal` score cross-condition pairs
+directly and never read `tolerance_k` at all. The defaults are 2.0 for `length`, `n_density` and `old20`,
 and 1.0 for `frequency`. Each remaining condition is filtered to its window, and then every anchor
 item is assigned its nearest unused candidate by standardised distance.
 

@@ -11,10 +11,12 @@ An *event* is a small dictionary::
 
     {type, content, duration_frames|duration_ms, trigger, onset_locked, keys, timeout_ms}
 
-``type``     one of fixation | text | mask | blank | region_by_region | response | question
+``type``     one of fixation | text | mask | blank | region_by_region | response |
+             question | feedback
 ``content``  a literal ("+", "#####") or a field reference ("{target}", "{sentence}")
 ``trigger``  an integer EEG code, or the token "condition" / "item"
 ``onset_locked``  write the trigger on the event's verified onset flip
+``blocks``   restrict the event to the named blocks (see blocks.add_blocks)
 
 This module is pure data and small helpers, identical in the R and Python
 engines (see R_workflow/R/paradigms.R), so the two produce the same trial

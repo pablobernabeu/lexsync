@@ -52,6 +52,10 @@ lex = lexsync.load_lexicon("corpora/derived/en.csv", schema, "english")
 design = yaml.safe_load(open("config/design_en_freqcontrast.yaml"))
 pool = lexsync.build_pool(lex, design["pool_filters"])
 stim = lexsync.match_stimuli(pool, design, schema)
+# Not optional: this assigns the counterbalancing lists and draws the trial
+# order. Exporting without it writes every trial of one condition and then every
+# trial of the next, with no `trial` column and no `list` column.
+stim = lexsync.counterbalance(stim, design, schema)
 
 report = lexsync.match_report(stim, ["length", "frequency", "n_density", "old20"], schema)
 lexsync.export_experiments(

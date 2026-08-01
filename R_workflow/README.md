@@ -94,8 +94,9 @@ for how to launch them.
 Every worked design in the repository also ships as a browser experiment, and
 these are published beside the documentation. The [lexical-decision
 demonstration](https://pablobernabeu.github.io/lexsync/demos/en_lexdec_english.html)
-is a single self-contained HTML file written by the same pipeline that emits the
-PsychoPy and OpenSesame scripts.
+is a single HTML file, self-contained apart from the jsPsych library it loads from
+a CDN, written by the same pipeline that emits the PsychoPy and OpenSesame
+scripts.
 
 ## Citation
 

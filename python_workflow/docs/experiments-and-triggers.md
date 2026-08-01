@@ -370,13 +370,17 @@ def show_frames(win, stim, frames, port, trigger):
     """Draw ``stim`` for ``frames`` flips; if a trigger is given, lock it to onset."""
     if trigger is not None:
         win.callOnFlip(port.setData, trigger)
+    # callOnFlip runs its callback on the NEXT flip, so queueing the reset on this
+    # index clears the code one flip later and holds it for exactly
+    # TRIGGER_HOLD_FRAMES flip intervals.
+    reset_at = TRIGGER_HOLD_FRAMES - 1
     for f in range(frames):
         if stim is not None:
             stim.draw()
         win.flip()
-        if trigger is not None and f == RESET_AFTER_FRAMES:
+        if trigger is not None and f == reset_at:
             win.callOnFlip(port.setData, 0)
-    if trigger is not None and frames <= RESET_AFTER_FRAMES:
+    if trigger is not None and frames <= reset_at:
         port.setData(0)
 ```
 
@@ -385,7 +389,9 @@ rather than from a later component that merely runs soon afterwards. The common 
 the trigger from a separate sequence-ordered item, inherits whatever jitter sits between that item
 and the flip. The reset is queued the same way, one flip before the hold expires so that it lands
 on the flip that ends it, with a direct write as the fallback when the stimulus is shorter than the
-hold.
+hold. `TRIGGER_HOLD_FRAMES` is computed at start-up from `TRIGGER_HOLD_MS` and the measured refresh
+rate, floored at one flip and at the recorder minimum, which is what keeps a declared hold meaning
+the same interval on a 60 Hz and a 144 Hz display.
 
 Stimulus text is never interpolated into the script, only read from the CSV at run time, so nothing
 in a stimulus can become code. When no parallel-port driver is present, on a development laptop, on

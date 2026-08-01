@@ -1,8 +1,8 @@
-{"time": "2026-08-01T11:52:01", "message": "loading items 'items/priming_pairs_en_soa.csv'", "data": null}
-{"time": "2026-08-01T11:52:01", "message": "loaded 12 items across 2 conditions", "data": {"conditions": "related, unrelated"}}
-{"time": "2026-08-01T11:52:01", "message": "wrote 'en_priming_jitter_english_stimuli_py.csv'", "data": {"path": "output\\stimuli\\en_priming_jitter_english_stimuli_py.csv", "rows": 24, "md5": "7c498659e1f5f33335f3ee3e5cce8e45"}}
-{"time": "2026-08-01T11:52:01", "message": "wrote 'en_priming_jitter_english_psychopy.py'", "data": {"path": "output\\experiments\\en_priming_jitter_english_psychopy.py", "rows": null, "md5": "c687e30a79ea9d73eb947b01e56088e6"}}
-{"time": "2026-08-01T11:52:01", "message": "wrote 'en_priming_jitter_english.osexp'", "data": {"path": "output\\experiments\\en_priming_jitter_english.osexp", "rows": null, "md5": "384dccebd9d3b783f43d9684aeea5a61"}}
-{"time": "2026-08-01T11:52:01", "message": "wrote 'en_priming_jitter_english.html'", "data": {"path": "output\\experiments\\en_priming_jitter_english.html", "rows": null, "md5": "e368c8cb3d7f44f30ea9f59b6dfda2d0"}}
-{"time": "2026-08-01T11:52:01", "message": "wrote 'en_priming_jitter_english_datasheet_py.json'", "data": {"path": "output\\reports\\en_priming_jitter_english_datasheet_py.json", "rows": null, "md5": "63450a66525e13d47846d33f15304732"}}
-{"time": "2026-08-01T11:52:01", "message": "wrote 'en_priming_jitter_english_datasheet_py.md'", "data": {"path": "output\\reports\\en_priming_jitter_english_datasheet_py.md", "rows": null, "md5": "8e3bd52208e19566e488e5a5f7c534b2"}}
+{"time": "2026-08-01T14:40:46", "message": "loading items 'items/priming_pairs_en_soa.csv'", "data": null}
+{"time": "2026-08-01T14:40:46", "message": "loaded 12 items across 2 conditions", "data": {"conditions": "related, unrelated"}}
+{"time": "2026-08-01T14:40:46", "message": "wrote 'en_priming_jitter_english_stimuli_py.csv'", "data": {"path": "output\\stimuli\\en_priming_jitter_english_stimuli_py.csv", "rows": 24, "md5": "7c498659e1f5f33335f3ee3e5cce8e45"}}
+{"time": "2026-08-01T14:40:46", "message": "wrote 'en_priming_jitter_english_psychopy.py'", "data": {"path": "output\\experiments\\en_priming_jitter_english_psychopy.py", "rows": null, "md5": "c687e30a79ea9d73eb947b01e56088e6"}}
+{"time": "2026-08-01T14:40:46", "message": "wrote 'en_priming_jitter_english.osexp'", "data": {"path": "output\\experiments\\en_priming_jitter_english.osexp", "rows": null, "md5": "384dccebd9d3b783f43d9684aeea5a61"}}
+{"time": "2026-08-01T14:40:46", "message": "wrote 'en_priming_jitter_english.html'", "data": {"path": "output\\experiments\\en_priming_jitter_english.html", "rows": null, "md5": "e368c8cb3d7f44f30ea9f59b6dfda2d0"}}
+{"time": "2026-08-01T14:40:46", "message": "wrote 'en_priming_jitter_english_datasheet_py.json'", "data": {"path": "output\\reports\\en_priming_jitter_english_datasheet_py.json", "rows": null, "md5": "63450a66525e13d47846d33f15304732"}}
+{"time": "2026-08-01T14:40:46", "message": "wrote 'en_priming_jitter_english_datasheet_py.md'", "data": {"path": "output\\reports\\en_priming_jitter_english_datasheet_py.md", "rows": null, "md5": "8e3bd52208e19566e488e5a5f7c534b2"}}

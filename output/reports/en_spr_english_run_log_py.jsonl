@@ -1,8 +1,8 @@
-{"time": "2026-08-01T11:52:02", "message": "loading items 'items/spr_sentences_en.csv'", "data": null}
-{"time": "2026-08-01T11:52:02", "message": "loaded 10 items across 2 conditions", "data": {"conditions": "grammatical, ungrammatical"}}
-{"time": "2026-08-01T11:52:02", "message": "wrote 'en_spr_english_stimuli_py.csv'", "data": {"path": "output\\stimuli\\en_spr_english_stimuli_py.csv", "rows": 20, "md5": "cc5846d69b7b5c04eddc6719a4aaf101"}}
-{"time": "2026-08-01T11:52:02", "message": "wrote 'en_spr_english_psychopy.py'", "data": {"path": "output\\experiments\\en_spr_english_psychopy.py", "rows": null, "md5": "b191573435441af3ae5141405f2891ef"}}
-{"time": "2026-08-01T11:52:02", "message": "wrote 'en_spr_english.osexp'", "data": {"path": "output\\experiments\\en_spr_english.osexp", "rows": null, "md5": "a8a9cc64d00304e0d3a256a52c1e5da6"}}
-{"time": "2026-08-01T11:52:02", "message": "wrote 'en_spr_english.html'", "data": {"path": "output\\experiments\\en_spr_english.html", "rows": null, "md5": "12546072f09e4fa8a5c149c6e1a1562c"}}
-{"time": "2026-08-01T11:52:02", "message": "wrote 'en_spr_english_datasheet_py.json'", "data": {"path": "output\\reports\\en_spr_english_datasheet_py.json", "rows": null, "md5": "fc8d6a7910bf774cf3ac519cb5830c8a"}}
-{"time": "2026-08-01T11:52:02", "message": "wrote 'en_spr_english_datasheet_py.md'", "data": {"path": "output\\reports\\en_spr_english_datasheet_py.md", "rows": null, "md5": "5021639496fd347b3fbb5d1824a0f55f"}}
+{"time": "2026-08-01T14:40:46", "message": "loading items 'items/spr_sentences_en.csv'", "data": null}
+{"time": "2026-08-01T14:40:46", "message": "loaded 10 items across 2 conditions", "data": {"conditions": "grammatical, ungrammatical"}}
+{"time": "2026-08-01T14:40:46", "message": "wrote 'en_spr_english_stimuli_py.csv'", "data": {"path": "output\\stimuli\\en_spr_english_stimuli_py.csv", "rows": 20, "md5": "cc5846d69b7b5c04eddc6719a4aaf101"}}
+{"time": "2026-08-01T14:40:46", "message": "wrote 'en_spr_english_psychopy.py'", "data": {"path": "output\\experiments\\en_spr_english_psychopy.py", "rows": null, "md5": "b191573435441af3ae5141405f2891ef"}}
+{"time": "2026-08-01T14:40:46", "message": "wrote 'en_spr_english.osexp'", "data": {"path": "output\\experiments\\en_spr_english.osexp", "rows": null, "md5": "a8a9cc64d00304e0d3a256a52c1e5da6"}}
+{"time": "2026-08-01T14:40:47", "message": "wrote 'en_spr_english.html'", "data": {"path": "output\\experiments\\en_spr_english.html", "rows": null, "md5": "12546072f09e4fa8a5c149c6e1a1562c"}}
+{"time": "2026-08-01T14:40:47", "message": "wrote 'en_spr_english_datasheet_py.json'", "data": {"path": "output\\reports\\en_spr_english_datasheet_py.json", "rows": null, "md5": "fc8d6a7910bf774cf3ac519cb5830c8a"}}
+{"time": "2026-08-01T14:40:47", "message": "wrote 'en_spr_english_datasheet_py.md'", "data": {"path": "output\\reports\\en_spr_english_datasheet_py.md", "rows": null, "md5": "5021639496fd347b3fbb5d1824a0f55f"}}

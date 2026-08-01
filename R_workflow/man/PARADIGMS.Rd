@@ -14,7 +14,8 @@ PARADIGMS
 }
 \description{
 Each event is a list with \code{type} (fixation | text | mask | blank |
-region_by_region | response | question), \code{content} (a literal or a \code{{field}}
-reference), an optional \code{trigger} (an integer EEG code or the token
-"condition"/"item"), \code{onset_locked}, and response \code{keys}/\code{timeout_ms}.
+region_by_region | response | question | feedback), \code{content} (a literal or a
+\code{{field}} reference), an optional \code{trigger} (an integer EEG code or the token
+"condition"/"item"), \code{onset_locked}, response \code{keys}/\code{timeout_ms}, and an
+optional \code{blocks} restricting the event to named blocks.
 }
