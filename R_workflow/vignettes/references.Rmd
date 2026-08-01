@@ -24,6 +24,7 @@ lexical corpora that lexsync reads are attributed separately, in
 and in the corpus registry, since their licences travel with the derived data
 rather than with the software.
 
+::: {.references}
 Andrews, S. (1989). Frequency and neighborhood effects on lexical access:
 Activation or search? *Journal of Experimental Psychology: Learning, Memory, and
 Cognition*, *15*(5), 802–814. https://doi.org/10.1037/0278-7393.15.5.802
@@ -145,3 +146,4 @@ Yarkoni, T. (2022). The generalizability crisis. *Behavioral and Brain Sciences*
 Yarkoni, T., Balota, D., & Yap, M. (2008). Moving beyond Coltheart's N: A new
 measure of orthographic similarity. *Psychonomic Bulletin & Review*, *15*(5),
 971–979. https://doi.org/10.3758/PBR.15.5.971
+:::

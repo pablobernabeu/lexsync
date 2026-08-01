@@ -463,3 +463,21 @@
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
+
+/* ---------------------------------------------------------------------------
+   Bibliography — hanging indent
+   ---------------------------------------------------------------------------
+   A reference list is read by running the eye down the author surnames, which
+   works only when the first line of each entry is the one at the left margin.
+   That is the APA convention and what a reader of this field expects.
+
+   Each entry on the references page carries an id from its attribute list, so
+   the citations in the guides can link to it, and nothing else in these docs
+   puts an id on a paragraph. That makes `p[id]` exactly the reference list. */
+.md-typeset p[id] {
+  padding-left: 2.2em;
+  text-indent: -2.2em;
+  /* A long DOI is a single unbreakable token by default, and one that cannot
+     break would run past the hanging indent it is meant to sit inside. */
+  overflow-wrap: anywhere;
+}

@@ -254,7 +254,14 @@ aside h2 {
   border-top: none;
   border-top-left-radius: 0;
   border-top-right-radius: 0;
+  // The card's 1.1rem top padding is meant for a card that opens with a heading.
+  // This half opens directly under one, so there the padding reads as a gap
+  // between a subtitle and the functions it introduces.
+  padding-top: .35rem;
 }
+// The lead under a subtitle belongs to the entries below it, so set it close to
+// them rather than a full paragraph away.
+.template-reference-index .section-desc p:last-child { margin-bottom: .35rem; }
 .template-reference-index .section > dl:empty { display: none; }
 
 .template-reference-index .section > h2::before {
@@ -530,4 +537,26 @@ table.table::-webkit-scrollbar-corner { background: transparent; }
   // scrolls under the branded scrollbar.
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+}
+
+// ---------------------------------------------------------------------------
+// Bibliographies — hanging indent
+// ---------------------------------------------------------------------------
+// A reference list is read by running the eye down the author surnames, which
+// only works if the first line of each entry is the one at the left margin.
+// That is the APA convention and it is what a reader of this field expects.
+//
+// Two shapes are covered: a vignette's own `## References` section, where the
+// entries are the paragraphs following that heading, and the standalone
+// References article, whose entries are wrapped in a `.references` div because
+// there is no heading to anchor to.
+:is(.contents, main) {
+  h2#references ~ p,
+  .references p {
+    padding-left: 2.2em;
+    text-indent: -2.2em;
+    // A long DOI cannot be broken mid-token by default, and an unbroken one
+    // would push past the hanging indent it is meant to sit inside.
+    overflow-wrap: anywhere;
+  }
 }
