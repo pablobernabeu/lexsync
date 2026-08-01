@@ -83,7 +83,6 @@ Department of Education at the University of Oxford, with hands-on experience of
 experiments, EEG, corpus analysis, computational modelling and statistics. He develops open,
 reproducible research software in R and Python, and is a Fellow of the Software Sustainability
 Institute. His [ORCID record](https://orcid.org/0000-0003-1083-2460) lists his other work.
-Authorship on the forthcoming manuscript is provisional and will be settled before submission.
 
 ## The two packages
 

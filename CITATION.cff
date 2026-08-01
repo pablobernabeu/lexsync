@@ -10,7 +10,6 @@ abstract: >-
   research.
 type: software
 authors:
-  # Authorship is provisional and to be finalised before submission/release.
   - family-names: Bernabeu
     given-names: Pablo
     orcid: 'https://orcid.org/0000-0003-1083-2460'
