@@ -34,6 +34,15 @@ jobs:
       - name: Run the test suite
         run: python -m pytest -q
 
+      # A test that writes into the tracked tree leaves every later `git status`
+      # dirty and gets its churn swept into the next commit, which is how 42 run
+      # logs full of fresh timestamps were committed twice. Tests write to a temp
+      # directory; this is what keeps it that way.
+      # git diff is repo-wide whatever directory it runs from, and it reports only
+      # tracked files, so the editable install's egg-info cannot trip it.
+      - name: Fail if the test suite modified any tracked file
+        run: git diff --exit-code
+
       - name: Build and check the distribution
         run: |
           python -m build
@@ -85,6 +94,13 @@ jobs:
                       cat(sprintf("FAIL %d | SKIP %d | PASS %d\n", sum(res$failed), sum(res$skipped), sum(res$passed)));
                       if (sum(res$failed) > 0) stop("R test failures");
                       if (sum(res$skipped) > 0) stop("A repo-coupled R test skipped; it is guarding nothing here.")'
+
+      # Same rule as the Python matrix: a suite that writes into the tracked tree
+      # dirties every later git status. This has to come BEFORE the deliberate
+      # regeneration below, which rewrites the run logs with fresh timestamps by
+      # design.
+      - name: Fail if the R suite modified any tracked file
+        run: git diff --exit-code
 
       - uses: actions/setup-python@v5
         with:

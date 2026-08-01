@@ -89,7 +89,7 @@ ORDER_COLS: set = set()
 
 
 @pytest.mark.parametrize("base,design,cols", CASES)
-def test_r_python_parity(base, design, cols):
+def test_r_python_parity(base, design, cols, tmp_path):
     r_ref = os.path.join(REPO, "output", "stimuli", f"{base}_stimuli_R.csv")
     if not os.path.exists(r_ref):
         if REQUIRE_PARITY:
@@ -100,15 +100,20 @@ def test_r_python_parity(base, design, cols):
             pytest.fail(f"design config missing: {design}")
         pytest.skip("repository design configs not present")
 
+    # Regenerate into a temp directory, never into the tracked output/. The
+    # comparison is unchanged -- what THIS code produces against the committed R
+    # reference -- but running the suite no longer rewrites 42 tracked run logs
+    # with fresh wall-clock timestamps, which left the working tree dirty after
+    # every test run and twice swept the churn into a commit.
     cwd = os.getcwd()
     os.chdir(REPO)
     try:
-        run_pipeline(design, "config/schema.yaml", "output", verbose=False)
+        run_pipeline(design, "config/schema.yaml", str(tmp_path), verbose=False)
     finally:
         os.chdir(cwd)
 
     r = pd.read_csv(r_ref)
-    p = pd.read_csv(os.path.join(REPO, "output", "stimuli", f"{base}_stimuli_py.csv"))
+    p = pd.read_csv(os.path.join(str(tmp_path), "stimuli", f"{base}_stimuli_py.csv"))
 
     # A column vanishing from one engine's output must fail, not quietly narrow
     # the comparison.
