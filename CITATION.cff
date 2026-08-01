@@ -1,6 +1,6 @@
 cff-version: 1.2.0
 message: 'If you use lexsync, please cite the software. A manuscript describing it is in preparation.'
-title: 'lexsync: multidimensional lexical optimisation and hardware-timed experiment generation'
+title: 'lexsync: Multidimensional lexical optimisation and hardware-timed experiment generation'
 abstract: >-
   lexsync is a cross-platform, dual-language (R and Python) toolkit that unifies
   many-language lexical-corpus access, parallel multidimensional stimulus
@@ -10,7 +10,6 @@ abstract: >-
   research.
 type: software
 authors:
-  # Authorship is provisional and to be finalised before submission/release.
   - family-names: Bernabeu
     given-names: Pablo
     orcid: 'https://orcid.org/0000-0003-1083-2460'
@@ -35,7 +34,7 @@ preferred-citation:
   # No venue is named: the manuscript has not been submitted. A journal will be
   # added here only once the article is accepted.
   type: unpublished
-  title: 'lexsync: a cross-platform pipeline for multidimensional lexical optimisation and hardware-timed experiment generation'
+  title: 'lexsync: A cross-platform pipeline for multidimensional lexical optimisation and hardware-timed experiment generation'
   authors:
     - family-names: Bernabeu
       given-names: Pablo

@@ -1,0 +1,9 @@
+group,dimension,n,mean,sd,min,median,max
+higher_frequency,length,20,5.7,0.47,5,6,6
+higher_frequency,frequency,20,4.716,0.303,4.4,4.66,5.71
+higher_frequency,n_density,20,2.6,2.415,0,2,8
+higher_frequency,old20,20,1.802,0.264,1.5,1.775,2.5
+lower_frequency,length,20,5.75,0.444,5,6,6
+lower_frequency,frequency,20,3.693,0.276,2.96,3.715,4.07
+lower_frequency,n_density,20,2.3,2.203,0,2,7
+lower_frequency,old20,20,1.86,0.209,1.6,1.825,2.3

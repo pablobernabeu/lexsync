@@ -43,39 +43,54 @@ footer:
     developed_by: >
       Developed by [Pablo Bernabeu](https://pablobernabeu.github.io). Open,
       reproducible research software in R and Python.
-    # LICENSE-text.html, not LICENSE.html. pkgdown renders LICENSE.html only from a
-    # LICENSE.md; from a plain LICENSE file (what this package has) it renders
-    # LICENSE-text.html, so LICENSE.html would 404.
+    # LICENSE.html, which pkgdown renders from LICENSE.md. The plain LICENSE file
+    # alone is the CRAN two-line stub, and from that pkgdown emits only
+    # LICENSE-text.html, so the licence page carried no licence text at all.
+    #
+    # The path is root-relative, unlike the home sidebar's. pkgdown renders the
+    # footer into every page without adjusting a relative href for the page's
+    # depth, so a bare LICENSE.html resolves against the current directory and
+    # 404s everywhere below the root (articles/LICENSE.html and the like). An
+    # absolute URL does not help either: pkgdown strips the configured site url
+    # back off it and leaves the same bare filename. A leading slash is the one
+    # form that survives, and it is unambiguous from any depth.
     legal: >
-      Released under the [MIT licence](LICENSE-text.html).
+      Released under the [MIT licence](/lexsync/r/LICENSE.html).
 
 home:
   sidebar:
-    # No community row: lexsync has no .github/CONTRIBUTING.md, and pkgdown would
-    # link a page it never builds.
-    structure: [links, license, cite, authors, dev]
+    # The `dev` entry carries the README badge block, which pkgdown lifts out of
+    # the page body via the badges: start/end markers.
+    structure: [links, license, community, cite, authors, dev]
     components:
       # One British-spelled licence link. pkgdown's default licence section renders
       # the raw "MIT + file LICENSE" field, which reads as more than one licence;
-      # this collapses it to a single link. See the footer note on LICENSE-text.html.
+      # this collapses it to a single link.
       license:
         title: Licence
         text: >
-          [MIT licence](LICENSE-text.html)
+          [MIT licence](LICENSE.html)
+      # Contributing guide only; pkgdown's default community block also lists a
+      # Code of Conduct row, which duplicates a link the guide already carries.
+      # pkgdown builds CONTRIBUTING.html from .github/CONTRIBUTING.md. A relative
+      # href is right here, unlike in the footer: the sidebar renders only on the
+      # home page, which sits at the site root.
+      community:
+        title: Community
+        text: >
+          [Contributing guide](CONTRIBUTING.html)
       # Dropping the built-in "citation" from the structure and supplying a custom
       # "cite" component is more reliable than overriding the built-in in place.
-      # There is no inst/CITATION and no deposited DOI, so this points at the
-      # CITATION.cff that does exist, at the root of the monorepo.
+      # It points at the About page rather than pkgdown's default
+      # authors.html#citation, matching the rest of the family. No trailing stop.
       cite:
         title: Citation
         text: |
-          [How to cite lexsync](https://github.com/pablobernabeu/lexsync/blob/main/CITATION.cff)
-
-          A manuscript describing lexsync is in preparation.
+          [How to cite lexsync](articles/about.html)
 
 navbar:
   structure:
-    left:  [intro, reference, articles, news]
+    left:  [intro, reference, articles, news, about]
     right: [demo, search, github, lightswitch]
   components:
     # A generated experiment, not an app: lexsync has no webR build, and the Shiny
@@ -97,11 +112,34 @@ navbar:
       text: Articles
       menu:
       - text: Matching and designs
-        href: https://pablobernabeu.github.io/lexsync/r/articles/matching-and-designs.html
+        href: articles/matching-and-designs.html
       - text: Experiments and triggers
-        href: https://pablobernabeu.github.io/lexsync/r/articles/experiments-and-triggers.html
+        href: articles/experiments-and-triggers.html
       - text: Reproducibility and parity
-        href: https://pablobernabeu.github.io/lexsync/r/articles/reproducibility-and-parity.html
+        href: articles/reproducibility-and-parity.html
+      - text: References
+        href: articles/references.html
+    # The About page carries the citation, the developer note, the licence and the
+    # link to the Python twin's documentation site. It is kept off the Articles
+    # index by the `internal` articles group below, but keeps its own navbar entry.
+    about:
+      text: About
+      href: articles/about.html
+
+# vignettes/lexsync.Rmd is absent by design: pkgdown treats the vignette named
+# after the package as the "Get started" intro and keeps it out of the Articles
+# index. The `internal` title is what hides the About page from that index while
+# leaving it reachable from its own navbar entry.
+articles:
+- title: Guides
+  contents:
+  - matching-and-designs
+  - experiments-and-triggers
+  - reproducibility-and-parity
+  - references
+- title: internal
+  contents:
+  - about
 
 # Every exported topic appears in exactly one section; pkgdown::check_pkgdown()
 # errors otherwise. The order follows the pipeline, from corpus to published
@@ -115,12 +153,14 @@ reference:
   - lexsync_cache_dir
   - load_lexicon
   - load_items
+  - load_pool
   - merge_norms
 - title: Lexical dimensions
   desc: Derive the dimensions that stimuli are later matched or controlled on.
   contents:
   - add_neighbourhood
   - add_bigram_frequency
+  - add_pair_overlap
   - count_syllables
 - title: Pools and matching
   desc: Filter a lexicon to a candidate pool, then match conditions across dimensions in parallel.
@@ -144,11 +184,13 @@ reference:
   contents:
   - PARADIGMS
   - resolve_events
+  - resolve_trial_timing
   - required_fields
 - title: Counterbalancing
   desc: Rotate items across lists and assign participants to them.
   contents:
   - counterbalance
+  - balance_lists
   - participant_table
 - title: Validation and equivalence
   desc: Report the realised control, testing for equivalence rather than for a null result.

@@ -1,5 +1,5 @@
 {
-  "lexsync_datasheet_version": "1.0",
+  "lexsync_datasheet_version": "1.1",
   "design": {
     "name": "es_gender_repro",
     "language": "spanish",
@@ -12,7 +12,7 @@
     "type": "corpus",
     "path": "corpora/derived/es_gender.csv",
     "sha256": "0f77aec3fe307ed38f1e69e69f7c80ee93e38ffb8c0622b817fd2c26d15114d5",
-    "provenance": "see corpora/ATTRIBUTION.md for corpus licence and citation"
+    "provenance": "wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md"
   },
   "dimensions": {
     "length": {
@@ -54,7 +54,7 @@
     ],
     "tolerance_k": {
       "length": 2,
-      "frequency": 0.1111,
+      "frequency": 0.111111111111111,
       "n_density": 2,
       "old20": 2
     },
@@ -70,6 +70,7 @@
     ],
     "cross_engine": "byte-identical"
   },
+  "relational": null,
   "analysis": {
     "response": "the trial outcome (e.g. reaction time or accuracy)",
     "suggested_model": "response ~ condition + (1 + condition | subject) + (1 | item)",
@@ -159,7 +160,7 @@
     },
     {
       "file": "output/experiments/es_gender_repro_spanish_psychopy.py",
-      "sha256": "16aab01b57dd0a69f2d142f872de2a090accd11f13d27bf3ff1f03834d917366"
+      "sha256": "9baa583e222c86daac15068659236fc48c1e08c3e98a360e207a61ea3b48ae24"
     },
     {
       "file": "output/experiments/es_gender_repro_spanish.osexp",
@@ -167,7 +168,7 @@
     },
     {
       "file": "output/experiments/es_gender_repro_spanish.html",
-      "sha256": "3ec93911703e255ac382697fa60ffccd9d61db5a3fabc1ed73094b7bc07c11a4"
+      "sha256": "f420e6b8ca45438183c3fcad6d2ce942f9482241ca5b1bb6a68be595d09d1af3"
     }
   ]
 }

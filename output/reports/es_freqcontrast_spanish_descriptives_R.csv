@@ -3,7 +3,7 @@ high_frequency,length,80,5.1,1.346,3,5,8
 high_frequency,frequency,80,5.556,0.338,5.2,5.455,6.99
 high_frequency,n_density,80,6.075,7.225,0,3,37
 high_frequency,old20,80,1.688,0.393,1,1.7,2.65
-low_frequency,length,80,5.037,1.227,3,5,7
+low_frequency,length,80,5.038,1.227,3,5,7
 low_frequency,frequency,80,4.046,0.184,3.8,4.02,4.4
 low_frequency,n_density,80,5.575,5.641,0,3.5,20
 low_frequency,old20,80,1.685,0.385,1,1.7,2.45

@@ -61,7 +61,8 @@ knitr::kable(data.frame(
 `length` is the character count of the orthographic form. `frequency` is the Zipf
 value read from the lexicon's `freq_zipf` column, a log-scaled measure on which
 roughly 1 is a word occurring once per hundred million tokens and 7 a word
-occurring a thousand times per million (van Heuven et al., 2014); it is
+occurring ten thousand times per million. The value is the base-10 logarithm of
+the frequency per billion words (van Heuven et al., 2014). It is
 preferred to raw counts because it is linear in the log space in which frequency
 effects are approximately linear, and because it is comparable across corpora of
 different sizes. `n_density` is Coltheart's N, the count of same-length words
@@ -116,6 +117,34 @@ merged <- merge_norms(lex, aoa)
 merged[merged$word %in% aoa$word, c("word", "frequency", "aoa")]
 ```
 
+The join is case- and whitespace-insensitive on both sides, keeps the lexicon's own
+row and column order, and refuses a norm column whose name already exists on the
+lexicon rather than renaming it. A silent rename is the worst available outcome: it
+leaves the dimension the design matches on under a name nothing looks for.
+
+In a design you do not call this yourself. Name the tables in a `norms:` block and
+the pipeline joins them before the pool is built, so a norm column can be filtered
+on, matched on or spanned like any other dimension.
+
+```yaml
+norms:
+  - path: norms/en_concreteness.csv
+    on: word                  # optional join key, default 'word'
+    columns: [concreteness]   # optional; default every column but the key
+
+pool_filters:
+  concreteness: [2.0, 5.0]
+match_on: [length, concreteness]
+```
+
+lexsync ships no norm data: licences vary, and the citation is yours to honour.
+What it does do is record what you joined. Every table appears in the materials
+datasheet with its checksum and its per-column coverage, because a norm table can
+supply the very variable a design manipulates, and a selection over columns of
+unstated origin is not reproducible from the record that exists to make it so.
+Coverage is recorded for a related reason: a word the table does not cover gets a
+missing value, and the tolerance windows then drop it from the pool.
+
 ## Pool filters
 
 A pool filter narrows the lexicon before any matching happens. It states what
@@ -141,6 +170,43 @@ Filtering is a separate step from matching. `match_stimuli()` reads a design's
 lexicon where a pool was intended silently widens the selection rather than
 raising an error. The pipeline calls `build_pool()` first and the examples here do
 the same.
+
+## Supplied item pools
+
+Narrowing a whole lexicon is the right way round when any word of the language
+will do. It is the wrong way round when the candidate set is itself a research
+decision: a list from a previous study, from a norming session, or one restricted
+to a semantic category that no lexical filter can express. Such a list used to
+have to masquerade as a lexicon, which meant inventing a `freq_zipf` column for
+it, or else skip matching entirely by going in as `items.source: table`.
+
+`items.source: pool` takes the list as it is.
+
+```yaml
+items:
+  source: pool
+  path: items/pool_en_concrete_nouns.csv
+  lexicon: corpora/derived/en.csv
+```
+
+The list needs only a `word` column. Length and the syllable estimate are derived
+from the form, and `items.lexicon` supplies the rest, frequency above all, by
+lookup. A word the lexicon does not have is a hard error rather than a missing
+value, because the tolerance windows drop rows with missing values silently and
+the pool would then be smaller than it appears to be.
+
+One subtlety would quietly invalidate the controls if it went the other way.
+`n_density` and `old20` are properties of a word in its *language*, not among the
+131 words of a supplied list, so they are computed against the lexicon's words
+rather than the pool's. A supplied pool with no lexicon falls back to itself,
+which is why one is given above. `load_pool()` returns both parts of that, the
+pool and the reference word list, if you are calling it directly rather than
+through a design.
+
+Everything downstream is unchanged: the same conditions, the same `match_on`, the
+same report, the same datasheet. What differs is only where the candidates came
+from, and the datasheet records the list's checksum so that stays answerable
+later. `design_en_supplied_pool.yaml` is a worked example.
 
 ## Conditions, the anchor and matched sets
 
@@ -515,33 +581,34 @@ across replicates; the report will show it if it does.
 
 Clark, H. H. (1973). The language-as-fixed-effect fallacy: A critique of language
 statistics in psychological research. *Journal of Verbal Learning and Verbal
-Behavior*, *12*(4), 335-359. https://doi.org/10.1016/S0022-5371(73)80014-3
+Behavior*, *12*(4), 335–359. https://doi.org/10.1016/S0022-5371(73)80014-3
 
 Coltheart, M., Davelaar, E., Jonasson, J. T., & Besner, D. (1977). Access to the
-internal lexicon. In *Attention and Performance VI* (pp. 535-555).
+internal lexicon. In S. Dornic (Ed.), *Attention and Performance VI*
+(pp. 535–555). Erlbaum.
 
 González Alonso, J., Bernabeu, P., Silva, G., DeLuca, V., Poch, C., Ivanova, I., &
 Rothman, J. (2025). Starting from the very beginning: Unraveling third language
 (L3) development with longitudinal data from artificial language learning and
-EEG. *International Journal of Multilingualism*, *22*(1), 119-142.
+EEG. *International Journal of Multilingualism*, *22*(1), 119–142.
 https://doi.org/10.1080/14790718.2024.2415993
 
 Gu, X. S., & Rosenbaum, P. R. (1993). Comparison of multivariate matching
 methods: Structures, distances, and algorithms. *Journal of Computational and
-Graphical Statistics*, *2*(4), 405-420.
+Graphical Statistics*, *2*(4), 405–420.
 https://doi.org/10.1080/10618600.1993.10474623
 
 Hansen, B. B., & Klopfer, S. O. (2006). Optimal full matching and related designs
 via network flows. *Journal of Computational and Graphical Statistics*, *15*(3),
-609-627. https://doi.org/10.1198/106186006X137047
+609–627. https://doi.org/10.1198/106186006X137047
 
 Kuperman, V. (2015). Virtual experiments in megastudies: A case study of language
-and emotion. *Quarterly Journal of Experimental Psychology*, *68*(8), 1693-1710.
+and emotion. *Quarterly Journal of Experimental Psychology*, *68*(8), 1693–1710.
 https://doi.org/10.1080/17470218.2014.989865
 
-Lakens, D. (2017). Equivalence tests: A practical primer for t tests,
+Lakens, D. (2017). Equivalence tests: A practical primer for *t* tests,
 correlations, and meta-analyses. *Social Psychological and Personality Science*,
-*8*(4), 355-362. https://doi.org/10.1177/1948550617697177
+*8*(4), 355–362. https://doi.org/10.1177/1948550617697177
 
 Liben-Nowell, D., Strand, J., Sharp, A., Wexler, T., & Woods, K. (2019). The
 danger of testing by selecting controlled subsets, with applications to
@@ -549,23 +616,23 @@ spoken-word recognition. *Journal of Cognition*, *2*(1), Article 2.
 https://doi.org/10.5334/joc.51
 
 Rubin, D. B. (1980). Bias reduction using Mahalanobis-metric matching.
-*Biometrics*, *36*(2), 293-298. https://doi.org/10.2307/2529981
+*Biometrics*, *36*(2), 293–298. https://doi.org/10.2307/2529981
 
 Sassenhagen, J., & Alday, P. M. (2016). A common misapplication of statistical
 inference: Nuisance control with null-hypothesis significance tests. *Brain and
-Language*, *162*, 42-45. https://doi.org/10.1016/j.bandl.2016.08.001
+Language*, *162*, 42–45. https://doi.org/10.1016/j.bandl.2016.08.001
 
 Stuart, E. A. (2010). Matching methods for causal inference: A review and a look
-forward. *Statistical Science*, *25*(1), 1-21. https://doi.org/10.1214/09-STS313
+forward. *Statistical Science*, *25*(1), 1–21. https://doi.org/10.1214/09-STS313
 
 van Heuven, W. J. B., Mandera, P., Keuleers, E., & Brysbaert, M. (2014).
 SUBTLEX-UK: A new and improved word frequency database for British English.
-*Quarterly Journal of Experimental Psychology*, *67*(6), 1176-1190.
+*Quarterly Journal of Experimental Psychology*, *67*(6), 1176–1190.
 https://doi.org/10.1080/17470218.2013.850521
 
 Yarkoni, T. (2022). The generalizability crisis. *Behavioral and Brain Sciences*,
-*45*, e1. https://doi.org/10.1017/S0140525X20001685
+*45*, Article e1. https://doi.org/10.1017/S0140525X20001685
 
 Yarkoni, T., Balota, D., & Yap, M. (2008). Moving beyond Coltheart's N: A new
 measure of orthographic similarity. *Psychonomic Bulletin & Review*, *15*(5),
-971-979. https://doi.org/10.3758/pbr.15.5.971
+971–979. https://doi.org/10.3758/PBR.15.5.971

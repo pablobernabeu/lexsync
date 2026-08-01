@@ -1,5 +1,5 @@
 {
-  "lexsync_datasheet_version": "1.0",
+  "lexsync_datasheet_version": "1.1",
   "design": {
     "name": "en_priming",
     "language": "english",
@@ -19,6 +19,7 @@
     "method": "item table (user-supplied)",
     "cross_engine": "n/a (user-supplied items)"
   },
+  "relational": null,
   "analysis": {
     "response": "the trial outcome (e.g. reaction time or accuracy)",
     "suggested_model": "response ~ condition + (1 + condition | subject) + (1 + condition | item)",
@@ -59,7 +60,7 @@
     },
     {
       "file": "output/experiments/en_priming_english_psychopy.py",
-      "sha256": "ca9d04ba4ca4878cf5dcf3ea1b7ef65e86bfd5d47ea8617bedf2c5b7ac857d8f"
+      "sha256": "c42d243b229c80e1a0772bfebc8b5e2fd190c97b680808f9013326e88a4012e1"
     },
     {
       "file": "output/experiments/en_priming_english.osexp",
@@ -67,7 +68,7 @@
     },
     {
       "file": "output/experiments/en_priming_english.html",
-      "sha256": "194ad1d631861a92086a04b5d74cd1cac1bcbe1fec5711e2cd9b8ff064fe45f1"
+      "sha256": "e4a81a46f3da2bd5db0fef5d68e64900a30d6c05253f28d30b4a16bda434eb10"
     }
   ]
 }

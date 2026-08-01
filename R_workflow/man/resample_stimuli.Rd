@@ -25,6 +25,6 @@ Each replicate is an independent, fully matched set drawn from the pool with the
 items of earlier replicates removed, so no item is reused. This lets a study
 treat its items as a random factor (running different item samples across
 participant groups, or showing an effect holds across samples) instead of treating
-them as a fixed set (Clark, 1973; Yarkoni, 2020). Deterministic and identical to the
+them as a fixed set (Clark, 1973; Yarkoni, 2022). Deterministic and identical to the
 Python engine.
 }

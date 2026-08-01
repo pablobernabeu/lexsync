@@ -1,6 +1,6 @@
 # Materials datasheet — en_richdim (english)
 
-*lexsync datasheet v1.0; python engine.*
+*lexsync datasheet v1.1; python engine.*
 
 ## Provenance
 
@@ -36,7 +36,7 @@
 
 ## Methods paragraph
 
-60 items per condition were selected from the English lexicon (see corpora/ATTRIBUTION.md for corpus licence and citation) and matched item by item on length, n_syllables, bigram_freq using lexsync's standardised_euclidean matcher. The realised control was close. The largest standardised difference on any matched dimension was 0.17 (90% CI [-0.13, 0.48]), within the 0.5-SD equivalence bound. The smallest condition was selected from 462 eligible candidates, and the selection was deterministic and blind to any outcome measure. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.0).
+60 items per condition were selected from the English lexicon (wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md) and matched item by item on length, n_syllables, bigram_freq using lexsync's standardised_euclidean matcher. The realised control was close. The largest standardised difference on any matched dimension was 0.17 (90% CI [-0.13, 0.48]), within the 0.5-SD equivalence bound. The smallest condition was selected from 462 eligible candidates, and the selection was deterministic and blind to any outcome measure. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.0).
 
 ## Pre-registration template
 
@@ -56,7 +56,7 @@
 - Paradigm: factorial
 
 ### Materials (from the lexsync datasheet)
-60 items per condition were selected from the English lexicon (see corpora/ATTRIBUTION.md for corpus licence and citation) and matched item by item on length, n_syllables, bigram_freq using lexsync's standardised_euclidean matcher. The realised control was close. The largest standardised difference on any matched dimension was 0.17 (90% CI [-0.13, 0.48]), within the 0.5-SD equivalence bound. The smallest condition was selected from 462 eligible candidates, and the selection was deterministic and blind to any outcome measure. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.0).
+60 items per condition were selected from the English lexicon (wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md) and matched item by item on length, n_syllables, bigram_freq using lexsync's standardised_euclidean matcher. The realised control was close. The largest standardised difference on any matched dimension was 0.17 (90% CI [-0.13, 0.48]), within the 0.5-SD equivalence bound. The smallest condition was selected from 462 eligible candidates, and the selection was deterministic and blind to any outcome measure. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.0).
 
 ### Sampling plan
 - Sample size and justification:

@@ -1,8 +1,5 @@
 """The command-line interface and the ``python -m lexsync`` module entry point."""
-import runpy
-import sys
 
-import pytest
 
 from lexsync.cli import main
 

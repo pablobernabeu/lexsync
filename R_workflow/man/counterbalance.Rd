@@ -4,7 +4,7 @@
 \alias{counterbalance}
 \title{Assign stimuli to lists and a randomised, reproducible trial order}
 \usage{
-counterbalance(stimuli, design, schema)
+counterbalance(stimuli, design, schema, list_of_set = NULL)
 }
 \arguments{
 \item{stimuli}{A stimuli data frame (matched set or loaded item table).}
@@ -12,6 +12,11 @@ counterbalance(stimuli, design, schema)
 \item{design}{A parsed design configuration.}
 
 \item{schema}{The parsed global schema (provides the seed).}
+
+\item{list_of_set}{Optional named integer vector mapping each \code{set} to a list,
+from \code{\link[=balance_lists]{balance_lists()}}. Supplied by the pipeline when
+\code{counterbalance.optimise} is on; when \code{NULL} the factorial recipe deals sets to
+lists by rank as before.}
 }
 \value{
 \code{stimuli} with added \code{list} and \code{trial} columns.

@@ -5,7 +5,8 @@
 \title{The paradigm registry: default event sequences and required fields}
 \format{
 A named list with one entry per paradigm (\code{factorial},
-\code{lexical_decision}, \code{priming}, \code{self_paced_reading}), each holding
+\code{lexical_decision}, \code{priming}, \code{categorisation}, \code{self_paced_reading}), each
+holding
 \code{stimulus_fields}, a \code{counterbalance} recipe and an \code{events} list.
 }
 \usage{

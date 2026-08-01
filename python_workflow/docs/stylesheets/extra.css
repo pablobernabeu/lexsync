@@ -25,3 +25,21 @@
   border-bottom: none;
   padding-bottom: 0;
 }
+
+/* ---- About page: citation controls -------------------------------------- */
+/* The BibTeX entry on the About page carries a copy button beside a download
+   link, matching the pkgdown twin. Material's .md-button look assumes an
+   anchor, and a <button> element keeps the browser's own font and background,
+   so both are reset here rather than in the page. */
+.md-typeset .mrd-cite-actions {
+  margin-top: .7rem;
+}
+.md-typeset .mrd-cite-actions .md-button + .md-button {
+  margin-left: .4rem;
+}
+.md-typeset .mrd-cite-actions button.md-button {
+  font: inherit;
+  font-weight: 600;
+  background: none;
+  cursor: pointer;
+}

@@ -6,12 +6,15 @@
 \alias{lexsync-package}
 \title{lexsync: Multidimensional Lexical Optimisation and Hardware-Timed Experiment Generation}
 \description{
-A cross-platform toolkit that unifies many-language lexical-corpus access, parallel multidimensional stimulus matching, deterministic pseudoword generation, counterbalancing and the automated generation of experiments from a declarative trial-event model, for 'PsychoPy', 'OpenSesame' and the browser ('jsPsych'). The laboratory targets bind electroencephalography onset triggers to the stimulus flip. It is the R member of a dual-language pair; a structurally identical 'Python' package is also provided. Several paradigms (factorial word contrasts, lexical decision, priming and self-paced reading) are supported, and each design is accompanied by a machine- and human-readable materials datasheet for reproducibility.
+\if{html}{\figure{logo.svg}{options: style='float: right' alt='logo' width='120'}}
+
+A cross-platform toolkit that unifies many-language lexical-corpus access, parallel multidimensional stimulus matching, deterministic pseudoword generation, counterbalancing and the automated generation of experiments from a declarative trial-event model, for 'PsychoPy', 'OpenSesame' and the browser ('jsPsych'). The laboratory targets bind electroencephalography onset triggers to the stimulus flip. It is the R member of a dual-language pair; a structurally identical 'Python' package is also provided. Several paradigms (factorial word contrasts, lexical decision, priming, self-paced reading and cued categorisation) are supported, and each design is accompanied by a machine- and human-readable materials datasheet for reproducibility.
 }
 \seealso{
 Useful links:
 \itemize{
   \item \url{https://github.com/pablobernabeu/lexsync}
+  \item \url{https://pablobernabeu.github.io/lexsync/r/}
   \item Report bugs at \url{https://github.com/pablobernabeu/lexsync/issues}
 }
 

@@ -1,5 +1,5 @@
 {
-  "lexsync_datasheet_version": "1.0",
+  "lexsync_datasheet_version": "1.1",
   "design": {
     "name": "en_lexdec_wuggy",
     "language": "english",
@@ -12,7 +12,7 @@
     "type": "generate",
     "path": "corpora/derived/en.csv",
     "sha256": "c20549b920d816809d11cfa673ad0df1dd70d3e73176ee66cbec18021627f65d",
-    "provenance": "see corpora/ATTRIBUTION.md for corpus licence and citation"
+    "provenance": "wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md"
   },
   "dimensions": {
     "length": {
@@ -35,6 +35,7 @@
     ],
     "cross_engine": "byte-identical"
   },
+  "relational": null,
   "analysis": {
     "response": "the trial outcome (e.g. reaction time or accuracy)",
     "suggested_model": "response ~ lexicality + (1 + lexicality | subject) + (1 | item)",
@@ -94,7 +95,7 @@
     },
     {
       "file": "output/experiments/en_lexdec_wuggy_english_psychopy.py",
-      "sha256": "05f522d678bd137b676d2fbc86f3eda3b060ea2ec11f8f7efa59c49c13700d6d"
+      "sha256": "0ddafd1272ce445112888164813efffc5e610dd13fd6d3ede1f46a7f66df7d6b"
     },
     {
       "file": "output/experiments/en_lexdec_wuggy_english.osexp",
@@ -102,7 +103,7 @@
     },
     {
       "file": "output/experiments/en_lexdec_wuggy_english.html",
-      "sha256": "39bc22e8c369d879de82a44b2521f80ec96b33e08795efcf8b8f7290e0adf69f"
+      "sha256": "a57d601304e48971b20951e0c7de2d79921957e142d81f66badbc4abba18040e"
     }
   ]
 }

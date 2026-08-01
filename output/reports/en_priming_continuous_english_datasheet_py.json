@@ -1,0 +1,164 @@
+{
+  "analysis": {
+    "note": "The predictor is kept continuous and analysed by regression or a mixed model rather than dichotomised (Kuperman, 2015; Liben-Nowell et al., 2019); the controls enter as covariates. Crossed random effects for subjects and items guard the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008); reduce the structure if it does not converge (Matuschek et al., 2017).",
+    "response": "the trial outcome (e.g. reaction time or accuracy)",
+    "suggested_model": "response ~ target.frequency + target.length + pair.overlap + (1 + target.frequency | subject) + (1 | item)"
+  },
+  "artifacts": [
+    {
+      "file": "output/stimuli/en_priming_continuous_english_stimuli_py.csv",
+      "sha256": "05fc40acad57d8de585d854e592e7f21288e9952d5add2e8d81032bd222dec24"
+    },
+    {
+      "file": "output/reports/en_priming_continuous_english_descriptives_py.csv",
+      "sha256": "d641dd9737bcfec66ec5a7bb8a9d38d23bb11236c44a5df98c7d398d33e3f9ed"
+    },
+    {
+      "file": "output/reports/en_priming_continuous_english_comparisons_py.csv",
+      "sha256": "6d7f5bf7bc63fe7d4c1cf21623eee70055b6f0822ae2f4c2f6dc94b657b3a9d5"
+    },
+    {
+      "file": "output/experiments/en_priming_continuous_english_psychopy.py",
+      "sha256": "7fdb11b6cd0678420481e1d0c0090abb48be9a537e563cb8e25a8428e1055c50"
+    },
+    {
+      "file": "output/experiments/en_priming_continuous_english.osexp",
+      "sha256": "efda467aa4c557653001193f5aef1d8805db488f7827fefc71c603e24f793028"
+    },
+    {
+      "file": "output/experiments/en_priming_continuous_english.html",
+      "sha256": "6b6d16ffa44fd5e53c1ff778b9ce20cf4f74cd70cabe30bd2b9b877e8785c45e"
+    }
+  ],
+  "counterbalancing": {
+    "lists": 2,
+    "recipe": "latin_square_target"
+  },
+  "design": {
+    "description": "Prime-target pairs selected to span target frequency continuously, with target length and prime-target orthographic overlap held near-constant; Latin-square counterbalanced over two lists.",
+    "language": "english",
+    "n_per_condition": 8,
+    "name": "en_priming_continuous",
+    "paradigm": "priming",
+    "source": "table"
+  },
+  "dimensions": {
+    "bigram_freq": {
+      "compute": "mean_bigram_probability",
+      "type": "derived",
+      "unit": "mean positional bigram probability"
+    },
+    "frequency": {
+      "column": "freq_zipf",
+      "type": "column",
+      "unit": "Zipf"
+    },
+    "length": {
+      "compute": "n_letters",
+      "type": "derived",
+      "unit": "letters"
+    },
+    "n_density": {
+      "compute": "coltheart_n",
+      "type": "derived",
+      "unit": "neighbours"
+    },
+    "n_syllables": {
+      "compute": "vowel_groups",
+      "type": "derived",
+      "unit": "syllables (orthographic estimate)"
+    },
+    "old20": {
+      "compute": "old20",
+      "type": "derived",
+      "unit": "mean Levenshtein distance"
+    }
+  },
+  "items": {
+    "conditions": [
+      "related",
+      "unrelated"
+    ],
+    "n_conditions": 2,
+    "n_total": 16,
+    "stimuli_file": "output/stimuli/en_priming_continuous_english_stimuli_py.csv",
+    "stimuli_sha256": "05fc40acad57d8de585d854e592e7f21288e9952d5add2e8d81032bd222dec24"
+  },
+  "lexsync_datasheet_version": "1.1",
+  "materials_source": {
+    "path": "items/priming_pairs_en.csv",
+    "provenance": "user-supplied item table",
+    "sha256": "088f506b3166368bb11b3b271a50ed33c52ba913205bcaa642c5b4ebec4a091a",
+    "type": "table"
+  },
+  "realised_control": [
+    {
+      "dimension": "target.frequency",
+      "pearson_r": null,
+      "predictor_span": 1.45,
+      "role": "predictor"
+    },
+    {
+      "dimension": "target.length",
+      "pearson_r": -0.292,
+      "predictor_span": 1.45,
+      "role": "control"
+    },
+    {
+      "dimension": "pair.overlap",
+      "pearson_r": -0.227,
+      "predictor_span": 1.45,
+      "role": "control"
+    }
+  ],
+  "relational": {
+    "member_dimensions": [
+      "freq_zipf",
+      "frequency",
+      "length",
+      "n_density",
+      "n_syllables",
+      "old20"
+    ],
+    "member_lexicon": "corpora/derived/en.csv",
+    "member_lexicon_sha256": "c20549b920d816809d11cfa673ad0df1dd70d3e73176ee66cbec18021627f65d",
+    "members": [
+      "prime",
+      "target"
+    ],
+    "n_pairs": 8,
+    "relational_dimensions": [
+      "pair.lev",
+      "pair.overlap"
+    ]
+  },
+  "reproducibility": {
+    "seed": 2026,
+    "versions": {
+      "engine": "python",
+      "lexsync": "0.1.0",
+      "numpy": "2.3.2",
+      "pandas": "2.3.2",
+      "python": "3.13.7",
+      "scipy": "1.17.1"
+    }
+  },
+  "resampling": null,
+  "selection": {
+    "controls": [
+      "target.length",
+      "pair.overlap"
+    ],
+    "cross_engine": "byte-identical",
+    "method": "continuous even-spread (predictor spanned, controls banded)",
+    "predictor": "target.frequency",
+    "tolerance_k": {
+      "frequency": 1.0,
+      "length": 2.0,
+      "n_density": 2.0,
+      "old20": 2.0,
+      "pair.overlap": 1.5,
+      "target.length": 1.5
+    }
+  }
+}

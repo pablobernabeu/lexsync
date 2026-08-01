@@ -48,8 +48,8 @@ match_stimuli <- function(pool, design, schema, verbose = FALSE) {
 
   # Standardisation statistics taken from the whole pool, so scaling is stable
   # and identical across conditions.
-  center <- vapply(match_on, function(d) mean(pool[[d]], na.rm = TRUE), numeric(1))
-  scale_ <- vapply(match_on, function(d) stats::sd(pool[[d]], na.rm = TRUE), numeric(1))
+  center <- vapply(match_on, function(d) .exact_mean(pool[[d]][!is.na(pool[[d]])]), numeric(1))
+  scale_ <- vapply(match_on, function(d) .exact_sd(pool[[d]][!is.na(pool[[d]])]), numeric(1))
   scale_[is.na(scale_) | scale_ == 0] <- 1
   zmat <- function(df) {
     m <- as.matrix(df[, match_on, drop = FALSE])
@@ -103,8 +103,8 @@ match_stimuli <- function(pool, design, schema, verbose = FALSE) {
 
   # Tolerance windows from the anchor distribution (Stage 1 pre-filter).
   win <- lapply(match_on, function(d) {
-    m <- mean(anchor[[d]], na.rm = TRUE)
-    s <- stats::sd(anchor[[d]], na.rm = TRUE)
+    m <- .exact_mean(anchor[[d]][!is.na(anchor[[d]])])
+    s <- .exact_sd(anchor[[d]][!is.na(anchor[[d]])])
     k <- tol_k[[d]] %||% 2
     c(m - k * s, m + k * s)
   })
@@ -186,6 +186,15 @@ match_stimuli <- function(pool, design, schema, verbose = FALSE) {
   out
 }
 
+# Column means for the overlap-cap centroid, through the compensated reduction rather
+# than colMeans. The cap decides which candidates survive into matching -- it fires for
+# the shipped en_ndensity and es_ndensity designs -- so a centroid that differs in the
+# last bits between engines is a selection difference waiting to happen, not a rounding
+# curiosity. Mirrors _exact_colmeans in matching.py.
+.exact_colmeans <- function(z) {
+  vapply(seq_len(ncol(z)), function(j) .exact_mean(z[, j]), numeric(1))
+}
+
 #' Joint nearest-pair matching for a two-condition design
 #'
 #' Selects the `n` best-matched pairs across the two conditions, keeping only
@@ -213,8 +222,8 @@ match_joint <- function(subpools, cond_names, match_on, center, scale_, n, cap =
     list(df = df[keep, , drop = FALSE], z = z[keep, , drop = FALSE])
   }
   z0 <- zof(s0); z1 <- zof(s1)
-  o0 <- cap_overlap(s0, z0, colMeans(z1)); s0 <- o0$df; z0 <- o0$z
-  o1 <- cap_overlap(s1, z1, colMeans(z0)); s1 <- o1$df; z1 <- o1$z
+  o0 <- cap_overlap(s0, z0, .exact_colmeans(z1)); s0 <- o0$df; z0 <- o0$z
+  o1 <- cap_overlap(s1, z1, .exact_colmeans(z0)); s1 <- o1$df; z1 <- o1$z
   m0 <- nrow(z0); m1 <- nrow(z1)
   cost <- matrix(0, m0, m1)
   for (d in seq_len(ncol(z0))) cost <- cost + outer(z0[, d], z1[, d], "-")^2
@@ -256,7 +265,7 @@ match_joint <- function(subpools, cond_names, match_on, center, scale_, n, cap =
 #'
 #' Solves the linear-assignment problem globally rather than greedily, so it
 #' minimises the summed pair distance and leaves fewer poorly matched pairs (Gu and
-#' Rosenbaum, 1993; Hansen and Klopfer, 2006). Needs the 'clue' package. The
+#' Rosenbaum, 1993; Hansen & Klopfer, 2006). Needs the 'clue' package. The
 #' solver's tie handling differs from the Python engine's, so the two agree closely
 #' but not byte-for-byte.
 #'
@@ -282,8 +291,8 @@ match_optimal <- function(subpools, cond_names, match_on, center, scale_, n, cap
     list(df = df[keep, , drop = FALSE], z = z[keep, , drop = FALSE])
   }
   z0 <- zof(s0); z1 <- zof(s1)
-  o0 <- cap_overlap(s0, z0, colMeans(z1)); s0 <- o0$df; z0 <- o0$z
-  o1 <- cap_overlap(s1, z1, colMeans(z0)); s1 <- o1$df; z1 <- o1$z
+  o0 <- cap_overlap(s0, z0, .exact_colmeans(z1)); s0 <- o0$df; z0 <- o0$z
+  o1 <- cap_overlap(s1, z1, .exact_colmeans(z0)); s1 <- o1$df; z1 <- o1$z
   m0 <- nrow(z0); m1 <- nrow(z1)
   cost <- matrix(0, m0, m1)
   for (d in seq_len(ncol(z0))) cost <- cost + outer(z0[, d], z1[, d], "-")^2
@@ -320,10 +329,23 @@ match_optimal <- function(subpools, cond_names, match_on, center, scale_, n, cap
 #' @param design A parsed design configuration carrying a `continuous` block.
 #' @param schema The parsed global schema (tolerance windows).
 #' @param verbose Logical; report a window relaxation.
+#' @param key Column used as the selection unit and the byte-order tie-break, by
+#'   default `"word"`. The pair-keyed path passes `"set"`: after a pair table is
+#'   collapsed to one row per item set there is no `word` column, and `set` is unique
+#'   per row, integer, and already derived deterministically.
+#' @param label Value written into the result's `condition` column, or `NULL` to leave
+#'   the existing conditions alone. The pair path passes `NULL`, because its rows
+#'   already carry the design's own conditions and overwriting them would destroy the
+#'   contrast the design exists to test.
+#' @param renumber_sets Logical; renumber the selected rows `1..n`. The pair path
+#'   passes `FALSE`, because its `set` ids have to survive selection for the result to
+#'   be re-expanded back to the full pair table.
 #' @return A data frame of selected stimuli (condition "continuous", set 1..n).
 #' @importFrom stats sd
 #' @export
-select_continuous_stimuli <- function(pool, design, schema, verbose = FALSE) {
+select_continuous_stimuli <- function(pool, design, schema, verbose = FALSE,
+                                      key = "word", label = "continuous",
+                                      renumber_sets = TRUE) {
   cfg <- design$continuous
   predictor <- cfg$predictor
   controls <- unlist(cfg$controls, use.names = FALSE)
@@ -350,9 +372,18 @@ select_continuous_stimuli <- function(pool, design, schema, verbose = FALSE) {
   if (!is.null(design$matching$tolerance_k)) {
     tol_k <- utils::modifyList(tol_k, design$matching$tolerance_k)
   }
+  if (!(key %in% names(pool))) {
+    stop(sprintf("lexsync: the continuous tie-break column '%s' is absent from the pool.", key),
+         call. = FALSE)
+  }
   even_spread <- function(df) {
     if (nrow(df) == 0) return(df)
-    df <- df[order(df[[predictor]], df$word, method = "radix"), , drop = FALSE]
+    # `key` is the deterministic tie-break when two rows share a predictor value.
+    # It is `word` for a corpus pool and `set` for a collapsed pair table, where no
+    # `word` column exists. Note `df[[key]]` rather than `df$word`: `$`
+    # partial-matches on a data frame, so a joined `word.frequency` with no bare
+    # `word` would silently sort by it in R while Python raised KeyError.
+    df <- df[order(df[[predictor]], df[[key]], method = "radix"), , drop = FALSE]
     n_take <- min(n, nrow(df))
     idx <- unique(round(seq(1, nrow(df), length.out = n_take)))
     df[idx, , drop = FALSE]
@@ -361,8 +392,8 @@ select_continuous_stimuli <- function(pool, design, schema, verbose = FALSE) {
   spread <- even_spread(pool)
   if (nrow(spread) == 0) stop("lexsync: the pool is empty for the continuous design.", call. = FALSE)
   win <- lapply(controls, function(d) {
-    m <- mean(spread[[d]], na.rm = TRUE)
-    s <- stats::sd(spread[[d]], na.rm = TRUE)
+    m <- .exact_mean(spread[[d]][!is.na(spread[[d]])])
+    s <- .exact_sd(spread[[d]][!is.na(spread[[d]])])
     k <- tol_k[[d]] %||% 2
     c(m - k * s, m + k * s)
   })
@@ -383,8 +414,11 @@ select_continuous_stimuli <- function(pool, design, schema, verbose = FALSE) {
   }
   # Pass 2: an even spread over the filtered pool is the selection.
   sel <- even_spread(filtered)
-  sel$condition <- "continuous"
-  sel$set <- seq_len(nrow(sel))
+  # A pair table already carries its own `condition` and `set`, which the Latin
+  # square and the trial-order digest depend on, so the pair path passes
+  # label = NULL and renumber_sets = FALSE to leave both alone.
+  if (!is.null(label)) sel$condition <- label
+  if (isTRUE(renumber_sets)) sel$set <- seq_len(nrow(sel))
   rownames(sel) <- NULL
   sel
 }
@@ -395,7 +429,7 @@ select_continuous_stimuli <- function(pool, design, schema, verbose = FALSE) {
 #' items of earlier replicates removed, so no item is reused. This lets a study
 #' treat its items as a random factor (running different item samples across
 #' participant groups, or showing an effect holds across samples) instead of treating
-#' them as a fixed set (Clark, 1973; Yarkoni, 2020). Deterministic and identical to the
+#' them as a fixed set (Clark, 1973; Yarkoni, 2022). Deterministic and identical to the
 #' Python engine.
 #'
 #' @param pool A candidate pool with the `match_on` dimensions present.

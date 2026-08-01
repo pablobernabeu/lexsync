@@ -20,7 +20,7 @@ build_lexdec_stimuli(
 the real word forms a pseudoword must avoid; defaults to the pool's words.}
 
 \item{method}{Pseudoword generator: \code{"letter_substitution"} (default) or
-\code{"subsyllabic"} (Wuggy-style; Keuleers and Brysbaert, 2010).}
+\code{"subsyllabic"} (Wuggy-style; Keuleers & Brysbaert, 2010).}
 }
 \value{
 A stimulus data frame with \code{target}, \code{condition} and \code{set} columns.

@@ -4,7 +4,7 @@ import pytest
 
 from lexsync.counterbalancing import counterbalance
 from lexsync.generation import (bigram_counts, build_lexdec_stimuli,
-                                generate_pseudowords, make_pseudoword)
+                                generate_pseudowords)
 from lexsync.io_utils import clean_field
 from lexsync.paradigms import (PARADIGMS, content_field, referenced_fields,
                                required_fields, resolve_events)

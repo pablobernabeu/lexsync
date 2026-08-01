@@ -1,6 +1,6 @@
 # Materials datasheet — es_gender_repro (spanish)
 
-*lexsync datasheet v1.0; python engine.*
+*lexsync datasheet v1.1; python engine.*
 
 ## Provenance
 
@@ -34,7 +34,7 @@
 
 ## Methods paragraph
 
-48 items per condition were selected from the Spanish lexicon (see corpora/ATTRIBUTION.md for corpus licence and citation) and matched item by item on frequency, length using lexsync's standardised_euclidean matcher. The realised control was close. The largest standardised difference on any matched dimension was 0.02 (90% CI [-0.32, 0.36]), within the 0.5-SD equivalence bound. The smallest condition was selected from 4164 eligible candidates, and the selection was deterministic and blind to any outcome measure. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.0).
+48 items per condition were selected from the Spanish lexicon (wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md) and matched item by item on frequency, length using lexsync's standardised_euclidean matcher. The realised control was close. The largest standardised difference on any matched dimension was 0.02 (90% CI [-0.32, 0.36]), within the 0.5-SD equivalence bound. The smallest condition was selected from 4164 eligible candidates, and the selection was deterministic and blind to any outcome measure. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.0).
 
 ## Pre-registration template
 
@@ -54,7 +54,7 @@
 - Paradigm: factorial
 
 ### Materials (from the lexsync datasheet)
-48 items per condition were selected from the Spanish lexicon (see corpora/ATTRIBUTION.md for corpus licence and citation) and matched item by item on frequency, length using lexsync's standardised_euclidean matcher. The realised control was close. The largest standardised difference on any matched dimension was 0.02 (90% CI [-0.32, 0.36]), within the 0.5-SD equivalence bound. The smallest condition was selected from 4164 eligible candidates, and the selection was deterministic and blind to any outcome measure. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.0).
+48 items per condition were selected from the Spanish lexicon (wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md) and matched item by item on frequency, length using lexsync's standardised_euclidean matcher. The realised control was close. The largest standardised difference on any matched dimension was 0.02 (90% CI [-0.32, 0.36]), within the 0.5-SD equivalence bound. The smallest condition was selected from 4164 eligible candidates, and the selection was deterministic and blind to any outcome measure. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.0).
 
 ### Sampling plan
 - Sample size and justification:

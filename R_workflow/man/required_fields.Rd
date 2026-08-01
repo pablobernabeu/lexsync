@@ -15,3 +15,6 @@ Character vector of the item fields the design's trials reference.
 \description{
 Trial fields a design needs present in its items (paradigm + events)
 }
+\examples{
+required_fields(list(paradigm = "categorisation"))
+}

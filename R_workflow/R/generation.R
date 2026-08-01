@@ -253,7 +253,7 @@ generate_pseudowords_subsyllabic <- function(base_words, reference_words) {
 #' @param reference_words Character vector supplying the bigram statistics and
 #'   the real word forms a pseudoword must avoid; defaults to the pool's words.
 #' @param method Pseudoword generator: `"letter_substitution"` (default) or
-#'   `"subsyllabic"` (Wuggy-style; Keuleers and Brysbaert, 2010).
+#'   `"subsyllabic"` (Wuggy-style; Keuleers & Brysbaert, 2010).
 #' @return A stimulus data frame with `target`, `condition` and `set` columns.
 #' @export
 build_lexdec_stimuli <- function(pool, n, reference_words = NULL, method = "letter_substitution") {

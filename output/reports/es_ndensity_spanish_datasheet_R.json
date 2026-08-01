@@ -1,5 +1,5 @@
 {
-  "lexsync_datasheet_version": "1.0",
+  "lexsync_datasheet_version": "1.1",
   "design": {
     "name": "es_ndensity",
     "language": "spanish",
@@ -12,7 +12,7 @@
     "type": "corpus",
     "path": "corpora/derived/es.csv",
     "sha256": "02732e5f00d09951b97ab8d5bdc285c321894ccb49d5c20b7afe39335a8204d9",
-    "provenance": "see corpora/ATTRIBUTION.md for corpus licence and citation"
+    "provenance": "wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md"
   },
   "dimensions": {
     "length": {
@@ -70,6 +70,7 @@
     ],
     "cross_engine": "byte-identical"
   },
+  "relational": null,
   "analysis": {
     "response": "the trial outcome (e.g. reaction time or accuracy)",
     "suggested_model": "response ~ condition + (1 + condition | subject) + (1 | item)",
@@ -151,7 +152,7 @@
     },
     {
       "file": "output/reports/es_ndensity_spanish_descriptives_R.csv",
-      "sha256": "4efa874227c294ef9982d35ad6768e0e9a47406f556d4610bc3239fa253059c2"
+      "sha256": "d45a2aeda2890e772d5d30e2a411316dbd3d62a976c4b3cd7e5038125ad19047"
     },
     {
       "file": "output/reports/es_ndensity_spanish_comparisons_R.csv",
@@ -159,7 +160,7 @@
     },
     {
       "file": "output/experiments/es_ndensity_spanish_psychopy.py",
-      "sha256": "c9a7ac3172492eb71a9154d3eedbcba4598f633bdd0a13f31a5c4db34172ecea"
+      "sha256": "54bf044d125c1e180110efc46597325ec7c2503919a124bfc4ee41760d072bd3"
     },
     {
       "file": "output/experiments/es_ndensity_spanish.osexp",
@@ -167,7 +168,7 @@
     },
     {
       "file": "output/experiments/es_ndensity_spanish.html",
-      "sha256": "d4ee52910281178048ed0edb74f4f6997bf88dea78b8670d958d898e725f49cd"
+      "sha256": "12a467ade4d684de97f59d290d0c5237999aaef24614fc50fce87595f06de108"
     }
   ]
 }

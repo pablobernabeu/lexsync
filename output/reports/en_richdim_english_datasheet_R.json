@@ -1,5 +1,5 @@
 {
-  "lexsync_datasheet_version": "1.0",
+  "lexsync_datasheet_version": "1.1",
   "design": {
     "name": "en_richdim",
     "language": "english",
@@ -12,7 +12,7 @@
     "type": "corpus",
     "path": "corpora/derived/en.csv",
     "sha256": "c20549b920d816809d11cfa673ad0df1dd70d3e73176ee66cbec18021627f65d",
-    "provenance": "see corpora/ATTRIBUTION.md for corpus licence and citation"
+    "provenance": "wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md"
   },
   "dimensions": {
     "length": {
@@ -71,6 +71,7 @@
     ],
     "cross_engine": "byte-identical"
   },
+  "relational": null,
   "analysis": {
     "response": "the trial outcome (e.g. reaction time or accuracy)",
     "suggested_model": "response ~ condition + (1 + condition | subject) + (1 | item)",
@@ -180,7 +181,7 @@
     },
     {
       "file": "output/experiments/en_richdim_english_psychopy.py",
-      "sha256": "3019504f913998599312f98b48df17751242389fa8cded15fc0bc35dfab78632"
+      "sha256": "b423eb4f2a351c6744c976354ea4361742d0f0d5c9db52cb61e04593aa5176b1"
     },
     {
       "file": "output/experiments/en_richdim_english.osexp",
@@ -188,7 +189,7 @@
     },
     {
       "file": "output/experiments/en_richdim_english.html",
-      "sha256": "a7b2fa1e45c955d06aecb7c23f1b2c79c47ddd1417ca5b231d3c4d719ea0998f"
+      "sha256": "07236323d266c430e5e27675ce6e146422d24ab43b071d415b565b8dc64a0075"
     }
   ]
 }

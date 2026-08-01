@@ -1,0 +1,74 @@
+{
+  "lexsync_datasheet_version": "1.1",
+  "design": {
+    "name": "en_priming_jitter",
+    "language": "english",
+    "paradigm": "priming",
+    "source": "table",
+    "description": "Priming with a per-trial stimulus-onset asynchrony read from the items and a jittered inter-trial interval, both recorded as trial-level variables.",
+    "n_per_condition": null
+  },
+  "materials_source": {
+    "type": "table",
+    "path": "items/priming_pairs_en_soa.csv",
+    "sha256": "305b3a91aa29671307aee0bdfe044f5ea48a00b3e63197a7110eba8d31da30ac",
+    "provenance": "user-supplied item table"
+  },
+  "dimensions": {},
+  "selection": {
+    "method": "item table (user-supplied)",
+    "cross_engine": "n/a (user-supplied items)"
+  },
+  "relational": null,
+  "analysis": {
+    "response": "the trial outcome (e.g. reaction time or accuracy)",
+    "suggested_model": "response ~ condition + (1 + condition | subject) + (1 + condition | item)",
+    "note": "Crossed random effects for subjects and items guard against the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). Begin with this maximal structure (Barr et al., 2013) and reduce it if the model does not converge (Matuschek et al., 2017); fit with lme4 in R or pymer4/statsmodels in Python."
+  },
+  "realised_control": [],
+  "counterbalancing": {
+    "recipe": "latin_square_target",
+    "lists": 2
+  },
+  "resampling": null,
+  "items": {
+    "n_total": 24,
+    "n_conditions": 2,
+    "conditions": [
+      "related",
+      "unrelated"
+    ],
+    "stimuli_file": "output/stimuli/en_priming_jitter_english_stimuli_R.csv",
+    "stimuli_sha256": "72aaa8ee8d28c35792e306ad6b7981566e8ca89c9f5a158719f5c68ed02ed307"
+  },
+  "reproducibility": {
+    "seed": 2026,
+    "versions": {
+      "engine": "R",
+      "lexsync": "0.1.0",
+      "R": "4.6.1",
+      "readr": "2.2.0",
+      "stringdist": "0.9.17",
+      "jsonlite": "2.0.0",
+      "digest": "0.6.39"
+    }
+  },
+  "artifacts": [
+    {
+      "file": "output/stimuli/en_priming_jitter_english_stimuli_R.csv",
+      "sha256": "72aaa8ee8d28c35792e306ad6b7981566e8ca89c9f5a158719f5c68ed02ed307"
+    },
+    {
+      "file": "output/experiments/en_priming_jitter_english_psychopy.py",
+      "sha256": "fdac313aa3128d0af09d1ee0482c0375c0c42db2d854d809e7f9cbdbed9af864"
+    },
+    {
+      "file": "output/experiments/en_priming_jitter_english.osexp",
+      "sha256": "102fbead7dcfefd1a2f0b309b544ab750b687b244f6ad7bcbdd125b2f01cc7db"
+    },
+    {
+      "file": "output/experiments/en_priming_jitter_english.html",
+      "sha256": "5ccf55875fd61bcb328080fb2635280e7cb834e93bf1dd87ac4260f00ccb7360"
+    }
+  ]
+}

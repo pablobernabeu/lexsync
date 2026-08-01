@@ -1,5 +1,5 @@
 {
-  "lexsync_datasheet_version": "1.0",
+  "lexsync_datasheet_version": "1.1",
   "design": {
     "name": "en_freqcontinuous",
     "language": "english",
@@ -12,7 +12,7 @@
     "type": "corpus",
     "path": "corpora/derived/en.csv",
     "sha256": "c20549b920d816809d11cfa673ad0df1dd70d3e73176ee66cbec18021627f65d",
-    "provenance": "see corpora/ATTRIBUTION.md for corpus licence and citation"
+    "provenance": "wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md"
   },
   "dimensions": {
     "length": {
@@ -68,6 +68,7 @@
     ],
     "cross_engine": "byte-identical"
   },
+  "relational": null,
   "analysis": {
     "response": "the trial outcome (e.g. reaction time or accuracy)",
     "suggested_model": "response ~ frequency + length + n_density + old20 + (1 + frequency | subject) + (1 | item)",
@@ -140,7 +141,7 @@
     },
     {
       "file": "output/experiments/en_freqcontinuous_english_psychopy.py",
-      "sha256": "e2858cdde2585bc604f949b02f3e478d721186a7b0c10a83915b188ea77800bb"
+      "sha256": "469ecb7a834210821e6b6b58f271bd8328cdfd4476080f048822ff6a0fc5315d"
     },
     {
       "file": "output/experiments/en_freqcontinuous_english.osexp",
@@ -148,7 +149,7 @@
     },
     {
       "file": "output/experiments/en_freqcontinuous_english.html",
-      "sha256": "3ced5d8d9e5cf1ae5d55c60a5a4079d148f66f4dd6933b6812b6c92fa108ea83"
+      "sha256": "ebf0c48a06e24fb35133388eb314e9b5a9056a272a9211e29ad2dc0f9b92f515"
     }
   ]
 }

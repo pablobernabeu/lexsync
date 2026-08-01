@@ -44,6 +44,17 @@ def test_versions_agree_across_all_metadata_files():
     cm = _codemeta()
     assert py_version == r_version == cm["version"] == cm["softwareVersion"] \
         == _cff()["version"]
+    # The three copies this test used not to reach. __version__ is what getting-started
+    # tells users to print and what datasheet.py falls back to when the distribution is
+    # not installed; mkdocs.yml's is shown on every page of the documentation site; and
+    # the R fallback is what a datasheet records where packageVersion() fails.
+    init = (REPO / "python_workflow/src/lexsync/__init__.py").read_text(encoding="utf-8")
+    assert re.search(r'^__version__ = "([^"]+)"', init, re.M).group(1) == py_version
+    mk = (REPO / "python_workflow/mkdocs.yml").read_text(encoding="utf-8")
+    assert re.search(r'^\s+version: "([^"]+)"', mk, re.M).group(1) == py_version
+    ds = (REPO / "R_workflow/R/datasheet.R").read_text(encoding="utf-8")
+    fallback = re.search(r'error = function\(e\) "([\d.]+)"\)', ds)
+    assert fallback is None or fallback.group(1) == py_version
 
 
 def test_orcid_recorded_in_every_file_that_can_carry_one():

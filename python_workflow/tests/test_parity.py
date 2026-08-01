@@ -31,13 +31,47 @@ CASES = [
     ("zh_freqcontrast_chinese", "config/design_zh_freqcontrast.yaml", ["word", "condition", "set"]),
     ("en_lexdec_english", "config/design_en_lexdec.yaml", ["target", "condition", "set"]),
     ("en_lexdec_wuggy_english", "config/design_en_lexdec_wuggy.yaml", ["target", "condition", "set"]),
+    # Practice and filler blocks. The stimuli file holds only the analysed rows, so this
+    # case checks that the split lands the same way in both engines; the presented set,
+    # which is larger, reaches the shared loop table that both engines write.
+    ("en_lexdec_blocks_english", "config/design_en_lexdec_blocks.yaml",
+     ["target", "condition", "set", "trial"]),
     ("en_richdim_english", "config/design_en_richdim.yaml", ["word", "condition", "set"]),
     ("en_freqcontinuous_english", "config/design_en_freqcontinuous.yaml",
      ["word", "condition", "set"]),
+    # Balanced list assignment. `list` is an identity column here, so the engines must
+    # agree on the deterministic integer search's output and not merely on which words
+    # were selected: a one-ulp split in the objective would show up as a different
+    # list for some item, which is exactly the failure the integer objective prevents.
+    ("en_balanced_lists_english", "config/design_en_balanced_lists.yaml",
+     ["word", "condition", "set", "list"]),
     ("en_resample_english", "config/design_en_resample.yaml",
      ["replicate", "word", "condition", "set"]),
     ("en_priming_english", "config/design_en_priming.yaml", ["list", "set", "condition", "prime", "target"]),
+    # Variable timing: soa_ms is read from the items, iti_ms is drawn from the
+    # keyed hash. Both are identity columns, so the engines must agree on the
+    # realised milliseconds and not merely on which stimuli were chosen.
+    ("en_priming_jitter_english", "config/design_en_priming_jitter.yaml",
+     ["list", "set", "condition", "prime", "target", "soa_ms", "iti_ms"]),
+    # The pair-keyed model: member norms joined onto both words, a relational
+    # dimension computed in-engine, and continuous selection over pairs. The
+    # member and pair columns are identity columns, so the engines must agree on
+    # the joined values and the computed overlap, not only on which pairs won.
+    ("en_priming_continuous_english", "config/design_en_priming_continuous.yaml",
+     ["list", "set", "condition", "prime", "target",
+      "target.frequency", "target.length", "pair.lev", "pair.overlap"]),
     ("en_spr_english", "config/design_en_spr.yaml", ["list", "set", "condition", "sentence"]),
+    # A supplied candidate pool: the words are the researcher's, the matching is
+    # lexsync's. The dimensions are identity columns because they arrive by lookup from
+    # the lexicon rather than being computed on the pool, and a wrong reference set would
+    # show up here as different neighbourhood values.
+    ("en_supplied_pool_english", "config/design_en_supplied_pool.yaml",
+     ["word", "condition", "set", "n_density", "old20"]),
+    # Cued categorisation. `answer` is an identity column on purpose: it holds the
+    # response key `f`, which readr reads as the logical FALSE unless the reader is told
+    # otherwise, so this column is the regression guard for that type trap.
+    ("en_categorisation_english", "config/design_en_categorisation.yaml",
+     ["list", "set", "condition", "target", "category", "answer"]),
     # Reproductions of published designs.
     ("es_gender_repro_spanish", "config/design_es_gender_repro.yaml", ["word", "condition", "set"]),
     ("en_andrews_repro_english", "config/design_en_andrews_repro.yaml", ["word", "condition", "set"]),
@@ -100,7 +134,16 @@ def test_r_python_parity(base, design, cols):
     shared = [c for c in r.columns
               if c in p.columns and c not in cols and c not in ORDER_COLS]
     for c in shared:
-        n_bad = int((m[f"{c}_r"].astype(str) != m[f"{c}_p"].astype(str)).sum())
+        a, b = m[f"{c}_r"], m[f"{c}_p"]
+        # Missing on both sides is agreement, and that has to be stated rather than
+        # relied on. Until pandas 3, `astype(str)` rendered a missing value as the
+        # literal "nan", so two of them compared equal by accident; pandas 3 keeps it
+        # missing, NaN != NaN, and a column legitimately empty in both engines --
+        # `item`, on a design whose main block generates its own items -- reported
+        # every row as differing while the two files were byte-identical.
+        both_missing = a.isna().to_numpy() & b.isna().to_numpy()
+        differs = (a.astype(str) != b.astype(str)).fillna(True).to_numpy()
+        n_bad = int((differs & ~both_missing).sum())
         assert n_bad == 0, f"{base}: column '{c}' differs across engines in {n_bad}/{len(m)} rows"
 
 

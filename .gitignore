@@ -14,6 +14,12 @@ R_workflow/src/*.so
 R_workflow/src/*.dll
 renv/library/
 R_workflow/renv/library/
+# `R CMD build` and devtools::build_vignettes() write these into the package
+# directory. They are rendered copies of vignettes/, so committing them would
+# publish a second, silently stale copy of every article.
+R_workflow/doc/
+R_workflow/Meta/
+R_workflow/inst/doc/
 
 # --- Python ----------------------------------------------------------------
 __pycache__/
@@ -34,10 +40,9 @@ corpora/raw/*
 !corpora/raw/.gitkeep
 
 # --- Quarto render intermediates -------------------------------------------
+# The manuscript itself now lives in the private-lexsync repository; this rule
+# stays because the vignettes and the docs sites can still leave a .quarto cache.
 /.quarto/
-manuscript/.quarto/
-manuscript/manuscript_files/
-manuscript/manuscript_cache/
 
 # --- Documentation sites (generated; the docs workflow rebuilds and deploys) -
 R_workflow/docs/
@@ -49,6 +54,29 @@ python_workflow/site/
 /.regen_R.log
 /.pkgdown_build.log
 /.audit_findings.txt
+
+# --- Credentials -----------------------------------------------------------
+# lexsync handles no credentials of its own, so nothing here is expected to
+# exist. These patterns are defensive: the repository is public, and an .Renviron
+# or a .env is the ordinary way an R or Python secret reaches a working tree by
+# accident. A commit that never happens needs no history rewrite.
+.env
+.env.*
+.Renviron
+*.pem
+*.p12
+*.pfx
+*.key
+id_rsa*
+id_ed25519*
+
+# --- Editor and local tool state -------------------------------------------
+# .claude/launch.json is deliberately tracked: it is how anyone launches the two
+# demo apps. Only the per-user settings file is local.
+.vscode/
+.idea/
+*.swp
+.claude/settings.local.json
 
 # --- OS --------------------------------------------------------------------
 .DS_Store

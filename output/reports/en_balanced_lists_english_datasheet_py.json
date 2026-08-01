@@ -1,0 +1,187 @@
+{
+  "analysis": {
+    "note": "Crossed random effects for subjects and items guard against the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). Begin with this maximal structure (Barr et al., 2013) and reduce it if the model does not converge (Matuschek et al., 2017); fit with lme4 in R or pymer4/statsmodels in Python.",
+    "response": "the trial outcome (e.g. reaction time or accuracy)",
+    "suggested_model": "response ~ condition + (1 + condition | subject) + (1 | item)"
+  },
+  "artifacts": [
+    {
+      "file": "output/stimuli/en_balanced_lists_english_stimuli_py.csv",
+      "sha256": "c2315baac536c882744e53cb65f08026bcc77bc4266b2a48dc616159614b6aa2"
+    },
+    {
+      "file": "output/reports/en_balanced_lists_english_descriptives_py.csv",
+      "sha256": "a4445bdf63468f6b6d98bc796a65565c145b2980e7a24a2401fdcc650274d1c9"
+    },
+    {
+      "file": "output/reports/en_balanced_lists_english_comparisons_py.csv",
+      "sha256": "17777ad05455eb3e91db8f68e40d9d5184e4311dc42cbd3dc1f9b548e5b5d584"
+    },
+    {
+      "file": "output/experiments/en_balanced_lists_english_psychopy.py",
+      "sha256": "f958ab8c6bc0cfade2d9d67d32beec0fedd5cb0d5b056597c59da4b6e57c885b"
+    },
+    {
+      "file": "output/experiments/en_balanced_lists_english.osexp",
+      "sha256": "26244292841dfa091b4609b424cc2dae56b00626abe36802562a9041fc8afffa"
+    },
+    {
+      "file": "output/experiments/en_balanced_lists_english.html",
+      "sha256": "d1790bb061cc9d5327786f66124bd3670d5ba777504d5d4ec42220b2dc4a6ac0"
+    }
+  ],
+  "counterbalancing": {
+    "lists": 4,
+    "optimise": {
+      "cost_after": 53820,
+      "cost_before": 1121480,
+      "cost_unit": "summed absolute deviation of each list's dimension total from its fair share, in milli-units of the dimension's mean, scaled by the number of item sets",
+      "dimensions": [
+        "length",
+        "n_density",
+        "old20",
+        "frequency"
+      ],
+      "max_passes_reached": false,
+      "n_swaps": 10
+    },
+    "recipe": "factorial"
+  },
+  "design": {
+    "description": "High versus low frequency English words, matched on length, neighbourhood density and OLD20, dealt into four counterbalancing lists that are themselves equated on those dimensions.",
+    "language": "english",
+    "n_per_condition": 40,
+    "name": "en_balanced_lists",
+    "paradigm": "factorial",
+    "source": "corpus"
+  },
+  "dimensions": {
+    "bigram_freq": {
+      "compute": "mean_bigram_probability",
+      "type": "derived",
+      "unit": "mean positional bigram probability"
+    },
+    "frequency": {
+      "column": "freq_zipf",
+      "type": "column",
+      "unit": "Zipf"
+    },
+    "length": {
+      "compute": "n_letters",
+      "type": "derived",
+      "unit": "letters"
+    },
+    "n_density": {
+      "compute": "coltheart_n",
+      "type": "derived",
+      "unit": "neighbours"
+    },
+    "n_syllables": {
+      "compute": "vowel_groups",
+      "type": "derived",
+      "unit": "syllables (orthographic estimate)"
+    },
+    "old20": {
+      "compute": "old20",
+      "type": "derived",
+      "unit": "mean Levenshtein distance"
+    }
+  },
+  "items": {
+    "conditions": [
+      "low_frequency",
+      "high_frequency"
+    ],
+    "n_conditions": 2,
+    "n_total": 80,
+    "stimuli_file": "output/stimuli/en_balanced_lists_english_stimuli_py.csv",
+    "stimuli_sha256": "c2315baac536c882744e53cb65f08026bcc77bc4266b2a48dc616159614b6aa2"
+  },
+  "lexsync_datasheet_version": "1.1",
+  "materials_source": {
+    "path": "corpora/derived/en.csv",
+    "provenance": "wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md",
+    "sha256": "c20549b920d816809d11cfa673ad0df1dd70d3e73176ee66cbec18021627f65d",
+    "type": "corpus"
+  },
+  "realised_control": [
+    {
+      "ci_high": 0.394,
+      "ci_low": -0.35,
+      "cohens_d": 0.022,
+      "dimension": "length",
+      "equivalent": true,
+      "role": "controlled",
+      "tost_p": 0.0178,
+      "var_ratio": 0.897
+    },
+    {
+      "ci_high": 5.427,
+      "ci_low": 4.682,
+      "cohens_d": 5.055,
+      "dimension": "frequency",
+      "equivalent": false,
+      "role": "manipulated/free",
+      "tost_p": 1.0,
+      "var_ratio": 0.201
+    },
+    {
+      "ci_high": 0.422,
+      "ci_low": -0.322,
+      "cohens_d": 0.05,
+      "dimension": "n_density",
+      "equivalent": true,
+      "role": "controlled",
+      "tost_p": 0.0237,
+      "var_ratio": 0.745
+    },
+    {
+      "ci_high": 0.426,
+      "ci_low": -0.319,
+      "cohens_d": 0.053,
+      "dimension": "old20",
+      "equivalent": true,
+      "role": "controlled",
+      "tost_p": 0.0246,
+      "var_ratio": 0.676
+    }
+  ],
+  "relational": null,
+  "reproducibility": {
+    "seed": 2026,
+    "versions": {
+      "engine": "python",
+      "lexsync": "0.1.0",
+      "numpy": "2.3.2",
+      "pandas": "2.3.2",
+      "python": "3.13.7",
+      "scipy": "1.17.1"
+    }
+  },
+  "resampling": null,
+  "selection": {
+    "candidate_pool": [
+      {
+        "condition": "high_frequency",
+        "n_candidates": 544
+      },
+      {
+        "condition": "low_frequency",
+        "n_candidates": 4295
+      }
+    ],
+    "cross_engine": "byte-identical",
+    "match_on": [
+      "length",
+      "n_density",
+      "old20"
+    ],
+    "method": "standardised_euclidean",
+    "tolerance_k": {
+      "frequency": 1.0,
+      "length": 2.0,
+      "n_density": 2.0,
+      "old20": 2.0
+    }
+  }
+}

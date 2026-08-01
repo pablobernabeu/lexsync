@@ -55,6 +55,22 @@ they are paired and the order they are presented in, so the generated experiment
 are byte-identical in full. The only exceptions are the `mahalanobis` and
 `optimal` matching methods.
 
+"Byte-identical" is meant literally, and stating it that way turned out to matter. The
+parity test originally read both engines' stimuli files back with a CSV parser and
+compared the values, under which `1` and `1.0` are the same number; on that test 13 of
+the shipped designs passed while differing byte for byte. Three of the differences were
+serialisation: a whole number written `1` by one writer and `1.0` by the other, a boolean
+written `FALSE` and `False`, and a small value written `9e-4` and `0.0009`. One was not:
+two reported means differed in the last decimal published, because one engine's
+summation was pairwise and the other's was not. Every reduction in the package now uses
+a single compensated-summation algorithm written out in both engines, whose agreement
+follows from IEEE-754 requiring addition and subtraction to be correctly rounded, and
+the artefacts are compared as bytes rather than as parsed values.
+
+Two files sit outside the claim by design, because each records the engine that produced
+it: the materials datasheet names its engine and that engine's package versions, and the
+run log adds wall-clock timestamps. Their contents are compared field by field instead.
+
 Within one engine, selection is a pure function of its input.
 
 ```{r determinism}
@@ -433,14 +449,18 @@ Psycholinguistics*, *2*(1). https://doi.org/10.5070/G6011239
 
 Clark, H. H. (1973). The language-as-fixed-effect fallacy: A critique of language
 statistics in psychological research. *Journal of Verbal Learning and Verbal
-Behavior*, *12*(4), 335-359. https://doi.org/10.1016/S0022-5371(73)80014-3
+Behavior*, *12*(4), 335–359. https://doi.org/10.1016/S0022-5371(73)80014-3
 
 Roettger, T. B. (2019). Researcher degrees of freedom in phonetic research.
-*Laboratory Phonology*, *10*(1). https://doi.org/10.5334/labphon.147
+*Laboratory Phonology*, *10*(1), Article 1.
+https://doi.org/10.5334/labphon.147
 
-Wilkinson, M. D., Dumontier, M., Aalbersberg, I. J., et al. (2016). The FAIR
-Guiding Principles for scientific data management and stewardship. *Scientific
-Data*, *3*, 160018. https://doi.org/10.1038/sdata.2016.18
+Wilkinson, M. D., Dumontier, M., Aalbersberg, IJ. J., Appleton, G., Axton, M.,
+Baak, A., Blomberg, N., Boiten, J.-W., da Silva Santos, L. B., Bourne, P. E.,
+Bouwman, J., Brookes, A. J., Clark, T., Crosas, M., Dillo, I., Dumon, O.,
+Edmunds, S., Evelo, C. T., Finkers, R., … Mons, B. (2016). The FAIR Guiding
+Principles for scientific data management and stewardship. *Scientific Data*,
+*3*, Article 160018. https://doi.org/10.1038/sdata.2016.18
 
 Yarkoni, T. (2022). The generalizability crisis. *Behavioral and Brain Sciences*,
-*45*, e1. https://doi.org/10.1017/S0140525X20001685
+*45*, Article e1. https://doi.org/10.1017/S0140525X20001685

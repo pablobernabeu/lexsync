@@ -5,7 +5,13 @@
 # exactly. The shareable materials record whose scarcity motivates lexsync
 # (Bochynska et al., 2023; Roettger, 2019). Mirrors datasheet.py.
 
-DATASHEET_VERSION <- "1.0"
+# 1.1 added `materials_source$norms` (the design's joined norm tables, with their
+# checksums and per-column coverage) and, for a pair-keyed design, a `relational`
+# block plus an honest `selection$cross_engine`. Both were required by the rule that
+# anything affecting item selection is recorded here: a norm table can carry the
+# manipulated variable itself, and the pair path performs a real selection that the
+# record used to describe as "n/a (user-supplied items)".
+DATASHEET_VERSION <- "1.1"
 
 # Datasheet labels for the pseudoword generators in generation.R, keyed by the
 # items.generation.method token. Kept character-for-character identical to
@@ -31,11 +37,56 @@ DATASHEET_VERSION <- "1.0"
 # deterministic methods are byte-identical; mahalanobis and optimal are the
 # exception (covariance inverse / assignment solver; see matching.R). Mirrors
 # datasheet.py.
-.cross_engine <- function(method, source) {
-  if (identical(source, "table")) return("n/a (user-supplied items)")
+#
+# `selected` distinguishes the two things an item table can now mean. A plain table
+# design does no selection, so there is nothing for the engines to agree on and the
+# honest answer is "n/a". A pair-keyed continuous design selects over that table, and
+# that selection was measured to be byte-identical -- so answering "n/a" there
+# understated the guarantee, on the one path where a reader most needs it.
+.cross_engine <- function(method, source, selected = FALSE) {
+  if (identical(source, "table") && !isTRUE(selected)) return("n/a (user-supplied items)")
   if (!is.null(method) && method %in% c("mahalanobis", "optimal"))
     return("approximate (platform linear algebra)")
   "byte-identical"
+}
+
+# The pair-keyed part of the record, or NULL for a design that is not pair-keyed.
+#
+# Derived from the design and the realised stimuli rather than passed in, so both
+# engines compute it from the same two objects and cannot disagree about it.
+#
+# Three of these fields answer questions the rest of the datasheet gets wrong for a
+# pair design. `n_pairs` is stated because `items$n_total` counts ROWS, which is one
+# per pair per condition, so a reader comparing it against the design's
+# `n_per_condition` would find it doubled. The member lexicon is named and checksummed
+# because it is where every member-level control came from, and nothing else in the
+# record mentions it -- `materials_source` names the item table. And the member
+# dimensions are separated from the relational ones because they are different kinds
+# of variable: `target.frequency` is a property of one word, `pair.overlap` is a
+# property of the pair, and only the second is unavailable from any word-level norm
+# database. Mirrors datasheet.py.
+.relational_record <- function(design, stimuli) {
+  items_cfg <- design$items %||% list()
+  members <- unlist(items_cfg[["members"]] %||% list(), use.names = FALSE)
+  if (!length(members)) return(NULL)
+  cols <- names(stimuli)
+  # The union over members, not the first member's alone. .join_member_norms gives
+  # every member the same dimensions, so the sets coincide in anything the pipeline
+  # produced; taking the union means a hand-built frame cannot report an empty list
+  # merely because the first member happens to carry no prefixed column.
+  # startsWith, not a regex: a member name is user-supplied and may contain a
+  # character a regex would read as syntax.
+  member_dims <- unique(unlist(lapply(members, function(m) {
+    prefix <- paste0(m, ".")
+    substring(cols[startsWith(cols, prefix)], nchar(prefix) + 1L)
+  }), use.names = FALSE))
+  lexicon <- items_cfg[["lexicon"]] %||% design[["lexicon"]]
+  list(members = as.list(members),
+       n_pairs = length(unique(stimuli$set)),
+       member_lexicon = lexicon,
+       member_lexicon_sha256 = sha256_file(lexicon),
+       member_dimensions = as.list(sort(member_dims, method = "radix")),
+       relational_dimensions = as.list(sort(cols[startsWith(cols, "pair.")], method = "radix")))
 }
 
 # The tolerance windows the matcher actually applied. Resolved exactly as
@@ -50,12 +101,14 @@ DATASHEET_VERSION <- "1.0"
 }
 
 .controlled_dims <- function(design, source) {
-  if (identical(source, "corpus")) unlist(design$match_on, use.names = FALSE)
+  # A supplied pool goes through the same matcher as a corpus, so it controls the same
+  # dimensions; only the origin of the candidate words differs.
+  if (source %in% c("corpus", "pool")) unlist(design$match_on, use.names = FALSE)
   else if (identical(source, "generate")) "length"
   else character(0)
 }
 
-.r4 <- function(v) if (is.null(v) || is.na(v)) NULL else round(as.numeric(v), 4)
+.r4 <- function(v) if (is.null(v) || is.na(v)) NULL else .round_dp(as.numeric(v), 4)
 
 # A suggested crossed mixed-model formula for the design. Handing the user an
 # items-crossed model guards against the language-as-fixed-effect fallacy
@@ -112,13 +165,25 @@ DATASHEET_VERSION <- "1.0"
 #' @param candidate_pool Optional list of per-condition candidate-pool sizes
 #'   (`list(condition, n_candidates)`) recording how many items satisfied each
 #'   condition's window before matching; reported for selection transparency.
+#' @param norms Optional list of norm-table provenance records, from the design's
+#'   `norms:` block (see the pipeline). Each names a file, its sha256, the join key
+#'   and the per-column coverage. Recorded because a norm table can supply the very
+#'   variable a design manipulates, so a record that omitted it would describe a
+#'   selection over columns of unstated origin.
+#' @param balance Optional balance-optimiser report, from [balance_lists()].
+#'   Recorded because it decides which items each participant sees.
+#' @param blocks Optional practice/filler block report. Recorded because those
+#'   trials are presented but not analysed, so the presented and analysed counts
+#'   differ and the record must say why.
 #' @return The datasheet as a nested list, ready for [write_datasheet()].
 #' @export
 build_datasheet <- function(design, schema, report, stimuli, source_path, artifacts,
-                            seed, engine = "R", candidate_pool = NULL) {
+                            seed, engine = "R", candidate_pool = NULL, norms = NULL,
+                            balance = NULL, blocks = NULL) {
   source <- design$items$source %||% "corpus"
-  is_continuous <- identical(source, "corpus") && !is.null(design$continuous)
+  is_continuous <- .is_continuous(design)
   controlled <- .controlled_dims(design, source)
+  relational <- .relational_record(design, stimuli)
   conditions <- unique(as.character(stimuli$condition))
 
   realised <- list()
@@ -152,7 +217,7 @@ build_datasheet <- function(design, schema, report, stimuli, source_path, artifa
          predictor = design$continuous$predictor,
          controls = as.list(unlist(design$continuous$controls, use.names = FALSE)),
          tolerance_k = .resolve_tolerance_k(design, schema))
-  } else if (identical(source, "corpus")) {
+  } else if (source %in% c("corpus", "pool")) {
     list(method = design$matching$method %||% schema$matching$method %||% "standardised_euclidean",
          match_on = as.list(controlled), tolerance_k = .resolve_tolerance_k(design, schema))
   } else if (identical(source, "generate")) {
@@ -166,7 +231,55 @@ build_datasheet <- function(design, schema, report, stimuli, source_path, artifa
   }
   if (!is.null(candidate_pool) && source %in% c("corpus", "generate"))
     selection$candidate_pool <- candidate_pool
-  selection$cross_engine <- .cross_engine(selection$method, source)
+  # A pair-keyed continuous design does select, over the item table.
+  selection$cross_engine <- .cross_engine(selection$method, source,
+                                          selected = is_continuous && !is.null(relational))
+
+  materials_source <- list(
+    type = source, path = source_path, sha256 = sha256_file(source_path),
+    provenance = if (source %in% c("corpus", "generate"))
+      paste0("wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and ",
+             "citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/",
+             "ATTRIBUTION.md")
+    else if (identical(source, "pool"))
+      "user-supplied word pool, matched by lexsync"
+    else "user-supplied item table")
+  # A supplied pool usually draws its dimensions from a corpus lexicon, and that
+  # lexicon is where every matched value came from, so it is named and checksummed
+  # here: `path` above records only the word list itself.
+  if (identical(source, "pool")) {
+    dim_lex <- design$items$lexicon %||% design$lexicon
+    materials_source$dimensions_from <- if (is.null(dim_lex))
+      "the supplied pool's own columns (no lexicon given)" else dim_lex
+    if (!is.null(dim_lex)) materials_source$dimensions_sha256 <- sha256_file(dim_lex)
+  }
+  # Assigned rather than declared in the list() above, because assigning NULL to a
+  # list element removes it: a design with no `norms:` block gets no key at all,
+  # instead of a "norms": null that every datasheet would then carry.
+  if (length(norms)) materials_source$norms <- norms
+
+  # A corpus design draws on every schema dimension, and so does a pair-keyed design:
+  # every lexicon dimension is joined onto each member. A generate or plain table
+  # design reports only the ones it controlled, so the record does not claim
+  # dimensions that played no part in the selection. Mirrors datasheet.py. The `[`
+  # form keeps the names attribute, so an empty result is a named list() and
+  # serialises as {} rather than [], matching Python.
+  keep_dims <- if (source %in% c("corpus", "pool") || !is.null(relational))
+    rep(TRUE, length(schema$dimensions))
+  else names(schema$dimensions) %in% controlled
+
+  # The balance report is added only when the optimiser ran, for the same reason the
+  # norms record is: a key that is null on every design that does not use the feature
+  # is noise in a research artefact.
+  counterbalancing <- list(
+    recipe = if (identical(source, "table")) "latin_square_target" else "factorial",
+    lists = design$counterbalance$lists %||% 1L)
+  if (!is.null(balance)) counterbalancing$optimise <- balance
+  # Practice and filler trials change what a participant sees but not what is
+  # analysed, so the record has to state both counts: a reader comparing the stimuli
+  # file against the experiment would otherwise find them a different length with no
+  # explanation.
+  if (!is.null(blocks)) counterbalancing$blocks <- blocks
 
   list(
     lexsync_datasheet_version = DATASHEET_VERSION,
@@ -174,24 +287,13 @@ build_datasheet <- function(design, schema, report, stimuli, source_path, artifa
                   paradigm = design$paradigm %||% "factorial", source = source,
                   description = design$description,
                   n_per_condition = design$n_per_condition %||% design$n_per_cell),
-    materials_source = list(
-      type = source, path = source_path, sha256 = sha256_file(source_path),
-      provenance = if (source %in% c("corpus", "generate"))
-        "see corpora/ATTRIBUTION.md for corpus licence and citation"
-      else "user-supplied item table"),
-    # A corpus design draws on every schema dimension; a generate or table design
-    # reports only the ones it controlled, so the record does not claim dimensions
-    # that played no part in the selection. Mirrors datasheet.py. The `[` form
-    # keeps the names attribute, so an empty result is a named list() and
-    # serialises as {} rather than [], matching Python.
-    dimensions = schema$dimensions[names(schema$dimensions) %in% controlled |
-                                     identical(source, "corpus")],
+    materials_source = materials_source,
+    dimensions = schema$dimensions[keep_dims],
     selection = selection,
+    relational = relational,
     analysis = .analysis_R(design, source),
     realised_control = realised,
-    counterbalancing = list(
-      recipe = if (identical(source, "table")) "latin_square_target" else "factorial",
-      lists = design$counterbalance$lists %||% 1L),
+    counterbalancing = counterbalancing,
     resampling = if (!is.null(design$resample))
       list(n_sets = design$resample$n_sets, disjoint = TRUE) else NULL,
     items = list(n_total = nrow(stimuli), n_conditions = length(conditions),
@@ -208,6 +310,17 @@ build_datasheet <- function(design, schema, report, stimuli, source_path, artifa
     unlist(artifacts$experiments, use.names = FALSE))
 }
 
+# The norm tables named in the Methods prose. Basenames only: the full paths and
+# checksums are in the datasheet, and a paper's Methods section wants the source, not
+# the directory it happened to sit in on one machine. Mirrors datasheet.py.
+.norms_note <- function(ds) {
+  norms <- ds$materials_source$norms
+  if (is.null(norms) || !length(norms)) return("")
+  files <- paste(vapply(norms, function(x) basename(x$path), character(1)), collapse = ", ")
+  sprintf(paste0(" Norm dimensions were joined from %s, whose checksums and per-column ",
+                 "coverage are recorded in the datasheet."), files)
+}
+
 #' A ready-to-adapt methods paragraph rendered from a datasheet
 #'
 #' @param ds A datasheet list, from [build_datasheet()].
@@ -219,6 +332,11 @@ methods_paragraph <- function(ds) {
   n <- d$n_per_condition
   lang <- paste0(toupper(substring(d$language, 1, 1)), substring(d$language, 2))
   sel <- ds$selection
+  # What was selected. A pair design's unit is the pair, and its `n_per_condition`
+  # counts pairs, so calling them "items" would misreport the size of the materials
+  # by a factor of the number of conditions.
+  unit <- if (is.null(ds$relational)) "items"
+  else paste0(paste(unlist(ds$relational$members), collapse = "-"), " pairs")
   if (!is.null(sel$predictor)) {
     predictor <- sel$predictor
     controls <- paste(unlist(sel$controls), collapse = ", ")
@@ -236,13 +354,14 @@ methods_paragraph <- function(ds) {
     cb <- ds$counterbalancing
     recipe_label <- switch(cb$recipe, latin_square_target = "a Latin-square rotation",
                            factorial = "a factorial split", cb$recipe)
-    return(sprintf(paste0("%s %s items were selected to span %s%s continuously while holding ",
+    return(sprintf(paste0("%s %s %s were selected to span %s%s continuously while holding ",
                           "%s near-constant%s, for analysis by regression or a mixed model rather ",
                           "than a between-condition contrast (Kuperman, 2015; Liben-Nowell et al., ",
-                          "2019). Materials were counterbalanced into %s list(s) (%s) and generated ",
+                          "2019).%s Materials were counterbalanced into %s list(s) (%s) and generated ",
                           "for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and ",
                           "reproducible (seed %s; lexsync %s)."),
-                   n, lang, predictor, span_str, controls, corr_str, cb$lists, recipe_label,
+                   n, lang, unit, predictor, span_str, controls, corr_str, .norms_note(ds),
+                   cb$lists, recipe_label,
                    ds$reproducibility$seed, ds$reproducibility$versions$lexsync))
   }
   if (identical(src, "corpus")) {
@@ -250,6 +369,17 @@ methods_paragraph <- function(ds) {
     lead <- sprintf(paste0("%s items per condition were selected from the %s lexicon (%s) and ",
                            "matched item by item on %s using lexsync's %s matcher"),
                     n, lang, ds$materials_source$provenance, ctrl, ds$selection$method)
+  } else if (identical(src, "pool")) {
+    # A supplied pool is matched exactly as a corpus is; what differs, and what the
+    # Methods section has to say, is that the candidate words were chosen by the
+    # researcher rather than drawn from the whole lexicon.
+    ctrl <- paste(unlist(ds$selection$match_on), collapse = ", ")
+    lead <- sprintf(paste0("%s %s items per condition were selected from a supplied ",
+                           "candidate pool and matched item by item on %s using ",
+                           "lexsync's %s matcher, with the matched dimensions taken ",
+                           "from %s"),
+                    n, lang, ctrl, ds$selection$method,
+                    ds$materials_source$dimensions_from)
   } else if (identical(src, "generate")) {
     lead <- sprintf(paste0("%s real %s words and %s length-matched pseudowords (generated by %s) ",
                            "were assembled for a lexical-decision contrast"),
@@ -280,6 +410,14 @@ methods_paragraph <- function(ds) {
                          "PsychoPy, OpenSesame and jsPsych. The selection is deterministic and ",
                          "reproducible (seed %s; lexsync %s)."),
                   cb$lists, recipe_label, ds$reproducibility$seed, ds$reproducibility$versions$lexsync)
+  bal <- ds$counterbalancing$optimise
+  bal_note <- if (is.null(bal)) "" else sprintf(
+    paste0(". Item sets were assigned to lists so as to equate the lists on %s rather ",
+           "than by an arbitrary deal, by a deterministic integer search (%d swap(s); ",
+           "imbalance reduced from %s to %s)"),
+    paste(unlist(bal$dimensions), collapse = ", "), bal$n_swaps,
+    format(bal$cost_before, scientific = FALSE),
+    format(bal$cost_after, scientific = FALSE))
   cp <- ds$selection$candidate_pool
   pool_note <- ""
   if (!is.null(cp) && length(cp)) {
@@ -296,7 +434,7 @@ methods_paragraph <- function(ds) {
     paste0(". This design's matching method uses a covariance inverse or an assignment ",
            "solver, so the R and Python engines select equivalent but not byte-identical ",
            "materials") else ""
-  paste0(lead, control, pool_note, ce_note, tail)
+  paste0(lead, control, pool_note, ce_note, bal_note, tail, .norms_note(ds))
 }
 
 #' @keywords internal
@@ -332,6 +470,14 @@ render_datasheet_md <- function(ds) {
     sprintf("- **Description:** %s", d$description %||% "--"),
     sprintf("- **Materials source:** `%s` (sha256 `%s...`)", ds$materials_source$path,
             substring(ds$materials_source$sha256 %||% "", 1, 16)),
+    # Where a supplied pool's matched values came from. Without this the record names
+    # only the word list, and the numbers every control rests on have no stated origin.
+    if (!is.null(ds$materials_source$dimensions_from))
+      sprintf("- **Dimensions from:** `%s`%s", ds$materials_source$dimensions_from,
+              if (is.null(ds$materials_source$dimensions_sha256)) ""
+              else sprintf(" (sha256 `%s...`)",
+                           substring(ds$materials_source$dimensions_sha256, 1, 16)))
+    else NULL,
     sprintf("- **Selection:** %s", ds$selection$method),
     sprintf("- **Cross-engine determinism:** %s", ds$selection$cross_engine %||% "byte-identical"),
     sprintf("- **Counterbalancing:** %s, %s list(s)", ds$counterbalancing$recipe,
@@ -339,6 +485,58 @@ render_datasheet_md <- function(ds) {
     sprintf("- **Items:** %s rows across %s conditions (%s)", ds$items$n_total,
             ds$items$n_conditions, paste(unlist(ds$items$conditions), collapse = ", ")),
     sprintf("- **Seed:** %s  |  **Versions:** %s", ds$reproducibility$seed, versions), "")
+  # Norm tables, with their checksums and coverage. A dimension covering only part of
+  # the lexicon matters to a reader: the uncovered rows carry NA and are dropped by
+  # the tolerance windows, so coverage is part of how the pool was defined.
+  nrm <- ds$materials_source$norms
+  if (!is.null(nrm) && length(nrm)) {
+    lines <- c(lines, "## Joined norms", "",
+               "| File | Key | Column | Coverage | sha256 |", "|---|---|---|---|---|")
+    for (t in nrm) {
+      for (cl in t$columns) {
+        lines <- c(lines, sprintf("| `%s` | %s | %s | %s / %s | `%s...` |", t$path, t$on,
+                                  cl$column, cl$n_matched, cl$n_total,
+                                  substring(t$sha256 %||% "", 1, 16)))
+      }
+    }
+    lines <- c(lines, "")
+  }
+  # Balance-aware list assignment. Reported because it decides which items each
+  # participant sees, and the before/after costs are what make the claim checkable
+  # rather than a bare assertion that the lists are balanced.
+  bal <- ds$counterbalancing$optimise
+  if (!is.null(bal)) {
+    lines <- c(lines, "## Balanced list assignment", "",
+               sprintf("- **Balanced on:** %s", paste(unlist(bal$dimensions), collapse = ", ")),
+               sprintf("- **Imbalance:** %s before, %s after, in %s swap(s)",
+                       format(bal$cost_before, scientific = FALSE),
+                       format(bal$cost_after, scientific = FALSE), bal$n_swaps),
+               sprintf("- **Cost unit:** %s", bal$cost_unit),
+               if (isTRUE(bal$max_passes_reached))
+                 paste0("- The search stopped at its pass bound rather than at a local ",
+                        "optimum, so a higher `counterbalance.max_passes` may balance ",
+                        "the lists further.")
+               else paste0("- The search ran to a local optimum: no single exchange of ",
+                           "two item sets between lists would reduce the imbalance further."),
+               paste0("- The search is a deterministic integer descent with a keyed-hash ",
+                      "tie-break, so it uses no random number generator and the R and ",
+                      "Python engines produce the same assignment."), "")
+  }
+  rel <- ds$relational
+  if (!is.null(rel)) {
+    lines <- c(lines, "## Pair-keyed items", "",
+               sprintf("- **Members:** %s  |  **Pairs:** %s",
+                       paste(unlist(rel$members), collapse = ", "), rel$n_pairs),
+               sprintf("- **Member lexicon:** `%s` (sha256 `%s...`)", rel$member_lexicon,
+                       substring(rel$member_lexicon_sha256 %||% "", 1, 16)),
+               sprintf("- **Member-level dimensions** (one word): %s",
+                       paste(unlist(rel$member_dimensions), collapse = ", ")),
+               sprintf("- **Relational dimensions** (the pair): %s",
+                       paste(unlist(rel$relational_dimensions), collapse = ", ")),
+               paste0("- Selection ran on one row per pair and the result was re-expanded, ",
+                      "so every condition row of every chosen pair is present and the ",
+                      "Latin-square rotation is complete."), "")
+  }
   cp <- ds$selection$candidate_pool
   if (!is.null(cp) && length(cp)) {
     parts <- paste(vapply(cp, function(x) sprintf("%s: %s", x$condition, x$n_candidates),
@@ -391,9 +589,18 @@ render_datasheet_md <- function(ds) {
 #' @return Invisibly, the two paths written.
 #' @export
 write_datasheet <- function(ds, json_path, md_path) {
-  dir.create(dirname(json_path), recursive = TRUE, showWarnings = FALSE)
-  writeLines(jsonlite::toJSON(ds, auto_unbox = TRUE, pretty = TRUE, null = "null", na = "null"),
-             json_path, useBytes = TRUE)
-  writeLines(render_datasheet_md(ds), md_path, useBytes = TRUE)
+  # write_lines_lf, not writeLines: a text-mode connection turns every newline into
+  # CRLF on Windows, so the datasheet's own bytes recorded which machine built it and
+  # disagreed with the Python engine's record of the same design. The datasheet is the
+  # provenance artefact -- it is the last file that should depend on the platform.
+  # digits = NA, not jsonlite's default of 4. The default silently truncated every
+  # value that had not already been rounded on the way in: a design declaring
+  # `tolerance_k: 0.1111111111111111` had it recorded as 0.1111, which does not
+  # reproduce the run the record exists to describe. Most fields survived only because
+  # they are rounded to four places deliberately (see .r4). NA means R's full display
+  # precision, 15 significant digits, which the Python engine also writes.
+  write_lines_lf(jsonlite::toJSON(ds, auto_unbox = TRUE, pretty = TRUE,
+                                  null = "null", na = "null", digits = NA), json_path)
+  write_lines_lf(render_datasheet_md(ds), md_path)
   invisible(c(json_path, md_path))
 }

@@ -4,7 +4,7 @@
 \alias{read_csv_utf8}
 \title{Read a UTF-8 CSV file}
 \usage{
-read_csv_utf8(path)
+read_csv_utf8(path, as_character = character(0))
 }
 \arguments{
 \item{path}{Path to a CSV file.}

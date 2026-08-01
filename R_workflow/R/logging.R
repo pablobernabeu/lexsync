@@ -79,7 +79,10 @@ write_run_log <- function(log, md_path, jsonl_path = NULL) {
       }
     }
   }
-  writeLines(lines, md_path, useBytes = TRUE)
+  # write_lines_lf, not writeLines: a text-mode connection turns every newline into
+  # CRLF on Windows, which made the R run log disagree byte for byte with the Python
+  # engine's for the same run. The .jsonl below already used a binary connection.
+  write_lines_lf(lines, md_path)
 
   if (!is.null(jsonl_path)) {
     con <- file(jsonl_path, open = "wb", encoding = "UTF-8")

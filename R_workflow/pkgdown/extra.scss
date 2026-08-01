@@ -278,10 +278,11 @@ pre {
   border-radius: 10px;
   border: 1px solid rgba(154, 107, 224, .25);
   padding: .85rem 1rem;
-  // Code and output read at the size of the surrounding prose (1rem against
-  // the 1.02rem body compensates for the wider monospace); long lines scroll
-  // inside the block where they cannot fit.
-  font-size: 1rem;
+  // Source and output share one size a step below the prose. Set level with the
+  // body text, the wide monospace made output blocks read outsized next to the
+  // code they belong to, and a typical source line overflowed the narrower home
+  // and article columns. Long lines scroll inside the block where they cannot fit.
+  font-size: .85rem;
   line-height: 1.5;
   overflow-x: auto;
   max-width: 100%;
@@ -292,11 +293,11 @@ pre {
 // translucent grey, so source and output stop matching the rest of the family.
 [data-bs-theme="dark"] pre { background: var(--brand-ink); color: #E7EDF0; }
 pre code { color: inherit; background: none; }
-// Source chunks read a touch smaller than the output and the prose, so a typical
-// line fits the narrower home and article columns without horizontal scrolling.
-// Only .sourceCode blocks (the highlighted input) are affected; output stays at
-// prose size. Both the pre and its code carry the size so the two do not compound.
-pre.sourceCode, pre.sourceCode code { font-size: .85rem; }
+// The inline-code rule above (.875em) must not compound inside blocks: any code
+// nested in a pre carries the same absolute size as the pre itself. Scoping this
+// to .sourceCode instead would leave the unhighlighted output blocks, which
+// carry no such class, at the inherited prose size.
+pre code { font-size: .85rem; }
 // The pre's overflow-x makes it a block formatting context, which shrinks
 // beside the floated hex logo; without the same treatment the copy button's
 // wrapper stays full width and the button strands outside the block.
@@ -357,6 +358,18 @@ blockquote p:last-child { margin-bottom: 0; }
   border-collapse: separate;
   border-spacing: 0;
   margin-bottom: 1.6rem;
+  // A step below the prose and level with the code blocks, so a data table
+  // reads as data rather than body text; this also lets more columns sit in
+  // the column before the box has to scroll. Lining figures keep the digit
+  // columns aligned. The mkdocs twin lands at the same size (~13.6px).
+  font-size: .85rem;
+  font-variant-numeric: tabular-nums;
+}
+// Tighter cells than the Bootstrap default fit more of a wide table into the
+// column before it scrolls, without shrinking the type below a readable size.
+:is(.contents, main) table th, :is(.contents, main) table td,
+table.table th, table.table td {
+  padding: .4rem .55rem;
 }
 :is(.contents, main) table thead th, table.table thead th {
   background: var(--brand-ink);
@@ -437,6 +450,16 @@ footer .pkgdown-footer-right { font-size: .92rem; }
 
 // Keep inline code readable inside the dark footer
 footer :not(pre) > code { background: rgba(255, 255, 255, .10); color: #E7EDF0; }
+
+// ---------------------------------------------------------------------------
+// Citation tools — the copy/download controls under the BibTeX block (About)
+// ---------------------------------------------------------------------------
+.citation-bibtex-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  margin-top: .75rem;
+}
 
 // ---------------------------------------------------------------------------
 // Scrollbars

@@ -14,7 +14,7 @@ lexsync is not yet on PyPI. Until a release is published, install it straight fr
 pip install "git+https://github.com/pablobernabeu/lexsync.git#subdirectory=python_workflow"
 ```
 
-That gives you the library and the `lexsync` console script. If you want the fifteen worked designs,
+That gives you the library and the `lexsync` console script. If you want the 21 worked designs,
 the derived corpora and the committed outputs as well, clone the repository and install the package
 in editable mode from inside it:
 
@@ -142,13 +142,14 @@ can state `language_tag` outright.
 `lexicon` names the derived corpus to read. It may also be written as `items.lexicon`, which is the
 form the lexical-decision designs use, since they also need to say where the items come from.
 
-`items` selects the source of the stimuli, and there are three of them:
+`items` selects the source of the stimuli, and there are four of them:
 
 | `items.source` | Where stimuli come from | Also needs |
 | --- | --- | --- |
 | `corpus` (the default) | Words selected from the lexicon by matching or by spanning a predictor. | `lexicon`, `conditions` or `continuous`, `match_on` |
 | `generate` | Real words plus a deterministically generated pseudoword for each. | `lexicon`, optionally `items.generation.method` |
 | `table` | A CSV of prepared items (prime-target pairs, sentences). | `items.path` |
+| `pool` | A candidate word list of your own, matched over as if it were a pool. | `items.path`, normally `items.lexicon` |
 
 `pool_filters` narrows the lexicon to the candidates a design will consider at all. Each key is a
 column and each value a `[min, max]` range for a numeric column, or a set of allowed values for a
@@ -158,7 +159,8 @@ design's bands.
 
 `conditions` is a list, each with a `name` and a `define_by` block that carves the condition out of
 the pool by the same filter syntax. Two conditions make a contrast; four make the 2 × 2 that
-`config/design_en_andrews_repro.yaml` uses to reproduce Andrews (1989). A design may instead declare
+`config/design_en_andrews_repro.yaml` uses to reproduce
+[Andrews (1989)](references.md#andrews-1989). A design may instead declare
 a `continuous` block and dispense with conditions altogether, which
 [Matching and designs](matching-and-designs.md) covers.
 
@@ -171,12 +173,15 @@ four methods, and `matching.tolerance_k` sets the half-width, in standard deviat
 tolerance window on each dimension. Overriding a single dimension is common when reproducing a
 published study's exact windows.
 
-`counterbalance.lists` sets the number of lists. `timing` overrides the fixation, critical-word and
-inter-stimulus frame counts, which are frames at 60 Hz rather than milliseconds. `font` overrides
+`counterbalance.lists` sets the number of lists, and `counterbalance.optimise` asks for an assignment
+whose lists are equated on the item dimensions rather than dealt by set rank. `practice` and
+`fillers` each name an item table whose trials run but are not analysed. `timing` overrides the fixation, critical-word and
+inter-stimulus durations in milliseconds (`fixation_ms`, `word_ms`, `isi_ms`; the older
+`*_frames` forms are still accepted and converted at `presentation.assumed_refresh_hz`). `font` overrides
 the presentation font, which matters for a non-Latin script: `config/design_zh_freqcontrast.yaml`
 sets `SimHei`, because the Latin default has no glyphs for Han characters.
 
-`paradigm` names one of the four registered paradigms and inherits its trial-event sequence and its
+`paradigm` names one of the five registered paradigms and inherits its trial-event sequence and its
 counterbalancing recipe. Omitting it gives `factorial`. A design may instead supply an explicit
 `events` list and describe its own trial. Both routes are covered in
 [Experiments and triggers](experiments-and-triggers.md).

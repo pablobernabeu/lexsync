@@ -26,8 +26,10 @@ neighbourhood dimensions are added later, on the experimental pool, by
 reference set.
 }
 \examples{
-\dontrun{
-schema <- read_config(system.file("extdata", "schema.yaml", package = "lexsync"))
-lex <- load_lexicon(system.file("extdata", "en_example.csv", package = "lexsync"), schema)
-}
+# Both inputs are bundled with the package, so this runs offline and touches
+# nothing outside the installation.
+schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+lex <- load_lexicon(system.file("extdata", "en_example.csv", package = "lexsync"),
+                    schema)
+head(lex[, c("word", "frequency", "length", "n_syllables")])
 }

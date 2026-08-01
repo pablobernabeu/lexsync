@@ -25,15 +25,25 @@ from psychopy import visual, core, event, parallel
 HERE = os.path.dirname(os.path.abspath(__file__))
 CONDITIONS_FILE = os.path.join(HERE, "en_ndensity_english_psychopy.csv")
 TRIGGER_ADDRESS = 0x0378
-RESET_AFTER_FRAMES = 2
+TRIGGER_HOLD_MS = 50
+# A pulse shorter than this may not register on the amplifier at all, so a fast
+# display must not be allowed to shorten the hold below it.
+MIN_TRIGGER_HOLD_MS = 10
+# Whole flips the onset code is held for; set from the measured refresh in main().
+TRIGGER_HOLD_FRAMES = 3
 INTER_TRIGGER_S = 0.01
 FULLSCREEN = False
 WORD_FONT = "Courier New"
+# Used only if the display's refresh cannot be measured at start-up.
+ASSUMED_REFRESH_HZ = 60
+# Set from the measured refresh in main(); durations are declared in
+# milliseconds and converted to whole flips against it.
+REFRESH_HZ = float(ASSUMED_REFRESH_HZ)
 BLOCK_START_TRIGGER = 254
 BLOCK_END_TRIGGER = 255
 
 # The trial event sequence (declarative data, written by lexsync).
-EVENTS = json.loads(r"""[{"type":"fixation","text":"+","frames":30},{"type":"text","field":"word","frames":30,"trigger":"@condition_trigger"},{"type":"response","keys":["left","right"],"timeout":2},{"type":"blank","frames":15}]""")
+EVENTS = json.loads(r"""[{"type":"fixation","text":"+","ms":500},{"type":"text","field":"word","ms":500,"trigger":"@condition_trigger"},{"type":"response","keys":["left","right"],"timeout":2},{"type":"blank","ms":250}]""")
 
 
 class MockPort:
@@ -66,28 +76,141 @@ def resolve_trigger(spec, trial):
     return int(spec)
 
 
+def measure_refresh_hz(win):
+    """The display's actual refresh rate, measured; falls back to the declared one.
+
+    Durations are authored in milliseconds, so the number of flips that realises
+    one depends on the monitor actually in use. Measuring here is what lets the
+    same design present the same duration at 60, 120 or 144 Hz. An implausible or
+    failed measurement falls back rather than silently mistiming the experiment.
+    """
+    try:
+        hz = win.getActualFrameRate(nIdentical=10, nMaxFrames=120, nWarmUpFrames=10)
+    except Exception:
+        hz = None
+    if hz is None or not (20.0 < float(hz) < 1000.0):
+        print("[lexsync] could not measure the refresh rate; assuming %g Hz"
+              % ASSUMED_REFRESH_HZ)
+        return float(ASSUMED_REFRESH_HZ)
+    return float(hz)
+
+
+def ms_to_frames(ms, hz):
+    """Whole flips covering ``ms`` at ``hz``; never fewer than one.
+
+    Rounding to the nearest flip keeps the realised duration as close to the
+    declared one as the display allows; the residual quantisation is reported by
+    the materials datasheet rather than hidden.
+    """
+    return max(1, int(round(float(ms) * float(hz) / 1000.0)))
+
+
+def trigger_hold_frames(hz):
+    """Whole flips the onset code is held for at ``hz``.
+
+    Floored at one flip, so a code is always held across at least one refresh, and
+    at the recorder minimum, so a fast display cannot shorten the pulse below what
+    the amplifier can register. Expressing the hold in milliseconds is what makes
+    that floor meaningful: as a frame count it silently shortened with the refresh.
+    """
+    ms = max(float(TRIGGER_HOLD_MS), float(MIN_TRIGGER_HOLD_MS))
+    return max(1, int(round(ms * float(hz) / 1000.0)))
+
+
 def show_frames(win, stim, frames, port, trigger):
     """Draw ``stim`` for ``frames`` flips; if a trigger is given, lock it to onset."""
     if trigger is not None:
         win.callOnFlip(port.setData, trigger)
+    # callOnFlip runs its callback on the NEXT flip, so queueing the reset on this
+    # index clears the code one flip later and holds it for exactly
+    # TRIGGER_HOLD_FRAMES flip intervals. Queueing on TRIGGER_HOLD_FRAMES itself
+    # would hold it for one interval longer than declared, which is what the
+    # frame-count version did while documenting otherwise.
+    reset_at = TRIGGER_HOLD_FRAMES - 1
     for f in range(frames):
         if stim is not None:
             stim.draw()
         win.flip()
-        if trigger is not None and f == RESET_AFTER_FRAMES:
+        if trigger is not None and f == reset_at:
             win.callOnFlip(port.setData, 0)
-    if trigger is not None and frames <= RESET_AFTER_FRAMES:
+    if trigger is not None and frames <= reset_at:
+        # The event ends before the reset could be queued, so clear the port here.
+        # This one write is not flip-locked, but only the ONSET has to be
+        # frame-accurate and it still is; the alternative is leaving the code high
+        # into the following event.
         port.setData(0)
+
+
+def event_ms(ev, trial):
+    """This event's duration in milliseconds for this trial.
+
+    A fixed duration is carried on the event itself; one that varies from trial to
+    trial names a loop-table column instead, which is how a jittered interval or a
+    per-item stimulus-onset asynchrony reaches the script. The realised value is
+    in the conditions file, so the analysis can use it as a regressor.
+    """
+    if "ms_column" in ev:
+        return int(float(trial[ev["ms_column"]]))
+    return int(ev.get("ms", 0))
+
+
+def event_applies(ev, trial):
+    """Whether this event runs on this trial.
+
+    An event may name the blocks it belongs to. Feedback during practice and not during
+    the main task is the case this exists for: the event list is global to the design, so
+    the restriction travels with the event and is applied per trial here.
+    """
+    blocks = ev.get("blocks")
+    if not blocks:
+        return True
+    return str(trial.get("block", "main")) in [str(b) for b in blocks]
+
+
+def show_feedback(win, text_stim, ev, trial, response):
+    """Tell the participant whether they were right, during practice.
+
+    The item's `answer` column holds the KEY that is correct, so this is a string
+    comparison with nothing to look up. No response at all is reported separately from a
+    wrong one, because on a timed task they mean different things to a participant.
+    """
+    correct_key = str(trial.get(ev.get("answer", "answer"), "")).strip()
+    if response is None:
+        message = ev.get("no_response", "Too slow")
+    elif str(response).strip() == correct_key:
+        message = ev.get("correct", "Correct")
+    else:
+        message = ev.get("incorrect", "Incorrect")
+    text_stim.text = message
+    show_frames(win, text_stim, ms_to_frames(event_ms(ev, trial), REFRESH_HZ), None, None)
+
+
+def block_break(win, text_stim, upcoming):
+    """A pause between blocks, waiting for a key.
+
+    Without it the practice trials run straight into the task and the participant cannot
+    tell that the part that counts has begun.
+    """
+    text_stim.text = ("End of the practice trials.\n\nPress the space bar to begin."
+                      if upcoming == "main" else
+                      "Press the space bar to continue.")
+    text_stim.draw()
+    win.flip()
+    keys = event.waitKeys(keyList=["space", "escape"])
+    return "escape" if keys and "escape" in keys else None
 
 
 def run_event(win, port, text_stim, ev, trial):
     etype = ev["type"]
+    if etype == "feedback":
+        # Handled by the caller, which is the only place the response is in scope.
+        return None
     if etype in ("fixation", "text", "mask"):
         text_stim.text = trial[ev["field"]] if "field" in ev else ev.get("text", "")
-        show_frames(win, text_stim, int(ev.get("frames", 1)), port,
+        show_frames(win, text_stim, ms_to_frames(event_ms(ev, trial), REFRESH_HZ), port,
                     resolve_trigger(ev.get("trigger"), trial))
     elif etype == "blank":
-        show_frames(win, None, int(ev.get("frames", 1)), port, None)
+        show_frames(win, None, ms_to_frames(event_ms(ev, trial), REFRESH_HZ), port, None)
     elif etype == "region":
         regions = [r for r in trial[ev["field"]].split(ev.get("sep", "|")) if r != ""]
         crit = int(trial.get("critical_region", 0) or 0)
@@ -115,12 +238,23 @@ def run_event(win, port, text_stim, ev, trial):
                               maxWait=float(ev.get("timeout", 2.0)))
         if keys and "escape" in keys:
             return "escape"
+        # The pressed key is returned so a later feedback event can score it. waitKeys
+        # gives None on a timeout, which is reported as its own outcome rather than
+        # collapsed into "wrong".
+        return keys[0] if keys else None
     return None
 
 
 def main():
+    global REFRESH_HZ, TRIGGER_HOLD_FRAMES
     trials = load_trials(CONDITIONS_FILE)
     win = visual.Window(size=(1280, 1024), color="black", units="pix", fullscr=FULLSCREEN)
+    REFRESH_HZ = measure_refresh_hz(win)
+    TRIGGER_HOLD_FRAMES = trigger_hold_frames(REFRESH_HZ)
+    print("[lexsync] presenting at %.2f Hz (%.2f ms per flip); "
+          "onset code held %d flips (%.1f ms)"
+          % (REFRESH_HZ, 1000.0 / REFRESH_HZ, TRIGGER_HOLD_FRAMES,
+             TRIGGER_HOLD_FRAMES * 1000.0 / REFRESH_HZ))
     port = open_port(TRIGGER_ADDRESS)
     text_stim = visual.TextStim(win, text="", height=48, color="white", font=WORD_FONT)
 
@@ -128,12 +262,30 @@ def main():
     win.flip()
     port.setData(0)
 
+    previous_block = None
     for trial in trials:
+        # A pause wherever the block changes. `block` is absent unless the design
+        # declares a practice or filler block, in which case every row carries it.
+        this_block = str(trial.get("block", "main"))
+        if previous_block is not None and this_block != previous_block:
+            if block_break(win, text_stim, this_block) == "escape":
+                break
+        previous_block = this_block
+
         stop = False
+        response = None
         for ev in EVENTS:
-            if run_event(win, port, text_stim, ev, trial) == "escape":
+            if not event_applies(ev, trial):
+                continue
+            if ev["type"] == "feedback":
+                show_feedback(win, text_stim, ev, trial, response)
+                continue
+            outcome = run_event(win, port, text_stim, ev, trial)
+            if outcome == "escape":
                 stop = True
                 break
+            if ev["type"] in ("response", "question"):
+                response = outcome
         if stop:
             break
 

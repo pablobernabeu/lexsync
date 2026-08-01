@@ -1,0 +1,166 @@
+{
+  "analysis": {
+    "note": "Crossed random effects for subjects and items guard against the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). Begin with this maximal structure (Barr et al., 2013) and reduce it if the model does not converge (Matuschek et al., 2017); fit with lme4 in R or pymer4/statsmodels in Python.",
+    "response": "the trial outcome (e.g. reaction time or accuracy)",
+    "suggested_model": "response ~ condition + (1 + condition | subject) + (1 | item)"
+  },
+  "artifacts": [
+    {
+      "file": "output/stimuli/en_supplied_pool_english_stimuli_py.csv",
+      "sha256": "13f355dbfa4669d3352ec765364c4ced12f067b510abe6ec44df9e49fc909263"
+    },
+    {
+      "file": "output/reports/en_supplied_pool_english_descriptives_py.csv",
+      "sha256": "4b3d9bfb7e3e23bc9260397f78dacbdfa05f6d87a8cc061754b712d8923e7aff"
+    },
+    {
+      "file": "output/reports/en_supplied_pool_english_comparisons_py.csv",
+      "sha256": "565ab79229422c6b40de2f387167092089f8ffd0866800f74e89e40336f50447"
+    },
+    {
+      "file": "output/experiments/en_supplied_pool_english_psychopy.py",
+      "sha256": "6f8d01b39e932741a348c8303f529eddbbd6f037db7a5732250bf9fd67f5ee78"
+    },
+    {
+      "file": "output/experiments/en_supplied_pool_english.osexp",
+      "sha256": "07a59f90a91aa776410c7a6b6516c058f8117aa482cbad1e5ffbf354523a2767"
+    },
+    {
+      "file": "output/experiments/en_supplied_pool_english.html",
+      "sha256": "9154ebfccfb166a12c7f6a4507062c42aec579eb5ac6caa937a3955009254dd9"
+    }
+  ],
+  "counterbalancing": {
+    "lists": 1,
+    "recipe": "factorial"
+  },
+  "design": {
+    "description": "Concrete nouns from a supplied candidate pool, split by frequency and matched item by item on length, neighbourhood density and OLD20.",
+    "language": "english",
+    "n_per_condition": 20,
+    "name": "en_supplied_pool",
+    "paradigm": "factorial",
+    "source": "pool"
+  },
+  "dimensions": {
+    "bigram_freq": {
+      "compute": "mean_bigram_probability",
+      "type": "derived",
+      "unit": "mean positional bigram probability"
+    },
+    "frequency": {
+      "column": "freq_zipf",
+      "type": "column",
+      "unit": "Zipf"
+    },
+    "length": {
+      "compute": "n_letters",
+      "type": "derived",
+      "unit": "letters"
+    },
+    "n_density": {
+      "compute": "coltheart_n",
+      "type": "derived",
+      "unit": "neighbours"
+    },
+    "n_syllables": {
+      "compute": "vowel_groups",
+      "type": "derived",
+      "unit": "syllables (orthographic estimate)"
+    },
+    "old20": {
+      "compute": "old20",
+      "type": "derived",
+      "unit": "mean Levenshtein distance"
+    }
+  },
+  "items": {
+    "conditions": [
+      "lower_frequency",
+      "higher_frequency"
+    ],
+    "n_conditions": 2,
+    "n_total": 40,
+    "stimuli_file": "output/stimuli/en_supplied_pool_english_stimuli_py.csv",
+    "stimuli_sha256": "13f355dbfa4669d3352ec765364c4ced12f067b510abe6ec44df9e49fc909263"
+  },
+  "lexsync_datasheet_version": "1.1",
+  "materials_source": {
+    "dimensions_from": "corpora/derived/en.csv",
+    "dimensions_sha256": "c20549b920d816809d11cfa673ad0df1dd70d3e73176ee66cbec18021627f65d",
+    "path": "items/pool_en_concrete_nouns.csv",
+    "provenance": "user-supplied word pool, matched by lexsync",
+    "sha256": "09d0706a853b4bb30580e892a64061835db0f460ee7595b674a2fc8f56d5775f",
+    "type": "pool"
+  },
+  "realised_control": [
+    {
+      "ci_high": 0.424,
+      "ci_low": -0.642,
+      "cohens_d": -0.109,
+      "dimension": "length",
+      "equivalent": false,
+      "role": "controlled",
+      "tost_p": 0.1121,
+      "var_ratio": 0.893
+    },
+    {
+      "ci_high": 4.061,
+      "ci_low": 2.995,
+      "cohens_d": 3.528,
+      "dimension": "frequency",
+      "equivalent": false,
+      "role": "manipulated/free",
+      "tost_p": 1.0,
+      "var_ratio": 0.832
+    },
+    {
+      "ci_high": 0.663,
+      "ci_low": -0.403,
+      "cohens_d": 0.13,
+      "dimension": "n_density",
+      "equivalent": false,
+      "role": "controlled",
+      "tost_p": 0.1245,
+      "var_ratio": 0.832
+    },
+    {
+      "ci_high": 0.292,
+      "ci_low": -0.775,
+      "cohens_d": -0.241,
+      "dimension": "old20",
+      "equivalent": false,
+      "role": "controlled",
+      "tost_p": 0.2093,
+      "var_ratio": 0.624
+    }
+  ],
+  "relational": null,
+  "reproducibility": {
+    "seed": 2026,
+    "versions": {
+      "engine": "python",
+      "lexsync": "0.1.0",
+      "numpy": "2.3.2",
+      "pandas": "2.3.2",
+      "python": "3.13.7",
+      "scipy": "1.17.1"
+    }
+  },
+  "resampling": null,
+  "selection": {
+    "cross_engine": "byte-identical",
+    "match_on": [
+      "length",
+      "n_density",
+      "old20"
+    ],
+    "method": "standardised_euclidean",
+    "tolerance_k": {
+      "frequency": 1.0,
+      "length": 2.0,
+      "n_density": 2.0,
+      "old20": 2.0
+    }
+  }
+}

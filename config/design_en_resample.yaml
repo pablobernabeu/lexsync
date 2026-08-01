@@ -3,7 +3,7 @@
 # independently matched item sets (no word is reused across sets). A study can then
 # run a different item sample per participant group, or show that an effect holds
 # across item samples, treating items as the random factor they are (Clark, 1973;
-# Yarkoni, 2020). The output carries a 'replicate' column.
+# Yarkoni, 2022). The output carries a 'replicate' column.
 name: en_resample
 language: english
 lexicon: corpora/derived/en.csv

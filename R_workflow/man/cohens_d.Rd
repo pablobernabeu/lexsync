@@ -15,3 +15,6 @@ The standardised mean difference, or 0 when undefined.
 \description{
 Cohen's d (pooled-SD standardised mean difference)
 }
+\examples{
+cohens_d(c(5, 6, 7, 8), c(5, 6, 7, 9))
+}

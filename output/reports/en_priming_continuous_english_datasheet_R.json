@@ -1,0 +1,165 @@
+{
+  "lexsync_datasheet_version": "1.1",
+  "design": {
+    "name": "en_priming_continuous",
+    "language": "english",
+    "paradigm": "priming",
+    "source": "table",
+    "description": "Prime-target pairs selected to span target frequency continuously, with target length and prime-target orthographic overlap held near-constant; Latin-square counterbalanced over two lists.",
+    "n_per_condition": 8
+  },
+  "materials_source": {
+    "type": "table",
+    "path": "items/priming_pairs_en.csv",
+    "sha256": "088f506b3166368bb11b3b271a50ed33c52ba913205bcaa642c5b4ebec4a091a",
+    "provenance": "user-supplied item table"
+  },
+  "dimensions": {
+    "length": {
+      "type": "derived",
+      "compute": "n_letters",
+      "unit": "letters"
+    },
+    "frequency": {
+      "type": "column",
+      "column": "freq_zipf",
+      "unit": "Zipf"
+    },
+    "n_density": {
+      "type": "derived",
+      "compute": "coltheart_n",
+      "unit": "neighbours"
+    },
+    "old20": {
+      "type": "derived",
+      "compute": "old20",
+      "unit": "mean Levenshtein distance"
+    },
+    "n_syllables": {
+      "type": "derived",
+      "compute": "vowel_groups",
+      "unit": "syllables (orthographic estimate)"
+    },
+    "bigram_freq": {
+      "type": "derived",
+      "compute": "mean_bigram_probability",
+      "unit": "mean positional bigram probability"
+    }
+  },
+  "selection": {
+    "method": "continuous even-spread (predictor spanned, controls banded)",
+    "predictor": "target.frequency",
+    "controls": [
+      "target.length",
+      "pair.overlap"
+    ],
+    "tolerance_k": {
+      "length": 2,
+      "frequency": 1,
+      "n_density": 2,
+      "old20": 2,
+      "target.length": 1.5,
+      "pair.overlap": 1.5
+    },
+    "cross_engine": "byte-identical"
+  },
+  "relational": {
+    "members": [
+      "prime",
+      "target"
+    ],
+    "n_pairs": 8,
+    "member_lexicon": "corpora/derived/en.csv",
+    "member_lexicon_sha256": "c20549b920d816809d11cfa673ad0df1dd70d3e73176ee66cbec18021627f65d",
+    "member_dimensions": [
+      "freq_zipf",
+      "frequency",
+      "length",
+      "n_density",
+      "n_syllables",
+      "old20"
+    ],
+    "relational_dimensions": [
+      "pair.lev",
+      "pair.overlap"
+    ]
+  },
+  "analysis": {
+    "response": "the trial outcome (e.g. reaction time or accuracy)",
+    "suggested_model": "response ~ target.frequency + target.length + pair.overlap + (1 + target.frequency | subject) + (1 | item)",
+    "note": "The predictor is kept continuous and analysed by regression or a mixed model rather than dichotomised (Kuperman, 2015; Liben-Nowell et al., 2019); the controls enter as covariates. Crossed random effects for subjects and items guard the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008); reduce the structure if it does not converge (Matuschek et al., 2017)."
+  },
+  "realised_control": [
+    {
+      "dimension": "target.frequency",
+      "role": "predictor",
+      "pearson_r": null,
+      "predictor_span": 1.45
+    },
+    {
+      "dimension": "target.length",
+      "role": "control",
+      "pearson_r": -0.292,
+      "predictor_span": 1.45
+    },
+    {
+      "dimension": "pair.overlap",
+      "role": "control",
+      "pearson_r": -0.227,
+      "predictor_span": 1.45
+    }
+  ],
+  "counterbalancing": {
+    "recipe": "latin_square_target",
+    "lists": 2
+  },
+  "resampling": null,
+  "items": {
+    "n_total": 16,
+    "n_conditions": 2,
+    "conditions": [
+      "related",
+      "unrelated"
+    ],
+    "stimuli_file": "output/stimuli/en_priming_continuous_english_stimuli_R.csv",
+    "stimuli_sha256": "05fc40acad57d8de585d854e592e7f21288e9952d5add2e8d81032bd222dec24"
+  },
+  "reproducibility": {
+    "seed": 2026,
+    "versions": {
+      "engine": "R",
+      "lexsync": "0.1.0",
+      "R": "4.6.1",
+      "readr": "2.2.0",
+      "stringdist": "0.9.17",
+      "jsonlite": "2.0.0",
+      "digest": "0.6.39"
+    }
+  },
+  "artifacts": [
+    {
+      "file": "output/stimuli/en_priming_continuous_english_stimuli_R.csv",
+      "sha256": "05fc40acad57d8de585d854e592e7f21288e9952d5add2e8d81032bd222dec24"
+    },
+    {
+      "file": "output/reports/en_priming_continuous_english_descriptives_R.csv",
+      "sha256": "d641dd9737bcfec66ec5a7bb8a9d38d23bb11236c44a5df98c7d398d33e3f9ed"
+    },
+    {
+      "file": "output/reports/en_priming_continuous_english_comparisons_R.csv",
+      "sha256": "6d7f5bf7bc63fe7d4c1cf21623eee70055b6f0822ae2f4c2f6dc94b657b3a9d5"
+    },
+    {
+      "file": "output/experiments/en_priming_continuous_english_psychopy.py",
+      "sha256": "7fdb11b6cd0678420481e1d0c0090abb48be9a537e563cb8e25a8428e1055c50"
+    },
+    {
+      "file": "output/experiments/en_priming_continuous_english.osexp",
+      "sha256": "efda467aa4c557653001193f5aef1d8805db488f7827fefc71c603e24f793028"
+    },
+    {
+      "file": "output/experiments/en_priming_continuous_english.html",
+      "sha256": "6b6d16ffa44fd5e53c1ff778b9ce20cf4f74cd70cabe30bd2b9b877e8785c45e"
+    }
+  ]
+}

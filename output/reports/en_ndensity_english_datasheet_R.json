@@ -1,5 +1,5 @@
 {
-  "lexsync_datasheet_version": "1.0",
+  "lexsync_datasheet_version": "1.1",
   "design": {
     "name": "en_ndensity",
     "language": "english",
@@ -12,7 +12,7 @@
     "type": "corpus",
     "path": "corpora/derived/en.csv",
     "sha256": "c20549b920d816809d11cfa673ad0df1dd70d3e73176ee66cbec18021627f65d",
-    "provenance": "see corpora/ATTRIBUTION.md for corpus licence and citation"
+    "provenance": "wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md"
   },
   "dimensions": {
     "length": {
@@ -70,6 +70,7 @@
     ],
     "cross_engine": "byte-identical"
   },
+  "relational": null,
   "analysis": {
     "response": "the trial outcome (e.g. reaction time or accuracy)",
     "suggested_model": "response ~ condition + (1 + condition | subject) + (1 | item)",
@@ -151,7 +152,7 @@
     },
     {
       "file": "output/reports/en_ndensity_english_descriptives_R.csv",
-      "sha256": "43a0ca3a73d218a88ea295761b81b6d5716653086a0db58982fb5f94528b08b0"
+      "sha256": "9e8c1775303fa94e310bd11abe358c9931e88755c6962dbb9fc55508b1738086"
     },
     {
       "file": "output/reports/en_ndensity_english_comparisons_R.csv",
@@ -159,7 +160,7 @@
     },
     {
       "file": "output/experiments/en_ndensity_english_psychopy.py",
-      "sha256": "bc9297ccc4298efd3c4b74e228cf306e26661c46cffdb2248c99b831591e44c5"
+      "sha256": "edccc65dd45676d150ef62d0cdb0c5196783c18273f0fb8c149793d17dae60cd"
     },
     {
       "file": "output/experiments/en_ndensity_english.osexp",
@@ -167,7 +168,7 @@
     },
     {
       "file": "output/experiments/en_ndensity_english.html",
-      "sha256": "8ce1ea1916e973069a41f12248e6fa1f5942f3f2b36ff97249904a7e608cf498"
+      "sha256": "a884555ee8a063b6fb72d5bc8bdf21f031ae9cbc40410f793436106cbf123cc2"
     }
   ]
 }

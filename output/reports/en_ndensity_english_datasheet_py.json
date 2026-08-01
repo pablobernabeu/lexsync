@@ -7,19 +7,19 @@
   "artifacts": [
     {
       "file": "output/stimuli/en_ndensity_english_stimuli_py.csv",
-      "sha256": "ae8e390fb662e56962a09dc8905467dab1a81b7911e3d3e9cfa5a22059e699ab"
+      "sha256": "9b9164e7708f68ea3519e9fcd9389bf903b4e34aba987902b0881de57a22488f"
     },
     {
       "file": "output/reports/en_ndensity_english_descriptives_py.csv",
-      "sha256": "3ba5eee2f35d000fad6677cd0f25f1f31d1482c982b039db167e669461748088"
+      "sha256": "9e8c1775303fa94e310bd11abe358c9931e88755c6962dbb9fc55508b1738086"
     },
     {
       "file": "output/reports/en_ndensity_english_comparisons_py.csv",
-      "sha256": "08104b5d8ce7d89bb581ab4f4d257885c6e5370964c3a8298d5daff775d8f612"
+      "sha256": "75f651e52fed2835de46a7014605123a0f8d99cda058cf25519d77379c44f26c"
     },
     {
       "file": "output/experiments/en_ndensity_english_psychopy.py",
-      "sha256": "bc9297ccc4298efd3c4b74e228cf306e26661c46cffdb2248c99b831591e44c5"
+      "sha256": "edccc65dd45676d150ef62d0cdb0c5196783c18273f0fb8c149793d17dae60cd"
     },
     {
       "file": "output/experiments/en_ndensity_english.osexp",
@@ -27,7 +27,7 @@
     },
     {
       "file": "output/experiments/en_ndensity_english.html",
-      "sha256": "8ce1ea1916e973069a41f12248e6fa1f5942f3f2b36ff97249904a7e608cf498"
+      "sha256": "a884555ee8a063b6fb72d5bc8bdf21f031ae9cbc40410f793436106cbf123cc2"
     }
   ],
   "counterbalancing": {
@@ -82,12 +82,12 @@
     "n_conditions": 2,
     "n_total": 160,
     "stimuli_file": "output/stimuli/en_ndensity_english_stimuli_py.csv",
-    "stimuli_sha256": "ae8e390fb662e56962a09dc8905467dab1a81b7911e3d3e9cfa5a22059e699ab"
+    "stimuli_sha256": "9b9164e7708f68ea3519e9fcd9389bf903b4e34aba987902b0881de57a22488f"
   },
-  "lexsync_datasheet_version": "1.0",
+  "lexsync_datasheet_version": "1.1",
   "materials_source": {
     "path": "corpora/derived/en.csv",
-    "provenance": "see corpora/ATTRIBUTION.md for corpus licence and citation",
+    "provenance": "wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md",
     "sha256": "c20549b920d816809d11cfa673ad0df1dd70d3e73176ee66cbec18021627f65d",
     "type": "corpus"
   },
@@ -133,6 +133,7 @@
       "var_ratio": 1.639
     }
   ],
+  "relational": null,
   "reproducibility": {
     "seed": 2026,
     "versions": {

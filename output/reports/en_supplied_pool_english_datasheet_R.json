@@ -1,0 +1,167 @@
+{
+  "lexsync_datasheet_version": "1.1",
+  "design": {
+    "name": "en_supplied_pool",
+    "language": "english",
+    "paradigm": "factorial",
+    "source": "pool",
+    "description": "Concrete nouns from a supplied candidate pool, split by frequency and matched item by item on length, neighbourhood density and OLD20.",
+    "n_per_condition": 20
+  },
+  "materials_source": {
+    "type": "pool",
+    "path": "items/pool_en_concrete_nouns.csv",
+    "sha256": "09d0706a853b4bb30580e892a64061835db0f460ee7595b674a2fc8f56d5775f",
+    "provenance": "user-supplied word pool, matched by lexsync",
+    "dimensions_from": "corpora/derived/en.csv",
+    "dimensions_sha256": "c20549b920d816809d11cfa673ad0df1dd70d3e73176ee66cbec18021627f65d"
+  },
+  "dimensions": {
+    "length": {
+      "type": "derived",
+      "compute": "n_letters",
+      "unit": "letters"
+    },
+    "frequency": {
+      "type": "column",
+      "column": "freq_zipf",
+      "unit": "Zipf"
+    },
+    "n_density": {
+      "type": "derived",
+      "compute": "coltheart_n",
+      "unit": "neighbours"
+    },
+    "old20": {
+      "type": "derived",
+      "compute": "old20",
+      "unit": "mean Levenshtein distance"
+    },
+    "n_syllables": {
+      "type": "derived",
+      "compute": "vowel_groups",
+      "unit": "syllables (orthographic estimate)"
+    },
+    "bigram_freq": {
+      "type": "derived",
+      "compute": "mean_bigram_probability",
+      "unit": "mean positional bigram probability"
+    }
+  },
+  "selection": {
+    "method": "standardised_euclidean",
+    "match_on": [
+      "length",
+      "n_density",
+      "old20"
+    ],
+    "tolerance_k": {
+      "length": 2,
+      "frequency": 1,
+      "n_density": 2,
+      "old20": 2
+    },
+    "cross_engine": "byte-identical"
+  },
+  "relational": null,
+  "analysis": {
+    "response": "the trial outcome (e.g. reaction time or accuracy)",
+    "suggested_model": "response ~ condition + (1 + condition | subject) + (1 | item)",
+    "note": "Crossed random effects for subjects and items guard against the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). Begin with this maximal structure (Barr et al., 2013) and reduce it if the model does not converge (Matuschek et al., 2017); fit with lme4 in R or pymer4/statsmodels in Python."
+  },
+  "realised_control": [
+    {
+      "dimension": "length",
+      "role": "controlled",
+      "cohens_d": -0.109,
+      "ci_low": -0.642,
+      "ci_high": 0.424,
+      "var_ratio": 0.893,
+      "tost_p": 0.1121,
+      "equivalent": false
+    },
+    {
+      "dimension": "frequency",
+      "role": "manipulated/free",
+      "cohens_d": 3.528,
+      "ci_low": 2.995,
+      "ci_high": 4.061,
+      "var_ratio": 0.832,
+      "tost_p": 1,
+      "equivalent": false
+    },
+    {
+      "dimension": "n_density",
+      "role": "controlled",
+      "cohens_d": 0.13,
+      "ci_low": -0.403,
+      "ci_high": 0.663,
+      "var_ratio": 0.832,
+      "tost_p": 0.1245,
+      "equivalent": false
+    },
+    {
+      "dimension": "old20",
+      "role": "controlled",
+      "cohens_d": -0.241,
+      "ci_low": -0.775,
+      "ci_high": 0.292,
+      "var_ratio": 0.624,
+      "tost_p": 0.2093,
+      "equivalent": false
+    }
+  ],
+  "counterbalancing": {
+    "recipe": "factorial",
+    "lists": 1
+  },
+  "resampling": null,
+  "items": {
+    "n_total": 40,
+    "n_conditions": 2,
+    "conditions": [
+      "lower_frequency",
+      "higher_frequency"
+    ],
+    "stimuli_file": "output/stimuli/en_supplied_pool_english_stimuli_R.csv",
+    "stimuli_sha256": "13f355dbfa4669d3352ec765364c4ced12f067b510abe6ec44df9e49fc909263"
+  },
+  "reproducibility": {
+    "seed": 2026,
+    "versions": {
+      "engine": "R",
+      "lexsync": "0.1.0",
+      "R": "4.6.1",
+      "readr": "2.2.0",
+      "stringdist": "0.9.17",
+      "jsonlite": "2.0.0",
+      "digest": "0.6.39"
+    }
+  },
+  "artifacts": [
+    {
+      "file": "output/stimuli/en_supplied_pool_english_stimuli_R.csv",
+      "sha256": "13f355dbfa4669d3352ec765364c4ced12f067b510abe6ec44df9e49fc909263"
+    },
+    {
+      "file": "output/reports/en_supplied_pool_english_descriptives_R.csv",
+      "sha256": "4b3d9bfb7e3e23bc9260397f78dacbdfa05f6d87a8cc061754b712d8923e7aff"
+    },
+    {
+      "file": "output/reports/en_supplied_pool_english_comparisons_R.csv",
+      "sha256": "565ab79229422c6b40de2f387167092089f8ffd0866800f74e89e40336f50447"
+    },
+    {
+      "file": "output/experiments/en_supplied_pool_english_psychopy.py",
+      "sha256": "6f8d01b39e932741a348c8303f529eddbbd6f037db7a5732250bf9fd67f5ee78"
+    },
+    {
+      "file": "output/experiments/en_supplied_pool_english.osexp",
+      "sha256": "07a59f90a91aa776410c7a6b6516c058f8117aa482cbad1e5ffbf354523a2767"
+    },
+    {
+      "file": "output/experiments/en_supplied_pool_english.html",
+      "sha256": "9154ebfccfb166a12c7f6a4507062c42aec579eb5ac6caa937a3955009254dd9"
+    }
+  ]
+}

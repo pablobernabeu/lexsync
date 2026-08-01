@@ -13,7 +13,8 @@
 #' "condition"/"item"), `onset_locked`, and response `keys`/`timeout_ms`.
 #'
 #' @format A named list with one entry per paradigm (`factorial`,
-#'   `lexical_decision`, `priming`, `self_paced_reading`), each holding
+#'   `lexical_decision`, `priming`, `categorisation`, `self_paced_reading`), each
+#'   holding
 #'   `stimulus_fields`, a `counterbalance` recipe and an `events` list.
 #' @export
 PARADIGMS <- list(
@@ -53,6 +54,33 @@ PARADIGMS <- list(
       list(type = "blank", duration_frames = 15L)
     )
   ),
+  # Cued semantic categorisation: a category question, then the word to judge against
+  # it. The cue is what distinguishes this from lexical decision, and it is a separate
+  # event rather than instructions shown once, because the category varies by trial --
+  # which is the point of the paradigm. Crossing the same words with different cues is
+  # how a categorisation study separates a property of the word from the demands of the
+  # task (a robin is a bird quickly and an animal slowly).
+  #
+  # `answer` holds the KEY that is correct for the trial, not a label, so scoring is a
+  # string comparison against the recorded response with nothing to look up. It is a
+  # field of the item table like any other; the paradigm requires it so that a design
+  # cannot generate an unscoreable categorisation experiment.
+  categorisation = list(
+    stimulus_fields = c("target", "category", "answer"),
+    # latin_square_target, not factorial. Each item carries both cues, so the factorial
+    # recipe would give a participant the same target twice -- and the second
+    # presentation would be a repetition-priming trial, not a categorisation trial. The
+    # rotation gives each target once per list, under one cue.
+    counterbalance = "latin_square_target",
+    events = list(
+      list(type = "fixation", content = "+", duration_ms = 500L),
+      list(type = "text", content = "{category}", duration_ms = 750L),
+      list(type = "text", content = "{target}", duration_ms = 800L,
+           trigger = "condition", onset_locked = TRUE),
+      list(type = "response", keys = c("f", "j"), timeout_ms = 2500L),
+      list(type = "blank", duration_ms = 250L)
+    )
+  ),
   self_paced_reading = list(
     stimulus_fields = c("sentence", "question"),
     counterbalance = "latin_square_target",
@@ -80,6 +108,9 @@ get_paradigm <- function(name) {
 #'
 #' @param design A parsed design list.
 #' @return The list of trial events the design presents.
+#' @examples
+#' vapply(resolve_events(list(paradigm = "lexical_decision")),
+#'        function(e) e$type, character(1))
 #' @export
 resolve_events <- function(design) {
   if (!is.null(design$events) && length(design$events)) return(design$events)
@@ -109,6 +140,8 @@ referenced_fields <- function(events) {
 #'
 #' @param design A parsed design list.
 #' @return Character vector of the item fields the design's trials reference.
+#' @examples
+#' required_fields(list(paradigm = "categorisation"))
 #' @export
 required_fields <- function(design) {
   name <- design$paradigm %||% "factorial"

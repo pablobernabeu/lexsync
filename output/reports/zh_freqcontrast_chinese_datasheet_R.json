@@ -1,5 +1,5 @@
 {
-  "lexsync_datasheet_version": "1.0",
+  "lexsync_datasheet_version": "1.1",
   "design": {
     "name": "zh_freqcontrast",
     "language": "chinese",
@@ -12,7 +12,7 @@
     "type": "corpus",
     "path": "corpora/derived/zh.csv",
     "sha256": "74666b257c1ad7bce4694a4b172796fbdc08c1414183bea5f28faa5ed3ab2fc4",
-    "provenance": "see corpora/ATTRIBUTION.md for corpus licence and citation"
+    "provenance": "wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md"
   },
   "dimensions": {
     "length": {
@@ -71,6 +71,7 @@
     ],
     "cross_engine": "byte-identical"
   },
+  "relational": null,
   "analysis": {
     "response": "the trial outcome (e.g. reaction time or accuracy)",
     "suggested_model": "response ~ condition + (1 + condition | subject) + (1 | item)",
@@ -152,7 +153,7 @@
     },
     {
       "file": "output/reports/zh_freqcontrast_chinese_descriptives_R.csv",
-      "sha256": "ddd4d78574fa1f135c2f5490542c558cf86335410b2ac344f072ac2f6f9d66b4"
+      "sha256": "97b2014ac0765262a8c940d14fd718ea9696217888a9a0f19f756f184899e9e8"
     },
     {
       "file": "output/reports/zh_freqcontrast_chinese_comparisons_R.csv",
@@ -160,7 +161,7 @@
     },
     {
       "file": "output/experiments/zh_freqcontrast_chinese_psychopy.py",
-      "sha256": "aaacd6a4445e85250a454cb98bf8876859ca750199f66f571da3bf359f20f7fc"
+      "sha256": "e4f89dd3a6ef14f565f0b09a4f7922b623eddc95522ce07747014c1f0a93a371"
     },
     {
       "file": "output/experiments/zh_freqcontrast_chinese.osexp",
@@ -168,7 +169,7 @@
     },
     {
       "file": "output/experiments/zh_freqcontrast_chinese.html",
-      "sha256": "98b053cc2879e6cf5c412eabde1483a6972fd4ce1b7557e3b183f00f501519be"
+      "sha256": "8864b3151cb029bcca4662ea7505e5ee09c8401cc5b5eb915d1ce1cfe16a9ba0"
     }
   ]
 }

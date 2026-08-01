@@ -1,6 +1,6 @@
 # Materials datasheet -- en_lexdec_wuggy (english)
 
-*lexsync datasheet v1.0; R engine.*
+*lexsync datasheet v1.1; R engine.*
 
 ## Provenance
 

@@ -1,5 +1,5 @@
 {
-  "lexsync_datasheet_version": "1.0",
+  "lexsync_datasheet_version": "1.1",
   "design": {
     "name": "en_freqcontrast",
     "language": "english",
@@ -12,7 +12,7 @@
     "type": "corpus",
     "path": "corpora/derived/en.csv",
     "sha256": "c20549b920d816809d11cfa673ad0df1dd70d3e73176ee66cbec18021627f65d",
-    "provenance": "see corpora/ATTRIBUTION.md for corpus licence and citation"
+    "provenance": "wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md"
   },
   "dimensions": {
     "length": {
@@ -71,6 +71,7 @@
     ],
     "cross_engine": "byte-identical"
   },
+  "relational": null,
   "analysis": {
     "response": "the trial outcome (e.g. reaction time or accuracy)",
     "suggested_model": "response ~ condition + (1 + condition | subject) + (1 | item)",
@@ -152,7 +153,7 @@
     },
     {
       "file": "output/reports/en_freqcontrast_english_descriptives_R.csv",
-      "sha256": "bb2878faa9568ad55c87d1cbdc97c3789be9f5a871e8206fb240536a21dbf763"
+      "sha256": "76bf7d63c1ffa0b617dafd7d7b4b74ba46f909b525408d11379f280e8b419e7b"
     },
     {
       "file": "output/reports/en_freqcontrast_english_comparisons_R.csv",
@@ -160,7 +161,7 @@
     },
     {
       "file": "output/experiments/en_freqcontrast_english_psychopy.py",
-      "sha256": "b5d45fbffe5139e44892f226fddbe2ec858eb8380ef86eb300cea2021ea22efc"
+      "sha256": "ae3da258db99fa108ef8568b87a586ef64d74bfd59d9c9a0352f7644fe9403bd"
     },
     {
       "file": "output/experiments/en_freqcontrast_english.osexp",
@@ -168,7 +169,7 @@
     },
     {
       "file": "output/experiments/en_freqcontrast_english.html",
-      "sha256": "d2db2dd093ec3a8a4aad1a31fff5c18c0e76ffe24bc643ed9b7f6c05aaa2b72b"
+      "sha256": "e2058484bd9f898f22328666bef0aacc277fe6faae444a9715d5a52098a637ee"
     }
   ]
 }

@@ -1,5 +1,5 @@
 {
-  "lexsync_datasheet_version": "1.0",
+  "lexsync_datasheet_version": "1.1",
   "design": {
     "name": "en_resample",
     "language": "english",
@@ -12,7 +12,7 @@
     "type": "corpus",
     "path": "corpora/derived/en.csv",
     "sha256": "c20549b920d816809d11cfa673ad0df1dd70d3e73176ee66cbec18021627f65d",
-    "provenance": "see corpora/ATTRIBUTION.md for corpus licence and citation"
+    "provenance": "wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md"
   },
   "dimensions": {
     "length": {
@@ -71,6 +71,7 @@
     ],
     "cross_engine": "byte-identical"
   },
+  "relational": null,
   "analysis": {
     "response": "the trial outcome (e.g. reaction time or accuracy)",
     "suggested_model": "response ~ condition + (1 + condition | subject) + (1 | item)",
@@ -163,7 +164,7 @@
     },
     {
       "file": "output/experiments/en_resample_english_psychopy.py",
-      "sha256": "bc6fa9d66d96366818d54d96d0b99a8f2da55ba4793acf87618719ff4c8e6833"
+      "sha256": "a06af248c8fbed8a484eb7040233efb989c4ab8514b593c113c62dcb65f45d81"
     },
     {
       "file": "output/experiments/en_resample_english.osexp",
@@ -171,7 +172,7 @@
     },
     {
       "file": "output/experiments/en_resample_english.html",
-      "sha256": "1e8a9108b02a6bc130439fdc7dbffaed59fd04968bfe1b0cfc9b5add34101890"
+      "sha256": "de95793ee13d8d8a9371a6119eebc1b7c7ce718a99e1bc440e4b3b860bc0adf5"
     }
   ]
 }

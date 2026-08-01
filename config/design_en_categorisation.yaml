@@ -1,0 +1,31 @@
+# Cued semantic categorisation: a category question, then the word to judge against it.
+#
+# Every target appears under a narrow cue and a broad one -- robin under A BIRD? and
+# under AN ANIMAL? -- which is the manipulation rather than a nuisance. Crossing one word
+# with two cues is how a categorisation study separates a property of the word from the
+# demands of the task, since the word is held constant and only the question changes.
+#
+# The cue is a trial event and not a line of instructions, because it varies by trial.
+# That is what makes this paradigm distinct from lexical decision, which it otherwise
+# resembles: the same fixation, one word, one two-choice response.
+#
+# `answer` holds the KEY that is correct on the trial, not a label. Scoring is then a
+# string comparison against the recorded response with nothing to look up, in whichever
+# analysis language the researcher uses. The paradigm requires the field, so a
+# categorisation experiment cannot be generated without a way to score it.
+#
+# Because each item carries both conditions, the Latin-square rotation applies: each list
+# shows a target once, under one cue, and the cue rotates across lists. That is what
+# keeps a participant from seeing the same word twice, which would make the second
+# presentation a repetition-priming trial rather than a categorisation trial.
+name: en_categorisation
+language: english
+paradigm: categorisation
+description: 'Cued semantic categorisation: concrete nouns judged against a narrow or a broad category cue, Latin-square counterbalanced over two lists so no target repeats within a list.'
+
+items:
+  source: table
+  path: items/categorisation_en.csv
+
+counterbalance:
+  lists: 2

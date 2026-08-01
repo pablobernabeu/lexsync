@@ -47,30 +47,200 @@ trigger_spec <- function(value) {
   as.integer(value)
 }
 
-#' Translate paradigm events into backend-neutral rendering dictionaries
+# Frames to milliseconds at a given refresh rate. Multiplication comes first so
+# both engines evaluate the same two IEEE-754 operations on the same doubles:
+# `frames * 1000 / hz`, never `frames * (1000 / hz)`, which is a different
+# computation and agrees with the first only by accident of the divisor.
+# Must stay identical to .frames_to_ms in python_workflow/src/lexsync/scripting.py.
 #' @keywords internal
-render_events <- function(events, timing) {
-  fix <- timing$fixation_frames
-  word <- timing$word_frames
-  isi <- timing$isi_frames
+frames_to_ms <- function(frames, hz) {
+  as.integer(round(as.numeric(frames) * 1000 / as.numeric(hz)))
+}
+
+# The refresh rate a design's frame counts were authored for. Only ever used to
+# convert `*_frames` to milliseconds; it is not the rate the experiment runs at.
+#' @keywords internal
+.refresh_hz <- function(schema) {
+  hz <- (schema$presentation %||% list())$assumed_refresh_hz %||% 60
+  hz <- as.numeric(hz)
+  if (!is.finite(hz) || hz <= 0) {
+    stop("lexsync: presentation.assumed_refresh_hz must be a positive number.", call. = FALSE)
+  }
+  hz
+}
+
+# How long the onset code is held before it is reset to 0, in milliseconds.
+#
+# `reset_after_frames: N` is still accepted, but converting it needs care: the old
+# implementation queued the reset on flip N and callOnFlip runs on the FOLLOWING
+# flip, so the code was actually held for N + 1 flip intervals. Converting N
+# directly would silently shorten every trigger by one frame, so the +1 is part of
+# the compatibility contract, not an off-by-one.
+# Must stay identical to _trigger_hold_ms in python_workflow/src/lexsync/scripting.py.
+#' @keywords internal
+.trigger_hold_ms <- function(schema) {
+  triggers <- schema$triggers %||% list()
+  if (!is.null(triggers$trigger_hold_ms)) {
+    ms <- as.numeric(triggers$trigger_hold_ms)
+  } else if (!is.null(triggers$reset_after_frames)) {
+    ms <- as.numeric(frames_to_ms(as.integer(triggers$reset_after_frames) + 1L,
+                                  .refresh_hz(schema)))
+  } else {
+    ms <- 50
+  }
+  if (!is.finite(ms) || ms <= 0) {
+    stop("lexsync: triggers.trigger_hold_ms must be a positive number.", call. = FALSE)
+  }
+  ms
+}
+
+# Resolve one event's duration to whole milliseconds. Milliseconds are canonical;
+# a frame count is accepted for backward compatibility and converted at the
+# design's assumed refresh rate. An explicit `duration_ms` wins over
+# `duration_frames` if a design carries both.
+#' @keywords internal
+.event_ms <- function(ev, override_ms, override_frames, hz, default_frames = 1L) {
+  if (!is.null(override_ms)) return(as.integer(override_ms))
+  if (!is.null(override_frames)) return(frames_to_ms(override_frames, hz))
+  if (!is.null(ev$duration_ms)) return(as.integer(ev$duration_ms))
+  frames_to_ms(ev$duration_frames %||% default_frames, hz)
+}
+
+
+# A design's per-event `duration:` block, if it declares one.
+#   duration: {from_column: soa_ms}                  read per trial from the items
+#   duration: {jitter: [400, 800], as: isi_ms}       drawn per trial from the hash
+#' @keywords internal
+.duration_spec <- function(ev, index) {
+  d <- ev$duration
+  if (is.null(d) || !is.list(d)) return(NULL)
+  if (!is.null(d$from_column)) {
+    return(list(column = as.character(d$from_column), jitter = NULL))
+  }
+  if (!is.null(d$jitter)) {
+    rng <- as.integer(unlist(d$jitter))
+    if (length(rng) != 2L) {
+      stop("lexsync: duration jitter must be a two-element range [lo, hi].", call. = FALSE)
+    }
+    return(list(column = as.character(d$as %||% sprintf("event%d_ms", index)),
+                jitter = rng))
+  }
+  stop("lexsync: a duration block needs either 'from_column' or 'jitter'.", call. = FALSE)
+}
+
+# An event's response keys, validated. OpenSesame writes them into
+# `set allowed_responses "a;b"`, one line of a line-oriented format, so a key holding a
+# quote closed the string and a newline ended the line -- and the rest became new
+# top-level items in the experiment, including an inline_script whose body runs.
+#' @keywords internal
+.keys_of <- function(ev, default) {
+  keys <- ev$keys %||% default
+  vapply(as.character(unlist(keys)), clean_key, character(1), USE.NAMES = FALSE)
+}
+
+#' Realise per-trial event durations onto the stimuli table
+#'
+#' An event may declare a duration that varies from trial to trial, either read
+#' from an item column or drawn from a range. A drawn value is a pure function of
+#' the keyed hash, so both engines realise the same milliseconds, and it is
+#' written into the stimuli table rather than only into the generated script:
+#' timing that varies is a variable the analysis needs, not presentation detail.
+#'
+#' @param stimuli A counterbalanced stimuli data frame.
+#' @param design A parsed design configuration.
+#' @param schema The parsed global schema (provides the seed).
+#' @return `stimuli` with one integer column per jittered event.
+#' @export
+resolve_trial_timing <- function(stimuli, design, schema) {
+  events <- resolve_events(design)
+  seed <- schema$seed %||% 1L
+  for (i in seq_along(events)) {
+    spec <- .duration_spec(events[[i]], i)
+    if (is.null(spec) || is.null(spec$jitter)) {
+      # from_column reads a column the items already carry; nothing to realise.
+      if (!is.null(spec) && !(spec$column %in% names(stimuli))) {
+        stop(sprintf("lexsync: event %d reads its duration from column '%s', which the items do not have.",
+                     i, spec$column), call. = FALSE)
+      }
+      next
+    }
+    # The key names the column as well as the trial, so two jittered events in
+    # one design draw independently rather than sharing a value.
+    key <- paste(.key_part(seed), "jitter", spec$column,
+                 .key_part(stimuli$list %||% 1L), .key_part(stimuli$set),
+                 .key_part(stimuli$condition), sep = "|")
+    stimuli[[spec$column]] <- hash_int_range(key, spec$jitter[1], spec$jitter[2])
+  }
+  stimuli
+}
+
+#' Translate paradigm events into backend-neutral rendering dictionaries
+#'
+#' Durations are emitted as whole milliseconds (`ms`), the unit every backend
+#' consumes: OpenSesame and jsPsych schedule it directly, and the PsychoPy script
+#' converts it back into whole flips against the refresh rate it measures at
+#' start-up.
+#' @keywords internal
+render_events <- function(events, timing, hz = 60) {
+  timing <- timing %||% list()
+  # A design's timing block was previously read key by key, so a typo such as
+  # `fixation_frame` was silently ignored and the event kept a default duration.
+  # Reject an unknown key instead: a mistimed experiment is not recoverable after
+  # the data are collected. Must list the same names as scripting.py.
+  known <- c("fixation_ms", "word_ms", "isi_ms",
+             "fixation_frames", "word_frames", "isi_frames")
+  unknown <- setdiff(names(timing), known)
+  if (length(unknown)) {
+    stop(sprintf("lexsync: unknown timing key(s) %s. Known keys: %s.",
+                 paste(sprintf("'%s'", sort(unknown)), collapse = ", "),
+                 paste(known, collapse = ", ")), call. = FALSE)
+  }
+  fix_ms <- timing$fixation_ms;  fix <- timing$fixation_frames
+  word_ms <- timing$word_ms;    word <- timing$word_frames
+  isi_ms <- timing$isi_ms;      isi <- timing$isi_frames
   out <- list()
-  for (ev in events) {
+  # A feedback event scores the key the participant pressed, so something must have
+  # collected one first. With no preceding response or question the OpenSesame runner
+  # raises on the unset variable, PsychoPy compares against None and jsPsych finds no
+  # scored row -- three different confusing failures at run time, for one design error
+  # that is obvious here.
+  seen_response <- FALSE
+  for (i in seq_along(events)) {
+    ty <- events[[i]]$type
+    if (ty %in% c("response", "question")) seen_response <- TRUE
+    if (identical(ty, "feedback") && !seen_response) {
+      stop(sprintf(paste("lexsync: event %d is a feedback event, but no response or",
+                         "question event precedes it, so there is no response to score."),
+                   i), call. = FALSE)
+    }
+  }
+  for (i in seq_along(events)) {
+    ev <- events[[i]]
     t <- ev$type
     r <- list(type = if (identical(t, "region_by_region")) "region" else t)
     if (t %in% c("fixation", "text", "mask")) {
       f <- content_field(ev$content)
       if (!is.null(f)) r$field <- f else r$text <- as.character(ev$content %||% "")
-      frames <- ev$duration_frames %||% 1L
-      if (t == "fixation" && !is.null(fix)) {
-        frames <- fix
-      } else if (t == "text" && identical(ev$trigger, "condition") && !is.null(word)) {
-        frames <- word
+      # The overrides are type-keyed, as before: `fixation_*` reaches every
+      # fixation and `word_*` only a text event whose trigger is "condition",
+      # which is why a priming prime (trigger 20) keeps its own duration.
+      is_word <- t == "text" && identical(ev$trigger, "condition")
+      spec <- .duration_spec(ev, i)
+      if (!is.null(spec)) {
+        r$ms_column <- spec$column
+      } else {
+        r$ms <- .event_ms(
+          ev,
+          if (t == "fixation") fix_ms else if (is_word) word_ms else NULL,
+          if (t == "fixation") fix else if (is_word) word else NULL,
+          hz
+        )
       }
-      r$frames <- as.integer(frames)
       spec <- trigger_spec(ev$trigger)
       if (!is.null(spec)) r$trigger <- spec
     } else if (t == "blank") {
-      r$frames <- as.integer(if (!is.null(isi)) isi else (ev$duration_frames %||% 1L))
+      spec <- .duration_spec(ev, i)
+      if (!is.null(spec)) r$ms_column <- spec$column else r$ms <- .event_ms(ev, isi_ms, isi, hz)
     } else if (t == "region_by_region") {
       r$field <- content_field(ev$content)
       r$sep <- ev$sep %||% "|"
@@ -78,14 +248,30 @@ render_events <- function(events, timing) {
       spec <- trigger_spec(ev$critical_region_trigger)
       if (!is.null(spec)) r$crit_trigger <- spec
     } else if (t == "response") {
-      r$keys <- ev$keys %||% c("left", "right")
+      r$keys <- .keys_of(ev, c("left", "right"))
       r$timeout <- round((ev$timeout_ms %||% 2000) / 1000, 3)
     } else if (t == "question") {
       r$field <- content_field(ev$content)
-      r$keys <- ev$keys %||% c("f", "j")
+      r$keys <- .keys_of(ev, c("f", "j"))
       r$timeout <- round((ev$timeout_ms %||% 5000) / 1000, 3)
+    } else if (t == "feedback") {
+      # Feedback compares the key the participant pressed against the key the item says
+      # is correct, so `answer` names a loop-table column holding a KEY, not a label:
+      # the runner then needs no mapping table and no notion of what the keys mean.
+      r$answer <- as.character(ev$answer %||% "answer")
+      r$correct <- as.character(ev$correct %||% "Correct")
+      r$incorrect <- as.character(ev$incorrect %||% "Incorrect")
+      r$no_response <- as.character(ev$no_response %||% "Too slow")
+      r$ms <- .event_ms(ev, NULL, NULL, hz, default_frames = 36L)
     } else {
       stop(sprintf("lexsync: unknown event type '%s'.", t), call. = FALSE)
+    }
+    # An event may be restricted to named blocks. This is what lets feedback run during
+    # practice and nowhere else: the event list is global to the design, so the
+    # restriction has to travel with the event and be applied per trial at run time,
+    # rather than by generating a second event list.
+    if (!is.null(ev$blocks)) {
+      r$blocks <- as.list(as.character(unlist(ev$blocks, use.names = FALSE)))
     }
     out[[length(out) + 1L]] <- r
   }
@@ -97,7 +283,20 @@ render_events <- function(events, timing) {
 loop_table <- function(stimuli, events = NULL) {
   fields <- if (!is.null(events)) referenced_fields(events) else
     (if ("word" %in% names(stimuli)) "word" else character(0))
-  order_cols <- c("trial", "list", "set", "condition", fields,
+  # A per-trial duration is read from the loop table at run time, so its column
+  # has to travel with the trials rather than staying in the stimuli file.
+  ms_cols <- character(0)
+  if (!is.null(events)) {
+    for (i in seq_along(events)) {
+      s <- .duration_spec(events[[i]], i)
+      if (!is.null(s) && !(s$column %in% ms_cols)) ms_cols <- c(ms_cols, s$column)
+    }
+  }
+  # `block` travels with the trials because the runners need it: it is what an
+  # event's `blocks:` restriction is matched against, and what a runner watches to
+  # know a block boundary has been reached. Absent unless the design declares a
+  # practice or filler block, so no existing loop table gains a column.
+  order_cols <- c("trial", "list", "block", "set", "condition", fields, ms_cols,
                   "critical_region", "answer", "condition_trigger", "item_trigger")
   cols <- character(0)
   for (c in order_cols) if (c %in% names(stimuli) && !(c %in% cols)) cols <- c(cols, c)
@@ -120,7 +319,7 @@ loop_table <- function(stimuli, events = NULL) {
 export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
   base <- base %||% slugify(design$name, design$language)
   events <- resolve_events(design)
-  rendered <- render_events(events, design$timing %||% list())
+  rendered <- render_events(events, design$timing %||% list(), .refresh_hz(schema))
   csv_name <- paste0(base, "_psychopy.csv")
   write_csv_utf8(loop_table(stimuli, events), file.path(outdir, csv_name))
   tmpl <- paste(readLines(find_template("psychopy/trial_runner_template.py"), warn = FALSE),
@@ -128,12 +327,16 @@ export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
   triggers <- schema$triggers %||% list()
   presentation <- schema$presentation %||% list()
   subs <- list(
-    DESIGN = design$name, LANGUAGE = design$language, CONDITIONS_FILE = csv_name,
-    TRIGGER_ADDRESS = triggers$parallel_address %||% "0x0378",
-    RESET_AFTER_FRAMES = triggers$reset_after_frames %||% 2,
+    DESIGN = clean_meta(design$name, "the design's `name`"),
+    LANGUAGE = clean_meta(design$language, "the design's `language`"),
+    CONDITIONS_FILE = csv_name,
+    TRIGGER_ADDRESS = clean_port(triggers$parallel_address %||% "0x0378"),
+    TRIGGER_HOLD_MS = sprintf("%.17g", .trigger_hold_ms(schema)),
     INTER_TRIGGER_S = (triggers$inter_trigger_ms %||% 10) / 1000,
-    WORD_FONT = design$font %||% presentation$font %||% "Courier New",
+    WORD_FONT = clean_meta(design$font %||% presentation$font %||% "Courier New", "the font"),
     FULLSCREEN = "False",
+    # The fallback used only when the script cannot measure the display.
+    ASSUMED_REFRESH_HZ = sprintf("%.17g", .refresh_hz(schema)),
     EVENTS_JSON = as.character(jsonlite::toJSON(rendered, auto_unbox = TRUE))
   )
   for (k in names(subs)) {
@@ -147,8 +350,15 @@ export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
 # ---- OpenSesame code generation ------------------------------------------
 
 .pyq <- function(s) {
+  # A newline had to be escaped as well as the backslash and the quote. An .osexp is a
+  # line-oriented format whose inline scripts are delimited by their own lines, so a raw
+  # newline in a value did not merely break the literal: it closed the script block and
+  # let the rest of the value start a new top-level item in the emitted experiment.
   s <- gsub("\\", "\\\\", s, fixed = TRUE)
   s <- gsub("'", "\\'", s, fixed = TRUE)
+  s <- gsub("\n", "\\n", s, fixed = TRUE)
+  s <- gsub("\r", "\\r", s, fixed = TRUE)
+  s <- gsub("\t", "\\t", s, fixed = TRUE)
   paste0("u'", s, "'")
 }
 
@@ -166,30 +376,75 @@ export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
     '\tset _prepare ""', "\t___run__", paste0("\t", body), "\t__end__", "")
 }
 
+# The Python that OpenSesame's inline_script actually runs.
+#
+# Two spellings here are forced by OpenSesame's runtime and were both wrong at first:
+#
+# `str`, never `unicode`. OpenSesame 3.3 and later run inline scripts in a Python 3
+# workspace and inject only a fixed set of globals (exp, var, pool, items, clock, log
+# and a small API); `unicode` is a Python 2 builtin and is not among them, so every
+# emitted guard and feedback script died with NameError on the first trial.
+#
+# `var.get(name, u'')`, never `var.get(name, None)`. OpenSesame's var_store.get ends
+# `elif default is not None: val = default / else: raise VariableDoesNotExist(var)`, so
+# passing None explicitly is indistinguishable from passing no default and RAISES rather
+# than yielding None. A non-None sentinel is the only default that works.
+
+# Restrict an inline script's body to the named blocks.
+#
+# The guard goes INSIDE the script rather than on the sequence's `run` line. OpenSesame
+# does support a run condition, but its syntax and quoting could not be verified here
+# without the application, and an emitter that generates an experiment nobody can open is
+# worse than one that generates a slightly longer script.
+#' @keywords internal
+.osexp_block_guard <- function(body, blocks) {
+  if (is.null(blocks) || !length(blocks)) return(body)
+  wanted <- paste(vapply(as.character(unlist(blocks)), .pyq, character(1)), collapse = ", ")
+  c(sprintf("if str(var.get(u'block', u'main')) in [%s]:", wanted),
+    paste0("    ", body))
+}
+
 .osexp_event_block <- function(name, ev) {
   t <- ev$type
-  ms <- as.integer(round((ev$frames %||% 1L) * 1000 / 60))
+  blocks <- ev[["blocks"]]
+  if (!is.null(blocks) && length(blocks) && t == "response") {
+    # A keyboard_response is not an inline script, so the guard above cannot reach it.
+    # Saying so beats emitting an experiment that ignores the restriction.
+    stop(paste("lexsync: a `response` event cannot be restricted to blocks on the",
+               "OpenSesame target. Restrict a feedback or stimulus event instead."),
+         call. = FALSE)
+  }
+  # A fixed duration is a literal; one that varies per trial reads the loop-table
+  # column, which OpenSesame exposes on `var`. Must match _osexp_event_block in
+  # scripting.py, since the two engines write the same .osexp.
+  # [[ ]], not $: `$` partial-matches on a list, so `ev$ms` would return the value
+  # of `ms_column` for a per-trial duration and emit the column name as a literal.
+  sleep_arg <- if (!is.null(ev[["ms_column"]]))
+    sprintf("int(var.%s)", clean_column(ev[["ms_column"]], "a jittered duration's `as`")) else
+    sprintf("%d", as.integer(ev[["ms"]] %||% 0L))
   if (t %in% c("fixation", "text", "mask", "blank")) {
     body <- "c = Canvas()"
     if (t != "blank") body <- c(body, sprintf("c.text(%s)", .content_expr(ev)))
     body <- c(body, "var.onset_time = c.show()")
     trig <- .trigger_expr(ev$trigger)
     if (!is.null(trig)) body <- c(body, sprintf("send_trigger(%s)", trig))
-    body <- c(body, sprintf("clock.sleep(%d)", ms))
-    return(list(block = .inline_block(name, "Show stimulus and send onset-aligned trigger", body),
+    body <- c(body, sprintf("clock.sleep(%s)", sleep_arg))
+    return(list(block = .inline_block(name, "Show stimulus and send onset-aligned trigger",
+                                      .osexp_block_guard(body, blocks)),
                 run = name))
   }
   if (t == "region") {
     trig <- .trigger_expr(ev$crit_trigger)
     body <- c(
       sprintf("_regions = [r for r in var.%s.split(%s) if r != u'']", ev$field, .pyq(ev$sep %||% "|")),
-      "_crit = int(var.critical_region) if var.get(u'critical_region') is not None else 0",
+      "_crit = int(var.get(u'critical_region', 0) or 0)",
       sprintf("_kb = Keyboard(keylist=[%s], timeout=None)", .pyq(ev$key %||% "space")),
       "for _i, _region in enumerate(_regions, start=1):",
       "    c = Canvas(); c.text(_region); c.show()")
     if (!is.null(trig)) body <- c(body, sprintf("    if _i == _crit: send_trigger(%s)", trig))
     body <- c(body, "    _kb.get_key()")
-    return(list(block = .inline_block(name, "Self-paced reading region by region", body), run = name))
+    return(list(block = .inline_block(name, "Self-paced reading region by region",
+                                      .osexp_block_guard(body, blocks)), run = name))
   }
   if (t == "question") {
     keys_list <- paste(vapply(ev$keys %||% c("f", "j"), .pyq, character(1)), collapse = ", ")
@@ -198,7 +453,26 @@ export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
       sprintf("_kb = Keyboard(keylist=[%s], timeout=%d)", keys_list,
               as.integer((ev$timeout %||% 5) * 1000)),
       "var.response, var.response_time = _kb.get_key()")
-    return(list(block = .inline_block(name, "Comprehension question", body), run = name))
+    return(list(block = .inline_block(name, "Comprehension question",
+                                      .osexp_block_guard(body, blocks)), run = name))
+  }
+  if (t == "feedback") {
+    # `var.response` is set by the keyboard_response above; `var.answer` (or whichever
+    # column the event names) holds the KEY that is correct, so scoring is a string
+    # comparison. A timeout leaves the response None, which is reported separately
+    # because on a timed task it means something different from a wrong key.
+    body <- c(
+      sprintf("_want = str(var.get(u'%s', u'')).strip()",
+              clean_column(ev[["answer"]] %||% "answer", "a feedback event's `answer`")),
+      "_got = var.get(u'response', u'')",
+      sprintf("if _got is None or _got == u'': _msg = %s", .pyq(ev[["no_response"]] %||% "Too slow")),
+      sprintf("elif str(_got).strip() == _want: _msg = %s",
+              .pyq(ev[["correct"]] %||% "Correct")),
+      sprintf("else: _msg = %s", .pyq(ev[["incorrect"]] %||% "Incorrect")),
+      "c = Canvas(); c.text(_msg); c.show()",
+      sprintf("clock.sleep(%s)", sleep_arg))
+    return(list(block = .inline_block(name, "Practice feedback",
+                                      .osexp_block_guard(body, blocks)), run = name))
   }
   if (t == "response") {
     keys <- paste(ev$keys %||% c("left", "right"), collapse = ";")
@@ -221,8 +495,13 @@ export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
 #' Build a complete plain-text OpenSesame experiment from rendered events
 #' @keywords internal
 build_osexp <- function(design, conditions_file, schema, rendered, font = "mono") {
-  addr <- schema$triggers$parallel_address %||% "0x378"
-  design_name <- design$name; language <- design$language
+  addr <- clean_port(schema$triggers$parallel_address %||% "0x378")
+  design_name <- clean_meta(design$name, "the design's `name`")
+  language <- clean_meta(design$language, "the design's `language`")
+  # `set font_family <font>` takes the value unquoted on its own line, so it is guarded
+  # here rather than at the caller: an .osexp is line-oriented and a newline would add
+  # items to the experiment.
+  font <- clean_meta(font, "the font")
   setup <- c(
     "var.trigger_backend = u'parallel'",
     sprintf("var.parallel_port_address = %s", addr),
@@ -311,7 +590,7 @@ build_osexp <- function(design, conditions_file, schema, rendered, font = "mono"
 export_opensesame <- function(stimuli, design, schema, outdir, base = NULL) {
   base <- base %||% slugify(design$name, design$language)
   events <- resolve_events(design)
-  rendered <- render_events(events, design$timing %||% list())
+  rendered <- render_events(events, design$timing %||% list(), .refresh_hz(schema))
   csv_name <- paste0(base, "_opensesame.csv")
   write_csv_utf8(loop_table(stimuli, events), file.path(outdir, csv_name))
   presentation <- schema$presentation %||% list()
@@ -334,8 +613,13 @@ export_opensesame <- function(stimuli, design, schema, outdir, base = NULL) {
 # "en-GB") is taken as given. Anything else becomes "und" (BCP 47 "undetermined"):
 # registered, and unlike lang="english" resolvable by a validator or a screen reader.
 .language_tag <- function(design) {
-  tag <- design$language_tag
-  if (!is.null(tag) && nzchar(as.character(tag))) return(as.character(tag))
+  # The shape check applies to a STATED tag too. It used to be returned verbatim, so
+  # `language_tag: 'en"><script>...'` reached the lang attribute of the generated HTML
+  # intact -- the one input to this function that an attacker would actually choose.
+  tag <- trimws(as.character(design$language_tag %||% ""))
+  if (nzchar(tag)) {
+    return(if (grepl("^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$", tag, perl = TRUE)) tag else "und")
+  }
   label <- trimws(as.character(design$language %||% ""))
   if (grepl("^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$", label, perl = TRUE)) return(label)
   m <- .BCP47_TAGS[.lower_invariant(label)]
@@ -361,7 +645,14 @@ export_opensesame <- function(stimuli, design, schema, outdir, base = NULL) {
   s <- as.character(x)
   s <- gsub("<", "\\u003c", s, fixed = TRUE)
   s <- gsub(">", "\\u003e", s, fixed = TRUE)
-  gsub("&", "\\u0026", s, fixed = TRUE)
+  s <- gsub("&", "\\u0026", s, fixed = TRUE)
+  # U+2028 and U+2029 terminate a line in JavaScript but are not ASCII controls, so
+  # clean_field passes them, and a raw one inside a <script> string literal is a
+  # SyntaxError before ES2019. The Python twin escaped them and this did not, so the
+  # same design produced different bytes from the two engines. Written as escape
+  # sequences rather than literal characters so this file stays pure ASCII.
+  s <- gsub("\u2028", "\\u2028", s, fixed = TRUE)
+  gsub("\u2029", "\\u2029", s, fixed = TRUE)
 }
 
 #' Export a browser-runnable jsPsych experiment
@@ -381,15 +672,17 @@ export_opensesame <- function(stimuli, design, schema, outdir, base = NULL) {
 export_jspsych <- function(stimuli, design, schema, outdir, base = NULL) {
   base <- base %||% slugify(design$name, design$language)
   events <- resolve_events(design)
-  rendered <- .map_keys_jspsych(render_events(events, design$timing %||% list()))
+  rendered <- .map_keys_jspsych(
+    render_events(events, design$timing %||% list(), .refresh_hz(schema)))
   trials <- loop_table(stimuli, events)
   presentation <- schema$presentation %||% list()
   font <- design$font %||% presentation$font %||% "Courier New"
   tmpl <- paste(readLines(find_template("jspsych/experiment_template.html"), warn = FALSE),
                 collapse = "\n")
   subs <- list(
-    DESIGN = design$name, LANGUAGE = design$language,
-    LANGUAGE_TAG = .language_tag(design), WORD_FONT = font,
+    DESIGN = clean_meta(design$name, "the design's `name`"),
+    LANGUAGE = clean_meta(design$language, "the design's `language`"),
+    LANGUAGE_TAG = .language_tag(design), WORD_FONT = clean_meta(font, "the font"),
     EVENTS_JSON = .json_html(jsonlite::toJSON(rendered, auto_unbox = TRUE)),
     TRIALS_JSON = .json_html(jsonlite::toJSON(trials, dataframe = "rows"))
   )

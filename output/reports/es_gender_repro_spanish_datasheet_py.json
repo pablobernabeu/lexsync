@@ -7,19 +7,19 @@
   "artifacts": [
     {
       "file": "output/stimuli/es_gender_repro_spanish_stimuli_py.csv",
-      "sha256": "ea82b29ac1adeb7bb0fc3a2f32c1740162dbc2d49afc861f5d801523cad81949"
+      "sha256": "eb7d3011aaa498cc50263f2636e20ec4be0b7950194d29ea8c2832ef70c837be"
     },
     {
       "file": "output/reports/es_gender_repro_spanish_descriptives_py.csv",
-      "sha256": "24abbdde8b2d9d2127ba260af6c068628cd76c4a0dab811f884f133b11da1cdb"
+      "sha256": "7e0f2bf841b1bbe6a612cbd5030a9b688ccd337b8f0b843afc20a8a821c4619b"
     },
     {
       "file": "output/reports/es_gender_repro_spanish_comparisons_py.csv",
-      "sha256": "b1fed707228ef3c73918ca5a58c447f1d0073083383dd71b1687380adc1fdb74"
+      "sha256": "aad4f917a1544add61793df988b41ba5ebb059c4f5e62e1747b8c27d68bf8a45"
     },
     {
       "file": "output/experiments/es_gender_repro_spanish_psychopy.py",
-      "sha256": "16aab01b57dd0a69f2d142f872de2a090accd11f13d27bf3ff1f03834d917366"
+      "sha256": "9baa583e222c86daac15068659236fc48c1e08c3e98a360e207a61ea3b48ae24"
     },
     {
       "file": "output/experiments/es_gender_repro_spanish.osexp",
@@ -27,7 +27,7 @@
     },
     {
       "file": "output/experiments/es_gender_repro_spanish.html",
-      "sha256": "3ec93911703e255ac382697fa60ffccd9d61db5a3fabc1ed73094b7bc07c11a4"
+      "sha256": "f420e6b8ca45438183c3fcad6d2ce942f9482241ca5b1bb6a68be595d09d1af3"
     }
   ],
   "counterbalancing": {
@@ -82,12 +82,12 @@
     "n_conditions": 2,
     "n_total": 96,
     "stimuli_file": "output/stimuli/es_gender_repro_spanish_stimuli_py.csv",
-    "stimuli_sha256": "ea82b29ac1adeb7bb0fc3a2f32c1740162dbc2d49afc861f5d801523cad81949"
+    "stimuli_sha256": "eb7d3011aaa498cc50263f2636e20ec4be0b7950194d29ea8c2832ef70c837be"
   },
-  "lexsync_datasheet_version": "1.0",
+  "lexsync_datasheet_version": "1.1",
   "materials_source": {
     "path": "corpora/derived/es_gender.csv",
-    "provenance": "see corpora/ATTRIBUTION.md for corpus licence and citation",
+    "provenance": "wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md",
     "sha256": "0f77aec3fe307ed38f1e69e69f7c80ee93e38ffb8c0622b817fd2c26d15114d5",
     "type": "corpus"
   },
@@ -133,6 +133,7 @@
       "var_ratio": 0.893
     }
   ],
+  "relational": null,
   "reproducibility": {
     "seed": 2026,
     "versions": {
@@ -163,7 +164,7 @@
     ],
     "method": "standardised_euclidean",
     "tolerance_k": {
-      "frequency": 0.1111111111111111,
+      "frequency": 0.111111111111111,
       "length": 2.0,
       "n_density": 2.0,
       "old20": 2.0

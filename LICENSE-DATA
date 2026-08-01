@@ -1,36 +1,68 @@
 Data licensing for lexsync
 ==========================
 
-The lexsync *source code* is released under the MIT License (see LICENSE).
-The *lexical corpora* that lexsync bundles or fetches are independent works
-with their own terms, summarised here and documented per corpus, with full
-citations and retrieval dates, in 'corpora/ATTRIBUTION.md'.
+The MIT License in LICENSE covers the lexsync *source code* only: the R package
+under R_workflow/ and the Python package under python_workflow/. The lexical
+corpora that lexsync bundles or fetches are NOT covered by it; they are
+independent works with their own terms, summarised here and documented per
+corpus, with full citations and retrieval dates, in 'corpora/ATTRIBUTION.md'.
 
 Bundled derivatives
 -------------------
 The small example slices shipped inside the packages
 ('R_workflow/inst/extdata/' and 'python_workflow/src/lexsync/data/') and the
-fuller derived corpora under 'corpora/derived/' are derived from the SUBTLEX
-word-frequency family (e.g. SUBTLEX-UK, SUBTLEX-ESP). These resources are made
-freely available by their authors for any purpose, subject to attribution, on
-terms the authors describe as equivalent to the Creative Commons
-Attribution-ShareAlike licence; the openlexicon project redistributes them
-under 'CC BY-SA 4.0'. Accordingly, the bundled derivatives in this repository
-are distributed under:
+fuller derived corpora under 'corpora/derived/' are built from the 'wordfreq'
+package by 'corpora/fetch_corpora.py', which is the only ingestion path that
+produced them. Every row of every derived file records this in its 'source'
+column. lexsync adds the orthographic-neighbourhood variables (Coltheart's N
+and OLD20) and standardises the columns; the frequencies themselves are
+wordfreq's.
+
+wordfreq distributes its code and its data under different terms. The code is
+under the Apache License 2.0, and the data files, which are what lexsync
+derives from, are redistributable under
 
     Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
     https://creativecommons.org/licenses/by-sa/4.0/
 
-You must (a) give appropriate credit to the original corpus authors (see
-'corpora/ATTRIBUTION.md'), (b) indicate if changes were made (lexsync
-standardises columns and computes derived variables) and (c) distribute any
-adaptations under the same licence.
+The bundled derivatives in this repository are therefore distributed under
+CC BY-SA 4.0. You must (a) give appropriate credit to the original corpus
+authors (see 'corpora/ATTRIBUTION.md'), (b) indicate if changes were made
+(lexsync standardises columns and computes derived variables) and (c)
+distribute any adaptations under the same licence.
+
+Credit for SUBTLEX
+------------------
+wordfreq's frequencies are a blend of up to eight domains of text, among them
+Wikipedia, OPUS OpenSubtitles, NewsCrawl, Google Books Ngrams, OSCAR, Twitter
+and Reddit. The subtitles domain draws in part on the SUBTLEX word lists
+SUBTLEX-US, SUBTLEX-UK, SUBTLEX-CH, SUBTLEX-DE and SUBTLEX-NL, created by Marc
+Brysbaert and colleagues, which wordfreq carries by permission on two
+conditions that pass through to anything derived from it:
+
+  - work derived from wordfreq must credit the SUBTLEX authors, and
+  - it must remain clear that SUBTLEX is freely available data.
+
+Those citations are in 'corpora/ATTRIBUTION.md'. Note that SUBTLEX contributes
+to the blend rather than constituting it: no lexsync corpus is a copy of a
+SUBTLEX list, and the SUBTLEX resources listed in 'corpora/registry.yaml' are
+separate corpora a user may load directly, not the source of anything bundled
+here.
+
+For Mandarin Chinese, wordfreq also imports a wordlist shipped with the Jieba
+segmenter whose provenance its own documentation describes as unknown. Anyone
+redistributing the bundled Chinese corpus, or relying on it for a claim about
+frequency provenance, should read wordfreq's own account of its sources first.
 
 Fetched corpora
 ---------------
 Corpora retrieved on demand via the registry ('corpora/registry.yaml') are not
 redistributed in this repository. Each carries its own licence and citation,
 recorded in the registry and written to 'corpora/ATTRIBUTION.md' at fetch time.
-Frequencies obtained through the optional 'wordfreq' connector derive from a
-package whose code is MIT-licensed but whose aggregated data has mixed
-provenance; consult the wordfreq documentation before redistribution.
+Lexica derived through the optional 'wordfreq' connector carry the same terms
+as the bundled derivatives above, since they come from the same source.
+
+A note on wordfreq's licence history: wordfreq was released under the MIT
+licence up to version 3.0.2 and relicensed to Apache 2.0 at 3.0.3. lexsync
+requires 'wordfreq>=3.0,<4', which spans that change, so an installation may
+carry either. The data terms above are unaffected.

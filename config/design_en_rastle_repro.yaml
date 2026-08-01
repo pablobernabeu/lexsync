@@ -15,7 +15,9 @@
 # Latin-square counterbalancing ensures a target is seen once per list. prime_type
 # (transparent | opaque | form) is the between-items factor carried for analysis.
 # This is a representative item set following the prime-type STRUCTURE of Rastle et
-# al. (2004), not their full 840-prime materials.
+# al. (2004), not their materials: they used 150 prime-target pairs, 50 per condition,
+# each target also appearing with an unrelated control prime, plus 50 filler word pairs
+# and 200 nonword targets.
 name: en_rastle_repro
 language: english
 paradigm: priming

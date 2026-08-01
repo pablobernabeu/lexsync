@@ -12,7 +12,8 @@ copyright: >-
   <span class="mrd-footer-badges">
   <a href="https://github.com/pablobernabeu/lexsync/actions/workflows/R-CMD-check.yaml"><img src="https://github.com/pablobernabeu/lexsync/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check"></a>
   <a href="https://github.com/pablobernabeu/lexsync/actions/workflows/python-tests.yaml"><img src="https://github.com/pablobernabeu/lexsync/actions/workflows/python-tests.yaml/badge.svg" alt="python-tests"></a>
-  <a href="https://opensource.org/license/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
+  <a href="https://lifecycle.r-lib.org/articles/stages.html#experimental"><img src="https://img.shields.io/badge/lifecycle-experimental-orange.svg" alt="Lifecycle: experimental"></a>
+  <a href="https://opensource.org/license/MIT"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT"></a>
   </span>
   Developed by <a href="https://pablobernabeu.github.io">Pablo Bernabeu</a>.
   Open, reproducible research software in R and Python. Released under the
@@ -50,6 +51,7 @@ theme:
   features:
     - navigation.tabs
     - navigation.sections
+    - navigation.indexes
     - navigation.top
     - navigation.footer
     - toc.follow
@@ -68,14 +70,14 @@ extra_css:
 # and are the twins of the R package's vignettes of the same names.
 nav:
   - Home: index.md
-  - Getting started: getting-started.md
+  - Get started: getting-started.md
+  - API reference: api.md
   - Guides:
       - Matching and designs: matching-and-designs.md
       - Experiments and triggers: experiments-and-triggers.md
       - Reproducibility and parity: reproducibility-and-parity.md
-  - API reference: api.md
+      - References: references.md
   - Changelog: changelog.md
-  - Licence: licence.md
   - About: about.md
 
 plugins:
@@ -104,6 +106,10 @@ plugins:
 
 markdown_extensions:
   - admonition
+  # Heading anchors, so any section of a guide or of the API reference can be
+  # linked directly. Without this the built pages carry no headerlink at all.
+  - toc:
+      permalink: true
   - pymdownx.highlight:
       # Tag each block with its language, so brand.css can tell output pasted
       # into a `text` fence from a source block and style it as output.

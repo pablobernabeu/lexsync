@@ -15,3 +15,7 @@ The list of trial events the design presents.
 \description{
 The design's trial event list: its own \code{events}, else its paradigm's
 }
+\examples{
+vapply(resolve_events(list(paradigm = "lexical_decision")),
+       function(e) e$type, character(1))
+}

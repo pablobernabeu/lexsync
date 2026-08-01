@@ -41,7 +41,6 @@
 <script>
   const EVENTS = {{EVENTS_JSON}};
   const TRIALS = {{TRIALS_JSON}};
-  const FRAME_MS = 1000 / 60;
   // A filename for the saved data, derived from the page title so no design value
   // is interpolated into JavaScript; non-filename characters become underscores.
   const DATA_FILE = document.title.replace(/[^A-Za-z0-9_.-]+/g, "_") + ".csv";
@@ -97,22 +96,80 @@
     });
   })();
 
+  // Whether an event runs on a given trial. An event may name the blocks it belongs to;
+  // feedback during practice and not during the main task is the case this exists for.
+  function eventApplies(ev, trial) {
+    if (!ev.blocks || !ev.blocks.length) return true;
+    return ev.blocks.map(String).indexOf(String(trial.block || "main")) !== -1;
+  }
+
+  let previousBlock = null;
+  let trialCounter = 0;
   for (const trial of TRIALS) {
+    // Identifies this trial's rows in the data store. A feedback screen has to score the
+    // key pressed on ITS OWN trial, and eventApplies can drop a response event from a
+    // block, so a trial can reach feedback with no response row of its own. Reading "the
+    // last scored row" would then silently score the previous trial's keypress; keying
+    // on the loop position reports no response instead, which is the honest outcome.
+    const trialUid = ++trialCounter;
+    // A pause wherever the block changes. Unlike the PsychoPy and OpenSesame runners,
+    // which decide this at run time from the loop table, the browser timeline is built
+    // here and now, so the break is simply inserted where the boundary is.
+    const thisBlock = String(trial.block || "main");
+    if (previousBlock !== null && thisBlock !== previousBlock) {
+      timeline.push({
+        type: jsPsychHtmlKeyboardResponse,
+        stimulus: "<div class='lexsync-note'>"
+          + (thisBlock === "main"
+             ? "<h1>End of practice</h1><p>The practice trials are over. The task itself "
+               + "begins now.</p>"
+             : "<h1>Pause</h1><p>Take a short break if you need one.</p>")
+          + "<p class='go'>Press the space bar to continue.</p></div>",
+        choices: [" "],
+        data: { lexsync_event: "block_break", block: thisBlock }
+      });
+    }
+    previousBlock = thisBlock;
+
     // Attach the item's fields to every recorded row (spread first, so the event's
     // own keys below always win on any name clash).
     for (const ev of EVENTS) {
-      if (ev.type === "fixation" || ev.type === "text" || ev.type === "mask") {
+      if (!eventApplies(ev, trial)) {
+        continue;
+      } else if (ev.type === "feedback") {
+        // The item's `answer` column holds the KEY that is correct, so scoring is a
+        // string comparison. jsPsych records the pressed key on the preceding response
+        // trial, so the verdict is computed when this screen is built, from the data
+        // store rather than from a variable threaded through the loop.
+        timeline.push({
+          type: jsPsychHtmlKeyboardResponse,
+          choices: "NO_KEYS",
+          trial_duration: ev.ms || 0,
+          stimulus: function () {
+            const scored = jsPsych.data.get().filter({ lexsync_scored: trialUid })
+              .last(1).values();
+            const pressed = scored.length ? scored[0].response : null;
+            const want = String(trial[ev.answer] === undefined ? "" : trial[ev.answer]).trim();
+            const text = (pressed === null || pressed === undefined)
+              ? (ev.no_response || "Too slow")
+              : (String(pressed).trim() === want ? (ev.correct || "Correct")
+                                                 : (ev.incorrect || "Incorrect"));
+            return stim(text);
+          },
+          data: Object.assign({}, trial, { lexsync_event: "feedback" })
+        });
+      } else if (ev.type === "fixation" || ev.type === "text" || ev.type === "mask") {
         timeline.push({
           type: jsPsychHtmlKeyboardResponse,
           stimulus: stim(content(ev, trial)),
           choices: "NO_KEYS",
-          trial_duration: Math.round((ev.frames || 1) * FRAME_MS),
+          trial_duration: ev.ms_column ? Number(trial[ev.ms_column]) : (ev.ms || 0),
           data: Object.assign({}, trial, { lexsync_event: ev.type, marker: resolveTrigger(ev.trigger, trial) })
         });
       } else if (ev.type === "blank") {
         timeline.push({
           type: jsPsychHtmlKeyboardResponse, stimulus: "", choices: "NO_KEYS",
-          trial_duration: Math.round((ev.frames || 1) * FRAME_MS),
+          trial_duration: ev.ms_column ? Number(trial[ev.ms_column]) : (ev.ms || 0),
           data: Object.assign({}, trial, { lexsync_event: "blank" })
         });
       } else if (ev.type === "region") {
@@ -132,7 +189,9 @@
           type: jsPsychHtmlKeyboardResponse, stimulus: "",
           choices: ev.keys || ["ArrowLeft", "ArrowRight"],
           trial_duration: ev.timeout ? Math.round(ev.timeout * 1000) : null,
-          data: Object.assign({}, trial, { lexsync_event: "response" })
+          // lexsync_scored carries this trial's id, so a feedback screen finds the
+          // response for ITS trial rather than whatever screen ran last.
+          data: Object.assign({}, trial, { lexsync_event: "response", lexsync_scored: trialUid })
         });
       } else if (ev.type === "question") {
         timeline.push({
@@ -140,7 +199,7 @@
           stimulus: stim(content(ev, trial)),
           choices: ev.keys || ["f", "j"],
           trial_duration: ev.timeout ? Math.round(ev.timeout * 1000) : null,
-          data: Object.assign({}, trial, { lexsync_event: "question" })
+          data: Object.assign({}, trial, { lexsync_event: "question", lexsync_scored: trialUid })
         });
       }
     }

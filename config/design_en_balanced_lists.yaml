@@ -1,0 +1,56 @@
+# Balanced list assignment: the same frequency contrast as design_en_freqcontrast,
+# split across four counterbalancing lists whose item properties are equated.
+#
+# This design exists to exercise `counterbalance.optimise`. The default deal sends set
+# 1 to list 1, set 2 to list 2 and so on, which is reproducible but arbitrary with
+# respect to the items: every fourth set lands in the same list, so any dimension that
+# happens to vary smoothly across sets is dealt out unevenly. Where each list goes to a
+# different group of participants, that unevenness is confounded with the group.
+#
+# The optimiser searches instead for an assignment whose lists have near-equal totals
+# on the dimensions named below, by exchanging pairs of item sets between lists. It is
+# a steepest descent to a local optimum, not a global search: it guarantees that no
+# single exchange would improve matters further, and the datasheet records the
+# imbalance before and after so the improvement is checkable rather than asserted.
+#
+# It is deliberately off by default everywhere else. Switching it on changes which
+# items a participant sees, so it has to be a design decision rather than something a
+# package upgrade does to a study that is already running.
+name: en_balanced_lists
+language: english
+lexicon: corpora/derived/en.csv
+description: 'High versus low frequency English words, matched on length, neighbourhood density and OLD20, dealt into four counterbalancing lists that are themselves equated on those dimensions.'
+n_per_condition: 40
+pool_filters:
+  length: [3, 8]
+  frequency: [3.8, 7.0]
+conditions:
+  - name: high_frequency
+    define_by:
+      frequency: [5.2, 7.0]
+  - name: low_frequency
+    define_by:
+      frequency: [3.8, 4.4]
+match_on: [length, n_density, old20]
+
+counterbalance:
+  lists: 4
+  # Search for a balanced assignment rather than dealing by set rank.
+  optimise: true
+  # Which dimensions the lists are equated on. This defaults to `match_on`, and the
+  # difference here is deliberate: `frequency` is added, even though it is the
+  # manipulated variable and so is not matched on.
+  #
+  # That is not a contradiction. Frequency is manipulated WITHIN a list -- every list
+  # holds both conditions -- so equating the lists on its total costs the manipulation
+  # nothing and removes a difference between the groups of participants who receive
+  # different lists. Naming only the matched dimensions would leave frequency dealt
+  # arbitrarily, and measurably so: on this design the optimiser then improves the
+  # three named dimensions and makes frequency worse than the arbitrary deal had it.
+  # Balance what you want equated across lists, which is usually everything.
+  balance_on: [length, n_density, old20, frequency]
+
+timing:
+  fixation_ms: 500
+  word_ms: 500
+  isi_ms: 250

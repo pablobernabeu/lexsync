@@ -2,9 +2,10 @@
 
 Once a set of stimuli exists, something has to present it, on the right machine, at the right time,
 and in an EEG study it has to tell the amplifier when the stimulus appeared. lexsync writes that
-something. This guide covers the declarative trial model that makes one engine serve four paradigms
-and three presentation targets, how items are rotated across lists, and where the trigger is written
-in each target and why the placement is the interesting part.
+something. This guide covers the declarative trial model that makes one engine serve five paradigms
+and three presentation targets, how items are rotated across lists and blocked into practice and
+fillers, and where the trigger is written in each target and why the placement is the interesting
+part.
 
 ## A trial is data
 
@@ -19,18 +20,52 @@ for event in lexsync.resolve_events({"paradigm": "lexical_decision"}):
     print(event)
 ```
 
-An event's `type` is one of `fixation`, `text`, `mask`, `blank`, `region_by_region`, `response` or
-`question`. Its `content` is either a literal, such as `"+"` or `"#####"`, or a field reference in
-braces, such as `"{target}"`, which is filled per trial from the loop table. `duration_frames`
-counts flips at 60 Hz rather than milliseconds, because a frame is the unit the display actually
-has. `trigger` is an integer EEG code, or the token `condition` or `item`, and `onset_locked` asks
-for it to be written on the event's onset flip.
+An event's `type` is one of `fixation`, `text`, `mask`, `blank`, `region_by_region`, `response`,
+`question` or `feedback`. Its `content` is either a literal, such as `"+"` or `"#####"`, or a field reference in
+braces, such as `"{target}"`, which is filled per trial from the loop table. `duration_ms` is the
+event's length in milliseconds, the unit all three targets present, so a design means the same
+interval wherever it runs; the PsychoPy script measures the display's refresh at start-up and
+converts it to the nearest whole number of flips. `duration_frames` is still accepted for designs
+written before that change and is converted at `presentation.assumed_refresh_hz`. `trigger` is an
+integer EEG code, or the token `condition` or `item`, and `onset_locked` asks for it to be written
+on the event's onset flip.
 
 `resolve_events` returns a design's `events` list if it has one, and otherwise the default sequence
 of the paradigm it names, defaulting to `factorial`. Supplying `events` explicitly is how you build
 a trial the registry does not have.
 
-## The four paradigms
+
+## Timing that varies from trial to trial
+
+A duration need not be the same on every trial. An event may instead declare a
+`duration:` block, in one of two forms:
+
+```yaml
+- type: text
+  content: '{prime}'
+  duration: {from_column: soa_ms}            # read per trial from the items
+- type: blank
+  duration: {jitter: [400, 800], as: iti_ms} # drawn per trial, in milliseconds
+```
+
+The two exist for different reasons. A duration read from a column is a
+manipulated variable: the stimulus-onset asynchrony of a priming study is the
+lever that separates automatic from strategic processing, so it belongs in the
+item table and in the analysis. A jittered duration is not manipulated at all; it
+decorrelates the design matrix, as EEG and fMRI designs routinely require.
+
+Neither draws a random number. A jittered value is a uniform integer keyed on the
+seed, the column name, the list, the set and the condition, so both engines
+realise the same milliseconds and a rerun reproduces them. Naming the column in
+the key is what makes two jittered events draw independently rather than sharing
+one value.
+
+Either form writes the realised milliseconds into the stimuli table and the loop
+table, which is the point: timing that varies is a variable the analysis needs,
+not presentation detail. `config/design_en_priming_jitter.yaml` is a worked
+example carrying both.
+
+## The five paradigms
 
 `PARADIGMS` is a plain dictionary. Each entry gives the fields the paradigm presents, its
 counterbalancing recipe and its default event sequence.
@@ -41,6 +76,21 @@ counterbalancing recipe and its default event sequence.
 | `lexical_decision` | `target` | `factorial` | The same shape, with a generic target field so a real word and a pseudoword are interchangeable. |
 | `priming` | `prime`, `target` | `latin_square_target` | Fixation, a 3-frame prime with its own fixed marker, a 2-frame mask, then the target with the condition marker. |
 | `self_paced_reading` | `sentence`, `question` | `latin_square_target` | Fixation, the sentence region by region with the critical region marked, then a yes/no comprehension question. |
+| `categorisation` | `target`, `category`, `answer` | `latin_square_target` | Fixation, the category cue, then the word to judge against it with the condition marker, response, blank. |
+
+`categorisation` is worth a paragraph, because what separates it from lexical decision is not the
+shape of the trial but where the question lives. The category cue is a trial event rather than a line
+of instructions shown once, since the category varies from trial to trial, and crossing one word with
+two cues is how a categorisation study separates a property of the word from the demands of the task.
+A robin is a bird quickly and an animal slowly, and only the question changed.
+
+Its `answer` field holds the key that is correct on the trial, not a label, so scoring is a string
+comparison against the recorded response with nothing to look up in whatever language the analysis is
+written in. The paradigm requires the field, which means an unscoreable categorisation experiment
+cannot be generated. Its recipe is `latin_square_target` for the same reason a priming design uses
+one: each item carries both cues, and a factorial deal would show a participant the same target
+twice, making the second presentation a repetition-priming trial rather than a categorisation trial.
+`config/design_en_categorisation.yaml` is a worked example.
 
 `required_fields` tells you what a design's items must carry: the paradigm's own fields, plus any
 extra field its events reference.
@@ -71,6 +121,65 @@ corpus-sourced one, and the same way in both engines.
 The self-paced-reading design shows how a sentence carries its own structure: regions are delimited
 with `|` in the `sentence` field, and a `critical_region` column names the region that gets the
 marker.
+
+A third source is `items.source: pool`, which hands the matcher a candidate list of your own instead
+of a whole lexicon. It is described under [supplied item pools](matching-and-designs.md#supplied-item-pools),
+since what it changes is the selection rather than the trial.
+
+## Practice, fillers and feedback
+
+Everything above treats one frame as both the materials record and the thing that runs. That holds
+only while the two are the same trials, and they usually are not. Practice exists to settle the
+participant into the task and is discarded before analysis; fillers exist to dilute the manipulation
+so the participant cannot guess it, and are likewise not analysed. Both have to reach the generated
+experiment, and neither belongs in the stimuli file, the descriptives or the realised control.
+
+So the pipeline splits. The stimuli CSV and the reports are written from the main rows; the PsychoPy,
+OpenSesame and jsPsych experiments are generated from every presented trial. A `block` column marks
+which is which, and it appears only when a design declares the blocks, so a design without them keeps
+exactly the columns it had.
+
+```yaml
+practice:
+  path: items/practice_en_lexdec.csv
+fillers:
+  path: items/fillers_en_lexdec.csv
+```
+
+Where each block goes is a methodological choice rather than a convenience. Practice comes first, as
+its own run, shuffled within itself so participants do not all meet the practice items in one order.
+Fillers are interleaved with the main trials rather than appended, because a block of fillers at the
+end is not a filler at all: it is a second block the participant can tell apart. They are merged in
+before the order is drawn, so one deterministic shuffle mixes them through, which does renumber the
+main trials. That is correct, since adding fillers changes the sequence and the stimuli file records
+where each item actually appeared. Both blocks appear in every list and neither is counterbalanced,
+because they carry no manipulation to rotate and every participant should get the same practice.
+
+Each block's item table is read with the same validation as any other, and given a `set` range that
+cannot collide with the main items, which a naive read would not manage since practice item 1 and
+main item 1 would both be set 1. The counts and the tables' checksums go into the datasheet, because
+what the participant saw is part of the materials even when it is not part of the analysis.
+
+A `feedback` event scores the trial and shows the result. It reads the field named by `answer`,
+compares it as a string with the key the participant pressed, and displays `correct`, `incorrect` or
+`no_response` for `duration_ms`.
+
+```yaml
+- type: feedback
+  answer: answer
+  correct: 'Correct'
+  incorrect: 'Incorrect'
+  no_response: 'Too slow'
+  duration_ms: 600
+  blocks: [practice]
+```
+
+`blocks:` restricts an event to the named blocks, and this is its main use: feedback teaches the
+mapping during practice, and would contaminate reaction times in the task itself. The restriction has
+to be expressed on the event because the event list is global to the design. Since a feedback event
+scores a keypress, something before it must have collected one; a design whose feedback event has no
+preceding `response` or `question` is refused when the experiment is generated rather than failing
+three different ways at run time. `config/design_en_lexdec_blocks.yaml` puts all of this together.
 
 ## Counterbalancing
 
@@ -132,6 +241,44 @@ print(
 A design with a `replicate` column, from `resample_stimuli`, is counterbalanced replicate by
 replicate, and trial order is numbered within each.
 
+### Balanced list assignment
+
+The factorial deal sends set 1 to list 1, set 2 to list 2 and so on. That is reproducible, but it
+balances nothing: every *n*th set lands in the same list, so a dimension that happens to vary
+smoothly across sets is dealt out unevenly, and where each list goes to a different group of
+participants, the unevenness is confounded with the group.
+
+`counterbalance.optimise` searches instead for an assignment whose lists have near-equal totals on
+the dimensions you name, by exchanging pairs of item sets between lists. List sizes are preserved,
+since a swap trades one set for another.
+
+```yaml
+counterbalance:
+  lists: 4
+  optimise: true
+  balance_on: [length, n_density, old20, frequency]
+```
+
+`balance_on` defaults to `match_on`, and the example widens it deliberately. Frequency is the
+manipulated variable and so is not matched on, but it is manipulated *within* a list, since every
+list holds both conditions. Equating the lists on its total therefore costs the manipulation nothing
+and removes a difference between the participant groups who receive different lists. Naming only the
+matched dimensions leaves frequency dealt arbitrarily, and measurably so: on the shipped design the
+optimiser then improves the three named dimensions and makes frequency worse than the arbitrary deal
+had it. Balance what you want equated across lists, which is usually everything.
+
+This is a steepest descent to a local optimum, not a global search. What it guarantees is that no
+single exchange would improve matters further, and the datasheet records the imbalance before and
+after, so the improvement is checkable rather than asserted. The objective is all-integer and ties
+are broken by the seeded keyed hash rather than by position, which is what keeps the two engines on
+the same assignment and stops list 1 being favoured for being numbered first.
+
+It is off by default, and stays off. Switching it on changes which items a participant sees, so it
+has to be a design decision rather than something a package upgrade does to a study already running.
+It is refused on a Latin-square design, where every item already appears in every list and the lists
+are balanced on the items by construction. `balance_lists` runs the search alone if you want the
+assignment without applying it; `config/design_en_balanced_lists.yaml` is the worked example.
+
 `participant_table` allocates participants to the cells of any crossed factors, cycling through the
 grid so the allocation stays balanced whatever the participant count.
 
@@ -186,9 +333,10 @@ trial,list,set,condition,word,condition_trigger,item_trigger
 ```
 
 The schema sets the hardware defaults: `triggers.parallel_address` (`0x0378`, a typical LPT1 base
-address), `triggers.reset_after_frames` (2, about 33 ms at 60 Hz, comfortably above the 10 ms
-minimum recorders need to see), and `triggers.inter_trigger_ms` (10, the spacing of trailing
-markers). A design can override them.
+address), `triggers.trigger_hold_ms` (50, comfortably above the 10 ms minimum recorders need to
+see, and converted to whole flips against the measured refresh so it does not shorten on a fast
+display), and `triggers.inter_trigger_ms` (10, the spacing of trailing markers). A design can
+override them. The older `triggers.reset_after_frames` is still accepted and converted.
 
 ## The three targets
 
@@ -209,9 +357,10 @@ demonstration, and the test suite, reproduce on a machine with no laboratory har
 
 ### PsychoPy
 
-The PsychoPy export is where the methodological argument for lexsync lives. The script reads its
-stimulus text as data from the conditions CSV beside it, and interprets an `EVENTS` list embedded as
-JSON, so one interpreter serves every paradigm.
+The PsychoPy export ([Peirce et al., 2019](references.md#peirce-2019)) is where the methodological
+argument for lexsync lives. The script reads its stimulus text as data from the conditions CSV
+beside it, and interprets an `EVENTS` list embedded as JSON, so one interpreter serves every
+paradigm.
 
 The trigger is written on the exact buffer flip on which the stimulus first appears:
 
@@ -234,8 +383,9 @@ def show_frames(win, stim, frames, port, trigger):
 `win.callOnFlip` queues the port write against the next flip, so the code goes out with the photons
 rather than from a later component that merely runs soon afterwards. The common alternative, sending
 the trigger from a separate sequence-ordered item, inherits whatever jitter sits between that item
-and the flip. The reset is queued the same way, on the flip `reset_after_frames` later, with a
-direct write as the fallback when the stimulus is shorter than the reset window.
+and the flip. The reset is queued the same way, one flip before the hold expires so that it lands
+on the flip that ends it, with a direct write as the fallback when the stimulus is shorter than the
+hold.
 
 Stimulus text is never interpolated into the script, only read from the CSV at run time, so nothing
 in a stimulus can become code. When no parallel-port driver is present, on a development laptop, on
@@ -246,8 +396,8 @@ that the onset trigger is flip-locked.
 ### OpenSesame
 
 The `.osexp` is generated block by block rather than from a template, and the result is a normal
-OpenSesame experiment: a trigger-setup inline script, one inline script per event, a sequence and a
-loop.
+OpenSesame experiment ([Mathôt et al., 2012](references.md#mathot-2012)): a trigger-setup inline
+script, one inline script per event, a sequence and a loop.
 
 ```text
 define inline_script lexsync_e1

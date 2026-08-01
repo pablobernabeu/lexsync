@@ -1,0 +1,68 @@
+# Relational continuous priming: pairs selected to span a continuous predictor,
+# with member-level and pair-level controls held near-constant.
+#
+# This is the design class the pair-keyed item model exists for. A priming study's
+# theoretical variable is a property of the PAIR (distributional similarity,
+# associative strength), while its nuisance variables are properties of each MEMBER
+# (frequency, length, neighbourhood). Until now a design could have matching or its
+# own item table but never both, so a relational design had to be assembled by hand.
+#
+# Three things are worth reading in the block below.
+#
+# `items.members` promotes an ordinary item table to a pair-keyed one. Each member's
+# word-level norms are joined from the lexicon and prefixed, giving `prime.frequency`,
+# `target.length` and so on. The prefix leads deliberately: `prime.frequency` is safe
+# because R's `df$prime` still exact-matches the bare `prime` column, whereas
+# `frequency.prime` would be a partial-match hazard.
+#
+# `pair.overlap` is a relational dimension computed by lexsync itself, the proportion
+# of the longer form that prime and target share. It is the standard confound control
+# in a priming design: a related pair that also shares letters confounds semantic
+# relatedness with orthographic similarity. Predictors that cannot be computed from
+# the forms alone, such as cosine similarity or forward associative strength, arrive
+# instead as extra columns on the item table.
+#
+# Selection runs on one row per pair and the result is re-expanded, so every
+# condition row of every chosen pair survives. That is not an optimisation: a filter
+# on `target.frequency` would otherwise keep a pair's related row and drop its
+# unrelated one, leaving a set the Latin-square counterbalancer cannot complete.
+name: en_priming_continuous
+language: english
+paradigm: priming
+description: 'Prime-target pairs selected to span target frequency continuously, with target length and prime-target orthographic overlap held near-constant; Latin-square counterbalanced over two lists.'
+
+items:
+  source: table
+  path: items/priming_pairs_en.csv
+  # The two word fields. Norms are joined onto each.
+  members: [prime, target]
+  # Where the member norms come from.
+  lexicon: corpora/derived/en.csv
+  # The condition whose row represents the pair during selection. Defaults to the
+  # byte-first condition, which is 'related' here; stated explicitly because it
+  # decides which row's values the predictor is read from.
+  anchor_condition: related
+
+# Counts PAIRS, not rows: 8 pairs become 16 rows once re-expanded over both
+# conditions, then 8 rows per list across two lists.
+n_per_condition: 8
+
+# Filters apply to a pair only if every one of its rows passes, so a pair is never
+# left half-present.
+pool_filters:
+  target.length: [3, 7]
+  target.frequency: [3.0, 6.0]
+
+continuous:
+  predictor: target.frequency
+  controls: [target.length, pair.overlap]
+
+match_on: [target.length, pair.overlap]
+
+matching:
+  tolerance_k:
+    target.length: 1.5
+    pair.overlap: 1.5
+
+counterbalance:
+  lists: 2
