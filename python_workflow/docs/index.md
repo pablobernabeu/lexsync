@@ -122,7 +122,11 @@ print(sorted(os.path.basename(p) for p in paths.values()))
 The jsPsych file is self-contained apart from the library itself, so opening it in
 a browser runs the experiment. Every worked design in the repository is published
 that way, and the Demo link in the header opens the generated lexical-decision
-task.
+task. All 21 are listed at
+[the demos index](https://pablobernabeu.github.io/lexsync/demos/), one per worked
+design, including cued categorisation, a lexical decision carrying practice and
+filler blocks, relational priming over pairs, and a Mandarin Chinese contrast on a
+logographic script.
 
 ## Where to go next
 

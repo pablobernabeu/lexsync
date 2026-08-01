@@ -95,7 +95,7 @@
 # Collapse a pair table to one row per set, select over it, then re-expand.
 #
 # The re-expansion is what keeps the Latin square valid. `build_pool` and the
-# control windows filter ROWS, and a filter on `target.frequency` would keep a
+# control windows filter ROWS, and a filter on `prime.frequency` would keep a
 # pair's related row while dropping its unrelated one, leaving a set that has no row
 # for one condition. So eligibility is decided at set granularity, selection runs on
 # one row per set, and the result is re-expanded as a pure row subset of the

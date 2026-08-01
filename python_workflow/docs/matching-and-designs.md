@@ -116,11 +116,15 @@ Each member's word-level norms are joined from the lexicon and prefixed, giving 
 `frequency.prime` would be a partial-matching hazard. Those prefixed names are then usable wherever a
 dimension is: in `pool_filters`, in `match_on`, as a `continuous.predictor` or as a control.
 
-`pair.overlap` is a relational dimension lexsync computes itself, the proportion of the longer form
-the two members share, and `pair.lev` is their Levenshtein distance. Orthographic overlap is the
+`pair.lev` is the Levenshtein distance between the two members and `pair.overlap`
+is `1 - pair.lev / length of the longer form`, a normalised orthographic
+similarity. It is a similarity score rather than a count of shared material:
+`abc` and `cba` share every letter but score 0.33, because the measure counts edit
+operations. Orthographic overlap is the
 standard confound control in a priming design, since a related pair that also shares letters
-confounds semantic relatedness with orthographic similarity. `add_pair_overlap` adds both directly if
-you are working outside a design. A predictor that cannot be computed from the forms alone -- cosine
+confounds semantic relatedness with orthographic similarity. The pipeline adds both automatically when the two members are named `prime` and
+`target`; under any other member names, call `add_pair_overlap` on the item table
+yourself. A predictor that cannot be computed from the forms alone -- cosine
 similarity, forward associative strength -- arrives instead as an extra column on the item table and
 is used like any other.
 
@@ -138,9 +142,11 @@ match_on: [target.length, pair.overlap]
 Two rules follow from the item being a pair rather than a row. A filter applies to a pair only if
 *every* one of its rows passes, and selection runs over one row per pair -- the `anchor_condition`,
 defaulting to the byte-first condition -- with the result re-expanded afterwards so every condition
-row of every chosen pair survives. Neither is an optimisation. A filter on `target.frequency` applied
+row of every chosen pair survives. Neither is an optimisation. A filter on `prime.frequency` applied
 row by row would keep a pair's related row and drop its unrelated one, leaving a set the Latin-square
-counterbalancer cannot complete.
+counterbalancer cannot complete. It has to be a dimension that varies within the pair, which the
+prime-level and pair-level ones do and the target-level ones do not, since the target is the same
+word in both rows.
 
 A member name may not be one of `word`, `id`, `set`, `list`, `trial`, `condition`, `replicate` or
 `item`, which the engines read directly, and a design using one is refused. The datasheet gains a
@@ -151,8 +157,11 @@ into why each rule is there.
 
 ## The dimensions
 
-Six dimensions are declared in the schema. Three are read from the lexicon or computed at load
-time, and three have to be derived from the orthographic forms before a design can match on them.
+Six dimensions are declared in the schema. Three arrive from `load_lexicon`: `length` and
+`n_syllables` derived from the form, `frequency` read from the column the schema names. `n_density`
+and `old20` are carried by every corpus lexsync distributes, so they too are usually present at load
+time, and `add_neighbourhood` computes them only for a lexicon that lacks them. `bigram_freq` is the
+one dimension that always needs a separate call.
 
 | Dimension | Unit | Where it comes from |
 | --- | --- | --- |

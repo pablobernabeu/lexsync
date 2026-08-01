@@ -24,7 +24,7 @@
 #
 # Selection runs on one row per pair and the result is re-expanded, so every
 # condition row of every chosen pair survives. That is not an optimisation: a filter
-# on `target.frequency` would otherwise keep a pair's related row and drop its
+# on `prime.frequency` would otherwise keep a pair's related row and drop its
 # unrelated one, leaving a set the Latin-square counterbalancer cannot complete.
 name: en_priming_continuous
 language: english
