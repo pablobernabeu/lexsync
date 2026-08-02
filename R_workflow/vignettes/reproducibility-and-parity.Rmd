@@ -57,7 +57,7 @@ are byte-identical in full. The only exceptions are the `mahalanobis` and
 
 'Byte-identical' is meant literally, and stating it that way turned out to matter. The
 parity test originally read both engines' stimuli files back with a CSV parser and
-compared the values, under which `1` and `1.0` are the same number; on that test 13 of
+compared the values, under which `1` and `1.0` are the same number. On that test 13 of
 the shipped designs passed while differing byte for byte. Three of the differences were
 serialisation: a whole number written `1` by one writer and `1.0` by the other, a boolean
 written `FALSE` and `False`, and a small value written `9e-4` and `0.0009`. One was not:
@@ -212,7 +212,7 @@ understanding rather than merely noting.
 
 `mahalanobis` needs the inverse of the pool's correlation matrix. A matrix
 inverse is computed by LAPACK, and R's LAPACK is not necessarily the one NumPy is
-built against; the two may differ in blocking, in vectorisation and in the order
+built against. The two may differ in blocking, in vectorisation and in the order
 they accumulate sums. The results agree to well within any tolerance you would
 care about and they need not agree in their last bits, and the rounding that saves
 the Euclidean path cannot save this one: the distance is now a function of a

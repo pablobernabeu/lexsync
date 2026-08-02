@@ -93,7 +93,7 @@ clone. With no design argument, `lexsync run` globs `design_*.yaml` and `design_
 `lexsync corpora list` prints the registry as a table of name, language, ISO code, status,
 connector and citation. `lexsync fetch` takes either a registry entry name or a language code. If
 the name is one of the thirty language codes registered for the wordfreq connector, a lexicon is
-built with wordfreq and cached under `~/.lexsync/cache`; otherwise the registered delimited file is
+built with wordfreq and cached under `~/.lexsync/cache`. Otherwise the registered delimited file is
 downloaded there. Either way the path is printed and the citation for the source goes to standard
 output with it. Fetching is Python-only. The R package can read the result as an ordinary corpus but
 cannot build one, so an R laboratory reaches the wider language set through lexica derived here.
@@ -135,7 +135,7 @@ timing:
 `name` and `language` are required, and together they form the slug that every written file is
 named after. `en_freqcontrast` plus `english` becomes `en_freqcontrast_english`, and from that come
 `en_freqcontrast_english_stimuli_py.csv`, `en_freqcontrast_english.osexp` and the rest. `language`
-is a free-text label rather than a code, because it is what the experiment displays; when the
+is a free-text label rather than a code, because it is what the experiment displays. When the
 browser target needs a real BCP 47 tag it maps the common labels and falls back to `und`, or you
 can state `language_tag` outright.
 
@@ -158,7 +158,7 @@ itself, so a script that omits `build_pool` matches over the entire lexicon and 
 design's bands.
 
 `conditions` is a list, each with a `name` and a `define_by` block that carves the condition out of
-the pool by the same filter syntax. Two conditions make a contrast; four make the 2 × 2 that
+the pool by the same filter syntax. Two conditions make a contrast. Four make the 2 × 2 that
 `config/design_en_andrews_repro.yaml` uses to reproduce
 [Andrews (1989)](references.md#andrews-1989). A design may instead declare
 a `continuous` block and dispense with conditions altogether, which
@@ -176,8 +176,8 @@ published study's exact windows.
 `counterbalance.lists` sets the number of lists, and `counterbalance.optimise` asks for an assignment
 whose lists are equated on the item dimensions rather than dealt by set rank. `practice` and
 `fillers` each name an item table whose trials run but are not analysed. `timing` overrides the fixation, critical-word and
-inter-stimulus durations in milliseconds (`fixation_ms`, `word_ms`, `isi_ms`; the older
-`*_frames` forms are still accepted and converted at `presentation.assumed_refresh_hz`). `font` overrides
+inter-stimulus durations in milliseconds (`fixation_ms`, `word_ms`, `isi_ms`), the older
+`*_frames` forms still being accepted and converted at `presentation.assumed_refresh_hz`. `font` overrides
 the presentation font, which matters for a non-Latin script: `config/design_zh_freqcontrast.yaml`
 sets `SimHei`, because the Latin default has no glyphs for Han characters.
 

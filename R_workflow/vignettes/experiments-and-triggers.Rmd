@@ -110,7 +110,7 @@ required_fields(list(paradigm = "self_paced_reading"))
 ```
 
 Presented strings are always carried as data. Each target writes a trial table and
-reads the strings from it at run time; they are never interpolated into generated
+reads the strings from it at run time, and they are never interpolated into generated
 code. That is why an apostrophe in a stimulus cannot break a generated script, and
 it is enforced on the way in: `load_items()` rejects control characters and
 over-long values in the fields a paradigm presents.
@@ -171,7 +171,7 @@ A duration need not be the same on every trial. An event may instead declare a
 The two exist for different reasons. A duration read from a column is a
 manipulated variable: the stimulus-onset asynchrony of a priming study is the
 lever that separates automatic from strategic processing, so it belongs in the
-item table and in the analysis. A jittered duration is not manipulated at all; it
+item table and in the analysis. A jittered duration is not manipulated at all. It
 decorrelates the design matrix, as EEG and fMRI designs routinely require.
 
 Neither draws a random number. A jittered value is a uniform integer keyed on the
@@ -291,12 +291,12 @@ if you want the assignment without applying it, and
 Everything above treats one frame as both the materials record and the thing that
 runs. That holds only while the two are the same trials, and they usually are not.
 Practice exists to settle the participant into the task and is discarded before
-analysis; fillers exist to dilute the manipulation so the participant cannot guess
+analysis. Fillers exist to dilute the manipulation so the participant cannot guess
 it, and are likewise not analysed. Both have to reach the generated experiment,
 and neither belongs in the stimuli file, the descriptives or the realised control.
 
 So the pipeline splits. The stimuli CSV and the reports are written from the main
-rows; the PsychoPy, OpenSesame and jsPsych experiments are generated from every
+rows. The PsychoPy, OpenSesame and jsPsych experiments are generated from every
 presented trial. A `block` column marks which is which, and it appears only when a
 design declares the blocks, so a design without them keeps exactly the columns it
 had.
@@ -344,7 +344,7 @@ displays `correct`, `incorrect` or `no_response` for `duration_ms`.
 feedback teaches the mapping during practice, and would contaminate reaction times
 in the task itself. The restriction has to be expressed on the event because the
 event list is global to the design. Since a feedback event scores a keypress,
-something before it must have collected one; a design whose feedback event has no
+something before it must have collected one. A design whose feedback event has no
 preceding `response` or `question` is refused when the experiment is generated
 rather than failing three different ways at run time.
 `design_en_lexdec_blocks.yaml` puts all of this together.
@@ -390,7 +390,7 @@ jsPsych is the browser target. A browser cannot address a parallel port, so the
 trigger codes are recorded into each trial's data rather than sent. That makes it
 suitable for behavioural work, for piloting and for sharing a procedure, and not
 for EEG. The generated HTML embeds the events and the trials and saves responses
-locally, so no server is needed; the jsPsych library itself loads from a CDN, so
+locally, so no server is needed. The jsPsych library itself loads from a CDN, so
 the first run needs an internet connection.
 
 Two smaller differences are worth knowing. The OpenSesame loop is written as
@@ -447,7 +447,7 @@ str(schema$triggers)
 `trigger_hold_ms` is 50, comfortably above the 10 ms minimum most recorders need
 to register a pulse. The script converts it to whole flips against the refresh it
 measures, so the pulse stays about 50 ms whether the display runs at 60 Hz or at
-240 Hz; as a frame count it used to shorten with the refresh, reaching 12.5 ms at
+240 Hz. As a frame count it used to shorten with the refresh, reaching 12.5 ms at
 240 Hz. The older `reset_after_frames` is still accepted and converted.
 `inter_trigger_ms`
 spaces any trailing markers. `parallel_address` is the LPT1 base address on a

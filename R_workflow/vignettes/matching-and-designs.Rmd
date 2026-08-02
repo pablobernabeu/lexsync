@@ -158,7 +158,7 @@ pool <- build_pool(lex, pool_filters)
 c(lexicon = nrow(lex), pool = nrow(pool))
 ```
 
-A numeric pair is read as an inclusive range; any other vector is read as a set of
+A numeric pair is read as an inclusive range. Any other vector is read as a set of
 permitted values, so `list(pos = c("noun", "verb"))` would keep nouns and verbs
 if the lexicon carried a `pos` column. A filter naming a column the lexicon does
 not have is skipped silently, which keeps one schema usable across corpora that
@@ -242,7 +242,7 @@ similarity. It is a similarity score rather than a count of shared material:
 operations. Orthographic overlap is the standard confound control in a priming
 design, since a related pair that also shares letters confounds semantic
 relatedness with orthographic similarity. The pipeline adds both automatically when the two
-members are named `prime` and `target`; under any other member names, call
+members are named `prime` and `target`. Under any other member names, call
 `add_pair_overlap()` on the item table yourself. A predictor that cannot be computed from the
 forms alone, such as cosine similarity or forward associative strength, arrives
 instead as an extra column on the item table and is used like any other.
@@ -318,7 +318,7 @@ Zipf unit become comparable. They differ in what they minimise it over.
 
 `standardised_euclidean`, the default, walks the anchor items in order and gives
 each one its nearest unused counterpart, greedily. It is anchored, so like
-`mahalanobis` it generalises past two conditions; `joint` and `optimal` score
+`mahalanobis` it generalises past two conditions. `joint` and `optimal` score
 cross-condition pairs and are refused with anything other than exactly two. It
 preserves the anchor's even spread exactly, because the anchor is selected
 before any matching happens.
@@ -349,7 +349,7 @@ Stuart, 2010).
 the summed distance over all pairings at once rather than committing to each pair
 as it goes (Gu & Rosenbaum, 1993; Hansen & Klopfer, 2006). Greedy matching can
 spend the one good counterpart of a hard item on an easy item that had
-alternatives; optimal matching cannot. It requires exactly two conditions and the
+alternatives. Optimal matching cannot. It requires exactly two conditions and the
 `clue` package.
 
 ```{r methods}
@@ -392,7 +392,7 @@ condition spread across its whole band by construction, which supports a claim
 about the band rather than about a cluster inside it, and it is variance you may
 want if the manipulation is later modelled as continuous. The globally pairing
 methods trade some of that spread for exact control of the nuisance dimensions.
-These numbers describe this pool and this design; the point is how to make the
+These numbers describe this pool and this design. The point is how to make the
 comparison, not which method wins.
 
 ### The parity caveat on two methods
@@ -408,7 +408,7 @@ tie-break that would otherwise make the engines agree never fires. In practice
 equally-optimal but different set. Each run's datasheet records which case
 applies, under `selection.cross_engine`. If cross-engine reproducibility is a
 requirement of your project, the two default methods are the ones that carry the
-guarantee; the reproducibility vignette sets out why the exception cannot simply
+guarantee. The reproducibility vignette sets out why the exception cannot simply
 be engineered away.
 
 ## Tolerance windows
@@ -425,7 +425,7 @@ str(schema$matching$tolerance_k)
 
 Smaller *k* is stricter. The default of 2.0 on the orthographic dimensions is
 permissive, admitting most of a normal distribution, and it is meant as a
-backstop against a wild counterpart rather than as the mechanism of control; the
+backstop against a wild counterpart rather than as the mechanism of control. The
 distance ranking within the window does the work. A design tightens it per
 dimension, and only the named dimensions are overridden.
 
@@ -460,7 +460,7 @@ dimension at once, not merely the one that proved unsatisfiable, so an
 over-tightened `old20` also discards the `length` and `n_density` windows for
 that condition. And it does not degrade the match as much as you might fear,
 because the distance ranking still runs over the whole subpool and still prefers
-near counterparts; the window is a backstop against a distant one, not the
+near counterparts. The window is a backstop against a distant one, not the
 mechanism of control. Only when the relaxed subpool is still too small does the
 matcher stop, with an error naming the condition and the counts.
 
@@ -472,7 +472,7 @@ the mean plus or minus SD/9 used by González Alonso et al. (2025), alongside
 One asymmetry is worth knowing. Tolerance windows are derived from the anchor, so
 they apply to the anchor-based methods, `standardised_euclidean` and
 `mahalanobis`, and to continuous designs. `joint` and `optimal` never build an
-anchor and never consult `tolerance_k`; both instead cap each subpool to the 1200
+anchor and never consult `tolerance_k`. Both instead cap each subpool to the 1200
 candidates nearest the other condition's centroid before pairing, which bounds
 the cost of scoring every pair.
 
@@ -720,7 +720,7 @@ length(intersect(
 Each replicate is matched independently against the pool with the earlier
 replicates' items removed, so the sets are disjoint by construction. Later
 replicates draw from a depleted pool, which means match quality can degrade
-across replicates; the report will show it if it does.
+across replicates. The report will show it if it does.
 
 ## References
 

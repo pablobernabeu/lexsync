@@ -69,9 +69,12 @@ extra_css:
 
 # The demonstration experiment is reached through the header pill
 # (overrides/partials/header.html), matching the family convention, so it does not
-# repeat in the nav. The three guides follow the workflow arc, from selecting
+# repeat in the nav. The first three guides follow the workflow arc, from selecting
 # stimuli to presenting them, then to the guarantees that hold across both engines,
-# and are the twins of the R package's vignettes of the same names.
+# and are the twins of the R package's vignettes of the same names. The app guide
+# comes after them because it covers the same ground without code, and it stays
+# ahead of References, which is a bibliography rather than a stage of the workflow.
+# The R package's Articles menu lists the same pages in the same order.
 nav:
   - Home: index.md
   - Get started: getting-started.md
@@ -80,6 +83,7 @@ nav:
       - Matching and designs: matching-and-designs.md
       - Experiments and triggers: experiments-and-triggers.md
       - Reproducibility and parity: reproducibility-and-parity.md
+      - The app: the-app.md
       - References: references.md
   - Changelog: changelog.md
   - About: about.md

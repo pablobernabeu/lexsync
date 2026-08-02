@@ -87,9 +87,11 @@ stimuli, the realised-control report and the materials datasheet. A Shiny app
 wraps this package and a Streamlit app wraps the Python twin. Each exports the
 design configuration and the code that reproduces the run, so the interface
 yields shareable artefacts rather than results you cannot retrace. Both call their
-engine directly and so need a local install. See
+engine directly and so need a local install. [The
+app](https://pablobernabeu.github.io/lexsync/r/articles/the-app.html) walks
+through the Shiny one control by control, and
 [`apps/README.md`](https://github.com/pablobernabeu/lexsync/blob/main/apps/README.md)
-for how to launch them.
+covers launching either of them.
 
 Every worked design in the repository also ships as a browser experiment, and
 these are published beside the documentation. The [lexical-decision

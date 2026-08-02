@@ -75,7 +75,7 @@ The generated experiments are byte-identical as well, all of them: the PsychoPy 
 OpenSesame experiment, the jsPsych page and both loop tables, 105 files across the 21
 worked designs. One place they could drift is the event JSON embedded in the PsychoPy script, since
 jsonlite pads no separators and drops a whole number's fractional part, serialising a 2000 ms
-timeout as `2` rather than `2.0`; Python is the side that conforms.
+timeout as `2` rather than `2.0`. Python is the side that conforms.
 
 The other place is trial order, which until recently was the one artefact the engines could not
 share. Each shuffled with its own seeded generator, R with `sample()` and Python with NumPy's
@@ -120,7 +120,7 @@ Corpus versions are not magic. A design pins the lexicon file it reads, and the 
 a fixed, checksummed snapshot, so the demonstrations reproduce with no download. The optional
 wordfreq connector is pinned to its frozen 3.x line, a stable snapshot of usage through roughly
 2021, which keeps a fetched lexicon reproducible instead of drifting under a live source.
-Fetch a corpus from a URL that changes and lexsync cannot help you; the datasheet's SHA-256 of the
+Fetch a corpus from a URL that changes and lexsync cannot help you. The datasheet's SHA-256 of the
 source file will at least tell you that it changed.
 
 ## How it is tested

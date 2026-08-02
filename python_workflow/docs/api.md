@@ -130,7 +130,7 @@ that a mean-based statistic would miss.
 ## Experiment generation
 
 All three targets are rendered from the same event list. Generation imports neither PsychoPy nor
-pyserial, so it needs no laboratory hardware; the `experiment` extra is for running the result.
+pyserial, so it needs no laboratory hardware. The `experiment` extra is for running the result.
 `assign_triggers` is reached as `lexsync.scripting.assign_triggers`, and `export_experiments` calls
 it for you.
 

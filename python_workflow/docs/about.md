@@ -25,35 +25,64 @@ design can therefore be shared and reproduced rather than only described in pros
 Cite the software. The authoritative record is
 [`CITATION.cff`](https://github.com/pablobernabeu/lexsync/blob/main/CITATION.cff) at the root of the
 repository, which GitHub also renders into several formats through the 'Cite this repository' button.
-Rendered as a reference, version 0.1.0 is:
+Rendered as a reference, the current version is:
 
-> Bernabeu, P. (2026). lexsync: Multidimensional lexical optimisation and hardware-timed experiment
-> generation. Python package version 0.1.0. https://github.com/pablobernabeu/lexsync
-
-<!-- The reference above follows the family form used on every other About page in this family,
+<!-- The reference below follows the family form used on every other About page in this family,
      "R package version X" / "Python package version X", so that the two twins read alike and both
      agree with what citation("lexsync") prints on the R side.
 
-     The version string is hard-coded here, as it is on the other mkdocs About pages, because a
-     Markdown page cannot read the installed version the way the R twin's vignette does. On release,
-     bump the version in each of the three places it appears on this page: once in the reference
-     above, once in the `note` field of the BibTeX entry below, and once inside the download URI,
-     where it is percent-encoded (`version%20...`). That URI is the entry itself, so the download
-     needs no .bib file shipped beside the site. -->
+     The version used to be written out by hand three times on this page, in the reference, in the
+     `note` field of the BibTeX entry and percent-encoded inside the download URI. That is how a page
+     in this family fell a whole minor version behind its release without anyone noticing. All three
+     copies now come from the installed package, so they can no longer disagree with each other or
+     with the release. Two copies stay out of reach of the block below, because neither file can run
+     code, and both still have to be bumped by hand when a release is cut: the `extra.version` chip
+     in mkdocs.yml and the `version` field in CITATION.cff.
 
-<div class="mrd-cite-bibtex">
-<pre id="lexsync-bibtex"><code>@Manual{lexsync,
-  title  = {{lexsync}: Multidimensional lexical optimisation and hardware-timed experiment generation},
-  author = {Pablo Bernabeu},
-  year   = {2026},
-  note   = {Python package version 0.1.0},
-  url    = {https://github.com/pablobernabeu/lexsync},
-}</code></pre>
-<p class="mrd-cite-actions">
-<button type="button" class="md-button" onclick="lexsyncCopyBibtex(this)">Copy BibTeX</button>
-<a class="md-button" download="lexsync.bib" href="data:application/x-bibtex;charset=utf-8,%40Manual%7Blexsync%2C%0A%20%20title%20%20%3D%20%7B%7Blexsync%7D%3A%20Multidimensional%20lexical%20optimisation%20and%20hardware-timed%20experiment%20generation%7D%2C%0A%20%20author%20%3D%20%7BPablo%20Bernabeu%7D%2C%0A%20%20year%20%20%20%3D%20%7B2026%7D%2C%0A%20%20note%20%20%20%3D%20%7BPython%20package%20version%200.1.0%7D%2C%0A%20%20url%20%20%20%20%3D%20%7Bhttps%3A%2F%2Fgithub.com%2Fpablobernabeu%2Flexsync%7D%2C%0A%7D">Download .bib</a>
-</p>
-</div>
+     The download URI is the entry itself, so the download needs no .bib file shipped beside the
+     site. -->
+
+````python exec="1"
+import urllib.parse
+
+from lexsync import __version__ as version
+
+bibtex = (
+    "@Manual{lexsync,\n"
+    "  title  = {{lexsync}: Multidimensional lexical optimisation and hardware-timed experiment generation},\n"
+    "  author = {Pablo Bernabeu},\n"
+    "  year   = {2026},\n"
+    f"  note   = {{Python package version {version}}},\n"
+    "  url    = {https://github.com/pablobernabeu/lexsync},\n"
+    "}"
+)
+
+# The download link encodes the very string the fenced block below shows, so the
+# two can never disagree. safe="" is deliberate: the default would leave the
+# slashes in the repository URL unescaped.
+data_uri = "data:application/x-bibtex;charset=utf-8," + urllib.parse.quote(bibtex, safe="")
+
+print(
+    "> Bernabeu, P. (2026). lexsync: Multidimensional lexical optimisation and hardware-timed experiment\n"
+    f"> generation. Python package version {version}. https://github.com/pablobernabeu/lexsync\n"
+)
+
+# The entry is printed as a real fenced block rather than as ready-made HTML, so
+# that Material gives it BibTeX highlighting and a copy button of its own. Printing
+# a fence from inside a fence is why the enclosing one takes four backticks. The id
+# is where the Copy BibTeX button below reads the entry from.
+print("```{ .bibtex #lexsync-bibtex }")
+print(bibtex)
+print("```")
+
+print(
+    '\n<p class="mrd-cite-actions">\n'
+    '<button type="button" class="md-button" onclick="lexsyncCopyBibtex(this)">Copy BibTeX</button>\n'
+    f'<a class="md-button" download="lexsync.bib" href="{data_uri}">Download .bib</a>\n'
+    '</p>'
+)
+````
+
 <script>
 function lexsyncCopyBibtex(btn) {
   var code = document.getElementById("lexsync-bibtex");
@@ -97,8 +126,10 @@ Two browser front-ends also live in the repository, a Streamlit app over the Pyt
 Shiny app over the R engine. Each lets a researcher assemble a design without writing code and then
 exports the configuration and the one-line R, Python and command-line code that reproduces the run,
 so the interface produces shareable artefacts rather than a black box. Both call their engine
-directly and need a local install, so neither is published beside this site. See
-[`apps/README.md`](https://github.com/pablobernabeu/lexsync/blob/main/apps/README.md).
+directly and need a local install, so neither is published beside this site. [The app](the-app.md)
+walks through the Streamlit one control by control, and
+[`apps/README.md`](https://github.com/pablobernabeu/lexsync/blob/main/apps/README.md) covers
+launching either of them.
 
 ## Licence
 

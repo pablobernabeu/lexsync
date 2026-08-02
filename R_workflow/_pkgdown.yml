@@ -107,7 +107,10 @@ navbar:
     # hyphenated slugs). "Get started" is omitted deliberately: it is the intro
     # navbar item, built from vignettes/lexsync.Rmd. Ordered along the workflow
     # arc, from selecting stimuli to presenting them, then to the guarantees that
-    # hold across both engines.
+    # hold across both engines. The app guide comes after those three because it
+    # covers the same ground without code, and it stays ahead of References,
+    # which is a bibliography rather than a stage of the workflow. The Python
+    # twin's nav lists the same pages in the same order.
     articles:
       text: Articles
       menu:
@@ -117,6 +120,8 @@ navbar:
         href: articles/experiments-and-triggers.html
       - text: Reproducibility and parity
         href: articles/reproducibility-and-parity.html
+      - text: The app
+        href: articles/the-app.html
       - text: References
         href: articles/references.html
     # The About page carries the citation, the developer note, the licence and the
@@ -136,6 +141,7 @@ articles:
   - matching-and-designs
   - experiments-and-triggers
   - reproducibility-and-parity
+  - the-app
   - references
 - title: internal
   contents:

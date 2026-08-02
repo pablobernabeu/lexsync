@@ -24,7 +24,7 @@ An event's `type` is one of `fixation`, `text`, `mask`, `blank`, `region_by_regi
 `question` or `feedback`. Its `content` is either a literal, such as `"+"` or `"#####"`, or a field reference in
 braces, such as `"{target}"`, which is filled per trial from the loop table. `duration_ms` is the
 event's length in milliseconds, the unit all three targets present, so a design means the same
-interval wherever it runs; the PsychoPy script measures the display's refresh at start-up and
+interval wherever it runs. The PsychoPy script measures the display's refresh at start-up and
 converts it to the nearest whole number of flips. `duration_frames` is still accepted for designs
 written before that change and is converted at `presentation.assumed_refresh_hz`. `trigger` is an
 integer EEG code, or the token `condition` or `item`, and `onset_locked` asks for it to be written
@@ -51,7 +51,7 @@ A duration need not be the same on every trial. An event may instead declare a
 The two exist for different reasons. A duration read from a column is a
 manipulated variable: the stimulus-onset asynchrony of a priming study is the
 lever that separates automatic from strategic processing, so it belongs in the
-item table and in the analysis. A jittered duration is not manipulated at all; it
+item table and in the analysis. A jittered duration is not manipulated at all. It
 decorrelates the design matrix, as EEG and fMRI designs routinely require.
 
 Neither draws a random number. A jittered value is a uniform integer keyed on the
@@ -130,7 +130,7 @@ since what it changes is the selection rather than the trial.
 
 Everything above treats one frame as both the materials record and the thing that runs. That holds
 only while the two are the same trials, and they usually are not. Practice exists to settle the
-participant into the task and is discarded before analysis; fillers exist to dilute the manipulation
+participant into the task and is discarded before analysis. Fillers exist to dilute the manipulation
 so the participant cannot guess it, and are likewise not analysed. Both have to reach the generated
 experiment, and neither belongs in the stimuli file, the descriptives or the realised control.
 
@@ -177,7 +177,7 @@ compares it as a string with the key the participant pressed, and displays `corr
 `blocks:` restricts an event to the named blocks, and this is its main use: feedback teaches the
 mapping during practice, and would contaminate reaction times in the task itself. The restriction has
 to be expressed on the event because the event list is global to the design. Since a feedback event
-scores a keypress, something before it must have collected one; a design whose feedback event has no
+scores a keypress, something before it must have collected one. A design whose feedback event has no
 preceding `response` or `question` is refused when the experiment is generated rather than failing
 three different ways at run time. `config/design_en_lexdec_blocks.yaml` puts all of this together.
 
@@ -277,7 +277,7 @@ It is off by default, and stays off. Switching it on changes which items a parti
 has to be a design decision rather than something a package upgrade does to a study already running.
 It is refused on a Latin-square design, where every item already appears in every list and the lists
 are balanced on the items by construction. `balance_lists` runs the search alone if you want the
-assignment without applying it; `config/design_en_balanced_lists.yaml` is the worked example.
+assignment without applying it. `config/design_en_balanced_lists.yaml` is the worked example.
 
 `participant_table` allocates participants to the cells of any crossed factors, cycling through the
 grid so the allocation stays balanced whatever the participant count.
@@ -306,7 +306,7 @@ engines put participant 3 in the same cell.
 ## Triggers
 
 `assign_triggers` gives each row two EEG codes in the 0–255 range a parallel port can carry. The
-condition marker starts at 101 and counts up per condition; the item marker starts at 40 and wraps
+condition marker starts at 101 and counts up per condition. The item marker starts at 40 and wraps
 after 200 sets. `export_experiments` calls it for you, so you only need it directly if you are
 exporting one target at a time.
 
@@ -440,7 +440,7 @@ network, so the first run needs an internet connection.
 Two things are handled on the way out. Event-model key names are mapped to browser key names, so
 `left` becomes `arrowleft` and `space` becomes a literal space. The design's free-text `language`
 label is mapped to a BCP 47 tag for the `lang` attribute, falling back to `und` rather than emitting
-`lang="english"`, which no user agent can resolve; a design may state `language_tag` outright.
+`lang="english"`, which no user agent can resolve. A design may state `language_tag` outright.
 
 !!! note "The browser target records triggers, it does not send them"
 

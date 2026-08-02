@@ -20,7 +20,7 @@ The selection is deterministic, and it ships as two independent packages, one fo
 R and one for Python, which select byte-identical stimuli from the same lexicon
 and design. No random number generator is involved: the engines agree because
 every ordering is by byte and every tie is broken by a rule both apply. This holds
-for the default matching methods; the optional `mahalanobis` and `optimal` methods
+for the default matching methods. The optional `mahalanobis` and `optimal` methods
 are equivalent but not byte-identical, because a covariance inverse and an
 assignment solver differ in their last bits between the two platforms.
 
@@ -101,7 +101,7 @@ file is named after. `en_freqcontrast` plus `english` becomes
 `en_freqcontrast_english`, and from that come
 `en_freqcontrast_english_stimuli_R.csv`, `en_freqcontrast_english.osexp` and the
 rest. `language` is a free-text label rather than a code, because it is what the
-experiment displays; when the browser target needs a real BCP 47 tag it maps the
+experiment displays. When the browser target needs a real BCP 47 tag it maps the
 common labels and falls back to `und`, or you can state `language_tag` outright.
 
 `lexicon` names the derived corpus to read. It may also be written as
@@ -126,7 +126,7 @@ design's bands.
 
 `conditions` is a list, each entry with a `name` and a `define_by` block that
 carves the condition out of the pool by the same filter syntax. Two conditions
-make a contrast; four make the 2 × 2 that `design_en_andrews_repro.yaml` uses to
+make a contrast. Four make the 2 × 2 that `design_en_andrews_repro.yaml` uses to
 reproduce Andrews (1989). A design may instead declare a `continuous` block and
 dispense with conditions altogether.
 
@@ -144,7 +144,7 @@ asks for an assignment whose lists are equated on the item dimensions rather tha
 dealt by set rank. `practice` and `fillers` each name an item table whose trials
 are presented but not analysed. `timing` sets the fixation, critical-word and
 inter-stimulus durations. Milliseconds are canonical (`fixation_ms`, `word_ms`,
-`isi_ms`), which is why a design means the same interval on any display; this
+`isi_ms`), which is why a design means the same interval on any display. This
 design predates that change and still uses the `*_frames` form above, which is
 accepted and converted on load at the schema's `presentation.assumed_refresh_hz`,
 so its 30 frames become the 500 ms they were written for. `font` overrides the
@@ -228,10 +228,12 @@ The pipeline does all of the above in one call. `run_pipeline()` on a design
 configuration writes the stimuli, the reports, the three experiments, a materials
 datasheet recording the provenance and realised control of the run, and a run log.
 
-Three further articles go into depth. *Matching, dimensions and designs* covers
+Four further articles go into depth. *Matching, dimensions and designs* covers
 the lexical dimensions and their units, the four matching methods and when each
 one suits, tolerance windows, continuous designs and how to read the validation
 report. *Experiments, paradigms and EEG triggers* covers the trial-event model,
 the paradigm registry, the three presentation targets and the flip-locked trigger
 timing. *Reproducibility, parity and the materials datasheet* covers the
-cross-engine guarantee, how it is achieved and where it stops.
+cross-engine guarantee, how it is achieved and where it stops. *The app* covers
+the Shiny front-end in the repository, which assembles a design through a browser
+tab, runs this same pipeline and exports the code that reproduces the run.

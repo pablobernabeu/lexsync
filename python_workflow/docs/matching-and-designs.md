@@ -123,7 +123,7 @@ similarity. It is a similarity score rather than a count of shared material:
 operations. Orthographic overlap is the
 standard confound control in a priming design, since a related pair that also shares letters
 confounds semantic relatedness with orthographic similarity. The pipeline adds both automatically when the two members are named `prime` and
-`target`; under any other member names, call `add_pair_overlap` on the item table
+`target`. Under any other member names, call `add_pair_overlap` on the item table
 yourself. A predictor that cannot be computed from the forms alone -- cosine
 similarity, forward associative strength -- arrives instead as an extra column on the item table and
 is used like any other.
@@ -246,13 +246,13 @@ dimension with zero or undefined spread gets a scale of 1 rather than producing 
 Then it picks an anchor. The first condition in the design is the anchor, and its subpool is sorted
 by the first dimension its `define_by` mentions, with a byte-order tie-break, after which the
 selection is an even spread across that sorted subpool rather than its top *n*. Taking the top *n*
-would pile the anchor into one corner of its own band; the even spread makes the anchor
+would pile the anchor into one corner of its own band. The even spread makes the anchor
 representative of the condition it is meant to define.
 
 The anchor's realised mean and standard deviation on each matched dimension then set a tolerance
 window, mean ± *k* × SD, where *k* comes from `matching.tolerance_k` in the schema and may be
 overridden per dimension by the design. This is the anchored path, so it is what
-`standardised_euclidean` and `mahalanobis` do; `joint` and `optimal` score cross-condition pairs
+`standardised_euclidean` and `mahalanobis` do. `joint` and `optimal` score cross-condition pairs
 directly and never read `tolerance_k` at all. The defaults are 2.0 for `length`, `n_density` and `old20`,
 and 1.0 for `frequency`. Each remaining condition is filtered to its window, and then every anchor
 item is assigned its nearest unused candidate by standardised distance.
@@ -364,7 +364,7 @@ as showing there is none. TOST says the difference is smaller than the bound you
 `var_ratio` is the condition's variance over the reference's. It is there because everything above
 is about means, and two conditions can share a mean while differing in spread, which still confounds
 ([Armstrong et al., 2012](references.md#armstrong-2012);
-[Austin, 2009](references.md#austin-2009)). A ratio near 1 is balanced; a common heuristic treats
+[Austin, 2009](references.md#austin-2009)). A ratio near 1 is balanced. A common heuristic treats
 anything outside roughly [0.5, 2] as unequal spread. It returns `None` when a variance is undefined.
 
 Two smaller functions round this out. `describe_stimuli` gives the descriptives alone, grouped by any
@@ -404,8 +404,9 @@ print(report["comparisons"].to_string(index=False))
 ```
 
 The selection is two deterministic passes, with no per-item matching and no random numbers. An even
-spread over the predictor across the whole pool sets a tolerance window on each control; the pool is
-filtered to those windows; a second even spread over the filtered pool is the selection. Because
+spread over the predictor across the whole pool sets a tolerance window on each control. The pool is
+then filtered to those windows, and a second even spread over the filtered pool is the selection.
+Because
 both passes reuse the matcher's even-spread primitive, the two engines select byte-identical stimuli
 here as well.
 

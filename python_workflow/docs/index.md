@@ -132,7 +132,8 @@ logographic script.
 
 [Getting started](getting-started.md) covers installation, the command-line
 interface and the anatomy of a design file, which is where most of the work is
-done. From there the three guides follow the arc of a study.
+done. From there the first three guides follow the arc of a study, and the fourth
+covers the same ground without any code.
 
 - [Matching and designs](matching-and-designs.md): the pool, whether drawn from a
   lexicon or supplied as a list of your own, the four matching methods, the
@@ -145,6 +146,9 @@ done. From there the three guides follow the arc of a study.
 - [Reproducibility and parity](reproducibility-and-parity.md): what the
   byte-identical guarantee promises, how it is enforced, and the materials
   datasheet that carries a set's provenance.
+- [The app](the-app.md): the Streamlit front-end in the repository, which
+  assembles a design through a browser tab, runs this same pipeline and exports the
+  configuration and the code that reproduces the run.
 
 Every public name is documented in the [API reference](api.md), grouped as the R
 package's reference index is, and the works cited throughout are listed under

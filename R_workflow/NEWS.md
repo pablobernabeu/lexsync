@@ -8,8 +8,8 @@
   events were substituted straight into code and markup positions, so a quote or an angle
   bracket there stopped being text and became syntax, and a crafted design could run
   arbitrary code on a lab machine or in the origin of a hosted browser study. These are
-  now validated rather than escaped -- one rule in both engines, which leaves every
-  legitimate value byte-identical -- a port address must be an address, a column name must
+  now validated rather than escaped, by one rule in both engines that leaves every
+  legitimate value byte-identical. A port address must be an address, a column name must
   be an identifier, and a stated `language_tag` is shape-checked rather than passed
   through. `.pyq()` escapes newlines now as well: an `.osexp` is line-oriented, so a raw
   newline closed the inline-script block and let the rest of the value start a new
@@ -17,12 +17,12 @@
   Adversarially attacking that fix then found four ways through it, all now closed and
   pinned. The largest: a response event's `keys` were joined into OpenSesame's
   `set allowed_responses "a;b"` with no validation at all, and that is one line of a
-  line-oriented format -- so a key holding a double quote closed the string, a newline
+  line-oriented format, so a key holding a double quote closed the string, a newline
   ended the line, and the rest of the value became new top-level items in the
   experiment, including an `inline_script` whose body OpenSesame runs. Keys are
   validated now. The shape guards were also anchored with `$`, which in both Python's
   `re` and R's PCRE matches just before a final newline, so a port address ending in
-  one passed the check; they are anchored at end-of-string now. A scalar
+  one passed the check. They are anchored at end-of-string now. A scalar
   `keys: space` or `blocks: practice` was
   iterated character by character in Python and kept whole in R, so one design gave two
   different allowed-response lists and a block-restricted event ran everywhere in one
@@ -36,17 +36,17 @@
   to a block, so a design running the response event in one block and feedback in another
   leaves a trial with no response row of its own, and the screen then reported a verdict
   computed from an earlier trial's key. Each trial's rows now carry its own identifier and
-  the screen matches on it. The generated HTML changed for all 21 designs; no stimulus
+  the screen matches on it. The generated HTML changed for all 21 designs. No stimulus
   selection changed.
 * **A large number in a user's own column was written differently by the two engines.**
   `write_csv_utf8()` reproduced readr's format for small magnitudes and left the top end
-  alone, since nothing lexsync computes reaches it. Nothing lexsync computes does; a
+  alone, since nothing lexsync computes reaches it. Nothing lexsync computes does. A
   joined norm table, a supplied pool or an item table carries whatever columns the user
   has, and those go straight into the stimuli CSV, so the guarantee held for the shipped
   designs and failed silently for the user's own data. readr's layout above 1e15 could not
-  be reproduced in Python -- it writes 1.5e16 as `15e15`, the largest double as
-  `17976931348623157e292`, and the double nearest 5e22 as `4.9999999999999996e+22` -- so
-  both engines now refuse such a value, naming the column, rather than one accepting it
+  be reproduced in Python, which writes 1.5e16 as `15e15`, the largest double as
+  `17976931348623157e292`, and the double nearest 5e22 as `4.9999999999999996e+22`. Both
+  engines now refuse such a value, naming the column, rather than one accepting it
   and the two writing different bytes. A value with two equally short decimal forms is
   refused for the same reason. Everything verified to render identically, across 465
   values compared against readr's own output, writes as before.
@@ -63,15 +63,15 @@
   `round()` disagrees with Python's builtin, Python's builtin disagrees with numpy's, and
   even R's `sprintf("%.3f")` disagrees with Python's `"%.3f"` on 274 of them. Reported
   statistics are now rounded by an arithmetic definition both engines compute
-  identically. Some values move by one in the last published digit; no selection changes.
+  identically. Some values move by one in the last published digit. No selection changes.
 * A hash-key component that cannot be rendered identically in both engines is now
-  refused rather than hashed. A blank `condition` cell — a routine data error neither
-  reader rejects — rendered `"NA"` in R and `"nan"` in Python, so the two engines
+  refused rather than hashed. A blank `condition` cell, a routine data error neither
+  reader rejects, rendered `"NA"` in R and `"nan"` in Python, so the two engines
   produced different trial orders from the same design, reproducibly and with nothing to
   signal it. Booleans get a pinned spelling rather than a refusal.
 * The overlap-cap centroid in the `joint` and `optimal` matchers goes through the
   compensated reduction. The cap really fires on shipped designs, so it decides which
-  candidates reach matching; verified to change no design's selection.
+  candidates reach matching. It was verified to change no design's selection.
 * `R CMD check --as-cran` is clean: **0 errors, 0 warnings, 1 note** (the standard
   new-submission note). Fixed on the way: three undocumented arguments on
   `select_continuous_stimuli()`, an unqualified `utils::head()`, and the package's only
@@ -85,9 +85,9 @@
   that appears nowhere in that paper.
 
 * Practice and filler blocks. A design may declare `practice:` and `fillers:` item
-  tables; those trials are presented but not analysed, so the stimuli file and the
+  tables. Those trials are presented but not analysed, so the stimuli file and the
   reports are written from the main rows while the generated experiments run every
-  trial. Practice comes first; fillers are interleaved with the main trials rather than
+  trial. Practice comes first. Fillers are interleaved with the main trials rather than
   appended, because a block of fillers at the end is not a filler but a second block a
   participant can tell apart. A design declaring neither is unaffected, down to not
   gaining a `block` column.
@@ -103,7 +103,7 @@
   dropped the key instead, so the two engines' experiments differed. Both now drop it.
 * **The generated artefacts were not byte-identical across the engines, and the parity
   test could not see it.** It read both CSVs back with a parser and compared the values,
-  under which `1` and `1.0` are the same number; 13 of the 18 shipped designs differed
+  under which `1` and `1.0` are the same number. Thirteen of the 18 shipped designs differed
   byte for byte while the gate stayed green. Three differences were serialisation (a
   whole number written `1` and `1.0`, a boolean written `FALSE` and `False`, a small
   value written `9e-4` and `0.0009`) and one was not: two reported means differed in the
@@ -135,7 +135,7 @@
 * A design may name norm tables in a `norms:` block. They are joined onto the
   lexicon before the candidate pool is built, so a semantic dimension the corpus
   does not carry (concreteness, age of acquisition, valence) can be filtered on,
-  matched on or spanned like any other. No norm data is bundled; every joined table
+  matched on or spanned like any other. No norm data is bundled. Every joined table
   is recorded in the materials datasheet with its checksum and its per-column
   coverage, because a norm table can supply the very variable a design manipulates.
 * Datasheet version 1.1. It adds `materials_source$norms` and, for a pair-keyed
@@ -156,7 +156,7 @@
 * `write_datasheet()` and `write_run_log()` now write LF on every platform. They
   used a text-mode connection, so on Windows the datasheet, its Markdown rendering
   and the Markdown run log came out CRLF while the Python engine's twins were LF.
-  The datasheet is the provenance record; its bytes no longer depend on the machine
+  The datasheet is the provenance record. Its bytes no longer depend on the machine
   that built it.
 * `add_pair_overlap()` and `resolve_trial_timing()` are now actually exported. Both
   were marked for export and documented, but the `NAMESPACE` had not been
@@ -173,7 +173,7 @@
 * Wuggy-style subsyllabic pseudoword generation (opt-in `items.generation.method:
   subsyllabic`): whole onset/nucleus/coda constituents are swapped for attested
   same-role, same-length alternatives, preserving syllabic structure and length.
-  Byte-identical across engines; the default letter-substitution generator is
+  Byte-identical across engines, and the default letter-substitution generator is
   unchanged.
 * Continuous (non-dichotomised) design mode: declare a `continuous` block and
   `select_continuous_stimuli()` spans a predictor's range evenly while holding the
