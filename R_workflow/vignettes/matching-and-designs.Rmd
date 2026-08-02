@@ -574,7 +574,7 @@ not the point estimate, is the primary summary of a controlled dimension. Its
 upper limit is the largest imbalance still consistent with the stimuli you have,
 and with few items that limit can be substantial even when the point estimate is
 almost zero. Reporting the interval keeps the dependence on set size visible,
-where a bare "no significant difference" hides it. The width is a property of the
+where a bare 'no significant difference' hides it. The width is a property of the
 number of items, so a small set cannot demonstrate tight control however good its
 point estimates look (Sassenhagen & Alday, 2016).
 

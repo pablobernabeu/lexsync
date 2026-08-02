@@ -54,7 +54,7 @@ print(len(pool))
 ```
 
 The pool step is not optional even though nothing enforces it. `match_stimuli` never looks at a
-design's `pool_filters`; it matches over whatever frame you hand it. A script that skips
+design's `pool_filters`. It matches over whatever frame you hand it. A script that skips
 `build_pool` therefore matches over the entire lexicon and silently ignores the design's bands, and
 the selection will look plausible while answering a different question. The package's own test suite
 pins this, checking that the README's example calls `build_pool` before matching.

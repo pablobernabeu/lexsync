@@ -5,12 +5,15 @@ site_url: https://pablobernabeu.github.io/lexsync/python/
 repo_url: https://github.com/pablobernabeu/lexsync
 # The licence link is absolute: the copyright line renders on every page, and a
 # relative link would resolve against nested pages and break.
-# The badges are the repository's own (see README.md): the two continuous-integration
-# workflows that check the R and the Python engine, and the source licence. There is
-# no Zenodo DOI badge, because lexsync has no deposited DOI (see CITATION.cff).
+# The badges are this package's own (see README.md): the continuous-integration
+# workflow that checks the Python engine, the lifecycle stage and the source licence.
+# The R package's R-CMD-check badge is not among them, even though the two engines
+# share a repository, because this site documents the Python half and a reader here
+# would take a red badge as a failure of the code they are reading about. Every other
+# Python site in the family shows only its own workflow. There is no Zenodo DOI badge,
+# because lexsync has no deposited DOI (see CITATION.cff).
 copyright: >-
   <span class="mrd-footer-badges">
-  <a href="https://github.com/pablobernabeu/lexsync/actions/workflows/R-CMD-check.yaml"><img src="https://github.com/pablobernabeu/lexsync/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check"></a>
   <a href="https://github.com/pablobernabeu/lexsync/actions/workflows/python-tests.yaml"><img src="https://github.com/pablobernabeu/lexsync/actions/workflows/python-tests.yaml/badge.svg" alt="python-tests"></a>
   <a href="https://lifecycle.r-lib.org/articles/stages.html#experimental"><img src="https://img.shields.io/badge/lifecycle-experimental-orange.svg" alt="Lifecycle: experimental"></a>
   <a href="https://opensource.org/license/MIT"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT"></a>

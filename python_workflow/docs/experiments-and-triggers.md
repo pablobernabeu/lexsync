@@ -134,10 +134,10 @@ participant into the task and is discarded before analysis; fillers exist to dil
 so the participant cannot guess it, and are likewise not analysed. Both have to reach the generated
 experiment, and neither belongs in the stimuli file, the descriptives or the realised control.
 
-So the pipeline splits. The stimuli CSV and the reports are written from the main rows; the PsychoPy,
-OpenSesame and jsPsych experiments are generated from every presented trial. A `block` column marks
-which is which, and it appears only when a design declares the blocks, so a design without them keeps
-exactly the columns it had.
+So the pipeline splits. The stimuli CSV and the reports are written from the main rows, while the
+PsychoPy, OpenSesame and jsPsych experiments are generated from every presented trial. A `block`
+column marks which is which, and it appears only when a design declares the blocks, so a design
+without them keeps exactly the columns it had.
 
 ```yaml
 practice:

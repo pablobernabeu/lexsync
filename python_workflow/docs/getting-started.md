@@ -100,8 +100,8 @@ cannot build one, so an R laboratory reaches the wider language set through lexi
 
 ## Anatomy of a design
 
-A design is a YAML file. `config/schema.yaml` holds everything global and every numeric default;
-the design holds what is specific to the study. Both are read identically by the R and Python
+A design is a YAML file. `config/schema.yaml` holds everything global and every numeric default,
+while the design holds what is specific to the study. Both are read identically by the R and Python
 packages, which is what lets a design travel. Here is the English frequency contrast in full, from
 `config/design_en_freqcontrast.yaml`:
 
@@ -153,7 +153,7 @@ form the lexical-decision designs use, since they also need to say where the ite
 
 `pool_filters` narrows the lexicon to the candidates a design will consider at all. Each key is a
 column and each value a `[min, max]` range for a numeric column, or a set of allowed values for a
-categorical one. This is a real step rather than a formality: the matcher never reads `pool_filters`
+categorical one. This is a real step rather than a formality. The matcher never reads `pool_filters`
 itself, so a script that omits `build_pool` matches over the entire lexicon and quietly ignores the
 design's bands.
 

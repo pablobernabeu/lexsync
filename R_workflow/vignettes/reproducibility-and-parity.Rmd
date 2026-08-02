@@ -55,7 +55,7 @@ they are paired and the order they are presented in, so the generated experiment
 are byte-identical in full. The only exceptions are the `mahalanobis` and
 `optimal` matching methods.
 
-"Byte-identical" is meant literally, and stating it that way turned out to matter. The
+'Byte-identical' is meant literally, and stating it that way turned out to matter. The
 parity test originally read both engines' stimuli files back with a CSV parser and
 compared the values, under which `1` and `1.0` are the same number; on that test 13 of
 the shipped designs passed while differing byte for byte. Three of the differences were
@@ -90,15 +90,15 @@ the two implementations share no code.
 Cross-engine identity is not an accident of two careful translations. Each
 mechanism below closes a specific way the engines could otherwise drift.
 
-**No random number generator anywhere.** The obvious way to choose 15 items from
-700 is to sample them. `lexsync` never does. The anchor condition is chosen by an
-even spread across its sorted subpool, taking positions along the whole range
-rather than a random subset, and every later item is determined by a distance. A
-seeded RNG would not help here, because R's Mersenne-Twister stream and NumPy's
-are different streams: the same seed gives different draws, so any sampling step
-would break parity by construction. Determinism through absence is the only
-option that survives two languages, and it now extends to trial order, whose
-shuffle is described below.
+The first is that there is no random number generator anywhere. The obvious way
+to choose 15 items from 700 is to sample them, and `lexsync` never does. The
+anchor condition is chosen by an even spread across its sorted subpool, taking
+positions along the whole range rather than a random subset, and every later item
+is determined by a distance. A seeded RNG would not help here, because R's
+Mersenne-Twister stream and NumPy's are different streams: the same seed gives
+different draws, so any sampling step would break parity by construction.
+Determinism through absence is the only option that survives two languages, and
+it now extends to trial order, whose shuffle is described below.
 
 ```{r even-spread}
 anchor_pool <- pool[pool$frequency >= 5.2 & pool$frequency <= 7.0, ]
@@ -113,9 +113,9 @@ The spread is `seq()` over the row positions, rounded to integers. Both engines
 compute the same positions from the same row count, and the rounding is specified
 rather than incidental.
 
-**Byte-order sorting everywhere.** R's default string sort is locale-collated. A
-French locale, a C locale and a Windows locale can order the same words
-differently, and any of those orders would differ from Python's, which sorts by
+Sorting is by byte order everywhere. R's default string sort is locale-collated,
+and a French locale, a C locale and a Windows locale can order the same words
+differently, while any of those orders would differ from Python's, which sorts by
 code point. Every sort on the selection path therefore passes `method = "radix"`,
 which sorts by bytes.
 
@@ -131,23 +131,24 @@ through ICU at the root locale rather than through `tolower()`, whose behaviour
 depends on the C library and the locale, and which differs from Python's on
 Greek final sigma and the dotted Turkish capital I.
 
-**Integer counts.** Frequencies of bigrams and of subsyllabic constituents are
-accumulated as integers, never as running floating-point sums, so the counts
-cannot depend on summation order.
+Frequencies of bigrams and of subsyllabic constituents are accumulated as
+integers, never as running floating-point sums, so the counts cannot depend on
+summation order.
 
-**Rounding before the tie-break.** This is the subtle one. Two candidate words can
-sit at genuinely equal distance from an anchor, and the last bits of a square root
-can differ between two linear-algebra implementations. If the engines compared
-raw doubles, an inconsequential difference in the fifteenth decimal would make
-one engine call a tie and the other not, and they would pick different words.
-Distances are therefore rounded to nine decimal places before ranking, which puts
-both engines on the same side of every comparison that matters.
+Rounding comes before the tie-break, which is the subtle one of these mechanisms.
+Two candidate words can sit at genuinely equal distance from an anchor, and the
+last bits of a square root can differ between two linear-algebra implementations.
+If the engines compared raw doubles, an inconsequential difference in the
+fifteenth decimal would make one engine call a tie and the other not, and they
+would pick different words. Distances are therefore rounded to nine decimal
+places before ranking, which puts both engines on the same side of every
+comparison that matters.
 
-**A total order for ties.** Rounding creates ties rather than removing them, so
-ties need a rule that both engines can apply identically. Candidates are ordered
-by distance, then by the word's bytes, then by its integer `id`. That is the
-comparison the matcher makes, and it is reproduced here on three imaginary
-candidates.
+Rounding creates ties rather than removing them, so the ties in turn need a rule
+that both engines can apply identically, and that rule is a total order.
+Candidates are ordered by distance, then by the word's bytes, then by its integer
+`id`. That is the comparison the matcher makes, and it is reproduced here on
+three imaginary candidates.
 
 ```{r tie-break}
 distance <- c(0.5, 0.5, 0.2)
@@ -163,9 +164,9 @@ winner and never a coin to flip. The schema notes that this order is fixed in th
 code and deliberately not configurable, because it is the mechanism of parity
 rather than a preference.
 
-**Even-spread rounding is shared.** `unique(round(seq(...)))` is used identically
-in both engines, including the `unique()`, which matters when the pool is smaller
-than the requested n and the rounding produces a repeated index.
+The even-spread rounding is shared as well. `unique(round(seq(...)))` is used
+identically in both engines, including the `unique()`, which matters when the
+pool is smaller than the requested n and the rounding produces a repeated index.
 
 ### Trial order: a seeded shuffle without a generator
 
@@ -310,14 +311,16 @@ ds <- build_datasheet(
 names(ds)
 ```
 
-The record answers the questions a sceptical reader would ask. Where did the words
-come from, and is this the same file: `materials_source` carries the path and its
-SHA-256. What was applied: `selection` carries the method, the matched dimensions
-and the tolerance windows that were actually resolved, which is the design's
-overrides merged onto the schema's defaults rather than the defaults a design may
-have replaced. What did it achieve: `realised_control` carries the effect sizes,
-intervals, variance ratios and TOST verdicts. What could it have chosen:
-`candidate_pool` records how many items satisfied each condition before matching.
+The record answers the questions a sceptical reader would ask. Where the words
+came from, and whether this is the same file, is settled by `materials_source`,
+which carries the path and its SHA-256. What was applied is recorded in
+`selection`, covering the method, the matched dimensions and the tolerance
+windows that were actually resolved, which is the design's overrides merged onto
+the schema's defaults rather than the defaults a design may have replaced. What
+the selection achieved is in `realised_control`, as the effect sizes, intervals,
+variance ratios and TOST verdicts. What it could have chosen instead is in
+`candidate_pool`, which records how many items satisfied each condition before
+matching.
 
 ```{r checksums}
 ds$materials_source$sha256
@@ -363,7 +366,7 @@ with its interval rather than a selective best case, states the candidate-pool
 size, and adds the cross-engine caveat when the design's method warrants it.
 
 It is a draft to adapt rather than a paragraph to paste unread, and this run shows
-why. The phrase "within the 0.5-SD equivalence bound" describes the point estimate,
+why. The phrase 'within the 0.5-SD equivalence bound' describes the point estimate,
 while the interval printed beside it reaches well past that bound in both
 directions. Both statements are true and they are not the same claim. The interval
 is wide because this demonstration matches only 15 items per condition, which is

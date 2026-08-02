@@ -1,5 +1,11 @@
 # lexsync (Python)
 
+<!-- badges: start -->
+[![python-tests](https://github.com/pablobernabeu/lexsync/actions/workflows/python-tests.yaml/badge.svg)](https://github.com/pablobernabeu/lexsync/actions/workflows/python-tests.yaml)
+[![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/license/MIT)
+<!-- badges: end -->
+
 Multidimensional lexical optimisation and hardware-timed experiment generation.
 
 lexsync selects stimuli matched in parallel across several lexical dimensions

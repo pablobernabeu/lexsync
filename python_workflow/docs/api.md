@@ -41,6 +41,8 @@ pool, since a word's neighbours do not stop existing because a design excluded t
 
 ::: lexsync.add_bigram_frequency
 
+::: lexsync.add_pair_overlap
+
 ::: lexsync.count_syllables
 
 ## Pools and matching
@@ -52,8 +54,6 @@ step rather than a convenience.
 ::: lexsync.build_pool
 
 ::: lexsync.match_stimuli
-
-::: lexsync.add_pair_overlap
 
 ::: lexsync.resample_stimuli
 
@@ -89,9 +89,9 @@ event sequence, or supplies its own `events`.
 
 ::: lexsync.resolve_events
 
-::: lexsync.required_fields
-
 ::: lexsync.resolve_trial_timing
+
+::: lexsync.required_fields
 
 ## Counterbalancing
 
