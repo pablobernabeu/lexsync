@@ -163,7 +163,7 @@ def attribution_entry(lang: str, df: pd.DataFrame, date: str) -> str:
     zmin, zmax = df.freq_zipf.min(), df.freq_zipf.max()
     unit = "over characters " if lang in CHAR_BASED else ""
     return (
-        f"- **{LANG_NAMES.get(lang, lang)} ('{lang}')** — {len(df)} words, "
+        f"- **{LANG_NAMES.get(lang, lang)} ('{lang}')**, {len(df)} words, "
         f"Zipf {zmin:.2f}-{zmax:.2f}. Source: wordfreq (Speer, 2022; data "
         f"CC BY-SA 4.0), retrieved {date}. N and OLD20 computed {unit}by lexsync."
     )

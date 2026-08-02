@@ -94,10 +94,10 @@ example.
 
 ## Relational designs, where the item is a pair
 
-A priming study's theoretical variable is a property of the *pair* -- distributional similarity,
-associative strength -- while its nuisance variables are properties of each *member*: frequency,
-length, neighbourhood. A design could previously have matching, or its own item table, but not both,
-so a relational design had to be assembled by hand.
+A priming study's theoretical variable is a property of the *pair*, such as distributional
+similarity or associative strength, while its nuisance variables are properties of each *member*:
+frequency, length, neighbourhood. A design could previously have matching, or its own item table,
+but not both, so a relational design had to be assembled by hand.
 
 `items.members` promotes an ordinary item table to a pair-keyed one.
 
@@ -124,8 +124,8 @@ operations. Orthographic overlap is the
 standard confound control in a priming design, since a related pair that also shares letters
 confounds semantic relatedness with orthographic similarity. The pipeline adds both automatically when the two members are named `prime` and
 `target`. Under any other member names, call `add_pair_overlap` on the item table
-yourself. A predictor that cannot be computed from the forms alone -- cosine
-similarity, forward associative strength -- arrives instead as an extra column on the item table and
+yourself. A predictor that cannot be computed from the forms alone, such as cosine
+similarity or forward associative strength, arrives instead as an extra column on the item table and
 is used like any other.
 
 ```yaml
@@ -140,8 +140,8 @@ match_on: [target.length, pair.overlap]
 ```
 
 Two rules follow from the item being a pair rather than a row. A filter applies to a pair only if
-*every* one of its rows passes, and selection runs over one row per pair -- the `anchor_condition`,
-defaulting to the byte-first condition -- with the result re-expanded afterwards so every condition
+*every* one of its rows passes, and selection runs over one row per pair, the `anchor_condition`,
+defaulting to the byte-first condition, with the result re-expanded afterwards so every condition
 row of every chosen pair survives. Neither is an optimisation. A filter on `prime.frequency` applied
 row by row would keep a pair's related row and drop its unrelated one, leaving a set the Latin-square
 counterbalancer cannot complete. It has to be a dimension that varies within the pair, which the

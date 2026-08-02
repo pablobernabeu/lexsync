@@ -15,7 +15,7 @@ no function signature changes.
 - **Practice and filler blocks.** A design may declare `practice:` and `fillers:` item
   tables. Those trials are presented but not analysed, so the pipeline splits: the
   stimuli file and the reports are written from the main rows, the generated experiments
-  from every presented trial. Practice comes first as its own run; fillers are
+  from every presented trial. Practice comes first as its own run. Fillers are
   INTERLEAVED with the main trials rather than appended, because a block of fillers at
   the end is not a filler but a second block a participant can tell apart. Both appear in
   every list, and both are recorded in the datasheet with their checksums. A design
@@ -84,7 +84,7 @@ no function signature changes.
   two-condition designs (Gu & Rosenbaum, 1993; Hansen & Klopfer, 2006). Unlike the
   deterministic default methods, these use a covariance-matrix inverse and an
   assignment solver, so the R and Python engines select equivalent but not
-  byte-identical materials; the datasheet records this per design (a new
+  byte-identical materials. The datasheet records this per design (a new
   `cross_engine` field). Adds the `clue` package to the R Suggests.
 - Wuggy-style subsyllabic pseudoword generation, opt-in via
   `items.generation.method: subsyllabic` (the default `letter_substitution` is
@@ -177,8 +177,8 @@ no function signature changes.
 ### Security
 
 - **A design file could execute code on the machine that ran it.** A design is meant to
-  be shared -- posted with a pre-registration, attached to a paper, handed to a
-  collaborator running the other engine -- and the recipient runs it and then opens the
+  be shared, whether posted with a pre-registration, attached to a paper or handed to a
+  collaborator running the other engine. The recipient runs it and then opens the
   generated PsychoPy script, OpenSesame experiment or jsPsych page, which is the only
   thing those files are for. Stimulus text was always safe, because it travels in the
   loop-table CSV the experiment reads at run time. Design *metadata* was not: the name,
@@ -204,12 +204,12 @@ no function signature changes.
   Adversarially attacking that fix then found four ways through it, all now closed and
   pinned. The largest: a response event's `keys` were joined into OpenSesame's
   `set allowed_responses "a;b"` with no validation at all, and that is one line of a
-  line-oriented format -- so a key holding a double quote closed the string, a newline
+  line-oriented format, so a key holding a double quote closed the string, a newline
   ended the line, and the rest of the value became new top-level items in the
   experiment, including an `inline_script` whose body OpenSesame runs. Keys are
   validated now. The shape guards were also anchored with `$`, which in both Python's
   `re` and R's PCRE matches just before a final newline, so a port address ending in
-  one passed the check; they are anchored at end-of-string now. A scalar
+  one passed the check. They are anchored at end-of-string now. A scalar
   `keys: space` or `blocks: practice` was
   iterated character by character in Python and kept whole in R, so one design gave two
   different allowed-response lists and a block-restricted event ran everywhere in one
@@ -235,19 +235,19 @@ no function signature changes.
   another leaves a trial with no response row of its own, and the screen then reported a
   verdict computed from an earlier trial's key. Each trial's rows now carry its own
   identifier and the screen matches on it, so a trial with no response of its own reports
-  none. The generated HTML changed for all 21 designs; no stimulus selection changed.
+  none. The generated HTML changed for all 21 designs. No stimulus selection changed.
 - **A large number in a user's own column was written differently by the two engines.**
   The CSV writer reproduced readr's format for small magnitudes and left the top end
   alone, on the grounds that nothing lexsync computes reaches it. Nothing lexsync
-  computes does; a joined norm table, a supplied pool or an item table carries whatever
+  computes does. A joined norm table, a supplied pool or an item table carries whatever
   columns the user has, and those go straight into the stimuli CSV. So the guarantee held
   for the shipped designs, which the byte-parity test covers, and failed silently for the
   user's own data, which nothing covers. The divergence started lower than assumed: readr
   writes 1e15 as `1e15` where the Python writer wrote it in full, and a value of exactly
   2^53 picked up a trailing `.0` in one engine only. readr's layout beyond 1e15 could not
-  be reproduced -- it writes 1.5e16 as `15e15`, the largest double as
+  be reproduced. It writes 1.5e16 as `15e15`, the largest double as
   `17976931348623157e292`, and the double nearest 5e22 as `4.9999999999999996e+22`, and
-  no rule fits all three -- so both engines now refuse such a value, naming the column,
+  no rule fits all three, so both engines now refuse such a value, naming the column,
   rather than one accepting it and the two writing different bytes. A value with two
   equally short decimal forms is refused for the same reason: readr prints
   1000000000000000.25 as `...0.3` and Python as `...0.2`, and the digits themselves
@@ -268,15 +268,15 @@ no function signature changes.
   R's `sprintf("%.3f")` disagrees with Python's `"%.3f"` on 274 of them, because R's
   delegates to the platform C library. The descriptives path paired R's `round` with
   Python's builtin and the distance path paired it with numpy's, so no artefact value was
-  safe. Both engines now use one rounder defined by its arithmetic — scale, truncate,
-  step away from zero at a half — every operation of which IEEE-754 either mandates
-  correctly rounded or makes exact. Some reported values move by one in the last
-  published digit; no selection changes.
+  safe. Both engines now use one rounder defined by its arithmetic. That arithmetic is to
+  scale, truncate and step away from zero at a half, and IEEE-754 either mandates every
+  one of those operations correctly rounded or makes it exact. Some reported values move
+  by one in the last published digit. No selection changes.
 - **A hash-key component that cannot be rendered identically is now refused.** A blank
   `condition` cell, a routine data error that neither reader rejects, rendered `"NA"` in R
   and `"nan"` in Python, so the two engines produced different trial orders from the same
-  design — reproducibly, and with nothing to signal it. `TRUE`/`True`, `Inf`/`inf` and
-  `NA`/`None` diverged the same way. Booleans now get a pinned spelling; missing and
+  design, reproducibly and with nothing to signal it. `TRUE`/`True`, `Inf`/`inf` and
+  `NA`/`None` diverged the same way. Booleans now get a pinned spelling. Missing and
   non-finite values raise, because a reproducible order over a meaningless key is worse
   than a stop.
 - The overlap-cap centroid in the `joint` and `optimal` matchers used `colMeans` and
@@ -285,7 +285,7 @@ no function signature changes.
   candidates reach matching. Verified to change no design's selection.
 - **`R CMD check --as-cran` had a WARNING and an undocumented NOTE**, while
   `cran-comments.md` claimed "0 errors | 0 warnings | 1 note". `select_continuous_stimuli()`
-  documented four of its seven arguments; `head()` was called without an import, so a user
+  documented four of its seven arguments. `head()` was called without an import, so a user
   who defined their own would have had it called by the package. Both fixed, and the check
   is now clean at 0/0/1.
 - **The package's only example could never have worked.** It called `read_config()`, which
@@ -296,30 +296,30 @@ no function signature changes.
   entry cited `10.3758/s13428-014-0511-x`, which Crossref resolves to an unrelated
   psychometrics program by different authors. The matching vignette placed Zipf 7 at a
   thousand occurrences per million rather than ten thousand, contradicting its own lower
-  anchor. A design comment attributed "840-prime materials" to Rastle et al. (2004);
-  that paper used 150 prime-target pairs and the figure appears nowhere in it.
+  anchor. A design comment attributed "840-prime materials" to Rastle et al. (2004).
+  That paper used 150 prime-target pairs and the figure appears nowhere in it.
 - **The Python engine embedded a bare `NaN` in the generated jsPsych experiment**, where
-  a trial had no value for a field that another block supplies -- a main-block trial in a
-  design whose practice items carry an `answer`. `NaN` is not valid JSON, and the R
+  a trial had no value for a field that another block supplies, as in a main-block trial
+  in a design whose practice items carry an `answer`. `NaN` is not valid JSON, and the R
   engine dropped the key instead, so the two engines' experiments differed byte for byte.
   Both now drop it, which is also the honest rendering: a trial with no correct answer
-  has none. Found by running the two engines into separate directories; both write the
+  has none. Found by running the two engines into separate directories. Both write the
   shared experiment files to one path, so a normal run has the second silently overwrite
   the first.
 - **The generated artefacts were not byte-identical across the engines, and the parity
   test could not see it.** It read both CSVs back with a parser and compared the values,
-  under which `1` and `1.0` are the same number; 13 of the 18 shipped designs differed
-  byte for byte while the gate stayed green. Three of the differences were serialisation
-  — a whole number written `1` by readr and `1.0` by pandas, a boolean written `FALSE` and
-  `False`, a value below 1e-3 written `9e-4` and `0.0009` — and one was not: two reported
-  means differed in the last decimal the descriptives publish, because numpy sums
-  pairwise and R's `mean()` uses a two-pass long-double algorithm, and the true value sat
-  on a rounding boundary. Every reduction in the package now uses one Neumaier
-  compensated summation written out in both engines, so their agreement follows from
-  IEEE-754 requiring addition and subtraction to be correctly rounded rather than from a
-  measurement of two libraries' internals. **No R golden moved:** R's two-pass mean was
-  already the correctly-rounded one, so the fix brought the Python engine into line.
-  Artefacts are now compared as bytes, not as parsed values.
+  under which `1` and `1.0` are the same number. Thirteen of the 18 shipped designs
+  differed byte for byte while the gate stayed green. Three of the differences were
+  matters of serialisation, namely a whole number written `1` by readr and `1.0` by
+  pandas, a boolean written `FALSE` and `False`, a value below 1e-3 written `9e-4` and
+  `0.0009`. The fourth was not. Two reported means differed in the last decimal the
+  descriptives publish, because numpy sums pairwise and R's `mean()` uses a two-pass
+  long-double algorithm, and the true value sat on a rounding boundary. Every reduction in
+  the package now uses one Neumaier compensated summation written out in both engines, so
+  their agreement follows from IEEE-754 requiring addition and subtraction to be correctly
+  rounded rather than from a measurement of two libraries' internals. **No R golden
+  moved:** R's two-pass mean was already the correctly-rounded one, so the fix brought the
+  Python engine into line. Artefacts are now compared as bytes, not as parsed values.
 - **A response key coded `f` was silently turned into `FALSE`.** `readr` reads a column
   whose values are all `f`, `t`, `T` or `F` as logical while pandas keeps the string, so
   an item table using the commonest two-choice key pair had its correct answer corrupted
@@ -332,9 +332,9 @@ no function signature changes.
   escaped only because they are deliberately rounded on the way in. Both engines now
   write the JSON at 15 significant digits.
 - The matcher's z-scoring centre and scale also go through the compensated reductions.
-  Selection was robust to the difference for a structural reason — a distance is between
+  Selection was robust to the difference for a structural reason. A distance is between
   z-vectors, so a shift in the centre cancels and a change of scale cannot reorder
-  candidates — but robust-for-a-reason is not identical-by-construction, and the change
+  candidates. Robust-for-a-reason is not identical-by-construction, though, and the change
   was verified to move no design's selection.
 - **`merge_norms()` column order differed between engines.** R's `merge()` hoists the
   join column to position 1 while `pandas.merge` keeps the left frame's order, so the
@@ -352,7 +352,7 @@ no function signature changes.
 - **The R engine wrote its datasheet and Markdown run log with CRLF on Windows**
   while the Python engine wrote LF, because `write_datasheet()` and `write_run_log()`
   used a text-mode connection rather than the package's LF-pinning writer. The
-  datasheet is the provenance artefact; its bytes must not record which machine
+  datasheet is the provenance artefact. Its bytes must not record which machine
   produced it.
 - **`add_pair_overlap()` and `resolve_trial_timing()` were not exported from the R
   package.** Both were marked for export and documented, but `NAMESPACE` had not been
