@@ -9,6 +9,9 @@ on:
   pull_request:
     branches: [main, master]
 
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ${{ matrix.os }}
@@ -28,11 +31,32 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
+      # pytest-cov is installed here rather than in the dev extras because it is
+      # a CI reporting concern, not something the suite needs to run locally.
       - name: Install the package with dev extras
-        run: python -m pip install -e ".[dev]"
+        run: python -m pip install -e ".[dev]" pytest-cov
 
       - name: Run the test suite
-        run: python -m pytest -q
+        run: python -m pytest -q --cov=lexsync --cov-report=term --cov-report=json
+
+      - name: Write the coverage percentage to the run summary
+        # coverage.json is the machine-readable twin of the terminal report the
+        # step above already printed. Reading the percentage from it here puts
+        # one headline figure on the run's summary page, so nobody has to dig
+        # through the pytest log to learn it. No external service is involved.
+        # The shell is pinned because this matrix includes Windows, where the
+        # default is pwsh and a heredoc would not parse.
+        shell: bash
+        run: |
+          python - <<'EOF'
+          import json, os
+          pct = round(json.load(open("coverage.json"))["totals"]["percent_covered"], 1)
+          print("Test coverage: %s%%" % pct)
+          path = os.environ.get("GITHUB_STEP_SUMMARY")
+          if path:
+              with open(path, "a") as f:
+                  f.write("## Python test coverage: **%s%%**\n" % pct)
+          EOF
 
       # A test that writes into the tracked tree leaves every later `git status`
       # dirty and gets its churn swept into the next commit, which is how 42 run

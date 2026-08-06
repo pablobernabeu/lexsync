@@ -14,9 +14,11 @@ authors:
     given-names: Pablo
     orcid: 'https://orcid.org/0000-0003-1083-2460'
 version: 0.1.0
+# This date describes a release that has not been tagged. Set it to the date the
+# first real release is cut, along with the version above, which nothing
+# generates either.
 date-released: '2026-06-07'
 license: MIT
-# repository-code is a placeholder until the public repository is created.
 repository-code: 'https://github.com/pablobernabeu/lexsync'
 keywords:
   - psycholinguistics
