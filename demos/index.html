@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Generated experiments &middot; lexsync</title>
+  <link rel="icon" href="../logo.svg">
+  <style>
+    :root {
+      --bg:#ffffff; --fg:#1b1b1b; --lead:#444; --muted:#555; --link:#7C4EA3;
+      --card-bg:#ffffff; --card-border:#e3e3e3; --card-hover:#b8b8b8; --chip:#f3f3f3;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg:#0f1722; --fg:#e9eef3; --lead:#c3cdd7; --muted:#9fb0c0; --link:#C3ADE8;
+        --card-bg:#16222f; --card-border:#27384a; --card-hover:#3c5570; --chip:#1d2c3b;
+      }
+    }
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      max-width: 52rem; margin: 3.5rem auto; padding: 0 1.25rem; line-height: 1.6;
+      background: var(--bg); color: var(--fg);
+    }
+    h1 { font-size: 1.9rem; margin-bottom: .25rem; letter-spacing: -.5px; }
+    p.lead { color: var(--lead); margin-top: 0; }
+    a { color: var(--link); }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 1rem; margin-top: 2rem; }
+    a.card {
+      background: var(--card-bg); color: inherit; text-decoration: none;
+      border: 1px solid var(--card-border); border-top: 3px solid var(--link);
+      border-radius: 10px; padding: 1rem 1.1rem; display: block;
+      transition: border-color .15s, transform .15s;
+    }
+    a.card:hover { border-color: var(--card-hover); transform: translateY(-2px); }
+    a.card:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; }
+    .card h2 { margin: 0 0 .35rem; font-size: 1.05rem; }
+    .card p { margin: 0 0 .7rem; color: var(--muted); font-size: .9rem; line-height: 1.5; }
+    .chip {
+      display: inline-block; background: var(--chip); color: var(--muted);
+      font-size: .74rem; padding: .1rem .45rem; border-radius: 4px; margin-right: .3rem;
+    }
+    footer { margin-top: 3rem; color: var(--muted); font-size: .9rem; }
+    footer a { color: inherit; }
+    @media (prefers-reduced-motion: reduce) { a.card { transition: none; } }
+  </style>
+</head>
+<body>
+  <h1>Generated experiments</h1>
+  <p class="lead">Every worked design in the lexsync repository ships as a browser experiment, written
+  by the same pipeline that emits the PsychoPy and OpenSesame scripts and rendered from the same
+  declarative event list. These are build artefacts rather than mock-ups. Each is a single HTML file
+  carrying its own trial list, so it runs by being opened.</p>
+  <div class="grid">
+    <a class="card" href="en_andrews_repro_english.html">
+      <h2>Factorial word contrast</h2>
+      <p>Reproducing Andrews (1989): frequency x orthographic neighbourhood size (Coltheart&#x27;s N), a 2x2 lexical-decision design with every cell matched on length.</p>
+      <span class="chip">English</span><span class="chip">en_andrews_repro</span>
+    </a>
+    <a class="card" href="en_balanced_lists_english.html">
+      <h2>Factorial word contrast</h2>
+      <p>High versus low frequency English words, matched on length, neighbourhood density and OLD20, dealt into four counterbalancing lists that are themselves equated on those dimensions.</p>
+      <span class="chip">English</span><span class="chip">en_balanced_lists</span>
+    </a>
+    <a class="card" href="en_categorisation_english.html">
+      <h2>Categorisation</h2>
+      <p>Cued semantic categorisation: concrete nouns judged against a narrow or a broad category cue, Latin-square counterbalanced over two lists so no target repeats within a list.</p>
+      <span class="chip">English</span><span class="chip">en_categorisation</span>
+    </a>
+    <a class="card" href="en_freqcontinuous_english.html">
+      <h2>Factorial word contrast</h2>
+      <p>English words spanning the frequency range continuously, with length, neighbourhood density and OLD20 held near-constant, for regression / mixed-model analysis.</p>
+      <span class="chip">English</span><span class="chip">en_freqcontinuous</span>
+    </a>
+    <a class="card" href="en_freqcontrast_english.html">
+      <h2>Factorial word contrast</h2>
+      <p>High versus low frequency English words, matched on length, neighbourhood density and OLD20.</p>
+      <span class="chip">English</span><span class="chip">en_freqcontrast</span>
+    </a>
+    <a class="card" href="en_lexdec_english.html">
+      <h2>Lexical decision</h2>
+      <p>Lexical decision: real words versus length-matched, orthographically legal pseudowords (deterministically generated).</p>
+      <span class="chip">English</span><span class="chip">en_lexdec</span>
+    </a>
+    <a class="card" href="en_lexdec_blocks_english.html">
+      <h2>Lexical decision</h2>
+      <p>English lexical decision with a feedback-bearing practice block and interleaved fillers, neither of which is analysed.</p>
+      <span class="chip">English</span><span class="chip">en_lexdec_blocks</span>
+    </a>
+    <a class="card" href="en_lexdec_wuggy_english.html">
+      <h2>Lexical decision</h2>
+      <p>Lexical decision with subsyllabic (Wuggy-style) pseudowords: real words versus length-matched pseudowords built by swapping whole onset/nucleus/coda constituents.</p>
+      <span class="chip">English</span><span class="chip">en_lexdec_wuggy</span>
+    </a>
+    <a class="card" href="en_ndensity_english.html">
+      <h2>Factorial word contrast</h2>
+      <p>Dense versus sparse orthographic neighbourhoods (Coltheart&#x27;s N) in English, matched on length and frequency.</p>
+      <span class="chip">English</span><span class="chip">en_ndensity</span>
+    </a>
+    <a class="card" href="en_priming_english.html">
+      <h2>Priming</h2>
+      <p>Priming: related versus unrelated prime-target pairs, Latin-square counterbalanced so each target appears once per list.</p>
+      <span class="chip">English</span><span class="chip">en_priming</span>
+    </a>
+    <a class="card" href="en_priming_continuous_english.html">
+      <h2>Priming</h2>
+      <p>Prime-target pairs selected to span target frequency continuously, with target length and prime-target orthographic overlap held near-constant; Latin-square counterbalanced over two lists.</p>
+      <span class="chip">English</span><span class="chip">en_priming_continuous</span>
+    </a>
+    <a class="card" href="en_priming_jitter_english.html">
+      <h2>Priming</h2>
+      <p>Priming with a per-trial stimulus-onset asynchrony read from the items and a jittered inter-trial interval, both recorded as trial-level variables.</p>
+      <span class="chip">English</span><span class="chip">en_priming_jitter</span>
+    </a>
+    <a class="card" href="en_rastle_repro_english.html">
+      <h2>Priming</h2>
+      <p>Reproducing Rastle, Davis &amp; New (2004): masked priming contrasting transparent, opaque and orthographic (form) prime-target relationships, each against an unrelated baseline; Latin-square counterbalanced over two lists.</p>
+      <span class="chip">English</span><span class="chip">en_rastle_repro</span>
+    </a>
+    <a class="card" href="en_resample_english.html">
+      <h2>Factorial word contrast</h2>
+      <p>High versus low frequency English words in three disjoint matched item sets (items as a random factor).</p>
+      <span class="chip">English</span><span class="chip">en_resample</span>
+    </a>
+    <a class="card" href="en_richdim_english.html">
+      <h2>Factorial word contrast</h2>
+      <p>High versus low frequency English words, matched on length, syllable count and bigram frequency (a phonotactic-probability proxy).</p>
+      <span class="chip">English</span><span class="chip">en_richdim</span>
+    </a>
+    <a class="card" href="en_spr_english.html">
+      <h2>Self-paced reading</h2>
+      <p>Self-paced reading: grammatical versus ungrammatical sentences presented region by region, with a comprehension question.</p>
+      <span class="chip">English</span><span class="chip">en_spr</span>
+    </a>
+    <a class="card" href="en_supplied_pool_english.html">
+      <h2>Factorial word contrast</h2>
+      <p>Concrete nouns from a supplied candidate pool, split by frequency and matched item by item on length, neighbourhood density and OLD20.</p>
+      <span class="chip">English</span><span class="chip">en_supplied_pool</span>
+    </a>
+    <a class="card" href="es_freqcontrast_spanish.html">
+      <h2>Factorial word contrast</h2>
+      <p>High versus low frequency Spanish words, matched on length, neighbourhood density and OLD20.</p>
+      <span class="chip">Spanish</span><span class="chip">es_freqcontrast</span>
+    </a>
+    <a class="card" href="es_gender_repro_spanish.html">
+      <h2>Factorial word contrast</h2>
+      <p>Reproducing Gonzalez Alonso et al. (2025): feminine versus masculine Spanish words matched on word frequency and number of letters, the origin study&#x27;s natural-language gender-assignment task.</p>
+      <span class="chip">Spanish</span><span class="chip">es_gender_repro</span>
+    </a>
+    <a class="card" href="es_ndensity_spanish.html">
+      <h2>Factorial word contrast</h2>
+      <p>Dense versus sparse orthographic neighbourhoods (Coltheart&#x27;s N) in Spanish, matched on length and frequency.</p>
+      <span class="chip">Spanish</span><span class="chip">es_ndensity</span>
+    </a>
+    <a class="card" href="zh_freqcontrast_chinese.html">
+      <h2>Factorial word contrast</h2>
+      <p>High versus low frequency Mandarin Chinese two-character words, matched on character-length and character-level neighbourhood (N, OLD20).</p>
+      <span class="chip">Chinese</span><span class="chip">zh_freqcontrast</span>
+    </a>
+  </div>
+  <footer>
+    <a href="../">lexsync documentation</a> &middot;
+    <a href="https://github.com/pablobernabeu/lexsync">Source on GitHub</a>
+  </footer>
+</body>
+</html>

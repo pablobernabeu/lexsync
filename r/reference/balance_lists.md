@@ -1,0 +1,45 @@
+# Assign item sets to counterbalancing lists so the lists match on the item dimensions
+
+The factorial recipe's default deal is by set rank, which balances
+nothing. This searches instead for an assignment whose lists have
+near-equal totals on each declared dimension, by steepest-descent
+pairwise swaps between lists. List sizes are preserved, because a swap
+exchanges one set for another.
+
+## Usage
+
+``` r
+balance_lists(stimuli, design, schema)
+```
+
+## Arguments
+
+- stimuli:
+
+  A stimuli data frame with a `set` column and the balance dimensions.
+
+- design:
+
+  A parsed design configuration. Reads `counterbalance.lists`,
+  `counterbalance.balance_on` (defaulting to `match_on`, then to the
+  continuous predictor and controls) and `counterbalance.max_passes`.
+
+- schema:
+
+  The parsed global schema (provides the seed).
+
+## Value
+
+A list with `list_of_set` (a named integer vector mapping each set to a
+list) and `report` (the dimensions, the integer cost before and after,
+the number of swaps taken, and whether the pass bound was reached).
+
+## Details
+
+The search is deterministic and identical in the R and Python engines:
+the objective is all-integer (see the notes in this file), the descent
+takes the single best swap each pass, and ties are broken by the seeded
+keyed hash rather than by position, so no list is favoured by being
+numbered first. Because the cost is a non-negative integer that strictly
+decreases, the search terminates; `max_passes` bounds it anyway and the
+report says whether the bound was reached.
