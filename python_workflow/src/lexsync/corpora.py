@@ -14,6 +14,8 @@ import numpy as np
 import pandas as pd
 import yaml
 
+from .io_utils import sha256_file
+
 
 def _registry_path(registry_path: str | None = None) -> str:
     candidates = [
@@ -87,12 +89,24 @@ def _starts_with_markup(path: str) -> bool:
     return head.lstrip(_LEADING_WS).startswith(b"<")
 
 
+def _max_download_bytes() -> int:
+    """Hard cap on a corpus download, in bytes.
+
+    Mirrors .max_download_bytes() in R_workflow/R/corpora.R. A function rather
+    than a bare constant so the twin tests can lower it without writing 200 MB
+    to disk; the message below names the real limit either way.
+    """
+    return 200 * 1024 * 1024
+
+
 def fetch_corpus(name: str, registry_path: str | None = None, n_words: int = 10000) -> str:
     """Fetch a registered corpus into the cache.
 
     If `name` is a language code supported by the wordfreq connector, a lexicon
     is built with wordfreq. Otherwise the corpus's registered URL is downloaded,
-    once its scheme and its first bytes have been checked.
+    once its scheme has been checked; the transfer lands in a sidecar file that
+    is renamed into the cache only after the size cap, the markup sniff and any
+    registered sha256 have all passed.
     """
     with open(_registry_path(registry_path), encoding="utf-8") as handle:
         reg = yaml.safe_load(handle)
@@ -129,20 +143,54 @@ def fetch_corpus(name: str, registry_path: str | None = None, n_words: int = 100
     import urllib.error
     import urllib.request
     dest = os.path.join(cache_dir(), f"{name}.csv")
+    # The transfer lands in a sidecar and is renamed over `dest` only after every
+    # check below has passed, so a truncated or unverified body can never sit at
+    # the cache path, where a later run would trust it.
+    part = dest + ".part"
     try:
-        urllib.request.urlretrieve(url, dest)
+        # 60 s guards against a stalled server, which urlretrieve() would wait on
+        # forever; the R engine's download.file() honours options(timeout).
+        with urllib.request.urlopen(url, timeout=60) as response, \
+                open(part, "wb") as handle:
+            received = 0
+            for chunk in iter(lambda: response.read(65536), b""):
+                received += len(chunk)
+                if received > _max_download_bytes():
+                    raise ValueError(
+                        "lexsync: corpus download exceeded the 200 MB size limit. "
+                        "Retrieve the delimited file manually and pass it to "
+                        "load_lexicon()."
+                    )
+                handle.write(chunk)
     except (urllib.error.URLError, OSError) as exc:
+        if os.path.exists(part):
+            os.remove(part)
         raise RuntimeError(
             f"lexsync: could not download corpus '{name}' from {url} ({exc}). "
             f"Check the URL in registry.yaml, or download the file manually and "
             f"pass it to load_lexicon()."
         ) from exc
-    if _starts_with_markup(dest):
-        os.remove(dest)
+    except ValueError:
+        if os.path.exists(part):
+            os.remove(part)
+        raise
+    if _starts_with_markup(part):
+        os.remove(part)
         raise ValueError(
             f"lexsync: corpus '{name}' returned an HTML page, not a delimited file "
             f"({url}); the registry URL may have rotted. Retrieve the delimited file "
             f"manually and pass it to load_lexicon()."
         )
+    # 'sha256' is optional per registry entry; when present the download must
+    # match it before it may enter the cache.
+    expected = entry.get("sha256")
+    if expected and sha256_file(part) != expected:
+        os.remove(part)
+        raise ValueError(
+            f"lexsync: checksum mismatch for corpus '{name}'; the download does "
+            f"not match the registry's sha256. Retry the download, or verify the "
+            f"sha256 recorded in registry.yaml."
+        )
+    os.replace(part, dest)
     print(f"lexsync: downloaded '{name}'. Please cite: {entry.get('citation', '(see registry)')}")
     return dest

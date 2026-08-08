@@ -204,6 +204,25 @@ counterbalancing no longer touches the random number generator at all, since
 nothing in the package consults one, so calling it cannot disturb the stream your
 own code is drawing from.
 
+## The Unicode input contract
+
+Word matching, deduplication and the `length` dimension operate on Unicode code
+points exactly as supplied. Beyond the pinned lower-casing described above, the
+orthographic form is never rewritten, and in particular no canonical
+normalisation is applied, neither NFC nor NFD. A precomposed character such as
+é and its decomposed counterpart, the base letter followed by a combining
+accent, are therefore distinct items that differ in length, and a lexicon
+mixing the two conventions carries apparent duplicates that never match one
+another. Supply NFC-normalised text, which is the form most corpora already
+distribute.
+
+The syllable estimator and the pseudoword generators carry a narrower contract
+still. The vowel class behind `n_syllables` covers the Latin-1 vowels, and the
+pseudoword generators build their candidates from lower-case a to z, so both
+are orthographic approximations defined for Latin orthographies and unavailable
+for other scripts. The shipped Chinese design matches on `length`, `n_density`
+and `old20` for exactly this reason.
+
 ## The documented exceptions
 
 `mahalanobis` and `optimal` are equivalent to their byte-identical siblings in

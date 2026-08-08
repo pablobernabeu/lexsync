@@ -29,12 +29,65 @@ import pandas as pd
 # and the distances are rounded to nine places on top of that. Even so, "robust for a
 # reason" is not the same as "identical by construction", and the latter is what the
 # package claims. Switching these was verified to change no design's selection.
-from .io_utils import _exact_mean, _exact_sd
+from .io_utils import _exact_mean, _exact_sd, _round_dp_vec
 from .querying import build_pool
 
 # Fixed order, as documented in schema.yaml; not sorted(), because the R mirror's
 # sort() on character vectors is locale-collated and the two error messages must agree.
 _KNOWN_METHODS = ("standardised_euclidean", "joint", "mahalanobis", "optimal")
+
+# Candidate cap for the pairwise (joint, optimal) matchers. The datasheet reports
+# whether the cap fired, so the literal lives in one place per engine.
+# Must stay identical to .PAIRWISE_CAP in R_workflow/R/matching.R.
+PAIRWISE_CAP = 1200
+
+
+def _resolve_policy(design, schema, key, default, known):
+    """Resolve a matching policy with a design-over-schema-over-default cascade.
+
+    Mirrors how tolerance_k is resolved. Must stay identical to .resolve_policy
+    in R_workflow/R/matching.R.
+    """
+    val = ((design.get("matching") or {}).get(key)
+           or (schema.get("matching") or {}).get(key) or default)
+    if val not in known:
+        raise ValueError(f"lexsync: unknown {key} policy '{val}'. "
+                         f"Known policies: {', '.join(known)}.")
+    return val
+
+
+def _check_shortfall(realised, n, policy, continuous=False):
+    """Refuse a selection smaller than the design requested, unless allowed.
+
+    A shortfall silently invalidates the datasheet and the generated Methods
+    text, which state the requested n. Must stay identical to .check_shortfall
+    in R_workflow/R/matching.R.
+    """
+    if realised >= n or policy == "allow":
+        return
+    if continuous:
+        raise ValueError(f"lexsync: {n} items were requested but only {realised} could be "
+                         f"selected; widen the pool or lower n_per_condition, or set "
+                         f"matching: shortfall: allow to accept a smaller set.")
+    raise ValueError(f"lexsync: {n} sets per condition were requested but only {realised} "
+                     f"could be selected; widen pool_filters/define_by or lower "
+                     f"n_per_condition, or set matching: shortfall: allow to accept a "
+                     f"smaller set.")
+
+
+def _assert_distinct_words(out):
+    """A word selected for two conditions is a confound, not a match.
+
+    The anchored and joint paths prevent it structurally; the optimal path can
+    only be steered away by a finite penalty, so the invariant is asserted on
+    every path's output. Must stay identical to .assert_distinct_words in
+    R_workflow/R/matching.R.
+    """
+    dup = out["word"][out["word"].duplicated()]
+    if len(dup):
+        raise ValueError(f"lexsync: overlapping conditions selected the word "
+                         f"'{dup.iloc[0]}' in more than one condition; make the "
+                         f"conditions disjoint or lower n_per_condition.")
 
 
 def _zmat(df: pd.DataFrame, match_on, center, scale) -> np.ndarray:
@@ -55,13 +108,13 @@ def _cap_to_overlap(df, z, other_centroid, cap):
     """Keep the `cap` rows nearest the other condition's centroid (byte-rank ties)."""
     if len(df) <= cap:
         return df.reset_index(drop=True), z
-    d = np.round(np.sqrt(((z - other_centroid) ** 2).sum(axis=1)), 9)
+    d = _round_dp_vec(np.sqrt(((z - other_centroid) ** 2).sum(axis=1)), 9)
     order = sorted(range(len(df)), key=lambda i: (d[i], i))[:cap]
     keep = sorted(order)
     return df.iloc[keep].reset_index(drop=True), z[keep]
 
 
-def _match_joint(subpools, cond_names, match_on, center, scale, n, cap=1200):
+def _match_joint(subpools, cond_names, match_on, center, scale, n, cap=PAIRWISE_CAP):
     """Select the `n` best-matched pairs jointly across two conditions.
 
     Rather than fixing one condition and matching the other to it, this scores
@@ -79,20 +132,34 @@ def _match_joint(subpools, cond_names, match_on, center, scale, n, cap=1200):
     z1 = _zmat(s1, match_on, center, scale)
     s0, z0 = _cap_to_overlap(s0, z0, _exact_colmeans(z1), cap)
     s1, z1 = _cap_to_overlap(s1, z1, _exact_colmeans(z0), cap)
-    cost = np.round(np.sqrt(((z0[:, None, :] - z1[None, :, :]) ** 2).sum(axis=2)), 9)
+    cost = _round_dp_vec(np.sqrt(((z0[:, None, :] - z1[None, :, :]) ** 2).sum(axis=2)), 9)
     m0, m1 = cost.shape
     rows = np.repeat(np.arange(m0), m1)
     cols = np.tile(np.arange(m1), m0)
     order = np.lexsort((cols, rows, cost.ravel()))   # by cost, then row, then col
+    w0 = s0["word"].to_numpy()
+    w1 = s1["word"].to_numpy()
     used0 = np.zeros(m0, dtype=bool)
     used1 = np.zeros(m1, dtype=bool)
+    # Word-level tracking, as in the anchored matcher: overlapping condition
+    # windows can put one word in both subpools, where its self-pair costs
+    # exactly 0 and a mirrored re-pick (x with y, then y with x) would reuse
+    # both words. For disjoint conditions no word appears twice, so these skips
+    # never fire and the selection is unchanged.
+    used_words: set = set()
     pi, pj = [], []
     for idx in order:
         i = int(rows[idx]); j = int(cols[idx])
         if used0[i] or used1[j]:
             continue
+        if w0[i] == w1[j]:
+            continue
+        if w0[i] in used_words or w1[j] in used_words:
+            continue
         used0[i] = True
         used1[j] = True
+        used_words.add(w0[i])
+        used_words.add(w1[j])
         pi.append(i)
         pj.append(j)
         if len(pi) >= n:
@@ -125,7 +192,7 @@ def _maha_metric(z_pool: np.ndarray, ridge: float = 1e-6) -> np.ndarray:
     return np.linalg.inv(c)
 
 
-def _match_optimal(subpools, cond_names, match_on, center, scale, n, cap=1200):
+def _match_optimal(subpools, cond_names, match_on, center, scale, n, cap=PAIRWISE_CAP):
     """Optimal (minimum-total-distance) pairing for a two-condition design.
 
     Unlike the greedy ``joint`` matcher, this solves the linear-assignment problem
@@ -143,13 +210,38 @@ def _match_optimal(subpools, cond_names, match_on, center, scale, n, cap=1200):
     z1 = _zmat(s1, match_on, center, scale)
     s0, z0 = _cap_to_overlap(s0, z0, _exact_colmeans(z1), cap)
     s1, z1 = _cap_to_overlap(s1, z1, _exact_colmeans(z0), cap)
-    cost = np.round(np.sqrt(((z0[:, None, :] - z1[None, :, :]) ** 2).sum(axis=2)), 9)
+    cost = _round_dp_vec(np.sqrt(((z0[:, None, :] - z1[None, :, :]) ** 2).sum(axis=2)), 9)
+    # A word present in both subpools (overlapping condition windows) must not be
+    # paired with itself. The penalty is a large FINITE constant because both
+    # scipy's linear_sum_assignment and clue::solve_LSAP reject Inf, and their
+    # failure modes differ across engines; 1e9 dominates any real distance, and
+    # the selection is asserted same-word-free afterwards in match_stimuli.
+    # Must stay identical to the constant in match_optimal (matching.R).
+    same = s0["word"].to_numpy()[:, None] == s1["word"].to_numpy()[None, :]
+    cost[same] = 1e9
     row_ind, col_ind = linear_sum_assignment(cost)      # complete min-cost matching
     pair_cost = cost[row_ind, col_ind]
     order = sorted(range(len(row_ind)),
-                   key=lambda t: (pair_cost[t], int(row_ind[t]), int(col_ind[t])))[:n]
-    pi = [int(row_ind[t]) for t in order]
-    pj = [int(col_ind[t]) for t in order]
+                   key=lambda t: (pair_cost[t], int(row_ind[t]), int(col_ind[t])))
+    # The penalty steers the assignment away from self-pairs, but an overlapping
+    # design can still mirror a pair (x with y, then y with x), reusing both
+    # words. Greedy word-level dedup over the cost-ordered assignment keeps the
+    # selection identical for disjoint designs, where every assigned word is
+    # distinct.
+    w0 = s0["word"].to_numpy()
+    w1 = s1["word"].to_numpy()
+    used_words: set = set()
+    pi, pj = [], []
+    for t in order:
+        wi = w0[int(row_ind[t])]; wj = w1[int(col_ind[t])]
+        if wi == wj or wi in used_words or wj in used_words:
+            continue
+        used_words.add(wi)
+        used_words.add(wj)
+        pi.append(int(row_ind[t]))
+        pj.append(int(col_ind[t]))
+        if len(pi) >= n:
+            break
     a = s0.iloc[pi].copy(); a["condition"] = cond_names[0]
     b = s1.iloc[pj].copy(); b["condition"] = cond_names[1]
     common = [c for c in a.columns if c in b.columns]
@@ -159,7 +251,21 @@ def _match_optimal(subpools, cond_names, match_on, center, scale, n, cap=1200):
 
 
 def match_stimuli(pool: pd.DataFrame, design: dict, schema: dict, verbose: bool = False) -> pd.DataFrame:
-    conditions = design["conditions"]
+    """Match stimuli across conditions on the ``match_on`` dimensions.
+
+    Two policies govern degraded selections, each read from the design's
+    ``matching`` block with the schema as fallback: ``shortfall`` ("error", the
+    default, refuses to return fewer sets than requested; "allow" accepts the
+    shrink) and ``on_insufficient_tolerance`` ("relax", the default, widens an
+    undersupplied tolerance window to the full condition subpool and records the
+    relaxation in ``out.attrs["audit"]``; "error" refuses instead).
+    """
+    conditions = design.get("conditions")
+    if not conditions:
+        # Without this, the anchor lookup below dies with a KeyError here and a
+        # bare subscript error in R -- two different messages for the same mistake.
+        raise ValueError("lexsync: the design has no conditions; a matched design "
+                         "needs a conditions list.")
     match_on = list(design["match_on"])
     n = design.get("n_per_condition") or design.get("n_per_cell") or 20
     # Tolerance window k per dimension (window = anchor mean +/- k * SD). A design
@@ -167,10 +273,34 @@ def match_stimuli(pool: pd.DataFrame, design: dict, schema: dict, verbose: bool 
     # study's exact windows (Gonzalez Alonso et al. used SD/9 for frequency).
     tol_k = dict(schema["matching"].get("tolerance_k") or {})
     tol_k.update((design.get("matching") or {}).get("tolerance_k") or {})
+    shortfall = _resolve_policy(design, schema, "shortfall", "error", ("error", "allow"))
+    on_tol = _resolve_policy(design, schema, "on_insufficient_tolerance", "relax",
+                             ("relax", "error"))
 
     for d in match_on:
         if d not in pool.columns:
             raise ValueError(f"lexsync: dimension '{d}' is absent from the pool.")
+        k = tol_k.get(d, 2)
+        if isinstance(k, (int, float)) and k < 0:
+            # A negative k inverts the window (upper bound below the lower), which
+            # empties the candidate set and silently relaxes to the full pool --
+            # never intended.
+            raise ValueError(f"lexsync: tolerance_k for dimension '{d}' is negative; "
+                             f"tolerances must be zero or positive.")
+    cnames = [c["name"] for c in conditions]
+    dup_name = [x for x in cnames if cnames.count(x) > 1]
+    if dup_name:
+        raise ValueError(f"lexsync: condition name '{dup_name[0]}' appears more than "
+                         f"once; condition names must be unique.")
+    for c in conditions:
+        for d in (c.get("define_by") or {}):
+            # build_pool skips a column it does not recognise, so a misspelt
+            # define_by key would silently hand the condition the whole pool as
+            # its subpool and the manipulated contrast would vanish while
+            # matching proceeds.
+            if d not in pool.columns:
+                raise ValueError(f"lexsync: dimension '{d}' in condition '{c['name']}' "
+                                 f"is absent from the pool.")
 
     center = np.array([_exact_mean(pool[d].dropna()) for d in match_on], dtype=float)
     scale = np.array([_exact_sd(pool[d].dropna()) for d in match_on], dtype=float)
@@ -190,9 +320,15 @@ def match_stimuli(pool: pd.DataFrame, design: dict, schema: dict, verbose: bool 
         raise ValueError(f"lexsync: matching method '{method}' requires exactly two "
                          f"conditions, got {len(conditions)}.")
     if method == "joint" and len(conditions) == 2:
-        return _match_joint(subpools, cond_names, match_on, center, scale, n)
+        out = _match_joint(subpools, cond_names, match_on, center, scale, n)
+        _check_shortfall(out["set"].nunique(), n, shortfall)
+        _assert_distinct_words(out)
+        return out
     if method == "optimal" and len(conditions) == 2:
-        return _match_optimal(subpools, cond_names, match_on, center, scale, n)
+        out = _match_optimal(subpools, cond_names, match_on, center, scale, n)
+        _check_shortfall(out["set"].nunique(), n, shortfall)
+        _assert_distinct_words(out)
+        return out
     # A covariance-aware metric for Mahalanobis matching (None -> plain Euclidean).
     metric = _maha_metric(_zmat(pool, match_on, center, scale)) if method == "mahalanobis" else None
 
@@ -209,6 +345,7 @@ def match_stimuli(pool: pd.DataFrame, design: dict, schema: dict, verbose: bool 
     anchor = anchor_pool.iloc[idx1 - 1].copy()
     anchor["condition"] = cond_names[0]
     n_take = len(anchor)
+    _check_shortfall(n_take, n, shortfall)
     if verbose and n_take < n:
         print(f"lexsync: anchor condition '{cond_names[0]}' yields only {n_take} items; "
               f"n_per_condition is {n}.")
@@ -223,6 +360,7 @@ def match_stimuli(pool: pd.DataFrame, design: dict, schema: dict, verbose: bool 
 
     selected = [anchor]
     used_words = set(anchor["word"])
+    relaxations = []
 
     for ci in range(1, len(conditions)):
         cname = cond_names[ci]
@@ -236,9 +374,20 @@ def match_stimuli(pool: pd.DataFrame, design: dict, schema: dict, verbose: bool 
             keep &= (col >= win[d][0]) & (col <= win[d][1])
         cand_f = cand[keep]
         if len(cand_f) < n_take:
+            if on_tol == "error":
+                raise ValueError(f"lexsync: condition '{cname}' has {len(cand_f)} candidates "
+                                 f"within tolerance but {n_take} are needed; raise tolerance_k "
+                                 f"or set matching: on_insufficient_tolerance: relax to widen "
+                                 f"the window.")
             if verbose:
                 print(f"lexsync: condition '{cname}' has {len(cand_f)} candidates within tolerance "
                       f"(< {n_take} needed); relaxing the window.")
+            # The relaxation changes what "matched" means for this condition, so it
+            # is recorded on the result for the run log and datasheet, not only
+            # narrated.
+            relaxations.append({"condition": cname,
+                                "n_within_tolerance": int(len(cand_f)),
+                                "n_needed": int(n_take)})
             cand_f = cand
         if len(cand_f) < n_take:
             # The assignment below would otherwise re-pick an exhausted pool's first
@@ -262,13 +411,17 @@ def match_stimuli(pool: pd.DataFrame, design: dict, schema: dict, verbose: bool 
         used = np.zeros(len(cand_f), dtype=bool)
         pick = np.empty(n_take, dtype=int)
         for a in range(n_take):
-            # Round to absorb last-ULP floating-point differences between engines,
-            # so the stable tie-break below is itself reproducible across R and Python.
+            # Rounded to 9 dp through the shared rule so the stable tie-break below
+            # is itself reproducible across R and Python. np.round would pair
+            # numpy's scale-rint-unscale with R's decimal algorithm, a pairing
+            # io_utils documents as disagreeing at boundaries -- and on the
+            # mahalanobis path the inputs already differ in their last bits, so
+            # the absorber must be the same function in both engines.
             delta = z_cand - z_anchor[a]
             if metric is None:
-                dvec = np.round(np.sqrt((delta ** 2).sum(axis=1)), 9)
+                dvec = _round_dp_vec(np.sqrt((delta ** 2).sum(axis=1)), 9)
             else:
-                dvec = np.round(np.sqrt(np.maximum((delta @ metric * delta).sum(axis=1), 0.0)), 9)
+                dvec = _round_dp_vec(np.sqrt(np.maximum((delta @ metric * delta).sum(axis=1), 0.0)), 9)
             dvec = np.where(used, np.inf, dvec)
             # A relaxed window can admit a row whose matched dimension is missing, and
             # its distance is NaN. Rank those last, as R's order(na.last = TRUE) does:
@@ -288,6 +441,11 @@ def match_stimuli(pool: pd.DataFrame, design: dict, schema: dict, verbose: bool 
     common = [c for c in selected[0].columns if all(c in s.columns for s in selected)]
     out = pd.concat([s[common] for s in selected], ignore_index=True)
     out["set"] = list(range(1, n_take + 1)) * len(conditions)
+    _assert_distinct_words(out)
+    if relaxations:
+        # pd.concat and rbind both drop attrs, so the pipeline reads this
+        # immediately after the call, before any reshaping.
+        out.attrs["audit"] = {"window_relaxations": relaxations}
     return out
 
 
@@ -333,6 +491,14 @@ def select_continuous_stimuli(pool: pd.DataFrame, design: dict, schema: dict,
     n = design.get("n_per_condition") or design.get("n_per_cell") or 60
     tol_k = dict(schema["matching"].get("tolerance_k") or {})
     tol_k.update((design.get("matching") or {}).get("tolerance_k") or {})
+    shortfall = _resolve_policy(design, schema, "shortfall", "error", ("error", "allow"))
+    on_tol = _resolve_policy(design, schema, "on_insufficient_tolerance", "relax",
+                             ("relax", "error"))
+    for d in controls:
+        k = tol_k.get(d, 2)
+        if isinstance(k, (int, float)) and k < 0:
+            raise ValueError(f"lexsync: tolerance_k for dimension '{d}' is negative; "
+                             f"tolerances must be zero or positive.")
 
     def even_spread(df):
         # `key` is the deterministic tie-break when two rows share a predictor
@@ -366,13 +532,22 @@ def select_continuous_stimuli(pool: pd.DataFrame, design: dict, schema: dict,
         col = pool[d].to_numpy()
         keep &= (col >= win[d][0]) & (col <= win[d][1])
     filtered = pool[keep]
+    relaxations = []
     if len(filtered) < n:
+        if on_tol == "error":
+            raise ValueError(f"lexsync: {len(filtered)} items lie within the control windows "
+                             f"but {n} are needed; raise tolerance_k or set matching: "
+                             f"on_insufficient_tolerance: relax to widen the window.")
         if verbose:
             print(f"lexsync: {len(filtered)} items within the control windows "
                   f"(< {n} needed); relaxing to the full pool.")
+        relaxations.append({"condition": "continuous",
+                            "n_within_tolerance": int(len(filtered)),
+                            "n_needed": int(n)})
         filtered = pool
     # Pass 2: an even spread over the filtered pool is the selection.
     sel = even_spread(filtered).copy()
+    _check_shortfall(len(sel), n, shortfall, continuous=True)
     # A pair table already carries its own `condition` and `set`, which the Latin
     # square and the trial-order digest depend on, so the pair path passes
     # label=None and renumber_sets=False to leave both alone.
@@ -380,6 +555,8 @@ def select_continuous_stimuli(pool: pd.DataFrame, design: dict, schema: dict,
         sel["condition"] = label
     if renumber_sets:
         sel["set"] = list(range(1, len(sel) + 1))
+    if relaxations:
+        sel.attrs["audit"] = {"window_relaxations": relaxations}
     return sel
 
 

@@ -18,7 +18,8 @@ The path to the downloaded file, invisibly.
 }
 \description{
 Suitable for Connector A corpora that expose a delimited file. The URL's
-scheme and the downloaded file's first bytes are checked before the file is
-kept. The download is recorded so it can be cited; consult \code{\link[=list_corpora]{list_corpora()}}
-for the citation.
+scheme is checked first; the transfer then lands in a sidecar file that is
+renamed into place only after the size cap, the markup sniff and any
+\code{sha256} the registry entry carries have all passed. The download is
+recorded so it can be cited; consult \code{\link[=list_corpora]{list_corpora()}} for the citation.
 }

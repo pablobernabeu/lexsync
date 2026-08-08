@@ -1,3 +1,4 @@
+import hashlib
 import os
 import urllib.error
 import urllib.request
@@ -23,15 +24,55 @@ def registry():
         return yaml.safe_load(handle)
 
 
-def _temp_registry(tmp_path, url):
+def _temp_registry(tmp_path, url, sha256=None):
     """A one-entry registry pointing at `url`, so no test touches the network."""
-    reg = {"corpora": {"fake": {
+    entry = {
         "language": {"name": "Test", "iso": "xx"}, "connector": "openlexicon",
         "status": "supported", "openlexicon": url, "citation": "Test (2026).",
-    }}}
+    }
+    if sha256:
+        entry["sha256"] = sha256
+    reg = {"corpora": {"fake": entry}}
     path = tmp_path / "registry.yaml"
     path.write_text(yaml.safe_dump(reg), encoding="utf-8")
     return str(path)
+
+
+class _FakeResponse:
+    """Minimal stand-in for urlopen()'s response: the chunked reads and the
+    context management fetch_corpus() uses, and nothing else."""
+
+    def __init__(self, body):
+        self._body = body
+
+    def read(self, n):
+        chunk, self._body = self._body[:n], self._body[n:]
+        return chunk
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        return False
+
+
+def _mock_transport(monkeypatch, body):
+    """Serve `body` in place of the network; returns the recorded call."""
+    calls = {}
+
+    def fake_urlopen(url, timeout=None):
+        calls["url"], calls["timeout"] = url, timeout
+        return _FakeResponse(body)
+
+    monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+    return calls
+
+
+def _local_cache(tmp_path, monkeypatch):
+    cache = tmp_path / "cache"
+    cache.mkdir()
+    monkeypatch.setattr(corpora, "cache_dir", lambda: str(cache))
+    return cache
 
 
 # Pins the same contract as "fetch_corpus refuses an entry that registers only a
@@ -114,20 +155,13 @@ def test_starts_with_markup_decision_table(tmp_path, head, expected):
 
 # A URL answering 200 with an HTML page (a login wall, or a 404 page served with
 # the wrong status) must not be cached as <name>.csv, where it would resurface as
-# an unintelligible schema error. The R twin cannot be driven this far without a
-# seam through utils::download.file, so it pins the same verdict on the sniff.
+# an unintelligible schema error. Pins the same contract as "an HTML body is
+# refused and leaves nothing behind" in the R engine's test-corpora.R: the sniff
+# now runs on the sidecar, so not even a '.part' file may remain.
 def test_fetch_corpus_rejects_an_html_body_and_caches_nothing(tmp_path, monkeypatch):
     path = _temp_registry(tmp_path, "https://example.invalid/rotted.csv")
-    cache = tmp_path / "cache"
-    cache.mkdir()
-    monkeypatch.setattr(corpora, "cache_dir", lambda: str(cache))
-
-    def fake_urlretrieve(url, dest):
-        with open(dest, "wb") as handle:
-            handle.write(b"<!DOCTYPE html>\n<html><body>Not Found</body></html>\n")
-        return dest, None
-
-    monkeypatch.setattr(urllib.request, "urlretrieve", fake_urlretrieve)
+    cache = _local_cache(tmp_path, monkeypatch)
+    _mock_transport(monkeypatch, b"<!DOCTYPE html>\n<html><body>Not Found</body></html>\n")
     with pytest.raises(ValueError, match="HTML page, not a delimited file"):
         fetch_corpus("fake", registry_path=path)
     assert list(cache.iterdir()) == []
@@ -135,32 +169,92 @@ def test_fetch_corpus_rejects_an_html_body_and_caches_nothing(tmp_path, monkeypa
 
 def test_fetch_corpus_brands_a_failed_download(tmp_path, monkeypatch):
     path = _temp_registry(tmp_path, "https://example.invalid/gone.csv")
-    monkeypatch.setattr(corpora, "cache_dir", lambda: str(tmp_path))
+    cache = _local_cache(tmp_path, monkeypatch)
 
-    def fake_urlretrieve(url, dest):
+    def fake_urlopen(url, timeout=None):
         raise urllib.error.HTTPError(url, 404, "Not Found", None, None)
 
-    monkeypatch.setattr(urllib.request, "urlretrieve", fake_urlretrieve)
+    monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
     with pytest.raises(RuntimeError, match="could not download corpus 'fake'"):
         fetch_corpus("fake", registry_path=path)
+    assert list(cache.iterdir()) == []
 
 
-def test_fetch_corpus_keeps_a_delimited_body(tmp_path, monkeypatch):
+# Pins the same contract as "a transfer that dies mid-stream leaves nothing
+# behind" in the R engine's test-corpora.R: the pre-sidecar implementation
+# cached exactly such truncated bodies, to resurface later as schema errors.
+def test_fetch_corpus_removes_the_sidecar_when_the_transfer_dies(tmp_path, monkeypatch):
+    path = _temp_registry(tmp_path, "https://example.invalid/flaky.csv")
+    cache = _local_cache(tmp_path, monkeypatch)
+
+    class _DyingResponse(_FakeResponse):
+        def read(self, n):
+            if self._body:
+                return _FakeResponse.read(self, n)
+            raise OSError("connection reset")
+
+    monkeypatch.setattr(urllib.request, "urlopen",
+                        lambda url, timeout=None: _DyingResponse(b"word,freq_zipf\ndog,4"))
+    with pytest.raises(RuntimeError, match="could not download corpus 'fake'"):
+        fetch_corpus("fake", registry_path=path)
+    assert list(cache.iterdir()) == []
+
+
+# Pins the same contract as "fetch_corpus promotes a verified download and
+# removes the sidecar" in the R engine's test-corpora.R: the transfer lands in
+# '<dest>.part' and is renamed into place only after every check has passed.
+def test_fetch_corpus_promotes_a_verified_download(tmp_path, monkeypatch):
     path = _temp_registry(tmp_path, "https://example.invalid/good.csv")
-    cache = tmp_path / "cache"
-    cache.mkdir()
-    monkeypatch.setattr(corpora, "cache_dir", lambda: str(cache))
-
-    def fake_urlretrieve(url, dest):
-        with open(dest, "wb") as handle:
-            handle.write(b"word,freq_zipf\ndog,4.5\n")
-        return dest, None
-
-    monkeypatch.setattr(urllib.request, "urlretrieve", fake_urlretrieve)
+    cache = _local_cache(tmp_path, monkeypatch)
+    calls = _mock_transport(monkeypatch, b"word,freq_zipf\ndog,4.5\n")
     dest = fetch_corpus("fake", registry_path=path)
     assert os.path.basename(dest) == "fake.csv"
-    with open(dest, encoding="utf-8") as handle:
-        assert handle.read().startswith("word,freq_zipf")
+    assert [p.name for p in cache.iterdir()] == ["fake.csv"]
+    with open(dest, "rb") as handle:
+        assert handle.read() == b"word,freq_zipf\ndog,4.5\n"
+    # The R engine's download.file() honours options(timeout); this engine has
+    # no such ambient setting, so the transport must be given its own.
+    assert calls["timeout"] == 60
+
+
+# Pins the same contract as "an oversized download is aborted and leaves nothing
+# behind" in the R engine's test-corpora.R. The cap is lowered through its seam
+# because a genuine 200 MB fixture has no place in a test suite; the message
+# names the real limit regardless.
+def test_fetch_corpus_aborts_an_oversized_download(tmp_path, monkeypatch):
+    path = _temp_registry(tmp_path, "https://example.invalid/big.csv")
+    cache = _local_cache(tmp_path, monkeypatch)
+    monkeypatch.setattr(corpora, "_max_download_bytes", lambda: 16)
+    _mock_transport(monkeypatch, b"x" * 64)
+    with pytest.raises(ValueError, match="exceeded the 200 MB size limit"):
+        fetch_corpus("fake", registry_path=path)
+    assert list(cache.iterdir()) == []
+
+
+# Pins the same contract as "a checksum mismatch is refused and leaves nothing
+# behind" in the R engine's test-corpora.R. The field is optional and no shipped
+# registry entry carries one yet, so the contract is exercised through the
+# temporary registry alone.
+def test_fetch_corpus_refuses_a_checksum_mismatch(tmp_path, monkeypatch):
+    path = _temp_registry(tmp_path, "https://example.invalid/good.csv", sha256="0" * 64)
+    cache = _local_cache(tmp_path, monkeypatch)
+    _mock_transport(monkeypatch, b"word,freq_zipf\ndog,4.5\n")
+    with pytest.raises(ValueError, match="checksum mismatch for corpus 'fake'"):
+        fetch_corpus("fake", registry_path=path)
+    assert list(cache.iterdir()) == []
+
+
+# Pins the same contract as "a matching checksum is accepted" in the R engine's
+# test-corpora.R: both engines must derive the same digest from the same bytes.
+def test_fetch_corpus_accepts_a_matching_checksum(tmp_path, monkeypatch):
+    body = b"word,freq_zipf\ndog,4.5\n"
+    path = _temp_registry(tmp_path, "https://example.invalid/good.csv",
+                          sha256=hashlib.sha256(body).hexdigest())
+    cache = _local_cache(tmp_path, monkeypatch)
+    _mock_transport(monkeypatch, body)
+    dest = fetch_corpus("fake", registry_path=path)
+    assert [p.name for p in cache.iterdir()] == ["fake.csv"]
+    assert os.path.basename(dest) == "fake.csv"
 
 
 def test_list_corpora_surfaces_registry_status():

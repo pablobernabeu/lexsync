@@ -45,6 +45,34 @@ test_that("cohens_d_ci is a point for a constant dimension", {
   expect_equal(c(ci$d, ci$ci_low, ci$ci_high), c(0, 0, 0))
 })
 
+test_that("a zero pooled SD with unequal means is undefined, not zero", {
+  # Two conditions each constant at a different value differ by infinitely many
+  # SDs: reporting d = 0 (perfect balance) inverted the truth. The equal-constant
+  # case is pinned by the zh_freqcontrast golden and must stay exactly zero.
+  x <- c(2, 2, 2, 2); y <- c(3, 3, 3, 3)
+  expect_true(is.na(cohens_d(x, y)))
+  ci <- cohens_d_ci(x, y)
+  expect_true(all(is.na(c(ci$d, ci$ci_low, ci$ci_high))))
+  expect_false(tost_equiv(x, y)$equivalent)  # already correct on this branch
+  expect_equal(variance_ratio(y, x), 1)      # unchanged: both spreads are zero
+  expect_equal(cohens_d(x, x), 0)            # equal constants stay exactly zero
+})
+
+test_that("match_report carries an undefined d as a missing cell", {
+  # Serialised as an empty CSV cell and a null JSON value, exactly like the other
+  # missing statistics, and identically in both engines.
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  stim <- data.frame(word = c("aa", "bb", "cc", "dd"),
+                     condition = c("a", "a", "b", "b"),
+                     length = c(2, 2, 3, 3), stringsAsFactors = FALSE)
+  cmp <- match_report(stim, "length", schema)$comparisons
+  expect_true(is.na(cmp$cohens_d))
+  expect_true(is.na(cmp$d_ci_low))
+  expect_true(is.na(cmp$d_ci_high))
+  expect_false(cmp$equivalent)
+  expect_equal(cmp$var_ratio, 1)
+})
+
 test_that("variance_ratio flags unequal spread", {
   expect_equal(variance_ratio(c(1, 2, 3, 4), c(1, 2, 3, 4)), 1)       # equal spread
   expect_gt(variance_ratio(c(0, 5, 10, 15), c(4, 5, 6, 7)), 1)        # condition wider

@@ -4,7 +4,15 @@
 \alias{match_joint}
 \title{Joint nearest-pair matching for a two-condition design}
 \usage{
-match_joint(subpools, cond_names, match_on, center, scale_, n, cap = 1200L)
+match_joint(
+  subpools,
+  cond_names,
+  match_on,
+  center,
+  scale_,
+  n,
+  cap = .PAIRWISE_CAP
+)
 }
 \description{
 Selects the \code{n} best-matched pairs across the two conditions, keeping only

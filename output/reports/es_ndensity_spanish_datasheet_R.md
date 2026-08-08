@@ -11,7 +11,7 @@
 - **Cross-engine determinism:** byte-identical
 - **Counterbalancing:** factorial, 1 list(s)
 - **Items:** 160 rows across 2 conditions (dense_neighbourhood, sparse_neighbourhood)
-- **Seed:** 2026  |  **Versions:** engine R, lexsync 0.1.0, R 4.6.1, readr 2.2.0, stringdist 0.9.17, jsonlite 2.0.0, digest 0.6.39
+- **Seed:** 2026  |  **Versions:** engine R, lexsync 0.1.0, R 4.6.1, readr 2.2.0, stringdist 0.9.17, jsonlite 2.0.0, digest 0.6.39, yaml 2.3.12, stringi 1.8.7, os Windows x86-64
 
 ## Selection transparency
 
@@ -30,11 +30,11 @@
 ## Suggested analysis
 
 - **Model:** `response ~ condition + (1 + condition | subject) + (1 | item)` -- where the response is the trial outcome (e.g. reaction time or accuracy).
-- Crossed random effects for subjects and items guard against the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). Begin with this maximal structure (Barr et al., 2013) and reduce it if the model does not converge (Matuschek et al., 2017); fit with lme4 in R or pymer4/statsmodels in Python.
+- Crossed random effects for subjects and items guard against the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). Begin with this maximal structure (Barr et al., 2013) and reduce it if the model does not converge (Matuschek et al., 2017). The formula is lme4 syntax, for lme4 in R or pymer4 in Python; statsmodels MixedLM cannot take it directly and needs the random effects restated in its own arguments. The equivalence tests in the realised control are post-selection diagnostics on deterministically selected items, not inferential tests over a sample.
 
 ## Methods paragraph
 
-80 items per condition were selected from the Spanish lexicon (wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md) and matched item by item on length, frequency using lexsync's joint matcher. The realised control was close. The largest standardised difference on any matched dimension was 0.00 (90% CI [-0.26, 0.26]), within the 0.5-SD equivalence bound. The smallest condition was selected from 1137 eligible candidates, and the selection was deterministic and blind to any outcome measure. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.0).
+80 items per condition were selected from the Spanish lexicon (wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md) and matched item by item on length, frequency using lexsync's joint matcher. The realised control was close. The largest standardised difference on any matched dimension was 0.00 (90% CI [-0.26, 0.26]), within the 0.5-SD equivalence bound. The smallest condition was selected from 1137 eligible candidates, and the selection was deterministic and blind to any outcome measure. Each candidate pool exceeding the pairwise cap was reduced to the 1200 candidates nearest the other condition's centroid before pairing. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.0).
 
 ## Pre-registration template
 
@@ -54,7 +54,7 @@
 - Paradigm: factorial
 
 ### Materials (from the lexsync datasheet)
-80 items per condition were selected from the Spanish lexicon (wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md) and matched item by item on length, frequency using lexsync's joint matcher. The realised control was close. The largest standardised difference on any matched dimension was 0.00 (90% CI [-0.26, 0.26]), within the 0.5-SD equivalence bound. The smallest condition was selected from 1137 eligible candidates, and the selection was deterministic and blind to any outcome measure. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.0).
+80 items per condition were selected from the Spanish lexicon (wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md) and matched item by item on length, frequency using lexsync's joint matcher. The realised control was close. The largest standardised difference on any matched dimension was 0.00 (90% CI [-0.26, 0.26]), within the 0.5-SD equivalence bound. The smallest condition was selected from 1137 eligible candidates, and the selection was deterministic and blind to any outcome measure. Each candidate pool exceeding the pairwise cap was reduced to the 1200 candidates nearest the other condition's centroid before pairing. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.0).
 
 ### Sampling plan
 - Sample size and justification:
@@ -62,7 +62,7 @@
 
 ### Analysis plan
 - Statistical model: response ~ condition + (1 + condition | subject) + (1 | item)
-  (Crossed random effects for subjects and items guard against the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). Begin with this maximal structure (Barr et al., 2013) and reduce it if the model does not converge (Matuschek et al., 2017); fit with lme4 in R or pymer4/statsmodels in Python.)
+  (Crossed random effects for subjects and items guard against the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). Begin with this maximal structure (Barr et al., 2013) and reduce it if the model does not converge (Matuschek et al., 2017). The formula is lme4 syntax, for lme4 in R or pymer4 in Python; statsmodels MixedLM cannot take it directly and needs the random effects restated in its own arguments. The equivalence tests in the realised control are post-selection diagnostics on deterministically selected items, not inferential tests over a sample.)
 - Inference criteria:
 - Treatment of items (e.g. items as a random factor):
 

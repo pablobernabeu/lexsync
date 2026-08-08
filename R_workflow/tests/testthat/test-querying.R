@@ -188,3 +188,98 @@ test_that("missing required columns raise an informative error", {
   utils::write.csv(data.frame(notword = "x"), bad, row.names = FALSE)
   expect_error(load_lexicon(bad, schema), "required column")
 })
+
+# Pins the same contract as test_load_items_refuses_missing_cells in the Python
+# engine's test_querying.py. An NA used to flow into cryptic downstream failures
+# here, while Python stringified it to the literal 'nan' and carried on. The two
+# readers reach the refusal at different stages (readr reads a blank or 'NA' or
+# all-whitespace cell as NA; pandas keeps a quoted whitespace cell as text until
+# the trim), but the message is the same.
+test_that("load_items refuses missing or blank cells", {
+  cases <- list(
+    "blank-item"           = list(body = c("item,condition,target", ",related,cat"),
+                                  col = "item"),
+    "blank-condition"      = list(body = c("item,condition,target", "i1,,cat"),
+                                  col = "condition"),
+    "blank-target"         = list(body = c("item,condition,target", "i1,related,"),
+                                  col = "target"),
+    "whitespace-condition" = list(body = c("item,condition,target", "i1,\"   \",cat"),
+                                  col = "condition"),
+    "literal-NA"           = list(body = c("item,condition,target", "i1,NA,cat"),
+                                  col = "condition")
+  )
+  for (nm in names(cases)) {
+    path <- tempfile(fileext = ".csv")
+    on.exit(unlink(path), add = TRUE)
+    writeLines(cases[[nm]]$body, path)
+    expect_error(load_items(path, "target"),
+                 sprintf(paste("lexsync: the items table has missing value(s) in column '%s';",
+                               "every item, condition and presented field must be filled."),
+                         cases[[nm]]$col),
+                 fixed = TRUE, info = nm)
+  }
+})
+
+# The boundary of the refusal above: both readers treat only '' and 'NA' as
+# missing, so a literal 'nan' is a kept value and must stay one.
+test_that("load_items keeps a literal 'nan' label", {
+  path <- tempfile(fileext = ".csv")
+  on.exit(unlink(path), add = TRUE)
+  writeLines(c("item,condition,target", "i1,nan,cat"), path)
+  items <- load_items(path, "target")
+  expect_identical(items$condition, "nan")
+})
+
+# Pins the same contract as test_load_items_refuses_a_duplicate_item_condition_pair
+# in the Python engine's test_querying.py: it is the pair that must be unique, so
+# the same item under another condition passes.
+test_that("load_items refuses a duplicate item and condition pair", {
+  path <- tempfile(fileext = ".csv")
+  on.exit(unlink(path), add = TRUE)
+  writeLines(c("item,condition,target",
+               "i1,related,cat", "i1,unrelated,dog", "i1,related,cow"), path)
+  expect_error(load_items(path, "target"),
+               paste("lexsync: the items table repeats item 'i1' for condition 'related';",
+                     "each item and condition pair may appear once."),
+               fixed = TRUE)
+})
+
+# Pins the same contract as test_load_items_keeps_numeric_ids_as_written in the
+# Python engine's test_querying.py. `item` is now read as text: left to
+# inference, both readers number-parsed '01' down to 1 (and pandas
+# float-promoted the whole column to '1.0' ids whenever any cell was missing),
+# so ids must survive exactly as written.
+test_that("load_items keeps numeric ids as written", {
+  path <- tempfile(fileext = ".csv")
+  on.exit(unlink(path), add = TRUE)
+  writeLines(c("item,condition,target", "01,related,cat", "2,related,dog"), path)
+  items <- load_items(path, "target")
+  expect_identical(items$item, c("01", "2"))
+  expect_identical(items$set, c(1L, 2L))
+})
+
+# Pins the same contract as test_build_pool_refuses_a_reversed_range in the
+# Python engine's test_querying.py: c(7, 3) used to empty the pool without a word.
+test_that("build_pool refuses a reversed range", {
+  df <- data.frame(word = letters[1:5], frequency = 1:5, stringsAsFactors = FALSE)
+  expect_error(build_pool(df, list(frequency = c(7, 3))),
+               "lexsync: filter 'frequency' has a reversed range; give it as [low, high].",
+               fixed = TRUE)
+})
+
+# Pins the same contract as test_build_pool_refuses_a_non_finite_bound in the
+# Python engine's test_querying.py: YAML's .nan/.inf used to drop every row silently.
+test_that("build_pool refuses a non-finite bound", {
+  df <- data.frame(word = letters[1:5], frequency = 1:5, stringsAsFactors = FALSE)
+  for (bad in list(c(NaN, 4), c(2, Inf))) {
+    expect_error(build_pool(df, list(frequency = bad)),
+                 "lexsync: filter 'frequency' has a non-finite bound; ranges need finite numbers.",
+                 fixed = TRUE)
+  }
+})
+
+# Equal bounds are a point, not a reversal: the zh design filters with [2, 2].
+test_that("build_pool keeps a degenerate range", {
+  df <- data.frame(word = letters[1:5], frequency = 1:5, stringsAsFactors = FALSE)
+  expect_identical(build_pool(df, list(frequency = c(2, 2)))$word, "b")
+})

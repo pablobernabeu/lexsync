@@ -24,12 +24,12 @@ lexicon_schema:
 # are computed at load time from the orthographic form, identically in R and
 # Python (Coltheart's N and OLD20 from Levenshtein distances).
 dimensions:
-  length:    { type: derived, compute: n_letters,    unit: 'letters' }
+  length:    { type: derived, compute: n_letters,    unit: 'characters' }
   frequency: { type: column,  column: freq_zipf,     unit: 'Zipf' }
   n_density: { type: derived, compute: coltheart_n,  unit: 'neighbours' }
   old20:     { type: derived, compute: old20,        unit: 'mean Levenshtein distance' }
   n_syllables: { type: derived, compute: vowel_groups,           unit: 'syllables (orthographic estimate)' }
-  bigram_freq: { type: derived, compute: mean_bigram_probability, unit: 'mean positional bigram probability' }
+  bigram_freq: { type: derived, compute: mean_bigram_probability, unit: 'mean bigram probability (type-based, non-positional)' }
 
 # ---- Semantic and other external dimensions --------------------------------
 # The dimensions above are computed from the orthographic form or read from the
@@ -83,6 +83,12 @@ matching:
     frequency: 1.0
     n_density: 2.0
     old20: 2.0
+  # Selection-size policies; a design may override either under its own matching:
+  # block. shortfall errors by default because the datasheet and the generated
+  # methods paragraph state the requested n, so a silently smaller set would
+  # leave the record misstating the materials.
+  shortfall: error                   # what to do when fewer sets than n_per_condition can be selected: error | allow
+  on_insufficient_tolerance: relax   # when a condition has too few candidates inside the tolerance window: relax | error
   # Stage 2 ranks candidates by standardised multivariate distance; ties are
   # broken by (distance, word bytes, id), fixed in matching.py / matching.R.
   # That order is not configurable: the byte-order tie-break is what makes the

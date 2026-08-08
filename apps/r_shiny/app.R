@@ -87,6 +87,30 @@ clean_yaml <- function(design) yaml::as.yaml(design, indent = 2)
 positive_tolerances <- function(values)
   Filter(function(k) length(k) == 1L && !is.na(k) && k > 0, values)
 
+#' Map each repository-bundled input the design names to its source file
+#'
+#' A design built from a bundled corpus or example item table records the
+#' repository-relative path (corpora/derived/<x>.csv, items/<x>.csv). Outside the
+#' repository that path resolves to nothing, so the export carries the file at
+#' exactly the path the design records.
+#'
+#' @param design The design as shown to the user, carrying repository-relative paths.
+#' @return Named list: design-relative path -> absolute path under the repository root.
+bundled_inputs <- function(design) {
+  out <- list()
+  lexicon <- design$lexicon
+  if (is.character(lexicon) && length(lexicon) == 1L && startsWith(lexicon, "corpora/derived/")) {
+    full <- file.path(REPO_ROOT, lexicon)
+    if (file.exists(full)) out[[lexicon]] <- full
+  }
+  items_path <- design$items$path
+  if (is.character(items_path) && length(items_path) == 1L && startsWith(items_path, "items/")) {
+    full <- file.path(REPO_ROOT, items_path)
+    if (file.exists(full)) out[[items_path]] <- full
+  }
+  out
+}
+
 #' Archive the contents of `outdir` into `file`
 #'
 #' Prefers the zip package, which is pure C: utils::zip shells out to the binary
@@ -427,6 +451,17 @@ server <- function(input, output, session) {
     content = function(file) {
       b <- bundle()
       writeLines(clean_yaml(b$design), file.path(b$outdir, b$cfg))
+      # The exported reproduction code passes schema_path = "config/schema.yaml",
+      # so the archive carries the schema the run actually used (the installed
+      # package copy) at that path, plus any repository-bundled input the design
+      # names at its design-relative path. Copied under outdir, where the zip
+      # walk picks them up like any other artefact.
+      extras <- c(list("config/schema.yaml" = SCHEMA_PATH), bundled_inputs(b$design))
+      for (rel in names(extras)) {
+        dest <- file.path(b$outdir, rel)
+        dir.create(dirname(dest), recursive = TRUE, showWarnings = FALSE)
+        file.copy(extras[[rel]], dest, overwrite = TRUE)
+      }
       write_bundle_zip(file, b$outdir)
     }
   )

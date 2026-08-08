@@ -2,7 +2,7 @@
 % Please edit documentation in R/querying.R
 \name{add_bigram_frequency}
 \alias{add_bigram_frequency}
-\title{Mean positional bigram probability, a phonotactic-probability proxy}
+\title{Mean bigram probability (type-based, non-positional), a phonotactic-probability proxy}
 \usage{
 add_bigram_frequency(df, reference = NULL)
 }

@@ -218,7 +218,10 @@ write_lines_lf <- function(x, path) {
 # trade-off the balance optimiser's quantisation already makes, and it is the right way
 # round: reproducible across engines matters more here than agreeing with what a
 # calculator would say about a value that was never exactly a half.
-# Must stay identical to _round_dp in python_workflow/src/lexsync/io_utils.py.
+# Must stay identical to _round_dp in python_workflow/src/lexsync/io_utils.py. This
+# function is already vectorised, so it is also the twin of the Python engine's
+# _round_dp_vec, which applies the same arithmetic over a whole numpy array; a
+# change here must land in both of them.
 #' @keywords internal
 .round_dp <- function(x, dp) {
   p <- 10^dp
@@ -263,8 +266,12 @@ sha256_file <- function(path) {
 # One predicate rather than four copies of the same expression. It was repeated
 # verbatim in run_pipeline.R, datasheet.R and both Python twins, which is how a
 # `continuous:` block under `items.source: table` came to be silently inert in all
-# four places at once. `generate` stays excluded deliberately: a continuous block
-# there would push a word/pseudoword frame into the selector.
+# four places at once. `pool` belongs in the allowed set because run_pipeline's
+# corpus/pool branch handles continuous selection generically; leaving it out sent a
+# continuous design over a supplied pool to the conditions matcher, which then failed
+# with a different obscure error in each engine. `generate` stays excluded
+# deliberately: a continuous block there would push a word/pseudoword frame into the
+# selector.
 # Must stay identical to _is_continuous in python_workflow/src/lexsync/io_utils.py.
 #' @keywords internal
 .is_continuous <- function(design) {
@@ -273,7 +280,7 @@ sha256_file <- function(path) {
     stop("lexsync: a 'continuous' block cannot be combined with items.source 'generate'.",
          call. = FALSE)
   }
-  !is.null(design$continuous) && src %in% c("corpus", "table")
+  !is.null(design$continuous) && src %in% c("corpus", "pool", "table")
 }
 
 # Render one component of a hash key. Never interpolate a number directly: R

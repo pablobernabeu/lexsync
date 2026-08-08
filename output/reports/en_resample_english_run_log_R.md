@@ -1,8 +1,8 @@
 # lexsync run log: en_resample
 
 - Engine: R 4.6.1
-- Started: 2026-08-01 00:33:43.365048
-- Finished: 2026-08-01 00:33:44.258217
+- Started: 2026-08-07 22:50:01.460467
+- Finished: 2026-08-07 22:50:05.096282
 
 ## Run metadata
 
@@ -15,46 +15,46 @@
 
 ## Steps
 
-- **2026-08-01 00:33:43.368005**: loading lexicon 'corpora/derived/en.csv'
-- **2026-08-01 00:33:43.702364**: lexicon loaded: 30000 words
+- **2026-08-07 22:50:01.466781**: loading lexicon 'corpora/derived/en.csv'
+- **2026-08-07 22:50:02.408453**: lexicon loaded: 30000 words
     - words: 30000
-- **2026-08-01 00:33:43.711746**: pool after filters: 10205 words
+- **2026-08-07 22:50:02.435698**: pool after filters: 10205 words
     - pool: 10205
-- **2026-08-01 00:33:43.94419**: resampled 3 disjoint matched sets (240 items total)
+- **2026-08-07 22:50:03.350255**: resampled 3 disjoint matched sets (240 items total)
     - conditions: high_frequency, low_frequency
-- **2026-08-01 00:33:43.96778**: equivalence low_frequency vs high_frequency on 'length': d = 0.04 [-0.17, 0.26], TOST p = 0.000 (equivalent)
-- **2026-08-01 00:33:43.971198**: equivalence low_frequency vs high_frequency on 'frequency': d = 5.38 [5.17, 5.59], TOST p = 1.000 (not shown equivalent)
-- **2026-08-01 00:33:43.973382**: equivalence low_frequency vs high_frequency on 'n_density': d = 0.03 [-0.18, 0.24], TOST p = 0.000 (equivalent)
-- **2026-08-01 00:33:43.975497**: equivalence low_frequency vs high_frequency on 'old20': d = 0.02 [-0.20, 0.23], TOST p = 0.000 (equivalent)
-- **2026-08-01 00:33:44.017241**: wrote 'en_resample_english_stimuli_R.csv'
+- **2026-08-07 22:50:03.403692**: equivalence low_frequency vs high_frequency on 'length': d = 0.04 [-0.17, 0.26], TOST p = 0.000 (equivalent)
+- **2026-08-07 22:50:03.466107**: equivalence low_frequency vs high_frequency on 'frequency': d = 5.38 [5.17, 5.59], TOST p = 1.000 (not shown equivalent)
+- **2026-08-07 22:50:03.486193**: equivalence low_frequency vs high_frequency on 'n_density': d = 0.03 [-0.18, 0.24], TOST p = 0.000 (equivalent)
+- **2026-08-07 22:50:03.505082**: equivalence low_frequency vs high_frequency on 'old20': d = 0.02 [-0.20, 0.23], TOST p = 0.000 (equivalent)
+- **2026-08-07 22:50:04.115019**: wrote 'en_resample_english_stimuli_R.csv'
     - path: output/stimuli/en_resample_english_stimuli_R.csv
     - rows: 240
     - md5: 32440a4d5753ad21bf307a389773cd05
-- **2026-08-01 00:33:44.031212**: wrote 'en_resample_english_descriptives_R.csv'
+- **2026-08-07 22:50:04.161869**: wrote 'en_resample_english_descriptives_R.csv'
     - path: output/reports/en_resample_english_descriptives_R.csv
     - rows: 8
     - md5: 19a03d1d55d822bdbb75c074c9f3bdc0
-- **2026-08-01 00:33:44.042348**: wrote 'en_resample_english_comparisons_R.csv'
+- **2026-08-07 22:50:04.21027**: wrote 'en_resample_english_comparisons_R.csv'
     - path: output/reports/en_resample_english_comparisons_R.csv
     - rows: 4
     - md5: 2d175506dbcccca4ee454044f2581c7e
-- **2026-08-01 00:33:44.153337**: wrote 'en_resample_english_psychopy.py'
+- **2026-08-07 22:50:04.696929**: wrote 'en_resample_english_psychopy.py'
     - path: output/experiments/en_resample_english_psychopy.py
     - rows: NA
     - md5: 5dfa6ea79de17442db4c7c2c81e2e589
-- **2026-08-01 00:33:44.160005**: wrote 'en_resample_english.osexp'
+- **2026-08-07 22:50:04.723683**: wrote 'en_resample_english.osexp'
     - path: output/experiments/en_resample_english.osexp
     - rows: NA
     - md5: a2da54b9b205406c3555856687996ccd
-- **2026-08-01 00:33:44.167925**: wrote 'en_resample_english.html'
+- **2026-08-07 22:50:04.746899**: wrote 'en_resample_english.html'
     - path: output/experiments/en_resample_english.html
     - rows: NA
     - md5: 78009137a81b18cf1a670265f0087d0d
-- **2026-08-01 00:33:44.244696**: wrote 'en_resample_english_datasheet_R.json'
+- **2026-08-07 22:50:05.03119**: wrote 'en_resample_english_datasheet_R.json'
     - path: output/reports/en_resample_english_datasheet_R.json
     - rows: NA
-    - md5: 03346c6837fc018009b11436947872b6
-- **2026-08-01 00:33:44.251691**: wrote 'en_resample_english_datasheet_R.md'
+    - md5: 59258dde51104ed58bf313d041d66596
+- **2026-08-07 22:50:05.071558**: wrote 'en_resample_english_datasheet_R.md'
     - path: output/reports/en_resample_english_datasheet_R.md
     - rows: NA
-    - md5: e0dbc50f917c613d22cf88c0d5cee521
+    - md5: 187f9a62bd23726a9006dad79d2751d1

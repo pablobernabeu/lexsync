@@ -13,6 +13,7 @@ import os
 import re
 from decimal import Decimal
 
+import numpy as np
 import pandas as pd
 import yaml
 
@@ -269,6 +270,39 @@ def _round_dp(x, dp: int) -> float:
     return (t + adj) / p
 
 
+def _round_dp_vec(x, dp: int):
+    """The shared rounder over a whole numpy array at once.
+
+    Elementwise identical to _round_dp by construction: the same scale, truncate
+    toward zero and half-away-from-zero step, in the same operations (*, -, /,
+    trunc, abs, comparison), each of which IEEE-754 either mandates correctly
+    rounded or makes exact -- so proving the scalar right proves this right, and
+    both engines still compute the same double from the same input. It exists so
+    a whole distance vector can be rounded without a Python-level loop.
+
+    NaN and +/-Inf pass through unchanged (np.round semantics): a matcher
+    distance vector carries NaN for a row missing a dimension and Inf as a
+    used-row sentinel, and neither must come out altered. The final mask also
+    restores the input where the scaled value overflowed, exactly as the R
+    twin's is.finite() override does.
+    Must stay identical to .round_dp in R_workflow/R/io_utils.R, which is
+    already vectorised and so is the twin of both this and _round_dp.
+    """
+    v = np.asarray(x, dtype=float)
+    p = 10.0 ** dp
+    # Inf - Inf and an overflowing scale signal "invalid"/"overflow" on the way
+    # to values the final mask discards, so the warnings are noise here.
+    with np.errstate(invalid="ignore", over="ignore"):
+        y = v * p
+        t = np.trunc(y)
+        r = y - t
+        # The step is away from zero, so a negative value moves down, not up.
+        adj = np.where(np.abs(r) >= 0.5, np.where(y > 0, 1.0, -1.0), 0.0)
+        # abs(y) < Inf is is.finite(y) in the permitted operations: the
+        # comparison fails for NaN and for +/-Inf, so those rows keep the input.
+        return np.where(np.abs(y) < np.inf, (t + adj) / p, v)
+
+
 def hash_file(path: str):
     """MD5 digest of a file, for provenance logging (matches the R engine)."""
     if not os.path.exists(path):
@@ -299,15 +333,19 @@ def _is_continuous(design: dict) -> bool:
     One predicate rather than four copies of the same expression. It was repeated
     verbatim in run_pipeline.py, datasheet.py and both R twins, which is how a
     ``continuous:`` block under ``items.source: table`` came to be silently inert in
-    all four places at once. ``generate`` stays excluded deliberately: a continuous
-    block there would push a word/pseudoword frame into the selector. Must stay
-    identical to .is_continuous in R_workflow/R/io_utils.R.
+    all four places at once. ``pool`` belongs in the allowed set because
+    run_pipeline's corpus/pool branch handles continuous selection generically;
+    leaving it out sent a continuous design over a supplied pool to the conditions
+    matcher, which then failed with a different obscure error in each engine.
+    ``generate`` stays excluded deliberately: a continuous block there would push a
+    word/pseudoword frame into the selector. Must stay identical to .is_continuous
+    in R_workflow/R/io_utils.R.
     """
     src = ((design or {}).get("items") or {}).get("source", "corpus")
     if design.get("continuous") and src == "generate":
         raise ValueError(
             "lexsync: a 'continuous' block cannot be combined with items.source 'generate'.")
-    return bool(design.get("continuous")) and src in ("corpus", "table")
+    return bool(design.get("continuous")) and src in ("corpus", "pool", "table")
 
 def _key_part(x) -> str:
     """Render one component of a hash key.
@@ -396,8 +434,27 @@ def slugify(*parts) -> str:
 def read_config(path: str) -> dict:
     if not os.path.exists(path):
         raise FileNotFoundError(f"lexsync: configuration not found: '{path}'")
+
+    # yaml.safe_load keeps the LAST value for a repeated mapping key, silently;
+    # the R engine's yaml::read_yaml() rejects the key by its libyaml parser
+    # default. A config one engine accepts and the other refuses is a hole in
+    # the twin-engine contract, so this loader refuses too. The R message comes
+    # from the C parser and cannot be matched byte for byte; behavioural parity
+    # -- both engines refuse -- is the contract here, pinned by the twin tests.
+    class _RefuseDuplicateKeys(yaml.SafeLoader):
+        def construct_mapping(self, node, deep=False):
+            seen = set()
+            for key_node, _ in node.value:
+                key = self.construct_object(key_node, deep=deep)
+                if key in seen:
+                    raise ValueError(
+                        "lexsync: duplicate mapping key '%s' in %s; each key "
+                        "may appear once." % (key, path))
+                seen.add(key)
+            return super().construct_mapping(node, deep)
+
     with open(path, encoding="utf-8") as handle:
-        return yaml.safe_load(handle)
+        return yaml.load(handle, Loader=_RefuseDuplicateKeys)
 
 
 # Control characters (incl. tab/newline/carriage return) are rejected in stimulus

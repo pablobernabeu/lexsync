@@ -1,7 +1,8 @@
 import pandas as pd
 
+from lexsync.io_utils import _round_dp
 from lexsync.scripting import (_language_tag, assign_triggers, export_jspsych,
-                               export_opensesame, export_psychopy)
+                               export_opensesame, export_psychopy, render_events)
 
 
 def _stim():
@@ -17,6 +18,38 @@ def test_triggers_in_range():
     s = _stim()
     assert s["item_trigger"].between(40, 239).all()
     assert set(s["condition_trigger"]) == {101, 102}
+
+
+def test_more_than_200_item_sets_discloses_the_trigger_wrap(capsys):
+    s = pd.DataFrame({"condition": ["a"] * 201, "set": list(range(1, 202))})
+    out = assign_triggers(s)
+    assert ("lexsync: 201 item sets exceed the 200-code trigger range; "
+            "item codes wrap and repeat.") in capsys.readouterr().out
+    assert out["item_trigger"].between(40, 239).all()
+    # 201 sets into 200 codes: exactly one code is reused, and it is the first.
+    assert int(out["item_trigger"].duplicated().sum()) == 1
+    assert out.loc[out["item_trigger"].duplicated(), "item_trigger"].tolist() == [40]
+
+
+def test_exactly_200_item_sets_stays_silent(capsys):
+    out = assign_triggers(pd.DataFrame({"condition": ["a"] * 200,
+                                        "set": list(range(1, 201))}))
+    assert capsys.readouterr().out == ""
+    assert int(out["item_trigger"].duplicated().sum()) == 0
+
+
+def test_timeouts_round_through_the_shared_rule():
+    # An integer timeout_ms divides to at most three decimals, so rounding is the
+    # identity and no committed experiment byte moves.
+    r = render_events([{"type": "response", "timeout_ms": 1500}], {}, 60)
+    assert r[0]["timeout"] == 1.5
+    # A fractional timeout goes through _round_dp, the rounder both engines share;
+    # 7812.5 ms lands on a 3-dp halfway case where the engines' own rounders differ.
+    r = render_events([{"type": "response", "timeout_ms": 1500.0005}], {}, 60)
+    assert r[0]["timeout"] == _round_dp(1500.0005 / 1000.0, 3)
+    r = render_events([{"type": "question", "timeout_ms": 7812.5}], {}, 60)
+    assert r[0]["timeout"] == _round_dp(7812.5 / 1000.0, 3)
+    assert r[0]["timeout"] != round(7812.5 / 1000.0, 3)
 
 
 def test_psychopy_export_is_frame_locked(schema, tmp_path):

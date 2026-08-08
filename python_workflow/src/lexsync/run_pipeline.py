@@ -10,6 +10,7 @@ scripts from the design's trial-event sequence. run_all loops over every design.
 from __future__ import annotations
 
 import glob
+import hashlib
 import os
 
 from . import logging as runlog
@@ -18,7 +19,8 @@ from .counterbalancing import balance_lists, counterbalance
 from .datasheet import build_datasheet, write_datasheet
 from .generation import build_lexdec_stimuli
 from .io_utils import _is_continuous, read_config, slugify, write_csv_utf8
-from .matching import match_stimuli, resample_stimuli, select_continuous_stimuli
+from .matching import (_resolve_policy, match_stimuli, resample_stimuli,
+                       select_continuous_stimuli)
 from .paradigms import required_fields
 from .pairs import join_member_norms, member_lexicon_path, select_continuous_pairs
 from .querying import (add_bigram_frequency, add_neighbourhood, add_pair_overlap, apply_norms,
@@ -31,10 +33,27 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
                  reference_words=None, verbose=True) -> dict:
     schema = read_config(schema_path)
     design = read_config(design_path)
+    n_req = design.get("n_per_condition") or design.get("n_per_cell")
+    if n_req is not None and (not isinstance(n_req, (int, float)) or isinstance(n_req, bool)
+                              or n_req != n_req or n_req < 1 or n_req != int(n_req)):
+        raise ValueError("lexsync: n_per_condition must be a positive whole number.")
     items_cfg = design.get("items") or {}
     source = items_cfg.get("source", "corpus")
     paradigm = design.get("paradigm", "factorial")
     is_continuous = _is_continuous(design)
+    if is_continuous and source == "table" and not list(items_cfg.get("members") or []):
+        # Without members the table branch loads the rows and never selects, while
+        # the log and datasheet would still record continuous mode -- a provenance
+        # lie.
+        raise ValueError("lexsync: a 'continuous' block with items.source 'table' "
+                         "requires items.members.")
+    if source == "table" and not is_continuous and design.get("pool_filters") is not None:
+        # Only the continuous pairs selector consumes pool_filters on the table
+        # path; a curated item table is the researcher's selection, so a stray
+        # filter here is always a mistake rather than a request to drop rows.
+        raise ValueError("lexsync: pool_filters have no effect for items.source 'table' "
+                         "without a 'continuous' block; remove them or use a continuous "
+                         "design.")
 
     log = runlog.new_run_log(design["name"], meta={
         "design": design["name"], "language": design["language"],
@@ -45,6 +64,21 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
     report = None
     pair_eligible = None
     norms: list = []
+    selection_audit = None
+
+    # Read the matcher's audit attribute straight off the returned frame (pd.concat
+    # and rbind drop attrs) and put any window relaxation on the run log; the
+    # datasheet records it too. Returns the frame unchanged.
+    def take_audit(stim):
+        nonlocal selection_audit
+        selection_audit = stim.attrs.get("audit")
+        for rx in (selection_audit or {}).get("window_relaxations", []):
+            runlog.log_step(log, "tolerance window relaxed for condition '%s' (%d within tolerance, %d needed)"
+                                 % (rx["condition"], rx["n_within_tolerance"], rx["n_needed"]),
+                            {"condition": rx["condition"],
+                             "n_within_tolerance": rx["n_within_tolerance"],
+                             "n_needed": rx["n_needed"]})
+        return stim
 
     # The design's `norms:` tables are joined onto the lexicon before the pool is
     # built, so a filter, a matched dimension or a continuous predictor may name a
@@ -85,6 +119,14 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
             runlog.log_step(log, f"lexicon loaded: {len(lex)} words", {"words": len(lex)})
             ref_words = lex["word"].tolist()
         lex = join_norms(lex)
+        # build_pool skips a filter column it does not recognise, so a misspelt key
+        # would silently leave the pool unfiltered; the pair path carries the same
+        # guard. Checked after the norms join, which legitimately adds filterable
+        # columns.
+        unknown = [c for c in (design.get("pool_filters") or {}) if c not in lex.columns]
+        if unknown:
+            raise ValueError("lexsync: pool_filters name column(s) the lexicon does not "
+                             "have: %s." % ", ".join(unknown))
         pool = build_pool(lex, design.get("pool_filters"))
         runlog.log_step(log, f"pool after filters: {len(pool)} words", {"pool": len(pool)})
 
@@ -101,31 +143,49 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
         if is_continuous:
             predictor = design["continuous"]["predictor"]
             controls = list(design["continuous"].get("controls") or [])
-            stim = select_continuous_stimuli(pool, design, schema, verbose=verbose)
+            stim = take_audit(select_continuous_stimuli(pool, design, schema, verbose=verbose))
             runlog.log_step(log, f"selected {len(stim)} items spanning '{predictor}' "
                                  f"(continuous design)", {"predictor": predictor})
             report = match_report_continuous(stim, predictor, controls, schema)
         else:
             resample = design.get("resample")
             if resample:
+                # Per-replicate audits are dropped with the concat inside
+                # resample_stimuli; a relaxation there still reaches the console
+                # via verbose.
                 n_sets = resample.get("n_sets", 2)
                 stim = resample_stimuli(pool, design, schema, n_sets, verbose=verbose)
                 runlog.log_step(log, f"resampled {stim['replicate'].nunique()} disjoint matched "
                                      f"sets ({len(stim)} items total)",
                                 {"conditions": ", ".join(dict.fromkeys(stim["condition"]))})
             else:
-                stim = match_stimuli(pool, design, schema, verbose=verbose)
+                stim = take_audit(match_stimuli(pool, design, schema, verbose=verbose))
                 runlog.log_step(log, f"matched {len(stim)} items across {stim['condition'].nunique()} conditions",
                                 {"conditions": ", ".join(dict.fromkeys(stim["condition"]))})
             std = ["length", "frequency", "n_density", "old20"]
-            extra = [d for d in ("n_syllables", "bigram_freq") if d in match_on]
-            dims = [d for d in std + extra if d in stim.columns]
+            # First-occurrence-order union with match_on (dict.fromkeys, not
+            # sorted(): a collated order would drift from the R engine), so a
+            # custom joined norm the design matches on reaches the descriptives,
+            # comparisons and realised-control record rather than only the
+            # stimuli file.
+            dims = [d for d in dict.fromkeys(std + match_on) if d in stim.columns]
             report = match_report(stim, dims, schema)
     elif source == "generate":
         n = design.get("n_per_condition") or design.get("n_per_cell") or 40
         gen_method = (items_cfg.get("generation") or {}).get("method", "letter_substitution")
         stim = build_lexdec_stimuli(pool, n, reference_words=lex["word"].tolist(),
                                     method=gen_method)
+        sf = _resolve_policy(design, schema, "shortfall", "error", ("error", "allow"))
+        realised = int(stim["set"].nunique())
+        if realised < n and sf != "allow":
+            # build_lexdec_stimuli filters the pool to a-z forms before selecting,
+            # so the eligible pool can be smaller than the request without any
+            # pool_filters.
+            raise ValueError(f"lexsync: {n} sets per condition were requested but only "
+                             f"{realised} could be generated; the eligible a-z pool is "
+                             f"smaller than the request, so lower n_per_condition or supply "
+                             f"more words, or set matching: shortfall: allow to accept a "
+                             f"smaller set.")
         runlog.log_step(log, f"generated {len(stim)} items (words + pseudowords, {gen_method})",
                         {"conditions": ", ".join(dict.fromkeys(stim["condition"]))})
         report = match_report(stim, ["length"], schema)
@@ -149,7 +209,10 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
             stim = join_member_norms(stim, members, items_cfg, design, schema, lex=mem_lex)
             runlog.log_step(log, "joined word-level norms onto %s" % " and ".join(members))
             if "prime" in members and "target" in members:
-                stim = add_pair_overlap(stim, members[0], members[1])
+                # The columns by name, not members[0]/members[1]: a member listed
+                # before prime/target would silently redirect the overlap to the
+                # wrong pair.
+                stim = add_pair_overlap(stim, "prime", "target")
                 runlog.log_step(log, "computed relational dimensions (pair.lev, pair.overlap)")
             if is_continuous:
                 res = select_continuous_pairs(stim, items_cfg, design, schema, verbose)
@@ -267,9 +330,18 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
                           for c in (design.get("conditions") or [])]
     elif source == "generate":
         candidate_pool = [{"condition": "words in band", "n_candidates": int(len(pool))}]
+    # The neighbourhood reference is provenance: overriding it changes n_density,
+    # old20 and bigram_freq without touching any input file the datasheet hashes.
+    nref = None
+    if reference_words is not None:
+        nref = {"source": "user-supplied", "n_words": len(reference_words),
+                "sha256": hashlib.sha256("\n".join(reference_words).encode("utf-8")).hexdigest()}
     ds = build_datasheet(design, schema, report, stim, source_path, artifacts,
                          schema.get("seed"), engine="python", candidate_pool=candidate_pool,
-                         norms=norms, balance=balance, blocks=blocks)
+                         norms=norms, balance=balance, blocks=blocks,
+                         design_path=design_path, schema_path=schema_path,
+                         selection_audit=selection_audit,
+                         neighbourhood_reference=nref)
     ds_json = os.path.join(outdir, "reports", f"{base}_datasheet_py.json")
     ds_md = os.path.join(outdir, "reports", f"{base}_datasheet_py.md")
     write_datasheet(ds, ds_json, ds_md)

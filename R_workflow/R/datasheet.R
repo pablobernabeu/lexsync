@@ -26,10 +26,12 @@ DATASHEET_VERSION <- "1.1"
             lexsync = tryCatch(as.character(utils::packageVersion("lexsync")),
                                error = function(e) "0.1.0"),
             R = paste(R.version$major, R.version$minor, sep = "."))
-  for (p in c("readr", "stringdist", "jsonlite", "digest")) {
+  for (p in c("readr", "stringdist", "jsonlite", "digest", "yaml", "stringi")) {
     pv <- tryCatch(as.character(utils::packageVersion(p)), error = function(e) NULL)
     if (!is.null(pv)) v[[p]] <- pv
   }
+  # The OS completes the environment record; per-engine, like the rest of the block.
+  v$os <- paste(Sys.info()[["sysname"]], Sys.info()[["machine"]])
   v
 }
 
@@ -89,10 +91,11 @@ DATASHEET_VERSION <- "1.1"
        relational_dimensions = as.list(sort(cols[startsWith(cols, "pair.")], method = "radix")))
 }
 
-# The tolerance windows the matcher actually applied. Resolved exactly as
-# match_stimuli resolves them (schema defaults, overridden per dimension by the
-# design), so the datasheet records the windows that were used rather than the
-# defaults that a design may have replaced. Mirrors datasheet.py.
+# The tolerance windows as match_stimuli resolves them (schema defaults, overridden
+# per dimension by the design) -- the same resolution the matcher performs. The
+# nearest-neighbour methods apply these windows; the pairwise joint/optimal methods
+# never consult them, which is why the datasheet attaches this block only for the
+# methods that do. Mirrors datasheet.py.
 .resolve_tolerance_k <- function(design, schema) {
   tol_k <- schema$matching$tolerance_k %||% list()
   if (!is.null(design$matching$tolerance_k))
@@ -120,15 +123,21 @@ DATASHEET_VERSION <- "1.1"
     predictor <- cont$predictor
     controls <- unlist(cont$controls, use.names = FALSE)
     fixed <- paste(c(predictor, controls), collapse = " + ")
+    note <- paste0("The predictor is kept continuous and analysed by regression or a ",
+                   "mixed model rather than dichotomised (Kuperman, 2015; Liben-Nowell ",
+                   "et al., 2019); the controls enter as covariates. Crossed random ",
+                   "effects for subjects and items guard the language-as-fixed-effect ",
+                   "fallacy (Clark, 1973; Baayen et al., 2008); reduce the structure if ",
+                   "it does not converge (Matuschek et al., 2017).")
+    # A pair design's member-prefixed terms carry a dot, which R formulas accept
+    # but Patsy reads as syntax, so the Python analyst needs the quoting stated.
+    if (any(grepl(".", c(predictor, controls), fixed = TRUE)))
+      note <- paste0(note, " Dotted dimension names are valid in R formulas but must ",
+                     "be quoted as Q(\"...\") in Patsy-style Python interfaces.")
     return(list(
       response = "the trial outcome (e.g. reaction time or accuracy)",
       suggested_model = sprintf("response ~ %s + (1 + %s | subject) + (1 | item)", fixed, predictor),
-      note = paste0("The predictor is kept continuous and analysed by regression or a ",
-                    "mixed model rather than dichotomised (Kuperman, 2015; Liben-Nowell ",
-                    "et al., 2019); the controls enter as covariates. Crossed random ",
-                    "effects for subjects and items guard the language-as-fixed-effect ",
-                    "fallacy (Clark, 1973; Baayen et al., 2008); reduce the structure if ",
-                    "it does not converge (Matuschek et al., 2017).")
+      note = note
     ))
   }
   paradigm <- design$paradigm %||% "factorial"
@@ -145,8 +154,12 @@ DATASHEET_VERSION <- "1.1"
     note = paste0("Crossed random effects for subjects and items guard against the ",
                   "language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). ",
                   "Begin with this maximal structure (Barr et al., 2013) and reduce it ",
-                  "if the model does not converge (Matuschek et al., 2017); fit with ",
-                  "lme4 in R or pymer4/statsmodels in Python.")
+                  "if the model does not converge (Matuschek et al., 2017). The formula ",
+                  "is lme4 syntax, for lme4 in R or pymer4 in Python; statsmodels ",
+                  "MixedLM cannot take it directly and needs the random effects ",
+                  "restated in its own arguments. The equivalence tests in the realised ",
+                  "control are post-selection diagnostics on deterministically selected ",
+                  "items, not inferential tests over a sample.")
   )
 }
 
@@ -175,11 +188,23 @@ DATASHEET_VERSION <- "1.1"
 #' @param blocks Optional practice/filler block report. Recorded because those
 #'   trials are presented but not analysed, so the presented and analysed counts
 #'   differ and the record must say why.
+#' @param design_path,schema_path Optional paths of the design and schema files
+#'   the run read; when given, their sha256 checksums complete the
+#'   reproducibility record, because those two files decide everything the seed
+#'   does not.
+#' @param selection_audit Optional matcher audit record; its `window_relaxations`
+#'   entries are recorded because a relaxed window changes what "matched" means
+#'   for that condition.
+#' @param neighbourhood_reference Optional record of the lexicon the
+#'   neighbourhood dimensions were computed against
+#'   (`list(source, n_words, sha256)`), recorded verbatim.
 #' @return The datasheet as a nested list, ready for [write_datasheet()].
 #' @export
 build_datasheet <- function(design, schema, report, stimuli, source_path, artifacts,
                             seed, engine = "R", candidate_pool = NULL, norms = NULL,
-                            balance = NULL, blocks = NULL) {
+                            balance = NULL, blocks = NULL, design_path = NULL,
+                            schema_path = NULL, selection_audit = NULL,
+                            neighbourhood_reference = NULL) {
   source <- design$items$source %||% "corpus"
   is_continuous <- .is_continuous(design)
   controlled <- .controlled_dims(design, source)
@@ -218,8 +243,24 @@ build_datasheet <- function(design, schema, report, stimuli, source_path, artifa
          controls = as.list(unlist(design$continuous$controls, use.names = FALSE)),
          tolerance_k = .resolve_tolerance_k(design, schema))
   } else if (source %in% c("corpus", "pool")) {
-    list(method = design$matching$method %||% schema$matching$method %||% "standardised_euclidean",
-         match_on = as.list(controlled), tolerance_k = .resolve_tolerance_k(design, schema))
+    method <- design$matching$method %||% schema$matching$method %||% "standardised_euclidean"
+    sel <- list(method = method, match_on = as.list(controlled))
+    if (method %in% c("joint", "optimal")) {
+      # The pairwise methods rank whole pairs and never consult the tolerance
+      # windows; recording tolerance_k here would claim a filter that was not
+      # applied. They get the cap they do apply instead, with a per-condition
+      # verdict on whether it fired.
+      entries <- Filter(function(x) !is.null(x$condition) && !is.null(x$n_candidates) &&
+                          !is.na(x$n_candidates), candidate_pool %||% list())
+      sel$candidate_cap <- list(
+        cap = as.integer(.PAIRWISE_CAP),
+        applied = stats::setNames(
+          lapply(entries, function(x) isTRUE(x$n_candidates > .PAIRWISE_CAP)),
+          vapply(entries, function(x) as.character(x$condition), character(1))))
+    } else {
+      sel$tolerance_k <- .resolve_tolerance_k(design, schema)
+    }
+    sel
   } else if (identical(source, "generate")) {
     gen_method <- design$items$generation$method %||% "letter_substitution"
     list(method = .GENERATION_LABELS[[gen_method]] %||%
@@ -229,11 +270,23 @@ build_datasheet <- function(design, schema, report, stimuli, source_path, artifa
   } else {
     list(method = "item table (user-supplied)")
   }
-  if (!is.null(candidate_pool) && source %in% c("corpus", "generate"))
+  if (!is.null(candidate_pool) && source %in% c("corpus", "pool", "generate"))
     selection$candidate_pool <- candidate_pool
   # A pair-keyed continuous design does select, over the item table.
   selection$cross_engine <- .cross_engine(selection$method, source,
                                           selected = is_continuous && !is.null(relational))
+  # A relaxed window changes what "matched" means for that condition, so the
+  # matcher's audit trail belongs in the record, not only in the run narration.
+  # Integers only, so both engines serialise the counts identically.
+  relaxations <- selection_audit$window_relaxations %||% list()
+  if (length(relaxations)) {
+    selection$window_relaxations <- lapply(relaxations, function(r)
+      list(condition = r$condition,
+           n_within_tolerance = as.integer(r$n_within_tolerance),
+           n_needed = as.integer(r$n_needed)))
+  }
+  if (!is.null(neighbourhood_reference))
+    selection$neighbourhood_reference <- neighbourhood_reference
 
   materials_source <- list(
     type = source, path = source_path, sha256 = sha256_file(source_path),
@@ -281,6 +334,17 @@ build_datasheet <- function(design, schema, report, stimuli, source_path, artifa
   # explanation.
   if (!is.null(blocks)) counterbalancing$blocks <- blocks
 
+  # The equivalence settings the report's TOST verdicts were computed against,
+  # recorded so the Methods prose can state the bound it actually ran with.
+  equivalence <- list(bound_d = schema$equivalence$bound_d %||% 0.5,
+                      alpha = schema$equivalence$alpha %||% 0.05)
+
+  reproducibility <- list(seed = seed, versions = .versions_R(engine))
+  # The design and schema decide everything the seed does not, so their checksums
+  # complete the reproducibility record when the pipeline names them.
+  if (!is.null(design_path)) reproducibility$design_sha256 <- sha256_file(design_path)
+  if (!is.null(schema_path)) reproducibility$schema_sha256 <- sha256_file(schema_path)
+
   list(
     lexsync_datasheet_version = DATASHEET_VERSION,
     design = list(name = design$name, language = design$language,
@@ -292,6 +356,7 @@ build_datasheet <- function(design, schema, report, stimuli, source_path, artifa
     selection = selection,
     relational = relational,
     analysis = .analysis_R(design, source),
+    equivalence = equivalence,
     realised_control = realised,
     counterbalancing = counterbalancing,
     resampling = if (!is.null(design$resample))
@@ -299,7 +364,7 @@ build_datasheet <- function(design, schema, report, stimuli, source_path, artifa
     items = list(n_total = nrow(stimuli), n_conditions = length(conditions),
                  conditions = as.list(conditions),
                  stimuli_file = artifacts$stimuli, stimuli_sha256 = sha256_file(artifacts$stimuli)),
-    reproducibility = list(seed = seed, versions = .versions_R(engine)),
+    reproducibility = reproducibility,
     artifacts = lapply(Filter(Negate(is.null), .artifact_paths(artifacts)),
                        function(p) list(file = p, sha256 = sha256_file(p)))
   )
@@ -389,14 +454,28 @@ methods_paragraph <- function(ds) {
     lead <- sprintf("%s items were drawn from an item table for a %s design (%s)",
                     per, d$paradigm, lang)
   }
-  ctrl_rows <- Filter(function(r) identical(r$role, "controlled") && !is.null(r$ci_high), ds$realised_control)
+  ctrl_rows <- Filter(function(r) identical(r$role, "controlled"), ds$realised_control)
+  defined <- Filter(function(r) !is.null(r$cohens_d), ctrl_rows)
   control <- ""
   if (length(ctrl_rows)) {
-    worst <- ctrl_rows[[which.max(vapply(ctrl_rows, function(r) abs(r$cohens_d), numeric(1)))]]
-    control <- sprintf(paste0(". The realised control was close. The largest standardised difference ",
-                              "on any matched dimension was %.2f (90%% CI [%.2f, %.2f]), within the ",
-                              "0.5-SD equivalence bound"),
-                       abs(worst$cohens_d), worst$ci_low, worst$ci_high)
+    # Affirmative only when the stored verdicts support it: every controlled row
+    # has a defined d and every one of them passed the TOST. An undefined d
+    # (constant dimensions at different constants) is the worst possible failure
+    # of the matching, not an excludable row.
+    all_equivalent <- length(defined) == length(ctrl_rows) &&
+      all(vapply(defined, function(r) isTRUE(r$equivalent), logical(1)))
+    if (all_equivalent && length(defined)) {
+      worst <- defined[[which.max(vapply(defined, function(r) abs(r$cohens_d), numeric(1)))]]
+      control <- sprintf(paste0(". The realised control was close. The largest standardised difference ",
+                                "on any matched dimension was %.2f (90%% CI [%.2f, %.2f]), within the ",
+                                "%s-SD equivalence bound"),
+                         worst$cohens_d, worst$ci_low, worst$ci_high,
+                         ds$equivalence$bound_d)
+    } else {
+      control <- paste0(". Equivalence was not confirmed on every matched dimension; ",
+                        "the per-dimension differences are reported in the ",
+                        "realised-control table")
+    }
   }
   resamp <- if (!is.null(ds$resampling))
     sprintf(". %s disjoint matched item sets were drawn, so items can be treated as a random factor",
@@ -429,12 +508,18 @@ methods_paragraph <- function(ds) {
                                   "candidates, and the selection was deterministic and blind ",
                                   "to any outcome measure"), as.integer(min(sizes)))
   }
+  cap_rec <- ds$selection$candidate_cap
+  cap_note <- ""
+  if (!is.null(cap_rec) && any(vapply(cap_rec$applied, isTRUE, logical(1))))
+    cap_note <- sprintf(paste0(". Each candidate pool exceeding the pairwise cap was reduced to ",
+                               "the %d candidates nearest the other condition's centroid ",
+                               "before pairing"), as.integer(cap_rec$cap))
   ce <- ds$selection$cross_engine %||% ""
   ce_note <- if (startsWith(ce, "approximate"))
     paste0(". This design's matching method uses a covariance inverse or an assignment ",
            "solver, so the R and Python engines select equivalent but not byte-identical ",
            "materials") else ""
-  paste0(lead, control, pool_note, ce_note, bal_note, tail, .norms_note(ds))
+  paste0(lead, control, pool_note, cap_note, ce_note, bal_note, tail, .norms_note(ds))
 }
 
 #' @keywords internal

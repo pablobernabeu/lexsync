@@ -11,12 +11,69 @@
 # linear-assignment solver whose last bits differ between the two linear-algebra
 # backends, so those two agree closely but not byte-for-byte.
 
+# Candidate cap for the pairwise (joint, optimal) matchers. The datasheet reports
+# whether the cap fired, so the literal lives in one place per engine.
+# Must stay identical to PAIRWISE_CAP in python_workflow/src/lexsync/matching.py.
+.PAIRWISE_CAP <- 1200L
+
+# Resolve a matching policy key with a design-over-schema-over-default cascade and
+# a closed vocabulary, mirroring how tolerance_k is resolved. Must stay identical
+# to _resolve_policy in python_workflow/src/lexsync/matching.py.
+.resolve_policy <- function(design, schema, key, default, known) {
+  val <- design$matching[[key]] %||% schema$matching[[key]] %||% default
+  if (!val %in% known) {
+    stop(sprintf("lexsync: unknown %s policy '%s'. Known policies: %s.",
+                 key, val, paste(known, collapse = ", ")), call. = FALSE)
+  }
+  val
+}
+
+# The shortfall contract: a selection that returns fewer sets than the design asked
+# for silently invalidates the datasheet and the generated Methods text, which state
+# the requested n. Under the default policy that is an error; a design may opt into
+# the shrink with matching: shortfall: allow.
+# Must stay identical to _check_shortfall in python_workflow/src/lexsync/matching.py.
+.check_shortfall <- function(realised, n, policy, continuous = FALSE) {
+  if (realised >= n || identical(policy, "allow")) return(invisible(NULL))
+  if (continuous) {
+    stop(sprintf(paste0("lexsync: %d items were requested but only %d could be selected; ",
+                        "widen the pool or lower n_per_condition, or set matching: ",
+                        "shortfall: allow to accept a smaller set."),
+                 n, realised), call. = FALSE)
+  }
+  stop(sprintf(paste0("lexsync: %d sets per condition were requested but only %d could be ",
+                      "selected; widen pool_filters/define_by or lower n_per_condition, ",
+                      "or set matching: shortfall: allow to accept a smaller set."),
+               n, realised), call. = FALSE)
+}
+
+# A word selected for two conditions is a confound, not a match. The anchored and
+# joint paths prevent it structurally; the optimal path can only be steered away by
+# a finite penalty, so the invariant is asserted on every path's output.
+# Must stay identical to _assert_distinct_words in python_workflow/src/lexsync/matching.py.
+.assert_distinct_words <- function(out) {
+  dup <- out$word[duplicated(out$word)]
+  if (length(dup)) {
+    stop(sprintf(paste0("lexsync: overlapping conditions selected the word '%s' in more ",
+                        "than one condition; make the conditions disjoint or lower ",
+                        "n_per_condition."), dup[1]), call. = FALSE)
+  }
+  invisible(NULL)
+}
+
 #' Match stimuli across conditions on several lexical dimensions
 #'
 #' The first condition is the anchor; its items are chosen by an even spread
 #' across the sorted candidate subpool. Every other condition is then matched to
 #' the anchor item by item, on the `match_on` dimensions, using standardised
 #' Euclidean distance under a tolerance window derived from the anchor.
+#'
+#' Two policies govern degraded selections, each read from the design's
+#' `matching` block with the schema as fallback: `shortfall` (`"error"`, the
+#' default, refuses to return fewer sets than requested; `"allow"` accepts the
+#' shrink) and `on_insufficient_tolerance` (`"relax"`, the default, widens an
+#' undersupplied tolerance window to the full condition subpool and records the
+#' relaxation in an `"audit"` attribute; `"error"` refuses instead).
 #'
 #' @param pool A lexicon/pool with all `match_on` dimensions present (see
 #'   [add_neighbourhood()]).
@@ -30,6 +87,12 @@
 #' @export
 match_stimuli <- function(pool, design, schema, verbose = FALSE) {
   conditions <- design$conditions
+  if (is.null(conditions) || length(conditions) == 0) {
+    # Without this, the anchor lookup below dies with a bare subscript error in R
+    # and a KeyError in Python -- two different messages for the same mistake.
+    stop("lexsync: the design has no conditions; a matched design needs a conditions list.",
+         call. = FALSE)
+  }
   match_on <- unlist(design$match_on, use.names = FALSE)
   n <- design$n_per_condition %||% design$n_per_cell %||% 20L
   # Tolerance window k per dimension (window = anchor mean +/- k * SD). A design
@@ -39,10 +102,37 @@ match_stimuli <- function(pool, design, schema, verbose = FALSE) {
   if (!is.null(design$matching$tolerance_k)) {
     tol_k <- utils::modifyList(tol_k, design$matching$tolerance_k)
   }
+  shortfall <- .resolve_policy(design, schema, "shortfall", "error", c("error", "allow"))
+  on_tol <- .resolve_policy(design, schema, "on_insufficient_tolerance", "relax",
+                            c("relax", "error"))
 
   for (d in match_on) {
     if (!d %in% names(pool)) {
       stop(sprintf("lexsync: dimension '%s' is absent from the pool.", d), call. = FALSE)
+    }
+    k <- tol_k[[d]] %||% 2
+    if (is.numeric(k) && k < 0) {
+      # A negative k inverts the window (upper bound below the lower), which empties
+      # the candidate set and silently relaxes to the full pool -- never intended.
+      stop(sprintf("lexsync: tolerance_k for dimension '%s' is negative; tolerances must be zero or positive.",
+                   d), call. = FALSE)
+    }
+  }
+  cnames <- vapply(conditions, function(cd) cd$name, character(1))
+  dup_name <- cnames[duplicated(cnames)]
+  if (length(dup_name)) {
+    stop(sprintf("lexsync: condition name '%s' appears more than once; condition names must be unique.",
+                 dup_name[1]), call. = FALSE)
+  }
+  for (cd in conditions) {
+    for (d in names(cd$define_by)) {
+      # build_pool skips a column it does not recognise, so a misspelt define_by
+      # key would silently hand the condition the whole pool as its subpool and
+      # the manipulated contrast would vanish while matching proceeds.
+      if (!d %in% names(pool)) {
+        stop(sprintf("lexsync: dimension '%s' in condition '%s' is absent from the pool.",
+                     d, cd$name), call. = FALSE)
+      }
     }
   }
 
@@ -74,10 +164,16 @@ match_stimuli <- function(pool, design, schema, verbose = FALSE) {
                  method, length(conditions)), call. = FALSE)
   }
   if (identical(method, "joint") && length(conditions) == 2L) {
-    return(match_joint(subpools, cond_names, match_on, center, scale_, n))
+    out <- match_joint(subpools, cond_names, match_on, center, scale_, n)
+    .check_shortfall(length(unique(out$set)), n, shortfall)
+    .assert_distinct_words(out)
+    return(out)
   }
   if (identical(method, "optimal") && length(conditions) == 2L) {
-    return(match_optimal(subpools, cond_names, match_on, center, scale_, n))
+    out <- match_optimal(subpools, cond_names, match_on, center, scale_, n)
+    .check_shortfall(length(unique(out$set)), n, shortfall)
+    .assert_distinct_words(out)
+    return(out)
   }
   # A covariance-aware metric for Mahalanobis matching (NULL -> plain Euclidean).
   metric <- if (identical(method, "mahalanobis")) .maha_metric(zmat(pool)) else NULL
@@ -95,6 +191,7 @@ match_stimuli <- function(pool, design, schema, verbose = FALSE) {
   anchor <- anchor_pool[idx, , drop = FALSE]
   anchor$condition <- cond_names[1]
   n_take <- nrow(anchor)
+  .check_shortfall(n_take, n, shortfall)
   if (verbose && n_take < n) {
     message(sprintf("lexsync: anchor condition '%s' yields only %d items; n_per_condition is %d.",
                     cond_names[1], n_take, n))
@@ -112,6 +209,7 @@ match_stimuli <- function(pool, design, schema, verbose = FALSE) {
 
   selected <- list(anchor)
   used_words <- anchor$word
+  relaxations <- list()
 
   for (ci in seq_along(conditions)[-1]) {
     cname <- cond_names[ci]
@@ -131,10 +229,20 @@ match_stimuli <- function(pool, design, schema, verbose = FALSE) {
     keep[is.na(keep)] <- FALSE            # NaN comparisons are FALSE in the Python engine
     cand_f <- cand[keep, , drop = FALSE]
     if (nrow(cand_f) < n_take) {
+      if (identical(on_tol, "error")) {
+        stop(sprintf(paste0("lexsync: condition '%s' has %d candidates within tolerance but %d ",
+                            "are needed; raise tolerance_k or set matching: ",
+                            "on_insufficient_tolerance: relax to widen the window."),
+                     cname, nrow(cand_f), n_take), call. = FALSE)
+      }
       if (verbose) {
         message(sprintf("lexsync: condition '%s' has %d candidates within tolerance (< %d needed); relaxing the window.",
                         cname, nrow(cand_f), n_take))
       }
+      # The relaxation changes what "matched" means for this condition, so it is
+      # recorded on the result for the run log and datasheet, not only narrated.
+      relaxations[[length(relaxations) + 1L]] <-
+        list(condition = cname, n_within_tolerance = nrow(cand_f), n_needed = n_take)
       cand_f <- cand
     }
     if (nrow(cand_f) < n_take) {
@@ -160,13 +268,17 @@ match_stimuli <- function(pool, design, schema, verbose = FALSE) {
     used <- rep(FALSE, nrow(cand_f))
     pick <- integer(n_take)
     for (a in seq_len(n_take)) {
-      # Round to absorb last-ULP floating-point differences between engines, so
-      # the stable tie-break below is itself reproducible across R and Python.
+      # Rounded to 9 dp through the shared rule so the stable tie-break below is
+      # itself reproducible across R and Python. Native round() would pair R's
+      # decimal algorithm with numpy's scale-rint-unscale, a pairing io_utils.R
+      # documents as disagreeing at boundaries -- and on the mahalanobis path the
+      # inputs already differ in their last bits, so the absorber must be the
+      # same function in both engines.
       delta <- sweep(z_cand, 2, z_anchor[a, ], "-")
       if (is.null(metric)) {
-        dvec <- round(sqrt(rowSums(delta^2)), 9)
+        dvec <- .round_dp(sqrt(rowSums(delta^2)), 9)
       } else {
-        dvec <- round(sqrt(pmax(rowSums((delta %*% metric) * delta), 0)), 9)
+        dvec <- .round_dp(sqrt(pmax(rowSums((delta %*% metric) * delta), 0)), 9)
       }
       dvec[used] <- Inf
       best <- order(dvec, cand_f$word, cand_f$id, method = "radix")[1]  # stable, locale-independent tie-break
@@ -183,6 +295,12 @@ match_stimuli <- function(pool, design, schema, verbose = FALSE) {
   out <- do.call(rbind, lapply(selected, function(x) x[, common, drop = FALSE]))
   out$set <- rep(seq_len(n_take), times = length(conditions))
   rownames(out) <- NULL
+  .assert_distinct_words(out)
+  if (length(relaxations)) {
+    # rbind and pd.concat both drop attributes, so the pipeline reads this
+    # immediately after the call, before any reshaping.
+    attr(out, "audit") <- list(window_relaxations = relaxations)
+  }
   out
 }
 
@@ -204,7 +322,7 @@ match_stimuli <- function(pool, design, schema, verbose = FALSE) {
 #' identical to the Python engine (rounded costs; byte-rank tie-breaks).
 #'
 #' @keywords internal
-match_joint <- function(subpools, cond_names, match_on, center, scale_, n, cap = 1200L) {
+match_joint <- function(subpools, cond_names, match_on, center, scale_, n, cap = .PAIRWISE_CAP) {
   s0 <- subpools[[1]]
   s1 <- subpools[[2]]
   if (nrow(s0) == 0 || nrow(s1) == 0) {
@@ -216,7 +334,7 @@ match_joint <- function(subpools, cond_names, match_on, center, scale_, n, cap =
   }
   cap_overlap <- function(df, z, centroid) {
     if (nrow(df) <= cap) return(list(df = df, z = z))
-    d <- round(sqrt(rowSums(sweep(z, 2, centroid, "-")^2)), 9)
+    d <- .round_dp(sqrt(rowSums(sweep(z, 2, centroid, "-")^2)), 9)
     ord <- order(d, seq_len(nrow(df)), method = "radix")[seq_len(cap)]
     keep <- sort(ord)
     list(df = df[keep, , drop = FALSE], z = z[keep, , drop = FALSE])
@@ -227,15 +345,25 @@ match_joint <- function(subpools, cond_names, match_on, center, scale_, n, cap =
   m0 <- nrow(z0); m1 <- nrow(z1)
   cost <- matrix(0, m0, m1)
   for (d in seq_len(ncol(z0))) cost <- cost + outer(z0[, d], z1[, d], "-")^2
-  cost <- round(sqrt(cost), 9)
+  # .round_dp drops dims (as.numeric traverses column-major), so rebuild the matrix.
+  cost <- matrix(.round_dp(sqrt(cost), 9), m0, m1)
   rows <- as.vector(row(cost)); cols <- as.vector(col(cost)); vals <- as.vector(cost)
   ord <- order(vals, rows, cols, method = "radix")
   used0 <- logical(m0); used1 <- logical(m1)
   pick0 <- integer(0); pick1 <- integer(0)
+  # Word-level tracking, as in the anchored matcher: overlapping condition windows
+  # can put one word in both subpools, where its self-pair costs exactly 0 and a
+  # mirrored re-pick (x with y, then y with x) would reuse both words. For
+  # disjoint conditions no word appears twice, so these skips never fire and the
+  # selection is unchanged.
+  used_words <- character(0)
   for (t in ord) {
     i <- rows[t]; j <- cols[t]
     if (used0[i] || used1[j]) next
+    if (s0$word[i] == s1$word[j]) next
+    if (s0$word[i] %in% used_words || s1$word[j] %in% used_words) next
     used0[i] <- TRUE; used1[j] <- TRUE
+    used_words <- c(used_words, s0$word[i], s1$word[j])
     pick0 <- c(pick0, i); pick1 <- c(pick1, j)
     if (length(pick0) >= n) break
   }
@@ -270,7 +398,7 @@ match_joint <- function(subpools, cond_names, match_on, center, scale_, n, cap =
 #' but not byte-for-byte.
 #'
 #' @keywords internal
-match_optimal <- function(subpools, cond_names, match_on, center, scale_, n, cap = 1200L) {
+match_optimal <- function(subpools, cond_names, match_on, center, scale_, n, cap = .PAIRWISE_CAP) {
   if (!requireNamespace("clue", quietly = TRUE)) {
     stop("lexsync: matching method 'optimal' needs the 'clue' package (install.packages('clue')).",
          call. = FALSE)
@@ -285,7 +413,7 @@ match_optimal <- function(subpools, cond_names, match_on, center, scale_, n, cap
   }
   cap_overlap <- function(df, z, centroid) {
     if (nrow(df) <= cap) return(list(df = df, z = z))
-    d <- round(sqrt(rowSums(sweep(z, 2, centroid, "-")^2)), 9)
+    d <- .round_dp(sqrt(rowSums(sweep(z, 2, centroid, "-")^2)), 9)
     ord <- order(d, seq_len(nrow(df)), method = "radix")[seq_len(cap)]
     keep <- sort(ord)
     list(df = df[keep, , drop = FALSE], z = z[keep, , drop = FALSE])
@@ -296,7 +424,15 @@ match_optimal <- function(subpools, cond_names, match_on, center, scale_, n, cap
   m0 <- nrow(z0); m1 <- nrow(z1)
   cost <- matrix(0, m0, m1)
   for (d in seq_len(ncol(z0))) cost <- cost + outer(z0[, d], z1[, d], "-")^2
-  cost <- round(sqrt(cost), 9)
+  cost <- matrix(.round_dp(sqrt(cost), 9), m0, m1)
+  # A word present in both subpools (overlapping condition windows) must not be
+  # paired with itself. The penalty is a large FINITE constant because both
+  # solve_LSAP and scipy's linear_sum_assignment reject Inf, and their failure
+  # modes differ across engines; 1e9 dominates any real distance, and the
+  # selection is asserted same-word-free afterwards in match_stimuli.
+  # Must stay identical to the constant in _match_optimal (matching.py).
+  same <- outer(s0$word, s1$word, "==")
+  cost[same] <- 1e9
   # clue::solve_LSAP needs nrow <= ncol; solve on the transpose otherwise.
   if (m0 <= m1) {
     asg <- as.integer(clue::solve_LSAP(cost)); ri <- seq_len(m0); ci <- asg
@@ -304,8 +440,20 @@ match_optimal <- function(subpools, cond_names, match_on, center, scale_, n, cap
     asg <- as.integer(clue::solve_LSAP(t(cost))); ci <- seq_len(m1); ri <- asg
   }
   pair_cost <- cost[cbind(ri, ci)]
-  ord <- order(pair_cost, ri, ci, method = "radix")[seq_len(min(n, length(ri)))]
-  pi <- ri[ord]; pj <- ci[ord]
+  ord <- order(pair_cost, ri, ci, method = "radix")
+  # The penalty steers the assignment away from self-pairs, but an overlapping
+  # design can still mirror a pair (x with y, then y with x), reusing both words.
+  # Greedy word-level dedup over the cost-ordered assignment keeps the selection
+  # identical for disjoint designs, where every assigned word is distinct.
+  used_words <- character(0)
+  pi <- integer(0); pj <- integer(0)
+  for (t in ord) {
+    wi <- s0$word[ri[t]]; wj <- s1$word[ci[t]]
+    if (wi == wj || wi %in% used_words || wj %in% used_words) next
+    used_words <- c(used_words, wi, wj)
+    pi <- c(pi, ri[t]); pj <- c(pj, ci[t])
+    if (length(pi) >= n) break
+  }
   a <- s0[pi, , drop = FALSE]; a$condition <- cond_names[1]
   b <- s1[pj, , drop = FALSE]; b$condition <- cond_names[2]
   common <- intersect(names(a), names(b))
@@ -372,6 +520,16 @@ select_continuous_stimuli <- function(pool, design, schema, verbose = FALSE,
   if (!is.null(design$matching$tolerance_k)) {
     tol_k <- utils::modifyList(tol_k, design$matching$tolerance_k)
   }
+  shortfall <- .resolve_policy(design, schema, "shortfall", "error", c("error", "allow"))
+  on_tol <- .resolve_policy(design, schema, "on_insufficient_tolerance", "relax",
+                            c("relax", "error"))
+  for (d in controls) {
+    k <- tol_k[[d]] %||% 2
+    if (is.numeric(k) && k < 0) {
+      stop(sprintf("lexsync: tolerance_k for dimension '%s' is negative; tolerances must be zero or positive.",
+                   d), call. = FALSE)
+    }
+  }
   if (!(key %in% names(pool))) {
     stop(sprintf("lexsync: the continuous tie-break column '%s' is absent from the pool.", key),
          call. = FALSE)
@@ -405,21 +563,34 @@ select_continuous_stimuli <- function(pool, design, schema, verbose = FALSE,
   for (d in controls) keep <- keep & !is.na(pool[[d]]) & pool[[d]] >= win[[d]][1] & pool[[d]] <= win[[d]][2]
   keep[is.na(keep)] <- FALSE            # NaN comparisons are FALSE in the Python engine
   filtered <- pool[keep, , drop = FALSE]
+  relaxations <- list()
   if (nrow(filtered) < n) {
+    if (identical(on_tol, "error")) {
+      stop(sprintf(paste0("lexsync: %d items lie within the control windows but %d are ",
+                          "needed; raise tolerance_k or set matching: ",
+                          "on_insufficient_tolerance: relax to widen the window."),
+                   nrow(filtered), n), call. = FALSE)
+    }
     if (verbose) {
       message(sprintf("lexsync: %d items within the control windows (< %d needed); relaxing to the full pool.",
                       nrow(filtered), n))
     }
+    relaxations[[1L]] <- list(condition = "continuous",
+                              n_within_tolerance = nrow(filtered), n_needed = n)
     filtered <- pool
   }
   # Pass 2: an even spread over the filtered pool is the selection.
   sel <- even_spread(filtered)
+  .check_shortfall(nrow(sel), n, shortfall, continuous = TRUE)
   # A pair table already carries its own `condition` and `set`, which the Latin
   # square and the trial-order digest depend on, so the pair path passes
   # label = NULL and renumber_sets = FALSE to leave both alone.
   if (!is.null(label)) sel$condition <- label
   if (isTRUE(renumber_sets)) sel$set <- seq_len(nrow(sel))
   rownames(sel) <- NULL
+  if (length(relaxations)) {
+    attr(sel, "audit") <- list(window_relaxations = relaxations)
+  }
   sel
 }
 

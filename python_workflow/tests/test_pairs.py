@@ -85,6 +85,9 @@ def test_a_pair_failing_a_filter_on_any_row_is_excluded_whole():
         "pool_filters": {"target.length": [4, 6]},   # excludes set 2 (length 3)
         "continuous": {"predictor": "target.frequency", "controls": ["target.length"]},
         "match_on": ["target.length"],
+        # The exclusion leaves 2 of the 3 requested pairs; accepting that shrink
+        # is the point of the test, so the shortfall policy is opted out of here.
+        "matching": {"shortfall": "allow"},
     }
     res = select_continuous_pairs(PAIRS, {"anchor_condition": "related"}, design,
                                   {"matching": {"tolerance_k": {"target.length": 2}}})

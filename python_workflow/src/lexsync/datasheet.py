@@ -15,6 +15,9 @@ import json
 import platform
 
 from .io_utils import _is_continuous, _round_dp, sha256_file
+# The cap the pairwise (joint, optimal) matchers apply before pairing. Imported from
+# matching so the datasheet can only ever record the value the selection used.
+from .matching import PAIRWISE_CAP
 
 # 1.1 added `materials_source["norms"]` (the design's joined norm tables, with their
 # checksums and per-column coverage) and, for a pair-keyed design, a `relational`
@@ -57,6 +60,15 @@ def _versions(engine: str) -> dict:
             out["scipy"] = scipy.__version__
         except Exception:
             pass
+        # Distribution metadata, because neither package exports __version__.
+        from importlib.metadata import version
+        for pkg in ("rapidfuzz", "pyyaml"):
+            try:
+                out[pkg] = version(pkg)
+            except Exception:
+                pass
+    # The OS completes the environment record; per-engine, like the rest of the block.
+    out["os"] = platform.system() + " " + platform.machine()
     return out
 
 
@@ -126,11 +138,12 @@ def _relational_record(design: dict, stimuli) -> dict | None:
 
 
 def _resolve_tolerance_k(design: dict, schema: dict) -> dict:
-    """The tolerance windows the matcher actually applied.
+    """The tolerance windows as match_stimuli resolves them.
 
-    Resolved exactly as match_stimuli resolves them (schema defaults, overridden
-    per dimension by the design), so the datasheet records the windows that were
-    used rather than the defaults that a design may have replaced.
+    Schema defaults, overridden per dimension by the design -- the same resolution
+    the matcher performs. The nearest-neighbour methods apply these windows; the
+    pairwise ``joint`` and ``optimal`` methods never consult them, which is why the
+    datasheet attaches this block only for the methods that do.
     """
     tol_k = dict((schema.get("matching") or {}).get("tolerance_k") or {})
     tol_k.update((design.get("matching") or {}).get("tolerance_k") or {})
@@ -164,15 +177,21 @@ def _analysis(design: dict, source: str) -> dict:
         predictor = cont["predictor"]
         controls = list(cont.get("controls") or [])
         fixed = " + ".join([predictor] + controls)
+        note = ("The predictor is kept continuous and analysed by regression or a "
+                "mixed model rather than dichotomised (Kuperman, 2015; Liben-Nowell "
+                "et al., 2019); the controls enter as covariates. Crossed random "
+                "effects for subjects and items guard the language-as-fixed-effect "
+                "fallacy (Clark, 1973; Baayen et al., 2008); reduce the structure if "
+                "it does not converge (Matuschek et al., 2017).")
+        # A pair design's member-prefixed terms carry a dot, which R formulas accept
+        # but Patsy reads as syntax, so the Python analyst needs the quoting stated.
+        if any("." in t for t in [predictor] + controls):
+            note += (" Dotted dimension names are valid in R formulas but must be "
+                     "quoted as Q(\"...\") in Patsy-style Python interfaces.")
         return {
             "response": "the trial outcome (e.g. reaction time or accuracy)",
             "suggested_model": f"response ~ {fixed} + (1 + {predictor} | subject) + (1 | item)",
-            "note": ("The predictor is kept continuous and analysed by regression or a "
-                     "mixed model rather than dichotomised (Kuperman, 2015; Liben-Nowell "
-                     "et al., 2019); the controls enter as covariates. Crossed random "
-                     "effects for subjects and items guard the language-as-fixed-effect "
-                     "fallacy (Clark, 1973; Baayen et al., 2008); reduce the structure if "
-                     "it does not converge (Matuschek et al., 2017)."),
+            "note": note,
         }
     paradigm = design.get("paradigm", "factorial")
     if source == "generate" or paradigm == "lexical_decision":
@@ -187,14 +206,19 @@ def _analysis(design: dict, source: str) -> dict:
         "note": ("Crossed random effects for subjects and items guard against the "
                  "language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). "
                  "Begin with this maximal structure (Barr et al., 2013) and reduce it "
-                 "if the model does not converge (Matuschek et al., 2017); fit with "
-                 "lme4 in R or pymer4/statsmodels in Python."),
+                 "if the model does not converge (Matuschek et al., 2017). The formula "
+                 "is lme4 syntax, for lme4 in R or pymer4 in Python; statsmodels "
+                 "MixedLM cannot take it directly and needs the random effects "
+                 "restated in its own arguments. The equivalence tests in the realised "
+                 "control are post-selection diagnostics on deterministically selected "
+                 "items, not inferential tests over a sample."),
     }
 
 
 def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
                     seed, engine="python", candidate_pool=None, norms=None,
-                    balance=None, blocks=None) -> dict:
+                    balance=None, blocks=None, design_path=None, schema_path=None,
+                    selection_audit=None, neighbourhood_reference=None) -> dict:
     """Assemble the datasheet dictionary from the pipeline's objects.
 
     ``candidate_pool`` (optional) is a list of ``{"condition", "n_candidates"}``
@@ -210,6 +234,18 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
 
     ``balance`` (optional) is the balance-optimiser report from ``balance_lists``.
     Recorded because it decides which items each participant sees.
+
+    ``design_path`` / ``schema_path`` (optional) are the design and schema files the
+    run read; when given, their sha256 checksums complete the reproducibility
+    record, because those two files decide everything the seed does not.
+
+    ``selection_audit`` (optional) is the matcher's audit record; its
+    ``window_relaxations`` entries are recorded because a relaxed window changes
+    what "matched" means for that condition.
+
+    ``neighbourhood_reference`` (optional) records the lexicon the neighbourhood
+    dimensions were computed against (``{"source", "n_words", "sha256"}``),
+    verbatim.
     """
     source = (design.get("items") or {}).get("source", "corpus")
     is_continuous = _is_continuous(design)
@@ -244,11 +280,24 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
                      "controls": list(design["continuous"].get("controls") or []),
                      "tolerance_k": _resolve_tolerance_k(design, schema)}
     elif source in ("corpus", "pool"):
-        selection = {"method": ((design.get("matching") or {}).get("method")
-                                or (schema.get("matching") or {}).get("method")
-                                or "standardised_euclidean"),
-                     "match_on": controlled,
-                     "tolerance_k": _resolve_tolerance_k(design, schema)}
+        method = ((design.get("matching") or {}).get("method")
+                  or (schema.get("matching") or {}).get("method")
+                  or "standardised_euclidean")
+        selection = {"method": method, "match_on": controlled}
+        if method in ("joint", "optimal"):
+            # The pairwise methods rank whole pairs and never consult the tolerance
+            # windows; recording tolerance_k here would claim a filter that was not
+            # applied. They get the cap they do apply instead, with a per-condition
+            # verdict on whether it fired.
+            selection["candidate_cap"] = {
+                "cap": int(PAIRWISE_CAP),
+                "applied": {c["condition"]: bool(c["n_candidates"] > PAIRWISE_CAP)
+                            for c in (candidate_pool or [])
+                            if c.get("condition") is not None
+                            and c.get("n_candidates") is not None},
+            }
+        else:
+            selection["tolerance_k"] = _resolve_tolerance_k(design, schema)
     elif source == "generate":
         gen_method = ((design.get("items") or {}).get("generation") or {}).get(
             "method", "letter_substitution")
@@ -258,11 +307,22 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
             "matched_on": ["length"]}
     else:
         selection = {"method": "item table (user-supplied)"}
-    if candidate_pool is not None and source in ("corpus", "generate"):
+    if candidate_pool is not None and source in ("corpus", "pool", "generate"):
         selection["candidate_pool"] = candidate_pool
     # A pair-keyed continuous design does select, over the item table.
     selection["cross_engine"] = _cross_engine(
         selection.get("method"), source, selected=is_continuous and relational is not None)
+    # A relaxed window changes what "matched" means for that condition, so the
+    # matcher's audit trail belongs in the record, not only in the run narration.
+    # Integers only, so both engines serialise the counts identically.
+    relaxations = (selection_audit or {}).get("window_relaxations") or []
+    if relaxations:
+        selection["window_relaxations"] = [
+            {"condition": r["condition"],
+             "n_within_tolerance": int(r["n_within_tolerance"]),
+             "n_needed": int(r["n_needed"])} for r in relaxations]
+    if neighbourhood_reference is not None:
+        selection["neighbourhood_reference"] = neighbourhood_reference
 
     if source in ("corpus", "generate"):
         provenance = ("wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence "
@@ -315,6 +375,19 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
     if blocks:
         counterbalancing["blocks"] = blocks
 
+    # The equivalence settings the report's TOST verdicts were computed against,
+    # recorded so the Methods prose can state the bound it actually ran with.
+    equivalence = {"bound_d": (schema.get("equivalence") or {}).get("bound_d", 0.5),
+                   "alpha": (schema.get("equivalence") or {}).get("alpha", 0.05)}
+
+    reproducibility = {"seed": seed, "versions": _versions(engine)}
+    # The design and schema decide everything the seed does not, so their checksums
+    # complete the reproducibility record when the pipeline names them.
+    if design_path is not None:
+        reproducibility["design_sha256"] = sha256_file(design_path)
+    if schema_path is not None:
+        reproducibility["schema_sha256"] = sha256_file(schema_path)
+
     return {
         "lexsync_datasheet_version": DATASHEET_VERSION,
         "design": {
@@ -328,6 +401,7 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
         "selection": selection,
         "relational": relational,
         "analysis": _analysis(design, source),
+        "equivalence": equivalence,
         "realised_control": realised,
         "counterbalancing": counterbalancing,
         "resampling": ({"n_sets": (design.get("resample") or {}).get("n_sets"),
@@ -338,7 +412,7 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
             "stimuli_file": _posix(artifacts.get("stimuli")),
             "stimuli_sha256": sha256_file(artifacts.get("stimuli")),
         },
-        "reproducibility": {"seed": seed, "versions": _versions(engine)},
+        "reproducibility": reproducibility,
         "artifacts": [{"file": _posix(p), "sha256": sha256_file(p)}
                       for p in _artifact_paths(artifacts) if p],
     }
@@ -443,16 +517,26 @@ def methods_paragraph(ds: dict) -> str:
     else:
         lead = (f"{ds['items']['n_total'] // max(1, ds['items']['n_conditions'])} items "
                 f"were drawn from an item table for a {d['paradigm']} design ({lang})")
-    ctrl_rows = [r for r in ds["realised_control"] if r["role"] == "controlled"
-                 and r["ci_high"] is not None]
+    ctrl_rows = [r for r in ds["realised_control"] if r["role"] == "controlled"]
+    defined = [r for r in ctrl_rows if r["cohens_d"] is not None]
+    control = ""
     if ctrl_rows:
-        worst = max(ctrl_rows, key=lambda r: abs(r["cohens_d"]))
-        control = (f". The realised control was close. The largest standardised difference on "
-                   f"any matched dimension was {abs(worst['cohens_d']):.2f} "
-                   f"(90% CI [{worst['ci_low']:.2f}, {worst['ci_high']:.2f}]), within the "
-                   f"0.5-SD equivalence bound")
-    else:
-        control = ""
+        # Affirmative only when the stored verdicts support it: every controlled row
+        # has a defined d and every one of them passed the TOST. An undefined d
+        # (constant dimensions at different constants) is the worst possible failure
+        # of the matching, not an excludable row.
+        all_equivalent = (len(defined) == len(ctrl_rows)
+                          and all(r.get("equivalent") is True for r in defined))
+        if all_equivalent and defined:
+            worst = max(defined, key=lambda r: abs(r["cohens_d"]))
+            control = (f". The realised control was close. The largest standardised difference on "
+                       f"any matched dimension was {worst['cohens_d']:.2f} "
+                       f"(90% CI [{worst['ci_low']:.2f}, {worst['ci_high']:.2f}]), within the "
+                       f"{ds['equivalence']['bound_d']}-SD equivalence bound")
+        else:
+            control = (". Equivalence was not confirmed on every matched dimension; "
+                       "the per-dimension differences are reported in the "
+                       "realised-control table")
     rs = ds.get("resampling")
     resamp = (f". {rs['n_sets']} disjoint matched item sets were drawn, so items can be "
               f"treated as a random factor" if rs else "")
@@ -472,6 +556,12 @@ def methods_paragraph(ds: dict) -> str:
             pool_note = (f". The smallest condition was selected from {min(sizes)} "
                          "eligible candidates, and the selection was deterministic and "
                          "blind to any outcome measure")
+    cap_rec = (ds.get("selection") or {}).get("candidate_cap")
+    cap_note = ""
+    if cap_rec and any(cap_rec.get("applied", {}).values()):
+        cap_note = (f". Each candidate pool exceeding the pairwise cap was reduced to "
+                    f"the {int(cap_rec['cap'])} candidates nearest the other "
+                    f"condition's centroid before pairing")
     ce_note = ""
     if str((ds.get("selection") or {}).get("cross_engine", "")).startswith("approximate"):
         ce_note = (". This design's matching method uses a covariance inverse or an "
@@ -484,7 +574,7 @@ def methods_paragraph(ds: dict) -> str:
         "reduced from %d to %d)"
         % (", ".join(bal["dimensions"]), bal["n_swaps"],
            bal["cost_before"], bal["cost_after"]))
-    return lead + control + pool_note + ce_note + bal_note + tail + _norms_note(ds)
+    return lead + control + pool_note + cap_note + ce_note + bal_note + tail + _norms_note(ds)
 
 
 def prereg_template(ds: dict) -> str:
@@ -512,7 +602,7 @@ def render_datasheet_md(ds: dict) -> str:
              f"{ds['reproducibility']['versions']['engine']} engine.*", "",
              "## Provenance", "",
              f"- **Paradigm:** {d['paradigm']}  |  **Item source:** {d['source']}",
-             f"- **Description:** {d.get('description') or '—'}",
+             f"- **Description:** {d.get('description') or '--'}",
              f"- **Materials source:** `{ds['materials_source']['path']}` "
              f"(sha256 `{(ds['materials_source']['sha256'] or '')[:16]}…`)"]
     # Where a supplied pool's matched values came from. Without this the record names
@@ -594,8 +684,9 @@ def render_datasheet_md(ds: dict) -> str:
                   "| Dimension | Role | r with predictor | Predictor span |",
                   "|---|---|---|---|"]
         for r in ds["realised_control"]:
-            rr = "—" if r.get("pearson_r") is None else f"{r['pearson_r']:.3f}"
-            sp = "—" if r.get("predictor_span") is None else f"{r['predictor_span']:.3f}"
+            # "--", not an em dash: the R renderer's placeholder, kept identical.
+            rr = "--" if r.get("pearson_r") is None else f"{r['pearson_r']:.3f}"
+            sp = "--" if r.get("predictor_span") is None else f"{r['predictor_span']:.3f}"
             lines.append(f"| {r['dimension']} | {r['role']} | {rr} | {sp} |")
         lines.append("")
     elif ds["realised_control"]:
@@ -603,10 +694,12 @@ def render_datasheet_md(ds: dict) -> str:
                   "| Dimension | Role | Cohen's d | 90% CI | Var ratio | TOST p | Equivalent |",
                   "|---|---|---|---|---|---|---|"]
         for r in ds["realised_control"]:
+            # "--", not an em dash: the R renderer's placeholder, kept identical.
+            # An undefined d (unequal constants) reaches every one of these cells.
             ci = (f"[{r['ci_low']:.2f}, {r['ci_high']:.2f}]"
-                  if r["ci_low"] is not None else "—")
-            d_str = "—" if r["cohens_d"] is None else f"{r['cohens_d']:.2f}"
-            vr = "—" if r.get("var_ratio") is None else f"{r['var_ratio']:.2f}"
+                  if r["ci_low"] is not None else "--")
+            d_str = "--" if r["cohens_d"] is None else f"{r['cohens_d']:.2f}"
+            vr = "--" if r.get("var_ratio") is None else f"{r['var_ratio']:.2f}"
             lines.append(f"| {r['dimension']} | {r['role']} | {d_str} | {ci} | {vr} | "
                          f"{r['tost_p']} | {r['equivalent']} |")
         lines.append("")

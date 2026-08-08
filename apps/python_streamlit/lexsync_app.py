@@ -156,14 +156,51 @@ def positive_tolerances(values: dict) -> dict:
     return {d: float(k) for d, k in values.items() if k is not None and k > 0}
 
 
-def make_zip(design: dict, design_filename: str, bundle: dict,
-             extra_files: dict | None = None) -> bytes:
-    """Archive the design, every generated artefact, and any uploaded input.
+def bundled_inputs(design: dict) -> dict:
+    """Map each repository-bundled input the design names to its source file.
+
+    A design built from a bundled corpus or example item table records the
+    repository-relative path (``corpora/derived/<x>.csv``, ``items/<x>.csv``).
+    Outside the repository that path resolves to nothing, so the export carries
+    the file at exactly the path the design records. Uploaded inputs are handled
+    separately, through ``extra_files``.
 
     Parameters
     ----------
     design : dict
         The design as shown to the user, carrying repository-relative paths.
+
+    Returns
+    -------
+    dict
+        Design-relative path -> absolute path under the repository root.
+    """
+    out = {}
+    lexicon = design.get("lexicon")
+    if isinstance(lexicon, str) and lexicon.startswith("corpora/derived/"):
+        full = os.path.join(REPO_ROOT, *lexicon.split("/"))
+        if os.path.exists(full):
+            out[lexicon] = full
+    items = design.get("items")
+    items_path = items.get("path") if isinstance(items, dict) else None
+    if isinstance(items_path, str) and items_path.startswith("items/"):
+        full = os.path.join(REPO_ROOT, *items_path.split("/"))
+        if os.path.exists(full):
+            out[items_path] = full
+    return out
+
+
+def make_zip(design: dict, design_filename: str, bundle: dict,
+             extra_files: dict | None = None) -> bytes:
+    """Archive the design, the schema, every generated artefact, and the inputs.
+
+    Parameters
+    ----------
+    design : dict
+        The design as shown to the user, carrying repository-relative paths.
+        Any repository-bundled input it names (a corpora/derived lexicon, an
+        items/ example table) is stored at that relative path, so the exported
+        reproduction code runs from the unzipped directory alone.
     design_filename : str
         Name the design YAML takes inside the archive.
     bundle : dict
@@ -182,7 +219,15 @@ def make_zip(design: dict, design_filename: str, bundle: dict,
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
         z.writestr(design_filename, yaml_block(design))
-        for rel, full in (extra_files or {}).items():
+        # The exported reproduction code passes schema_path="config/schema.yaml",
+        # so the archive carries the schema the run actually used (the installed
+        # package copy) at that path.
+        z.write(SCHEMA_PATH, "config/schema.yaml")
+        inputs = dict(extra_files or {})
+        # An upload wins over a same-named repository file: it is the copy the run used.
+        for rel, full in bundled_inputs(design).items():
+            inputs.setdefault(rel, full)
+        for rel, full in inputs.items():
             z.write(full, rel)
         out = bundle["outdir"]
         for root, _dirs, files in os.walk(out):
@@ -535,7 +580,8 @@ if "bundle" in st.session_state:
             zip_bytes, file_name=f"{design['name']}_lexsync.zip", mime="application/zip",
             type="primary",
         )
-        st.caption("A self-contained bundle: the design YAML, every generated artefact, "
-                   "and any lexicon or item table you uploaded, at the path the design names.")
+        st.caption("A self-contained bundle: the design YAML, the schema, every generated "
+                   "artefact, and the lexicon or item table the design names, at the path "
+                   "the design records.")
 else:
     st.info("Configure a design in the sidebar and panels above, then press **Run design**.")

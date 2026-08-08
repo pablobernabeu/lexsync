@@ -4,7 +4,15 @@
 \alias{match_optimal}
 \title{Optimal (minimum-total-distance) pairing for a two-condition design}
 \usage{
-match_optimal(subpools, cond_names, match_on, center, scale_, n, cap = 1200L)
+match_optimal(
+  subpools,
+  cond_names,
+  match_on,
+  center,
+  scale_,
+  n,
+  cap = .PAIRWISE_CAP
+)
 }
 \description{
 Solves the linear-assignment problem globally rather than greedily, so it

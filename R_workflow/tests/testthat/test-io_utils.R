@@ -61,6 +61,42 @@ test_that("the datasheet and run log pin LF like every other artefact", {
   }
 })
 
+test_that("read_config refuses a duplicated mapping key", {
+  # yaml::read_yaml() rejects duplicate map keys by its libyaml parser default;
+  # asserting the refusal here pins that default, so a future yaml-package
+  # regression is caught rather than silently reopening the gap. The Python
+  # engine's yaml.safe_load kept the last value, so read_config there now refuses
+  # too (test_read_config_refuses_a_duplicated_mapping_key in test_io_utils.py).
+  # The messages differ because this one comes from the C parser; behavioural
+  # parity -- both engines refuse -- is the contract.
+  path <- file.path(tempdir(), "dup.yaml")
+  writeLines(c("name: a", "name: b"), path)
+  expect_error(read_config(path), "Duplicate map key", fixed = TRUE)
+  # A key repeated in a NESTED mapping must be caught too, not just at the top.
+  writeLines(c("items:", "  source: table", "  source: pool"), path)
+  expect_error(read_config(path), "Duplicate map key", fixed = TRUE)
+  # And an ordinary config still loads.
+  writeLines(c("name: a", "items:", "  source: pool"), path)
+  expect_identical(read_config(path), list(name = "a", items = list(source = "pool")))
+})
+
+test_that("a continuous design over a supplied pool takes the continuous path", {
+  # The predicate allowed corpus and table only, so a 'continuous' block over
+  # items.source 'pool' fell through to the conditions matcher and failed with a
+  # different obscure error in each engine, even though run_pipeline's corpus/pool
+  # branch handles continuous selection generically. The Python twin
+  # test_a_continuous_design_over_a_supplied_pool_takes_the_continuous_path in
+  # test_io_utils.py pins the same outcomes.
+  cont <- list(predictor = "frequency", controls = list("length"))
+  expect_true(lexsync:::.is_continuous(list(continuous = cont,
+                                            items = list(source = "pool"))))
+  expect_true(lexsync:::.is_continuous(list(continuous = cont)))  # default: corpus
+  expect_false(lexsync:::.is_continuous(list(items = list(source = "pool"))))
+  expect_error(lexsync:::.is_continuous(list(continuous = cont,
+                                             items = list(source = "generate"))),
+               "cannot be combined with items.source 'generate'", fixed = TRUE)
+})
+
 test_that("clean_field rejects control characters but allows commas and quotes", {
   expect_error(clean_field("cat\ndog", "word"), "control characters")
   expect_identical(clean_field('the "big" cat, asleep', "word"), 'the "big" cat, asleep')

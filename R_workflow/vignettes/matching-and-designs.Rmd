@@ -445,8 +445,8 @@ There is a behaviour here that will bite you if you do not know it. If a window
 leaves a condition with fewer candidates than there are anchor items, the matcher
 neither fails nor returns a short set. It relaxes that condition's window and
 carries on. Tightening the window past what the pool can supply therefore looks
-exactly like a window that was never set, and `verbose = TRUE` is the only thing
-that tells you which happened.
+exactly like a window that was never set, and under the default policy
+`verbose = TRUE` is the only thing that tells you which happened.
 
 ```{r tolerance-relaxed}
 too_tight <- design
@@ -463,6 +463,20 @@ because the distance ranking still runs over the whole subpool and still prefers
 near counterparts. The window is a backstop against a distant one, not the
 mechanism of control. Only when the relaxed subpool is still too small does the
 matcher stop, with an error naming the condition and the counts.
+
+Both behaviours are policies rather than fixtures of the matcher, and the
+schema's `matching` block names them. `on_insufficient_tolerance` governs the
+fallback just described. Its default of `relax` keeps the behaviour above,
+while `error` makes the matcher refuse instead of silently widening the
+window, which is the honest setting when the window is itself the criterion,
+as it is when reproducing a published study's stated windows. `shortfall`
+governs what happens when fewer sets than `n_per_condition` can be selected at
+all, and it defaults to `error` deliberately: the datasheet and the generated
+methods paragraph state the requested n, so a set that silently shrank would
+leave the record misstating the materials. A design that can live with fewer
+sets says so with `shortfall: allow`, and either key may be overridden under
+the design's own `matching:` block, exactly as `tolerance_k` was overridden
+above.
 
 Windows are the place to reproduce a published study's stated criteria. The
 bundled `design_es_gender_repro.yaml` sets `frequency` to `0.111...`, which is

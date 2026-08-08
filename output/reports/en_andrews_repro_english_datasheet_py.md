@@ -11,7 +11,7 @@
 - **Cross-engine determinism:** byte-identical
 - **Counterbalancing:** factorial, 1 list(s)
 - **Items:** 72 rows across 4 conditions (HF_smallN, HF_largeN, LF_largeN, LF_smallN)
-- **Seed:** 2026  |  **Versions:** engine python, lexsync 0.1.0, python 3.13.7, pandas 2.3.2, numpy 2.3.2, scipy 1.17.1
+- **Seed:** 2026  |  **Versions:** engine python, lexsync 0.1.0, python 3.13.7, pandas 2.3.2, numpy 2.3.2, scipy 1.17.1, rapidfuzz 3.14.5, pyyaml 6.0.3, os Windows AMD64
 
 ## Selection transparency
 
@@ -38,11 +38,11 @@
 ## Suggested analysis
 
 - **Model:** `response ~ condition + (1 + condition | subject) + (1 | item)` — where the response is the trial outcome (e.g. reaction time or accuracy).
-- Crossed random effects for subjects and items guard against the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). Begin with this maximal structure (Barr et al., 2013) and reduce it if the model does not converge (Matuschek et al., 2017); fit with lme4 in R or pymer4/statsmodels in Python.
+- Crossed random effects for subjects and items guard against the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). Begin with this maximal structure (Barr et al., 2013) and reduce it if the model does not converge (Matuschek et al., 2017). The formula is lme4 syntax, for lme4 in R or pymer4 in Python; statsmodels MixedLM cannot take it directly and needs the random effects restated in its own arguments. The equivalence tests in the realised control are post-selection diagnostics on deterministically selected items, not inferential tests over a sample.
 
 ## Methods paragraph
 
-18 items per condition were selected from the English lexicon (wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md) and matched item by item on length using lexsync's standardised_euclidean matcher. The realised control was close. The largest standardised difference on any matched dimension was 0.21 (90% CI [-0.77, 0.36]), within the 0.5-SD equivalence bound. The smallest condition was selected from 251 eligible candidates, and the selection was deterministic and blind to any outcome measure. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.0).
+18 items per condition were selected from the English lexicon (wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md) and matched item by item on length using lexsync's standardised_euclidean matcher. Equivalence was not confirmed on every matched dimension; the per-dimension differences are reported in the realised-control table. The smallest condition was selected from 251 eligible candidates, and the selection was deterministic and blind to any outcome measure. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.0).
 
 ## Pre-registration template
 
@@ -62,7 +62,7 @@
 - Paradigm: factorial
 
 ### Materials (from the lexsync datasheet)
-18 items per condition were selected from the English lexicon (wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md) and matched item by item on length using lexsync's standardised_euclidean matcher. The realised control was close. The largest standardised difference on any matched dimension was 0.21 (90% CI [-0.77, 0.36]), within the 0.5-SD equivalence bound. The smallest condition was selected from 251 eligible candidates, and the selection was deterministic and blind to any outcome measure. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.0).
+18 items per condition were selected from the English lexicon (wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md) and matched item by item on length using lexsync's standardised_euclidean matcher. Equivalence was not confirmed on every matched dimension; the per-dimension differences are reported in the realised-control table. The smallest condition was selected from 251 eligible candidates, and the selection was deterministic and blind to any outcome measure. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.0).
 
 ### Sampling plan
 - Sample size and justification:
@@ -70,7 +70,7 @@
 
 ### Analysis plan
 - Statistical model: response ~ condition + (1 + condition | subject) + (1 | item)
-  (Crossed random effects for subjects and items guard against the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). Begin with this maximal structure (Barr et al., 2013) and reduce it if the model does not converge (Matuschek et al., 2017); fit with lme4 in R or pymer4/statsmodels in Python.)
+  (Crossed random effects for subjects and items guard against the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). Begin with this maximal structure (Barr et al., 2013) and reduce it if the model does not converge (Matuschek et al., 2017). The formula is lme4 syntax, for lme4 in R or pymer4 in Python; statsmodels MixedLM cannot take it directly and needs the random effects restated in its own arguments. The equivalence tests in the realised control are post-selection diagnostics on deterministically selected items, not inferential tests over a sample.)
 - Inference criteria:
 - Treatment of items (e.g. items as a random factor):
 

@@ -239,7 +239,10 @@ def build_lexdec_stimuli(pool: pd.DataFrame, n: int, reference_words=None,
 
     Real words are drawn by an even spread across the byte-ordered pool (the same
     deterministic device as the matcher's anchor), then a length-matched
-    pseudoword is generated for each. ``reference_words`` (the full lexicon)
+    pseudoword is generated for each. The pool is first filtered to lower-case
+    a-z forms, the only ones the pseudoword generators are defined for, so the
+    eligible pool can be smaller than the request; the pipeline's shortfall
+    policy then decides whether that errors. ``reference_words`` (the full lexicon)
     supplies the bigram statistics and the real-word list a pseudoword must avoid;
     it falls back to the pool when not given. The presented string is the
     ``target`` column; conditions are ``word`` and ``pseudoword`` and ``set``

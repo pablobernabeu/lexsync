@@ -5,13 +5,14 @@ Mirrors R_workflow/R/querying.R.
 """
 from __future__ import annotations
 
+import math
 import re
 
 import numpy as np
 import pandas as pd
 from rapidfuzz.distance import Hamming, Levenshtein
 
-from .io_utils import clean_field, read_csv_utf8, sha256_file
+from .io_utils import _round_dp, clean_field, read_csv_utf8, sha256_file
 
 # Maximal runs of (possibly accented) Latin vowels approximate syllable nuclei.
 _VOWELS = re.compile(r"[aeiouyàáâãäåèéêëìíîïòóôõöøùúûüýÿ]+")
@@ -152,7 +153,7 @@ def load_pool(path: str, schema: dict, lexicon=None, language=None) -> dict:
 
 
 def add_bigram_frequency(df: pd.DataFrame, reference=None) -> pd.DataFrame:
-    """Mean positional bigram probability, a phonotactic-probability proxy.
+    """Mean bigram probability (type-based, non-positional), a phonotactic-probability proxy.
 
     For each word, the mean over its adjacent letter bigrams of the corpus bigram
     probability (count divided by the total bigram count). Computed from integer
@@ -172,7 +173,7 @@ def add_bigram_frequency(df: pd.DataFrame, reference=None) -> pd.DataFrame:
         bgs = [w[i:i + 2] for i in range(len(w) - 1)]
         if not bgs:
             return 0.0
-        return round(sum(counts.get(b, 0) for b in bgs) / len(bgs) / total, 9)
+        return _round_dp(sum(counts.get(b, 0) for b in bgs) / len(bgs) / total, 9)
 
     out = df.copy()
     out["bigram_freq"] = out["word"].map(bf)
@@ -363,7 +364,7 @@ def add_pair_overlap(df: pd.DataFrame, prime: str = "prime",
     den = [max(len(x), len(y)) for x, y in zip(a, b)]
     out = df.copy()
     out["pair.lev"] = np.array(lev, dtype=int)
-    out["pair.overlap"] = [0.0 if d == 0 else round(1 - l / d, 9)
+    out["pair.overlap"] = [0.0 if d == 0 else _round_dp(1 - l / d, 9)
                            for l, d in zip(lev, den)]
     return out
 
@@ -379,24 +380,54 @@ def load_items(path: str, required_fields) -> pd.DataFrame:
     parts = str(path).replace("\\", "/").split("/")
     if ".." in parts:
         raise ValueError("lexsync: items path must not contain '..'.")
-    # The condition label and the paradigm's presented fields are read as text, never
-    # type-guessed. This engine happens to keep "f" a string anyway, but the R engine's
-    # reader turns a column of `f` or `t` into a LOGICAL, so a design coding its two
-    # response keys as f and j had `answer` become FALSE there and "f" here. Forcing the
-    # type on both sides makes the agreement structural rather than coincidental.
-    df = read_csv_utf8(path, as_character=["condition"] + list(required_fields))
+    # The item id, the condition label and the paradigm's presented fields are read as
+    # text, never type-guessed. This engine happens to keep "f" a string anyway, but the
+    # R engine's reader turns a column of `f` or `t` into a LOGICAL, so a design coding
+    # its two response keys as f and j had `answer` become FALSE there and "f" here; and
+    # `item` left to inference float-promoted a numeric id column, so '01' became '1'
+    # (or, with a missing cell, '1.0'). Forcing the type on both sides makes the
+    # agreement structural rather than coincidental.
+    df = read_csv_utf8(path, as_character=["item", "condition"] + list(required_fields))
     needed = ["item", "condition"] + list(required_fields)
     missing = [c for c in needed if c not in df.columns]
     if missing:
         raise ValueError(f"lexsync: items table '{path}' is missing column(s): {', '.join(missing)}.")
+    # Missingness is tested before any string coercion: a missing cell in a dtype=str
+    # column still arrives as NaN, and str() would render it as the literal 'nan',
+    # which a blank condition then carries past the hash-key guard downstream.
+    for col in needed:
+        if df[col].isna().any():
+            raise ValueError(
+                f"lexsync: the items table has missing value(s) in column '{col}'; "
+                "every item, condition and presented field must be filled.")
     df = df.copy()
     for f in [c for c in required_fields if c in df.columns]:
-        df[f] = [clean_field(str(v).strip(_ASCII_WS), f) for v in df[f]]
+        df[f] = [str(v).strip(_ASCII_WS) for v in df[f]]
     item_key = df["item"].astype(str).str.strip(_ASCII_WS)
+    df["condition"] = df["condition"].astype(str).str.strip(_ASCII_WS)
+    # An all-whitespace cell is already missing in the R engine's reader (readr trims
+    # before matching its na strings), so refusing the trimmed-empty value here keeps
+    # the two engines refusing the same tables, with the same message.
+    for col in needed:
+        vals = item_key if col == "item" else df[col]
+        if (vals == "").any():
+            raise ValueError(
+                f"lexsync: the items table has missing value(s) in column '{col}'; "
+                "every item, condition and presented field must be filled.")
+    # A repeated item-condition pair is a slip that would silently duplicate a trial
+    # in every generated list; the first repeat in file order is reported.
+    seen = set()
+    for it, cond in zip(item_key, df["condition"]):
+        if (it, cond) in seen:
+            raise ValueError(
+                f"lexsync: the items table repeats item '{it}' for condition '{cond}'; "
+                "each item and condition pair may appear once.")
+        seen.add((it, cond))
+    for f in [c for c in required_fields if c in df.columns]:
+        df[f] = [clean_field(v, f) for v in df[f]]
     items = sorted(item_key.unique(), key=lambda s: s.encode("utf-8"))
     set_map = {it: i + 1 for i, it in enumerate(items)}
     df["set"] = item_key.map(set_map)
-    df["condition"] = df["condition"].astype(str).str.strip(_ASCII_WS)
     return df.reset_index(drop=True)
 
 
@@ -408,6 +439,18 @@ def build_pool(lexicon: pd.DataFrame, filters: dict | None = None) -> pd.DataFra
                 continue
             vals = list(rng) if isinstance(rng, (list, tuple)) else [rng]
             if len(vals) == 2 and all(isinstance(v, (int, float)) for v in vals):
+                # YAML's .inf and .nan arrive as ordinary floats, and either one --
+                # like a reversed range -- silently empties the pool row by row.
+                # Non-finite first: a NaN bound would make the reversal test
+                # meaningless. Equal bounds stay legal (the zh design uses [2, 2]).
+                if not all(math.isfinite(float(v)) for v in vals):
+                    raise ValueError(
+                        f"lexsync: filter '{col}' has a non-finite bound; "
+                        "ranges need finite numbers.")
+                if vals[0] > vals[1]:
+                    raise ValueError(
+                        f"lexsync: filter '{col}' has a reversed range; "
+                        "give it as [low, high].")
                 df = df[df[col].notna() & (df[col] >= vals[0]) & (df[col] <= vals[1])]
             else:
                 df = df[df[col].notna() & df[col].astype(str).isin([str(v) for v in vals])]

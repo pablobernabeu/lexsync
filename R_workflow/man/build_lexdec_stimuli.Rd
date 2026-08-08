@@ -27,7 +27,10 @@ A stimulus data frame with \code{target}, \code{condition} and \code{set} column
 }
 \description{
 Real words are drawn by an even spread across the byte-ordered pool, then a
-length-matched pseudoword is generated for each. \code{reference_words} (the full
+length-matched pseudoword is generated for each. The pool is first filtered to
+lower-case a-z forms, the only ones the pseudoword generators are defined for,
+so the eligible pool can be smaller than the request; the pipeline's shortfall
+policy then decides whether that errors. \code{reference_words} (the full
 lexicon) supplies the bigram statistics and the real-word list a pseudoword
 must avoid. The presented string is the \code{target} column; conditions are \code{word}
 and \code{pseudoword} and \code{set} pairs them.

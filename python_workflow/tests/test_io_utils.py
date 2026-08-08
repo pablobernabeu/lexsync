@@ -1,7 +1,8 @@
 import pandas as pd
 import pytest
 
-from lexsync.io_utils import clean_field, read_csv_utf8, sha256_file, slugify, write_csv_utf8
+from lexsync.io_utils import (_is_continuous, clean_field, read_config, read_csv_utf8,
+                              sha256_file, slugify, write_csv_utf8)
 
 # The R engine (readr) writes LF on every platform, so LF is the cross-engine
 # contract. test-io_utils.R pins these same bytes and this same digest.
@@ -59,3 +60,38 @@ def test_slugify_is_lowercase_and_path_safe():
 def test_slugify_is_locale_invariant():
     assert slugify("STUDY_I") == "study_i"
     assert slugify("En Lexdec", "English!").isascii()
+
+
+def test_read_config_refuses_a_duplicated_mapping_key(tmp_path):
+    # yaml.safe_load keeps the last value for a repeated key, silently; the R
+    # engine's yaml::read_yaml() rejects the key by its libyaml parser default,
+    # so this engine accepted a config the R engine refused. The messages differ
+    # because R's comes from the C parser; behavioural parity -- both engines
+    # refuse -- is the contract, and test-io_utils.R pins the R side of it.
+    path = tmp_path / "dup.yaml"
+    path.write_text("name: a\nname: b\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="duplicate mapping key 'name'"):
+        read_config(str(path))
+    # A key repeated in a NESTED mapping must be caught too, not just at the top.
+    path.write_text("items:\n  source: table\n  source: pool\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="duplicate mapping key 'source'"):
+        read_config(str(path))
+    # And an ordinary config still loads, so the strict loader costs nothing.
+    path.write_text("name: a\nitems:\n  source: pool\n", encoding="utf-8")
+    assert read_config(str(path)) == {"name": "a", "items": {"source": "pool"}}
+
+
+def test_a_continuous_design_over_a_supplied_pool_takes_the_continuous_path():
+    # The predicate allowed corpus and table only, so a 'continuous' block over
+    # items.source 'pool' fell through to the conditions matcher and failed with
+    # a different obscure error in each engine, even though run_pipeline's
+    # corpus/pool branch handles continuous selection generically. The R twin
+    # "a continuous design over a supplied pool takes the continuous path" in
+    # test-io_utils.R pins the same outcomes.
+    cont = {"predictor": "frequency", "controls": ["length"]}
+    assert _is_continuous({"continuous": cont, "items": {"source": "pool"}})
+    assert _is_continuous({"continuous": cont})            # default source: corpus
+    assert not _is_continuous({"items": {"source": "pool"}})
+    with pytest.raises(ValueError,
+                       match="cannot be combined with items.source 'generate'"):
+        _is_continuous({"continuous": cont, "items": {"source": "generate"}})

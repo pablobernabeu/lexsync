@@ -212,11 +212,11 @@ add_pair_overlap <- function(df, prime = "prime", target = "target") {
   lev <- as.integer(stringdist::stringdist(a, b, method = "lv"))
   den <- pmax(nchar(a), nchar(b))
   df[["pair.lev"]] <- lev
-  df[["pair.overlap"]] <- ifelse(den == 0L, 0, round(1 - lev / den, 9))
+  df[["pair.overlap"]] <- ifelse(den == 0L, 0, .round_dp(1 - lev / den, 9))
   df
 }
 
-#' Mean positional bigram probability, a phonotactic-probability proxy
+#' Mean bigram probability (type-based, non-positional), a phonotactic-probability proxy
 #'
 #' For each word, the mean over its adjacent letter bigrams of the corpus bigram
 #' probability (count divided by the total bigram count). Computed from integer
@@ -240,7 +240,7 @@ add_bigram_frequency <- function(df, reference = NULL) {
     if (n < 2L) return(0)
     bgs <- substring(w, 1:(n - 1L), 2:n)
     v <- counts[bgs]; v[is.na(v)] <- 0L
-    round(sum(v) / length(bgs) / total, 9)
+    .round_dp(sum(v) / length(bgs) / total, 9)
   }
   df$bigram_freq <- vapply(as.character(df$word), bf, numeric(1), USE.NAMES = FALSE)
   df
@@ -473,17 +473,28 @@ load_pool <- function(path, schema, lexicon = NULL, language = NULL) {
 load_items <- function(path, required_fields) {
   parts <- strsplit(gsub("\\\\", "/", path), "/", fixed = TRUE)[[1]]
   if (".." %in% parts) stop("lexsync: items path must not contain '..'.", call. = FALSE)
-  # The condition label and the paradigm's presented fields are read as text, never
-  # type-guessed: readr reads a column of `f` or `t` as logical, which silently turned
-  # a design's `answer: f` response key into FALSE here while the Python engine kept
-  # "f". See read_csv_utf8.
-  df <- as.data.frame(read_csv_utf8(path, as_character = c("condition", required_fields)),
+  # The item id, the condition label and the paradigm's presented fields are read as
+  # text, never type-guessed: readr reads a column of `f` or `t` as logical, which
+  # silently turned a design's `answer: f` response key into FALSE here while the
+  # Python engine kept "f", and an `item` column left to inference number-parsed
+  # '01' down to '1' (pandas, with a missing cell, to '1.0'). See read_csv_utf8.
+  df <- as.data.frame(read_csv_utf8(path, as_character = c("item", "condition", required_fields)),
                       stringsAsFactors = FALSE)
   needed <- c("item", "condition", required_fields)
   missing <- setdiff(needed, names(df))
   if (length(missing)) {
     stop(sprintf("lexsync: items table '%s' is missing column(s): %s.",
                  path, paste(missing, collapse = ", ")), call. = FALSE)
+  }
+  # Missingness is tested before any coercion or cleaning: an NA left to flow on
+  # fails far from here, and the Python engine (where str() would render it as the
+  # literal 'nan') refuses at this same point with this same message.
+  for (col in needed) {
+    if (anyNA(df[[col]])) {
+      stop(sprintf(paste("lexsync: the items table has missing value(s) in column '%s';",
+                         "every item, condition and presented field must be filled."),
+                   col), call. = FALSE)
+    }
   }
   # readr trims ASCII whitespace from every field (trim_ws defaults to TRUE) and
   # pandas trims nothing, so the same padded table would yield different stimulus
@@ -494,14 +505,38 @@ load_items <- function(path, required_fields) {
   # Only ASCII whitespace is trimmed, because that is all readr removes -- a
   # no-break space survives in both engines, so they still agree.
   trim <- function(x) trimws(as.character(x), whitespace = "[ \t\r\n]")
-  for (f in intersect(required_fields, names(df))) {
-    df[[f]] <- vapply(df[[f]], function(v) clean_field(trim(v), f), character(1))
-  }
+  for (f in intersect(required_fields, names(df))) df[[f]] <- trim(df[[f]])
   item_key <- trim(df$item)
+  df$condition <- trim(df$condition)
+  # A quoted all-whitespace cell survives the reader as text here and as text in
+  # pandas; trimmed empty, it is a missing value in all but spelling, so it gets
+  # the same refusal in both engines.
+  for (col in needed) {
+    v <- if (identical(col, "item")) item_key else df[[col]]
+    if (any(!nzchar(v))) {
+      stop(sprintf(paste("lexsync: the items table has missing value(s) in column '%s';",
+                         "every item, condition and presented field must be filled."),
+                   col), call. = FALSE)
+    }
+  }
+  # A repeated item-condition pair is a slip that would silently duplicate a trial
+  # in every generated list; the first repeat in file order is reported. The key is
+  # length-prefixed because a bare separator could recur inside a label and collide;
+  # the Python engine compares the pair as a tuple, which has no such ambiguity.
+  pair_key <- paste0(nchar(item_key), ":", item_key, ":", df$condition)
+  dup <- duplicated(pair_key)
+  if (any(dup)) {
+    i <- which(dup)[1L]
+    stop(sprintf(paste("lexsync: the items table repeats item '%s' for condition '%s';",
+                       "each item and condition pair may appear once."),
+                 item_key[i], df$condition[i]), call. = FALSE)
+  }
+  for (f in intersect(required_fields, names(df))) {
+    df[[f]] <- vapply(df[[f]], function(v) clean_field(v, f), character(1))
+  }
   items <- sort(unique(item_key), method = "radix")
   set_map <- stats::setNames(seq_along(items), items)
   df$set <- unname(set_map[item_key])
-  df$condition <- trim(df$condition)
   rownames(df) <- NULL
   df
 }
@@ -525,6 +560,18 @@ build_pool <- function(lexicon, filters = NULL) {
       if (!col %in% names(df)) next
       rng <- unlist(filters[[col]], use.names = FALSE)
       if (is.numeric(rng) && length(rng) == 2) {
+        # YAML's .inf and .nan arrive as ordinary doubles, and either one -- like
+        # a reversed range -- silently empties the pool row by row. Non-finite
+        # first: a NaN bound would make the reversal test meaningless. Equal
+        # bounds stay legal (the zh design uses [2, 2]).
+        if (any(!is.finite(rng))) {
+          stop(sprintf(paste("lexsync: filter '%s' has a non-finite bound;",
+                             "ranges need finite numbers."), col), call. = FALSE)
+        }
+        if (rng[1] > rng[2]) {
+          stop(sprintf("lexsync: filter '%s' has a reversed range; give it as [low, high].",
+                       col), call. = FALSE)
+        }
         df <- df[!is.na(df[[col]]) & df[[col]] >= rng[1] & df[[col]] <= rng[2], , drop = FALSE]
       } else {
         df <- df[!is.na(df[[col]]) & as.character(df[[col]]) %in% as.character(rng), , drop = FALSE]

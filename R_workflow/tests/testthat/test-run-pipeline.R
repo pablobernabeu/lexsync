@@ -124,3 +124,127 @@ test_that("run_all errors when the configuration directory holds no designs", {
                        outdir = out, verbose = FALSE),
                "no design_.*yaml files")
 })
+
+# ---- pipeline-level guards --------------------------------------------------
+# Twinned with test_run_pipeline.py: every fixture, expectation and message
+# below must stay in step with the Python suite.
+
+test_that("a misspelt pool filter is an error, not an unfiltered pool", {
+  out <- tmp_out()
+  design <- write_design(out, c(
+    "name: guard_test",
+    "language: english",
+    paste0("lexicon: ", as_yaml_path(extdata("en_example.csv"))),
+    "n_per_condition: 5",
+    "pool_filters: {frequncy: [3.8, 7]}",
+    "conditions:",
+    "  - {name: high, define_by: {frequency: [5.0, 7.0]}}",
+    "  - {name: low, define_by: {frequency: [3.8, 4.4]}}",
+    "match_on: [length]"
+  ))
+  expect_error(run_quiet(design, extdata("schema.yaml"), outdir = out),
+               "pool_filters name column")
+})
+
+test_that("a non-integer n_per_condition is an error", {
+  out <- tmp_out()
+  design <- write_design(out, c(
+    "name: guard_test",
+    "language: english",
+    paste0("lexicon: ", as_yaml_path(extdata("en_example.csv"))),
+    "n_per_condition: 2.5",
+    "conditions:",
+    "  - {name: high, define_by: {frequency: [5.0, 7.0]}}",
+    "  - {name: low, define_by: {frequency: [3.8, 4.4]}}",
+    "match_on: [length]"
+  ))
+  expect_error(run_quiet(design, extdata("schema.yaml"), outdir = out),
+               "positive whole number")
+})
+
+test_that("a continuous table without members is an error", {
+  out <- tmp_out()
+  items <- file.path(out, "pairs.csv")
+  writeLines(c("item,condition,prime,target", "1,related,nurse,doctor"),
+             items, useBytes = TRUE)
+  design <- write_design(out, c(
+    "name: guard_test",
+    "language: english",
+    "paradigm: priming",
+    "items:",
+    "  source: table",
+    paste0("  path: ", as_yaml_path(items)),
+    "continuous:",
+    "  predictor: target.frequency",
+    "  controls: [target.length]",
+    "match_on: [target.length]"
+  ))
+  expect_error(run_quiet(design, extdata("schema.yaml"), outdir = out),
+               "requires items.members")
+})
+
+test_that("pool_filters on a plain table are an error", {
+  out <- tmp_out()
+  items <- file.path(out, "pairs.csv")
+  writeLines(c("item,condition,prime,target",
+               "1,related,nurse,doctor",
+               "1,unrelated,window,doctor"), items, useBytes = TRUE)
+  design <- write_design(out, c(
+    "name: guard_test",
+    "language: english",
+    "paradigm: priming",
+    "items:",
+    "  source: table",
+    paste0("  path: ", as_yaml_path(items)),
+    "pool_filters: {length: [3, 7]}"
+  ))
+  expect_error(run_quiet(design, extdata("schema.yaml"), outdir = out),
+               "pool_filters have no effect")
+})
+
+test_that("a generate shortfall errors by default and allow accepts it", {
+  out <- tmp_out()
+  base <- c(
+    "name: guard_gen",
+    "language: english",
+    "paradigm: lexical_decision",
+    "items:",
+    "  source: generate",
+    paste0("  lexicon: ", as_yaml_path(extdata("en_example.csv"))),
+    "n_per_condition: 2000",
+    "pool_filters: {length: [4, 7], frequency: [3.5, 6.0]}"
+  )
+  expect_error(run_quiet(write_design(out, base), extdata("schema.yaml"), outdir = out),
+               "could be generated")
+  out2 <- tmp_out()
+  design <- write_design(out2, c(base, "matching: {shortfall: allow}"))
+  res <- suppressMessages(run_quiet(design, extdata("schema.yaml"), outdir = out2))
+  expect_true(file.exists(res$stimuli))
+})
+
+test_that("a continuous design over a supplied pool selects continuously", {
+  # The predicate that gates the continuous selector must treat a supplied
+  # pool like a corpus; before the fix this design fell through to the
+  # conditions matcher and crashed differently in each engine.
+  out <- tmp_out()
+  lex <- read_csv_utf8(extdata("en_example.csv"))
+  pool_path <- file.path(out, "pool.csv")
+  write_csv_utf8(data.frame(word = head(lex$word, 60)), pool_path)
+  design <- write_design(out, c(
+    "name: guard_pool",
+    "language: english",
+    "items:",
+    "  source: pool",
+    paste0("  path: ", as_yaml_path(pool_path)),
+    paste0("  lexicon: ", as_yaml_path(extdata("en_example.csv"))),
+    "n_per_condition: 10",
+    "continuous:",
+    "  predictor: frequency",
+    "  controls: [length]",
+    "match_on: [length]"
+  ))
+  res <- run_quiet(design, extdata("schema.yaml"), outdir = out)
+  stim <- read_csv_utf8(res$stimuli)
+  expect_true(all(stim$condition == "continuous"))
+  expect_equal(sort(unique(stim$set)), 1:10)
+})

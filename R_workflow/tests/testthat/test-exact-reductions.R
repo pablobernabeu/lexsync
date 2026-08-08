@@ -93,6 +93,13 @@ test_that("the shared decimal rounder is pinned", {
   expect_identical(lexsync:::.round_dp(c(1.0005, 2.0005), 3), c(1.001, 2.001))
   expect_true(is.na(lexsync:::.round_dp(NA_real_, 3)))
   expect_identical(lexsync:::.round_dp(Inf, 3), Inf)
+  # The Python engine now carries a vectorised twin, _round_dp_vec, and
+  # test_the_vectorised_rounder_matches_the_scalar_elementwise asserts these same
+  # values elementwise; here the vectorised call is the function itself, so one
+  # mixed vector pins the pinned cases and the non-finite pass-through together.
+  expect_identical(
+    lexsync:::.round_dp(c(7.8125, -7.8125, 1.0005, 4.2505, 0, NA_real_, Inf, -Inf), 3),
+    c(7.813, -7.813, 1.001, 4.251, 0, NA_real_, Inf, -Inf))
 })
 
 # ---- The CSV writer's magnitude limits -------------------------------------

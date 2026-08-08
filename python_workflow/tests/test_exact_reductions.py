@@ -149,6 +149,36 @@ def test_the_shared_rounder_differs_from_the_builtins_where_expected():
     assert _round_dp(float("nan"), 3) != _round_dp(float("nan"), 3)
 
 
+def test_the_vectorised_rounder_matches_the_scalar_elementwise():
+    """_round_dp_vec exists so a whole distance vector can be rounded without a
+    Python-level loop; it must be indistinguishable from mapping _round_dp over
+    the same values, including the NaN a row missing a dimension carries and the
+    Inf used as a used-row sentinel. The scalar's pinned cases above are all
+    included, at every dp, so the two rounders cannot drift apart quietly.
+    test-exact-reductions.R asserts the same values through .round_dp, which is
+    vectorised already and is the twin of both."""
+    import numpy as np
+
+    from lexsync.io_utils import _round_dp, _round_dp_vec
+
+    values = [7.8125, -7.8125, 2.5, -2.5, 1.0005, 4.2505, 0.0,     # the pinned cases
+              0.5, -0.5, 1.5, 3.5, -3.5, 0.25, -0.25, 0.05, -0.05,  # more exact halves
+              123456.789, -123456.789, 1e15, -1e15, 2.0 ** 49, 2.0 ** 53,
+              float("nan"), float("inf"), float("-inf")]
+    for dp in (0, 1, 2, 3):
+        arr = np.array(values)
+        expected = np.array([_round_dp(v, dp) for v in values])
+        # assert_array_equal is exact, and treats NaN in the same slot as equal.
+        np.testing.assert_array_equal(_round_dp_vec(arr, dp), expected)
+    # The contract stated directly as well, not only relative to the scalar.
+    np.testing.assert_array_equal(
+        _round_dp_vec(np.array([7.8125, -7.8125, 1.0005, 4.2505, 0.0]), 3),
+        np.array([7.813, -7.813, 1.001, 4.251, 0.0]))
+    out = _round_dp_vec(np.array([float("nan"), float("inf"), float("-inf")]), 3)
+    assert math.isnan(out[0])
+    assert out[1] == float("inf") and out[2] == float("-inf")
+
+
 # ---- The CSV writer's magnitude limits -------------------------------------------
 
 

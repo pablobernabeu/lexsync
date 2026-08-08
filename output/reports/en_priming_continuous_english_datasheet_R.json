@@ -18,7 +18,7 @@
     "length": {
       "type": "derived",
       "compute": "n_letters",
-      "unit": "letters"
+      "unit": "characters"
     },
     "frequency": {
       "type": "column",
@@ -43,7 +43,7 @@
     "bigram_freq": {
       "type": "derived",
       "compute": "mean_bigram_probability",
-      "unit": "mean positional bigram probability"
+      "unit": "mean bigram probability (type-based, non-positional)"
     }
   },
   "selection": {
@@ -87,7 +87,11 @@
   "analysis": {
     "response": "the trial outcome (e.g. reaction time or accuracy)",
     "suggested_model": "response ~ target.frequency + target.length + pair.overlap + (1 + target.frequency | subject) + (1 | item)",
-    "note": "The predictor is kept continuous and analysed by regression or a mixed model rather than dichotomised (Kuperman, 2015; Liben-Nowell et al., 2019); the controls enter as covariates. Crossed random effects for subjects and items guard the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008); reduce the structure if it does not converge (Matuschek et al., 2017)."
+    "note": "The predictor is kept continuous and analysed by regression or a mixed model rather than dichotomised (Kuperman, 2015; Liben-Nowell et al., 2019); the controls enter as covariates. Crossed random effects for subjects and items guard the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008); reduce the structure if it does not converge (Matuschek et al., 2017). Dotted dimension names are valid in R formulas but must be quoted as Q(\"...\") in Patsy-style Python interfaces."
+  },
+  "equivalence": {
+    "bound_d": 0.5,
+    "alpha": 0.05
   },
   "realised_control": [
     {
@@ -133,8 +137,13 @@
       "readr": "2.2.0",
       "stringdist": "0.9.17",
       "jsonlite": "2.0.0",
-      "digest": "0.6.39"
-    }
+      "digest": "0.6.39",
+      "yaml": "2.3.12",
+      "stringi": "1.8.7",
+      "os": "Windows x86-64"
+    },
+    "design_sha256": "aa538f8c33f01a3abc3176fe37c89c25107a97a03bc2ec0109070cf4eb9c8b23",
+    "schema_sha256": "483a9cec49314b9479fe656ad39840083a551f2e4313ca164efe3e9c064fb255"
   },
   "artifacts": [
     {

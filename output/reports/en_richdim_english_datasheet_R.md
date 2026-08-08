@@ -11,7 +11,7 @@
 - **Cross-engine determinism:** byte-identical
 - **Counterbalancing:** factorial, 1 list(s)
 - **Items:** 120 rows across 2 conditions (low_frequency, high_frequency)
-- **Seed:** 2026  |  **Versions:** engine R, lexsync 0.1.0, R 4.6.1, readr 2.2.0, stringdist 0.9.17, jsonlite 2.0.0, digest 0.6.39
+- **Seed:** 2026  |  **Versions:** engine R, lexsync 0.1.0, R 4.6.1, readr 2.2.0, stringdist 0.9.17, jsonlite 2.0.0, digest 0.6.39, yaml 2.3.12, stringi 1.8.7, os Windows x86-64
 
 ## Selection transparency
 
@@ -32,7 +32,7 @@
 ## Suggested analysis
 
 - **Model:** `response ~ condition + (1 + condition | subject) + (1 | item)` -- where the response is the trial outcome (e.g. reaction time or accuracy).
-- Crossed random effects for subjects and items guard against the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). Begin with this maximal structure (Barr et al., 2013) and reduce it if the model does not converge (Matuschek et al., 2017); fit with lme4 in R or pymer4/statsmodels in Python.
+- Crossed random effects for subjects and items guard against the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). Begin with this maximal structure (Barr et al., 2013) and reduce it if the model does not converge (Matuschek et al., 2017). The formula is lme4 syntax, for lme4 in R or pymer4 in Python; statsmodels MixedLM cannot take it directly and needs the random effects restated in its own arguments. The equivalence tests in the realised control are post-selection diagnostics on deterministically selected items, not inferential tests over a sample.
 
 ## Methods paragraph
 
@@ -64,7 +64,7 @@
 
 ### Analysis plan
 - Statistical model: response ~ condition + (1 + condition | subject) + (1 | item)
-  (Crossed random effects for subjects and items guard against the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). Begin with this maximal structure (Barr et al., 2013) and reduce it if the model does not converge (Matuschek et al., 2017); fit with lme4 in R or pymer4/statsmodels in Python.)
+  (Crossed random effects for subjects and items guard against the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). Begin with this maximal structure (Barr et al., 2013) and reduce it if the model does not converge (Matuschek et al., 2017). The formula is lme4 syntax, for lme4 in R or pymer4 in Python; statsmodels MixedLM cannot take it directly and needs the random effects restated in its own arguments. The equivalence tests in the realised control are post-selection diagnostics on deterministically selected items, not inferential tests over a sample.)
 - Inference criteria:
 - Treatment of items (e.g. items as a random factor):
 

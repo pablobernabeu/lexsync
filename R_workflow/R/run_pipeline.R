@@ -20,10 +20,31 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
   options(lexsync.verbose = verbose)
   schema <- read_config(schema_path)
   design <- read_config(design_path)
+  n_req <- design$n_per_condition %||% design$n_per_cell
+  if (!is.null(n_req) &&
+      (!is.numeric(n_req) || length(n_req) != 1L || is.na(n_req) ||
+       n_req < 1 || n_req != trunc(n_req))) {
+    stop("lexsync: n_per_condition must be a positive whole number.", call. = FALSE)
+  }
   items_cfg <- design$items %||% list()
   source <- items_cfg$source %||% "corpus"
   paradigm <- design$paradigm %||% "factorial"
   is_continuous <- .is_continuous(design)
+  if (is_continuous && identical(source, "table") &&
+      !length(unlist(items_cfg$members %||% list(), use.names = FALSE))) {
+    # Without members the table branch loads the rows and never selects, while the
+    # log and datasheet would still record continuous mode -- a provenance lie.
+    stop("lexsync: a 'continuous' block with items.source 'table' requires items.members.",
+         call. = FALSE)
+  }
+  if (identical(source, "table") && !is_continuous && !is.null(design$pool_filters)) {
+    # Only the continuous pairs selector consumes pool_filters on the table path; a
+    # curated item table is the researcher's selection, so a stray filter here is
+    # always a mistake rather than a request to drop rows.
+    stop(paste0("lexsync: pool_filters have no effect for items.source 'table' without ",
+                "a 'continuous' block; remove them or use a continuous design."),
+         call. = FALSE)
+  }
 
   log <- new_run_log(design$name, meta = list(
     design = design$name, language = design$language,
@@ -34,6 +55,22 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
   report <- NULL
   pair_eligible <- NULL
   norms <- list()
+  selection_audit <- NULL
+
+  # Read the matcher's audit attribute straight off the returned frame (rbind and
+  # pd.concat drop attributes) and put any window relaxation on the run log; the
+  # datasheet records it too. Returns the frame unchanged.
+  take_audit <- function(stim) {
+    selection_audit <<- attr(stim, "audit")
+    for (rx in selection_audit$window_relaxations %||% list()) {
+      log <<- log_step(log, sprintf("tolerance window relaxed for condition '%s' (%d within tolerance, %d needed)",
+                                    rx$condition, rx$n_within_tolerance, rx$n_needed),
+                       list(condition = rx$condition,
+                            n_within_tolerance = rx$n_within_tolerance,
+                            n_needed = rx$n_needed))
+    }
+    stim
+  }
 
   # The design's `norms:` tables are joined onto the lexicon before the pool is
   # built, so a filter, a matched dimension or a continuous predictor may name a
@@ -76,6 +113,15 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
       ref_words <- lex$word
     }
     jn <- join_norms(lex, log); lex <- jn$lexicon; log <- jn$log
+    # build_pool skips a filter column it does not recognise, so a misspelt key
+    # would silently leave the pool unfiltered; the pair path carries the same
+    # guard. Checked after the norms join, which legitimately adds filterable
+    # columns.
+    unknown <- setdiff(names(design$pool_filters %||% list()), names(lex))
+    if (length(unknown)) {
+      stop(sprintf("lexsync: pool_filters name column(s) the lexicon does not have: %s.",
+                   paste(unknown, collapse = ", ")), call. = FALSE)
+    }
     pool <- build_pool(lex, design$pool_filters)
     log <- log_step(log, sprintf("pool after filters: %d words", nrow(pool)), list(pool = nrow(pool)))
   }
@@ -95,31 +141,48 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
     if (is_continuous) {
       predictor <- design$continuous$predictor
       controls <- unlist(design$continuous$controls, use.names = FALSE)
-      stim <- select_continuous_stimuli(pool, design, schema, verbose = verbose)
+      stim <- take_audit(select_continuous_stimuli(pool, design, schema, verbose = verbose))
       log <- log_step(log, sprintf("selected %d items spanning '%s' (continuous design)",
                                    nrow(stim), predictor), list(predictor = predictor))
       report <- match_report_continuous(stim, predictor, controls, schema)
     } else {
       if (!is.null(design$resample)) {
+        # Per-replicate audits are dropped with the rbind inside resample_stimuli;
+        # a relaxation there still reaches the console via verbose.
         stim <- resample_stimuli(pool, design, schema, design$resample$n_sets %||% 2L, verbose = verbose)
         log <- log_step(log, sprintf("resampled %d disjoint matched sets (%d items total)",
                                      length(unique(stim$replicate)), nrow(stim)),
                         list(conditions = paste(unique(stim$condition), collapse = ", ")))
       } else {
-        stim <- match_stimuli(pool, design, schema, verbose = verbose)
+        stim <- take_audit(match_stimuli(pool, design, schema, verbose = verbose))
         log <- log_step(log, sprintf("matched %d items across %d conditions",
                                      nrow(stim), length(unique(stim$condition))),
                         list(conditions = paste(unique(stim$condition), collapse = ", ")))
       }
       std <- c("length", "frequency", "n_density", "old20")
-      extra <- intersect(c("n_syllables", "bigram_freq"), match_on)
-      dims <- intersect(c(std, extra), names(stim))
+      # First-occurrence-order union with match_on (not sort(): a locale-collated
+      # order would drift from the Python engine), so a custom joined norm the
+      # design matches on reaches the descriptives, comparisons and
+      # realised-control record rather than only the stimuli file.
+      dims <- unique(c(std, match_on))
+      dims <- dims[dims %in% names(stim)]
       report <- match_report(stim, dims, schema)
     }
   } else if (source == "generate") {
     n <- design$n_per_condition %||% design$n_per_cell %||% 40L
     gen_method <- items_cfg$generation$method %||% "letter_substitution"
     stim <- build_lexdec_stimuli(pool, n, reference_words = lex$word, method = gen_method)
+    sf <- .resolve_policy(design, schema, "shortfall", "error", c("error", "allow"))
+    realised <- length(unique(stim$set))
+    if (realised < n && !identical(sf, "allow")) {
+      # build_lexdec_stimuli filters the pool to a-z forms before selecting, so the
+      # eligible pool can be smaller than the request without any pool_filters.
+      stop(sprintf(paste0("lexsync: %d sets per condition were requested but only %d could ",
+                          "be generated; the eligible a-z pool is smaller than the request, ",
+                          "so lower n_per_condition or supply more words, or set matching: ",
+                          "shortfall: allow to accept a smaller set."),
+                   n, realised), call. = FALSE)
+    }
     log <- log_step(log, sprintf("generated %d items (words + pseudowords, %s)", nrow(stim), gen_method),
                     list(conditions = paste(unique(stim$condition), collapse = ", ")))
     report <- match_report(stim, "length", schema)
@@ -142,7 +205,9 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
       stim <- .join_member_norms(stim, members, items_cfg, design, schema, lex = mem_lex)
       log <- log_step(log, sprintf("joined word-level norms onto %s", paste(members, collapse = " and ")))
       if (all(c("prime", "target") %in% members)) {
-        stim <- add_pair_overlap(stim, members[1], members[2])
+        # The columns by name, not members[1]/members[2]: a member listed before
+        # prime/target would silently redirect the overlap to the wrong pair.
+        stim <- add_pair_overlap(stim, "prime", "target")
         log <- log_step(log, "computed relational dimensions (pair.lev, pair.overlap)")
       }
       if (is_continuous) {
@@ -269,9 +334,20 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
   } else if (identical(source, "generate")) {
     candidate_pool <- list(list(condition = "words in band", n_candidates = nrow(pool)))
   }
+  # The neighbourhood reference is provenance: overriding it changes n_density,
+  # old20 and bigram_freq without touching any input file the datasheet hashes.
+  nref <- NULL
+  if (!is.null(reference_words)) {
+    nref <- list(source = "user-supplied", n_words = length(reference_words),
+                 sha256 = digest::digest(paste(enc2utf8(reference_words), collapse = "\n"),
+                                         algo = "sha256", serialize = FALSE))
+  }
   ds <- build_datasheet(design, schema, report, stim, source_path, artifacts,
                         schema$seed, engine = "R", candidate_pool = candidate_pool,
-                        norms = norms, balance = balance, blocks = blocks)
+                        norms = norms, balance = balance, blocks = blocks,
+                        design_path = design_path, schema_path = schema_path,
+                        selection_audit = selection_audit,
+                        neighbourhood_reference = nref)
   ds_json <- file.path(outdir, "reports", paste0(base, "_datasheet_R.json"))
   ds_md <- file.path(outdir, "reports", paste0(base, "_datasheet_R.md"))
   write_datasheet(ds, ds_json, ds_md)

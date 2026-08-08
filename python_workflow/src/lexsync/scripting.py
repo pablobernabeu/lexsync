@@ -17,8 +17,8 @@ import re
 
 import pandas as pd
 
-from .io_utils import (_key_part, clean_column, clean_key, clean_meta, clean_port,
-                       hash_int_range, slugify, write_csv_utf8)
+from .io_utils import (_key_part, _round_dp, clean_column, clean_key, clean_meta,
+                       clean_port, hash_int_range, slugify, write_csv_utf8)
 from .paradigms import content_field, referenced_fields, resolve_events
 
 # Columns always carried in a loop table when present (besides the event fields).
@@ -107,11 +107,20 @@ def find_template(relpath: str) -> str:
 
 
 def assign_triggers(stimuli: pd.DataFrame) -> pd.DataFrame:
-    """A per-condition marker and a per-item marker, both 0-255 EEG codes."""
+    """A per-condition marker and a per-item marker, both 0-255 EEG codes.
+
+    The item range holds 200 codes (an 8-bit-port constraint), so past 200 sets
+    the codes wrap and repeat, and a runtime notice says so.
+    """
     stimuli = stimuli.copy()
     conds = list(dict.fromkeys(stimuli["condition"]))
     stimuli["condition_trigger"] = stimuli["condition"].map(lambda c: 101 + conds.index(c))
     sets = sorted(stimuli["set"].unique(), key=lambda s: str(s))
+    # A wrapped code no longer identifies its item one to one, which the analyst
+    # must hear about at generation time, not at decode time.
+    if len(sets) > 200:
+        print(f"lexsync: {len(sets)} item sets exceed the 200-code trigger range; "
+              "item codes wrap and repeat.")
     set_code = {s: 40 + (i % 200) for i, s in enumerate(sets)}
     stimuli["item_trigger"] = stimuli["set"].map(set_code)
     return stimuli
@@ -278,11 +287,14 @@ def render_events(events: list, timing: dict, hz: float = 60) -> list:
                 r["crit_trigger"] = spec
         elif t == "response":
             r["keys"] = _keys_of(ev, ["left", "right"])
-            r["timeout"] = round(ev.get("timeout_ms", 2000) / 1000.0, 3)
+            # _round_dp, not round(): the timeout is written into experiment files
+            # both engines emit as the same bytes, and the two languages' own
+            # rounders disagree on 3-dp halfway cases (see _round_dp in io_utils.py).
+            r["timeout"] = _round_dp(ev.get("timeout_ms", 2000) / 1000.0, 3)
         elif t == "question":
             r["field"] = content_field(ev.get("content"))
             r["keys"] = _keys_of(ev, ["f", "j"])
-            r["timeout"] = round(ev.get("timeout_ms", 5000) / 1000.0, 3)
+            r["timeout"] = _round_dp(ev.get("timeout_ms", 5000) / 1000.0, 3)
         elif t == "feedback":
             # Feedback compares the key the participant pressed against the key the item
             # says is correct, so `answer` names a loop-table column holding a KEY, not a

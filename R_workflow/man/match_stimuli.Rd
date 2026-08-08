@@ -27,3 +27,11 @@ across the sorted candidate subpool. Every other condition is then matched to
 the anchor item by item, on the \code{match_on} dimensions, using standardised
 Euclidean distance under a tolerance window derived from the anchor.
 }
+\details{
+Two policies govern degraded selections, each read from the design's
+\code{matching} block with the schema as fallback: \code{shortfall} (\code{"error"}, the
+default, refuses to return fewer sets than requested; \code{"allow"} accepts the
+shrink) and \code{on_insufficient_tolerance} (\code{"relax"}, the default, widens an
+undersupplied tolerance window to the full condition subpool and records the
+relaxation in an \code{"audit"} attribute; \code{"error"} refuses instead).
+}

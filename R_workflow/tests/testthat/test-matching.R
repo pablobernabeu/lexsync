@@ -263,3 +263,155 @@ test_that("resample_stimuli produces disjoint matched sets", {
   expect_length(intersect(w[[1]], w[[3]]), 0)
   expect_length(intersect(w[[2]], w[[3]]), 0)
 })
+
+# ---- shortfall and tolerance policies, guards -------------------------------
+# Twinned with test_matching.py: every fixture, expectation and message below
+# must stay in step with the Python suite.
+
+small_pool <- function() {
+  data.frame(
+    id = 1:8,
+    word = c("haa", "hab", "hac", "laa", "lab", "lac", "lad", "lae"),
+    frequency = c(5.0, 5.5, 6.0, 1.0, 1.5, 2.0, 2.5, 3.0),
+    concreteness = c(3.0, 3.1, 2.9, 3.0, 3.1, 3.2, 2.8, 3.3),
+    stringsAsFactors = FALSE
+  )
+}
+
+small_design <- function(n, matching = NULL) {
+  d <- list(
+    name = "sf", language = "english", n_per_condition = n,
+    conditions = list(
+      list(name = "high", define_by = list(frequency = c(5.0, 7.0))),
+      list(name = "low",  define_by = list(frequency = c(1.0, 3.0)))
+    ),
+    match_on = list("concreteness")
+  )
+  if (!is.null(matching)) d$matching <- matching
+  d
+}
+
+test_that("a shortfall is an error by default", {
+  # Three anchor candidates cannot honour n = 5; a silent shrink would leave
+  # the datasheet stating the requested n over a smaller realised set.
+  expect_error(match_stimuli(small_pool(), small_design(5L), tiny_schema()),
+               "5 sets per condition were requested but only 3")
+})
+
+test_that("shortfall: allow accepts the shrink", {
+  s <- match_stimuli(small_pool(), small_design(5L, matching = list(shortfall = "allow")),
+                     tiny_schema())
+  expect_equal(sort(as.integer(table(s$condition))), c(3L, 3L))
+})
+
+test_that("an unknown shortfall policy is an error", {
+  expect_error(match_stimuli(small_pool(), small_design(3L, matching = list(shortfall = "maybe")),
+                             tiny_schema()),
+               "unknown shortfall policy 'maybe'")
+})
+
+test_that("joint matching errors on a shortfall by default", {
+  # At most three disjoint pairs exist, so n = 5 cannot be met.
+  pool <- small_pool()[1:6, , drop = FALSE]
+  expect_error(match_stimuli(pool, small_design(5L, matching = list(method = "joint")),
+                             tiny_schema()),
+               "5 sets per condition were requested but only 3")
+})
+
+test_that("on_insufficient_tolerance: error refuses to relax", {
+  # In the na_pool scenario the low condition has too few candidates inside
+  # the anchor window, which the default policy silently relaxes.
+  d <- na_design()
+  d$matching <- list(on_insufficient_tolerance = "error")
+  expect_error(match_stimuli(na_pool(), d, tiny_schema()),
+               "within tolerance but 3 are needed")
+})
+
+test_that("a window relaxation is recorded in the audit attribute", {
+  s <- match_stimuli(na_pool(), na_design(), tiny_schema())
+  audit <- attr(s, "audit")
+  expect_false(is.null(audit))
+  rx <- audit$window_relaxations
+  expect_length(rx, 1)
+  expect_identical(rx[[1]]$condition, "low")
+  expect_identical(rx[[1]]$n_needed, 3L)
+})
+
+overlapping_design <- function(n, method) {
+  # Both conditions admit the whole pool, so every word sits in both subpools
+  # and its self-pair costs exactly zero.
+  list(
+    name = "ov", language = "english", n_per_condition = n,
+    conditions = list(
+      list(name = "a", define_by = list(frequency = c(1.0, 7.0))),
+      list(name = "b", define_by = list(frequency = c(1.0, 7.0)))
+    ),
+    match_on = list("concreteness"),
+    matching = list(method = method, shortfall = "allow")
+  )
+}
+
+test_that("joint matching never pairs a word with itself", {
+  s <- match_stimuli(small_pool(), overlapping_design(3L, "joint"), tiny_schema())
+  expect_false(any(duplicated(s$word)))
+  for (st in split(s$word, s$set)) expect_length(unique(st), 2)
+})
+
+test_that("optimal matching never pairs a word with itself", {
+  skip_if_not_installed("clue")
+  s <- match_stimuli(small_pool(), overlapping_design(3L, "optimal"), tiny_schema())
+  expect_false(any(duplicated(s$word)))
+  for (st in split(s$word, s$set)) expect_length(unique(st), 2)
+})
+
+test_that("a misspelt define_by dimension is an error, not a widened condition", {
+  d <- small_design(3L)
+  d$conditions[[2]]$define_by <- list(frequnecy = c(1.0, 3.0))
+  expect_error(match_stimuli(small_pool(), d, tiny_schema()),
+               "dimension 'frequnecy' in condition 'low'")
+})
+
+test_that("duplicate condition names are an error", {
+  d <- small_design(3L)
+  d$conditions[[2]]$name <- "high"
+  expect_error(match_stimuli(small_pool(), d, tiny_schema()),
+               "condition name 'high' appears more than once")
+})
+
+test_that("a negative tolerance is an error", {
+  expect_error(match_stimuli(small_pool(),
+                             small_design(3L, matching = list(tolerance_k = list(concreteness = -1))),
+                             tiny_schema()),
+               "tolerance_k for dimension 'concreteness' is negative")
+})
+
+test_that("a design without conditions is an error", {
+  d <- small_design(3L)
+  d$conditions <- NULL
+  expect_error(match_stimuli(small_pool(), d, tiny_schema()),
+               "the design has no conditions")
+})
+
+test_that("selection ignores unused columns and the seed", {
+  # Metamorphic invariants: an inert extra column must not steer selection, and
+  # the schema seed only ever reaches the shuffle keys, never the matcher.
+  base <- match_stimuli(small_pool(), small_design(3L), tiny_schema())
+  with_extra <- small_pool()
+  with_extra$unused_norm <- c(9.9, 1.2, 5.5, 0.1, 7.7, 3.3, 2.2, 8.8)
+  seeded <- tiny_schema()
+  seeded$seed <- 99L
+  expect_identical(match_stimuli(with_extra, small_design(3L), tiny_schema())$word, base$word)
+  expect_identical(match_stimuli(small_pool(), small_design(3L), seeded)$word, base$word)
+})
+
+test_that("the matching module uses the shared rounder on distance paths", {
+  # The 9-dp distance and cost roundings must go through .round_dp: native
+  # round() pairs with numpy's different scale-rint-unscale algorithm. The two
+  # remaining native calls are the 0-dp even-spread index sites, which are
+  # half-even on exactly representable halves in both engines and pinned by the
+  # committed goldens -- converting them would change selections.
+  src <- readLines(testthat::test_path("..", "..", "R", "matching.R"))
+  src <- sub("#.*$", "", src)   # comments legitimately mention round()
+  hits <- sum(lengths(regmatches(src, gregexpr("(?<![._[:alnum:]])round\\(", src, perl = TRUE))))
+  expect_identical(hits, 2L)
+})

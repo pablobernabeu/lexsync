@@ -66,6 +66,12 @@ list_corpora <- function(registry_path = NULL) {
   length(first) > 0L && identical(bytes[first[1]], as.raw(0x3C))
 }
 
+# Hard cap on a corpus download, in bytes. Mirrors _max_download_bytes() in
+# python_workflow/src/lexsync/corpora.py. A function rather than a bare constant
+# so the twin tests can lower it without writing 200 MB to disk; the message
+# below names the real limit either way.
+.max_download_bytes <- function() 200 * 1024^2
+
 .stop_download <- function(name, url, detail) {
   stop(sprintf(paste0("lexsync: could not download corpus '%s' from %s (%s). Check the URL ",
                       "in registry.yaml, or download the file manually and pass it to ",
@@ -76,9 +82,10 @@ list_corpora <- function(registry_path = NULL) {
 #' Download a CSV-format registered corpus into the cache
 #'
 #' Suitable for Connector A corpora that expose a delimited file. The URL's
-#' scheme and the downloaded file's first bytes are checked before the file is
-#' kept. The download is recorded so it can be cited; consult [list_corpora()]
-#' for the citation.
+#' scheme is checked first; the transfer then lands in a sidecar file that is
+#' renamed into place only after the size cap, the markup sniff and any
+#' `sha256` the registry entry carries have all passed. The download is
+#' recorded so it can be cited; consult [list_corpora()] for the citation.
 #'
 #' @param name A corpus name present in the registry.
 #' @param registry_path Optional path to `registry.yaml`.
@@ -110,20 +117,52 @@ fetch_corpus <- function(name, registry_path = NULL, dest = NULL) {
                  name, url), call. = FALSE)
   }
   dest <- dest %||% file.path(lexsync_cache_dir(), paste0(name, ".csv"))
+  # The transfer lands in a sidecar and is renamed over `dest` only after every
+  # check below has passed, so a truncated or unverified body can never sit at
+  # the cache path, where a later run would trust it.
+  part <- paste0(dest, ".part")
   # download.file() reports a failed transfer as a warning under some methods and
-  # as an error under others, so both are branded.
+  # as an error under others, so both are branded. Called through the import
+  # rather than utils:: so the tests can substitute an offline transport; it
+  # honours options(timeout), where the Python engine passes its own.
   tryCatch(
-    utils::download.file(url, dest, mode = "wb", quiet = TRUE),
-    error = function(e) .stop_download(name, url, conditionMessage(e)),
-    warning = function(w) .stop_download(name, url, conditionMessage(w))
+    download.file(url, part, mode = "wb", quiet = TRUE),
+    error = function(e) {
+      unlink(part)
+      .stop_download(name, url, conditionMessage(e))
+    },
+    warning = function(w) {
+      unlink(part)
+      .stop_download(name, url, conditionMessage(w))
+    }
   )
-  if (.starts_with_markup(dest)) {
-    unlink(dest)
+  # download.file() cannot stop a transfer mid-stream as the Python engine's
+  # chunked reader does, so the cap is enforced on the landed sidecar instead.
+  if (file.size(part) > .max_download_bytes()) {
+    unlink(part)
+    stop(paste0("lexsync: corpus download exceeded the 200 MB size limit. Retrieve the ",
+                "delimited file manually and pass it to load_lexicon()."),
+         call. = FALSE)
+  }
+  if (.starts_with_markup(part)) {
+    unlink(part)
     stop(sprintf(paste0("lexsync: corpus '%s' returned an HTML page, not a delimited file ",
                         "(%s); the registry URL may have rotted. Retrieve the delimited file ",
                         "manually and pass it to load_lexicon()."),
                  name, url), call. = FALSE)
   }
+  # 'sha256' is optional per registry entry; when present the download must
+  # match it before it may enter the cache.
+  if (!is.null(entry$sha256) && !identical(sha256_file(part), entry$sha256)) {
+    unlink(part)
+    stop(sprintf(paste0("lexsync: checksum mismatch for corpus '%s'; the download does not ",
+                        "match the registry's sha256. Retry the download, or verify the ",
+                        "sha256 recorded in registry.yaml."),
+                 name), call. = FALSE)
+  }
+  # file.rename() will not overwrite an existing file on Windows.
+  if (file.exists(dest)) unlink(dest)
+  file.rename(part, dest)
   message(sprintf("lexsync: downloaded '%s'. Please cite: %s", name, entry$citation %||% "(see registry)"))
   invisible(dest)
 }

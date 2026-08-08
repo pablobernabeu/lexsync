@@ -1,5 +1,52 @@
 # lexsync (development version)
 
+* **A selection that cannot honour `n_per_condition` is now an error, not a smaller
+  set.** Every selector clipped the request to the available pool and said so at most
+  through a verbose message, while the datasheet and the generated Methods text kept
+  stating the requested n. The new `matching: shortfall` policy defaults to `error`;
+  `allow` accepts the shrink. Its sibling `matching: on_insufficient_tolerance`
+  (default `relax`) can likewise turn the silent tolerance-window widening into a
+  refusal, and a relaxation that does happen is now recorded in the run log and the
+  datasheet (`selection.window_relaxations`) rather than only narrated. No committed
+  design experiences either condition.
+* **`joint` and `optimal` matching can no longer select the same word twice.** With
+  overlapping condition windows a word could be paired with itself at zero cost, or
+  mirrored across two sets, appearing in both conditions. Both matchers now track used
+  words as the anchored matcher always has, and every matcher asserts its output holds
+  each word at most once. Disjoint designs -- all committed ones -- select identically,
+  byte for byte.
+* **The item-table loader refuses missing cells in both engines.** A blank `condition`
+  reached Python's hash-key guard as the string "nan" and passed the very check built
+  to refuse it, a blank `item` cell turned numeric identifiers into "1.0", and R failed
+  on the same table with a bare "missing value where TRUE/FALSE needed". Missingness is
+  now checked before any coercion, `item` is read as text, empties after trimming and
+  duplicated item-and-condition rows are refused, and both engines say the same thing.
+* **Cohen's d no longer reports perfect balance for two unequal constant vectors.** The
+  standardised difference is undefined when the pooled SD is zero and the means differ;
+  it is now reported as missing instead of 0 with CI [0, 0], which contradicted the
+  TOST verdict on the same row.
+* **The datasheet's Methods prose follows the recorded verdicts.** The claim of being
+  "within the 0.5-SD equivalence bound" was printed for any controlled dimension with a
+  confidence interval, even where the datasheet's own JSON recorded
+  `equivalent: false`; the sentence is now conditional on the stored verdicts, prints
+  the signed worst difference and the configurable bound, and the analysis note names
+  the suggested formula as lme4 syntax rather than implying statsmodels accepts it.
+  The datasheet also gains the SHA-256 of the design and schema, the pairwise matchers'
+  candidate cap and whether it fired, the equivalence bound tested against, and the
+  yaml, stringi and operating-system entries the environment record omitted.
+* **A `continuous` block now works over a supplied pool, and two silent table-mode
+  gaps are refusals.** `source: pool` reaches the continuous selector (it previously
+  fell through to the conditions matcher and crashed); a continuous table without
+  `members` and `pool_filters` on a plain table design are errors instead of silently
+  doing nothing while the provenance recorded otherwise. Misspelt `pool_filters` or
+  `define_by` columns, duplicate condition names, reversed or non-finite ranges,
+  negative tolerances and non-integer n are likewise refusals now.
+* **Selection-path rounding goes through the shared decimal rule** (`.round_dp` and a
+  new vectorised numpy twin) instead of pairing R's `round()` with numpy's, two
+  rounders the project measured to disagree at boundaries. Regenerating all 21 designs
+  moved no stimulus, report or experiment byte. A custom norm named in `match_on` now
+  also reaches the descriptives, comparisons and realised-control record, which
+  previously listed only the built-in dimensions.
 * **A design file could execute code on the machine that ran it.** A design is meant to
   be shared, and the recipient runs it and then opens the generated PsychoPy script,
   OpenSesame experiment or jsPsych page. Stimulus text was always safe: it travels in the

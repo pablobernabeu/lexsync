@@ -116,10 +116,11 @@ generate_pseudowords <- function(base_words, reference_words) {
 #'
 #' Nuclei are the maximal vowel runs; consonants before the first nucleus form the
 #' first onset, those after the last nucleus the final coda, and a consonant run
-#' between two nuclei is split at its midpoint (floor(m/2) to the left coda). On
-#' character indices, so accented vowels behave identically to Python. A word with
-#' no vowel returns an empty list (its caller falls back). Mirrors segment_subsyllabic
-#' in generation.py.
+#' between two nuclei is split at its midpoint (floor(m/2) to the left coda). An
+#' orthographic model for Latin a-z words only: any word with a character outside
+#' a-z (accented, hyphenated, digit) returns an empty list, as does a word with no
+#' vowel, and the caller falls back to letter substitution. Mirrors
+#' segment_subsyllabic in generation.py.
 #' @keywords internal
 segment_subsyllabic <- function(word) {
   w <- .lower_invariant(word)
@@ -243,7 +244,10 @@ generate_pseudowords_subsyllabic <- function(base_words, reference_words) {
 #' Assemble a word-vs-pseudoword lexical-decision set from a candidate pool
 #'
 #' Real words are drawn by an even spread across the byte-ordered pool, then a
-#' length-matched pseudoword is generated for each. `reference_words` (the full
+#' length-matched pseudoword is generated for each. The pool is first filtered to
+#' lower-case a-z forms, the only ones the pseudoword generators are defined for,
+#' so the eligible pool can be smaller than the request; the pipeline's shortfall
+#' policy then decides whether that errors. `reference_words` (the full
 #' lexicon) supplies the bigram statistics and the real-word list a pseudoword
 #' must avoid. The presented string is the `target` column; conditions are `word`
 #' and `pseudoword` and `set` pairs them.

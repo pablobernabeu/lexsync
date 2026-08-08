@@ -269,6 +269,17 @@ subpool, and `verbose=True` says so. If even the relaxed subpool is too small, o
 rows are complete on the matched dimensions, `match_stimuli` raises rather than proceeding. Without
 the second check an exhausted pool would let the tie-break re-pick the same word into several sets.
 
+Both behaviours are policies rather than fixtures of the matcher, and the schema's `matching` block
+names them. `on_insufficient_tolerance` governs the window fallback. Its default of `relax` keeps
+the behaviour just described, while `error` makes the matcher refuse instead of silently widening
+the window, which is the honest setting when the window is itself the criterion, as it is when
+reproducing a published study's stated windows. `shortfall` governs what happens when fewer sets
+than `n_per_condition` can be selected at all, and it defaults to `error` deliberately: the
+datasheet and the generated methods paragraph state the requested n, so a set that silently shrank
+would leave the record misstating the materials. A design that can live with fewer sets says so
+with `shortfall: allow`, and either key may be overridden under the design's own `matching:` block,
+exactly as `tolerance_k` may be.
+
 ### The four methods
 
 The method is set with `matching.method` in a design, or globally in the schema.

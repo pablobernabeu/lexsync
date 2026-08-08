@@ -46,7 +46,7 @@
     "bigram_freq": {
       "compute": "mean_bigram_probability",
       "type": "derived",
-      "unit": "mean positional bigram probability"
+      "unit": "mean bigram probability (type-based, non-positional)"
     },
     "frequency": {
       "column": "freq_zipf",
@@ -56,7 +56,7 @@
     "length": {
       "compute": "n_letters",
       "type": "derived",
-      "unit": "letters"
+      "unit": "characters"
     },
     "n_density": {
       "compute": "coltheart_n",
@@ -73,6 +73,10 @@
       "type": "derived",
       "unit": "mean Levenshtein distance"
     }
+  },
+  "equivalence": {
+    "alpha": 0.05,
+    "bound_d": 0.5
   },
   "items": {
     "conditions": [
@@ -118,13 +122,18 @@
   ],
   "relational": null,
   "reproducibility": {
+    "design_sha256": "e63493a09f6744207e21768586f88ac0a27970654bb2182ac26a82f1e6604353",
+    "schema_sha256": "483a9cec49314b9479fe656ad39840083a551f2e4313ca164efe3e9c064fb255",
     "seed": 2026,
     "versions": {
       "engine": "python",
       "lexsync": "0.1.0",
       "numpy": "2.3.2",
+      "os": "Windows AMD64",
       "pandas": "2.3.2",
       "python": "3.13.7",
+      "pyyaml": "6.0.3",
+      "rapidfuzz": "3.14.5",
       "scipy": "1.17.1"
     }
   },

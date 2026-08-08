@@ -1,3 +1,5 @@
+import re
+
 import pandas as pd
 import pytest
 
@@ -174,3 +176,92 @@ def test_load_items_keeps_non_ascii_whitespace(tmp_path):
     path.write_text(body, encoding="utf-8")
     items = load_items(str(path), ["target"])
     assert items["target"].tolist() == ["{s}cat{s}".format(s=nbsp)]
+
+
+# Pins the same contract as "load_items refuses missing or blank cells" in the R
+# engine's test-querying.R. A missing cell used to arrive as NaN, be stringified
+# to the literal 'nan' and flow on; a blank condition then defeated the hash-key
+# guard downstream. The two readers reach the refusal at different stages (readr
+# reads a blank or 'NA' or all-whitespace cell as NA; pandas keeps a quoted
+# whitespace cell as text until the trim), but the message is the same.
+@pytest.mark.parametrize(
+    "body,col",
+    [
+        ("item,condition,target\n,related,cat\n", "item"),
+        ("item,condition,target\ni1,,cat\n", "condition"),
+        ("item,condition,target\ni1,related,\n", "target"),
+        ('item,condition,target\ni1,"   ",cat\n', "condition"),
+        ("item,condition,target\ni1,NA,cat\n", "condition"),
+    ],
+    ids=["blank-item", "blank-condition", "blank-target",
+         "whitespace-condition", "literal-NA"],
+)
+def test_load_items_refuses_missing_cells(tmp_path, body, col):
+    path = tmp_path / "items.csv"
+    path.write_text(body, encoding="utf-8")
+    msg = ("lexsync: the items table has missing value(s) in column '%s'; "
+           "every item, condition and presented field must be filled." % col)
+    with pytest.raises(ValueError, match=re.escape(msg)):
+        load_items(str(path), ["target"])
+
+
+# The boundary of the refusal above: both readers treat only '' and 'NA' as
+# missing, so a literal 'nan' is a kept value and must stay one.
+def test_load_items_keeps_a_literal_nan_label(tmp_path):
+    path = tmp_path / "nan.csv"
+    path.write_text("item,condition,target\ni1,nan,cat\n", encoding="utf-8")
+    items = load_items(str(path), ["target"])
+    assert items["condition"].tolist() == ["nan"]
+
+
+# Pins the same contract as "load_items refuses a duplicate item and condition
+# pair" in the R engine's test-querying.R: it is the pair that must be unique,
+# so the same item under another condition passes.
+def test_load_items_refuses_a_duplicate_item_condition_pair(tmp_path):
+    path = tmp_path / "dup.csv"
+    path.write_text(
+        "item,condition,target\ni1,related,cat\ni1,unrelated,dog\ni1,related,cow\n",
+        encoding="utf-8")
+    msg = ("lexsync: the items table repeats item 'i1' for condition 'related'; "
+           "each item and condition pair may appear once.")
+    with pytest.raises(ValueError, match=re.escape(msg)):
+        load_items(str(path), ["target"])
+
+
+# Pins the same contract as "load_items keeps numeric ids as written" in the R
+# engine's test-querying.R. `item` is now read as text: left to inference, both
+# readers number-parsed '01' down to 1 (and pandas float-promoted the whole
+# column to '1.0' ids whenever any cell was missing), so ids must survive
+# exactly as written.
+def test_load_items_keeps_numeric_ids_as_written(tmp_path):
+    path = tmp_path / "ids.csv"
+    path.write_text("item,condition,target\n01,related,cat\n2,related,dog\n",
+                    encoding="utf-8")
+    items = load_items(str(path), ["target"])
+    assert items["item"].tolist() == ["01", "2"]
+    assert items["set"].tolist() == [1, 2]
+
+
+# Pins the same contract as "build_pool refuses a reversed range" in the R
+# engine's test-querying.R: [7, 3] used to empty the pool without a word.
+def test_build_pool_refuses_a_reversed_range():
+    df = pd.DataFrame({"word": list("abcde"), "frequency": [1, 2, 3, 4, 5]})
+    msg = "lexsync: filter 'frequency' has a reversed range; give it as [low, high]."
+    with pytest.raises(ValueError, match=re.escape(msg)):
+        build_pool(df, {"frequency": [7, 3]})
+
+
+# Pins the same contract as "build_pool refuses a non-finite bound" in the R
+# engine's test-querying.R: YAML's .nan/.inf used to drop every row silently.
+def test_build_pool_refuses_a_non_finite_bound():
+    df = pd.DataFrame({"word": list("abcde"), "frequency": [1, 2, 3, 4, 5]})
+    msg = "lexsync: filter 'frequency' has a non-finite bound; ranges need finite numbers."
+    for bad in ([float("nan"), 4.0], [2.0, float("inf")]):
+        with pytest.raises(ValueError, match=re.escape(msg)):
+            build_pool(df, {"frequency": bad})
+
+
+# Equal bounds are a point, not a reversal: the zh design filters with [2, 2].
+def test_build_pool_keeps_a_degenerate_range():
+    df = pd.DataFrame({"word": list("abcde"), "frequency": [1, 2, 3, 4, 5]})
+    assert build_pool(df, {"frequency": [2, 2]})["word"].tolist() == ["b"]

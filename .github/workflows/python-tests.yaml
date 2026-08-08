@@ -8,6 +8,11 @@ on:
     branches: [main, master]
   pull_request:
     branches: [main, master]
+  # Mondays at 06:00 UTC: the matrix installs whatever pip resolves on the day,
+  # so a weekly run catches a breaking dependency release even while the
+  # repository itself is quiet.
+  schedule:
+    - cron: '0 6 * * 1'
 
 permissions:
   contents: read
@@ -20,7 +25,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ['3.10', '3.11', '3.12', '3.13']
+        python-version: ['3.10', '3.11', '3.12', '3.13', '3.14']
     defaults:
       run:
         working-directory: python_workflow
@@ -71,6 +76,30 @@ jobs:
         run: |
           python -m build
           python -m twine check dist/*
+
+      # Everything above runs from the checkout, where a datum missing from the
+      # wheel is masked by the repository copy sitting next to it. Prove the wheel
+      # alone suffices: install it into a bare venv, leave the checkout, and run a
+      # real design offline (the design, the corpus it references and the schema
+      # are copied in first). One leg is enough; the wheel is pure Python.
+      - name: Smoke-test the built wheel outside the checkout
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
+        run: |
+          python -m venv "$RUNNER_TEMP/wheel-venv"
+          "$RUNNER_TEMP/wheel-venv/bin/pip" install dist/*.whl
+          mkdir -p "$RUNNER_TEMP/config" "$RUNNER_TEMP/corpora/derived"
+          cp "$GITHUB_WORKSPACE/config/design_en_freqcontrast.yaml" "$RUNNER_TEMP/config/"
+          cp "$GITHUB_WORKSPACE/config/schema.yaml" "$RUNNER_TEMP/config/"
+          cp "$GITHUB_WORKSPACE/corpora/derived/en.csv" "$RUNNER_TEMP/corpora/derived/"
+          cd "$RUNNER_TEMP"
+          "$RUNNER_TEMP/wheel-venv/bin/python" - <<'EOF'
+          from importlib.resources import files
+          import lexsync
+          schema = files("lexsync") / "data" / "schema.yaml"
+          assert schema.is_file(), "the bundled schema is missing from the wheel"
+          EOF
+          "$RUNNER_TEMP/wheel-venv/bin/lexsync" run config/design_en_freqcontrast.yaml --outdir out
+          test -f out/stimuli/en_freqcontrast_english_stimuli_py.csv
 
   # The parity suite compares the Python engine against output/stimuli/*_R.csv.
   # Run on a single platform: parity is a property of the two engines, not of the
@@ -149,12 +178,49 @@ jobs:
 
       # Both engines write experiments to the same paths, so a diff against the
       # committed tree only ever compares the last engine to run against itself. Run
-      # each into its own directory and compare everything directly: the keyed-hash
-      # shuffle makes the trial order itself engine-identical, so every generated
-      # file, scripts and trial lists alike, must match byte for byte.
-      - name: Fail if the two engines generated different experiments
+      # each into its own directory and compare the whole generated trees: the
+      # keyed-hash shuffle makes the trial order itself engine-identical, so every
+      # generated file, stimuli, reports and scripts alike, must match byte for
+      # byte. Two accommodations: the datasheets and run logs are per-engine
+      # provenance records (each names its own engine), so they are excluded; and
+      # the CSVs carry an engine tag in their names (_R/_py), which would leave
+      # diff -r nothing to pair, so the tags are stripped first.
+      - name: Fail if the two engines generated different artefacts
         run: |
           Rscript -e 'library(lexsync); run_all("config", "config/schema.yaml", "/tmp/eng_r")'
           python -c "from lexsync.run_pipeline import run_all; run_all('config','config/schema.yaml','/tmp/eng_py')"
-          diff -r /tmp/eng_r/experiments /tmp/eng_py/experiments \
-            || { echo "::error::the engines generated different experiments"; exit 1; }
+          for f in /tmp/eng_r/*/*_R.csv; do mv "$f" "${f%_R.csv}.csv"; done
+          for f in /tmp/eng_py/*/*_py.csv; do mv "$f" "${f%_py.csv}.csv"; done
+          diff -r -x '*_datasheet_*' -x '*_run_log_*' /tmp/eng_r /tmp/eng_py \
+            || { echo "::error::the engines generated different artefacts"; exit 1; }
+
+  # Every other job installs whatever pip resolves on the day, so the floors
+  # declared in pyproject.toml are never actually exercised and could rot
+  # unnoticed. This job installs them exactly, on the oldest supported
+  # interpreter. A failure here is the job doing its work: it means the floors
+  # in pyproject.toml need raising to the oldest versions the suite really
+  # supports, not that this job should be softened or skipped.
+  minimum-versions:
+    runs-on: ubuntu-latest
+    name: Minimum supported dependency versions
+    defaults:
+      run:
+        working-directory: python_workflow
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.10'
+
+      # The floors go in first and the package follows with --no-deps, so pip
+      # cannot quietly upgrade any of them while resolving the package. pytest is
+      # installed on its own line because --no-deps would strip its dependencies.
+      - name: Install the declared dependency floors, then the package
+        run: |
+          python -m pip install "pandas==1.5.*" "numpy==1.23.*" "PyYAML==6.0.*" "rapidfuzz==3.0.*" "scipy==1.9.*"
+          python -m pip install --no-deps -e .
+          python -m pip install pytest
+
+      - name: Run the test suite against the floors
+        run: python -m pytest -q

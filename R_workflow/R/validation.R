@@ -43,7 +43,9 @@ describe_stimuli <- function(stimuli, dims, by = "condition") {
 #' Cohen's d (pooled-SD standardised mean difference)
 #'
 #' @param x,y Numeric vectors.
-#' @return The standardised mean difference, or 0 when undefined.
+#' @return The standardised mean difference; 0 when either sample is too small or
+#'   both share one constant, `NA` when the pooled SD is zero but the means
+#'   differ (the standardised difference is then unbounded, not zero).
 #' @importFrom stats var
 #' @examples
 #' cohens_d(c(5, 6, 7, 8), c(5, 6, 7, 9))
@@ -53,7 +55,12 @@ cohens_d <- function(x, y) {
   nx <- length(x); ny <- length(y)
   if (nx < 2 || ny < 2) return(0)
   sp <- sqrt(((nx - 1) * .exact_var(x) + (ny - 1) * .exact_var(y)) / (nx + ny - 2))
-  if (is.na(sp) || sp == 0) return(0)
+  if (is.na(sp) || sp == 0) {
+    # Two constants: an exactly-zero difference is exactly zero SDs apart, but
+    # unequal constants are infinitely many -- undefined, not perfect balance.
+    if (.exact_mean(x) - .exact_mean(y) == 0) return(0)
+    return(NA_real_)
+  }
   (.exact_mean(x) - .exact_mean(y)) / sp
 }
 
@@ -79,8 +86,13 @@ cohens_d_ci <- function(x, y, alpha = 0.05) {
   if (nx < 2 || ny < 2) return(list(d = 0, ci_low = NA_real_, ci_high = NA_real_))
   sp <- sqrt(((nx - 1) * .exact_var(x) + (ny - 1) * .exact_var(y)) / (nx + ny - 2))
   diff <- .exact_mean(x) - .exact_mean(y)
-  # A constant dimension carries no sampling uncertainty: a point at zero.
-  if (is.na(sp) || sp == 0) return(list(d = 0, ci_low = 0, ci_high = 0))
+  if (is.na(sp) || sp == 0) {
+    # Equal constants carry no sampling uncertainty: a point at zero. Unequal
+    # constants are infinitely many SDs apart, so the estimate and its interval
+    # are undefined, not a perfect [0, 0].
+    if (diff == 0) return(list(d = 0, ci_low = 0, ci_high = 0))
+    return(list(d = NA_real_, ci_low = NA_real_, ci_high = NA_real_))
+  }
   d <- diff / sp
   margin <- stats::qt(1 - alpha, nx + ny - 2) * sqrt(1 / nx + 1 / ny)
   list(d = d, ci_low = d - margin, ci_high = d + margin)

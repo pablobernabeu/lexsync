@@ -16,7 +16,11 @@ build_datasheet(
   candidate_pool = NULL,
   norms = NULL,
   balance = NULL,
-  blocks = NULL
+  blocks = NULL,
+  design_path = NULL,
+  schema_path = NULL,
+  selection_audit = NULL,
+  neighbourhood_reference = NULL
 )
 }
 \arguments{
@@ -54,6 +58,19 @@ Recorded because it decides which items each participant sees.}
 \item{blocks}{Optional practice/filler block report. Recorded because those
 trials are presented but not analysed, so the presented and analysed counts
 differ and the record must say why.}
+
+\item{design_path, schema_path}{Optional paths of the design and schema files
+the run read; when given, their sha256 checksums complete the
+reproducibility record, because those two files decide everything the seed
+does not.}
+
+\item{selection_audit}{Optional matcher audit record; its \code{window_relaxations}
+entries are recorded because a relaxed window changes what "matched" means
+for that condition.}
+
+\item{neighbourhood_reference}{Optional record of the lexicon the
+neighbourhood dimensions were computed against
+(\code{list(source, n_words, sha256)}), recorded verbatim.}
 }
 \value{
 The datasheet as a nested list, ready for \code{\link[=write_datasheet]{write_datasheet()}}.

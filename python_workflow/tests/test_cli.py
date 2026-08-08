@@ -1,13 +1,44 @@
 """The command-line interface and the ``python -m lexsync`` module entry point."""
 
 
-from lexsync.cli import main
+import os
+
+import pytest
+
+from lexsync.cli import DEFAULT_SCHEMA, _resolve_schema, main
 
 
 def test_corpora_list_runs(capsys):
     main(["corpora", "list"])
     out = capsys.readouterr().out
     assert "language" in out
+
+
+def test_version_prints_and_exits_zero(capsys):
+    # argparse's version action exits, so the SystemExit is the success path.
+    with pytest.raises(SystemExit) as exc:
+        main(["--version"])
+    assert exc.value.code == 0
+    assert capsys.readouterr().out.strip()
+
+
+def test_default_schema_falls_back_to_bundled_copy(tmp_path, monkeypatch):
+    # An installed CLI can run from anywhere, so with no config/ in the working
+    # directory the default schema must resolve to the copy shipped inside the
+    # package (byte-identical to config/schema.yaml; the identity is enforced
+    # elsewhere in the suite).
+    monkeypatch.chdir(tmp_path)
+    resolved = _resolve_schema(DEFAULT_SCHEMA)
+    assert resolved != DEFAULT_SCHEMA
+    assert os.path.isfile(resolved)
+
+
+def test_explicit_missing_schema_still_errors(tmp_path, monkeypatch):
+    # The fallback is only for the untouched default: a path the user named must
+    # not be silently substituted.
+    monkeypatch.chdir(tmp_path)
+    with pytest.raises(FileNotFoundError, match="pass --schema"):
+        main(["run", "--schema", "does_not_exist.yaml"])
 
 
 def test_help_runs(capsys):

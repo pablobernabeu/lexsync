@@ -10,7 +10,9 @@ cohens_d(x, y)
 \item{x, y}{Numeric vectors.}
 }
 \value{
-The standardised mean difference, or 0 when undefined.
+The standardised mean difference; 0 when either sample is too small or
+both share one constant, \code{NA} when the pooled SD is zero but the means
+differ (the standardised difference is then unbounded, not zero).
 }
 \description{
 Cohen's d (pooled-SD standardised mean difference)

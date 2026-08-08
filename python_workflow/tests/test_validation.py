@@ -5,8 +5,8 @@ import numpy as np
 import pandas as pd
 
 from lexsync.validation import (
-    balance_check, cohens_d, cohens_d_ci, describe_stimuli, match_report_continuous,
-    tost_equiv, variance_ratio,
+    balance_check, cohens_d, cohens_d_ci, describe_stimuli, match_report,
+    match_report_continuous, tost_equiv, variance_ratio,
 )
 
 
@@ -77,6 +77,33 @@ def test_cohens_d_ci_constant_dimension_is_a_point():
     # A dimension fixed by the pool (e.g. two-character words) has no uncertainty.
     ci = cohens_d_ci([2, 2, 2, 2], [2, 2, 2, 2])
     assert ci == {"d": 0.0, "ci_low": 0.0, "ci_high": 0.0}
+
+
+def test_zero_pooled_sd_with_unequal_means_is_undefined_not_zero():
+    # Two conditions each constant at a different value differ by infinitely many
+    # SDs: reporting d = 0 (perfect balance) inverted the truth. The equal-constant
+    # case is pinned by the zh_freqcontrast golden and must stay exactly zero.
+    x = [2, 2, 2, 2]
+    y = [3, 3, 3, 3]
+    assert cohens_d(x, y) is None
+    assert cohens_d_ci(x, y) == {"d": None, "ci_low": None, "ci_high": None}
+    assert tost_equiv(x, y)["equivalent"] is False  # already correct on this branch
+    assert variance_ratio(y, x) == 1.0              # unchanged: both spreads are zero
+    assert cohens_d(x, x) == 0                      # equal constants stay exactly zero
+
+
+def test_match_report_carries_an_undefined_d_as_a_missing_cell(schema):
+    # Serialised as an empty CSV cell and a null JSON value, exactly like the other
+    # missing statistics, and identically in both engines.
+    stim = pd.DataFrame({"word": ["aa", "bb", "cc", "dd"],
+                         "condition": ["a", "a", "b", "b"],
+                         "length": [2, 2, 3, 3]})
+    cmp = match_report(stim, ["length"], schema)["comparisons"]
+    assert cmp["cohens_d"].isna().iloc[0]
+    assert cmp["d_ci_low"].isna().iloc[0]
+    assert cmp["d_ci_high"].isna().iloc[0]
+    assert cmp["equivalent"].iloc[0] == False  # noqa: E712 -- numpy bool, not None
+    assert cmp["var_ratio"].iloc[0] == 1.0
 
 
 def test_variance_ratio():

@@ -270,3 +270,166 @@ def test_artifact_paths_are_recorded_in_posix_form():
     assert _posix(r"output\stimuli\x_R.csv") == "output/stimuli/x_R.csv"
     assert _posix("output/stimuli/x_R.csv") == "output/stimuli/x_R.csv"
     assert _posix(None) is None
+
+
+# --- Truthful prose, audit honesty and provenance completeness ---------------
+# test-datasheet.R asserts the same properties.
+
+def test_datasheet_records_the_equivalence_settings_the_report_used(schema):
+    ds = build_datasheet(_design(), schema, None, _stim(), "x.csv",
+                         {"stimuli": None, "experiments": {}}, 2026)
+    assert ds["equivalence"] == {"bound_d": 0.5, "alpha": 0.05}
+
+
+def test_methods_prose_states_the_schemas_bound_not_a_literal(schema):
+    schema = dict(schema, equivalence={"bound_d": 0.4, "alpha": 0.05})
+    stim = _stim()
+    report = match_report(stim, ["length", "frequency"], schema)
+    ds = build_datasheet(_design(), schema, report, stim, "x.csv",
+                         {"stimuli": None, "experiments": {}}, 2026)
+    assert ds["equivalence"]["bound_d"] == 0.4
+    assert "within the 0.4-SD equivalence bound" in methods_paragraph(ds)
+
+
+def test_an_undefined_d_forces_the_non_affirmative_methods_sentence(schema):
+    # A controlled dimension constant at a different value in each condition has an
+    # undefined d: the worst possible failure of the matching, not an excludable row.
+    stim = _stim()
+    stim["length"] = [3, 3, 4, 4]
+    report = match_report(stim, ["length", "frequency"], schema)
+    ds = build_datasheet(_design(), schema, report, stim, "x.csv",
+                         {"stimuli": None, "experiments": {}}, 2026)
+    m = methods_paragraph(ds)
+    assert "Equivalence was not confirmed on every matched dimension" in m
+    assert "realised-control table" in m
+    assert "equivalence bound" not in m
+    # The undefined cells render as the ASCII placeholder, matching the R engine.
+    md = render_datasheet_md(ds)
+    assert "| length | controlled | -- | -- |" in md
+
+
+def test_a_failed_tost_on_a_controlled_dimension_blocks_the_affirmative_sentence(schema):
+    stim = _stim()
+    stim["length"] = [3, 9, 3, 4]  # defined d, but far too few items to pass a TOST
+    report = match_report(stim, ["length", "frequency"], schema)
+    ds = build_datasheet(_design(), schema, report, stim, "x.csv",
+                         {"stimuli": None, "experiments": {}}, 2026)
+    m = methods_paragraph(ds)
+    assert "Equivalence was not confirmed on every matched dimension" in m
+    assert "The realised control was close" not in m
+
+
+def test_affirmative_sentence_prints_the_signed_d_beside_its_signed_ci(schema):
+    stim = pd.DataFrame({
+        "word": [f"w{i}" for i in range(120)],
+        "condition": ["hi"] * 60 + ["lo"] * 60,
+        "length": [4.0, 5.0, 6.0] * 20 + [4.1, 5.1, 6.1] * 20,
+        "frequency": [6] * 60 + [3] * 60,
+        "set": list(range(60)) * 2,
+    })
+    report = match_report(stim, ["length", "frequency"], schema)
+    ds = build_datasheet(_design(), schema, report, stim, "x.csv",
+                         {"stimuli": None, "experiments": {}}, 2026)
+    m = methods_paragraph(ds)
+    # The anchor's mean is below the comparison's, so the worst d is negative and
+    # must be printed with its sign: |d| beside a signed CI misstated the direction.
+    assert "was -0.12 (90% CI [" in m
+    assert "within the 0.5-SD equivalence bound" in m
+
+
+def test_pairwise_method_records_the_candidate_cap_instead_of_tolerance_windows(schema):
+    design = _design()
+    design["matching"] = {"method": "joint"}
+    cp = [{"condition": "hi", "n_candidates": 5000},
+          {"condition": "lo", "n_candidates": 40}]
+    ds = build_datasheet(design, schema, None, _stim(), "x.csv",
+                         {"stimuli": None, "experiments": {}}, 2026, candidate_pool=cp)
+    assert "tolerance_k" not in ds["selection"]
+    assert ds["selection"]["candidate_cap"] == {"cap": 1200,
+                                                "applied": {"hi": True, "lo": False}}
+    assert ("reduced to the 1200 candidates nearest the other condition's centroid "
+            "before pairing") in methods_paragraph(ds)
+    # The nearest-neighbour default keeps the windows it applies and takes no cap.
+    plain = build_datasheet(_design(), schema, None, _stim(), "x.csv",
+                            {"stimuli": None, "experiments": {}}, 2026)
+    assert "tolerance_k" in plain["selection"]
+    assert "candidate_cap" not in plain["selection"]
+
+
+def test_an_uncapped_pairwise_run_says_nothing_about_the_cap_in_the_prose(schema):
+    design = _design()
+    design["matching"] = {"method": "optimal"}
+    ds = build_datasheet(design, schema, None, _stim(), "x.csv",
+                         {"stimuli": None, "experiments": {}}, 2026,
+                         candidate_pool=[{"condition": "hi", "n_candidates": 40},
+                                         {"condition": "lo", "n_candidates": 40}])
+    assert not any(ds["selection"]["candidate_cap"]["applied"].values())
+    assert "nearest the other condition's centroid" not in methods_paragraph(ds)
+
+
+def test_a_pool_designs_candidate_pool_is_recorded_like_a_corpus_designs(schema):
+    design = _design()
+    design["items"] = {"source": "pool", "path": "items/pool.csv"}
+    cp = [{"condition": "hi", "n_candidates": 12}]
+    ds = build_datasheet(design, schema, None, _stim(), "x.csv",
+                         {"stimuli": None, "experiments": {}}, 2026, candidate_pool=cp)
+    assert ds["selection"]["candidate_pool"] == cp
+
+
+def test_datasheet_records_design_and_schema_checksums_and_the_matcher_audit(schema, tmp_path):
+    from lexsync.io_utils import sha256_file
+    dpath = tmp_path / "design.yaml"
+    dpath.write_text("name: t\n", encoding="utf-8")
+    spath = tmp_path / "schema.yaml"
+    spath.write_text("seed: 2026\n", encoding="utf-8")
+    audit = {"window_relaxations": [{"condition": "lo",
+                                     "n_within_tolerance": 1, "n_needed": 2}]}
+    nref = {"source": "corpora/derived/en.csv", "n_words": 25000, "sha256": "b" * 64}
+    ds = build_datasheet(_design(), schema, None, _stim(), "x.csv",
+                         {"stimuli": None, "experiments": {}}, 2026,
+                         design_path=str(dpath), schema_path=str(spath),
+                         selection_audit=audit, neighbourhood_reference=nref)
+    assert ds["reproducibility"]["design_sha256"] == sha256_file(str(dpath))
+    assert ds["reproducibility"]["schema_sha256"] == sha256_file(str(spath))
+    assert ds["selection"]["window_relaxations"] == [
+        {"condition": "lo", "n_within_tolerance": 1, "n_needed": 2}]
+    assert ds["selection"]["neighbourhood_reference"] == nref
+    # Existing call sites pass none of these, so nothing appears without them, and an
+    # audit that recorded no relaxation leaves no key either.
+    plain = build_datasheet(_design(), schema, None, _stim(), "x.csv",
+                            {"stimuli": None, "experiments": {}}, 2026,
+                            selection_audit={"window_relaxations": []})
+    assert "design_sha256" not in plain["reproducibility"]
+    assert "schema_sha256" not in plain["reproducibility"]
+    assert "window_relaxations" not in plain["selection"]
+    assert "neighbourhood_reference" not in plain["selection"]
+
+
+def test_versions_block_records_the_os_and_the_parsing_packages():
+    import platform
+    from lexsync.datasheet import _versions
+    v = _versions("python")
+    assert v["os"] == platform.system() + " " + platform.machine()
+    assert "rapidfuzz" in v and "pyyaml" in v
+
+
+def test_analysis_note_is_truthful_about_python_mixed_model_tooling(schema):
+    ds = build_datasheet(_design(), schema, None, _stim(), "x.csv",
+                         {"stimuli": None, "experiments": {}}, 2026)
+    assert "lme4 syntax" in ds["analysis"]["note"]
+    assert "statsmodels MixedLM" in ds["analysis"]["note"]
+    assert "pymer4/statsmodels" not in ds["analysis"]["note"]
+    assert "post-selection diagnostics" in ds["analysis"]["note"]
+
+
+def test_a_dotted_model_term_earns_the_patsy_quoting_note(schema):
+    ds = build_datasheet(_pair_design(), schema, None, _pair_stim(), "items/p.csv",
+                         {"stimuli": None, "experiments": {}}, 2026)
+    assert 'Q("...")' in ds["analysis"]["note"]
+    plain = build_datasheet({"name": "c", "language": "english",
+                             "continuous": {"predictor": "frequency",
+                                            "controls": ["length"]},
+                             "n_per_condition": 4, "counterbalance": {"lists": 1}},
+                            schema, None, _stim(), "x.csv",
+                            {"stimuli": None, "experiments": {}}, 2026)
+    assert "Patsy" not in plain["analysis"]["note"]

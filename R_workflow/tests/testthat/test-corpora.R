@@ -4,14 +4,33 @@ registry_path <- function() system.file("extdata", "registry.yaml", package = "l
 STATUSES <- c("validated", "supported", "manual", "listed")
 
 # A one-entry registry pointing at `url`, so no test touches the network.
-temp_registry <- function(url) {
+temp_registry <- function(url, sha256 = NULL) {
   path <- tempfile(fileext = ".yaml")
-  yaml::write_yaml(list(corpora = list(fake = list(
+  entry <- list(
     language = list(name = "Test", iso = "xx"), connector = "openlexicon",
     status = "supported", openlexicon = url, citation = "Test (2026)."
-  ))), path)
+  )
+  if (!is.null(sha256)) entry$sha256 <- sha256
+  yaml::write_yaml(list(corpora = list(fake = entry)), path)
   path
 }
+
+# Serves `bytes` in place of the network, through the download.file import seam.
+mock_download <- function(bytes) {
+  function(url, destfile, ...) {
+    writeBin(bytes, destfile)
+    0L
+  }
+}
+
+# A directory the test owns outright, so leftovers are provable by listing it.
+temp_cache <- function() {
+  dir <- tempfile()
+  dir.create(dir)
+  dir
+}
+
+CSV_BODY <- charToRaw("word,freq_zipf\ndog,4.5\n")
 
 write_head <- function(bytes) {
   path <- tempfile()
@@ -105,6 +124,111 @@ test_that("a delimited body is not mistaken for markup", {
   expect_false(.starts_with_markup(write_head(c(BOM, charToRaw("word,freq_zipf\n")))))
   expect_false(.starts_with_markup(write_head(raw(0))))
   expect_false(.starts_with_markup(write_head(charToRaw("   "))))
+})
+
+# A URL answering 200 with an HTML page (a login wall, or a 404 page served with
+# the wrong status) must not be cached as <name>.csv, where it would resurface as
+# an unintelligible schema error. Pins the same contract as
+# test_fetch_corpus_rejects_an_html_body_and_caches_nothing in the Python
+# engine's test_corpora.py: the sniff now runs on the sidecar, so not even a
+# '.part' file may remain.
+test_that("an HTML body is refused and leaves nothing behind", {
+  dir <- temp_cache()
+  local_mocked_bindings(
+    download.file = mock_download(charToRaw("<!DOCTYPE html>\n<html><body>Not Found</body></html>\n"))
+  )
+  expect_error(
+    fetch_corpus("fake", registry_path = temp_registry("https://example.invalid/rotted.csv"),
+                 dest = file.path(dir, "fake.csv")),
+    "HTML page, not a delimited file"
+  )
+  expect_identical(list.files(dir), character(0))
+})
+
+# Pins the same contract as test_fetch_corpus_removes_the_sidecar_when_the_transfer_dies
+# in the Python engine's test_corpora.py: the pre-sidecar implementation cached
+# exactly such truncated bodies, to resurface later as schema errors.
+test_that("a transfer that dies mid-stream leaves nothing behind", {
+  dir <- temp_cache()
+  local_mocked_bindings(download.file = function(url, destfile, ...) {
+    writeBin(charToRaw("word,freq_zipf\ndog,4"), destfile)
+    warning("connection reset")
+  })
+  expect_error(
+    fetch_corpus("fake", registry_path = temp_registry("https://example.invalid/flaky.csv"),
+                 dest = file.path(dir, "fake.csv")),
+    "could not download corpus 'fake'"
+  )
+  expect_identical(list.files(dir), character(0))
+})
+
+# Pins the same contract as test_fetch_corpus_promotes_a_verified_download in the
+# Python engine's test_corpora.py: the transfer lands in '<dest>.part' and is
+# renamed into place only after every check has passed.
+test_that("fetch_corpus promotes a verified download and removes the sidecar", {
+  dir <- temp_cache()
+  dest <- file.path(dir, "fake.csv")
+  local_mocked_bindings(download.file = mock_download(CSV_BODY))
+  expect_message(
+    out <- fetch_corpus("fake", registry_path = temp_registry("https://example.invalid/good.csv"),
+                        dest = dest),
+    "downloaded 'fake'"
+  )
+  expect_identical(out, dest)
+  expect_identical(list.files(dir), "fake.csv")
+  expect_identical(readBin(dest, "raw", n = file.size(dest)), CSV_BODY)
+})
+
+# Pins the same contract as test_fetch_corpus_aborts_an_oversized_download in the
+# Python engine's test_corpora.py. The cap is lowered through its seam because a
+# genuine 200 MB fixture has no place in a test suite; the message names the real
+# limit regardless.
+test_that("an oversized download is aborted and leaves nothing behind", {
+  dir <- temp_cache()
+  local_mocked_bindings(
+    download.file = mock_download(charToRaw(strrep("x", 64))),
+    .max_download_bytes = function() 16
+  )
+  expect_error(
+    fetch_corpus("fake", registry_path = temp_registry("https://example.invalid/big.csv"),
+                 dest = file.path(dir, "fake.csv")),
+    "exceeded the 200 MB size limit"
+  )
+  expect_identical(list.files(dir), character(0))
+})
+
+# Pins the same contract as test_fetch_corpus_refuses_a_checksum_mismatch in the
+# Python engine's test_corpora.py. The field is optional and no shipped registry
+# entry carries one yet, so the contract is exercised through the temporary
+# registry alone.
+test_that("a checksum mismatch is refused and leaves nothing behind", {
+  dir <- temp_cache()
+  local_mocked_bindings(download.file = mock_download(CSV_BODY))
+  expect_error(
+    fetch_corpus("fake",
+                 registry_path = temp_registry("https://example.invalid/good.csv",
+                                               sha256 = strrep("0", 64)),
+                 dest = file.path(dir, "fake.csv")),
+    "checksum mismatch for corpus 'fake'"
+  )
+  expect_identical(list.files(dir), character(0))
+})
+
+# Pins the same contract as test_fetch_corpus_accepts_a_matching_checksum in the
+# Python engine's test_corpora.py: both engines must derive the same digest from
+# the same bytes.
+test_that("a matching checksum is accepted", {
+  dir <- temp_cache()
+  dest <- file.path(dir, "fake.csv")
+  local_mocked_bindings(download.file = mock_download(CSV_BODY))
+  sha <- digest::digest(CSV_BODY, algo = "sha256", serialize = FALSE)
+  expect_message(
+    fetch_corpus("fake",
+                 registry_path = temp_registry("https://example.invalid/good.csv", sha256 = sha),
+                 dest = dest),
+    "downloaded 'fake'"
+  )
+  expect_identical(list.files(dir), "fake.csv")
 })
 
 test_that("list_corpora surfaces the registry status", {

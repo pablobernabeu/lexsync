@@ -13,6 +13,39 @@ test_that("assign_triggers produces valid EEG codes", {
   expect_setequal(unique(stim$condition_trigger), c(101, 102))
 })
 
+test_that("more than 200 item sets discloses the trigger wrap", {
+  stim <- data.frame(condition = "a", set = seq_len(201), stringsAsFactors = FALSE)
+  expect_message(
+    stim <- assign_triggers(stim),
+    "lexsync: 201 item sets exceed the 200-code trigger range; item codes wrap and repeat.",
+    fixed = TRUE
+  )
+  expect_true(all(stim$item_trigger >= 40 & stim$item_trigger <= 239))
+  # 201 sets into 200 codes: exactly one code is reused, and it is the first.
+  expect_identical(sum(duplicated(stim$item_trigger)), 1L)
+  expect_identical(stim$item_trigger[duplicated(stim$item_trigger)], 40L)
+})
+
+test_that("exactly 200 item sets stays silent", {
+  stim <- data.frame(condition = "a", set = seq_len(200), stringsAsFactors = FALSE)
+  expect_silent(stim <- assign_triggers(stim))
+  expect_identical(sum(duplicated(stim$item_trigger)), 0L)
+})
+
+test_that("response and question timeouts round through the shared rule", {
+  # An integer timeout_ms divides to at most three decimals, so rounding is the
+  # identity and no committed experiment byte moves.
+  r <- render_events(list(list(type = "response", timeout_ms = 1500L)), list(), 60)
+  expect_identical(r[[1]]$timeout, 1.5)
+  # A fractional timeout goes through .round_dp, the rounder both engines share;
+  # 7812.5 ms lands on a 3-dp halfway case where the engines' own rounders differ.
+  r <- render_events(list(list(type = "response", timeout_ms = 1500.0005)), list(), 60)
+  expect_identical(r[[1]]$timeout, .round_dp(1500.0005 / 1000, 3))
+  r <- render_events(list(list(type = "question", timeout_ms = 7812.5)), list(), 60)
+  expect_identical(r[[1]]$timeout, .round_dp(7812.5 / 1000, 3))
+  expect_false(identical(r[[1]]$timeout, round(7812.5 / 1000, 3)))
+})
+
 test_that("PsychoPy export is frame-locked and OpenSesame export is internally consistent", {
   schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
   stim <- make_stim()

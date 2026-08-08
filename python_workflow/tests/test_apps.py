@@ -54,9 +54,11 @@ def test_make_zip_holds_the_design_and_every_artefact(app, tmp_path):
 
     payload = app.make_zip({"name": "my_design"}, "my_design.yaml", {"outdir": str(out)})
 
-    # The same three entries the Shiny app's write_bundle_zip produces (test-apps.R):
-    # names are relative to outdir and subdirectories survive.
-    assert _names(payload) == ["my_design.yaml", "reports/datasheet.md", "stimuli.csv"]
+    # The artefact entries the Shiny app's write_bundle_zip also produces
+    # (test-apps.R), plus the schema the run actually used: names are relative
+    # to outdir and subdirectories survive.
+    assert _names(payload) == ["config/schema.yaml", "my_design.yaml",
+                               "reports/datasheet.md", "stimuli.csv"]
 
 
 def test_make_zip_ships_an_uploaded_lexicon_at_the_path_the_design_names(app, tmp_path):
@@ -96,7 +98,7 @@ def test_make_zip_ships_an_uploaded_item_table_under_its_own_root(app, tmp_path)
 
 
 def test_make_zip_without_uploads_is_unchanged(app, tmp_path):
-    """A bundled corpus resolves in the repository, so nothing extra is shipped."""
+    """A lexicon path the repository does not hold ships nothing beyond the schema."""
     out = tmp_path / "output"
     out.mkdir()
     (out / "my_design_stimuli_py.csv").write_text("word\ncat\n", encoding="utf-8")
@@ -105,8 +107,24 @@ def test_make_zip_without_uploads_is_unchanged(app, tmp_path):
     assert (app.make_zip(design, "my_design.yaml", {"outdir": str(out)}, None)
             == app.make_zip(design, "my_design.yaml", {"outdir": str(out)}, {}))
     assert _names(app.make_zip(design, "my_design.yaml", {"outdir": str(out)})) == [
-        "my_design.yaml", "my_design_stimuli_py.csv",
+        "config/schema.yaml", "my_design.yaml", "my_design_stimuli_py.csv",
     ]
+
+
+def test_make_zip_ships_a_repository_bundled_corpus(app, tmp_path):
+    """A design built from a bundled corpus records corpora/derived/<x>.csv, a
+    path that resolves to nothing outside the checkout, so the export must carry
+    the file there for the reproduction code to run from the unzipped directory."""
+    out = tmp_path / "output"
+    out.mkdir()
+    (out / "my_design_stimuli_py.csv").write_text("word\ncat\n", encoding="utf-8")
+    design = {"name": "my_design", "lexicon": "corpora/derived/en.csv"}
+
+    payload = app.make_zip(design, "my_design.yaml", {"outdir": str(out)})
+    assert "corpora/derived/en.csv" in _names(payload)
+    with zipfile.ZipFile(io.BytesIO(payload)) as z:
+        with open(os.path.join(app.REPO_ROOT, "corpora", "derived", "en.csv"), "rb") as f:
+            assert z.read("corpora/derived/en.csv") == f.read()
 
 
 def test_dropdowns_offer_exactly_the_methods_the_engine_implements(app):

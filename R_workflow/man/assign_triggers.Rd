@@ -15,5 +15,7 @@ assign_triggers(stimuli)
 \description{
 Adds \code{condition_trigger} (101, 102, ... per condition) and \code{item_trigger}
 (40-239 per item/\code{set}). Events reference these by the tokens "condition" and
-"item", or carry their own integer codes.
+"item", or carry their own integer codes. The item range holds 200 codes (an
+8-bit-port constraint), so past 200 sets the codes wrap and repeat, and a
+runtime notice says so.
 }

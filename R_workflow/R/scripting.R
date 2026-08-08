@@ -24,7 +24,9 @@ find_template <- function(relpath) {
 #'
 #' Adds `condition_trigger` (101, 102, ... per condition) and `item_trigger`
 #' (40-239 per item/`set`). Events reference these by the tokens "condition" and
-#' "item", or carry their own integer codes.
+#' "item", or carry their own integer codes. The item range holds 200 codes (an
+#' 8-bit-port constraint), so past 200 sets the codes wrap and repeat, and a
+#' runtime notice says so.
 #'
 #' @param stimuli A stimuli data frame.
 #' @return `stimuli` with trigger columns added.
@@ -34,6 +36,13 @@ assign_triggers <- function(stimuli) {
   stimuli$condition_trigger <- 100L + match(stimuli$condition, conds)
   sets <- unique(stimuli$set)
   sets <- sets[order(as.character(sets), method = "radix")]
+  # A wrapped code no longer identifies its item one to one, which the analyst
+  # must hear about at generation time, not at decode time.
+  if (length(sets) > 200L) {
+    message(sprintf(
+      "lexsync: %d item sets exceed the 200-code trigger range; item codes wrap and repeat.",
+      length(sets)))
+  }
   code <- 40L + ((seq_along(sets) - 1L) %% 200L)
   stimuli$item_trigger <- code[match(stimuli$set, sets)]
   stimuli
@@ -249,11 +258,14 @@ render_events <- function(events, timing, hz = 60) {
       if (!is.null(spec)) r$crit_trigger <- spec
     } else if (t == "response") {
       r$keys <- .keys_of(ev, c("left", "right"))
-      r$timeout <- round((ev$timeout_ms %||% 2000) / 1000, 3)
+      # .round_dp, not round(): the timeout is written into experiment files both
+      # engines emit as the same bytes, and the two languages' own rounders
+      # disagree on 3-dp halfway cases (see .round_dp in io_utils.R).
+      r$timeout <- .round_dp((ev$timeout_ms %||% 2000) / 1000, 3)
     } else if (t == "question") {
       r$field <- content_field(ev$content)
       r$keys <- .keys_of(ev, c("f", "j"))
-      r$timeout <- round((ev$timeout_ms %||% 5000) / 1000, 3)
+      r$timeout <- .round_dp((ev$timeout_ms %||% 5000) / 1000, 3)
     } else if (t == "feedback") {
       # Feedback compares the key the participant pressed against the key the item says
       # is correct, so `answer` names a loop-table column holding a KEY, not a label:

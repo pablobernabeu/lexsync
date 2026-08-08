@@ -11,7 +11,7 @@
 - **Cross-engine determinism:** byte-identical
 - **Counterbalancing:** factorial, 1 list(s)
 - **Items:** 80 rows across 1 conditions (continuous)
-- **Seed:** 2026  |  **Versions:** engine python, lexsync 0.1.0, python 3.13.7, pandas 2.3.2, numpy 2.3.2, scipy 1.17.1
+- **Seed:** 2026  |  **Versions:** engine python, lexsync 0.1.0, python 3.13.7, pandas 2.3.2, numpy 2.3.2, scipy 1.17.1, rapidfuzz 3.14.5, pyyaml 6.0.3, os Windows AMD64
 
 ## Selection transparency
 
@@ -22,7 +22,7 @@
 
 | Dimension | Role | r with predictor | Predictor span |
 |---|---|---|---|
-| frequency | predictor | — | 3.050 |
+| frequency | predictor | -- | 3.050 |
 | length | control | -0.165 | 3.050 |
 | n_density | control | -0.049 | 3.050 |
 | old20 | control | -0.077 | 3.050 |

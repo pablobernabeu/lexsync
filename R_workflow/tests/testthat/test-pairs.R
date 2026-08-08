@@ -77,7 +77,11 @@ test_that("a pair failing a filter on any row is excluded whole", {
                  pool_filters = list(target.length = c(4L, 6L)),   # excludes set 2
                  continuous = list(predictor = "target.frequency",
                                    controls = list("target.length")),
-                 match_on = list("target.length"))
+                 match_on = list("target.length"),
+                 # The exclusion leaves 2 of the 3 requested pairs; accepting that
+                 # shrink is the point of the test, so the shortfall policy is
+                 # opted out of here.
+                 matching = list(shortfall = "allow"))
   res <- lexsync:::.select_continuous_pairs(
     pairs_df, list(anchor_condition = "related"), design,
     list(matching = list(tolerance_k = list(target.length = 2))))

@@ -12,6 +12,40 @@ no function signature changes.
 
 ### Added
 
+- **The requested number of stimuli is now a contract.** Every selector -- the anchored
+  matcher, `joint` and `optimal` pairing, continuous selection (including pair-keyed
+  continuous designs) and pseudoword generation -- previously returned fewer sets than
+  `n_per_condition` when the pool ran short, disclosing it at most through a verbose
+  console note. The datasheet and the generated Methods text state the requested n, so a
+  silent shrink made the provenance record misstate the materials. A shortfall is now an
+  error by default; a design that genuinely accepts a smaller set opts in with
+  `matching: shortfall: allow`. A second policy, `matching: on_insufficient_tolerance`,
+  governs the tolerance window: the default `relax` keeps the old widening behaviour but
+  now records it (see the datasheet entry below), and `error` refuses instead. No
+  committed design experiences either condition, so no shipped stimulus changed.
+- **The datasheet records what the matcher actually did, not only what was asked.**
+  `selection.window_relaxations` records every tolerance-window relaxation (condition,
+  candidates within tolerance, candidates needed), which previously left no trace
+  outside a verbose console line. `selection.candidate_cap` records the pairwise
+  matchers' 1,200-candidate cap and whether it fired per condition; it does fire for
+  the shipped neighbourhood-density designs, whose Methods paragraphs now say so.
+  `tolerance_k` is omitted for `joint` and `optimal`, which never consult it. The
+  `reproducibility` block gains the SHA-256 of the design YAML and of the schema, so an
+  artefact set is pinned to the exact configuration that produced it, and a
+  `reference_words` override, which changes the neighbourhood dimensions without
+  touching any hashed input file, is recorded as `selection.neighbourhood_reference`.
+  The environment record adds the value-relevant dependencies it omitted (rapidfuzz and
+  PyYAML in Python; yaml and stringi in R) and the operating system. The datasheet also
+  now states the equivalence bound it tested against (`equivalence: {bound_d, alpha}`).
+- **CI tests what users install, not only the checkout.** The Python matrix gains 3.14;
+  a new job installs the declared minimum dependency versions on Python 3.10, so the
+  floors in `pyproject.toml` become tested claims; a weekly scheduled run catches
+  upstream drift between pushes; the built wheel is installed into a clean environment
+  and a design is run from outside the repository through the installed CLI; and the
+  parity job's final cross-engine diff widens from the experiments subtree to every
+  freshly generated artefact except the per-engine provenance files. The CLI gains
+  `--version` and falls back to the bundled schema when `config/schema.yaml` is not
+  present, so the installed package runs outside a checkout.
 - **Practice and filler blocks.** A design may declare `practice:` and `fillers:` item
   tables. Those trials are presented but not analysed, so the pipeline splits: the
   stimuli file and the reports are written from the main rows, the generated experiments
@@ -113,6 +147,57 @@ no function signature changes.
 
 ### Changed
 
+- **The pairwise matchers refuse to reuse a word.** With overlapping condition windows,
+  `joint` and `optimal` could pair a word with itself at zero cost, or mirror a pair
+  (x with y, then y with x), so the same word appeared in both conditions -- a confound,
+  not a match. Both now track used words as the anchored matcher always has, the optimal
+  cost matrix penalises self-pairs, and every matcher asserts its output holds each word
+  at most once. For disjoint conditions -- every committed design -- the selection is
+  bit-for-bit unchanged; for overlapping conditions the selection changes, which under
+  this project's versioning rule is a breaking change and the reason it lands before 1.0.
+- **The match-quality report covers every matched dimension.** The report dimensions
+  were a fixed list (length, frequency, n_density, old20, plus two built-ins), so a
+  custom norm joined via `norms:` and named in `match_on` was matched on but absent from
+  the descriptives, comparisons and realised-control record -- precisely the dimension
+  whose realised balance most needs stating. The set is now the first-occurrence-order
+  union of that list with `match_on`. Every committed report reproduces byte-for-byte.
+- **Datasheet prose follows the recorded verdicts.** The Methods paragraph claimed
+  "within the 0.5-SD equivalence bound" whenever a controlled dimension had a confidence
+  interval, without consulting the TOST verdicts, and the committed en_andrews datasheet
+  said it while its own JSON recorded `equivalent: false`. The sentence is now
+  conditional on the stored verdicts, prints the signed worst difference rather than its
+  absolute value beside a signed interval, uses the configurable bound rather than a
+  literal 0.5, and an undefined effect size blocks the affirmative wording. The analysis
+  note states that the equivalence tests are post-selection diagnostics on
+  deterministically selected items, names the suggested formula as lme4 syntax (lme4 in
+  R, pymer4 in Python; statsmodels MixedLM needs the random effects restated), and warns
+  that dotted pair-design names need `Q("...")` quoting in Patsy-style interfaces.
+- **Selection-path rounding goes through the shared decimal rule.** The matcher's 9-dp
+  distance and cost roundings and the generated scripts' timeout seconds used native
+  `round()`/`np.round()`, pairing two rounders the project itself measured to disagree
+  at boundaries; the shared half-away-from-zero rule (`.round_dp`/`_round_dp`, now with
+  a vectorised numpy twin) replaces them, and a static test keeps native rounding out of
+  the matcher. The two 0-dp even-spread sites and the frame-to-ms conversion keep native
+  rounding deliberately: they are half-even on exactly representable halves in both
+  engines and pinned by goldens. Regenerating all 21 designs moved no stimulus,
+  descriptive, comparison or experiment byte.
+- **Two mislabelled dimensions are relabelled.** `bigram_freq`'s unit read "mean
+  positional bigram probability", but the measure pools adjacent bigrams across
+  reference types with no position in the count key; it now reads "mean bigram
+  probability (type-based, non-positional)". `length`'s unit read "letters"; both
+  engines count Unicode code points, which for the shipped Chinese corpus are
+  characters, so the unit now says so. Values are untouched; the reproducibility docs
+  additionally state the input contract (no NFC normalisation is applied, and the
+  syllable and pseudoword machinery is defined for Latin orthographies).
+- **The app export is self-contained.** Both apps' reproduction bundles now include the
+  schema the run actually used at `config/schema.yaml`, and any repository-bundled
+  corpus or example item table at the path the exported design names, so the bundled
+  reproduction code runs from the unzipped directory alone.
+- **The corpus fetcher downloads to a temporary file first.** The download streams to
+  `<name>.csv.part` with a timeout and a 200 MB cap, is checked (scheme allowlist,
+  markup sniff, and an optional per-entry `sha256:` in the registry), and only then
+  renamed into the cache, so a truncated transfer can no longer be mistaken for a
+  corpus.
 - `selection.cross_engine` in the datasheet no longer reports "n/a (user-supplied
   items)" for a **pair-keyed continuous design**. That design does perform a
   selection over the item table, and the selection is byte-identical across engines,
@@ -220,6 +305,49 @@ no function signature changes.
 
 ### Fixed
 
+- **A missing item cell became the string 'nan' in Python and a cryptic error in R.**
+  The Python item loader stringified cells before checking them, so a blank `condition`
+  arrived at the hash-key guard as the legitimate-looking string "nan" and sailed
+  through the very check built to refuse it, a blank `item` cell float-promoted the
+  whole column so numeric identifiers became "1.0", and a whitespace-only cell slipped
+  past everything; R refused the same table, but through a bare
+  "missing value where TRUE/FALSE needed". Both engines now check missingness before
+  any coercion and refuse a blank or whitespace-only `item`, `condition` or presented
+  field with the same message, `item` is read as text so identifiers survive as
+  written, and a duplicated item-and-condition row is refused instead of the Latin
+  square silently taking the first. A literal string "nan" remains a valid label in
+  both readers, and the twin fixture set pins each case in both suites.
+- **Cohen's d reported perfect balance for two unequal constant vectors.** With pooled
+  SD zero and a real mean difference (say every length 3 in one condition and 4 in the
+  other), both engines returned d = 0 with CI [0, 0] while the TOST verdict on the same
+  row correctly said not equivalent -- an internally contradictory report. The
+  standardised difference is undefined there, and is now reported as missing (empty CSV
+  cell, JSON null) in both engines; equal constants keep d = 0, which the committed
+  zh_freqcontrast golden pins. The markdown placeholder for a missing value is "--" in
+  both engines, where Python previously printed an em dash.
+- **A `continuous` block over a supplied pool never selected continuously.** The
+  predicate gating the continuous selector recognised `corpus` and `table` but not
+  `pool`, so the design fell through to the conditions matcher and crashed with a
+  different obscure error in each engine; `pool` is now in the set and the pipeline
+  path behind it already worked. Its two table-side cousins are closed with refusals:
+  a `continuous` block with `items.source: table` and no `members` loaded the rows,
+  selected nothing, and still stamped continuous mode into the log and datasheet (a
+  provenance lie), and `pool_filters` on a plain table design were consumed by nothing.
+  Both are now errors with the same message in both engines.
+- **Pair overlap was computed from list positions, not the named columns.** With
+  `members: [prime, target]` the positional call was right by coincidence; any member
+  listed before them would have silently redirected `pair.lev` and `pair.overlap` to
+  the wrong column pair. The call now names `prime` and `target`.
+- **Config mistakes that silently changed the design are now refusals.** A misspelt
+  `pool_filters` key left the pool unfiltered (the guard existed on the pair path and
+  is now on the corpus path too); a misspelt `define_by` column handed the condition
+  the whole pool as its subpool, erasing the manipulated contrast while the datasheet
+  recorded full-pool candidate counts; duplicate condition names, a reversed or
+  non-finite filter range, a negative `tolerance_k` and a non-integer `n_per_condition`
+  each produced downstream nonsense; and Python's YAML loader kept the last of two
+  duplicated mapping keys while R's parser refused the file, so the twin engines
+  disagreed at the input step. All are now errors, message-identical across engines
+  where the message is lexsync's own.
 - **The R-versus-Python parity gate had not run since 15 July.** `setup-r-dependencies`
   is invoked with `working-directory: R_workflow` and also asked for
   `local::./R_workflow`, which resolved to `R_workflow/R_workflow` and failed. Because it

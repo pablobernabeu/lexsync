@@ -11,7 +11,7 @@
 - **Cross-engine determinism:** byte-identical
 - **Counterbalancing:** latin_square_target, 2 list(s)
 - **Items:** 16 rows across 2 conditions (related, unrelated)
-- **Seed:** 2026  |  **Versions:** engine python, lexsync 0.1.0, python 3.13.7, pandas 2.3.2, numpy 2.3.2, scipy 1.17.1
+- **Seed:** 2026  |  **Versions:** engine python, lexsync 0.1.0, python 3.13.7, pandas 2.3.2, numpy 2.3.2, scipy 1.17.1, rapidfuzz 3.14.5, pyyaml 6.0.3, os Windows AMD64
 
 ## Pair-keyed items
 
@@ -25,14 +25,14 @@
 
 | Dimension | Role | r with predictor | Predictor span |
 |---|---|---|---|
-| target.frequency | predictor | — | 1.450 |
+| target.frequency | predictor | -- | 1.450 |
 | target.length | control | -0.292 | 1.450 |
 | pair.overlap | control | -0.227 | 1.450 |
 
 ## Suggested analysis
 
 - **Model:** `response ~ target.frequency + target.length + pair.overlap + (1 + target.frequency | subject) + (1 | item)` — where the response is the trial outcome (e.g. reaction time or accuracy).
-- The predictor is kept continuous and analysed by regression or a mixed model rather than dichotomised (Kuperman, 2015; Liben-Nowell et al., 2019); the controls enter as covariates. Crossed random effects for subjects and items guard the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008); reduce the structure if it does not converge (Matuschek et al., 2017).
+- The predictor is kept continuous and analysed by regression or a mixed model rather than dichotomised (Kuperman, 2015; Liben-Nowell et al., 2019); the controls enter as covariates. Crossed random effects for subjects and items guard the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008); reduce the structure if it does not converge (Matuschek et al., 2017). Dotted dimension names are valid in R formulas but must be quoted as Q("...") in Patsy-style Python interfaces.
 
 ## Methods paragraph
 
@@ -64,7 +64,7 @@
 
 ### Analysis plan
 - Statistical model: response ~ target.frequency + target.length + pair.overlap + (1 + target.frequency | subject) + (1 | item)
-  (The predictor is kept continuous and analysed by regression or a mixed model rather than dichotomised (Kuperman, 2015; Liben-Nowell et al., 2019); the controls enter as covariates. Crossed random effects for subjects and items guard the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008); reduce the structure if it does not converge (Matuschek et al., 2017).)
+  (The predictor is kept continuous and analysed by regression or a mixed model rather than dichotomised (Kuperman, 2015; Liben-Nowell et al., 2019); the controls enter as covariates. Crossed random effects for subjects and items guard the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008); reduce the structure if it does not converge (Matuschek et al., 2017). Dotted dimension names are valid in R formulas but must be quoted as Q("...") in Patsy-style Python interfaces.)
 - Inference criteria:
 - Treatment of items (e.g. items as a random factor):
 

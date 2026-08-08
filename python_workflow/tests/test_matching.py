@@ -295,3 +295,152 @@ def test_resample_produces_disjoint_matched_sets(schema, en_lexicon_path):
     assert len(words[1] & words[2]) == 0
     assert len(words[1] & words[3]) == 0
     assert len(words[2] & words[3]) == 0
+
+
+# ---- shortfall and tolerance policies, guards -------------------------------
+# Twinned with test-matching.R: every fixture, expectation and message below
+# must stay in step with the R suite.
+
+def _small_pool():
+    return pd.DataFrame({
+        "id": [1, 2, 3, 4, 5, 6, 7, 8],
+        "word": ["haa", "hab", "hac", "laa", "lab", "lac", "lad", "lae"],
+        "frequency": [5.0, 5.5, 6.0, 1.0, 1.5, 2.0, 2.5, 3.0],
+        "concreteness": [3.0, 3.1, 2.9, 3.0, 3.1, 3.2, 2.8, 3.3],
+    })
+
+
+def _small_design(n, **matching):
+    return {
+        "name": "sf", "language": "english", "n_per_condition": n,
+        "conditions": [
+            {"name": "high", "define_by": {"frequency": [5.0, 7.0]}},
+            {"name": "low", "define_by": {"frequency": [1.0, 3.0]}},
+        ],
+        "match_on": ["concreteness"],
+        **({"matching": matching} if matching else {}),
+    }
+
+
+def test_shortfall_errors_by_default():
+    # Three anchor candidates cannot honour n = 5; a silent shrink would leave
+    # the datasheet stating the requested n over a smaller realised set.
+    with pytest.raises(ValueError, match="5 sets per condition were requested but only 3"):
+        match_stimuli(_small_pool(), _small_design(5), _tiny_schema())
+
+
+def test_shortfall_allow_accepts_the_shrink():
+    s = match_stimuli(_small_pool(), _small_design(5, shortfall="allow"), _tiny_schema())
+    assert sorted(s["condition"].value_counts().tolist()) == [3, 3]
+
+
+def test_unknown_shortfall_policy_raises():
+    with pytest.raises(ValueError, match="unknown shortfall policy 'maybe'"):
+        match_stimuli(_small_pool(), _small_design(3, shortfall="maybe"), _tiny_schema())
+
+
+def test_joint_shortfall_errors_by_default():
+    # At most three disjoint pairs exist, so n = 5 cannot be met.
+    pool = _small_pool().iloc[[0, 1, 2, 3, 4, 5]].reset_index(drop=True)
+    with pytest.raises(ValueError, match="5 sets per condition were requested but only 3"):
+        match_stimuli(pool, _small_design(5, method="joint"), _tiny_schema())
+
+
+def test_on_insufficient_tolerance_error_refuses_to_relax():
+    # In the _na_pool scenario the low condition has too few candidates inside
+    # the anchor window, which the default policy silently relaxes.
+    d = _na_design()
+    d["matching"] = {"on_insufficient_tolerance": "error"}
+    with pytest.raises(ValueError, match="within tolerance but 3 are needed"):
+        match_stimuli(_na_pool(), d, _tiny_schema())
+
+
+def test_relaxation_is_recorded_in_the_audit():
+    s = match_stimuli(_na_pool(), _na_design(), _tiny_schema())
+    audit = s.attrs.get("audit")
+    assert audit is not None
+    rx = audit["window_relaxations"]
+    assert len(rx) == 1
+    assert rx[0]["condition"] == "low"
+    assert isinstance(rx[0]["n_within_tolerance"], int)
+    assert rx[0]["n_needed"] == 3
+
+
+def _overlapping_design(n, method):
+    # Both conditions admit the whole pool, so every word sits in both subpools
+    # and its self-pair costs exactly zero.
+    return {
+        "name": "ov", "language": "english", "n_per_condition": n,
+        "conditions": [
+            {"name": "a", "define_by": {"frequency": [1.0, 7.0]}},
+            {"name": "b", "define_by": {"frequency": [1.0, 7.0]}},
+        ],
+        "match_on": ["concreteness"],
+        "matching": {"method": method, "shortfall": "allow"},
+    }
+
+
+def test_joint_never_pairs_a_word_with_itself():
+    s = match_stimuli(_small_pool(), _overlapping_design(3, "joint"), _tiny_schema())
+    assert not s["word"].duplicated().any()
+    for _, g in s.groupby("set"):
+        assert g["word"].nunique() == 2
+
+
+def test_optimal_never_pairs_a_word_with_itself():
+    pytest.importorskip("scipy")
+    s = match_stimuli(_small_pool(), _overlapping_design(3, "optimal"), _tiny_schema())
+    assert not s["word"].duplicated().any()
+    for _, g in s.groupby("set"):
+        assert g["word"].nunique() == 2
+
+
+def test_misspelt_define_by_raises_instead_of_widening():
+    d = _small_design(3)
+    d["conditions"][1]["define_by"] = {"frequnecy": [1.0, 3.0]}
+    with pytest.raises(ValueError, match="dimension 'frequnecy' in condition 'low'"):
+        match_stimuli(_small_pool(), d, _tiny_schema())
+
+
+def test_duplicate_condition_names_raise():
+    d = _small_design(3)
+    d["conditions"][1]["name"] = "high"
+    with pytest.raises(ValueError, match="condition name 'high' appears more than once"):
+        match_stimuli(_small_pool(), d, _tiny_schema())
+
+
+def test_negative_tolerance_raises():
+    with pytest.raises(ValueError, match="tolerance_k for dimension 'concreteness' is negative"):
+        match_stimuli(_small_pool(),
+                      _small_design(3, tolerance_k={"concreteness": -1}),
+                      _tiny_schema())
+
+
+def test_missing_conditions_raise():
+    d = _small_design(3)
+    del d["conditions"]
+    with pytest.raises(ValueError, match="the design has no conditions"):
+        match_stimuli(_small_pool(), d, _tiny_schema())
+
+
+def test_selection_ignores_unused_columns_and_the_seed():
+    # Metamorphic invariants: an inert extra column must not steer selection, and
+    # the schema seed only ever reaches the shuffle keys, never the matcher.
+    base = match_stimuli(_small_pool(), _small_design(3), _tiny_schema())
+    with_extra = _small_pool().assign(unused_norm=[9.9, 1.2, 5.5, 0.1, 7.7, 3.3, 2.2, 8.8])
+    seeded = dict(_tiny_schema(), seed=99)
+    assert list(match_stimuli(with_extra, _small_design(3), _tiny_schema())["word"]) == \
+           list(base["word"])
+    assert list(match_stimuli(_small_pool(), _small_design(3), seeded)["word"]) == \
+           list(base["word"])
+
+
+def test_matching_module_uses_the_shared_rounder():
+    # The 9-dp distance and cost roundings must go through _round_dp_vec: native
+    # np.round pairs with R's different decimal algorithm. The two remaining
+    # native calls are the 0-dp even-spread index sites, which are half-even on
+    # exactly representable halves in both engines and pinned by the committed
+    # goldens -- converting them would change selections.
+    import lexsync.matching as m
+    src = open(m.__file__, encoding="utf-8").read()
+    assert src.count("np.round(") == 2

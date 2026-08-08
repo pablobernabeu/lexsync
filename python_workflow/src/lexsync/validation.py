@@ -32,7 +32,7 @@ def describe_stimuli(stimuli: pd.DataFrame, dims, by: str = "condition") -> pd.D
     return pd.DataFrame(rows)
 
 
-def cohens_d(x, y) -> float:
+def cohens_d(x, y):
     x = np.asarray(x, dtype=float); y = np.asarray(y, dtype=float)
     x = x[~np.isnan(x)]; y = y[~np.isnan(y)]
     nx, ny = len(x), len(y)
@@ -40,7 +40,11 @@ def cohens_d(x, y) -> float:
         return 0.0
     sp = math.sqrt(((nx - 1) * _exact_var(x) + (ny - 1) * _exact_var(y)) / (nx + ny - 2))
     if sp == 0 or math.isnan(sp):
-        return 0.0
+        # Two constants: an exactly-zero difference is exactly zero SDs apart, but
+        # unequal constants are infinitely many -- undefined, not perfect balance.
+        if float(_exact_mean(x) - _exact_mean(y)) == 0:
+            return 0.0
+        return None
     return float((_exact_mean(x) - _exact_mean(y)) / sp)
 
 
@@ -66,9 +70,12 @@ def cohens_d_ci(x, y, alpha: float = 0.05) -> dict:
     sp = math.sqrt(((nx - 1) * _exact_var(x) + (ny - 1) * _exact_var(y)) / (nx + ny - 2))
     diff = float(_exact_mean(x) - _exact_mean(y))
     if sp == 0 or math.isnan(sp):
-        # A constant dimension carries no sampling uncertainty: the interval is a
-        # point at the (zero) standardised difference.
-        return dict(d=0.0, ci_low=0.0, ci_high=0.0)
+        # Equal constants carry no sampling uncertainty: a point at zero. Unequal
+        # constants are infinitely many SDs apart, so the estimate and its interval
+        # are undefined, not a perfect [0, 0].
+        if diff == 0:
+            return dict(d=0.0, ci_low=0.0, ci_high=0.0)
+        return dict(d=None, ci_low=None, ci_high=None)
     d = diff / sp
     margin = float(stats.t.ppf(1 - alpha, nx + ny - 2) * math.sqrt(1 / nx + 1 / ny))
     return dict(d=float(d), ci_low=d - margin, ci_high=d + margin)
@@ -146,11 +153,15 @@ def match_report(stimuli: pd.DataFrame, dims, schema: dict) -> dict:
             ci = cohens_d_ci(x, y, alpha)
             vr = variance_ratio(y, x)
             p = tt["p"]
+            # An undefined d and its interval serialise as missing cells (empty in
+            # the CSV, null in the datasheet), exactly like the other missing stats.
+            d = cohens_d(x, y)
+            lo, hi = ci["ci_low"], ci["ci_high"]
             rows.append(dict(
                 condition=cc, reference=anchor, dimension=dim,
-                cohens_d=_round_dp(cohens_d(x, y), 3),
-                d_ci_low=_round_dp(ci["ci_low"], 3) if ci["ci_low"] == ci["ci_low"] else None,
-                d_ci_high=_round_dp(ci["ci_high"], 3) if ci["ci_high"] == ci["ci_high"] else None,
+                cohens_d=_round_dp(d, 3) if d is not None else None,
+                d_ci_low=_round_dp(lo, 3) if lo is not None and lo == lo else None,
+                d_ci_high=_round_dp(hi, 3) if hi is not None and hi == hi else None,
                 var_ratio=_round_dp(vr, 3) if vr is not None else None,
                 tost_p=_round_dp(p, 4) if p == p else None,
                 equivalent=tt["equivalent"],
