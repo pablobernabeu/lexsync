@@ -410,7 +410,13 @@ test_that("the matching module uses the shared rounder on distance paths", {
   # remaining native calls are the 0-dp even-spread index sites, which are
   # half-even on exactly representable halves in both engines and pinned by the
   # committed goldens -- converting them would change selections.
-  src <- readLines(testthat::test_path("..", "..", "R", "matching.R"))
+  # Reads the package source, which only a source checkout has: R CMD check runs
+  # the tests from lexsync.Rcheck/tests/testthat, where the installed copy holds a
+  # lazy-load database and no R/ directory. Skip there rather than fail, the same
+  # way test-config.R skips its repository-level checks.
+  path <- testthat::test_path("..", "..", "R", "matching.R")
+  skip_if_not(file.exists(path), "package sources not available")
+  src <- readLines(path)
   src <- sub("#.*$", "", src)   # comments legitimately mention round()
   hits <- sum(lengths(regmatches(src, gregexpr("(?<![._[:alnum:]])round\\(", src, perl = TRUE))))
   expect_identical(hits, 2L)

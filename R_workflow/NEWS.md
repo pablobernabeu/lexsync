@@ -30,10 +30,10 @@
   confidence interval, even where the datasheet's own JSON recorded
   `equivalent: false`; the sentence is now conditional on the stored verdicts, prints
   the signed worst difference and the configurable bound, and the analysis note names
-  the suggested formula as lme4 syntax rather than implying statsmodels accepts it.
+  the suggested formula as `lme4` syntax rather than implying `statsmodels` accepts it.
   The datasheet also gains the SHA-256 of the design and schema, the pairwise matchers'
   candidate cap and whether it fired, the equivalence bound tested against, and the
-  yaml, stringi and operating-system entries the environment record omitted.
+  `yaml`, `stringi` and operating-system entries the environment record omitted.
 * **A `continuous` block now works over a supplied pool, and two silent table-mode
   gaps are refusals.** `source: pool` reaches the continuous selector (it previously
   fell through to the conditions matcher and crashed); a continuous table without
