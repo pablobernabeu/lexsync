@@ -46,6 +46,51 @@ Documentation = "https://pablobernabeu.github.io/lexsync/python/"
 Issues = "https://github.com/pablobernabeu/lexsync/issues"
 "R twin" = "https://pablobernabeu.github.io/lexsync/r/"
 
+[tool.ruff]
+line-length = 110
+# The declared floor, so ruff never proposes syntax the oldest supported
+# interpreter cannot run.
+target-version = "py310"
+# The template trees are not modules. They are payload text: OpenSesame inline
+# scripts, which the host runs with Canvas, var, clock and send_trigger already
+# in the namespace, and PsychoPy templates whose ALL_CAPS placeholders are
+# substituted before anything executes. Linting them as importable Python
+# reports every one of those as an undefined name -- 22 of them, which is every
+# F finding this package has -- and each is a false positive by construction.
+# They are held to their own standard instead: tests/test_templates.py and the R
+# twin pin all three copies byte-identical to templates/ at the repository root.
+extend-exclude = ["src/lexsync/templates"]
+
+[tool.ruff.lint]
+# Stated rather than inherited, because ruff's defaults move: 0.16 widened them
+# and turned a sibling package's green CI red without a line of that package
+# changing.
+#
+# F and E9 only, for now, and deliberately. This package had no linter at all,
+# so the first job is a gate that catches the findings which are bugs rather
+# than style: undefined names, unused imports and variables, redefined
+# functions, f-strings missing their placeholders, syntax errors. It passes
+# today with nothing to fix, which means from here it can only go red for a real
+# regression.
+#
+# The rest of the family set (E, W, I, UP, B) is deferred, not forgotten. It
+# reports around 200 findings here and they are not mechanical:
+#
+#   UP031 (96) would rewrite %-formatting as f-strings, but io_utils.py's
+#     '"%.17g" % f' is paired with sprintf("%.17g", ...) in R/io_utils.R, and
+#     scripting.py formats TRIGGER_HOLD_MS and ASSUMED_REFRESH_HZ the same way.
+#     Those values reach the experiment templates and underpin the byte-identity
+#     of the two engines, which are written to look alike on purpose so that a
+#     reader can see they agree rather than take it on trust.
+#   B905 (25) wants an explicit zip(strict=), which is a decision per call site:
+#     columns of one frame want strict=True, where truncation would be a silent
+#     bug, but a deliberately ragged pairwise zip wants strict=False.
+#   E741 (12) wants renames of l, I and O in code whose output is compared
+#     byte-for-byte against the R engine.
+#
+# Each is worth doing with the parity harness in the loop, and none blind.
+select = ["F", "E9"]
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/lexsync"]
 

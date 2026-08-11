@@ -18,6 +18,27 @@ permissions:
   contents: read
 
 jobs:
+  # This package ran no linter at all, alone in the family. The rule set is
+  # pinned in python_workflow/pyproject.toml rather than given here, so a ruff
+  # release cannot silently widen or narrow what CI enforces, and it starts at
+  # F and E9 -- the findings that are bugs rather than style. See the comment
+  # there for what is deferred and why.
+  lint:
+    name: ruff
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: python_workflow
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Install ruff
+        run: python -m pip install --upgrade pip ruff
+      - name: Lint the Python sources
+        run: ruff check .
+
   test:
     runs-on: ${{ matrix.os }}
     name: ${{ matrix.os }} (Python ${{ matrix.python-version }})
