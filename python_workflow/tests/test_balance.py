@@ -33,7 +33,7 @@ def mk(n_sets=16):
     deal handles worst: it hands every Nth set to the same list."""
     s = [i for i in range(1, n_sets + 1) for _ in range(2)]
     return pd.DataFrame({
-        "word": ["w%03d%s" % (si, c) for si, c in zip(s, ["a", "b"] * n_sets)],
+        "word": ["w%03d%s" % (si, c) for si, c in zip(s, ["a", "b"] * n_sets, strict=True)],
         "set": s,
         "condition": ["hi", "lo"] * n_sets,
         "frequency": [2.0 + 0.31 * si for si in s],
@@ -49,7 +49,7 @@ DESIGN = {"name": "b", "language": "english",
 
 def _spread(stim, assign, dim):
     tot = {}
-    for a, v in zip(assign, stim[dim]):
+    for a, v in zip(assign, stim[dim], strict=True):
         tot[a] = tot.get(a, 0) + v
     return max(tot.values()) - min(tot.values())
 
@@ -130,7 +130,7 @@ def test_counterbalance_uses_the_supplied_assignment():
     stim = mk()
     res = balance_lists(stim, DESIGN, SCHEMA)
     out = counterbalance(stim, DESIGN, SCHEMA, res["list_of_set"])
-    for s, l in zip(out["set"], out["list"]):
+    for s, l in zip(out["set"], out["list"], strict=True):
         assert l == res["list_of_set"][s]
 
 
@@ -152,5 +152,5 @@ def test_a_design_without_optimise_is_dealt_by_rank():
     out = counterbalance(stim, plain, SCHEMA)
     sets = sorted(stim["set"].unique())
     deal = {s: (i % 4) + 1 for i, s in enumerate(sets)}
-    for s, l in zip(out["set"], out["list"]):
+    for s, l in zip(out["set"], out["list"], strict=True):
         assert l == deal[s]

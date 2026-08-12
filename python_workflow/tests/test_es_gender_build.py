@@ -56,7 +56,7 @@ def test_gender_follows_the_final_letter():
     endings = {w[-1] for w in committed.word}
     assert endings == {"a", "o"}
     mismatched = [
-        w for w, g in zip(committed.word, committed.gender)
+        w for w, g in zip(committed.word, committed.gender, strict=True)
         if build_es_gender.GENDER_BY_ENDING[w[-1]] != g
     ]
     assert not mismatched, f"gender does not follow the ending for: {mismatched[:5]}"

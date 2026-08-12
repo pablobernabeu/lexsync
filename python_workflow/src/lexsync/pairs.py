@@ -133,7 +133,7 @@ def select_continuous_pairs(stim: pd.DataFrame, items_cfg: dict, design: dict,
     tagged["..lexsync_pair_row"] = range(len(tagged))
     passed = build_pool(tagged, design.get("pool_filters"))
     kept = set(passed["..lexsync_pair_row"])
-    failed = {s for s, r in zip(tagged["set"], tagged["..lexsync_pair_row"]) if r not in kept}
+    failed = {s for s, r in zip(tagged["set"], tagged["..lexsync_pair_row"], strict=True) if r not in kept}
     eligible = [s for s in dict.fromkeys(stim["set"]) if s not in failed]
     if not eligible:
         raise ValueError(
@@ -146,7 +146,7 @@ def select_continuous_pairs(stim: pd.DataFrame, items_cfg: dict, design: dict,
         {str(c) for c in stim["condition"]}, key=lambda s: s.encode("utf-8"))[0]
     elig = set(eligible)
     anchor = stim[[s in elig and str(c) == anchor_cond
-                   for s, c in zip(stim["set"], stim["condition"])]].reset_index(drop=True)
+                   for s, c in zip(stim["set"], stim["condition"], strict=True)]].reset_index(drop=True)
     dup = sorted({s for s in anchor["set"] if list(anchor["set"]).count(s) > 1})
     if dup:
         raise ValueError("lexsync: item set(s) %s have more than one '%s' row."

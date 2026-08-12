@@ -38,7 +38,7 @@ def test_counterbalance_factorial_deals_lists_by_set_rank():
     stim = pd.DataFrame({"word": list("abcdefgh"), "condition": ["x", "y"] * 4,
                          "set": [2, 2, 4, 4, 6, 6, 8, 8]})
     out = counterbalance(stim, {"counterbalance": {"lists": 2}}, {"seed": 1})
-    assert dict(zip(out["set"], out["list"])) == {2: 1, 4: 2, 6: 1, 8: 2}
+    assert dict(zip(out["set"], out["list"], strict=True)) == {2: 1, 4: 2, 6: 1, 8: 2}
 
 
 def test_keyed_hash_shuffle_matches_the_r_engine():
@@ -73,7 +73,7 @@ def test_keyed_hash_shuffle_is_a_uniform_permutation():
         out = counterbalance(stim, {"counterbalance": {"lists": 1}}, {"seed": seed})
         out = out.sort_values("trial", kind="stable")
         firsts.add(out.iloc[0]["word"])
-        for w, t in zip(out["word"], out["trial"]):
+        for w, t in zip(out["word"], out["trial"], strict=True):
             positions[w].append(t)
     centre = (n + 1) / 2
     means = {w: sum(p) / len(p) for w, p in positions.items()}

@@ -30,7 +30,7 @@ def test_generate_subsyllabic_legal_nonword_length_preserved(schema, en_lexicon_
     gen = generate_pseudowords_subsyllabic(base, ref)
     lexset = set(ref)
     bg = bigram_counts(ref)
-    for w, pw in zip(gen["base_word"], gen["pseudoword"]):
+    for w, pw in zip(gen["base_word"], gen["pseudoword"], strict=True):
         assert len(pw) == len(w)             # length preserved exactly
         assert pw not in lexset              # a novel non-word
         assert _legal(pw, bg)                # every bigram attested

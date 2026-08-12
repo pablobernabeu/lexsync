@@ -259,7 +259,7 @@ def test_fetch_corpus_accepts_a_matching_checksum(tmp_path, monkeypatch):
 
 def test_list_corpora_surfaces_registry_status():
     frame = list_corpora(_registry_path())
-    status = dict(zip(frame["name"], frame["status"]))
+    status = dict(zip(frame["name"], frame["status"], strict=True))
     assert status["subtlex_uk"] == "manual"
     assert status["subtlex_esp"] == "listed"
     assert "validated" not in set(status.values())

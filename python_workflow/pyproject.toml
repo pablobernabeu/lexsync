@@ -66,15 +66,23 @@ extend-exclude = ["src/lexsync/templates"]
 # and turned a sibling package's green CI red without a line of that package
 # changing.
 #
-# F and E9 only, for now, and deliberately. This package had no linter at all,
-# so the first job is a gate that catches the findings which are bugs rather
-# than style: undefined names, unused imports and variables, redefined
-# functions, f-strings missing their placeholders, syntax errors. It passes
-# today with nothing to fix, which means from here it can only go red for a real
-# regression.
+# F, E9 and B: the rules that catch bugs rather than style. Undefined names,
+# unused imports and variables, redefined functions, f-strings missing their
+# placeholders, syntax errors, and the bugbear set. This package had no linter at
+# all, so these came first and the file passes them, which means from here it can
+# only go red for a real regression.
 #
-# The rest of the family set (E, W, I, UP, B) is deferred, not forgotten. It
-# reports around 200 findings here and they are not mechanical:
+# B905 was the reason B was worth enabling. Every zip() in this package pairs
+# sequences that are equal in length by construction -- columns of one frame,
+# or a list built from the thing it is zipped against -- so each now says
+# strict=True. That is a no-op while the invariant holds and an exception the
+# moment it stops holding, which matters most in counterbalancing.py and
+# scripting.py, where the zipped values build the hash keys behind the
+# deterministic shuffle and the jitter. Silent truncation there would not raise;
+# it would quietly deal a different experiment. Adding it changed no output:
+# the suite and a full pipeline run over 242 artefacts are byte-identical.
+#
+# The remaining style families (E, W, I, UP) are deferred, not forgotten:
 #
 #   UP031 (96) would rewrite %-formatting as f-strings, but io_utils.py's
 #     '"%.17g" % f' is paired with sprintf("%.17g", ...) in R/io_utils.R, and
@@ -82,14 +90,12 @@ extend-exclude = ["src/lexsync/templates"]
 #     Those values reach the experiment templates and underpin the byte-identity
 #     of the two engines, which are written to look alike on purpose so that a
 #     reader can see they agree rather than take it on trust.
-#   B905 (25) wants an explicit zip(strict=), which is a decision per call site:
-#     columns of one frame want strict=True, where truncation would be a silent
-#     bug, but a deliberately ragged pairwise zip wants strict=False.
 #   E741 (12) wants renames of l, I and O in code whose output is compared
-#     byte-for-byte against the R engine.
-#
-# Each is worth doing with the parity harness in the loop, and none blind.
-select = ["F", "E9"]
+#     byte-for-byte against the R engine, for no gain but readability.
+#   I001, E501, E702 and the remaining UP rules are ordinary tidying, worth doing
+#     in a pass of their own rather than mixed into a change that alters
+#     behaviour, so that a diff which should move nothing can be read as such.
+select = ["F", "E9", "B"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/lexsync"]

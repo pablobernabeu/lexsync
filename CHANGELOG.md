@@ -12,6 +12,27 @@ no function signature changes.
 
 ### Added
 
+- **The experiment templates cannot drift between their three copies.** `templates/` is
+  the canonical set and both packages carry a mirror so an installed copy can reach one;
+  nothing checked that the three agreed, and no functional test could, because a stale
+  mirror still renders and runs and simply produces a different experiment from the one
+  documented. For the trigger templates that means code time-locking EEG markers to
+  stimulus onset, where the failure is silent and the data unusable. Both engines now
+  compare the bytes.
+- **A linter, and an explicit rule set.** This package ran none. It now enforces `F`, `E9`
+  and `B`, the families that report bugs rather than style, pinned in `pyproject.toml` so
+  a ruff release cannot move what CI checks. The template trees are excluded because they
+  are not modules: OpenSesame supplies `Canvas`, `var` and `clock` at run time, and the
+  PsychoPy placeholders are substituted before anything executes, so reading them as
+  importable Python reported every one of those names as undefined.
+- **Every `zip()` states the length invariant it relies on.** All of them pair sequences
+  equal in length by construction, so all now pass `strict=True`. It is a no-op while
+  that holds and an exception the moment it stops, which matters most in
+  `counterbalancing.py` and `scripting.py`, where the zipped values build the hash keys
+  behind the deterministic shuffle and the jitter: silent truncation there would not
+  raise, it would quietly deal a different experiment. No output changed -- the suite and
+  a full pipeline run over 242 artefacts are byte-identical.
+
 - **The requested number of stimuli is now a contract.** Every selector -- the anchored
   matcher, `joint` and `optimal` pairing, continuous selection (including pair-keyed
   continuous designs) and pseudoword generation -- previously returned fewer sets than

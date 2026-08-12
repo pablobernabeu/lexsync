@@ -48,7 +48,7 @@ def test_pseudowords_are_deterministic():
 def test_pseudowords_are_legal_nonwords_of_matched_length():
     gen = generate_pseudowords(["cat", "bat", "rat", "man"], LEX)
     lex = set(LEX)
-    for base, pw in zip(gen["base_word"], gen["pseudoword"]):
+    for base, pw in zip(gen["base_word"], gen["pseudoword"], strict=True):
         assert pw not in lex                    # not a real word
         assert len(pw) == len(base)             # length preserved
         bg = bigram_counts(LEX)

@@ -316,7 +316,7 @@ def add_neighbourhood(df: pd.DataFrame, reference=None, n_old: int = 20) -> pd.D
     n_density = np.zeros(len(words), dtype=int)
     old = np.full(len(words), np.nan)
     for i, w in enumerate(words):
-        same_len = [r for r, L in zip(ref, ref_len) if L == len(w)]
+        same_len = [r for r, L in zip(ref, ref_len, strict=True) if L == len(w)]
         if same_len:
             hd = np.array([Hamming.distance(w, s) for s in same_len])
             n_density[i] = int(np.sum(hd == 1))
@@ -360,12 +360,12 @@ def add_pair_overlap(df: pd.DataFrame, prime: str = "prime",
             raise ValueError("lexsync: add_pair_overlap needs column '%s'." % col)
     a = [str(w).strip().lower() for w in df[prime]]
     b = [str(w).strip().lower() for w in df[target]]
-    lev = [Levenshtein.distance(x, y) for x, y in zip(a, b)]
-    den = [max(len(x), len(y)) for x, y in zip(a, b)]
+    lev = [Levenshtein.distance(x, y) for x, y in zip(a, b, strict=True)]
+    den = [max(len(x), len(y)) for x, y in zip(a, b, strict=True)]
     out = df.copy()
     out["pair.lev"] = np.array(lev, dtype=int)
     out["pair.overlap"] = [0.0 if d == 0 else _round_dp(1 - l / d, 9)
-                           for l, d in zip(lev, den)]
+                           for l, d in zip(lev, den, strict=True)]
     return out
 
 def load_items(path: str, required_fields) -> pd.DataFrame:
@@ -417,7 +417,7 @@ def load_items(path: str, required_fields) -> pd.DataFrame:
     # A repeated item-condition pair is a slip that would silently duplicate a trial
     # in every generated list; the first repeat in file order is reported.
     seen = set()
-    for it, cond in zip(item_key, df["condition"]):
+    for it, cond in zip(item_key, df["condition"], strict=True):
         if (it, cond) in seen:
             raise ValueError(
                 f"lexsync: the items table repeats item '{it}' for condition '{cond}'; "

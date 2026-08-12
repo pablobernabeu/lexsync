@@ -200,7 +200,7 @@ def resolve_trial_timing(stimuli: pd.DataFrame, design: dict, schema: dict) -> p
         lists = stimuli["list"] if "list" in stimuli.columns else [1] * len(stimuli)
         keys = ["|".join([_key_part(seed), "jitter", spec["column"],
                           _key_part(l), _key_part(s), _key_part(c)])
-                for l, s, c in zip(lists, stimuli["set"], stimuli["condition"])]
+                for l, s, c in zip(lists, stimuli["set"], stimuli["condition"], strict=True)]
         stimuli[spec["column"]] = [hash_int_range(k, lo, hi) for k in keys]
     return stimuli
 

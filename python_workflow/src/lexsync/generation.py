@@ -265,7 +265,7 @@ def build_lexdec_stimuli(pool: pd.DataFrame, n: int, reference_words=None,
         gen = generate_pseudowords(words["word"].tolist(), ref)
     else:
         raise ValueError(f"lexsync: unknown pseudoword generation method '{method}'.")
-    pw_map = dict(zip(gen["base_word"], gen["pseudoword"]))
+    pw_map = dict(zip(gen["base_word"], gen["pseudoword"], strict=True))
 
     real = pd.DataFrame({
         "target": words["word"].tolist(), "word": words["word"].tolist(),

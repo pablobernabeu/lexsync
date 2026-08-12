@@ -140,11 +140,12 @@ def test_load_lexicon_reports_an_empty_lexicon(schema, tmp_path, body):
 def test_missing_column_raises(schema, tmp_path):
     bad = tmp_path / "bad.csv"
     pd.DataFrame({"notword": ["x"]}).to_csv(bad, index=False)
-    try:
+    # pytest.raises, as everywhere else in this file. The try/assert False form
+    # this replaces passes for the wrong reason under `python -O`, which strips
+    # asserts: the call would raise nothing, the vanished assert would not
+    # complain, and the test would report success having checked nothing.
+    with pytest.raises(ValueError, match="required column"):
         load_lexicon(str(bad), schema)
-        assert False, "expected a ValueError"
-    except ValueError as exc:
-        assert "required column" in str(exc)
 
 
 # Pins the same contract as "load_items trims the ASCII whitespace readr trims"

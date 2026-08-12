@@ -53,7 +53,7 @@ def _shuffle_deterministic(df: pd.DataFrame, seed) -> pd.DataFrame:
     ranks = [hashlib.sha256("|".join(
                  [_key_part(seed), _key_part(r), _key_part(l), _key_part(s), _key_part(c)]
              ).encode("utf-8")).hexdigest()
-             for r, l, s, c in zip(rep, df["list"], df["set"], df["condition"])]
+             for r, l, s, c in zip(rep, df["list"], df["set"], df["condition"], strict=True)]
     df = df.iloc[np.argsort(ranks, kind="stable")].copy()
     df["trial"] = np.arange(1, len(df) + 1)
     return df
@@ -161,7 +161,7 @@ def _balance_values(stimuli: pd.DataFrame, dims: list) -> dict:
     for d in dims:
         q = _quantise_dim(stimuli[d], d)
         by_set = {s: 0 for s in sets}
-        for s, qv in zip(stimuli["set"], q):
+        for s, qv in zip(stimuli["set"], q, strict=True):
             by_set[s] += qv                          # exact integer sum
         V[d] = [by_set[s] for s in sets]
     return V
@@ -175,7 +175,7 @@ def _balance_cost(V: dict, assign: list, n_lists: int, n_sets: int) -> int:
     for vals in V.values():
         total = sum(vals)
         for l in range(1, n_lists + 1):
-            s = sum(v for v, a in zip(vals, assign) if a == l)
+            s = sum(v for v, a in zip(vals, assign, strict=True) if a == l)
             n_in = sum(1 for a in assign if a == l)
             cost += abs(s * n_sets - total * n_in)
     return cost
@@ -244,7 +244,7 @@ def balance_lists(stimuli: pd.DataFrame, design: dict, schema: dict) -> dict:
         if not cand:
             break
         n_in = [sum(1 for a in assign if a == l) for l in range(1, n_lists + 1)]
-        S = {d: [sum(v for v, a in zip(V[d], assign) if a == l)
+        S = {d: [sum(v for v, a in zip(V[d], assign, strict=True) if a == l)
                  for l in range(1, n_lists + 1)] for d in dims}
         best = 0
         tied = []
@@ -285,7 +285,7 @@ def balance_lists(stimuli: pd.DataFrame, design: dict, schema: dict) -> dict:
             hit_bound = True
 
     return {
-        "list_of_set": {s: int(a) for s, a in zip(sets, assign)},
+        "list_of_set": {s: int(a) for s, a in zip(sets, assign, strict=True)},
         "report": {
             "dimensions": list(dims), "cost_before": int(cost0),
             "cost_after": int(cost), "n_swaps": int(n_swaps),
@@ -379,7 +379,7 @@ def participant_table(factors: dict, n_participants: int) -> pd.DataFrame:
     # last; cross the reversed keys and unreverse each cell so a participant
     # number is allocated the same cell by either engine.
     grid = [cell[::-1] for cell in product(*[factors[k] for k in reversed(keys)])]
-    rows = [dict(zip(keys, grid[i % len(grid)])) for i in range(n_participants)]
+    rows = [dict(zip(keys, grid[i % len(grid)], strict=True)) for i in range(n_participants)]
     df = pd.DataFrame(rows)
     df["participant"] = np.arange(1, n_participants + 1)
     return df
