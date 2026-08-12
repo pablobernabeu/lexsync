@@ -2,8 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from lexsync.matching import (match_stimuli, resample_stimuli,
-                              select_continuous_stimuli)
+from lexsync.matching import match_stimuli, resample_stimuli, select_continuous_stimuli
 from lexsync.querying import build_pool, load_lexicon
 from lexsync.validation import _pearson, cohens_d
 

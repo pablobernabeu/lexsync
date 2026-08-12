@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Assign matched stimuli to lists and trial order, and build participant tables.
 
 Mirrors R_workflow/R/counterbalancing.R. Two recipes are provided: the original

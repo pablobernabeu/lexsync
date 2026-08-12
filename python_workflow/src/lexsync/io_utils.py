@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Robust UTF-8 input/output and provenance helpers.
 
 Mirrors R_workflow/R/io_utils.R. Centralising these guards against the encoding

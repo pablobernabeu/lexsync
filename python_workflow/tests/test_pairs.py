@@ -22,8 +22,7 @@ pinned in R_workflow/tests/testthat/test-pairs.R against the same values.
 import pandas as pd
 import pytest
 
-from lexsync.pairs import (RESERVED_MEMBER_NAMES, _check_members,
-                           select_continuous_pairs)
+from lexsync.pairs import RESERVED_MEMBER_NAMES, _check_members, select_continuous_pairs
 from lexsync.querying import add_pair_overlap
 
 PAIRS = pd.DataFrame({

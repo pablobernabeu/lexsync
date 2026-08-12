@@ -17,8 +17,7 @@ R_workflow/tests/testthat/test-trial-timing.R asserts the same values.
 import pandas as pd
 import pytest
 
-from lexsync.scripting import (_duration_spec, _key_part, loop_table, render_events,
-                               resolve_trial_timing)
+from lexsync.scripting import _duration_spec, _key_part, loop_table, render_events, resolve_trial_timing
 
 SCHEMA = {"seed": 42}
 
@@ -118,6 +117,7 @@ def test_a_hash_key_component_that_cannot_be_rendered_identically_is_refused():
     routine data error that neither reader rejects, and it produced a DIFFERENT trial
     order in each engine -- reproducibly, with nothing to signal it."""
     import pytest
+
     from lexsync.io_utils import _key_part
     for bad in (None, float("nan")):
         with pytest.raises(ValueError, match="missing"):

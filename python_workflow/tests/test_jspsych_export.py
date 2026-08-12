@@ -4,8 +4,8 @@ import re
 
 import pandas as pd
 
-from lexsync.scripting import assign_triggers, export_jspsych
 from lexsync.paradigms import referenced_fields, resolve_events
+from lexsync.scripting import assign_triggers, export_jspsych
 
 
 def validate_jspsych(text):

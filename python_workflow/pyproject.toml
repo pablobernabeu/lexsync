@@ -82,20 +82,29 @@ extend-exclude = ["src/lexsync/templates"]
 # it would quietly deal a different experiment. Adding it changed no output:
 # the suite and a full pipeline run over 242 artefacts are byte-identical.
 #
-# The remaining style families (E, W, I, UP) are deferred, not forgotten:
+# E, W, I and UP are enforced too, so this package is now held to the same set
+# as its four siblings. Three rules are turned off, each because the thing it
+# objects to is carrying meaning rather than costing anything:
 #
-#   UP031 (96) would rewrite %-formatting as f-strings, but io_utils.py's
-#     '"%.17g" % f' is paired with sprintf("%.17g", ...) in R/io_utils.R, and
-#     scripting.py formats TRIGGER_HOLD_MS and ASSUMED_REFRESH_HZ the same way.
-#     Those values reach the experiment templates and underpin the byte-identity
-#     of the two engines, which are written to look alike on purpose so that a
-#     reader can see they agree rather than take it on trust.
-#   E741 (12) wants renames of l, I and O in code whose output is compared
-#     byte-for-byte against the R engine, for no gain but readability.
-#   I001, E501, E702 and the remaining UP rules are ordinary tidying, worth doing
-#     in a pass of their own rather than mixed into a change that alters
-#     behaviour, so that a diff which should move nothing can be read as such.
-select = ["F", "E9", "B"]
+#   UP031 would rewrite every %-format as an f-string. This package is one half
+#     of a pair, and the R half formats with sprintf; io_utils.py's
+#     '"%.17g" % f' sits opposite sprintf("%.17g", ...) in R/io_utils.R, and
+#     scripting.py builds TRIGGER_HOLD_MS and ASSUMED_REFRESH_HZ the same way,
+#     values that reach the experiment templates and underpin the byte-identity
+#     of the two engines. The twins are written to look alike so a reader can
+#     see they agree rather than take it on trust. Converting the handful that
+#     are load-bearing is out of the question, and converting only the rest
+#     would leave one file speaking two dialects.
+#   E702 objects to the semicolon in `x = ...; y = ...`. Every instance is a
+#     symmetric pair -- x and y, i and j, wi and wj, cond and ref -- where the
+#     two halves are one operation on a pair of things. Splitting them across
+#     thirty-four lines would hide the symmetry that the single line shows.
+#   E741 objects to `l`. In counterbalancing.py it is the list number, and
+#     R/counterbalancing.R writes `for (l in seq_len(n_lists))` for the same
+#     loop. It is domain vocabulary shared with the twin, not a careless name.
+#     theoryforge's pyproject.toml disables this rule for the same reason.
+select = ["E", "F", "W", "I", "UP", "B"]
+ignore = ["UP031", "E702", "E741"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/lexsync"]

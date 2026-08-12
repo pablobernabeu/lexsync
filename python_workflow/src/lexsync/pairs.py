@@ -122,7 +122,7 @@ def select_continuous_pairs(stim: pd.DataFrame, items_cfg: dict, design: dict,
 
     # build_pool silently skips a column it does not recognise, which on this path
     # would mean a mistyped filter quietly widening the selection.
-    unknown = sorted(set((design.get("pool_filters") or {})) - set(stim.columns))
+    unknown = sorted(set(design.get("pool_filters") or {}) - set(stim.columns))
     if unknown:
         raise ValueError(
             "lexsync: pool_filters name column(s) the item table does not have: %s."

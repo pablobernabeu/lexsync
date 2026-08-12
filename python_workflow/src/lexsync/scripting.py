@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Export finalised, hardware-timed experiment scripts (PsychoPy + OpenSesame).
 
 Mirrors R_workflow/R/scripting.R. Both backends render the same declarative trial
@@ -17,8 +16,17 @@ import re
 
 import pandas as pd
 
-from .io_utils import (_key_part, _round_dp, clean_column, clean_key, clean_meta,
-                       clean_port, hash_int_range, slugify, write_csv_utf8)
+from .io_utils import (
+    _key_part,
+    _round_dp,
+    clean_column,
+    clean_key,
+    clean_meta,
+    clean_port,
+    hash_int_range,
+    slugify,
+    write_csv_utf8,
+)
 from .paradigms import content_field, referenced_fields, resolve_events
 
 # Columns always carried in a loop table when present (besides the event fields).
@@ -435,7 +443,8 @@ def _osexp_block_guard(body: list, blocks) -> list:
     if not blocks:
         return body
     wanted = ", ".join(_pyq(str(b)) for b in blocks)
-    return ["if str(var.get(u'block', u'main')) in [%s]:" % wanted] +            ["    " + line for line in body]
+    return (["if str(var.get(u'block', u'main')) in [%s]:" % wanted]
+            + ["    " + line for line in body])
 
 
 def _osexp_event_block(name: str, ev: dict) -> tuple:

@@ -1,8 +1,14 @@
 import pandas as pd
 
 from lexsync.io_utils import _round_dp
-from lexsync.scripting import (_language_tag, assign_triggers, export_jspsych,
-                               export_opensesame, export_psychopy, render_events)
+from lexsync.scripting import (
+    _language_tag,
+    assign_triggers,
+    export_jspsych,
+    export_opensesame,
+    export_psychopy,
+    render_events,
+)
 
 
 def _stim():

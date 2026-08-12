@@ -69,7 +69,7 @@ def test_load_lexicon_drops_missing_words(schema, tmp_path):
 def test_load_lexicon_strips_unicode_whitespace(schema, tmp_path):
     pad = "".join(chr(cp) for cp in STRIPPED)
     path = tmp_path / "padded.csv"
-    body = 'word,freq_zipf\n"{p}dog{p}",5.0\n" cat ",4.0\n'.format(p=pad)
+    body = f'word,freq_zipf\n"{pad}dog{pad}",5.0\n" cat ",4.0\n'
     path.write_text(body, encoding="utf-8")
     lex = load_lexicon(str(path), schema)
     assert lex["word"].tolist() == ["cat", "dog"]
@@ -83,9 +83,9 @@ def test_load_lexicon_strips_unicode_whitespace(schema, tmp_path):
 def test_load_lexicon_keeps_zero_width_characters(schema, tmp_path):
     zw = chr(KEPT[0])
     path = tmp_path / "zw.csv"
-    path.write_text('word,freq_zipf\n"{z}dog{z}",5.0\n'.format(z=zw), encoding="utf-8")
+    path.write_text(f'word,freq_zipf\n"{zw}dog{zw}",5.0\n', encoding="utf-8")
     lex = load_lexicon(str(path), schema)
-    assert lex["word"].tolist() == ["{z}dog{z}".format(z=zw)]
+    assert lex["word"].tolist() == [f"{zw}dog{zw}"]
     assert lex["length"].tolist() == [5]
 
 
@@ -173,10 +173,10 @@ def test_load_items_trims_ascii_whitespace(tmp_path):
 def test_load_items_keeps_non_ascii_whitespace(tmp_path):
     nbsp = chr(0xA0)
     path = tmp_path / "nbsp.csv"
-    body = 'item,condition,target\ni1,related,"{s}cat{s}"\n'.format(s=nbsp)
+    body = f'item,condition,target\ni1,related,"{nbsp}cat{nbsp}"\n'
     path.write_text(body, encoding="utf-8")
     items = load_items(str(path), ["target"])
-    assert items["target"].tolist() == ["{s}cat{s}".format(s=nbsp)]
+    assert items["target"].tolist() == [f"{nbsp}cat{nbsp}"]
 
 
 # Pins the same contract as "load_items refuses missing or blank cells" in the R

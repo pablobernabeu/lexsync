@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """Thin wrapper that runs every lexsync demonstration design.
 
 Usage (from the repository root):  python python_workflow/run_pipeline.py

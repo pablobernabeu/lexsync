@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Practice and filler trials: rows that are PRESENTED but not ANALYSED.
 
 Everything else in the package treats one frame as both the materials record and the

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Paradigm registry and the trial-event model.
 
 A *paradigm* is a named default sequence of trial *events* plus the trial fields

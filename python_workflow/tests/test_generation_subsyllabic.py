@@ -1,9 +1,14 @@
 """The subsyllabic (Wuggy-style) pseudoword generator."""
 import pytest
 
-from lexsync.generation import (_legal, bigram_counts, build_constituent_inventory,
-                                build_lexdec_stimuli, generate_pseudowords_subsyllabic,
-                                segment_subsyllabic)
+from lexsync.generation import (
+    _legal,
+    bigram_counts,
+    build_constituent_inventory,
+    build_lexdec_stimuli,
+    generate_pseudowords_subsyllabic,
+    segment_subsyllabic,
+)
 from lexsync.querying import build_pool, load_lexicon
 
 

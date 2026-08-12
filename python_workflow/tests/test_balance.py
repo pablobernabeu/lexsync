@@ -22,8 +22,7 @@ test-balance.R asserts the same properties.
 import pandas as pd
 import pytest
 
-from lexsync.counterbalancing import (balance_lists, counterbalance,
-                                      counterbalance_factorial)
+from lexsync.counterbalancing import balance_lists, counterbalance, counterbalance_factorial
 
 SCHEMA = {"seed": 2026}
 

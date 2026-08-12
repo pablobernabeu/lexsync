@@ -5,8 +5,14 @@ import numpy as np
 import pandas as pd
 
 from lexsync.validation import (
-    balance_check, cohens_d, cohens_d_ci, describe_stimuli, match_report,
-    match_report_continuous, tost_equiv, variance_ratio,
+    balance_check,
+    cohens_d,
+    cohens_d_ci,
+    describe_stimuli,
+    match_report,
+    match_report_continuous,
+    tost_equiv,
+    variance_ratio,
 )
 
 

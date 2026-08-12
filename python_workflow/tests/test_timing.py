@@ -107,7 +107,8 @@ def test_reset_after_frames_converts_with_the_off_by_one_it_actually_had():
     """
     from lexsync.scripting import _trigger_hold_ms
     assert _trigger_hold_ms({"triggers": {"reset_after_frames": 2}}) == 50.0
-    assert _trigger_hold_ms({"triggers": {"reset_after_frames": 2}}) ==         _trigger_hold_ms({"triggers": {"trigger_hold_ms": 50}})
+    assert (_trigger_hold_ms({"triggers": {"reset_after_frames": 2}})
+            == _trigger_hold_ms({"triggers": {"trigger_hold_ms": 50}}))
     # An explicit hold wins over the legacy key.
     assert _trigger_hold_ms(
         {"triggers": {"trigger_hold_ms": 20, "reset_after_frames": 2}}) == 20.0

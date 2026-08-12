@@ -38,8 +38,7 @@ def test_all_names_are_importable_from_the_top_level():
 def test_continuous_and_variance_helpers_are_public():
     # Regression guard: these three were exported by R while __init__.py still omitted
     # them, so `from lexsync import ...` failed for the continuous-design API alone.
-    from lexsync import (match_report_continuous, select_continuous_stimuli,
-                         variance_ratio)
+    from lexsync import match_report_continuous, select_continuous_stimuli, variance_ratio
 
     assert select_continuous_stimuli is lexsync.matching.select_continuous_stimuli
     assert match_report_continuous is lexsync.validation.match_report_continuous

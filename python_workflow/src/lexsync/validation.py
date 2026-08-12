@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Match-quality reporting: descriptives, standardised mean differences, TOST.
 
 Mirrors R_workflow/R/validation.R.
@@ -14,8 +13,7 @@ from scipy import stats
 # Every reduction in this module goes through these rather than through numpy or
 # pandas. Two designs' reported means used to differ between the engines in the last
 # published decimal because numpy sums pairwise and R's mean() does not; see io_utils.
-from .io_utils import (_exact_mean, _exact_sd, _exact_sum, _exact_var,
-                       _round_dp)
+from .io_utils import _exact_mean, _exact_sd, _exact_sum, _exact_var, _round_dp
 
 
 def describe_stimuli(stimuli: pd.DataFrame, dims, by: str = "condition") -> pd.DataFrame:

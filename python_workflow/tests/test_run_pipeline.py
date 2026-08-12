@@ -1,13 +1,11 @@
-# -*- coding: utf-8 -*-
 """Pipeline-level guards. Twinned with test-run-pipeline.R: every fixture,
 expectation and message here must stay in step with the R suite."""
 import os
 
 import pytest
+from conftest import _pkg_data
 
 from lexsync.run_pipeline import run_pipeline
-
-from conftest import _pkg_data
 
 
 def _yaml_path(p):

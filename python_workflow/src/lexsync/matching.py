@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """The multidimensional constraint-matching engine.
 
 Mirrors R_workflow/R/matching.R exactly: a per-dimension tolerance pre-filter

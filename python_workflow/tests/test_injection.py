@@ -13,13 +13,13 @@ and markup positions, so a quote or an angle bracket there stopped being text.
 Mirrors test-injection.R. Both suites assert refusal rather than escaping: see
 clean_meta in io_utils for why one rule beats three escapes across two engines.
 """
+from importlib.resources import files
+
 import pandas as pd
 import pytest
 import yaml
-from importlib.resources import files
 
-from lexsync.scripting import (export_jspsych, export_opensesame, export_psychopy,
-                               _language_tag, _pyq)
+from lexsync.scripting import _language_tag, _pyq, export_jspsych, export_opensesame, export_psychopy
 
 
 @pytest.fixture
@@ -175,8 +175,8 @@ def test_a_scalar_keys_or_blocks_is_not_exploded_into_characters(schema):
     two different allowed-response lists -- and a scalar `blocks:` made the OpenSesame
     guard compare against "p", "r", ... so the event ran in every block in Python and
     only the named one in R."""
-    from lexsync.scripting import render_events
     from lexsync.paradigms import resolve_events
+    from lexsync.scripting import render_events
     design = _design(events=[
         {"type": "text", "content": "{word}", "duration_ms": 100},
         {"type": "response", "keys": "space", "timeout_ms": 500},

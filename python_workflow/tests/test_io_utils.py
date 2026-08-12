@@ -1,8 +1,15 @@
 import pandas as pd
 import pytest
 
-from lexsync.io_utils import (_is_continuous, clean_field, read_config, read_csv_utf8,
-                              sha256_file, slugify, write_csv_utf8)
+from lexsync.io_utils import (
+    _is_continuous,
+    clean_field,
+    read_config,
+    read_csv_utf8,
+    sha256_file,
+    slugify,
+    write_csv_utf8,
+)
 
 # The R engine (readr) writes LF on every platform, so LF is the cross-engine
 # contract. test-io_utils.R pins these same bytes and this same digest.

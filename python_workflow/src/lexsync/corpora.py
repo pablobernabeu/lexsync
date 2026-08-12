@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Access to the many-language corpus registry.
 
 Mirrors R_workflow/R/corpora.R, and adds the wordfreq connector (Connector B,

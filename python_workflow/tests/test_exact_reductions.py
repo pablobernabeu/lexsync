@@ -13,8 +13,7 @@ import math
 
 import pytest
 
-from lexsync.io_utils import (_exact_mean, _exact_sd, _exact_sum, _exact_var,
-                              _readr_cell, _readr_sci)
+from lexsync.io_utils import _exact_mean, _exact_sd, _exact_sum, _exact_var, _readr_cell, _readr_sci
 
 
 def test_the_sum_is_exact_where_a_naive_loop_is_not():

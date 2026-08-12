@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """The orchestrator. Mirrors R_workflow/R/run_pipeline.R.
 
 For each design it obtains stimuli from the configured item source (a corpus
@@ -19,12 +18,19 @@ from .counterbalancing import balance_lists, counterbalance
 from .datasheet import build_datasheet, write_datasheet
 from .generation import build_lexdec_stimuli
 from .io_utils import _is_continuous, read_config, slugify, write_csv_utf8
-from .matching import (_resolve_policy, match_stimuli, resample_stimuli,
-                       select_continuous_stimuli)
-from .paradigms import required_fields
+from .matching import _resolve_policy, match_stimuli, resample_stimuli, select_continuous_stimuli
 from .pairs import join_member_norms, member_lexicon_path, select_continuous_pairs
-from .querying import (add_bigram_frequency, add_neighbourhood, add_pair_overlap, apply_norms,
-                       build_pool, load_items, load_lexicon, load_pool)
+from .paradigms import required_fields
+from .querying import (
+    add_bigram_frequency,
+    add_neighbourhood,
+    add_pair_overlap,
+    apply_norms,
+    build_pool,
+    load_items,
+    load_lexicon,
+    load_pool,
+)
 from .scripting import export_experiments, resolve_trial_timing
 from .validation import balance_check, match_report, match_report_continuous
 
@@ -73,8 +79,10 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
         nonlocal selection_audit
         selection_audit = stim.attrs.get("audit")
         for rx in (selection_audit or {}).get("window_relaxations", []):
-            runlog.log_step(log, "tolerance window relaxed for condition '%s' (%d within tolerance, %d needed)"
-                                 % (rx["condition"], rx["n_within_tolerance"], rx["n_needed"]),
+            runlog.log_step(log,
+                            "tolerance window relaxed for condition '%s'"
+                            " (%d within tolerance, %d needed)"
+                            % (rx["condition"], rx["n_within_tolerance"], rx["n_needed"]),
                             {"condition": rx["condition"],
                              "n_within_tolerance": rx["n_within_tolerance"],
                              "n_needed": rx["n_needed"]})
@@ -160,7 +168,9 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
                                 {"conditions": ", ".join(dict.fromkeys(stim["condition"]))})
             else:
                 stim = take_audit(match_stimuli(pool, design, schema, verbose=verbose))
-                runlog.log_step(log, f"matched {len(stim)} items across {stim['condition'].nunique()} conditions",
+                runlog.log_step(log,
+                                f"matched {len(stim)} items across "
+                                f"{stim['condition'].nunique()} conditions",
                                 {"conditions": ", ".join(dict.fromkeys(stim["condition"]))})
             std = ["length", "frequency", "n_density", "old20"]
             # First-occurrence-order union with match_on (dict.fromkeys, not

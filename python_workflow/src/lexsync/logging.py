@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """An automated, comprehensive run log (Markdown + JSON Lines).
 
 Mirrors R_workflow/R/logging.R. Records each pipeline stage with its parameters,

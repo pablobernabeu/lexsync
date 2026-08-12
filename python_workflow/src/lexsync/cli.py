@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Command-line interface: ``lexsync run | corpora list | fetch``."""
 from __future__ import annotations
 

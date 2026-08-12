@@ -3,8 +3,7 @@ import json
 
 import pandas as pd
 
-from lexsync.datasheet import (build_datasheet, methods_paragraph,
-                               render_datasheet_md, write_datasheet)
+from lexsync.datasheet import build_datasheet, methods_paragraph, render_datasheet_md, write_datasheet
 from lexsync.validation import match_report, match_report_continuous
 
 
@@ -407,6 +406,7 @@ def test_datasheet_records_design_and_schema_checksums_and_the_matcher_audit(sch
 
 def test_versions_block_records_the_os_and_the_parsing_packages():
     import platform
+
     from lexsync.datasheet import _versions
     v = _versions("python")
     assert v["os"] == platform.system() + " " + platform.machine()

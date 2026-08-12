@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Materials datasheet and pre-registration template.
 
 A *materials datasheet* is a machine- and human-readable provenance record for a
@@ -15,6 +14,7 @@ import json
 import platform
 
 from .io_utils import _is_continuous, _round_dp, sha256_file
+
 # The cap the pairwise (joint, optimal) matchers apply before pairing. Imported from
 # matching so the datasheet can only ever record the value the selection used.
 from .matching import PAIRWISE_CAP

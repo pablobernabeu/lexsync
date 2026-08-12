@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Deterministic, orthographically-controlled pseudoword generation.
 
 For each real base word a pseudoword is produced by *constrained letter

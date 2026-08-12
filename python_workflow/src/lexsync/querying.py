@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Load lexica, validate the column contract and compute lexical dimensions.
 
 Mirrors R_workflow/R/querying.R.
