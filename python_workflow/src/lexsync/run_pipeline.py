@@ -37,6 +37,7 @@ from .validation import balance_check, match_report, match_report_continuous
 
 def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
                  reference_words=None, verbose=True) -> dict:
+    runlog.set_verbose(verbose)
     schema = read_config(schema_path)
     design = read_config(design_path)
     n_req = design.get("n_per_condition") or design.get("n_per_cell")
@@ -226,7 +227,7 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
                 runlog.log_step(log, "computed relational dimensions (pair.lev, pair.overlap)")
             if is_continuous:
                 res = select_continuous_pairs(stim, items_cfg, design, schema, verbose)
-                stim, report = res["stim"], res["report"]
+                stim, report = take_audit(res["stim"]), res["report"]
                 pair_eligible = res["n_eligible"]
                 runlog.log_step(
                     log, "selected %d pairs spanning '%s' (%d eligible)"
@@ -335,8 +336,10 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
     elif is_continuous:
         candidate_pool = [{"condition": "continuous", "n_candidates": int(len(pool))}]
     elif source in ("corpus", "pool"):
+        # .get, not ["define_by"]: a condition without define_by counts the whole
+        # pool, as the R engine's NULL does through build_pool.
         candidate_pool = [{"condition": c["name"],
-                           "n_candidates": int(len(build_pool(pool, c["define_by"])))}
+                           "n_candidates": int(len(build_pool(pool, c.get("define_by"))))}
                           for c in (design.get("conditions") or [])]
     elif source == "generate":
         candidate_pool = [{"condition": "words in band", "n_candidates": int(len(pool))}]

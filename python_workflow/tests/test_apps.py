@@ -139,3 +139,36 @@ def test_dropdowns_offer_exactly_the_methods_the_engine_implements(app):
     # The engine default first: the design only names a method when the other is
     # chosen. Pinned identically in test-apps.R.
     assert app.GENERATION_METHODS == ["letter_substitution", "subsyllabic"]
+
+
+def test_the_run_design_yaml_is_written_with_lf_endings(app, tmp_path):
+    """The pipeline hashes the design file it ran into the datasheet's
+    design_sha256, so the bytes must not record which operating system wrote
+    them; without newline="\n" the text-mode default writes CRLF on Windows.
+    test-apps.R pins the same property for the Shiny app's write_yaml_lf."""
+    path = app._write_design_yaml({"name": "t", "n_per_condition": 10},
+                                  str(tmp_path / "design.yaml"))
+    raw = open(path, "rb").read()
+    assert b"\r" not in raw
+    assert raw.endswith(b"\n")
+
+
+def test_both_apps_state_the_same_parity_claim():
+    """The caption used to say only the seeded trial order differs by ecosystem,
+    contradicting the keyed-hash guarantee (counterbalancing.py's header: the
+    two engines produce the same order byte for byte). The corrected sentence
+    must stay word-identical across the two apps."""
+    import re
+
+    claim = ("The R and Python engines produce byte-identical stimuli and "
+             "trial order from this configuration.")
+    apps_dir = os.path.dirname(os.path.dirname(APP_PATH))
+    streamlit_src = open(APP_PATH, encoding="utf-8").read()
+    shiny_src = open(os.path.join(apps_dir, "r_shiny", "app.R"),
+                     encoding="utf-8").read()
+    for src in (streamlit_src, shiny_src):
+        # Join string literals split across lines before searching, so the
+        # assertion sees the sentence a reader of the app sees.
+        joined = re.sub(r'"\s*,?\s*"', "", src)
+        assert claim in joined
+        assert "only the seeded trial order differs" not in src

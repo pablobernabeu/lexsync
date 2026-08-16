@@ -3,6 +3,14 @@
 # Usage (from the repository root):  Rscript R_workflow/run_pipeline.R
 # It uses the installed 'lexsync' package if available, otherwise it sources the
 # package sources directly, so it works before installation too.
+#
+# That preference is a trap when editing the package: with lexsync installed,
+# edits under R_workflow/R are silently ignored until the package is
+# reinstalled (install.packages("R_workflow", repos = NULL, type = "source")
+# from the repository root) or the installed copy is removed
+# (remove.packages("lexsync")). The Python wrapper prefers the source tree, so
+# the two engines can quietly run different code. The startup message below
+# says which copy this run loaded.
 
 local({
   args <- commandArgs(trailingOnly = FALSE)
@@ -35,9 +43,15 @@ local({
 
   if (requireNamespace("lexsync", quietly = TRUE)) {
     library(lexsync)
+    # message(), not cat(): stderr, so no artefact or redirected stdout captures it.
+    message(sprintf(paste0("run_pipeline.R: using the INSTALLED lexsync %s, not the ",
+                           "sources under R_workflow/R; reinstall after editing them, ",
+                           "or remove the installed package to run from source."),
+                    as.character(utils::packageVersion("lexsync"))))
   } else {
     src <- list.files(file.path(script_dir, "R"), pattern = "[.][Rr]$", full.names = TRUE)
     invisible(lapply(src, source))
+    message("run_pipeline.R: no installed lexsync; running from the sources under R_workflow/R.")
   }
 
   old <- setwd(repo)

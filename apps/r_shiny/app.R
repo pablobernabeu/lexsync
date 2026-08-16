@@ -76,6 +76,25 @@ preset_df <- function(preset) {
 
 clean_yaml <- function(design) yaml::as.yaml(design, indent = 2)
 
+#' Write a design as YAML with LF line endings on every platform
+#'
+#' yaml::write_yaml and writeLines both open text-mode connections, which on
+#' Windows turn every newline into CRLF. The pipeline hashes the design file it
+#' ran into the datasheet's design_sha256, so its bytes must depend on the
+#' content alone, never on the operating system; a binary connection writes the
+#' string as given. The Streamlit app pins the same convention with
+#' newline="\\n".
+#'
+#' @param x The design list to serialise.
+#' @param path Output path.
+#' @return `path`, invisibly.
+write_yaml_lf <- function(x, path) {
+  con <- file(path, open = "wb")
+  on.exit(close(con))
+  writeLines(sub("\n$", "", enc2utf8(clean_yaml(x))), con, sep = "\n", useBytes = TRUE)
+  invisible(path)
+}
+
 #' Keep the dimensions the user gave a positive tolerance k
 #'
 #' A k of zero means "leave the schema default for this dimension alone". Carried
@@ -341,7 +360,7 @@ server <- function(input, output, session) {
     if (!is.null(spec$lexicon_abs)) run_d$lexicon <- spec$lexicon_abs
     if (!is.null(spec$items_abs)) run_d$items$path <- spec$items_abs
     tmp <- tempfile("lexsync_app_"); dir.create(tmp)
-    dp <- file.path(tmp, "design.yaml"); yaml::write_yaml(run_d, dp)
+    dp <- file.path(tmp, "design.yaml"); write_yaml_lf(run_d, dp)
     out <- file.path(tmp, "output")
     res <- tryCatch(
       withCallingHandlers(
@@ -441,8 +460,8 @@ server <- function(input, output, session) {
       h5("Reproduce in R"), tags$pre(tags$code(code$r)),
       h5("Reproduce in Python"), tags$pre(tags$code(code$python)),
       h5("Reproduce from the command line"), tags$pre(tags$code(code$cli)),
-      helpText("The R and Python engines select byte-identical stimuli from this ",
-               "configuration; only the seeded trial order differs by ecosystem.")
+      helpText("The R and Python engines produce byte-identical stimuli and ",
+               "trial order from this configuration.")
     )
   })
 
@@ -450,7 +469,7 @@ server <- function(input, output, session) {
     filename = function() paste0(bundle()$design$name, "_lexsync.zip"),
     content = function(file) {
       b <- bundle()
-      writeLines(clean_yaml(b$design), file.path(b$outdir, b$cfg))
+      write_yaml_lf(b$design, file.path(b$outdir, b$cfg))
       # The exported reproduction code passes schema_path = "config/schema.yaml",
       # so the archive carries the schema the run actually used (the installed
       # package copy) at that path, plus any repository-bundled input the design

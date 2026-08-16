@@ -344,7 +344,11 @@ export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
     CONDITIONS_FILE = csv_name,
     TRIGGER_ADDRESS = clean_port(triggers$parallel_address %||% "0x0378"),
     TRIGGER_HOLD_MS = sprintf("%.17g", .trigger_hold_ms(schema)),
-    INTER_TRIGGER_S = (triggers$inter_trigger_ms %||% 10) / 1000,
+    # Through %.17g like its neighbours, never default stringification: R's
+    # as.character() and Python's str() part company on a non-integer quotient
+    # (as.character(16.65 / 1000) gives "0.01665", str gives
+    # "0.016649999999999998"), and this value lands in the generated script.
+    INTER_TRIGGER_S = sprintf("%.17g", (triggers$inter_trigger_ms %||% 10) / 1000),
     WORD_FONT = clean_meta(design$font %||% presentation$font %||% "Courier New", "the font"),
     FULLSCREEN = "False",
     # The fallback used only when the script cannot measure the display.

@@ -92,15 +92,22 @@ read_csv_utf8 <- function(path, as_character = character(0)) {
     # The shortest decimal is unique below 2^49, so only this band needs the check.
     tie <- v[abs(v) >= .READR_TIE & v != trunc(v)]
     for (t in tie) {
-      s <- format(t, digits = 15)
-      dp <- nchar(sub("^[^.]*\\.?", "", s))
-      if (dp && (identical(as.numeric(sprintf("%.*f", dp, t + 10^(-dp))), t) ||
-                 identical(as.numeric(sprintf("%.*f", dp, t - 10^(-dp))), t))) {
+      a <- abs(t)
+      # Between 2^49 and 1e15 consecutive doubles are exactly 0.125 apart, so a
+      # non-integral double's shortest round-tripping decimal has exactly one
+      # fractional digit, and the form is ambiguous precisely when two neighbouring
+      # one-decimal strings parse back to the same double. `ip + d/10` IS that
+      # parse: ip is an exact double (below 2^53), the error of d/10 is under
+      # 2^-56, and no candidate sits nearer a rounding boundary than 1/80, so the
+      # sum rounds to the same double the decimal string does. Must refuse exactly
+      # what _shortest_digits_ambiguous refuses in io_utils.py.
+      ip <- trunc(a)
+      if (sum(ip + (1:9) / 10 == a) >= 2L) {
         stop(sprintf(paste("lexsync: column '%s' holds %s, which has more than one",
                            "shortest decimal form. The R and Python engines print",
                            "different ones, so the two CSVs would differ with nothing to",
                            "signal it. Round the column, or carry it as text."),
-                     nm, s), call. = FALSE)
+                     nm, format(t, digits = 16)), call. = FALSE)
       }
     }
   }
@@ -142,7 +149,8 @@ write_lines_lf <- function(x, path) {
 }
 
 # ---- Reproducible reductions -----------------------------------------------
-# A sum, mean and variance that give the same bits in the R and Python engines.
+# A sum, mean, variance and median that give the same bits in the R and Python
+# engines.
 #
 # This is not pedantry; it was a live bug. Two designs' reported means differed between
 # the engines in the last decimal place the descriptives publish -- 1.448 against 1.447
@@ -197,6 +205,23 @@ write_lines_lf <- function(x, path) {
   v <- .exact_var(x)
   # sqrt is correctly rounded under IEEE-754, so it adds no divergence.
   if (is.na(v)) NA_real_ else sqrt(v)
+}
+
+# Median via a sort and the exact middle. stats::median averages the two middle
+# values through mean(), whose long-double accumulator is platform-dependent;
+# (a + b) / 2 in plain double arithmetic is one correctly-rounded IEEE addition
+# and one exact halving, so both engines compute the same double from the same
+# input. Must stay identical to _exact_median in
+# python_workflow/src/lexsync/io_utils.py.
+#' @keywords internal
+.exact_median <- function(x) {
+  x <- as.numeric(x)
+  x <- x[!is.na(x)]
+  n <- length(x)
+  if (!n) return(NA_real_)
+  x <- sort(x, method = "radix")
+  if (n %% 2L == 1L) return(x[(n + 1L) %/% 2L])
+  (x[n %/% 2L] + x[n %/% 2L + 1L]) / 2
 }
 
 # ---- One decimal rounder, shared by both engines ---------------------------

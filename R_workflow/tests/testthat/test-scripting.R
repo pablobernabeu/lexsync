@@ -65,6 +65,25 @@ test_that("PsychoPy export is frame-locked and OpenSesame export is internally c
   expect_true(all(runs %in% defs))                 # every run resolves to a definition
 })
 
+test_that("INTER_TRIGGER_S goes through %.17g like its neighbouring substitutions", {
+  # as.character(16.65 / 1000) gives "0.01665" while Python's str() gives
+  # "0.016649999999999998", so the substitution is pinned through %.17g in both
+  # engines. test_scripting.py asserts these same generated lines.
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  design <- list(name = "t", language = "english", timing = list())
+  out <- tempfile("lexsync"); dir.create(out)
+  schema$triggers$inter_trigger_ms <- 16.65
+  pytxt <- paste(readLines(export_psychopy(make_stim(), design, schema, out), warn = FALSE),
+                 collapse = "\n")
+  expect_true(grepl("INTER_TRIGGER_S = 0.016649999999999998\n", pytxt, fixed = TRUE))
+  # The shipped default still renders as "0.01", so no committed experiment
+  # byte moves.
+  schema$triggers$inter_trigger_ms <- NULL
+  pytxt <- paste(readLines(export_psychopy(make_stim(), design, schema, out), warn = FALSE),
+                 collapse = "\n")
+  expect_true(grepl("INTER_TRIGGER_S = 0.01\n", pytxt, fixed = TRUE))
+})
+
 test_that("the OpenSesame export carries both trigger backends and a test-mode fallback", {
   schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
   os <- paste(readLines(export_opensesame(make_stim(),

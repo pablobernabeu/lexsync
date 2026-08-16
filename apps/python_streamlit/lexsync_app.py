@@ -102,6 +102,19 @@ def reproduction_code(design: dict, design_filename: str) -> dict:
     return {"yaml": yaml_block(design), "python": py, "r": r, "cli": cli}
 
 
+def _write_design_yaml(design: dict, path: str) -> str:
+    """Write the design YAML with LF line endings on every platform.
+
+    Without newline="\\n" the text-mode default writes CRLF on Windows, and the
+    pipeline hashes this file into the datasheet's design_sha256, so its bytes
+    must depend on the content alone, never on the operating system. The Shiny
+    app's write_yaml_lf pins the same convention.
+    """
+    with open(path, "w", encoding="utf-8", newline="\n") as fh:
+        yaml.safe_dump(design, fh, sort_keys=False, allow_unicode=True)
+    return path
+
+
 def run_design(design: dict, lexicon_abs: str | None, items_abs: str | None) -> dict:
     """Write the design to a temp file, run the pipeline, and collect the outputs.
 
@@ -117,9 +130,7 @@ def run_design(design: dict, lexicon_abs: str | None, items_abs: str | None) -> 
         run_design_dict["items"] = items
 
     tmp = tempfile.mkdtemp(prefix="lexsync_app_")
-    design_path = os.path.join(tmp, "design.yaml")
-    with open(design_path, "w", encoding="utf-8") as fh:
-        yaml.safe_dump(run_design_dict, fh, sort_keys=False, allow_unicode=True)
+    design_path = _write_design_yaml(run_design_dict, os.path.join(tmp, "design.yaml"))
     out = os.path.join(tmp, "output")
     result = run_pipeline(design_path, schema_path=SCHEMA_PATH, outdir=out, verbose=False)
 
@@ -563,8 +574,8 @@ if "bundle" in st.session_state:
         st.code(code["r"], language="r")
         st.markdown("**Reproduce from the command line**")
         st.code(code["cli"], language="bash")
-        st.caption("The R and Python engines select byte-identical stimuli from this "
-                   "configuration; only the seeded trial order differs by ecosystem.")
+        st.caption("The R and Python engines produce byte-identical stimuli and "
+                   "trial order from this configuration.")
         if extra_files:
             st.warning(
                 "This design names " + ", ".join(f"`{p}`" for p in extra_files) +

@@ -305,7 +305,9 @@ def match_stimuli(pool: pd.DataFrame, design: dict, schema: dict, verbose: bool 
     scale = np.array([_exact_sd(pool[d].dropna()) for d in match_on], dtype=float)
     scale[np.isnan(scale) | (scale == 0)] = 1.0
 
-    subpools = [build_pool(pool, c["define_by"]) for c in conditions]
+    # .get, not ["define_by"]: a condition without define_by draws on the whole
+    # pool, as the R engine's NULL does through build_pool.
+    subpools = [build_pool(pool, c.get("define_by")) for c in conditions]
     cond_names = [c["name"] for c in conditions]
 
     method = ((design.get("matching") or {}).get("method")
@@ -334,7 +336,10 @@ def match_stimuli(pool: pd.DataFrame, design: dict, schema: dict, verbose: bool 
     anchor_pool = subpools[0]
     if len(anchor_pool) == 0:
         raise ValueError(f"lexsync: anchor condition '{cond_names[0]}' has no candidates.")
-    ord_dim = list(conditions[0]["define_by"].keys())[0]
+    # An anchor without define_by orders by the default dimension, as the R
+    # engine's names(NULL)[1] falls back to "frequency".
+    ord_keys = list((conditions[0].get("define_by") or {}).keys())
+    ord_dim = ord_keys[0] if ord_keys else "frequency"
     if ord_dim not in anchor_pool.columns:
         ord_dim = "frequency"
     anchor_pool = (anchor_pool.assign(_k=anchor_pool["word"].map(lambda w: w.encode("utf-8")))

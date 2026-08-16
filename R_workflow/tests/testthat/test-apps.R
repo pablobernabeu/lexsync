@@ -87,3 +87,18 @@ test_that("the app offers exactly the pseudoword generators the engine implement
   # chosen. Pinned identically in tests/test_apps.py.
   expect_equal(e$GENERATION_METHODS, c("letter_substitution", "subsyllabic"))
 })
+
+test_that("the design YAML is written with LF endings on every platform", {
+  e <- app_env()
+  # The pipeline hashes the design file it ran into the datasheet's
+  # design_sha256, so the bytes must not record which operating system wrote
+  # them; yaml::write_yaml and writeLines both open text-mode connections,
+  # which on Windows turn every newline into CRLF. tests/test_apps.py pins the
+  # same property for the Streamlit app's _write_design_yaml.
+  path <- tempfile(fileext = ".yaml")
+  e$write_yaml_lf(list(name = "t", n_per_condition = 10L), path)
+  raw <- readBin(path, "raw", file.info(path)$size)
+  expect_false(any(raw == as.raw(0x0d)))
+  expect_identical(raw[length(raw)], as.raw(0x0a))
+  expect_identical(yaml::read_yaml(path)$name, "t")
+})

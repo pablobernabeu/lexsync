@@ -401,6 +401,25 @@ def test_misspelt_define_by_raises_instead_of_widening():
         match_stimuli(_small_pool(), d, _tiny_schema())
 
 
+def test_a_condition_without_define_by_draws_on_the_whole_pool():
+    # The R engine's NULL define_by falls back to the whole pool (and, for the
+    # anchor, to ordering by 'frequency'); a bare KeyError here meant Python
+    # crashed on a design R accepted. The words are pinned identically in
+    # test-matching.R, so the two engines select the same stimuli.
+    d = _small_design(3)
+    d["conditions"][1] = {"name": "rest"}
+    s = match_stimuli(_small_pool(), d, _tiny_schema())
+    assert list(s.loc[s.condition == "high", "word"]) == ["haa", "hab", "hac"]
+    assert list(s.loc[s.condition == "rest", "word"]) == ["laa", "lab", "lad"]
+    # An anchor without define_by orders by the fallback dimension.
+    d = _small_design(3)
+    d["conditions"][0] = {"name": "any"}
+    d["conditions"][1] = {"name": "low", "define_by": {"frequency": [1.0, 3.0]}}
+    s = match_stimuli(_small_pool(), d, _tiny_schema())
+    assert list(s.loc[s.condition == "any", "word"]) == ["laa", "lad", "hac"]
+    assert list(s.loc[s.condition == "low", "word"]) == ["lab", "lac", "lae"]
+
+
 def test_duplicate_condition_names_raise():
     d = _small_design(3)
     d["conditions"][1]["name"] = "high"

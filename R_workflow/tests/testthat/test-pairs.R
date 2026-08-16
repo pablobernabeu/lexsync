@@ -114,6 +114,27 @@ test_that("the anchor condition defaults to the byte-first one", {
   expect_equal(default$stim$set, explicit$stim$set)
 })
 
+test_that("a window relaxation is returned on the re-expanded frame", {
+  # The audit rides on the collapsed selection as an attribute, which the
+  # re-expansion used to drop, so a relaxed window on a pair design left no
+  # trace for the run log or the datasheet. tolerance_k 0 pins a zero-width
+  # window no pair satisfies, forcing the relaxation. Twinned with
+  # test_pairs.py.
+  design <- list(n_per_condition = 2L,
+                 continuous = list(predictor = "target.frequency",
+                                   controls = list("target.length")),
+                 match_on = list("target.length"))
+  res <- lexsync:::.select_continuous_pairs(
+    pairs_df, list(anchor_condition = "related"), design,
+    list(matching = list(tolerance_k = list(target.length = 0))))
+  audit <- attr(res$stim, "audit")
+  expect_false(is.null(audit))
+  rx <- audit$window_relaxations
+  expect_length(rx, 1)
+  expect_identical(rx[[1]]$condition, "continuous")
+  expect_identical(as.integer(rx[[1]]$n_needed), 2L)
+})
+
 test_that("a pair missing its anchor row is an error", {
   partial <- pairs_df[pairs_df$condition == "unrelated", , drop = FALSE]
   rownames(partial) <- NULL

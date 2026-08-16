@@ -380,7 +380,11 @@ def export_psychopy(stimuli, design, schema, outdir, base=None) -> str:
         "CONDITIONS_FILE": csv_name,
         "TRIGGER_ADDRESS": clean_port(triggers.get("parallel_address", "0x0378")),
         "TRIGGER_HOLD_MS": "%.17g" % _trigger_hold_ms(schema),
-        "INTER_TRIGGER_S": triggers.get("inter_trigger_ms", 10) / 1000,
+        # Through %.17g like its neighbours, never default stringification: str()
+        # and R's as.character() part company on a non-integer quotient
+        # (str(16.65 / 1000) gives "0.016649999999999998", as.character gives
+        # "0.01665"), and this value lands in the generated script.
+        "INTER_TRIGGER_S": "%.17g" % (triggers.get("inter_trigger_ms", 10) / 1000),
         "WORD_FONT": clean_meta(
             design.get("font") or presentation.get("font") or "Courier New", "the font"),
         "FULLSCREEN": "False",

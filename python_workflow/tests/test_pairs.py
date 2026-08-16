@@ -121,6 +121,26 @@ def test_the_anchor_condition_defaults_to_the_byte_first_one():
     assert list(default["stim"]["set"]) == list(explicit["stim"]["set"])
 
 
+def test_a_window_relaxation_is_returned_on_the_re_expanded_frame():
+    # The audit rides on the collapsed selection's attrs, which the re-expansion
+    # used to drop, so a relaxed window on a pair design left no trace for the
+    # run log or the datasheet. tolerance_k 0 pins a zero-width window no pair
+    # satisfies, forcing the relaxation. Twinned with test-pairs.R.
+    design = {
+        "n_per_condition": 2,
+        "continuous": {"predictor": "target.frequency", "controls": ["target.length"]},
+        "match_on": ["target.length"],
+    }
+    res = select_continuous_pairs(PAIRS, {"anchor_condition": "related"}, design,
+                                  {"matching": {"tolerance_k": {"target.length": 0}}})
+    audit = res["stim"].attrs.get("audit")
+    assert audit is not None
+    rx = audit["window_relaxations"]
+    assert len(rx) == 1
+    assert rx[0]["condition"] == "continuous"
+    assert rx[0]["n_needed"] == 2
+
+
 def test_a_pair_missing_its_anchor_row_is_an_error():
     partial = PAIRS[PAIRS["condition"] == "unrelated"].reset_index(drop=True)
     design = {

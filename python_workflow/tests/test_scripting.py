@@ -66,6 +66,25 @@ def test_psychopy_export_is_frame_locked(schema, tmp_path):
     assert "{{" not in text  # all placeholders substituted
 
 
+def test_inter_trigger_s_goes_through_17g_like_its_neighbours(schema, tmp_path):
+    # str(16.65 / 1000) gives "0.016649999999999998" while R's as.character()
+    # gives "0.01665", so the substitution is pinned through %.17g in both
+    # engines. test-scripting.R asserts these same generated lines.
+    design = {"name": "t", "language": "english", "timing": {}}
+    fractional = dict(schema, triggers=dict(schema.get("triggers") or {},
+                                            inter_trigger_ms=16.65))
+    text = open(export_psychopy(_stim(), design, fractional, str(tmp_path)),
+                encoding="utf-8").read()
+    assert "INTER_TRIGGER_S = 0.016649999999999998\n" in text
+    # The shipped default still renders as "0.01", so no committed experiment
+    # byte moves.
+    default = dict(schema, triggers={k: v for k, v in (schema.get("triggers") or {}).items()
+                                     if k != "inter_trigger_ms"})
+    text = open(export_psychopy(_stim(), design, default, str(tmp_path)),
+                encoding="utf-8").read()
+    assert "INTER_TRIGGER_S = 0.01\n" in text
+
+
 def test_opensesame_export_is_consistent(schema, tmp_path):
     design = {"name": "t", "language": "english"}
     path = export_opensesame(_stim(), design, schema, str(tmp_path))

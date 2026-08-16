@@ -371,6 +371,25 @@ test_that("a misspelt define_by dimension is an error, not a widened condition",
                "dimension 'frequnecy' in condition 'low'")
 })
 
+test_that("a condition without define_by draws on the whole pool", {
+  # NULL define_by falls back to the whole pool (and, for the anchor, to
+  # ordering by 'frequency'); the Python engine used to crash with a bare
+  # KeyError on a design this engine accepted. The words are pinned identically
+  # in test_matching.py, so the two engines select the same stimuli.
+  d <- small_design(3L)
+  d$conditions[[2]] <- list(name = "rest")
+  s <- match_stimuli(small_pool(), d, tiny_schema())
+  expect_identical(s$word[s$condition == "high"], c("haa", "hab", "hac"))
+  expect_identical(s$word[s$condition == "rest"], c("laa", "lab", "lad"))
+  # An anchor without define_by orders by the fallback dimension.
+  d <- small_design(3L)
+  d$conditions[[1]] <- list(name = "any")
+  d$conditions[[2]] <- list(name = "low", define_by = list(frequency = c(1.0, 3.0)))
+  s <- match_stimuli(small_pool(), d, tiny_schema())
+  expect_identical(s$word[s$condition == "any"], c("laa", "lad", "hac"))
+  expect_identical(s$word[s$condition == "low"], c("lab", "lac", "lae"))
+})
+
 test_that("duplicate condition names are an error", {
   d <- small_design(3L)
   d$conditions[[2]]$name <- "high"

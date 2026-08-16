@@ -212,7 +212,7 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
       }
       if (is_continuous) {
         res <- .select_continuous_pairs(stim, items_cfg, design, schema, verbose)
-        stim <- res$stim; report <- res$report; pair_eligible <- res$n_eligible
+        stim <- take_audit(res$stim); report <- res$report; pair_eligible <- res$n_eligible
         log <- log_step(log, sprintf("selected %d pairs spanning '%s' (%d eligible)",
                                      length(unique(stim$set)), design$continuous$predictor,
                                      res$n_eligible),

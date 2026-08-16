@@ -1,5 +1,45 @@
 # lexsync (development version)
 
+* **The package now declares `Depends: R (>= 4.0.0)`.** `tools::R_user_dir` does not
+  exist before 4.0.0, and `round()`'s post-4.0 algorithm shapes artefact bytes, so an
+  older R would fail obscurely or write different bytes without complaint.
+* **The published median goes through the exact reductions.** `describe_stimuli()` was
+  the one reduction still on `stats::median`, which averages the two middle values
+  through `mean()`'s long-double accumulator while the Python engine reduced through
+  numpy. Both engines now sort and take the exact middle, with `(a + b) / 2` in plain
+  double arithmetic for even n; regenerating every design moved no byte. *Reproducibility
+  and parity* claimed that every reduction shared one compensated-summation algorithm,
+  which the median never did, and now describes the sort-and-middle rule beside it.
+* **The dead half of the two-shortest-forms CSV guard now fires.** Between 2^49 and
+  1e15 two one-decimal strings can round-trip to the same double, and the R check
+  derived its digit count from a 15-digit format that never shows a fractional digit
+  there, so R accepted values (844424930131968.2 among them) that the Python writer
+  refused. R now refuses exactly the same values; the change only adds refusals.
+* **A condition without `define_by` selects identically in both engines.** This engine
+  always fell back to the whole pool; the Python engine crashed with a bare KeyError on
+  the same design and now mirrors the fallback, pinned by twin tests.
+* **A pair design's tolerance-window relaxation reaches the run log and datasheet.**
+  The continuous-pairs selector's re-expansion dropped the audit in both engines, so a
+  relaxed window left no trace outside the console. No shipped pair design relaxes, so
+  no committed artefact changed.
+* **`INTER_TRIGGER_S` is substituted through `%.17g`** like its neighbours in the
+  generated PsychoPy script, rather than through `as.character()`, whose rendering of a
+  non-integer quotient differs from Python's `str()`. The shipped default still renders
+  "0.01", so no committed experiment byte moved.
+* **The counterbalancing hash keys convert to UTF-8 before hashing**, as `hash_unit()`
+  always has, so a latin1-marked condition read from a user's CSV can no longer rank by
+  different digests in the two engines.
+* **The command-line wrapper reports which copy of the package it loaded.**
+  `R_workflow/run_pipeline.R` prefers an installed lexsync over the edited sources, so
+  edits silently did nothing until a reinstall; it now states the loaded copy and the
+  remedy on stderr at startup.
+* **The Shiny app writes its design YAML with LF endings** through a binary connection
+  (the datasheet hashes that file into `design_sha256`, which must not depend on the
+  operating system), and its parity caption now matches the keyed-hash guarantee: the
+  engines produce byte-identical stimuli and trial order, not merely stimuli. The
+  Python engine's twin fixes land in the same release: its writer refuses 16-digit
+  integer columns as this engine always has, its scalar rounder passes an overflowing
+  scale through, and `run_pipeline(verbose = FALSE)` keeps its console silent.
 * **A selection that cannot honour `n_per_condition` is now an error, not a smaller
   set.** Every selector clipped the request to the available pool and said so at most
   through a verbose message, while the datasheet and the generated Methods text kept

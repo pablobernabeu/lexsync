@@ -18,6 +18,8 @@ Description: A cross-platform toolkit that unifies many-language lexical-corpus
 License: MIT + file LICENSE
 Encoding: UTF-8
 Language: en-GB
+Depends:
+    R (>= 4.0.0)
 Imports:
     readr,
     yaml,

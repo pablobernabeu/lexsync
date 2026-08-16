@@ -13,7 +13,7 @@ from scipy import stats
 # Every reduction in this module goes through these rather than through numpy or
 # pandas. Two designs' reported means used to differ between the engines in the last
 # published decimal because numpy sums pairwise and R's mean() does not; see io_utils.
-from .io_utils import _exact_mean, _exact_sd, _exact_sum, _exact_var, _round_dp
+from .io_utils import _exact_mean, _exact_median, _exact_sd, _exact_sum, _exact_var, _round_dp
 
 
 def describe_stimuli(stimuli: pd.DataFrame, dims, by: str = "condition") -> pd.DataFrame:
@@ -24,7 +24,11 @@ def describe_stimuli(stimuli: pd.DataFrame, dims, by: str = "condition") -> pd.D
             rows.append(dict(
                 group=g, dimension=dim, n=int(x.size),
                 mean=_round_dp(_exact_mean(x), 3), sd=_round_dp(_exact_sd(x), 3),
-                min=_round_dp(float(x.min()), 3), median=_round_dp(float(x.median()), 3),
+                min=_round_dp(float(x.min()), 3),
+                # _exact_median, not pandas' .median(): the latter reduces through
+                # numpy, the one reduction here that would bypass the shared exact
+                # primitives.
+                median=_round_dp(_exact_median(x), 3),
                 max=_round_dp(float(x.max()), 3),
             ))
     return pd.DataFrame(rows)

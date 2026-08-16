@@ -222,6 +222,77 @@ test_that("a generate shortfall errors by default and allow accepts it", {
   expect_true(file.exists(res$stimuli))
 })
 
+test_that("a condition without define_by reaches the datasheet", {
+  # This engine's NULL define_by always fell back to the whole pool; the Python
+  # engine used to crash with a bare KeyError on the same design, so this run is
+  # pinned in both suites.
+  out <- tmp_out()
+  design <- write_design(out, c(
+    "name: guard_bare",
+    "language: english",
+    paste0("lexicon: ", as_yaml_path(extdata("en_example.csv"))),
+    "n_per_condition: 3",
+    "pool_filters: {length: [3, 7], frequency: [3.8, 7]}",
+    "conditions:",
+    "  - {name: high, define_by: {frequency: [5.0, 7.0]}}",
+    "  - {name: rest}",
+    "match_on: [length]"
+  ))
+  res <- run_quiet(design, extdata("schema.yaml"), outdir = out)
+  stim <- read_csv_utf8(res$stimuli)
+  expect_setequal(unique(stim$condition), c("high", "rest"))
+  ds <- jsonlite::fromJSON(file.path(out, "reports", "guard_bare_english_datasheet_R.json"),
+                           simplifyVector = FALSE)
+  entries <- ds$selection$candidate_pool
+  conds <- vapply(entries, function(e) e$condition, character(1))
+  counts <- vapply(entries, function(e) as.numeric(e$n_candidates), numeric(1))
+  expect_setequal(conds, c("high", "rest"))
+  # The bare condition's candidates are the whole filtered pool.
+  expect_gte(counts[conds == "rest"], counts[conds == "high"])
+  expect_gt(counts[conds == "high"], 0)
+})
+
+test_that("a pair design's window relaxation reaches the datasheet", {
+  # The pair path dropped the selector's audit on re-expansion, so a tolerance
+  # relaxation never reached the run log or the datasheet. tolerance_k 0 pins a
+  # zero-width window that no pair satisfies, forcing the relaxation.
+  out <- tmp_out()
+  items <- file.path(out, "pairs.csv")
+  writeLines(c("item,condition,prime,target",
+               "1,related,aaa,flat", "1,unrelated,abba,flat",
+               "2,related,acne,glass", "2,unrelated,aaron,glass",
+               "3,related,alarm,across", "3,unrelated,abrams,across",
+               "4,related,aha,house", "4,unrelated,abdel,house"),
+             items, useBytes = TRUE)
+  design <- write_design(out, c(
+    "name: guard_pair_relax",
+    "language: english",
+    "paradigm: priming",
+    "items:",
+    "  source: table",
+    paste0("  path: ", as_yaml_path(items)),
+    "  members: [prime, target]",
+    paste0("  lexicon: ", as_yaml_path(extdata("en_example.csv"))),
+    "  anchor_condition: related",
+    "n_per_condition: 3",
+    "continuous:",
+    "  predictor: target.frequency",
+    "  controls: [target.length]",
+    "match_on: [target.length]",
+    "matching: {tolerance_k: {target.length: 0}}"
+  ))
+  res <- run_quiet(design, extdata("schema.yaml"), outdir = out)
+  ds <- jsonlite::fromJSON(file.path(out, "reports",
+                                     "guard_pair_relax_english_datasheet_R.json"),
+                           simplifyVector = FALSE)
+  rx <- ds$selection$window_relaxations
+  expect_length(rx, 1)
+  expect_identical(rx[[1]]$condition, "continuous")
+  expect_identical(as.integer(rx[[1]]$n_needed), 3L)
+  log <- paste(readLines(res$log, warn = FALSE), collapse = "\n")
+  expect_true(grepl("tolerance window relaxed", log, fixed = TRUE))
+})
+
 test_that("a continuous design over a supplied pool selects continuously", {
   # The predicate that gates the continuous selector must treat a supplied
   # pool like a corpus; before the fix this design fell through to the

@@ -86,3 +86,21 @@ test_that("the keyed-hash shuffle gives both engines the same trial order", {
   out2 <- out2[order(out2$list, out2$trial), , drop = FALSE]
   expect_false(identical(out$word, out2$word))
 })
+
+test_that("the shuffle key hashes UTF-8 bytes whatever encoding the frame carries", {
+  # digest(serialize = FALSE) hashes the stored bytes, so a latin1-marked
+  # condition read from a user's CSV used to rank by different digests from the
+  # same characters in UTF-8, and so from the Python engine. The key now goes
+  # through enc2utf8, as hash_unit always has.
+  stim <- data.frame(word = letters[1:8], list = 1L,
+                     condition = rep(c("café", "naïve"), 4),
+                     set = rep(1:4, each = 2), stringsAsFactors = FALSE)
+  stim$condition <- enc2utf8(stim$condition)
+  lat <- stim
+  lat$condition <- iconv(stim$condition, "UTF-8", "latin1")
+  expect_identical(unique(Encoding(lat$condition)), "latin1")
+  out_utf <- lexsync:::.shuffle_deterministic(stim, 2026L)
+  out_lat <- lexsync:::.shuffle_deterministic(lat, 2026L)
+  expect_identical(out_lat$word, out_utf$word)
+  expect_identical(out_lat$trial, out_utf$trial)
+})

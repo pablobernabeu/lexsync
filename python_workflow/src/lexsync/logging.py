@@ -28,9 +28,22 @@ def new_run_log(name: str, meta: dict | None = None) -> dict:
     }
 
 
+# The console-narration gate, mirroring the R engine's options(lexsync.verbose):
+# run_pipeline sets it from its `verbose` argument, so an embedding front end
+# (the Streamlit app runs with verbose=False) gets a silent console while every
+# step is still recorded on the log itself.
+_VERBOSE = True
+
+
+def set_verbose(flag: bool) -> None:
+    global _VERBOSE
+    _VERBOSE = bool(flag)
+
+
 def log_step(log: dict, message: str, data: dict | None = None) -> dict:
     log["steps"].append({"time": _now(), "message": message, "data": data})
-    print(f"[lexsync] {message}")
+    if _VERBOSE:
+        print(f"[lexsync] {message}")
     return log
 
 

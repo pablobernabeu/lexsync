@@ -83,7 +83,6 @@
 #' @param verbose Logical; report tolerance relaxations and a shrunk anchor.
 #' @return A data frame of selected stimuli with a `condition` label and a `set`
 #'   index pairing matched items across conditions.
-#' @importFrom stats sd
 #' @export
 match_stimuli <- function(pool, design, schema, verbose = FALSE) {
   conditions <- design$conditions
@@ -489,7 +488,6 @@ match_optimal <- function(subpools, cond_names, match_on, center, scale_, n, cap
 #'   passes `FALSE`, because its `set` ids have to survive selection for the result to
 #'   be re-expanded back to the full pair table.
 #' @return A data frame of selected stimuli (condition "continuous", set 1..n).
-#' @importFrom stats sd
 #' @export
 select_continuous_stimuli <- function(pool, design, schema, verbose = FALSE,
                                       key = "word", label = "continuous",

@@ -62,10 +62,13 @@ the shipped designs passed while differing byte for byte. Three of the differenc
 serialisation: a whole number written `1` by one writer and `1.0` by the other, a boolean
 written `FALSE` and `False`, and a small value written `9e-4` and `0.0009`. One was not:
 two reported means differed in the last decimal published, because one engine's
-summation was pairwise and the other's was not. Every reduction in the package now uses
+summation was pairwise and the other's was not. Every sum in the package now goes through
 a single compensated-summation algorithm written out in both engines, whose agreement
-follows from IEEE-754 requiring addition and subtraction to be correctly rounded, and
-the artefacts are compared as bytes rather than as parsed values.
+follows from IEEE-754 requiring addition and subtraction to be correctly rounded, and the
+mean, variance and standard deviation are built on it. The median sorts and takes the
+exact middle instead, rather than averaging the two central values through the
+long-double accumulator that `stats::median()` reaches by way of `mean()`. The artefacts
+are compared as bytes rather than as parsed values.
 
 Two files sit outside the claim by design, because each records the engine that produced
 it: the materials datasheet names its engine and that engine's package versions, and the

@@ -130,6 +130,16 @@ def _readr_cell(v):
         return ""
     if isinstance(v, bool):
         return "TRUE" if v else "FALSE"
+    # Integers too, not only floats: pandas keeps a 16-digit column as int64 and
+    # would write it verbatim here while readr, which reads it as a double, refuses
+    # it on the R side. abs(int(v)) rather than abs(v), which wraps at the int64
+    # minimum.
+    if isinstance(v, (int, np.integer)) and abs(int(v)) >= _READR_BIG:
+        raise ValueError(
+            "lexsync: %r is too large to write identically from both engines. Above "
+            "1e15 readr's number format could not be reproduced exactly, so the R "
+            "and Python CSVs would differ with nothing to signal it. Scale the "
+            "column, or carry it as text." % int(v))
     if isinstance(v, float):
         if v != v:                      # NaN
             return ""
@@ -174,7 +184,8 @@ def write_csv_utf8(x: pd.DataFrame, path: str) -> str:
 
 
 # ---- Reproducible reductions -----------------------------------------------
-# A sum, mean and variance that give the same bits in the R and Python engines.
+# A sum, mean, variance and median that give the same bits in the R and Python
+# engines.
 #
 # This is not pedantry; it was a live bug. Two designs' reported means differed between
 # the engines in the last decimal place the descriptives publish -- 1.447 against 1.448
@@ -234,6 +245,26 @@ def _exact_sd(x):
     return v if v != v else math.sqrt(v)
 
 
+def _exact_median(x):
+    """Median via a sort and the exact middle.
+
+    R's stats::median averages the two middle values through mean(), whose
+    long-double accumulator is platform-dependent; pandas goes through numpy.
+    (a + b) / 2 in plain double arithmetic is one correctly-rounded IEEE
+    addition and one exact halving, so both engines compute the same double
+    from the same input. Missing values are dropped, as R's is.na() filter
+    drops them. Must stay identical to .exact_median in
+    R_workflow/R/io_utils.R.
+    """
+    vals = sorted(v for v in (float(v) for v in x) if v == v)
+    n = len(vals)
+    if not n:
+        return float("nan")
+    if n % 2:
+        return vals[n // 2]
+    return (vals[n // 2 - 1] + vals[n // 2]) / 2
+
+
 # ---- One decimal rounder, shared by both engines ---------------------------
 #
 # No pairing of built-ins works. Measured over 210,000 values including every 3-dp
@@ -262,6 +293,11 @@ def _round_dp(x, dp: int) -> float:
         return v
     p = 10.0 ** dp
     y = v * p
+    # A finite input whose scaled value overflows passes through unchanged, as the
+    # R twin's is.finite() override and _round_dp_vec's final mask already do;
+    # math.trunc(inf) raises instead.
+    if math.isinf(y):
+        return v
     t = math.trunc(y)
     r = y - t
     # The step is away from zero, so a negative value moves down, not up.

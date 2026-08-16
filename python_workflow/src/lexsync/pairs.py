@@ -164,6 +164,11 @@ def select_continuous_pairs(stim: pd.DataFrame, items_cfg: dict, design: dict,
     # Step D: re-expand as a pure row subset, preserving the item table's own order.
     chosen = set(sel["set"])
     out = stim[[s in chosen for s in stim["set"]]].reset_index(drop=True)
+    # The selector's audit rides on `sel.attrs`, which the row subset above does
+    # not carry; without the copy a window relaxation on a pair design would
+    # never reach the run log or the datasheet.
+    if sel.attrs.get("audit"):
+        out.attrs["audit"] = sel.attrs["audit"]
 
     # Step E: report on the COLLAPSED frame. On the expanded one every target would
     # be counted once per condition, and the predictor-control correlations would be

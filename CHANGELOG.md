@@ -168,6 +168,16 @@ no function signature changes.
 
 ### Changed
 
+- **The R package declares its version floor.** `Depends: R (>= 4.0.0)`:
+  `tools::R_user_dir` does not exist before 4.0.0, and `round()`'s post-4.0 algorithm
+  shapes artefact bytes, so an older R would fail obscurely or, worse, write different
+  bytes without complaint.
+- **The R command-line wrapper says which copy of the package it loaded.**
+  `R_workflow/run_pipeline.R` prefers an installed lexsync over the edited sources --
+  the opposite of the Python wrapper -- so edits under `R_workflow/R` silently did
+  nothing until a reinstall. The header comment states the trap and the remedy, and the
+  wrapper prints the loaded copy (version, installed versus source) to stderr at
+  startup, where no artefact or redirected stdout captures it.
 - **The pairwise matchers refuse to reuse a word.** With overlapping condition windows,
   `joint` and `optimal` could pair a word with itself at zero cost, or mirror a pair
   (x with y, then y with x), so the same word appeared in both conditions -- a confound,
@@ -326,6 +336,68 @@ no function signature changes.
 
 ### Fixed
 
+- **`INTER_TRIGGER_S` leaned on each language's default number-to-string rule.** Its
+  neighbours in the generated PsychoPy script, `TRIGGER_HOLD_MS` and
+  `ASSUMED_REFRESH_HZ`, are pinned through `%.17g`, but the inter-trigger interval was
+  interpolated directly, so a non-integer `inter_trigger_ms` would have put different
+  bytes into the two engines' scripts: 16.65 renders "0.01665" through R's
+  `as.character()` and "0.016649999999999998" through Python's `str()`. Both engines now
+  substitute it through the same `%.17g`. The shipped default of 10 ms still renders
+  "0.01", so no committed experiment byte moved.
+- **The R half of the two-shortest-forms CSV guard never fired.** Between 2^49 and 1e15
+  two different one-decimal strings can round-trip to the same double, which is why the
+  writer refuses such a value in both engines; but R derived the digit count from
+  `format(t, digits = 15)`, which never shows a fractional digit in that band, so R
+  accepted every value Python refused (844424930131968.2 among them). R now tests the
+  neighbouring one-decimal strings directly and refuses exactly what Python's
+  `_readr_cell` refuses. The change only adds refusals; no artefact byte moved.
+- **A 16-digit integer column was written by one engine and refused by the other.** The
+  Python writer's >= 1e15 refusal applied only to floats, and pandas keeps such a
+  column as int64, so Python wrote data that readr, which reads it as a double, made
+  the R engine refuse. The check now covers integers, with the same message.
+- **A condition without `define_by` crashed the Python engine.** The R engine falls
+  back to the whole pool as that condition's subpool and, for the anchor, to ordering
+  by frequency; Python indexed the key directly and died with a bare KeyError in the
+  matcher and again in the datasheet's candidate-pool record. Python now mirrors both
+  fallbacks, and a twin test pins the same selected words in both suites.
+- **A pair design's tolerance-window relaxation vanished from the record.** The
+  continuous-pairs selector re-expands the collapsed selection as a row subset, which
+  drops the audit attribute in both engines, so a relaxed window reached neither the
+  run log nor the datasheet while the corpus continuous path records it. The audit now
+  survives the re-expansion and flows through the same path. No shipped pair design
+  relaxes, so no committed artefact changed.
+- **`run_pipeline(verbose=False)` still narrated every step in Python.** `log_step`
+  printed unconditionally, so an embedding front end (the Streamlit app) got a running
+  commentary it never asked for. The printer now sits behind a module gate the pipeline
+  sets from `verbose`, mirroring the R engine's `options(lexsync.verbose)`; every step
+  is still recorded on the log itself.
+- **Scalar `_round_dp` raised where both its twins passed through.** `_round_dp(1e306,
+  3)` scaled to infinity, on which `math.trunc` raises OverflowError, while the R
+  `.round_dp` and the vectorised `_round_dp_vec` return the input unchanged there. The
+  scalar now does the same.
+- **The published median was the one reduction outside the exact primitives.**
+  `describe_stimuli` still paired R's `stats::median`, which averages the two middle
+  values through `mean()`'s long-double accumulator, with pandas' `.median()`, which
+  reduces through numpy -- on some platforms a last-bit divergence in exactly the
+  values the module header claimed were computed identically. Both engines now use an
+  exact median: sort, take the middle element for odd n, `(a + b) / 2` in plain double
+  arithmetic for even n. Regenerating all 21 designs moved no byte. The parity vignette
+  said every reduction went through one compensated-summation algorithm, which the
+  median never did and still does not; it now describes the sort-and-middle rule
+  alongside the summation.
+- **The counterbalancing hash keys did not pin their encoding.** The shuffle and
+  balance tie-break digests hashed `paste()`'s stored bytes where `hash_unit` has
+  always converted through `enc2utf8` first, so a latin1-marked condition read from a
+  user's CSV would have ranked by different digests in R than in Python. Both keys now
+  convert. No artefact changed.
+- **Both apps overstated a difference and understated a hash.** Their caption said the
+  engines select byte-identical stimuli while "only the seeded trial order differs by
+  ecosystem", contradicting the keyed-hash shuffle that makes trial order itself
+  byte-identical; both now say the engines produce byte-identical stimuli and trial
+  order, in the same words. And both wrote the design YAML with platform line endings
+  -- the run copy that the datasheet hashes into `design_sha256`, and the export copy
+  in the download bundle -- so the recorded provenance depended on the operating
+  system; both apps now pin LF.
 - **A missing item cell became the string 'nan' in Python and a cryptic error in R.**
   The Python item loader stringified cells before checking them, so a blank `condition`
   arrived at the hash-key guard as the legitimate-looking string "nan" and sailed

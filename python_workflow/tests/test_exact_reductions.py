@@ -75,6 +75,26 @@ def test_variance_survives_data_far_from_zero():
     assert _exact_var(xs) >= 0
 
 
+def test_the_median_is_the_sorted_middle_in_plain_double_arithmetic():
+    # pandas' .median() reduces through numpy while R's stats::median averages the
+    # two middle values through mean()'s long-double accumulator, the one published
+    # reduction that bypassed the exact primitives; (a + b) / 2 is one
+    # correctly-rounded addition and one exact halving, so both engines compute the
+    # same double. test-exact-reductions.R pins these same values.
+    from lexsync.io_utils import _exact_median
+    assert _exact_median([3.0, 1.0, 2.0]) == 2.0
+    assert _exact_median([0.1, 0.2]) == (0.1 + 0.2) / 2
+    assert _exact_median([4.0, 1.0, 3.0, 2.0]) == 2.5
+    # Missing values are dropped, and an empty input is NaN rather than an error.
+    assert _exact_median([1.0, float("nan"), 3.0]) == 2.0
+    assert _exact_median([]) != _exact_median([])    # NaN
+    # Where the built-in is reliable the replacement must agree with it.
+    import statistics
+    set_free = [3.65, 5.4, 4.2, 5.3, 2.96, 4.07, 3.715, 6.1]
+    assert _exact_median(set_free) == statistics.median(set_free)
+    assert _exact_median(set_free[1:]) == statistics.median(set_free[1:])
+
+
 # --- The readr-matching cell formatter ---------------------------------------
 # Every expected value here was measured from readr 2.2.0, not assumed.
 
@@ -148,6 +168,15 @@ def test_the_shared_rounder_differs_from_the_builtins_where_expected():
     assert _round_dp(float("nan"), 3) != _round_dp(float("nan"), 3)
 
 
+def test_the_scalar_rounder_passes_an_overflowing_scale_through():
+    # 1e306 * 10**3 overflows to infinity, on which math.trunc raises; the R twin
+    # and _round_dp_vec both return the input unchanged there, and so must this.
+    # test-exact-reductions.R pins the same values.
+    from lexsync.io_utils import _round_dp
+    assert _round_dp(1e306, 3) == 1e306
+    assert _round_dp(-1e306, 3) == -1e306
+
+
 def test_the_vectorised_rounder_matches_the_scalar_elementwise():
     """_round_dp_vec exists so a whole distance vector can be rounded without a
     Python-level loop; it must be indistinguishable from mapping _round_dp over
@@ -219,6 +248,32 @@ def test_the_writer_refuses_an_ambiguous_shortest_decimal():
     assert not _shortest_digits_ambiguous(562949953421312.5)
     with pytest.raises(ValueError):
         _readr_cell(1000000000000000.25)
+    # The band below 1e15: the literal 844424930131968.2 parses to the double
+    # ...968.25, whose rounding interval holds both "...968.2" and "...968.3".
+    # test-exact-reductions.R refuses and accepts these same values, now through a
+    # guard that actually fires there.
+    assert _shortest_digits_ambiguous(844424930131968.2)
+    with pytest.raises(ValueError, match="more than one shortest decimal form"):
+        _readr_cell(844424930131968.2)
+    with pytest.raises(ValueError, match="more than one shortest decimal form"):
+        _readr_cell(-844424930131968.2)
+    assert _readr_cell(844424930131968.5) == "844424930131968.5"
+
+
+def test_an_integer_at_the_refused_magnitude_is_refused_like_the_float():
+    """pandas keeps a 16-digit identifier column as int64, so it used to sail past a
+    float-only check and be written while readr, which reads it as a double, refused
+    the same data on the R side."""
+    import numpy as np
+
+    from lexsync.io_utils import _readr_cell
+    with pytest.raises(ValueError, match="too large to write identically"):
+        _readr_cell(10 ** 16)
+    with pytest.raises(ValueError, match="too large to write identically"):
+        _readr_cell(np.int64(10 ** 15))
+    with pytest.raises(ValueError, match="too large to write identically"):
+        _readr_cell(-(10 ** 15))
+    assert _readr_cell(999999999999999) == "999999999999999"
 
 
 def test_a_large_value_is_refused_on_the_way_into_a_csv(tmp_path):

@@ -33,8 +33,11 @@
   # float64 by a single missing value, which would change every digest, every
   # trial order and every generated artefact with nothing to signal it. The
   # values are integers today, so this changes no output; it removes a trap.
-  key <- paste(.key_part(seed), .key_part(rep_id), .key_part(df$list),
-               .key_part(df$set), .key_part(df$condition), sep = "|")
+  # enc2utf8 because digest(serialize = FALSE) hashes the stored bytes, as
+  # hash_unit already does: a latin1-marked condition read from a user's CSV
+  # would otherwise give a different digest from the same characters in Python.
+  key <- enc2utf8(paste(.key_part(seed), .key_part(rep_id), .key_part(df$list),
+                        .key_part(df$set), .key_part(df$condition), sep = "|"))
   rank <- vapply(key, function(k) digest::digest(k, algo = "sha256", serialize = FALSE),
                  character(1), USE.NAMES = FALSE)
   df <- df[order(rank, method = "radix"), , drop = FALSE]
@@ -266,9 +269,10 @@ balance_lists <- function(stimuli, design, schema) {
     if (length(tied) > 1L) {
       # Hash tie-break, not position: taking the first tied pair would
       # systematically prefer low-numbered sets, and the digest is the package's
-      # established way of choosing without a generator.
-      key <- paste(.key_part(seed), "balance", .key_part(sets[a[tied]]),
-                   .key_part(sets[b[tied]]), sep = "|")
+      # established way of choosing without a generator. enc2utf8 for the same
+      # reason as the shuffle key: digest hashes the stored bytes.
+      key <- enc2utf8(paste(.key_part(seed), "balance", .key_part(sets[a[tied]]),
+                            .key_part(sets[b[tied]]), sep = "|"))
       h <- vapply(key, function(k) digest::digest(k, algo = "sha256", serialize = FALSE),
                   character(1), USE.NAMES = FALSE)
       pick <- tied[order(h, method = "radix")[1]]

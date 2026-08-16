@@ -8,7 +8,6 @@
 #' @param dims Character vector of dimension columns.
 #' @param by Grouping column (default `"condition"`).
 #' @return A long data frame with n, mean, sd, min, median and max per group.
-#' @importFrom stats sd median
 #' @export
 describe_stimuli <- function(stimuli, dims, by = "condition") {
   # Group in order of first appearance: split() alone coerces to a factor whose
@@ -28,7 +27,10 @@ describe_stimuli <- function(stimuli, dims, by = "condition") {
         # NA (not Inf/-Inf, which is what min/max of an empty vector give) when a
         # dimension is entirely missing, so both engines agree.
         min = if (length(xv)) min(xv) else NA_real_,
-        median = stats::median(x, na.rm = TRUE),
+        # .exact_median, not stats::median: the latter averages the two middle
+        # values through mean()'s long-double accumulator, the one reduction
+        # here that would bypass the shared exact primitives.
+        median = .exact_median(xv),
         max = if (length(xv)) max(xv) else NA_real_,
         stringsAsFactors = FALSE
       )
@@ -46,7 +48,6 @@ describe_stimuli <- function(stimuli, dims, by = "condition") {
 #' @return The standardised mean difference; 0 when either sample is too small or
 #'   both share one constant, `NA` when the pooled SD is zero but the means
 #'   differ (the standardised difference is then unbounded, not zero).
-#' @importFrom stats var
 #' @examples
 #' cohens_d(c(5, 6, 7, 8), c(5, 6, 7, 9))
 #' @export
@@ -78,7 +79,7 @@ cohens_d <- function(x, y) {
 #' @param x,y Numeric vectors.
 #' @param alpha Significance level matching the TOST (default 0.05).
 #' @return A list with `d`, `ci_low` and `ci_high`.
-#' @importFrom stats var qt
+#' @importFrom stats qt
 #' @export
 cohens_d_ci <- function(x, y, alpha = 0.05) {
   x <- x[!is.na(x)]; y <- y[!is.na(y)]
@@ -110,7 +111,7 @@ cohens_d_ci <- function(x, y, alpha = 0.05) {
 #'   schema value of 0.5 (Lakens, 2017).
 #' @param alpha Significance level.
 #' @return A list with `p` and logical `equivalent`.
-#' @importFrom stats var pt
+#' @importFrom stats pt
 #' @export
 tost_equiv <- function(x, y, bound_d = 0.5, alpha = 0.05) {
   x <- x[!is.na(x)]; y <- y[!is.na(y)]
@@ -146,7 +147,6 @@ tost_equiv <- function(x, y, bound_d = 0.5, alpha = 0.05) {
 #'
 #' @param cond,ref Numeric vectors (condition and reference).
 #' @return The variance ratio, or `NA` when a variance is undefined.
-#' @importFrom stats var
 #' @examples
 #' variance_ratio(c(1, 2, 3, 4), c(1, 2, 3, 8))
 #' @export
