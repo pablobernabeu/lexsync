@@ -326,6 +326,10 @@
   byte-identical to the Python engine's, trial lists included (see the keyed-hash
   shuffle entry above).
 * Selected stimuli are unchanged for all 15 designs bundled at the time.
+* Every vignette now turns console colour off and fixes the console width while it
+  renders. pkgdown passes the calling terminal's colour support into its build
+  subprocess, so a coloured message or error would otherwise reach the reader as
+  escape sequences in the middle of the text.
 * See the top-level `CHANGELOG.md` for the full, cross-language history and the
   planned methodological roadmap.
 
