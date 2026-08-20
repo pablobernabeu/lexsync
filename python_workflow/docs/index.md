@@ -31,12 +31,13 @@ and a collaborator the Python one, and the materials will agree rather than mere
 resemble each other. Continuous integration checks this on 21 worked designs
 across English, Spanish and Mandarin Chinese.
 
-Two matching methods are a documented exception: `mahalanobis` and `optimal` rely
-on a covariance-matrix inverse and an assignment solver whose last bits differ
-between the two linear-algebra backends, so there the engines select equivalent
-sets rather than identical ones. Each run's materials datasheet records which case
-applies. [Reproducibility and parity](reproducibility-and-parity.md) sets out what
-the guarantee promises, how it is enforced and where it stops.
+Two matching methods are a documented exception: `mahalanobis` and `optimal`
+rely on a covariance-matrix inverse and an assignment solver whose last bits
+differ between the two linear-algebra backends, so there the engines select
+equivalent sets, with byte identity no longer guaranteed. Each run's materials
+datasheet records which case applies.
+[Reproducibility and parity](reproducibility-and-parity.md) sets out what the
+guarantee promises, how it is enforced and where it stops.
 
 ## Install
 
@@ -93,8 +94,8 @@ report = lexsync.match_report(
 print(report["comparisons"].to_string(index=False))
 ```
 
-The report is the point of the exercise, because it states what the matching
-achieved rather than asserting that it worked. Frequency, the manipulation,
+The report is the point of the exercise, because it measures what the matching
+achieved. Frequency, the manipulation,
 separates the conditions by nearly six standard deviations. Each control dimension
 passes a two one-sided tests procedure against a bound of *d* = 0.5, so it is
 shown to be equivalent rather than merely failing to differ significantly.

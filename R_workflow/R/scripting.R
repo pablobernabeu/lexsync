@@ -152,8 +152,8 @@ frames_to_ms <- function(frames, hz) {
 #' An event may declare a duration that varies from trial to trial, either read
 #' from an item column or drawn from a range. A drawn value is a pure function of
 #' the keyed hash, so both engines realise the same milliseconds, and it is
-#' written into the stimuli table rather than only into the generated script:
-#' timing that varies is a variable the analysis needs, not presentation detail.
+#' written into the stimuli table as well as the generated script, because timing
+#' that varies is a variable the analysis needs, not presentation detail.
 #'
 #' @param stimuli A counterbalanced stimuli data frame.
 #' @param design A parsed design configuration.
@@ -174,7 +174,8 @@ resolve_trial_timing <- function(stimuli, design, schema) {
       next
     }
     # The key names the column as well as the trial, so two jittered events in
-    # one design draw independently rather than sharing a value.
+    # one design draw independently, where a key naming only the trial would give
+    # them one shared value.
     key <- paste(.key_part(seed), "jitter", spec$column,
                  .key_part(stimuli$list %||% 1L), .key_part(stimuli$set),
                  .key_part(stimuli$condition), sep = "|")
@@ -280,8 +281,8 @@ render_events <- function(events, timing, hz = 60) {
     }
     # An event may be restricted to named blocks. This is what lets feedback run during
     # practice and nowhere else: the event list is global to the design, so the
-    # restriction has to travel with the event and be applied per trial at run time,
-    # rather than by generating a second event list.
+    # restriction has to travel with the event and be applied per trial at run time.
+    # Generating a second event list would be the alternative, and a worse one.
     if (!is.null(ev$blocks)) {
       r$blocks <- as.list(as.character(unlist(ev$blocks, use.names = FALSE)))
     }
@@ -296,7 +297,7 @@ loop_table <- function(stimuli, events = NULL) {
   fields <- if (!is.null(events)) referenced_fields(events) else
     (if ("word" %in% names(stimuli)) "word" else character(0))
   # A per-trial duration is read from the loop table at run time, so its column
-  # has to travel with the trials rather than staying in the stimuli file.
+  # has to travel with the trials, and cannot stay behind in the stimuli file.
   ms_cols <- character(0)
   if (!is.null(events)) {
     for (i in seq_along(events)) {

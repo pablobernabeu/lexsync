@@ -22,12 +22,12 @@ import numpy as np
 import pandas as pd
 
 # The z-scoring centre and scale go through the reproducible reductions, not numpy's.
-# Selection was robust to the difference for a structural reason worth stating: a
-# distance is computed between z-VECTORS, so a shift in the centre cancels in the
-# difference, a change of scale is a monotone rescaling that cannot reorder candidates,
-# and the distances are rounded to nine places on top of that. Even so, "robust for a
-# reason" is not the same as "identical by construction", and the latter is what the
-# package claims. Switching these was verified to change no design's selection.
+# The difference could not have changed a selection, for a structural reason: a distance
+# is computed between z-VECTORS, so a shift in the centre cancels in the difference, a
+# change of scale is a monotone rescaling that cannot reorder candidates, and the
+# distances are rounded to nine places on top of that. That argument is weaker than
+# identity by construction, which is what the package claims, and switching these was
+# verified to change no design's selection.
 from .io_utils import _exact_mean, _exact_sd, _round_dp_vec
 from .querying import build_pool
 
@@ -96,8 +96,8 @@ def _zmat(df: pd.DataFrame, match_on, center, scale) -> np.ndarray:
 
 def _exact_colmeans(z):
     """Column means for the overlap-cap centroid, through the compensated reduction
-    rather than numpy's. The cap decides which candidates survive into matching -- it
-    fires for the shipped en_ndensity and es_ndensity designs -- so a centroid that
+    rather than numpy's. The cap decides which candidates survive into matching, and it
+    fires for the shipped en_ndensity and es_ndensity designs, so a centroid that
     differs in the last bits between engines is a selection difference waiting to
     happen, not a rounding curiosity. Mirrors .exact_colmeans in matching.R."""
     return np.array([_exact_mean(z[:, j]) for j in range(z.shape[1])], dtype=float)
@@ -185,7 +185,19 @@ def _maha_metric(z_pool: np.ndarray, ridge: float = 1e-6) -> np.ndarray:
     if z_pool.shape[1] == 1:
         return np.array([[1.0]])
     c = np.atleast_2d(np.corrcoef(z_pool, rowvar=False))
-    c = np.nan_to_num(c, nan=0.0)          # a constant dimension -> treat as uncorrelated
+    # An undefined correlation is treated as no correlation, which covers two cases
+    # worth telling apart. A constant dimension has no correlation to estimate, and
+    # zero is the right reading. A dimension carrying even one missing value also
+    # gives NaN here, and zeroing it drops that dimension's whole row and column; if
+    # every dimension is affected the metric is the identity and Mahalanobis matching
+    # becomes the standardised Euclidean matching it was chosen over. Nothing
+    # upstream prevents that: the completeness guards in match_stimuli count usable
+    # candidates per condition and pass easily on a large pool with a handful of
+    # missing values. It is the one respect in which this method is quietly sensitive
+    # to pool quality, so a design choosing it should match on dimensions the lexicon
+    # covers completely.
+    # Must stay identical to .maha_metric in R_workflow/R/matching.R.
+    c = np.nan_to_num(c, nan=0.0)
     np.fill_diagonal(c, 1.0)
     c = c + ridge * np.eye(c.shape[0])
     return np.linalg.inv(c)
@@ -262,7 +274,7 @@ def match_stimuli(pool: pd.DataFrame, design: dict, schema: dict, verbose: bool 
     conditions = design.get("conditions")
     if not conditions:
         # Without this, the anchor lookup below dies with a KeyError here and a
-        # bare subscript error in R -- two different messages for the same mistake.
+        # bare subscript error in R, two different messages for the same mistake.
         raise ValueError("lexsync: the design has no conditions; a matched design "
                          "needs a conditions list.")
     match_on = list(design["match_on"])
@@ -282,8 +294,8 @@ def match_stimuli(pool: pd.DataFrame, design: dict, schema: dict, verbose: bool 
         k = tol_k.get(d, 2)
         if isinstance(k, (int, float)) and k < 0:
             # A negative k inverts the window (upper bound below the lower), which
-            # empties the candidate set and silently relaxes to the full pool --
-            # never intended.
+            # empties the candidate set and silently relaxes to the full pool,
+            # which is never intended.
             raise ValueError(f"lexsync: tolerance_k for dimension '{d}' is negative; "
                              f"tolerances must be zero or positive.")
     cnames = [c["name"] for c in conditions]
@@ -387,8 +399,8 @@ def match_stimuli(pool: pd.DataFrame, design: dict, schema: dict, verbose: bool 
                 print(f"lexsync: condition '{cname}' has {len(cand_f)} candidates within tolerance "
                       f"(< {n_take} needed); relaxing the window.")
             # The relaxation changes what "matched" means for this condition, so it
-            # is recorded on the result for the run log and datasheet, not only
-            # narrated.
+            # is recorded on the result for the run log and datasheet, where a
+            # console message would leave no trace.
             relaxations.append({"condition": cname,
                                 "n_within_tolerance": int(len(cand_f)),
                                 "n_needed": int(n_take)})
@@ -418,9 +430,9 @@ def match_stimuli(pool: pd.DataFrame, design: dict, schema: dict, verbose: bool 
             # Rounded to 9 dp through the shared rule so the stable tie-break below
             # is itself reproducible across R and Python. np.round would pair
             # numpy's scale-rint-unscale with R's decimal algorithm, a pairing
-            # io_utils documents as disagreeing at boundaries -- and on the
-            # mahalanobis path the inputs already differ in their last bits, so
-            # the absorber must be the same function in both engines.
+            # io_utils documents as disagreeing at boundaries. On the mahalanobis
+            # path the inputs already differ in their last bits, so the absorber
+            # must be the same function in both engines.
             delta = z_cand - z_anchor[a]
             if metric is None:
                 dvec = _round_dp_vec(np.sqrt((delta ** 2).sum(axis=1)), 9)
@@ -472,6 +484,17 @@ def select_continuous_stimuli(pool: pd.DataFrame, design: dict, schema: dict,
     predictor defines a tolerance window on each control; the pool is filtered to
     that window; a second even spread over the filtered pool is the selection.
     There is no per-item matching and no random number generator.
+
+    The design is checked before anything is selected, so a design that cannot be
+    honoured raises ``ValueError`` outright. ``continuous.controls`` must be non-empty
+    and must not name the predictor, ``match_on`` must name exactly the same dimensions
+    as ``continuous.controls``, every dimension named and the ``key`` column must be
+    present in the pool, no ``tolerance_k`` may be negative, and the pool must not be
+    empty.
+
+    Returns the selected stimuli. Unless ``label`` is ``None`` the ``condition``
+    column is set to it, ``continuous`` by default, and unless ``renumber_sets`` is
+    ``False`` the ``set`` column is renumbered ``1..n``.
     """
     cfg = design["continuous"]
     predictor = cfg["predictor"]
@@ -572,8 +595,13 @@ def resample_stimuli(pool: pd.DataFrame, design: dict, schema: dict,
     the items of earlier replicates removed, so no item is reused. This lets a
     study treat its items as a random factor (running different item samples
     across participant groups, or showing an effect holds across samples) instead
-    of treating them as a fixed set (Clark, 1973; Yarkoni, 2022). Deterministic: the matcher is
-    deterministic and the used-item set evolves identically across engines.
+    of treating them as a fixed set (Clark, 1973; Yarkoni, 2022). Deterministic: the
+    matcher is deterministic and the used-item set evolves identically across engines.
+
+    The replicates are concatenated, which drops the ``attrs["audit"]`` entry
+    :func:`match_stimuli` uses to report a relaxed tolerance window, so a relaxation
+    inside a replicate reaches the console under ``verbose`` but not the run log or
+    the datasheet.
     """
     used: set = set()
     parts = []

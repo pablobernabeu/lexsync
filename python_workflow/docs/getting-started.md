@@ -46,8 +46,8 @@ parallel port, no EEG amplifier and no PsychoPy installation, and the test suite
 in continuous integration.
 
 The `corpora` extra pins wordfreq to its frozen 3.x line, which is a stable snapshot of language
-usage through roughly 2021. That is a feature rather than an oversight. A lexicon derived from a
-live, drifting source would quietly stop reproducing.
+usage through roughly 2021. That is deliberate. A lexicon derived from a live, drifting source
+would quietly stop reproducing.
 
 ### Check that it worked
 
@@ -153,9 +153,9 @@ form the lexical-decision designs use, since they also need to say where the ite
 
 `pool_filters` narrows the lexicon to the candidates a design will consider at all. Each key is a
 column and each value a `[min, max]` range for a numeric column, or a set of allowed values for a
-categorical one. This is a real step rather than a formality. The matcher never reads `pool_filters`
-itself, so a script that omits `build_pool` matches over the entire lexicon and quietly ignores the
-design's bands.
+categorical one. This is a step that matters. The matcher never reads `pool_filters` itself, so a
+script that omits `build_pool` matches over the entire lexicon and quietly ignores the design's
+bands.
 
 `conditions` is a list, each with a `name` and a `define_by` block that carves the condition out of
 the pool by the same filter syntax. Two conditions make a contrast. Four make the 2 × 2 that
@@ -174,7 +174,7 @@ tolerance window on each dimension. Overriding a single dimension is common when
 published study's exact windows.
 
 `counterbalance.lists` sets the number of lists, and `counterbalance.optimise` asks for an assignment
-whose lists are equated on the item dimensions rather than dealt by set rank. `practice` and
+whose lists are equated on the item dimensions, where the plain deal goes by set rank. `practice` and
 `fillers` each name an item table whose trials run but are not analysed. `timing` overrides the fixation, critical-word and
 inter-stimulus durations in milliseconds (`fixation_ms`, `word_ms`, `isi_ms`), the older
 `*_frames` forms still being accepted and converted at `presentation.assumed_refresh_hz`. `font` overrides

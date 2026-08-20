@@ -81,6 +81,23 @@ test_that("mahalanobis matching balances and is deterministic within an engine",
   expect_identical(s$word, match_stimuli(lex, d, schema)$word)
 })
 
+test_that("a missing value on a matched dimension reduces the mahalanobis metric to identity", {
+  # cor() under its default use = "everything" returns NA for any pair involving a
+  # column that holds one, and .maha_metric reads NA as no correlation, so the metric
+  # collapses and mahalanobis matching becomes the standardised Euclidean matching it
+  # was chosen over. Nothing upstream prevents it, which is what the comment there now
+  # says; this pins the behaviour so a change of estimator cannot pass unnoticed.
+  # Pinned identically in tests/test_matching.py.
+  z <- cbind(c(1, 2, 3, 4), c(4, 3, 2, 1))
+  informative <- .maha_metric(z)
+  expect_gt(abs(informative[1, 2]), 0.5)                 # the correlation is used
+
+  z[2, 1] <- NA_real_
+  collapsed <- .maha_metric(z)
+  expect_equal(collapsed[1, 2], 0)
+  expect_equal(collapsed, diag(2) / (1 + 1e-6), tolerance = 1e-12)
+})
+
 test_that("optimal matching equates the confound and is deterministic within an engine", {
   skip_if_not_installed("clue")
   schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
@@ -138,6 +155,31 @@ test_that("select_continuous_stimuli rejects the predictor appearing in controls
   d$continuous$controls <- list("frequency", "length")
   d$match_on <- list("frequency", "length")
   expect_error(select_continuous_stimuli(pool, d, schema), "must not also appear")
+})
+
+test_that("select_continuous_stimuli requires match_on to equal the controls", {
+  # Twin of test_select_continuous_requires_match_on_equals_controls, which this suite
+  # was missing. The two keys state one contract twice, so a design where they disagree
+  # is ambiguous about which dimensions are actually held constant, and the datasheet
+  # would record whichever list it happened to read.
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  lex <- load_lexicon(system.file("extdata", "en_example.csv", package = "lexsync"), schema, "english")
+  pool <- build_pool(lex, make_continuous_design()$pool_filters)
+  d <- make_continuous_design()
+  d$match_on <- list("length", "n_density")   # short of continuous.controls
+  expect_error(select_continuous_stimuli(pool, d, schema), "match_on must equal")
+})
+
+test_that("select_continuous_stimuli requires at least one control", {
+  # With no control there is nothing held constant, and an even spread over the
+  # predictor alone would still be recorded as a controlled selection.
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  lex <- load_lexicon(system.file("extdata", "en_example.csv", package = "lexsync"), schema, "english")
+  pool <- build_pool(lex, make_continuous_design()$pool_filters)
+  d <- make_continuous_design()
+  d$continuous$controls <- list()
+  d$match_on <- list()
+  expect_error(select_continuous_stimuli(pool, d, schema), "at least one control")
 })
 
 tiny_schema <- function() {

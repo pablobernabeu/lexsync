@@ -6,8 +6,8 @@ spreadsheet with no account of where it came from. lexsync is built the other wa
 is a file, the selection is a function of that file, and the run emits the provenance record that
 lets someone else arrive at the same words.
 
-This guide sets out what the cross-engine guarantee actually promises, the specific engineering that
-makes it hold, where it stops, how it is tested, and what a run writes down about itself.
+This guide sets out what the cross-engine guarantee promises, the specific engineering that makes
+it hold, where it stops, how it is tested, and what a run writes down about itself.
 
 ## The guarantee
 
@@ -112,13 +112,13 @@ orthographies and unavailable for other scripts. The shipped Chinese design matc
 
 ## Where it stops
 
-Two exceptions, both of them documented rather than incidental.
+Two exceptions, and both are documented here.
 
 `mahalanobis` and `optimal` are not covered. The first inverts a covariance matrix and the second
 solves a linear-assignment problem, and those are the two places where the R and Python
 linear-algebra backends differ in their last bits, with the assignment solver's tie handling
-differing outright. The engines agree closely. In practice `mahalanobis` usually still agrees
-exactly, while `optimal` tends to select an equally optimal but different set, which is a
+differing outright. The engines agree closely. `mahalanobis` usually still agrees exactly,
+while `optimal` tends to select an equally optimal but different set, which is a
 reasonable thing for an optimal matcher to do when several assignments share the minimum. Neither is
 guaranteed byte-for-byte, and each run's datasheet records which case applies.
 
@@ -135,13 +135,13 @@ and the parity suite compares the `trial` column along with everything else.
 Corpus versions are not magic. A design pins the lexicon file it reads, and the bundled corpora are
 a fixed, checksummed snapshot, so the demonstrations reproduce with no download. The optional
 wordfreq connector is pinned to its frozen 3.x line, a stable snapshot of usage through roughly
-2021, which keeps a fetched lexicon reproducible instead of drifting under a live source.
-Fetch a corpus from a URL that changes and lexsync cannot help you. The datasheet's SHA-256 of the
+2021, which keeps a fetched lexicon reproducible where a live source would let it drift. Fetch a
+corpus from a URL that changes and lexsync cannot help you. The datasheet's SHA-256 of the
 source file will at least tell you that it changed.
 
 ## How it is tested
 
-The claim is checked rather than asserted. `tests/test_parity.py` carries 21 cases, one per
+The claim is checked, not merely stated. `tests/test_parity.py` carries 21 cases, one per
 worked design, spanning English, Spanish and Mandarin Chinese and covering every item source and
 every paradigm: frequency and neighbourhood contrasts, lexical decision under both pseudoword
 generators, the continuous design, resampling, priming, self-paced reading and three reproductions
@@ -169,7 +169,7 @@ The rest of the suite covers the parts hardware would otherwise gate: a mock-Psy
 runs the generated script and asserts the onset trigger is flip-locked, a structural validator for
 the generated OpenSesame experiment, and checks that the jsPsych export is well formed and escapes
 HTML in stimulus data. The R package runs `R CMD check` on Ubuntu, macOS and Windows, and the Python
-tests run on Python 3.10 to 3.13.
+tests run on Python 3.10 to 3.14.
 
 ## The materials datasheet
 
@@ -199,14 +199,14 @@ frequency contrast:
 - **Cross-engine determinism:** byte-identical
 - **Counterbalancing:** factorial, 1 list(s)
 - **Items:** 160 rows across 2 conditions (low_frequency, high_frequency)
-- **Seed:** 2026  |  **Versions:** engine python, lexsync 0.1.0, python 3.13.7, pandas 2.3.2, numpy 2.3.2, scipy 1.17.1
+- **Seed:** 2026  |  **Versions:** engine python, lexsync 0.1.0, python 3.13.7, pandas 2.3.2, numpy 2.3.2, scipy 1.17.1, …
 ```
 
-Four things in there are worth pointing at.
+Four of those lines repay a second look.
 
-`Cross-engine determinism` is the caveat from the previous section, recorded per run rather than
-left in prose. A design that uses `mahalanobis` or `optimal` says so here, so whoever receives the
-materials learns it from the materials.
+`Cross-engine determinism` is the caveat from the previous section, recorded once per run. A design
+that uses `mahalanobis` or `optimal` says so here, so whoever receives the materials learns it from
+the materials.
 
 Selection transparency records how many items satisfied each condition's window before matching. For
 this design the answer is 544 high-frequency candidates and 4295 low-frequency ones. That number is
@@ -228,12 +228,13 @@ analysis that treats them as fixed over-generalises. The maximal structure is su
 the numbers above. The pipeline writes it into the Markdown datasheet, and you can call it on a
 datasheet dictionary yourself with `lexsync.methods_paragraph(ds)`. For this design it reads:
 
-> 80 items per condition were selected from the English lexicon (see corpora/ATTRIBUTION.md for
-> corpus licence and citation) and matched item by item on length, n_density, old20 using lexsync's
-> standardised_euclidean matcher. The realised control was close. The largest standardised
-> difference on any matched dimension was 0.04 (90% CI [-0.22, 0.30]), within the 0.5-SD equivalence
-> bound. The smallest condition was selected from 544 eligible candidates, and the selection was
-> deterministic and blind to any outcome measure.
+> 80 items per condition were selected from the English lexicon (wordfreq (Speer, 2022), data
+> CC BY-SA 4.0; full corpus licence and citation at
+> https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md) and matched item by
+> item on length, n_density, old20 using lexsync's standardised_euclidean matcher. The realised
+> control was close. The largest standardised difference on any matched dimension was 0.04 (90% CI
+> [-0.22, 0.30]), within the 0.5-SD equivalence bound. The smallest condition was selected from 544
+> eligible candidates, and the selection was deterministic and blind to any outcome measure. […]
 
 The Markdown datasheet also carries a pre-registration skeleton with its Materials section already
 filled from the run and its analysis plan filled with the suggested model. The remaining sections

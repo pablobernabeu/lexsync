@@ -162,5 +162,5 @@ def test_events_json_is_serialised_as_jsonlite_would():
     from lexsync.scripting import _json_r
     assert _json_r([{"type": "response", "keys": ["left", "right"], "timeout": 2.0}]) == (
         '[{"type":"response","keys":["left","right"],"timeout":2}]')
-    # A genuinely fractional timeout keeps its decimal part in both engines.
+    # A fractional timeout keeps its decimal part in both engines.
     assert _json_r({"timeout": 2.5}) == '{"timeout":2.5}'

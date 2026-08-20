@@ -16,7 +16,7 @@ lexsync is one repository holding two packages that must behave identically. The
 R package is in `R_workflow/`, the Python package in `python_workflow/`, and the
 design configurations, corpora, item tables and generated output they share sit at
 the root. The experiment templates exist in three copies, one canonical set under
-`templates/` and a mirror inside each package; keep all three byte-identical.
+`templates/` and a mirror inside each package. Keep all three byte-identical.
 
 ## Setting up for development
 
@@ -42,13 +42,13 @@ with only one leaves the repository in a state where they disagree.
 
 ## The one convention that governs everything
 
-**The two engines must produce byte-identical artefacts, and nothing may draw a
-random number.** Anything that looks stochastic, such as trial order, is a pure
-function of a keyed SHA-256 digest and the seed. This is not a stylistic
-preference; it is what lets a laboratory run the R package and a collaborator the
-Python one and get the same materials rather than merely similar ones.
+The two engines must produce byte-identical artefacts, and nothing may draw a
+random number. Anything that looks stochastic, such as trial order, is a pure
+function of a keyed SHA-256 digest and the seed. The point of the rule is that a
+laboratory can run the R package while a collaborator runs the Python one, and the
+two of them end up with the same materials down to the byte.
 
-In practice that rules out several ordinary things. Do not call `sample()`,
+That rules out several ordinary things. Do not call `sample()`,
 `numpy.random` or any generator. Do not let a floating-point comparison decide an
 outcome without rounding first and breaking ties explicitly, because R and Python
 disagree in the last bits: their `exp`, `log` and `**` differ by one unit in the
@@ -64,7 +64,7 @@ and tests that run offline against the bundled example lexicons.
 ## Submitting a pull request
 
 Base your work on `main` and keep the change focused. Every feature needs a
-cross-engine regression test that would fail if the two engines diverged; add it
+cross-engine regression test that would fail if the two engines diverged. Add it
 to both `R_workflow/tests/testthat/` and `python_workflow/tests/`, and prefer a
 shared golden digest computed independently in each, so the two suites fail
 together. Update `config/schema.yaml` and the design YAMLs in step with any

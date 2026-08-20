@@ -43,7 +43,7 @@ def cohens_d(x, y):
     sp = math.sqrt(((nx - 1) * _exact_var(x) + (ny - 1) * _exact_var(y)) / (nx + ny - 2))
     if sp == 0 or math.isnan(sp):
         # Two constants: an exactly-zero difference is exactly zero SDs apart, but
-        # unequal constants are infinitely many -- undefined, not perfect balance.
+        # unequal constants are infinitely many. That is undefined, not perfect balance.
         if float(_exact_mean(x) - _exact_mean(y)) == 0:
             return 0.0
         return None
@@ -140,7 +140,24 @@ def balance_check(stimuli: pd.DataFrame, columns) -> list:
     return issues
 
 
+# The columns of the comparisons frame, needed explicitly for the single-condition
+# case where there is nothing to compare against the anchor. A DataFrame built from
+# no rows carries no columns either, and wrote a comparisons CSV with no header at
+# all, while the R engine's rbind() over an empty list returned NULL and killed the
+# pipeline's reporting loop with a message that named neither the design nor the
+# cause. Must list the same columns, in the same order, as .empty_comparisons in
+# R_workflow/R/validation.R.
+_COMPARISON_COLUMNS = ("condition", "reference", "dimension", "cohens_d", "d_ci_low",
+                       "d_ci_high", "var_ratio", "tost_p", "equivalent")
+
+
 def match_report(stimuli: pd.DataFrame, dims, schema: dict) -> dict:
+    """Build the full match-quality report: descriptives and comparisons.
+
+    Every comparison is against the first condition in order of appearance, so a
+    design with a single condition has nothing to compare and ``comparisons`` comes
+    back with its columns and no rows.
+    """
     conds = list(dict.fromkeys(stimuli["condition"]))
     anchor = conds[0]
     desc = describe_stimuli(stimuli, dims)
@@ -168,7 +185,9 @@ def match_report(stimuli: pd.DataFrame, dims, schema: dict) -> dict:
                 tost_p=_round_dp(p, 4) if p == p else None,
                 equivalent=tt["equivalent"],
             ))
-    return dict(descriptives=desc, comparisons=pd.DataFrame(rows))
+    return dict(descriptives=desc,
+                comparisons=pd.DataFrame(rows) if rows
+                else pd.DataFrame(columns=list(_COMPARISON_COLUMNS)))
 
 
 def _pearson(x, y):

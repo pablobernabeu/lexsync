@@ -58,7 +58,7 @@ cohens_d <- function(x, y) {
   sp <- sqrt(((nx - 1) * .exact_var(x) + (ny - 1) * .exact_var(y)) / (nx + ny - 2))
   if (is.na(sp) || sp == 0) {
     # Two constants: an exactly-zero difference is exactly zero SDs apart, but
-    # unequal constants are infinitely many -- undefined, not perfect balance.
+    # unequal constants are infinitely many. That is undefined, not perfect balance.
     if (.exact_mean(x) - .exact_mean(y) == 0) return(0)
     return(NA_real_)
   }
@@ -184,7 +184,10 @@ balance_check <- function(stimuli, columns) {
 #' @param stimuli A matched-stimuli data frame (must contain `condition`).
 #' @param dims Dimensions to summarise and compare.
 #' @param schema The parsed global schema (equivalence settings).
-#' @return A list with `descriptives` and `comparisons` data frames.
+#' @return A list with `descriptives` and `comparisons` data frames. Every
+#'   comparison is against the first condition in order of appearance, so a design
+#'   with a single condition has nothing to compare and `comparisons` comes back
+#'   with its columns and no rows.
 #' @export
 match_report <- function(stimuli, dims, schema) {
   conds <- unique(stimuli$condition)
@@ -210,7 +213,25 @@ match_report <- function(stimuli, dims, schema) {
       )
     }
   }
-  list(descriptives = desc, comparisons = do.call(rbind, comp))
+  list(descriptives = desc,
+       comparisons = if (length(comp)) do.call(rbind, comp) else .empty_comparisons())
+}
+
+# The comparisons frame a single-condition design produces: the columns, no rows.
+# rbind() of an empty list returns NULL, which run_pipeline's seq_len(nrow(...)) loop
+# then died on with "argument must be coercible to non-negative integer", naming
+# neither the design nor the cause, while the Python engine went on and wrote a
+# comparisons CSV with no header at all. Naming the columns here gives both engines
+# the same header-only file and the same empty loop.
+# Must list the same columns, in the same order, as _COMPARISON_COLUMNS in
+# python_workflow/src/lexsync/validation.py.
+#' @keywords internal
+.empty_comparisons <- function() {
+  data.frame(condition = character(0), reference = character(0),
+             dimension = character(0), cohens_d = numeric(0),
+             d_ci_low = numeric(0), d_ci_high = numeric(0),
+             var_ratio = numeric(0), tost_p = numeric(0),
+             equivalent = logical(0), stringsAsFactors = FALSE)
 }
 
 # Pearson correlation from raw sums, rounded to 9 dp so it is byte-comparable across

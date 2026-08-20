@@ -118,8 +118,8 @@ def _write_design_yaml(design: dict, path: str) -> str:
 def run_design(design: dict, lexicon_abs: str | None, items_abs: str | None) -> dict:
     """Write the design to a temp file, run the pipeline, and collect the outputs.
 
-    The design shown to the user keeps clean relative paths; the copy that is
-    actually executed is resolved to absolute paths so it runs from any directory.
+    The design shown to the user keeps repository-relative paths. The copy that runs
+    is resolved to absolute paths, so it works from any directory.
     """
     run_design_dict = {k: v for k, v in design.items()}
     if lexicon_abs:
@@ -253,7 +253,7 @@ def make_zip(design: dict, design_filename: str, bundle: dict,
 st.set_page_config(page_title="lexsync", layout="wide", page_icon="🔤")
 st.title("lexsync")
 st.markdown(
-    "**Reproducible psycholinguistic stimulus design — Python engine.** "
+    "Reproducible psycholinguistic stimulus design, running on the Python engine. "
     "Assemble a design below, run the verified lexsync pipeline, and export the "
     "design file together with the R, Python and command-line code that reproduces "
     "it. The two engines select byte-identical stimuli, so the exported code runs "
@@ -507,7 +507,7 @@ if run:
             st.session_state["design"] = design
             st.session_state["design_filename"] = design_filename
             st.session_state["uploaded_inputs"] = uploaded_inputs
-            st.success(f"Done — {len(bundle['stimuli'])} rows selected.")
+            st.success(f"Selected {len(bundle['stimuli'])} rows.")
         except Exception as exc:  # surface pipeline errors to the user
             st.session_state.pop("bundle", None)
             st.error(f"The pipeline raised an error: {exc}")

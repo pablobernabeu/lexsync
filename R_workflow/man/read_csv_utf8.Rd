@@ -8,6 +8,10 @@ read_csv_utf8(path, as_character = character(0))
 }
 \arguments{
 \item{path}{Path to a CSV file.}
+
+\item{as_character}{Character vector of column names whose type must not be guessed,
+read as text instead. A name the file's header does not carry is ignored, since
+readr warns about a parser for a column that is not there.}
 }
 \value{
 A data frame (a tibble), as returned by \code{\link[readr:read_csv]{readr::read_csv()}}.

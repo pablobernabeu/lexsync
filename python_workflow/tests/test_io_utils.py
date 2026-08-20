@@ -61,7 +61,7 @@ def test_slugify_is_lowercase_and_path_safe():
 
 # Pins the same contract as "slugify folds case whatever the locale" in the R
 # engine's test-io_utils.R, where base tolower() folded "I" to the dotless "i"
-# under a Turkish locale and wrote the design's artifacts under a name this
+# under a Turkish locale and wrote the design's artefacts under a name this
 # engine never produces. str.lower() is already locale-invariant; the assertion
 # is what the R engine is now held to.
 def test_slugify_is_locale_invariant():

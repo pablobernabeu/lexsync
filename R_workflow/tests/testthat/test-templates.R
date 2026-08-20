@@ -12,7 +12,8 @@
 # the code time-locking EEG markers to stimulus onset, and an experiment that
 # records the wrong onset does not fail -- it quietly collects unusable data.
 #
-# So compare the bytes. Twinned with python_workflow/tests/test_templates.py.
+# Comparing the bytes is the check that catches it. Twinned with
+# python_workflow/tests/test_templates.py.
 # Repository-level checks skip gracefully when the package is checked in
 # isolation, as test-config.R already does.
 

@@ -57,12 +57,12 @@ decorrelates the design matrix, as EEG and fMRI designs routinely require.
 Neither draws a random number. A jittered value is a uniform integer keyed on the
 seed, the column name, the list, the set and the condition, so both engines
 realise the same milliseconds and a rerun reproduces them. Naming the column in
-the key is what makes two jittered events draw independently rather than sharing
-one value.
+the key is what makes two jittered events draw independently, since without it
+they would share a single value.
 
 Either form writes the realised milliseconds into the stimuli table and the loop
-table, which is the point: timing that varies is a variable the analysis needs,
-not presentation detail. `config/design_en_priming_jitter.yaml` is a worked
+table, because timing that varies is a variable the analysis needs, not
+presentation detail. `config/design_en_priming_jitter.yaml` is a worked
 example carrying both.
 
 ## The five paradigms
@@ -79,17 +79,17 @@ counterbalancing recipe and its default event sequence.
 | `categorisation` | `target`, `category`, `answer` | `latin_square_target` | Fixation, the category cue, then the word to judge against it with the condition marker, response, blank. |
 
 `categorisation` is worth a paragraph, because what separates it from lexical decision is not the
-shape of the trial but where the question lives. The category cue is a trial event rather than a line
-of instructions shown once, since the category varies from trial to trial, and crossing one word with
-two cues is how a categorisation study separates a property of the word from the demands of the task.
-A robin is a bird quickly and an animal slowly, and only the question changed.
+shape of the trial but where the question lives. The category cue is a trial event, shown afresh each
+time, since the category varies from trial to trial, and crossing one word with two cues is how a
+categorisation study separates a property of the word from the demands of the task. A robin is a bird
+quickly and an animal slowly, and only the question changed.
 
-Its `answer` field holds the key that is correct on the trial, not a label, so scoring is a string
-comparison against the recorded response with nothing to look up in whatever language the analysis is
+Its `answer` field holds the key that is correct on the trial, so scoring is a string comparison
+against the recorded response with nothing to look up in whatever language the analysis is
 written in. The paradigm requires the field, which means an unscoreable categorisation experiment
 cannot be generated. Its recipe is `latin_square_target` for the same reason a priming design uses
 one: each item carries both cues, and a factorial deal would show a participant the same target
-twice, making the second presentation a repetition-priming trial rather than a categorisation trial.
+twice, turning the second presentation into a repetition-priming trial.
 `config/design_en_categorisation.yaml` is a worked example.
 
 `required_fields` tells you what a design's items must carry: the paradigm's own fields, plus any
@@ -134,8 +134,8 @@ participant into the task and is discarded before analysis. Fillers exist to dil
 so the participant cannot guess it, and are likewise not analysed. Both have to reach the generated
 experiment, and neither belongs in the stimuli file, the descriptives or the realised control.
 
-So the pipeline splits. The stimuli CSV and the reports are written from the main rows, while the
-PsychoPy, OpenSesame and jsPsych experiments are generated from every presented trial. A `block`
+The pipeline therefore splits. The stimuli CSV and the reports are written from the main rows, while
+the PsychoPy, OpenSesame and jsPsych experiments are generated from every presented trial. A `block`
 column marks which is which, and it appears only when a design declares the blocks, so a design
 without them keeps exactly the columns it had.
 
@@ -146,10 +146,10 @@ fillers:
   path: items/fillers_en_lexdec.csv
 ```
 
-Where each block goes is a methodological choice rather than a convenience. Practice comes first, as
-its own run, shuffled within itself so participants do not all meet the practice items in one order.
-Fillers are interleaved with the main trials rather than appended, because a block of fillers at the
-end is not a filler at all: it is a second block the participant can tell apart. They are merged in
+Where each block goes is a methodological choice. Practice comes first, as its own run, shuffled
+within itself so participants do not all meet the practice items in one order. Fillers are
+interleaved with the main trials, because a block of fillers at the end is not a filler at all: it
+is a second block the participant can tell apart. They are merged in
 before the order is drawn, so one deterministic shuffle mixes them through, which does renumber the
 main trials. That is correct, since adding fillers changes the sequence and the stimuli file records
 where each item actually appeared. Both blocks appear in every list and neither is counterbalanced,
@@ -178,8 +178,9 @@ compares it as a string with the key the participant pressed, and displays `corr
 mapping during practice, and would contaminate reaction times in the task itself. The restriction has
 to be expressed on the event because the event list is global to the design. Since a feedback event
 scores a keypress, something before it must have collected one. A design whose feedback event has no
-preceding `response` or `question` is refused when the experiment is generated rather than failing
-three different ways at run time. `config/design_en_lexdec_blocks.yaml` puts all of this together.
+preceding `response` or `question` is refused when the experiment is generated. Left to run time,
+that one design error would surface as three different failures, one per target.
+`config/design_en_lexdec_blocks.yaml` puts all of this together.
 
 ## Counterbalancing
 
@@ -269,15 +270,16 @@ had it. Balance what you want equated across lists, which is usually everything.
 
 This is a steepest descent to a local optimum, not a global search. What it guarantees is that no
 single exchange would improve matters further, and the datasheet records the imbalance before and
-after, so the improvement is checkable rather than asserted. The objective is all-integer and ties
-are broken by the seeded keyed hash rather than by position, which is what keeps the two engines on
-the same assignment and stops list 1 being favoured for being numbered first.
+after, so the improvement is checkable. The objective is all-integer and ties are broken by the
+seeded keyed hash, which keeps the two engines on the same assignment and stops list 1 being
+favoured for being numbered first.
 
 It is off by default, and stays off. Switching it on changes which items a participant sees, so it
-has to be a design decision rather than something a package upgrade does to a study already running.
-It is refused on a Latin-square design, where every item already appears in every list and the lists
-are balanced on the items by construction. `balance_lists` runs the search alone if you want the
-assignment without applying it. `config/design_en_balanced_lists.yaml` is the worked example.
+has to be a deliberate design decision. A package upgrade must never make that change for a study
+already running. It is refused on a Latin-square design, where every item already appears in every
+list and the lists are balanced on the items by construction. `balance_lists` runs the search alone
+if you want the assignment without applying it. `config/design_en_balanced_lists.yaml` is the worked
+example.
 
 `participant_table` allocates participants to the cells of any crossed factors, cycling through the
 grid so the allocation stays balanced whatever the participant count.

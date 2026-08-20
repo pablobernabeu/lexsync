@@ -34,6 +34,6 @@ from the branch, and all will be live before submission.
 - 'lexsync' *generates text* for PsychoPy, OpenSesame and jsPsych but never
   imports them. Those tools are needed only to run a generated experiment, not to
   use the package, so they are not dependencies.
-- Full lexical corpora are fetched on demand into `tools::R_user_dir()`; only
+- Full lexical corpora are fetched on demand into `tools::R_user_dir()`, and only
   small example lexica are bundled. No example or CRAN-run test calls the
   fetching functions.

@@ -24,7 +24,7 @@ def read_csv_utf8(path: str, as_character=None) -> pd.DataFrame:
     # keeps a single "f" a string, but the R engine's readr reads a column of `f`, `t`,
     # `T` or `F` as LOGICAL, so a design coding its two response keys as f and j had
     # `answer` turned into FALSE there. Forcing the type on both sides makes the
-    # agreement structural rather than a coincidence of two readers' heuristics.
+    # agreement structural, where it used to rest on two readers' heuristics agreeing.
     #
     # Treat only "" and "NA" as missing, matching R's readr default. Pandas would
     # otherwise read the real words 'null', 'nan', 'none', 'true' etc. as NaN and
@@ -38,8 +38,8 @@ def _readr_sci(v: float) -> str:
     """A small double in readr's scientific form: a normalised mantissa and an
     unpadded exponent, so 0.0009 becomes "9e-4" and 0.00012 becomes "1.2e-4".
 
-    Built from ``repr``, which is the shortest decimal that round-trips -- the same
-    digits readr's own shortest-representation formatter produces -- and then
+    Built from ``repr``, which is the shortest decimal that round-trips, the same
+    digits readr's own shortest-representation formatter produces, and then
     re-presented in readr's layout. Python's own scientific form pads the exponent
     ("1e-05"), which is the third way the two engines' CSVs came apart.
     """
@@ -66,7 +66,7 @@ def _readr_sci(v: float) -> str:
 # fixed, and 1e15, 1.5e15 and 1.25e15 in scientific.
 _READR_BIG = 1e15
 # Above 2**49 consecutive doubles are more than 0.1 apart, so a single decimal digit can
-# round-trip -- and two different ones can round-trip to the SAME double. Below that they
+# round-trip, and two different ones can round-trip to the SAME double. Below that they
 # cannot, so the shortest form is unique and both engines must print it.
 _READR_TIE = float(2 ** 49)
 
@@ -112,12 +112,12 @@ def _readr_cell(v):
     0.0011, 0.0012, 0.0099 and 0.00999 in fixed notation and 0.00099, 0.0009999,
     1e-4, 1.2e-4, 2.5e-5 and 9.99999e-4 in scientific.
 
-    A value at or above 1e15 is refused rather than written. readr leaves fixed notation
+    A value at or above 1e15 is refused. readr leaves fixed notation
     there, and its layout beyond it could not be reproduced: it writes 1.5e16 as "15e15"
     with an integer mantissa, the largest double as "17976931348623157e292", but the
     double nearest 5e22 as "4.9999999999999996e+22", a padded form with more digits than
     round-tripping needs. No rule fitted all three. Nothing lexsync computes goes near
-    that range -- frequencies are Zipf values under 8, counts and durations under 1e6 --
+    that range (frequencies are Zipf values under 8, counts and durations under 1e6),
     but a joined norm table, a supplied pool or an item table may carry any column the
     user likes, and those columns are written straight into the stimuli CSV. Leaving the
     range unhandled meant the guarantee held for the shipped designs, which the
@@ -132,8 +132,7 @@ def _readr_cell(v):
         return "TRUE" if v else "FALSE"
     # Integers too, not only floats: pandas keeps a 16-digit column as int64 and
     # would write it verbatim here while readr, which reads it as a double, refuses
-    # it on the R side. abs(int(v)) rather than abs(v), which wraps at the int64
-    # minimum.
+    # it on the R side. abs(int(v)), because abs(v) wraps at the int64 minimum.
     if isinstance(v, (int, np.integer)) and abs(int(v)) >= _READR_BIG:
         raise ValueError(
             "lexsync: %r is too large to write identically from both engines. Above "
@@ -188,19 +187,18 @@ def write_csv_utf8(x: pd.DataFrame, path: str) -> str:
 # engines.
 #
 # This is not pedantry; it was a live bug. Two designs' reported means differed between
-# the engines in the last decimal place the descriptives publish -- 1.447 against 1.448
-# -- because numpy sums pairwise while R's mean() uses a two-pass long-double
-# algorithm, and the true value happened to sit on a rounding boundary. Summing 20000
-# identical doubles was measured to give three different answers across R's sum(),
-# math.fsum, numpy's pairwise sum and a naive loop, so no language's built-in reduction
-# can be relied on for a cross-engine artefact.
+# the engines in the last decimal place the descriptives publish, 1.448 from R against
+# 1.447 from numpy, because numpy sums pairwise while R's mean() uses a two-pass
+# long-double algorithm, and the true value happened to sit on a rounding boundary.
+# Summing 20000 identical doubles was measured to give three different answers across
+# R's sum(), math.fsum, numpy's pairwise sum and a naive loop, so no language's
+# built-in reduction can be relied on for a cross-engine artefact.
 #
 # Neumaier compensated summation is used instead, written out in plain double
 # arithmetic in both engines. Every operation is +, -, abs or a comparison, and
 # IEEE-754 requires + and - to be correctly rounded, so the two engines execute the
 # same sequence of exactly-specified operations and cannot disagree. That is an
-# argument rather than a measurement, which is what relying on numpy's pairwise
-# ordering amounted to.
+# argument. Relying on numpy's pairwise ordering amounted only to a measurement.
 #
 # math.fsum would also be exactly rounded, but it is not what the R engine can run:
 # the point is that BOTH engines execute this same algorithm. Mirrors io_utils.R.
@@ -271,17 +269,18 @@ def _exact_median(x):
 # halfway case in range: Python's builtin round() disagrees with R's round(), numpy's
 # round() disagrees with both, and even Python's "%.3f" disagrees with R's
 # sprintf("%.3f") on 274 of them, because R's delegates to the platform C library while
-# this one is correctly rounded. So a value rounded for an artefact cannot be handed to
-# any language's own rounder.
+# this one is correctly rounded. No value rounded for an artefact can safely be handed
+# to any language's own rounder.
 #
 # This one is defined by its arithmetic instead: scale, truncate toward zero, then step
 # away from zero when the remainder reaches a half. Every operation is *, -, /, trunc,
 # abs or a comparison, all of which IEEE-754 either mandates correctly rounded or makes
 # exact, so both engines compute the same double from the same input by construction.
 #
-# It rounds the SCALED double rather than the true decimal value, which for a tie that
-# is not exactly representable is a choice rather than a theorem. That is the same
-# trade-off the balance optimiser's quantisation already makes, and it is the right way
+# It rounds the SCALED double. For a tie that is not exactly representable, the true
+# decimal value would give a different answer, so this is a choice the package makes
+# and arithmetic does not force. It is the same trade-off the balance optimiser's
+# quantisation already makes, and it is the right way
 # round: reproducible across engines matters more here than agreeing with what a
 # calculator would say about a value that was never exactly a half.
 # Must stay identical to .round_dp in R_workflow/R/io_utils.R.
@@ -311,7 +310,7 @@ def _round_dp_vec(x, dp: int):
     Elementwise identical to _round_dp by construction: the same scale, truncate
     toward zero and half-away-from-zero step, in the same operations (*, -, /,
     trunc, abs, comparison), each of which IEEE-754 either mandates correctly
-    rounded or makes exact -- so proving the scalar right proves this right, and
+    rounded or makes exact, so proving the scalar right proves this right, and
     both engines still compute the same double from the same input. It exists so
     a whole distance vector can be rounded without a Python-level loop.
 
@@ -365,7 +364,7 @@ def sha256_file(path: str):
 def _is_continuous(design: dict) -> bool:
     """Is this design a continuous (non-dichotomised) selection?
 
-    One predicate rather than four copies of the same expression. It was repeated
+    One predicate, where there were four copies of the same expression. It was repeated
     verbatim in run_pipeline.py, datasheet.py and both R twins, which is how a
     ``continuous:`` block under ``items.source: table`` came to be silently inert in
     all four places at once. ``pool`` belongs in the allowed set because
@@ -393,12 +392,12 @@ def _key_part(x) -> str:
     silently hashed. Measured: a missing value rendered "nan" here and "NA" in R,
     True/False against TRUE/FALSE, inf against Inf. A blank ``condition`` cell is a
     routine data error that neither reader rejects, and it produced a DIFFERENT trial
-    order in each engine -- reproducibly, and with nothing to signal it.
+    order in each engine, reproducibly and with nothing to signal it.
 
     Raising beats picking a spelling. A missing condition, set or list is always a data
     error, and a reproducible order computed over a meaningless key is worse than a
     stop. Booleans do get a pinned spelling, because they are legitimate: the spelling
-    is fixed to R's here rather than left to each language.
+    is fixed to R's here, so neither language chooses it.
 
     Must stay identical to .key_part in R_workflow/R/io_utils.R.
     """
@@ -432,12 +431,12 @@ def hash_unit(key: str) -> float:
 
     This is how lexsync gets anything that looks stochastic without a generator:
     jittered durations, and any future search that needs a candidate order. The
-    scheme is chosen for exact reproducibility across the two engines rather than
-    for elegance, and every part of it is load-bearing.
+    scheme is chosen for exact reproducibility across the two engines, and every
+    step of it is there for a reason.
 
     Thirteen hex digits give a 52-bit integer, which a double represents exactly;
     dividing by 2**52 is exact because the divisor is a power of two. The result
-    is therefore the same bits in R and Python rather than merely close. Fourteen
+    is therefore identical bits in R and Python, to the last one. Fourteen
     digits or more would round up to exactly 1.0, and ``lo + floor(u * n)`` would
     then silently return ``hi + 1``.
 
@@ -475,7 +474,7 @@ def read_config(path: str) -> dict:
     # default. A config one engine accepts and the other refuses is a hole in
     # the twin-engine contract, so this loader refuses too. The R message comes
     # from the C parser and cannot be matched byte for byte; behavioural parity
-    # -- both engines refuse -- is the contract here, pinned by the twin tests.
+    # (both engines refuse) is the contract here, pinned by the twin tests.
     class _RefuseDuplicateKeys(yaml.SafeLoader):
         def construct_mapping(self, node, deep=False):
             seen = set()
@@ -543,8 +542,8 @@ def clean_meta(value, field: str = "value", max_len: int = 200) -> str:
     loop table that the experiment reads at run time; they are substituted directly into
     the PsychoPy script, the OpenSesame inline Python and the jsPsych HTML, so a quote or
     an angle bracket there stops being text and starts being syntax. A design file is
-    meant to be shared and re-run by someone else -- that is the point of the format --
-    which makes an unvalidated one an executable payload rather than a configuration.
+    meant to be shared and re-run by someone else, which is the point of the format,
+    and that makes an unvalidated one an executable payload as much as a configuration.
 
     Refusing beats escaping here. Escaping correctly would mean three different escapes
     for three targets in two engines, six places to get subtly wrong, and it would change
@@ -586,7 +585,7 @@ def clean_key(value, field: str = "an event's `keys`") -> str:
 
     OpenSesame takes the keys as `set allowed_responses "a;b"` on one line of a
     line-oriented format, so a key containing a quote closed the string and a newline
-    ended the line -- and the rest of the value became new top-level items in the
+    ended the line, and the rest of the value became new top-level items in the
     experiment, including an inline_script whose body runs. This is the one input the
     metadata guards missed, and three independent reviewers found it.
     """

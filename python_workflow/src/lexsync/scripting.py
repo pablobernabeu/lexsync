@@ -187,8 +187,8 @@ def resolve_trial_timing(stimuli: pd.DataFrame, design: dict, schema: dict) -> p
     An event may declare a duration that varies from trial to trial, either read
     from an item column or drawn from a range. A drawn value is a pure function of
     the keyed hash, so both engines realise the same milliseconds, and it is
-    written into the stimuli table rather than only into the generated script:
-    timing that varies is a variable the analysis needs, not presentation detail.
+    written into the stimuli table as well as the generated script, because timing
+    that varies is a variable the analysis needs, not presentation detail.
     """
     events = resolve_events(design)
     seed = (schema or {}).get("seed", 1)
@@ -204,7 +204,8 @@ def resolve_trial_timing(stimuli: pd.DataFrame, design: dict, schema: dict) -> p
             continue
         lo, hi = spec["jitter"]
         # The key names the column as well as the trial, so two jittered events in
-        # one design draw independently rather than sharing a value.
+        # one design draw independently, where a key naming only the trial would
+        # give them one shared value.
         lists = stimuli["list"] if "list" in stimuli.columns else [1] * len(stimuli)
         keys = ["|".join([_key_part(seed), "jitter", spec["column"],
                           _key_part(l), _key_part(s), _key_part(c)])
@@ -318,7 +319,7 @@ def render_events(events: list, timing: dict, hz: float = 60) -> list:
         # An event may be restricted to named blocks. This is what lets feedback run
         # during practice and nowhere else: the event list is global to the design, so
         # the restriction has to travel with the event and be applied per trial at run
-        # time, rather than by generating a second event list.
+        # time. Generating a second event list would be the alternative, and a worse one.
         if ev.get("blocks"):
             # A scalar `blocks: practice` is a str, and iterating it yields
             # characters, so the OpenSesame guard compared against "p", "r", ... and
@@ -335,7 +336,7 @@ def loop_table(stimuli: pd.DataFrame, events: list | None = None) -> pd.DataFram
     """Per-trial table carrying exactly the fields the events reference."""
     fields = referenced_fields(events) if events else (["word"] if "word" in stimuli.columns else [])
     # A per-trial duration is read from the loop table at run time, so its column
-    # has to travel with the trials rather than staying in the stimuli file.
+    # has to travel with the trials, and cannot stay behind in the stimuli file.
     ms_cols = []
     for i, ev in enumerate(events or [], start=1):
         s = _duration_spec(ev, i)
@@ -372,8 +373,8 @@ def export_psychopy(stimuli, design, schema, outdir, base=None) -> str:
     triggers = schema.get("triggers") or {}
     presentation = schema.get("presentation") or {}
     # These land in CODE positions -- a module docstring, a bare assignment, a string
-    # literal -- so they are validated rather than escaped. Escaping would need three
-    # different rules for three targets in two engines; see clean_meta in io_utils.
+    # literal, so they are validated on the way in. Escaping would need three
+    # different rules for three targets in two engines. See clean_meta in io_utils.
     subs = {
         "DESIGN": clean_meta(design["name"], "the design's `name`"),
         "LANGUAGE": clean_meta(design["language"], "the design's `language`"),
@@ -718,8 +719,8 @@ def _json_r(obj) -> str:
             # frame by rows. Without this the two engines' generated experiments differ --
             # and worse, this side emitted a bare NaN into the embedded JSON, which is not
             # valid JSON at all. A trial with no correct answer (a main-block trial in a
-            # design whose practice items carry one) genuinely has none, so omitting the
-            # field is also the honest rendering.
+            # design whose practice items carry one) has none, so omitting the field is
+            # also the honest rendering.
             return {k: integral(v) for k, v in o.items()
                     if v is not None and not (isinstance(v, float) and v != v)}
         if isinstance(o, list):

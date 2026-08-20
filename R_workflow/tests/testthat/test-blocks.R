@@ -73,7 +73,7 @@ test_that("practice comes first and fillers interleave", {
   first_main <- which(order_v == "main")[1]
   expect_identical(unique(order_v[seq_len(first_main - 1L)]), "practice")
   filler <- which(order_v == "filler"); main <- which(order_v == "main")
-  # Genuinely mixed through, not a trailing run.
+  # Mixed through the main trials, not left as a trailing run.
   expect_lt(min(filler), max(main))
   expect_gt(max(filler), min(main))
 })

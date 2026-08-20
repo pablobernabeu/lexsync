@@ -95,7 +95,7 @@ test_that("the shared decimal rounder is pinned", {
   # No pairing of built-ins agrees. Measured over 210,000 values including every 3-dp
   # halfway case in range: R's round() disagrees with Python's builtin round(), Python's
   # builtin disagrees with numpy's, and even R's sprintf("%.3f") disagrees with Python's
-  # "%.3f" on 274 of them. So the rounder is defined by its arithmetic instead, and both
+  # "%.3f" on 274 of them. The rounder is defined by its arithmetic instead, and both
   # engines compute the same double by construction. test_exact_reductions.py asserts
   # these same values.
   expect_identical(lexsync:::.round_dp(7.8125, 3), 7.813)   # half AWAY from zero

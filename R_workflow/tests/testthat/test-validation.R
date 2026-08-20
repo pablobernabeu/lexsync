@@ -73,6 +73,26 @@ test_that("match_report carries an undefined d as a missing cell", {
   expect_equal(cmp$var_ratio, 1)
 })
 
+test_that("match_report gives a single-condition design an empty comparisons frame", {
+  # There is nothing to compare against the anchor, so the frame comes back with its
+  # columns and no rows. rbind() over an empty list used to return NULL, which
+  # run_pipeline's seq_len(nrow(...)) loop died on with "argument must be coercible
+  # to non-negative integer", naming neither the design nor the cause, while the
+  # Python engine carried on and wrote a comparisons CSV with no header at all.
+  # Pinned identically in tests/test_validation.py.
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  stim <- data.frame(word = c("aa", "bb"), condition = c("only", "only"),
+                     length = c(2, 3), stringsAsFactors = FALSE)
+  cmp <- match_report(stim, "length", schema)$comparisons
+  expect_s3_class(cmp, "data.frame")
+  expect_equal(nrow(cmp), 0L)
+  expect_identical(names(cmp),
+                   c("condition", "reference", "dimension", "cohens_d", "d_ci_low",
+                     "d_ci_high", "var_ratio", "tost_p", "equivalent"))
+  # The loop that used to die on NULL now runs zero times.
+  expect_length(seq_len(nrow(cmp)), 0L)
+})
+
 test_that("variance_ratio flags unequal spread", {
   expect_equal(variance_ratio(c(1, 2, 3, 4), c(1, 2, 3, 4)), 1)       # equal spread
   expect_gt(variance_ratio(c(0, 5, 10, 15), c(4, 5, 6, 7)), 1)        # condition wider

@@ -14,6 +14,9 @@
 #' Read a UTF-8 CSV file
 #'
 #' @param path Path to a CSV file.
+#' @param as_character Character vector of column names whose type must not be guessed,
+#'   read as text instead. A name the file's header does not carry is ignored, since
+#'   readr warns about a parser for a column that is not there.
 #' @return A data frame (a tibble), as returned by [readr::read_csv()].
 #' @importFrom readr read_csv locale
 #' @keywords internal
@@ -23,7 +26,7 @@ read_csv_utf8 <- function(path, as_character = character(0)) {
   }
   # `as_character` names columns whose type must NOT be guessed. readr reads a column
   # whose values are all `f`, `t`, `T` or `F` as LOGICAL, so an item table coding its
-  # two response keys as f and j had `answer` turned into FALSE -- while pandas kept the
+  # two response keys as f and j had `answer` turned into FALSE, while pandas kept the
   # string "f". Measured, not supposed: readr 2.2.0 reads f and t as logical and j, y
   # and n as character, which is the worst possible split because f/j and t/f are the
   # two commonest key pairs in a two-choice task. The paradigm's presented fields are
@@ -33,7 +36,7 @@ read_csv_utf8 <- function(path, as_character = character(0)) {
   if (length(as_character)) {
     # Only name columns the file actually has: readr warns about a parser for a column
     # that is not there, and a caller naming a paradigm's required fields cannot know
-    # whether the table supplies them -- reporting the missing column is load_items's
+    # whether the table supplies them. Reporting the missing column is load_items's
     # job, and its message says which ones. Reading the header alone costs one line.
     header <- names(readr::read_csv(path, n_max = 0, show_col_types = FALSE,
                                     progress = FALSE,
@@ -65,11 +68,11 @@ read_csv_utf8 <- function(path, as_character = character(0)) {
 
 #' Refuse a value the two engines could not write identically
 #'
-#' Nothing lexsync computes reaches these magnitudes -- frequencies are Zipf values
-#' under 8, counts and durations under 1e6 -- but a joined norm table, a supplied pool
+#' Nothing lexsync computes reaches these magnitudes (frequencies are Zipf values under
+#' 8, counts and durations under 1e6), but a joined norm table, a supplied pool
 #' or an item table may carry any column the user likes, and those columns go straight
-#' into the stimuli CSV. The guard lives in both engines so that a design is refused by
-#' each rather than accepted by one, which would be a difference of its own.
+#' into the stimuli CSV. The guard lives in both engines so that each refuses the same
+#' design; one engine accepting what the other rejects is a difference of its own.
 #'
 #' @param x A data frame about to be written.
 #' @return `x`, invisibly, or an error.
@@ -119,6 +122,10 @@ read_csv_utf8 <- function(path, as_character = character(0)) {
 #' @param x A data frame.
 #' @param path Output path; parent directories are created as needed.
 #' @return `path`, invisibly.
+#' @details A value the two engines cannot render alike is refused, naming the column:
+#'   a magnitude at or above 1e15, where readr has three incompatible layouts and no
+#'   rule fits all of them, and a value with two equally short decimal forms, where the
+#'   two writers pick opposite ones.
 #' @importFrom readr write_csv
 #' @keywords internal
 write_csv_utf8 <- function(x, path) {
@@ -153,19 +160,19 @@ write_lines_lf <- function(x, path) {
 # engines.
 #
 # This is not pedantry; it was a live bug. Two designs' reported means differed between
-# the engines in the last decimal place the descriptives publish -- 1.448 against 1.447
-# -- because R's mean() uses a two-pass long-double algorithm while numpy sums
-# pairwise, and the true value happened to sit on a rounding boundary. Summing 20000
-# identical doubles was measured to give three different answers across R's sum(),
-# math.fsum, numpy's pairwise sum and a naive loop, so no language's built-in reduction
-# can be relied on for a cross-engine artefact.
+# the engines in the last decimal place the descriptives publish, 1.448 from R against
+# 1.447 from numpy, because R's mean() uses a two-pass long-double algorithm while
+# numpy sums pairwise, and the true value happened to sit on a rounding boundary.
+# Summing 20000 identical doubles was measured to give three different answers across
+# R's sum(), math.fsum, numpy's pairwise sum and a naive loop, so no language's
+# built-in reduction can be relied on for a cross-engine artefact.
 #
 # Neumaier compensated summation is used instead, written out in plain double
 # arithmetic in both engines. Every operation is +, -, abs or a comparison, and
 # IEEE-754 requires + and - to be correctly rounded, so the two engines execute the
 # same sequence of exactly-specified operations and cannot disagree. That is an
-# argument rather than a measurement, which is what relying on R's long-double
-# accumulator amounted to. Mirrors io_utils.py.
+# argument. Relying on R's long-double accumulator amounted only to a measurement.
+# Mirrors io_utils.py.
 
 #' @keywords internal
 .exact_sum <- function(x) {
@@ -230,17 +237,18 @@ write_lines_lf <- function(x, path) {
 # halfway case in range: R's round() disagrees with Python's builtin round(), Python's
 # builtin disagrees with numpy's round(), and even R's sprintf("%.3f") disagrees with
 # Python's "%.3f" on 274 of them, because R's delegates to the platform C library while
-# Python's is correctly rounded. So a value rounded for an artefact cannot be handed to
-# any language's own rounder.
+# Python's is correctly rounded. No value rounded for an artefact can safely be handed
+# to any language's own rounder.
 #
 # This one is defined by its arithmetic instead: scale, truncate toward zero, then step
 # away from zero when the remainder reaches a half. Every operation is *, -, /, trunc,
 # abs or a comparison, all of which IEEE-754 either mandates correctly rounded or makes
 # exact, so both engines compute the same double from the same input by construction.
 #
-# It rounds the SCALED double rather than the true decimal value, which for a tie that
-# is not exactly representable is a choice rather than a theorem. That is the same
-# trade-off the balance optimiser's quantisation already makes, and it is the right way
+# It rounds the SCALED double. For a tie that is not exactly representable, the true
+# decimal value would give a different answer, so this is a choice the package makes
+# and arithmetic does not force. It is the same trade-off the balance optimiser's
+# quantisation already makes, and it is the right way
 # round: reproducible across engines matters more here than agreeing with what a
 # calculator would say about a value that was never exactly a half.
 # Must stay identical to _round_dp in python_workflow/src/lexsync/io_utils.py. This
@@ -253,7 +261,7 @@ write_lines_lf <- function(x, path) {
   y <- as.numeric(x) * p
   t <- trunc(y)
   r <- y - t
-  # sign(y) rather than 1: a negative value must step away from zero too.
+  # sign(y), because a negative value must step away from zero too.
   adj <- ifelse(is.finite(r) & abs(r) >= 0.5, sign(y), 0)
   out <- (t + adj) / p
   out[!is.finite(y)] <- as.numeric(x)[!is.finite(y)]
@@ -288,7 +296,7 @@ sha256_file <- function(path) {
 
 # Is this design a continuous (non-dichotomised) selection?
 #
-# One predicate rather than four copies of the same expression. It was repeated
+# One predicate, where there were four copies of the same expression. It was repeated
 # verbatim in run_pipeline.R, datasheet.R and both Python twins, which is how a
 # `continuous:` block under `items.source: table` came to be silently inert in all
 # four places at once. `pool` belongs in the allowed set because run_pipeline's
@@ -319,13 +327,13 @@ sha256_file <- function(path) {
   # silently hashed. Measured: a missing value rendered "NA" here and "nan" in Python,
   # TRUE/FALSE against True/False, Inf against inf. A blank `condition` cell is a
   # routine data error that neither reader rejects, and it produced a DIFFERENT trial
-  # order in each engine -- reproducibly, and with nothing to signal it.
+  # order in each engine, reproducibly and with nothing to signal it.
   #
   # Raising beats picking a spelling. A missing condition, set or list is always a data
   # error, and a reproducible order computed over a meaningless key is worse than a
   # stop. Booleans do get a pinned spelling, because they are legitimate: R's
   # as.character gives "TRUE" and Python's str gives "True", so the spelling is fixed
-  # here rather than left to each language.
+  # here, so neither language chooses it.
   # Must stay identical to _key_part in python_workflow/src/lexsync/io_utils.py.
   if (anyNA(x)) {
     stop(paste("lexsync: a hash-key component is missing, so the trial order cannot be",
@@ -353,12 +361,12 @@ sha256_file <- function(path) {
 #
 # This is how lexsync gets anything that looks stochastic without a generator:
 # jittered durations, and any future search that needs a candidate order. The
-# scheme is chosen for exact reproducibility across the two engines rather than
-# for elegance, and every part of it is load-bearing.
+# scheme is chosen for exact reproducibility across the two engines, and every
+# step of it is there for a reason.
 #
 # Thirteen hex digits give a 52-bit integer, which a double represents exactly;
 # dividing by 2^52 is exact because the divisor is a power of two. The result is
-# therefore the same bits in R and Python rather than merely close. Fourteen
+# therefore identical bits in R and Python, to the last one. Fourteen
 # digits or more would round up to exactly 1.0, and `lo + floor(u * n)` would
 # then silently return `hi + 1`. R needs two chunks because `strtoi` returns NA
 # above 2^31 - 1.
@@ -403,7 +411,7 @@ slugify <- function(...) {
   s <- gsub("_+", "_", s)
   # Reducing to ASCII first does not make base `tolower()` safe here: under a
   # Turkish or Azeri locale it maps "I" to the dotless i (U+0131), so the slug
-  # would leave ASCII and this design's artifacts would be written under a name
+  # would leave ASCII and this design's artefacts would be written under a name
   # the Python engine never produces. Case-fold as [.lower_invariant()] does.
   .lower_invariant(gsub("^_|_$", "", s))
 }
@@ -473,7 +481,7 @@ clean_field <- function(value, field = "field", max_len = 1000L) {
 #' PsychoPy script, the OpenSesame inline Python and the jsPsych HTML, so a quote or an
 #' angle bracket there stops being text and becomes syntax. A design file is meant to be
 #' shared and re-run by someone else, which is what makes an unvalidated one an
-#' executable payload rather than a configuration.
+#' executable payload as much as a configuration.
 #'
 #' Refusing beats escaping. Escaping correctly would mean three different escapes for
 #' three targets in two engines, six places to get subtly wrong, and it would change the

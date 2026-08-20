@@ -61,6 +61,46 @@ def test_non_integer_n_per_condition_is_an_error(tmp_path):
         _run(design, tmp_path)
 
 
+@pytest.mark.parametrize("n", ["0", ".inf"])
+def test_a_zero_or_infinite_n_per_condition_is_an_error(tmp_path, n):
+    """Both values used to slip past this guard in one engine only.
+
+    A configured 0 is falsy, so `or` read it as absent, fell through to the
+    matcher's default of twenty and ran; R's %||% falls back on NULL alone and
+    refused. An infinite request went the other way: trunc(Inf) is Inf, so R took it
+    as a whole number and selected the whole pool, while int() raised OverflowError
+    here. Pinned identically in test-run-pipeline.R.
+    """
+    design = _corpus_design(str(tmp_path), n=n)
+    with pytest.raises(ValueError, match="positive whole number"):
+        _run(design, tmp_path)
+
+
+def test_a_single_condition_design_writes_a_header_only_comparisons_file(tmp_path):
+    """A design with one condition has nothing to compare against the anchor, and the
+    engines used to part company there: this one finished and wrote a comparisons CSV
+    with no header, while R died inside the reporting loop on seq_len(nrow(NULL)).
+    Both now write this header and no rows. Pinned identically in
+    test-run-pipeline.R."""
+    design = _write_design(str(tmp_path), [
+        "name: onecond",
+        "language: english",
+        "lexicon: " + _yaml_path(_pkg_data("en_example.csv")),
+        "n_per_condition: 5",
+        "pool_filters: {length: [3, 7], frequency: [3.8, 7]}",
+        "conditions:",
+        "  - {name: only, define_by: {frequency: [4.0, 7.0]}}",
+        "match_on: [length]",
+    ])
+
+    res = _run(design, tmp_path)
+
+    with open(res["comparisons"], encoding="utf-8") as handle:
+        assert handle.read().splitlines() == [
+            "condition,reference,dimension,cohens_d,d_ci_low,d_ci_high,"
+            "var_ratio,tost_p,equivalent"]
+
+
 def test_continuous_table_without_members_is_an_error(tmp_path):
     items = os.path.join(str(tmp_path), "pairs.csv")
     with open(items, "w", encoding="utf-8") as handle:

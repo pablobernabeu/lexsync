@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import glob
 import hashlib
+import math
 import os
 
 from . import logging as runlog
@@ -40,9 +41,20 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
     runlog.set_verbose(verbose)
     schema = read_config(schema_path)
     design = read_config(design_path)
-    n_req = design.get("n_per_condition") or design.get("n_per_cell")
+    # Resolved on presence, not truth: `or` treats a configured 0 as absent and would
+    # fall through to n_per_cell and then to the matcher's default n, where the R
+    # engine's %||% falls back on NULL alone and so reaches the refusal below. A
+    # design asking for zero items must be refused by both engines, not silently
+    # given twenty by one of them.
+    n_req = design.get("n_per_condition")
+    if n_req is None:
+        n_req = design.get("n_per_cell")
+    # isfinite, not a bare NaN test: int(inf) raises OverflowError here, while R's
+    # trunc(Inf) equals Inf and let an infinite request through to select the whole
+    # pool. Both engines refuse it now, with this message.
     if n_req is not None and (not isinstance(n_req, (int, float)) or isinstance(n_req, bool)
-                              or n_req != n_req or n_req < 1 or n_req != int(n_req)):
+                              or not math.isfinite(n_req) or n_req < 1
+                              or n_req != int(n_req)):
         raise ValueError("lexsync: n_per_condition must be a positive whole number.")
     items_cfg = design.get("items") or {}
     source = items_cfg.get("source", "corpus")
@@ -50,8 +62,8 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
     is_continuous = _is_continuous(design)
     if is_continuous and source == "table" and not list(items_cfg.get("members") or []):
         # Without members the table branch loads the rows and never selects, while
-        # the log and datasheet would still record continuous mode -- a provenance
-        # lie.
+        # the log and datasheet would still record continuous mode, which is a
+        # provenance lie.
         raise ValueError("lexsync: a 'continuous' block with items.source 'table' "
                          "requires items.members.")
     if source == "table" and not is_continuous and design.get("pool_filters") is not None:
@@ -174,11 +186,11 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
                                 f"{stim['condition'].nunique()} conditions",
                                 {"conditions": ", ".join(dict.fromkeys(stim["condition"]))})
             std = ["length", "frequency", "n_density", "old20"]
-            # First-occurrence-order union with match_on (dict.fromkeys, not
-            # sorted(): a collated order would drift from the R engine), so a
-            # custom joined norm the design matches on reaches the descriptives,
-            # comparisons and realised-control record rather than only the
-            # stimuli file.
+            # First-occurrence-order union with match_on, through dict.fromkeys:
+            # sorted() would give a collated order that drifts from the R engine.
+            # A custom joined norm the design matches on then reaches the
+            # descriptives, comparisons and realised-control record, and not only
+            # the stimuli file.
             dims = [d for d in dict.fromkeys(std + match_on) if d in stim.columns]
             report = match_report(stim, dims, schema)
     elif source == "generate":

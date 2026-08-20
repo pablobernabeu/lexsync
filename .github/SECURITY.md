@@ -13,8 +13,8 @@ you informed as the issue is investigated and resolved.
 lexsync handles no credentials of its own. It reads corpora and design files from
 disk and writes stimulus tables and experiment scripts, so there is no key or
 token for it to store or leak. The generated PsychoPy script opens a parallel port
-for EEG triggers and falls back to a mock port when no driver is present; it never
-opens a network connection.
+for EEG triggers and falls back to a mock port when no driver is present, and it
+never opens a network connection.
 
 ## A note on design files
 
@@ -28,9 +28,9 @@ lexsync treats a design accordingly. Presented stimuli are always carried as dat
 in the loop table the experiment reads at run time, never interpolated into
 generated code, and the metadata that does reach a code position (a design's name,
 language label and font, the parallel-port address, and the column names on jitter
-and feedback events) is validated on the way in: a value that could end a string
-literal or open a tag is refused, naming the field, rather than escaped. Both
-engines apply the same rule, and `test_injection.py` and `test-injection.R` pin it.
+and feedback events) is validated on the way in. A value that could end a string
+literal or open a tag is refused, and the message names the field. Both engines
+apply the same rule, and `test_injection.py` and `test-injection.R` pin it.
 
 Even so, read a design before you run it, as you would a script. If you find a
 value that reaches a generated file without being checked, that is a security bug

@@ -20,6 +20,6 @@ resolve_trial_timing(stimuli, design, schema)
 An event may declare a duration that varies from trial to trial, either read
 from an item column or drawn from a range. A drawn value is a pure function of
 the keyed hash, so both engines realise the same milliseconds, and it is
-written into the stimuli table rather than only into the generated script:
-timing that varies is a variable the analysis needs, not presentation detail.
+written into the stimuli table as well as the generated script, because timing
+that varies is a variable the analysis needs, not presentation detail.
 }

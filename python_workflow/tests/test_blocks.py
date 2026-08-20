@@ -79,7 +79,7 @@ def test_practice_comes_first_and_fillers_interleave(design, schema):
     assert set(order[:first_main]) == {"practice"}, "practice must be strictly first"
     filler = [i for i, b in enumerate(order) if b == "filler"]
     main = [i for i, b in enumerate(order) if b == BLOCK_MAIN]
-    # Genuinely mixed through, not a trailing run.
+    # Mixed through the main trials, not left as a trailing run.
     assert min(filler) < max(main) and max(filler) > min(main)
 
 

@@ -68,8 +68,8 @@
 # engines was measured to differ by about 3e-16 on average, which at nine decimal
 # places leaves roughly a one-in-three chance over a full run that a comparison of
 # two candidate swaps resolves differently in R than in Python -- and the failure is
-# silent and total, different words rather than different last bits. So the values
-# are quantised to integers ONCE, and the search then uses only +, -, * and
+# silent and total, different words rather than different last bits. The values are
+# quantised to integers ONCE, and the search then uses only +, -, * and
 # comparison, all of which are exact on integers held in doubles below 2^53. There is
 # no division anywhere in the objective.
 
@@ -91,7 +91,8 @@
 # intermediate stays below 2^53; past that a sum would round and the two engines
 # could disagree. Nothing near this is reachable with realistic designs (the bound is
 # some four orders of magnitude above a 200-set, six-dimension design), so this is a
-# tripwire rather than a limit, and it fails loudly instead of quietly rounding.
+# tripwire rather than a limit, and it fails loudly where quiet rounding would hide
+# the problem.
 .BALANCE_MAX_MAGNITUDE <- 2^50
 
 .balance_dims <- function(design) {
@@ -178,6 +179,15 @@
 #' position, so no list is favoured by being numbered first. Because the cost is a
 #' non-negative integer that strictly decreases, the search terminates; `max_passes`
 #' bounds it anyway and the report says whether the bound was reached.
+#'
+#' Five situations are refused rather than answered with an assignment that would
+#' mislead. A Latin-square design is refused because every item already appears in
+#' every list there, so there is nothing left to equate, and fewer than two lists
+#' leaves no pair of lists to exchange sets between. A design with no resolvable
+#' balance dimension is refused, as is one naming a dimension the stimuli do not
+#' carry, and the message names the columns. The last refusal is arithmetic: the
+#' search stops if the integer objective would leave the range a double represents
+#' exactly, since past that point the two engines could disagree.
 #'
 #' @param stimuli A stimuli data frame with a `set` column and the balance dimensions.
 #' @param design A parsed design configuration. Reads `counterbalance.lists`,

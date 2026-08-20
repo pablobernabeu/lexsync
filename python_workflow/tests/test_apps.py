@@ -153,6 +153,24 @@ def test_the_run_design_yaml_is_written_with_lf_endings(app, tmp_path):
     assert raw.endswith(b"\n")
 
 
+def test_both_apps_word_the_item_table_notice_alike():
+    """The Realised control tab is empty for a paradigm that draws from an item
+    table, and the two apps explained that differently: one said "no corpus-matching
+    report", the other "no corpus-matching control report". Someone comparing the two
+    front-ends should not have to work out whether they mean the same thing."""
+    import re
+
+    notice = ("This paradigm draws from an item table, so no corpus-matching "
+              "control report is produced.")
+    apps_dir = os.path.dirname(os.path.dirname(APP_PATH))
+    for path in (APP_PATH, os.path.join(apps_dir, "r_shiny", "app.R")):
+        with open(path, encoding="utf-8") as handle:
+            src = handle.read()
+        # Join string literals split across lines before searching, so the assertion
+        # sees the sentence a reader of the app sees.
+        assert notice in re.sub(r'"\s*,?\s*"', "", src), path
+
+
 def test_both_apps_state_the_same_parity_claim():
     """The caption used to say only the seeded trial order differs by ecosystem,
     contradicting the keyed-hash guarantee (counterbalancing.py's header: the

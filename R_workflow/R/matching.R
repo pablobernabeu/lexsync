@@ -7,8 +7,8 @@
 #
 # Cross-engine determinism: the default methods (standardised_euclidean, joint) are
 # byte-identical across the R and Python engines. The optional mahalanobis and
-# optimal methods are the exception -- they use a covariance-matrix inverse and a
-# linear-assignment solver whose last bits differ between the two linear-algebra
+# optimal methods are the exception, because they use a covariance-matrix inverse and
+# a linear-assignment solver whose last bits differ between the two linear-algebra
 # backends, so those two agree closely but not byte-for-byte.
 
 # Candidate cap for the pairwise (joint, optimal) matchers. The datasheet reports
@@ -88,7 +88,7 @@ match_stimuli <- function(pool, design, schema, verbose = FALSE) {
   conditions <- design$conditions
   if (is.null(conditions) || length(conditions) == 0) {
     # Without this, the anchor lookup below dies with a bare subscript error in R
-    # and a KeyError in Python -- two different messages for the same mistake.
+    # and a KeyError in Python, two different messages for the same mistake.
     stop("lexsync: the design has no conditions; a matched design needs a conditions list.",
          call. = FALSE)
   }
@@ -112,7 +112,8 @@ match_stimuli <- function(pool, design, schema, verbose = FALSE) {
     k <- tol_k[[d]] %||% 2
     if (is.numeric(k) && k < 0) {
       # A negative k inverts the window (upper bound below the lower), which empties
-      # the candidate set and silently relaxes to the full pool -- never intended.
+      # the candidate set and silently relaxes to the full pool, which is never
+      # intended.
       stop(sprintf("lexsync: tolerance_k for dimension '%s' is negative; tolerances must be zero or positive.",
                    d), call. = FALSE)
     }
@@ -223,7 +224,7 @@ match_stimuli <- function(pool, design, schema, verbose = FALSE) {
     # NA, and cand[NA, ] injects an all-NA filler row that would inflate the count
     # the relaxation guard below tests. The window itself can also be NA (an anchor
     # of one item has sd = NA), which makes `keep` NA even where the candidate is
-    # present, so resolve NA to FALSE rather than relying on the !is.na() conjunct.
+    # present, so resolve NA to FALSE. The !is.na() conjunct alone does not cover it.
     for (d in match_on) keep <- keep & !is.na(cand[[d]]) & cand[[d]] >= win[[d]][1] & cand[[d]] <= win[[d]][2]
     keep[is.na(keep)] <- FALSE            # NaN comparisons are FALSE in the Python engine
     cand_f <- cand[keep, , drop = FALSE]
@@ -239,7 +240,8 @@ match_stimuli <- function(pool, design, schema, verbose = FALSE) {
                         cname, nrow(cand_f), n_take))
       }
       # The relaxation changes what "matched" means for this condition, so it is
-      # recorded on the result for the run log and datasheet, not only narrated.
+      # recorded on the result for the run log and datasheet, where a console message
+      # would leave no trace.
       relaxations[[length(relaxations) + 1L]] <-
         list(condition = cname, n_within_tolerance = nrow(cand_f), n_needed = n_take)
       cand_f <- cand
@@ -270,7 +272,7 @@ match_stimuli <- function(pool, design, schema, verbose = FALSE) {
       # Rounded to 9 dp through the shared rule so the stable tie-break below is
       # itself reproducible across R and Python. Native round() would pair R's
       # decimal algorithm with numpy's scale-rint-unscale, a pairing io_utils.R
-      # documents as disagreeing at boundaries -- and on the mahalanobis path the
+      # documents as disagreeing at boundaries. On the mahalanobis path the
       # inputs already differ in their last bits, so the absorber must be the
       # same function in both engines.
       delta <- sweep(z_cand, 2, z_anchor[a, ], "-")
@@ -304,8 +306,8 @@ match_stimuli <- function(pool, design, schema, verbose = FALSE) {
 }
 
 # Column means for the overlap-cap centroid, through the compensated reduction rather
-# than colMeans. The cap decides which candidates survive into matching -- it fires for
-# the shipped en_ndensity and es_ndensity designs -- so a centroid that differs in the
+# than colMeans. The cap decides which candidates survive into matching, and it fires
+# for the shipped en_ndensity and es_ndensity designs, so a centroid that differs in the
 # last bits between engines is a selection difference waiting to happen, not a rounding
 # curiosity. Mirrors _exact_colmeans in matching.py.
 .exact_colmeans <- function(z) {
@@ -383,7 +385,19 @@ match_joint <- function(subpools, cond_names, match_on, center, scale_, n, cap =
 .maha_metric <- function(z_pool, ridge = 1e-6) {
   if (ncol(z_pool) == 1L) return(matrix(1, 1, 1))
   cmat <- stats::cor(z_pool)
-  cmat[is.na(cmat)] <- 0        # a constant dimension -> treat as uncorrelated
+  # An undefined correlation is treated as no correlation, which covers two cases
+  # worth telling apart. A constant dimension has no correlation to estimate, and
+  # zero is the right reading. A dimension carrying even one missing value also
+  # gives NA here, under cor()'s default use = "everything", and zeroing it drops
+  # that dimension's whole row and column; if every dimension is affected the metric
+  # is the identity and Mahalanobis matching becomes the standardised Euclidean
+  # matching it was chosen over. Nothing upstream prevents that: the completeness
+  # guards in match_stimuli count usable candidates per condition and pass easily on
+  # a large pool with a handful of missing values. It is the one respect in which
+  # this method is quietly sensitive to pool quality, so a design choosing it should
+  # match on dimensions the lexicon covers completely.
+  # Must stay identical to _maha_metric in python_workflow/src/lexsync/matching.py.
+  cmat[is.na(cmat)] <- 0
   diag(cmat) <- 1
   solve(cmat + ridge * diag(ncol(cmat)))
 }
@@ -472,6 +486,12 @@ match_optimal <- function(subpools, cond_names, match_on, center, scale_, n, cap
 #' deterministic even-spread passes make the R and Python engines select
 #' byte-identical stimuli. Mirrors select_continuous_stimuli in matching.py.
 #'
+#' The design is checked before anything is selected, so a design that cannot be
+#' honoured is refused outright. `continuous.controls` must be non-empty and must not
+#' name the predictor, `match_on` must name exactly the same dimensions as
+#' `continuous.controls`, every dimension named and the `key` column must be present
+#' in the pool, no `tolerance_k` may be negative, and the pool must not be empty.
+#'
 #' @param pool A candidate pool with the predictor and control dimensions present.
 #' @param design A parsed design configuration carrying a `continuous` block.
 #' @param schema The parsed global schema (tolerance windows).
@@ -487,7 +507,9 @@ match_optimal <- function(subpools, cond_names, match_on, center, scale_, n, cap
 #' @param renumber_sets Logical; renumber the selected rows `1..n`. The pair path
 #'   passes `FALSE`, because its `set` ids have to survive selection for the result to
 #'   be re-expanded back to the full pair table.
-#' @return A data frame of selected stimuli (condition "continuous", set 1..n).
+#' @return A data frame of the selected stimuli. Unless `label` is `NULL` the
+#'   `condition` column is set to it, `"continuous"` by default, and unless
+#'   `renumber_sets` is `FALSE` the `set` column is renumbered `1..n`.
 #' @export
 select_continuous_stimuli <- function(pool, design, schema, verbose = FALSE,
                                       key = "word", label = "continuous",
@@ -606,7 +628,11 @@ select_continuous_stimuli <- function(pool, design, schema, verbose = FALSE,
 #' @param schema The parsed global schema.
 #' @param n_sets Number of disjoint matched sets to draw.
 #' @param verbose Logical; passed to [match_stimuli()].
-#' @return A data frame of matched stimuli with an added `replicate` column.
+#' @return A data frame of matched stimuli with an added `replicate` column. The
+#'   replicates are bound together, which drops the `"audit"` attribute
+#'   [match_stimuli()] uses to report a relaxed tolerance window, so a relaxation
+#'   inside a replicate reaches the console under `verbose` but not the run log or
+#'   the datasheet.
 #' @export
 resample_stimuli <- function(pool, design, schema, n_sets, verbose = FALSE) {
   used <- character(0)

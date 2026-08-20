@@ -13,7 +13,12 @@ from rapidfuzz.distance import Hamming, Levenshtein
 
 from .io_utils import _round_dp, clean_field, read_csv_utf8, sha256_file
 
-# Maximal runs of (possibly accented) Latin vowels approximate syllable nuclei.
+# Maximal runs of (possibly accented) Latin vowels approximate syllable nuclei. The
+# R mirror builds the same 26 accented code points with intToUtf8, to keep its source
+# ASCII for CRAN, so the two lists look nothing alike and must be checked against each
+# other by hand: a character in one and not the other changes n_syllables, which a
+# design may match on. Must cover the same code points as .VOWELS in
+# R_workflow/R/querying.R.
 _VOWELS = re.compile(r"[aeiouyàáâãäåèéêëìíîïòóôõöøùúûüýÿ]+")
 
 # readr trims ASCII whitespace from every field (trim_ws defaults to TRUE) and
@@ -74,8 +79,8 @@ def load_lexicon(path: str, schema: dict, language: str | None = None) -> pd.Dat
 def load_pool(path: str, schema: dict, lexicon=None, language=None) -> dict:
     """Load a supplied candidate pool of words and give it the matcher's dimensions.
 
-    A researcher who already has a curated word list -- from a previous study, a
-    norming session, a colleague -- should not have to dress it up as a corpus lexicon
+    A researcher who already has a curated word list (from a previous study, a norming
+    session, a colleague) should not have to dress it up as a corpus lexicon
     to get lexsync's matching, validation and datasheet. This reads such a list and
     returns something the matcher accepts.
 
@@ -200,7 +205,7 @@ def merge_norms(lexicon: pd.DataFrame, norms, on: str = "word", columns=None) ->
 
     The result is the lexicon itself with the norm columns appended, and the key is
     looked up positionally rather than through ``merge``. That is what makes the two
-    engines agree structurally rather than by repair afterwards, because ``merge``
+    engines agree by construction, with nothing to repair afterwards, because ``merge``
     and R's ``merge()`` were measured to diverge in three ways, each of them silent:
     R hoists the ``by`` column to position 1 while pandas keeps the left frame's
     order, so the column order differed whenever ``on`` was not already first; R
@@ -212,8 +217,8 @@ def merge_norms(lexicon: pd.DataFrame, norms, on: str = "word", columns=None) ->
 
     The key is trimmed and case-folded on *both* sides. Only the norm table's side
     was normalised before, so a lexicon holding ``Dog`` matched nothing and the
-    design carried on with an all-``NaN`` dimension -- and because both engines
-    agreed on that wrong answer, no parity test could have caught it. The lexicon's
+    design carried on with an all-``NaN`` dimension. Because both engines agreed on
+    that wrong answer, no parity test could have caught it. The lexicon's
     own spelling is preserved rather than folded in place: ``word`` is the
     byte-order tie-break behind every selection, so the join must not rewrite it.
 
@@ -385,7 +390,7 @@ def load_items(path: str, required_fields) -> pd.DataFrame:
     # its two response keys as f and j had `answer` become FALSE there and "f" here; and
     # `item` left to inference float-promoted a numeric id column, so '01' became '1'
     # (or, with a missing cell, '1.0'). Forcing the type on both sides makes the
-    # agreement structural rather than coincidental.
+    # agreement structural, where it would otherwise be coincidental.
     df = read_csv_utf8(path, as_character=["item", "condition"] + list(required_fields))
     needed = ["item", "condition"] + list(required_fields)
     missing = [c for c in needed if c not in df.columns]
@@ -431,6 +436,22 @@ def load_items(path: str, required_fields) -> pd.DataFrame:
 
 
 def build_pool(lexicon: pd.DataFrame, filters: dict | None = None) -> pd.DataFrame:
+    """Build an experimental candidate pool by filtering a lexicon.
+
+    ``filters`` maps a column to either a two-element numeric range or a list of
+    permitted values. A row missing the filtered column is dropped under either
+    kind, and a range with a reversed or non-finite bound is an error rather than an
+    empty pool.
+
+    A filter naming a column the frame does not have is silently skipped, because the
+    same function filters lexica, supplied pools and pair tables, and those carry
+    different columns. The cost is that a misspelt key silently widens a
+    selection, so every caller that takes its filters from a design checks the names
+    against the frame first: ``run_pipeline`` for ``pool_filters``,
+    ``match_stimuli`` for a condition's ``define_by``, and
+    ``select_continuous_pairs`` for both. Mirrors build_pool in
+    R_workflow/R/querying.R.
+    """
     df = lexicon
     if filters:
         for col, rng in filters.items():
@@ -438,8 +459,8 @@ def build_pool(lexicon: pd.DataFrame, filters: dict | None = None) -> pd.DataFra
                 continue
             vals = list(rng) if isinstance(rng, (list, tuple)) else [rng]
             if len(vals) == 2 and all(isinstance(v, (int, float)) for v in vals):
-                # YAML's .inf and .nan arrive as ordinary floats, and either one --
-                # like a reversed range -- silently empties the pool row by row.
+                # YAML's .inf and .nan arrive as ordinary floats, and either one,
+                # like a reversed range, silently empties the pool row by row.
                 # Non-finite first: a NaN bound would make the reversal test
                 # meaningless. Equal bounds stay legal (the zh design uses [2, 2]).
                 if not all(math.isfinite(float(v)) for v in vals):

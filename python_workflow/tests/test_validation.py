@@ -112,6 +112,23 @@ def test_match_report_carries_an_undefined_d_as_a_missing_cell(schema):
     assert cmp["var_ratio"].iloc[0] == 1.0
 
 
+def test_match_report_gives_a_single_condition_design_an_empty_comparisons_frame(schema):
+    """There is nothing to compare against the anchor, so the frame comes back with
+    its columns and no rows. A DataFrame built from no rows carried no columns
+    either, and wrote a comparisons CSV with no header at all, while the R engine's
+    rbind() over an empty list returned NULL and killed run_pipeline's reporting
+    loop. Pinned identically in test-validation.R."""
+    stim = pd.DataFrame({"word": ["aa", "bb"], "condition": ["only", "only"],
+                         "length": [2, 3]})
+    cmp = match_report(stim, ["length"], schema)["comparisons"]
+    assert len(cmp) == 0
+    assert list(cmp.columns) == ["condition", "reference", "dimension", "cohens_d",
+                                 "d_ci_low", "d_ci_high", "var_ratio", "tost_p",
+                                 "equivalent"]
+    assert cmp.to_csv(index=False, lineterminator="\n").splitlines() == [
+        "condition,reference,dimension,cohens_d,d_ci_low,d_ci_high,var_ratio,tost_p,equivalent"]
+
+
 def test_variance_ratio():
     assert abs(variance_ratio([1, 2, 3, 4], [1, 2, 3, 4]) - 1.0) < 1e-9  # equal spread
     assert variance_ratio([0, 5, 10, 15], [4, 5, 6, 7]) > 1              # condition wider

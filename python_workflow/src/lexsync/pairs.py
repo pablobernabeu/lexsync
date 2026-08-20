@@ -111,8 +111,8 @@ def select_continuous_pairs(stim: pd.DataFrame, items_cfg: dict, design: dict,
     The re-expansion is what keeps the Latin square valid. ``build_pool`` and the
     control windows filter ROWS, and a filter on ``prime.frequency`` would keep a
     pair's related row while dropping its unrelated one, leaving a set that has no
-    row for one condition. So eligibility is decided at set granularity, selection
-    runs on one row per set, and the result is re-expanded as a pure row subset of
+    row for one condition. Eligibility is therefore decided at set granularity,
+    selection runs on one row per set, and the result is re-expanded as a pure row subset of
     the original frame: every condition row of every surviving set is present, and no
     norm or relational value is recomputed and so none can drift.
     """

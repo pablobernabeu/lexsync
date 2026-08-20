@@ -192,7 +192,7 @@ ui <- page_sidebar(
                      as.character(utils::packageVersion("lexsync"))))
   ),
   markdown(paste(
-    "**Reproducible psycholinguistic stimulus design — R engine.**",
+    "Reproducible psycholinguistic stimulus design, running on the R engine.",
     "Assemble a design, run the verified lexsync pipeline, and export the design",
     "file together with the R, Python and command-line code that reproduces it.",
     "The two engines select byte-identical stimuli."
@@ -384,7 +384,7 @@ server <- function(input, output, session) {
     if (is.null(b)) return(div(class = "alert alert-info mt-3",
                                "Configure a design above, then press Run design."))
     if (!is.null(b$error)) return(div(class = "alert alert-danger mt-3", b$error))
-    div(class = "alert alert-success mt-3", sprintf("Done — %d rows selected.", nrow(b$stimuli)))
+    div(class = "alert alert-success mt-3", sprintf("Selected %d rows.", nrow(b$stimuli)))
   })
 
   output$results <- renderUI({
@@ -405,9 +405,12 @@ server <- function(input, output, session) {
 
   output$control_ui <- renderUI({
     b <- bundle()
+    # Word-identical to the Streamlit app's notice. tests/test_apps.py pins the two
+    # against each other, as it does the parity claim under Reproducible code.
     if (is.null(b$comparisons))
       return(div(class = "alert alert-info",
-                 "This paradigm draws from an item table, so no corpus-matching report is produced."))
+                 "This paradigm draws from an item table, so no corpus-matching ",
+                 "control report is produced."))
     tagList(
       h5("Effect size and equivalence per controlled dimension"),
       DT::renderDT({

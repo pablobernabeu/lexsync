@@ -2,7 +2,12 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from lexsync.matching import match_stimuli, resample_stimuli, select_continuous_stimuli
+from lexsync.matching import (
+    _maha_metric,
+    match_stimuli,
+    resample_stimuli,
+    select_continuous_stimuli,
+)
 from lexsync.querying import build_pool, load_lexicon
 from lexsync.validation import _pearson, cohens_d
 
@@ -92,6 +97,23 @@ def test_mahalanobis_matches_and_is_deterministic(schema, en_lexicon_path):
     assert list(s["word"]) == list(match_stimuli(lex, d, schema)["word"])
 
 
+def test_a_missing_value_reduces_the_mahalanobis_metric_to_identity():
+    """np.corrcoef returns NaN for any pair involving a column that holds one, and
+    _maha_metric reads NaN as no correlation, so the metric collapses and mahalanobis
+    matching becomes the standardised Euclidean matching it was chosen over. Nothing
+    upstream prevents it, which is what the comment there now says; this pins the
+    behaviour so a change of estimator cannot pass unnoticed. Pinned identically in
+    test-matching.R."""
+    z = np.array([[1.0, 4.0], [2.0, 3.0], [3.0, 2.0], [4.0, 1.0]])
+    informative = _maha_metric(z)
+    assert abs(informative[0, 1]) > 0.5                 # the correlation is used
+
+    z[1, 0] = np.nan
+    collapsed = _maha_metric(z)
+    assert collapsed[0, 1] == 0
+    assert np.allclose(collapsed, np.eye(2) / (1 + 1e-6), atol=1e-12)
+
+
 def test_optimal_matches_confound_and_is_deterministic(schema, en_lexicon_path):
     lex = load_lexicon(en_lexicon_path, schema, "english")
     s = match_stimuli(lex, _confounded_design(method="optimal"), schema)
@@ -146,10 +168,25 @@ def test_select_continuous_driven_by_byte_order_not_row_order(schema, en_lexicon
 
 
 def test_select_continuous_requires_match_on_equals_controls(schema, en_lexicon_path):
+    """The two keys state one contract twice, so a design where they disagree is
+    ambiguous about which dimensions are actually held constant. The message is matched
+    as well as the type: any other ValueError would otherwise pass this test."""
     pool = _continuous_pool(schema, en_lexicon_path)
     d = _continuous_design()
-    d["match_on"] = ["length", "n_density"]     # != continuous.controls
-    with pytest.raises(ValueError):
+    d["match_on"] = ["length", "n_density"]     # short of continuous.controls
+    with pytest.raises(ValueError, match="match_on must equal"):
+        select_continuous_stimuli(pool, d, schema)
+
+
+def test_select_continuous_requires_at_least_one_control(schema, en_lexicon_path):
+    """With no control there is nothing held constant, and an even spread over the
+    predictor alone would still be recorded as a controlled selection. Twinned with
+    test-matching.R."""
+    pool = _continuous_pool(schema, en_lexicon_path)
+    d = _continuous_design()
+    d["continuous"]["controls"] = []
+    d["match_on"] = []
+    with pytest.raises(ValueError, match="at least one control"):
         select_continuous_stimuli(pool, d, schema)
 
 

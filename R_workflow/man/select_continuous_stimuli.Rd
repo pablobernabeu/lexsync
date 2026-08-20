@@ -38,7 +38,9 @@ passes \code{FALSE}, because its \code{set} ids have to survive selection for th
 be re-expanded back to the full pair table.}
 }
 \value{
-A data frame of selected stimuli (condition "continuous", set 1..n).
+A data frame of the selected stimuli. Unless \code{label} is \code{NULL} the
+\code{condition} column is set to it, \code{"continuous"} by default, and unless
+\code{renumber_sets} is \code{FALSE} the \code{set} column is renumbered \verb{1..n}.
 }
 \description{
 Instead of dichotomising the predictor into conditions and matching, items are
@@ -48,4 +50,11 @@ with the predictor. The set is analysed by regression / mixed models rather than
 between-condition contrasts (Kuperman, 2015; Liben-Nowell et al., 2019). Two
 deterministic even-spread passes make the R and Python engines select
 byte-identical stimuli. Mirrors select_continuous_stimuli in matching.py.
+}
+\details{
+The design is checked before anything is selected, so a design that cannot be
+honoured is refused outright. \code{continuous.controls} must be non-empty and must not
+name the predictor, \code{match_on} must name exactly the same dimensions as
+\code{continuous.controls}, every dimension named and the \code{key} column must be present
+in the pool, no \code{tolerance_k} may be negative, and the pool must not be empty.
 }

@@ -57,8 +57,8 @@ PARADIGMS <- list(
   ),
   # Cued semantic categorisation: a category question, then the word to judge against
   # it. The cue is what distinguishes this from lexical decision, and it is a separate
-  # event rather than instructions shown once, because the category varies by trial --
-  # which is the point of the paradigm. Crossing the same words with different cues is
+  # event rather than instructions shown once, because a category that varies by trial
+  # is what the paradigm is for. Crossing the same words with different cues is
   # how a categorisation study separates a property of the word from the demands of the
   # task (a robin is a bird quickly and an animal slowly).
   #

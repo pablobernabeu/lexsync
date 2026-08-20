@@ -13,8 +13,8 @@ cite is listed in full on the [references page](references.md).
 
 ## Corpora and lexica
 
-Languages are supplied through a corpus registry rather than hard-coded, so reaching a new one is a
-registry entry. These functions find a corpus, fetch it if it is not already local, and read a
+Languages are supplied through a corpus registry, so reaching a new one takes a registry entry and
+no code. These functions find a corpus, fetch it if it is not already local, and read a
 derived lexicon or a prepared item table into the frame everything else expects.
 
 ::: lexsync.list_corpora
@@ -49,7 +49,7 @@ pool, since a word's neighbours do not stop existing because a design excluded t
 
 The pool is the set of candidates a design will consider at all, and the matcher works only on what
 it is given. `match_stimuli` never reads a design's `pool_filters`, so `build_pool` is a required
-step rather than a convenience.
+step.
 
 ::: lexsync.build_pool
 
@@ -69,9 +69,9 @@ regression or a mixed model.
 
 ## Pseudoword generation
 
-Non-words are generated deterministically rather than sampled, preserving length exactly and keeping
-every letter bigram attested in the corpus. Both methods select byte-identical stimuli in the R and
-Python engines.
+Non-words are generated deterministically, with no sampling anywhere, preserving length exactly
+and keeping every letter bigram attested in the corpus. Both methods select byte-identical stimuli
+in the R and Python engines.
 
 ::: lexsync.generate_pseudowords
 
@@ -96,9 +96,9 @@ event sequence, or supplies its own `events`.
 ## Counterbalancing
 
 Two recipes are available, and the paradigm chooses between them. Trial order comes from a seeded,
-keyed-hash shuffle, a pure function of the design rather than a draw from a generator, so the same
-seed gives the same order in both engines. `balance_lists` is the optional search for a list
-assignment whose lists are equated on the item dimensions, rather than dealt by set rank.
+keyed-hash shuffle, a pure function of the design with no generator behind it, so the same seed
+gives the same order in both engines. `balance_lists` is the optional search for a list assignment
+whose lists are equated on the item dimensions, where the plain deal goes by set rank.
 
 ::: lexsync.counterbalance
 

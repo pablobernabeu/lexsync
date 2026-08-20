@@ -63,7 +63,7 @@ many-language corpus through parallel multidimensional matching and counterbalan
 to flip-locked, cross-platform experiment scripts. Under the two deterministic
 matching methods the two engines select byte-identical stimuli, deal them into the
 same lists and conditions, and order the trials identically, so the generated
-experiment files themselves match byte for byte; the two linear-algebra methods
+experiment files themselves match byte for byte. The two linear-algebra methods
 agree closely without carrying that guarantee, and each run's datasheet records
 which case applies. Nothing in the package draws a random number: trial order comes
 from a keyed hash of the design and the seed, which is what lets a seeded shuffle
@@ -136,7 +136,7 @@ Two browser front-ends in `apps/` let a researcher assemble a design without wri
 code, run the verified pipeline and view the matched stimuli, the realised-control
 report and the materials datasheet. Each one also exports the design configuration
 and the one-line R, Python and command-line code that reproduces the operation, so
-the interface yields shareable artefacts rather than results a reader cannot retrace.
+what the interface yields is a shareable artefact a reader can retrace.
 A Streamlit app wraps the Python engine and a Shiny app wraps the R engine, and the
 two select byte-identical stimuli. See `apps/README.md` for details.
 
@@ -147,25 +147,26 @@ Rscript -e "shiny::runApp('apps/r_shiny', port = 8502)"        # R
 
 ## Corpora
 
-Languages are supplied through `corpora/registry.yaml`. Two connectors are provided: a
-curated SUBTLEX-family/'openlexicon' connector (individually citable corpora under
-CC BY-SA 4.0) and a 'wordfreq' connector that reaches roughly forty languages through a
-single dependency. English, Spanish and Mandarin Chinese are bundled and demonstrated
-end to end (the last a logographic-script example, showing that the matching and script
-generation are not limited to alphabetic writing). Those three come from 'wordfreq',
-not from the openlexicon connector, and carry its CC BY-SA 4.0 data terms; the
-registry's SUBTLEX entries are separate corpora a user loads directly. Further
-languages are fetched on demand into a user cache, though not equally from both
-engines. The 'openlexicon' connector is available in R and Python alike, whereas
-'wordfreq' is Python-only: `lexsync fetch <language>` derives those lexica from the
-Python package, and the R package can read the result as an ordinary corpus but cannot
-build one itself. An R-only laboratory therefore reaches the wider language set only
-through lexica derived elsewhere. Every corpus is cited, with its licence and
-retrieval date, in `corpora/ATTRIBUTION.md`. The bundled corpora are a
+Languages are supplied through `corpora/registry.yaml`. Two connectors are
+provided: a curated SUBTLEX-family/'openlexicon' connector (individually citable
+corpora under CC BY-SA 4.0) and a 'wordfreq' connector that reaches roughly
+forty languages through a single dependency. English, Spanish and Mandarin
+Chinese are bundled and demonstrated end to end (the last a logographic-script
+example, showing that the matching and script generation are not limited to
+alphabetic writing). Those three come from 'wordfreq', not from the openlexicon
+connector, and carry its CC BY-SA 4.0 data terms. The registry's SUBTLEX entries
+are separate corpora a user loads directly. Further languages are fetched on
+demand into a user cache, though not equally from both engines. The
+'openlexicon' connector is available in R and Python alike, whereas 'wordfreq'
+is Python-only: `lexsync fetch <language>` derives those lexica from the Python
+package, and the R package can read the result as an ordinary corpus but cannot
+build one itself. An R-only laboratory therefore reaches the wider language set
+only through lexica derived elsewhere. Every corpus is cited, with its licence
+and retrieval date, in `corpora/ATTRIBUTION.md`. The bundled corpora are a
 fixed, checksummed snapshot, so the demonstrations reproduce with no download.
 'wordfreq' itself was frozen in 2024, giving a stable snapshot of usage through
-roughly 2021, which makes fetched corpora reproducible rather than drifting under a
-live source.
+roughly 2021, which keeps fetched corpora reproducible where a live source would
+let them drift.
 
 ## Extending lexsync
 
@@ -194,8 +195,8 @@ The R package carries a `testthat` suite and the Python package a `pytest` suite
 the latter including a mock-'PsychoPy' harness that checks the onset trigger is
 flip-locked, a structural validator for the generated 'OpenSesame' experiment and
 an R-versus-Python parity test. GitHub Actions run `R CMD check` on Ubuntu, macOS
-and Windows under R release, on Ubuntu additionally under R-devel, and the Python
-tests on Python 3.10–3.13.
+and Windows under the current R release, on Ubuntu and Windows under R-devel and on
+Ubuntu under the previous release, and the Python tests on Python 3.10–3.14.
 
 ## Matching methods
 
@@ -203,24 +204,25 @@ Four matching methods are available, set with `matching.method` in a design: the
 default `standardised_euclidean` (greedy nearest-neighbour on z-scored
 dimensions), `joint` (optimal-greedy pairing for a two-condition design),
 `mahalanobis` (a covariance-aware distance that down-weights correlated
-dimensions; Rubin, 1980; Stuart, 2010) and `optimal` (globally optimal assignment
-for two conditions; Gu & Rosenbaum, 1993). The R and Python engines select
-byte-identical stimuli for `standardised_euclidean` and `joint`. The `mahalanobis`
-and `optimal` methods are not guaranteed byte-identical across engines, because
-they use a covariance-matrix inverse and an assignment solver whose last bits can
-differ between the two linear-algebra backends: in practice `mahalanobis` usually
-still agrees exactly, while `optimal` selects an equally-optimal but often
-different set. Each run's datasheet records which case applies.
+dimensions; Rubin, 1980; Stuart, 2010) and `optimal` (globally optimal
+assignment for two conditions; Gu & Rosenbaum, 1993). The R and Python engines
+select byte-identical stimuli for `standardised_euclidean` and `joint`. The
+`mahalanobis` and `optimal` methods are not guaranteed byte-identical across
+engines, because they use a covariance-matrix inverse and an assignment solver
+whose last bits can differ between the two linear-algebra backends.
+`mahalanobis` usually still agrees exactly, while `optimal` selects an
+equally-optimal but often different set. Each run's datasheet records which case
+applies.
 
 ## Continuous designs
 
-A design may declare a `continuous:` block (a predictor and the controls to hold
-constant) instead of discrete `conditions`. lexsync then selects a set that spans
-the predictor's range evenly while keeping the controls near-constant and
-near-uncorrelated with it, for analysis by regression or a mixed model rather than
-a matched dichotomy (Kuperman, 2015; Liben-Nowell et al., 2019). The datasheet
-reports the predictor's span, the predictor-control correlations and a suggested
-regression model, and the two engines select byte-identical stimuli. See
+A design may replace its discrete `conditions` with a `continuous:` block,
+naming a predictor and the controls to hold constant. lexsync then selects a set
+that spans the predictor's range evenly while keeping the controls near-constant
+and near-uncorrelated with it, ready for analysis by regression or a mixed model
+(Kuperman, 2015; Liben-Nowell et al., 2019). The datasheet reports the
+predictor's span, the predictor-control correlations and a suggested regression
+model, and the two engines select byte-identical stimuli. See
 `config/design_en_freqcontinuous.yaml`.
 
 ## Pseudoword generation

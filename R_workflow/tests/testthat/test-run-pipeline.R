@@ -162,6 +162,57 @@ test_that("a non-integer n_per_condition is an error", {
                "positive whole number")
 })
 
+# Both values used to slip past this guard in one engine only. A configured 0 is
+# falsy in Python, so `or` read it as absent, fell through to the matcher's default
+# of twenty and ran; `%||%` here falls back on NULL alone and refused. An infinite
+# request went the other way: trunc(Inf) is Inf, so this engine took it as a whole
+# number and selected the whole pool, while Python's int() raised OverflowError.
+# Pinned identically in tests/test_run_pipeline.py.
+test_that("a zero or infinite n_per_condition is an error", {
+  for (n in c("0", ".inf")) {
+    out <- tmp_out()
+    design <- write_design(out, c(
+      "name: guard_test",
+      "language: english",
+      paste0("lexicon: ", as_yaml_path(extdata("en_example.csv"))),
+      paste0("n_per_condition: ", n),
+      "conditions:",
+      "  - {name: high, define_by: {frequency: [5.0, 7.0]}}",
+      "  - {name: low, define_by: {frequency: [3.8, 4.4]}}",
+      "match_on: [length]"
+    ))
+    expect_error(run_quiet(design, extdata("schema.yaml"), outdir = out),
+                 "positive whole number", info = n)
+  }
+})
+
+# A design with one condition has nothing to compare against the anchor, and the
+# engines used to part company there: this one died inside the reporting loop on
+# seq_len(nrow(NULL)), while the Python engine finished and wrote a comparisons CSV
+# with no header. Both now write this header and no rows. Pinned identically in
+# tests/test_run_pipeline.py.
+test_that("a single-condition design completes and writes a header-only comparisons file", {
+  out <- tmp_out()
+  design <- write_design(out, c(
+    "name: onecond",
+    "language: english",
+    paste0("lexicon: ", as_yaml_path(extdata("en_example.csv"))),
+    "n_per_condition: 5",
+    "pool_filters: {length: [3, 7], frequency: [3.8, 7]}",
+    "conditions:",
+    "  - {name: only, define_by: {frequency: [4.0, 7.0]}}",
+    "match_on: [length]"
+  ))
+
+  res <- run_quiet(design, extdata("schema.yaml"), outdir = out)
+
+  expect_true(file.exists(res$comparisons))
+  expect_identical(
+    readLines(res$comparisons, warn = FALSE),
+    paste0("condition,reference,dimension,cohens_d,d_ci_low,d_ci_high,",
+           "var_ratio,tost_p,equivalent"))
+})
+
 test_that("a continuous table without members is an error", {
   out <- tmp_out()
   items <- file.path(out, "pairs.csv")

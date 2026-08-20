@@ -13,10 +13,17 @@ build_pool(lexicon, filters = NULL)
 range or a vector of permitted values.}
 }
 \value{
-The filtered lexicon.
+The filtered lexicon, with row names dropped. A row missing the filtered
+column is dropped under either kind of filter, and a range with a reversed or
+non-finite bound is an error rather than an empty pool.
 }
 \description{
-Build an experimental candidate pool by filtering a lexicon
+A filter naming a column the frame does not have is silently skipped, because the
+same function filters lexica, supplied pools and pair tables, and those carry
+different columns. The cost is that a misspelt key silently widens a
+selection, so every caller that takes its filters from a design checks the names
+against the frame first: \code{\link[=run_pipeline]{run_pipeline()}} for \code{pool_filters}, \code{\link[=match_stimuli]{match_stimuli()}}
+for a condition's \code{define_by}, and the pair selector for both.
 }
 \examples{
 schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))

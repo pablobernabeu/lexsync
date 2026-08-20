@@ -3,18 +3,18 @@
 Not every design has to be written as code. The repository carries a Streamlit front-end over this
 package which drives the whole workflow through a browser tab, from choosing a paradigm to
 downloading the stimuli, the realised-control report and the materials datasheet. It is a front-end
-and nothing more. Every number it shows is produced by the installed `lexsync` package rather than
-by a re-implementation, and the design it assembles is an ordinary YAML file that you can save,
+and nothing more. Every number it shows comes from the installed `lexsync` package, never from a
+re-implementation, and the design it assembles is an ordinary YAML file that you can save,
 share and run from a script afterwards.
 
-This page describes the app rather than running it, since the app needs a live server.
+This page describes the app without running it, since the app needs a live server.
 
 ## Launching it
 
 The app is not part of the package. It lives in the repository, under `apps/python_streamlit`,
-beside the corpora and the example item tables that it reads, so start from a clone rather than
-from an installed package alone. Streamlit itself is the only extra dependency, and it also comes
-with the `dev` extra, because the test suite covers the app.
+beside the corpora and the example item tables that it reads, so launch it from a clone. Streamlit
+itself is the only extra dependency, and it also comes with the `dev` extra, because the test suite
+covers the app.
 
 ```bash
 pip install -e python_workflow      # the lexsync package
@@ -29,7 +29,7 @@ falls back to whatever lexicon you upload. It opens at <http://localhost:8501>.
 
 ## The sidebar
 
-The sidebar holds what every design needs whatever its paradigm. 'Paradigm' chooses between a
+Whatever the paradigm, the same few fields sit in the sidebar. 'Paradigm' chooses between a
 factorial word contrast drawn from a corpus, lexical decision with generated pseudowords, priming
 and self-paced reading, the last two reading prepared items from a table. 'Design name' and
 'Language label' become the slug that every written file is named after, exactly as in a design
@@ -55,8 +55,8 @@ whichever one you pick are shown beside the selector so you can see what you are
 last entry in the list uploads a lexicon of your own instead, which needs at least a `word` and a
 `freq_zipf` column. Two sliders then narrow the lexicon
 to the candidate pool the design will consider at all, one for length in letters or characters and
-one for frequency in Zipf. They are the design's `pool_filters`, and they are a real step rather
-than a formality, because matching never re-reads them.
+one for frequency in Zipf. They are the design's `pool_filters`, and they are a step that matters,
+because matching never re-reads them.
 
 The conditions are an editable table that rows can be added to and removed from. Each row names a
 condition and carves it out of the pool, either by a numeric window through the `dimension`,
@@ -67,8 +67,8 @@ define a full cell of a 2 × 2. Three presets fill the table in one click, a hig
 frequency contrast, a dense versus sparse neighbourhood contrast and a 2 × 2 of frequency by
 neighbourhood. A preset also sets the matched dimensions and the matching method that suit it, so
 the neighbourhood contrast arrives matched on length and frequency by the `joint` method and the
-2 × 2 arrives matched on length alone. Every control stays editable afterwards, so a preset is a
-starting point rather than a constraint.
+2 × 2 arrives matched on length alone. Every control stays editable afterwards, so a preset is
+only a starting point.
 
 Below the table sit the choices that govern the match itself. 'Items per condition' sets how many
 stimuli each condition should hold. 'Match on' picks the dimensions to equate across conditions,
@@ -80,8 +80,8 @@ how many lists the items are rotated across.
 
 The advanced panel underneath holds one tolerance window per matched dimension, the half-width in
 standard deviations of the band a candidate must fall inside. It is collapsed by default because
-the schema already carries a sensible default for every dimension, and a zero there means that
-default is left alone rather than that the window is pinned to nothing. Reproducing the exact
+the schema already carries a sensible default for every dimension, and a zero there leaves that
+default alone, where you might expect it to pin the window to nothing. Reproducing the exact
 window of a published study is the usual reason to touch the panel at all, and the panel itself
 gives the worked example that [Matching and designs](matching-and-designs.md) discusses, a
 frequency k of 0.111 for a band of the mean plus or minus a ninth of a standard deviation.
@@ -97,7 +97,7 @@ the package would generate from a script.
 
 ### Priming and self-paced reading
 
-These two paradigms read prepared items rather than selecting them, so no corpus and no matching
+These two paradigms read prepared items instead of selecting any, so no corpus and no matching
 are involved. The app offers the bundled example table for the paradigm,
 `items/priming_pairs_en.csv` or `items/spr_sentences_en.csv`, and shows its first rows. Clearing
 that checkbox uploads a table of your own instead, and the uploader states the columns the paradigm
@@ -112,8 +112,8 @@ lexicon and item paths resolved to absolute ones, and hands it to `run_pipeline`
 that ships inside the package. Three conditions are checked first, that a lexicon has been chosen
 or uploaded where the paradigm needs one, that a factorial design defines at least two conditions,
 and that an item-table paradigm has a table, and anything the pipeline itself refuses comes back as
-the error the pipeline raised rather than as a generic failure. A successful run reports how many
-rows were selected and opens the results.
+the error the pipeline raised, in its own words. A successful run reports how many rows were
+selected and opens the results.
 
 ## Reading the results
 
@@ -126,9 +126,9 @@ what it will present and how to reproduce it.
 against the anchor condition for each controlled dimension, with its 90% confidence interval, the
 variance ratio and the verdict of the two one-sided tests procedure, then draws the absolute
 standardised mean difference per dimension as a bar chart. Manipulated dimensions stand high and
-matched dimensions sit near zero, so the shape of the chart is readable at a glance. The
+matched dimensions sit near zero, so the chart shows immediately whether the matching worked. The
 per-condition descriptive statistics follow underneath. A design drawn from an item table produces
-no corpus-matching report, and the tab says so rather than showing an empty table.
+no corpus-matching report, and the tab says as much where an empty table would otherwise sit.
 
 'Datasheet' renders the materials datasheet for the run, carrying the provenance of the corpus, the
 checksums, the realised control and the pre-registration skeleton.
@@ -138,8 +138,8 @@ OpenSesame `.osexp` and the jsPsych HTML that runs in a browser, all three compi
 trial description.
 
 'Reproducible code' is what stops a session in the app from being a dead end. It shows the design
-configuration as YAML, with clean repository-relative paths such as `corpora/derived/en.csv` rather
-than the temporary ones the run used, followed by the one-line Python, R and command-line calls
+configuration as YAML, with repository-relative paths such as `corpora/derived/en.csv` rather than
+the temporary ones the run used, followed by the one-line Python, R and command-line calls
 that reproduce the same operation. Saving the YAML under the name the panel gives it and running
 any of those three lines repeats the run outside the app. Where the design names a file you
 uploaded, which the repository does not hold, the panel says so and points at the bundle that
@@ -152,9 +152,10 @@ run unchanged.
 
 ## What you leave with
 
-A session in the app ends with the same artefacts a scripted run produces, which is the point of
-building it as a front-end rather than as a separate tool. The design YAML is portable across both
-engines, so a set assembled here can be reproduced by a collaborator working in R, byte for byte
+A session in the app ends with the same artefacts a scripted run produces, which is why it was
+built as a front-end over the package and not as a tool of its own. The design YAML is portable
+across both engines, so a set assembled here can be reproduced by a collaborator working in R,
+byte for byte
 under the deterministic matching methods. [Reproducibility and
 parity](reproducibility-and-parity.md) covers what that guarantee promises and where it stops, and
 [Matching and designs](matching-and-designs.md) reads the realised-control report column by column.

@@ -4,7 +4,7 @@
 # properties of each MEMBER, so it needs an item table and selection at the same
 # time. Until this existed a design could have one or the other.
 #
-# Three properties are load-bearing and each has a test here.
+# Three properties have to hold, and each has a test here.
 #
 # The member prefix leads (`prime.frequency`, never `frequency.prime`). R's `$`
 # partial-matches on a data frame, so a joined `word.frequency` with no bare `word`

@@ -41,10 +41,10 @@ DATASHEET_VERSION <- "1.1"
 # datasheet.py.
 #
 # `selected` distinguishes the two things an item table can now mean. A plain table
-# design does no selection, so there is nothing for the engines to agree on and the
-# honest answer is "n/a". A pair-keyed continuous design selects over that table, and
-# that selection was measured to be byte-identical -- so answering "n/a" there
-# understated the guarantee, on the one path where a reader most needs it.
+# design does no selection, so there is nothing for the engines to agree on and "n/a"
+# is the whole story. A pair-keyed continuous design selects over that table, and that
+# selection was measured to be byte-identical, so answering "n/a" there understated
+# the guarantee on the one path where a reader most needs it.
 .cross_engine <- function(method, source, selected = FALSE) {
   if (identical(source, "table") && !isTRUE(selected)) return("n/a (user-supplied items)")
   if (!is.null(method) && method %in% c("mahalanobis", "optimal"))
@@ -62,7 +62,7 @@ DATASHEET_VERSION <- "1.1"
 # per pair per condition, so a reader comparing it against the design's
 # `n_per_condition` would find it doubled. The member lexicon is named and checksummed
 # because it is where every member-level control came from, and nothing else in the
-# record mentions it -- `materials_source` names the item table. And the member
+# record mentions it. `materials_source` names the item table. And the member
 # dimensions are separated from the relational ones because they are different kinds
 # of variable: `target.frequency` is a property of one word, `pair.overlap` is a
 # property of the pair, and only the second is unavailable from any word-level norm
@@ -92,7 +92,7 @@ DATASHEET_VERSION <- "1.1"
 }
 
 # The tolerance windows as match_stimuli resolves them (schema defaults, overridden
-# per dimension by the design) -- the same resolution the matcher performs. The
+# per dimension by the design), the same resolution the matcher performs. The
 # nearest-neighbour methods apply these windows; the pairwise joint/optimal methods
 # never consult them, which is why the datasheet attaches this block only for the
 # methods that do. Mirrors datasheet.py.
@@ -306,9 +306,9 @@ build_datasheet <- function(design, schema, report, stimuli, source_path, artifa
       "the supplied pool's own columns (no lexicon given)" else dim_lex
     if (!is.null(dim_lex)) materials_source$dimensions_sha256 <- sha256_file(dim_lex)
   }
-  # Assigned rather than declared in the list() above, because assigning NULL to a
-  # list element removes it: a design with no `norms:` block gets no key at all,
-  # instead of a "norms": null that every datasheet would then carry.
+  # Assigned here, because assigning NULL to a list element removes it, so a design
+  # with no `norms:` block gets no key at all rather than a "norms": null that every
+  # datasheet would then carry.
   if (length(norms)) materials_source$norms <- norms
 
   # A corpus design draws on every schema dimension, and so does a pair-keyed design:
@@ -677,7 +677,7 @@ write_datasheet <- function(ds, json_path, md_path) {
   # write_lines_lf, not writeLines: a text-mode connection turns every newline into
   # CRLF on Windows, so the datasheet's own bytes recorded which machine built it and
   # disagreed with the Python engine's record of the same design. The datasheet is the
-  # provenance artefact -- it is the last file that should depend on the platform.
+  # provenance artefact, and the last file that should depend on the platform.
   # digits = NA, not jsonlite's default of 4. The default silently truncated every
   # value that had not already been rounded on the way in: a design declaring
   # `tolerance_k: 0.1111111111111111` had it recorded as 0.1111, which does not

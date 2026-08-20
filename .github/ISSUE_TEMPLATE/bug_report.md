@@ -11,7 +11,7 @@ A clear description of what went wrong and what you expected instead.
 
 **Reproducible example**
 A small, self-contained example helps a great deal. Never paste a secret (an API
-key or token) into an issue; replace it with a placeholder.
+key or token) into an issue. Replace it with a placeholder.
 
 ```
 # your example here (R reprex or Python snippet)

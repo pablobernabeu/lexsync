@@ -18,7 +18,11 @@ resample_stimuli(pool, design, schema, n_sets, verbose = FALSE)
 \item{verbose}{Logical; passed to \code{\link[=match_stimuli]{match_stimuli()}}.}
 }
 \value{
-A data frame of matched stimuli with an added \code{replicate} column.
+A data frame of matched stimuli with an added \code{replicate} column. The
+replicates are bound together, which drops the \code{"audit"} attribute
+\code{\link[=match_stimuli]{match_stimuli()}} uses to report a relaxed tolerance window, so a relaxation
+inside a replicate reaches the console under \code{verbose} but not the run log or
+the datasheet.
 }
 \description{
 Each replicate is an independent, fully matched set drawn from the pool with the

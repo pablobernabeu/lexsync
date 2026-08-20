@@ -33,4 +33,13 @@ best swap each pass, and ties are broken by the seeded keyed hash rather than by
 position, so no list is favoured by being numbered first. Because the cost is a
 non-negative integer that strictly decreases, the search terminates; \code{max_passes}
 bounds it anyway and the report says whether the bound was reached.
+
+Five situations are refused rather than answered with an assignment that would
+mislead. A Latin-square design is refused because every item already appears in
+every list there, so there is nothing left to equate, and fewer than two lists
+leaves no pair of lists to exchange sets between. A design with no resolvable
+balance dimension is refused, as is one naming a dimension the stimuli do not
+carry, and the message names the columns. The last refusal is arithmetic: the
+search stops if the integer objective would leave the range a double represents
+exactly, since past that point the two engines could disagree.
 }

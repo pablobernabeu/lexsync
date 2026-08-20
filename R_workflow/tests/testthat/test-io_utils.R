@@ -107,7 +107,7 @@ test_that("slugify is lower-case and path-safe", {
 })
 
 # Pins the same contract as test_slugify_is_locale_invariant in the Python
-# engine's test_io_utils.py. Every artifact path in both engines is built from
+# engine's test_io_utils.py. Every artefact path in both engines is built from
 # slugify(), so a locale-sensitive fold would write this design's files under a
 # name the Python engine never produces. Base `tolower()` maps "I" to the
 # dotless "i" under a Turkish or Azeri locale, taking the slug out of ASCII --

@@ -18,7 +18,7 @@ scripts, identically in both languages.
 Beyond matching, it treats the stimulus set as a research artefact rather than a by-product. Each run
 emits a materials datasheet carrying its provenance, its checksums, the realised control with an
 effect size, a confidence interval and an equivalence test, and a pre-registration skeleton. A
-design can therefore be shared and reproduced rather than only described in prose.
+design is therefore something a reader can rerun.
 
 ## How to cite
 
@@ -67,8 +67,8 @@ print(
     f"> generation. Python package version {version}. https://github.com/pablobernabeu/lexsync\n"
 )
 
-# The entry is printed as a real fenced block rather than as ready-made HTML, so
-# that Material gives it BibTeX highlighting and a copy button of its own. Printing
+# The entry is printed as a fenced block so that Material gives it BibTeX highlighting
+# and a copy button of its own. Ready-made HTML would get neither. Printing
 # a fence from inside a fence is why the enclosing one takes four backticks. The id
 # is where the Copy BibTeX button below reads the entry from.
 print("```{ .bibtex #lexsync-bibtex }")
@@ -125,7 +125,7 @@ repository and released in lockstep under one version.
 Two browser front-ends also live in the repository, a Streamlit app over the Python engine and a
 Shiny app over the R engine. Each lets a researcher assemble a design without writing code and then
 exports the configuration and the one-line R, Python and command-line code that reproduces the run,
-so the interface produces shareable artefacts rather than a black box. Both call their engine
+so what the interface yields is a shareable artefact a reader can retrace. Both call their engine
 directly and need a local install, so neither is published beside this site. [The app](the-app.md)
 walks through the Streamlit one control by control, and
 [`apps/README.md`](https://github.com/pablobernabeu/lexsync/blob/main/apps/README.md) covers

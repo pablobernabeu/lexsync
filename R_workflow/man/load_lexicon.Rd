@@ -14,8 +14,10 @@ load_lexicon(path, schema, language = NULL)
 \item{language}{Optional language label to record in a \code{language} column.}
 }
 \value{
-A data frame with at least \code{word}, \code{freq_zipf}, \code{length},
-\code{frequency} and \code{id}.
+A data frame with at least \code{word}, \code{length}, \code{n_syllables},
+\code{frequency} and \code{id}, plus the frequency column the schema names (by default
+\code{freq_zipf}) and every other column the file carried. Rows are in byte order
+of \code{word} and \code{id} numbers them from 1.
 }
 \description{
 Reads a derived lexicon, validates the column contract, lower-cases the

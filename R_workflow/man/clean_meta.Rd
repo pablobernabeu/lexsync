@@ -22,7 +22,7 @@ loop table the experiment reads at run time; they are substituted straight into 
 PsychoPy script, the OpenSesame inline Python and the jsPsych HTML, so a quote or an
 angle bracket there stops being text and becomes syntax. A design file is meant to be
 shared and re-run by someone else, which is what makes an unvalidated one an
-executable payload rather than a configuration.
+executable payload as much as a configuration.
 }
 \details{
 Refusing beats escaping. Escaping correctly would mean three different escapes for

@@ -5,7 +5,7 @@ dimension that varies smoothly across set ids is dealt out unevenly, and where e
 list goes to a different group of participants that unevenness is confounded with the
 group. `balance_lists` searches for an assignment whose lists are equated instead.
 
-Two properties are load-bearing and each is pinned here.
+Two properties have to hold, and each is pinned here.
 
 The search must be identical in the two engines, so the objective is all-integer.
 Cohen's d was measured to differ between R and Python by around 3e-16, which at nine

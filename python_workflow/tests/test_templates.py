@@ -12,7 +12,8 @@ templates that is worse than an ordinary staleness bug, because what drifts is
 the code that time-locks EEG markers to stimulus onset, and an experiment that
 records the wrong onset does not fail, it quietly collects unusable data.
 
-So compare the bytes. Twinned with R_workflow/tests/testthat/test-templates.R,
+Comparing the bytes is the check that catches it. Twinned with
+R_workflow/tests/testthat/test-templates.R,
 which holds the R mirror to the same canonical copy. Both skip rather than fail
 when the repository is not present, since an installed package checked in
 isolation has no root templates/ to compare against.

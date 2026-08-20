@@ -82,9 +82,9 @@ def _cross_engine(method, source: str, selected: bool = False) -> str:
 
     ``selected`` distinguishes the two things an item table can now mean. A plain
     table design does no selection, so there is nothing for the engines to agree on
-    and the honest answer is "n/a". A pair-keyed continuous design selects over that
-    table, and that selection was measured to be byte-identical -- so answering "n/a"
-    there understated the guarantee, on the one path where a reader most needs it.
+    and "n/a" is the whole story. A pair-keyed continuous design selects over that
+    table, and that selection was measured to be byte-identical, so answering "n/a"
+    there understated the guarantee on the one path where a reader most needs it.
     """
     if source == "table" and not selected:
         return "n/a (user-supplied items)"
@@ -104,7 +104,7 @@ def _relational_record(design: dict, stimuli) -> dict | None:
     is one per pair per condition, so a reader comparing it against the design's
     ``n_per_condition`` would find it doubled. The member lexicon is named and
     checksummed because it is where every member-level control came from, and nothing
-    else in the record mentions it -- ``materials_source`` names the item table. And
+    else in the record mentions it. ``materials_source`` names the item table. And
     the member dimensions are separated from the relational ones because they are
     different kinds of variable: ``target.frequency`` is a property of one word,
     ``pair.overlap`` is a property of the pair, and only the second is unavailable
@@ -140,7 +140,7 @@ def _relational_record(design: dict, stimuli) -> dict | None:
 def _resolve_tolerance_k(design: dict, schema: dict) -> dict:
     """The tolerance windows as match_stimuli resolves them.
 
-    Schema defaults, overridden per dimension by the design -- the same resolution
+    Schema defaults, overridden per dimension by the design, the same resolution
     the matcher performs. The nearest-neighbour methods apply these windows; the
     pairwise ``joint`` and ``optimal`` methods never consult them, which is why the
     datasheet attaches this block only for the methods that do.
@@ -222,7 +222,7 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
     """Assemble the datasheet dictionary from the pipeline's objects.
 
     ``candidate_pool`` (optional) is a list of ``{"condition", "n_candidates"}``
-    recording how many items satisfied each condition's window before matching --
+    recording how many items satisfied each condition's window before matching,
     the size of the discretionary pool the selection drew from, reported so that
     item-selection bias is auditable (Forster, 2000; Simmons et al., 2011).
 
@@ -421,8 +421,8 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
 def _posix(path):
     """Record a path in POSIX form, as R's file.path() already produces.
 
-    os.path.join gives backslashes on Windows, which would make the datasheet -- a
-    record meant to travel with the materials and be read anywhere -- describe the
+    os.path.join gives backslashes on Windows, which would make the datasheet, a
+    record meant to travel with the materials and be read anywhere, describe the
     machine that happened to build it, and disagree with the R engine's record of the
     same file.
     """
@@ -719,8 +719,8 @@ def _at_15_significant_digits(o):
     The R engine writes this JSON with jsonlite, whose numeric precision is a single
     setting for the whole document; 15 significant digits (``digits = NA``) is R's full
     display precision and the closest common ground. Without this the two engines'
-    records disagreed on any value that had not already been rounded on the way in --
-    a `tolerance_k` of 1/9 was written to 16 digits here and 15 there -- so a reader
+    records disagreed on any value that had not already been rounded on the way in.
+    A `tolerance_k` of 1/9 was written to 16 digits here and 15 there, so a reader
     diffing the two records saw a difference that meant nothing.
 
     Fifteen digits is ample for a provenance record: every value in it either came from

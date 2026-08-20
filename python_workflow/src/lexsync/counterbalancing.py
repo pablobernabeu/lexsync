@@ -81,7 +81,7 @@ def _shuffle_deterministic(df: pd.DataFrame, seed) -> pd.DataFrame:
 # engines was measured to differ by about 3e-16 on average, which at nine decimal
 # places leaves roughly a one-in-three chance over a full run that a comparison of two
 # candidate swaps resolves differently in Python than in R -- and the failure is
-# silent and total, different words rather than different last bits. So the values are
+# silent and total, different words rather than different last bits. The values are
 # quantised to integers ONCE, and the search then uses only +, -, * and comparison.
 # There is no division anywhere in the objective.
 #
@@ -194,6 +194,15 @@ def balance_lists(stimuli: pd.DataFrame, design: dict, schema: dict) -> dict:
     than by position, so no list is favoured by being numbered first. Because the cost
     is a non-negative integer that strictly decreases, the search terminates;
     ``max_passes`` bounds it anyway and the report says whether the bound was reached.
+
+    Five situations raise ``ValueError`` rather than being answered with an assignment
+    that would mislead. A Latin-square design is refused because every item already
+    appears in every list there, so there is nothing left to equate, and fewer than two
+    lists leaves no pair of lists to exchange sets between. A design with no resolvable
+    balance dimension is refused, as is one naming a dimension the stimuli do not carry,
+    and the message names the columns. The last refusal is arithmetic: the search stops
+    if the integer objective would leave the range a double represents exactly, since
+    past that point the two engines could disagree.
 
     Returns ``{"list_of_set": {set: list}, "report": {...}}``.
     """

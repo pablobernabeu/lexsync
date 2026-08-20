@@ -95,8 +95,10 @@ count_syllables <- function(word) {
 #' @param path Path to a derived lexicon CSV.
 #' @param schema The parsed schema (see `config/schema.yaml`).
 #' @param language Optional language label to record in a `language` column.
-#' @return A data frame with at least `word`, `freq_zipf`, `length`,
-#'   `frequency` and `id`.
+#' @return A data frame with at least `word`, `length`, `n_syllables`,
+#'   `frequency` and `id`, plus the frequency column the schema names (by default
+#'   `freq_zipf`) and every other column the file carried. Rows are in byte order
+#'   of `word` and `id` numbers them from 1.
 #' @examples
 #' # Both inputs are bundled with the package, so this runs offline and touches
 #' # nothing outside the installation.
@@ -261,21 +263,21 @@ add_bigram_frequency <- function(df, reference = NULL) {
 #'
 #' The result is the lexicon itself with the norm columns appended, and the key is
 #' looked up positionally rather than through `merge()`. That is what makes the two
-#' engines agree structurally rather than by repair afterwards, because `merge()`
+#' engines agree by construction, with nothing to repair afterwards, because `merge()`
 #' and `pandas.merge` were measured to diverge in three ways, each of them silent:
 #' R hoists the `by` column to position 1 while pandas keeps the left frame's
 #' order, so the column order differed whenever `on` was not already first; R
 #' disambiguates a colliding column name with `.x`/`.y` and pandas with `_x`/`_y`,
 #' and either way a dimension the design matches on disappears under a name
-#' nothing looks for; and `merge(sort = FALSE)` leaves the row order unspecified
-#' rather than keeping x's. A positional lookup has none of those degrees of
+#' nothing looks for; and `merge(sort = FALSE)` leaves the row order unspecified, so
+#' x's order is not carried through. A positional lookup has none of those degrees of
 #' freedom: the output is the input plus columns, in both engines. A colliding
 #' name is now an error instead.
 #'
 #' The key is trimmed and case-folded on *both* sides. Only the norm table's side
 #' was normalised before, so a lexicon holding `Dog` matched nothing and the design
-#' carried on with an all-`NA` dimension -- and because both engines agreed on that
-#' wrong answer, no parity test could have caught it. The lexicon's own spelling is
+#' carried on with an all-`NA` dimension. Because both engines agreed on that wrong
+#' answer, no parity test could have caught it. The lexicon's own spelling is
 #' preserved rather than folded in place: `word` is the byte-order tie-break behind
 #' every selection, so the join must not rewrite it.
 #'
@@ -377,8 +379,8 @@ merge_norms <- function(lexicon, norms, on = "word", columns = NULL) {
 
 #' Load a supplied candidate pool of words and give it the matcher's dimensions
 #'
-#' A researcher who already has a curated word list -- from a previous study, a
-#' norming session, a colleague -- should not have to dress it up as a corpus lexicon
+#' A researcher who already has a curated word list (from a previous study, a norming
+#' session, a colleague) should not have to dress it up as a corpus lexicon
 #' to get lexsync's matching, validation and datasheet. This reads such a list and
 #' returns something the matcher accepts.
 #'
@@ -502,8 +504,8 @@ load_items <- function(path, required_fields) {
   # switching the reader off, keeps one definition of a field's value in both
   # sources: readr's trim_ws also drives its type inference, so disabling it
   # would read a padded ' 3.5 ' as text in R while pandas still parsed a float.
-  # Only ASCII whitespace is trimmed, because that is all readr removes -- a
-  # no-break space survives in both engines, so they still agree.
+  # Only ASCII whitespace is trimmed, because that is all readr removes. A no-break
+  # space survives in both engines, so they still agree.
   trim <- function(x) trimws(as.character(x), whitespace = "[ \t\r\n]")
   for (f in intersect(required_fields, names(df))) df[[f]] <- trim(df[[f]])
   item_key <- trim(df$item)
@@ -543,10 +545,19 @@ load_items <- function(path, required_fields) {
 
 #' Build an experimental candidate pool by filtering a lexicon
 #'
+#' A filter naming a column the frame does not have is silently skipped, because the
+#' same function filters lexica, supplied pools and pair tables, and those carry
+#' different columns. The cost is that a misspelt key silently widens a
+#' selection, so every caller that takes its filters from a design checks the names
+#' against the frame first: [run_pipeline()] for `pool_filters`, [match_stimuli()]
+#' for a condition's `define_by`, and the pair selector for both.
+#'
 #' @param lexicon A lexicon data frame.
 #' @param filters A named list mapping columns to either a numeric `c(min, max)`
 #'   range or a vector of permitted values.
-#' @return The filtered lexicon.
+#' @return The filtered lexicon, with row names dropped. A row missing the filtered
+#'   column is dropped under either kind of filter, and a range with a reversed or
+#'   non-finite bound is an error rather than an empty pool.
 #' @examples
 #' schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
 #' lex <- load_lexicon(system.file("extdata", "en_example.csv", package = "lexsync"),
@@ -560,8 +571,8 @@ build_pool <- function(lexicon, filters = NULL) {
       if (!col %in% names(df)) next
       rng <- unlist(filters[[col]], use.names = FALSE)
       if (is.numeric(rng) && length(rng) == 2) {
-        # YAML's .inf and .nan arrive as ordinary doubles, and either one -- like
-        # a reversed range -- silently empties the pool row by row. Non-finite
+        # YAML's .inf and .nan arrive as ordinary doubles, and either one, like a
+        # reversed range, silently empties the pool row by row. Non-finite
         # first: a NaN bound would make the reversal test meaningless. Equal
         # bounds stay legal (the zh design uses [2, 2]).
         if (any(!is.finite(rng))) {

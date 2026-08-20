@@ -21,8 +21,8 @@ hand-written region below will not survive the next run.
 The four corpora above were built from wordfreq by `corpora/fetch_corpora.py`,
 which takes the most frequent forms admitted by the language's script, keeps
 those within the length bounds, and computes Coltheart's N and OLD20 over the
-resulting set. The frequencies are wordfreq's own Zipf values; everything else
-is computed here and is inspectable in the file.
+resulting set. The frequencies are wordfreq's own Zipf values, and everything
+else is computed here and is inspectable in the file.
 
 The `es_gender` corpus is the exception. It is a derivative of `es` rather than a
 separate retrieval, restricted to words with canonical Spanish gender endings (-a
@@ -30,17 +30,17 @@ feminine, -o masculine, with gerunds excluded) and tagged with a `gender` column
 and it backs the demonstration that reproduces the gender-assignment design of
 González Alonso et al. (2025). It is rebuilt by `corpora/build_es_gender.py`,
 which reproduces the committed file byte for byte. Run that script whenever `es`
-is rebuilt; a test in the Python suite fails if the two fall out of step.
+is rebuilt. A test in the Python suite fails if the two fall out of step.
 
-Two approximations travel with it. Grammatical gender is read off the word ending
-rather than looked up in a lexical database, where the original study used EsPal
-(Duchon et al., 2013), so a word whose ending misrepresents its gender is
-mislabelled: `problema` and `mapa` are masculine, `mano` and `foto` feminine, and
-all four are tagged the wrong way here. Separately, the gerund exclusion tests the
+Two approximations travel with it. Grammatical gender is read off the word ending,
+where the original study looked it up in a lexical database, EsPal (Duchon et al.,
+2013), so a word whose ending misrepresents its gender is mislabelled: `problema`
+and `mapa` are masculine, `mano` and `foto` feminine, and all four are tagged the
+wrong way here. Separately, the gerund exclusion tests the
 ending -endo, which is broader than the gerund ending -iendo and so also removes
 thirteen ordinary words, among them `estupendo`, `tremendo`, `atuendo` and
 `aprendo`. Narrowing it would change which stimuli the demonstration selects, so
-the behaviour is kept and documented rather than quietly corrected.
+the behaviour is kept, and documented here so that nobody has to rediscover it.
 
 ## Data currency and reproducibility
 

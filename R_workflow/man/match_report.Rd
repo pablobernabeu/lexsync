@@ -14,7 +14,10 @@ match_report(stimuli, dims, schema)
 \item{schema}{The parsed global schema (equivalence settings).}
 }
 \value{
-A list with \code{descriptives} and \code{comparisons} data frames.
+A list with \code{descriptives} and \code{comparisons} data frames. Every
+comparison is against the first condition in order of appearance, so a design
+with a single condition has nothing to compare and \code{comparisons} comes back
+with its columns and no rows.
 }
 \description{
 Build the full match-quality report

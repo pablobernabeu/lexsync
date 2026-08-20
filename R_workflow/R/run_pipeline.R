@@ -21,8 +21,12 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
   schema <- read_config(schema_path)
   design <- read_config(design_path)
   n_req <- design$n_per_condition %||% design$n_per_cell
+  # is.finite rather than is.na: trunc(Inf) is Inf, so an infinite request passed both
+  # the integrality and the lower-bound test here and went on to select the whole pool,
+  # while the Python engine's int() raised OverflowError on it. Both engines now refuse
+  # it with this message.
   if (!is.null(n_req) &&
-      (!is.numeric(n_req) || length(n_req) != 1L || is.na(n_req) ||
+      (!is.numeric(n_req) || length(n_req) != 1L || !is.finite(n_req) ||
        n_req < 1 || n_req != trunc(n_req))) {
     stop("lexsync: n_per_condition must be a positive whole number.", call. = FALSE)
   }
@@ -33,7 +37,7 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
   if (is_continuous && identical(source, "table") &&
       !length(unlist(items_cfg$members %||% list(), use.names = FALSE))) {
     # Without members the table branch loads the rows and never selects, while the
-    # log and datasheet would still record continuous mode -- a provenance lie.
+    # log and datasheet would still record continuous mode, which is a provenance lie.
     stop("lexsync: a 'continuous' block with items.source 'table' requires items.members.",
          call. = FALSE)
   }
@@ -160,10 +164,10 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
                         list(conditions = paste(unique(stim$condition), collapse = ", ")))
       }
       std <- c("length", "frequency", "n_density", "old20")
-      # First-occurrence-order union with match_on (not sort(): a locale-collated
-      # order would drift from the Python engine), so a custom joined norm the
-      # design matches on reaches the descriptives, comparisons and
-      # realised-control record rather than only the stimuli file.
+      # First-occurrence-order union with match_on: sort() would give a
+      # locale-collated order that drifts from the Python engine. A custom joined
+      # norm the design matches on then reaches the descriptives, comparisons and
+      # realised-control record, and not only the stimuli file.
       dims <- unique(c(std, match_on))
       dims <- dims[dims %in% names(stim)]
       report <- match_report(stim, dims, schema)

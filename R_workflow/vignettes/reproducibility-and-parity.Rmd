@@ -20,8 +20,8 @@ options(cli.num_colors = 1, cli.hyperlink = FALSE, crayon.enabled = FALSE,
 A stimulus set is usually described rather than shared. The methods section says
 the words were matched on length and frequency, and the set itself, the criteria
 that produced it and the code that applied them are not recoverable from the
-paper. `lexsync` treats the set as an artefact instead of a description: the
-selection and the trial order are deterministic, the R and Python engines produce
+paper. `lexsync` treats the set as an artefact in its own right: the selection
+and the trial order are deterministic, the R and Python engines produce
 the same artefacts from the same input, and each run emits a provenance record
 with the checksums needed to verify it.
 
@@ -72,9 +72,9 @@ summation was pairwise and the other's was not. Every sum in the package now goe
 a single compensated-summation algorithm written out in both engines, whose agreement
 follows from IEEE-754 requiring addition and subtraction to be correctly rounded, and the
 mean, variance and standard deviation are built on it. The median sorts and takes the
-exact middle instead, rather than averaging the two central values through the
-long-double accumulator that `stats::median()` reaches by way of `mean()`. The artefacts
-are compared as bytes rather than as parsed values.
+middle value, or the plain-double average of the two middle values when the count is
+even, which keeps it clear of the long-double accumulator that `stats::median()` reaches
+by way of `mean()`. The artefacts are now compared as bytes.
 
 Two files sit outside the claim by design, because each records the engine that produced
 it: the materials datasheet names its engine and that engine's package versions, and the
@@ -102,12 +102,12 @@ mechanism below closes a specific way the engines could otherwise drift.
 The first is that there is no random number generator anywhere. The obvious way
 to choose 15 items from 700 is to sample them, and `lexsync` never does. The
 anchor condition is chosen by an even spread across its sorted subpool, taking
-positions along the whole range rather than a random subset, and every later item
-is determined by a distance. A seeded RNG would not help here, because R's
-Mersenne-Twister stream and NumPy's are different streams: the same seed gives
-different draws, so any sampling step would break parity by construction.
-Determinism through absence is the only option that survives two languages, and
-it now extends to trial order, whose shuffle is described below.
+positions along the whole range, and every later item is determined by a
+distance. A seeded RNG would not help here, because R's Mersenne-Twister stream
+and NumPy's are different streams: the same seed gives different draws, so any
+sampling step would break parity by construction. Determinism through absence is
+the only option that survives two languages, and it now extends to trial order,
+whose shuffle is described below.
 
 ```{r even-spread}
 anchor_pool <- pool[pool$frequency >= 5.2 & pool$frequency <= 7.0, ]
@@ -119,8 +119,8 @@ idx
 ```
 
 The spread is `seq()` over the row positions, rounded to integers. Both engines
-compute the same positions from the same row count, and the rounding is specified
-rather than incidental.
+compute the same positions from the same row count, and the rounding rule is
+written out in both.
 
 Sorting is by byte order everywhere. R's default string sort is locale-collated,
 and a French locale, a C locale and a Windows locale can order the same words
@@ -145,7 +145,7 @@ integers, never as running floating-point sums, so the counts cannot depend on
 summation order.
 
 Rounding comes before the tie-break, which is the subtle one of these mechanisms.
-Two candidate words can sit at genuinely equal distance from an anchor, and the
+Two candidate words can sit at exactly equal distance from an anchor, and the
 last bits of a square root can differ between two linear-algebra implementations.
 If the engines compared raw doubles, an inconsequential difference in the
 fifteenth decimal would make one engine call a tie and the other not, and they
@@ -170,8 +170,7 @@ word[order(distance, word, id, method = "radix")]
 decimal, and the word's bytes settle it, identically in both engines. Since `word`
 is unique within a lexicon the order is total, so there is always exactly one
 winner and never a coin to flip. The schema notes that this order is fixed in the
-code and deliberately not configurable, because it is the mechanism of parity
-rather than a preference.
+code and deliberately not configurable, because it is the mechanism of parity.
 
 The even-spread rounding is shared as well. `unique(round(seq(...)))` is used
 identically in both engines, including the `unique()`, which matters when the
@@ -203,12 +202,12 @@ identical(stim$trial, same$trial)
 The order is still randomised in the sense a study needs: an item's properties
 bear no systematic relation to its position, and a different seed gives a
 different order. What changed is that the permutation is engine-invariant, so it
-sits inside the cross-engine contract rather than outside it, and the guarantee
-reaches the generated experiments whole: for every shipped design, the PsychoPy
-script, the OpenSesame file, the jsPsych page and both loop-table CSVs are
-byte-identical across the engines.
+now sits inside the cross-engine contract, and the guarantee reaches the
+generated experiments whole: for every shipped design, the PsychoPy script, the
+OpenSesame file, the jsPsych page and both loop-table CSVs are byte-identical
+across the engines.
 
-One detail worth noting for anyone embedding `lexsync` in a longer script:
+One detail matters to anyone embedding `lexsync` in a longer script:
 counterbalancing no longer touches the random number generator at all, since
 nothing in the package consults one, so calling it cannot disturb the stream your
 own code is drawing from.
@@ -236,7 +235,7 @@ and `old20` for exactly this reason.
 
 `mahalanobis` and `optimal` are equivalent to their byte-identical siblings in
 what they compute and not in what they select, and the reason is worth
-understanding rather than merely noting.
+understanding.
 
 `mahalanobis` needs the inverse of the pool's correlation matrix. A matrix
 inverse is computed by LAPACK, and R's LAPACK is not necessarily the one NumPy is
@@ -250,7 +249,7 @@ can land on either side.
 `optimal` solves a linear assignment problem. Where several assignments have the
 same total cost, which one a solver returns is an implementation detail of the
 solver, and R's `clue::solve_LSAP()` and SciPy's implementation resolve those ties
-differently. Both return a genuinely optimal assignment. They need not return the
+differently. Both return an optimal assignment. They need not return the
 same one.
 
 Neither is a bug that a determined engineer could fix. Guaranteeing them would
@@ -275,7 +274,7 @@ Every datasheet carries this field, so a reader of the record does not have to
 know the rule. It reads `byte-identical` for the default methods and
 `approximate (platform linear algebra)` for these two, and the generated methods
 paragraph adds a sentence stating the caveat in prose when it applies. The
-constraint also shapes the roadmap: a covariance-aware distance would arguably be
+constraint also shapes the roadmap: a covariance-aware distance might well be
 the better default, and it stays optional precisely because it cannot carry the
 guarantee.
 
@@ -289,22 +288,21 @@ priming and self-paced reading, three languages including a logographic script,
 and three reproductions of published designs.
 
 The comparison is on identity columns: the word or target, the condition and the
-`set` index. Including `set` is what makes the test meaningful rather than
-cosmetic, since without it the engines could select the same items and pair them
-differently and still pass. Having matched on those, the test then checks every
-other shared column, so the `trial` position and the dimensions each engine
-computes at run time (`n_density`, `old20`, `n_syllables`, `bigram_freq`) must
-also agree.
+`set` index. Including `set` is what gives the test teeth, since without it the
+engines could select the same items and pair them differently and still pass.
+Having matched on those, the test then checks every other shared column, so the
+`trial` position and the dimensions each engine computes at run time
+(`n_density`, `old20`, `n_syllables`, `bigram_freq`) must also agree.
 
 Three details keep the gate from passing vacuously. The test skips when the R
-reference output is absent, since the Python package can be installed on its own,
-so CI sets `LEXSYNC_REQUIRE_PARITY=1` to turn those skips into failures: a job
-meant to run both engines cannot pass by quietly skipping. The R references are
-regenerated and then checked with `git diff --exit-code`, so an R-engine
-regression fails the build instead of being compared against a stale snapshot it
-matches. And the R suite is run once from the source tree with a check that
-nothing skipped, because the repository-coupled tests silently skip when run from
-an installed copy.
+reference output is absent, since the Python package can be installed on its
+own, so CI sets `LEXSYNC_REQUIRE_PARITY=1` to turn those skips into failures: a
+job meant to run both engines cannot pass by quietly skipping. The R references
+are regenerated and then checked with `git diff --exit-code`, so an R-engine
+regression fails the build. Without that step the comparison would run against a
+stale snapshot that the regression matches. And the R suite is run once from the
+source tree with a check that nothing skipped, because the repository-coupled
+tests silently skip when run from an installed copy.
 
 ## The materials datasheet
 
@@ -343,7 +341,7 @@ The record answers the questions a sceptical reader would ask. Where the words
 came from, and whether this is the same file, is settled by `materials_source`,
 which carries the path and its SHA-256. What was applied is recorded in
 `selection`, covering the method, the matched dimensions and the tolerance
-windows that were actually resolved, which is the design's overrides merged onto
+windows as resolved, which is the design's overrides merged onto
 the schema's defaults rather than the defaults a design may have replaced. What
 the selection achieved is in `realised_control`, as the effect sizes, intervals,
 variance ratios and TOST verdicts. What it could have chosen instead is in
@@ -415,8 +413,8 @@ grep("^#", md, value = TRUE)
 ```
 
 The sections left blank are the ones no tool can fill: the hypotheses, the
-sampling plan and the inference criteria. The analysis plan arrives with a
-suggested model rather than empty, and the suggestion is opinionated on purpose.
+sampling plan and the inference criteria. The analysis plan is the exception: it
+arrives with a suggested model, and the suggestion takes a position.
 
 ```{r analysis}
 ds$analysis$suggested_model
@@ -427,7 +425,7 @@ of the language rather than the population of interest, and an analysis treating
 them as fixed generalises only to the words that were used (Clark, 1973; Yarkoni,
 2022). The accompanying note recommends beginning with the maximal structure and
 reducing it if it does not converge. It is a starting point for a design of this
-shape and not a substitute for thinking about the analysis.
+shape.
 
 ## The run log
 
@@ -457,7 +455,7 @@ are emitted, the latter so that a run can be checked by a script. The MD5 here i
 content fingerprint for spotting drift between runs, whereas the datasheet's
 SHA-256 is the stronger one that belongs in a permanent record.
 
-## Reproducing this in practice
+## Reproducing a run
 
 The pipeline does all of the above in one call, and `run_pipeline()` on a design
 configuration is the reproducible unit: it writes the stimuli, the reports, the
@@ -467,9 +465,10 @@ checksums, in either language.
 
 Two habits make that work. Pin the corpus, since a selection is only reproducible
 against a fixed lexicon, which is why the bundled corpora are a checksummed
-snapshot and why the `wordfreq` connector draws on a source frozen in 2024 rather
-than a live one. And prefer the default matching methods when cross-engine
-reproducibility matters, since they are the ones that carry the guarantee.
+snapshot and why the `wordfreq` connector draws on a package frozen in 2024, whose
+data is a stable snapshot of usage through roughly 2021. And where cross-engine
+reproducibility matters, prefer the default matching methods, since they are the
+ones that carry the guarantee.
 
 ## References
 

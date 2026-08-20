@@ -7,8 +7,8 @@ is discarded before analysis; fillers exist to dilute the manipulation so it is 
 guessable, and are likewise not analysed. Both have to reach the generated experiment and
 neither belongs in the stimuli file, the descriptives or the realised control.
 
-So the pipeline splits after counterbalancing: the analysis artefacts are written from
-the main rows, and the experiment is generated from the presented rows. A ``block``
+The pipeline therefore splits after counterbalancing: the analysis artefacts are
+written from the main rows, and the experiment is generated from the presented rows. A ``block``
 column marks which is which, and it appears ONLY when a design declares one of these
 blocks -- a design without them keeps exactly the columns it had.
 

@@ -78,8 +78,8 @@ unlike Coltheart's N is defined for long words, where substitution neighbours ru
 out (Yarkoni et al., 2008). A larger OLD20 means a more isolated word, so it runs
 in the opposite direction to `n_density`.
 
-`n_syllables` also arrives at load time, counting maximal runs of vowels, which is
-an orthographic estimate rather than a phonological syllabification. Only
+`n_syllables` also arrives at load time, counting maximal runs of vowels, an
+orthographic estimate with no pronunciation model behind it. Only
 `bigram_freq` is computed on request, by `add_bigram_frequency()`: it is the mean
 corpus probability of a word's adjacent letter bigrams, standing proxy for
 phonotactic probability.
@@ -101,10 +101,9 @@ The bundled lexicon arrives with `n_density` and `old20` already present, but
 neighbourhood measures depend on the reference set they are computed against, so
 a lexicon derived elsewhere may need them recomputed. `add_neighbourhood()` does
 that. Both measures are quadratic in the size of the reference set, which is why
-the pipeline computes them on the pool rather than on the whole lexicon, and why
-the reference should still be the whole lexicon: a word's neighbours are its
-neighbours in the language, not among the handful of words that survived your
-filters.
+the pipeline computes them on the pool alone, and why the reference should still
+be the whole lexicon: a word's neighbours are its neighbours in the language,
+not among the handful of words that survived your filters.
 
 ```{r neighbourhood}
 sample_words <- lex[lex$word %in% c("cat", "dog", "house", "rhythm"), ]
@@ -124,10 +123,10 @@ merged <- merge_norms(lex, aoa)
 merged[merged$word %in% aoa$word, c("word", "frequency", "aoa")]
 ```
 
-The join is case- and whitespace-insensitive on both sides, keeps the lexicon's own
-row and column order, and refuses a norm column whose name already exists on the
-lexicon rather than renaming it. A silent rename is the worst available outcome: it
-leaves the dimension the design matches on under a name nothing looks for.
+The join is case- and whitespace-insensitive on both sides, keeps the lexicon's
+own row and column order, and refuses a norm column whose name already exists on
+the lexicon. A silent rename would be the worst available outcome: it leaves the
+dimension the design matches on under a name nothing looks for.
 
 In a design you do not call this yourself. Name the tables in a `norms:` block and
 the pipeline joins them before the pool is built, so a norm column can be filtered
@@ -174,9 +173,9 @@ dropped.
 
 Filtering is a separate step from matching. `match_stimuli()` reads a design's
 `conditions` and `match_on` fields but never its `pool_filters`, so passing a raw
-lexicon where a pool was intended silently widens the selection rather than
-raising an error. The pipeline calls `build_pool()` first and the examples here do
-the same.
+lexicon where a pool was intended silently widens the selection, with no error to
+warn you. The pipeline calls `build_pool()` first and the examples here do the
+same.
 
 ## Supplied item pools
 
@@ -198,17 +197,16 @@ items:
 
 The list needs only a `word` column. Length and the syllable estimate are derived
 from the form, and `items.lexicon` supplies the rest, frequency above all, by
-lookup. A word the lexicon does not have is a hard error rather than a missing
-value, because the tolerance windows drop rows with missing values silently and
-the pool would then be smaller than it appears to be.
+lookup. A word the lexicon does not have raises a hard error, because the
+tolerance windows drop rows with missing values silently and the pool would then
+be smaller than it appears to be.
 
 One subtlety would quietly invalidate the controls if it went the other way.
 `n_density` and `old20` are properties of a word in its *language*, not among the
-131 words of a supplied list, so they are computed against the lexicon's words
-rather than the pool's. A supplied pool with no lexicon falls back to itself,
-which is why one is given above. `load_pool()` returns both parts of that, the
-pool and the reference word list, if you are calling it directly rather than
-through a design.
+131 words of a supplied list, so they are computed against the lexicon's words. A
+supplied pool with no lexicon falls back to itself, which is why one is given
+above. `load_pool()` returns both parts of that, the pool and the reference word
+list, if you call it directly outside a design.
 
 Everything downstream is unchanged: the same conditions, the same `match_on`, the
 same report, the same datasheet. What differs is only where the candidates came
@@ -235,23 +233,24 @@ items:
 ```
 
 Each member's word-level norms are joined from the lexicon and prefixed, giving
-`prime.frequency`, `target.length` and so on. The prefix leads rather than trails
-for a reason specific to R: `prime.frequency` is safe because `df$prime` still
-exact-matches the bare `prime` column, whereas `frequency.prime` would be a
-partial-matching hazard. Those prefixed names are usable wherever a dimension is:
-in `pool_filters`, in `match_on`, as a `continuous` predictor or as a control.
+`prime.frequency`, `target.length` and so on. The member name leads and the
+dimension follows, for a reason specific to R: `prime.frequency` is safe because
+`df$prime` still exact-matches the bare `prime` column, whereas
+`frequency.prime` would be a partial-matching hazard. Those prefixed names are
+usable wherever a dimension is: in `pool_filters`, in `match_on`, as a
+`continuous` predictor or as a control.
 
 `pair.lev` is the Levenshtein distance between the two members and `pair.overlap`
 is `1 - pair.lev / length of the longer form`, a normalised orthographic
-similarity. It is a similarity score rather than a count of shared material:
-`abc` and `cba` share every letter but score 0.33, because the measure counts edit
-operations. Orthographic overlap is the standard confound control in a priming
-design, since a related pair that also shares letters confounds semantic
-relatedness with orthographic similarity. The pipeline adds both automatically when the two
-members are named `prime` and `target`. Under any other member names, call
-`add_pair_overlap()` on the item table yourself. A predictor that cannot be computed from the
-forms alone, such as cosine similarity or forward associative strength, arrives
-instead as an extra column on the item table and is used like any other.
+similarity. It scores edit operations, so it is not a count of shared material:
+`abc` and `cba` share every letter but score 0.33. Orthographic overlap is the
+standard confound control in a priming design, since a related pair that also
+shares letters confounds semantic relatedness with orthographic similarity. The
+pipeline adds both automatically when the two members are named `prime` and
+`target`. Under any other member names, call `add_pair_overlap()` on the item
+table yourself. A predictor that cannot be computed from the forms alone, such as
+cosine similarity or forward associative strength, arrives as an extra column on
+the item table and is used like any other.
 
 ```yaml
 n_per_condition: 8                  # counts PAIRS: 8 pairs, 16 rows, 8 per list
@@ -264,15 +263,15 @@ continuous:
 match_on: [target.length, pair.overlap]
 ```
 
-Two rules follow from the item being a pair rather than a row. A filter applies to
-a pair only if *every* one of its rows passes, and selection runs over one row per
-pair, the `anchor_condition`, defaulting to the byte-first condition, with the
-result re-expanded afterwards so every condition row of every chosen pair
-survives. Neither is an optimisation. A filter on `prime.frequency` applied row by
-row would keep a pair's related row and drop its unrelated one, leaving a set the
-Latin-square counterbalancer cannot complete. It has to be a dimension that varies
-within the pair, which the prime-level and pair-level ones do and the target-level
-ones do not, since the target is the same word in both rows.
+Two rules follow from the item being a pair. A filter applies to a pair only if
+*every* one of its rows passes, and selection runs over one row per pair, the
+`anchor_condition`, defaulting to the byte-first condition, with the result
+re-expanded afterwards so every condition row of every chosen pair survives.
+Neither is an optimisation. A filter on `prime.frequency` applied row by row would
+keep a pair's related row and drop its unrelated one, leaving a set the
+Latin-square counterbalancer cannot complete. Only a dimension that varies within
+the pair can split it that way, which the prime-level and pair-level ones do and
+the target-level ones do not, since the target is the same word in both rows.
 
 A member name may not be one of `word`, `id`, `set`, `list`, `trial`, `condition`,
 `replicate` or `item`, which the engines read directly, and a design using one is
@@ -285,10 +284,10 @@ worked example, and its own comments go further into why each rule is there.
 
 A condition is a named region of the pool, given by `define_by`, which is read
 exactly as `pool_filters` is. The first condition listed is the anchor. Its items
-are chosen by an even spread across the sorted candidate subpool rather than by
-taking the top of it, so the anchor covers its region of the manipulated
-dimension instead of clustering at one end. Every later condition is then matched
-to the anchor item by item, and the `set` column records the pairing.
+are chosen by an even spread across the sorted candidate subpool, so the anchor
+covers the whole of its region on the manipulated dimension and does not cluster
+at one end. Every later condition is then matched to the anchor item by item, and
+the `set` column records the pairing.
 
 ```{r design}
 design <- list(
@@ -311,7 +310,7 @@ head(
 ```
 
 Because the anchor is spread across its own subpool, the order of the conditions
-is a design decision and not a formality. The anchor's distribution on the
+is a design decision with consequences. The anchor's distribution on the
 manipulated dimension is inherited from the pool, and every other condition's
 distribution is whatever matching to that anchor produces.
 
@@ -323,11 +322,11 @@ z-scoring each `match_on` dimension against the whole pool, so that a letter and
 Zipf unit become comparable. They differ in what they minimise it over.
 
 `standardised_euclidean`, the default, walks the anchor items in order and gives
-each one its nearest unused counterpart, greedily. It is anchored, so like
-`mahalanobis` it generalises past two conditions. `joint` and `optimal` score
-cross-condition pairs and are refused with anything other than exactly two. It
-preserves the anchor's even spread exactly, because the anchor is selected
-before any matching happens.
+each one its nearest unused counterpart, greedily. Because the anchor is selected
+before any matching happens, it preserves the anchor's even spread exactly. Being
+anchored, it generalises past two conditions, as `mahalanobis` does, while `joint`
+and `optimal` score cross-condition pairs and are refused with any number of
+conditions but two.
 
 `joint` abandons the anchor. It scores every cross-condition pair, then takes the
 best-matched pairs in ascending order of distance until it has enough, so an item
@@ -347,16 +346,14 @@ round(cor(pool[, c("length", "n_density", "old20")]), 2)
 
 Length, neighbourhood density and OLD20 are far from independent here. Under a
 plain Euclidean metric, matching on all three counts the shared
-length-neighbourhood variance three times over and lets a genuinely free
-dimension drift. Mahalanobis distance discounts that overlap (Rubin, 1980;
-Stuart, 2010).
+length-neighbourhood variance three times over and lets an independent dimension
+drift. Mahalanobis distance discounts that overlap (Rubin, 1980; Stuart, 2010).
 
 `optimal` keeps the Euclidean metric but solves the pairing globally, minimising
-the summed distance over all pairings at once rather than committing to each pair
-as it goes (Gu & Rosenbaum, 1993; Hansen & Klopfer, 2006). Greedy matching can
-spend the one good counterpart of a hard item on an easy item that had
-alternatives. Optimal matching cannot. It requires exactly two conditions and the
-`clue` package.
+the summed distance over all pairings at once (Gu & Rosenbaum, 1993; Hansen &
+Klopfer, 2006). Greedy matching can spend the one good counterpart of a hard
+item on an easy item that had alternatives. Optimal matching cannot. It requires
+exactly two conditions and the `clue` package.
 
 ```{r methods}
 methods <- c("standardised_euclidean", "joint", "mahalanobis")
@@ -409,13 +406,13 @@ The R and Python engines select byte-identical stimuli under
 operation whose last bits are decided by the platform's linear-algebra
 implementation, a covariance-matrix inverse in one case and an assignment solver
 in the other, and once two candidate distances differ in their final bits the
-tie-break that would otherwise make the engines agree never fires. In practice
-`mahalanobis` usually still agrees exactly and `optimal` often selects an
-equally-optimal but different set. Each run's datasheet records which case
-applies, under `selection.cross_engine`. If cross-engine reproducibility is a
-requirement of your project, the two default methods are the ones that carry the
-guarantee. The reproducibility vignette sets out why the exception cannot simply
-be engineered away.
+tie-break that would otherwise make the engines agree never fires. `mahalanobis`
+usually still agrees exactly, and `optimal` often selects an equally-optimal but
+different set. Each run's datasheet records which case applies, under
+`selection.cross_engine`. If cross-engine reproducibility is a requirement of
+your project, the two default methods are the ones that carry the guarantee. The
+reproducibility vignette sets out why the exception cannot simply be engineered
+away.
 
 ## Tolerance windows
 
@@ -430,10 +427,10 @@ str(schema$matching$tolerance_k)
 ```
 
 Smaller *k* is stricter. The default of 2.0 on the orthographic dimensions is
-permissive, admitting most of a normal distribution, and it is meant as a
-backstop against a wild counterpart rather than as the mechanism of control. The
-distance ranking within the window does the work. A design tightens it per
-dimension, and only the named dimensions are overridden.
+permissive, admitting most of a normal distribution, and it is meant as a backstop
+against a wild counterpart. The distance ranking within the window is what does
+the work of control. A design tightens the window per dimension, and only the
+named dimensions are overridden.
 
 The window belongs to the anchored path, so it is what `standardised_euclidean`
 and `mahalanobis` apply. `joint` and `optimal` score cross-condition pairs
@@ -466,15 +463,13 @@ dimension at once, not merely the one that proved unsatisfiable, so an
 over-tightened `old20` also discards the `length` and `n_density` windows for
 that condition. And it does not degrade the match as much as you might fear,
 because the distance ranking still runs over the whole subpool and still prefers
-near counterparts. The window is a backstop against a distant one, not the
-mechanism of control. Only when the relaxed subpool is still too small does the
+near counterparts. Only when the relaxed subpool is still too small does the
 matcher stop, with an error naming the condition and the counts.
 
-Both behaviours are policies rather than fixtures of the matcher, and the
-schema's `matching` block names them. `on_insufficient_tolerance` governs the
-fallback just described. Its default of `relax` keeps the behaviour above,
-while `error` makes the matcher refuse instead of silently widening the
-window, which is the honest setting when the window is itself the criterion,
+Both behaviours are policies, and the schema's `matching` block names them.
+`on_insufficient_tolerance` governs the fallback just described. Its default of
+`relax` keeps the behaviour above, while `error` makes the matcher refuse and say
+so, which is the honest setting when the window is itself the criterion,
 as it is when reproducing a published study's stated windows. `shortfall`
 governs what happens when fewer sets than `n_per_condition` can be selected at
 all, and it defaults to `error` deliberately: the datasheet and the generated
@@ -702,8 +697,8 @@ pseudowords evolves identically in the two engines and both select byte-identica
 stimuli. Both are also orthographic models defined for a-z words:
 `build_lexdec_stimuli()` filters the pool to those, and the subsyllabic segmenter
 returns nothing for a word with an accent, a hyphen or a digit, which sends it
-down the letter-substitution path. That is why lexical decision is demonstrated in
-English rather than in the Chinese design.
+down the letter-substitution path. That is why lexical decision is demonstrated on
+the English designs and never on the Chinese one.
 
 `generate_pseudowords()` and `make_pseudoword()` are available directly if you
 want the forms without the lexical-decision scaffolding around them.

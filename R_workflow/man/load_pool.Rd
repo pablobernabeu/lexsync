@@ -21,8 +21,8 @@ A list with \code{pool} (the data frame, carrying \code{word}, \code{id}, \code{
 vector the neighbourhood dimensions should be computed against).
 }
 \description{
-A researcher who already has a curated word list -- from a previous study, a
-norming session, a colleague -- should not have to dress it up as a corpus lexicon
+A researcher who already has a curated word list (from a previous study, a norming
+session, a colleague) should not have to dress it up as a corpus lexicon
 to get lexsync's matching, validation and datasheet. This reads such a list and
 returns something the matcher accepts.
 }

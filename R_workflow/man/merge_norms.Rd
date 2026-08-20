@@ -27,21 +27,21 @@ them. The join is deterministic and identical across engines.
 \details{
 The result is the lexicon itself with the norm columns appended, and the key is
 looked up positionally rather than through \code{merge()}. That is what makes the two
-engines agree structurally rather than by repair afterwards, because \code{merge()}
+engines agree by construction, with nothing to repair afterwards, because \code{merge()}
 and \code{pandas.merge} were measured to diverge in three ways, each of them silent:
 R hoists the \code{by} column to position 1 while pandas keeps the left frame's
 order, so the column order differed whenever \code{on} was not already first; R
 disambiguates a colliding column name with \code{.x}/\code{.y} and pandas with \verb{_x}/\verb{_y},
 and either way a dimension the design matches on disappears under a name
-nothing looks for; and \code{merge(sort = FALSE)} leaves the row order unspecified
-rather than keeping x's. A positional lookup has none of those degrees of
+nothing looks for; and \code{merge(sort = FALSE)} leaves the row order unspecified, so
+x's order is not carried through. A positional lookup has none of those degrees of
 freedom: the output is the input plus columns, in both engines. A colliding
 name is now an error instead.
 
 The key is trimmed and case-folded on \emph{both} sides. Only the norm table's side
 was normalised before, so a lexicon holding \code{Dog} matched nothing and the design
-carried on with an all-\code{NA} dimension -- and because both engines agreed on that
-wrong answer, no parity test could have caught it. The lexicon's own spelling is
+carried on with an all-\code{NA} dimension. Because both engines agreed on that wrong
+answer, no parity test could have caught it. The lexicon's own spelling is
 preserved rather than folded in place: \code{word} is the byte-order tie-break behind
 every selection, so the join must not rewrite it.
 }
