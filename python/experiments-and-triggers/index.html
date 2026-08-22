@@ -1,0 +1,1676 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Multidimensional lexical optimisation and hardware-timed experiment generation. Select matched stimuli from a corpus in any of dozens of languages and generate the experiment that presents them.">
+      
+      
+        <meta name="author" content="Pablo Bernabeu">
+      
+      
+        <link rel="canonical" href="https://pablobernabeu.github.io/lexsync/python/experiments-and-triggers/">
+      
+      
+        <link rel="prev" href="../matching-and-designs/">
+      
+      
+        <link rel="next" href="../reproducibility-and-parity/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/favicon.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Experiments and triggers - lexsync (Python)</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,700,700i%7CJetBrains+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_markdown_exec_pyodide.css">
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../stylesheets/brand.css">
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="amber">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#experiments-and-triggers" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="lexsync (Python)" class="md-header__button md-logo" aria-label="lexsync (Python)" data-md-component="logo">
+      
+  <img src="../assets/logo.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            lexsync (Python)
+          </span>
+          <small class="mrd-version" title="Released version">0.1.0</small>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Experiments and triggers
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Demo link (added: not part of upstream header.html) -->
+    <a data-md-component="demo-link" href="https://pablobernabeu.github.io/lexsync/demos/en_lexdec_english.html" title="Open the demonstration experiment: a generated jsPsych lexical-decision task" class="md-header__button">Demo</a>
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/pablobernabeu/lexsync" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+    
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="amber"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="amber"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../getting-started/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Get started
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../api/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  API reference
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../matching-and-designs/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../changelog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Changelog
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../about/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  About
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="lexsync (Python)" class="md-nav__button md-logo" aria-label="lexsync (Python)" data-md-component="logo">
+      
+  <img src="../assets/logo.svg" alt="logo">
+
+    </a>
+    lexsync (Python)
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/pablobernabeu/lexsync" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Get started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../matching-and-designs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Matching and designs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Experiments and triggers
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Experiments and triggers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#a-trial-is-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A trial is data
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#timing-that-varies-from-trial-to-trial" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Timing that varies from trial to trial
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-five-paradigms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The five paradigms
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-the-items-come-from" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where the items come from
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#practice-fillers-and-feedback" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Practice, fillers and feedback
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#counterbalancing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Counterbalancing
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Counterbalancing">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#balanced-list-assignment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Balanced list assignment
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#triggers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Triggers
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-three-targets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The three targets
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The three targets">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#psychopy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PsychoPy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#opensesame" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OpenSesame
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jspsych" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        jsPsych
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reproducibility-and-parity/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reproducibility and parity
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../the-app/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The app
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../references/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    References
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../about/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    About
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#a-trial-is-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A trial is data
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#timing-that-varies-from-trial-to-trial" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Timing that varies from trial to trial
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-five-paradigms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The five paradigms
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-the-items-come-from" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where the items come from
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#practice-fillers-and-feedback" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Practice, fillers and feedback
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#counterbalancing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Counterbalancing
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Counterbalancing">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#balanced-list-assignment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Balanced list assignment
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#triggers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Triggers
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-three-targets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The three targets
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The three targets">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#psychopy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PsychoPy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#opensesame" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OpenSesame
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jspsych" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        jsPsych
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="experiments-and-triggers">Experiments and triggers<a class="headerlink" href="#experiments-and-triggers" title="Permanent link">&para;</a></h1>
+<p>Once a set of stimuli exists, something has to present it, on the right machine, at the right time,
+and in an EEG study it has to tell the amplifier when the stimulus appeared. lexsync writes that
+something. This guide covers the declarative trial model that makes one engine serve five paradigms
+and three presentation targets, how items are rotated across lists and blocked into practice and
+fillers, and where the trigger is written in each target and why the placement is the interesting
+part.</p>
+<h2 id="a-trial-is-data">A trial is data<a class="headerlink" href="#a-trial-is-data" title="Permanent link">&para;</a></h2>
+<p>The core idea is small. A trial is a list of events, and an event is a dictionary. Nothing about a
+paradigm is expressed as code in a backend, which is what allows a new paradigm to be a
+configuration change rather than three new renderers.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">lexsync</span>
+
+<span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">lexsync</span><span class="o">.</span><span class="n">resolve_events</span><span class="p">({</span><span class="s2">"paradigm"</span><span class="p">:</span> <span class="s2">"lexical_decision"</span><span class="p">}):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+</code></pre></div>
+<div class="result">
+<div class="language-text highlight"><pre><span></span><code>{'type': 'fixation', 'content': '+', 'duration_frames': 30}
+{'type': 'text', 'content': '{target}', 'duration_frames': 48, 'trigger': 'condition', 'onset_locked': True}
+{'type': 'response', 'keys': ['left', 'right'], 'timeout_ms': 2000}
+{'type': 'blank', 'duration_frames': 15}
+</code></pre></div>
+</div>
+<p>An event's <code>type</code> is one of <code>fixation</code>, <code>text</code>, <code>mask</code>, <code>blank</code>, <code>region_by_region</code>, <code>response</code>,
+<code>question</code> or <code>feedback</code>. Its <code>content</code> is either a literal, such as <code>"+"</code> or <code>"#####"</code>, or a field reference in
+braces, such as <code>"{target}"</code>, which is filled per trial from the loop table. <code>duration_ms</code> is the
+event's length in milliseconds, the unit all three targets present, so a design means the same
+interval wherever it runs. The PsychoPy script measures the display's refresh at start-up and
+converts it to the nearest whole number of flips. <code>duration_frames</code> is still accepted for designs
+written before that change and is converted at <code>presentation.assumed_refresh_hz</code>. <code>trigger</code> is an
+integer EEG code, or the token <code>condition</code> or <code>item</code>, and <code>onset_locked</code> asks for it to be written
+on the event's onset flip.</p>
+<p><code>resolve_events</code> returns a design's <code>events</code> list if it has one, and otherwise the default sequence
+of the paradigm it names, defaulting to <code>factorial</code>. Supplying <code>events</code> explicitly is how you build
+a trial the registry does not have.</p>
+<h2 id="timing-that-varies-from-trial-to-trial">Timing that varies from trial to trial<a class="headerlink" href="#timing-that-varies-from-trial-to-trial" title="Permanent link">&para;</a></h2>
+<p>A duration need not be the same on every trial. An event may instead declare a
+<code>duration:</code> block, in one of two forms:</p>
+<div class="language-yaml highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">text</span>
+<span class="w">  </span><span class="nt">content</span><span class="p">:</span><span class="w"> </span><span class="s">'{prime}'</span>
+<span class="w">  </span><span class="nt">duration</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">from_column</span><span class="p">:</span><span class="w"> </span><span class="nv">soa_ms</span><span class="p p-Indicator">}</span><span class="w">            </span><span class="c1"># read per trial from the items</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">blank</span>
+<span class="w">  </span><span class="nt">duration</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">jitter</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">400</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">800</span><span class="p p-Indicator">],</span><span class="nt"> as</span><span class="p">:</span><span class="w"> </span><span class="nv">iti_ms</span><span class="p p-Indicator">}</span><span class="w"> </span><span class="c1"># drawn per trial, in milliseconds</span>
+</code></pre></div>
+<p>The two exist for different reasons. A duration read from a column is a
+manipulated variable: the stimulus-onset asynchrony of a priming study is the
+lever that separates automatic from strategic processing, so it belongs in the
+item table and in the analysis. A jittered duration is not manipulated at all. It
+decorrelates the design matrix, as EEG and fMRI designs routinely require.</p>
+<p>Neither draws a random number. A jittered value is a uniform integer keyed on the
+seed, the column name, the list, the set and the condition, so both engines
+realise the same milliseconds and a rerun reproduces them. Naming the column in
+the key is what makes two jittered events draw independently, since without it
+they would share a single value.</p>
+<p>Either form writes the realised milliseconds into the stimuli table and the loop
+table, because timing that varies is a variable the analysis needs, not
+presentation detail. <code>config/design_en_priming_jitter.yaml</code> is a worked
+example carrying both.</p>
+<h2 id="the-five-paradigms">The five paradigms<a class="headerlink" href="#the-five-paradigms" title="Permanent link">&para;</a></h2>
+<p><code>PARADIGMS</code> is a plain dictionary. Each entry gives the fields the paradigm presents, its
+counterbalancing recipe and its default event sequence.</p>
+<table>
+<thead>
+<tr>
+<th>Paradigm</th>
+<th>Presents</th>
+<th>Counterbalancing</th>
+<th>The trial</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>factorial</code></td>
+<td><code>word</code></td>
+<td><code>factorial</code></td>
+<td>Fixation, the critical word carrying the onset-locked condition marker, response, blank.</td>
+</tr>
+<tr>
+<td><code>lexical_decision</code></td>
+<td><code>target</code></td>
+<td><code>factorial</code></td>
+<td>The same shape, with a generic target field so a real word and a pseudoword are interchangeable.</td>
+</tr>
+<tr>
+<td><code>priming</code></td>
+<td><code>prime</code>, <code>target</code></td>
+<td><code>latin_square_target</code></td>
+<td>Fixation, a 3-frame prime with its own fixed marker, a 2-frame mask, then the target with the condition marker.</td>
+</tr>
+<tr>
+<td><code>self_paced_reading</code></td>
+<td><code>sentence</code>, <code>question</code></td>
+<td><code>latin_square_target</code></td>
+<td>Fixation, the sentence region by region with the critical region marked, then a yes/no comprehension question.</td>
+</tr>
+<tr>
+<td><code>categorisation</code></td>
+<td><code>target</code>, <code>category</code>, <code>answer</code></td>
+<td><code>latin_square_target</code></td>
+<td>Fixation, the category cue, then the word to judge against it with the condition marker, response, blank.</td>
+</tr>
+</tbody>
+</table>
+<p><code>categorisation</code> is worth a paragraph, because what separates it from lexical decision is not the
+shape of the trial but where the question lives. The category cue is a trial event, shown afresh each
+time, since the category varies from trial to trial, and crossing one word with two cues is how a
+categorisation study separates a property of the word from the demands of the task. A robin is a bird
+quickly and an animal slowly, and only the question changed.</p>
+<p>Its <code>answer</code> field holds the key that is correct on the trial, so scoring is a string comparison
+against the recorded response with nothing to look up in whatever language the analysis is
+written in. The paradigm requires the field, which means an unscoreable categorisation experiment
+cannot be generated. Its recipe is <code>latin_square_target</code> for the same reason a priming design uses
+one: each item carries both cues, and a factorial deal would show a participant the same target
+twice, turning the second presentation into a repetition-priming trial.
+<code>config/design_en_categorisation.yaml</code> is a worked example.</p>
+<p><code>required_fields</code> tells you what a design's items must carry: the paradigm's own fields, plus any
+extra field its events reference.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="nb">print</span><span class="p">(</span><span class="n">lexsync</span><span class="o">.</span><span class="n">required_fields</span><span class="p">({</span><span class="s2">"paradigm"</span><span class="p">:</span> <span class="s2">"priming"</span><span class="p">}))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">lexsync</span><span class="o">.</span><span class="n">required_fields</span><span class="p">({</span><span class="s2">"paradigm"</span><span class="p">:</span> <span class="s2">"self_paced_reading"</span><span class="p">}))</span>
+</code></pre></div>
+<div class="result">
+<div class="language-text highlight"><pre><span></span><code>['prime', 'target']
+['sentence', 'question']
+</code></pre></div>
+</div>
+<p>Adding a paradigm means adding an entry to <code>PARADIGMS</code> in both engines, with its event sequence, its
+fields and its recipe. Both backends then render it with no further code.</p>
+<h2 id="where-the-items-come-from">Where the items come from<a class="headerlink" href="#where-the-items-come-from" title="Permanent link">&para;</a></h2>
+<p>The corpus paradigms build their own items. Priming and self-paced reading cannot, because a prime,
+a target and a sentence with a marked critical region are editorial work, so those designs set
+<code>items.source: table</code> and point at a CSV.</p>
+<p><code>load_items</code> reads it. The table must carry an <code>item</code> identifier, a <code>condition</code> label and the
+paradigm's presented fields, and it is checked on the way in. Field values are validated against
+control characters and over-long strings, which is not paranoia about typos: the values are written
+into a loop table and an experiment script, and a stray newline in a stimulus would corrupt both.
+Commas and quotation marks pass through, because they go into a properly quoted CSV that the
+experiment reads at run time rather than into generated code. Items are then mapped to an integer
+<code>set</code> id in byte order, so that a table-sourced design counterbalances the same way as a
+corpus-sourced one, and the same way in both engines.</p>
+<p>The self-paced-reading design shows how a sentence carries its own structure: regions are delimited
+with <code>|</code> in the <code>sentence</code> field, and a <code>critical_region</code> column names the region that gets the
+marker.</p>
+<p>A third source is <code>items.source: pool</code>, which hands the matcher a candidate list of your own instead
+of a whole lexicon. It is described under <a href="../matching-and-designs/#supplied-item-pools">supplied item pools</a>,
+since what it changes is the selection rather than the trial.</p>
+<h2 id="practice-fillers-and-feedback">Practice, fillers and feedback<a class="headerlink" href="#practice-fillers-and-feedback" title="Permanent link">&para;</a></h2>
+<p>Everything above treats one frame as both the materials record and the thing that runs. That holds
+only while the two are the same trials, and they usually are not. Practice exists to settle the
+participant into the task and is discarded before analysis. Fillers exist to dilute the manipulation
+so the participant cannot guess it, and are likewise not analysed. Both have to reach the generated
+experiment, and neither belongs in the stimuli file, the descriptives or the realised control.</p>
+<p>The pipeline therefore splits. The stimuli CSV and the reports are written from the main rows, while
+the PsychoPy, OpenSesame and jsPsych experiments are generated from every presented trial. A <code>block</code>
+column marks which is which, and it appears only when a design declares the blocks, so a design
+without them keeps exactly the columns it had.</p>
+<div class="language-yaml highlight"><pre><span></span><code><span class="nt">practice</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">items/practice_en_lexdec.csv</span>
+<span class="nt">fillers</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">items/fillers_en_lexdec.csv</span>
+</code></pre></div>
+<p>Where each block goes is a methodological choice. Practice comes first, as its own run, shuffled
+within itself so participants do not all meet the practice items in one order. Fillers are
+interleaved with the main trials, because a block of fillers at the end is not a filler at all: it
+is a second block the participant can tell apart. They are merged in
+before the order is drawn, so one deterministic shuffle mixes them through, which does renumber the
+main trials. That is correct, since adding fillers changes the sequence and the stimuli file records
+where each item actually appeared. Both blocks appear in every list and neither is counterbalanced,
+because they carry no manipulation to rotate and every participant should get the same practice.</p>
+<p>Each block's item table is read with the same validation as any other, and given a <code>set</code> range that
+cannot collide with the main items, which a naive read would not manage since practice item 1 and
+main item 1 would both be set 1. The counts and the tables' checksums go into the datasheet, because
+what the participant saw is part of the materials even when it is not part of the analysis.</p>
+<p>A <code>feedback</code> event scores the trial and shows the result. It reads the field named by <code>answer</code>,
+compares it as a string with the key the participant pressed, and displays <code>correct</code>, <code>incorrect</code> or
+<code>no_response</code> for <code>duration_ms</code>.</p>
+<div class="language-yaml highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">feedback</span>
+<span class="w">  </span><span class="nt">answer</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">answer</span>
+<span class="w">  </span><span class="nt">correct</span><span class="p">:</span><span class="w"> </span><span class="s">'Correct'</span>
+<span class="w">  </span><span class="nt">incorrect</span><span class="p">:</span><span class="w"> </span><span class="s">'Incorrect'</span>
+<span class="w">  </span><span class="nt">no_response</span><span class="p">:</span><span class="w"> </span><span class="s">'Too</span><span class="nv"> </span><span class="s">slow'</span>
+<span class="w">  </span><span class="nt">duration_ms</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">600</span>
+<span class="w">  </span><span class="nt">blocks</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">practice</span><span class="p p-Indicator">]</span>
+</code></pre></div>
+<p><code>blocks:</code> restricts an event to the named blocks, and this is its main use: feedback teaches the
+mapping during practice, and would contaminate reaction times in the task itself. The restriction has
+to be expressed on the event because the event list is global to the design. Since a feedback event
+scores a keypress, something before it must have collected one. A design whose feedback event has no
+preceding <code>response</code> or <code>question</code> is refused when the experiment is generated. Left to run time,
+that one design error would surface as three different failures, one per target.
+<code>config/design_en_lexdec_blocks.yaml</code> puts all of this together.</p>
+<h2 id="counterbalancing">Counterbalancing<a class="headerlink" href="#counterbalancing" title="Permanent link">&para;</a></h2>
+<p><code>counterbalance</code> picks a recipe from the design's paradigm and applies it. Trial order within each
+list comes from a keyed-hash shuffle seeded by <code>schema.seed</code>, and a <code>trial</code> column numbers the
+result.</p>
+<p>The rest of this page follows one small design through to its three exported experiments. It runs
+against the bundled lexicon, so the output shown is the output you will get.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">importlib.resources</span><span class="w"> </span><span class="kn">import</span> <span class="n">files</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">yaml</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">lexsync</span>
+
+<span class="n">data</span> <span class="o">=</span> <span class="n">files</span><span class="p">(</span><span class="s2">"lexsync"</span><span class="p">)</span> <span class="o">/</span> <span class="s2">"data"</span>
+<span class="n">schema</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">((</span><span class="n">data</span> <span class="o">/</span> <span class="s2">"schema.yaml"</span><span class="p">)</span><span class="o">.</span><span class="n">read_text</span><span class="p">(</span><span class="n">encoding</span><span class="o">=</span><span class="s2">"utf-8"</span><span class="p">))</span>
+<span class="n">lexicon</span> <span class="o">=</span> <span class="n">lexsync</span><span class="o">.</span><span class="n">load_lexicon</span><span class="p">(</span>
+    <span class="nb">str</span><span class="p">(</span><span class="n">data</span> <span class="o">/</span> <span class="s2">"en_example.csv"</span><span class="p">),</span> <span class="n">schema</span><span class="p">,</span> <span class="n">language</span><span class="o">=</span><span class="s2">"english"</span>
+<span class="p">)</span>
+
+<span class="n">design</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">"name"</span><span class="p">:</span> <span class="s2">"demo"</span><span class="p">,</span> <span class="s2">"language"</span><span class="p">:</span> <span class="s2">"english"</span><span class="p">,</span> <span class="s2">"n_per_condition"</span><span class="p">:</span> <span class="mi">6</span><span class="p">,</span>
+    <span class="s2">"pool_filters"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"length"</span><span class="p">:</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">8</span><span class="p">],</span> <span class="s2">"frequency"</span><span class="p">:</span> <span class="p">[</span><span class="mf">3.8</span><span class="p">,</span> <span class="mf">7.0</span><span class="p">]},</span>
+    <span class="s2">"conditions"</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"high_frequency"</span><span class="p">,</span> <span class="s2">"define_by"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"frequency"</span><span class="p">:</span> <span class="p">[</span><span class="mf">5.2</span><span class="p">,</span> <span class="mf">7.0</span><span class="p">]}},</span>
+        <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"low_frequency"</span><span class="p">,</span> <span class="s2">"define_by"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"frequency"</span><span class="p">:</span> <span class="p">[</span><span class="mf">3.8</span><span class="p">,</span> <span class="mf">4.4</span><span class="p">]}},</span>
+    <span class="p">],</span>
+    <span class="s2">"match_on"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"length"</span><span class="p">,</span> <span class="s2">"n_density"</span><span class="p">,</span> <span class="s2">"old20"</span><span class="p">],</span>
+    <span class="s2">"counterbalance"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"lists"</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span>
+    <span class="s2">"timing"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"fixation_frames"</span><span class="p">:</span> <span class="mi">30</span><span class="p">,</span> <span class="s2">"word_frames"</span><span class="p">:</span> <span class="mi">30</span><span class="p">,</span> <span class="s2">"isi_frames"</span><span class="p">:</span> <span class="mi">15</span><span class="p">},</span>
+<span class="p">}</span>
+
+<span class="n">pool</span> <span class="o">=</span> <span class="n">lexsync</span><span class="o">.</span><span class="n">build_pool</span><span class="p">(</span><span class="n">lexicon</span><span class="p">,</span> <span class="n">design</span><span class="p">[</span><span class="s2">"pool_filters"</span><span class="p">])</span>
+<span class="n">stimuli</span> <span class="o">=</span> <span class="n">lexsync</span><span class="o">.</span><span class="n">match_stimuli</span><span class="p">(</span><span class="n">pool</span><span class="p">,</span> <span class="n">design</span><span class="p">,</span> <span class="n">schema</span><span class="p">)</span>
+</code></pre></div>
+<div class="result"></div>
+<p><code>factorial</code> shows every matched item. With more than one list, matched sets are dealt to lists round
+robin by set index, so a list gets a balanced slice of the design rather than a contiguous block of
+it.</p>
+<p><code>latin_square_target</code> is for the paired and sentence paradigms, where showing the same target twice
+in one list would ruin it. Each item contributes exactly one trial to each list, in a condition
+rotated by the list number, so no target repeats within a list and conditions stay balanced because
+items rotate through them. With <code>counterbalance.lists</code> unset, the number of lists equals the number
+of conditions, which is the fully counterbalanced case.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="n">stimuli</span> <span class="o">=</span> <span class="n">lexsync</span><span class="o">.</span><span class="n">counterbalance</span><span class="p">(</span><span class="n">stimuli</span><span class="p">,</span> <span class="n">design</span><span class="p">,</span> <span class="n">schema</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span>
+    <span class="n">stimuli</span><span class="p">[[</span><span class="s2">"trial"</span><span class="p">,</span> <span class="s2">"list"</span><span class="p">,</span> <span class="s2">"set"</span><span class="p">,</span> <span class="s2">"condition"</span><span class="p">,</span> <span class="s2">"word"</span><span class="p">]]</span>
+    <span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">to_string</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="p">)</span>
+</code></pre></div>
+<div class="result">
+<div class="language-text highlight"><pre><span></span><code> trial  list  set      condition  word
+     1     1    4 high_frequency water
+     2     1    1 high_frequency  knew
+     3     1    3 high_frequency  fact
+</code></pre></div>
+</div>
+<p>A design with a <code>replicate</code> column, from <code>resample_stimuli</code>, is counterbalanced replicate by
+replicate, and trial order is numbered within each.</p>
+<h3 id="balanced-list-assignment">Balanced list assignment<a class="headerlink" href="#balanced-list-assignment" title="Permanent link">&para;</a></h3>
+<p>The factorial deal sends set 1 to list 1, set 2 to list 2 and so on. That is reproducible, but it
+balances nothing: every <em>n</em>th set lands in the same list, so a dimension that happens to vary
+smoothly across sets is dealt out unevenly, and where each list goes to a different group of
+participants, the unevenness is confounded with the group.</p>
+<p><code>counterbalance.optimise</code> searches instead for an assignment whose lists have near-equal totals on
+the dimensions you name, by exchanging pairs of item sets between lists. List sizes are preserved,
+since a swap trades one set for another.</p>
+<div class="language-yaml highlight"><pre><span></span><code><span class="nt">counterbalance</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">lists</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">4</span>
+<span class="w">  </span><span class="nt">optimise</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">  </span><span class="nt">balance_on</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">length</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">n_density</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">old20</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">frequency</span><span class="p p-Indicator">]</span>
+</code></pre></div>
+<p><code>balance_on</code> defaults to <code>match_on</code>, and the example widens it deliberately. Frequency is the
+manipulated variable and so is not matched on, but it is manipulated <em>within</em> a list, since every
+list holds both conditions. Equating the lists on its total therefore costs the manipulation nothing
+and removes a difference between the participant groups who receive different lists. Naming only the
+matched dimensions leaves frequency dealt arbitrarily, and measurably so: on the shipped design the
+optimiser then improves the three named dimensions and makes frequency worse than the arbitrary deal
+had it. Balance what you want equated across lists, which is usually everything.</p>
+<p>This is a steepest descent to a local optimum, not a global search. What it guarantees is that no
+single exchange would improve matters further, and the datasheet records the imbalance before and
+after, so the improvement is checkable. The objective is all-integer and ties are broken by the
+seeded keyed hash, which keeps the two engines on the same assignment and stops list 1 being
+favoured for being numbered first.</p>
+<p>It is off by default, and stays off. Switching it on changes which items a participant sees, so it
+has to be a deliberate design decision. A package upgrade must never make that change for a study
+already running. It is refused on a Latin-square design, where every item already appears in every
+list and the lists are balanced on the items by construction. <code>balance_lists</code> runs the search alone
+if you want the assignment without applying it. <code>config/design_en_balanced_lists.yaml</code> is the worked
+example.</p>
+<p><code>participant_table</code> allocates participants to the cells of any crossed factors, cycling through the
+grid so the allocation stays balanced whatever the participant count.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="nb">print</span><span class="p">(</span>
+    <span class="n">lexsync</span><span class="o">.</span><span class="n">participant_table</span><span class="p">(</span>
+        <span class="p">{</span><span class="s2">"list"</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="s2">"order"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"forward"</span><span class="p">,</span> <span class="s2">"reverse"</span><span class="p">]},</span> <span class="mi">4</span>
+    <span class="p">)</span>
+    <span class="o">.</span><span class="n">to_string</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="p">)</span>
+</code></pre></div>
+<div class="result">
+<div class="language-text highlight"><pre><span></span><code> list   order  participant
+    1 forward            1
+    2 forward            2
+    1 reverse            3
+    2 reverse            4
+</code></pre></div>
+</div>
+<p>The grid is crossed with the first factor varying fastest, matching R's <code>expand.grid</code>, so both
+engines put participant 3 in the same cell.</p>
+<div class="admonition note">
+<p class="admonition-title">Trial order is part of the parity contract</p>
+<p>The selection, the pairing, the condition assignment and the trial order are all byte-identical
+across the engines. The shuffle draws no random number, since R's and NumPy's generators could
+never agree on a permutation. Each trial is instead ranked by the SHA-256 digest of its seed,
+replicate, list, set and condition, so the order is a pure function of the design: the same
+bytes from either engine on any platform, a different order for every seed, and no systematic
+position effects.</p>
+</div>
+<h2 id="triggers">Triggers<a class="headerlink" href="#triggers" title="Permanent link">&para;</a></h2>
+<p><code>assign_triggers</code> gives each row two EEG codes in the 0–255 range a parallel port can carry. The
+condition marker starts at 101 and counts up per condition. The item marker starts at 40 and wraps
+after 200 sets. <code>export_experiments</code> calls it for you, so you only need it directly if you are
+exporting one target at a time.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">lexsync.scripting</span><span class="w"> </span><span class="kn">import</span> <span class="n">assign_triggers</span>
+
+<span class="nb">print</span><span class="p">(</span>
+    <span class="n">assign_triggers</span><span class="p">(</span><span class="n">stimuli</span><span class="p">)[</span>
+        <span class="p">[</span><span class="s2">"word"</span><span class="p">,</span> <span class="s2">"condition"</span><span class="p">,</span> <span class="s2">"condition_trigger"</span><span class="p">,</span> <span class="s2">"item_trigger"</span><span class="p">]</span>
+    <span class="p">]</span>
+    <span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">to_string</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="p">)</span>
+</code></pre></div>
+<div class="result">
+<div class="language-text highlight"><pre><span></span><code> word      condition  condition_trigger  item_trigger
+water high_frequency                101            43
+ knew high_frequency                101            40
+ fact high_frequency                101            42
+</code></pre></div>
+</div>
+<p>The codes land in the loop table as <code>condition_trigger</code> and <code>item_trigger</code>, and the event's
+<code>trigger: condition</code> token is what binds one to the other:</p>
+<div class="language-text highlight"><pre><span></span><code>trial,list,set,condition,word,condition_trigger,item_trigger
+1,1,4,high_frequency,water,101,43
+2,1,1,high_frequency,knew,101,40
+3,1,3,high_frequency,fact,101,42
+</code></pre></div>
+<p>The schema sets the hardware defaults: <code>triggers.parallel_address</code> (<code>0x0378</code>, a typical LPT1 base
+address), <code>triggers.trigger_hold_ms</code> (50, comfortably above the 10 ms minimum recorders need to
+see, and converted to whole flips against the measured refresh so it does not shorten on a fast
+display), and <code>triggers.inter_trigger_ms</code> (10, the spacing of trailing markers). A design can
+override them. The older <code>triggers.reset_after_frames</code> is still accepted and converted.</p>
+<h2 id="the-three-targets">The three targets<a class="headerlink" href="#the-three-targets" title="Permanent link">&para;</a></h2>
+<p><code>export_experiments</code> writes all three from the same rendered event list and returns their paths.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="c1"># illustrative: writes three experiment files into the working directory</span>
+<span class="n">paths</span> <span class="o">=</span> <span class="n">lexsync</span><span class="o">.</span><span class="n">export_experiments</span><span class="p">(</span>
+    <span class="n">stimuli</span><span class="p">,</span> <span class="n">design</span><span class="p">,</span> <span class="n">schema</span><span class="p">,</span> <span class="n">outdir</span><span class="o">=</span><span class="s2">"output/experiments"</span>
+<span class="p">)</span>
+<span class="c1"># {'psychopy': '.../demo_english_psychopy.py',</span>
+<span class="c1">#  'opensesame': '.../demo_english.osexp',</span>
+<span class="c1">#  'jspsych': '.../demo_english.html'}</span>
+</code></pre></div>
+<p>Generation imports neither PsychoPy nor pyserial. It writes text. That is what lets the whole
+demonstration, and the test suite, reproduce on a machine with no laboratory hardware attached.</p>
+<h3 id="psychopy">PsychoPy<a class="headerlink" href="#psychopy" title="Permanent link">&para;</a></h3>
+<p>The PsychoPy export (<a href="../references/#peirce-2019">Peirce et al., 2019</a>) is where the methodological
+argument for lexsync lives. The script reads its stimulus text as data from the conditions CSV
+beside it, and interprets an <code>EVENTS</code> list embedded as JSON, so one interpreter serves every
+paradigm.</p>
+<p>The trigger is written on the exact buffer flip on which the stimulus first appears:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="c1"># illustrative: an excerpt of the generated script, needing a PsychoPy window and port</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">show_frames</span><span class="p">(</span><span class="n">win</span><span class="p">,</span> <span class="n">stim</span><span class="p">,</span> <span class="n">frames</span><span class="p">,</span> <span class="n">port</span><span class="p">,</span> <span class="n">trigger</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Draw ``stim`` for ``frames`` flips; if a trigger is given, lock it to onset."""</span>
+    <span class="k">if</span> <span class="n">trigger</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">win</span><span class="o">.</span><span class="n">callOnFlip</span><span class="p">(</span><span class="n">port</span><span class="o">.</span><span class="n">setData</span><span class="p">,</span> <span class="n">trigger</span><span class="p">)</span>
+    <span class="c1"># callOnFlip runs its callback on the NEXT flip, so queueing the reset on this</span>
+    <span class="c1"># index clears the code one flip later and holds it for exactly</span>
+    <span class="c1"># TRIGGER_HOLD_FRAMES flip intervals.</span>
+    <span class="n">reset_at</span> <span class="o">=</span> <span class="n">TRIGGER_HOLD_FRAMES</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">frames</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">stim</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">stim</span><span class="o">.</span><span class="n">draw</span><span class="p">()</span>
+        <span class="n">win</span><span class="o">.</span><span class="n">flip</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">trigger</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">f</span> <span class="o">==</span> <span class="n">reset_at</span><span class="p">:</span>
+            <span class="n">win</span><span class="o">.</span><span class="n">callOnFlip</span><span class="p">(</span><span class="n">port</span><span class="o">.</span><span class="n">setData</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">trigger</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">frames</span> <span class="o">&lt;=</span> <span class="n">reset_at</span><span class="p">:</span>
+        <span class="n">port</span><span class="o">.</span><span class="n">setData</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</code></pre></div>
+<p><code>win.callOnFlip</code> queues the port write against the next flip, so the code goes out with the photons
+rather than from a later component that merely runs soon afterwards. The common alternative, sending
+the trigger from a separate sequence-ordered item, inherits whatever jitter sits between that item
+and the flip. The reset is queued the same way, one flip before the hold expires so that it lands
+on the flip that ends it, with a direct write as the fallback when the stimulus is shorter than the
+hold. <code>TRIGGER_HOLD_FRAMES</code> is computed at start-up from <code>TRIGGER_HOLD_MS</code> and the measured refresh
+rate, floored at one flip and at the recorder minimum, which is what keeps a declared hold meaning
+the same interval on a 60 Hz and a 144 Hz display.</p>
+<p>Stimulus text is never interpolated into the script, only read from the CSV at run time, so nothing
+in a stimulus can become code. When no parallel-port driver is present, on a development laptop, on
+macOS, or in continuous integration, a mock port prints the codes and the script still runs. The
+test suite exercises exactly that: a mock-PsychoPy harness runs the generated script and asserts
+that the onset trigger is flip-locked.</p>
+<h3 id="opensesame">OpenSesame<a class="headerlink" href="#opensesame" title="Permanent link">&para;</a></h3>
+<p>The <code>.osexp</code> is generated block by block rather than from a template, and the result is a normal
+OpenSesame experiment (<a href="../references/#mathot-2012">Mathôt et al., 2012</a>): a trigger-setup inline
+script, one inline script per event, a sequence and a loop.</p>
+<div class="language-text highlight"><pre><span></span><code>define inline_script lexsync_e1
+    set description "Show stimulus and send onset-aligned trigger"
+    set _prepare ""
+    ___run__
+    c = Canvas()
+    c.text(var.word)
+    var.onset_time = c.show()
+    send_trigger(var.condition_trigger)
+    clock.sleep(500)
+</code></pre></div>
+<p><code>Canvas.show()</code> blocks until the flip and returns its timestamp, so the trigger goes out
+immediately after the onset it marks. The setup block opens a parallel or serial device and falls
+back to a printing stub when neither is available, so the experiment opens and runs on a machine
+with no trigger hardware.</p>
+<p>Two details in the generated file are deliberate. The loop is set to <code>sequential</code>, because
+OpenSesame's default is random, which would discard the seeded trial order the CSV is sorted by and
+put this target out of step with the other two. A <code>response</code> event is preceded by a blank canvas,
+because a <code>keyboard_response</code> draws nothing and the preceding stimulus would otherwise stay on
+screen for the whole response window instead of offsetting at its stated duration. A structural
+validator in the test suite checks the generated file's blocks and references.</p>
+<h3 id="jspsych">jsPsych<a class="headerlink" href="#jspsych" title="Permanent link">&para;</a></h3>
+<p>The browser export is a single HTML file carrying the same rendered events and the trial data
+inline. It opens with instructions, attaches each item's design fields to every recorded row, and
+ends by saving the collected data as a CSV download, so a generated experiment gathers usable data
+with no server behind it. The jsPsych library and its stylesheet load from a content delivery
+network, so the first run needs an internet connection.</p>
+<p>Two things are handled on the way out. Event-model key names are mapped to browser key names, so
+<code>left</code> becomes <code>arrowleft</code> and <code>space</code> becomes a literal space. The design's free-text <code>language</code>
+label is mapped to a BCP 47 tag for the <code>lang</code> attribute, falling back to <code>und</code> rather than emitting
+<code>lang="english"</code>, which no user agent can resolve. A design may state <code>language_tag</code> outright.</p>
+<div class="admonition note">
+<p class="admonition-title">The browser target records triggers, it does not send them</p>
+<p>A browser cannot drive a parallel port. Onset triggers are written into each trial's recorded
+data, which is enough to reconstruct the design offline but not to synchronise an amplifier.
+Online EEG synchronisation needs WebSerial, LSL or a photodiode. The two laboratory targets are
+where the hardware timing lives.</p>
+</div>
+<p>Every worked design in the repository is published as one of these files, which is what the Demo
+link in the header opens.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../matching-and-designs/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Matching and designs">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Matching and designs
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../reproducibility-and-parity/" class="md-footer__link md-footer__link--next" aria-label="Next: Reproducibility and parity">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Reproducibility and parity
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      <span class="mrd-footer-badges"> <a href="https://github.com/pablobernabeu/lexsync/actions/workflows/python-tests.yaml"><img src="https://github.com/pablobernabeu/lexsync/actions/workflows/python-tests.yaml/badge.svg" alt="python-tests"></a> <a href="https://lifecycle.r-lib.org/articles/stages.html#experimental"><img src="https://img.shields.io/badge/lifecycle-experimental-orange.svg" alt="Lifecycle: experimental"></a> <a href="https://opensource.org/license/MIT"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT"></a> </span> Developed by <a href="https://pablobernabeu.github.io">Pablo Bernabeu</a>. Open, reproducible research software in R and Python. Released under the <a href="https://pablobernabeu.github.io/lexsync/python/licence/">MIT licence</a>.
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.indexes", "navigation.top", "navigation.footer", "toc.follow", "content.code.copy", "search.suggest", "search.highlight"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": "0.1.0"}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="../assets/_markdown_exec_pyodide.js"></script>
+      
+    
+  </body>
+</html>

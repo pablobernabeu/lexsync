@@ -1,0 +1,1354 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Multidimensional lexical optimisation and hardware-timed experiment generation. Select matched stimuli from a corpus in any of dozens of languages and generate the experiment that presents them.">
+      
+      
+        <meta name="author" content="Pablo Bernabeu">
+      
+      
+        <link rel="canonical" href="https://pablobernabeu.github.io/lexsync/python/reproducibility-and-parity/">
+      
+      
+        <link rel="prev" href="../experiments-and-triggers/">
+      
+      
+        <link rel="next" href="../the-app/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/favicon.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Reproducibility and parity - lexsync (Python)</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,700,700i%7CJetBrains+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_markdown_exec_pyodide.css">
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../stylesheets/brand.css">
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="amber">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#reproducibility-and-parity" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="lexsync (Python)" class="md-header__button md-logo" aria-label="lexsync (Python)" data-md-component="logo">
+      
+  <img src="../assets/logo.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            lexsync (Python)
+          </span>
+          <small class="mrd-version" title="Released version">0.1.0</small>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Reproducibility and parity
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Demo link (added: not part of upstream header.html) -->
+    <a data-md-component="demo-link" href="https://pablobernabeu.github.io/lexsync/demos/en_lexdec_english.html" title="Open the demonstration experiment: a generated jsPsych lexical-decision task" class="md-header__button">Demo</a>
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/pablobernabeu/lexsync" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+    
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="amber"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="amber"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../getting-started/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Get started
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../api/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  API reference
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../matching-and-designs/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../changelog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Changelog
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../about/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  About
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="lexsync (Python)" class="md-nav__button md-logo" aria-label="lexsync (Python)" data-md-component="logo">
+      
+  <img src="../assets/logo.svg" alt="logo">
+
+    </a>
+    lexsync (Python)
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/pablobernabeu/lexsync" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Get started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../matching-and-designs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Matching and designs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../experiments-and-triggers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Experiments and triggers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reproducibility and parity
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reproducibility and parity
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-guarantee" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The guarantee
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-makes-it-hold" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What makes it hold
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-unicode-input-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Unicode input contract
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-it-stops" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where it stops
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-it-is-tested" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How it is tested
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-materials-datasheet" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The materials datasheet
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-run-log" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The run log
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reproducing-the-demonstrations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reproducing the demonstrations
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../the-app/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The app
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../references/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    References
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../about/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    About
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-guarantee" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The guarantee
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-makes-it-hold" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What makes it hold
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-unicode-input-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Unicode input contract
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-it-stops" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where it stops
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-it-is-tested" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How it is tested
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-materials-datasheet" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The materials datasheet
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-run-log" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The run log
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reproducing-the-demonstrations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reproducing the demonstrations
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="reproducibility-and-parity">Reproducibility and parity<a class="headerlink" href="#reproducibility-and-parity" title="Permanent link">&para;</a></h1>
+<p>Most stimulus sets are described rather than shared. A paper says the words were matched on length
+and frequency, gives two tables of means, and the set itself either never appears or appears as a
+spreadsheet with no account of where it came from. lexsync is built the other way round: the design
+is a file, the selection is a function of that file, and the run emits the provenance record that
+lets someone else arrive at the same words.</p>
+<p>This guide sets out what the cross-engine guarantee promises, the specific engineering that makes
+it hold, where it stops, how it is tested, and what a run writes down about itself.</p>
+<h2 id="the-guarantee">The guarantee<a class="headerlink" href="#the-guarantee" title="Permanent link">&para;</a></h2>
+<p>For the deterministic matching methods, the R and Python engines produce byte-identical output from
+identical input, and the guarantee has three layers. The selection: the same words, paired the same
+way, assigned to the same conditions and lists. The computed dimensions: every value an engine
+derives at run time and writes into the stimuli CSV. And the full generated experiment: the
+PsychoPy script, the OpenSesame experiment, the jsPsych page and both loop tables, trial order
+included. Not statistically equivalent sets, not files that agree to several decimal places. The
+same bytes.</p>
+<p>That is a stronger claim than it may look, because the two engines share no code. They are separate
+implementations, in different languages, on different linear-algebra stacks, and each is a package
+in its own right. What they share is a specification: the same schema, the same design file, the
+same algorithm, and the same rules about what to do at every point where an implementation could
+legitimately choose either of two answers.</p>
+<h2 id="what-makes-it-hold">What makes it hold<a class="headerlink" href="#what-makes-it-hold" title="Permanent link">&para;</a></h2>
+<p>The guarantee is not a property that the code happens to have. It is a set of decisions, most of
+which cost something, and each of which closes off a way for the two engines to drift apart.</p>
+<p>There is no random number generator anywhere in the package. Not a seeded one, none at all.
+Wherever a naive implementation would sample, lexsync spreads evenly or hashes. The matcher's
+anchor is an even spread across the sorted subpool, the continuous selector is two even spreads,
+<code>build_lexdec_stimuli</code> draws its real words the same way, and trial order is a keyed hash of the
+design, described below. A seeded generator would be reproducible within an engine, but R's and
+NumPy's differ, so it would not cross the gap.</p>
+<p>Every ordering is by UTF-8 bytes. The lexicon is sorted that way at load time, item tables are
+mapped to set ids that way, pseudoword base words are processed that way, and the matcher's
+tie-break is the word's bytes and then its lexicon id. Locale-collated sorting would put a German
+laptop and an English continuous-integration runner in disagreement about which of two words comes
+first, and one flipped tie-break at the top of a pool cascades through everything after it.</p>
+<p>Distances are rounded to nine decimal places before they are compared: in the matcher, in the
+<code>joint</code> cost matrix, in the overlap cap and in the continuous selector's Pearson correlations. Two
+engines can compute the same distance and differ in the last bit, and if that bit decides a
+comparison then a stable tie-break is not stable at all. Rounding first is what makes the tie-break
+mean anything.</p>
+<p>Missing values are ranked last, explicitly. A relaxed tolerance window can readmit a row whose
+matched dimension is missing, and its distance is then NaN. A bare <code>min()</code> over NaN keeps whichever
+row it happened to see first, which makes the selection depend on pool row order. The matcher sorts
+NaN last, as R's <code>order(na.last = TRUE)</code> does.</p>
+<p>Text is read the same way by both engines. pandas treats <code>null</code>, <code>nan</code>, <code>none</code> and <code>true</code> as missing
+by default, which would silently drop those real English words and leave the two engines with
+different lexica, so <code>read_csv_utf8</code> sets <code>keep_default_na=False</code> and recognises only <code>""</code> and <code>NA</code>,
+matching readr's default. <code>load_lexicon</code> also drops missing words before coercing types: <code>astype(str)</code>
+renders a missing word as the literal string <code>"nan"</code>, which survives every guard downstream, while
+R's <code>as.character(NA)</code> stays <code>NA</code> and drops the row. One extra row shifts every id after it.</p>
+<p>Text is written the same way too. pandas defaults its line terminator to <code>os.linesep</code>, so the same
+selection would carry a different SHA-256 on Windows than on Linux. The datasheet advertises those
+digests as provenance, so they must depend on the content alone, and <code>write_csv_utf8</code> pins LF. Paths
+in the datasheet are recorded in POSIX form for the same reason. A record meant to travel should not
+describe the machine that happened to build it.</p>
+<p>Derived quantities are computed from integers. Bigram probabilities come from integer counts and are
+rounded, and the subsyllabic constituent inventory is integer counts keyed by role and length, so it
+is order-independent. Neither depends on the order in which the corpus was accumulated.</p>
+<p>The generated experiments are byte-identical as well, all of them: the PsychoPy script, the
+OpenSesame experiment, the jsPsych page and both loop tables, 105 files across the 21
+worked designs. One place they could drift is the event JSON embedded in the PsychoPy script, since
+jsonlite pads no separators and drops a whole number's fractional part, serialising a 2000 ms
+timeout as <code>2</code> rather than <code>2.0</code>. Python is the side that conforms.</p>
+<p>The other place is trial order, which until recently was the one artefact the engines could not
+share. Each shuffled with its own seeded generator, R with <code>sample()</code> and Python with NumPy's
+PCG64, and the same seed could not give the same permutation, so the loop tables, and the <code>TRIALS</code>
+array the browser experiment embeds, used to differ. Both engines now order the trials of a list by
+a keyed hash instead: each row is ranked by the SHA-256 digest of
+<code>seed|replicate|list|set|condition</code>, a tuple that identifies the trial uniquely under either
+counterbalancing recipe. Distinct inputs to SHA-256 behave as independent uniform draws, so
+ordering by the digest realises a seeded random permutation, but as a pure function of the design.
+The same bytes come out of both engines on any platform, there is no generator state to save or
+restore, a different seed still gives a different order, and the order remains random in the sense
+a reviewer cares about, with no systematic position effects.</p>
+<p>Some of these are visible in the design surface, and deliberately so. The tie-break order in the
+matcher is fixed at distance, then word bytes, then id, and is not configurable, because it is
+precisely what makes the two engines agree without an RNG. Making it an option would make the
+guarantee an option.</p>
+<h2 id="the-unicode-input-contract">The Unicode input contract<a class="headerlink" href="#the-unicode-input-contract" title="Permanent link">&para;</a></h2>
+<p>Word matching, deduplication and the <code>length</code> dimension operate on Unicode code points exactly as
+supplied. Beyond lower-casing at load time, the orthographic form is never rewritten, and in
+particular no canonical normalisation is applied, neither NFC nor NFD. A precomposed character such
+as é and its decomposed counterpart, the base letter followed by a combining accent, are therefore
+distinct items that differ in length, and a lexicon mixing the two conventions carries apparent
+duplicates that never match one another. Supply NFC-normalised text, which is the form most corpora
+already distribute.</p>
+<p>The syllable estimator and the pseudoword generators carry a narrower contract still. The vowel
+class behind <code>n_syllables</code> covers the Latin-1 vowels, and the pseudoword generators build their
+candidates from lower-case a to z, so both are orthographic approximations defined for Latin
+orthographies and unavailable for other scripts. The shipped Chinese design matches on <code>length</code>,
+<code>n_density</code> and <code>old20</code> for exactly this reason.</p>
+<h2 id="where-it-stops">Where it stops<a class="headerlink" href="#where-it-stops" title="Permanent link">&para;</a></h2>
+<p>Two exceptions, and both are documented here.</p>
+<p><code>mahalanobis</code> and <code>optimal</code> are not covered. The first inverts a covariance matrix and the second
+solves a linear-assignment problem, and those are the two places where the R and Python
+linear-algebra backends differ in their last bits, with the assignment solver's tie handling
+differing outright. The engines agree closely. <code>mahalanobis</code> usually still agrees exactly,
+while <code>optimal</code> tends to select an equally optimal but different set, which is a
+reasonable thing for an optimal matcher to do when several assignments share the minimum. Neither is
+guaranteed byte-for-byte, and each run's datasheet records which case applies.</p>
+<p>This is why neither is the default, despite both being defensible improvements on it. The roadmap
+says as much: a covariance-aware distance is promoted to the default only if a determinism-safe
+implementation is found. The guarantee is a hard constraint on which algorithms can be adopted, not
+a nice property that the current defaults happen to have.</p>
+<p>Trial order is no longer on this list. Earlier versions drew it from each engine's own seeded
+generator, reproducible within an engine, given <code>schema.seed</code>, and never across the two. The
+keyed-hash shuffle retired that exception: the permutation is part of the byte-identical surface,
+and the parity suite compares the <code>trial</code> column along with everything else.</p>
+<p>Corpus versions are not magic. A design pins the lexicon file it reads, and the bundled corpora are
+a fixed, checksummed snapshot, so the demonstrations reproduce with no download. The optional
+wordfreq connector is pinned to its frozen 3.x line, a stable snapshot of usage through roughly
+2021, which keeps a fetched lexicon reproducible where a live source would let it drift. Fetch a
+corpus from a URL that changes and lexsync cannot help you. The datasheet's SHA-256 of the
+source file will at least tell you that it changed.</p>
+<h2 id="how-it-is-tested">How it is tested<a class="headerlink" href="#how-it-is-tested" title="Permanent link">&para;</a></h2>
+<p>The claim is checked, not merely stated. <code>tests/test_parity.py</code> carries 21 cases, one per
+worked design, spanning English, Spanish and Mandarin Chinese and covering every item source and
+every paradigm: frequency and neighbourhood contrasts, lexical decision under both pseudoword
+generators, the continuous design, resampling, priming, self-paced reading and three reproductions
+of published designs.</p>
+<p>Each case regenerates the Python selection and compares it against the committed R reference in
+<code>output/stimuli/&lt;base&gt;_stimuli_R.csv</code>. The comparison is exact and it has two parts. The identity
+columns, which are <code>word</code> or <code>target</code>, <code>condition</code> and <code>set</code>, must match as a set of rows. <code>set</code> is
+in there deliberately: it records which item was matched to which, and without it the test would
+place no constraint on the pairing at all. Then every other shared column is compared value by
+value, because the dimensions each engine computes at run time end up in the stimuli CSV and must
+agree too. <code>trial</code> is among them, now that the keyed-hash shuffle has brought order inside the
+contract.</p>
+<p>Continuous integration closes the loopholes that would let this pass without meaning anything.
+<code>LEXSYNC_REQUIRE_PARITY=1</code> turns the graceful skip into a failure, so a job meant to run both
+engines cannot pass by quietly skipping. <code>git diff --exit-code -- output/stimuli/</code> runs before the
+parity suite, because otherwise the gate would only ever compare Python against a reference that
+Python itself had just rewritten. And <code>git diff --exit-code -- output/experiments/</code> runs after,
+since the Python engine has by then rewritten that directory, and the diff against the
+R-generated files committed there is the only thing standing between a cross-engine divergence in
+the generated scripts and a green tick.</p>
+<p>The rest of the suite covers the parts hardware would otherwise gate: a mock-PsychoPy harness that
+runs the generated script and asserts the onset trigger is flip-locked, a structural validator for
+the generated OpenSesame experiment, and checks that the jsPsych export is well formed and escapes
+HTML in stimulus data. The R package runs <code>R CMD check</code> on Ubuntu, macOS and Windows, and the Python
+tests run on Python 3.10 to 3.14.</p>
+<h2 id="the-materials-datasheet">The materials datasheet<a class="headerlink" href="#the-materials-datasheet" title="Permanent link">&para;</a></h2>
+<p>Every run writes a datasheet, in JSON for machines and Markdown for people. It is the record that
+travels with a set, and it exists because the reproducibility literature keeps asking for one
+(<a href="../references/#bochynska-2023">Bochynska et al., 2023</a>; <a href="../references/#roettger-2019">Roettger, 2019</a>).</p>
+<div class="language-python highlight"><pre><span></span><code><span class="c1"># illustrative: needs a clone's config directory and writes the run into the working tree</span>
+<span class="n">paths</span> <span class="o">=</span> <span class="n">lexsync</span><span class="o">.</span><span class="n">run_pipeline</span><span class="p">(</span><span class="s2">"config/design_en_freqcontrast.yaml"</span><span class="p">)</span>
+<span class="c1"># output/reports/en_freqcontrast_english_datasheet_py.json</span>
+<span class="c1"># output/reports/en_freqcontrast_english_datasheet_py.md</span>
+</code></pre></div>
+<p>The JSON carries <code>design</code>, <code>materials_source</code>, <code>selection</code>, <code>dimensions</code>, <code>items</code>,
+<code>counterbalancing</code>, <code>realised_control</code>, <code>resampling</code>, <code>analysis</code>, <code>artifacts</code> and <code>reproducibility</code>,
+plus a <code>lexsync_datasheet_version</code> marker so a reader knows which format it is looking at. The
+Markdown renders the same content as prose and tables. From the committed datasheet for the English
+frequency contrast:</p>
+<div class="language-text highlight"><pre><span></span><code>## Provenance
+
+- **Paradigm:** factorial  |  **Item source:** corpus
+- **Materials source:** `corpora/derived/en.csv` (sha256 `c20549b920d81680…`)
+- **Selection:** standardised_euclidean
+- **Cross-engine determinism:** byte-identical
+- **Counterbalancing:** factorial, 1 list(s)
+- **Items:** 160 rows across 2 conditions (low_frequency, high_frequency)
+- **Seed:** 2026  |  **Versions:** engine python, lexsync 0.1.0, python 3.13.7, pandas 2.3.2, numpy 2.3.2, scipy 1.17.1, …
+</code></pre></div>
+<p>Four of those lines repay a second look.</p>
+<p><code>Cross-engine determinism</code> is the caveat from the previous section, recorded once per run. A design
+that uses <code>mahalanobis</code> or <code>optimal</code> says so here, so whoever receives the materials learns it from
+the materials.</p>
+<p>Selection transparency records how many items satisfied each condition's window before matching. For
+this design the answer is 544 high-frequency candidates and 4295 low-frequency ones. That number is
+the size of the discretionary pool the selection drew from, and reporting it makes item-selection
+bias auditable (<a href="../references/#forster-2000">Forster, 2000</a>;
+<a href="../references/#simmons-2011">Simmons et al., 2011</a>). A set of 80 chosen from 544 is a different
+object from a set of 80 chosen from 85.</p>
+<p>The realised control is a table, not a claim, giving each dimension its role, Cohen's <em>d</em>, the 90%
+interval, the variance ratio, the TOST <em>p</em> and the verdict. The suggested analysis is a crossed
+mixed-model formula, <code>response ~ condition + (1 + condition | subject) + (1 | item)</code>, which is there
+to guard against the language-as-fixed-effect fallacy (<a href="../references/#clark-1973">Clark, 1973</a>;
+<a href="../references/#baayen-2008">Baayen et al., 2008</a>): items are a sample of the language, and an
+analysis that treats them as fixed over-generalises. The maximal structure is suggested
+(<a href="../references/#barr-2013">Barr et al., 2013</a>) with the advice to reduce it if it does not converge
+(<a href="../references/#matuschek-2017">Matuschek et al., 2017</a>).</p>
+<p><code>methods_paragraph</code> turns the datasheet into prose you can paste into a Methods section, filled from
+the numbers above. The pipeline writes it into the Markdown datasheet, and you can call it on a
+datasheet dictionary yourself with <code>lexsync.methods_paragraph(ds)</code>. For this design it reads:</p>
+<blockquote>
+<p>80 items per condition were selected from the English lexicon (wordfreq (Speer, 2022), data
+CC BY-SA 4.0; full corpus licence and citation at
+https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md) and matched item by
+item on length, n_density, old20 using lexsync's standardised_euclidean matcher. The realised
+control was close. The largest standardised difference on any matched dimension was 0.04 (90% CI
+[-0.22, 0.30]), within the 0.5-SD equivalence bound. The smallest condition was selected from 544
+eligible candidates, and the selection was deterministic and blind to any outcome measure. […]</p>
+</blockquote>
+<p>The Markdown datasheet also carries a pre-registration skeleton with its Materials section already
+filled from the run and its analysis plan filled with the suggested model. The remaining sections
+are yours to complete before data collection.</p>
+<p><code>build_datasheet</code> and <code>write_datasheet</code> are available if you are assembling a datasheet outside the
+pipeline, though <code>run_pipeline</code> calls them for you.</p>
+<h2 id="the-run-log">The run log<a class="headerlink" href="#the-run-log" title="Permanent link">&para;</a></h2>
+<p>Alongside the datasheet, each run writes a log in Markdown and JSON Lines, with a timestamped entry
+per stage: which lexicon was loaded and how many words it held, the pool size after filtering, which
+dimensions were derived, how many items were matched, the equivalence verdict on each dimension, and
+every artefact written with its row count and MD5.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="c1"># illustrative: writes run_log.md and run_log.jsonl into the working tree</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">lexsync</span><span class="w"> </span><span class="kn">import</span> <span class="n">logging</span> <span class="k">as</span> <span class="n">runlog</span>
+
+<span class="n">log</span> <span class="o">=</span> <span class="n">runlog</span><span class="o">.</span><span class="n">new_run_log</span><span class="p">(</span><span class="s2">"my_design"</span><span class="p">,</span> <span class="n">meta</span><span class="o">=</span><span class="p">{</span><span class="s2">"seed"</span><span class="p">:</span> <span class="mi">2026</span><span class="p">})</span>
+<span class="n">runlog</span><span class="o">.</span><span class="n">log_step</span><span class="p">(</span><span class="n">log</span><span class="p">,</span> <span class="s2">"loaded lexicon"</span><span class="p">,</span> <span class="p">{</span><span class="s2">"words"</span><span class="p">:</span> <span class="mi">3000</span><span class="p">})</span>
+<span class="n">runlog</span><span class="o">.</span><span class="n">write_run_log</span><span class="p">(</span><span class="n">log</span><span class="p">,</span> <span class="s2">"run_log.md"</span><span class="p">,</span> <span class="s2">"run_log.jsonl"</span><span class="p">)</span>
+</code></pre></div>
+<p>The Markdown log is for reading afterwards and the JSON Lines log is for anything that needs to
+parse it. Between the two of them, plus the datasheet's checksums and the design file, a run is
+reconstructible from its own output.</p>
+<h2 id="reproducing-the-demonstrations">Reproducing the demonstrations<a class="headerlink" href="#reproducing-the-demonstrations" title="Permanent link">&para;</a></h2>
+<p>From a clone, the whole thing is one command:</p>
+<div class="language-bash highlight"><pre><span></span><code>python<span class="w"> </span>python_workflow/run_pipeline.py<span class="w">     </span><span class="c1"># or: lexsync run</span>
+</code></pre></div>
+<p>This regenerates every worked design into <code>output/</code>. Nothing in it needs PsychoPy, OpenSesame, a
+parallel-port driver or an internet connection, since the bundled corpora are a checksummed snapshot
+and generation writes text. If the regenerated stimuli differ from the committed ones, <code>git diff</code>
+will say so, which is the same check continuous integration performs.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../experiments-and-triggers/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Experiments and triggers">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Experiments and triggers
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../the-app/" class="md-footer__link md-footer__link--next" aria-label="Next: The app">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                The app
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      <span class="mrd-footer-badges"> <a href="https://github.com/pablobernabeu/lexsync/actions/workflows/python-tests.yaml"><img src="https://github.com/pablobernabeu/lexsync/actions/workflows/python-tests.yaml/badge.svg" alt="python-tests"></a> <a href="https://lifecycle.r-lib.org/articles/stages.html#experimental"><img src="https://img.shields.io/badge/lifecycle-experimental-orange.svg" alt="Lifecycle: experimental"></a> <a href="https://opensource.org/license/MIT"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT"></a> </span> Developed by <a href="https://pablobernabeu.github.io">Pablo Bernabeu</a>. Open, reproducible research software in R and Python. Released under the <a href="https://pablobernabeu.github.io/lexsync/python/licence/">MIT licence</a>.
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.indexes", "navigation.top", "navigation.footer", "toc.follow", "content.code.copy", "search.suggest", "search.highlight"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": "0.1.0"}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="../assets/_markdown_exec_pyodide.js"></script>
+      
+    
+  </body>
+</html>

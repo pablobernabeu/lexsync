@@ -1,0 +1,14 @@
+# One row per item per list, condition rotated across lists (Latin square)
+
+Each item (`set`) contributes exactly one trial to a list, so its target
+is never repeated within a list; conditions are balanced because items
+rotate through them. With `lists` unset the number of lists equals the
+number of conditions. Mirrors the Python recipe (byte-order condition
+list, zero-based rotation), so the two engines assign the same condition
+to each item per list.
+
+## Usage
+
+``` r
+counterbalance_latin_square(stimuli, design, schema)
+```
