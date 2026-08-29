@@ -6,6 +6,17 @@
 
 #' Per-user cache directory for fetched corpora
 #'
+#' The directory `tools::R_user_dir("lexsync", "cache")` names for this package,
+#' created on first use. It is where [fetch_corpus()] puts a download unless told
+#' otherwise, and it is the only place the package writes to without being handed
+#' a path.
+#'
+#' The cache persists between sessions and lexsync never prunes it. A registered
+#' corpus is a delimited word list, and a download is refused above 200 MB, so a
+#' cache holding several large corpora can reach a few hundred megabytes. It holds
+#' nothing that cannot be fetched again, so it may be deleted at any time, whole or
+#' file by file, and the next call downloads afresh.
+#'
 #' @return A writable cache directory path (created if absent).
 #' @importFrom tools R_user_dir
 #' @export
@@ -86,6 +97,12 @@ list_corpora <- function(registry_path = NULL) {
 #' renamed into place only after the size cap, the markup sniff and any
 #' `sha256` the registry entry carries have all passed. The download is
 #' recorded so it can be cited; consult [list_corpora()] for the citation.
+#'
+#' The file lands in [lexsync_cache_dir()] unless `dest` names somewhere else.
+#' That cache persists between sessions and the package never prunes it; one
+#' corpus may reach the 200 MB download cap, so several of them add up. Nothing
+#' kept there is irreplaceable, so the directory may be deleted at any time and
+#' the next call downloads the corpus again.
 #'
 #' @param name A corpus name present in the registry.
 #' @param registry_path Optional path to `registry.yaml`.

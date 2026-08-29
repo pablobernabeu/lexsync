@@ -5,11 +5,15 @@ build-backend = "hatchling.build"
 [project]
 name = "lexsync"
 version = "0.1.0"
-description = "Multidimensional lexical optimisation and hardware-timed experiment generation"
+description = "Lexical optimisation and hardware-timed experiment generation"
 readme = "README.md"
 requires-python = ">=3.10"
-license = "MIT"
-license-files = ["LICENSE"]
+# The wheel ships the example lexica under src/lexsync/data, which are wordfreq
+# derivatives under CC BY-SA 4.0 rather than MIT, so the SPDX expression for the
+# distribution as a whole names both. LICENSE.note carries the terms and the
+# attribution they require, and is shipped alongside LICENSE for that reason.
+license = "MIT AND CC-BY-SA-4.0"
+license-files = ["LICENSE", "LICENSE.note"]
 authors = [{ name = "Pablo Bernabeu" }]
 keywords = [
   "psycholinguistics", "lexical statistics", "stimulus matching",
@@ -110,4 +114,6 @@ ignore = ["UP031", "E702", "E741"]
 packages = ["src/lexsync"]
 
 [tool.hatch.build.targets.sdist]
-include = ["src/lexsync", "README.md", "LICENSE", "pyproject.toml"]
+# LICENSE.note is listed as well as declared under license-files, so the sdist
+# carries the data terms whether or not the backend expands that declaration.
+include = ["src/lexsync", "README.md", "LICENSE", "LICENSE.note", "pyproject.toml"]

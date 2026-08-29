@@ -43,7 +43,7 @@ shiny::runApp("apps/r_shiny", port = 8502)
 Run that from the root of the clone. The app looks for `corpora/derived/` in the
 working directory and then in the two directories above it, and it finds the
 example item tables under `items/` the same way, so a launch from somewhere else
-leaves it with no lexicon to offer. It opens at <http://127.0.0.1:8502>.
+leaves it with no lexicon to offer. It opens at `http://127.0.0.1:8502`.
 
 The repository also carries a launcher for the terminal, which takes an optional
 port and is what a container or a headless session should use.

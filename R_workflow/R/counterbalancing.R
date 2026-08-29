@@ -124,8 +124,11 @@
                        "balanced across lists. Fill or drop those items."), name),
          call. = FALSE)
   }
-  # Integer magnitudes first, summed exactly as R integers (which error on overflow
-  # rather than wrapping), so the unit is reproducible without a float reduction.
+  # Integer magnitudes first, so the unit is reproducible without a float reduction.
+  # sum() over an integer vector accumulates in a 64-bit integer and returns a double
+  # if the total leaves int range (measured on R 4.6.1: no warning, no NA), so the
+  # total is exact either way while it stays under 2^53, which the per-value bound
+  # below and any realistic number of items keep it well inside.
   scaled <- trunc(abs(as.numeric(values)) * 100)
   if (max(scaled, 0) > .Machine$integer.max) {
     stop(sprintf("lexsync: dimension '%s' has values too large to balance on.", name),

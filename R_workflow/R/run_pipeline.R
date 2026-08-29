@@ -17,7 +17,11 @@
 #' @export
 run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
                          outdir = "output", reference_words = NULL, verbose = TRUE) {
-  options(lexsync.verbose = verbose)
+  # An exported function must not leave the session changed, so the narration gate
+  # is restored on every exit path, error included. Mirrors the Python twin, where
+  # the gate is module state restored by a decorator.
+  old_opts <- options(lexsync.verbose = verbose)
+  on.exit(options(old_opts), add = TRUE)
   schema <- read_config(schema_path)
   design <- read_config(design_path)
   n_req <- design$n_per_condition %||% design$n_per_cell

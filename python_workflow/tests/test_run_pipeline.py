@@ -248,15 +248,14 @@ def test_verbose_false_keeps_the_console_silent(tmp_path, capsys):
         "  source: table",
         "  path: " + _yaml_path(items),
     ])
-    try:
-        _run(design, tmp_path)
-        assert capsys.readouterr().out == ""
-        run_pipeline(design, _pkg_data("schema.yaml"),
-                     outdir=os.path.join(str(tmp_path), "loud"), verbose=True)
-        assert "[lexsync]" in capsys.readouterr().out
-    finally:
-        # The gate is module state; leave it as other tests expect it.
-        runlog.set_verbose(True)
+    _run(design, tmp_path)
+    assert capsys.readouterr().out == ""
+    run_pipeline(design, _pkg_data("schema.yaml"),
+                 outdir=os.path.join(str(tmp_path), "loud"), verbose=True)
+    assert "[lexsync]" in capsys.readouterr().out
+    # The gate is module state, and run_pipeline puts it back on the way out, so
+    # a quiet run cannot silence whatever runs after it.
+    assert runlog.get_verbose() is True
 
 
 def test_continuous_over_a_supplied_pool_selects_continuously(tmp_path):

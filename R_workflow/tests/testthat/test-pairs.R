@@ -16,7 +16,10 @@
 # leaving a set the Latin-square counterbalancer cannot complete.
 #
 # `pair.overlap` is computed in-engine, which is only safe because the core is an
-# integer edit distance and the arithmetic uses no transcendental.
+# integer edit distance and this path's arithmetic reaches nothing beyond -, / and
+# the shared rounder. That is a property of this path, not of the package: the
+# Student t functions behind the equivalence report do reach an artefact, and
+# validation.R records what is guaranteed there instead.
 # python_workflow/tests/test_pairs.py asserts the same values.
 
 pairs_df <- data.frame(

@@ -8,6 +8,7 @@ scripts from the design's trial-event sequence. run_all loops over every design.
 """
 from __future__ import annotations
 
+import functools
 import glob
 import hashlib
 import math
@@ -36,6 +37,25 @@ from .scripting import export_experiments, resolve_trial_timing
 from .validation import balance_check, match_report, match_report_continuous
 
 
+def _restores_verbosity(fn):
+    """Keep ``verbose`` from outliving the call.
+
+    The narration gate is module state, so a public entry point that set it and
+    walked away would silence, or unsilence, the rest of the session. Restoring it
+    on every exit path, error included, mirrors the R twin's
+    on.exit(options(old_opts)).
+    """
+    @functools.wraps(fn)
+    def wrapper(*args, **kwargs):
+        previous = runlog.get_verbose()
+        try:
+            return fn(*args, **kwargs)
+        finally:
+            runlog.set_verbose(previous)
+    return wrapper
+
+
+@_restores_verbosity
 def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
                  reference_words=None, verbose=True) -> dict:
     runlog.set_verbose(verbose)

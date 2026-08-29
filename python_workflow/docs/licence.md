@@ -9,7 +9,8 @@ cover the lexical corpora, which are third-party data with terms of their own. T
 corpus derivatives are under CC BY-SA 4.0, and every corpus is cited with its licence and
 retrieval date. See `LICENSE-DATA` and
 [`corpora/ATTRIBUTION.md`](https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md)
-in the repository. If you publish materials selected with lexsync, the corpus you drew them from is
-the thing that needs citing alongside the software.
+in the repository, or the `LICENSE.note` file that ships inside each package for a reader who has
+the distribution and not the repository. If you publish materials selected with lexsync, the corpus
+you drew them from is the thing that needs citing alongside the software.
 
 --8<-- "LICENSE"

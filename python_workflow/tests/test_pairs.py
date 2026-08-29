@@ -16,8 +16,11 @@ applied row-wise would keep a pair's related row and drop its unrelated one, lea
 a set the Latin-square counterbalancer cannot complete.
 
 `pair.overlap` is computed in-engine, which is only safe because the core is an
-integer edit distance and the arithmetic uses no transcendental. Its bit patterns are
-pinned in R_workflow/tests/testthat/test-pairs.R against the same values.
+integer edit distance and this path's arithmetic reaches nothing beyond -, / and the
+shared rounder. That is a property of this path, not of the package: the Student t
+functions behind the equivalence report do reach an artefact, and validation.py
+records what is guaranteed there instead. Its bit patterns are pinned in
+R_workflow/tests/testthat/test-pairs.R against the same values.
 """
 import pandas as pd
 import pytest

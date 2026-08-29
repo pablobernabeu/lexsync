@@ -1,5 +1,18 @@
 """Match-quality reporting: descriptives, standardised mean differences, TOST.
 
+The one place a non-elementary function reaches a compared artefact. Everything
+else on the path to a stimuli, descriptives or comparisons file is built from
+operations IEEE-754 either mandates correctly rounded or makes exact, so the two
+engines agree by construction. The Student t quantile and distribution behind the
+confidence interval and the TOST p-value are not among those: scipy.stats.t here,
+stats::qt and stats::pt in R, two independent implementations. Measured on SciPy
+1.17.1 against R 4.6.1, they disagree by at most about 1e-12 over the range these
+reports use, while the published values are rounded to three and four decimal
+places, which leaves 5e-4 and 5e-5 of headroom before a byte could move. The
+comparisons artefacts are therefore byte-identical on the evidence of a margin of
+some seven orders of magnitude, not on the by-construction argument that carries
+the rest.
+
 Mirrors R_workflow/R/validation.R.
 """
 from __future__ import annotations

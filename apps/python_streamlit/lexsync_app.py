@@ -142,7 +142,13 @@ def run_design(design: dict, lexicon_abs: str | None, items_abs: str | None) -> 
                              if result.get("comparisons") and os.path.exists(result["comparisons"]) else None)
     base = os.path.splitext(os.path.basename(result["stimuli"]))[0].replace("_stimuli_py", "")
     ds_md = os.path.join(out, "reports", f"{base}_datasheet_py.md")
-    bundle["datasheet_md"] = open(ds_md, encoding="utf-8").read() if os.path.exists(ds_md) else None
+    bundle["datasheet_md"] = None
+    if os.path.exists(ds_md):
+        # A `with` block, not open(...).read(): the app is long-lived and reruns this
+        # on every widget interaction, so a handle left to the garbage collector is a
+        # descriptor leak rather than a style point.
+        with open(ds_md, encoding="utf-8") as handle:
+            bundle["datasheet_md"] = handle.read()
     bundle["base"] = base
     return bundle
 

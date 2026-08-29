@@ -68,11 +68,35 @@ def test_orcid_recorded_in_every_file_that_can_carry_one():
 
 
 def test_licences_agree():
+    # MIT for the code, CC BY-SA 4.0 for the wordfreq-derived example lexica that
+    # both distributions ship. Every format states both in whatever form it has.
+    # The R DESCRIPTION keeps the bare stub because CRAN's template check
+    # constrains that field; its Copyright field carries the disclosure instead.
     assert "License: MIT + file LICENSE" in _description_text()
-    assert 'license = "MIT"' in _pyproject_text()
-    assert _codemeta()["license"] == "https://spdx.org/licenses/MIT.html"
-    assert _cff()["license"] == "MIT"
+    assert "LICENSE.note" in _description_text()
+    assert 'license = "MIT AND CC-BY-SA-4.0"' in _pyproject_text()
+    assert _codemeta()["license"] == ["https://spdx.org/licenses/MIT.html",
+                                      "https://spdx.org/licenses/CC-BY-SA-4.0.html"]
+    assert _cff()["license"] == ["MIT", "CC-BY-SA-4.0"]
+    # Zenodo takes one licence identifier, so the deposit is MIT and the data
+    # terms are stated in the description instead.
     assert _zenodo()["license"] == "MIT"
+    assert "CC BY-SA 4.0" in _zenodo()["description"]
+
+
+def test_the_bundled_data_terms_ship_with_both_packages():
+    # The CSVs under inst/extdata and src/lexsync/data are the same wordfreq
+    # derivatives, so a user of either package must be able to find the terms
+    # without the repository. R CMD check knows LICENSE.note as a top-level file,
+    # and pyproject declares it under license-files.
+    for note in (REPO / "R_workflow" / "LICENSE.note",
+                 REPO / "python_workflow" / "LICENSE.note"):
+        text = note.read_text(encoding="utf-8")
+        assert "CC BY-SA 4.0" in text
+        assert "https://creativecommons.org/licenses/by-sa/4.0/" in text
+        assert "SUBTLEX" in text
+        for name in ("en_example.csv", "es_example.csv", "zh_example.csv"):
+            assert name in text
 
 
 def test_no_dead_analysis_extra():

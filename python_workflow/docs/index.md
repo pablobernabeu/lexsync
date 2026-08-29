@@ -1,6 +1,6 @@
 # lexsync <span class="mrd-lang">(Python)</span>
 
-Multidimensional lexical optimisation and hardware-timed experiment generation.
+Lexical optimisation and hardware-timed experiment generation.
 { .mrd-tagline }
 
 lexsync builds psycholinguistic stimulus sets and the experiments that present

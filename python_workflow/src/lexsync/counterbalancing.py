@@ -10,6 +10,7 @@ engines produce the same order byte for byte.
 from __future__ import annotations
 
 import hashlib
+import math
 from itertools import product
 
 import numpy as np
@@ -143,7 +144,12 @@ def _quantise_dim(values, name: str) -> list:
         raise ValueError(
             "lexsync: dimension '%s' has missing values, so it cannot be balanced "
             "across lists. Fill or drop those items." % name)
-    scaled = [int(abs(v) * 100) for v in vals]      # int() truncates toward zero
+    # math.trunc, guarded on finiteness, rather than a bare int(): int(inf) raises
+    # OverflowError with a message of Python's own, where R's trunc(Inf) is Inf and
+    # reaches the size refusal below. Truncating BEFORE the comparison, as the R twin
+    # does, so the two engines refuse exactly the same values.
+    scaled = [math.trunc(s) if math.isfinite(s) else s
+              for s in (abs(v) * 100 for v in vals)]
     if max(scaled, default=0) > 2 ** 31 - 1:
         raise ValueError(
             "lexsync: dimension '%s' has values too large to balance on." % name)

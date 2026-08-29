@@ -8,13 +8,9 @@ tmp_out <- function() {
   d
 }
 
-# run_pipeline() sets the verbosity option globally; restore it so the setting
-# cannot leak into the tests that follow.
-run_quiet <- function(...) {
-  old <- options(lexsync.verbose = getOption("lexsync.verbose", TRUE))
-  on.exit(options(old), add = TRUE)
-  run_pipeline(..., verbose = FALSE)
-}
+# One quiet call, so the suite is not narrated. run_pipeline() restores the
+# verbosity option itself, so nothing has to be put back here.
+run_quiet <- function(...) run_pipeline(..., verbose = FALSE)
 
 write_design <- function(dir, text) {
   p <- file.path(dir, "design.yaml")
@@ -369,4 +365,40 @@ test_that("a continuous design over a supplied pool selects continuously", {
   stim <- read_csv_utf8(res$stimuli)
   expect_true(all(stim$condition == "continuous"))
   expect_equal(sort(unique(stim$set)), 1:10)
+})
+
+test_that("run_pipeline leaves the verbosity option as it found it", {
+  # An exported function that set an option and walked away would silence, or
+  # unsilence, the rest of the caller's session. Both exit paths are covered,
+  # since a design that fails validation must restore it too.
+  # test_run_pipeline.py::test_verbose_false_keeps_the_console_silent asserts the
+  # same property on the Python engine's module-level gate.
+  out <- tmp_out()
+  design <- write_design(out, c(
+    "name: opt_test",
+    "language: english",
+    paste0("lexicon: ", as_yaml_path(extdata("en_example.csv"))),
+    "n_per_condition: 5",
+    "pool_filters: {length: [3, 7], frequency: [3.8, 7]}",
+    "conditions:",
+    "  - {name: high, define_by: {frequency: [5.0, 7.0]}}",
+    "  - {name: low, define_by: {frequency: [3.8, 4.4]}}",
+    "match_on: [length]"
+  ))
+
+  before <- getOption("lexsync.verbose")
+  invisible(run_quiet(design, extdata("schema.yaml"), outdir = out))
+  expect_identical(getOption("lexsync.verbose"), before)
+
+  bad <- write_design(out, c(
+    "name: opt_test_bad",
+    "language: english",
+    paste0("lexicon: ", as_yaml_path(extdata("en_example.csv"))),
+    "n_per_condition: 0",
+    "conditions:",
+    "  - {name: high, define_by: {frequency: [5.0, 7.0]}}"
+  ))
+  expect_error(run_quiet(bad, extdata("schema.yaml"), outdir = out),
+               "positive whole number")
+  expect_identical(getOption("lexsync.verbose"), before)
 })

@@ -49,7 +49,7 @@ def _resolve_schema(schema_path: str) -> str:
 def main(argv=None) -> None:
     parser = argparse.ArgumentParser(
         prog="lexsync",
-        description="lexsync: multidimensional lexical optimisation and hardware-timed experiment generation",
+        description="lexsync: lexical optimisation and hardware-timed experiment generation",
     )
     parser.add_argument("--version", action="version", version="lexsync " + _version())
     sub = parser.add_subparsers(dest="command")

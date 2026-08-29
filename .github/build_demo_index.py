@@ -35,6 +35,13 @@ PARADIGM_LABELS = {
 
 SCALAR = re.compile(r"^(name|language|paradigm|description)\s*:\s*(.+?)\s*$")
 
+# A continuous design spans a predictor instead of contrasting conditions, and it
+# says so with a block rather than a scalar, so SCALAR never sees it. It also
+# declares no ``paradigm``, so without this it falls through to the factorial
+# label that every paradigm-less design takes, and the one continuous
+# demonstration is published as a factorial word contrast.
+CONTINUOUS = re.compile(r"^continuous\s*:\s*$")
+
 
 def unquote(value: str) -> str:
     """Undo the one YAML quoting form these configurations use."""
@@ -46,16 +53,21 @@ def unquote(value: str) -> str:
 
 
 def read_design(path: Path) -> dict[str, str]:
-    """Return the top-level scalars of a design file."""
+    """Return the top-level scalars of a design file, plus a continuous marker."""
     found: dict[str, str] = {}
+    continuous = ""
     for line in path.read_text(encoding="utf-8").splitlines():
         # Only top-level keys: an indented line belongs to a nested block, where
         # `name` means something else (a condition's name, for instance).
         if line[:1].isspace():
             continue
+        if CONTINUOUS.match(line):
+            continuous = "yes"
+            continue
         match = SCALAR.match(line)
         if match:
             found.setdefault(match.group(1), unquote(match.group(2).strip()))
+    found["continuous"] = continuous
     return found
 
 
@@ -71,9 +83,14 @@ def collect() -> list[dict[str, str]]:
             continue
         paradigm = design.get("paradigm", "")
         # Only some designs declare a paradigm; the rest take the factorial word
-        # contrast the schema defaults to. Stating that is better than an
-        # empty chip.
-        label = PARADIGM_LABELS.get(paradigm) if paradigm else PARADIGM_LABELS["factorial_word"]
+        # contrast the schema defaults to, unless they span a predictor instead.
+        # Stating that is better than an empty chip.
+        if paradigm:
+            label = PARADIGM_LABELS.get(paradigm)
+        elif design.get("continuous"):
+            label = PARADIGM_LABELS["continuous"]
+        else:
+            label = PARADIGM_LABELS["factorial_word"]
         demos.append(
             {
                 "file": target.name,

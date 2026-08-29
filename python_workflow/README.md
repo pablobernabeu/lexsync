@@ -6,7 +6,7 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/license/MIT)
 <!-- badges: end -->
 
-Multidimensional lexical optimisation and hardware-timed experiment generation.
+Lexical optimisation and hardware-timed experiment generation.
 
 lexsync selects stimuli matched in parallel across several lexical dimensions
 (length, frequency, orthographic neighbourhood density and OLD20),

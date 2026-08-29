@@ -356,8 +356,12 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
     # table design reports only the ones it controlled, so the record does not claim
     # dimensions that played no part in the selection.
     all_dims = source in ("corpus", "pool") or relational is not None
-    dims = {d: schema["dimensions"][d] for d in schema.get("dimensions", {})
-            if all_dims or d in controlled}
+    # `or {}`, not a default argument, for the reason load_lexicon carries the same
+    # guard: an empty `dimensions:` key parses to None here, which is not iterable,
+    # while the R twin's schema$dimensions[keep] returns NULL and the record simply
+    # carries no dimensions.
+    schema_dims = schema.get("dimensions") or {}
+    dims = {d: schema_dims[d] for d in schema_dims if all_dims or d in controlled}
 
     # The balance report is added only when the optimiser ran, for the same reason the
     # norms record is: a key that is null on every design that does not use the feature

@@ -35,6 +35,15 @@ def new_run_log(name: str, meta: dict | None = None) -> dict:
 _VERBOSE = True
 
 
+def get_verbose() -> bool:
+    """The current setting, so a caller that changes it can put it back.
+
+    run_pipeline does exactly that, as the R twin restores its
+    options(lexsync.verbose) with on.exit.
+    """
+    return _VERBOSE
+
+
 def set_verbose(flag: bool) -> None:
     global _VERBOSE
     _VERBOSE = bool(flag)

@@ -170,7 +170,7 @@ one dimension that always needs a separate call.
 | `n_density` | neighbours | `add_neighbourhood`: Coltheart's N, same-length single substitutions ([Coltheart et al., 1977](references.md#coltheart-1977)). |
 | `old20` | mean Levenshtein distance | `add_neighbourhood`: the mean distance to the 20 nearest words ([Yarkoni et al., 2008](references.md#yarkoni-2008)). |
 | `n_syllables` | syllables | Derived at load time by counting maximal vowel runs. |
-| `bigram_freq` | mean positional bigram probability | `add_bigram_frequency`, a phonotactic-probability proxy. |
+| `bigram_freq` | mean bigram probability (type-based, non-positional) | `add_bigram_frequency`, a phonotactic-probability proxy. |
 
 `add_neighbourhood` computes both neighbourhood measures against a reference word list, which
 should normally be the full lexicon, since a word's neighbours do not stop
@@ -336,7 +336,7 @@ for method in ["standardised_euclidean", "joint", "mahalanobis", "optimal"]:
 The two pairwise methods reach exact equality on all three controls here, because a pool of this size
 contains, for most anchor words, a low-frequency counterpart with the same length, the same
 neighbourhood count and the same OLD20. The default and the covariance-aware method leave a
-standardised difference in the third decimal place. None of these differences would matter to a
+standardised difference in the second decimal place. None of these differences would matter to a
 result. The default remains the default because it is byte-identical across engines and generalises
 past two conditions, and that is the trade lexsync makes: an algorithm is adopted as a default only
 if it can keep the guarantee.

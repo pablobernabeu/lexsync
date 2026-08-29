@@ -2,8 +2,8 @@
   "@context": "https://doi.org/10.5063/schema/codemeta-2.0",
   "@type": "SoftwareSourceCode",
   "identifier": "lexsync",
-  "name": "lexsync: Multidimensional lexical optimisation and hardware-timed experiment generation",
-  "description": "A cross-platform, dual-language (R and Python) toolkit that unifies many-language lexical-corpus access, parallel multidimensional stimulus matching, counterbalancing, item resampling, deterministic pseudoword generation and the automated generation of hardware-timed PsychoPy, OpenSesame and jsPsych experiment scripts. The R and Python engines select byte-identical stimuli, and every run ships a machine- and human-readable materials datasheet (provenance, checksums, realised control).",
+  "name": "lexsync: Lexical optimisation and hardware-timed experiment generation",
+  "description": "A cross-platform, dual-language (R and Python) toolkit that unifies many-language lexical-corpus access, parallel multidimensional stimulus matching, counterbalancing, item resampling, deterministic pseudoword generation and the automated generation of hardware-timed PsychoPy, OpenSesame and jsPsych experiment scripts. The R and Python engines select byte-identical stimuli, and every run ships a machine- and human-readable materials datasheet (provenance, checksums, realised control). The MIT licence covers the source code only; the example lexica bundled in both packages are derived from wordfreq (Speer, 2022) and are distributed under CC BY-SA 4.0, whose terms and required attribution are recorded in LICENSE-DATA and corpora/ATTRIBUTION.md.",
   "applicationCategory": "Psycholinguistics",
   "codeRepository": "https://github.com/pablobernabeu/lexsync",
   "programmingLanguage": [
@@ -14,7 +14,10 @@
     "R",
     "Python 3"
   ],
-  "license": "https://spdx.org/licenses/MIT.html",
+  "license": [
+    "https://spdx.org/licenses/MIT.html",
+    "https://spdx.org/licenses/CC-BY-SA-4.0.html"
+  ],
   "version": "0.1.0",
   "softwareVersion": "0.1.0",
   "developmentStatus": "active",
@@ -53,5 +56,11 @@
   "citation": "See CITATION.cff. A manuscript describing lexsync is in preparation.",
   "readme": "https://github.com/pablobernabeu/lexsync/blob/main/README.md",
   "issueTracker": "https://github.com/pablobernabeu/lexsync/issues",
-  "referencePublication": "Manuscript in preparation."
+  "referencePublication": "Manuscript in preparation.",
+  "copyrightHolder": {
+    "@type": "Person",
+    "givenName": "Pablo",
+    "familyName": "Bernabeu",
+    "@id": "https://orcid.org/0000-0003-1083-2460"
+  }
 }

@@ -45,7 +45,11 @@ def validate_lexicon(df: pd.DataFrame, schema: dict) -> None:
 def load_lexicon(path: str, schema: dict, language: str | None = None) -> pd.DataFrame:
     df = read_csv_utf8(path)
     validate_lexicon(df, schema)
-    freq_col = (schema.get("dimensions", {}).get("frequency", {}) or {}).get("column") or "freq_zipf"
+    # `or {}` at every level: an empty `dimensions:` or `frequency:` key parses to
+    # None here and to NULL in R, where `$` chains through it to the default. A
+    # default argument only covers an ABSENT key, so the two engines answered the
+    # same schema with a column name and an AttributeError.
+    freq_col = ((schema.get("dimensions") or {}).get("frequency") or {}).get("column") or "freq_zipf"
     # Filter before coercing: astype(str) renders a missing word as the literal
     # string "nan", which survives both guards below, whereas the R engine (where
     # as.character(NA) stays NA) drops the row. Coercing first would therefore

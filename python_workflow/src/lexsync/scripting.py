@@ -11,6 +11,7 @@ only writes text. The .osexp is built line for line identically to the R engine.
 from __future__ import annotations
 
 import json
+import math
 import os
 import re
 
@@ -56,8 +57,14 @@ def _refresh_hz(schema: dict) -> float:
     Only ever used to convert ``*_frames`` to milliseconds; it is not the rate
     the experiment runs at.
     """
-    hz = float((schema or {}).get("presentation", {}).get("assumed_refresh_hz", 60))
-    if not (hz > 0):
+    # `or {}`, not a default argument: a schema whose `presentation:` key is present
+    # but empty parses to None here and to NULL in R, where `%||% list()` falls back
+    # to the default, so the two engines answered the same schema with a refresh rate
+    # and an AttributeError. isfinite for the reason run_pipeline tests
+    # n_per_condition that way: `hz > 0` admits Inf, which R's is.finite() refuses,
+    # and _frames_to_ms would then turn every frame count into 0 ms.
+    hz = float(((schema or {}).get("presentation") or {}).get("assumed_refresh_hz", 60))
+    if not math.isfinite(hz) or hz <= 0:
         raise ValueError("lexsync: presentation.assumed_refresh_hz must be a positive number.")
     return hz
 
@@ -79,7 +86,9 @@ def _trigger_hold_ms(schema: dict) -> float:
         ms = float(_frames_to_ms(int(triggers["reset_after_frames"]) + 1, _refresh_hz(schema)))
     else:
         ms = 50.0
-    if not (ms > 0):
+    # isfinite as well as the sign, mirroring the R twin's is.finite(): `ms > 0`
+    # alone admits Inf, which R refuses with this same message.
+    if not math.isfinite(ms) or ms <= 0:
         raise ValueError("lexsync: triggers.trigger_hold_ms must be a positive number.")
     return ms
 

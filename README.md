@@ -7,7 +7,7 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/license/MIT)
 <!-- badges: end -->
 
-Multidimensional lexical optimisation and hardware-timed experiment generation, in
+Lexical optimisation and hardware-timed experiment generation, in
 R and Python.
 
 `lexsync` is a cross-platform toolkit for building psycholinguistic stimulus sets

@@ -1,6 +1,6 @@
 {
-  "title": "lexsync: Multidimensional lexical optimisation and hardware-timed experiment generation",
-  "description": "A cross-platform (R and Python) toolkit that unifies many-language lexical-corpus access, parallel multidimensional stimulus matching, counterbalancing, item resampling, deterministic pseudoword generation and the automated generation of hardware-timed PsychoPy, OpenSesame and jsPsych experiment scripts for EEG/ERP and browser-based research. Distributed as a CRAN-ready R package and a PyPI-ready Python package that produce identical matched stimuli.",
+  "title": "lexsync: Lexical optimisation and hardware-timed experiment generation",
+  "description": "A cross-platform (R and Python) toolkit that unifies many-language lexical-corpus access, parallel multidimensional stimulus matching, counterbalancing, item resampling, deterministic pseudoword generation and the automated generation of hardware-timed PsychoPy, OpenSesame and jsPsych experiment scripts for EEG/ERP and browser-based research. Distributed as a CRAN-ready R package and a PyPI-ready Python package that produce identical matched stimuli. The MIT licence covers the source code only; the bundled example lexica are wordfreq derivatives distributed under CC BY-SA 4.0, with the terms and the required attribution in LICENSE-DATA and corpora/ATTRIBUTION.md.",
   "upload_type": "software",
   "access_right": "open",
   "license": "MIT",

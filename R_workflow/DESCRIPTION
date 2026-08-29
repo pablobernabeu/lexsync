@@ -1,6 +1,6 @@
 Package: lexsync
 Type: Package
-Title: Multidimensional Lexical Optimisation and Hardware-Timed Experiment Generation
+Title: Lexical Optimisation and Hardware-Timed Experiment Generation
 Version: 0.1.0
 Authors@R: person("Pablo", "Bernabeu", email = "pcbernabeu@gmail.com", role = c("aut", "cre"),
     comment = c(ORCID = "0000-0003-1083-2460"))
@@ -16,6 +16,10 @@ Description: A cross-platform toolkit that unifies many-language lexical-corpus
     each design is accompanied by a machine- and human-readable materials datasheet
     for reproducibility.
 License: MIT + file LICENSE
+Copyright: The MIT licence covers the source code only. The example lexica
+    in inst/extdata are derived from third-party data and are distributed
+    under CC BY-SA 4.0; the terms and the attribution they require are in the
+    LICENSE.note file.
 Encoding: UTF-8
 Language: en-GB
 Depends:

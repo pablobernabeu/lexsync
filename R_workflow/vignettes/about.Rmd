@@ -23,8 +23,8 @@ If lexsync contributes to published work, please cite it. Nothing has been
 deposited on Zenodo yet, so the citation is a software reference pointing at the
 repository rather than at a DOI.
 
-> Bernabeu, P. (2026). lexsync: Multidimensional lexical optimisation and
-> hardware-timed experiment generation. R package version
+> Bernabeu, P. (2026). lexsync: Lexical optimisation and hardware-timed
+> experiment generation. R package version
 > `r packageVersion("lexsync")`. https://github.com/pablobernabeu/lexsync
 
 ```{r bibtex, echo = FALSE, results = "asis"}
@@ -35,7 +35,7 @@ repository rather than at a DOI.
 ver <- as.character(utils::packageVersion("lexsync"))
 bib <- paste(
   "@Manual{lexsync,",
-  "  title  = {{lexsync}: Multidimensional lexical optimisation and hardware-timed experiment generation},",
+  "  title  = {{lexsync}: Lexical optimisation and hardware-timed experiment generation},",
   "  author = {Pablo Bernabeu},",
   "  year   = {2026},",
   sprintf("  note   = {R package version %s},", ver),
@@ -124,7 +124,9 @@ sets out, with the sources and retrieval dates recorded in
 [`corpora/ATTRIBUTION.md`](https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md). The distinction becomes practical if you redistribute
 a lexicon derived from the bundled data, since that means crediting the original
 corpus authors, saying what was changed and passing the same licence on. Nothing
-of the sort applies to the code you write with the package.
+of the sort applies to the code you write with the package. A reader who has only
+the package rather than the repository will find the same terms, and the credit
+they require, in the `LICENSE.note` file that ships in the sources.
 
 ## Versioning and archival
 

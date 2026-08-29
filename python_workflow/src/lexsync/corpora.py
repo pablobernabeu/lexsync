@@ -45,6 +45,19 @@ def list_corpora(registry_path: str | None = None) -> pd.DataFrame:
 
 
 def cache_dir() -> str:
+    """Per-user cache directory for fetched corpora, created on first use.
+
+    Where :func:`fetch_corpus` puts a download unless told otherwise, and the only
+    place the package writes to without being handed a path.
+
+    The cache persists between sessions and lexsync never prunes it. A registered
+    corpus is a delimited word list, and a download is refused above 200 MB, so a
+    cache holding several large corpora can reach a few hundred megabytes. It holds
+    nothing that cannot be fetched again, so it may be deleted at any time, whole or
+    file by file, and the next call downloads afresh. The R twin documents the same
+    contract in lexsync_cache_dir.Rd; only the location differs, since R uses
+    tools::R_user_dir.
+    """
     path = os.path.join(os.path.expanduser("~"), ".lexsync", "cache")
     os.makedirs(path, exist_ok=True)
     return path
@@ -106,6 +119,11 @@ def fetch_corpus(name: str, registry_path: str | None = None, n_words: int = 100
     once its scheme has been checked; the transfer lands in a sidecar file that
     is renamed into the cache only after the size cap, the markup sniff and any
     registered sha256 have all passed.
+
+    The file lands in :func:`cache_dir`. That cache persists between sessions and
+    the package never prunes it; one corpus may reach the 200 MB download cap, so
+    several of them add up. Nothing kept there is irreplaceable, so the directory
+    may be deleted at any time and the next call downloads the corpus again.
     """
     with open(_registry_path(registry_path), encoding="utf-8") as handle:
         reg = yaml.safe_load(handle)

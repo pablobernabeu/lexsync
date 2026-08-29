@@ -49,7 +49,7 @@ from lexsync import __version__ as version
 
 bibtex = (
     "@Manual{lexsync,\n"
-    "  title  = {{lexsync}: Multidimensional lexical optimisation and hardware-timed experiment generation},\n"
+    "  title  = {{lexsync}: Lexical optimisation and hardware-timed experiment generation},\n"
     "  author = {Pablo Bernabeu},\n"
     "  year   = {2026},\n"
     f"  note   = {{Python package version {version}}},\n"
@@ -63,8 +63,8 @@ bibtex = (
 data_uri = "data:application/x-bibtex;charset=utf-8," + urllib.parse.quote(bibtex, safe="")
 
 print(
-    "> Bernabeu, P. (2026). lexsync: Multidimensional lexical optimisation and hardware-timed experiment\n"
-    f"> generation. Python package version {version}. https://github.com/pablobernabeu/lexsync\n"
+    "> Bernabeu, P. (2026). lexsync: Lexical optimisation and hardware-timed\n"
+    f"> experiment generation. Python package version {version}. https://github.com/pablobernabeu/lexsync\n"
 )
 
 # The entry is printed as a fenced block so that Material gives it BibTeX highlighting

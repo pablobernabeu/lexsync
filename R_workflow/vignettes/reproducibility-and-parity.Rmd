@@ -278,6 +278,19 @@ constraint also shapes the roadmap: a covariance-aware distance might well be
 the better default, and it stays optional precisely because it cannot carry the
 guarantee.
 
+One further place is worth naming, though it is not an exception. Almost
+everything on the path to a compared artefact is built from operations IEEE-754
+either mandates correctly rounded or makes exact, so the engines agree by
+construction rather than by measurement. The Student t quantile and distribution
+behind the confidence interval and the TOST *p*-value are where that argument
+does not reach: `stats::qt` and `stats::pt` on one side, SciPy's on the other, two
+independent implementations that were measured to disagree by up to about 1e-12
+over the range these reports use. The published values are rounded to three and
+four decimal places, which leaves 5e-4 and 5e-5 of headroom, so the comparisons
+files still come out byte-identical. The guarantee there rests on a margin of some
+seven orders of magnitude rather than on the construction, and saying so is what
+stops anyone widening the reported precision without checking the margin first.
+
 ## The parity test
 
 A guarantee that is not tested is a comment. The parity gate in continuous
@@ -387,19 +400,21 @@ cat(strwrap(methods_paragraph(ds), width = 76), sep = "\n")
 ```
 
 The paragraph is generated from the record, so it cannot disagree with the
-stimuli. It reports the largest standardised difference on any matched dimension
-with its interval rather than a selective best case, states the candidate-pool
-size, and adds the cross-engine caveat when the design's method warrants it.
+stimuli. It states the candidate-pool size, and it adds the cross-engine caveat
+when the design's method warrants it. On the realised control it takes one of two
+branches. Where every controlled dimension passes its equivalence test, it names
+the largest standardised difference on any matched dimension with its interval,
+rather than a selective best case, and says that this sits within the equivalence
+bound. Where one does not, it declines to summarise and sends the reader to the
+realised-control table instead, which is the branch this run takes.
 
-It is a draft to adapt rather than a paragraph to paste unread, and this run shows
-why. The phrase 'within the 0.5-SD equivalence bound' describes the point estimate,
-while the interval printed beside it reaches well past that bound in both
-directions. Both statements are true and they are not the same claim. The interval
-is wide because this demonstration matches only 15 items per condition, which is
-precisely the dependence on set size that the matching vignette warns against
-reading past. A real study would either match enough items to narrow the interval
-or say plainly that the control is established at the point estimate and not at
-the bound.
+That is worth seeing, because the paragraph is a draft to adapt rather than one to
+paste unread. What fails here is not the matching but the width of the interval,
+and the interval is wide because this demonstration matches only 15 items per
+condition, which is precisely the dependence on set size that the matching
+vignette warns against reading past. A real study would either match enough items
+to narrow the interval or say plainly that the control is established at the point
+estimate and not at the bound.
 
 `write_datasheet()` writes both forms, and the Markdown rendering carries a
 pre-registration skeleton with its materials section already filled in.

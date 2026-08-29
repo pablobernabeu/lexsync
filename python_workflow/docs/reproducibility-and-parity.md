@@ -127,6 +127,17 @@ says as much: a covariance-aware distance is promoted to the default only if a d
 implementation is found. The guarantee is a hard constraint on which algorithms can be adopted, not
 a nice property that the current defaults happen to have.
 
+One further place is worth naming, though it is not an exception. Almost everything on the path to
+a compared artefact is built from operations IEEE-754 either mandates correctly rounded or makes
+exact, so the engines agree by construction rather than by measurement. The Student t quantile and
+distribution behind the confidence interval and the TOST *p*-value are where that argument does
+not reach: `scipy.stats.t` on one side, R's `qt` and `pt` on the other, two independent
+implementations that were measured to disagree by up to about 1e-12 over the range these reports
+use. The published values are rounded to three and four decimal places, which leaves 5e-4 and 5e-5
+of headroom, so the comparisons files still come out byte-identical. The guarantee there rests on a
+margin of some seven orders of magnitude rather than on the construction, and saying so is what
+stops anyone widening the reported precision without checking the margin first.
+
 Trial order is no longer on this list. Earlier versions drew it from each engine's own seeded
 generator, reproducible within an engine, given `schema.seed`, and never across the two. The
 keyed-hash shuffle retired that exception: the permutation is part of the byte-identical surface,
@@ -160,10 +171,12 @@ Continuous integration closes the loopholes that would let this pass without mea
 `LEXSYNC_REQUIRE_PARITY=1` turns the graceful skip into a failure, so a job meant to run both
 engines cannot pass by quietly skipping. `git diff --exit-code -- output/stimuli/` runs before the
 parity suite, because otherwise the gate would only ever compare Python against a reference that
-Python itself had just rewritten. And `git diff --exit-code -- output/experiments/` runs after,
-since the Python engine has by then rewritten that directory, and the diff against the
-R-generated files committed there is the only thing standing between a cross-engine divergence in
-the generated scripts and a green tick.
+Python itself had just rewritten. And a final step runs each engine over every design into a
+directory of its own and compares the two trees with `diff -r`, because both engines write the
+generated experiments to the same paths, so a diff against the committed tree would only ever
+compare the last engine to run against itself. Only the two per-engine provenance records, the
+datasheet and the run log, are excluded from that comparison. It is the step standing between a
+cross-engine divergence in any generated artefact and a green tick.
 
 The rest of the suite covers the parts hardware would otherwise gate: a mock-PsychoPy harness that
 runs the generated script and asserts the onset trigger is flip-locked, a structural validator for
@@ -185,8 +198,9 @@ paths = lexsync.run_pipeline("config/design_en_freqcontrast.yaml")
 ```
 
 The JSON carries `design`, `materials_source`, `selection`, `dimensions`, `items`,
-`counterbalancing`, `realised_control`, `resampling`, `analysis`, `artifacts` and `reproducibility`,
-plus a `lexsync_datasheet_version` marker so a reader knows which format it is looking at. The
+`counterbalancing`, `realised_control`, `equivalence`, `relational`, `resampling`, `analysis`,
+`artifacts` and `reproducibility`, plus a `lexsync_datasheet_version` marker so a reader knows
+which format it is looking at. The
 Markdown renders the same content as prose and tables. From the committed datasheet for the English
 frequency contrast:
 

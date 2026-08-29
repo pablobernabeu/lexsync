@@ -4,7 +4,7 @@
 \name{lexsync-package}
 \alias{lexsync}
 \alias{lexsync-package}
-\title{lexsync: Multidimensional Lexical Optimisation and Hardware-Timed Experiment Generation}
+\title{lexsync: Lexical Optimisation and Hardware-Timed Experiment Generation}
 \description{
 \if{html}{\figure{logo.svg}{options: style='float: right' alt='logo' width='120'}}
 

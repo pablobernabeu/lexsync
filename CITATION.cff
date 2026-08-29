@@ -1,13 +1,16 @@
 cff-version: 1.2.0
 message: 'If you use lexsync, please cite the software. A manuscript describing it is in preparation.'
-title: 'lexsync: Multidimensional lexical optimisation and hardware-timed experiment generation'
+title: 'lexsync: Lexical optimisation and hardware-timed experiment generation'
 abstract: >-
   lexsync is a cross-platform, dual-language (R and Python) toolkit that unifies
   many-language lexical-corpus access, parallel multidimensional stimulus
   matching, counterbalancing, item resampling, deterministic pseudoword
   generation and the automated generation of hardware-timed PsychoPy,
   OpenSesame and jsPsych experiment scripts for EEG/ERP and browser-based
-  research.
+  research. The MIT licence covers the source code; the bundled example lexica
+  are derived from wordfreq (Speer, 2022) and are distributed under
+  CC BY-SA 4.0, with the terms and the attribution they require in LICENSE-DATA
+  and corpora/ATTRIBUTION.md.
 type: software
 authors:
   - family-names: Bernabeu
@@ -18,7 +21,11 @@ version: 0.1.0
 # first real release is cut, along with the version above, which nothing
 # generates either.
 date-released: '2026-06-07'
-license: MIT
+# Two licences, because the release ships both: MIT for the code, CC BY-SA 4.0 for
+# the wordfreq-derived example lexica inside each package.
+license:
+  - MIT
+  - CC-BY-SA-4.0
 repository-code: 'https://github.com/pablobernabeu/lexsync'
 keywords:
   - psycholinguistics

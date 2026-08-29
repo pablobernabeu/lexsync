@@ -23,3 +23,10 @@ renamed into place only after the size cap, the markup sniff and any
 \code{sha256} the registry entry carries have all passed. The download is
 recorded so it can be cited; consult \code{\link[=list_corpora]{list_corpora()}} for the citation.
 }
+\details{
+The file lands in \code{\link[=lexsync_cache_dir]{lexsync_cache_dir()}} unless \code{dest} names somewhere else.
+That cache persists between sessions and the package never prunes it; one
+corpus may reach the 200 MB download cap, so several of them add up. Nothing
+kept there is irreplaceable, so the directory may be deleted at any time and
+the next call downloads the corpus again.
+}
