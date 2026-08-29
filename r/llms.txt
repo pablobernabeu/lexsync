@@ -1,0 +1,323 @@
+# lexsync (R)
+
+lexsync builds psycholinguistic stimulus sets and the experiments that
+present them. Given a word-frequency corpus in any of dozens of
+languages and a short design file, it selects items matched in parallel
+across several lexical dimensions, counterbalances them across
+conditions and lists, and writes the experiment that runs them on
+‘PsychoPy’, ‘OpenSesame’ or in the browser through ‘jsPsych’. The two
+laboratory targets carry electroencephalography triggers bound to the
+buffer flip on which the stimulus appears. A trial is described
+declaratively, as a sequence of events, so factorial word contrasts,
+lexical decision with generated pseudowords, priming, self-paced reading
+and cued categorisation all come out of the same engine and the same
+configuration file, as do the practice and filler blocks that run but
+are not analysed.
+
+This is the feature-parity twin of [the Python
+package](https://pablobernabeu.github.io/lexsync/python/) of the same
+name, which offers the same workflow in Python. The two engines select
+byte-identical stimuli under the deterministic matching methods, and are
+built from one repository and released under one version.
+
+## Installation
+
+lexsync is not on CRAN yet. Install it from the repository, where the
+package sits in the `R_workflow/` subdirectory:
+
+``` r
+
+# install.packages("remotes")
+remotes::install_github("pablobernabeu/lexsync", subdir = "R_workflow")
+```
+
+## Quick start
+
+A design names the conditions, the dimensions to match and the number of
+items, alongside the filters that narrow the lexicon to a candidate
+pool. The example below runs a high- against low-frequency contrast on
+the English lexicon bundled with the package, so it needs no download
+and no corpus of your own.
+
+``` r
+
+library(lexsync)
+
+schema <- yaml::read_yaml(
+  system.file("extdata", "schema.yaml", package = "lexsync")
+)
+lex <- load_lexicon(
+  system.file("extdata", "en_example.csv", package = "lexsync"),
+  schema, language = "english"
+)
+
+design <- list(
+  name = "readme_demo", language = "english", n_per_condition = 15,
+  pool_filters = list(length = c(3, 7), frequency = c(3.8, 7)),
+  conditions = list(
+    list(name = "high", define_by = list(frequency = c(5.2, 7.0))),
+    list(name = "low",  define_by = list(frequency = c(3.8, 4.4)))
+  ),
+  match_on = list("length", "n_density", "old20")
+)
+
+pool <- build_pool(lex, design$pool_filters)
+stim <- match_stimuli(pool, design, schema)
+
+# What the match actually achieved, as effect sizes with confidence intervals
+# and a complementary equivalence test.
+match_report(stim, c("length", "frequency", "n_density", "old20"), schema)
+```
+
+The [Get
+started](https://pablobernabeu.github.io/lexsync/r/articles/lexsync.html)
+vignette works through the same example with its output, and the other
+articles each cover one part in depth: [matching and
+designs](https://pablobernabeu.github.io/lexsync/r/articles/matching-and-designs.html),
+[experiments and
+triggers](https://pablobernabeu.github.io/lexsync/r/articles/experiments-and-triggers.html)
+and [reproducibility and
+parity](https://pablobernabeu.github.io/lexsync/r/articles/reproducibility-and-parity.html).
+
+## Apps and demonstrations
+
+Two browser front-ends in the repository’s `apps/` directory let a
+researcher assemble a design without writing code, run the pipeline and
+read the matched stimuli, the realised-control report and the materials
+datasheet. A Shiny app wraps this package and a Streamlit app wraps the
+Python twin. Each exports the design configuration and the code that
+reproduces the run, so the interface yields shareable artefacts rather
+than results you cannot retrace. Both call their engine directly and so
+need a local install. [The
+app](https://pablobernabeu.github.io/lexsync/r/articles/the-app.html)
+walks through the Shiny one control by control, and
+[`apps/README.md`](https://github.com/pablobernabeu/lexsync/blob/main/apps/README.md)
+covers launching either of them.
+
+Every worked design in the repository also ships as a browser
+experiment, and these are published beside the documentation. The
+[lexical-decision
+demonstration](https://pablobernabeu.github.io/lexsync/demos/en_lexdec_english.html)
+is a single HTML file, self-contained apart from the jsPsych library it
+loads from a CDN, written by the same pipeline that emits the PsychoPy
+and OpenSesame scripts. All 21 are listed at [the demos
+index](https://pablobernabeu.github.io/lexsync/demos/), one per worked
+design.
+
+## Citation
+
+``` r
+
+citation("lexsync")
+```
+
+The repository also ships a
+[`CITATION.cff`](https://github.com/pablobernabeu/lexsync/blob/main/CITATION.cff),
+which drives GitHub’s ‘Cite this repository’ button. A manuscript
+describing lexsync is in preparation.
+
+Cite the corpus as well as the software. The corpora are third-party
+work with their own terms, and each is credited, with its licence and
+retrieval date, in
+[`corpora/ATTRIBUTION.md`](https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md).
+
+## Licence
+
+MIT. The bundled corpus derivatives are not covered by it: they are
+released under CC BY-SA 4.0, as recorded in
+[`LICENSE-DATA`](https://github.com/pablobernabeu/lexsync/blob/main/LICENSE-DATA).
+
+## Contributing
+
+Issues and pull requests are welcome, on the [issue
+tracker](https://github.com/pablobernabeu/lexsync/issues) of the
+repository that holds both twins. A report that includes the design YAML
+and the run log is one someone can act on, since between them they pin
+the inputs and every step that ran.
+
+# Package index
+
+## Corpora and lexica
+
+Reach a word-frequency corpus in any registered language, and read it
+in.
+
+- [`list_corpora()`](https://pablobernabeu.github.io/lexsync/r/reference/list_corpora.md)
+  : List the corpora known to the registry
+- [`fetch_corpus()`](https://pablobernabeu.github.io/lexsync/r/reference/fetch_corpus.md)
+  : Download a CSV-format registered corpus into the cache
+- [`lexsync_cache_dir()`](https://pablobernabeu.github.io/lexsync/r/reference/lexsync_cache_dir.md)
+  : Per-user cache directory for fetched corpora
+- [`load_lexicon()`](https://pablobernabeu.github.io/lexsync/r/reference/load_lexicon.md)
+  : Load a lexicon from a CSV file
+- [`load_items()`](https://pablobernabeu.github.io/lexsync/r/reference/load_items.md)
+  : Load a paradigm item table (prime-target pairs, sentences, ...)
+- [`load_pool()`](https://pablobernabeu.github.io/lexsync/r/reference/load_pool.md)
+  : Load a supplied candidate pool of words and give it the matcher's
+  dimensions
+- [`merge_norms()`](https://pablobernabeu.github.io/lexsync/r/reference/merge_norms.md)
+  : Left-join a norm table (e.g. concreteness, age of acquisition,
+  valence)
+
+## Lexical dimensions
+
+Derive the dimensions that stimuli are later matched or controlled on.
+
+- [`add_neighbourhood()`](https://pablobernabeu.github.io/lexsync/r/reference/add_neighbourhood.md)
+  : Compute orthographic-neighbourhood dimensions (Coltheart's N and
+  OLD20)
+- [`add_bigram_frequency()`](https://pablobernabeu.github.io/lexsync/r/reference/add_bigram_frequency.md)
+  : Mean bigram probability (type-based, non-positional), a
+  phonotactic-probability proxy
+- [`add_pair_overlap()`](https://pablobernabeu.github.io/lexsync/r/reference/add_pair_overlap.md)
+  : Orthographic overlap between the two members of each pair
+- [`count_syllables()`](https://pablobernabeu.github.io/lexsync/r/reference/count_syllables.md)
+  : Orthographic syllable estimate: the number of maximal vowel runs
+
+## Pools and matching
+
+Filter a lexicon to a candidate pool, then match conditions across
+dimensions in parallel.
+
+- [`build_pool()`](https://pablobernabeu.github.io/lexsync/r/reference/build_pool.md)
+  : Build an experimental candidate pool by filtering a lexicon
+- [`match_stimuli()`](https://pablobernabeu.github.io/lexsync/r/reference/match_stimuli.md)
+  : Match stimuli across conditions on several lexical dimensions
+- [`resample_stimuli()`](https://pablobernabeu.github.io/lexsync/r/reference/resample_stimuli.md)
+  : Produce several disjoint matched item sets (items as a random
+  factor)
+
+## Continuous designs
+
+Span a predictor instead of dichotomising it, holding the control
+dimensions constant.
+
+- [`select_continuous_stimuli()`](https://pablobernabeu.github.io/lexsync/r/reference/select_continuous_stimuli.md)
+  : Select a set spanning a continuous predictor, holding controls
+  constant
+- [`match_report_continuous()`](https://pablobernabeu.github.io/lexsync/r/reference/match_report_continuous.md)
+  : Realised-control report for a continuous design
+
+## Pseudoword generation
+
+Deterministic non-words, and the lexical-decision sets built from them.
+
+- [`generate_pseudowords()`](https://pablobernabeu.github.io/lexsync/r/reference/generate_pseudowords.md)
+  : A length-matched pseudoword for each base word (byte-order
+  processing)
+- [`make_pseudoword()`](https://pablobernabeu.github.io/lexsync/r/reference/make_pseudoword.md)
+  : The most bigram-plausible legal non-word at the smallest edit
+  distance
+- [`build_lexdec_stimuli()`](https://pablobernabeu.github.io/lexsync/r/reference/build_lexdec_stimuli.md)
+  : Assemble a word-vs-pseudoword lexical-decision set from a candidate
+  pool
+
+## Paradigms and trial events
+
+The declarative trial model, and the fields a design must supply to it.
+
+- [`PARADIGMS`](https://pablobernabeu.github.io/lexsync/r/reference/PARADIGMS.md)
+  : The paradigm registry: default event sequences and required fields
+
+- [`resolve_events()`](https://pablobernabeu.github.io/lexsync/r/reference/resolve_events.md)
+  :
+
+  The design's trial event list: its own `events`, else its paradigm's
+
+- [`resolve_trial_timing()`](https://pablobernabeu.github.io/lexsync/r/reference/resolve_trial_timing.md)
+  : Realise per-trial event durations onto the stimuli table
+
+- [`required_fields()`](https://pablobernabeu.github.io/lexsync/r/reference/required_fields.md)
+  : Trial fields a design needs present in its items (paradigm + events)
+
+## Counterbalancing
+
+Rotate items across lists and assign participants to them.
+
+- [`counterbalance()`](https://pablobernabeu.github.io/lexsync/r/reference/counterbalance.md)
+  : Assign stimuli to lists and a randomised, reproducible trial order
+- [`balance_lists()`](https://pablobernabeu.github.io/lexsync/r/reference/balance_lists.md)
+  : Assign item sets to counterbalancing lists so the lists match on the
+  item dimensions
+- [`participant_table()`](https://pablobernabeu.github.io/lexsync/r/reference/participant_table.md)
+  : Build a participant counterbalancing table
+
+## Validation and equivalence
+
+Report the realised control, testing for equivalence rather than for a
+null result.
+
+- [`match_report()`](https://pablobernabeu.github.io/lexsync/r/reference/match_report.md)
+  : Build the full match-quality report
+- [`describe_stimuli()`](https://pablobernabeu.github.io/lexsync/r/reference/describe_stimuli.md)
+  : Per-group descriptive statistics for several dimensions
+- [`balance_check()`](https://pablobernabeu.github.io/lexsync/r/reference/balance_check.md)
+  : Check that the levels of given columns occur equally often
+- [`variance_ratio()`](https://pablobernabeu.github.io/lexsync/r/reference/variance_ratio.md)
+  : Variance ratio: a distributional balance check
+- [`cohens_d()`](https://pablobernabeu.github.io/lexsync/r/reference/cohens_d.md)
+  : Cohen's d (pooled-SD standardised mean difference)
+- [`cohens_d_ci()`](https://pablobernabeu.github.io/lexsync/r/reference/cohens_d_ci.md)
+  : Cohen's d with a confidence interval, complementing the TOST verdict
+- [`tost_equiv()`](https://pablobernabeu.github.io/lexsync/r/reference/tost_equiv.md)
+  : Two one-sided tests (TOST) of equivalence on a Cohen's d bound
+
+## Experiment generation
+
+Render the events into runnable experiments, with EEG triggers on the
+laboratory targets.
+
+- [`export_experiments()`](https://pablobernabeu.github.io/lexsync/r/reference/export_experiments.md)
+  : Export all presentation targets (PsychoPy, OpenSesame, jsPsych)
+- [`export_psychopy()`](https://pablobernabeu.github.io/lexsync/r/reference/export_psychopy.md)
+  : Export a runnable PsychoPy script that interprets the event sequence
+- [`export_opensesame()`](https://pablobernabeu.github.io/lexsync/r/reference/export_opensesame.md)
+  : Export a complete plain-text OpenSesame experiment
+- [`export_jspsych()`](https://pablobernabeu.github.io/lexsync/r/reference/export_jspsych.md)
+  : Export a browser-runnable jsPsych experiment
+- [`assign_triggers()`](https://pablobernabeu.github.io/lexsync/r/reference/assign_triggers.md)
+  : Assign EEG trigger codes to stimuli
+
+## Materials datasheet
+
+The provenance, checksums and realised control that travel with a
+stimulus set.
+
+- [`build_datasheet()`](https://pablobernabeu.github.io/lexsync/r/reference/build_datasheet.md)
+  : Assemble the materials datasheet for one design
+- [`write_datasheet()`](https://pablobernabeu.github.io/lexsync/r/reference/write_datasheet.md)
+  : Write a datasheet to a JSON record and a Markdown rendering
+- [`methods_paragraph()`](https://pablobernabeu.github.io/lexsync/r/reference/methods_paragraph.md)
+  : A ready-to-adapt methods paragraph rendered from a datasheet
+
+## Pipeline and logging
+
+Run a design end to end, and log every step and artefact as it is
+written.
+
+- [`run_pipeline()`](https://pablobernabeu.github.io/lexsync/r/reference/run_pipeline.md)
+  : Run the lexsync pipeline for one design
+- [`run_all()`](https://pablobernabeu.github.io/lexsync/r/reference/run_all.md)
+  : Run the lexsync pipeline for every design configuration
+- [`new_run_log()`](https://pablobernabeu.github.io/lexsync/r/reference/new_run_log.md)
+  : Start a new run log
+- [`log_step()`](https://pablobernabeu.github.io/lexsync/r/reference/log_step.md)
+  : Append a step to a run log
+- [`log_artefact()`](https://pablobernabeu.github.io/lexsync/r/reference/log_artefact.md)
+  : Record a written artefact (path, rows, fingerprint) in the log
+- [`write_run_log()`](https://pablobernabeu.github.io/lexsync/r/reference/write_run_log.md)
+  : Write the run log to Markdown (and optionally JSON Lines)
+
+# Articles
+
+### Guides
+
+- [Matching, dimensions and
+  designs](https://pablobernabeu.github.io/lexsync/r/articles/matching-and-designs.md):
+- [Experiments, paradigms and EEG
+  triggers](https://pablobernabeu.github.io/lexsync/r/articles/experiments-and-triggers.md):
+- [Reproducibility, parity and the materials
+  datasheet](https://pablobernabeu.github.io/lexsync/r/articles/reproducibility-and-parity.md):
+- [The
+  app](https://pablobernabeu.github.io/lexsync/r/articles/the-app.md):
+- [References](https://pablobernabeu.github.io/lexsync/r/articles/references.md):
