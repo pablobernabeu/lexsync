@@ -3,6 +3,8 @@ import pandas as pd
 import pytest
 
 from lexsync.matching import (
+    PAIRWISE_CAP,
+    _cap_to_overlap,
     _maha_metric,
     match_stimuli,
     resample_stimuli,
@@ -233,6 +235,78 @@ def test_missing_dimension_rows_are_dropped_and_ranked_last():
     assert list(s.loc[s.condition == "high", "word"]) == ["hab", "hac", "had"]
     assert list(s.loc[s.condition == "low", "word"]) == ["laa", "lab", "laz"]
     assert not s["concreteness"].isna().any()
+
+
+def _na_anchor_pool():
+    # The missing-concreteness row leads the anchor condition: an anchor that cannot
+    # be scored has the same distance to every candidate, so the tie-break alone
+    # would choose its counterpart.
+    return pd.DataFrame({
+        "id": [1, 2, 3, 4, 5, 6, 7, 8],
+        "word": ["hab", "hac", "had", "hae", "laa", "lab", "lac", "lad"],
+        "frequency": [5.0, 5.5, 6.0, 6.5, 1.0, 1.5, 2.0, 2.5],
+        "concreteness": [np.nan, 3.0, 3.1, 2.9, 3.0, 3.1, 2.9, 9.0],
+    })
+
+
+def test_an_unscoreable_anchor_row_is_not_selected():
+    # The anchor passes through no tolerance window, so nothing else drops the row.
+    # Selecting it paired 'hab' with whichever low word sorted first. Pinned
+    # identically in test-matching.R.
+    s = match_stimuli(_na_anchor_pool(), _na_design(), _tiny_schema())
+    assert list(s.loc[s.condition == "high", "word"]) == ["hac", "had", "hae"]
+    assert list(s.loc[s.condition == "low", "word"]) == ["laa", "lab", "lac"]
+    assert not s["concreteness"].isna().any()
+
+
+def _joint_na_design(n):
+    d = _na_design(n)
+    d["matching"] = {"method": "joint"}
+    return d
+
+
+def test_joint_will_not_pair_an_unscoreable_row():
+    # The pairwise matchers have no tolerance window either, and a NaN cost sorts
+    # last rather than out, so a pair with no distance at all could still be taken to
+    # reach n. Pinned identically in test-matching.R.
+    pool = pd.DataFrame({
+        "id": [1, 2, 3, 4, 5, 6],
+        "word": ["hab", "hac", "had", "laa", "lab", "lac"],
+        "frequency": [5.0, 5.5, 6.0, 1.0, 1.5, 2.0],
+        "concreteness": [np.nan, 3.0, 3.1, np.nan, 3.0, 3.1],
+    })
+    s = match_stimuli(pool, _joint_na_design(2), _tiny_schema())
+    assert list(s.loc[s.condition == "high", "word"]) == ["hac", "had"]
+    assert not s["concreteness"].isna().any()
+    # A third pair would have to use an unscoreable row; that is a shortfall now.
+    with pytest.raises(ValueError, match="3 sets per condition"):
+        match_stimuli(pool, _joint_na_design(3), _tiny_schema())
+
+
+def test_the_overlap_cap_ranks_an_unscoreable_row_last():
+    # R's order() drops a missing distance to the end; Python's comparison sort treats
+    # it as incomparable and leaves it where it fell, so the cap kept rows the R engine
+    # dropped and the two engines matched over different candidates. test-matching.R
+    # pins the same expectation on .cap_to_overlap.
+    n = PAIRWISE_CAP + 100
+    z = (np.arange(n, dtype=float) / n).reshape(-1, 1)
+    missing = (3, 17, 500, 1250)
+    z[list(missing), 0] = np.nan
+    df = pd.DataFrame({"id": list(range(n)), "word": ["w%05d" % i for i in range(n)]})
+    kept, z_kept = _cap_to_overlap(df, z, np.array([0.0]), PAIRWISE_CAP)
+    assert len(kept) == PAIRWISE_CAP
+    assert not np.isnan(z_kept).any()
+    assert list(kept["id"]) == [i for i in range(n) if i not in missing][:PAIRWISE_CAP]
+
+
+def test_a_design_without_match_on_is_refused():
+    # R read NULL, scored every candidate at distance zero and returned an unmatched
+    # selection its datasheet still called matched; Python died with a bare KeyError.
+    # Both now refuse, with the same message. test-matching.R pins it too.
+    d = _na_design()
+    d.pop("match_on")
+    with pytest.raises(ValueError, match="the design has no match_on"):
+        match_stimuli(_na_pool(), d, _tiny_schema())
 
 
 def test_undersized_condition_raises_instead_of_duplicating():

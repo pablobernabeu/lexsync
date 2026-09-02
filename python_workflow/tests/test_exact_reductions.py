@@ -66,6 +66,18 @@ def test_degenerate_inputs_are_not_silently_zero():
     assert _exact_sd([2.0, 2.0]) == 0.0
 
 
+def test_a_missing_value_propagates_through_every_reduction():
+    # The four sum-based reductions share one missing-value contract with the R
+    # engine, which used to abort here where Python returned NaN, so `joint`
+    # matching over a partially covering norm table ran in one engine and failed in
+    # the other. test-exact-reductions.R pins the same cases.
+    xs = [1.0, float("nan"), 3.0]
+    assert _exact_sum(xs) != _exact_sum(xs)         # NaN
+    assert _exact_mean(xs) != _exact_mean(xs)
+    assert _exact_var(xs) != _exact_var(xs)
+    assert _exact_sd(xs) != _exact_sd(xs)
+
+
 def test_variance_survives_data_far_from_zero():
     # The one-pass "sum of squares minus n times squared mean" form cancels
     # catastrophically here and can even return a negative variance; the two-pass form

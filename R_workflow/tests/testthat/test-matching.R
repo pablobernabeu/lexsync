@@ -217,6 +217,78 @@ test_that("rows missing a matched dimension are dropped and ranked last", {
   expect_false(any(is.na(s$concreteness)))
 })
 
+na_anchor_pool <- function() {
+  # The missing-concreteness row leads the anchor condition: an anchor that cannot be
+  # scored has the same distance to every candidate, so the tie-break alone would
+  # choose its counterpart.
+  data.frame(
+    id = 1:8,
+    word = c("hab", "hac", "had", "hae", "laa", "lab", "lac", "lad"),
+    frequency = c(5.0, 5.5, 6.0, 6.5, 1.0, 1.5, 2.0, 2.5),
+    concreteness = c(NA, 3.0, 3.1, 2.9, 3.0, 3.1, 2.9, 9.0),
+    stringsAsFactors = FALSE
+  )
+}
+
+test_that("an unscoreable anchor row is not selected", {
+  # The anchor passes through no tolerance window, so nothing else drops the row.
+  # Selecting it paired "hab" with whichever low word sorted first. Pinned identically
+  # in test_matching.py.
+  s <- match_stimuli(na_anchor_pool(), na_design(), tiny_schema())
+  expect_identical(s$word[s$condition == "high"], c("hac", "had", "hae"))
+  expect_identical(s$word[s$condition == "low"], c("laa", "lab", "lac"))
+  expect_false(any(is.na(s$concreteness)))
+})
+
+test_that("joint matching will not pair an unscoreable row", {
+  # The pairwise matchers have no tolerance window either, and an NA cost sorts last
+  # rather than out, so a pair with no distance at all could still be taken to reach n.
+  # Pinned identically in test_matching.py.
+  pool <- data.frame(
+    id = 1:6,
+    word = c("hab", "hac", "had", "laa", "lab", "lac"),
+    frequency = c(5.0, 5.5, 6.0, 1.0, 1.5, 2.0),
+    concreteness = c(NA, 3.0, 3.1, NA, 3.0, 3.1),
+    stringsAsFactors = FALSE
+  )
+  joint_design <- function(n) {
+    d <- na_design(n); d$matching <- list(method = "joint"); d
+  }
+  s <- match_stimuli(pool, joint_design(2L), tiny_schema())
+  expect_identical(s$word[s$condition == "high"], c("hac", "had"))
+  expect_false(any(is.na(s$concreteness)))
+  # A third pair would have to use an unscoreable row; that is a shortfall now.
+  expect_error(match_stimuli(pool, joint_design(3L), tiny_schema()),
+               "3 sets per condition")
+})
+
+test_that("the overlap cap ranks an unscoreable row last", {
+  # order()'s na.last default drops a missing distance to the end. The Python engine's
+  # comparison sort treats it as incomparable and left such rows in the cap, so the two
+  # engines matched over different candidates. test_matching.py pins the same
+  # expectation on _cap_to_overlap.
+  n <- lexsync:::.PAIRWISE_CAP + 100L
+  z <- matrix(seq_len(n) / n, ncol = 1)
+  missing <- c(4L, 18L, 501L, 1251L)
+  z[missing, 1] <- NA_real_
+  df <- data.frame(id = seq_len(n), word = sprintf("w%05d", seq_len(n)),
+                   stringsAsFactors = FALSE)
+  o <- lexsync:::.cap_to_overlap(df, z, 0, lexsync:::.PAIRWISE_CAP)
+  expect_identical(nrow(o$df), lexsync:::.PAIRWISE_CAP)
+  expect_false(anyNA(o$z))
+  expect_identical(o$df$id,
+                   setdiff(seq_len(n), missing)[seq_len(lexsync:::.PAIRWISE_CAP)])
+})
+
+test_that("a design without match_on is refused", {
+  # This engine read NULL, scored every candidate at distance zero and returned an
+  # unmatched selection its datasheet still called matched; Python died with a bare
+  # KeyError. Both now refuse, with the same message. test_matching.py pins it too.
+  d <- na_design(); d$match_on <- NULL
+  expect_error(match_stimuli(na_pool(), d, tiny_schema()),
+               "the design has no match_on")
+})
+
 test_that("an undersized condition raises rather than duplicating words", {
   # Five anchors but only two low candidates: the greedy assignment would exhaust
   # the low pool and re-pick its first word for sets 3 to 5.

@@ -53,6 +53,21 @@ test_that("degenerate inputs are not silently zero", {
   expect_identical(lexsync:::.exact_sd(c(2, 2)), 0)
 })
 
+test_that("a missing value propagates through every reduction", {
+  # The four sum-based reductions share one missing-value contract with the Python
+  # engine. This engine used to abort with "missing value where TRUE/FALSE needed"
+  # where Python returned NaN, so `joint` matching over a partially covering norm
+  # table ran in one engine and failed in the other. test_exact_reductions.py pins
+  # the same cases.
+  xs <- c(1, NA, 3)
+  expect_true(is.na(lexsync:::.exact_sum(xs)))
+  expect_true(is.na(lexsync:::.exact_mean(xs)))
+  expect_true(is.na(lexsync:::.exact_var(xs)))
+  expect_true(is.na(lexsync:::.exact_sd(xs)))
+  # The median is the stated exception: it drops the missing value and reduces.
+  expect_identical(lexsync:::.exact_median(xs), 2)
+})
+
 test_that("variance survives data far from zero", {
   # The one-pass "sum of squares minus n times squared mean" form cancels
   # catastrophically here and can even return a negative variance; the two-pass form

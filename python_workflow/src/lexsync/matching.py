@@ -103,12 +103,29 @@ def _exact_colmeans(z):
     return np.array([_exact_mean(z[:, j]) for j in range(z.shape[1])], dtype=float)
 
 
+def _complete_on(df, match_on):
+    """Drop rows missing a matched dimension.
+
+    Such a row has no distance to any counterpart, so it cannot be matched: it
+    would be paired with whichever candidate the tie-break happened to reach.
+    The anchored path drops them in its tolerance pre-filter; the pairwise
+    matchers have no window to drop them. Must stay identical to .complete_on in
+    R_workflow/R/matching.R.
+    """
+    return df[df[match_on].notna().all(axis=1)].reset_index(drop=True)
+
+
 def _cap_to_overlap(df, z, other_centroid, cap):
     """Keep the `cap` rows nearest the other condition's centroid (byte-rank ties)."""
     if len(df) <= cap:
         return df.reset_index(drop=True), z
     d = _round_dp_vec(np.sqrt(((z - other_centroid) ** 2).sum(axis=1)), 9)
-    order = sorted(range(len(df)), key=lambda i: (d[i], i))[:cap]
+    # NaN last, as R's order(na.last = TRUE) does. Python's comparison sort treats a
+    # NaN as incomparable, so every comparison against it is False and timsort leaves
+    # such a row wherever it fell, keeping in the cap a row the R engine drops.
+    nan = np.isnan(d)
+    order = sorted(range(len(df)),
+                   key=lambda i: (bool(nan[i]), 0.0 if nan[i] else d[i], i))[:cap]
     keep = sorted(order)
     return df.iloc[keep].reset_index(drop=True), z[keep]
 
@@ -123,8 +140,8 @@ def _match_joint(subpools, cond_names, match_on, center, scale, n, cap=PAIRWISE_
     them (e.g. neighbourhood density with word length). Deterministic and
     identical to the R engine (rounded costs; byte-rank tie-breaks).
     """
-    s0 = subpools[0].reset_index(drop=True)
-    s1 = subpools[1].reset_index(drop=True)
+    s0 = _complete_on(subpools[0], match_on)
+    s1 = _complete_on(subpools[1], match_on)
     if len(s0) == 0 or len(s1) == 0:
         raise ValueError("lexsync: a condition has no candidates for joint matching.")
     z0 = _zmat(s0, match_on, center, scale)
@@ -213,8 +230,8 @@ def _match_optimal(subpools, cond_names, match_on, center, scale, n, cap=PAIRWIS
     handling differs between engines, so the two agree closely but not byte-for-byte.
     """
     from scipy.optimize import linear_sum_assignment
-    s0 = subpools[0].reset_index(drop=True)
-    s1 = subpools[1].reset_index(drop=True)
+    s0 = _complete_on(subpools[0], match_on)
+    s1 = _complete_on(subpools[1], match_on)
     if len(s0) == 0 or len(s1) == 0:
         raise ValueError("lexsync: a condition has no candidates for optimal matching.")
     z0 = _zmat(s0, match_on, center, scale)
@@ -277,7 +294,13 @@ def match_stimuli(pool: pd.DataFrame, design: dict, schema: dict, verbose: bool 
         # bare subscript error in R, two different messages for the same mistake.
         raise ValueError("lexsync: the design has no conditions; a matched design "
                          "needs a conditions list.")
-    match_on = list(design["match_on"])
+    match_on = list(design.get("match_on") or [])
+    if not match_on:
+        # Without this, Python dies with a bare KeyError while R reads NULL, scores
+        # every candidate at distance zero and returns an unmatched selection whose
+        # datasheet still claims the items were matched, on nothing.
+        raise ValueError("lexsync: the design has no match_on; a matched design needs "
+                         "at least one dimension to equate the conditions on.")
     n = design.get("n_per_condition") or design.get("n_per_cell") or 20
     # Tolerance window k per dimension (window = anchor mean +/- k * SD). A design
     # may override the schema defaults per dimension, e.g. to reproduce a published
@@ -348,6 +371,14 @@ def match_stimuli(pool: pd.DataFrame, design: dict, schema: dict, verbose: bool 
     anchor_pool = subpools[0]
     if len(anchor_pool) == 0:
         raise ValueError(f"lexsync: anchor condition '{cond_names[0]}' has no candidates.")
+    # An anchor row missing a matched dimension has a NaN distance to every candidate,
+    # so the tie-break alone chooses its counterpart and the pair carries no matching
+    # information at all. The matched conditions lose such rows in the tolerance
+    # pre-filter below; the anchor passes through no window, so it is filtered here.
+    anchor_pool = _complete_on(anchor_pool, match_on)
+    if len(anchor_pool) == 0:
+        raise ValueError(f"lexsync: anchor condition '{cond_names[0]}' has no candidates "
+                         f"complete on the matched dimensions.")
     # An anchor without define_by orders by the default dimension, as the R
     # engine's names(NULL)[1] falls back to "frequency".
     ord_keys = list((conditions[0].get("define_by") or {}).keys())

@@ -49,10 +49,12 @@ engines can compute the same distance and differ in the last bit, and if that bi
 comparison then a stable tie-break is not stable at all. Rounding first is what makes the tie-break
 mean anything.
 
-Missing values are ranked last, explicitly. A relaxed tolerance window can readmit a row whose
-matched dimension is missing, and its distance is then NaN. A bare `min()` over NaN keeps whichever
-row it happened to see first, which makes the selection depend on pool row order. The matcher sorts
-NaN last, as R's `order(na.last = TRUE)` does.
+Missing values are ranked last, explicitly, wherever they can be reached at all. A row missing one
+of the matched dimensions has no distance to anything, so the anchor condition and the two pairwise
+matchers drop such rows before they select, and the matched conditions' tolerance windows exclude
+them already. Where a relaxed window readmits one, its distance is NaN, and a bare `min()` over NaN
+keeps whichever row it happened to see first, which makes the selection depend on pool row order.
+Both the matcher and the overlap cap sort NaN last, as R's `order(na.last = TRUE)` does.
 
 Text is read the same way by both engines. pandas treats `null`, `nan`, `none` and `true` as missing
 by default, which would silently drop those real English words and leave the two engines with

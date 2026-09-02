@@ -176,6 +176,24 @@ no function signature changes.
 
 ### Changed
 
+- A row missing one of the `match_on` dimensions is no longer selected, which counts
+  as a breaking change for any design whose pool has such a row. The row has no
+  distance to anything, so the anchored matcher paired an unscoreable anchor with
+  whichever candidate sorted first, and, where the row came later in the anchor,
+  re-picked an already-used candidate and then aborted with a message about
+  overlapping conditions that named the wrong cause. The pairwise `joint` and
+  `optimal` matchers had no filter either, and would take a pair with no distance at
+  all to reach `n`. The matched conditions already lost such rows to their tolerance
+  window; the anchor condition and both pairwise subpools now lose them too, and a
+  shortfall is reported where the remaining rows do not reach `n`. This is reachable
+  through any `norms:` table that does not cover the whole lexicon, which is the
+  ordinary case. No shipped design has a hole on a matched dimension, so no committed
+  artefact changed.
+- A design that declares `conditions` but no `match_on` is refused by both engines.
+  Python died with a bare `KeyError`; R read it as no dimensions at all, scored every
+  candidate at distance zero, let the byte-order tie-break choose the items and then
+  wrote a datasheet and a Methods paragraph saying they had been matched item by item
+  on nothing. Both now stop with the same message.
 - A design that names a paradigm keeps that paradigm's counterbalancing recipe when
   it declares its own `events`, which counts as a breaking change for one shipped
   design. The recipe used to fall back to factorial whenever an `events` list was
@@ -354,6 +372,22 @@ no function signature changes.
 
 ### Fixed
 
+- The pairwise matchers' candidate cap kept rows the R engine dropped. The cap sorts
+  a condition's subpool by distance to the other condition's centroid and keeps the
+  nearest 1,200, and Python sorted on a plain comparison key, which treats a missing
+  distance as incomparable and leaves such a row wherever it fell, while R's `order()`
+  drops it to the end. On a 1,300-row subpool holding ten unscoreable rows the two
+  engines kept 62 different candidates, against a parity guide that says missing
+  values are ranked last. Python now ranks them last, and R's two copies of the cap
+  are one shared function.
+- The compensated sum disagreed with itself across the engines on missing input. It is
+  the primitive both run so that means, standard deviations and variances agree bit
+  for bit, and on a missing value Python's `abs(s) >= abs(v)` is False and returns
+  NaN while R's is NA and stops with "missing value where TRUE/FALSE needed". With a
+  partially covering norm table that made `matching: method: joint` run in one engine
+  and fail in the other. R now propagates the missing value as Python does; the mean,
+  variance and standard deviation inherit the contract, and the median keeps its
+  stated exception of dropping missing values before it sorts.
 - The datasheet records the counterbalancing recipe that ran. Both engines inferred
   it from `items.source` while `counterbalance()` dispatched on the paradigm, so a
   table-sourced design could be recorded as a Latin-square rotation it never had; the

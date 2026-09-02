@@ -1,5 +1,22 @@
 # lexsync (development version)
 
+* Breaking change: a row missing one of the `match_on` dimensions is no longer
+  selected. An unscoreable anchor has the same distance to every candidate, so the
+  tie-break alone chose its counterpart, and `joint` and `optimal` would take a pair
+  with no distance at all to reach `n`. The anchor condition and both pairwise
+  subpools now drop such rows, as the matched conditions' tolerance windows already
+  did. This is reachable through any `norms:` table that does not cover the whole
+  lexicon. No shipped design has a hole on a matched dimension, so no committed
+  artefact changed.
+* A design that declares `conditions` but no `match_on` is an error. This engine read
+  it as no dimensions at all, scored every candidate at distance zero and wrote a
+  datasheet saying the items had been matched on nothing, while the Python engine died
+  with a bare `KeyError`. Both now stop with the same message.
+* `.exact_sum` returns `NA` on missing input instead of stopping with "missing value
+  where TRUE/FALSE needed". The Python twin returns `NaN` there, so `matching: method:
+  joint` over a partially covering norm table ran in one engine and failed in the
+  other. `.exact_mean`, `.exact_var` and `.exact_sd` inherit the contract;
+  `.exact_median` keeps its stated exception of dropping missing values first.
 * Breaking change: a design that names a paradigm keeps that paradigm's
   counterbalancing recipe when it declares its own `events`. The recipe used to fall
   back to factorial whenever an `events` list was present, so

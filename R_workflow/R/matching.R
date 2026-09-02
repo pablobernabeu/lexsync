@@ -93,6 +93,14 @@ match_stimuli <- function(pool, design, schema, verbose = FALSE) {
          call. = FALSE)
   }
   match_on <- unlist(design$match_on, use.names = FALSE)
+  if (length(match_on) == 0) {
+    # Without this, NULL gives a z-matrix of zero columns, every candidate distance
+    # is zero and the byte-order tie-break alone chooses the items, while the
+    # datasheet still claims they were matched, on nothing. Python died with a bare
+    # KeyError on the same design.
+    stop(paste0("lexsync: the design has no match_on; a matched design needs at least ",
+                "one dimension to equate the conditions on."), call. = FALSE)
+  }
   n <- design$n_per_condition %||% design$n_per_cell %||% 20L
   # Tolerance window k per dimension (window = anchor mean +/- k * SD). A design
   # may override the schema defaults per dimension, e.g. to reproduce a published
@@ -182,6 +190,15 @@ match_stimuli <- function(pool, design, schema, verbose = FALSE) {
   anchor_pool <- subpools[[1]]
   if (nrow(anchor_pool) == 0) {
     stop(sprintf("lexsync: anchor condition '%s' has no candidates.", cond_names[1]), call. = FALSE)
+  }
+  # An anchor row missing a matched dimension has an NA distance to every candidate, so
+  # the tie-break alone chooses its counterpart and the pair carries no matching
+  # information at all. The matched conditions lose such rows in the tolerance
+  # pre-filter below; the anchor passes through no window, so it is filtered here.
+  anchor_pool <- .complete_on(anchor_pool, match_on)
+  if (nrow(anchor_pool) == 0) {
+    stop(sprintf("lexsync: anchor condition '%s' has no candidates complete on the matched dimensions.",
+                 cond_names[1]), call. = FALSE)
   }
   ord_dim <- names(conditions[[1]]$define_by)[1]
   if (is.null(ord_dim) || !ord_dim %in% names(anchor_pool)) ord_dim <- "frequency"
@@ -314,6 +331,26 @@ match_stimuli <- function(pool, design, schema, verbose = FALSE) {
   vapply(seq_len(ncol(z)), function(j) .exact_mean(z[, j]), numeric(1))
 }
 
+# Drop rows missing a matched dimension. Such a row has no distance to any
+# counterpart, so it cannot be matched: it would be paired with whichever candidate
+# the tie-break happened to reach. The anchored path drops them in its tolerance
+# pre-filter; the pairwise matchers have no window to drop them. Must stay identical
+# to _complete_on in python_workflow/src/lexsync/matching.py.
+.complete_on <- function(df, match_on) {
+  df[stats::complete.cases(df[, match_on, drop = FALSE]), , drop = FALSE]
+}
+
+# Keep the `cap` rows nearest the other condition's centroid (byte-rank ties). Shared
+# by both pairwise matchers so the two cannot drift apart. order()'s na.last default
+# ranks an unscoreable row last; _cap_to_overlap in matching.py has to say so.
+.cap_to_overlap <- function(df, z, centroid, cap) {
+  if (nrow(df) <= cap) return(list(df = df, z = z))
+  d <- .round_dp(sqrt(rowSums(sweep(z, 2, centroid, "-")^2)), 9)
+  ord <- order(d, seq_len(nrow(df)), method = "radix")[seq_len(cap)]
+  keep <- sort(ord)
+  list(df = df[keep, , drop = FALSE], z = z[keep, , drop = FALSE])
+}
+
 #' Joint nearest-pair matching for a two-condition design
 #'
 #' Selects the `n` best-matched pairs across the two conditions, keeping only
@@ -324,8 +361,8 @@ match_stimuli <- function(pool, design, schema, verbose = FALSE) {
 #'
 #' @keywords internal
 match_joint <- function(subpools, cond_names, match_on, center, scale_, n, cap = .PAIRWISE_CAP) {
-  s0 <- subpools[[1]]
-  s1 <- subpools[[2]]
+  s0 <- .complete_on(subpools[[1]], match_on)
+  s1 <- .complete_on(subpools[[2]], match_on)
   if (nrow(s0) == 0 || nrow(s1) == 0) {
     stop("lexsync: a condition has no candidates for joint matching.", call. = FALSE)
   }
@@ -333,16 +370,9 @@ match_joint <- function(subpools, cond_names, match_on, center, scale_, n, cap =
     m <- as.matrix(df[, match_on, drop = FALSE])
     sweep(sweep(m, 2, center, "-"), 2, scale_, "/")
   }
-  cap_overlap <- function(df, z, centroid) {
-    if (nrow(df) <= cap) return(list(df = df, z = z))
-    d <- .round_dp(sqrt(rowSums(sweep(z, 2, centroid, "-")^2)), 9)
-    ord <- order(d, seq_len(nrow(df)), method = "radix")[seq_len(cap)]
-    keep <- sort(ord)
-    list(df = df[keep, , drop = FALSE], z = z[keep, , drop = FALSE])
-  }
   z0 <- zof(s0); z1 <- zof(s1)
-  o0 <- cap_overlap(s0, z0, .exact_colmeans(z1)); s0 <- o0$df; z0 <- o0$z
-  o1 <- cap_overlap(s1, z1, .exact_colmeans(z0)); s1 <- o1$df; z1 <- o1$z
+  o0 <- .cap_to_overlap(s0, z0, .exact_colmeans(z1), cap); s0 <- o0$df; z0 <- o0$z
+  o1 <- .cap_to_overlap(s1, z1, .exact_colmeans(z0), cap); s1 <- o1$df; z1 <- o1$z
   m0 <- nrow(z0); m1 <- nrow(z1)
   cost <- matrix(0, m0, m1)
   for (d in seq_len(ncol(z0))) cost <- cost + outer(z0[, d], z1[, d], "-")^2
@@ -416,7 +446,8 @@ match_optimal <- function(subpools, cond_names, match_on, center, scale_, n, cap
     stop("lexsync: matching method 'optimal' needs the 'clue' package (install.packages('clue')).",
          call. = FALSE)
   }
-  s0 <- subpools[[1]]; s1 <- subpools[[2]]
+  s0 <- .complete_on(subpools[[1]], match_on)
+  s1 <- .complete_on(subpools[[2]], match_on)
   if (nrow(s0) == 0 || nrow(s1) == 0) {
     stop("lexsync: a condition has no candidates for optimal matching.", call. = FALSE)
   }
@@ -424,16 +455,9 @@ match_optimal <- function(subpools, cond_names, match_on, center, scale_, n, cap
     m <- as.matrix(df[, match_on, drop = FALSE])
     sweep(sweep(m, 2, center, "-"), 2, scale_, "/")
   }
-  cap_overlap <- function(df, z, centroid) {
-    if (nrow(df) <= cap) return(list(df = df, z = z))
-    d <- .round_dp(sqrt(rowSums(sweep(z, 2, centroid, "-")^2)), 9)
-    ord <- order(d, seq_len(nrow(df)), method = "radix")[seq_len(cap)]
-    keep <- sort(ord)
-    list(df = df[keep, , drop = FALSE], z = z[keep, , drop = FALSE])
-  }
   z0 <- zof(s0); z1 <- zof(s1)
-  o0 <- cap_overlap(s0, z0, .exact_colmeans(z1)); s0 <- o0$df; z0 <- o0$z
-  o1 <- cap_overlap(s1, z1, .exact_colmeans(z0)); s1 <- o1$df; z1 <- o1$z
+  o0 <- .cap_to_overlap(s0, z0, .exact_colmeans(z1), cap); s0 <- o0$df; z0 <- o0$z
+  o1 <- .cap_to_overlap(s1, z1, .exact_colmeans(z0), cap); s1 <- o1$df; z1 <- o1$z
   m0 <- nrow(z0); m1 <- nrow(z1)
   cost <- matrix(0, m0, m1)
   for (d in seq_len(ncol(z0))) cost <- cost + outer(z0[, d], z1[, d], "-")^2
