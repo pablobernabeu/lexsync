@@ -77,8 +77,30 @@ test_that("the bundle zip needs no external zip executable", {
 
 test_that("the app offers exactly the paradigms the engine implements", {
   e <- app_env()
-  expect_equal(sort(unname(e$PARADIGMS)),
-               c("factorial", "lexical_decision", "priming", "self_paced_reading"))
+  # Against the registry, not a written-out list: a paradigm added to the engine
+  # must reach the chooser, and a hard-coded expectation would simply pin
+  # whatever the app happened to offer. Pinned identically in tests/test_apps.py.
+  expect_equal(sort(unname(e$PARADIGMS)), sort(names(lexsync::PARADIGMS)))
+})
+
+test_that("every item-table paradigm the app offers has a bundled example table", {
+  e <- app_env()
+  # The app writes items/<example> into the design and runs the pipeline against
+  # it, so a named table that is not in the repository would fail at run time.
+  # The app's own REPO_ROOT walks up from the working directory, which from
+  # tests/testthat does not reach the checkout, so the tree is found here the
+  # same way the app source is.
+  items_dir <- NULL
+  for (cand in c("items", "../../../items", "../../../../items")) {
+    if (dir.exists(cand)) { items_dir <- cand; break }
+  }
+  if (is.null(items_dir)) skip("The bundled item tables are not in this tree.")
+  expect_gt(length(e$ITEM_TABLE_EXAMPLES), 0L)
+  expect_true(all(names(e$ITEM_TABLE_EXAMPLES) %in% unname(e$PARADIGMS)))
+  for (p in names(e$ITEM_TABLE_EXAMPLES)) {
+    expect_true(p %in% names(lexsync::PARADIGMS))
+    expect_true(file.exists(file.path(items_dir, e$ITEM_TABLE_EXAMPLES[[p]])))
+  }
 })
 
 test_that("the app offers exactly the pseudoword generators the engine implements", {

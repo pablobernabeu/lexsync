@@ -53,6 +53,11 @@
   `R_workflow/run_pipeline.R` prefers an installed lexsync over the edited sources, so
   edits silently did nothing until a reinstall. It now states the loaded copy and the
   remedy on stderr at startup.
+* The Shiny app offers the categorisation paradigm, wired to the bundled
+  `items/categorisation_en.csv` as priming and self-paced reading are. The package
+  registers five paradigms while the chooser listed four, and the test that claimed the
+  chooser was complete compared against a written-out list rather than
+  `names(PARADIGMS)`.
 * The Shiny app writes its design YAML with LF endings through a binary connection
   (the datasheet hashes that file into `design_sha256`, which must not depend on the
   operating system), and its parity caption now matches the keyed-hash guarantee: the
@@ -139,7 +144,7 @@
   escaped them, R did not, so the same design produced different bytes and R's
   `<script>` was a syntax error before ES2019.
 * A browser experiment could score a feedback screen against the previous trial's
-  keypress. The jsPsych feedback screen looked up "the last row marked scoreable",
+  keypress. The jsPsych feedback screen looked up 'the last row marked scoreable',
   which is that trial's response only when the trial has one. An event may be restricted
   to a block, so a design running the response event in one block and feedback in another
   leaves a trial with no response row of its own, and the screen then reported a verdict
@@ -190,8 +195,17 @@
   an unrelated psychometrics paper. The matching vignette put Zipf 7 at a thousand
   occurrences per million where the correct figure is ten thousand, contradicting its
   own lower anchor.
-  A design comment attributed "840-prime materials" to Rastle et al. (2004), a figure
+  A design comment attributed '840-prime materials' to Rastle et al. (2004), a figure
   that appears nowhere in that paper.
+* The vignettes and the reference state what the package does, leaving what it used to
+  do to this file. The matching vignette said `verbose = TRUE` was the only report of a
+  relaxed tolerance window, which the `audit` attribute, the run log and the datasheet
+  have since answered, and said an unknown `pool_filters` column is skipped silently,
+  which is true of a direct `build_pool()` call but not of `run_pipeline()`.
+  `build_datasheet()`'s `report` argument is the list `match_report()` returns rather
+  than a data frame, and it is supplied for generated items and pair-keyed tables too;
+  `fetch_corpus()` prints the citation when the download completes rather than recording
+  it.
 * A design may declare `practice:` and `fillers:` item tables. Those trials are
   presented but not analysed, so the stimuli file and the
   reports are written from the main rows while the generated experiments run every
@@ -301,7 +315,7 @@
   machine's locale and matches the Python engine byte for byte. `shiny`, `bslib`,
   `DT` and `zip` are new Suggests, for the Shiny app.
 * Ten functions are newly exported, matching the Python package's public surface:
-  `PARADIGMS()`, `build_datasheet()`, `build_lexdec_stimuli()`,
+  `PARADIGMS`, `build_datasheet()`, `build_lexdec_stimuli()`,
   `count_syllables()`, `generate_pseudowords()`, `make_pseudoword()`,
   `methods_paragraph()`, `required_fields()`, `resolve_events()` and
   `write_datasheet()`.

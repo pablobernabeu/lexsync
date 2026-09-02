@@ -42,7 +42,19 @@ PARADIGMS = {
     "Factorial word contrast (corpus matching)": "factorial",
     "Lexical decision (generated pseudowords)": "lexical_decision",
     "Priming (item table)": "priming",
+    "Categorisation (item table)": "categorisation",
     "Self-paced reading (item table)": "self_paced_reading",
+}
+# The paradigms that take their trials from an item table rather than from the
+# corpus, each with the bundled example table and the columns such a table must
+# carry. Keeping the set in one place is what stops the chooser and the design
+# builder from disagreeing about which paradigms need a table.
+ITEM_TABLE_PARADIGMS = {
+    "priming": ("priming_pairs_en.csv", "item, condition, prime, target"),
+    "categorisation": ("categorisation_en.csv",
+                       "item, condition, target, category, answer (the correct key)"),
+    "self_paced_reading": ("spr_sentences_en.csv",
+                           "item, condition, sentence (regions split by |), critical_region"),
 }
 
 
@@ -461,10 +473,10 @@ elif paradigm == "lexical_decision":
     st.caption("Real words in the frequency/length band are paired with deterministically "
                "generated, orthographically legal pseudowords matched on length.")
 
-elif paradigm in ("priming", "self_paced_reading"):
+elif paradigm in ITEM_TABLE_PARADIGMS:
     design["paradigm"] = paradigm
     st.subheader("Item table")
-    default_item = ("priming_pairs_en.csv" if paradigm == "priming" else "spr_sentences_en.csv")
+    default_item, req = ITEM_TABLE_PARADIGMS[paradigm]
     example = os.path.join(ITEMS_DIR, default_item)
     use_example = False
     if os.path.exists(example):
@@ -474,7 +486,6 @@ elif paradigm in ("priming", "self_paced_reading"):
         design["items"] = {"source": "table", "path": f"items/{default_item}"}
         st.dataframe(pd.read_csv(example).head(8), use_container_width=True)
     else:
-        req = "item, condition, prime, target" if paradigm == "priming" else "item, condition, sentence (regions split by |), critical_region"
         up = st.file_uploader(f"Item table CSV ({req})", type=["csv"])
         if up is not None:
             tmpdir = tempfile.mkdtemp(prefix="lexsync_items_")
@@ -502,7 +513,7 @@ if run:
     if paradigm == "factorial" and len(design.get("conditions", [])) < 2:
         st.error("Define at least two conditions.")
         ready = False
-    if paradigm in ("priming", "self_paced_reading") and not items_abs:
+    if paradigm in ITEM_TABLE_PARADIGMS and not items_abs:
         st.error("Choose or upload an item table first.")
         ready = False
     if ready:

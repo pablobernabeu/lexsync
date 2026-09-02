@@ -27,7 +27,17 @@ PARADIGMS <- c(
   "Factorial word contrast (corpus matching)" = "factorial",
   "Lexical decision (generated pseudowords)" = "lexical_decision",
   "Priming (item table)" = "priming",
+  "Categorisation (item table)" = "categorisation",
   "Self-paced reading (item table)" = "self_paced_reading"
+)
+# The paradigms that take their trials from an item table rather than from the
+# corpus, each with the bundled example table the app offers for it. Keeping the
+# set in one place is what stops the chooser and the design builder from
+# disagreeing about which paradigms need a table.
+ITEM_TABLE_EXAMPLES <- c(
+  priming = "priming_pairs_en.csv",
+  categorisation = "categorisation_en.csv",
+  self_paced_reading = "spr_sentences_en.csv"
 )
 
 find_repo_root <- function() {
@@ -252,10 +262,10 @@ server <- function(input, output, session) {
                  "bigram attested; subsyllabic swaps whole onset/nucleus/coda ",
                  "constituents (Wuggy-style; Keuleers & Brysbaert, 2010).")
       ),
-      if (p %in% c("priming", "self_paced_reading")) tagList(
+      if (p %in% names(ITEM_TABLE_EXAMPLES)) tagList(
         h4("Item table"),
         {
-          ex <- if (p == "priming") "priming_pairs_en.csv" else "spr_sentences_en.csv"
+          ex <- ITEM_TABLE_EXAMPLES[[p]]
           tagList(
             helpText(sprintf("Using the bundled example: items/%s", ex)),
             numericInput("lists", "Counterbalancing lists", 2, 1, 16, 1)
@@ -337,9 +347,9 @@ server <- function(input, output, session) {
         d$items$generation <- list(method = input$gen_method)
       d$n_per_condition <- as.integer(input$n)
       d$counterbalance <- list(lists = 1L)
-    } else if (p %in% c("priming", "self_paced_reading")) {
+    } else if (p %in% names(ITEM_TABLE_EXAMPLES)) {
       d$paradigm <- p
-      ex <- if (p == "priming") "priming_pairs_en.csv" else "spr_sentences_en.csv"
+      ex <- ITEM_TABLE_EXAMPLES[[p]]
       items_abs <- file.path(ITEMS_DIR, ex)
       d$items <- list(source = "table", path = paste0("items/", ex))
       d$counterbalance <- list(lists = as.integer(input$lists))

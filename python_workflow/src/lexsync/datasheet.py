@@ -242,7 +242,7 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
 
     ``selection_audit`` (optional) is the matcher's audit record; its
     ``window_relaxations`` entries are recorded because a relaxed window changes
-    what "matched" means for that condition.
+    what 'matched' means for that condition.
 
     ``neighbourhood_reference`` (optional) records the lexicon the neighbourhood
     dimensions were computed against (``{"source", "n_words", "sha256"}``),

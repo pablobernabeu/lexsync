@@ -61,20 +61,20 @@ they are paired and the order they are presented in, so the generated experiment
 are byte-identical in full. The only exceptions are the `mahalanobis` and
 `optimal` matching methods.
 
-'Byte-identical' is meant literally, and stating it that way turned out to matter. The
-parity test originally read both engines' stimuli files back with a CSV parser and
-compared the values, under which `1` and `1.0` are the same number. On that test 13 of
-the shipped designs passed while differing byte for byte. Three of the differences were
-serialisation: a whole number written `1` by one writer and `1.0` by the other, a boolean
-written `FALSE` and `False`, and a small value written `9e-4` and `0.0009`. One was not:
-two reported means differed in the last decimal published, because one engine's
-summation was pairwise and the other's was not. Every sum in the package now goes through
-a single compensated-summation algorithm written out in both engines, whose agreement
-follows from IEEE-754 requiring addition and subtraction to be correctly rounded, and the
-mean, variance and standard deviation are built on it. The median sorts and takes the
-middle value, or the plain-double average of the two middle values when the count is
-even, which keeps it clear of the long-double accumulator that `stats::median()` reaches
-by way of `mean()`. The artefacts are now compared as bytes.
+'Byte-identical' is meant literally, and stating it that way matters. A parity test that
+read both engines' stimuli files back with a CSV parser and compared the values, under
+which `1` and `1.0` are the same number, would pass on artefacts that differ byte for
+byte: a whole number written `1` by one writer and `1.0` by the other, a boolean written
+`FALSE` and `False`, a small value written `9e-4` and `0.0009`. It would also miss the
+difference that is not serialisation, where two reported means differ in the last decimal
+published because the two languages' built-in summations differ, one pairwise and one
+not. Every sum in the package therefore goes through a single compensated-summation
+algorithm written out in both engines, whose agreement follows from IEEE-754 requiring
+addition and subtraction to be correctly rounded, and the mean, variance and standard
+deviation are built on it. The median sorts and takes the middle value, or the
+plain-double average of the two middle values when the count is even, which keeps it
+clear of the long-double accumulator that `stats::median()` reaches by way of `mean()`.
+The artefacts themselves are compared as bytes.
 
 Two files sit outside the claim by design, because each records the engine that produced
 it: the materials datasheet names its engine and that engine's package versions, and the
@@ -182,10 +182,10 @@ pool is smaller than the requested n and the rounding produces a repeated index.
 
 ### Trial order: a seeded shuffle without a generator
 
-Trial order used to be the honest exception. Each engine drew the order from its
-own seeded generator, R's Mersenne-Twister against NumPy's PCG64, and the same
-seed could not give the same permutation, so an order was reproducible within an
-engine and different between the engines. That exception is retired. Order is now
+Trial order carries no generator. Drawing it from each engine's own seeded
+generator, R's Mersenne-Twister against NumPy's PCG64, would put it outside the
+claim, because the same seed cannot give the same permutation on both, leaving an
+order reproducible within an engine and different between them. Order is instead
 decided by a keyed hash: each row of a list is ranked by the SHA-256 digest of
 `seed|replicate|list|set|condition`, a tuple that identifies the trial uniquely
 under either counterbalancing recipe. Distinct inputs to SHA-256 behave as
@@ -203,17 +203,16 @@ same <- counterbalance(match_stimuli(pool, design, schema), design, schema)
 identical(stim$trial, same$trial)
 ```
 
-The order is still randomised in the sense a study needs: an item's properties
-bear no systematic relation to its position, and a different seed gives a
-different order. What changed is that the permutation is engine-invariant, so it
-now sits inside the cross-engine contract, and the guarantee reaches the
-generated experiments whole: for every shipped design, the PsychoPy script, the
-OpenSesame file, the jsPsych page and both loop-table CSVs are byte-identical
-across the engines.
+The order is randomised in the sense a study needs: an item's properties bear no
+systematic relation to its position, and a different seed gives a different
+order. The permutation is engine-invariant, so it sits inside the cross-engine
+contract, and the guarantee reaches the generated experiments whole: for every
+shipped design, the PsychoPy script, the OpenSesame file, the jsPsych page and
+both loop-table CSVs are byte-identical across the engines.
 
 One detail matters to anyone embedding `lexsync` in a longer script:
-counterbalancing no longer touches the random number generator at all, since
-nothing in the package consults one, so calling it cannot disturb the stream your
+counterbalancing does not touch the random number generator at all, since nothing
+in the package consults one, so calling it cannot disturb the stream your
 own code is drawing from.
 
 ## The Unicode input contract

@@ -61,14 +61,15 @@ up in an automated environment.
 ## The sidebar
 
 Whatever the paradigm, the same few fields sit in the sidebar. 'Paradigm'
-chooses between a factorial word contrast drawn from a corpus, lexical decision
-with generated pseudowords, priming and self-paced reading, the last two reading
-prepared items from a table. 'Design name' and 'Language label' become the slug
-that every written file is named after, exactly as in a design file, so
-`my_design` plus `english` gives `my_design_english_stimuli_R.csv` and its
-companions. 'Stimulus font' overrides the presentation font, which matters for a
-non-Latin script, and it reaches the design only when it differs from the
-`Courier New` default, leaving the schema in charge otherwise.
+chooses between a factorial word contrast drawn from a corpus, lexical
+decision with generated pseudowords, priming, categorisation and self-paced
+reading, the last three reading prepared items from a table. 'Design name'
+and 'Language label' become the slug that every written file is named
+after, exactly as in a design file, so `my_design` plus `english` gives
+`my_design_english_stimuli_R.csv` and its companions. 'Stimulus font' overrides
+the presentation font, which matters for a non-Latin script, and it reaches the
+design only when it differs from the `Courier New` default, leaving the schema
+in charge otherwise.
 
 Under those the sidebar prints the version of lexsync that is running, with the
 reminder that the app runs the installed package. If that line disagrees with the
@@ -127,12 +128,13 @@ as few single letters as it can while keeping every bigram attested.
 Wuggy (Keuleers & Brysbaert, 2010). Both are deterministic, so the pseudowords
 are the same ones the package would generate from a script.
 
-### Priming and self-paced reading
+### Priming, categorisation and self-paced reading
 
-These two paradigms read prepared items instead of selecting any, so no corpus
+These three paradigms read prepared items instead of selecting any, so no corpus
 and no matching are involved. The app uses the bundled example table for the
-paradigm, `items/priming_pairs_en.csv` or `items/spr_sentences_en.csv`, and asks
-only how many counterbalancing lists to build.
+paradigm, `items/priming_pairs_en.csv`, `items/categorisation_en.csv` or
+`items/spr_sentences_en.csv`, and asks only how many counterbalancing lists to
+build.
 
 ## Running it
 

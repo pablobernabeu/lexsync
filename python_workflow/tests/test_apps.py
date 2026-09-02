@@ -131,14 +131,30 @@ def test_dropdowns_offer_exactly_the_methods_the_engine_implements(app):
     """The app must not advertise a method run_pipeline would reject."""
     import inspect
 
+    import lexsync
+
     source = inspect.getsource(app)
     assert 'methods = ["standardised_euclidean", "joint", "mahalanobis", "optimal"]' in source
-    assert sorted(app.PARADIGMS.values()) == [
-        "factorial", "lexical_decision", "priming", "self_paced_reading",
-    ]
+    # Against the registry, not a written-out list: a paradigm added to the engine
+    # must reach the chooser, and a hard-coded expectation would simply pin
+    # whatever the app happened to offer. Pinned identically in test-apps.R.
+    assert sorted(app.PARADIGMS.values()) == sorted(lexsync.PARADIGMS)
     # The engine default first: the design only names a method when the other is
     # chosen. Pinned identically in test-apps.R.
     assert app.GENERATION_METHODS == ["letter_substitution", "subsyllabic"]
+
+
+def test_every_item_table_paradigm_has_a_bundled_example(app):
+    """The app writes items/<example> into the design and runs the pipeline
+    against it, so a named table that is not in the repository would fail at run
+    time. Pinned identically in test-apps.R."""
+    import lexsync
+
+    assert app.ITEM_TABLE_PARADIGMS
+    assert set(app.ITEM_TABLE_PARADIGMS) <= set(app.PARADIGMS.values())
+    for paradigm, (example, _columns) in app.ITEM_TABLE_PARADIGMS.items():
+        assert paradigm in lexsync.PARADIGMS
+        assert os.path.exists(os.path.join(app.REPO_ROOT, "items", example))
 
 
 def test_the_run_design_yaml_is_written_with_lf_endings(app, tmp_path):

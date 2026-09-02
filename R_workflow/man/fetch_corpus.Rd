@@ -20,8 +20,8 @@ The path to the downloaded file, invisibly.
 Suitable for Connector A corpora that expose a delimited file. The URL's
 scheme is checked first; the transfer then lands in a sidecar file that is
 renamed into place only after the size cap, the markup sniff and any
-\code{sha256} the registry entry carries have all passed. The download is
-recorded so it can be cited; consult \code{\link[=list_corpora]{list_corpora()}} for the citation.
+\code{sha256} the registry entry carries have all passed. The citation is printed
+when the download completes; \code{\link[=list_corpora]{list_corpora()}} carries it too.
 }
 \details{
 The file lands in \code{\link[=lexsync_cache_dir]{lexsync_cache_dir()}} unless \code{dest} names somewhere else.

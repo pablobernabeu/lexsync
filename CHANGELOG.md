@@ -166,6 +166,13 @@ no function signature changes.
   yet differ in spread and still confound (Armstrong, Watson & Plaut, 2012; Austin,
   2009).
 - `codemeta.json` (machine-readable software metadata) and this changelog.
+- Both applications offer the categorisation paradigm, wired to the bundled
+  `items/categorisation_en.csv` exactly as priming and self-paced reading are. The
+  engine registers five paradigms and ships a worked categorisation design, while the
+  two choosers listed four, so the one paradigm a researcher could not reach from the
+  interface was the one they would otherwise have had to write a design file for. The
+  test that claimed the chooser was complete compared against a written-out list rather
+  than the paradigm registry, and now compares against the registry in both suites.
 
 ### Changed
 
@@ -623,6 +630,19 @@ no function signature changes.
 - Documentation no longer describes the jsPsych output as self-contained. The
   jsPsych library loads from a CDN, so the machine running the file needs an
   internet connection.
+- The guides state what the engines do, leaving what they used to do to this file. The
+  matching guide said an unknown `pool_filters` column is skipped silently, which is
+  true of a direct `build_pool()` call but not of the pipeline, and said `verbose` was
+  the only report of a relaxed tolerance window, which the matcher's audit record, the
+  run log and the datasheet have since answered. `build_datasheet`'s `report` argument
+  is the object `match_report` returns rather than a data frame, and it is supplied for
+  generated items and pair-keyed tables too, and `fetch_corpus` prints the citation when
+  the download completes rather than recording it.
+- The Python documentation site's Demo pill answers keyboard focus. It inverted under
+  the pointer but carried no `:focus-visible` state, and it is the only header control
+  the brand restyles wholesale, so it was the one item a reader tabbing through the
+  header could not locate. It now takes the same inversion plus an outline ring, as the
+  R site's Demo link already did.
 
 ### Planned
 

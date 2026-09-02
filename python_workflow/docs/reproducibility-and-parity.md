@@ -77,17 +77,16 @@ worked designs. One place they could drift is the event JSON embedded in the Psy
 jsonlite pads no separators and drops a whole number's fractional part, serialising a 2000 ms
 timeout as `2` rather than `2.0`. Python is the side that conforms.
 
-The other place is trial order, which until recently was the one artefact the engines could not
-share. Each shuffled with its own seeded generator, R with `sample()` and Python with NumPy's
-PCG64, and the same seed could not give the same permutation, so the loop tables, and the `TRIALS`
-array the browser experiment embeds, used to differ. Both engines now order the trials of a list by
-a keyed hash instead: each row is ranked by the SHA-256 digest of
-`seed|replicate|list|set|condition`, a tuple that identifies the trial uniquely under either
-counterbalancing recipe. Distinct inputs to SHA-256 behave as independent uniform draws, so
-ordering by the digest realises a seeded random permutation, but as a pure function of the design.
-The same bytes come out of both engines on any platform, there is no generator state to save or
-restore, a different seed still gives a different order, and the order remains random in the sense
-a reviewer cares about, with no systematic position effects.
+The other place would be trial order. A shuffle drawn from each engine's own seeded generator, R's
+`sample()` against NumPy's PCG64, cannot be shared, because the same seed does not give the same
+permutation on both, so the loop tables, and the `TRIALS` array the browser experiment embeds,
+would differ. Both engines order the trials of a list by a keyed hash instead: each row is ranked
+by the SHA-256 digest of `seed|replicate|list|set|condition`, a tuple that identifies the trial
+uniquely under either counterbalancing recipe. Distinct inputs to SHA-256 behave as independent
+uniform draws, so ordering by the digest realises a seeded random permutation, but as a pure
+function of the design. The same bytes come out of both engines on any platform, there is no
+generator state to save or restore, a different seed still gives a different order, and the order
+remains random in the sense a reviewer cares about, with no systematic position effects.
 
 Some of these are visible in the design surface, and deliberately so. The tie-break order in the
 matcher is fixed at distance, then word bytes, then id, and is not configurable, because it is
@@ -138,10 +137,11 @@ of headroom, so the comparisons files still come out byte-identical. The guarant
 margin of some seven orders of magnitude rather than on the construction, and saying so is what
 stops anyone widening the reported precision without checking the margin first.
 
-Trial order is no longer on this list. Earlier versions drew it from each engine's own seeded
-generator, reproducible within an engine, given `schema.seed`, and never across the two. The
-keyed-hash shuffle retired that exception: the permutation is part of the byte-identical surface,
-and the parity suite compares the `trial` column along with everything else.
+Trial order is not on this list, although a generator-based shuffle could not have reached
+it: an order drawn from each engine's own seeded generator is reproducible within an
+engine, given `schema.seed`, and never across the two. The keyed-hash shuffle puts the
+permutation inside the byte-identical surface, and the parity suite compares the `trial`
+column along with everything else.
 
 Corpus versions are not magic. A design pins the lexicon file it reads, and the bundled corpora are
 a fixed, checksummed snapshot, so the demonstrations reproduce with no download. The optional

@@ -73,7 +73,7 @@ precedence rule: a design's own `events` list wins, and only if there is none do
 the design inherit its paradigm's default sequence. The eight event types are
 `fixation`, `text`, `mask`, `blank`, `region_by_region`, `response`, `question`
 and `feedback`. The first four draw something (or nothing, for `blank`) for a fixed
-number of frames. `response` and `question` collect a keypress. `region_by_region`
+duration. `response` and `question` collect a keypress. `region_by_region`
 presents a segmented sentence one region at a time, advancing on a key.
 `feedback` scores the keypress just collected and reports it, and is described
 under practice blocks below.
@@ -86,8 +86,8 @@ and converts each duration into the nearest whole number of flips: 50 ms is thre
 flips at 60 Hz and seven at 144 Hz. The trigger stays bound to the flip, and the
 residual quantisation is reported.
 
-A duration may also be given as `duration_frames`, which designs written before
-this change still use. A frame count is converted to milliseconds when the design
+A duration may also be given as `duration_frames`, for a design that states its
+timings in frames. A frame count is converted to milliseconds when the design
 loads, at `presentation.assumed_refresh_hz` in the schema (60 by default), so it
 means the rate the count was written for, whatever rate the experiment then runs
 at. The `timeout_ms` of a response window has always been in milliseconds,
@@ -448,12 +448,11 @@ str(schema$triggers)
 `trigger_hold_ms` is 50, comfortably above the 10 ms minimum most recorders need
 to register a pulse. The script converts it to whole flips against the refresh it
 measures, so the pulse stays about 50 ms whether the display runs at 60 Hz or at
-240 Hz. As a frame count it used to shorten with the refresh, reaching 12.5 ms at
-240 Hz. The older `reset_after_frames` is still accepted and converted.
-`inter_trigger_ms`
-spaces any trailing markers. `parallel_address` is the LPT1 base address on a
-typical laboratory machine, and it is a schema value because it belongs to the
-machine, which will run many designs.
+240 Hz. Stated as a frame count it would shorten with the refresh instead,
+reaching 12.5 ms at 240 Hz. The older `reset_after_frames` is still accepted and
+converted. `inter_trigger_ms` spaces any trailing markers. `parallel_address` is
+the LPT1 base address on a typical laboratory machine, and it is a schema value
+because it belongs to the machine, which will run many designs.
 
 OpenSesame reaches the same place by a different route, and the difference is
 worth being explicit about. It has no `callOnFlip`, so the generated inline script

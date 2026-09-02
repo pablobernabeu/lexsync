@@ -25,10 +25,10 @@ An event's `type` is one of `fixation`, `text`, `mask`, `blank`, `region_by_regi
 braces, such as `"{target}"`, which is filled per trial from the loop table. `duration_ms` is the
 event's length in milliseconds, the unit all three targets present, so a design means the same
 interval wherever it runs. The PsychoPy script measures the display's refresh at start-up and
-converts it to the nearest whole number of flips. `duration_frames` is still accepted for designs
-written before that change and is converted at `presentation.assumed_refresh_hz`. `trigger` is an
-integer EEG code, or the token `condition` or `item`, and `onset_locked` asks for it to be written
-on the event's onset flip.
+converts it to the nearest whole number of flips. `duration_frames` is still accepted for a
+design that states its timings in frames, and is converted at `presentation.assumed_refresh_hz`.
+`trigger` is an integer EEG code, or the token `condition` or `item`, and `onset_locked` asks for
+it to be written on the event's onset flip.
 
 `resolve_events` returns a design's `events` list if it has one, and otherwise the default sequence
 of the paradigm it names, defaulting to `factorial`. Supplying `events` explicitly is how you build

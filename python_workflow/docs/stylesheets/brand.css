@@ -195,10 +195,18 @@
   border-bottom: .32em solid transparent;
   margin-right: .45em;
 }
-[data-md-component="demo-link"]:hover {
+/* Keyboard focus takes the same inversion as the pointer, plus a white ring:
+   the pill is the only header control the brand restyles wholesale, so
+   without this it was the one item a tabbing reader could not locate. */
+[data-md-component="demo-link"]:hover,
+[data-md-component="demo-link"]:focus-visible {
   color: var(--brand-ink);
   background: var(--brand-amber-light);
   border-color: var(--brand-amber-light);
+}
+[data-md-component="demo-link"]:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
 }
 
 /* ---- Buttons (home CTAs) ------------------------------------------------ */

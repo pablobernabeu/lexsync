@@ -29,14 +29,14 @@ falls back to whatever lexicon you upload. It opens at <http://localhost:8501>.
 
 ## The sidebar
 
-Whatever the paradigm, the same few fields sit in the sidebar. 'Paradigm' chooses between a
-factorial word contrast drawn from a corpus, lexical decision with generated pseudowords, priming
-and self-paced reading, the last two reading prepared items from a table. 'Design name' and
-'Language label' become the slug that every written file is named after, exactly as in a design
-file, so `my_design` plus `english` gives `my_design_english_stimuli_py.csv` and its companions.
-'Stimulus font' overrides the presentation font, which matters for a non-Latin script, and it
-reaches the design only when it differs from the `Courier New` default, leaving the schema in
-charge otherwise.
+Whatever the paradigm, the same few fields sit in the sidebar. 'Paradigm' chooses between
+a factorial word contrast drawn from a corpus, lexical decision with generated pseudowords,
+priming, categorisation and self-paced reading, the last three reading prepared items
+from a table. 'Design name' and 'Language label' become the slug that every written
+file is named after, exactly as in a design file, so `my_design` plus `english` gives
+`my_design_english_stimuli_py.csv` and its companions. 'Stimulus font' overrides the presentation
+font, which matters for a non-Latin script, and it reaches the design only when it differs from
+the `Courier New` default, leaving the schema in charge otherwise.
 
 Under those the sidebar prints the version of lexsync that is running, with the reminder that the
 app runs the installed package. If that line disagrees with the version you expect, the app is
@@ -95,15 +95,17 @@ every bigram attested. `subsyllabic` swaps whole onset, nucleus and coda constit
 of Wuggy (Keuleers & Brysbaert, 2010). Both are deterministic, so the pseudowords are the same ones
 the package would generate from a script.
 
-### Priming and self-paced reading
+### Priming, categorisation and self-paced reading
 
-These two paradigms read prepared items instead of selecting any, so no corpus and no matching
+These three paradigms read prepared items instead of selecting any, so no corpus and no matching
 are involved. The app offers the bundled example table for the paradigm,
-`items/priming_pairs_en.csv` or `items/spr_sentences_en.csv`, and shows its first rows. Clearing
-that checkbox uploads a table of your own instead, and the uploader states the columns the paradigm
-requires, which are `item`, `condition`, `prime` and `target` for priming, and `item`, `condition`,
-`sentence` with its regions split by `|`, and `critical_region` for self-paced reading. Either way
-the design needs only the number of counterbalancing lists.
+`items/priming_pairs_en.csv`, `items/categorisation_en.csv` or `items/spr_sentences_en.csv`, and
+shows its first rows. Clearing that checkbox uploads a table of your own instead, and the uploader
+states the columns the paradigm requires, which are `item`, `condition`, `prime` and `target` for
+priming, `item`, `condition`, `target`, `category` and `answer` holding the correct key for
+categorisation, and `item`, `condition`, `sentence` with its regions split by `|`, and
+`critical_region` for self-paced reading. Either way the design needs only the number of
+counterbalancing lists.
 
 ## Running it
 

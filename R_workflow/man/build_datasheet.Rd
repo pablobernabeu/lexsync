@@ -28,8 +28,8 @@ build_datasheet(
 
 \item{schema}{The parsed global schema (\code{schema.yaml}).}
 
-\item{report}{Match report data frame, from \code{\link[=match_report]{match_report()}} or
-\code{\link[=match_report_continuous]{match_report_continuous()}}, or \code{NULL} for generated or tabled items.}
+\item{report}{The list from \code{\link[=match_report]{match_report()}} or \code{\link[=match_report_continuous]{match_report_continuous()}},
+or \code{NULL} when no report was produced.}
 
 \item{stimuli}{The selected stimulus data frame.}
 
@@ -65,7 +65,7 @@ reproducibility record, because those two files decide everything the seed
 does not.}
 
 \item{selection_audit}{Optional matcher audit record; its \code{window_relaxations}
-entries are recorded because a relaxed window changes what "matched" means
+entries are recorded because a relaxed window changes what 'matched' means
 for that condition.}
 
 \item{neighbourhood_reference}{Optional record of the lexicon the

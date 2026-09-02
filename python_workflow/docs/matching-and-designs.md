@@ -65,8 +65,8 @@ pins this, checking that the README's example calls `build_pool` before matching
 Narrowing a whole lexicon is the right way round when any word of the language will do. It is the
 wrong way round when the candidate set is itself a research decision: a list from a previous study,
 from a norming session, or one restricted to a semantic category that no lexical filter can express.
-Such a list used to have to masquerade as a lexicon, which meant inventing a `freq_zipf` column for
-it, or else skip matching entirely by going in as `items.source: table`.
+Such a list would otherwise have to masquerade as a lexicon, which means inventing a `freq_zipf`
+column for it, or else skip matching entirely by going in as `items.source: table`.
 
 `items.source: pool` takes the list as it is.
 
@@ -97,8 +97,7 @@ example.
 
 A priming study's theoretical variable is a property of the *pair*, such as distributional
 similarity or associative strength, while its nuisance variables are properties of each *member*:
-frequency, length, neighbourhood. A design could previously have matching, or its own item table,
-but not both, so a relational design had to be assembled by hand.
+frequency, length, neighbourhood. Such a design needs matching and its own item table at once.
 
 `items.members` promotes an ordinary item table to a pair-keyed one.
 

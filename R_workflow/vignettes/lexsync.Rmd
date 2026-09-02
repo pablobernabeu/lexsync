@@ -151,12 +151,12 @@ dealt by set rank. `practice` and `fillers` each name an item table whose trials
 are presented but not analysed. `timing` sets the fixation, critical-word and
 inter-stimulus durations. Milliseconds are canonical (`fixation_ms`, `word_ms`,
 `isi_ms`), which is why a design means the same interval on any display. This
-design predates that change and still uses the `*_frames` form above, which is
-accepted and converted on load at the schema's `presentation.assumed_refresh_hz`,
-so its 30 frames become the 500 ms they were written for. `font` overrides the
-presentation font, which
-matters for a non-Latin script: `design_zh_freqcontrast.yaml` sets `SimHei`,
-because the Latin default has no glyphs for Han characters.
+design states its timings in the `*_frames` form above, which is accepted and
+converted on load at the schema's `presentation.assumed_refresh_hz`, so its 30
+frames become the 500 ms they were written for. `font` overrides the
+presentation font, which matters for a non-Latin script:
+`design_zh_freqcontrast.yaml` sets `SimHei`, because the Latin default has no
+glyphs for Han characters.
 
 `paradigm` names one of the five registered paradigms and inherits its trial-event
 sequence and its counterbalancing recipe. Omitting it gives `factorial`. A design

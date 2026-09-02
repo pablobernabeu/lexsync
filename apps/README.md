@@ -12,10 +12,10 @@ the same way in either ecosystem.
 
 Both cover the corpus-matching workflow (conditions defined by numeric windows or by
 a categorical column, including full 2 × 2 cells), the lexical-decision paradigm with
-generated pseudowords, and the item-table paradigms (priming and self-paced
-reading), along with the four matching methods (standardised Euclidean, joint,
-Mahalanobis and optimal), per-dimension tolerance windows, counterbalancing and item
-resampling.
+generated pseudowords, and the item-table paradigms (priming, categorisation and
+self-paced reading), along with the four matching methods (standardised Euclidean,
+joint, Mahalanobis and optimal), per-dimension tolerance windows, counterbalancing
+and item resampling.
 
 ## Python (Streamlit)
 

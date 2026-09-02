@@ -166,10 +166,12 @@ c(lexicon = nrow(lex), pool = nrow(pool))
 A numeric pair is read as an inclusive range. Any other vector is read as a set of
 permitted values, so `list(pos = c("noun", "verb"))` would keep nouns and verbs
 if the lexicon carried a `pos` column. A filter naming a column the lexicon does
-not have is skipped silently, which keeps one schema usable across corpora that
-differ in their optional columns, and which is worth knowing about when a filter
-appears not to bite. Rows missing a value on a filtered column are always
-dropped.
+not have is skipped by `build_pool()`, which keeps one schema usable across
+corpora that differ in their optional columns. A design gets no such latitude:
+`run_pipeline()` refuses a `pool_filters` key the lexicon lacks, and
+`match_stimuli()` refuses a `define_by` dimension absent from the pool, because
+a misspelt key there would quietly widen the selection instead. Rows missing a
+value on a filtered column are always dropped.
 
 Filtering is a separate step from matching. `match_stimuli()` reads a design's
 `conditions` and `match_on` fields but never its `pool_filters`, so passing a raw
@@ -182,9 +184,10 @@ same.
 Narrowing a whole lexicon is the right way round when any word of the language
 will do. It is the wrong way round when the candidate set is itself a research
 decision: a list from a previous study, from a norming session, or one restricted
-to a semantic category that no lexical filter can express. Such a list used to
-have to masquerade as a lexicon, which meant inventing a `freq_zipf` column for
-it, or else skip matching entirely by going in as `items.source: table`.
+to a semantic category that no lexical filter can express. Such a list would
+otherwise have to masquerade as a lexicon, which means inventing a `freq_zipf`
+column for it, or else skip matching entirely by going in as
+`items.source: table`.
 
 `items.source: pool` takes the list as it is.
 
@@ -217,9 +220,8 @@ later. `design_en_supplied_pool.yaml` is a worked example.
 
 A priming study's theoretical variable is a property of the *pair*, such as
 distributional similarity or associative strength, while its nuisance variables
-are properties of each *member*: frequency, length, neighbourhood. A design could
-previously have matching, or its own item table, but not both, so a relational
-design had to be assembled by hand.
+are properties of each *member*: frequency, length, neighbourhood. Such a design
+needs matching and its own item table at once.
 
 `items.members` promotes an ordinary item table to a pair-keyed one.
 
@@ -448,8 +450,11 @@ There is a behaviour here that will bite you if you do not know it. If a window
 leaves a condition with fewer candidates than there are anchor items, the matcher
 neither fails nor returns a short set. It relaxes that condition's window and
 carries on. Tightening the window past what the pool can supply therefore looks
-exactly like a window that was never set, and under the default policy
-`verbose = TRUE` is the only thing that tells you which happened.
+exactly like a window that was never set, so under the default policy the
+matcher records which happened: `match_stimuli()` returns the relaxations in the
+result's `audit` attribute, `run_pipeline()` carries them into the run log and
+into the datasheet as `selection.window_relaxations`, and `verbose = TRUE`
+narrates them as they occur.
 
 ```{r tolerance-relaxed}
 too_tight <- design

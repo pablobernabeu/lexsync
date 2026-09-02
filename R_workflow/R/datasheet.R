@@ -167,8 +167,8 @@ DATASHEET_VERSION <- "1.1"
 #'
 #' @param design A parsed design list.
 #' @param schema The parsed global schema (`schema.yaml`).
-#' @param report Match report data frame, from [match_report()] or
-#'   [match_report_continuous()], or `NULL` for generated or tabled items.
+#' @param report The list from [match_report()] or [match_report_continuous()],
+#'   or `NULL` when no report was produced.
 #' @param stimuli The selected stimulus data frame.
 #' @param source_path Path of the lexicon or item table the stimuli came from.
 #' @param artifacts Named list of the artifact paths written for the design
@@ -193,7 +193,7 @@ DATASHEET_VERSION <- "1.1"
 #'   reproducibility record, because those two files decide everything the seed
 #'   does not.
 #' @param selection_audit Optional matcher audit record; its `window_relaxations`
-#'   entries are recorded because a relaxed window changes what "matched" means
+#'   entries are recorded because a relaxed window changes what 'matched' means
 #'   for that condition.
 #' @param neighbourhood_reference Optional record of the lexicon the
 #'   neighbourhood dimensions were computed against
