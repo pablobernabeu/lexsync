@@ -1,5 +1,16 @@
 # lexsync (development version)
 
+* Breaking change: a design that names a paradigm keeps that paradigm's
+  counterbalancing recipe when it declares its own `events`. The recipe used to fall
+  back to factorial whenever an `events` list was present, so
+  `config/design_en_priming_jitter.yaml`, which names `priming` and adjusts two
+  durations, dealt every target to each list twice, once related and once unrelated.
+  It now rotates through the Latin square like the other priming designs, and its
+  committed stimuli and experiments are regenerated. No other shipped design changes.
+* The datasheet records the counterbalancing recipe that ran. It inferred the recipe
+  from `items.source` while `counterbalance()` dispatched on the paradigm, so a
+  table-sourced design could be recorded as a Latin-square rotation it never had;
+  both now come from the same dispatch.
 * The package now declares `Depends: R (>= 4.0.0)`. `tools::R_user_dir` does not
   exist before 4.0.0, and `round()`'s post-4.0 algorithm shapes artefact bytes, so an
   older R would fail obscurely or write different bytes without complaint.
@@ -27,9 +38,17 @@
   generated PsychoPy script. It used `as.character()`, whose rendering of a
   non-integer quotient differs from Python's `str()`. The shipped default still renders
   "0.01", so no committed experiment byte moved.
-* The counterbalancing hash keys convert to UTF-8 before hashing, as `hash_unit()`
-  always has, so a latin1-marked condition read from a user's CSV can no longer rank by
-  different digests in the two engines.
+* The hash keys behind trial order, list balancing and jitter are normalised to UTF-8
+  bytes in every locale. Wrapping the pasted key in `enc2utf8()` left a latin1-marked
+  or unmarked condition label hashing its escape text under a C locale, so `hash_unit()`
+  and the trial order differed from the Python engine's there; every character
+  component is now normalised before the key is assembled, and the tests pin the
+  Python digests for all three encoding marks under the C locale.
+* YAML is read as UTF-8 whatever the session locale. `yaml::read_yaml()` re-encodes
+  the file through the native encoding, so under a C locale `list_corpora()` and
+  `fetch_corpus()` failed on the bundled registry's accented citation and
+  `read_config()` silently dropped every key after an accented label. The readers now
+  take the bytes as UTF-8 and return UTF-8-marked strings.
 * The command-line wrapper reports which copy of the package it loaded.
   `R_workflow/run_pipeline.R` prefers an installed lexsync over the edited sources, so
   edits silently did nothing until a reinstall. It now states the loaded copy and the

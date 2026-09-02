@@ -47,10 +47,9 @@ default_registry_path <- function() {
 #'
 #' @param registry_path Optional path to `registry.yaml`.
 #' @return A data frame describing each registered corpus.
-#' @importFrom yaml read_yaml
 #' @export
 list_corpora <- function(registry_path = NULL) {
-  reg <- yaml::read_yaml(registry_path %||% default_registry_path())
+  reg <- .read_yaml_utf8(registry_path %||% default_registry_path())
   corp <- reg$corpora
   data.frame(
     name = names(corp),
@@ -108,11 +107,10 @@ list_corpora <- function(registry_path = NULL) {
 #' @param registry_path Optional path to `registry.yaml`.
 #' @param dest Optional destination path; defaults to the cache.
 #' @return The path to the downloaded file, invisibly.
-#' @importFrom yaml read_yaml
 #' @importFrom utils download.file
 #' @export
 fetch_corpus <- function(name, registry_path = NULL, dest = NULL) {
-  reg <- yaml::read_yaml(registry_path %||% default_registry_path())
+  reg <- .read_yaml_utf8(registry_path %||% default_registry_path())
   entry <- reg$corpora[[name]]
   if (is.null(entry)) {
     stop(sprintf("lexsync: corpus '%s' is not in the registry.", name), call. = FALSE)

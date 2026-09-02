@@ -80,6 +80,36 @@ test_that("read_config refuses a duplicated mapping key", {
   expect_identical(read_config(path), list(name = "a", items = list(source = "pool")))
 })
 
+# yaml::read_yaml() re-encodes the file through the session locale, so under a C
+# locale a non-ASCII byte truncated the stream: the bundled registry's citation for
+# SUBTLEX-ESP failed to parse at all, and a design with an unquoted accented label
+# came back holding only the keys before it, with a warning nobody reads. The reader
+# now takes the bytes as UTF-8, so the same file gives the same UTF-8-marked strings
+# in every locale.
+test_that("YAML is read as UTF-8 whatever the session locale", {
+  path <- file.path(tempdir(), "accent.yaml")
+  con <- file(path, "wb")
+  writeLines(c("name: caf\u00e9 study", "description: 'Palabras en espa\u00f1ol'",
+               "n_per_condition: 18"), con, useBytes = TRUE)
+  close(con)
+  check <- function() {
+    cfg <- read_config(path)
+    expect_identical(names(cfg), c("name", "description", "n_per_condition"))
+    expect_identical(cfg$name, "caf\u00e9 study")
+    expect_identical(cfg$description, "Palabras en espa\u00f1ol")
+    expect_identical(Encoding(cfg$name), "UTF-8")
+    expect_identical(cfg$n_per_condition, 18L)
+    reg <- list_corpora()
+    expect_match(reg$citation[reg$name == "subtlex_esp"], "Gonz\u00e1lez")
+  }
+  check()
+  old <- Sys.getlocale("LC_CTYPE")
+  skip_if(!isTRUE(suppressWarnings(Sys.setlocale("LC_CTYPE", "C")) == "C"),
+          "cannot switch to the C locale on this platform")
+  on.exit(Sys.setlocale("LC_CTYPE", old), add = TRUE)
+  check()
+})
+
 test_that("a continuous design over a supplied pool takes the continuous path", {
   # The predicate allowed corpus and table only, so a 'continuous' block over
   # items.source 'pool' fell through to the conditions matcher and failed with a

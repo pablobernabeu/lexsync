@@ -13,6 +13,7 @@ from __future__ import annotations
 import json
 import platform
 
+from .counterbalancing import _recipe
 from .io_utils import _is_continuous, _round_dp, sha256_file
 
 # The cap the pairwise (joint, optimal) matchers apply before pairing. Imported from
@@ -366,8 +367,10 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
     # The balance report is added only when the optimiser ran, for the same reason the
     # norms record is: a key that is null on every design that does not use the feature
     # is noise in a research artefact.
+    # The recipe comes from the same dispatch counterbalance() used, so the record
+    # cannot say Latin square where the lists were dealt factorially.
     counterbalancing = {
-        "recipe": "latin_square_target" if source == "table" else "factorial",
+        "recipe": _recipe(design),
         "lists": (design.get("counterbalance") or {}).get("lists", 1),
     }
     if balance:

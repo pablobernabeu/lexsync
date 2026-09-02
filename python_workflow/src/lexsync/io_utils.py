@@ -399,7 +399,9 @@ def _key_part(x) -> str:
     stop. Booleans do get a pinned spelling, because they are legitimate: the spelling
     is fixed to R's here, so neither language chooses it.
 
-    Must stay identical to .key_part in R_workflow/R/io_utils.R.
+    Must stay identical to .key_part in R_workflow/R/io_utils.R, except for the
+    UTF-8 normalisation of character components there, which is the one R-only
+    step: a str carries no encoding mark, so it always hashes its code points.
     """
     if x is None:
         raise ValueError(

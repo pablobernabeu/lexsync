@@ -501,9 +501,10 @@ basename(unlist(custom_files))
 
 Nothing in the backends changed. All three targets rendered a sequence they had
 never seen, because each one walks the event list and knows nothing about
-paradigms. The design also inherits a consequence of declaring its own events: a
-design with an explicit `events` list counterbalances factorially, since the
-Latin-square recipe belongs to the registered paradigms that need it.
+paradigms. Declaring events changes only the trial shape: the counterbalancing
+recipe still follows the paradigm the design names, so a priming design that
+adjusts a duration keeps its Latin square, and a design that names no paradigm
+counterbalances factorially.
 
 To register a paradigm for reuse across designs, add an entry to the
 `PARADIGMS` registry in `R/paradigms.R`, giving its `stimulus_fields`, its

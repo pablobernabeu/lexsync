@@ -169,6 +169,14 @@ no function signature changes.
 
 ### Changed
 
+- A design that names a paradigm keeps that paradigm's counterbalancing recipe when
+  it declares its own `events`, which counts as a breaking change for one shipped
+  design. The recipe used to fall back to factorial whenever an `events` list was
+  present, so `config/design_en_priming_jitter.yaml`, which names `priming` and
+  adjusts two durations, dealt every target to each list twice, once related and once
+  unrelated. It now rotates through the Latin square like the other priming designs,
+  and its committed stimuli and experiments are regenerated in both engines. No other
+  shipped design changes.
 - The R package declares its version floor. `Depends: R (>= 4.0.0)`:
   `tools::R_user_dir` does not exist before 4.0.0, and `round()`'s post-4.0 algorithm
   shapes artefact bytes, so an older R would fail obscurely or, worse, write different
@@ -339,6 +347,10 @@ no function signature changes.
 
 ### Fixed
 
+- The datasheet records the counterbalancing recipe that ran. Both engines inferred
+  it from `items.source` while `counterbalance()` dispatched on the paradigm, so a
+  table-sourced design could be recorded as a Latin-square rotation it never had; the
+  record and the dispatch now come from the same function.
 - `INTER_TRIGGER_S` leaned on each language's default number-to-string rule. Its
   neighbours in the generated PsychoPy script, `TRIGGER_HOLD_MS` and
   `ASSUMED_REFRESH_HZ`, are pinned through `%.17g`, but the inter-trigger interval was

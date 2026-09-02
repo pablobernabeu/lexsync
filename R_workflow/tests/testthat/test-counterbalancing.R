@@ -20,6 +20,27 @@ test_that("participant_table varies the first factor fastest with three factors"
   expect_equal(pt$c, c("p", "p", "p", "p", "q", "q", "q", "q"))
 })
 
+# The recipe used to fall back to factorial whenever a design declared its own
+# events, before the paradigm was consulted. config/design_en_priming_jitter.yaml
+# names priming and adjusts two durations, and every list held each target twice,
+# once related and once unrelated, which is the repetition the Latin square exists
+# to prevent. The same expectations are pinned in test_counterbalancing.py.
+test_that("the paradigm decides the recipe even when the design declares events", {
+  events <- list(list(type = "text", content = "{target}", duration_ms = 800L))
+  expect_identical(lexsync:::.cb_recipe(list(paradigm = "priming", events = events)),
+                   "latin_square_target")
+  expect_identical(lexsync:::.cb_recipe(list(paradigm = "priming")), "latin_square_target")
+  expect_identical(lexsync:::.cb_recipe(list(paradigm = "lexical_decision", events = events)),
+                   "factorial")
+  expect_identical(lexsync:::.cb_recipe(list(events = events)), "factorial")
+  stim <- data.frame(prime = c("a", "b", "c", "d"), target = c("x", "x", "y", "y"),
+                     condition = c("r", "u", "r", "u"), set = c(1, 1, 2, 2),
+                     stringsAsFactors = FALSE)
+  out <- counterbalance(stim, list(paradigm = "priming", events = events,
+                                   counterbalance = list(lists = 2)), list(seed = 1))
+  expect_false(any(duplicated(out[, c("list", "target")])))
+})
+
 test_that("counterbalance adds list and trial columns", {
   stim <- data.frame(
     word = c("a", "b", "c", "d"), condition = c("x", "x", "y", "y"),
@@ -90,17 +111,36 @@ test_that("the keyed-hash shuffle gives both engines the same trial order", {
 test_that("the shuffle key hashes UTF-8 bytes whatever encoding the frame carries", {
   # digest(serialize = FALSE) hashes the stored bytes, so a latin1-marked
   # condition read from a user's CSV used to rank by different digests from the
-  # same characters in UTF-8, and so from the Python engine. The key now goes
-  # through enc2utf8, as hash_unit always has.
+  # same characters in UTF-8, and so from the Python engine. Wrapping the pasted
+  # key in enc2utf8 did not close the gap: paste() had already translated a
+  # latin1 component into the native encoding, which in a C locale is the escape
+  # text "caf<e9>", and an unmarked string was escaped to "caf<c3><a9>" the same
+  # way. Every character component is now normalised before it is pasted, so all
+  # three markings rank by the digest Python computes, and the order is pinned to
+  # the Python engine's rather than to another R run.
+  python_order <- c("c", "e", "a", "f", "b", "h", "g", "d")
   stim <- data.frame(word = letters[1:8], list = 1L,
-                     condition = rep(c("café", "naïve"), 4),
+                     condition = rep(c("caf\u00e9", "na\u00efve"), 4),
                      set = rep(1:4, each = 2), stringsAsFactors = FALSE)
   stim$condition <- enc2utf8(stim$condition)
   lat <- stim
   lat$condition <- iconv(stim$condition, "UTF-8", "latin1")
   expect_identical(unique(Encoding(lat$condition)), "latin1")
-  out_utf <- lexsync:::.shuffle_deterministic(stim, 2026L)
-  out_lat <- lexsync:::.shuffle_deterministic(lat, 2026L)
-  expect_identical(out_lat$word, out_utf$word)
-  expect_identical(out_lat$trial, out_utf$trial)
+  unk <- stim
+  Encoding(unk$condition) <- "unknown"
+  expect_identical(unique(Encoding(unk$condition)), "unknown")
+  check <- function() {
+    for (frame in list(stim, lat, unk)) {
+      out <- lexsync:::.shuffle_deterministic(frame, 2026L)
+      expect_identical(out$word, python_order)
+      expect_identical(out$trial, 1:8)
+    }
+  }
+  check()
+  # The C locale is where the translations bit, so a UTF-8 runner switches to it too.
+  old <- Sys.getlocale("LC_CTYPE")
+  skip_if(!isTRUE(suppressWarnings(Sys.setlocale("LC_CTYPE", "C")) == "C"),
+          "cannot switch to the C locale on this platform")
+  on.exit(Sys.setlocale("LC_CTYPE", old), add = TRUE)
+  check()
 })

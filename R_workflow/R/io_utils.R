@@ -316,11 +316,28 @@ sha256_file <- function(path) {
   !is.null(design$continuous) && src %in% c("corpus", "pool", "table")
 }
 
+# The bytes a hash key is computed over. digest(serialize = FALSE) hashes the
+# stored bytes, and what R stores depends on the encoding mark and the session
+# locale: a latin1-marked string holds one byte for an accented letter, and
+# enc2utf8() on an unmarked string in a C locale escapes it to "<c3><a9>" rather
+# than trusting its bytes. Python's str carries no mark, so it always hashes the
+# UTF-8 code points. Marking a valid unmarked string UTF-8 before enc2utf8() makes
+# the R digest the same in every locale.
+#' @keywords internal
+.as_utf8 <- function(x) {
+  x <- as.character(x)
+  unk <- Encoding(x) == "unknown" & validUTF8(x)
+  Encoding(x)[unk] <- "UTF-8"
+  enc2utf8(x)
+}
+
 # Render one component of a hash key. Never interpolate a number directly: R
 # prints 42.0 as "42" and Python as "42.0", and a pandas column silently promoted
 # to float64 by a single missing value would otherwise change every digest and so
 # every realised duration. Integral values go through %d in both engines.
-# Must stay identical to _key_part in python_workflow/src/lexsync/io_utils.py.
+# Must stay identical to _key_part in python_workflow/src/lexsync/io_utils.py,
+# except for the UTF-8 normalisation of character components, which is the one
+# R-only step: a Python str carries no encoding mark.
 #' @keywords internal
 .key_part <- function(x) {
   # A component that cannot be rendered identically in both engines must never be
@@ -354,7 +371,7 @@ sha256_file <- function(path) {
     out[!ok] <- sprintf("%.17g", x[!ok])
     return(out)
   }
-  as.character(x)
+  .as_utf8(x)
 }
 
 # A uniform variate in [0, 1) derived from a keyed SHA-256 digest.
@@ -379,10 +396,9 @@ sha256_file <- function(path) {
 #' @importFrom digest digest
 #' @keywords internal
 hash_unit <- function(key) {
-  # enc2utf8 because digest(serialize = FALSE) hashes the stored bytes: a
-  # latin1-marked string read from a user's CSV would otherwise give a different
-  # digest from the same characters in Python.
-  h <- vapply(enc2utf8(as.character(key)),
+  # digest(serialize = FALSE) hashes the stored bytes, so the key is normalised to
+  # UTF-8 first; see .as_utf8.
+  h <- vapply(.as_utf8(key),
               function(k) digest::digest(k, algo = "sha256", serialize = FALSE),
               character(1), USE.NAMES = FALSE)
   (strtoi(substr(h, 1L, 7L), 16L) * 16777216 + strtoi(substr(h, 8L, 13L), 16L)) /
@@ -416,17 +432,32 @@ slugify <- function(...) {
   .lower_invariant(gsub("^_|_$", "", s))
 }
 
+# Parse a YAML file as UTF-8 whatever the session locale. yaml::read_yaml() opens
+# the file through file(encoding = "UTF-8"), which re-encodes into the native
+# encoding; under a C locale that is ASCII, so the stream is cut at the first
+# non-ASCII byte and a quoted scalar such as a citation ends the document early.
+# Reading the bytes and marking them UTF-8 parses the same text everywhere and
+# hands every scalar to the hash keys already UTF-8-marked. yaml.load keeps the
+# duplicate-key refusal that read_config's tests pin.
+#' @importFrom yaml yaml.load
+#' @keywords internal
+.read_yaml_utf8 <- function(path) {
+  con <- file(path, "rb")
+  on.exit(close(con))
+  text <- readLines(con, encoding = "UTF-8", warn = FALSE)
+  yaml::yaml.load(paste(text, collapse = "\n"), error.label = path)
+}
+
 #' Read a YAML configuration file
 #'
 #' @param path Path to a YAML file.
 #' @return A named list.
-#' @importFrom yaml read_yaml
 #' @keywords internal
 read_config <- function(path) {
   if (!file.exists(path)) {
     stop(sprintf("lexsync: configuration not found: '%s'", path), call. = FALSE)
   }
-  yaml::read_yaml(path)
+  .read_yaml_utf8(path)
 }
 
 #' Validate a single stimulus value for safe inclusion in generated files

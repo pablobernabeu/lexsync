@@ -324,8 +324,10 @@ build_datasheet <- function(design, schema, report, stimuli, source_path, artifa
   # The balance report is added only when the optimiser ran, for the same reason the
   # norms record is: a key that is null on every design that does not use the feature
   # is noise in a research artefact.
+  # The recipe comes from the same dispatch counterbalance() used, so the record
+  # cannot say Latin square where the lists were dealt factorially.
   counterbalancing <- list(
-    recipe = if (identical(source, "table")) "latin_square_target" else "factorial",
+    recipe = .cb_recipe(design),
     lists = design$counterbalance$lists %||% 1L)
   if (!is.null(balance)) counterbalancing$optimise <- balance
   # Practice and filler trials change what a participant sees but not what is

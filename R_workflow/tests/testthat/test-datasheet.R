@@ -68,6 +68,29 @@ test_that("datasheet builds for a table source without a report", {
   expect_length(ds$dimensions, 0L)
 })
 
+# The record used to infer the recipe from items.source, while counterbalance()
+# dispatched on the paradigm, so a table-sourced lexical-decision design was
+# recorded as a Latin-square rotation it never had. Both now come from .cb_recipe,
+# and test_datasheet.py pins the same two cases.
+test_that("the datasheet records the recipe counterbalance applied", {
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  stim <- data.frame(target = c("a", "b"), condition = c("word", "pseudoword"),
+                     set = c(1, 1), stringsAsFactors = FALSE)
+  design <- list(name = "t", language = "english", paradigm = "lexical_decision",
+                 items = list(source = "table", path = "items/t.csv"),
+                 counterbalance = list(lists = 2))
+  ds <- build_datasheet(design, schema, NULL, stim, "items/t.csv",
+                        list(stimuli = NULL, experiments = list()), 2026, engine = "R")
+  expect_identical(ds$counterbalancing$recipe, lexsync:::.cb_recipe(design))
+  expect_identical(ds$counterbalancing$recipe, "factorial")
+  expect_false(grepl("Latin-square", methods_paragraph(ds), fixed = TRUE))
+  design$paradigm <- "priming"
+  design$events <- list(list(type = "text", content = "{target}", duration_ms = 800L))
+  ds <- build_datasheet(design, schema, NULL, stim, "items/t.csv",
+                        list(stimuli = NULL, experiments = list()), 2026, engine = "R")
+  expect_identical(ds$counterbalancing$recipe, "latin_square_target")
+})
+
 test_that("the datasheet records the tolerance windows the matcher applied", {
   # The design-level override is what match_stimuli applies, so it is what the
   # provenance record must state; the schema defaults survive for the rest.

@@ -43,21 +43,21 @@
       "unrelated"
     ],
     "stimuli_file": "output/stimuli/en_priming_jitter_english_stimuli_R.csv",
-    "stimuli_sha256": "72aaa8ee8d28c35792e306ad6b7981566e8ca89c9f5a158719f5c68ed02ed307"
+    "stimuli_sha256": "c5819ab6ac7afc477f947c46270be21a7dcf58dd1a819fdb925d1108067ae8a2"
   },
   "reproducibility": {
     "seed": 2026,
     "versions": {
       "engine": "R",
       "lexsync": "0.1.0",
-      "R": "4.6.1",
-      "readr": "2.2.0",
-      "stringdist": "0.9.17",
-      "jsonlite": "2.0.0",
-      "digest": "0.6.39",
-      "yaml": "2.3.12",
-      "stringi": "1.8.7",
-      "os": "Windows x86-64"
+      "R": "4.3.3",
+      "readr": "2.1.5",
+      "stringdist": "0.9.12",
+      "jsonlite": "1.8.8",
+      "digest": "0.6.34",
+      "yaml": "2.3.8",
+      "stringi": "1.8.3",
+      "os": "Linux x86_64"
     },
     "design_sha256": "5948b0b66dcdd984810e697568e2ccb184a3a075a7df10bd1ac61b90404ab1c2",
     "schema_sha256": "483a9cec49314b9479fe656ad39840083a551f2e4313ca164efe3e9c064fb255"
@@ -65,7 +65,7 @@
   "artifacts": [
     {
       "file": "output/stimuli/en_priming_jitter_english_stimuli_R.csv",
-      "sha256": "72aaa8ee8d28c35792e306ad6b7981566e8ca89c9f5a158719f5c68ed02ed307"
+      "sha256": "c5819ab6ac7afc477f947c46270be21a7dcf58dd1a819fdb925d1108067ae8a2"
     },
     {
       "file": "output/experiments/en_priming_jitter_english_psychopy.py",
@@ -77,7 +77,7 @@
     },
     {
       "file": "output/experiments/en_priming_jitter_english.html",
-      "sha256": "5ccf55875fd61bcb328080fb2635280e7cb834e93bf1dd87ac4260f00ccb7360"
+      "sha256": "2e1189fdf958b661ee1590cb352a24b82689758ba23acf246864498996556286"
     }
   ]
 }

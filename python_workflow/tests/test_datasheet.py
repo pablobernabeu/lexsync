@@ -3,6 +3,7 @@ import json
 
 import pandas as pd
 
+from lexsync.counterbalancing import _recipe
 from lexsync.datasheet import build_datasheet, methods_paragraph, render_datasheet_md, write_datasheet
 from lexsync.validation import match_report, match_report_continuous
 
@@ -114,6 +115,27 @@ def test_datasheet_without_report_table_source(schema):
     assert ds["counterbalancing"]["recipe"] == "latin_square_target"
     assert "item table" in methods_paragraph(ds)
     assert ds["dimensions"] == {}
+
+
+def test_datasheet_records_the_recipe_counterbalance_applied(schema):
+    # The record used to infer the recipe from items.source, while counterbalance()
+    # dispatched on the paradigm, so a table-sourced lexical-decision design was
+    # recorded as a Latin-square rotation it never had. Both now come from _recipe,
+    # and test-datasheet.R pins the same two cases.
+    stim = pd.DataFrame({"target": ["a", "b"], "condition": ["word", "pseudoword"],
+                         "set": [1, 1]})
+    design = {"name": "t", "language": "english", "paradigm": "lexical_decision",
+              "items": {"source": "table", "path": "items/t.csv"},
+              "counterbalance": {"lists": 2}}
+    ds = build_datasheet(design, schema, None, stim, "items/t.csv",
+                         {"stimuli": None, "experiments": {}}, 2026)
+    assert ds["counterbalancing"]["recipe"] == _recipe(design) == "factorial"
+    assert "Latin-square" not in methods_paragraph(ds)
+    design["paradigm"] = "priming"
+    design["events"] = [{"type": "text", "content": "{target}", "duration_ms": 800}]
+    ds = build_datasheet(design, schema, None, stim, "items/t.csv",
+                         {"stimuli": None, "experiments": {}}, 2026)
+    assert ds["counterbalancing"]["recipe"] == "latin_square_target"
 
 
 def test_datasheet_records_the_tolerance_windows_the_matcher_applied(schema):

@@ -33,6 +33,32 @@ test_that("known keys, including non-ASCII, match the Python engine", {
   expect_equal(lexsync:::hash_int_range("42|0|A|1|北京大学汉字", 200L, 800L), 209L)
 })
 
+# digest() hashes the stored bytes, and what R stores for an accented letter
+# depends on the encoding mark and the session locale. The constants are the
+# Python engine's, mirrored in test_hash_primitive.py, and the second one goes
+# through .key_part and paste() the way every shuffle, balance and jitter key does.
+test_that("the digest is the same bits for any encoding mark in any locale", {
+  utf <- enc2utf8("caf\u00e9")
+  lat <- iconv(utf, "UTF-8", "latin1")
+  unk <- utf
+  Encoding(unk) <- "unknown"
+  expect_identical(c(Encoding(utf), Encoding(lat), Encoding(unk)),
+                   c("UTF-8", "latin1", "unknown"))
+  check <- function() {
+    for (w in list(utf, lat, unk)) {
+      expect_equal(lexsync:::hash_unit(w), 0.519767628103242)
+      key <- paste("2026", lexsync:::.key_part(w), "soa", sep = "|")
+      expect_equal(lexsync:::hash_unit(key), 0.7908144324504798)
+    }
+  }
+  check()
+  old <- Sys.getlocale("LC_CTYPE")
+  skip_if(!isTRUE(suppressWarnings(Sys.setlocale("LC_CTYPE", "C")) == "C"),
+          "cannot switch to the C locale on this platform")
+  on.exit(Sys.setlocale("LC_CTYPE", old), add = TRUE)
+  check()
+})
+
 test_that("the integer mapping respects both bounds", {
   for (rng in list(c(0L, 1L), c(1L, 3L), c(200L, 800L), c(0L, 0L), c(-5L, 5L))) {
     v <- lexsync:::hash_int_range(sprintf("k|%d", 0:2999), rng[1], rng[2])

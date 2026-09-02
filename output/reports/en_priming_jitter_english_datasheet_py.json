@@ -7,7 +7,7 @@
   "artifacts": [
     {
       "file": "output/stimuli/en_priming_jitter_english_stimuli_py.csv",
-      "sha256": "72aaa8ee8d28c35792e306ad6b7981566e8ca89c9f5a158719f5c68ed02ed307"
+      "sha256": "c5819ab6ac7afc477f947c46270be21a7dcf58dd1a819fdb925d1108067ae8a2"
     },
     {
       "file": "output/experiments/en_priming_jitter_english_psychopy.py",
@@ -19,7 +19,7 @@
     },
     {
       "file": "output/experiments/en_priming_jitter_english.html",
-      "sha256": "5ccf55875fd61bcb328080fb2635280e7cb834e93bf1dd87ac4260f00ccb7360"
+      "sha256": "2e1189fdf958b661ee1590cb352a24b82689758ba23acf246864498996556286"
     }
   ],
   "counterbalancing": {
@@ -47,7 +47,7 @@
     "n_conditions": 2,
     "n_total": 24,
     "stimuli_file": "output/stimuli/en_priming_jitter_english_stimuli_py.csv",
-    "stimuli_sha256": "72aaa8ee8d28c35792e306ad6b7981566e8ca89c9f5a158719f5c68ed02ed307"
+    "stimuli_sha256": "c5819ab6ac7afc477f947c46270be21a7dcf58dd1a819fdb925d1108067ae8a2"
   },
   "lexsync_datasheet_version": "1.1",
   "materials_source": {
@@ -65,12 +65,12 @@
     "versions": {
       "engine": "python",
       "lexsync": "0.1.0",
-      "numpy": "2.3.2",
-      "os": "Windows AMD64",
-      "pandas": "2.3.2",
-      "python": "3.13.7",
+      "numpy": "2.4.6",
+      "os": "Linux x86_64",
+      "pandas": "2.3.3",
+      "python": "3.11.15",
       "pyyaml": "6.0.3",
-      "rapidfuzz": "3.14.5",
+      "rapidfuzz": "3.14.6",
       "scipy": "1.17.1"
     }
   },

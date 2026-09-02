@@ -48,6 +48,15 @@ def test_known_keys_including_non_ascii():
     assert hash_int_range("42|0|A|1|北京大学汉字", 200, 800) == 209
 
 
+def test_accented_keys_pin_the_digests_the_r_engine_normalises_to():
+    # The R engine hashes stored bytes, which vary with the encoding mark and the
+    # session locale until it normalises them to UTF-8; test-hash-primitive.R pins
+    # these same two values for UTF-8-, latin1- and unknown-marked input, the second
+    # through the key assembly every shuffle, balance and jitter key uses.
+    assert hash_unit("café") == 0.519767628103242
+    assert hash_unit("2026|café|soa") == 0.7908144324504798
+
+
 def test_the_integer_mapping_respects_both_bounds():
     for lo, hi in [(0, 1), (1, 3), (200, 800), (0, 0), (-5, 5)]:
         seen = {hash_int_range(f"k|{i}", lo, hi) for i in range(3000)}

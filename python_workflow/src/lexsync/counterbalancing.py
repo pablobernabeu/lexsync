@@ -21,8 +21,14 @@ from .paradigms import get_paradigm
 
 
 def _recipe(design: dict) -> str:
-    if design.get("events"):
-        return "factorial"
+    """The named paradigm decides the recipe.
+
+    An ``events`` list overrides only the trial shape: a priming design that adjusts
+    a duration still shows each target once per list, which is what the paradigm's
+    Latin square is for. A design that names no paradigm counterbalances factorially
+    whether or not it declares events. Mirrors .cb_recipe in
+    R_workflow/R/counterbalancing.R.
+    """
     name = design.get("paradigm", "factorial")
     try:
         return get_paradigm(name).get("counterbalance", "factorial")

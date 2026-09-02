@@ -139,6 +139,10 @@ them. Case folding is pinned for the same reason: `load_lexicon()` lower-cases
 through ICU at the root locale rather than through `tolower()`, whose behaviour
 depends on the C library and the locale, and which differs from Python's on
 Greek final sigma and the dotted Turkish capital I.
+The hash keys behind trial order, list balancing and jitter are normalised to
+UTF-8 bytes before they are digested, whatever encoding mark the strings carry
+and whatever the session locale, so a condition label such as `café` ranks by
+the same digest in R under a C locale as in Python.
 
 Frequencies of bigrams and of subsyllabic constituents are accumulated as
 integers, never as running floating-point sums, so the counts cannot depend on

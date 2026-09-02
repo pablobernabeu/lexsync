@@ -1,6 +1,6 @@
 import pandas as pd
 
-from lexsync.counterbalancing import counterbalance, participant_table
+from lexsync.counterbalancing import _recipe, counterbalance, participant_table
 
 
 def test_participant_table():
@@ -23,6 +23,24 @@ def test_participant_table_first_factor_fastest_with_three_factors():
     assert list(pt["a"]) == [1, 2, 1, 2, 1, 2, 1, 2]
     assert list(pt["b"]) == ["x", "x", "y", "y", "x", "x", "y", "y"]
     assert list(pt["c"]) == ["p", "p", "p", "p", "q", "q", "q", "q"]
+
+
+def test_the_paradigm_decides_the_recipe_even_when_the_design_declares_events():
+    # The recipe used to fall back to factorial whenever a design declared its own
+    # events, before the paradigm was consulted. config/design_en_priming_jitter.yaml
+    # names priming and adjusts two durations, and every list held each target twice,
+    # once related and once unrelated, which is the repetition the Latin square exists
+    # to prevent. The same expectations are pinned in test-counterbalancing.R.
+    events = [{"type": "text", "content": "{target}", "duration_ms": 800}]
+    assert _recipe({"paradigm": "priming", "events": events}) == "latin_square_target"
+    assert _recipe({"paradigm": "priming"}) == "latin_square_target"
+    assert _recipe({"paradigm": "lexical_decision", "events": events}) == "factorial"
+    assert _recipe({"events": events}) == "factorial"
+    stim = pd.DataFrame({"prime": list("abcd"), "target": ["x", "x", "y", "y"],
+                         "condition": ["r", "u", "r", "u"], "set": [1, 1, 2, 2]})
+    out = counterbalance(stim, {"paradigm": "priming", "events": events,
+                                "counterbalance": {"lists": 2}}, {"seed": 1})
+    assert not out.duplicated(["list", "target"]).any()
 
 
 def test_counterbalance_adds_list_and_trial():

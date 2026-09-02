@@ -58,7 +58,7 @@ test_that("fetch_corpus rejects a corpus absent from the registry", {
 # demonstrated end to end. Every bundled lexicon is wordfreq-derived, so no
 # SUBTLEX entry may claim it; list_corpora() shows 'status' to users.
 test_that("registry status reflects what is actually shipped", {
-  reg <- yaml::read_yaml(registry_path())
+  reg <- lexsync:::.read_yaml_utf8(registry_path())
   expect_identical(reg$corpora$subtlex_uk$status, "manual")
   expect_identical(reg$corpora$subtlex_esp$status, "listed")
   expect_false(any(vapply(reg$corpora, function(x) identical(x$status, "validated"), logical(1))))
@@ -66,7 +66,7 @@ test_that("registry status reflects what is actually shipped", {
 })
 
 test_that("registry statuses come from the documented vocabulary", {
-  reg <- yaml::read_yaml(registry_path())
+  reg <- lexsync:::.read_yaml_utf8(registry_path())
   for (name in names(reg$corpora)) {
     expect_true(reg$corpora[[name]]$status %in% STATUSES, info = name)
   }
@@ -79,7 +79,7 @@ test_that("registry statuses come from the documented vocabulary", {
 # zip archives, which the delimited-file connector cannot ingest. The entry must
 # therefore send a human to the landing page rather than advertise a dead download.
 test_that("subtlex_uk advertises a landing page, not a dead download", {
-  reg <- yaml::read_yaml(registry_path())
+  reg <- lexsync:::.read_yaml_utf8(registry_path())
   entry <- reg$corpora$subtlex_uk
   expect_null(entry$openlexicon)
   expect_match(entry$url, "^https://")
@@ -92,7 +92,7 @@ test_that("subtlex_uk advertises a landing page, not a dead download", {
 # advertises a download, so it may not claim a status that denies one. Pinning the
 # equivalence keeps a rotted URL from being demoted in status alone.
 test_that("the openlexicon key and 'supported' status agree", {
-  reg <- yaml::read_yaml(registry_path())
+  reg <- lexsync:::.read_yaml_utf8(registry_path())
   for (name in names(reg$corpora)) {
     entry <- reg$corpora[[name]]
     has_file <- !is.null(entry$openlexicon) && nzchar(entry$openlexicon)
