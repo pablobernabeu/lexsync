@@ -29,4 +29,9 @@ That cache persists between sessions and the package never prunes it; one
 corpus may reach the 200 MB download cap, so several of them add up. Nothing
 kept there is irreplaceable, so the directory may be deleted at any time and
 the next call downloads the corpus again.
+
+The Python twin takes the same three arguments and additionally an \code{n_words}
+cap, which sizes a lexicon derived through the wordfreq connector. That
+connector is Python-only; a lexicon derived there is read here as an ordinary
+corpus.
 }

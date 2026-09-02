@@ -19,7 +19,7 @@
     },
     {
       "file": "output/experiments/en_lexdec_blocks_english_psychopy.py",
-      "sha256": "2ab021bdaaa0f9d502a62fcf1570d8fb7031dac6b22f8e358909f73d1fa6f9c7"
+      "sha256": "7458a91d2c40b922f1398b21de5e809864a7f6781a3a0e93b2b0a797bb816d53"
     },
     {
       "file": "output/experiments/en_lexdec_blocks_english.osexp",
@@ -27,7 +27,7 @@
     },
     {
       "file": "output/experiments/en_lexdec_blocks_english.html",
-      "sha256": "264381375c77bb3e6bd3cd4a176ee0ab7bb19409be3ab2c49fc96d2e17815252"
+      "sha256": "d1ad254b36a3127df6152d27548b00b5c622d93b58666a68c4ec95f23f60d0c0"
     }
   ],
   "counterbalancing": {
@@ -90,7 +90,7 @@
   "materials_source": {
     "path": "corpora/derived/en.csv",
     "provenance": "wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md",
-    "sha256": "c20549b920d816809d11cfa673ad0df1dd70d3e73176ee66cbec18021627f65d",
+    "sha256": "575833489e04d6a4001fda56a56e3daa383811dece1f819c44060ee79ca56976",
     "type": "generate"
   },
   "realised_control": [
@@ -108,17 +108,17 @@
   "relational": null,
   "reproducibility": {
     "design_sha256": "c356ede15b8587796968b9e45f4f1db651fee0d9dac6da8934890f85bf3ed626",
-    "schema_sha256": "483a9cec49314b9479fe656ad39840083a551f2e4313ca164efe3e9c064fb255",
+    "schema_sha256": "bc66a5fd3a65b0f93271d18958f18ae7037f00f7a21ae6380632c55de49e7ca0",
     "seed": 2026,
     "versions": {
       "engine": "python",
       "lexsync": "0.1.0",
-      "numpy": "2.3.2",
-      "os": "Windows AMD64",
-      "pandas": "2.3.2",
-      "python": "3.13.7",
+      "numpy": "2.4.6",
+      "os": "Linux x86_64",
+      "pandas": "2.3.3",
+      "python": "3.11.15",
       "pyyaml": "6.0.3",
-      "rapidfuzz": "3.14.5",
+      "rapidfuzz": "3.14.6",
       "scipy": "1.17.1"
     }
   },

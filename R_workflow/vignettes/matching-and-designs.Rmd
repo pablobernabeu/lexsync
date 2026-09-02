@@ -105,6 +105,12 @@ the pipeline computes them on the pool alone, and why the reference should still
 be the whole lexicon: a word's neighbours are its neighbours in the language,
 not among the handful of words that survived your filters.
 
+The pipeline computes them wherever the design asks for them, which means anywhere
+it names the dimension: `match_on`, a `pool_filters` entry, a condition's
+`define_by`, and a continuous predictor or control. A filter on a dimension the
+lexicon does not carry is answered after the filters it can carry, so the
+derivation still runs on the smaller frame.
+
 ```{r neighbourhood}
 sample_words <- lex[lex$word %in% c("cat", "dog", "house", "rhythm"), ]
 add_neighbourhood(

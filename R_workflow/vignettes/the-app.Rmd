@@ -43,7 +43,8 @@ shiny::runApp("apps/r_shiny", port = 8502)
 Run that from the root of the clone. The app looks for `corpora/derived/` in the
 working directory and then in the two directories above it, and it finds the
 example item tables under `items/` the same way, so a launch from somewhere else
-leaves it with no lexicon to offer. It opens at `http://127.0.0.1:8502`.
+says so where the lexicon chooser would be and cannot run a corpus design. It opens
+at `http://127.0.0.1:8502`.
 
 The repository also carries a launcher for the terminal, which takes an optional
 port and is what a container or a headless session should use.
@@ -84,20 +85,26 @@ prepared item table need different things.
 
 'Lexicon' lists the derived corpora the clone holds under `corpora/derived/`,
 which are English, Spanish, a Spanish lexicon carrying grammatical gender, and
-Mandarin Chinese. Two sliders then narrow the lexicon to the candidate pool the
+Mandarin Chinese, and the first rows of whichever one you pick are shown beside
+the selector so you can see what you are working with. Two sliders then narrow
+the lexicon to the candidate pool the
 design will consider at all, one for length in letters or characters and one for
 frequency in Zipf. They are the design's `pool_filters`, and they are a step that
 matters, because matching never re-reads them.
 
-The conditions are an editable table. Each row names a condition and carves it
+The conditions are an editable table that rows can be added to and removed from,
+through the two buttons underneath it. Each row names a condition and carves it
 out of the pool, either by a numeric window through the `dimension`, `lower` and
 `upper` columns or by a set of comma-separated values through `categories`, which
 is what a categorical column such as the gender of the Spanish lexicon needs. The
 optional `dimension2`, `lower2` and `upper2` columns add a second factor to the
 same row, so one row can define a full cell of a 2 × 2. Three presets fill the
 table in one click, a high versus low frequency contrast, a dense versus sparse
-neighbourhood contrast and a 2 × 2 of frequency by neighbourhood, and every cell
-stays editable afterwards, so a preset is only a starting point.
+neighbourhood contrast and a 2 × 2 of frequency by neighbourhood. A preset also
+sets the matched dimensions and the matching method that suit it, so the
+neighbourhood contrast arrives matched on length and frequency by the `joint`
+method and the 2 × 2 arrives matched on length alone. Every control stays editable
+afterwards, so a preset is only a starting point.
 
 Below the table sit the choices that govern the match itself. 'Items per
 condition' sets how many stimuli each condition should hold. 'Matching method'
@@ -133,16 +140,19 @@ are the same ones the package would generate from a script.
 These three paradigms read prepared items instead of selecting any, so no corpus
 and no matching are involved. The app uses the bundled example table for the
 paradigm, `items/priming_pairs_en.csv`, `items/categorisation_en.csv` or
-`items/spr_sentences_en.csv`, and asks only how many counterbalancing lists to
-build.
+`items/spr_sentences_en.csv`, shows its first rows, and asks only how many
+counterbalancing lists to build.
 
 ## Running it
 
 'Run design' assembles the design, writes it to a `design.yaml` in a temporary
-directory with the lexicon and item paths resolved to absolute ones, and hands it
-to `run_pipeline()` with the schema that ships inside the package. Two conditions
-are checked first, that a lexicon has been chosen where the paradigm needs one
-and that a factorial design defines at least two conditions, and anything the
+directory, places the chosen lexicon and item table at the paths the design
+records, and hands it to `run_pipeline()` from that directory with the schema that
+ships inside the package. The run therefore uses the design exactly as the app
+shows and exports it, so the checksum the datasheet records is the checksum of the
+file you are given. Three conditions are checked first, that a lexicon has been
+chosen where the paradigm needs one and that a factorial design defines at least
+two conditions and names at least one dimension to match on, and anything the
 pipeline itself refuses comes back as the error the pipeline raised, in its own
 words. A successful run reports how many rows were selected and opens the results.
 
@@ -156,13 +166,13 @@ whether it is any good, what it will present and how to reproduce it.
 'Realised control' is the part that decides whether the set is usable. It reports
 Cohen's *d* against the anchor condition for each controlled dimension, with its
 90% confidence interval, the variance ratio and the verdict of the two one-sided
-tests procedure, then draws the absolute standardised mean difference per
-dimension as a bar chart with a dashed line at 0.5 standard deviations.
-Manipulated dimensions stand well above that line and matched ones sit near zero,
-so the chart shows immediately whether the matching worked. The per-condition
-descriptive statistics follow underneath. A design drawn from an item table
-produces no corpus-matching report, and the tab says as much where an empty table
-would otherwise sit.
+tests procedure, then draws the absolute standardised mean difference as a bar
+chart, one bar per condition against the anchor, grouped by dimension, with a
+dashed line at 0.5 standard deviations. Manipulated dimensions stand well above
+that line and matched ones sit near zero, so the chart shows immediately whether
+the matching worked. The per-condition descriptive statistics follow underneath. A
+design drawn from an item table produces no corpus-matching report, and the tab
+says as much where an empty table would otherwise sit.
 
 'Datasheet' renders the materials datasheet for the run, carrying the provenance
 of the corpus, the checksums, the realised control and the pre-registration
@@ -174,10 +184,13 @@ three compiled from the same trial description.
 
 'Reproducible code' is what stops a session in the app from being a dead end. It
 shows the design configuration as YAML, with repository-relative paths such as
-`corpora/derived/en.csv` rather than the temporary ones the run used, followed
-by the one-line R, Python and command-line calls that reproduce the same
+`corpora/derived/en.csv`, followed by the one-line R, Python and command-line
+calls that reproduce the same
 operation. Saving the YAML under the name the panel gives it and running any of
-those three lines repeats the run outside the app.
+those three lines repeats the run outside the app. Beneath the code the panel
+states what the two engines guarantee for the method that ran: byte-identical
+stimuli and trial order under the deterministic methods, and equivalent but not
+byte-identical materials under `mahalanobis` and `optimal`.
 
 'Download' packages the design and every artefact the run wrote, the stimuli, the
 reports, the datasheet, the run log and the three experiments, into a single

@@ -14,7 +14,9 @@ describe_stimuli(stimuli, dims, by = "condition")
 \item{by}{Grouping column (default \code{"condition"}).}
 }
 \value{
-A long data frame with n, mean, sd, min, median and max per group.
+A long data frame with n, mean, sd, min, median and max per group. A
+grouping column or a dimension the stimuli do not carry is an error rather
+than a table of missing values.
 }
 \description{
 Per-group descriptive statistics for several dimensions

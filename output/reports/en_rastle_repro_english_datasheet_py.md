@@ -1,4 +1,4 @@
-# Materials datasheet — en_rastle_repro (english)
+# Materials datasheet -- en_rastle_repro (english)
 
 *lexsync datasheet v1.1; python engine.*
 
@@ -6,16 +6,16 @@
 
 - **Paradigm:** priming  |  **Item source:** table
 - **Description:** Reproducing Rastle, Davis & New (2004): masked priming contrasting transparent, opaque and orthographic (form) prime-target relationships, each against an unrelated baseline; Latin-square counterbalanced over two lists.
-- **Materials source:** `items/rastle_priming_en.csv` (sha256 `53bd365a801a3e82…`)
+- **Materials source:** `items/rastle_priming_en.csv` (sha256 `53bd365a801a3e82...`)
 - **Selection:** item table (user-supplied)
 - **Cross-engine determinism:** n/a (user-supplied items)
 - **Counterbalancing:** latin_square_target, 2 list(s)
 - **Items:** 24 rows across 2 conditions (related, unrelated)
-- **Seed:** 2026  |  **Versions:** engine python, lexsync 0.1.0, python 3.13.7, pandas 2.3.2, numpy 2.3.2, scipy 1.17.1, rapidfuzz 3.14.5, pyyaml 6.0.3, os Windows AMD64
+- **Seed:** 2026  |  **Versions:** engine python, lexsync 0.1.0, python 3.11.15, pandas 2.3.3, numpy 2.4.6, scipy 1.17.1, rapidfuzz 3.14.6, pyyaml 6.0.3, os Linux x86_64
 
 ## Suggested analysis
 
-- **Model:** `response ~ condition + (1 + condition | subject) + (1 + condition | item)` — where the response is the trial outcome (e.g. reaction time or accuracy).
+- **Model:** `response ~ condition + (1 + condition | subject) + (1 + condition | item)` -- where the response is the trial outcome (e.g. reaction time or accuracy).
 - Crossed random effects for subjects and items guard against the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). Begin with this maximal structure (Barr et al., 2013) and reduce it if the model does not converge (Matuschek et al., 2017). The formula is lme4 syntax, for lme4 in R or pymer4 in Python; statsmodels MixedLM cannot take it directly and needs the random effects restated in its own arguments. The equivalence tests in the realised control are post-selection diagnostics on deterministically selected items, not inferential tests over a sample.
 
 ## Methods paragraph

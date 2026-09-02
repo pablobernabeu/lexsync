@@ -27,6 +27,12 @@ self-paced reading), plus the `condition_trigger` and `item_trigger` markers tha
 `condition_trigger`. Adjust those names if you paste it into a design whose
 loop table names its markers differently.
 
+The loop table carries every counterbalancing list, so a design with more than one
+gets a gate ahead of its trial sequence: it reads the subject number OpenSesame asks
+for at start-up, takes the list that participant is allocated, and runs the trial
+only on the rows belonging to it. Participant *p* is given the *p*th list, cycling,
+the same rule the PsychoPy and jsPsych targets follow.
+
 Timing: the word is drawn and shown from inside an `inline_script`, and the
 trigger is sent immediately after `canvas.show()` returns. Because `show()`
 blocks until the display refresh (with the `psycho`/`xpyriment` backends), the

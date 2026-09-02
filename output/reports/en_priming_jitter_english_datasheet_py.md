@@ -1,4 +1,4 @@
-# Materials datasheet — en_priming_jitter (english)
+# Materials datasheet -- en_priming_jitter (english)
 
 *lexsync datasheet v1.1; python engine.*
 
@@ -6,7 +6,7 @@
 
 - **Paradigm:** priming  |  **Item source:** table
 - **Description:** Priming with a per-trial stimulus-onset asynchrony read from the items and a jittered inter-trial interval, both recorded as trial-level variables.
-- **Materials source:** `items/priming_pairs_en_soa.csv` (sha256 `305b3a91aa296713…`)
+- **Materials source:** `items/priming_pairs_en_soa.csv` (sha256 `305b3a91aa296713...`)
 - **Selection:** item table (user-supplied)
 - **Cross-engine determinism:** n/a (user-supplied items)
 - **Counterbalancing:** latin_square_target, 2 list(s)
@@ -15,7 +15,7 @@
 
 ## Suggested analysis
 
-- **Model:** `response ~ condition + (1 + condition | subject) + (1 + condition | item)` — where the response is the trial outcome (e.g. reaction time or accuracy).
+- **Model:** `response ~ condition + (1 + condition | subject) + (1 + condition | item)` -- where the response is the trial outcome (e.g. reaction time or accuracy).
 - Crossed random effects for subjects and items guard against the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). Begin with this maximal structure (Barr et al., 2013) and reduce it if the model does not converge (Matuschek et al., 2017). The formula is lme4 syntax, for lme4 in R or pymer4 in Python; statsmodels MixedLM cannot take it directly and needs the random effects restated in its own arguments. The equivalence tests in the realised control are post-selection diagnostics on deterministically selected items, not inferential tests over a sample.
 
 ## Methods paragraph

@@ -14,7 +14,7 @@
     "sha256": "09d0706a853b4bb30580e892a64061835db0f460ee7595b674a2fc8f56d5775f",
     "provenance": "user-supplied word pool, matched by lexsync",
     "dimensions_from": "corpora/derived/en.csv",
-    "dimensions_sha256": "c20549b920d816809d11cfa673ad0df1dd70d3e73176ee66cbec18021627f65d"
+    "dimensions_sha256": "575833489e04d6a4001fda56a56e3daa383811dece1f819c44060ee79ca56976"
   },
   "dimensions": {
     "length": {
@@ -145,17 +145,17 @@
     "versions": {
       "engine": "R",
       "lexsync": "0.1.0",
-      "R": "4.6.1",
-      "readr": "2.2.0",
-      "stringdist": "0.9.17",
-      "jsonlite": "2.0.0",
-      "digest": "0.6.39",
-      "yaml": "2.3.12",
-      "stringi": "1.8.7",
-      "os": "Windows x86-64"
+      "R": "4.3.3",
+      "readr": "2.1.5",
+      "stringdist": "0.9.12",
+      "jsonlite": "1.8.8",
+      "digest": "0.6.34",
+      "yaml": "2.3.8",
+      "stringi": "1.8.3",
+      "os": "Linux x86_64"
     },
     "design_sha256": "919571123fbe696f3c3b7e491f26f74727eb76fe2686b7c4487253faf97973a4",
-    "schema_sha256": "483a9cec49314b9479fe656ad39840083a551f2e4313ca164efe3e9c064fb255"
+    "schema_sha256": "bc66a5fd3a65b0f93271d18958f18ae7037f00f7a21ae6380632c55de49e7ca0"
   },
   "artifacts": [
     {
@@ -172,7 +172,7 @@
     },
     {
       "file": "output/experiments/en_supplied_pool_english_psychopy.py",
-      "sha256": "6f8d01b39e932741a348c8303f529eddbbd6f037db7a5732250bf9fd67f5ee78"
+      "sha256": "8e3252acc4119006f83d7cc2509b1c86ae30847ef2af0c3001692720205c4b59"
     },
     {
       "file": "output/experiments/en_supplied_pool_english.osexp",
@@ -180,7 +180,7 @@
     },
     {
       "file": "output/experiments/en_supplied_pool_english.html",
-      "sha256": "9154ebfccfb166a12c7f6a4507062c42aec579eb5ac6caa937a3955009254dd9"
+      "sha256": "f83cac0a59fd84e9d1af1196b850b66a8e3c24b8715a4775d751337043c7314b"
     }
   ]
 }

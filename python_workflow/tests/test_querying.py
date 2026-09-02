@@ -3,7 +3,14 @@ import re
 import pandas as pd
 import pytest
 
-from lexsync.querying import add_neighbourhood, build_pool, load_items, load_lexicon, merge_norms
+from lexsync import querying
+from lexsync.querying import (
+    add_neighbourhood,
+    build_pool,
+    load_items,
+    load_lexicon,
+    merge_norms,
+)
 
 # Every code point Python's str.strip() removes, i.e. every one whose
 # str.isspace() is true: the Unicode White_Space property plus the C0
@@ -43,6 +50,27 @@ def test_add_neighbourhood():
     # 'cat' differs from 'car' and 'cap' by a single substitution -> N = 2
     assert int(out.loc[out.word == "cat", "n_density"].iloc[0]) == 2
     assert (out["old20"] > 0).all()
+
+
+# Both dimensions are read off one edit-distance matrix, so the case that tells
+# them apart is worth pinning: 'cats' and 'at' are at distance 1 from 'cat' but
+# are not the same length, so they count towards OLD20 and not towards N.
+def test_add_neighbourhood_counts_only_same_length_neighbours():
+    ref = ["cat", "car", "cap", "cats", "at", "dog"]
+    out = add_neighbourhood(pd.DataFrame({"word": ["cat"]}), reference=ref)
+    assert int(out["n_density"].iloc[0]) == 2
+    assert out["old20"].iloc[0] == pytest.approx((1 + 1 + 1 + 1 + 3) / 5)
+
+
+def test_add_neighbourhood_chunking_does_not_change_the_values(monkeypatch):
+    words = [f"{a}{b}{c}" for a in "abcdef" for b in "abcdef" for c in "abcdefghijklmnopqrst"]
+    assert len(words) > querying._NEIGHBOUR_CHUNK   # the fixture spans more than one chunk
+    df = pd.DataFrame({"word": words})
+    chunked = add_neighbourhood(df, reference=words)
+    monkeypatch.setattr(querying, "_NEIGHBOUR_CHUNK", len(words) + 1)
+    whole = add_neighbourhood(df, reference=words)
+    assert chunked["n_density"].tolist() == whole["n_density"].tolist()
+    assert [v.hex() for v in chunked["old20"]] == [v.hex() for v in whole["old20"]]
 
 
 def test_build_pool():
@@ -266,3 +294,34 @@ def test_build_pool_refuses_a_non_finite_bound():
 def test_build_pool_keeps_a_degenerate_range():
     df = pd.DataFrame({"word": list("abcde"), "frequency": [1, 2, 3, 4, 5]})
     assert build_pool(df, {"frequency": [2, 2]})["word"].tolist() == ["b"]
+
+
+def _banded():
+    """One missing value promotes an integer-valued column to float, which is
+    routine on a joined norm table."""
+    return pd.DataFrame({"word": list("abcd"), "band": [1.0, 2.0, 3.0, float("nan")],
+                         "flag": [True, False, True, True]})
+
+
+# Pins the same contract as "build_pool matches a numeric filter numerically" in
+# the R engine's test-querying.R: the values were compared as strings, and str()
+# renders 2.0 as '2.0' where R's as.character() gives '2', so an integer literal
+# matched nothing on a float column and emptied the pool without a word.
+def test_build_pool_matches_a_numeric_value_filter_on_a_float_column():
+    df = _banded()
+    assert build_pool(df, {"band": [1, 2, 3]})["word"].tolist() == ["a", "b", "c"]
+    assert build_pool(df, {"band": [2]})["word"].tolist() == ["b"]
+    assert build_pool(df, {"band": 2})["word"].tolist() == ["b"]
+    assert build_pool(df, {"band": [1.0, 2.0, 3.0]})["word"].tolist() == ["a", "b", "c"]
+
+
+# Pins the same contract as "build_pool takes a boolean pair as permitted values"
+# in the R engine's test-querying.R: bool is a subclass of int here, so the pair
+# was read as a range and refused as reversed.
+def test_build_pool_takes_a_boolean_filter_as_permitted_values():
+    df = _banded()
+    assert build_pool(df, {"flag": [True, False]})["word"].tolist() == list("abcd")
+    assert build_pool(df, {"flag": [False]})["word"].tolist() == ["b"]
+    # A boolean is spelt as R spells it, so a design quoting 'TRUE' selects the
+    # same rows in both engines.
+    assert build_pool(df, {"flag": ["TRUE"]})["word"].tolist() == ["a", "c", "d"]

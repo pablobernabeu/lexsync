@@ -145,3 +145,45 @@ test_that("balance_check detects imbalance", {
   expect_length(balance_check(balanced, "condition"), 0)
   expect_length(balance_check(unbalanced, "condition"), 1)
 })
+
+# The message reaches the run log, so the two engines must word it alike. Byte
+# order is the one ordering neither table() nor pandas' value_counts reaches on
+# its own; test_validation.py pins the same sentence.
+test_that("balance_check names the levels in byte order", {
+  df <- data.frame(condition = c("low", "high", "high", "high", "mid", "mid"),
+                   stringsAsFactors = FALSE)
+  expect_identical(balance_check(df, "condition"),
+                   "Column 'condition' is unbalanced: high=3, low=1, mid=2")
+})
+
+named_stim <- function() {
+  data.frame(word = letters[1:4], condition = c("hi", "hi", "lo", "lo"),
+             frequency = c(1, 2, 3, 4), stringsAsFactors = FALSE)
+}
+
+test_that("a dimension the stimuli do not have is refused", {
+  # A misspelt dimension used to give a full table of NAs, with a Cohen's d of zero
+  # beside it, and a bare KeyError in the Python engine. Mirrored in
+  # test_validation.py.
+  stim <- named_stim()
+  msg <- "lexsync: cannot report on dimension(s) the stimuli do not have: 'frequncy'."
+  expect_error(describe_stimuli(stim, "frequncy"), msg, fixed = TRUE)
+  expect_error(match_report(stim, "frequncy", list()), msg, fixed = TRUE)
+  expect_error(match_report_continuous(stim, "frequncy", character(0), list()),
+               msg, fixed = TRUE)
+  # Offenders are named in byte order, as balance_lists names them.
+  expect_error(match_report(stim, c("zz", "aa"), list()),
+               "do not have: 'aa', 'zz'.", fixed = TRUE)
+})
+
+test_that("a grouping column the stimuli do not have is refused", {
+  stim <- named_stim()
+  expect_error(describe_stimuli(stim, "frequency", by = "cond"),
+               "lexsync: cannot group the stimuli by column 'cond', which they do not have.",
+               fixed = TRUE)
+  names(stim)[2] <- "cond"
+  msg <- "lexsync: cannot group the stimuli by column 'condition', which they do not have."
+  expect_error(match_report(stim, "frequency", list()), msg, fixed = TRUE)
+  expect_error(match_report_continuous(stim, "frequency", character(0), list()),
+               msg, fixed = TRUE)
+})

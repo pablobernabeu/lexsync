@@ -1,8 +1,8 @@
-{"time":"2026-08-07 22:49:43.445542","message":"loading items 'items/categorisation_en.csv'","data":null}
-{"time":"2026-08-07 22:49:43.475057","message":"loaded 16 items across 2 conditions","data":{"conditions":"narrow, broad"}}
-{"time":"2026-08-07 22:49:43.514391","message":"wrote 'en_categorisation_english_stimuli_R.csv'","data":{"path":"output/stimuli/en_categorisation_english_stimuli_R.csv","rows":32,"md5":"5875c5e4de8add0e2689720265c9b9e5"}}
-{"time":"2026-08-07 22:49:43.599445","message":"wrote 'en_categorisation_english_psychopy.py'","data":{"path":"output/experiments/en_categorisation_english_psychopy.py","rows":"NA","md5":"d2377a0514a100f4e4a0b7fd90d4b16c"}}
-{"time":"2026-08-07 22:49:43.608584","message":"wrote 'en_categorisation_english.osexp'","data":{"path":"output/experiments/en_categorisation_english.osexp","rows":"NA","md5":"b0e35559349ec27f561db4b45a393f78"}}
-{"time":"2026-08-07 22:49:43.617294","message":"wrote 'en_categorisation_english.html'","data":{"path":"output/experiments/en_categorisation_english.html","rows":"NA","md5":"7a2dd54a052356cb29aa4c0e206e6453"}}
-{"time":"2026-08-07 22:49:43.714794","message":"wrote 'en_categorisation_english_datasheet_R.json'","data":{"path":"output/reports/en_categorisation_english_datasheet_R.json","rows":"NA","md5":"6a8d00ed457dc03a270d8109d64012b5"}}
-{"time":"2026-08-07 22:49:43.724826","message":"wrote 'en_categorisation_english_datasheet_R.md'","data":{"path":"output/reports/en_categorisation_english_datasheet_R.md","rows":"NA","md5":"7011169527a3ca66b70af09a5b0a73ea"}}
+{"time":"2026-09-02 19:24:54.423421","message":"loading items 'items/categorisation_en.csv'","data":null}
+{"time":"2026-09-02 19:24:54.477591","message":"loaded 16 items across 2 conditions","data":{"conditions":"narrow, broad"}}
+{"time":"2026-09-02 19:24:54.503187","message":"wrote 'en_categorisation_english_stimuli_R.csv'","data":{"path":"output/stimuli/en_categorisation_english_stimuli_R.csv","rows":32,"md5":"5875c5e4de8add0e2689720265c9b9e5"}}
+{"time":"2026-09-02 19:24:54.514738","message":"wrote 'en_categorisation_english_psychopy.py'","data":{"path":"output/experiments/en_categorisation_english_psychopy.py","rows":"NA","md5":"7235c468ddb4606e229954919f2906f4"}}
+{"time":"2026-09-02 19:24:54.514977","message":"wrote 'en_categorisation_english.osexp'","data":{"path":"output/experiments/en_categorisation_english.osexp","rows":"NA","md5":"c8490e604320395ff34d201d71b572cd"}}
+{"time":"2026-09-02 19:24:54.515073","message":"wrote 'en_categorisation_english.html'","data":{"path":"output/experiments/en_categorisation_english.html","rows":"NA","md5":"8cc2f57808013ac06f2715c49857884f"}}
+{"time":"2026-09-02 19:24:54.520325","message":"wrote 'en_categorisation_english_datasheet_R.json'","data":{"path":"output/reports/en_categorisation_english_datasheet_R.json","rows":"NA","md5":"686100ddb642de6549b96c0d470b1879"}}
+{"time":"2026-09-02 19:24:54.52051","message":"wrote 'en_categorisation_english_datasheet_R.md'","data":{"path":"output/reports/en_categorisation_english_datasheet_R.md","rows":"NA","md5":"959f8766b4b7fdb224ac2da2a7ec1a6b"}}

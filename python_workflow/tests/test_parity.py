@@ -6,6 +6,7 @@ reference under output/stimuli/. Skips gracefully if the R reference is absent
 LEXSYNC_REQUIRE_PARITY=1 to turn those skips into failures, so a job that was
 meant to run both engines cannot pass by quietly skipping.
 """
+import glob
 import os
 
 import pandas as pd
@@ -150,6 +151,22 @@ def test_r_python_parity(base, design, cols, tmp_path):
         differs = (a.astype(str) != b.astype(str)).fillna(True).to_numpy()
         n_bad = int((differs & ~both_missing).sum())
         assert n_bad == 0, f"{base}: column '{c}' differs across engines in {n_bad}/{len(m)} rows"
+
+
+def test_every_shipped_design_has_a_parity_case():
+    """CASES is written by hand, so a design added to config/ without a case here
+    would have no cross-engine coverage in this suite and a local run would stay
+    green. test_byte_parity.py guards its own sweep the same way."""
+    configs = sorted(os.path.basename(p)
+                     for p in glob.glob(os.path.join(REPO, "config", "design_*.yaml")))
+    if not configs:
+        if REQUIRE_PARITY:
+            pytest.fail("repository design configs missing; the parity job cannot run")
+        pytest.skip("repository design configs not present")
+    covered = {os.path.basename(design) for _base, design, _cols in CASES}
+    assert sorted(set(configs) - covered) == [], (
+        "these shipped designs are compared across the engines by nothing in this "
+        "suite: %s" % ", ".join(sorted(set(configs) - covered)))
 
 
 def test_events_json_is_serialised_as_jsonlite_would():

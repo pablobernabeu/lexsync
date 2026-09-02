@@ -137,8 +137,8 @@ equivalence:
   alpha: 0.05
 
 # ---- Hardware triggers (defaults; overridable per design) -----------------
-# Triggers are reset to 0 after reset_after_frames; the reset value is fixed in
-# the emitted PsychoPy and OpenSesame code (scripting.py / scripting.R).
+# Triggers are held for trigger_hold_ms and then reset to 0; the reset value is
+# fixed in the emitted PsychoPy and OpenSesame code (scripting.py / scripting.R).
 triggers:
   parallel_address: '0x0378'   # typical LPT1 base address
   # How long the onset code is held before it is reset to 0, in milliseconds.

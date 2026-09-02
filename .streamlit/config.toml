@@ -1,0 +1,8 @@
+# The lexsync accent, taken from the documentation site
+# (R_workflow/pkgdown/extra.scss). Streamlit reads this file when the app is
+# launched from the repository root, which is how apps/README.md runs it. Only
+# the accent is set, so the page follows the viewer's own light or dark setting;
+# the Shiny twin likewise overrides primary and link-color and leaves cosmo's
+# base alone (apps/r_shiny/app.R).
+[theme]
+primaryColor = "#7C4EA3"

@@ -6,12 +6,12 @@
 
 - **Paradigm:** factorial  |  **Item source:** corpus
 - **Description:** High versus low frequency English words in three disjoint matched item sets (items as a random factor).
-- **Materials source:** `corpora/derived/en.csv` (sha256 `c20549b920d81680...`)
+- **Materials source:** `corpora/derived/en.csv` (sha256 `575833489e04d6a4...`)
 - **Selection:** standardised_euclidean
 - **Cross-engine determinism:** byte-identical
 - **Counterbalancing:** factorial, 1 list(s)
 - **Items:** 240 rows across 2 conditions (low_frequency, high_frequency)
-- **Seed:** 2026  |  **Versions:** engine R, lexsync 0.1.0, R 4.6.1, readr 2.2.0, stringdist 0.9.17, jsonlite 2.0.0, digest 0.6.39, yaml 2.3.12, stringi 1.8.7, os Windows x86-64
+- **Seed:** 2026  |  **Versions:** engine R, lexsync 0.1.0, R 4.3.3, readr 2.1.5, stringdist 0.9.12, jsonlite 1.8.8, digest 0.6.34, yaml 2.3.8, stringi 1.8.3, os Linux x86_64
 
 ## Selection transparency
 
@@ -22,10 +22,10 @@
 
 | Dimension | Role | Cohen's d | 90% CI | Var ratio | TOST p | Equivalent |
 |---|---|---|---|---|---|---|
-| length | controlled | 0.04 | [-0.17, 0.26] | 0.86 | 2e-04 | TRUE |
-| frequency | manipulated/free | 5.38 | [5.17, 5.59] | 0.58 | 1 | FALSE |
-| n_density | controlled | 0.03 | [-0.18, 0.24] | 0.86 | 2e-04 | TRUE |
-| old20 | controlled | 0.02 | [-0.20, 0.23] | 0.90 | 1e-04 | TRUE |
+| length | controlled | 0.04 | [-0.17, 0.26] | 0.86 | 0.0002 | TRUE |
+| frequency | manipulated/free | 5.38 | [5.17, 5.60] | 0.59 | 1 | FALSE |
+| n_density | controlled | 0.03 | [-0.18, 0.25] | 0.87 | 0.0002 | TRUE |
+| old20 | controlled | 0.02 | [-0.20, 0.23] | 0.90 | 0.0001 | TRUE |
 
 ## Suggested analysis
 

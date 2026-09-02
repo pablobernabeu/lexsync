@@ -1,4 +1,4 @@
-# Materials datasheet — en_richdim (english)
+# Materials datasheet -- en_richdim (english)
 
 *lexsync datasheet v1.1; python engine.*
 
@@ -6,12 +6,12 @@
 
 - **Paradigm:** factorial  |  **Item source:** corpus
 - **Description:** High versus low frequency English words, matched on length, syllable count and bigram frequency (a phonotactic-probability proxy).
-- **Materials source:** `corpora/derived/en.csv` (sha256 `c20549b920d81680…`)
+- **Materials source:** `corpora/derived/en.csv` (sha256 `575833489e04d6a4...`)
 - **Selection:** standardised_euclidean
 - **Cross-engine determinism:** byte-identical
 - **Counterbalancing:** factorial, 1 list(s)
 - **Items:** 120 rows across 2 conditions (low_frequency, high_frequency)
-- **Seed:** 2026  |  **Versions:** engine python, lexsync 0.1.0, python 3.13.7, pandas 2.3.2, numpy 2.3.2, scipy 1.17.1, rapidfuzz 3.14.5, pyyaml 6.0.3, os Windows AMD64
+- **Seed:** 2026  |  **Versions:** engine python, lexsync 0.1.0, python 3.11.15, pandas 2.3.3, numpy 2.4.6, scipy 1.17.1, rapidfuzz 3.14.6, pyyaml 6.0.3, os Linux x86_64
 
 ## Selection transparency
 
@@ -22,16 +22,16 @@
 
 | Dimension | Role | Cohen's d | 90% CI | Var ratio | TOST p | Equivalent |
 |---|---|---|---|---|---|---|
-| length | controlled | 0.01 | [-0.29, 0.32] | 0.94 | 0.0045 | True |
-| frequency | manipulated/free | 5.57 | [5.27, 5.88] | 0.58 | 1.0 | False |
-| n_density | manipulated/free | 0.08 | [-0.23, 0.38] | 0.72 | 0.011 | True |
-| old20 | manipulated/free | 0.08 | [-0.22, 0.38] | 0.40 | 0.0113 | True |
-| n_syllables | controlled | 0.17 | [-0.13, 0.48] | 0.58 | 0.0383 | True |
-| bigram_freq | controlled | 0.01 | [-0.29, 0.31] | 0.96 | 0.0041 | True |
+| length | controlled | 0.02 | [-0.29, 0.32] | 0.94 | 0.0045 | TRUE |
+| frequency | manipulated/free | 5.57 | [5.27, 5.88] | 0.58 | 1 | FALSE |
+| n_density | manipulated/free | 0.08 | [-0.23, 0.38] | 0.72 | 0.011 | TRUE |
+| old20 | manipulated/free | 0.08 | [-0.22, 0.38] | 0.40 | 0.0113 | TRUE |
+| n_syllables | controlled | 0.17 | [-0.13, 0.48] | 0.59 | 0.0383 | TRUE |
+| bigram_freq | controlled | 0.01 | [-0.29, 0.31] | 0.96 | 0.0041 | TRUE |
 
 ## Suggested analysis
 
-- **Model:** `response ~ condition + (1 + condition | subject) + (1 | item)` — where the response is the trial outcome (e.g. reaction time or accuracy).
+- **Model:** `response ~ condition + (1 + condition | subject) + (1 | item)` -- where the response is the trial outcome (e.g. reaction time or accuracy).
 - Crossed random effects for subjects and items guard against the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). Begin with this maximal structure (Barr et al., 2013) and reduce it if the model does not converge (Matuschek et al., 2017). The formula is lme4 syntax, for lme4 in R or pymer4 in Python; statsmodels MixedLM cannot take it directly and needs the random effects restated in its own arguments. The equivalence tests in the realised control are post-selection diagnostics on deterministically selected items, not inferential tests over a sample.
 
 ## Methods paragraph

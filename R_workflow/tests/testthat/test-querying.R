@@ -283,3 +283,32 @@ test_that("build_pool keeps a degenerate range", {
   df <- data.frame(word = letters[1:5], frequency = 1:5, stringsAsFactors = FALSE)
   expect_identical(build_pool(df, list(frequency = c(2, 2)))$word, "b")
 })
+
+banded <- function() {
+  # One missing value promotes an integer-valued column to double, which is
+  # routine on a joined norm table.
+  data.frame(word = letters[1:4], band = c(1, 2, 3, NA),
+             flag = c(TRUE, FALSE, TRUE, TRUE), stringsAsFactors = FALSE)
+}
+
+# Pins the same contract as
+# test_build_pool_matches_a_numeric_value_filter_on_a_float_column in the Python
+# engine's test_querying.py, where an integer literal used to match nothing on a
+# double column.
+test_that("build_pool matches a numeric filter numerically", {
+  df <- banded()
+  expect_identical(build_pool(df, list(band = list(1L, 2L, 3L)))$word, c("a", "b", "c"))
+  expect_identical(build_pool(df, list(band = list(2L)))$word, "b")
+  expect_identical(build_pool(df, list(band = 2))$word, "b")
+  expect_identical(build_pool(df, list(band = list(1, 2, 3)))$word, c("a", "b", "c"))
+})
+
+# Pins the same contract as
+# test_build_pool_takes_a_boolean_filter_as_permitted_values in the Python
+# engine's test_querying.py, where the pair used to be read as a range.
+test_that("build_pool takes a boolean pair as permitted values", {
+  df <- banded()
+  expect_identical(build_pool(df, list(flag = list(TRUE, FALSE)))$word, letters[1:4])
+  expect_identical(build_pool(df, list(flag = list(FALSE)))$word, "b")
+  expect_identical(build_pool(df, list(flag = list("TRUE")))$word, c("a", "c", "d"))
+})

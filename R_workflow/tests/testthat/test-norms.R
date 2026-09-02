@@ -148,6 +148,17 @@ test_that("the pipeline matches on a norm column and records it", {
   expect_false(any(is.na(stim$concreteness)))
   expect_true(all(stim$concreteness >= 2.0 & stim$concreteness <= 5.0))
 
+  # The selection itself, pinned to the same literals in test_norms.py. No shipped
+  # design carries a `norms:` block, so a design that joins one is reached by neither
+  # the cross-engine artefact diff nor the byte-parity sweep, and a divergence in how
+  # the two engines match over a joined column would show up nowhere. Pinning one
+  # fixture's outcome in both suites is what fails if it ever does.
+  expect_identical(stim$word, c("car", "cap", "map", "dog", "hag", "cot"))
+  expect_identical(stim$condition, c("low", "low", "high", "low", "high", "high"))
+  expect_equal(stim$set, c(1, 2, 3, 3, 2, 1))
+  expect_equal(stim$trial, c(1, 2, 3, 4, 5, 6))
+  expect_equal(stim$concreteness, c(4, 5, 5, 3, 5, 4))
+
   ds <- jsonlite::fromJSON(file.path(outdir, "reports", "normtest_english_datasheet_R.json"),
                            simplifyVector = FALSE)
   recorded <- ds$materials_source$norms

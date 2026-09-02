@@ -247,6 +247,31 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
     ``neighbourhood_reference`` (optional) records the lexicon the neighbourhood
     dimensions were computed against (``{"source", "n_words", "sha256"}``),
     verbatim.
+
+    Args:
+        design: A parsed design configuration.
+        schema: The parsed global schema (``schema.yaml``).
+        report: The report from :func:`match_report` or
+            :func:`match_report_continuous`, or ``None`` when none was produced.
+        stimuli: The selected stimulus data frame.
+        source_path: Path of the lexicon or item table the stimuli came from.
+        artifacts: The artefact paths written for the design (stimuli,
+            descriptives, comparisons, experiments).
+        seed: The integer seed recorded for the counterbalanced trial order.
+        engine: Engine label recorded in the record.
+        candidate_pool: Optional per-condition candidate-pool sizes, as above.
+        norms: Optional norm-table provenance records, as above.
+        balance: Optional balance-optimiser report, as above.
+        blocks: Optional practice and filler block report. Recorded because
+            those trials are presented but not analysed, so the presented and
+            analysed counts differ and the record must say why.
+        design_path: Optional path of the design file, as above.
+        schema_path: Optional path of the schema file, as above.
+        selection_audit: Optional matcher audit record, as above.
+        neighbourhood_reference: Optional neighbourhood reference, as above.
+
+    Returns:
+        The datasheet as a nested dictionary, ready for :func:`write_datasheet`.
     """
     source = (design.get("items") or {}).get("source", "corpus")
     is_continuous = _is_continuous(design)
@@ -454,6 +479,28 @@ def _bool(v):
     return None if v is None or (isinstance(v, float) and v != v) else bool(v)
 
 
+def _fixed(v, dp: int) -> str:
+    """A stored value at `dp` decimal places, identically in both engines.
+
+    A bare "%.2f" leaves the half-way case to the C library, and the two runtimes
+    disagree there: the stored ci_low of -0.465 printed as -0.46 from R on Windows
+    and -0.47 from Python, so one design's datasheet differed between the engines on
+    a number a reader would quote. Rounding with the package's own half-away-from-zero
+    rounder first moves the value off the boundary, so the format that follows has
+    nothing left to decide. Mirrors .fixed in datasheet.R.
+    """
+    return "%.*f" % (dp, _round_dp(v, dp))
+
+
+def _tost_p(v) -> str:
+    """The TOST p as both engines render it.
+
+    "%g", not R's as.character or Python's str: those write 9e-04 and 0.0009 for the
+    same stored double. Mirrors .tost_p in datasheet.R.
+    """
+    return "--" if v is None else "%g" % v
+
+
 def _norms_note(ds: dict) -> str:
     """The norm tables named in the Methods prose.
 
@@ -470,10 +517,20 @@ def _norms_note(ds: dict) -> str:
 
 
 def methods_paragraph(ds: dict) -> str:
+    """A ready-to-adapt methods paragraph rendered from a datasheet.
+
+    Args:
+        ds: A datasheet, from :func:`build_datasheet`.
+
+    Returns:
+        A single string describing the materials procedure.
+    """
     d = ds["design"]
     src = ds["materials_source"]["type"]
     n = d["n_per_condition"]
-    lang = d["language"].capitalize()
+    # Not str.capitalize(), which also lower-cases the rest and would rewrite a
+    # label such as 'British English'. Mirrors the R twin's substring form.
+    lang = d["language"][:1].upper() + d["language"][1:]
     sel = ds.get("selection") or {}
     # What was selected. A pair design's unit is the pair, and its `n_per_condition`
     # counts pairs, so calling them "items" would misreport the size of the materials
@@ -487,10 +544,10 @@ def methods_paragraph(ds: dict) -> str:
         span = next((r.get("predictor_span") for r in rc if r.get("predictor_span") is not None), None)
         rs = [abs(r["pearson_r"]) for r in rc
               if r.get("pearson_r") is not None and r["pearson_r"] == r["pearson_r"]]
-        span_str = f" (a span of {span:.2f})" if span is not None else ""
-        # Report |r| at 3 dp (its stored precision) so the text is identical across
-        # engines; a 2-dp format of, say, 0.165 rounds to 0.17 in Python and 0.16 in R.
-        corr_str = (f", and the largest predictor-control correlation was |r| = {max(rs):.3f}"
+        span_str = f" (a span of {_fixed(span, 2)})" if span is not None else ""
+        # |r| at 3 dp: enough to compare correlations, and _fixed keeps the choice at
+        # the half-way point away from the C library, which the two engines disagree on.
+        corr_str = (f", and the largest predictor-control correlation was |r| = {_fixed(max(rs), 3)}"
                     if rs else "")
         cb = ds["counterbalancing"]
         recipe_label = {"latin_square_target": "a Latin-square rotation",
@@ -537,8 +594,9 @@ def methods_paragraph(ds: dict) -> str:
         if all_equivalent and defined:
             worst = max(defined, key=lambda r: abs(r["cohens_d"]))
             control = (f". The realised control was close. The largest standardised difference on "
-                       f"any matched dimension was {worst['cohens_d']:.2f} "
-                       f"(90% CI [{worst['ci_low']:.2f}, {worst['ci_high']:.2f}]), within the "
+                       f"any matched dimension was {_fixed(worst['cohens_d'], 2)} "
+                       f"(90% CI [{_fixed(worst['ci_low'], 2)}, "
+                       f"{_fixed(worst['ci_high'], 2)}]), within the "
                        f"{ds['equivalence']['bound_d']}-SD equivalence bound")
         else:
             control = (". Equivalence was not confirmed on every matched dimension; "
@@ -604,14 +662,14 @@ def prereg_template(ds: dict) -> str:
 
 def render_datasheet_md(ds: dict) -> str:
     d = ds["design"]
-    lines = [f"# Materials datasheet — {d['name']} ({d['language']})", "",
+    lines = [f"# Materials datasheet -- {d['name']} ({d['language']})", "",
              f"*lexsync datasheet v{ds['lexsync_datasheet_version']}; "
              f"{ds['reproducibility']['versions']['engine']} engine.*", "",
              "## Provenance", "",
              f"- **Paradigm:** {d['paradigm']}  |  **Item source:** {d['source']}",
              f"- **Description:** {d.get('description') or '--'}",
              f"- **Materials source:** `{ds['materials_source']['path']}` "
-             f"(sha256 `{(ds['materials_source']['sha256'] or '')[:16]}…`)"]
+             f"(sha256 `{(ds['materials_source']['sha256'] or '')[:16]}...`)"]
     # Where a supplied pool's matched values came from. Without this the record names
     # only the word list, and the numbers every control rests on have no stated origin.
     # Appended here rather than inserted at an index, so the position stays right if a
@@ -620,7 +678,7 @@ def render_datasheet_md(ds: dict) -> str:
     if dim_from:
         dim_sha = (ds.get("materials_source") or {}).get("dimensions_sha256")
         lines.append("- **Dimensions from:** `%s`%s"
-                     % (dim_from, "" if not dim_sha else " (sha256 `%s…`)" % dim_sha[:16]))
+                     % (dim_from, "" if not dim_sha else " (sha256 `%s...`)" % dim_sha[:16]))
     lines += [
         f"- **Selection:** {ds['selection']['method']}",
         f"- **Cross-engine determinism:** {ds['selection'].get('cross_engine', 'byte-identical')}",
@@ -642,7 +700,7 @@ def render_datasheet_md(ds: dict) -> str:
             for cl in t["columns"]:
                 lines.append(f"| `{t['path']}` | {t['on']} | {cl['column']} | "
                              f"{cl['n_matched']} / {cl['n_total']} | "
-                             f"`{(t.get('sha256') or '')[:16]}…` |")
+                             f"`{(t.get('sha256') or '')[:16]}...` |")
         lines.append("")
     # Balance-aware list assignment. Reported because it decides which items each
     # participant sees, and the before/after costs are what make the claim checkable
@@ -668,7 +726,7 @@ def render_datasheet_md(ds: dict) -> str:
                   f"- **Members:** {', '.join(rel['members'])}  |  "
                   f"**Pairs:** {rel['n_pairs']}",
                   f"- **Member lexicon:** `{rel['member_lexicon']}` "
-                  f"(sha256 `{(rel.get('member_lexicon_sha256') or '')[:16]}…`)",
+                  f"(sha256 `{(rel.get('member_lexicon_sha256') or '')[:16]}...`)",
                   "- **Member-level dimensions** (one word): "
                   + ", ".join(rel["member_dimensions"]),
                   "- **Relational dimensions** (the pair): "
@@ -692,8 +750,8 @@ def render_datasheet_md(ds: dict) -> str:
                   "|---|---|---|---|"]
         for r in ds["realised_control"]:
             # "--", not an em dash: the R renderer's placeholder, kept identical.
-            rr = "--" if r.get("pearson_r") is None else f"{r['pearson_r']:.3f}"
-            sp = "--" if r.get("predictor_span") is None else f"{r['predictor_span']:.3f}"
+            rr = "--" if r.get("pearson_r") is None else _fixed(r["pearson_r"], 3)
+            sp = "--" if r.get("predictor_span") is None else _fixed(r["predictor_span"], 3)
             lines.append(f"| {r['dimension']} | {r['role']} | {rr} | {sp} |")
         lines.append("")
     elif ds["realised_control"]:
@@ -703,17 +761,20 @@ def render_datasheet_md(ds: dict) -> str:
         for r in ds["realised_control"]:
             # "--", not an em dash: the R renderer's placeholder, kept identical.
             # An undefined d (unequal constants) reaches every one of these cells.
-            ci = (f"[{r['ci_low']:.2f}, {r['ci_high']:.2f}]"
+            ci = (f"[{_fixed(r['ci_low'], 2)}, {_fixed(r['ci_high'], 2)}]"
                   if r["ci_low"] is not None else "--")
-            d_str = "--" if r["cohens_d"] is None else f"{r['cohens_d']:.2f}"
-            vr = "--" if r.get("var_ratio") is None else f"{r['var_ratio']:.2f}"
+            d_str = "--" if r["cohens_d"] is None else _fixed(r["cohens_d"], 2)
+            vr = "--" if r.get("var_ratio") is None else _fixed(r["var_ratio"], 2)
+            # "TRUE"/"FALSE", not Python's True/False: the R renderer's spelling, and
+            # the one the stimuli CSVs already use.
+            eq = "--" if r.get("equivalent") is None else ("TRUE" if r["equivalent"] else "FALSE")
             lines.append(f"| {r['dimension']} | {r['role']} | {d_str} | {ci} | {vr} | "
-                         f"{r['tost_p']} | {r['equivalent']} |")
+                         f"{_tost_p(r.get('tost_p'))} | {eq} |")
         lines.append("")
     a = ds.get("analysis")
     if a:
         lines += ["## Suggested analysis", "",
-                  f"- **Model:** `{a['suggested_model']}` — where the response is "
+                  f"- **Model:** `{a['suggested_model']}` -- where the response is "
                   f"{a['response']}.",
                   f"- {a['note']}", ""]
     lines += ["## Methods paragraph", "", methods_paragraph(ds), "", prereg_template(ds)]
@@ -744,6 +805,16 @@ def _at_15_significant_digits(o):
 
 
 def write_datasheet(ds: dict, json_path: str, md_path: str) -> tuple:
+    """Write a datasheet to a JSON record and a Markdown rendering.
+
+    Args:
+        ds: A datasheet, from :func:`build_datasheet`.
+        json_path: Output path for the machine-readable JSON record.
+        md_path: Output path for the human-readable Markdown rendering.
+
+    Returns:
+        The two paths written.
+    """
     import os
     os.makedirs(os.path.dirname(json_path) or ".", exist_ok=True)
     with open(json_path, "w", encoding="utf-8", newline="\n") as handle:

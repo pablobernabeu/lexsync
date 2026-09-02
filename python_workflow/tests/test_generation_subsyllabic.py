@@ -45,5 +45,10 @@ def test_generate_subsyllabic_legal_nonword_length_preserved(schema, en_lexicon_
 def test_build_lexdec_unknown_method_raises(schema, en_lexicon_path):
     lex = load_lexicon(en_lexicon_path, schema, "english")
     pool = build_pool(lex, {"length": [4, 6]})
-    with pytest.raises(ValueError, match="unknown pseudoword generation method"):
+    with pytest.raises(ValueError) as excinfo:
         build_lexdec_stimuli(pool, 10, reference_words=lex["word"].tolist(), method="invalid")
+    # The set is named, as every other 'unknown X' message in the package names it;
+    # test-generation-subsyllabic.R pins the same sentence.
+    assert str(excinfo.value) == ("lexsync: unknown pseudoword generation method "
+                                  "'invalid'. Known methods: letter_substitution, "
+                                  "subsyllabic.")

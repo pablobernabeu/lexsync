@@ -28,6 +28,10 @@ test_that("build_lexdec_stimuli rejects an unknown generation method", {
   schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
   lex <- load_lexicon(system.file("extdata", "en_example.csv", package = "lexsync"), schema, "english")
   pool <- build_pool(lex, list(length = c(4, 6)))
+  # The set is named, as every other 'unknown X' message in the package names it;
+  # test_generation_subsyllabic.py pins the same sentence.
   expect_error(build_lexdec_stimuli(pool, 10L, reference_words = lex$word, method = "invalid"),
-               "unknown pseudoword generation method")
+               paste("lexsync: unknown pseudoword generation method 'invalid'.",
+                     "Known methods: letter_substitution, subsyllabic."),
+               fixed = TRUE)
 })

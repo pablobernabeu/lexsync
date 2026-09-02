@@ -6,12 +6,12 @@
 
 - **Paradigm:** factorial  |  **Item source:** corpus
 - **Description:** High versus low frequency Spanish words, matched on length, neighbourhood density and OLD20.
-- **Materials source:** `corpora/derived/es.csv` (sha256 `02732e5f00d09951...`)
+- **Materials source:** `corpora/derived/es.csv` (sha256 `e9f93013c16ec974...`)
 - **Selection:** standardised_euclidean
 - **Cross-engine determinism:** byte-identical
 - **Counterbalancing:** factorial, 1 list(s)
 - **Items:** 160 rows across 2 conditions (low_frequency, high_frequency)
-- **Seed:** 2026  |  **Versions:** engine R, lexsync 0.1.0, R 4.6.1, readr 2.2.0, stringdist 0.9.17, jsonlite 2.0.0, digest 0.6.39, yaml 2.3.12, stringi 1.8.7, os Windows x86-64
+- **Seed:** 2026  |  **Versions:** engine R, lexsync 0.1.0, R 4.3.3, readr 2.1.5, stringdist 0.9.12, jsonlite 1.8.8, digest 0.6.34, yaml 2.3.8, stringi 1.8.3, os Linux x86_64
 
 ## Selection transparency
 

@@ -11,7 +11,7 @@
   "materials_source": {
     "type": "corpus",
     "path": "corpora/derived/en.csv",
-    "sha256": "c20549b920d816809d11cfa673ad0df1dd70d3e73176ee66cbec18021627f65d",
+    "sha256": "575833489e04d6a4001fda56a56e3daa383811dece1f819c44060ee79ca56976",
     "provenance": "wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md"
   },
   "dimensions": {
@@ -156,17 +156,17 @@
     "versions": {
       "engine": "R",
       "lexsync": "0.1.0",
-      "R": "4.6.1",
-      "readr": "2.2.0",
-      "stringdist": "0.9.17",
-      "jsonlite": "2.0.0",
-      "digest": "0.6.39",
-      "yaml": "2.3.12",
-      "stringi": "1.8.7",
-      "os": "Windows x86-64"
+      "R": "4.3.3",
+      "readr": "2.1.5",
+      "stringdist": "0.9.12",
+      "jsonlite": "1.8.8",
+      "digest": "0.6.34",
+      "yaml": "2.3.8",
+      "stringi": "1.8.3",
+      "os": "Linux x86_64"
     },
     "design_sha256": "3b871bdbff36cccc407b9a0feef29bddd5db66fdc30f9061475337a17a4c5aa7",
-    "schema_sha256": "483a9cec49314b9479fe656ad39840083a551f2e4313ca164efe3e9c064fb255"
+    "schema_sha256": "bc66a5fd3a65b0f93271d18958f18ae7037f00f7a21ae6380632c55de49e7ca0"
   },
   "artifacts": [
     {
@@ -183,15 +183,15 @@
     },
     {
       "file": "output/experiments/en_balanced_lists_english_psychopy.py",
-      "sha256": "f958ab8c6bc0cfade2d9d67d32beec0fedd5cb0d5b056597c59da4b6e57c885b"
+      "sha256": "55a4faa2cba9b23857e7353b971773aee529abeb89e3ff5ed93924777d6637f3"
     },
     {
       "file": "output/experiments/en_balanced_lists_english.osexp",
-      "sha256": "26244292841dfa091b4609b424cc2dae56b00626abe36802562a9041fc8afffa"
+      "sha256": "ffe7a2a0392410e222853df8ab3a3f7fdfe1a2104b2887f0c22eec65905b7a21"
     },
     {
       "file": "output/experiments/en_balanced_lists_english.html",
-      "sha256": "d1790bb061cc9d5327786f66124bd3670d5ba777504d5d4ec42220b2dc4a6ac0"
+      "sha256": "6082040ccde17cb3fbe4406b827251483ec37418afa1e26b855f0dd0a9b67343"
     }
   ]
 }

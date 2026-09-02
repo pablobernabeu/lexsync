@@ -1,4 +1,4 @@
-# Materials datasheet — es_freqcontrast (spanish)
+# Materials datasheet -- es_freqcontrast (spanish)
 
 *lexsync datasheet v1.1; python engine.*
 
@@ -6,12 +6,12 @@
 
 - **Paradigm:** factorial  |  **Item source:** corpus
 - **Description:** High versus low frequency Spanish words, matched on length, neighbourhood density and OLD20.
-- **Materials source:** `corpora/derived/es.csv` (sha256 `02732e5f00d09951…`)
+- **Materials source:** `corpora/derived/es.csv` (sha256 `e9f93013c16ec974...`)
 - **Selection:** standardised_euclidean
 - **Cross-engine determinism:** byte-identical
 - **Counterbalancing:** factorial, 1 list(s)
 - **Items:** 160 rows across 2 conditions (low_frequency, high_frequency)
-- **Seed:** 2026  |  **Versions:** engine python, lexsync 0.1.0, python 3.13.7, pandas 2.3.2, numpy 2.3.2, scipy 1.17.1, rapidfuzz 3.14.5, pyyaml 6.0.3, os Windows AMD64
+- **Seed:** 2026  |  **Versions:** engine python, lexsync 0.1.0, python 3.11.15, pandas 2.3.3, numpy 2.4.6, scipy 1.17.1, rapidfuzz 3.14.6, pyyaml 6.0.3, os Linux x86_64
 
 ## Selection transparency
 
@@ -22,14 +22,14 @@
 
 | Dimension | Role | Cohen's d | 90% CI | Var ratio | TOST p | Equivalent |
 |---|---|---|---|---|---|---|
-| length | controlled | 0.05 | [-0.21, 0.31] | 0.83 | 0.0024 | True |
-| frequency | manipulated/free | 5.55 | [5.29, 5.81] | 0.30 | 1.0 | False |
-| n_density | controlled | 0.08 | [-0.18, 0.34] | 0.61 | 0.0041 | True |
-| old20 | controlled | 0.01 | [-0.26, 0.27] | 0.96 | 0.0011 | True |
+| length | controlled | 0.05 | [-0.21, 0.31] | 0.83 | 0.0024 | TRUE |
+| frequency | manipulated/free | 5.55 | [5.29, 5.81] | 0.30 | 1 | FALSE |
+| n_density | controlled | 0.08 | [-0.18, 0.34] | 0.61 | 0.0041 | TRUE |
+| old20 | controlled | 0.01 | [-0.26, 0.27] | 0.96 | 0.0011 | TRUE |
 
 ## Suggested analysis
 
-- **Model:** `response ~ condition + (1 + condition | subject) + (1 | item)` — where the response is the trial outcome (e.g. reaction time or accuracy).
+- **Model:** `response ~ condition + (1 + condition | subject) + (1 | item)` -- where the response is the trial outcome (e.g. reaction time or accuracy).
 - Crossed random effects for subjects and items guard against the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). Begin with this maximal structure (Barr et al., 2013) and reduce it if the model does not converge (Matuschek et al., 2017). The formula is lme4 syntax, for lme4 in R or pymer4 in Python; statsmodels MixedLM cannot take it directly and needs the random effects restated in its own arguments. The equivalence tests in the realised control are post-selection diagnostics on deterministically selected items, not inferential tests over a sample.
 
 ## Methods paragraph

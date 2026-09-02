@@ -152,6 +152,12 @@ wordfreq connector is pinned to its frozen 3.x line, a stable snapshot of usage 
 corpus from a URL that changes and lexsync cannot help you. The datasheet's SHA-256 of the
 source file will at least tell you that it changed.
 
+That connector is also where the two engines' surfaces differ. `fetch_corpus` takes the same
+arguments on both sides, `name`, `registry_path` and `dest`, and additionally an `n_words` cap in
+Python, which sizes a wordfreq-derived lexicon and has nothing to size in R. The cap does not reach
+the cached file name, so fetching a language again replaces what is there whatever size either call
+asked for.
+
 ## How it is tested
 
 The claim is checked, not merely stated. `tests/test_parity.py` carries 21 cases, one per
@@ -176,9 +182,11 @@ parity suite, because otherwise the gate would only ever compare Python against 
 Python itself had just rewritten. And a final step runs each engine over every design into a
 directory of its own and compares the two trees with `diff -r`, because both engines write the
 generated experiments to the same paths, so a diff against the committed tree would only ever
-compare the last engine to run against itself. Only the two per-engine provenance records, the
-datasheet and the run log, are excluded from that comparison. It is the step standing between a
-cross-engine divergence in any generated artefact and a green tick.
+compare the last engine to run against itself. The two datasheets are compared next to it, minus
+the two lines that name the engine and its package versions, which is everything about them that
+may legitimately differ; only the run log, which additionally records wall-clock timestamps, is
+left out. Together they are the step standing between a cross-engine divergence in any generated
+artefact and a green tick.
 
 The rest of the suite covers the parts hardware would otherwise gate: a mock-PsychoPy harness that
 runs the generated script and asserts the onset trigger is flip-locked, a structural validator for
@@ -210,7 +218,7 @@ frequency contrast:
 ## Provenance
 
 - **Paradigm:** factorial  |  **Item source:** corpus
-- **Materials source:** `corpora/derived/en.csv` (sha256 `c20549b920d81680…`)
+- **Materials source:** `corpora/derived/en.csv` (sha256 `575833489e04d6a4...`)
 - **Selection:** standardised_euclidean
 - **Cross-engine determinism:** byte-identical
 - **Counterbalancing:** factorial, 1 list(s)

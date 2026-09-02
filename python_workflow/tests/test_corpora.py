@@ -3,6 +3,7 @@ import os
 import urllib.error
 import urllib.request
 
+import pandas as pd
 import pytest
 import yaml
 
@@ -263,3 +264,106 @@ def test_list_corpora_surfaces_registry_status():
     assert status["subtlex_uk"] == "manual"
     assert status["subtlex_esp"] == "listed"
     assert "validated" not in set(status.values())
+
+
+# Pins the same contract as "an explicit registry_path that is not there is
+# refused" in the R engine's test-corpora.R. Falling through to the search list
+# would report another registry's corpora under the path the caller named.
+def test_an_explicit_registry_path_that_is_not_there_is_refused(tmp_path):
+    missing = str(tmp_path / "nowhere" / "registry.yaml")
+    with pytest.raises(FileNotFoundError, match="registry not found"):
+        list_corpora(missing)
+    with pytest.raises(FileNotFoundError, match="registry not found"):
+        fetch_corpus("subtlex_esp", registry_path=missing)
+
+
+# The R twin has taken a `dest` since it was written, and its own tests fetch
+# into a directory of their own; a researcher who wants the lexicon committed
+# beside the design otherwise has to copy it out of the cache by hand.
+def test_fetch_corpus_honours_an_explicit_dest(tmp_path, monkeypatch):
+    path = _temp_registry(tmp_path, "https://example.invalid/good.csv")
+    cache = _local_cache(tmp_path, monkeypatch)
+    _mock_transport(monkeypatch, b"word,freq_zipf\ndog,4.5\n")
+    dest = tmp_path / "beside_the_design.csv"
+    assert fetch_corpus("fake", registry_path=path, dest=str(dest)) == str(dest)
+    assert dest.read_bytes() == b"word,freq_zipf\ndog,4.5\n"
+    assert list(cache.iterdir()) == []
+
+
+# The wordfreq path writes the frame itself rather than promoting a sidecar, so
+# it honours `dest` through a line of its own.
+def test_fetch_corpus_honours_an_explicit_dest_on_the_wordfreq_path(tmp_path, monkeypatch):
+    reg = {"wordfreq_connector": {"languages": ["xx"], "citation": "Speer (2022)."}}
+    path = tmp_path / "registry.yaml"
+    path.write_text(yaml.safe_dump(reg), encoding="utf-8")
+    cache = _local_cache(tmp_path, monkeypatch)
+    monkeypatch.setattr(corpora, "build_wordfreq_lexicon",
+                        lambda language, n: pd.DataFrame({"word": ["dog"], "freq_zipf": [4.5]}))
+    dest = tmp_path / "xx.csv"
+    assert fetch_corpus("xx", registry_path=str(path), dest=str(dest)) == str(dest)
+    assert dest.read_bytes() == b"word,freq_zipf\ndog,4.5\n"
+    assert list(cache.iterdir()) == []
+
+
+def test_the_wordfreq_connector_names_the_extra_when_it_is_absent(monkeypatch):
+    """`lexsync fetch fr` is documented in the README and in getting-started, and
+    without the optional extra it died on a bare import error naming neither
+    lexsync nor the extra that supplies the connector."""
+    import builtins
+
+    real = builtins.__import__
+
+    def missing(name, *args, **kwargs):
+        if name == "wordfreq":
+            raise ModuleNotFoundError("No module named 'wordfreq'", name=name)
+        return real(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", missing)
+    with pytest.raises(ModuleNotFoundError, match=r"lexsync: .*'corpora' extra"):
+        corpora.build_wordfreq_lexicon("fr", n_words=10)
+
+
+def test_the_wordfreq_connector_builds_a_lexicon(tmp_path):
+    """The connector is the one feature the R twin has no equivalent of, and it
+    was exercised by no test and no CI job, so the extra's version pin was never
+    resolved either. wordfreq carries its own frequency data, so this needs no
+    network. The corpora-extra job in python-tests.yaml is what installs it."""
+    pytest.importorskip("wordfreq")
+    df = corpora.build_wordfreq_lexicon("en", n_words=50)
+    assert list(df.columns) == ["word", "freq_zipf", "language", "source"]
+    assert 0 < len(df) <= 50
+    assert (df.freq_zipf > 0).all()
+    assert df.word.str.len().between(2, 15).all()
+
+
+# The count the documentation may state for the wordfreq connector. wordfreq itself
+# supports about forty languages, which is what registry.yaml's own comments say,
+# but lexsync exposes only the ones the registry lists, and fetch_corpus refuses
+# the rest.
+_COUNT_WORDS = {10: "ten", 20: "twenty", 30: "thirty", 40: "forty", 50: "fifty"}
+
+
+def test_the_documentation_names_the_languages_the_connector_actually_reaches(registry):
+    """The README told the reader the connector 'reaches roughly forty languages'
+    while the registry registered thirty and fetch_corpus refused the rest, so
+    `lexsync fetch sk` answered a documented promise with a registry error."""
+    languages = registry["wordfreq_connector"]["languages"]
+    count = _COUNT_WORDS.get(len(languages))
+    assert count, ("registry.yaml registers %d wordfreq languages, a number the "
+                   "documentation has no word for; reword it and this table"
+                   % len(languages))
+    sentence = "the %s languages the registry registers for it" % count
+    repo = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    for rel in ("README.md", os.path.join("python_workflow", "README.md"),
+                os.path.join("python_workflow", "src", "lexsync", "corpora.py"),
+                os.path.join("R_workflow", "R", "corpora.R")):
+        path = os.path.join(repo, rel)
+        if not os.path.exists(path):
+            continue
+        with open(path, encoding="utf-8") as handle:
+            text = " ".join(handle.read().split())
+        assert sentence in text, rel
+    getting_started = os.path.join(repo, "python_workflow", "docs", "getting-started.md")
+    with open(getting_started, encoding="utf-8") as handle:
+        assert "%s language codes registered for the wordfreq connector" % count in \
+            " ".join(handle.read().split())

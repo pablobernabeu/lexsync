@@ -238,3 +238,13 @@ test_that("list_corpora surfaces the registry status", {
   expect_identical(unname(status[["subtlex_esp"]]), "listed")
   expect_false("validated" %in% status)
 })
+
+# Pins the same contract as
+# test_an_explicit_registry_path_that_is_not_there_is_refused in the Python
+# engine's test_corpora.py. Falling through to the default search would report
+# another registry's corpora under the path the caller named.
+test_that("an explicit registry_path that is not there is refused", {
+  missing <- file.path(tempfile(), "registry.yaml")
+  expect_error(list_corpora(missing), "registry not found")
+  expect_error(fetch_corpus("subtlex_esp", registry_path = missing), "registry not found")
+})

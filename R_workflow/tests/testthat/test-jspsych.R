@@ -70,3 +70,31 @@ test_that("key mapping does not invent a 'key' element on a response event", {
   reg <- list(list(type = "region", field = "sentence", sep = "|", key = "space"))
   expect_identical(lexsync:::.map_keys_jspsych(reg)[[1]][["key"]], " ")
 })
+
+test_that("the jsPsych page presents one counterbalancing list", {
+  # The trials are embedded whole, because one page serves every participant, and a
+  # timeline built from all of them showed each target once per list: under a Latin
+  # square, once in every condition. The page selects the participant's list from its
+  # ?participant= query, the rule the other two targets follow. Pinned in
+  # test_jspsych_export.py too.
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  out <- tempfile("lx"); dir.create(out)
+  stim <- data.frame(
+    prime = c("hot", "sky", "sun", "big"), target = c("cold", "cold", "moon", "moon"),
+    condition = rep(c("related", "unrelated"), 2), set = c(1, 1, 2, 2),
+    length = 4L, frequency = 5, n_density = 2L, old20 = 1.5, stringsAsFactors = FALSE)
+  design <- list(name = "t", language = "english", paradigm = "priming",
+                 counterbalance = list(lists = 2L))
+  stim <- assign_triggers(counterbalance(stim, design, list(seed = 1)))
+  html <- paste(readLines(export_jspsych(stim, design, schema, out), warn = FALSE),
+                collapse = "\n")
+  tr <- regmatches(html, regexec("const TRIALS = (.*?);\\n", html))[[1]][2]
+  trials <- jsonlite::fromJSON(tr, simplifyDataFrame = FALSE)
+  # The embedded data stay complete; it is the timeline that takes one list.
+  expect_setequal(vapply(trials, function(t) as.character(t$list), character(1)),
+                  c("1", "2"))
+  expect_true(grepl("const RUN_TRIALS = trialsForParticipant(TRIALS, PARTICIPANT);",
+                    html, fixed = TRUE))
+  expect_true(grepl("for (const trial of RUN_TRIALS) {", html, fixed = TRUE))
+  expect_true(grepl('get("participant")', html, fixed = TRUE))
+})

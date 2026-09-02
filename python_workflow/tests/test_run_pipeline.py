@@ -1,11 +1,14 @@
 """Pipeline-level guards. Twinned with test-run-pipeline.R: every fixture,
 expectation and message here must stay in step with the R suite."""
 import os
+import re
 
+import pandas as pd
 import pytest
 from conftest import _pkg_data
 
-from lexsync.run_pipeline import run_pipeline
+from lexsync.querying import add_neighbourhood
+from lexsync.run_pipeline import run_all, run_pipeline
 
 
 def _yaml_path(p):
@@ -284,3 +287,206 @@ def test_continuous_over_a_supplied_pool_selects_continuously(tmp_path):
     stim = pd.read_csv(res["stimuli"])
     assert (stim["condition"] == "continuous").all()
     assert stim["set"].nunique() == 10
+
+
+def _bare_lexicon(tmp_path, n=600):
+    """The example lexicon, shortened, without the columns lexsync derives itself.
+
+    `load_lexicon` requires `word` and `freq_zipf` alone, so this is a lexicon a user
+    may legitimately point lexsync at.
+    """
+    lex = pd.read_csv(_pkg_data("en_example.csv")).head(n)
+    path = os.path.join(tmp_path, "bare.csv")
+    lex.drop(columns=["n_density", "old20"]).to_csv(path, index=False)
+    return path
+
+
+def _derived_here(path, words, dim):
+    """The dimension as add_neighbourhood computes it, over the same reference list."""
+    lex = pd.read_csv(path)
+    ref = lex["word"].astype(str).tolist()
+    got = add_neighbourhood(pd.DataFrame({"word": words}), reference=ref)
+    return got[dim].tolist()
+
+
+def test_a_condition_defined_by_a_derived_dimension_computes_it(tmp_path):
+    # The derivation used to be triggered by `match_on` alone, so a design that
+    # defined its conditions by n_density -- the shape of the shipped
+    # design_en_ndensity.yaml -- stopped on any lexicon that did not ship the column.
+    # Twinned in test-run-pipeline.R.
+    lexicon = _bare_lexicon(str(tmp_path))
+    design = _write_design(str(tmp_path), [
+        "name: derived_define", "language: english",
+        "lexicon: " + _yaml_path(lexicon), "n_per_condition: 3",
+        "pool_filters: {length: [3, 7]}",
+        "conditions:",
+        "  - {name: dense, define_by: {n_density: [5, 100]}}",
+        "  - {name: sparse, define_by: {n_density: [0, 1]}}",
+        "match_on: [length, frequency]",
+    ])
+    stim = pd.read_csv(_run(design, tmp_path)["stimuli"])
+    assert len(stim) == 6
+    assert stim["n_density"].tolist() == _derived_here(lexicon, stim["word"], "n_density")
+    dense = stim[stim["condition"] == "dense"]["n_density"]
+    assert (dense >= 5).all()
+
+
+def test_a_pool_filter_on_a_derived_dimension_computes_it(tmp_path):
+    # The filter names a column the lexicon does not have, and the guard on unknown
+    # filter names used to reject the design before anything could derive it.
+    lexicon = _bare_lexicon(str(tmp_path))
+    design = _write_design(str(tmp_path), [
+        "name: derived_filter", "language: english",
+        "lexicon: " + _yaml_path(lexicon), "n_per_condition: 3",
+        "pool_filters: {length: [3, 7], old20: [1.0, 2.0]}",
+        "conditions:",
+        "  - {name: high, define_by: {frequency: [5.0, 7.0]}}",
+        "  - {name: low, define_by: {frequency: [3.8, 4.4]}}",
+        "match_on: [length]",
+    ])
+    stim = pd.read_csv(_run(design, tmp_path)["stimuli"])
+    assert len(stim) == 6
+    assert stim["old20"].between(1.0, 2.0).all()
+    assert stim["old20"].tolist() == _derived_here(lexicon, stim["word"], "old20")
+
+
+def test_a_continuous_predictor_on_a_derived_dimension_computes_it(tmp_path):
+    lexicon = _bare_lexicon(str(tmp_path))
+    design = _write_design(str(tmp_path), [
+        "name: derived_continuous", "language: english",
+        "lexicon: " + _yaml_path(lexicon), "n_per_condition: 6",
+        "pool_filters: {length: [3, 7]}",
+        "continuous: {predictor: old20, controls: [length, frequency]}",
+        "match_on: [length, frequency]",
+    ])
+    stim = pd.read_csv(_run(design, tmp_path)["stimuli"])
+    assert len(stim) == 6
+    assert stim["old20"].tolist() == _derived_here(lexicon, stim["word"], "old20")
+
+
+def test_a_misspelt_filter_is_still_refused_beside_a_derived_one(tmp_path):
+    lexicon = _bare_lexicon(str(tmp_path))
+    design = _write_design(str(tmp_path), [
+        "name: derived_typo", "language: english",
+        "lexicon: " + _yaml_path(lexicon), "n_per_condition: 3",
+        "pool_filters: {old20: [1.0, 2.0], frequncy: [3.8, 7]}",
+        "conditions:",
+        "  - {name: high, define_by: {frequency: [5.0, 7.0]}}",
+        "  - {name: low, define_by: {frequency: [3.8, 4.4]}}",
+        "match_on: [length]",
+    ])
+    with pytest.raises(ValueError, match="pool_filters name column"):
+        _run(design, tmp_path)
+
+
+def _constant_pool_design(tmp_path):
+    """Two conditions each constant on the one matched dimension, at different
+    constants, so Cohen's d and its interval are undefined for every comparison."""
+    pool = os.path.join(tmp_path, "pool.csv")
+    words = ["abcd", "efgh", "ijkl", "mnop", "qrst", "uvwx",
+             "abcdef", "ghijkl", "mnopqr", "stuvwx", "yzabcd", "efghij"]
+    pd.DataFrame({"word": words}).to_csv(pool, index=False)
+    return _write_design(tmp_path, [
+        "name: undefined_d", "language: english",
+        "items:", "  source: pool", "  path: " + _yaml_path(pool),
+        "n_per_condition: 3",
+        "conditions:",
+        "  - {name: four, define_by: {length: [4, 4]}}",
+        "  - {name: six, define_by: {length: [6, 6]}}",
+        "match_on: [length]",
+    ])
+
+
+def test_an_undefined_cohens_d_on_every_comparison_still_runs(tmp_path):
+    """The whole column stays object dtype when no comparison is numeric, so the
+    stored None reached the format string and stopped the run here while the R
+    engine wrote 'NA' and finished. Mirrored in test-run-pipeline.R."""
+    res = _run(_constant_pool_design(str(tmp_path)), tmp_path)
+    comparisons = pd.read_csv(res["comparisons"])
+    assert comparisons["cohens_d"].isna().all()
+    with open(res["log"], encoding="utf-8") as handle:
+        log = handle.read()
+    assert "equivalence six vs four on 'length': d = NA," in log
+
+
+# The two engines' run logs quoted different numbers for the same statistic: the
+# stored value is at four places and Python printed all of them while R rounded to
+# three, so 0.0016 was also written 0.002 and 1.0 was also written 1.000. The R
+# suite pins the same two lines, fixture for fixture.
+def _fractional_tost_design(tmp_path):
+    pool = os.path.join(tmp_path, "pool.csv")
+    letters = "abcdefghijklmnopqrstuvwxyz"
+    rows = []
+    i = 0
+    for a in letters[:10]:
+        for b in "aeiou":
+            for c in letters[:6]:
+                word = a + b + c if i % 3 else a + b + c + "z"
+                rows.append({"word": word, "frequency": 1.0 + (i % 19) / 4.5})
+                i += 1
+    pd.DataFrame(rows).drop_duplicates("word").to_csv(pool, index=False)
+    return _write_design(tmp_path, [
+        "name: tost_format", "language: english",
+        "items:", "  source: pool", "  path: " + _yaml_path(pool),
+        "n_per_condition: 25",
+        "conditions:",
+        "  - {name: low, define_by: {frequency: [1.0, 2.0]}}",
+        "  - {name: high, define_by: {frequency: [3.5, 5.5]}}",
+        "match_on: [length]",
+    ])
+
+
+def test_the_run_log_writes_the_tost_p_at_four_places(tmp_path):
+    res = _run(_fractional_tost_design(str(tmp_path)), tmp_path)
+    with open(res["log"], encoding="utf-8") as handle:
+        log = handle.read()
+    assert "on 'length': d = 0.00 [-0.47, 0.47], TOST p = 0.0417 (equivalent)" in log
+    assert "TOST p = 1.0000 (not shown equivalent)" in log
+
+
+def _malformed(tmp_path, name, text):
+    p = os.path.join(tmp_path, name)
+    with open(p, "w", encoding="utf-8") as handle:
+        handle.write(text)
+    return p
+
+
+@pytest.mark.parametrize("text", ["", "- a\n- b\n"])
+def test_a_design_that_is_not_a_mapping_names_the_file(tmp_path, text):
+    """An empty or list-shaped design used to report a Python type and not the file.
+    Mirrored in test-run-pipeline.R."""
+    design = _malformed(str(tmp_path), "design_bad.yaml", text)
+    with pytest.raises(ValueError, match=re.escape(
+            f"lexsync: design '{design}' did not parse to a mapping of keys")):
+        _run(design, tmp_path)
+
+
+@pytest.mark.parametrize(("lines", "key"), [
+    (["language: english"], "name"),
+    (["name: nameless"], "language"),
+    (["name: ' '", "language: english"], "name"),
+])
+def test_a_design_without_a_name_or_a_language_is_refused(tmp_path, lines, key):
+    """The base name for every artefact is built from both, so a nameless design
+    used to write its files under the language alone in the R engine."""
+    design = _write_design(str(tmp_path), lines)
+    with pytest.raises(ValueError, match=re.escape(
+            f"is missing the required key(s) '{key}'.")):
+        _run(design, tmp_path)
+
+
+def test_a_schema_without_its_structural_blocks_is_refused(tmp_path):
+    schema = _malformed(str(tmp_path), "schema.yaml", "seed: 2026\n")
+    design = _corpus_design(str(tmp_path))
+    with pytest.raises(ValueError, match=re.escape(
+            f"lexsync: schema '{schema}' is missing the required key(s) "
+            "'lexicon_schema', 'matching'.")):
+        run_pipeline(design, schema, outdir=str(tmp_path), verbose=False)
+
+
+def test_run_all_names_the_design_that_failed(tmp_path):
+    """A quiet sweep reported the bare failure of an unnamed one of twenty designs."""
+    _malformed(str(tmp_path), "design_b_bad.yaml", "")
+    with pytest.raises(RuntimeError, match=re.escape(
+            "lexsync: design 'design_b_bad.yaml' failed: ")):
+        run_all(str(tmp_path), _pkg_data("schema.yaml"), str(tmp_path), verbose=False)

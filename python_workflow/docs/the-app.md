@@ -109,13 +109,15 @@ counterbalancing lists.
 
 ## Running it
 
-'Run design' assembles the design, writes it to a `design.yaml` in a temporary directory with the
-lexicon and item paths resolved to absolute ones, and hands it to `run_pipeline` with the schema
-that ships inside the package. Three conditions are checked first, that a lexicon has been chosen
-or uploaded where the paradigm needs one, that a factorial design defines at least two conditions,
-and that an item-table paradigm has a table, and anything the pipeline itself refuses comes back as
-the error the pipeline raised, in its own words. A successful run reports how many rows were
-selected and opens the results.
+'Run design' assembles the design, writes it to a `design.yaml` in a temporary directory, places
+the chosen or uploaded lexicon and item table at the paths the design records, and hands it to
+`run_pipeline` from that directory with the schema that ships inside the package. The run therefore
+uses the design exactly as the app shows and exports it, so the checksum the datasheet records is
+the checksum of the file you are given. Four conditions are checked first, that a lexicon has been
+chosen or uploaded where the paradigm needs one, that a factorial design defines at least two
+conditions and names at least one dimension to match on, and that an item-table paradigm has a
+table, and anything the pipeline itself refuses comes back as the error the pipeline raised, in its
+own words. A successful run reports how many rows were selected and opens the results.
 
 ## Reading the results
 
@@ -127,10 +129,12 @@ what it will present and how to reproduce it.
 'Realised control' is the part that decides whether the set is usable. It reports Cohen's *d*
 against the anchor condition for each controlled dimension, with its 90% confidence interval, the
 variance ratio and the verdict of the two one-sided tests procedure, then draws the absolute
-standardised mean difference per dimension as a bar chart. Manipulated dimensions stand high and
-matched dimensions sit near zero, so the chart shows immediately whether the matching worked. The
-per-condition descriptive statistics follow underneath. A design drawn from an item table produces
-no corpus-matching report, and the tab says as much where an empty table would otherwise sit.
+standardised mean difference as a bar chart, one bar per condition against the anchor, grouped by
+dimension, with a dashed line at 0.5 standard deviations. Manipulated dimensions stand well above
+that line and matched ones sit near zero, so the chart shows immediately whether the matching
+worked. The per-condition descriptive statistics follow underneath. A design drawn from an item
+table produces no corpus-matching report, and the tab says as much where an empty table would
+otherwise sit.
 
 'Datasheet' renders the materials datasheet for the run, carrying the provenance of the corpus, the
 checksums, the realised control and the pre-registration skeleton.
@@ -140,12 +144,14 @@ OpenSesame `.osexp` and the jsPsych HTML that runs in a browser, all three compi
 trial description.
 
 'Reproducible code' is what stops a session in the app from being a dead end. It shows the design
-configuration as YAML, with repository-relative paths such as `corpora/derived/en.csv` rather than
-the temporary ones the run used, followed by the one-line Python, R and command-line calls
+configuration as YAML, with repository-relative paths such as `corpora/derived/en.csv`, followed
+by the one-line Python, R and command-line calls
 that reproduce the same operation. Saving the YAML under the name the panel gives it and running
 any of those three lines repeats the run outside the app. Where the design names a file you
 uploaded, which the repository does not hold, the panel says so and points at the bundle that
-carries it.
+carries it. Beneath the code the panel states what the two engines guarantee for the method that
+ran: byte-identical stimuli and trial order under the deterministic methods, and equivalent but not
+byte-identical materials under `mahalanobis` and `optimal`.
 
 'Download' packages the design, every artefact the run wrote and any lexicon or item table you
 uploaded into a single archive named after the design. The uploaded files are stored at the path

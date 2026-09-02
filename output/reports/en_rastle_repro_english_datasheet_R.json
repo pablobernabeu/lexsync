@@ -50,17 +50,17 @@
     "versions": {
       "engine": "R",
       "lexsync": "0.1.0",
-      "R": "4.6.1",
-      "readr": "2.2.0",
-      "stringdist": "0.9.17",
-      "jsonlite": "2.0.0",
-      "digest": "0.6.39",
-      "yaml": "2.3.12",
-      "stringi": "1.8.7",
-      "os": "Windows x86-64"
+      "R": "4.3.3",
+      "readr": "2.1.5",
+      "stringdist": "0.9.12",
+      "jsonlite": "1.8.8",
+      "digest": "0.6.34",
+      "yaml": "2.3.8",
+      "stringi": "1.8.3",
+      "os": "Linux x86_64"
     },
     "design_sha256": "305de9ee748ee1fa071157bb8856610961be4304d2505331d7e7e636539ce4e8",
-    "schema_sha256": "483a9cec49314b9479fe656ad39840083a551f2e4313ca164efe3e9c064fb255"
+    "schema_sha256": "bc66a5fd3a65b0f93271d18958f18ae7037f00f7a21ae6380632c55de49e7ca0"
   },
   "artifacts": [
     {
@@ -69,15 +69,15 @@
     },
     {
       "file": "output/experiments/en_rastle_repro_english_psychopy.py",
-      "sha256": "e8692810c2f2f5f1625a75f44fc8056e063f750e05f1a940a9e928e096dd78c8"
+      "sha256": "78c646426c5418f7a52152041869c2e0034ff573f80e4679f5af1590316f2225"
     },
     {
       "file": "output/experiments/en_rastle_repro_english.osexp",
-      "sha256": "f45773c11203ed2dbb416f1ca8e11cf9107cb4a0caddae648b8a8f33460ef2e1"
+      "sha256": "a229336d40576b8e948b0edef28461dc0197ca00da262d24b3c2d204a7bc9902"
     },
     {
       "file": "output/experiments/en_rastle_repro_english.html",
-      "sha256": "d0e8bad60eb6170e9b80a2da25f116ba777994f4ae0887e6c35b7ab6bcc3d289"
+      "sha256": "ff606ca70b47feed92a18a83872f7570d9c6bfffc4e88f3a697eff389740f0b1"
     }
   ]
 }

@@ -18,6 +18,8 @@ two methods.
 """
 from __future__ import annotations
 
+import math
+
 import numpy as np
 import pandas as pd
 
@@ -287,6 +289,22 @@ def match_stimuli(pool: pd.DataFrame, design: dict, schema: dict, verbose: bool 
     shrink) and ``on_insufficient_tolerance`` ("relax", the default, widens an
     undersupplied tolerance window to the full condition subpool and records the
     relaxation in ``out.attrs["audit"]``; "error" refuses instead).
+
+    Args:
+        pool: A lexicon or pool carrying every ``match_on`` dimension (see
+            :func:`add_neighbourhood`).
+        design: A parsed design configuration (conditions, ``match_on``,
+            ``n_per_condition`` / ``n_per_cell``).
+        schema: The parsed global schema (the tolerances live here).
+        verbose: Whether to report tolerance relaxations and a shrunk anchor.
+
+    Returns:
+        A data frame of selected stimuli with a ``condition`` label and a
+        ``set`` index pairing matched items across conditions.
+
+    Raises:
+        ValueError: If the design names a dimension or a filter column the pool
+            does not carry, or a policy above refuses the degraded selection.
     """
     conditions = design.get("conditions")
     if not conditions:
@@ -523,9 +541,33 @@ def select_continuous_stimuli(pool: pd.DataFrame, design: dict, schema: dict,
     present in the pool, no ``tolerance_k`` may be negative, and the pool must not be
     empty.
 
-    Returns the selected stimuli. Unless ``label`` is ``None`` the ``condition``
-    column is set to it, ``continuous`` by default, and unless ``renumber_sets`` is
-    ``False`` the ``set`` column is renumbered ``1..n``.
+    Args:
+        pool: A candidate pool carrying the predictor and control dimensions.
+        design: A parsed design configuration carrying a ``continuous`` block.
+        schema: The parsed global schema (tolerance windows).
+        verbose: Whether to report a window relaxation.
+        key: Column used as the selection unit and the byte-order tie-break. The
+            pair-keyed path passes ``"set"``: once a pair table is collapsed to
+            one row per item set there is no ``word`` column, and ``set`` is
+            unique per row, integer and already derived deterministically.
+        label: Value written into the result's ``condition`` column, or ``None``
+            to leave the existing conditions alone. The pair path passes
+            ``None``, because its rows already carry the design's own conditions
+            and overwriting them would destroy the contrast the design exists to
+            test.
+        renumber_sets: Whether to renumber the selected rows ``1..n``. The pair
+            path passes ``False``, because its ``set`` ids have to survive
+            selection for the result to be re-expanded back to the pair table.
+
+    Returns:
+        A data frame of the selected stimuli. Unless ``label`` is ``None`` the
+        ``condition`` column is set to it, ``continuous`` by default, and unless
+        ``renumber_sets`` is ``False`` the ``set`` column is renumbered
+        ``1..n``.
+
+    Raises:
+        ValueError: In any of the situations checked before selection, listed
+            above.
     """
     cfg = design["continuous"]
     predictor = cfg["predictor"]
@@ -633,7 +675,27 @@ def resample_stimuli(pool: pd.DataFrame, design: dict, schema: dict,
     :func:`match_stimuli` uses to report a relaxed tolerance window, so a relaxation
     inside a replicate reaches the console under ``verbose`` but not the run log or
     the datasheet.
+
+    Args:
+        pool: A candidate pool carrying the ``match_on`` dimensions.
+        design: A parsed design configuration.
+        schema: The parsed global schema.
+        n_sets: Number of disjoint matched sets to draw.
+        verbose: Passed to :func:`match_stimuli`.
+
+    Returns:
+        A data frame of matched stimuli with an added ``replicate`` column.
+
+    Raises:
+        ValueError: If ``n_sets`` is not a positive whole number, or a replicate
+            cannot be matched.
     """
+    # The same predicate run_pipeline applies to n_per_condition, and for the same
+    # reason: zero or a negative request produced no replicates and then pandas' own
+    # 'No objects to concatenate', while a fractional one was truncated in silence.
+    if (not isinstance(n_sets, (int, float)) or isinstance(n_sets, bool)
+            or not math.isfinite(n_sets) or n_sets < 1 or n_sets != int(n_sets)):
+        raise ValueError("lexsync: resample.n_sets must be a positive whole number.")
     used: set = set()
     parts = []
     for k in range(1, int(n_sets) + 1):

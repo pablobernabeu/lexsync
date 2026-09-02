@@ -6,12 +6,12 @@
 
 - **Paradigm:** factorial  |  **Item source:** corpus
 - **Description:** Reproducing Andrews (1989): frequency x orthographic neighbourhood size (Coltheart's N), a 2x2 lexical-decision design with every cell matched on length.
-- **Materials source:** `corpora/derived/en.csv` (sha256 `c20549b920d81680...`)
+- **Materials source:** `corpora/derived/en.csv` (sha256 `575833489e04d6a4...`)
 - **Selection:** standardised_euclidean
 - **Cross-engine determinism:** byte-identical
 - **Counterbalancing:** factorial, 1 list(s)
 - **Items:** 72 rows across 4 conditions (HF_smallN, HF_largeN, LF_largeN, LF_smallN)
-- **Seed:** 2026  |  **Versions:** engine R, lexsync 0.1.0, R 4.6.1, readr 2.2.0, stringdist 0.9.17, jsonlite 2.0.0, digest 0.6.39, yaml 2.3.12, stringi 1.8.7, os Windows x86-64
+- **Seed:** 2026  |  **Versions:** engine R, lexsync 0.1.0, R 4.3.3, readr 2.1.5, stringdist 0.9.12, jsonlite 1.8.8, digest 0.6.34, yaml 2.3.8, stringi 1.8.3, os Linux x86_64
 
 ## Selection transparency
 
@@ -26,12 +26,12 @@
 | frequency | manipulated/free | -0.11 | [-0.67, 0.46] | 1.07 | 0.1238 | FALSE |
 | n_density | manipulated/free | 3.19 | [2.63, 3.75] | 0.04 | 1 | FALSE |
 | old20 | manipulated/free | -5.76 | [-6.32, -5.19] | 1.13 | 1 | FALSE |
-| length | controlled | 0.10 | [-0.46, 0.66] | 0.71 | 0.1186 | FALSE |
+| length | controlled | 0.10 | [-0.47, 0.66] | 0.71 | 0.1186 | FALSE |
 | frequency | manipulated/free | 4.71 | [4.15, 5.28] | 0.50 | 1 | FALSE |
 | n_density | manipulated/free | 0.10 | [-0.46, 0.67] | 0.64 | 0.1208 | FALSE |
 | old20 | manipulated/free | 0.10 | [-0.46, 0.67] | 1.02 | 0.1218 | FALSE |
-| length | controlled | 0.10 | [-0.46, 0.66] | 0.71 | 0.1186 | FALSE |
-| frequency | manipulated/free | 5.18 | [4.62, 5.75] | 0.39 | 1 | FALSE |
+| length | controlled | 0.10 | [-0.47, 0.66] | 0.71 | 0.1186 | FALSE |
+| frequency | manipulated/free | 5.19 | [4.62, 5.75] | 0.39 | 1 | FALSE |
 | n_density | manipulated/free | 3.29 | [2.73, 3.85] | 0.05 | 1 | FALSE |
 | old20 | manipulated/free | -5.91 | [-6.48, -5.35] | 1.22 | 1 | FALSE |
 

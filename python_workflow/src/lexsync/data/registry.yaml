@@ -12,6 +12,7 @@
 # The two URL keys are not interchangeable:
 #   url         -> the corpus's human-facing landing page (citation/provenance only)
 #   openlexicon -> a directly downloadable delimited file; fetch_corpus() requires this
+# An entry may also carry 'sha256' (hex digest); fetch_corpus() then verifies the download.
 #
 # 'connector' selects the ingestion path:
 #   openlexicon -> a SUBTLEX-family/openlexicon delimited file (Connector A)

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """lexsync web application (Python / Streamlit).
 
 A browser front-end for the lexsync package. The user assembles a design through
@@ -15,11 +14,15 @@ Run from the repository root:
 """
 from __future__ import annotations
 
+import hashlib
 import io
 import os
+import shutil
 import tempfile
+import threading
 import zipfile
 
+import altair as alt
 import pandas as pd
 import streamlit as st
 import yaml
@@ -44,6 +47,16 @@ PARADIGMS = {
     "Priming (item table)": "priming",
     "Categorisation (item table)": "categorisation",
     "Self-paced reading (item table)": "self_paced_reading",
+}
+# Each preset's matched dimensions and matching method. A preset that manipulates
+# a dimension must not also ask the engine to match on it, so the neighbourhood
+# contrast is matched on length and frequency rather than on the general default.
+# The Shiny app's PRESET_MATCHING holds the same table (tests/test_apps.py).
+PRESET_MATCHING = {
+    "High vs low frequency": (["length", "n_density", "old20"], "standardised_euclidean"),
+    "Dense vs sparse neighbourhood": (["length", "frequency"], "joint"),
+    "2x2 frequency x neighbourhood": (["length"], "standardised_euclidean"),
+    "Custom": (["length"], "standardised_euclidean"),
 }
 # The paradigms that take their trials from an item table rather than from the
 # corpus, each with the bundled example table and the columns such a table must
@@ -88,6 +101,48 @@ def corpus_preview(path: str) -> pd.DataFrame:
     return pd.read_csv(path, nrows=5, keep_default_na=False, na_values=["", "NA"])
 
 
+@st.cache_data(show_spinner=False)
+def staged_upload(name: str, digest: str, _data: bytes) -> str:
+    """Write an uploaded file once per upload rather than once per rerun.
+
+    The script re-executes top to bottom on every widget interaction and the
+    uploader keeps handing back the file it holds, so writing it here directly
+    copied a lexicon of about a megabyte for every keystroke, tab and slider move.
+    The cache is keyed on the content digest, and ``_data`` is left out of the key
+    by its leading underscore, so the same upload resolves to the same path.
+
+    Parameters
+    ----------
+    name : str
+        The uploaded file's own name, which the written file keeps.
+    digest : str
+        Hex digest of ``_data``; the cache key.
+    _data : bytes
+        The uploaded bytes.
+
+    Returns
+    -------
+    str
+        Absolute path of the written file.
+    """
+    path = os.path.join(tempfile.mkdtemp(prefix="lexsync_upload_"), name)
+    with open(path, "wb") as fh:
+        fh.write(_data)
+    return path
+
+
+def discard_run_dir(path: str | None) -> None:
+    """Remove a previous run's temporary tree.
+
+    Every run writes its design, its staged inputs and a whole output tree under a
+    fresh temporary directory, and nothing reclaimed them, so a long-lived process
+    kept one complete set of artefacts per press of Run. Only the run whose results
+    are on screen is still read from.
+    """
+    if path and os.path.isdir(path):
+        shutil.rmtree(path, ignore_errors=True)
+
+
 def yaml_block(d: dict) -> str:
     return yaml.safe_dump(d, sort_keys=False, allow_unicode=True, default_flow_style=False)
 
@@ -114,6 +169,24 @@ def reproduction_code(design: dict, design_filename: str) -> dict:
     return {"yaml": yaml_block(design), "python": py, "r": r, "cli": cli}
 
 
+def parity_claim(design: dict) -> str:
+    """The sentence under the exported code, conditioned on the matching method.
+
+    ``mahalanobis`` and ``optimal`` use a covariance inverse and an assignment
+    solver, whose last bits differ between the two linear-algebra backends, so the
+    unqualified claim contradicted the method chooser's own help text and the
+    'Cross-engine determinism' line of the datasheet one tab away. The Shiny app
+    words both cases the same way.
+    """
+    if ((design.get("matching") or {}).get("method")) in ("mahalanobis", "optimal"):
+        return ("This design's matching method uses a covariance inverse or an "
+                "assignment solver, so the R and Python engines select equivalent "
+                "but not byte-identical stimuli. The datasheet's 'Cross-engine "
+                "determinism' line records which case applies.")
+    return ("The R and Python engines produce byte-identical stimuli and "
+            "trial order from this configuration.")
+
+
 def _write_design_yaml(design: dict, path: str) -> str:
     """Write the design YAML with LF line endings on every platform.
 
@@ -127,29 +200,77 @@ def _write_design_yaml(design: dict, path: str) -> str:
     return path
 
 
-def run_design(design: dict, lexicon_abs: str | None, items_abs: str | None) -> dict:
-    """Write the design to a temp file, run the pipeline, and collect the outputs.
+def staged_inputs(design: dict, lexicon_abs: str | None, items_abs: str | None) -> dict:
+    """Map each input the design names to the file the run should read it from.
 
-    The design shown to the user keeps repository-relative paths. The copy that runs
-    is resolved to absolute paths, so it works from any directory.
+    Parameters
+    ----------
+    design : dict
+        The design as shown to the user, carrying repository-relative paths.
+    lexicon_abs : str, optional
+        Absolute path of the chosen or uploaded lexicon.
+    items_abs : str, optional
+        Absolute path of the chosen or uploaded item table.
+
+    Returns
+    -------
+    dict
+        Design-relative path -> absolute path of the file to place there. A design
+        that already names an absolute path needs no staging and is omitted.
     """
-    run_design_dict = {k: v for k, v in design.items()}
-    if lexicon_abs:
-        run_design_dict["lexicon"] = lexicon_abs
-    if items_abs:
-        items = dict(run_design_dict.get("items") or {})
-        items["path"] = items_abs
-        run_design_dict["items"] = items
+    out = {}
+    lexicon = design.get("lexicon")
+    if lexicon_abs and isinstance(lexicon, str) and not os.path.isabs(lexicon):
+        out[lexicon] = lexicon_abs
+    items = design.get("items")
+    items_path = items.get("path") if isinstance(items, dict) else None
+    if items_abs and isinstance(items_path, str) and not os.path.isabs(items_path):
+        out[items_path] = items_abs
+    return out
 
+
+# The working directory is process-global, and Streamlit runs each browser
+# session's script in a thread of one process, so two runs that overlap would
+# resolve each other's relative design and lexicon paths. Only one run holds the
+# directory at a time.
+_RUN_LOCK = threading.Lock()
+
+
+def run_design(design: dict, lexicon_abs: str | None, items_abs: str | None) -> dict:
+    """Stage the design's inputs, run the pipeline over them, and collect the outputs.
+
+    The run uses the design exactly as it is shown, exported and archived, because
+    the pipeline hashes the design file it ran into the datasheet's design_sha256
+    and records the lexicon path it was given as the materials source. Rewriting
+    those paths to absolute ones would give the recipient of a bundle a datasheet
+    whose checksum names no file in it and a materials line naming a directory on
+    the machine that ran the app. So each input is placed at the path the design
+    records, inside a temporary directory the pipeline runs from.
+    """
     tmp = tempfile.mkdtemp(prefix="lexsync_app_")
-    design_path = _write_design_yaml(run_design_dict, os.path.join(tmp, "design.yaml"))
+    design_path = _write_design_yaml(design, os.path.join(tmp, "design.yaml"))
+    for rel, full in staged_inputs(design, lexicon_abs, items_abs).items():
+        dest = os.path.join(tmp, *rel.split("/"))
+        os.makedirs(os.path.dirname(dest), exist_ok=True)
+        shutil.copyfile(full, dest)
     out = os.path.join(tmp, "output")
-    result = run_pipeline(design_path, schema_path=SCHEMA_PATH, outdir=out, verbose=False)
+    # The design's paths are relative, so the pipeline has to read them from the
+    # staging directory. outdir and the schema are absolute, so nothing else in the
+    # call depends on where the process happens to stand.
+    with _RUN_LOCK:
+        cwd = os.getcwd()
+        try:
+            os.chdir(tmp)
+            result = run_pipeline(os.path.basename(design_path), schema_path=SCHEMA_PATH,
+                                  outdir=out, verbose=False)
+        finally:
+            os.chdir(cwd)
 
-    bundle = {"paths": result, "outdir": out}
+    bundle = {"paths": result, "outdir": out, "rundir": tmp}
     bundle["stimuli"] = pd.read_csv(result["stimuli"])
-    bundle["descriptives"] = (pd.read_csv(result["descriptives"])
-                              if result.get("descriptives") and os.path.exists(result["descriptives"]) else None)
+    bundle["descriptives"] = (
+        pd.read_csv(result["descriptives"])
+        if result.get("descriptives") and os.path.exists(result["descriptives"]) else None)
     bundle["comparisons"] = (pd.read_csv(result["comparisons"])
                              if result.get("comparisons") and os.path.exists(result["comparisons"]) else None)
     base = os.path.splitext(os.path.basename(result["stimuli"]))[0].replace("_stimuli_py", "")
@@ -183,6 +304,127 @@ def positive_tolerances(values: dict) -> dict:
         The subset with k > 0, order preserved.
     """
     return {d: float(k) for d, k in values.items() if k is not None and k > 0}
+
+
+def _bound(x):
+    """One end of a condition's window as a number, or None when the cell holds none.
+
+    The editor's columns are typed, but a cell it classifies as empty passes the
+    client's value through unconverted, so a bound can reach here as text. This
+    runs while the page is being drawn, above the handler that reports a pipeline
+    error, so a bare float() would take the whole page down, results already on
+    screen included, rather than drop the factor the cell belongs to.
+    """
+    try:
+        if x is None or x != x or str(x).strip() == "":  # None, NaN or blank
+            return None
+        return float(x)
+    except (TypeError, ValueError):
+        return None
+
+
+def conditions_from_table(cond_df: pd.DataFrame) -> list:
+    """Read the conditions editor's rows into the design's ``conditions`` list.
+
+    A row contributes a condition when it names one and defines at least one
+    window, either a category list or a pair of numeric bounds. The optional
+    second factor is added only when both of its bounds are numbers.
+
+    Parameters
+    ----------
+    cond_df : pandas.DataFrame
+        The edited conditions table.
+
+    Returns
+    -------
+    list
+        One ``{"name": ..., "define_by": {...}}`` mapping per usable row.
+    """
+    conditions = []
+    for _, row in cond_df.iterrows():
+        nm = str(row.get("name") or "").strip()
+        dim = str(row.get("dimension") or "").strip()
+        if not nm or not dim:
+            continue
+        cats = str(row.get("categories") or "").strip()
+        define_by = {}
+        lower, upper = _bound(row.get("lower")), _bound(row.get("upper"))
+        if cats:
+            define_by[dim] = [c.strip() for c in cats.split(",") if c.strip()]
+        elif lower is not None and upper is not None:
+            define_by[dim] = [lower, upper]
+        dim2 = str(row.get("dimension2") or "").strip()
+        lower2, upper2 = _bound(row.get("lower2")), _bound(row.get("upper2"))
+        if dim2 and lower2 is not None and upper2 is not None:
+            define_by[dim2] = [lower2, upper2]
+        if define_by:
+            conditions.append({"name": nm, "define_by": define_by})
+    return conditions
+
+
+def control_chart(comp: pd.DataFrame) -> pd.DataFrame:
+    """The realised-control bar chart's data, one row per comparison.
+
+    ``comparisons`` carries one row per non-anchor condition per dimension, so a
+    2x2 design contributes three comparisons to every dimension. The chart used
+    dimension alone as its x channel and drew those three at one position, where
+    they differ by as much as five standard deviations, so the condition travels
+    with each value here and separates the bars. The Shiny app groups the same rows.
+
+    Parameters
+    ----------
+    comp : pandas.DataFrame
+        The comparisons table from the run.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Columns dimension, condition and abs_d, one row per input row.
+    """
+    return pd.DataFrame({"dimension": comp["dimension"], "condition": comp["condition"],
+                         "abs_d": comp["cohens_d"].abs()})
+
+
+def control_plot(chart: pd.DataFrame) -> alt.LayerChart:
+    """The realised-control chart: one bar per comparison, with the 0.5-SD line.
+
+    The bars are offset by condition, which is what keeps a 2x2 design's three
+    comparisons on a dimension apart. ``st.bar_chart`` draws no reference line, so
+    this chart left unmarked the half a standard deviation that the Shiny chart
+    marks and that the caption of both apps names. Altair ships with Streamlit.
+
+    Parameters
+    ----------
+    chart : pandas.DataFrame
+        A :func:`control_chart` frame.
+
+    Returns
+    -------
+    altair.LayerChart
+        The bars and the reference line.
+    """
+    bars = alt.Chart(chart).mark_bar().encode(
+        x=alt.X("dimension:N", title=None),
+        xOffset=alt.XOffset("condition:N"),
+        y=alt.Y("abs_d:Q", title="|Cohen's d|"),
+        color=alt.Color("condition:N", title="condition"),
+    )
+    rule = alt.Chart(pd.DataFrame({"abs_d": [0.5]})).mark_rule(
+        strokeDash=[4, 4], color="grey").encode(y=alt.Y("abs_d:Q"))
+    return (bars + rule).properties(height=240)
+
+
+def control_caption(comp: pd.DataFrame) -> str:
+    """The sentence under that chart, naming the anchor the bars are measured against.
+
+    Every comparison is against one anchor condition, which the chart itself does
+    not show. The Shiny app words this the same way.
+    """
+    ref = comp["reference"].iloc[0] if "reference" in comp.columns and len(comp) else None
+    anchor = f" {ref}" if ref else ""
+    return ("Absolute standardised mean difference by dimension, one bar per "
+            "condition against the anchor" + anchor + ". Manipulated dimensions "
+            "stand high; matched dimensions sit near zero (below the 0.5-SD line).")
 
 
 def bundled_inputs(design: dict) -> dict:
@@ -274,8 +516,9 @@ st.markdown(
     "Reproducible psycholinguistic stimulus design, running on the Python engine. "
     "Assemble a design below, run the verified lexsync pipeline, and export the "
     "design file together with the R, Python and command-line code that reproduces "
-    "it. The two engines select byte-identical stimuli, so the exported code runs "
-    "the same operation in either ecosystem."
+    "it. The two engines select byte-identical stimuli under the deterministic "
+    "matching methods, so the exported code runs the same operation in either "
+    "ecosystem."
 )
 
 corpora = list_corpora()
@@ -291,7 +534,10 @@ with st.sidebar:
     paradigm = PARADIGMS[paradigm_label]
     name = st.text_input("Design name", value="my_design")
     language = st.text_input("Language label", value="english")
-    seed_note = st.empty()
+    # Created here, with the other three sidebar fields: Streamlit places a widget
+    # where the call is made, so a st.sidebar call further down the script would
+    # put this field below the rule and the version line that close the sidebar.
+    font = st.text_input("Stimulus font", value="Courier New")
     st.divider()
     st.caption(
         "lexsync " + getattr(lexsync, "__version__", "") +
@@ -318,17 +564,15 @@ if paradigm in ("factorial", "lexical_decision"):
     if corpus_choice == "Upload a CSV…":
         up = st.file_uploader("Lexicon CSV (word, freq_zipf, …)", type=["csv"])
         if up is not None:
-            tmpdir = tempfile.mkdtemp(prefix="lexsync_lex_")
-            lexicon_abs = os.path.join(tmpdir, up.name)
-            with open(lexicon_abs, "wb") as fh:
-                fh.write(up.getbuffer())
+            data = up.getvalue()
+            lexicon_abs = staged_upload(up.name, hashlib.sha256(data).hexdigest(), data)
             design["lexicon"] = f"corpora/{up.name}"
             uploaded_inputs[design["lexicon"]] = lexicon_abs
     else:
         lexicon_abs = corpora[corpus_choice]
         design["lexicon"] = f"corpora/derived/{corpus_choice}.csv"
         with col2:
-            st.dataframe(corpus_preview(lexicon_abs), use_container_width=True, height=150)
+            st.dataframe(corpus_preview(lexicon_abs), width="stretch", height=150)
 
     st.subheader("Pool filters")
     c1, c2 = st.columns(2)
@@ -351,13 +595,11 @@ if paradigm == "factorial":
         "categorical column such as `gender`). The optional *dimension2/lower2/upper2* "
         "add a second factor, so a row can define a full 2x2 cell."
     )
-    preset = st.selectbox(
-        "Start from a preset",
-        ["High vs low frequency", "Dense vs sparse neighbourhood",
-         "2x2 frequency x neighbourhood", "Custom"],
-    )
+    preset = st.selectbox("Start from a preset", list(PRESET_MATCHING))
 
-    def _row(name, dim, lo, hi, cats="", dim2="", lo2=None, hi2=None):
+    # lo2/hi2 default to NaN, not None, so a preset that leaves the second factor
+    # empty still hands the editor a numeric column, as the Shiny table does.
+    def _row(name, dim, lo, hi, cats="", dim2="", lo2=float("nan"), hi2=float("nan")):
         return {"name": name, "dimension": dim, "lower": lo, "upper": hi, "categories": cats,
                 "dimension2": dim2, "lower2": lo2, "upper2": hi2}
 
@@ -366,13 +608,11 @@ if paradigm == "factorial":
             _row("high_frequency", "frequency", 5.2, 7.0),
             _row("low_frequency", "frequency", 3.8, 4.4),
         ])
-        match_default, method_default = ["length", "n_density", "old20"], "standardised_euclidean"
     elif preset == "Dense vs sparse neighbourhood":
         cond_default = pd.DataFrame([
             _row("dense_neighbourhood", "n_density", 5.0, 100.0),
             _row("sparse_neighbourhood", "n_density", 0.0, 1.0),
         ])
-        match_default, method_default = ["length", "frequency"], "joint"
     elif preset == "2x2 frequency x neighbourhood":
         cond_default = pd.DataFrame([
             _row("HF_largeN", "frequency", 5.0, 7.0, "", "n_density", 9.0, 100.0),
@@ -380,46 +620,22 @@ if paradigm == "factorial":
             _row("LF_largeN", "frequency", 2.5, 4.2, "", "n_density", 9.0, 100.0),
             _row("LF_smallN", "frequency", 2.5, 4.2, "", "n_density", 0.0, 5.0),
         ])
-        match_default, method_default = ["length"], "standardised_euclidean"
     else:
         cond_default = pd.DataFrame([
             _row("condition_a", "frequency", 5.0, 7.0),
             _row("condition_b", "frequency", 3.5, 4.5),
         ])
-        match_default, method_default = ["length"], "standardised_euclidean"
+    match_default, method_default = PRESET_MATCHING.get(preset, PRESET_MATCHING["Custom"])
 
     cond_df = st.data_editor(
-        cond_default, num_rows="dynamic", use_container_width=True, key=f"cond_editor_{preset}",
+        cond_default, num_rows="dynamic", width="stretch", key=f"cond_editor_{preset}",
         column_config={
             "dimension": st.column_config.SelectboxColumn("dimension", options=DIMENSIONS),
             "dimension2": st.column_config.SelectboxColumn("dimension2", options=[""] + DIMENSIONS),
         },
     )
 
-    def _isnum(x):
-        try:
-            return x is not None and x == x and str(x) != ""  # not None, not NaN, not ""
-        except Exception:
-            return False
-
-    conditions = []
-    for _, row in cond_df.iterrows():
-        nm = str(row.get("name") or "").strip()
-        dim = str(row.get("dimension") or "").strip()
-        if not nm or not dim:
-            continue
-        cats = str(row.get("categories") or "").strip()
-        define_by = {}
-        if cats:
-            define_by[dim] = [c.strip() for c in cats.split(",") if c.strip()]
-        elif _isnum(row.get("lower")) and _isnum(row.get("upper")):
-            define_by[dim] = [float(row["lower"]), float(row["upper"])]
-        dim2 = str(row.get("dimension2") or "").strip()
-        if dim2 and _isnum(row.get("lower2")) and _isnum(row.get("upper2")):
-            define_by[dim2] = [float(row["lower2"]), float(row["upper2"])]
-        if define_by:
-            conditions.append({"name": nm, "define_by": define_by})
-    design["conditions"] = conditions
+    design["conditions"] = conditions_from_table(cond_df)
 
     design["n_per_condition"] = st.number_input("Items per condition", 4, 400, 80, step=2)
     design["match_on"] = st.multiselect(
@@ -459,7 +675,8 @@ if paradigm == "factorial":
 elif paradigm == "lexical_decision":
     design["paradigm"] = "lexical_decision"
     design["items"] = {"source": "generate"}  # lexicon comes from the top-level field
-    design["n_per_condition"] = st.number_input("Items per condition (words = pseudowords)", 4, 200, 60, step=2)
+    design["n_per_condition"] = st.number_input(
+        "Items per condition (words = pseudowords)", 4, 200, 60, step=2)
     gen_method = st.selectbox(
         "Pseudoword generation method", GENERATION_METHODS,
         help="letter_substitution changes the fewest single letters, keeping every "
@@ -484,26 +701,23 @@ elif paradigm in ITEM_TABLE_PARADIGMS:
     if use_example and os.path.exists(example):
         items_abs = example
         design["items"] = {"source": "table", "path": f"items/{default_item}"}
-        st.dataframe(pd.read_csv(example).head(8), use_container_width=True)
+        st.dataframe(pd.read_csv(example).head(8), width="stretch")
     else:
         up = st.file_uploader(f"Item table CSV ({req})", type=["csv"])
         if up is not None:
-            tmpdir = tempfile.mkdtemp(prefix="lexsync_items_")
-            items_abs = os.path.join(tmpdir, up.name)
-            with open(items_abs, "wb") as fh:
-                fh.write(up.getbuffer())
+            data = up.getvalue()
+            items_abs = staged_upload(up.name, hashlib.sha256(data).hexdigest(), data)
             design["items"] = {"source": "table", "path": f"items/{up.name}"}
             uploaded_inputs[design["items"]["path"]] = items_abs
-            st.dataframe(pd.read_csv(items_abs).head(8), use_container_width=True)
+            st.dataframe(pd.read_csv(items_abs).head(8), width="stretch")
     design["counterbalance"] = {"lists": st.number_input("Counterbalancing lists", 1, 16, 2)}
 
-font = st.sidebar.text_input("Stimulus font", value="Courier New")
 if font and font != "Courier New":
     design["font"] = font
 
 design_filename = f"{name}.yaml"
 
-run = st.button("▶  Run design", type="primary", use_container_width=True)
+run = st.button("▶  Run design", type="primary", width="stretch")
 
 if run:
     ready = True
@@ -513,6 +727,9 @@ if run:
     if paradigm == "factorial" and len(design.get("conditions", [])) < 2:
         st.error("Define at least two conditions.")
         ready = False
+    if paradigm == "factorial" and not design.get("match_on"):
+        st.error("Choose at least one dimension to match on.")
+        ready = False
     if paradigm in ITEM_TABLE_PARADIGMS and not items_abs:
         st.error("Choose or upload an item table first.")
         ready = False
@@ -520,6 +737,10 @@ if run:
         try:
             with st.spinner("Running the lexsync pipeline…"):
                 bundle = run_design(design, lexicon_abs, items_abs)
+            # One run's tree at a time: the results on screen are read from the
+            # newest, and the process may serve many runs before it ends.
+            discard_run_dir(st.session_state.get("run_dir"))
+            st.session_state["run_dir"] = bundle["rundir"]
             st.session_state["bundle"] = bundle
             st.session_state["design"] = design
             st.session_state["design_filename"] = design_filename
@@ -527,6 +748,7 @@ if run:
             st.success(f"Selected {len(bundle['stimuli'])} rows.")
         except Exception as exc:  # surface pipeline errors to the user
             st.session_state.pop("bundle", None)
+            discard_run_dir(st.session_state.pop("run_dir", None))
             st.error(f"The pipeline raised an error: {exc}")
 
 if "bundle" in st.session_state:
@@ -539,7 +761,7 @@ if "bundle" in st.session_state:
                     "Reproducible code", "Download"])
 
     with tabs[0]:
-        st.dataframe(bundle["stimuli"], use_container_width=True, height=460)
+        st.dataframe(bundle["stimuli"], width="stretch", height=460)
 
     with tabs[1]:
         comp = bundle["comparisons"]
@@ -554,17 +776,15 @@ if "bundle" in st.session_state:
                                 "var_ratio", "tost_p", "equivalent"] if c in show.columns]
             st.markdown("**Effect size and equivalence per controlled dimension** "
                         "(Cohen's *d* against the anchor, 90% CI, and the TOST verdict).")
-            st.dataframe(show[cols], use_container_width=True)
+            st.dataframe(show[cols], width="stretch")
             try:
-                chart = comp.assign(abs_d=comp["cohens_d"].abs())[["dimension", "abs_d"]]
-                st.bar_chart(chart, x="dimension", y="abs_d", height=240)
-                st.caption("Absolute standardised mean difference by dimension. Manipulated "
-                           "dimensions stand high; matched dimensions sit near zero.")
+                st.altair_chart(control_plot(control_chart(comp)), width="stretch")
+                st.caption(control_caption(comp))
             except Exception:
                 pass
         if bundle["descriptives"] is not None:
             st.markdown("**Per-condition descriptive statistics**")
-            st.dataframe(bundle["descriptives"], use_container_width=True)
+            st.dataframe(bundle["descriptives"], width="stretch")
 
     with tabs[2]:
         if bundle["datasheet_md"]:
@@ -591,8 +811,7 @@ if "bundle" in st.session_state:
         st.code(code["r"], language="r")
         st.markdown("**Reproduce from the command line**")
         st.code(code["cli"], language="bash")
-        st.caption("The R and Python engines produce byte-identical stimuli and "
-                   "trial order from this configuration.")
+        st.caption(parity_claim(design))
         if extra_files:
             st.warning(
                 "This design names " + ", ".join(f"`{p}`" for p in extra_files) +

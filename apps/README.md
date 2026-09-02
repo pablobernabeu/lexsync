@@ -7,8 +7,8 @@ realised-control report and the materials datasheet, and exports the reproducibl
 R, Python and command-line code that reproduces the operation. The applications are
 front-ends only: every result they show is produced by the installed lexsync
 package, and the design they build is an ordinary YAML configuration file. The two
-engines select byte-identical stimuli, so a design built in either application runs
-the same way in either ecosystem.
+engines select byte-identical stimuli under the deterministic matching methods, so a
+design built in either application runs the same way in either ecosystem.
 
 Both cover the corpus-matching workflow (conditions defined by numeric windows or by
 a categorical column, including full 2 × 2 cells), the lexical-decision paradigm with
@@ -56,5 +56,6 @@ The app opens at <http://localhost:8502>.
   unchanged from the repository root.
 - The `standardised_euclidean` and `joint` methods select byte-identical stimuli in
   both engines. `mahalanobis` and `optimal` use a covariance inverse or an assignment
-  solver, so the two engines agree closely but not byte-for-byte, and the datasheet
-  tab reports which case applies. The `optimal` method needs the R `clue` package.
+  solver, so the two engines agree closely but not byte-for-byte, and both the
+  reproducible-code panel and the datasheet tab report which case applies. The
+  `optimal` method needs the R `clue` package.

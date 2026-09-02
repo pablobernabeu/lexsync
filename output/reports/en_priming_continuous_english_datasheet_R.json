@@ -70,7 +70,7 @@
     ],
     "n_pairs": 8,
     "member_lexicon": "corpora/derived/en.csv",
-    "member_lexicon_sha256": "c20549b920d816809d11cfa673ad0df1dd70d3e73176ee66cbec18021627f65d",
+    "member_lexicon_sha256": "575833489e04d6a4001fda56a56e3daa383811dece1f819c44060ee79ca56976",
     "member_dimensions": [
       "freq_zipf",
       "frequency",
@@ -133,17 +133,17 @@
     "versions": {
       "engine": "R",
       "lexsync": "0.1.0",
-      "R": "4.6.1",
-      "readr": "2.2.0",
-      "stringdist": "0.9.17",
-      "jsonlite": "2.0.0",
-      "digest": "0.6.39",
-      "yaml": "2.3.12",
-      "stringi": "1.8.7",
-      "os": "Windows x86-64"
+      "R": "4.3.3",
+      "readr": "2.1.5",
+      "stringdist": "0.9.12",
+      "jsonlite": "1.8.8",
+      "digest": "0.6.34",
+      "yaml": "2.3.8",
+      "stringi": "1.8.3",
+      "os": "Linux x86_64"
     },
-    "design_sha256": "aa538f8c33f01a3abc3176fe37c89c25107a97a03bc2ec0109070cf4eb9c8b23",
-    "schema_sha256": "483a9cec49314b9479fe656ad39840083a551f2e4313ca164efe3e9c064fb255"
+    "design_sha256": "ccfdfb44d3a32c3642b8dec85fe32f9cce173b90185d10bb1d8016379576cd6f",
+    "schema_sha256": "bc66a5fd3a65b0f93271d18958f18ae7037f00f7a21ae6380632c55de49e7ca0"
   },
   "artifacts": [
     {
@@ -160,15 +160,15 @@
     },
     {
       "file": "output/experiments/en_priming_continuous_english_psychopy.py",
-      "sha256": "7fdb11b6cd0678420481e1d0c0090abb48be9a537e563cb8e25a8428e1055c50"
+      "sha256": "c520349021add7d4b34cd119841a00ef1efa2c18253c1e21a124cfa4fd213a55"
     },
     {
       "file": "output/experiments/en_priming_continuous_english.osexp",
-      "sha256": "efda467aa4c557653001193f5aef1d8805db488f7827fefc71c603e24f793028"
+      "sha256": "a748d3124e65f115a6b580d0937eb6a77aa37da64ef40df10bc4946fa995637b"
     },
     {
       "file": "output/experiments/en_priming_continuous_english.html",
-      "sha256": "6b6d16ffa44fd5e53c1ff778b9ce20cf4f74cd70cabe30bd2b9b877e8785c45e"
+      "sha256": "a66897af3a1b64a71559c75473b7438e3426193d02194c5771e2d358b899f3c7"
     }
   ]
 }

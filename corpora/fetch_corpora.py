@@ -150,7 +150,8 @@ def write_slice(df: pd.DataFrame, lang: str, target: int = 3000) -> int:
     sl = sl.sort_values("word").reset_index(drop=True)
     for d in PACKAGE_DATA_DIRS:
         d.mkdir(parents=True, exist_ok=True)
-        sl.to_csv(d / f"{lang}_example.csv", index=False, encoding="utf-8")
+        sl.to_csv(d / f"{lang}_example.csv", index=False, encoding="utf-8",
+                  lineterminator="\n")
     return len(sl)
 
 
@@ -264,7 +265,10 @@ def main() -> None:
         print(f"[fetch_corpora] building '{lang}' (target {args.n_words} words) ...", flush=True)
         df = build(lang, args.n_words)
         out = DERIVED / f"{lang}.csv"
-        df.to_csv(out, index=False, encoding="utf-8")
+        # LF explicitly, as in build_es_gender.py and the package's own writers:
+        # pandas otherwise follows os.linesep, and the datasheet publishes the
+        # sha256 of these files, which must not depend on the OS that built them.
+        df.to_csv(out, index=False, encoding="utf-8", lineterminator="\n")
         n_slice = write_slice(df, lang)
         zmin, zmax = df.freq_zipf.min(), df.freq_zipf.max()
         print(f"  -> {out.name}: {len(df)} words (Zipf {zmin:.2f}-{zmax:.2f}); slice {n_slice}", flush=True)

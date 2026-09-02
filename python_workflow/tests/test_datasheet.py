@@ -455,3 +455,41 @@ def test_a_dotted_model_term_earns_the_patsy_quoting_note(schema):
                             schema, None, _stim(), "x.csv",
                             {"stimuli": None, "experiments": {}}, 2026)
     assert "Patsy" not in plain["analysis"]["note"]
+
+
+# --- Rendering the two engines have to agree on -----------------------------
+# test-datasheet.R asserts the same properties.
+
+def test_the_markdown_renderer_writes_the_r_engines_ascii_and_spellings(schema):
+    stim = _stim()
+    report = match_report(stim, ["length", "frequency", "n_density", "old20"], schema)
+    ds = build_datasheet(_design(), schema, report, stim, "corpora/derived/en.csv",
+                         {"stimuli": None, "experiments": {}}, 2026, engine="python")
+    md = render_datasheet_md(ds)
+    assert "—" not in md and "…" not in md
+    assert md.startswith("# Materials datasheet -- t (english)")
+    assert "-- where the response is" in md
+    # The realised-control table, spelled as the R renderer spells it: a whole-number
+    # TOST p without a trailing ".0", and R's booleans.
+    assert "| length | controlled | 0.00 | [0.00, 0.00] | 1.00 | 0 | TRUE |" in md
+    assert "| frequency | manipulated/free | -- | -- | 1.00 | 1 | FALSE |" in md
+
+
+def test_fixed_and_tost_p_render_a_stored_value_the_same_way_in_both_engines():
+    from lexsync.datasheet import _fixed, _tost_p
+    # -0.465 is the value that split the engines: the C library's answer at the
+    # half-way point is its own business, so the shared rounder decides first.
+    assert _fixed(-0.465, 2) == "-0.47"
+    assert _fixed(0.465, 2) == "0.47"
+    assert _fixed(0.1235, 3) == "0.124"
+    # Neither R's as.character (9e-04) nor Python's str (1.0), which disagree.
+    assert _tost_p(0.0009) == "0.0009"
+    assert _tost_p(1.0) == "1"
+    assert _tost_p(None) == "--"
+
+
+def test_methods_paragraph_keeps_the_language_labels_own_capitals(schema):
+    design = dict(_design(), language="British English")
+    ds = build_datasheet(design, schema, None, _stim(), "x.csv",
+                         {"stimuli": None, "experiments": {}}, 2026)
+    assert "from the British English lexicon" in methods_paragraph(ds)

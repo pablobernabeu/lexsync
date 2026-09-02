@@ -19,15 +19,15 @@
     },
     {
       "file": "output/experiments/en_priming_continuous_english_psychopy.py",
-      "sha256": "7fdb11b6cd0678420481e1d0c0090abb48be9a537e563cb8e25a8428e1055c50"
+      "sha256": "c520349021add7d4b34cd119841a00ef1efa2c18253c1e21a124cfa4fd213a55"
     },
     {
       "file": "output/experiments/en_priming_continuous_english.osexp",
-      "sha256": "efda467aa4c557653001193f5aef1d8805db488f7827fefc71c603e24f793028"
+      "sha256": "a748d3124e65f115a6b580d0937eb6a77aa37da64ef40df10bc4946fa995637b"
     },
     {
       "file": "output/experiments/en_priming_continuous_english.html",
-      "sha256": "6b6d16ffa44fd5e53c1ff778b9ce20cf4f74cd70cabe30bd2b9b877e8785c45e"
+      "sha256": "a66897af3a1b64a71559c75473b7438e3426193d02194c5771e2d358b899f3c7"
     }
   ],
   "counterbalancing": {
@@ -125,7 +125,7 @@
       "old20"
     ],
     "member_lexicon": "corpora/derived/en.csv",
-    "member_lexicon_sha256": "c20549b920d816809d11cfa673ad0df1dd70d3e73176ee66cbec18021627f65d",
+    "member_lexicon_sha256": "575833489e04d6a4001fda56a56e3daa383811dece1f819c44060ee79ca56976",
     "members": [
       "prime",
       "target"
@@ -137,18 +137,18 @@
     ]
   },
   "reproducibility": {
-    "design_sha256": "aa538f8c33f01a3abc3176fe37c89c25107a97a03bc2ec0109070cf4eb9c8b23",
-    "schema_sha256": "483a9cec49314b9479fe656ad39840083a551f2e4313ca164efe3e9c064fb255",
+    "design_sha256": "ccfdfb44d3a32c3642b8dec85fe32f9cce173b90185d10bb1d8016379576cd6f",
+    "schema_sha256": "bc66a5fd3a65b0f93271d18958f18ae7037f00f7a21ae6380632c55de49e7ca0",
     "seed": 2026,
     "versions": {
       "engine": "python",
       "lexsync": "0.1.0",
-      "numpy": "2.3.2",
-      "os": "Windows AMD64",
-      "pandas": "2.3.2",
-      "python": "3.13.7",
+      "numpy": "2.4.6",
+      "os": "Linux x86_64",
+      "pandas": "2.3.3",
+      "python": "3.11.15",
       "pyyaml": "6.0.3",
-      "rapidfuzz": "3.14.5",
+      "rapidfuzz": "3.14.6",
       "scipy": "1.17.1"
     }
   },

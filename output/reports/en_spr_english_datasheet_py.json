@@ -11,15 +11,15 @@
     },
     {
       "file": "output/experiments/en_spr_english_psychopy.py",
-      "sha256": "31f2c9f74d34edca6f577b2abb541dc4dc53ed3f7759628baed6c88b8f4a501c"
+      "sha256": "872ed579ff3036cd5899c33aaa84ff2d4bb6b43fcf09a28ac6a9c3f85e971ebf"
     },
     {
       "file": "output/experiments/en_spr_english.osexp",
-      "sha256": "0df266c692e3b49d4ec92cc400cd639e30e30c17ba8b1f2a52bc71686d63053f"
+      "sha256": "06d18f27b73b34914de2f597bfc85dc8d7aec47ad6e447a97a20fc220d68b1e8"
     },
     {
       "file": "output/experiments/en_spr_english.html",
-      "sha256": "d6b2b3523f409963577dc5c0a2b6bda0ef0a71e7f76091f1bb9c8864b81a67c9"
+      "sha256": "7343059a0371d572478697e05fd20af4a070c6d7a77c1593e62bb9dc0e59a995"
     }
   ],
   "counterbalancing": {
@@ -60,17 +60,17 @@
   "relational": null,
   "reproducibility": {
     "design_sha256": "f1af82c75f9910c2cdf16f883a188ca1842f83a7ec995e051f7a0238ef613d95",
-    "schema_sha256": "483a9cec49314b9479fe656ad39840083a551f2e4313ca164efe3e9c064fb255",
+    "schema_sha256": "bc66a5fd3a65b0f93271d18958f18ae7037f00f7a21ae6380632c55de49e7ca0",
     "seed": 2026,
     "versions": {
       "engine": "python",
       "lexsync": "0.1.0",
-      "numpy": "2.3.2",
-      "os": "Windows AMD64",
-      "pandas": "2.3.2",
-      "python": "3.13.7",
+      "numpy": "2.4.6",
+      "os": "Linux x86_64",
+      "pandas": "2.3.3",
+      "python": "3.11.15",
       "pyyaml": "6.0.3",
-      "rapidfuzz": "3.14.5",
+      "rapidfuzz": "3.14.6",
       "scipy": "1.17.1"
     }
   },

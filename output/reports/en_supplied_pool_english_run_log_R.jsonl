@@ -1,16 +1,16 @@
-{"time":"2026-08-07 22:50:08.146744","message":"loading supplied pool 'items/pool_en_concrete_nouns.csv'","data":null}
-{"time":"2026-08-07 22:50:08.761776","message":"supplied pool: 131 words (dimensions from 'corpora/derived/en.csv')","data":{"words":131,"lexicon":"corpora/derived/en.csv"}}
-{"time":"2026-08-07 22:50:08.767828","message":"pool after filters: 131 words","data":{"pool":131}}
-{"time":"2026-08-07 22:50:08.780705","message":"matched 40 items across 2 conditions","data":{"conditions":"higher_frequency, lower_frequency"}}
-{"time":"2026-08-07 22:50:08.798693","message":"equivalence lower_frequency vs higher_frequency on 'length': d = -0.11 [-0.64, 0.42], TOST p = 0.112 (not shown equivalent)","data":null}
-{"time":"2026-08-07 22:50:08.804029","message":"equivalence lower_frequency vs higher_frequency on 'frequency': d = 3.53 [3.00, 4.06], TOST p = 1.000 (not shown equivalent)","data":null}
-{"time":"2026-08-07 22:50:08.808262","message":"equivalence lower_frequency vs higher_frequency on 'n_density': d = 0.13 [-0.40, 0.66], TOST p = 0.124 (not shown equivalent)","data":null}
-{"time":"2026-08-07 22:50:08.813858","message":"equivalence lower_frequency vs higher_frequency on 'old20': d = -0.24 [-0.78, 0.29], TOST p = 0.209 (not shown equivalent)","data":null}
-{"time":"2026-08-07 22:50:08.849348","message":"wrote 'en_supplied_pool_english_stimuli_R.csv'","data":{"path":"output/stimuli/en_supplied_pool_english_stimuli_R.csv","rows":40,"md5":"5f9123dce72c73b1f532a5b393c0ee55"}}
-{"time":"2026-08-07 22:50:08.877054","message":"wrote 'en_supplied_pool_english_descriptives_R.csv'","data":{"path":"output/reports/en_supplied_pool_english_descriptives_R.csv","rows":8,"md5":"084478a4ea1b2982354267964701bdf0"}}
-{"time":"2026-08-07 22:50:08.903608","message":"wrote 'en_supplied_pool_english_comparisons_R.csv'","data":{"path":"output/reports/en_supplied_pool_english_comparisons_R.csv","rows":4,"md5":"a6ed40f01c6a55726fccd8f520ab8333"}}
-{"time":"2026-08-07 22:50:08.995365","message":"wrote 'en_supplied_pool_english_psychopy.py'","data":{"path":"output/experiments/en_supplied_pool_english_psychopy.py","rows":"NA","md5":"f2a329e0d8bf81270a33cc700ab8d858"}}
-{"time":"2026-08-07 22:50:09.006312","message":"wrote 'en_supplied_pool_english.osexp'","data":{"path":"output/experiments/en_supplied_pool_english.osexp","rows":"NA","md5":"4bfa2f18cc3a5e7ef39a9f140aa6154e"}}
-{"time":"2026-08-07 22:50:09.014659","message":"wrote 'en_supplied_pool_english.html'","data":{"path":"output/experiments/en_supplied_pool_english.html","rows":"NA","md5":"049942042c0f160bef7a4b9b3a37b7ae"}}
-{"time":"2026-08-07 22:50:09.150259","message":"wrote 'en_supplied_pool_english_datasheet_R.json'","data":{"path":"output/reports/en_supplied_pool_english_datasheet_R.json","rows":"NA","md5":"671950c2c0105b7417e4e3e92513222a"}}
-{"time":"2026-08-07 22:50:09.163508","message":"wrote 'en_supplied_pool_english_datasheet_R.md'","data":{"path":"output/reports/en_supplied_pool_english_datasheet_R.md","rows":"NA","md5":"4ee16e01446bf9485449bad820cce157"}}
+{"time":"2026-09-02 19:25:03.383069","message":"loading supplied pool 'items/pool_en_concrete_nouns.csv'","data":null}
+{"time":"2026-09-02 19:25:03.630605","message":"supplied pool: 131 words (dimensions from 'corpora/derived/en.csv')","data":{"words":131,"lexicon":"corpora/derived/en.csv"}}
+{"time":"2026-09-02 19:25:03.63091","message":"pool after filters: 131 words","data":{"pool":131}}
+{"time":"2026-09-02 19:25:03.635818","message":"matched 40 items across 2 conditions","data":{"conditions":"higher_frequency, lower_frequency"}}
+{"time":"2026-09-02 19:25:03.651255","message":"equivalence lower_frequency vs higher_frequency on 'length': d = -0.11 [-0.64, 0.42], TOST p = 0.1121 (not shown equivalent)","data":null}
+{"time":"2026-09-02 19:25:03.651504","message":"equivalence lower_frequency vs higher_frequency on 'frequency': d = 3.53 [3.00, 4.06], TOST p = 1.0000 (not shown equivalent)","data":null}
+{"time":"2026-09-02 19:25:03.651654","message":"equivalence lower_frequency vs higher_frequency on 'n_density': d = 0.13 [-0.40, 0.66], TOST p = 0.1245 (not shown equivalent)","data":null}
+{"time":"2026-09-02 19:25:03.65179","message":"equivalence lower_frequency vs higher_frequency on 'old20': d = -0.24 [-0.78, 0.29], TOST p = 0.2093 (not shown equivalent)","data":null}
+{"time":"2026-09-02 19:25:03.656847","message":"wrote 'en_supplied_pool_english_stimuli_R.csv'","data":{"path":"output/stimuli/en_supplied_pool_english_stimuli_R.csv","rows":40,"md5":"5f9123dce72c73b1f532a5b393c0ee55"}}
+{"time":"2026-09-02 19:25:03.659053","message":"wrote 'en_supplied_pool_english_descriptives_R.csv'","data":{"path":"output/reports/en_supplied_pool_english_descriptives_R.csv","rows":8,"md5":"084478a4ea1b2982354267964701bdf0"}}
+{"time":"2026-09-02 19:25:03.660924","message":"wrote 'en_supplied_pool_english_comparisons_R.csv'","data":{"path":"output/reports/en_supplied_pool_english_comparisons_R.csv","rows":4,"md5":"a6ed40f01c6a55726fccd8f520ab8333"}}
+{"time":"2026-09-02 19:25:03.673317","message":"wrote 'en_supplied_pool_english_psychopy.py'","data":{"path":"output/experiments/en_supplied_pool_english_psychopy.py","rows":"NA","md5":"db685471ea7d349bf708ed0e3434b085"}}
+{"time":"2026-09-02 19:25:03.673537","message":"wrote 'en_supplied_pool_english.osexp'","data":{"path":"output/experiments/en_supplied_pool_english.osexp","rows":"NA","md5":"4bfa2f18cc3a5e7ef39a9f140aa6154e"}}
+{"time":"2026-09-02 19:25:03.673628","message":"wrote 'en_supplied_pool_english.html'","data":{"path":"output/experiments/en_supplied_pool_english.html","rows":"NA","md5":"02b986a4f7aa3ba7f242afa29777a16c"}}
+{"time":"2026-09-02 19:25:03.689271","message":"wrote 'en_supplied_pool_english_datasheet_R.json'","data":{"path":"output/reports/en_supplied_pool_english_datasheet_R.json","rows":"NA","md5":"c9901ad1813f04314baf63f36b0bcd6e"}}
+{"time":"2026-09-02 19:25:03.689442","message":"wrote 'en_supplied_pool_english_datasheet_R.md'","data":{"path":"output/reports/en_supplied_pool_english_datasheet_R.md","rows":"NA","md5":"dddac013cdff32921016747a7997ebf7"}}

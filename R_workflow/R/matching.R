@@ -659,6 +659,13 @@ select_continuous_stimuli <- function(pool, design, schema, verbose = FALSE,
 #'   the datasheet.
 #' @export
 resample_stimuli <- function(pool, design, schema, n_sets, verbose = FALSE) {
+  # The same predicate run_pipeline applies to n_per_condition, and for the same
+  # reason: zero or a negative request returned an empty result the pipeline then
+  # reported nothing about, while a fractional one was truncated in silence.
+  if (!is.numeric(n_sets) || length(n_sets) != 1L || !is.finite(n_sets) ||
+      n_sets < 1 || n_sets != trunc(n_sets)) {
+    stop("lexsync: resample.n_sets must be a positive whole number.", call. = FALSE)
+  }
   used <- character(0)
   parts <- list()
   for (k in seq_len(as.integer(n_sets))) {

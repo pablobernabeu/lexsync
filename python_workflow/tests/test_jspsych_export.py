@@ -4,6 +4,7 @@ import re
 
 import pandas as pd
 
+from lexsync.counterbalancing import counterbalance
 from lexsync.paradigms import referenced_fields, resolve_events
 from lexsync.scripting import assign_triggers, export_jspsych
 
@@ -60,3 +61,26 @@ def test_jspsych_escapes_html_in_data(schema, tmp_path):
     assert "</script><b>x" not in text          # the literal closing tag is escaped
     _, trials = validate_jspsych(text)
     assert trials[0]["word"] == "</script><b>x"  # but the value round-trips via JSON
+
+
+def test_the_page_presents_one_counterbalancing_list(schema, tmp_path):
+    # The trials are embedded whole, because one page serves every participant, and a
+    # timeline built from all of them showed each target once per list: under a Latin
+    # square, once in every condition. The page selects the participant's list from its
+    # ?participant= query, the rule the other two targets follow. Pinned in
+    # test-jspsych.R too.
+    stim = pd.DataFrame({"prime": ["hot", "sky", "sun", "big"],
+                         "target": ["cold", "cold", "moon", "moon"],
+                         "condition": ["related", "unrelated"] * 2, "set": [1, 1, 2, 2],
+                         "length": 4, "frequency": 5, "n_density": 2, "old20": 1.5})
+    design = {"name": "t", "language": "english", "paradigm": "priming",
+              "counterbalance": {"lists": 2}}
+    stim = assign_triggers(counterbalance(stim, design, schema))
+    text = open(export_jspsych(stim, design, schema, str(tmp_path)),
+                encoding="utf-8").read()
+    _, trials = validate_jspsych(text)
+    # The embedded data stay complete; it is the timeline that takes one list.
+    assert sorted({str(t["list"]) for t in trials}) == ["1", "2"]
+    assert "const RUN_TRIALS = trialsForParticipant(TRIALS, PARTICIPANT);" in text
+    assert "for (const trial of RUN_TRIALS) {" in text
+    assert 'get("participant")' in text

@@ -50,17 +50,17 @@
     "versions": {
       "engine": "R",
       "lexsync": "0.1.0",
-      "R": "4.6.1",
-      "readr": "2.2.0",
-      "stringdist": "0.9.17",
-      "jsonlite": "2.0.0",
-      "digest": "0.6.39",
-      "yaml": "2.3.12",
-      "stringi": "1.8.7",
-      "os": "Windows x86-64"
+      "R": "4.3.3",
+      "readr": "2.1.5",
+      "stringdist": "0.9.12",
+      "jsonlite": "1.8.8",
+      "digest": "0.6.34",
+      "yaml": "2.3.8",
+      "stringi": "1.8.3",
+      "os": "Linux x86_64"
     },
     "design_sha256": "0535f924775a71d520cd2125b385c4752d7fe1ad336ef0a65e854b68ac356679",
-    "schema_sha256": "483a9cec49314b9479fe656ad39840083a551f2e4313ca164efe3e9c064fb255"
+    "schema_sha256": "bc66a5fd3a65b0f93271d18958f18ae7037f00f7a21ae6380632c55de49e7ca0"
   },
   "artifacts": [
     {
@@ -69,15 +69,15 @@
     },
     {
       "file": "output/experiments/en_categorisation_english_psychopy.py",
-      "sha256": "f1946751f35dd94dfb94d1b301ca38144775613e1fae6e4aee600c6686806eac"
+      "sha256": "c4b3899cb09a71ff60ad667428f4361e261ffc766fae626fc8956be6fdb959a0"
     },
     {
       "file": "output/experiments/en_categorisation_english.osexp",
-      "sha256": "5b180d45fe8d38c6b93668fd856d632c7c0b605743d0dfd14260a69b15e1cc4d"
+      "sha256": "f5794fe52a868bd5fb02ab0483be13251feb1af28732878f9714da4241acd7d5"
     },
     {
       "file": "output/experiments/en_categorisation_english.html",
-      "sha256": "f8977bf007666032ec8bf5bcfa23bd35e0ab83e2e83036871aa794fd28c85f45"
+      "sha256": "8a46e3cbbd51d3272e265e855b95726981ad45942c7d6ed409612b16888771e8"
     }
   ]
 }

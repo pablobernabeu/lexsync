@@ -1,4 +1,4 @@
-# Materials datasheet — en_andrews_repro (english)
+# Materials datasheet -- en_andrews_repro (english)
 
 *lexsync datasheet v1.1; python engine.*
 
@@ -6,12 +6,12 @@
 
 - **Paradigm:** factorial  |  **Item source:** corpus
 - **Description:** Reproducing Andrews (1989): frequency x orthographic neighbourhood size (Coltheart's N), a 2x2 lexical-decision design with every cell matched on length.
-- **Materials source:** `corpora/derived/en.csv` (sha256 `c20549b920d81680…`)
+- **Materials source:** `corpora/derived/en.csv` (sha256 `575833489e04d6a4...`)
 - **Selection:** standardised_euclidean
 - **Cross-engine determinism:** byte-identical
 - **Counterbalancing:** factorial, 1 list(s)
 - **Items:** 72 rows across 4 conditions (HF_smallN, HF_largeN, LF_largeN, LF_smallN)
-- **Seed:** 2026  |  **Versions:** engine python, lexsync 0.1.0, python 3.13.7, pandas 2.3.2, numpy 2.3.2, scipy 1.17.1, rapidfuzz 3.14.5, pyyaml 6.0.3, os Windows AMD64
+- **Seed:** 2026  |  **Versions:** engine python, lexsync 0.1.0, python 3.11.15, pandas 2.3.3, numpy 2.4.6, scipy 1.17.1, rapidfuzz 3.14.6, pyyaml 6.0.3, os Linux x86_64
 
 ## Selection transparency
 
@@ -22,22 +22,22 @@
 
 | Dimension | Role | Cohen's d | 90% CI | Var ratio | TOST p | Equivalent |
 |---|---|---|---|---|---|---|
-| length | controlled | -0.21 | [-0.77, 0.36] | 0.57 | 0.192 | False |
-| frequency | manipulated/free | -0.11 | [-0.67, 0.46] | 1.07 | 0.1238 | False |
-| n_density | manipulated/free | 3.19 | [2.63, 3.75] | 0.04 | 1.0 | False |
-| old20 | manipulated/free | -5.76 | [-6.32, -5.19] | 1.13 | 1.0 | False |
-| length | controlled | 0.10 | [-0.47, 0.66] | 0.71 | 0.1186 | False |
-| frequency | manipulated/free | 4.71 | [4.15, 5.28] | 0.50 | 1.0 | False |
-| n_density | manipulated/free | 0.10 | [-0.46, 0.67] | 0.64 | 0.1208 | False |
-| old20 | manipulated/free | 0.10 | [-0.46, 0.67] | 1.02 | 0.1218 | False |
-| length | controlled | 0.10 | [-0.47, 0.66] | 0.71 | 0.1186 | False |
-| frequency | manipulated/free | 5.18 | [4.62, 5.75] | 0.39 | 1.0 | False |
-| n_density | manipulated/free | 3.29 | [2.73, 3.85] | 0.05 | 1.0 | False |
-| old20 | manipulated/free | -5.91 | [-6.48, -5.35] | 1.22 | 1.0 | False |
+| length | controlled | -0.21 | [-0.77, 0.36] | 0.57 | 0.192 | FALSE |
+| frequency | manipulated/free | -0.11 | [-0.67, 0.46] | 1.07 | 0.1238 | FALSE |
+| n_density | manipulated/free | 3.19 | [2.63, 3.75] | 0.04 | 1 | FALSE |
+| old20 | manipulated/free | -5.76 | [-6.32, -5.19] | 1.13 | 1 | FALSE |
+| length | controlled | 0.10 | [-0.47, 0.66] | 0.71 | 0.1186 | FALSE |
+| frequency | manipulated/free | 4.71 | [4.15, 5.28] | 0.50 | 1 | FALSE |
+| n_density | manipulated/free | 0.10 | [-0.46, 0.67] | 0.64 | 0.1208 | FALSE |
+| old20 | manipulated/free | 0.10 | [-0.46, 0.67] | 1.02 | 0.1218 | FALSE |
+| length | controlled | 0.10 | [-0.47, 0.66] | 0.71 | 0.1186 | FALSE |
+| frequency | manipulated/free | 5.19 | [4.62, 5.75] | 0.39 | 1 | FALSE |
+| n_density | manipulated/free | 3.29 | [2.73, 3.85] | 0.05 | 1 | FALSE |
+| old20 | manipulated/free | -5.91 | [-6.48, -5.35] | 1.22 | 1 | FALSE |
 
 ## Suggested analysis
 
-- **Model:** `response ~ condition + (1 + condition | subject) + (1 | item)` — where the response is the trial outcome (e.g. reaction time or accuracy).
+- **Model:** `response ~ condition + (1 + condition | subject) + (1 | item)` -- where the response is the trial outcome (e.g. reaction time or accuracy).
 - Crossed random effects for subjects and items guard against the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). Begin with this maximal structure (Barr et al., 2013) and reduce it if the model does not converge (Matuschek et al., 2017). The formula is lme4 syntax, for lme4 in R or pymer4 in Python; statsmodels MixedLM cannot take it directly and needs the random effects restated in its own arguments. The equivalence tests in the realised control are post-selection diagnostics on deterministically selected items, not inferential tests over a sample.
 
 ## Methods paragraph

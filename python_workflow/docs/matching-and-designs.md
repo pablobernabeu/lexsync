@@ -174,8 +174,12 @@ one dimension that always needs a separate call.
 `add_neighbourhood` computes both neighbourhood measures against a reference word list, which
 should normally be the full lexicon, since a word's neighbours do not stop
 existing because your design excluded them. The pipeline passes the full lexicon for exactly that
-reason, and computes these only when the design's `match_on` asks for them, because the calculation
-is quadratic in the reference size and easily the slowest step in a run.
+reason, and computes these only where the design asks for them, because the calculation
+is quadratic in the reference size and easily the slowest step in a run. Anywhere the design names
+a dimension counts: `match_on`, a `pool_filters` entry, a condition's `define_by`, and a continuous
+predictor or control. A filter on a dimension the lexicon does not carry is answered after the
+filters it can carry, so the derivation runs on the smaller frame; the values are the same either
+way, because they are measured against the whole lexicon rather than against the pool.
 
 `add_bigram_frequency` averages, over a word's adjacent letter bigrams, the corpus probability of
 each. It works from integer counts and rounds the result to nine decimal places, which keeps

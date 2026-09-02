@@ -118,13 +118,29 @@ define sequence lexsync_trial
 	run lexsync_e2 always
 	run lexsync_e3 always
 
+define inline_script lexsync_list_gate
+	set description "Choose the participant's counterbalancing list"
+	set _prepare ""
+	___run__
+	_lists = [u'1', u'2']
+	_p = int(var.get(u'subject_nr', 1) or 1)
+	var.lexsync_list = _lists[(max(_p, 1) - 1) % len(_lists)]
+	var.lexsync_present = 1 if str(var.get(u'list', u'1')) == var.lexsync_list else 0
+	__end__
+
+define sequence lexsync_trial_gate
+	set flush_keyboard no
+	set description "Run the trial only if it belongs to the participant's list"
+	run lexsync_list_gate always
+	run lexsync_trial "[lexsync_present] = 1"
+
 define loop lexsync_loop
 	set source_file "en_spr_english_opensesame.csv"
 	set source file
 	set repeat 1
 	set order sequential
 	set description "Present each item once"
-	run lexsync_trial
+	run lexsync_trial_gate
 
 define sequence lexsync_experiment
 	set flush_keyboard yes

@@ -358,6 +358,24 @@ test_that("joint matching rejects a design without exactly two conditions", {
   expect_error(match_stimuli(lex, d, schema), "requires exactly two conditions")
 })
 
+# The engines diverged on n_sets = 0, R returning nothing at all and Python stopping
+# with pandas' 'No objects to concatenate', and both truncated a fractional request
+# without a word. test_matching.py pins the same values and message.
+test_that("resample_stimuli refuses an impossible number of sets", {
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  lex <- load_lexicon(system.file("extdata", "en_example.csv", package = "lexsync"), schema, "english")
+  design <- list(name = "r", language = "english", n_per_condition = 5,
+    pool_filters = list(length = c(3, 7), frequency = c(3.8, 7)),
+    conditions = list(list(name = "high", define_by = list(frequency = c(5.0, 7.0))),
+                      list(name = "low", define_by = list(frequency = c(3.8, 4.4)))),
+    match_on = list("length"))
+  pool <- build_pool(lex, design$pool_filters)
+  for (n_sets in list(0L, -1L, 2.5, "two", Inf)) {
+    expect_error(resample_stimuli(pool, design, schema, n_sets),
+                 "resample.n_sets must be a positive whole number", fixed = TRUE)
+  }
+})
+
 test_that("resample_stimuli produces disjoint matched sets", {
   schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
   lex <- load_lexicon(system.file("extdata", "en_example.csv", package = "lexsync"), schema, "english")

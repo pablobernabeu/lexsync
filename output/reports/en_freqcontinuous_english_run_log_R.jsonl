@@ -1,15 +1,15 @@
-{"time":"2026-08-07 22:49:43.758988","message":"loading lexicon 'corpora/derived/en.csv'","data":null}
-{"time":"2026-08-07 22:49:44.149169","message":"lexicon loaded: 30000 words","data":{"words":30000}}
-{"time":"2026-08-07 22:49:44.161421","message":"pool after filters: 7230 words","data":{"pool":7230}}
-{"time":"2026-08-07 22:49:44.175588","message":"selected 80 items spanning 'frequency' (continuous design)","data":{"predictor":"frequency"}}
-{"time":"2026-08-07 22:49:44.18489","message":"continuous: 'length' correlation with the predictor r = -0.165","data":null}
-{"time":"2026-08-07 22:49:44.188795","message":"continuous: 'n_density' correlation with the predictor r = -0.049","data":null}
-{"time":"2026-08-07 22:49:44.19147","message":"continuous: 'old20' correlation with the predictor r = -0.077","data":null}
-{"time":"2026-08-07 22:49:44.219722","message":"wrote 'en_freqcontinuous_english_stimuli_R.csv'","data":{"path":"output/stimuli/en_freqcontinuous_english_stimuli_R.csv","rows":80,"md5":"fcdccc1e813095d734281114acba796a"}}
-{"time":"2026-08-07 22:49:44.236361","message":"wrote 'en_freqcontinuous_english_descriptives_R.csv'","data":{"path":"output/reports/en_freqcontinuous_english_descriptives_R.csv","rows":4,"md5":"116b7845ef563fc194dbc065dfb7fde8"}}
-{"time":"2026-08-07 22:49:44.250808","message":"wrote 'en_freqcontinuous_english_comparisons_R.csv'","data":{"path":"output/reports/en_freqcontinuous_english_comparisons_R.csv","rows":4,"md5":"f654bdcb431ebfcdcf053b49444c4408"}}
-{"time":"2026-08-07 22:49:44.341315","message":"wrote 'en_freqcontinuous_english_psychopy.py'","data":{"path":"output/experiments/en_freqcontinuous_english_psychopy.py","rows":"NA","md5":"d7a770830721a210513e1c393beb2066"}}
-{"time":"2026-08-07 22:49:44.349244","message":"wrote 'en_freqcontinuous_english.osexp'","data":{"path":"output/experiments/en_freqcontinuous_english.osexp","rows":"NA","md5":"d9953f16653d5e11612d5e3b49f63686"}}
-{"time":"2026-08-07 22:49:44.356828","message":"wrote 'en_freqcontinuous_english.html'","data":{"path":"output/experiments/en_freqcontinuous_english.html","rows":"NA","md5":"bd05cb434d52b7dd568c35505287acc0"}}
-{"time":"2026-08-07 22:49:44.464816","message":"wrote 'en_freqcontinuous_english_datasheet_R.json'","data":{"path":"output/reports/en_freqcontinuous_english_datasheet_R.json","rows":"NA","md5":"55700176d36583ec195b30e42db1a884"}}
-{"time":"2026-08-07 22:49:44.475067","message":"wrote 'en_freqcontinuous_english_datasheet_R.md'","data":{"path":"output/reports/en_freqcontinuous_english_datasheet_R.md","rows":"NA","md5":"fefa12708472de05b32dcca4ade60e06"}}
+{"time":"2026-09-02 19:24:54.527472","message":"loading lexicon 'corpora/derived/en.csv'","data":null}
+{"time":"2026-09-02 19:24:54.743325","message":"lexicon loaded: 30000 words","data":{"words":30000}}
+{"time":"2026-09-02 19:24:54.748739","message":"pool after filters: 7230 words","data":{"pool":7230}}
+{"time":"2026-09-02 19:24:54.794999","message":"selected 80 items spanning 'frequency' (continuous design)","data":{"predictor":"frequency"}}
+{"time":"2026-09-02 19:24:54.814243","message":"continuous: 'length' correlation with the predictor r = -0.165","data":null}
+{"time":"2026-09-02 19:24:54.81446","message":"continuous: 'n_density' correlation with the predictor r = -0.049","data":null}
+{"time":"2026-09-02 19:24:54.814586","message":"continuous: 'old20' correlation with the predictor r = -0.077","data":null}
+{"time":"2026-09-02 19:24:54.821171","message":"wrote 'en_freqcontinuous_english_stimuli_R.csv'","data":{"path":"output/stimuli/en_freqcontinuous_english_stimuli_R.csv","rows":80,"md5":"fcdccc1e813095d734281114acba796a"}}
+{"time":"2026-09-02 19:24:54.823295","message":"wrote 'en_freqcontinuous_english_descriptives_R.csv'","data":{"path":"output/reports/en_freqcontinuous_english_descriptives_R.csv","rows":4,"md5":"116b7845ef563fc194dbc065dfb7fde8"}}
+{"time":"2026-09-02 19:24:54.825116","message":"wrote 'en_freqcontinuous_english_comparisons_R.csv'","data":{"path":"output/reports/en_freqcontinuous_english_comparisons_R.csv","rows":4,"md5":"f654bdcb431ebfcdcf053b49444c4408"}}
+{"time":"2026-09-02 19:24:54.843168","message":"wrote 'en_freqcontinuous_english_psychopy.py'","data":{"path":"output/experiments/en_freqcontinuous_english_psychopy.py","rows":"NA","md5":"edaf108cfd819b97b4b9c55fcebde069"}}
+{"time":"2026-09-02 19:24:54.843377","message":"wrote 'en_freqcontinuous_english.osexp'","data":{"path":"output/experiments/en_freqcontinuous_english.osexp","rows":"NA","md5":"d9953f16653d5e11612d5e3b49f63686"}}
+{"time":"2026-09-02 19:24:54.843469","message":"wrote 'en_freqcontinuous_english.html'","data":{"path":"output/experiments/en_freqcontinuous_english.html","rows":"NA","md5":"c0cf07ab3020143f0c3c05a44a3ba807"}}
+{"time":"2026-09-02 19:24:54.856855","message":"wrote 'en_freqcontinuous_english_datasheet_R.json'","data":{"path":"output/reports/en_freqcontinuous_english_datasheet_R.json","rows":"NA","md5":"9fea54b15782a4dabc0dfe23253002de"}}
+{"time":"2026-09-02 19:24:54.857049","message":"wrote 'en_freqcontinuous_english_datasheet_R.md'","data":{"path":"output/reports/en_freqcontinuous_english_datasheet_R.md","rows":"NA","md5":"ee94ade78651a1b7def7c0474344eab4"}}

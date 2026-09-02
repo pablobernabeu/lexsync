@@ -6,12 +6,12 @@
 
 - **Paradigm:** factorial  |  **Item source:** corpus
 - **Description:** English words spanning the frequency range continuously, with length, neighbourhood density and OLD20 held near-constant, for regression / mixed-model analysis.
-- **Materials source:** `corpora/derived/en.csv` (sha256 `c20549b920d81680...`)
+- **Materials source:** `corpora/derived/en.csv` (sha256 `575833489e04d6a4...`)
 - **Selection:** continuous even-spread (predictor spanned, controls banded)
 - **Cross-engine determinism:** byte-identical
 - **Counterbalancing:** factorial, 1 list(s)
 - **Items:** 80 rows across 1 conditions (continuous)
-- **Seed:** 2026  |  **Versions:** engine R, lexsync 0.1.0, R 4.6.1, readr 2.2.0, stringdist 0.9.17, jsonlite 2.0.0, digest 0.6.39, yaml 2.3.12, stringi 1.8.7, os Windows x86-64
+- **Seed:** 2026  |  **Versions:** engine R, lexsync 0.1.0, R 4.3.3, readr 2.1.5, stringdist 0.9.12, jsonlite 1.8.8, digest 0.6.34, yaml 2.3.8, stringi 1.8.3, os Linux x86_64
 
 ## Selection transparency
 

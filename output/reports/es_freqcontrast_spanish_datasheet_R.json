@@ -11,7 +11,7 @@
   "materials_source": {
     "type": "corpus",
     "path": "corpora/derived/es.csv",
-    "sha256": "02732e5f00d09951b97ab8d5bdc285c321894ccb49d5c20b7afe39335a8204d9",
+    "sha256": "e9f93013c16ec9745c0d02f82c697f2488c328365b95b57c5f04ac2565c123ea",
     "provenance": "wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md"
   },
   "dimensions": {
@@ -143,17 +143,17 @@
     "versions": {
       "engine": "R",
       "lexsync": "0.1.0",
-      "R": "4.6.1",
-      "readr": "2.2.0",
-      "stringdist": "0.9.17",
-      "jsonlite": "2.0.0",
-      "digest": "0.6.39",
-      "yaml": "2.3.12",
-      "stringi": "1.8.7",
-      "os": "Windows x86-64"
+      "R": "4.3.3",
+      "readr": "2.1.5",
+      "stringdist": "0.9.12",
+      "jsonlite": "1.8.8",
+      "digest": "0.6.34",
+      "yaml": "2.3.8",
+      "stringi": "1.8.3",
+      "os": "Linux x86_64"
     },
     "design_sha256": "08428e5f090244fb55490364bcbc218561e71a8fca325d0497f1a36c1c0b1580",
-    "schema_sha256": "483a9cec49314b9479fe656ad39840083a551f2e4313ca164efe3e9c064fb255"
+    "schema_sha256": "bc66a5fd3a65b0f93271d18958f18ae7037f00f7a21ae6380632c55de49e7ca0"
   },
   "artifacts": [
     {
@@ -170,7 +170,7 @@
     },
     {
       "file": "output/experiments/es_freqcontrast_spanish_psychopy.py",
-      "sha256": "fa8a94de8f9314b49d5cada043f8aaa7cd04e1efc9916f4250cb45dff35f5296"
+      "sha256": "8db15d6bb992ea7ba20305acf9685e923da58023fe549b4bbc619af56573679d"
     },
     {
       "file": "output/experiments/es_freqcontrast_spanish.osexp",
@@ -178,7 +178,7 @@
     },
     {
       "file": "output/experiments/es_freqcontrast_spanish.html",
-      "sha256": "35d567707d028bfe22ff8a1ff95f248017c11ab55994e6ec464e5d00c5fa69a0"
+      "sha256": "157ebe1fcb3d8a831061ada4e2610d7cf4086cf74b2c85d767ec927a8df16ae8"
     }
   ]
 }

@@ -116,11 +116,31 @@ PARADIGMS = {
         ],
     },
 }
+"""The paradigm registry: default event sequences and required fields.
+
+One entry per paradigm (``factorial``, ``lexical_decision``, ``priming``,
+``categorisation``, ``self_paced_reading``), each holding ``stimulus_fields``, a
+``counterbalance`` recipe and an ``events`` list. An event is the small
+dictionary this module's header describes: ``type``, ``content``, an optional
+``trigger``, ``onset_locked``, response ``keys`` and ``timeout_ms``, and an
+optional ``blocks`` restricting the event to named blocks.
+"""
 
 _FIELD_RE = re.compile(r"\{([A-Za-z_][A-Za-z0-9_]*)\}")
 
 
 def get_paradigm(name: str) -> dict:
+    """Look a paradigm up in the registry.
+
+    Args:
+        name: A paradigm name.
+
+    Returns:
+        The paradigm's registry entry.
+
+    Raises:
+        ValueError: If the name is not registered.
+    """
     if name not in PARADIGMS:
         known = ", ".join(sorted(PARADIGMS))
         raise ValueError(f"lexsync: unknown paradigm '{name}'. Known paradigms: {known}.")
@@ -128,7 +148,14 @@ def get_paradigm(name: str) -> dict:
 
 
 def resolve_events(design: dict) -> list:
-    """Return the event list for a design: explicit ``events`` or paradigm default."""
+    """Return the event list for a design: explicit ``events`` or paradigm default.
+
+    Args:
+        design: A parsed design configuration.
+
+    Returns:
+        The trial events the design presents.
+    """
     if design.get("events"):
         return [dict(e) for e in design["events"]]
     name = design.get("paradigm", "factorial")
@@ -136,7 +163,14 @@ def resolve_events(design: dict) -> list:
 
 
 def content_field(content) -> str | None:
-    """If ``content`` is a single field reference like "{target}", return the field."""
+    """If ``content`` is a single field reference like "{target}", return the field.
+
+    Args:
+        content: An event's content, of any type.
+
+    Returns:
+        The field name, or ``None`` when the content is a literal.
+    """
     if not isinstance(content, str):
         return None
     m = _FIELD_RE.fullmatch(content.strip())
@@ -144,7 +178,14 @@ def content_field(content) -> str | None:
 
 
 def referenced_fields(events: list) -> list:
-    """The ordered, unique trial fields referenced by an event list's content."""
+    """The ordered, unique trial fields referenced by an event list's content.
+
+    Args:
+        events: A list of trial events.
+
+    Returns:
+        The field names, in order of first appearance.
+    """
     fields = []
     for ev in events:
         f = content_field(ev.get("content"))
@@ -154,7 +195,14 @@ def referenced_fields(events: list) -> list:
 
 
 def required_fields(design: dict) -> list:
-    """Trial fields a design needs present in its items (paradigm + events)."""
+    """Trial fields a design needs present in its items (paradigm + events).
+
+    Args:
+        design: A parsed design configuration.
+
+    Returns:
+        The item fields the design's trials reference.
+    """
     name = design.get("paradigm", "factorial")
     base = list(get_paradigm(name)["stimulus_fields"]) if name in PARADIGMS else []
     for f in referenced_fields(resolve_events(design)):

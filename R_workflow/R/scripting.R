@@ -5,6 +5,12 @@
 # list; the OpenSesame .osexp is generated block by block. Generation imports
 # neither psychopy nor pyserial: it only writes text. Mirrors scripting.py.
 
+# The event types the renderers accept, in the order the paradigms.R header lists
+# them. Fixed, not sort(), because sort() on character vectors is locale-collated
+# and the two engines' error messages must agree.
+.KNOWN_EVENT_TYPES <- c("fixation", "text", "mask", "blank", "region_by_region",
+                        "response", "question", "feedback")
+
 #' Locate a bundled template file
 #' @keywords internal
 find_template <- function(relpath) {
@@ -216,7 +222,7 @@ render_events <- function(events, timing, hz = 60) {
   # that is obvious here.
   seen_response <- FALSE
   for (i in seq_along(events)) {
-    ty <- events[[i]]$type
+    ty <- events[[i]]$type %||% ""
     if (ty %in% c("response", "question")) seen_response <- TRUE
     if (identical(ty, "feedback") && !seen_response) {
       stop(sprintf(paste("lexsync: event %d is a feedback event, but no response or",
@@ -226,7 +232,9 @@ render_events <- function(events, timing, hz = 60) {
   }
   for (i in seq_along(events)) {
     ev <- events[[i]]
-    t <- ev$type
+    # %||% "", so an event with no type at all reaches the message below rather
+    # than base R's 'argument is of length zero'; the Python mirror does the same.
+    t <- ev$type %||% ""
     r <- list(type = if (identical(t, "region_by_region")) "region" else t)
     if (t %in% c("fixation", "text", "mask")) {
       f <- content_field(ev$content)
@@ -277,7 +285,8 @@ render_events <- function(events, timing, hz = 60) {
       r$no_response <- as.character(ev$no_response %||% "Too slow")
       r$ms <- .event_ms(ev, NULL, NULL, hz, default_frames = 36L)
     } else {
-      stop(sprintf("lexsync: unknown event type '%s'.", t), call. = FALSE)
+      stop(sprintf("lexsync: unknown event type '%s'. Known types: %s.", t,
+                   paste(.KNOWN_EVENT_TYPES, collapse = ", ")), call. = FALSE)
     }
     # An event may be restricted to named blocks. This is what lets feedback run during
     # practice and nowhere else: the event list is global to the design, so the
@@ -421,6 +430,17 @@ export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
     paste0("    ", body))
 }
 
+# The response window in milliseconds, as the other two backends read it.
+# OpenSesame wants milliseconds where the rendered event carries seconds, and
+# as.integer() truncates: 1.001 * 1000 is 1000.9999999999999 in binary floating
+# point, so a 1001 ms window became 1000 ms here while the PsychoPy template used
+# the seconds directly and the jsPsych template rounded. The conversion therefore
+# goes through the package's own rounder, which is what wrote the seconds in the
+# first place.
+.osexp_timeout_ms <- function(ev, default_s) {
+  as.integer(.round_dp((ev$timeout %||% default_s) * 1000, 0))
+}
+
 .osexp_event_block <- function(name, ev) {
   t <- ev$type
   blocks <- ev[["blocks"]]
@@ -468,7 +488,7 @@ export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
     body <- c(
       sprintf("c = Canvas(); c.text(var.%s); c.show()", ev$field),
       sprintf("_kb = Keyboard(keylist=[%s], timeout=%d)", keys_list,
-              as.integer((ev$timeout %||% 5) * 1000)),
+              .osexp_timeout_ms(ev, 5)),
       "var.response, var.response_time = _kb.get_key()")
     return(list(block = .inline_block(name, "Comprehension question",
                                       .osexp_block_guard(body, blocks)), run = name))
@@ -500,18 +520,61 @@ export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
       .inline_block(sprintf("%s_blank", name), "Clear the screen for the response window",
                     c("c = Canvas()", "c.show()")),
       sprintf("define keyboard_response %s", name),
-      paste0("\tset timeout ", as.integer((ev$timeout %||% 2) * 1000)),
+      paste0("\tset timeout ", .osexp_timeout_ms(ev, 2)),
       "\tset flush yes", "\tset duration keypress",
       '\tset description "Collect a response"',
       sprintf('\tset allowed_responses "%s"', keys), "")
     return(list(block = block, run = c(sprintf("%s_blank", name), name)))
   }
-  stop(sprintf("lexsync: unknown event type '%s'.", t), call. = FALSE)
+  stop(sprintf("lexsync: unknown event type '%s'. Known types: %s.", t,
+               paste(.KNOWN_EVENT_TYPES, collapse = ", ")), call. = FALSE)
+}
+
+# The order that puts list labels in numeric order, so list 10 follows list 9 rather
+# than list 1. Mirrors ._list_sort_key in scripting.py.
+.list_order <- function(values) {
+  text <- as.character(values)
+  numeric_like <- grepl("^[0-9]+$", text)
+  order(!numeric_like, suppressWarnings(ifelse(numeric_like, as.numeric(text), 0)),
+        ifelse(numeric_like, "", text), method = "radix")
+}
+
+# Lines defining the per-trial list gate, and the item the loop should run.
+#
+# The loop table carries every counterbalancing list, because one experiment file serves
+# every participant, and presenting it whole would show each item once per list: for a
+# rotated design, once in every condition. The PsychoPy and jsPsych runners drop the
+# other lists in code; a sequence has no such place, so the trial is run behind a
+# condition instead. The inline script sets an integer flag rather than the run line
+# comparing two variables, which keeps that line in the `[variable] = value` form
+# OpenSesame documents. Participant p is presented the pth list, cycling, which is the
+# allocation participant_table() makes and the rule the other two runners follow;
+# `subject_nr` is the participant number OpenSesame asks for at start-up. Mirrors
+# ._osexp_list_gate in scripting.py, since the two engines write the same .osexp.
+.osexp_list_gate <- function(lists) {
+  values <- unique(as.character(lists))
+  values <- values[.list_order(values)]
+  if (length(values) < 2L) return(list(block = character(0), run = "lexsync_trial"))
+  body <- c(
+    sprintf("_lists = [%s]", paste(vapply(values, .pyq, character(1)), collapse = ", ")),
+    "_p = int(var.get(u'subject_nr', 1) or 1)",
+    "var.lexsync_list = _lists[(max(_p, 1) - 1) % len(_lists)]",
+    "var.lexsync_present = 1 if str(var.get(u'list', u'1')) == var.lexsync_list else 0")
+  block <- c(
+    .inline_block("lexsync_list_gate", "Choose the participant's counterbalancing list",
+                  body),
+    "define sequence lexsync_trial_gate",
+    "\tset flush_keyboard no",
+    '\tset description "Run the trial only if it belongs to the participant\'s list"',
+    "\trun lexsync_list_gate always",
+    '\trun lexsync_trial "[lexsync_present] = 1"', "")
+  list(block = block, run = "lexsync_trial_gate")
 }
 
 #' Build a complete plain-text OpenSesame experiment from rendered events
 #' @keywords internal
-build_osexp <- function(design, conditions_file, schema, rendered, font = "mono") {
+build_osexp <- function(design, conditions_file, schema, rendered, font = "mono",
+                        lists = NULL) {
   addr <- clean_port(schema$triggers$parallel_address %||% "0x378")
   design_name <- clean_meta(design$name, "the design's `name`")
   language <- clean_meta(design$language, "the design's `language`")
@@ -579,18 +642,20 @@ build_osexp <- function(design, conditions_file, schema, rendered, font = "mono"
     '\tset description "Open the trigger device with a test-mode fallback"',
     '\tset _run ""', "\t___prepare__", paste0("\t", setup), "\t__end__", ""
   )
+  gate <- .osexp_list_gate(lists)
   trial <- c(
     "define sequence lexsync_trial",
     "\tset flush_keyboard yes",
     '\tset description "One trial: the paradigm event sequence"',
     sprintf("\trun %s always", run_names), "",
+    gate$block,
     "define loop lexsync_loop",
     sprintf('\tset source_file "%s"', conditions_file),
     # Sequential, so the loop presents the seeded trial order the CSV is sorted
     # by; OpenSesame's default (random) would discard it and diverge from the
     # PsychoPy and jsPsych targets.
     "\tset source file", "\tset repeat 1", "\tset order sequential",
-    '\tset description "Present each item once"', "\trun lexsync_trial", "",
+    '\tset description "Present each item once"', sprintf("\trun %s", gate$run), "",
     "define sequence lexsync_experiment",
     "\tset flush_keyboard yes",
     '\tset description "Top-level experiment sequence"',
@@ -612,7 +677,8 @@ export_opensesame <- function(stimuli, design, schema, outdir, base = NULL) {
   write_csv_utf8(loop_table(stimuli, events), file.path(outdir, csv_name))
   presentation <- schema$presentation %||% list()
   font <- design$font %||% presentation$opensesame_font %||% "mono"
-  txt <- build_osexp(design, csv_name, schema, rendered, font = font)
+  lists <- if ("list" %in% names(stimuli)) stimuli$list else NULL
+  txt <- build_osexp(design, csv_name, schema, rendered, font = font, lists = lists)
   out <- file.path(outdir, paste0(base, ".osexp"))
   write_lines_lf(txt, out)
   invisible(out)

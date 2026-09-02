@@ -216,7 +216,22 @@ def balance_lists(stimuli: pd.DataFrame, design: dict, schema: dict) -> dict:
     if the integer objective would leave the range a double represents exactly, since
     past that point the two engines could disagree.
 
-    Returns ``{"list_of_set": {set: list}, "report": {...}}``.
+    Args:
+        stimuli: A stimuli data frame with a ``set`` column and the balance
+            dimensions.
+        design: A parsed design configuration. Reads ``counterbalance.lists``,
+            ``counterbalance.balance_on`` (defaulting to ``match_on``, then to
+            the continuous predictor and its controls) and
+            ``counterbalance.max_passes``.
+        schema: The parsed global schema (provides the seed).
+
+    Returns:
+        ``{"list_of_set": {set: list}, "report": {...}}``, where the report
+        names the dimensions, the integer cost before and after, the number of
+        swaps taken and whether the pass bound was reached.
+
+    Raises:
+        ValueError: In the five situations described above.
     """
     cb = design.get("counterbalance") or {}
     n_lists = int(cb.get("lists", 1))
@@ -319,6 +334,27 @@ def balance_lists(stimuli: pd.DataFrame, design: dict, schema: dict) -> dict:
 
 def counterbalance(stimuli: pd.DataFrame, design: dict, schema: dict,
                    list_of_set=None) -> pd.DataFrame:
+    """Assign stimuli to lists and a randomised, reproducible trial order.
+
+    Dispatches on the design's paradigm: the factorial recipe for matched word
+    lists, or a Latin square over conditions for paired and sentence paradigms.
+
+    Args:
+        stimuli: A stimuli data frame (matched set or loaded item table).
+        design: A parsed design configuration.
+        schema: The parsed global schema (provides the seed).
+        list_of_set: Optional mapping of each ``set`` to a list, from
+            :func:`balance_lists`. Supplied by the pipeline when
+            ``counterbalance.optimise`` is on; without it the factorial recipe
+            deals sets to lists by rank.
+
+    Returns:
+        ``stimuli`` with added ``list`` and ``trial`` columns.
+
+    Raises:
+        ValueError: If more lists are asked for than the item sets or the
+            rotation can fill, or a set has no row for a condition.
+    """
     # Resampled designs counterbalance each replicate (an independent item set)
     # on its own, so trial order is numbered within each replicate.
     if "replicate" in stimuli.columns and stimuli["replicate"].nunique() > 1:
@@ -343,6 +379,14 @@ def counterbalance_factorial(stimuli: pd.DataFrame, design: dict, schema: dict,
     stimuli["list"] = 1
     if n_lists > 1:
         sets = sorted(stimuli["set"].unique())
+        if n_lists > len(sets):
+            # A list per set at most: dealing further would leave the high-numbered
+            # lists empty, and the datasheet would still report the number asked for.
+            raise ValueError(
+                "lexsync: counterbalance.lists is %d but there are only %d item "
+                "set(s), so %d list(s) would be empty. Lower counterbalance.lists "
+                "or raise n_per_condition."
+                % (n_lists, len(sets), n_lists - len(sets)))
         if list_of_set is not None:
             # A balanced assignment from balance_lists(). Looked up by set VALUE, since
             # the map is keyed by it; a set the map does not name is a caller error
@@ -376,6 +420,13 @@ def counterbalance_latin_square(stimuli: pd.DataFrame, design: dict, schema: dic
     conds = sorted(stimuli["condition"].unique(), key=lambda s: str(s).encode("utf-8"))
     n_cond = len(conds)
     n_lists = (design.get("counterbalance") or {}).get("lists", n_cond)
+    if n_lists > n_cond:
+        # The rotation has a period of n_cond, so list n_cond + 1 would repeat list 1
+        # item for item and condition for condition.
+        raise ValueError(
+            "lexsync: counterbalance.lists is %d but there are only %d condition(s), "
+            "so %d list(s) would repeat an earlier rotation. Lower "
+            "counterbalance.lists." % (n_lists, n_cond, n_lists - n_cond))
     sets = sorted(stimuli["set"].unique())
     parts = []
     for li in range(n_lists):
@@ -394,6 +445,19 @@ def counterbalance_latin_square(stimuli: pd.DataFrame, design: dict, schema: dic
 
 
 def participant_table(factors: dict, n_participants: int) -> pd.DataFrame:
+    """Build a participant counterbalancing table.
+
+    Crosses the supplied counterbalancing factors and replicates the cells to
+    cover ``n_participants``.
+
+    Args:
+        factors: A mapping of factor names to their levels.
+        n_participants: Number of participants to allocate.
+
+    Returns:
+        A data frame with one row per participant, carrying one column per
+        factor and a ``participant`` number.
+    """
     keys = list(factors.keys())
     # R's expand.grid() varies the first factor fastest, itertools.product the
     # last; cross the reversed keys and unreverse each cell so a participant

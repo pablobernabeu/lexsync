@@ -37,6 +37,98 @@ from .scripting import export_experiments, resolve_trial_timing
 from .validation import balance_check, match_report, match_report_continuous
 
 
+def _blank(value) -> bool:
+    """True for a key a configuration leaves empty in any of YAML's several ways."""
+    if value is None:
+        return True
+    if isinstance(value, (list, dict, tuple)):
+        return len(value) == 0
+    return not str(value).strip()
+
+
+def _validate_config(cfg, path: str, kind: str, required) -> None:
+    """Refuse a configuration file that cannot carry a run.
+
+    `read_config` returns whatever the parser produced, so an empty file gave
+    `None` and a file written as a list gave a list, and the first `.get` or `$`
+    on it reported a type rather than the file. A design without `name` or
+    `language` got further still: this engine stopped on a bare KeyError, and the
+    R engine wrote its artefacts under a base name derived from the language
+    alone, which silently collides with any other nameless design in it.
+    """
+    if not isinstance(cfg, dict):
+        raise ValueError(f"lexsync: {kind} '{path}' did not parse to a mapping of "
+                         "keys; check the file is a YAML mapping and not empty.")
+    missing = [k for k in required if _blank(cfg.get(k))]
+    if missing:
+        raise ValueError(f"lexsync: {kind} '{path}' is missing the required key(s) "
+                         + ", ".join("'%s'" % k for k in missing) + ".")
+
+
+# The dimensions lexsync derives itself, in the order add_neighbourhood and
+# add_bigram_frequency compute them.
+DERIVED_DIMS = ("n_density", "old20", "bigram_freq")
+
+
+def _derived_dims_needed(design: dict) -> list:
+    """Every derivable dimension the design references, in first-mention order.
+
+    The union of `match_on`, the pool filters, each condition's `define_by` and the
+    continuous predictor and controls. Only `match_on` used to trigger the
+    derivation, so a design that filtered on `old20`, or defined its conditions by
+    `n_density`, stopped on any lexicon that did not already carry the column.
+    """
+    names = list(design.get("match_on") or [])
+    names += list((design.get("pool_filters") or {}).keys())
+    for cond in design.get("conditions") or []:
+        names += list((cond.get("define_by") or {}).keys())
+    continuous = design.get("continuous") or {}
+    if continuous.get("predictor"):
+        names.append(str(continuous["predictor"]))
+    names += list(continuous.get("controls") or [])
+    return [d for d in dict.fromkeys(names) if d in DERIVED_DIMS]
+
+
+def _derive_dims(frame, dims, reference, log):
+    """Add the named derived dimensions the frame does not already carry."""
+    if any(d in dims and d not in frame.columns for d in ("n_density", "old20")):
+        runlog.log_step(log, "computing orthographic neighbourhood (N, OLD20)")
+        frame = add_neighbourhood(frame, reference=reference)
+    if "bigram_freq" in dims and "bigram_freq" not in frame.columns:
+        runlog.log_step(log, "computing bigram frequency (phonotactic-probability proxy)")
+        frame = add_bigram_frequency(frame, reference=reference)
+    return frame
+
+
+def _missing(v) -> bool:
+    """True for both spellings of a missing statistic in the comparisons frame.
+
+    An undefined Cohen's d is stored as None, and pandas leaves the column at
+    object dtype when every value in it is undefined, so the NaN test alone let a
+    None through to the format string below.
+    """
+    return v is None or v != v
+
+
+def _dp2(v) -> str:
+    """Two decimals, or 'NA' when the statistic is undefined.
+
+    'NA' rather than a placeholder of our own: sprintf('%.2f', NA) writes that in
+    the R engine's run log, and the two logs report the same run.
+    """
+    return "NA" if _missing(v) else f"{v:.2f}"
+
+
+def _dp4(v) -> str:
+    """Four decimals, or 'NA' when the statistic is undefined.
+
+    The TOST p is stored at four places, so this loses nothing, and the R engine's
+    run log writes it the same way: the two logs report the same run and were
+    quoting different numbers for it.
+    """
+    return "NA" if _missing(v) else f"{v:.4f}"
+
+
 def _restores_verbosity(fn):
     """Keep ``verbose`` from outliving the call.
 
@@ -58,9 +150,29 @@ def _restores_verbosity(fn):
 @_restores_verbosity
 def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
                  reference_words=None, verbose=True) -> dict:
+    """Run the lexsync pipeline for one design.
+
+    Args:
+        design_path: Path to a design configuration (YAML).
+        schema_path: Path to the global schema (YAML).
+        outdir: Output directory (the subdirectories ``stimuli``, ``reports``
+            and ``experiments`` are created).
+        reference_words: Optional reference word list for the neighbourhood
+            dimensions; defaults to the whole lexicon.
+        verbose: Whether to print progress.
+
+    Returns:
+        A mapping of the output paths written.
+
+    Raises:
+        ValueError: If the design or the schema cannot carry a run, or a step
+            refuses what the design asks for.
+    """
     runlog.set_verbose(verbose)
     schema = read_config(schema_path)
+    _validate_config(schema, schema_path, "schema", ("lexicon_schema", "matching"))
     design = read_config(design_path)
+    _validate_config(design, design_path, "design", ("name", "language"))
     # Resolved on presence, not truth: `or` treats a configured 0 as absent and would
     # fall through to n_per_cell and then to the matcher's default n, where the R
     # engine's %||% falls back on NULL alone and so reaches the refusal below. A
@@ -160,27 +272,33 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
             runlog.log_step(log, f"lexicon loaded: {len(lex)} words", {"words": len(lex)})
             ref_words = lex["word"].tolist()
         lex = join_norms(lex)
+        filters = dict(design.get("pool_filters") or {})
+        # A filter on a dimension lexsync derives cannot be answered until the
+        # dimension exists. Deriving it costs a pass over the reference list per word,
+        # so the filters the lexicon can answer are applied first and the derivation
+        # runs on the smaller frame; the values do not depend on which rows carry
+        # them, since the neighbourhood is measured against the whole lexicon.
+        deferred = {k: v for k, v in filters.items()
+                    if k in _derived_dims_needed(design) and k not in lex.columns}
         # build_pool skips a filter column it does not recognise, so a misspelt key
         # would silently leave the pool unfiltered; the pair path carries the same
         # guard. Checked after the norms join, which legitimately adds filterable
         # columns.
-        unknown = [c for c in (design.get("pool_filters") or {}) if c not in lex.columns]
+        unknown = [c for c in filters if c not in lex.columns and c not in deferred]
         if unknown:
             raise ValueError("lexsync: pool_filters name column(s) the lexicon does not "
                              "have: %s." % ", ".join(unknown))
-        pool = build_pool(lex, design.get("pool_filters"))
+        pool = build_pool(lex, {k: v for k, v in filters.items() if k not in deferred})
+        if deferred:
+            reference = reference_words if reference_words is not None else ref_words
+            pool = _derive_dims(pool, list(deferred), reference, log)
+            pool = build_pool(pool, deferred)
         runlog.log_step(log, f"pool after filters: {len(pool)} words", {"pool": len(pool)})
 
     if source in ("corpus", "pool"):
         match_on = list(design.get("match_on") or [])
         ref = reference_words if reference_words is not None else ref_words
-        needed = [d for d in ("n_density", "old20") if d in match_on]
-        if needed and any(d not in pool.columns for d in needed):
-            runlog.log_step(log, "computing orthographic neighbourhood (N, OLD20)")
-            pool = add_neighbourhood(pool, reference=ref)
-        if "bigram_freq" in match_on and "bigram_freq" not in pool.columns:
-            runlog.log_step(log, "computing bigram frequency (phonotactic-probability proxy)")
-            pool = add_bigram_frequency(pool, reference=ref)
+        pool = _derive_dims(pool, _derived_dims_needed(design), ref, log)
         if is_continuous:
             predictor = design["continuous"]["predictor"]
             controls = list(design["continuous"].get("controls") or [])
@@ -282,10 +400,11 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
             for _, cr in report["comparisons"].iterrows():
                 verdict = "equivalent" if cr["equivalent"] else "not shown equivalent"
                 lo, hi = cr["d_ci_low"], cr["d_ci_high"]
-                ci = f" [{lo:.2f}, {hi:.2f}]" if (lo == lo and hi == hi) else ""  # NaN-safe
+                ci = (f" [{_dp2(lo)}, {_dp2(hi)}]"
+                      if not (_missing(lo) or _missing(hi)) else "")
                 runlog.log_step(log, f"equivalence {cr['condition']} vs {cr['reference']} on "
-                                     f"'{cr['dimension']}': d = {cr['cohens_d']:.2f}{ci}, "
-                                     f"TOST p = {cr['tost_p']} ({verdict})")
+                                     f"'{cr['dimension']}': d = {_dp2(cr['cohens_d'])}{ci}, "
+                                     f"TOST p = {_dp4(cr['tost_p'])} ({verdict})")
 
     # Balance-aware list assignment, when the design asks for it. Off by default,
     # because it changes which items a participant sees. The Latin-square recipe
@@ -403,6 +522,22 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
 
 
 def run_all(config_dir="config", schema_path=None, outdir="output", verbose=True) -> dict:
+    """Run the lexsync pipeline for every design configuration in a directory.
+
+    Args:
+        config_dir: Directory of ``design_*.yaml`` configurations.
+        schema_path: Path to the global schema; defaults to ``schema.yaml``
+            inside ``config_dir``.
+        outdir: Output directory.
+        verbose: Whether to print progress.
+
+    Returns:
+        A mapping of design file name to that design's output paths.
+
+    Raises:
+        FileNotFoundError: If the directory holds no design file.
+        RuntimeError: If a design fails, naming the file that did.
+    """
     schema_path = schema_path or os.path.join(config_dir, "schema.yaml")
     designs = sorted(glob.glob(os.path.join(config_dir, "design_*.yaml")) +
                      glob.glob(os.path.join(config_dir, "design_*.yml")))
@@ -412,7 +547,15 @@ def run_all(config_dir="config", schema_path=None, outdir="output", verbose=True
     for design in designs:
         if verbose:
             print(f"\n=== lexsync: design '{os.path.basename(design)}' ===")
-        results[os.path.basename(design)] = run_pipeline(design, schema_path, outdir, verbose=verbose)
+        try:
+            results[os.path.basename(design)] = run_pipeline(design, schema_path, outdir,
+                                                             verbose=verbose)
+        except Exception as exc:
+            # The loop knows which design failed and the failure often does not, so
+            # a quiet sweep over twenty designs used to report a bare error from an
+            # unnamed one.
+            raise RuntimeError(f"lexsync: design '{os.path.basename(design)}' "
+                               f"failed: {exc}") from exc
     if verbose:
         print(f"\n[lexsync] all {len(designs)} designs complete.")
     return results

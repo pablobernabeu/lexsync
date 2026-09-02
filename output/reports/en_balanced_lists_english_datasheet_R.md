@@ -6,12 +6,12 @@
 
 - **Paradigm:** factorial  |  **Item source:** corpus
 - **Description:** High versus low frequency English words, matched on length, neighbourhood density and OLD20, dealt into four counterbalancing lists that are themselves equated on those dimensions.
-- **Materials source:** `corpora/derived/en.csv` (sha256 `c20549b920d81680...`)
+- **Materials source:** `corpora/derived/en.csv` (sha256 `575833489e04d6a4...`)
 - **Selection:** standardised_euclidean
 - **Cross-engine determinism:** byte-identical
 - **Counterbalancing:** factorial, 4 list(s)
 - **Items:** 80 rows across 2 conditions (low_frequency, high_frequency)
-- **Seed:** 2026  |  **Versions:** engine R, lexsync 0.1.0, R 4.6.1, readr 2.2.0, stringdist 0.9.17, jsonlite 2.0.0, digest 0.6.39, yaml 2.3.12, stringi 1.8.7, os Windows x86-64
+- **Seed:** 2026  |  **Versions:** engine R, lexsync 0.1.0, R 4.3.3, readr 2.1.5, stringdist 0.9.12, jsonlite 1.8.8, digest 0.6.34, yaml 2.3.8, stringi 1.8.3, os Linux x86_64
 
 ## Balanced list assignment
 
@@ -31,8 +31,8 @@
 | Dimension | Role | Cohen's d | 90% CI | Var ratio | TOST p | Equivalent |
 |---|---|---|---|---|---|---|
 | length | controlled | 0.02 | [-0.35, 0.39] | 0.90 | 0.0178 | TRUE |
-| frequency | manipulated/free | 5.05 | [4.68, 5.43] | 0.20 | 1 | FALSE |
-| n_density | controlled | 0.05 | [-0.32, 0.42] | 0.74 | 0.0237 | TRUE |
+| frequency | manipulated/free | 5.06 | [4.68, 5.43] | 0.20 | 1 | FALSE |
+| n_density | controlled | 0.05 | [-0.32, 0.42] | 0.75 | 0.0237 | TRUE |
 | old20 | controlled | 0.05 | [-0.32, 0.43] | 0.68 | 0.0246 | TRUE |
 
 ## Suggested analysis

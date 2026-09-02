@@ -242,6 +242,10 @@ print(
 A design with a `replicate` column, from `resample_stimuli`, is counterbalanced replicate by
 replicate, and trial order is numbered within each.
 
+`counterbalance.lists` above what the design can fill is refused by both recipes rather than
+quietly answered with fewer lists than the datasheet then reports. A factorial deal holds at most
+one item set per list, and a rotation repeats itself after as many lists as there are conditions.
+
 ### Balanced list assignment
 
 The factorial deal sends set 1 to list 1, set 2 to list 2 and so on. That is reproducible, but it
@@ -295,6 +299,21 @@ print(
 
 The grid is crossed with the first factor varying fastest, matching R's `expand.grid`, so both
 engines put participant 3 in the same cell.
+
+### Which list a participant is presented
+
+One generated experiment serves the whole study, so the PsychoPy conditions file, the OpenSesame
+conditions file and the trials embedded in the jsPsych page all carry every list. A run presents
+one of them, allocated by the rule `participant_table` follows: participant *p* is given the *p*th
+list, cycling. The PsychoPy script takes the participant number on the command line, `python
+demo_english_psychopy.py --participant 3`, or from `LEXSYNC_PARTICIPANT`; the jsPsych page takes it
+from its query string, `demo_english.html?participant=3`; and the OpenSesame experiment takes the
+subject number it asks for at start-up, gating each trial on the list it belongs to. All three
+present the first list when no participant is given.
+
+Presenting the whole file instead would show each item once per list, which under a Latin square is
+each target once in every condition, and often on adjacent trials. That is the repetition the
+rotation exists to prevent.
 
 !!! note "Trial order is part of the parity contract"
 

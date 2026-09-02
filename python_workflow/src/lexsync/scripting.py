@@ -30,6 +30,12 @@ from .io_utils import (
 )
 from .paradigms import content_field, referenced_fields, resolve_events
 
+# The event types the renderers accept, in the order the paradigms.py module
+# docstring lists them. Fixed, not sorted(), because the R mirror's sort() on
+# character vectors is locale-collated and the two error messages must agree.
+_KNOWN_EVENT_TYPES = ("fixation", "text", "mask", "blank", "region_by_region",
+                      "response", "question", "feedback")
+
 # Columns always carried in a loop table when present (besides the event fields).
 # `block` travels with the trials because the runners need it: it is what an event's
 # `blocks:` restriction is matched against, and what a runner watches to know a block
@@ -128,6 +134,12 @@ def assign_triggers(stimuli: pd.DataFrame) -> pd.DataFrame:
 
     The item range holds 200 codes (an 8-bit-port constraint), so past 200 sets
     the codes wrap and repeat, and a runtime notice says so.
+
+    Args:
+        stimuli: A stimuli data frame.
+
+    Returns:
+        ``stimuli`` with ``condition_trigger`` and ``item_trigger`` added.
     """
     stimuli = stimuli.copy()
     conds = list(dict.fromkeys(stimuli["condition"]))
@@ -198,6 +210,14 @@ def resolve_trial_timing(stimuli: pd.DataFrame, design: dict, schema: dict) -> p
     the keyed hash, so both engines realise the same milliseconds, and it is
     written into the stimuli table as well as the generated script, because timing
     that varies is a variable the analysis needs, not presentation detail.
+
+    Args:
+        stimuli: A counterbalanced stimuli data frame.
+        design: A parsed design configuration.
+        schema: The parsed global schema (provides the seed).
+
+    Returns:
+        ``stimuli`` with one integer column per jittered event.
     """
     events = resolve_events(design)
     seed = (schema or {}).get("seed", 1)
@@ -265,7 +285,10 @@ def render_events(events: list, timing: dict, hz: float = 60) -> list:
                 "event precedes it, so there is no response to score." % i)
     out = []
     for i, ev in enumerate(events, start=1):
-        t = ev["type"]
+        # .get, spelt "" when absent: an event with no type at all was a bare
+        # KeyError here and an 'argument is of length zero' in the R mirror, where
+        # both engines can say what a type has to be.
+        t = ev.get("type") or ""
         r = {"type": "region" if t == "region_by_region" else t}
         if t in ("fixation", "text", "mask"):
             f = content_field(ev.get("content"))
@@ -324,7 +347,8 @@ def render_events(events: list, timing: dict, hz: float = 60) -> list:
             r["no_response"] = str(ev.get("no_response", "Too slow"))
             r["ms"] = _event_ms(ev, None, None, hz, default_frames=36)
         else:
-            raise ValueError(f"lexsync: unknown event type '{t}'.")
+            raise ValueError(f"lexsync: unknown event type '{t}'. "
+                             f"Known types: {', '.join(_KNOWN_EVENT_TYPES)}.")
         # An event may be restricted to named blocks. This is what lets feedback run
         # during practice and nowhere else: the event list is global to the design, so
         # the restriction has to travel with the event and be applied per trial at run
@@ -372,6 +396,18 @@ def _write_text(text: str, path: str) -> str:
 
 
 def export_psychopy(stimuli, design, schema, outdir, base=None) -> str:
+    """Export a runnable PsychoPy script that interprets the event sequence.
+
+    Args:
+        stimuli: Stimuli with trigger columns (see :func:`assign_triggers`).
+        design: A parsed design configuration.
+        schema: The parsed global schema (trigger and presentation settings).
+        outdir: Output directory.
+        base: Optional file-name stem.
+
+    Returns:
+        The path to the generated ``.py``.
+    """
     base = base or slugify(design["name"], design["language"])
     events = resolve_events(design)
     rendered = render_events(events, design.get("timing") or {}, _refresh_hz(schema))
@@ -506,7 +542,7 @@ def _osexp_event_block(name: str, ev: dict) -> tuple:
         body = [
             f"c = Canvas(); c.text(var.{ev['field']}); c.show()",
             f"_kb = Keyboard(keylist=[{', '.join(_pyq(k) for k in ev.get('keys', ['f', 'j']))}], "
-            f"timeout={int(ev.get('timeout', 5) * 1000)})",
+            f"timeout={_osexp_timeout_ms(ev, 5)})",
             "var.response, var.response_time = _kb.get_key()",
         ]
         return (_inline_block(name, "Comprehension question",
@@ -537,13 +573,27 @@ def _osexp_event_block(name: str, ev: dict) -> tuple:
                               ["c = Canvas()", "c.show()"], run=True)
         block += [
             f"define keyboard_response {name}",
-            "\tset timeout " + str(int(ev.get("timeout", 2) * 1000)),
+            "\tset timeout " + str(_osexp_timeout_ms(ev, 2)),
             "\tset flush yes", "\tset duration keypress",
             '\tset description "Collect a response"',
             f'\tset allowed_responses "{keys}"', "",
         ]
         return (block, [f"{name}_blank", name])
-    raise ValueError(f"lexsync: unknown event type '{t}'.")
+    raise ValueError(f"lexsync: unknown event type '{t}'. "
+                     f"Known types: {', '.join(_KNOWN_EVENT_TYPES)}.")
+
+
+def _osexp_timeout_ms(ev: dict, default_s) -> int:
+    """The response window in milliseconds, as the other two backends read it.
+
+    OpenSesame wants milliseconds where the rendered event carries seconds, and
+    int() truncates: 1.001 * 1000 is 1000.9999999999999 in binary floating point,
+    so a 1001 ms window became 1000 ms here while the PsychoPy template used the
+    seconds directly and the jsPsych template rounded. The conversion therefore goes
+    through the package's own rounder, which is what wrote the seconds in the first
+    place.
+    """
+    return int(_round_dp(ev.get("timeout", default_s) * 1000, 0))
 
 
 def _inline_block(name: str, desc: str, body: list, run: bool) -> list:
@@ -555,8 +605,59 @@ def _inline_block(name: str, desc: str, body: list, run: bool) -> list:
     ]
 
 
+def _list_sort_key(value):
+    """Order list labels numerically, so list 10 follows list 9 rather than list 1.
+
+    The try, rather than str.isdigit(): isdigit() is true of characters int()
+    refuses, a superscript among them, so such a label raised here where the
+    PsychoPy runner's list_key() and the jsPsych runner's listKey() sort it as an
+    ordinary label. The three now agree on the same input.
+    """
+    try:
+        return (0, int(value), "")
+    except (TypeError, ValueError):
+        return (1, 0, str(value))
+
+
+def _osexp_list_gate(lists) -> tuple:
+    """Lines defining the per-trial list gate, and the item the loop should run.
+
+    The loop table carries every counterbalancing list, because one experiment file
+    serves every participant, and presenting it whole would show each item once per
+    list: for a rotated design, once in every condition. The PsychoPy and jsPsych
+    runners drop the other lists in code; a sequence has no such place, so the trial
+    is run behind a condition instead. The inline script sets an integer flag rather
+    than the run line comparing two variables, which keeps that line in the
+    `[variable] = value` form OpenSesame documents.
+
+    Participant p is presented the pth list, cycling, which is the allocation
+    participant_table() makes and the rule the other two runners follow.
+    `subject_nr` is the participant number OpenSesame asks for at start-up.
+    """
+    values = sorted({str(v) for v in ([] if lists is None else lists)},
+                    key=_list_sort_key)
+    if len(values) < 2:
+        return [], "lexsync_trial"
+    body = [
+        "_lists = [%s]" % ", ".join(_pyq(v) for v in values),
+        "_p = int(var.get(u'subject_nr', 1) or 1)",
+        "var.lexsync_list = _lists[(max(_p, 1) - 1) % len(_lists)]",
+        "var.lexsync_present = 1 if str(var.get(u'list', u'1')) == var.lexsync_list else 0",
+    ]
+    block = _inline_block("lexsync_list_gate",
+                          "Choose the participant's counterbalancing list", body, run=True)
+    block += [
+        "define sequence lexsync_trial_gate",
+        "\tset flush_keyboard no",
+        '\tset description "Run the trial only if it belongs to the participant\'s list"',
+        "\trun lexsync_list_gate always",
+        '\trun lexsync_trial "[lexsync_present] = 1"', "",
+    ]
+    return block, "lexsync_trial_gate"
+
+
 def build_osexp(design: dict, conditions_file: str, schema: dict, rendered: list,
-                font: str = "mono") -> str:
+                font: str = "mono", lists=None) -> str:
     addr = clean_port((schema.get("triggers") or {}).get("parallel_address", "0x378"))
     design_name = clean_meta(design["name"], "the design's `name`")
     language = clean_meta(design["language"], "the design's `language`")
@@ -624,18 +725,20 @@ def build_osexp(design: dict, conditions_file: str, schema: dict, rendered: list
         '\tset description "Open the trigger device with a test-mode fallback"',
         '\tset _run ""', "\t___prepare__", *["\t" + s for s in setup], "\t__end__", "",
     ]
+    gate, looped = _osexp_list_gate(lists)
     trial = [
         "define sequence lexsync_trial",
         "\tset flush_keyboard yes",
         '\tset description "One trial: the paradigm event sequence"',
         *[f"\trun {n} always" for n in run_names], "",
+        *gate,
         "define loop lexsync_loop",
         f'\tset source_file "{conditions_file}"',
         # Sequential, so the loop presents the seeded trial order the CSV is sorted
         # by; OpenSesame's default (random) would discard it and diverge from the
         # PsychoPy and jsPsych targets.
         "\tset source file", "\tset repeat 1", "\tset order sequential",
-        '\tset description "Present each item once"', "\trun lexsync_trial", "",
+        '\tset description "Present each item once"', f"\trun {looped}", "",
         "define sequence lexsync_experiment",
         "\tset flush_keyboard yes",
         '\tset description "Top-level experiment sequence"',
@@ -645,6 +748,18 @@ def build_osexp(design: dict, conditions_file: str, schema: dict, rendered: list
 
 
 def export_opensesame(stimuli, design, schema, outdir, base=None) -> str:
+    """Export a complete plain-text OpenSesame experiment.
+
+    Args:
+        stimuli: Stimuli with trigger columns (see :func:`assign_triggers`).
+        design: A parsed design configuration.
+        schema: The parsed global schema (trigger and presentation settings).
+        outdir: Output directory.
+        base: Optional file-name stem.
+
+    Returns:
+        The path to the generated ``.osexp``.
+    """
     base = base or slugify(design["name"], design["language"])
     events = resolve_events(design)
     rendered = render_events(events, design.get("timing") or {}, _refresh_hz(schema))
@@ -652,7 +767,8 @@ def export_opensesame(stimuli, design, schema, outdir, base=None) -> str:
     write_csv_utf8(loop_table(stimuli, events), os.path.join(outdir, csv_name))
     presentation = schema.get("presentation") or {}
     font = design.get("font") or presentation.get("opensesame_font") or "mono"
-    text = build_osexp(design, csv_name, schema, rendered, font=font)
+    lists = stimuli["list"].unique() if "list" in stimuli.columns else []
+    text = build_osexp(design, csv_name, schema, rendered, font=font, lists=lists)
     return _write_text(text, os.path.join(outdir, f"{base}.osexp"))
 
 
@@ -672,14 +788,10 @@ def _language_tag(design: dict) -> str:
     tag-shaped ("en", "en-GB") is taken as given. Anything else becomes ``und``
     (BCP 47 "undetermined"): registered, and unlike ``lang="english"`` resolvable.
 
-    Parameters
-    ----------
-    design : dict
-        A parsed design configuration.
+    Args:
+        design: A parsed design configuration.
 
-    Returns
-    -------
-    str
+    Returns:
         A well-formed BCP 47 language tag.
     """
     # The shape check applies to a STATED tag too. It used to be returned verbatim, so
@@ -754,6 +866,16 @@ def export_jspsych(stimuli, design, schema, outdir, base=None) -> str:
     are saved locally, so no server is required either to run it or to collect them.
     Onset triggers are recorded in each trial's data (a browser cannot drive a
     parallel port); online EEG synchronisation needs WebSerial/LSL or a photodiode.
+
+    Args:
+        stimuli: Stimuli with trigger columns (see :func:`assign_triggers`).
+        design: A parsed design configuration.
+        schema: The parsed global schema (trigger and presentation settings).
+        outdir: Output directory.
+        base: Optional file-name stem.
+
+    Returns:
+        The path to the generated ``.html``.
     """
     base = base or slugify(design["name"], design["language"])
     events = resolve_events(design)
@@ -781,6 +903,21 @@ def export_jspsych(stimuli, design, schema, outdir, base=None) -> str:
 
 
 def export_experiments(stimuli, design, schema, outdir, base=None) -> dict:
+    """Export every presentation target (PsychoPy, OpenSesame, jsPsych).
+
+    Triggers are assigned here, so a caller has no need to call
+    :func:`assign_triggers` first.
+
+    Args:
+        stimuli: The counterbalanced stimuli.
+        design: A parsed design configuration.
+        schema: The parsed global schema (trigger and presentation settings).
+        outdir: Output directory.
+        base: Optional file-name stem.
+
+    Returns:
+        A mapping of target name to generated file path.
+    """
     stimuli = assign_triggers(stimuli)
     return {
         "psychopy": export_psychopy(stimuli, design, schema, outdir, base),

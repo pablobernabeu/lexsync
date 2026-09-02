@@ -1,5 +1,158 @@
 # lexsync (development version)
 
+* The Shiny app takes the lexsync accent, the deep violet the documentation site
+  uses, in place of Bootswatch's cosmo blue. That blue reached only 3.97:1 against
+  the white label of the full-width 'Run design' button, short of the 4.5:1 the
+  size calls for, and the app looked unlike both its Streamlit twin and the
+  package's own sites. The Streamlit app declares the same accent.
+* The Shiny app's realised-control chart leaves a gap where Cohen's d is undefined.
+  The bars were summed into their cells, which writes a zero for a comparison that
+  is absent or undefined, so a dimension on which both conditions are constant, the
+  case the datasheet reports as '--', drew the bar of a perfectly matched dimension.
+  The Streamlit chart already omitted it.
+* Two messages name the alternatives, as every other 'unknown X' message in the
+  package does. An unrecognised event type in a design's `events:` list now ends
+  'Known types: fixation, text, mask, blank, region_by_region, response, question,
+  feedback.', and an unrecognised `items.generation.method` names the two
+  generators. An event carrying no `type` at all reaches the same message rather
+  than base R's 'argument is of length zero'.
+* `resample_stimuli()` refuses an `n_sets` that is not a positive whole number, the
+  test `run_pipeline()` already applies to `n_per_condition`. Zero returned an empty
+  result the pipeline then reported nothing about, and a fractional number was
+  truncated in silence.
+* The run log writes the TOST p at four places, the number of places it is stored
+  at. It was rounded to three here and printed in full by the Python engine, so the
+  two provenance records of one run quoted different numbers for the same statistic.
+* `balance_check()` names a column's levels in byte order. `table()` ordered them
+  by the session's collation and the Python twin's `value_counts` by descending
+  count, so the same stimuli produced two differently worded warnings, in the run
+  log among other places, and the R wording depended on the locale.
+* An explicit `registry_path` that does not exist is refused with lexsync's own
+  message rather than the connection error `file()` raises. The Python twin
+  accepted such a path and read whichever registry its search list found next,
+  reporting another file's corpora under the one the caller named, so both
+  engines now refuse it alike.
+* The `registry.yaml` bundled with the package is byte-identical to
+  `corpora/registry.yaml` again, and the suite holds the two together as it
+  already does for the schema. The mirror had fallen a line behind, the line
+  documenting the optional `sha256` an entry may carry, so an installed package
+  described the registry format less fully than a checkout did.
+* A malformed design or schema is refused by name. `read_config` returns whatever the
+  parser produced, so an empty design file gave NULL and one written as a list gave a
+  vector, and the first `$` on either reported a type rather than the file. A design
+  without `name` got further: the base name for every artefact is built from the name
+  and the language, so its stimuli, reports and experiments were written under the
+  language alone, colliding silently with any other nameless design in that language.
+  `run_all` now names the design a failure came from as well.
+* `describe_stimuli`, `match_report` and `match_report_continuous` refuse a dimension
+  or a grouping column the stimuli do not carry. A misspelt name returned a full
+  descriptives table of missing values, and through `match_report` a comparisons row
+  with a Cohen's *d* of zero, so a report on a selection of the user's own looked
+  complete and described nothing. The pipeline filters its dimensions to the columns
+  present, so no design is affected.
+* The generated OpenSesame experiment waits as long for a response as the PsychoPy
+  and jsPsych experiments generated beside it. The rendered event carries the window
+  in seconds and the OpenSesame emitters converted it back with `as.integer()`, which
+  truncates, so a `timeout_ms` of 1001 became 1000 there and stayed 1001 in the other
+  two. The conversion now goes through the package's own rounder. The shipped
+  paradigms use round windows, so no committed experiment changed.
+* The datasheet the Shiny app produces describes the design the app hands over. The
+  run used a rewritten copy of the design, with the lexicon and any item table
+  resolved to absolute paths, so the `design_sha256` recorded in the datasheet inside
+  the downloaded bundle was the checksum of a file that bundle does not carry, and
+  'Materials source' named a directory on the machine that ran the app. Each input is
+  now placed at the path the exported design records and the pipeline runs there.
+* The realised-control chart in the Shiny app draws one labelled bar per comparison.
+  The report carries one row per non-anchor condition per dimension, and the plot named
+  every bar by its dimension alone, so a 2x2 design repeated each label three times
+  with nothing saying which comparison a bar belonged to. The bars are grouped by
+  condition with a legend, and the caption names the anchor they are measured against.
+* The parity claim under the exported code depends on the method that ran. The panel
+  printed 'The R and Python engines produce byte-identical stimuli and trial order
+  from this configuration.' whatever was chosen, which the method chooser's own help
+  text and the datasheet's 'Cross-engine determinism' line both deny for
+  `mahalanobis` and `optimal`. Those two now get a sentence saying the engines select
+  equivalent but not byte-identical stimuli.
+* A factorial run with nothing to match on is refused. 'Match on' can be emptied, and
+  the pipeline accepts `match_on: []` happily, so the run reported success over a set
+  that was never matched on anything and a realised-control tab of large effects,
+  which reads as a matching failure rather than as a design that asked for no
+  matching.
+* A condition bound the conditions table holds as text drops the factor it belongs to.
+  `as.numeric` gave NA and a warning, and the design then carried `define_by` of two
+  missing values as if that window had been asked for.
+* Rows can be added to and removed from the Shiny app's conditions table. It offered
+  cell editing and nothing else, so a design could hold exactly as many conditions as
+  the chosen preset supplies, and a three-level factor, a fifth 2x2 cell or a preset
+  row the user did not want meant editing the YAML by hand. 'Add condition' and
+  'Remove selected' sit under the table.
+* The 'Match on' chooser names its dimensions as the rest of the interface does. It
+  listed the raw column names while the tolerance panel beside it uses the human
+  labels the app already defines, and the Streamlit twin labels the same chooser.
+* The chosen lexicon and the bundled item table are previewed before a run. The app
+  showed a bare chooser and a sentence naming the example table, so the user committed
+  to a run without seeing a row of the input. The realised-control plot also carries
+  alt text now.
+* Every edit to the Shiny app's conditions table lands in the column the user edited.
+  The table is rendered without rownames, so the client reports a zero-based column
+  index, while `DT::editData` was called at its default `rownames = TRUE` and read one
+  column to the left: an edit to `dimension` overwrote the condition's name, an edit to
+  `lower` overwrote `dimension`, and an edit to the name itself was dropped from the
+  frame altogether. The app ran and exported the altered design without saying
+  anything. The optional `lower2` and `upper2` columns are typed as numeric too, where
+  three of the presets left them logical and the first edit of such a cell coerced the
+  whole column to text.
+* The Shiny app no longer crashes on Run when it is launched from outside the
+  checkout. With no `corpora/derived/` above the working directory the lexicon chooser
+  was rendered empty and silent, and pressing Run indexed that empty vector before the
+  'Choose a lexicon first.' guard could be reached, so the user was shown Shiny's
+  generic error. The chooser is now replaced by a notice naming the cause, and the
+  guard does its job.
+* A preset also sets the matched dimensions and the matching method that suit it, as
+  the Streamlit app's presets already did. Filling the conditions table alone left
+  'Match on' at its general default, so one click on 'Dense vs sparse neighbourhood'
+  asked the engine to match on `n_density`, the dimension the preset manipulates, and
+  on `old20`, which follows it closely. The run did not fail; it returned a much weaker
+  manipulation with frequency and length uncontrolled.
+* Every fixed-decimal number in the datasheet is rounded by lexsync's own rounder
+  before it is formatted. A bare `%.2f` leaves the half-way case to the C library, and
+  the two engines disagree there: `en_andrews_repro` stored a confidence bound of
+  -0.465 and published it as [-0.46, 0.66] from this engine and [-0.47, 0.66] from
+  Python, on the same machine. The Methods paragraph the vignettes invite users to
+  paste into a paper used the same format, so a published sentence could differ by
+  engine. Sixteen published numbers across seven designs move by one in the last
+  decimal place shown; the stored values are unchanged.
+* The TOST *p* in the realised-control table is written with `%g`. `as.character` gave
+  `9e-04` where the Python engine gave `0.0009` for the same stored double, and nothing
+  compared the two engines' datasheets to notice. Both engines now write one form, and
+  the comparison is made: over the committed pair, and over a fresh sweep in the
+  workflow.
+* The committed datasheets publish checksums this repository reproduces. 28 of them
+  recorded the sha256 of a CRLF copy of an input that `.gitattributes` checks out as
+  LF, so a recipient who followed the datasheet's own instructions and recomputed the
+  digest of `corpora/derived/en.csv` was told the materials had been altered. All 42
+  datasheets are regenerated, and the suite now checks every path and digest a
+  committed datasheet publishes against the files in the checkout.
+* The neighbourhood and bigram dimensions are derived wherever the design asks for
+  them, not for `match_on` alone: a design that filters on `old20`, defines a
+  condition by `n_density` or takes either as a continuous predictor no longer stops
+  on a lexicon that does not already carry the column. A filter on such a dimension is
+  answered after the filters the lexicon can answer, so the derivation still runs on
+  the pool.
+* A generated experiment presents one counterbalancing list rather than all of them.
+  The loop table carries every list, because one experiment file serves the whole
+  study, and all three runners presented that file whole: under a Latin square each
+  target was then shown once in every condition, often on adjacent trials. Each run
+  now presents the list the participant is allocated, taken from `--participant` in
+  the PsychoPy script, from the `?participant=` query in the jsPsych page and from
+  OpenSesame's own subject number, and all three present the first list when no
+  participant is given. The committed experiments are regenerated.
+* `counterbalance.lists` above what the design can fill is an error. The factorial
+  recipe deals item sets to lists round-robin, so more lists than item sets left the
+  high-numbered lists empty while the datasheet still reported the number requested,
+  and the Latin-square rotation repeats after as many lists as there are conditions,
+  so a further list duplicated an earlier one. Both recipes now stop, with the message
+  the Python engine gives. No shipped design asks for more lists than it can fill.
 * Breaking change: a row missing one of the `match_on` dimensions is no longer
   selected. An unscoreable anchor has the same distance to every candidate, so the
   tie-break alone chose its counterpart, and `joint` and `optimal` would take a pair

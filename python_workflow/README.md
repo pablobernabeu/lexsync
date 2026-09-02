@@ -33,10 +33,11 @@ package sits in the `python_workflow/` subdirectory:
 pip install "git+https://github.com/pablobernabeu/lexsync.git#subdirectory=python_workflow"
 ```
 
-The `corpora` extra adds the 'wordfreq' connector, which reaches roughly forty
-languages through a single dependency, and the `experiment` extra adds
-'PsychoPy' and 'pyserial'. Note that the `experiment` extra is needed only to run
-a generated experiment on hardware, never to generate one:
+The `corpora` extra adds the 'wordfreq' connector, which reaches the thirty
+languages the registry registers for it through a single dependency, and the
+`experiment` extra adds 'PsychoPy' and 'pyserial'. Note that the `experiment`
+extra is needed only to run a generated experiment on hardware, never to
+generate one:
 
 ```bash
 pip install "lexsync[corpora] @ git+https://github.com/pablobernabeu/lexsync.git#subdirectory=python_workflow"
@@ -64,9 +65,9 @@ stim = lexsync.match_stimuli(pool, design, schema)
 stim = lexsync.counterbalance(stim, design, schema)
 
 report = lexsync.match_report(stim, ["length", "frequency", "n_density", "old20"], schema)
-lexsync.export_experiments(
-    lexsync.scripting.assign_triggers(stim), design, schema, "output/experiments"
-)
+# The EEG trigger codes are assigned here, so there is no need to call
+# lexsync.scripting.assign_triggers first.
+lexsync.export_experiments(stim, design, schema, "output/experiments")
 ```
 
 The same operations are available from the command line, which runs a whole

@@ -15,14 +15,36 @@
 # a margin of some seven orders of magnitude, not on the by-construction argument
 # that carries the rest. Mirrors the note in validation.py.
 
+# Refuse a grouping column or a dimension the stimuli do not carry. These three
+# reports are exported and are called on a selection of the user's own, where a
+# misspelt name used to give a full table of NAs with a Cohen's d of zero beside
+# it: a report that looks complete and describes nothing. Mirrors
+# _require_columns in validation.py.
+.require_columns <- function(stimuli, by, dims) {
+  if (!by %in% names(stimuli)) {
+    stop(sprintf("lexsync: cannot group the stimuli by column '%s', which they do not have.",
+                 by), call. = FALSE)
+  }
+  absent <- setdiff(dims, names(stimuli))
+  if (length(absent)) {
+    stop(sprintf("lexsync: cannot report on dimension(s) the stimuli do not have: %s.",
+                 paste(sprintf("'%s'", sort(absent, method = "radix")), collapse = ", ")),
+         call. = FALSE)
+  }
+  invisible(NULL)
+}
+
 #' Per-group descriptive statistics for several dimensions
 #'
 #' @param stimuli A stimuli data frame.
 #' @param dims Character vector of dimension columns.
 #' @param by Grouping column (default `"condition"`).
-#' @return A long data frame with n, mean, sd, min, median and max per group.
+#' @return A long data frame with n, mean, sd, min, median and max per group. A
+#'   grouping column or a dimension the stimuli do not carry is an error rather
+#'   than a table of missing values.
 #' @export
 describe_stimuli <- function(stimuli, dims, by = "condition") {
+  .require_columns(stimuli, by, dims)
   # Group in order of first appearance: split() alone coerces to a factor whose
   # levels are locale-collated sort(unique(x)), which diverges from validation.py's
   # groupby(sort = FALSE) and from the anchor match_report() takes from unique().
@@ -182,6 +204,10 @@ balance_check <- function(stimuli, columns) {
   for (col in columns) {
     if (!col %in% names(stimuli)) next
     tab <- table(stimuli[[col]])
+    # Levels in byte order, as everywhere else in the package: table() orders by the
+    # session's collation and pandas' value_counts by descending count, so the two
+    # engines wrote the same counts in different words.
+    tab <- tab[order(names(tab), method = "radix")]
     if (length(unique(as.integer(tab))) > 1) {
       issues <- c(issues, sprintf(
         "Column '%s' is unbalanced: %s", col,
@@ -203,6 +229,7 @@ balance_check <- function(stimuli, columns) {
 #'   with its columns and no rows.
 #' @export
 match_report <- function(stimuli, dims, schema) {
+  .require_columns(stimuli, "condition", dims)
   conds <- unique(stimuli$condition)
   anchor <- conds[1]
   desc <- describe_stimuli(stimuli, dims, by = "condition")

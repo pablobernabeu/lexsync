@@ -1,8 +1,10 @@
 import pandas as pd
+import pytest
 
 from lexsync.io_utils import _round_dp
 from lexsync.scripting import (
     _language_tag,
+    _osexp_event_block,
     assign_triggers,
     export_jspsych,
     export_opensesame,
@@ -56,6 +58,43 @@ def test_timeouts_round_through_the_shared_rule():
     r = render_events([{"type": "question", "timeout_ms": 7812.5}], {}, 60)
     assert r[0]["timeout"] == _round_dp(7812.5 / 1000.0, 3)
     assert r[0]["timeout"] != round(7812.5 / 1000.0, 3)
+
+
+def test_the_opensesame_timeout_matches_the_other_two_backends():
+    """1.001 * 1000 is 1000.9999999999999, and int() truncated it, so a 1001 ms
+    window reached OpenSesame as 1000 while PsychoPy used the seconds directly and
+    jsPsych rounded. Mirrored in test-scripting.R."""
+    r = render_events([{"type": "response", "timeout_ms": 1001},
+                       {"type": "question", "content": "q", "timeout_ms": 1001}], {}, 60)
+    assert [ev["timeout"] for ev in r] == [1.001, 1.001]
+    resp, _ = _osexp_event_block("t", r[0])
+    assert "\tset timeout 1001" in resp
+    quest, _ = _osexp_event_block("q", r[1])
+    assert any("timeout=1001)" in line for line in quest)
+
+
+# An explicit `events:` list is the documented way to depart from a paradigm, so
+# the message that refuses one has to say what a type may be. test-scripting.R pins
+# the same three sentences.
+_KNOWN_TYPES_SENTENCE = ("Known types: fixation, text, mask, blank, region_by_region, "
+                         "response, question, feedback.")
+
+
+def test_an_unknown_event_type_names_the_known_ones():
+    with pytest.raises(ValueError) as excinfo:
+        render_events([{"type": "fixaton", "content": "+", "duration_ms": 500}], {}, 60)
+    assert str(excinfo.value) == ("lexsync: unknown event type 'fixaton'. "
+                                  + _KNOWN_TYPES_SENTENCE)
+    with pytest.raises(ValueError) as excinfo:
+        _osexp_event_block("e1", {"type": "fixaton"})
+    assert str(excinfo.value) == ("lexsync: unknown event type 'fixaton'. "
+                                  + _KNOWN_TYPES_SENTENCE)
+
+
+def test_an_event_with_no_type_is_refused_by_name():
+    with pytest.raises(ValueError) as excinfo:
+        render_events([{"content": "+", "duration_ms": 500}], {}, 60)
+    assert str(excinfo.value) == "lexsync: unknown event type ''. " + _KNOWN_TYPES_SENTENCE
 
 
 def test_psychopy_export_is_frame_locked(schema, tmp_path):
@@ -169,3 +208,16 @@ def test_default_font_is_latin(schema, tmp_path):
     design = {"name": "t", "language": "english", "timing": {}}
     py = open(export_psychopy(_stim(), design, schema, str(tmp_path)), encoding="utf-8").read()
     assert 'WORD_FONT = "Courier New"' in py
+
+
+def test_the_osexp_list_gate_orders_labels_as_the_two_runners_do():
+    """The gate sorted with str.isdigit(), which is true of characters int()
+    refuses, so a superscript label raised a ValueError where the PsychoPy and
+    jsPsych runners sort it as an ordinary label. The three read one experiment's
+    lists, so they have to agree on the same input."""
+    from lexsync.scripting import _list_sort_key
+
+    assert sorted(["10", "9", "1"], key=_list_sort_key) == ["1", "9", "10"]
+    # int() refuses it, so it sorts as a label rather than raising.
+    assert _list_sort_key("\u00b2") == (1, 0, "\u00b2")
+    assert sorted(["b", "2", "a", "10"], key=_list_sort_key) == ["2", "10", "a", "b"]

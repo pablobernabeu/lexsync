@@ -143,17 +143,17 @@
     "versions": {
       "engine": "R",
       "lexsync": "0.1.0",
-      "R": "4.6.1",
-      "readr": "2.2.0",
-      "stringdist": "0.9.17",
-      "jsonlite": "2.0.0",
-      "digest": "0.6.39",
-      "yaml": "2.3.12",
-      "stringi": "1.8.7",
-      "os": "Windows x86-64"
+      "R": "4.3.3",
+      "readr": "2.1.5",
+      "stringdist": "0.9.12",
+      "jsonlite": "1.8.8",
+      "digest": "0.6.34",
+      "yaml": "2.3.8",
+      "stringi": "1.8.3",
+      "os": "Linux x86_64"
     },
     "design_sha256": "bf1f073989dc3aac339617a7a9cbb157f5039c5a057d747506988933a8bbd663",
-    "schema_sha256": "483a9cec49314b9479fe656ad39840083a551f2e4313ca164efe3e9c064fb255"
+    "schema_sha256": "bc66a5fd3a65b0f93271d18958f18ae7037f00f7a21ae6380632c55de49e7ca0"
   },
   "artifacts": [
     {
@@ -170,7 +170,7 @@
     },
     {
       "file": "output/experiments/zh_freqcontrast_chinese_psychopy.py",
-      "sha256": "e4f89dd3a6ef14f565f0b09a4f7922b623eddc95522ce07747014c1f0a93a371"
+      "sha256": "8363943bd9ba323f65d11db98ce4cec706f3bbc6ea8ca97a9b9077cbe551dfb2"
     },
     {
       "file": "output/experiments/zh_freqcontrast_chinese.osexp",
@@ -178,7 +178,7 @@
     },
     {
       "file": "output/experiments/zh_freqcontrast_chinese.html",
-      "sha256": "8864b3151cb029bcca4662ea7505e5ee09c8401cc5b5eb915d1ce1cfe16a9ba0"
+      "sha256": "0eb38e808153d5cb40cb92c9fcf40338be1f9871da109cdee2dff4a190709a7b"
     }
   ]
 }

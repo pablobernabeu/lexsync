@@ -161,6 +161,18 @@ def test_the_pipeline_matches_on_a_norm_column_and_records_it(tmp_path):
     assert stim["concreteness"].notna().all()
     assert stim["concreteness"].between(2.0, 5.0).all()
 
+    # The selection itself, pinned to the same literals in test-norms.R. No shipped
+    # design carries a `norms:` block, so a design that joins one is reached by
+    # neither the cross-engine artefact diff nor the byte-parity sweep, and a
+    # divergence in how the two engines match over a joined column would show up
+    # nowhere. Pinning one fixture's outcome in both suites is what fails if it ever
+    # does.
+    assert list(stim["word"]) == ["car", "cap", "map", "dog", "hag", "cot"]
+    assert list(stim["condition"]) == ["low", "low", "high", "low", "high", "high"]
+    assert list(stim["set"]) == [1, 2, 3, 3, 2, 1]
+    assert list(stim["trial"]) == [1, 2, 3, 4, 5, 6]
+    assert list(stim["concreteness"]) == [4, 5, 5, 3, 5, 4]
+
     ds = json.load(open(outdir / "reports" / "normtest_english_datasheet_py.json",
                         encoding="utf-8"))
     recorded = ds["materials_source"]["norms"]

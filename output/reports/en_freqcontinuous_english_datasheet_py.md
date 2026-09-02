@@ -1,4 +1,4 @@
-# Materials datasheet — en_freqcontinuous (english)
+# Materials datasheet -- en_freqcontinuous (english)
 
 *lexsync datasheet v1.1; python engine.*
 
@@ -6,12 +6,12 @@
 
 - **Paradigm:** factorial  |  **Item source:** corpus
 - **Description:** English words spanning the frequency range continuously, with length, neighbourhood density and OLD20 held near-constant, for regression / mixed-model analysis.
-- **Materials source:** `corpora/derived/en.csv` (sha256 `c20549b920d81680…`)
+- **Materials source:** `corpora/derived/en.csv` (sha256 `575833489e04d6a4...`)
 - **Selection:** continuous even-spread (predictor spanned, controls banded)
 - **Cross-engine determinism:** byte-identical
 - **Counterbalancing:** factorial, 1 list(s)
 - **Items:** 80 rows across 1 conditions (continuous)
-- **Seed:** 2026  |  **Versions:** engine python, lexsync 0.1.0, python 3.13.7, pandas 2.3.2, numpy 2.3.2, scipy 1.17.1, rapidfuzz 3.14.5, pyyaml 6.0.3, os Windows AMD64
+- **Seed:** 2026  |  **Versions:** engine python, lexsync 0.1.0, python 3.11.15, pandas 2.3.3, numpy 2.4.6, scipy 1.17.1, rapidfuzz 3.14.6, pyyaml 6.0.3, os Linux x86_64
 
 ## Selection transparency
 
@@ -29,7 +29,7 @@
 
 ## Suggested analysis
 
-- **Model:** `response ~ frequency + length + n_density + old20 + (1 + frequency | subject) + (1 | item)` — where the response is the trial outcome (e.g. reaction time or accuracy).
+- **Model:** `response ~ frequency + length + n_density + old20 + (1 + frequency | subject) + (1 | item)` -- where the response is the trial outcome (e.g. reaction time or accuracy).
 - The predictor is kept continuous and analysed by regression or a mixed model rather than dichotomised (Kuperman, 2015; Liben-Nowell et al., 2019); the controls enter as covariates. Crossed random effects for subjects and items guard the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008); reduce the structure if it does not converge (Matuschek et al., 2017).
 
 ## Methods paragraph

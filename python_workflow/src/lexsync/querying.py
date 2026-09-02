@@ -9,7 +9,8 @@ import re
 
 import numpy as np
 import pandas as pd
-from rapidfuzz.distance import Hamming, Levenshtein
+from rapidfuzz import process
+from rapidfuzz.distance import Levenshtein
 
 from .io_utils import _round_dp, clean_field, read_csv_utf8, sha256_file
 
@@ -30,7 +31,14 @@ _ASCII_WS = " \t\r\n"
 
 
 def count_syllables(word) -> int:
-    """An orthographic syllable estimate: the number of maximal vowel runs."""
+    """An orthographic syllable estimate: the number of maximal vowel runs.
+
+    Args:
+        word: A word form.
+
+    Returns:
+        The estimated syllable count.
+    """
     return len(_VOWELS.findall(str(word).lower()))
 
 
@@ -43,6 +51,30 @@ def validate_lexicon(df: pd.DataFrame, schema: dict) -> None:
 
 
 def load_lexicon(path: str, schema: dict, language: str | None = None) -> pd.DataFrame:
+    """Load a lexicon from a CSV file.
+
+    Reads a derived lexicon, validates the column contract, lower-cases the
+    orthographic form, removes duplicates and attaches a stable integer ``id``
+    plus the inexpensive dimensions ``length`` and ``frequency``. The
+    orthographic neighbourhood dimensions are added later, on the experimental
+    pool, by :func:`add_neighbourhood`, because they are quadratic in the size of
+    the reference set.
+
+    Args:
+        path: Path to a derived lexicon CSV.
+        schema: The parsed schema (see ``config/schema.yaml``).
+        language: Optional language label to record in a ``language`` column.
+
+    Returns:
+        A data frame with at least ``word``, ``length``, ``n_syllables``,
+        ``frequency`` and ``id``, plus the frequency column the schema names (by
+        default ``freq_zipf``) and every other column the file carried. Rows are
+        in byte order of ``word`` and ``id`` numbers them from 1.
+
+    Raises:
+        ValueError: If a required column is missing, or no row survives the
+            missing-value and duplicate filters.
+    """
     df = read_csv_utf8(path)
     validate_lexicon(df, schema)
     # `or {}` at every level: an empty `dimensions:` or `frequency:` key parses to
@@ -101,8 +133,23 @@ def load_pool(path: str, schema: dict, lexicon=None, language=None) -> dict:
     numbers that mean nothing. When a lexicon is given, the reference is the lexicon's
     words; only without one does it fall back to the pool itself.
 
-    Returns ``{"pool": DataFrame, "reference": list}``. Mirrors load_pool in
-    R_workflow/R/querying.R.
+    Mirrors load_pool in R_workflow/R/querying.R.
+
+    Args:
+        path: Path to a UTF-8 CSV with at least a ``word`` column.
+        schema: The parsed schema (used when a lexicon is loaded).
+        lexicon: Optional path to a derived lexicon to draw dimensions from.
+        language: Optional language label recorded in a ``language`` column.
+
+    Returns:
+        ``{"pool": DataFrame, "reference": list}``: the pool carries ``word``,
+        ``id``, ``length``, ``n_syllables`` and any joined or supplied
+        dimensions, and the reference is the word list the neighbourhood
+        dimensions should be computed against.
+
+    Raises:
+        ValueError: If the path contains ``..``, the ``word`` column is missing,
+            no row survives normalisation, or a word is absent from ``lexicon``.
     """
     if ".." in str(path).replace("\\", "/").split("/"):
         raise ValueError("lexsync: pool path must not contain '..'.")
@@ -166,6 +213,14 @@ def add_bigram_frequency(df: pd.DataFrame, reference=None) -> pd.DataFrame:
     For each word, the mean over its adjacent letter bigrams of the corpus bigram
     probability (count divided by the total bigram count). Computed from integer
     counts and rounded, so it is identical in the R and Python engines.
+
+    Args:
+        df: A data frame with a ``word`` column.
+        reference: Reference words supplying the bigram counts; defaults to the
+            frame's own words.
+
+    Returns:
+        ``df`` with an added numeric ``bigram_freq`` column.
     """
     ref = [str(w) for w in (reference if reference is not None else df["word"].tolist())]
     counts: dict[str, int] = {}
@@ -227,6 +282,20 @@ def merge_norms(lexicon: pd.DataFrame, norms, on: str = "word", columns=None) ->
     byte-order tie-break behind every selection, so the join must not rewrite it.
 
     Mirrors merge_norms in R_workflow/R/querying.R.
+
+    Args:
+        lexicon: A lexicon data frame.
+        norms: A data frame, or the path to a CSV, with a word column and norms.
+        on: The join column.
+        columns: Optional norm columns to keep.
+
+    Returns:
+        ``lexicon`` with the norm columns appended, in the lexicon's own row and
+        column order. A row with no matching norm gets ``NaN``.
+
+    Raises:
+        ValueError: If the join column is missing on either side, or a norm
+            column collides with a column the lexicon already carries.
     """
     n = norms if isinstance(norms, pd.DataFrame) else read_csv_utf8(norms)
     if on not in lexicon.columns:
@@ -316,23 +385,47 @@ def apply_norms(lex: pd.DataFrame, design: dict) -> dict:
     return {"lexicon": lex, "provenance": records}
 
 
+# Pool words are measured against the reference in chunks: the distance matrix is
+# quadratic, so a 30,000-word lexicon against itself would not fit in memory at once.
+_NEIGHBOUR_CHUNK = 512
+
+
 def add_neighbourhood(df: pd.DataFrame, reference=None, n_old: int = 20) -> pd.DataFrame:
-    """Coltheart's N (same-length, single substitution) and OLD20 for each word."""
+    """Coltheart's N (same-length, single substitution) and OLD20 for each word.
+
+    One Levenshtein matrix answers both dimensions. Coltheart's N is read off it
+    rather than measured with a separate Hamming pass, because for two words of the
+    same length an edit distance of 1 is exactly a Hamming distance of 1: an
+    insertion has to be paid for with a deletion, so any other single-letter
+    difference costs 2. Every value is a small exact integer, so this agrees with
+    ``stringdist`` in the R twin as before.
+
+    Args:
+        df: A data frame with a ``word`` column.
+        reference: Reference words the neighbourhoods are measured against;
+            defaults to the frame's own words.
+        n_old: Neighbourhood size for OLD.
+
+    Returns:
+        ``df`` with added integer ``n_density`` and numeric ``old20`` columns.
+    """
     words = df["word"].astype(str).tolist()
     ref = list(dict.fromkeys(str(w) for w in (reference if reference is not None else words)))
-    ref_len = np.array([len(w) for w in ref])
+    ref_len = np.array([len(w) for w in ref], dtype=np.int64)
     n_density = np.zeros(len(words), dtype=int)
     old = np.full(len(words), np.nan)
-    for i, w in enumerate(words):
-        same_len = [r for r, L in zip(ref, ref_len, strict=True) if L == len(w)]
-        if same_len:
-            hd = np.array([Hamming.distance(w, s) for s in same_len])
-            n_density[i] = int(np.sum(hd == 1))
-        ld = np.array([Levenshtein.distance(w, r) for r in ref], dtype=float)
-        ld = ld[ld > 0]
-        if ld.size:
-            k = min(n_old, ld.size)
-            old[i] = float(np.mean(np.partition(ld, k - 1)[:k]))
+    for start in range(0, len(words), _NEIGHBOUR_CHUNK):
+        chunk = words[start:start + _NEIGHBOUR_CHUNK]
+        dist = process.cdist(chunk, ref, scorer=Levenshtein.distance, workers=-1)
+        chunk_len = np.array([len(w) for w in chunk], dtype=np.int64)
+        same_len = ref_len[None, :] == chunk_len[:, None]
+        n_density[start:start + len(chunk)] = np.sum((dist == 1) & same_len, axis=1)
+        for j in range(len(chunk)):
+            ld = dist[j].astype(float)
+            ld = ld[ld > 0]
+            if ld.size:
+                k = min(n_old, ld.size)
+                old[start + j] = float(np.mean(np.partition(ld, k - 1)[:k]))
     out = df.copy()
     out["n_density"] = n_density
     out["old20"] = old
@@ -362,6 +455,17 @@ def add_pair_overlap(df: pd.DataFrame, prime: str = "prime",
     pair of two empty forms returns 0 rather than ``0/0``, because a NaN would be
     sorted and compared and would then drop the row from one engine's control window
     but not the other's.
+
+    Args:
+        df: A pair table.
+        prime: Column holding the first orthographic form.
+        target: Column holding the second orthographic form.
+
+    Returns:
+        ``df`` with ``pair.lev`` and ``pair.overlap`` added.
+
+    Raises:
+        ValueError: If either column is missing.
     """
     for col in (prime, target):
         if col not in df.columns:
@@ -384,6 +488,17 @@ def load_items(path: str, required_fields) -> pd.DataFrame:
     characters; bounded length) so a crafted item cannot corrupt the generated
     loop table or scripts. Items are mapped to a deterministic integer ``set`` id
     (byte order) so counterbalancing matches the corpus path and the two engines.
+
+    Args:
+        path: Path to a UTF-8 CSV item table.
+        required_fields: The presented fields the paradigm needs.
+
+    Returns:
+        A data frame with ``set``, ``condition`` and the item fields.
+
+    Raises:
+        ValueError: If the path contains ``..``, a required column is missing, a
+            cell is empty, or a field value fails the content check.
     """
     parts = str(path).replace("\\", "/").split("/")
     if ".." in parts:
@@ -439,13 +554,31 @@ def load_items(path: str, required_fields) -> pd.DataFrame:
     return df.reset_index(drop=True)
 
 
+def _filter_key(v) -> str:
+    """The spelling a value is compared under in a set-of-permitted-values filter.
+
+    R compares `as.character()` on both sides, and that renders 2.0 as '2' and TRUE
+    as 'TRUE', where Python's str() gives '2.0' and 'True'. Comparing the raw str()
+    meant a numeric filter written `[1, 2, 3]` matched nothing on a float column, and
+    a column is float the moment one value is missing, so the pool came back empty and
+    the run died much later naming the wrong cause. Keying both sides through this
+    puts the two engines on the same comparison.
+    """
+    if isinstance(v, (bool, np.bool_)):
+        return "TRUE" if v else "FALSE"
+    if isinstance(v, float) and v.is_integer() and abs(v) < 1e15:
+        return str(int(v))
+    return str(v)
+
+
 def build_pool(lexicon: pd.DataFrame, filters: dict | None = None) -> pd.DataFrame:
     """Build an experimental candidate pool by filtering a lexicon.
 
     ``filters`` maps a column to either a two-element numeric range or a list of
     permitted values. A row missing the filtered column is dropped under either
     kind, and a range with a reversed or non-finite bound is an error rather than an
-    empty pool.
+    empty pool. A two-element list of booleans is a pair of permitted values, not a
+    range, as it is in R.
 
     A filter naming a column the frame does not have is silently skipped, because the
     same function filters lexica, supplied pools and pair tables, and those carry
@@ -455,6 +588,17 @@ def build_pool(lexicon: pd.DataFrame, filters: dict | None = None) -> pd.DataFra
     ``match_stimuli`` for a condition's ``define_by``, and
     ``select_continuous_pairs`` for both. Mirrors build_pool in
     R_workflow/R/querying.R.
+
+    Args:
+        lexicon: A lexicon data frame.
+        filters: A mapping of columns to either a two-element numeric range or a
+            list of permitted values.
+
+    Returns:
+        The filtered lexicon, with the row index reset.
+
+    Raises:
+        ValueError: If a range bound is reversed or not finite.
     """
     df = lexicon
     if filters:
@@ -462,7 +606,11 @@ def build_pool(lexicon: pd.DataFrame, filters: dict | None = None) -> pd.DataFra
             if col not in df.columns:
                 continue
             vals = list(rng) if isinstance(rng, (list, tuple)) else [rng]
-            if len(vals) == 2 and all(isinstance(v, (int, float)) for v in vals):
+            # `bool` is a subclass of `int` here and R's is.numeric() is FALSE for a
+            # logical, so `[true, false]` was read as a reversed range in this engine
+            # and as a pair of permitted values in the other.
+            if len(vals) == 2 and all(isinstance(v, (int, float))
+                                      and not isinstance(v, bool) for v in vals):
                 # YAML's .inf and .nan arrive as ordinary floats, and either one,
                 # like a reversed range, silently empties the pool row by row.
                 # Non-finite first: a NaN bound would make the reversal test
@@ -477,5 +625,6 @@ def build_pool(lexicon: pd.DataFrame, filters: dict | None = None) -> pd.DataFra
                         "give it as [low, high].")
                 df = df[df[col].notna() & (df[col] >= vals[0]) & (df[col] <= vals[1])]
             else:
-                df = df[df[col].notna() & df[col].astype(str).isin([str(v) for v in vals])]
+                keys = [_filter_key(v) for v in vals]
+                df = df[df[col].notna() & df[col].map(_filter_key).isin(keys)]
     return df.reset_index(drop=True)

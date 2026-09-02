@@ -6,12 +6,12 @@
 
 - **Paradigm:** lexical_decision  |  **Item source:** generate
 - **Description:** Lexical decision with subsyllabic (Wuggy-style) pseudowords: real words versus length-matched pseudowords built by swapping whole onset/nucleus/coda constituents.
-- **Materials source:** `corpora/derived/en.csv` (sha256 `c20549b920d81680...`)
+- **Materials source:** `corpora/derived/en.csv` (sha256 `575833489e04d6a4...`)
 - **Selection:** subsyllabic constituent swap (Wuggy-style, deterministic pseudowords)
 - **Cross-engine determinism:** byte-identical
 - **Counterbalancing:** factorial, 1 list(s)
 - **Items:** 120 rows across 2 conditions (pseudoword, word)
-- **Seed:** 2026  |  **Versions:** engine R, lexsync 0.1.0, R 4.6.1, readr 2.2.0, stringdist 0.9.17, jsonlite 2.0.0, digest 0.6.39, yaml 2.3.12, stringi 1.8.7, os Windows x86-64
+- **Seed:** 2026  |  **Versions:** engine R, lexsync 0.1.0, R 4.3.3, readr 2.1.5, stringdist 0.9.12, jsonlite 1.8.8, digest 0.6.34, yaml 2.3.8, stringi 1.8.3, os Linux x86_64
 
 ## Selection transparency
 

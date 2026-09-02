@@ -402,3 +402,211 @@ test_that("run_pipeline leaves the verbosity option as it found it", {
                "positive whole number")
   expect_identical(getOption("lexsync.verbose"), before)
 })
+
+# The example lexicon, shortened, without the columns lexsync derives itself.
+# load_lexicon() requires `word` and `freq_zipf` alone, so this is a lexicon a user
+# may legitimately point lexsync at. Twinned with _bare_lexicon in
+# test_run_pipeline.py.
+bare_lexicon <- function(dir, n = 600L) {
+  lex <- read_csv_utf8(extdata("en_example.csv"))[seq_len(n), , drop = FALSE]
+  path <- file.path(dir, "bare.csv")
+  write_csv_utf8(lex[setdiff(names(lex), c("n_density", "old20"))], path)
+  path
+}
+
+# The dimension as add_neighbourhood() computes it, over the same reference list.
+derived_here <- function(path, words, dim) {
+  ref <- as.character(read_csv_utf8(path)$word)
+  add_neighbourhood(data.frame(word = words, stringsAsFactors = FALSE),
+                    reference = ref)[[dim]]
+}
+
+test_that("a condition defined by a derived dimension computes it", {
+  # The derivation used to be triggered by `match_on` alone, so a design that defined
+  # its conditions by n_density -- the shape of the shipped design_en_ndensity.yaml --
+  # stopped on any lexicon that did not ship the column.
+  out <- tmp_out()
+  lexicon <- bare_lexicon(out)
+  design <- write_design(out, c(
+    "name: derived_define", "language: english",
+    paste0("lexicon: ", as_yaml_path(lexicon)), "n_per_condition: 3",
+    "pool_filters: {length: [3, 7]}",
+    "conditions:",
+    "  - {name: dense, define_by: {n_density: [5, 100]}}",
+    "  - {name: sparse, define_by: {n_density: [0, 1]}}",
+    "match_on: [length, frequency]"))
+  stim <- read_csv_utf8(run_quiet(design, extdata("schema.yaml"), outdir = out)$stimuli)
+  expect_equal(nrow(stim), 6)
+  expect_equal(stim$n_density, derived_here(lexicon, stim$word, "n_density"))
+  expect_true(all(stim$n_density[stim$condition == "dense"] >= 5))
+})
+
+test_that("a pool filter on a derived dimension computes it", {
+  # The filter names a column the lexicon does not have, and the guard on unknown
+  # filter names used to reject the design before anything could derive it.
+  out <- tmp_out()
+  lexicon <- bare_lexicon(out)
+  design <- write_design(out, c(
+    "name: derived_filter", "language: english",
+    paste0("lexicon: ", as_yaml_path(lexicon)), "n_per_condition: 3",
+    "pool_filters: {length: [3, 7], old20: [1.0, 2.0]}",
+    "conditions:",
+    "  - {name: high, define_by: {frequency: [5.0, 7.0]}}",
+    "  - {name: low, define_by: {frequency: [3.8, 4.4]}}",
+    "match_on: [length]"))
+  stim <- read_csv_utf8(run_quiet(design, extdata("schema.yaml"), outdir = out)$stimuli)
+  expect_equal(nrow(stim), 6)
+  expect_true(all(stim$old20 >= 1.0 & stim$old20 <= 2.0))
+  expect_equal(stim$old20, derived_here(lexicon, stim$word, "old20"))
+})
+
+test_that("a continuous predictor on a derived dimension computes it", {
+  out <- tmp_out()
+  lexicon <- bare_lexicon(out)
+  design <- write_design(out, c(
+    "name: derived_continuous", "language: english",
+    paste0("lexicon: ", as_yaml_path(lexicon)), "n_per_condition: 6",
+    "pool_filters: {length: [3, 7]}",
+    "continuous: {predictor: old20, controls: [length, frequency]}",
+    "match_on: [length, frequency]"))
+  stim <- read_csv_utf8(run_quiet(design, extdata("schema.yaml"), outdir = out)$stimuli)
+  expect_equal(nrow(stim), 6)
+  expect_equal(stim$old20, derived_here(lexicon, stim$word, "old20"))
+})
+
+test_that("a misspelt filter is still refused beside a derived one", {
+  out <- tmp_out()
+  lexicon <- bare_lexicon(out)
+  design <- write_design(out, c(
+    "name: derived_typo", "language: english",
+    paste0("lexicon: ", as_yaml_path(lexicon)), "n_per_condition: 3",
+    "pool_filters: {old20: [1.0, 2.0], frequncy: [3.8, 7]}",
+    "conditions:",
+    "  - {name: high, define_by: {frequency: [5.0, 7.0]}}",
+    "  - {name: low, define_by: {frequency: [3.8, 4.4]}}",
+    "match_on: [length]"))
+  expect_error(run_quiet(design, extdata("schema.yaml"), outdir = out),
+               "pool_filters name column")
+})
+
+constant_pool_design <- function(dir) {
+  # Two conditions each constant on the one matched dimension, at different
+  # constants, so Cohen's d and its interval are undefined for every comparison.
+  pool <- file.path(dir, "pool.csv")
+  words <- c("abcd", "efgh", "ijkl", "mnop", "qrst", "uvwx",
+             "abcdef", "ghijkl", "mnopqr", "stuvwx", "yzabcd", "efghij")
+  write_csv_utf8(data.frame(word = words, stringsAsFactors = FALSE), pool)
+  write_design(dir, c(
+    "name: undefined_d", "language: english",
+    "items:", "  source: pool", paste0("  path: ", as_yaml_path(pool)),
+    "n_per_condition: 3",
+    "conditions:",
+    "  - {name: four, define_by: {length: [4, 4]}}",
+    "  - {name: six, define_by: {length: [6, 6]}}",
+    "match_on: [length]"))
+}
+
+test_that("an undefined Cohen's d on every comparison still runs", {
+  # Twin of test_run_pipeline.py::test_an_undefined_cohens_d_on_every_comparison_
+  # still_runs, which pins the same run log line: the Python engine used to stop
+  # here rather than report the statistic as missing.
+  out <- tmp_out()
+  res <- run_quiet(constant_pool_design(out), extdata("schema.yaml"), outdir = out)
+  comparisons <- read_csv_utf8(res$comparisons)
+  expect_true(all(is.na(comparisons$cohens_d)))
+  expect_true(any(grepl("equivalence six vs four on 'length': d = NA,",
+                        readLines(res$log, encoding = "UTF-8"), fixed = TRUE)))
+})
+
+# The two engines' run logs quoted different numbers for the same statistic: the
+# stored value is at four places and R rounded to three while Python printed all of
+# them, so 0.0016 was also written 0.002 and 1.0 was also written 1.000. The Python
+# suite pins the same two lines, fixture for fixture.
+fractional_tost_design <- function(dir) {
+  pool <- file.path(dir, "pool.csv")
+  rows <- list()
+  i <- 0L
+  for (a in letters[1:10]) for (b in c("a", "e", "i", "o", "u")) for (cc in letters[1:6]) {
+    word <- if (i %% 3L) paste0(a, b, cc) else paste0(a, b, cc, "z")
+    rows[[length(rows) + 1L]] <- data.frame(word = word,
+                                            frequency = 1 + (i %% 19L) / 4.5,
+                                            stringsAsFactors = FALSE)
+    i <- i + 1L
+  }
+  df <- do.call(rbind, rows)
+  write_csv_utf8(df[!duplicated(df$word), , drop = FALSE], pool)
+  write_design(dir, c(
+    "name: tost_format", "language: english",
+    "items:", "  source: pool", paste0("  path: ", as_yaml_path(pool)),
+    "n_per_condition: 25",
+    "conditions:",
+    "  - {name: low, define_by: {frequency: [1.0, 2.0]}}",
+    "  - {name: high, define_by: {frequency: [3.5, 5.5]}}",
+    "match_on: [length]"))
+}
+
+test_that("the run log writes the TOST p at four places", {
+  out <- tmp_out()
+  res <- run_quiet(fractional_tost_design(out), extdata("schema.yaml"), outdir = out)
+  log <- readLines(res$log, encoding = "UTF-8")
+  expect_true(any(grepl("on 'length': d = 0.00 [-0.47, 0.47], TOST p = 0.0417 (equivalent)",
+                        log, fixed = TRUE)))
+  expect_true(any(grepl("TOST p = 1.0000 (not shown equivalent)", log, fixed = TRUE)))
+})
+
+malformed <- function(dir, name, text) {
+  p <- file.path(dir, name)
+  writeLines(text, p, useBytes = TRUE)
+  p
+}
+
+test_that("a design that is not a mapping names the file", {
+  # An empty or list-shaped design used to report an R type and not the file.
+  # Mirrored in test_run_pipeline.py.
+  out <- tmp_out()
+  for (text in list(character(0), c("- a", "- b"))) {
+    design <- malformed(out, "design_bad.yaml", text)
+    expect_error(run_quiet(design, extdata("schema.yaml"), outdir = out),
+                 sprintf("lexsync: design '%s' did not parse to a mapping of keys", design),
+                 fixed = TRUE)
+  }
+})
+
+test_that("a design without a name or a language is refused", {
+  # The base name for every artefact is built from both, so a nameless design used
+  # to write its files under the language alone.
+  out <- tmp_out()
+  cases <- list(list(c("language: english"), "name"),
+                list(c("name: nameless"), "language"),
+                list(c("name: ' '", "language: english"), "name"))
+  for (case in cases) {
+    design <- write_design(out, case[[1]])
+    expect_error(run_quiet(design, extdata("schema.yaml"), outdir = out),
+                 sprintf("is missing the required key(s) '%s'.", case[[2]]), fixed = TRUE)
+  }
+  expect_length(list.files(out, pattern = "_stimuli_R[.]csv$", recursive = TRUE), 0L)
+})
+
+test_that("a schema without its structural blocks is refused", {
+  out <- tmp_out()
+  schema <- malformed(out, "schema.yaml", "seed: 2026")
+  design <- write_design(out, c(
+    "name: guard_test", "language: english",
+    paste0("lexicon: ", as_yaml_path(extdata("en_example.csv"))), "n_per_condition: 5",
+    "conditions:",
+    "  - {name: high, define_by: {frequency: [5.0, 7.0]}}",
+    "  - {name: low, define_by: {frequency: [3.8, 4.4]}}",
+    "match_on: [length]"))
+  expect_error(run_quiet(design, schema, outdir = out),
+               sprintf(paste("lexsync: schema '%s' is missing the required key(s)",
+                             "'lexicon_schema', 'matching'."), schema), fixed = TRUE)
+})
+
+test_that("run_all names the design that failed", {
+  # A quiet sweep reported the bare failure of an unnamed one of twenty designs.
+  out <- tmp_out()
+  malformed(out, "design_b_bad.yaml", character(0))
+  expect_error(run_all(config_dir = out, schema_path = extdata("schema.yaml"),
+                       outdir = out, verbose = FALSE),
+               "lexsync: design 'design_b_bad.yaml' failed: ", fixed = TRUE)
+})

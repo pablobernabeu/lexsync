@@ -1,4 +1,5 @@
 import pandas as pd
+import pytest
 
 from lexsync.counterbalancing import _recipe, counterbalance, participant_table
 
@@ -97,3 +98,28 @@ def test_keyed_hash_shuffle_is_a_uniform_permutation():
     means = {w: sum(p) / len(p) for w, p in positions.items()}
     assert all(abs(m - centre) < 0.6 for m in means.values()), means
     assert firsts == set(stim["word"])
+
+
+def test_more_lists_than_item_sets_is_refused():
+    # Dealing sets round-robin used to leave the surplus lists empty and silent, while
+    # the datasheet went on reporting the number of lists the design asked for. The
+    # same refusal is pinned in test-counterbalancing.R.
+    stim = pd.DataFrame({"word": list("abcdef"), "condition": ["x", "y"] * 3,
+                         "set": [1, 1, 2, 2, 3, 3]})
+    with pytest.raises(ValueError, match="only 3 item set"):
+        counterbalance(stim, {"counterbalance": {"lists": 8}}, {"seed": 1})
+    out = counterbalance(stim, {"counterbalance": {"lists": 3}}, {"seed": 1})
+    assert sorted(out["list"].unique()) == [1, 2, 3]
+
+
+def test_more_lists_than_conditions_is_refused_by_the_latin_square():
+    # The rotation repeats after as many lists as there are conditions, so a fourth
+    # list over two conditions would duplicate the first. Pinned in the R suite too.
+    stim = pd.DataFrame({"prime": list("abcd"), "target": ["x", "x", "y", "y"],
+                         "condition": ["r", "u", "r", "u"], "set": [1, 1, 2, 2]})
+    design = {"paradigm": "priming", "counterbalance": {"lists": 4}}
+    with pytest.raises(ValueError, match="only 2 condition"):
+        counterbalance(stim, design, {"seed": 1})
+    design["counterbalance"]["lists"] = 2
+    out = counterbalance(stim, design, {"seed": 1})
+    assert sorted(out["list"].unique()) == [1, 2]

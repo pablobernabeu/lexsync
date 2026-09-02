@@ -6,12 +6,12 @@
 
 - **Paradigm:** factorial  |  **Item source:** corpus
 - **Description:** High versus low frequency English words, matched on length, syllable count and bigram frequency (a phonotactic-probability proxy).
-- **Materials source:** `corpora/derived/en.csv` (sha256 `c20549b920d81680...`)
+- **Materials source:** `corpora/derived/en.csv` (sha256 `575833489e04d6a4...`)
 - **Selection:** standardised_euclidean
 - **Cross-engine determinism:** byte-identical
 - **Counterbalancing:** factorial, 1 list(s)
 - **Items:** 120 rows across 2 conditions (low_frequency, high_frequency)
-- **Seed:** 2026  |  **Versions:** engine R, lexsync 0.1.0, R 4.6.1, readr 2.2.0, stringdist 0.9.17, jsonlite 2.0.0, digest 0.6.39, yaml 2.3.12, stringi 1.8.7, os Windows x86-64
+- **Seed:** 2026  |  **Versions:** engine R, lexsync 0.1.0, R 4.3.3, readr 2.1.5, stringdist 0.9.12, jsonlite 1.8.8, digest 0.6.34, yaml 2.3.8, stringi 1.8.3, os Linux x86_64
 
 ## Selection transparency
 
@@ -22,11 +22,11 @@
 
 | Dimension | Role | Cohen's d | 90% CI | Var ratio | TOST p | Equivalent |
 |---|---|---|---|---|---|---|
-| length | controlled | 0.01 | [-0.29, 0.32] | 0.94 | 0.0045 | TRUE |
+| length | controlled | 0.02 | [-0.29, 0.32] | 0.94 | 0.0045 | TRUE |
 | frequency | manipulated/free | 5.57 | [5.27, 5.88] | 0.58 | 1 | FALSE |
 | n_density | manipulated/free | 0.08 | [-0.23, 0.38] | 0.72 | 0.011 | TRUE |
 | old20 | manipulated/free | 0.08 | [-0.22, 0.38] | 0.40 | 0.0113 | TRUE |
-| n_syllables | controlled | 0.17 | [-0.13, 0.48] | 0.58 | 0.0383 | TRUE |
+| n_syllables | controlled | 0.17 | [-0.13, 0.48] | 0.59 | 0.0383 | TRUE |
 | bigram_freq | controlled | 0.01 | [-0.29, 0.31] | 0.96 | 0.0041 | TRUE |
 
 ## Suggested analysis

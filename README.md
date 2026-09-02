@@ -149,24 +149,24 @@ Rscript -e "shiny::runApp('apps/r_shiny', port = 8502)"        # R
 
 Languages are supplied through `corpora/registry.yaml`. Two connectors are
 provided: a curated SUBTLEX-family/'openlexicon' connector (individually citable
-corpora under CC BY-SA 4.0) and a 'wordfreq' connector that reaches roughly
-forty languages through a single dependency. English, Spanish and Mandarin
-Chinese are bundled and demonstrated end to end (the last a logographic-script
-example, showing that the matching and script generation are not limited to
-alphabetic writing). Those three come from 'wordfreq', not from the openlexicon
-connector, and carry its CC BY-SA 4.0 data terms. The registry's SUBTLEX entries
-are separate corpora a user loads directly. Further languages are fetched on
-demand into a user cache, though not equally from both engines. The
-'openlexicon' connector is available in R and Python alike, whereas 'wordfreq'
-is Python-only: `lexsync fetch <language>` derives those lexica from the Python
-package, and the R package can read the result as an ordinary corpus but cannot
-build one itself. An R-only laboratory therefore reaches the wider language set
-only through lexica derived elsewhere. Every corpus is cited, with its licence
-and retrieval date, in `corpora/ATTRIBUTION.md`. The bundled corpora are a
-fixed, checksummed snapshot, so the demonstrations reproduce with no download.
-'wordfreq' itself was frozen in 2024, giving a stable snapshot of usage through
-roughly 2021, which keeps fetched corpora reproducible where a live source would
-let them drift.
+corpora under CC BY-SA 4.0) and a 'wordfreq' connector that reaches the thirty
+languages the registry registers for it through a single dependency. English,
+Spanish and Mandarin Chinese are bundled and demonstrated end to end (the last a
+logographic-script example, showing that the matching and script generation are
+not limited to alphabetic writing). Those three come from 'wordfreq', not from
+the openlexicon connector, and carry its CC BY-SA 4.0 data terms. The registry's
+SUBTLEX entries are separate corpora a user loads directly. Further languages
+are fetched on demand into a user cache, though not equally from both engines.
+The 'openlexicon' connector is available in R and Python alike, whereas
+'wordfreq' is Python-only: `lexsync fetch <language>` derives those lexica from
+the Python package, and the R package can read the result as an ordinary corpus
+but cannot build one itself. An R-only laboratory therefore reaches the wider
+language set only through lexica derived elsewhere. Every corpus is cited, with
+its licence and retrieval date, in `corpora/ATTRIBUTION.md`. The bundled corpora
+are a fixed, checksummed snapshot, so the demonstrations reproduce with no
+download. 'wordfreq' itself was frozen in 2024, giving a stable snapshot of
+usage through roughly 2021, which keeps fetched corpora reproducible where a
+live source would let them drift.
 
 ## Extending lexsync
 
@@ -186,8 +186,10 @@ To add a presentation target, add an `export_<target>()` function in
 `R_workflow/R/scripting.R` and `python_workflow/src/lexsync/scripting.py` that walks
 the same rendered event list.
 
-To add a corpus or language, add an entry to `corpora/registry.yaml`. No code change
-is required for SUBTLEX-family or 'wordfreq' sources.
+To add a corpus or language, add an entry to `corpora/registry.yaml` and copy that file
+over the two bundled mirrors, which the suites hold byte-identical to it so an installed
+package reads the same registry. No code change is required for SUBTLEX-family or
+'wordfreq' sources.
 
 ## Tests and continuous integration
 

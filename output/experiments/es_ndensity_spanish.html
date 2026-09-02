@@ -13,11 +13,13 @@
     jsPsych library and stylesheet are loaded from a CDN (unpkg), so the machine
     running it needs an internet connection; to run offline, download jspsych@7.3.4,
     the html-keyboard-response plugin and jspsych.css and point the three tags below
-    at the local copies. A welcome screen precedes the trials and a completion
-    screen follows them. Every recorded row carries the item's design fields
-    (condition, item id, counterbalancing list and so on) alongside the onset
-    marker (the 'marker' field), so responses can be scored without re-joining to
-    the stimulus table.
+    at the local copies. Open it as page.html?participant=3: the embedded trials
+    carry every counterbalancing list and the run presents the one list that
+    participant is allocated, list 1 when no participant is given. A welcome screen
+    precedes the trials and a completion screen follows them. Every recorded row
+    carries the item's design fields (condition, item id, counterbalancing list and
+    so on) alongside the onset marker (the 'marker' field), so responses can be
+    scored without re-joining to the stimulus table.
     When the run finishes the data are offered as a CSV download (jsPsych
     localSave), so no server is required to collect them. A browser cannot drive a
     parallel port, so for online EEG synchronisation route the marker through
@@ -58,6 +60,35 @@
   }
   function content(ev, trial) { return ("field" in ev) ? trial[ev.field] : (ev.text || ""); }
 
+  // The participant this run is for, from the page's ?participant=N query, and the one
+  // counterbalancing list they are presented. TRIALS carries every list, because the
+  // same page serves every participant; running it whole would present each item once
+  // per list, which for a rotated design means each item once in every condition,
+  // exactly the repetition the counterbalancing exists to prevent. Participant p is
+  // given the pth list, cycling, the allocation lexsync's participant_table writes.
+  function participantNumber() {
+    const raw = parseInt(new URLSearchParams(window.location.search).get("participant"), 10);
+    return isFinite(raw) && raw > 0 ? raw : 1;
+  }
+  function listKey(value) {
+    const n = parseInt(value, 10);
+    return String(n) === String(value) ? [0, n, ""] : [1, 0, String(value)];
+  }
+  function trialsForParticipant(trials, participant) {
+    const seen = {};
+    trials.forEach(t => { seen[String(t.list === undefined ? 1 : t.list)] = 1; });
+    const lists = Object.keys(seen).sort((a, b) => {
+      const ka = listKey(a), kb = listKey(b);
+      return ka[0] - kb[0] || ka[1] - kb[1] || (ka[2] < kb[2] ? -1 : ka[2] > kb[2] ? 1 : 0);
+    });
+    if (lists.length < 2) return trials.slice();
+    const wanted = lists[(participant - 1) % lists.length];
+    return trials.filter(t => String(t.list === undefined ? 1 : t.list) === wanted);
+  }
+
+  const PARTICIPANT = participantNumber();
+  const RUN_TRIALS = trialsForParticipant(TRIALS, PARTICIPANT);
+
   // The response keys the participant will use, gathered from the events so the
   // welcome screen can name them.
   function responseKeys() {
@@ -78,7 +109,7 @@
   // response, so a passive-reading design does not mention a keyboard.
   (function () {
     const keys = responseKeys();
-    const n = TRIALS.length;
+    const n = RUN_TRIALS.length;
     let body = "<h1>Welcome</h1><p>Thank you for taking part. In this task you will see "
       + "items presented one at a time on the screen.</p>";
     if (keys.length)
@@ -105,7 +136,7 @@
 
   let previousBlock = null;
   let trialCounter = 0;
-  for (const trial of TRIALS) {
+  for (const trial of RUN_TRIALS) {
     // Identifies this trial's rows in the data store. A feedback screen has to score the
     // key pressed on ITS OWN trial, and eventApplies can drop a response event from a
     // block, so a trial can reach feedback with no response row of its own. Reading "the

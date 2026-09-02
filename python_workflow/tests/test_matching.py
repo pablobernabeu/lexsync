@@ -390,6 +390,17 @@ def _resample_design():
     }
 
 
+# The engines diverged on n_sets = 0, Python stopping with pandas' 'No objects to
+# concatenate' and R returning nothing at all, and both truncated a fractional
+# request without a word. test-matching.R pins the same values and message.
+@pytest.mark.parametrize("n_sets", [0, -1, 2.5, "two", float("inf")])
+def test_resample_refuses_an_impossible_number_of_sets(schema, en_lexicon_path, n_sets):
+    lex = load_lexicon(en_lexicon_path, schema, "english")
+    pool = build_pool(lex, _resample_design()["pool_filters"])
+    with pytest.raises(ValueError, match=r"resample\.n_sets must be a positive whole number"):
+        resample_stimuli(pool, _resample_design(), schema, n_sets)
+
+
 def test_resample_produces_disjoint_matched_sets(schema, en_lexicon_path):
     lex = load_lexicon(en_lexicon_path, schema, "english")
     pool = build_pool(lex, _resample_design()["pool_filters"])

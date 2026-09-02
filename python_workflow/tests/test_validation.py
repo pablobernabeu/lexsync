@@ -1,8 +1,10 @@
 import inspect
 import math
+import re
 
 import numpy as np
 import pandas as pd
+import pytest
 
 from lexsync.validation import (
     balance_check,
@@ -146,6 +148,15 @@ def test_describe_and_balance():
     assert len(balance_check(pd.DataFrame({"condition": ["a", "a", "b", "b"]}), "condition")) == 0
 
 
+# The message reaches the run log, so the two engines must word it alike. Byte
+# order is the one ordering neither pandas nor R's table() reaches on its own;
+# test-validation.R pins the same sentence.
+def test_balance_check_names_the_levels_in_byte_order():
+    df = pd.DataFrame({"condition": ["low", "high", "high", "high", "mid", "mid"]})
+    assert balance_check(df, "condition") == [
+        "Column 'condition' is unbalanced: high=3, low=1, mid=2"]
+
+
 def test_describe_stimuli_groups_in_first_appearance_order():
     # Not sorted order: this is the order validation.R's appearance-ordered factor
     # yields, and the order in which match_report() takes its anchor.
@@ -161,3 +172,36 @@ def test_describe_stimuli_all_na_dimension_is_missing_not_infinite():
     assert math.isnan(d["max"].iloc[0])
     assert not math.isinf(d["min"].iloc[0])
     assert not math.isinf(d["max"].iloc[0])
+
+
+def _named_stim():
+    return pd.DataFrame({"word": list("abcd"), "condition": ["hi", "hi", "lo", "lo"],
+                         "frequency": [1.0, 2.0, 3.0, 4.0]})
+
+
+def test_a_dimension_the_stimuli_do_not_have_is_refused():
+    """A misspelt dimension was a bare KeyError here and a full table of NAs, with a
+    Cohen's d of zero beside it, in the R engine. Mirrored in test-validation.R."""
+    stim = _named_stim()
+    msg = "lexsync: cannot report on dimension(s) the stimuli do not have: 'frequncy'."
+    for call in (lambda: describe_stimuli(stim, ["frequncy"]),
+                 lambda: match_report(stim, ["frequncy"], {}),
+                 lambda: match_report_continuous(stim, "frequncy", [], {})):
+        with pytest.raises(ValueError, match=re.escape(msg)):
+            call()
+    # Offenders are named in byte order, as balance_lists names them.
+    with pytest.raises(ValueError, match=re.escape("do not have: 'aa', 'zz'.")):
+        match_report(stim, ["zz", "aa"], {})
+
+
+def test_a_grouping_column_the_stimuli_do_not_have_is_refused():
+    stim = _named_stim()
+    with pytest.raises(ValueError, match=re.escape(
+            "lexsync: cannot group the stimuli by column 'cond', which they do not have.")):
+        describe_stimuli(stim, ["frequency"], by="cond")
+    renamed = stim.rename(columns={"condition": "cond"})
+    msg = "lexsync: cannot group the stimuli by column 'condition', which they do not have."
+    with pytest.raises(ValueError, match=re.escape(msg)):
+        match_report(renamed, ["frequency"], {})
+    with pytest.raises(ValueError, match=re.escape(msg)):
+        match_report_continuous(renamed, "frequency", [], {})

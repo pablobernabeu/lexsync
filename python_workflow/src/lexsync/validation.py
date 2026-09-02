@@ -29,7 +29,41 @@ from scipy import stats
 from .io_utils import _exact_mean, _exact_median, _exact_sd, _exact_sum, _exact_var, _round_dp
 
 
+def _require_columns(stimuli: pd.DataFrame, by: str, dims) -> None:
+    """Refuse a grouping column or a dimension the stimuli do not carry.
+
+    These three reports are exported and are called on a selection of the user's
+    own, where a misspelt name used to be a bare KeyError here and, in the R
+    engine, a full table of NAs with a Cohen's d of zero beside it: a report that
+    looks complete and describes nothing. Mirrors .require_columns in
+    R_workflow/R/validation.R.
+    """
+    if by not in stimuli.columns:
+        raise ValueError(f"lexsync: cannot group the stimuli by column '{by}', "
+                         "which they do not have.")
+    absent = sorted((d for d in dims if d not in stimuli.columns),
+                    key=lambda s: s.encode("utf-8"))
+    if absent:
+        raise ValueError("lexsync: cannot report on dimension(s) the stimuli do not "
+                         "have: %s." % ", ".join("'%s'" % a for a in absent))
+
+
 def describe_stimuli(stimuli: pd.DataFrame, dims, by: str = "condition") -> pd.DataFrame:
+    """Per-group descriptive statistics for several dimensions.
+
+    Args:
+        stimuli: A stimuli data frame.
+        dims: The dimension columns to describe.
+        by: Grouping column.
+
+    Returns:
+        A long data frame with n, mean, sd, min, median and max per group.
+
+    Raises:
+        ValueError: If the grouping column or a dimension is absent, rather than
+            a table of missing values.
+    """
+    _require_columns(stimuli, by, dims)
     rows = []
     for g, d in stimuli.groupby(by, sort=False):
         for dim in dims:
@@ -48,6 +82,18 @@ def describe_stimuli(stimuli: pd.DataFrame, dims, by: str = "condition") -> pd.D
 
 
 def cohens_d(x, y):
+    """Cohen's *d*, the pooled-SD standardised mean difference.
+
+    Args:
+        x: The condition's values.
+        y: The reference condition's values.
+
+    Returns:
+        The standardised mean difference; 0.0 when either sample is too small or
+        both share one constant, and ``None`` when the pooled SD is zero but the
+        means differ, since the standardised difference is then unbounded rather
+        than zero.
+    """
     x = np.asarray(x, dtype=float); y = np.asarray(y, dtype=float)
     x = x[~np.isnan(x)]; y = y[~np.isnan(y)]
     nx, ny = len(x), len(y)
@@ -76,6 +122,15 @@ def cohens_d_ci(x, y, alpha: float = 0.05) -> dict:
     estimate cannot be over-read as evidence of a small true difference
     (Sassenhagen & Alday, 2016). The upper limit of the interval on ``|d|`` is the
     largest imbalance still consistent with the stimuli.
+
+    Args:
+        x: The condition's values.
+        y: The reference condition's values.
+        alpha: Significance level matching the TOST.
+
+    Returns:
+        ``{"d": ..., "ci_low": ..., "ci_high": ...}``, whose members are
+        ``None`` when unequal constants leave the estimate undefined.
     """
     x = np.asarray(x, dtype=float); y = np.asarray(y, dtype=float)
     x = x[~np.isnan(x)]; y = y[~np.isnan(y)]
@@ -97,6 +152,24 @@ def cohens_d_ci(x, y, alpha: float = 0.05) -> dict:
 
 
 def tost_equiv(x, y, bound_d: float = 0.5, alpha: float = 0.05) -> dict:
+    """Two one-sided tests (TOST) of equivalence on a Cohen's *d* bound.
+
+    Reports the larger of the two one-sided p-values; a value below ``alpha``
+    supports equivalence within plus or minus ``bound_d`` standard deviations. A
+    non-significant difference test is not itself evidence of equivalence, hence
+    TOST is reported alongside the standardised mean difference (Lakens, 2017).
+
+    Args:
+        x: The condition's values.
+        y: The reference condition's values.
+        bound_d: Smallest effect size of interest, in Cohen's *d*; the schema
+            sets 0.5 (Lakens, 2017).
+        alpha: Significance level.
+
+    Returns:
+        ``{"p": ..., "equivalent": ...}``, the verdict being ``None`` when
+        either sample is too small to test.
+    """
     x = np.asarray(x, dtype=float); y = np.asarray(y, dtype=float)
     x = x[~np.isnan(x)]; y = y[~np.isnan(y)]
     nx, ny = len(x), len(y)
@@ -127,7 +200,14 @@ def variance_ratio(cond, ref):
     Two conditions can share a mean yet differ in spread and still confound, which
     a mean-based statistic misses (Armstrong, Watson & Plaut, 2012; Austin, 2009).
     A ratio near 1 is balanced; a common heuristic flags ratios outside about
-    [0.5, 2] as unequal spread. Returns ``None`` when a variance is undefined.
+    [0.5, 2] as unequal spread.
+
+    Args:
+        cond: The condition's values.
+        ref: The reference condition's values.
+
+    Returns:
+        The variance ratio, or ``None`` when a variance is undefined.
     """
     cond = np.asarray(cond, dtype=float); ref = np.asarray(ref, dtype=float)
     cond = cond[~np.isnan(cond)]; ref = ref[~np.isnan(ref)]
@@ -140,6 +220,16 @@ def variance_ratio(cond, ref):
 
 
 def balance_check(stimuli: pd.DataFrame, columns) -> list:
+    """Check that the levels of given columns occur equally often.
+
+    Args:
+        stimuli: A stimuli data frame.
+        columns: A column, or columns, whose level counts should be equal. A
+            column the stimuli do not carry is skipped.
+
+    Returns:
+        Readable balance warnings, empty when every level count agrees.
+    """
     if isinstance(columns, str):
         columns = [columns]
     issues = []
@@ -148,7 +238,11 @@ def balance_check(stimuli: pd.DataFrame, columns) -> list:
             continue
         tab = stimuli[col].value_counts()
         if tab.nunique() > 1:
-            detail = ", ".join(f"{k}={v}" for k, v in tab.items())
+            # Levels in byte order, as everywhere else in the package: pandas orders
+            # value_counts by descending count and R's table() by the session's
+            # collation, so the two engines wrote the same counts in different words.
+            levels = sorted(tab.items(), key=lambda kv: str(kv[0]).encode("utf-8"))
+            detail = ", ".join(f"{k}={v}" for k, v in levels)
             issues.append(f"Column '{col}' is unbalanced: {detail}")
     return issues
 
@@ -169,8 +263,21 @@ def match_report(stimuli: pd.DataFrame, dims, schema: dict) -> dict:
 
     Every comparison is against the first condition in order of appearance, so a
     design with a single condition has nothing to compare and ``comparisons`` comes
-    back with its columns and no rows.
+    back with its columns and no rows. A ``condition`` column or a dimension the
+    stimuli do not carry is an error rather than a report of missing values.
+
+    Args:
+        stimuli: A matched-stimuli data frame (must carry ``condition``).
+        dims: The dimensions to summarise and compare.
+        schema: The parsed global schema (equivalence settings).
+
+    Returns:
+        ``{"descriptives": DataFrame, "comparisons": DataFrame}``.
+
+    Raises:
+        ValueError: If ``condition`` or a dimension is absent.
     """
+    _require_columns(stimuli, "condition", dims)
     conds = list(dict.fromkeys(stimuli["condition"]))
     anchor = conds[0]
     desc = describe_stimuli(stimuli, dims)
@@ -227,6 +334,18 @@ def match_report_continuous(stimuli, predictor, controls, schema) -> dict:
     realised span and, for each control, its Pearson correlation with the predictor
     (near zero when the control is held constant). The set is meant for regression /
     mixed-model analysis, not equivalence tests.
+
+    Args:
+        stimuli: A stimuli data frame (a single 'continuous' group).
+        predictor: The spanned predictor dimension.
+        controls: The control dimensions.
+        schema: The parsed global schema.
+
+    Returns:
+        ``{"descriptives": DataFrame, "comparisons": DataFrame}``.
+
+    Raises:
+        ValueError: If the predictor or a control is absent.
     """
     desc = describe_stimuli(stimuli, [predictor] + controls)
     pv = pd.to_numeric(stimuli[predictor], errors="coerce").to_numpy(dtype=float)

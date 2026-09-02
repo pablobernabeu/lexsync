@@ -1,4 +1,4 @@
-# Materials datasheet — en_lexdec (english)
+# Materials datasheet -- en_lexdec (english)
 
 *lexsync datasheet v1.1; python engine.*
 
@@ -6,12 +6,12 @@
 
 - **Paradigm:** lexical_decision  |  **Item source:** generate
 - **Description:** Lexical decision: real words versus length-matched, orthographically legal pseudowords (deterministically generated).
-- **Materials source:** `corpora/derived/en.csv` (sha256 `c20549b920d81680…`)
+- **Materials source:** `corpora/derived/en.csv` (sha256 `575833489e04d6a4...`)
 - **Selection:** constrained letter substitution (deterministic pseudowords)
 - **Cross-engine determinism:** byte-identical
 - **Counterbalancing:** factorial, 1 list(s)
 - **Items:** 120 rows across 2 conditions (pseudoword, word)
-- **Seed:** 2026  |  **Versions:** engine python, lexsync 0.1.0, python 3.13.7, pandas 2.3.2, numpy 2.3.2, scipy 1.17.1, rapidfuzz 3.14.5, pyyaml 6.0.3, os Windows AMD64
+- **Seed:** 2026  |  **Versions:** engine python, lexsync 0.1.0, python 3.11.15, pandas 2.3.3, numpy 2.4.6, scipy 1.17.1, rapidfuzz 3.14.6, pyyaml 6.0.3, os Linux x86_64
 
 ## Selection transparency
 
@@ -22,11 +22,11 @@
 
 | Dimension | Role | Cohen's d | 90% CI | Var ratio | TOST p | Equivalent |
 |---|---|---|---|---|---|---|
-| length | controlled | 0.00 | [-0.30, 0.30] | 1.00 | 0.0036 | True |
+| length | controlled | 0.00 | [-0.30, 0.30] | 1.00 | 0.0036 | TRUE |
 
 ## Suggested analysis
 
-- **Model:** `response ~ lexicality + (1 + lexicality | subject) + (1 | item)` — where the response is the trial outcome (e.g. reaction time or accuracy).
+- **Model:** `response ~ lexicality + (1 + lexicality | subject) + (1 | item)` -- where the response is the trial outcome (e.g. reaction time or accuracy).
 - Crossed random effects for subjects and items guard against the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). Begin with this maximal structure (Barr et al., 2013) and reduce it if the model does not converge (Matuschek et al., 2017). The formula is lme4 syntax, for lme4 in R or pymer4 in Python; statsmodels MixedLM cannot take it directly and needs the random effects restated in its own arguments. The equivalence tests in the realised control are post-selection diagnostics on deterministically selected items, not inferential tests over a sample.
 
 ## Methods paragraph

@@ -1,8 +1,9 @@
 """Access to the many-language corpus registry.
 
-Mirrors R_workflow/R/corpora.R, and adds the wordfreq connector (Connector B,
-~40 languages). The demonstrations read the bundled, pre-derived lexica; new
-languages are fetched on demand into a user cache.
+Mirrors R_workflow/R/corpora.R, and adds the wordfreq connector (Connector B, the
+thirty languages the registry registers for it). The demonstrations read the
+bundled, pre-derived lexica; new languages are fetched on demand into a user
+cache.
 """
 from __future__ import annotations
 
@@ -17,8 +18,15 @@ from .io_utils import sha256_file
 
 
 def _registry_path(registry_path: str | None = None) -> str:
+    # An explicit path is honoured on its own: falling through to the search
+    # list would read a registry other than the one the caller named, and every
+    # corpus it reports would come from that other file. The R twin resolves the
+    # argument the same way, and cli.py states the principle for the schema.
+    if registry_path is not None:
+        if not os.path.exists(registry_path):
+            raise FileNotFoundError(f"lexsync: registry not found: '{registry_path}'.")
+        return registry_path
     candidates = [
-        registry_path,
         os.environ.get("LEXSYNC_REGISTRY"),
         os.path.join("corpora", "registry.yaml"),
         os.path.join("..", "corpora", "registry.yaml"),
@@ -31,6 +39,19 @@ def _registry_path(registry_path: str | None = None) -> str:
 
 
 def list_corpora(registry_path: str | None = None) -> pd.DataFrame:
+    """List the corpora known to the registry.
+
+    Args:
+        registry_path: Optional path to ``registry.yaml``. When given it is read
+            on its own; otherwise the usual search order applies.
+
+    Returns:
+        A data frame describing each registered corpus: its name, language,
+        ISO code, status, connector and citation.
+
+    Raises:
+        FileNotFoundError: If the named registry, or any registry, is absent.
+    """
     with open(_registry_path(registry_path), encoding="utf-8") as handle:
         reg = yaml.safe_load(handle)
     rows = []
@@ -57,6 +78,9 @@ def cache_dir() -> str:
     file by file, and the next call downloads afresh. The R twin documents the same
     contract in lexsync_cache_dir.Rd; only the location differs, since R uses
     tools::R_user_dir.
+
+    Returns:
+        The cache directory path, created if it was absent.
     """
     path = os.path.join(os.path.expanduser("~"), ".lexsync", "cache")
     os.makedirs(path, exist_ok=True)
@@ -65,8 +89,28 @@ def cache_dir() -> str:
 
 def build_wordfreq_lexicon(language: str, n_words: int = 10000,
                            min_len: int = 2, max_len: int = 15) -> pd.DataFrame:
-    """Build a (word, freq_zipf) lexicon for any wordfreq language."""
-    import wordfreq  # optional dependency (the [corpora] extra)
+    """Build a (word, freq_zipf) lexicon for any wordfreq language.
+
+    Args:
+        language: A language code wordfreq supports.
+        n_words: Number of words to keep, most frequent first.
+        min_len: Shortest word form to keep.
+        max_len: Longest word form to keep.
+
+    Returns:
+        A data frame with ``word``, ``freq_zipf``, ``language`` and ``source``,
+        in byte order of ``word``.
+
+    Raises:
+        ModuleNotFoundError: If the optional 'corpora' extra is not installed.
+    """
+    try:
+        import wordfreq  # optional dependency (the [corpora] extra)
+    except ModuleNotFoundError as exc:  # the documented `lexsync fetch <lang>` route
+        raise ModuleNotFoundError(
+            "lexsync: the wordfreq connector needs the 'corpora' extra; install it "
+            "with `pip install lexsync[corpora]`."
+        ) from exc
 
     rx = re.compile(r"^[^\W\d_]+$", re.UNICODE)
     words = []
@@ -111,26 +155,49 @@ def _max_download_bytes() -> int:
     return 200 * 1024 * 1024
 
 
-def fetch_corpus(name: str, registry_path: str | None = None, n_words: int = 10000) -> str:
-    """Fetch a registered corpus into the cache.
+def fetch_corpus(name: str, registry_path: str | None = None, dest: str | None = None,
+                 n_words: int = 10000) -> str:
+    """Fetch a registered corpus into the cache, or into `dest`.
 
     If `name` is a language code supported by the wordfreq connector, a lexicon
     is built with wordfreq. Otherwise the corpus's registered URL is downloaded,
     once its scheme has been checked; the transfer lands in a sidecar file that
-    is renamed into the cache only after the size cap, the markup sniff and any
+    is renamed into place only after the size cap, the markup sniff and any
     registered sha256 have all passed.
 
-    The file lands in :func:`cache_dir`. That cache persists between sessions and
-    the package never prunes it; one corpus may reach the 200 MB download cap, so
-    several of them add up. Nothing kept there is irreplaceable, so the directory
-    may be deleted at any time and the next call downloads the corpus again.
+    `n_words` caps a wordfreq-derived lexicon at 10,000 words by default and is
+    ignored on the download path. It is the one argument the R twin does not
+    take, since the wordfreq connector is Python-only. It does not reach the file
+    name either, so fetching the same language again replaces what is there
+    whatever size each call asked for.
+
+    The file lands in :func:`cache_dir` unless `dest` names somewhere else. That
+    cache persists between sessions and the package never prunes it; one corpus
+    may reach the 200 MB download cap, so several of them add up. Nothing kept
+    there is irreplaceable, so the directory may be deleted at any time and the
+    next call downloads the corpus again.
+
+    Args:
+        name: A corpus name present in the registry, or a language code the
+            wordfreq connector registers.
+        registry_path: Optional path to ``registry.yaml``.
+        dest: Optional destination path; defaults to a file in the cache.
+        n_words: Cap on a wordfreq-derived lexicon, as described above.
+
+    Returns:
+        The path the corpus was written to.
+
+    Raises:
+        ValueError: If the corpus is not registered, its registered address is
+            not a usable file, or the transfer fails a size, markup or checksum
+            check.
     """
     with open(_registry_path(registry_path), encoding="utf-8") as handle:
         reg = yaml.safe_load(handle)
     wf = reg.get("wordfreq_connector") or {}
     if name in (wf.get("languages") or []):
         df = build_wordfreq_lexicon(name, n_words)
-        dest = os.path.join(cache_dir(), f"{name}_wordfreq.csv")
+        dest = dest or os.path.join(cache_dir(), f"{name}_wordfreq.csv")
         # LF explicitly: pandas otherwise follows os.linesep, and the cached
         # lexicon's bytes (and any checksum of them) must not depend on the OS.
         df.to_csv(dest, index=False, encoding="utf-8", lineterminator="\n")
@@ -159,7 +226,7 @@ def fetch_corpus(name: str, registry_path: str | None = None, n_words: int = 100
         )
     import urllib.error
     import urllib.request
-    dest = os.path.join(cache_dir(), f"{name}.csv")
+    dest = dest or os.path.join(cache_dir(), f"{name}.csv")
     # The transfer lands in a sidecar and is renamed over `dest` only after every
     # check below has passed, so a truncated or unverified body can never sit at
     # the cache path, where a later run would trust it.

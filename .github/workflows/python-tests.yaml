@@ -18,11 +18,10 @@ permissions:
   contents: read
 
 jobs:
-  # This package ran no linter at all, alone in the family. The rule set is
-  # pinned in python_workflow/pyproject.toml rather than given here, so a ruff
-  # release cannot silently widen or narrow what CI enforces, and it starts at
-  # F and E9 -- the findings that are bugs rather than style. See the comment
-  # there for what is deferred and why.
+  # The rule set is pinned in python_workflow/pyproject.toml rather than given
+  # here, so a ruff release cannot silently widen or narrow what CI enforces. See
+  # that file for the set it selects and for the three rules it ignores, each
+  # with its reason.
   lint:
     name: ruff
     runs-on: ubuntu-latest
@@ -38,6 +37,14 @@ jobs:
         run: python -m pip install --upgrade pip ruff
       - name: Lint the Python sources
         run: ruff check .
+
+      # apps/ is the repository's only other Python source and the file most
+      # users read, and it sits outside this job's working directory, so nothing
+      # looked at it. The rule set is still the package's own: no configuration
+      # sits above apps/, and ruff then falls back to the one where it was
+      # invoked, which this job's working directory makes python_workflow's.
+      - name: Lint the Streamlit app
+        run: ruff check ../apps
 
   test:
     runs-on: ${{ matrix.os }}
@@ -122,6 +129,36 @@ jobs:
           "$RUNNER_TEMP/wheel-venv/bin/lexsync" run config/design_en_freqcontrast.yaml --outdir out
           test -f out/stimuli/en_freqcontrast_english_stimuli_py.csv
 
+  # The wordfreq connector is the one feature of the Python engine the R twin has
+  # no equivalent of, and the README advertises `lexsync fetch fr`, but no job
+  # installed the extra that supplies it: the connector was executed nowhere and
+  # the `wordfreq>=3.0,<4` pin was never resolved, so it could have become
+  # unsatisfiable without anything noticing. wordfreq carries its own frequency
+  # data, so the check needs no network.
+  corpora-extra:
+    runs-on: ubuntu-latest
+    name: wordfreq connector (corpora extra)
+    defaults:
+      run:
+        working-directory: python_workflow
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+
+      - name: Install the package with the dev and corpora extras
+        run: python -m pip install -e ".[dev,corpora]"
+
+      # The import is asserted on its own: without it a resolver that quietly
+      # left wordfreq out would leave the connector's test skipping and the job
+      # green, which is the state this job exists to end.
+      - name: Run the corpus suite with the connector present
+        run: |
+          python -c "import wordfreq"
+          python -m pytest -q tests/test_corpora.py
+
   # The parity suite compares the Python engine against output/stimuli/*_R.csv.
   # Run on a single platform: parity is a property of the two engines, not of the
   # operating system, and this is the one job that needs both toolchains.
@@ -183,18 +220,26 @@ jobs:
       - name: Install the Python package with dev extras
         run: python -m pip install -e "./python_workflow[dev]"
 
-      - name: Regenerate the R reference stimuli
+      - name: Regenerate the R reference artefacts
         run: Rscript R_workflow/run_pipeline.R
 
       # Without this the parity gate would only ever compare Python against a
-      # frozen snapshot, so an R-engine regression could not fail CI.
+      # frozen snapshot, so an R-engine regression could not fail CI. The whole
+      # of output/ is diffed, not the stimuli alone: the run rewrites the
+      # descriptives, the comparisons and all five generated experiment files per
+      # design, and docs.yml publishes the committed experiments verbatim, so a
+      # stale copy there is what a reader is handed. The two exclusions are the
+      # per-engine provenance records, which cannot match: a run log carries
+      # wall-clock timestamps and a datasheet the runner's package versions.
       - name: Fail if the regenerated R references drifted from the committed ones
-        run: git diff --exit-code -- output/stimuli/
+        run: |
+          git diff --exit-code -- output/ \
+            ':!output/reports/*_run_log_*' ':!output/reports/*_datasheet_*'
 
       - name: Compare the engines
         env:
           LEXSYNC_REQUIRE_PARITY: '1'
-        run: python -m pytest tests/test_parity.py -q
+        run: python -m pytest tests/test_parity.py tests/test_byte_parity.py -q
         working-directory: python_workflow
 
       # Both engines write experiments to the same paths, so a diff against the
@@ -206,6 +251,11 @@ jobs:
       # provenance records (each names its own engine), so they are excluded; and
       # the CSVs carry an engine tag in their names (_R/_py), which would leave
       # diff -r nothing to pair, so the tags are stripped first.
+      #
+      # Excluding the datasheets wholesale left them compared by nothing at all, and
+      # under that the two renderers drifted apart on 122 lines. The step that follows
+      # puts them back inside the gate: everything but the two lines and the few
+      # fields that name the engine has to match.
       - name: Fail if the two engines generated different artefacts
         run: |
           Rscript -e 'library(lexsync); run_all("config", "config/schema.yaml", "/tmp/eng_r")'
@@ -214,6 +264,14 @@ jobs:
           for f in /tmp/eng_py/*/*_py.csv; do mv "$f" "${f%_py.csv}.csv"; done
           diff -r -x '*_datasheet_*' -x '*_run_log_*' /tmp/eng_r /tmp/eng_py \
             || { echo "::error::the engines generated different artefacts"; exit 1; }
+
+      - name: Fail if the two engines wrote different datasheets
+        env:
+          LEXSYNC_R_OUTPUT: /tmp/eng_r
+          LEXSYNC_PY_OUTPUT: /tmp/eng_py
+          LEXSYNC_REQUIRE_PARITY: '1'
+        run: python -m pytest tests/test_byte_parity.py -q -k datasheet
+        working-directory: python_workflow
 
   # Every other job installs whatever pip resolves on the day, so the floors
   # declared in pyproject.toml are never actually exercised and could rot

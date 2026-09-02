@@ -32,6 +32,28 @@ test_that("exactly 200 item sets stays silent", {
   expect_identical(sum(duplicated(stim$item_trigger)), 0L)
 })
 
+# An explicit `events:` list is the documented way to depart from a paradigm, so
+# the message that refuses one has to say what a type may be. test_scripting.py pins
+# the same three sentences.
+KNOWN_TYPES_SENTENCE <- paste("Known types: fixation, text, mask, blank,",
+                             "region_by_region, response, question, feedback.")
+
+test_that("an unknown event type names the known ones", {
+  expect_error(render_events(list(list(type = "fixaton", content = "+", duration_ms = 500L)),
+                             list(), 60),
+               paste("lexsync: unknown event type 'fixaton'.", KNOWN_TYPES_SENTENCE),
+               fixed = TRUE)
+  expect_error(lexsync:::.osexp_event_block("e1", list(type = "fixaton")),
+               paste("lexsync: unknown event type 'fixaton'.", KNOWN_TYPES_SENTENCE),
+               fixed = TRUE)
+})
+
+test_that("an event with no type is refused by name", {
+  expect_error(render_events(list(list(content = "+", duration_ms = 500L)), list(), 60),
+               paste("lexsync: unknown event type ''.", KNOWN_TYPES_SENTENCE),
+               fixed = TRUE)
+})
+
 test_that("response and question timeouts round through the shared rule", {
   # An integer timeout_ms divides to at most three decimals, so rounding is the
   # identity and no committed experiment byte moves.
@@ -44,6 +66,20 @@ test_that("response and question timeouts round through the shared rule", {
   r <- render_events(list(list(type = "question", timeout_ms = 7812.5)), list(), 60)
   expect_identical(r[[1]]$timeout, .round_dp(7812.5 / 1000, 3))
   expect_false(identical(r[[1]]$timeout, round(7812.5 / 1000, 3)))
+})
+
+test_that("the OpenSesame timeout matches the other two backends", {
+  # 1.001 * 1000 is 1000.9999999999999, and as.integer() truncated it, so a 1001 ms
+  # window reached OpenSesame as 1000 while PsychoPy used the seconds directly and
+  # jsPsych rounded. Mirrored in test_scripting.py.
+  r <- render_events(list(list(type = "response", timeout_ms = 1001L),
+                          list(type = "question", content = "q", timeout_ms = 1001L)),
+                     list(), 60)
+  expect_identical(vapply(r, function(ev) ev$timeout, numeric(1)), c(1.001, 1.001))
+  resp <- lexsync:::.osexp_event_block("t", r[[1]])$block
+  expect_true("\tset timeout 1001" %in% resp)
+  quest <- lexsync:::.osexp_event_block("q", r[[2]])$block
+  expect_true(any(grepl("timeout=1001)", quest, fixed = TRUE)))
 })
 
 test_that("PsychoPy export is frame-locked and OpenSesame export is internally consistent", {
@@ -162,4 +198,52 @@ test_that("a per-design font overrides the Latin default for logographic scripts
 test_that("the BCP 47 lookup folds case as the Python engine does", {
   expect_identical(.language_tag(list(language = "ITALIAN")), "it")
   expect_identical(.language_tag(list(language = paste0(intToUtf8(0x130), "TALIAN"))), "und")
+})
+
+two_list_stim <- function() {
+  stim <- data.frame(
+    prime = c("hot", "sky", "sun", "big"), target = c("cold", "cold", "moon", "moon"),
+    condition = rep(c("related", "unrelated"), 2), set = c(1, 1, 2, 2),
+    length = 4L, frequency = 5, n_density = 2L, old20 = 1.5, stringsAsFactors = FALSE)
+  design <- list(name = "t", language = "english", paradigm = "priming",
+                 counterbalance = list(lists = 2L))
+  list(stimuli = assign_triggers(counterbalance(stim, design, list(seed = 1))),
+       design = design)
+}
+
+test_that("a multi-list OpenSesame experiment runs only the participant's list", {
+  # The loop presents every row of the conditions file, so without a gate a
+  # participant saw each target once per list, which under a Latin square is once in
+  # every condition. A sequence has nowhere to filter its rows, so the trial runs
+  # behind a condition instead. Pinned in test_osexp_validator.py too.
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  out <- tempfile("lexsync"); dir.create(out)
+  two <- two_list_stim()
+  os <- readLines(export_opensesame(two$stimuli, two$design, schema, out), warn = FALSE)
+  expect_true("\trun lexsync_trial_gate" %in% os)
+  expect_true('\trun lexsync_trial "[lexsync_present] = 1"' %in% os)
+  expect_true("\t_lists = [u'1', u'2']" %in% os)
+  expect_true(any(grepl("var.lexsync_present = 1 if", os, fixed = TRUE)))
+
+  # A design with one list keeps the ungated loop.
+  single <- readLines(export_opensesame(make_stim(), list(name = "t", language = "english"),
+                                        schema, out), warn = FALSE)
+  expect_true("\trun lexsync_trial" %in% single)
+  expect_false(any(grepl("lexsync_trial_gate", single, fixed = TRUE)))
+})
+
+test_that("the PsychoPy runner presents one counterbalancing list", {
+  # The conditions file carries every list, because one script serves every
+  # participant. Presenting it whole showed each target once per list, on adjacent
+  # trials: the repetition the rotation exists to prevent. The Python suite runs the
+  # generated script against a mock PsychoPy and checks the trials it selects.
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  out <- tempfile("lexsync"); dir.create(out)
+  two <- two_list_stim()
+  py <- paste(readLines(export_psychopy(two$stimuli, two$design, schema, out), warn = FALSE),
+              collapse = "\n")
+  expect_true(grepl("trials = trials_for_participant(load_trials(CONDITIONS_FILE), participant)",
+                    py, fixed = TRUE))
+  conditions <- read.csv(file.path(out, "t_english_psychopy.csv"), stringsAsFactors = FALSE)
+  expect_identical(sort(unique(conditions$list)), 1:2)
 })

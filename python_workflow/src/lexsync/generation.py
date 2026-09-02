@@ -18,6 +18,10 @@ import pandas as pd
 from .querying import _VOWELS
 
 _LETTERS = "abcdefghijklmnopqrstuvwxyz"
+# The pseudoword generators build_lexdec_stimuli accepts, in the order
+# datasheet.py's _GENERATION_LABELS names them. Fixed, not sorted(), because the R
+# mirror's sort() is locale-collated and the two error messages must agree.
+_KNOWN_GENERATION_METHODS = ("letter_substitution", "subsyllabic")
 # Order in which subsyllabic constituents are considered for substitution: codas
 # and nuclei vary more freely than onsets, which carry the most identifying
 # orthography, so they are changed first.
@@ -49,6 +53,15 @@ def make_pseudoword(word: str, bigrams: dict, lexicon: set, used: set) -> str | 
     Searches single-letter substitutions first, then two-letter substitutions;
     candidates are ranked by summed bigram frequency with a byte-order tie-break,
     so the choice is deterministic and identical across engines.
+
+    Args:
+        word: The base word to derive the pseudoword from.
+        bigrams: Bigram counts, from :func:`bigram_counts`.
+        lexicon: The real word forms a pseudoword must avoid.
+        used: The pseudowords already taken.
+
+    Returns:
+        A pseudoword, or ``None`` if no legal candidate exists.
     """
     word = str(word)
     L = len(word)
@@ -87,7 +100,18 @@ def generate_pseudowords(base_words, reference_words) -> pd.DataFrame:
     """A length-matched pseudoword for each base word.
 
     Base words are processed in byte order so the ``used`` set evolves identically
-    across engines. Returns a frame with ``base_word`` and ``pseudoword``.
+    across engines.
+
+    Args:
+        base_words: The words to derive pseudowords from.
+        reference_words: Typically the full lexicon, supplying the bigram
+            statistics and the real word forms to avoid.
+
+    Returns:
+        A data frame with ``base_word`` and ``pseudoword``.
+
+    Raises:
+        ValueError: If no legal pseudoword exists for a base word.
     """
     base = [str(w) for w in base_words]
     lexicon = set(str(w) for w in reference_words)
@@ -246,6 +270,21 @@ def build_lexdec_stimuli(pool: pd.DataFrame, n: int, reference_words=None,
     it falls back to the pool when not given. The presented string is the
     ``target`` column; conditions are ``word`` and ``pseudoword`` and ``set``
     pairs them.
+
+    Args:
+        pool: Candidate words, for instance from :func:`build_pool`.
+        n: Number of real words to select.
+        reference_words: Words supplying the bigram statistics and the real
+            forms a pseudoword must avoid; defaults to the pool's own words.
+        method: Pseudoword generator, ``"letter_substitution"`` or
+            ``"subsyllabic"`` (Wuggy-style; Keuleers & Brysbaert, 2010).
+
+    Returns:
+        A stimulus data frame with ``target``, ``condition`` and ``set``.
+
+    Raises:
+        ValueError: If the method is unknown, or no legal pseudoword exists for
+            a selected word.
     """
     pool = (pool.assign(_k=pool["word"].map(lambda w: w.encode("utf-8")))
             .sort_values("_k").drop(columns="_k").reset_index(drop=True))
@@ -263,7 +302,8 @@ def build_lexdec_stimuli(pool: pd.DataFrame, n: int, reference_words=None,
     elif method == "letter_substitution":
         gen = generate_pseudowords(words["word"].tolist(), ref)
     else:
-        raise ValueError(f"lexsync: unknown pseudoword generation method '{method}'.")
+        raise ValueError(f"lexsync: unknown pseudoword generation method '{method}'. "
+                         f"Known methods: {', '.join(_KNOWN_GENERATION_METHODS)}.")
     pw_map = dict(zip(gen["base_word"], gen["pseudoword"], strict=True))
 
     real = pd.DataFrame({

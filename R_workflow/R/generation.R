@@ -7,6 +7,11 @@
 # the identical pseudoword from the identical corpus. A deterministic orthographic
 # cousin of Wuggy (Keuleers & Brysbaert, 2010). Mirrors generation.py.
 
+# The pseudoword generators build_lexdec_stimuli accepts, in the order
+# datasheet.R's .GENERATION_LABELS names them. Fixed, not sort(), because sort() on
+# character vectors is locale-collated and the two engines' messages must agree.
+.KNOWN_GENERATION_METHODS <- c("letter_substitution", "subsyllabic")
+
 #' Integer counts of adjacent letter bigrams across a word list
 #' @keywords internal
 bigram_counts <- function(words) {
@@ -274,7 +279,8 @@ build_lexdec_stimuli <- function(pool, n, reference_words = NULL, method = "lett
   } else if (identical(method, "letter_substitution")) {
     generate_pseudowords(words$word, ref)
   } else {
-    stop(sprintf("lexsync: unknown pseudoword generation method '%s'.", method), call. = FALSE)
+    stop(sprintf("lexsync: unknown pseudoword generation method '%s'. Known methods: %s.",
+                 method, paste(.KNOWN_GENERATION_METHODS, collapse = ", ")), call. = FALSE)
   }
   pw_map <- stats::setNames(gen$pseudoword, gen$base_word)
   real <- data.frame(target = words$word, word = words$word, condition = "word",

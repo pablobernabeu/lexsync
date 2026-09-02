@@ -1,16 +1,16 @@
-{"time":"2026-08-07 22:50:00.022867","message":"loading items 'items/priming_pairs_en.csv'","data":null}
-{"time":"2026-08-07 22:50:00.042863","message":"loaded 12 items across 2 conditions","data":{"conditions":"related, unrelated"}}
-{"time":"2026-08-07 22:50:00.047616","message":"loading member lexicon 'corpora/derived/en.csv'","data":null}
-{"time":"2026-08-07 22:50:00.522394","message":"joined word-level norms onto prime and target","data":null}
-{"time":"2026-08-07 22:50:00.529598","message":"computed relational dimensions (pair.lev, pair.overlap)","data":null}
-{"time":"2026-08-07 22:50:00.542201","message":"selected 8 pairs spanning 'target.frequency' (12 eligible)","data":{"sets":8,"eligible":12}}
-{"time":"2026-08-07 22:50:00.548506","message":"continuous: 'target.length' correlation with the predictor r = -0.292","data":null}
-{"time":"2026-08-07 22:50:00.554018","message":"continuous: 'pair.overlap' correlation with the predictor r = -0.227","data":null}
-{"time":"2026-08-07 22:50:00.584366","message":"wrote 'en_priming_continuous_english_stimuli_R.csv'","data":{"path":"output/stimuli/en_priming_continuous_english_stimuli_R.csv","rows":16,"md5":"8a2bb9907edffd68183a1ed5f6c23030"}}
-{"time":"2026-08-07 22:50:00.605118","message":"wrote 'en_priming_continuous_english_descriptives_R.csv'","data":{"path":"output/reports/en_priming_continuous_english_descriptives_R.csv","rows":3,"md5":"1cae97ee35a1cce758b47ec9cf803b60"}}
-{"time":"2026-08-07 22:50:00.624336","message":"wrote 'en_priming_continuous_english_comparisons_R.csv'","data":{"path":"output/reports/en_priming_continuous_english_comparisons_R.csv","rows":3,"md5":"5f9405c3b989e0e9fa2d0672cd43c720"}}
-{"time":"2026-08-07 22:50:00.697308","message":"wrote 'en_priming_continuous_english_psychopy.py'","data":{"path":"output/experiments/en_priming_continuous_english_psychopy.py","rows":"NA","md5":"0feed505e220db017528a85ea3e2c27d"}}
-{"time":"2026-08-07 22:50:00.708684","message":"wrote 'en_priming_continuous_english.osexp'","data":{"path":"output/experiments/en_priming_continuous_english.osexp","rows":"NA","md5":"b1487d45d95363d2c90bd864f91ea030"}}
-{"time":"2026-08-07 22:50:00.716773","message":"wrote 'en_priming_continuous_english.html'","data":{"path":"output/experiments/en_priming_continuous_english.html","rows":"NA","md5":"0698986fa2935e67cd12c069f27a61dc"}}
-{"time":"2026-08-07 22:50:00.830595","message":"wrote 'en_priming_continuous_english_datasheet_R.json'","data":{"path":"output/reports/en_priming_continuous_english_datasheet_R.json","rows":"NA","md5":"c19df617b6397ca03759e0cde974b476"}}
-{"time":"2026-08-07 22:50:00.841227","message":"wrote 'en_priming_continuous_english_datasheet_R.md'","data":{"path":"output/reports/en_priming_continuous_english_datasheet_R.md","rows":"NA","md5":"016fa2b05ea7707d51668b4d2b133168"}}
+{"time":"2026-09-02 19:25:01.460731","message":"loading items 'items/priming_pairs_en.csv'","data":null}
+{"time":"2026-09-02 19:25:01.474159","message":"loaded 12 items across 2 conditions","data":{"conditions":"related, unrelated"}}
+{"time":"2026-09-02 19:25:01.474324","message":"loading member lexicon 'corpora/derived/en.csv'","data":null}
+{"time":"2026-09-02 19:25:01.736064","message":"joined word-level norms onto prime and target","data":null}
+{"time":"2026-09-02 19:25:01.754142","message":"computed relational dimensions (pair.lev, pair.overlap)","data":null}
+{"time":"2026-09-02 19:25:01.786892","message":"selected 8 pairs spanning 'target.frequency' (12 eligible)","data":{"sets":8,"eligible":12}}
+{"time":"2026-09-02 19:25:01.787314","message":"continuous: 'target.length' correlation with the predictor r = -0.292","data":null}
+{"time":"2026-09-02 19:25:01.787466","message":"continuous: 'pair.overlap' correlation with the predictor r = -0.227","data":null}
+{"time":"2026-09-02 19:25:01.797257","message":"wrote 'en_priming_continuous_english_stimuli_R.csv'","data":{"path":"output/stimuli/en_priming_continuous_english_stimuli_R.csv","rows":16,"md5":"8a2bb9907edffd68183a1ed5f6c23030"}}
+{"time":"2026-09-02 19:25:01.799264","message":"wrote 'en_priming_continuous_english_descriptives_R.csv'","data":{"path":"output/reports/en_priming_continuous_english_descriptives_R.csv","rows":3,"md5":"1cae97ee35a1cce758b47ec9cf803b60"}}
+{"time":"2026-09-02 19:25:01.80087","message":"wrote 'en_priming_continuous_english_comparisons_R.csv'","data":{"path":"output/reports/en_priming_continuous_english_comparisons_R.csv","rows":3,"md5":"5f9405c3b989e0e9fa2d0672cd43c720"}}
+{"time":"2026-09-02 19:25:01.812723","message":"wrote 'en_priming_continuous_english_psychopy.py'","data":{"path":"output/experiments/en_priming_continuous_english_psychopy.py","rows":"NA","md5":"aac2cafa051a6fd293b7253394443b85"}}
+{"time":"2026-09-02 19:25:01.812934","message":"wrote 'en_priming_continuous_english.osexp'","data":{"path":"output/experiments/en_priming_continuous_english.osexp","rows":"NA","md5":"89aef8ebf0507a24a77b87c0b558d282"}}
+{"time":"2026-09-02 19:25:01.813046","message":"wrote 'en_priming_continuous_english.html'","data":{"path":"output/experiments/en_priming_continuous_english.html","rows":"NA","md5":"6f6d724ad414c20ffef97d234c9f3c68"}}
+{"time":"2026-09-02 19:25:01.826402","message":"wrote 'en_priming_continuous_english_datasheet_R.json'","data":{"path":"output/reports/en_priming_continuous_english_datasheet_R.json","rows":"NA","md5":"a1511bdc0567084aee44c78017b54f2c"}}
+{"time":"2026-09-02 19:25:01.826577","message":"wrote 'en_priming_continuous_english_datasheet_R.md'","data":{"path":"output/reports/en_priming_continuous_english_datasheet_R.md","rows":"NA","md5":"6d0b7c770ade3ea4b08f621d31f5ae3a"}}

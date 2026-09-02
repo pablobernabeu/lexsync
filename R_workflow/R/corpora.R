@@ -1,8 +1,9 @@
 # corpora.R -- access to the many-language corpus registry. The R package reads
 # the bundled, pre-derived lexica for the demonstrations and can download
 # CSV-format corpora (Connector A) on demand into a user cache. The wordfreq
-# connector (Connector B, ~40 languages) is provided by the Python package; its
-# pre-derived outputs are read here as ordinary lexica.
+# connector (Connector B, the thirty languages the registry registers for it) is
+# provided by the Python package; its pre-derived outputs are read here as
+# ordinary lexica.
 
 #' Per-user cache directory for fetched corpora
 #'
@@ -43,13 +44,25 @@ default_registry_path <- function() {
   cand[1]
 }
 
+# Resolve the registry a call should read. An explicit path is honoured on its
+# own, so a stale or misspelt one errors rather than reading whichever registry
+# the default search finds next. Mirrors _registry_path() in
+# python_workflow/src/lexsync/corpora.py.
+.registry_path <- function(registry_path = NULL) {
+  if (is.null(registry_path)) return(default_registry_path())
+  if (!file.exists(registry_path)) {
+    stop(sprintf("lexsync: registry not found: '%s'.", registry_path), call. = FALSE)
+  }
+  registry_path
+}
+
 #' List the corpora known to the registry
 #'
 #' @param registry_path Optional path to `registry.yaml`.
 #' @return A data frame describing each registered corpus.
 #' @export
 list_corpora <- function(registry_path = NULL) {
-  reg <- .read_yaml_utf8(registry_path %||% default_registry_path())
+  reg <- .read_yaml_utf8(.registry_path(registry_path))
   corp <- reg$corpora
   data.frame(
     name = names(corp),
@@ -103,6 +116,11 @@ list_corpora <- function(registry_path = NULL) {
 #' kept there is irreplaceable, so the directory may be deleted at any time and
 #' the next call downloads the corpus again.
 #'
+#' The Python twin takes the same three arguments and additionally an `n_words`
+#' cap, which sizes a lexicon derived through the wordfreq connector. That
+#' connector is Python-only; a lexicon derived there is read here as an ordinary
+#' corpus.
+#'
 #' @param name A corpus name present in the registry.
 #' @param registry_path Optional path to `registry.yaml`.
 #' @param dest Optional destination path; defaults to the cache.
@@ -110,7 +128,7 @@ list_corpora <- function(registry_path = NULL) {
 #' @importFrom utils download.file
 #' @export
 fetch_corpus <- function(name, registry_path = NULL, dest = NULL) {
-  reg <- .read_yaml_utf8(registry_path %||% default_registry_path())
+  reg <- .read_yaml_utf8(.registry_path(registry_path))
   entry <- reg$corpora[[name]]
   if (is.null(entry)) {
     stop(sprintf("lexsync: corpus '%s' is not in the registry.", name), call. = FALSE)

@@ -144,3 +144,28 @@ test_that("the shuffle key hashes UTF-8 bytes whatever encoding the frame carrie
   on.exit(Sys.setlocale("LC_CTYPE", old), add = TRUE)
   check()
 })
+
+test_that("more lists than item sets is refused", {
+  # Dealing sets round-robin used to leave the surplus lists empty and silent, while
+  # the datasheet went on reporting the number of lists the design asked for. The
+  # same refusal is pinned in test_counterbalancing.py.
+  stim <- data.frame(word = letters[1:6], condition = rep(c("x", "y"), 3),
+                     set = rep(1:3, each = 2), stringsAsFactors = FALSE)
+  expect_error(counterbalance(stim, list(counterbalance = list(lists = 8)), list(seed = 1)),
+               "only 3 item set")
+  out <- counterbalance(stim, list(counterbalance = list(lists = 3L)), list(seed = 1))
+  expect_identical(sort(unique(out$list)), 1:3)
+})
+
+test_that("more lists than conditions is refused by the Latin square", {
+  # The rotation repeats after as many lists as there are conditions, so a fourth
+  # list over two conditions would duplicate the first. Pinned in the Python suite too.
+  stim <- data.frame(prime = letters[1:4], target = c("x", "x", "y", "y"),
+                     condition = c("r", "u", "r", "u"), set = c(1, 1, 2, 2),
+                     stringsAsFactors = FALSE)
+  design <- list(paradigm = "priming", counterbalance = list(lists = 4))
+  expect_error(counterbalance(stim, design, list(seed = 1)), "only 2 condition")
+  design$counterbalance$lists <- 2L
+  out <- counterbalance(stim, design, list(seed = 1))
+  expect_identical(sort(unique(out$list)), 1:2)
+})

@@ -3,7 +3,12 @@ import pandas as pd
 import pytest
 
 from lexsync.counterbalancing import counterbalance
-from lexsync.generation import bigram_counts, build_lexdec_stimuli, generate_pseudowords
+from lexsync.generation import (
+    bigram_counts,
+    build_lexdec_stimuli,
+    generate_pseudowords,
+    make_pseudoword,
+)
 from lexsync.io_utils import clean_field
 from lexsync.paradigms import PARADIGMS, content_field, referenced_fields, required_fields, resolve_events
 from lexsync.querying import build_pool, load_items, load_lexicon
@@ -51,6 +56,27 @@ def test_pseudowords_are_legal_nonwords_of_matched_length():
         bg = bigram_counts(LEX)
         assert all(pw[i:i + 2] in bg for i in range(len(pw) - 1))  # orthographically legal
     assert len(set(gen["pseudoword"])) == len(gen)  # unique
+
+
+# The distance-2 fallback and the no-candidate refusal decide stimulus identity and
+# are mirrored in R_workflow/R/generation.R, so the same three cases are pinned in
+# test-paradigms.R with the same literals.
+SHORT_REF = ["ab", "cd", "cb", "ad", "cex"]
+
+
+def test_pseudoword_falls_back_to_two_substitutions():
+    pw = make_pseudoword("ab", bigram_counts(SHORT_REF), set(SHORT_REF), set())
+    assert pw == "ce"
+
+
+def test_pseudoword_is_none_when_no_legal_non_word_exists():
+    ref = ["ab", "cb", "ad"]
+    assert make_pseudoword("ab", bigram_counts(ref), set(ref), set()) is None
+
+
+def test_generate_pseudowords_refuses_when_none_can_be_made():
+    with pytest.raises(ValueError, match=r"could not generate a pseudoword for 'ab'"):
+        generate_pseudowords(["ab"], ["ab", "cb", "ad"])
 
 
 def test_build_lexdec_stimuli_pairs_words_and_pseudowords(schema, en_lexicon_path):

@@ -1,4 +1,4 @@
-# Materials datasheet — en_supplied_pool (english)
+# Materials datasheet -- en_supplied_pool (english)
 
 *lexsync datasheet v1.1; python engine.*
 
@@ -6,13 +6,13 @@
 
 - **Paradigm:** factorial  |  **Item source:** pool
 - **Description:** Concrete nouns from a supplied candidate pool, split by frequency and matched item by item on length, neighbourhood density and OLD20.
-- **Materials source:** `items/pool_en_concrete_nouns.csv` (sha256 `09d0706a853b4bb3…`)
-- **Dimensions from:** `corpora/derived/en.csv` (sha256 `c20549b920d81680…`)
+- **Materials source:** `items/pool_en_concrete_nouns.csv` (sha256 `09d0706a853b4bb3...`)
+- **Dimensions from:** `corpora/derived/en.csv` (sha256 `575833489e04d6a4...`)
 - **Selection:** standardised_euclidean
 - **Cross-engine determinism:** byte-identical
 - **Counterbalancing:** factorial, 1 list(s)
 - **Items:** 40 rows across 2 conditions (lower_frequency, higher_frequency)
-- **Seed:** 2026  |  **Versions:** engine python, lexsync 0.1.0, python 3.13.7, pandas 2.3.2, numpy 2.3.2, scipy 1.17.1, rapidfuzz 3.14.5, pyyaml 6.0.3, os Windows AMD64
+- **Seed:** 2026  |  **Versions:** engine python, lexsync 0.1.0, python 3.11.15, pandas 2.3.3, numpy 2.4.6, scipy 1.17.1, rapidfuzz 3.14.6, pyyaml 6.0.3, os Linux x86_64
 
 ## Selection transparency
 
@@ -23,14 +23,14 @@
 
 | Dimension | Role | Cohen's d | 90% CI | Var ratio | TOST p | Equivalent |
 |---|---|---|---|---|---|---|
-| length | controlled | -0.11 | [-0.64, 0.42] | 0.89 | 0.1121 | False |
-| frequency | manipulated/free | 3.53 | [3.00, 4.06] | 0.83 | 1.0 | False |
-| n_density | controlled | 0.13 | [-0.40, 0.66] | 0.83 | 0.1245 | False |
-| old20 | controlled | -0.24 | [-0.78, 0.29] | 0.62 | 0.2093 | False |
+| length | controlled | -0.11 | [-0.64, 0.42] | 0.89 | 0.1121 | FALSE |
+| frequency | manipulated/free | 3.53 | [3.00, 4.06] | 0.83 | 1 | FALSE |
+| n_density | controlled | 0.13 | [-0.40, 0.66] | 0.83 | 0.1245 | FALSE |
+| old20 | controlled | -0.24 | [-0.78, 0.29] | 0.62 | 0.2093 | FALSE |
 
 ## Suggested analysis
 
-- **Model:** `response ~ condition + (1 + condition | subject) + (1 | item)` — where the response is the trial outcome (e.g. reaction time or accuracy).
+- **Model:** `response ~ condition + (1 + condition | subject) + (1 | item)` -- where the response is the trial outcome (e.g. reaction time or accuracy).
 - Crossed random effects for subjects and items guard against the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). Begin with this maximal structure (Barr et al., 2013) and reduce it if the model does not converge (Matuschek et al., 2017). The formula is lme4 syntax, for lme4 in R or pymer4 in Python; statsmodels MixedLM cannot take it directly and needs the random effects restated in its own arguments. The equivalence tests in the realised control are post-selection diagnostics on deterministically selected items, not inferential tests over a sample.
 
 ## Methods paragraph

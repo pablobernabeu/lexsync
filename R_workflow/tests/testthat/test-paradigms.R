@@ -41,6 +41,34 @@ test_that("pseudowords are legal non-words of matched length", {
   expect_equal(length(unique(gen$pseudoword)), nrow(gen))
 })
 
+# The distance-2 fallback and the no-candidate refusal decide stimulus identity and
+# are mirrored in python_workflow/src/lexsync/generation.py, so the same three cases
+# are pinned in test_paradigms.py with the same literals.
+SHORT_REF <- c("ab", "cd", "cb", "ad", "cex")
+
+.wordset <- function(words) {
+  e <- new.env(hash = TRUE, parent = emptyenv())
+  for (w in words) assign(w, TRUE, envir = e)
+  e
+}
+
+test_that("a pseudoword falls back to two substitutions", {
+  pw <- make_pseudoword("ab", bigram_counts(SHORT_REF), .wordset(SHORT_REF),
+                        .wordset(character(0)))
+  expect_identical(pw, "ce")
+})
+
+test_that("make_pseudoword returns NULL when no legal non-word exists", {
+  ref <- c("ab", "cb", "ad")
+  expect_null(make_pseudoword("ab", bigram_counts(ref), .wordset(ref),
+                              .wordset(character(0))))
+})
+
+test_that("generate_pseudowords refuses when none can be made", {
+  expect_error(generate_pseudowords(c("ab"), c("ab", "cb", "ad")),
+               "could not generate a pseudoword for 'ab'", fixed = TRUE)
+})
+
 test_that("build_lexdec_stimuli pairs words and pseudowords by length", {
   schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
   lex <- load_lexicon(system.file("extdata", "en_example.csv", package = "lexsync"), schema, "english")

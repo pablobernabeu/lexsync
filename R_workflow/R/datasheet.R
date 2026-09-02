@@ -113,6 +113,20 @@ DATASHEET_VERSION <- "1.1"
 
 .r4 <- function(v) if (is.null(v) || is.na(v)) NULL else .round_dp(as.numeric(v), 4)
 
+# A stored value at `dp` decimal places, identically in both engines. A bare "%.2f"
+# leaves the half-way case to the C library, and the two runtimes disagree there: the
+# stored ci_low of -0.465 printed as -0.46 from R on Windows and -0.47 from Python, so
+# one design's datasheet differed between the engines on a number a reader would quote.
+# Rounding with the package's own half-away-from-zero rounder first moves the value off
+# the boundary, so the format that follows has nothing left to decide. Mirrors _fixed
+# in datasheet.py.
+.fixed <- function(v, dp) sprintf(paste0("%.", dp, "f"), .round_dp(as.numeric(v), dp))
+
+# The TOST p as both engines render it. "%g", not as.character (or Python's str):
+# those write 9e-04 and 0.0009 for the same stored double. Mirrors _tost_p in
+# datasheet.py.
+.tost_p <- function(v) if (is.null(v)) "--" else sprintf("%g", as.numeric(v))
+
 # A suggested crossed mixed-model formula for the design. Handing the user an
 # items-crossed model guards against the language-as-fixed-effect fallacy
 # (Clark, 1973; Baayen et al., 2008): items are a random sample of the language,
@@ -413,11 +427,11 @@ methods_paragraph <- function(ds) {
       if (!is.null(r$predictor_span) && is.null(span)) span <- r$predictor_span
       if (!is.null(r$pearson_r)) rs <- c(rs, abs(r$pearson_r))
     }
-    span_str <- if (!is.null(span)) sprintf(" (a span of %.2f)", span) else ""
-    # Report |r| at 3 dp (its stored precision) so the text is identical across
-    # engines; a 2-dp format of, say, 0.165 rounds to 0.16 in R and 0.17 in Python.
+    span_str <- if (!is.null(span)) sprintf(" (a span of %s)", .fixed(span, 2)) else ""
+    # |r| at 3 dp: enough to compare correlations, and .fixed keeps the choice at the
+    # half-way point away from the C library, which the two engines disagree on.
     corr_str <- if (length(rs))
-      sprintf(", and the largest predictor-control correlation was |r| = %.3f", max(rs)) else ""
+      sprintf(", and the largest predictor-control correlation was |r| = %s", .fixed(max(rs), 3)) else ""
     cb <- ds$counterbalancing
     recipe_label <- switch(cb$recipe, latin_square_target = "a Latin-square rotation",
                            factorial = "a factorial split", cb$recipe)
@@ -469,9 +483,10 @@ methods_paragraph <- function(ds) {
     if (all_equivalent && length(defined)) {
       worst <- defined[[which.max(vapply(defined, function(r) abs(r$cohens_d), numeric(1)))]]
       control <- sprintf(paste0(". The realised control was close. The largest standardised difference ",
-                                "on any matched dimension was %.2f (90%% CI [%.2f, %.2f]), within the ",
+                                "on any matched dimension was %s (90%% CI [%s, %s]), within the ",
                                 "%s-SD equivalence bound"),
-                         worst$cohens_d, worst$ci_low, worst$ci_high,
+                         .fixed(worst$cohens_d, 2), .fixed(worst$ci_low, 2),
+                         .fixed(worst$ci_high, 2),
                          ds$equivalence$bound_d)
     } else {
       control <- paste0(". Equivalence was not confirmed on every matched dimension; ",
@@ -640,8 +655,8 @@ render_datasheet_md <- function(ds) {
                "| Dimension | Role | r with predictor | Predictor span |",
                "|---|---|---|---|")
     for (r in ds$realised_control) {
-      rr <- if (is.null(r$pearson_r)) "--" else sprintf("%.3f", r$pearson_r)
-      sp <- if (is.null(r$predictor_span)) "--" else sprintf("%.3f", r$predictor_span)
+      rr <- if (is.null(r$pearson_r)) "--" else .fixed(r$pearson_r, 3)
+      sp <- if (is.null(r$predictor_span)) "--" else .fixed(r$predictor_span, 3)
       lines <- c(lines, sprintf("| %s | %s | %s | %s |", r$dimension, r$role, rr, sp))
     }
     lines <- c(lines, "")
@@ -650,11 +665,12 @@ render_datasheet_md <- function(ds) {
                "| Dimension | Role | Cohen's d | 90% CI | Var ratio | TOST p | Equivalent |",
                "|---|---|---|---|---|---|---|")
     for (r in ds$realised_control) {
-      ci <- if (!is.null(r$ci_low)) sprintf("[%.2f, %.2f]", r$ci_low, r$ci_high) else "--"
-      dstr <- if (is.null(r$cohens_d)) "--" else sprintf("%.2f", r$cohens_d)
-      vr <- if (is.null(r$var_ratio)) "--" else sprintf("%.2f", r$var_ratio)
+      ci <- if (!is.null(r$ci_low))
+        sprintf("[%s, %s]", .fixed(r$ci_low, 2), .fixed(r$ci_high, 2)) else "--"
+      dstr <- if (is.null(r$cohens_d)) "--" else .fixed(r$cohens_d, 2)
+      vr <- if (is.null(r$var_ratio)) "--" else .fixed(r$var_ratio, 2)
       lines <- c(lines, sprintf("| %s | %s | %s | %s | %s | %s | %s |", r$dimension, r$role,
-                                dstr, ci, vr, r$tost_p %||% "--", r$equivalent %||% "--"))
+                                dstr, ci, vr, .tost_p(r$tost_p), r$equivalent %||% "--"))
     }
     lines <- c(lines, "")
   }

@@ -19,6 +19,15 @@ def _now() -> str:
 
 
 def new_run_log(name: str, meta: dict | None = None) -> dict:
+    """Start a new run log.
+
+    Args:
+        name: A label for the run.
+        meta: A mapping of run-level metadata (seed, versions, ...).
+
+    Returns:
+        A run-log object (a dictionary).
+    """
     return {
         "name": name,
         "started": _now(),
@@ -40,16 +49,34 @@ def get_verbose() -> bool:
 
     run_pipeline does exactly that, as the R twin restores its
     options(lexsync.verbose) with on.exit.
+
+    Returns:
+        Whether the console narration is on.
     """
     return _VERBOSE
 
 
 def set_verbose(flag: bool) -> None:
+    """Turn the console narration on or off.
+
+    Args:
+        flag: Whether steps are printed as they are logged.
+    """
     global _VERBOSE
     _VERBOSE = bool(flag)
 
 
 def log_step(log: dict, message: str, data: dict | None = None) -> dict:
+    """Append a step to a run log.
+
+    Args:
+        log: A run-log object.
+        message: A short description of the step.
+        data: An optional mapping of step details.
+
+    Returns:
+        The updated run-log object.
+    """
     log["steps"].append({"time": _now(), "message": message, "data": data})
     if _VERBOSE:
         print(f"[lexsync] {message}")
@@ -57,11 +84,31 @@ def log_step(log: dict, message: str, data: dict | None = None) -> dict:
 
 
 def log_artefact(log: dict, path: str, rows=None) -> dict:
+    """Record a written artefact (path, rows, fingerprint) in the log.
+
+    Args:
+        log: A run-log object.
+        path: A file path that has just been written.
+        rows: Optional row count.
+
+    Returns:
+        The updated run-log object.
+    """
     return log_step(log, f"wrote '{os.path.basename(path)}'",
                     {"path": path, "rows": rows, "md5": hash_file(path)})
 
 
 def write_run_log(log: dict, md_path: str, jsonl_path: str | None = None) -> str:
+    """Write the run log to Markdown, and optionally to JSON Lines.
+
+    Args:
+        log: A run-log object.
+        md_path: Output path for the Markdown log.
+        jsonl_path: Optional output path for the JSON Lines log.
+
+    Returns:
+        ``md_path``.
+    """
     os.makedirs(os.path.dirname(md_path) or ".", exist_ok=True)
     lines = [
         f"# lexsync run log: {log['name']}", "",

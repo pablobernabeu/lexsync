@@ -1,4 +1,4 @@
-# Materials datasheet — zh_freqcontrast (chinese)
+# Materials datasheet -- zh_freqcontrast (chinese)
 
 *lexsync datasheet v1.1; python engine.*
 
@@ -6,12 +6,12 @@
 
 - **Paradigm:** factorial  |  **Item source:** corpus
 - **Description:** High versus low frequency Mandarin Chinese two-character words, matched on character-length and character-level neighbourhood (N, OLD20).
-- **Materials source:** `corpora/derived/zh.csv` (sha256 `74666b257c1ad7bc…`)
+- **Materials source:** `corpora/derived/zh.csv` (sha256 `74666b257c1ad7bc...`)
 - **Selection:** standardised_euclidean
 - **Cross-engine determinism:** byte-identical
 - **Counterbalancing:** factorial, 1 list(s)
 - **Items:** 160 rows across 2 conditions (low_frequency, high_frequency)
-- **Seed:** 2026  |  **Versions:** engine python, lexsync 0.1.0, python 3.13.7, pandas 2.3.2, numpy 2.3.2, scipy 1.17.1, rapidfuzz 3.14.5, pyyaml 6.0.3, os Windows AMD64
+- **Seed:** 2026  |  **Versions:** engine python, lexsync 0.1.0, python 3.11.15, pandas 2.3.3, numpy 2.4.6, scipy 1.17.1, rapidfuzz 3.14.6, pyyaml 6.0.3, os Linux x86_64
 
 ## Selection transparency
 
@@ -22,19 +22,19 @@
 
 | Dimension | Role | Cohen's d | 90% CI | Var ratio | TOST p | Equivalent |
 |---|---|---|---|---|---|---|
-| length | controlled | 0.00 | [0.00, 0.00] | 1.00 | 0.0 | True |
-| frequency | manipulated/free | 6.00 | [5.74, 6.27] | 0.47 | 1.0 | False |
-| n_density | controlled | 0.07 | [-0.19, 0.33] | 0.65 | 0.0037 | True |
-| old20 | controlled | 0.11 | [-0.15, 0.37] | 0.44 | 0.0069 | True |
+| length | controlled | 0.00 | [0.00, 0.00] | 1.00 | 0 | TRUE |
+| frequency | manipulated/free | 6.00 | [5.74, 6.27] | 0.47 | 1 | FALSE |
+| n_density | controlled | 0.07 | [-0.19, 0.33] | 0.65 | 0.0037 | TRUE |
+| old20 | controlled | 0.11 | [-0.16, 0.37] | 0.44 | 0.0069 | TRUE |
 
 ## Suggested analysis
 
-- **Model:** `response ~ condition + (1 + condition | subject) + (1 | item)` — where the response is the trial outcome (e.g. reaction time or accuracy).
+- **Model:** `response ~ condition + (1 + condition | subject) + (1 | item)` -- where the response is the trial outcome (e.g. reaction time or accuracy).
 - Crossed random effects for subjects and items guard against the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). Begin with this maximal structure (Barr et al., 2013) and reduce it if the model does not converge (Matuschek et al., 2017). The formula is lme4 syntax, for lme4 in R or pymer4 in Python; statsmodels MixedLM cannot take it directly and needs the random effects restated in its own arguments. The equivalence tests in the realised control are post-selection diagnostics on deterministically selected items, not inferential tests over a sample.
 
 ## Methods paragraph
 
-80 items per condition were selected from the Chinese lexicon (wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md) and matched item by item on length, n_density, old20 using lexsync's standardised_euclidean matcher. The realised control was close. The largest standardised difference on any matched dimension was 0.11 (90% CI [-0.15, 0.37]), within the 0.5-SD equivalence bound. The smallest condition was selected from 948 eligible candidates, and the selection was deterministic and blind to any outcome measure. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.0).
+80 items per condition were selected from the Chinese lexicon (wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md) and matched item by item on length, n_density, old20 using lexsync's standardised_euclidean matcher. The realised control was close. The largest standardised difference on any matched dimension was 0.11 (90% CI [-0.16, 0.37]), within the 0.5-SD equivalence bound. The smallest condition was selected from 948 eligible candidates, and the selection was deterministic and blind to any outcome measure. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.0).
 
 ## Pre-registration template
 
@@ -54,7 +54,7 @@
 - Paradigm: factorial
 
 ### Materials (from the lexsync datasheet)
-80 items per condition were selected from the Chinese lexicon (wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md) and matched item by item on length, n_density, old20 using lexsync's standardised_euclidean matcher. The realised control was close. The largest standardised difference on any matched dimension was 0.11 (90% CI [-0.15, 0.37]), within the 0.5-SD equivalence bound. The smallest condition was selected from 948 eligible candidates, and the selection was deterministic and blind to any outcome measure. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.0).
+80 items per condition were selected from the Chinese lexicon (wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md) and matched item by item on length, n_density, old20 using lexsync's standardised_euclidean matcher. The realised control was close. The largest standardised difference on any matched dimension was 0.11 (90% CI [-0.16, 0.37]), within the 0.5-SD equivalence bound. The smallest condition was selected from 948 eligible candidates, and the selection was deterministic and blind to any outcome measure. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.0).
 
 ### Sampling plan
 - Sample size and justification:

@@ -4,6 +4,70 @@
 # run log, and exports the PsychoPy and OpenSesame scripts. run_all() loops over
 # every design configuration, automating the work across languages and designs.
 
+# The dimensions lexsync derives itself, in the order add_neighbourhood() and
+# add_bigram_frequency() compute them.
+.DERIVED_DIMS <- c("n_density", "old20", "bigram_freq")
+
+# Every derivable dimension the design references, in first-mention order: the union
+# of `match_on`, the pool filters, each condition's `define_by` and the continuous
+# predictor and controls. Only `match_on` used to trigger the derivation, so a design
+# that filtered on `old20`, or defined its conditions by `n_density`, stopped on any
+# lexicon that did not already carry the column. Mirrors ._derived_dims_needed in
+# run_pipeline.py.
+.derived_dims_needed <- function(design) {
+  names_used <- unlist(design$match_on, use.names = FALSE)
+  names_used <- c(names_used, names(design$pool_filters %||% list()))
+  for (cond in design$conditions %||% list()) {
+    names_used <- c(names_used, names(cond$define_by %||% list()))
+  }
+  if (!is.null(design$continuous$predictor)) {
+    names_used <- c(names_used, as.character(design$continuous$predictor))
+  }
+  names_used <- c(names_used, unlist(design$continuous$controls, use.names = FALSE))
+  intersect(unique(as.character(names_used)), .DERIVED_DIMS)
+}
+
+# Add the named derived dimensions the frame does not already carry.
+.derive_dims <- function(frame, dims, reference, log) {
+  needed <- intersect(c("n_density", "old20"), dims)
+  if (length(needed) && any(!needed %in% names(frame))) {
+    log <- log_step(log, "computing orthographic neighbourhood (N, OLD20)")
+    frame <- add_neighbourhood(frame, reference = reference)
+  }
+  if ("bigram_freq" %in% dims && !("bigram_freq" %in% names(frame))) {
+    log <- log_step(log, "computing bigram frequency (phonotactic-probability proxy)")
+    frame <- add_bigram_frequency(frame, reference = reference)
+  }
+  list(frame = frame, log = log)
+}
+
+# True for a key a configuration leaves empty in any of YAML's several ways.
+.blank <- function(value) {
+  if (is.null(value) || length(value) == 0L) return(TRUE)
+  if (length(value) > 1L || is.list(value)) return(FALSE)
+  is.na(value) || !nzchar(trimws(as.character(value)))
+}
+
+# Refuse a configuration file that cannot carry a run. read_config() returns
+# whatever the parser produced, so an empty file gave NULL and a file written as a
+# list gave a vector, and the first `$` on it reported a type rather than the file.
+# A design without `name` or `language` got further still: the base name is built
+# from both, so a nameless design wrote its artefacts under the language alone,
+# which silently collides with any other nameless design in it.
+.validate_config <- function(cfg, path, kind, required) {
+  if (!is.list(cfg) || is.null(names(cfg))) {
+    stop(sprintf(paste("lexsync: %s '%s' did not parse to a mapping of keys;",
+                       "check the file is a YAML mapping and not empty."), kind, path),
+         call. = FALSE)
+  }
+  missing <- required[vapply(required, function(k) .blank(cfg[[k]]), logical(1))]
+  if (length(missing)) {
+    stop(sprintf("lexsync: %s '%s' is missing the required key(s) %s.", kind, path,
+                 paste(sprintf("'%s'", missing), collapse = ", ")), call. = FALSE)
+  }
+  invisible(NULL)
+}
+
 #' Run the lexsync pipeline for one design
 #'
 #' @param design_path Path to a design configuration (YAML).
@@ -23,7 +87,9 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
   old_opts <- options(lexsync.verbose = verbose)
   on.exit(options(old_opts), add = TRUE)
   schema <- read_config(schema_path)
+  .validate_config(schema, schema_path, "schema", c("lexicon_schema", "matching"))
   design <- read_config(design_path)
+  .validate_config(design, design_path, "design", c("name", "language"))
   n_req <- design$n_per_condition %||% design$n_per_cell
   # is.finite rather than is.na: trunc(Inf) is Inf, so an infinite request passed both
   # the integrality and the lower-bound test here and went on to select the whole pool,
@@ -121,31 +187,36 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
       ref_words <- lex$word
     }
     jn <- join_norms(lex, log); lex <- jn$lexicon; log <- jn$log
+    filters <- design$pool_filters %||% list()
+    # A filter on a dimension lexsync derives cannot be answered until the dimension
+    # exists. Deriving it costs a pass over the reference list per word, so the filters
+    # the lexicon can answer are applied first and the derivation runs on the smaller
+    # frame; the values do not depend on which rows carry them, since the
+    # neighbourhood is measured against the whole lexicon.
+    deferred <- intersect(names(filters),
+                          setdiff(.derived_dims_needed(design), names(lex)))
     # build_pool skips a filter column it does not recognise, so a misspelt key
     # would silently leave the pool unfiltered; the pair path carries the same
     # guard. Checked after the norms join, which legitimately adds filterable
     # columns.
-    unknown <- setdiff(names(design$pool_filters %||% list()), names(lex))
+    unknown <- setdiff(names(filters), c(names(lex), deferred))
     if (length(unknown)) {
       stop(sprintf("lexsync: pool_filters name column(s) the lexicon does not have: %s.",
                    paste(unknown, collapse = ", ")), call. = FALSE)
     }
-    pool <- build_pool(lex, design$pool_filters)
+    pool <- build_pool(lex, filters[setdiff(names(filters), deferred)])
+    if (length(deferred)) {
+      dd <- .derive_dims(pool, deferred, reference_words %||% ref_words, log)
+      pool <- build_pool(dd$frame, filters[deferred]); log <- dd$log
+    }
     log <- log_step(log, sprintf("pool after filters: %d words", nrow(pool)), list(pool = nrow(pool)))
   }
 
   if (source %in% c("corpus", "pool")) {
     match_on <- unlist(design$match_on, use.names = FALSE)
     ref <- reference_words %||% ref_words
-    needed <- intersect(c("n_density", "old20"), match_on)
-    if (length(needed) && any(!needed %in% names(pool))) {
-      log <- log_step(log, "computing orthographic neighbourhood (N, OLD20)")
-      pool <- add_neighbourhood(pool, reference = ref)
-    }
-    if ("bigram_freq" %in% match_on && !("bigram_freq" %in% names(pool))) {
-      log <- log_step(log, "computing bigram frequency (phonotactic-probability proxy)")
-      pool <- add_bigram_frequency(pool, reference = ref)
-    }
+    dd <- .derive_dims(pool, .derived_dims_needed(design), ref, log)
+    pool <- dd$frame; log <- dd$log
     if (is_continuous) {
       predictor <- design$continuous$predictor
       controls <- unlist(design$continuous$controls, use.names = FALSE)
@@ -246,7 +317,7 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
         cr <- report$comparisons[i, ]
         ci <- if (!is.na(cr$d_ci_low) && !is.na(cr$d_ci_high))
           sprintf(" [%.2f, %.2f]", cr$d_ci_low, cr$d_ci_high) else ""
-        log <- log_step(log, sprintf("equivalence %s vs %s on '%s': d = %.2f%s, TOST p = %.3f (%s)",
+        log <- log_step(log, sprintf("equivalence %s vs %s on '%s': d = %.2f%s, TOST p = %.4f (%s)",
                                      cr$condition, cr$reference, cr$dimension, cr$cohens_d, ci, cr$tost_p,
                                      if (isTRUE(cr$equivalent)) "equivalent" else "not shown equivalent"))
       }
@@ -384,7 +455,12 @@ run_all <- function(config_dir = "config", schema_path = file.path(config_dir, "
   results <- list()
   for (d in designs) {
     if (verbose) cat(sprintf("\n=== lexsync: design '%s' ===\n", basename(d)))
-    results[[basename(d)]] <- run_pipeline(d, schema_path, outdir, verbose = verbose)
+    # The loop knows which design failed and the failure often does not, so a quiet
+    # sweep over twenty designs used to report a bare error from an unnamed one.
+    results[[basename(d)]] <- tryCatch(
+      run_pipeline(d, schema_path, outdir, verbose = verbose),
+      error = function(e) stop(sprintf("lexsync: design '%s' failed: %s",
+                                       basename(d), conditionMessage(e)), call. = FALSE))
   }
   if (verbose) cat(sprintf("\n[lexsync] all %d designs complete.\n", length(designs)))
   invisible(results)

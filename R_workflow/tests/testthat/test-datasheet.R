@@ -452,3 +452,46 @@ test_that("a dotted model term earns the Patsy quoting note", {
                            list(stimuli = NULL, experiments = list()), 2026, engine = "R")
   expect_false(grepl("Patsy", plain$analysis$note, fixed = TRUE))
 })
+
+# --- Rendering the two engines have to agree on -----------------------------
+# test_datasheet.py asserts the same properties.
+
+test_that("the Markdown renderer writes ASCII placeholders and R's spellings", {
+  schema <- ds_schema()
+  stim <- ds_stim()
+  report <- match_report(stim, c("length", "frequency", "n_density", "old20"), schema)
+  ds <- build_datasheet(ds_design(), schema, report, stim, "corpora/derived/en.csv",
+                        list(stimuli = NULL, experiments = list()), 2026, engine = "R")
+  md <- lexsync:::render_datasheet_md(ds)
+  expect_false(grepl("\u2014", md, fixed = TRUE))
+  expect_false(grepl("\u2026", md, fixed = TRUE))
+  expect_true(startsWith(md, "# Materials datasheet -- t (english)"))
+  expect_true(grepl("-- where the response is", md, fixed = TRUE))
+  # The realised-control table: a whole-number TOST p without a trailing ".0", and
+  # R's booleans.
+  expect_true(grepl("| length | controlled | 0.00 | [0.00, 0.00] | 1.00 | 0 | TRUE |",
+                    md, fixed = TRUE))
+  expect_true(grepl("| frequency | manipulated/free | -- | -- | 1.00 | 1 | FALSE |",
+                    md, fixed = TRUE))
+})
+
+test_that(".fixed and .tost_p render a stored value the same way in both engines", {
+  # -0.465 is the value that split the engines: the C library's answer at the
+  # half-way point is its own business, so the shared rounder decides first.
+  expect_identical(lexsync:::.fixed(-0.465, 2), "-0.47")
+  expect_identical(lexsync:::.fixed(0.465, 2), "0.47")
+  expect_identical(lexsync:::.fixed(0.1235, 3), "0.124")
+  # Neither R's as.character (9e-04) nor Python's str (1.0), which disagree.
+  expect_identical(lexsync:::.tost_p(0.0009), "0.0009")
+  expect_identical(lexsync:::.tost_p(1), "1")
+  expect_identical(lexsync:::.tost_p(NULL), "--")
+})
+
+test_that("the methods paragraph keeps the language label's own capitals", {
+  design <- ds_design()
+  design$language <- "British English"
+  ds <- build_datasheet(design, ds_schema(), NULL, ds_stim(), "x.csv",
+                        list(stimuli = NULL, experiments = list()), 2026, engine = "R")
+  expect_true(grepl("from the British English lexicon", methods_paragraph(ds),
+                    fixed = TRUE))
+})

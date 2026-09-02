@@ -1,13 +1,13 @@
-{"time": "2026-08-07T22:50:27", "message": "loading lexicon 'corpora/derived/en.csv'", "data": null}
-{"time": "2026-08-07T22:50:27", "message": "lexicon loaded: 30000 words", "data": {"words": 30000}}
-{"time": "2026-08-07T22:50:27", "message": "pool after filters: 8177 words", "data": {"pool": 8177}}
-{"time": "2026-08-07T22:50:28", "message": "generated 120 items (words + pseudowords, letter_substitution)", "data": {"conditions": "word, pseudoword"}}
-{"time": "2026-08-07T22:50:28", "message": "equivalence pseudoword vs word on 'length': d = 0.00 [-0.30, 0.30], TOST p = 0.0036 (equivalent)", "data": null}
-{"time": "2026-08-07T22:50:28", "message": "wrote 'en_lexdec_english_stimuli_py.csv'", "data": {"path": "output\\stimuli\\en_lexdec_english_stimuli_py.csv", "rows": 120, "md5": "d99b79dee80a0803d326cce5157ad553"}}
-{"time": "2026-08-07T22:50:28", "message": "wrote 'en_lexdec_english_descriptives_py.csv'", "data": {"path": "output\\reports\\en_lexdec_english_descriptives_py.csv", "rows": 2, "md5": "f26ab1271c06e35b089d78a806602d3e"}}
-{"time": "2026-08-07T22:50:28", "message": "wrote 'en_lexdec_english_comparisons_py.csv'", "data": {"path": "output\\reports\\en_lexdec_english_comparisons_py.csv", "rows": 1, "md5": "08fc5207d0e20aa470e1b3cf332e5830"}}
-{"time": "2026-08-07T22:50:28", "message": "wrote 'en_lexdec_english_psychopy.py'", "data": {"path": "output\\experiments\\en_lexdec_english_psychopy.py", "rows": null, "md5": "f9e9b82991e8ffb552fe92ba01b86e58"}}
-{"time": "2026-08-07T22:50:28", "message": "wrote 'en_lexdec_english.osexp'", "data": {"path": "output\\experiments\\en_lexdec_english.osexp", "rows": null, "md5": "a1718c27604d642b875fc1b6057bc76c"}}
-{"time": "2026-08-07T22:50:28", "message": "wrote 'en_lexdec_english.html'", "data": {"path": "output\\experiments\\en_lexdec_english.html", "rows": null, "md5": "b3841161510a3bea9d2de0be9419796f"}}
-{"time": "2026-08-07T22:50:28", "message": "wrote 'en_lexdec_english_datasheet_py.json'", "data": {"path": "output\\reports\\en_lexdec_english_datasheet_py.json", "rows": null, "md5": "10637c0ea84bf1dac25a6ffcd672f98e"}}
-{"time": "2026-08-07T22:50:28", "message": "wrote 'en_lexdec_english_datasheet_py.md'", "data": {"path": "output\\reports\\en_lexdec_english_datasheet_py.md", "rows": null, "md5": "51580adf8a1d45a93a8e290a21995ae4"}}
+{"time": "2026-09-02T19:25:42", "message": "loading lexicon 'corpora/derived/en.csv'", "data": null}
+{"time": "2026-09-02T19:25:42", "message": "lexicon loaded: 30000 words", "data": {"words": 30000}}
+{"time": "2026-09-02T19:25:42", "message": "pool after filters: 8177 words", "data": {"pool": 8177}}
+{"time": "2026-09-02T19:25:42", "message": "generated 120 items (words + pseudowords, letter_substitution)", "data": {"conditions": "word, pseudoword"}}
+{"time": "2026-09-02T19:25:42", "message": "equivalence pseudoword vs word on 'length': d = 0.00 [-0.30, 0.30], TOST p = 0.0036 (equivalent)", "data": null}
+{"time": "2026-09-02T19:25:42", "message": "wrote 'en_lexdec_english_stimuli_py.csv'", "data": {"path": "output/stimuli/en_lexdec_english_stimuli_py.csv", "rows": 120, "md5": "d99b79dee80a0803d326cce5157ad553"}}
+{"time": "2026-09-02T19:25:42", "message": "wrote 'en_lexdec_english_descriptives_py.csv'", "data": {"path": "output/reports/en_lexdec_english_descriptives_py.csv", "rows": 2, "md5": "f26ab1271c06e35b089d78a806602d3e"}}
+{"time": "2026-09-02T19:25:42", "message": "wrote 'en_lexdec_english_comparisons_py.csv'", "data": {"path": "output/reports/en_lexdec_english_comparisons_py.csv", "rows": 1, "md5": "08fc5207d0e20aa470e1b3cf332e5830"}}
+{"time": "2026-09-02T19:25:42", "message": "wrote 'en_lexdec_english_psychopy.py'", "data": {"path": "output/experiments/en_lexdec_english_psychopy.py", "rows": null, "md5": "1504c568260802eed4dcb41daccb8144"}}
+{"time": "2026-09-02T19:25:42", "message": "wrote 'en_lexdec_english.osexp'", "data": {"path": "output/experiments/en_lexdec_english.osexp", "rows": null, "md5": "a1718c27604d642b875fc1b6057bc76c"}}
+{"time": "2026-09-02T19:25:42", "message": "wrote 'en_lexdec_english.html'", "data": {"path": "output/experiments/en_lexdec_english.html", "rows": null, "md5": "fb969d979282508a6fca961a666c20a5"}}
+{"time": "2026-09-02T19:25:42", "message": "wrote 'en_lexdec_english_datasheet_py.json'", "data": {"path": "output/reports/en_lexdec_english_datasheet_py.json", "rows": null, "md5": "b23e841eaa622a6394507771ec4eaf5f"}}
+{"time": "2026-09-02T19:25:42", "message": "wrote 'en_lexdec_english_datasheet_py.md'", "data": {"path": "output/reports/en_lexdec_english_datasheet_py.md", "rows": null, "md5": "121740e98c5da8ddd58a1acadfc47072"}}

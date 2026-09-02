@@ -25,17 +25,39 @@ on:
       # to it alone changes a published page. Without it here, that edit would
       # sit unpublished until some other path happened to trigger a rebuild.
       - '.github/build_demo_index.py'
+  # The same paths on a pull request. `mkdocs build --strict` and pkgdown are the
+  # only checks the documentation has, so a broken internal link, a missing nav
+  # page or a mkdocstrings identifier that no longer resolves used to pass every
+  # PR check and then turn main red at deploy time, leaving the published site on
+  # its previous version with no signal on the change that caused it. The deploy
+  # job below is gated on the event, so a pull request builds and publishes
+  # nothing.
+  pull_request:
+    branches: [main]
+    paths:
+      - 'R_workflow/**'
+      - 'python_workflow/**'
+      - 'output/experiments/**'
+      - 'config/design_*.yaml'
+      - 'CHANGELOG.md'
+      - '.github/workflows/docs.yml'
+      - '.github/landing.html'
+      - '.github/404.html'
+      - '.github/build_demo_index.py'
   workflow_dispatch:
 
+# Write is needed to push gh-pages and by nothing else, so it is declared on the
+# deploy job alone: the build runs on pull requests, where its token has no
+# business being able to write to the repository.
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: docs-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -114,6 +136,34 @@ jobs:
       # than written by hand, so it cannot fall behind the set of designs.
       - name: Build an index for the published demos
         run: python .github/build_demo_index.py
+
+      # The deploy job publishes exactly what this job built, so the whole site
+      # travels between them. Hidden files are included because the upload drops
+      # them by default and a site's dot-files are part of what it serves.
+      - name: Upload the built site
+        uses: actions/upload-artifact@v4
+        with:
+          name: site
+          path: site
+          include-hidden-files: true
+          retention-days: 7
+
+  deploy:
+    needs: build
+    # A pull request builds the two sites and stops there; only a push to main and
+    # a manual run publish.
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Download the built site
+        uses: actions/download-artifact@v4
+        with:
+          name: site
+          path: site
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@84c30a85c19949d7eee79c4ff27748b70285e453  # v4.1.0

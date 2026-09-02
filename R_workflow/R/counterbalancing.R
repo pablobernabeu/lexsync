@@ -352,6 +352,14 @@ counterbalance_factorial <- function(stimuli, design, schema, list_of_set = NULL
   stimuli$list <- 1L
   if (n_lists > 1) {
     sets <- sort(unique(stimuli$set))
+    if (n_lists > length(sets)) {
+      # A list per set at most: dealing further would leave the high-numbered lists
+      # empty, and the datasheet would still report the number asked for.
+      stop(sprintf(paste0("lexsync: counterbalance.lists is %d but there are only %d ",
+                          "item set(s), so %d list(s) would be empty. Lower ",
+                          "counterbalance.lists or raise n_per_condition."),
+                   n_lists, length(sets), n_lists - length(sets)), call. = FALSE)
+    }
     if (!is.null(list_of_set)) {
       # A balanced assignment from balance_lists(). Looked up by set VALUE, since the
       # map is keyed by it; a set the map does not name is a caller error rather than
@@ -391,6 +399,14 @@ counterbalance_latin_square <- function(stimuli, design, schema) {
   conds <- sort(unique(as.character(stimuli$condition)), method = "radix")
   n_cond <- length(conds)
   n_lists <- design$counterbalance$lists %||% n_cond
+  if (n_lists > n_cond) {
+    # The rotation has a period of n_cond, so list n_cond + 1 would repeat list 1 item
+    # for item and condition for condition.
+    stop(sprintf(paste0("lexsync: counterbalance.lists is %d but there are only %d ",
+                        "condition(s), so %d list(s) would repeat an earlier ",
+                        "rotation. Lower counterbalance.lists."),
+                 n_lists, n_cond, n_lists - n_cond), call. = FALSE)
+  }
   sets <- sort(unique(stimuli$set))
 
   parts <- list()

@@ -4,7 +4,14 @@
 \alias{build_osexp}
 \title{Build a complete plain-text OpenSesame experiment from rendered events}
 \usage{
-build_osexp(design, conditions_file, schema, rendered, font = "mono")
+build_osexp(
+  design,
+  conditions_file,
+  schema,
+  rendered,
+  font = "mono",
+  lists = NULL
+)
 }
 \description{
 Build a complete plain-text OpenSesame experiment from rendered events
