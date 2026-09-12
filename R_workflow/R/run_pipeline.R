@@ -8,15 +8,21 @@
 #'
 #' @param design_path Path to a design configuration (YAML).
 #' @param schema_path Path to the global schema (YAML).
-#' @param outdir Output directory (subdirectories `stimuli`, `reports`,
-#'   `experiments` are created).
+#' @param outdir Output directory supplied by the caller (subdirectories
+#'   `stimuli`, `reports`, `experiments` are created). It must be supplied;
+#'   lexsync does not choose a default output location.
 #' @param reference_words Optional reference word list for neighbourhood
 #'   computation; defaults to the whole lexicon.
 #' @param verbose Logical; print progress.
 #' @return A named list of output paths, invisibly.
 #' @export
 run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
-                         outdir = "output", reference_words = NULL, verbose = TRUE) {
+                         outdir = NULL, reference_words = NULL, verbose = TRUE) {
+  if (is.null(outdir) || !is.character(outdir) || length(outdir) != 1L ||
+      is.na(outdir) || !nzchar(outdir)) {
+    stop("lexsync: outdir must be supplied; no output directory is chosen by default.",
+         call. = FALSE)
+  }
   # An exported function must not leave the session changed, so the narration gate
   # is restored on every exit path, error included. Mirrors the Python twin, where
   # the gate is module state restored by a decorator.
@@ -373,12 +379,18 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
 #'
 #' @param config_dir Directory of `design_*.yaml` configurations.
 #' @param schema_path Path to the global schema.
-#' @param outdir Output directory.
+#' @param outdir Output directory supplied by the caller. It must be supplied;
+#'   lexsync does not choose a default output location.
 #' @param verbose Logical; print progress.
 #' @return A named list of per-design results, invisibly.
 #' @export
 run_all <- function(config_dir = "config", schema_path = file.path(config_dir, "schema.yaml"),
-                    outdir = "output", verbose = TRUE) {
+                    outdir = NULL, verbose = TRUE) {
+  if (is.null(outdir) || !is.character(outdir) || length(outdir) != 1L ||
+      is.na(outdir) || !nzchar(outdir)) {
+    stop("lexsync: outdir must be supplied; no output directory is chosen by default.",
+         call. = FALSE)
+  }
   designs <- list.files(config_dir, pattern = "^design_.*\\.ya?ml$", full.names = TRUE)
   if (!length(designs)) stop(sprintf("lexsync: no design_*.yaml files in '%s'.", config_dir), call. = FALSE)
   results <- list()

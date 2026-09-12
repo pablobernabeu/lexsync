@@ -17,6 +17,13 @@
 #'   `lexical_decision`, `priming`, `categorisation`, `self_paced_reading`), each
 #'   holding
 #'   `stimulus_fields`, a `counterbalance` recipe and an `events` list.
+#' @return A plain named list (class `"list"`; no package-specific class) of
+#'   built-in paradigm specifications. Each element contains `stimulus_fields`,
+#'   a character vector naming required item-table fields; `counterbalance`, a
+#'   character scalar naming the counterbalancing recipe; and `events`, an
+#'   ordered list of event-specification lists. The selected entry supplies the
+#'   default trial sequence, required item fields, and counterbalancing rule
+#'   inherited by a design that names that paradigm.
 #' @export
 PARADIGMS <- list(
   factorial = list(

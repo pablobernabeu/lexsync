@@ -8,15 +8,27 @@ handed to someone running the other engine.
 
 ## Install
 
-lexsync is not yet on PyPI. Until a release is published, install it straight from the repository:
+```bash
+pip install lexsync
+```
+
+That gives you the library and the `lexsync` console script. The `corpora` and `experiment` extras go
+in brackets, either on their own or together:
+
+```bash
+pip install "lexsync[corpora]"
+pip install "lexsync[corpora,experiment]"
+```
+
+The development version comes straight from the repository, where the Python package sits in the
+`python_workflow/` subdirectory:
 
 ```bash
 pip install "git+https://github.com/pablobernabeu/lexsync.git#subdirectory=python_workflow"
 ```
 
-That gives you the library and the `lexsync` console script. If you want the 21 worked designs,
-the derived corpora and the committed outputs as well, clone the repository and install the package
-in editable mode from inside it:
+If you want the 21 worked designs, the derived corpora and the committed outputs as well, clone the
+repository and install the package in editable mode from inside it:
 
 ```bash
 git clone https://github.com/pablobernabeu/lexsync.git
@@ -36,7 +48,7 @@ early on.
 | Extra | Installs | What it unlocks |
 | --- | --- | --- |
 | `corpora` | `wordfreq>=3.0,<4` | The wordfreq connector, which derives a lexicon for a language that is not bundled. |
-| `experiment` | `psychopy`, `pyserial` | Running a generated laboratory experiment on hardware. |
+| `experiment` | `psychopy>=2024.1`, `pyserial>=3.5` | Running a generated laboratory experiment on hardware. |
 | `dev` | `pytest`, `build`, `twine`, `streamlit` | The test suite, including the tests that cover the Streamlit app. |
 
 The `experiment` extra deserves emphasis because it is easy to assume otherwise. It is needed only
@@ -44,6 +56,17 @@ to *run* a generated experiment, never to generate one. Script generation import
 nor pyserial. It writes text. The whole demonstration therefore reproduces on a laptop with no
 parallel port, no EEG amplifier and no PsychoPy installation, and the test suite runs the same way
 in continuous integration.
+
+The floor on PsychoPy is there because the extra tracks PsychoPy's own supported range of Python
+versions, which trails the newest interpreter by a release or two. PsychoPy currently declares 3.10
+up to 3.12, so on Python 3.13 there is nothing for pip to install and it stops with a message naming
+psychopy. That is the intended outcome. Without the floor pip would keep looking further back until
+it reached a 2022 release whose dependencies no longer build, and the install would die part-way
+through a compilation having installed nothing. On Windows with Python 3.12 the resolve succeeds,
+but pyWinhook, which PsychoPy requires there, publishes no wheel for that version and is built from
+source, so swig has to be on the path. Python 3.11 avoids both and is the easiest interpreter to use
+for hardware work. None of this touches the rest of the package, which runs on any version from 3.10
+onwards.
 
 The `corpora` extra pins wordfreq to its frozen 3.x line, which is a stable snapshot of language
 usage through roughly 2021. That is deliberate. A lexicon derived from a live, drifting source

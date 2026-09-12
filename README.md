@@ -107,7 +107,8 @@ In R:
 Rscript -e "install.packages(c('readr','yaml','stringdist','stringi','jsonlite','digest'))"
 # from the repository root:
 Rscript R_workflow/run_pipeline.R             # runs the demonstrations
-# or, once installed:  Rscript -e "lexsync::run_pipeline('config/design_en_freqcontrast.yaml')"
+# or, once installed (choose an output path):
+Rscript -e "lexsync::run_pipeline('config/design_en_freqcontrast.yaml', outdir = 'my-output')"
 ```
 
 In Python:

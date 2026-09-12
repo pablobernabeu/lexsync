@@ -56,10 +56,15 @@ python_workflow/site/
 /.audit_findings.txt
 
 # --- Credentials -----------------------------------------------------------
-# lexsync handles no credentials of its own, so nothing here is expected to
-# exist. These patterns are defensive: the repository is public, and an .Renviron
-# or a .env is the ordinary way an R or Python secret reaches a working tree by
-# accident. A commit that never happens needs no history rewrite.
+# Publishing to PyPI gives lexsync a credential of its own for the first time.
+# Twine reads an upload token from .pypirc in plaintext. It looks in the home
+# directory by default, but --config-file will take one from anywhere, and a copy
+# made for a single upload is the kind that gets left behind. Nothing else listed
+# here is expected to exist. Those patterns are defensive: the repository is
+# public, and an .Renviron or a .env is the ordinary way an R or Python secret
+# reaches a working tree by accident. A commit that never happens needs no
+# history rewrite.
+.pypirc
 .env
 .env.*
 .Renviron

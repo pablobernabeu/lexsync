@@ -12,6 +12,15 @@ holding
 \usage{
 PARADIGMS
 }
+\value{
+A plain named list (class \code{"list"}; no package-specific class) of
+built-in paradigm specifications. Each element contains \code{stimulus_fields},
+a character vector naming required item-table fields; \code{counterbalance}, a
+character scalar naming the counterbalancing recipe; and \code{events}, an
+ordered list of event-specification lists. The selected entry supplies the
+default trial sequence, required item fields, and counterbalancing rule
+inherited by a design that names that paradigm.
+}
 \description{
 Each event is a list with \code{type} (fixation | text | mask | blank |
 region_by_region | response | question | feedback), \code{content} (a literal or a

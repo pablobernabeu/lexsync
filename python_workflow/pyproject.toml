@@ -14,16 +14,38 @@ requires-python = ">=3.10"
 # attribution they require, and is shipped alongside LICENSE for that reason.
 license = "MIT AND CC-BY-SA-4.0"
 license-files = ["LICENSE", "LICENSE.note"]
-authors = [{ name = "Pablo Bernabeu" }]
+authors = [{ name = "Pablo Bernabeu", email = "pcbernabeu@gmail.com" }]
 keywords = [
   "psycholinguistics", "lexical statistics", "stimulus matching",
   "counterbalancing", "pseudoword generation", "EEG", "ERP",
   "PsychoPy", "OpenSesame", "jsPsych", "FAIR",
 ]
+# No "License :: ..." classifier belongs in this list, and adding one would stop
+# the release dead. Under PEP 639 the classifier and the License-Expression above
+# are mutually exclusive, and PyPI rejects the upload of any distribution that
+# carries both. scopusflow's pyproject.toml still pairs them, so that is not the
+# file to copy this list from.
+#
+# The five interpreter lines are the five the test matrix runs, on Linux, macOS
+# and Windows alike, so each one states something CI has checked. Alpha is the
+# trove equivalent of the experimental lifecycle badge the README carries, and it
+# is what all four siblings declare. "Typing :: Typed" goes with the py.typed
+# marker inside src/lexsync, which is what makes a type checker read the
+# annotations instead of treating the whole package as untyped.
 classifiers = [
-  "Programming Language :: Python :: 3",
+  "Development Status :: 3 - Alpha",
   "Intended Audience :: Science/Research",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Programming Language :: Python :: 3 :: Only",
   "Topic :: Scientific/Engineering",
+  "Topic :: Scientific/Engineering :: Information Analysis",
+  "Typing :: Typed",
 ]
 dependencies = [
   "pandas>=1.5",
@@ -35,7 +57,27 @@ dependencies = [
 
 [project.optional-dependencies]
 corpora = ["wordfreq>=3.0,<4"]   # frozen 3.x line: a stable ~2021 language snapshot
-experiment = ["psychopy", "pyserial"]
+# The extra tracks PsychoPy's own supported Python range, which has always sat a
+# release or two behind the newest interpreter: the 2024.1 line declared <3.11,
+# 2025.2 moved to <3.12, and the current 2026.2.3 declares >=3.10,<3.13. Python
+# 3.13 therefore has no PsychoPy at all. The floor earns its place because
+# without it pip back-solves past every capped release down to 2022.2.4, whose
+# dependencies still include pyo, dukpy and an uncapped pyWinhook, and the
+# install then dies part-way through a swig build having installed nothing at
+# all. With the floor, pip stops at the top and reports that it cannot find a
+# distribution for psychopy>=2024.1, which names the actual problem.
+#
+# An environment marker was tried and rejected. Writing
+# psychopy>=2024.1; python_version < "3.13" makes the requirement evaluate away
+# on 3.13, so pip installs pyserial, reports success and exits 0. The user finds
+# PsychoPy missing only later, when a generated experiment fails to run. A loud
+# failure at install time is the lesser harm.
+#
+# One combination resolves and still compiles. On Windows with Python 3.12,
+# pyWinhook, which PsychoPy requires there, publishes no cp312 wheel, so it is
+# built from its sdist and needs swig on PATH. 3.10 and 3.11 ship cp310 and
+# cp311 wheels and install clean.
+experiment = ["psychopy>=2024.1", "pyserial>=3.5"]
 # streamlit backs test_apps.py: without it those tests importorskip themselves and
 # the app they cover goes unguarded in CI, so it belongs with the rest of what the
 # suite needs to run.
@@ -45,8 +87,18 @@ dev = ["pytest>=7.0", "build", "twine", "streamlit>=1.30"]
 lexsync = "lexsync.cli:main"
 
 [project.urls]
+# Repository and Changelog are the two labels PyPI treats specially, giving each
+# its own icon in the sidebar, so both are spelled the way PyPI expects. The
+# changelog points at the documentation page instead of the file at the root of
+# the monorepo because that page includes CHANGELOG.md verbatim through the
+# snippets extension, so the two cannot disagree, and a reader arriving from PyPI
+# lands on a rendered page beside the rest of the documentation. "R twin" is not
+# a label PyPI knows, and it renders as the plain text with a generic
+# external-link icon, which is what theoryforge's identical entry already does.
 Homepage = "https://github.com/pablobernabeu/lexsync"
+Repository = "https://github.com/pablobernabeu/lexsync"
 Documentation = "https://pablobernabeu.github.io/lexsync/python/"
+Changelog = "https://pablobernabeu.github.io/lexsync/python/changelog/"
 Issues = "https://github.com/pablobernabeu/lexsync/issues"
 "R twin" = "https://pablobernabeu.github.io/lexsync/r/"
 
@@ -116,4 +168,18 @@ packages = ["src/lexsync"]
 [tool.hatch.build.targets.sdist]
 # LICENSE.note is listed as well as declared under license-files, so the sdist
 # carries the data terms whether or not the backend expands that declaration.
-include = ["src/lexsync", "README.md", "LICENSE", "LICENSE.note", "pyproject.toml"]
+#
+# tests is here because the sdist is what conda-forge, Debian and Nix build from,
+# and a packager who receives no suite can do nothing more than import the module
+# and hope. The 36 files it adds are also the only check that this engine still
+# agrees with the R twin byte for byte, which is precisely what a rebuild on an
+# unfamiliar platform might disturb.
+#
+# depictr-py does the opposite and names an exclude list, letting hatchling ship
+# everything else that is tracked. That is shorter to write but wrong here: this
+# directory also holds docs/, overrides/, mkdocs.yml, run_pipeline.py and three
+# requirements files, none of which belong in a distribution, and every one of
+# them would have to be listed to keep it out. An include list only ever ships
+# what it names, so forgetting an entry costs a missing file, and forgetting one
+# in an exclude list costs a tarball quietly twice the size it should be.
+include = ["src/lexsync", "tests", "README.md", "LICENSE", "LICENSE.note", "pyproject.toml"]

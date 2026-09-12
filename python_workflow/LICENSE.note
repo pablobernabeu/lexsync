@@ -9,9 +9,9 @@ carrying their own terms, which are set out here.
 Bundled corpus derivatives
 --------------------------
 
-    src/lexsync/data/en_example.csv
-    src/lexsync/data/es_example.csv
-    src/lexsync/data/zh_example.csv
+    lexsync/data/en_example.csv
+    lexsync/data/es_example.csv
+    lexsync/data/zh_example.csv
 
 These small example lexica are derived from the wordfreq package (Speer, 2022,
 https://doi.org/10.5281/zenodo.7199437). wordfreq distributes its code and its
@@ -26,7 +26,19 @@ The three files above are therefore distributed under CC BY-SA 4.0 rather than
 under the MIT licence. Anyone redistributing them, or an adaptation of them,
 must give appropriate credit to the corpus authors, indicate that changes were
 made, and place any adaptation under the same licence. Everything else in the
-package, including the other files under src/lexsync/data, is MIT.
+package, including the other files under lexsync/data, is MIT.
+
+Two further notices belong with these three files, because CC BY-SA 4.0 asks
+that they be kept with the material. The copyright notice carried by wordfreq's
+own licence file is 'Copyright 2022 Robyn Speer', and it is retained here. As
+section 5 of CC BY-SA 4.0 sets out, the licensor offers the material as-is and
+as-available and makes no representations or warranties of any kind concerning
+it, whether express, implied, statutory or other.
+
+A note on wordfreq's licence history: wordfreq was released under the MIT
+licence up to version 3.0.2 and relicensed to Apache 2.0 at 3.0.3. lexsync
+requires wordfreq>=3.0,<4, which spans that change, so an installation may
+carry either. The data terms above are unaffected.
 
 
 What lexsync changed

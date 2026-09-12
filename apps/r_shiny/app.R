@@ -171,7 +171,8 @@ reproduction_code <- function(design, cfg) {
     python = paste0("# Python\nfrom lexsync import run_pipeline\n\nrun_pipeline(\"", cfg,
                     "\", schema_path=\"config/schema.yaml\", outdir=\"output\")"),
     cli = paste0("# Command line\n",
-                 "Rscript -e 'lexsync::run_pipeline(\"", cfg, "\")'    # R\n",
+                 "Rscript -e 'lexsync::run_pipeline(\"", cfg,
+                 "\", outdir = \"output\")'    # R\n",
                  "lexsync run ", cfg, "                              # Python console script\n",
                  "python -m lexsync run ", cfg, "                    # Python (module form)")
   )

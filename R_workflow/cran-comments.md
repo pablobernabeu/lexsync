@@ -50,11 +50,15 @@ Everything else in the package, code and remaining data alike, is MIT.
 ## Notes for the reviewer
 
 - No compiled code and no external system requirements.
-- The package writes only to paths supplied by the caller, plus an opt-in cache
-  under `tools::R_user_dir()` for downloaded corpora. Nothing is written at load
-  time, and no example writes anywhere. `?lexsync_cache_dir` and `?fetch_corpus`
-  say where that cache lives, that it persists between sessions, how large it can
-  grow and that it may be deleted at any time.
+- Output-writing functions require a caller-supplied destination; they do not
+  choose a working-directory output path. `fetch_corpus()` uses an opt-in cache
+  under `tools::R_user_dir()` for downloaded corpora, a permitted cache location.
+  Nothing is written at load time, and no example writes outside `tempdir()`.
+  `?lexsync_cache_dir` and `?fetch_corpus` say where that cache lives, that it
+  persists between sessions, how large it can grow and that it may be deleted at
+  any time.
+- Vignette display settings use knitr's scoped `R.options`, so rendering restores
+  the caller's R options after each chunk.
 - Examples are executable and offline: they read only files bundled in
   `inst/extdata`, located with `system.file()`. The package contains no
   `\dontrun{}`.

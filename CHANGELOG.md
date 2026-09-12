@@ -21,8 +21,14 @@ no function signature changes.
   stimulus onset, where the failure is silent and the data unusable. Both engines now
   compare the bytes.
 - The Python package runs a linter, under a rule set it states for itself. It ran none
-  before, and now enforces `F`, `E9` and `B`, the families that report bugs and leave
-  style alone, pinned in `pyproject.toml` so a ruff release cannot move what CI checks.
+  before, and now enforces `E`, `F`, `W`, `I`, `UP` and `B`, the bug-catching families
+  alongside the style, import-order and modernisation rules its four sibling packages
+  already answer to, pinned in `pyproject.toml` so a ruff release cannot move what CI
+  checks. Three rules are turned off, each because the thing it objects to is carrying
+  meaning. `UP031` would rewrite the `%`-formats that sit opposite the R twin's
+  `sprintf` calls, some of which decide artefact bytes. `E702` objects to the semicolon
+  in a symmetric pair written on one line. `E741` objects to `l`, which is the list
+  number in `counterbalancing.py` and the same loop variable in the R twin.
   The template trees are excluded because they are not modules: OpenSesame supplies
   `Canvas`, `var` and `clock` at run time, and the
   PsychoPy placeholders are substituted before anything executes, so reading them as

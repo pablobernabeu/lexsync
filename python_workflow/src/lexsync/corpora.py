@@ -65,8 +65,26 @@ def cache_dir() -> str:
 
 def build_wordfreq_lexicon(language: str, n_words: int = 10000,
                            min_len: int = 2, max_len: int = 15) -> pd.DataFrame:
-    """Build a (word, freq_zipf) lexicon for any wordfreq language."""
-    import wordfreq  # optional dependency (the [corpora] extra)
+    """Build a (word, freq_zipf) lexicon for any wordfreq language.
+
+    Raises ModuleNotFoundError if the optional [corpora] extra is not installed.
+    """
+    # Deferred because wordfreq belongs to the [corpora] extra, so importing it at
+    # module scope would break `import lexsync` on a default install. Guarded because
+    # this is what `lexsync fetch fr` reaches, and the README advertises that command:
+    # unguarded, a default install answers it with a bare ModuleNotFoundError nine
+    # frames down, which names the missing module and no way to get it. Everything
+    # else in this module answers a failure with the remedy, and so does this now.
+    # The R twin has no counterpart here: Connector B is Python-only, and R/corpora.R
+    # reads its pre-derived output as an ordinary lexicon.
+    try:
+        import wordfreq
+    except ImportError as exc:
+        raise ModuleNotFoundError(
+            f"lexsync: building a lexicon for '{language}' needs the wordfreq connector, "
+            f"which ships in the optional [corpora] extra and is not installed. Install "
+            'it with: pip install "lexsync[corpora]".'
+        ) from exc
 
     rx = re.compile(r"^[^\W\d_]+$", re.UNICODE)
     words = []

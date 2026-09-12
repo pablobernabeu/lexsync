@@ -137,8 +137,12 @@ wordfreq_connector:
   # Two different licences, and the data one is what matters for redistribution:
   # wordfreq's code is Apache-2.0 (it was MIT up to 3.0.2 and relicensed at
   # 3.0.3, which the >=3.0,<4 pin spans), while its data files are
-  # redistributable under CC BY-SA 4.0. See LICENSE-DATA, which also records the
-  # SUBTLEX credit that wordfreq's terms require of anything derived from it.
+  # redistributable under CC BY-SA 4.0. The full record, including the SUBTLEX
+  # credit that wordfreq's terms require of anything derived from it, is at the
+  # link below. It is spelled out in full because a bare filename resolves only
+  # for someone reading the repository, and this file also ships inside the
+  # installed package, where no LICENSE-DATA sits beside it.
+  # https://github.com/pablobernabeu/lexsync/blob/main/LICENSE-DATA
   licence: 'Apache-2.0 (package code); CC BY-SA 4.0 (data files)'
   citation_key: speer2022wordfreq
   citation: 'Speer (2022). rspeer/wordfreq v3.0. Zenodo. doi:10.5281/zenodo.7199437'

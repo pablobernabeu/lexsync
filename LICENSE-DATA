@@ -31,6 +31,13 @@ authors (see 'corpora/ATTRIBUTION.md'), (b) indicate if changes were made
 (lexsync standardises columns and computes derived variables) and (c)
 distribute any adaptations under the same licence.
 
+Two further notices belong with the derived files, because CC BY-SA 4.0 asks
+that they be kept with the material. The copyright notice carried by wordfreq's
+own licence file is 'Copyright 2022 Robyn Speer', and it is retained here. As
+section 5 of CC BY-SA 4.0 sets out, the licensor offers the material as-is and
+as-available and makes no representations or warranties of any kind concerning
+it, whether express, implied, statutory or other.
+
 Credit for SUBTLEX
 ------------------
 wordfreq's frequencies are a blend of up to eight domains of text, among them

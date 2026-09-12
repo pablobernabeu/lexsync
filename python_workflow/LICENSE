@@ -21,7 +21,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ----------------------------------------------------------------------------
-The MIT License above covers the lexsync source code (the R package under
-R_workflow/ and the Python package under python_workflow/). Bundled and
-fetched lexical corpora are NOT covered by this licence; their terms are
-recorded in LICENSE-DATA and corpora/ATTRIBUTION.md.
+The MIT License above covers the lexsync source code. The lexical corpora that
+the package bundles or fetches are NOT covered by it. Three of the data files
+shipped inside the package, lexsync/data/en_example.csv, es_example.csv and
+zh_example.csv, are wordfreq derivatives distributed under CC BY-SA 4.0. Their
+terms are set out in full in LICENSE.note, which ships beside this file. The
+repository keeps the fuller record, with the retrieval date and checksum of
+every derived file, at
+
+    https://github.com/pablobernabeu/lexsync/blob/main/LICENSE-DATA
+    https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md

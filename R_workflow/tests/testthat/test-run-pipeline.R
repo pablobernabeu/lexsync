@@ -20,6 +20,13 @@ write_design <- function(dir, text) {
 
 as_yaml_path <- function(p) gsub("\\\\", "/", p)
 
+test_that("pipeline functions require an explicit output directory", {
+  expect_error(run_pipeline("not-used.yaml", verbose = FALSE),
+               "outdir must be supplied")
+  expect_error(run_all(config_dir = "not-used", verbose = FALSE),
+               "outdir must be supplied")
+})
+
 test_that("run_pipeline exports every artefact for a corpus design", {
   # Mirrors test_cli.py::test_run_one_design, but asserts on the whole artefact
   # set: nothing else in R CMD check executes the orchestrator.

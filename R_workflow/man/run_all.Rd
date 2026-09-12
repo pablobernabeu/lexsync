@@ -7,7 +7,7 @@
 run_all(
   config_dir = "config",
   schema_path = file.path(config_dir, "schema.yaml"),
-  outdir = "output",
+  outdir = NULL,
   verbose = TRUE
 )
 }
@@ -16,7 +16,8 @@ run_all(
 
 \item{schema_path}{Path to the global schema.}
 
-\item{outdir}{Output directory.}
+\item{outdir}{Output directory supplied by the caller. It must be supplied;
+lexsync does not choose a default output location.}
 
 \item{verbose}{Logical; print progress.}
 }

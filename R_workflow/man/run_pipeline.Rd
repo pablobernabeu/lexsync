@@ -7,7 +7,7 @@
 run_pipeline(
   design_path,
   schema_path = "config/schema.yaml",
-  outdir = "output",
+  outdir = NULL,
   reference_words = NULL,
   verbose = TRUE
 )
@@ -17,8 +17,9 @@ run_pipeline(
 
 \item{schema_path}{Path to the global schema (YAML).}
 
-\item{outdir}{Output directory (subdirectories \code{stimuli}, \code{reports},
-\code{experiments} are created).}
+\item{outdir}{Output directory supplied by the caller (subdirectories
+\code{stimuli}, \code{reports}, \code{experiments} are created). It must be supplied;
+lexsync does not choose a default output location.}
 
 \item{reference_words}{Optional reference word list for neighbourhood
 computation; defaults to the whole lexicon.}

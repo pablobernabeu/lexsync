@@ -3,7 +3,8 @@
 <!-- badges: start -->
 [![python-tests](https://github.com/pablobernabeu/lexsync/actions/workflows/python-tests.yaml/badge.svg)](https://github.com/pablobernabeu/lexsync/actions/workflows/python-tests.yaml)
 [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/license/MIT)
+[![Code: MIT](https://img.shields.io/badge/code-MIT-blue.svg)](https://opensource.org/license/MIT)
+[![Data: CC BY-SA 4.0](https://img.shields.io/badge/data-CC_BY--SA_4.0-blue.svg)](https://creativecommons.org/licenses/by-sa/4.0/)
 <!-- badges: end -->
 
 Lexical optimisation and hardware-timed experiment generation.
@@ -26,11 +27,10 @@ Documentation, including the guides and the full API reference, is at
 
 ## Install
 
-lexsync is not on PyPI yet, so install it from the repository, where the Python
-package sits in the `python_workflow/` subdirectory:
+The package is on [PyPI](https://pypi.org/project/lexsync/):
 
 ```bash
-pip install "git+https://github.com/pablobernabeu/lexsync.git#subdirectory=python_workflow"
+pip install lexsync
 ```
 
 The `corpora` extra adds the 'wordfreq' connector, which reaches roughly forty
@@ -39,8 +39,65 @@ languages through a single dependency, and the `experiment` extra adds
 a generated experiment on hardware, never to generate one:
 
 ```bash
-pip install "lexsync[corpora] @ git+https://github.com/pablobernabeu/lexsync.git#subdirectory=python_workflow"
+pip install "lexsync[corpora]"
+pip install "lexsync[experiment]"
 ```
+
+The development version installs from the repository, where the Python package
+sits in the `python_workflow/` subdirectory:
+
+```bash
+pip install "git+https://github.com/pablobernabeu/lexsync.git#subdirectory=python_workflow"
+```
+
+## Quick start
+
+The package bundles a 3000-word slice of an English lexicon and a copy of the
+global schema, so the example below runs straight after installation, from any
+working directory, with no corpus to download and nothing to configure. It
+contrasts high- with low-frequency words while equating them, item by item, on
+length, orthographic neighbourhood density and OLD20.
+
+```python
+from importlib.resources import files
+
+import yaml
+
+import lexsync
+
+data = files("lexsync") / "data"
+schema = yaml.safe_load((data / "schema.yaml").read_text(encoding="utf-8"))
+
+design = {
+    "name": "quick_start",
+    "language": "english",
+    "n_per_condition": 60,
+    "pool_filters": {"length": [3, 8], "frequency": [3.8, 7.0]},
+    "conditions": [
+        {"name": "high_frequency", "define_by": {"frequency": [5.2, 7.0]}},
+        {"name": "low_frequency", "define_by": {"frequency": [3.8, 4.4]}},
+    ],
+    "match_on": ["length", "n_density", "old20"],
+    "counterbalance": {"lists": 1},
+}
+
+lexicon = lexsync.load_lexicon(str(data / "en_example.csv"), schema, language="english")
+pool = lexsync.build_pool(lexicon, design["pool_filters"])
+stimuli = lexsync.match_stimuli(pool, design, schema)
+
+report = lexsync.match_report(
+    stimuli, ["length", "frequency", "n_density", "old20"], schema
+)
+print(report["comparisons"].to_string(index=False))
+```
+
+The report is the point of the exercise, because it measures what the matching
+achieved. Frequency, the manipulation, separates the conditions by nearly six
+standard deviations, while each control dimension passes a two one-sided tests
+procedure against a bound of *d* = 0.5, so it is shown to be equivalent and not
+merely to have escaped a significance test. The [Matching and designs
+guide](https://pablobernabeu.github.io/lexsync/python/matching-and-designs/)
+reads the report column by column.
 
 ## Use
 
@@ -94,8 +151,15 @@ their own terms, and each is credited, with its licence and retrieval date, in
 
 ## Licence
 
-MIT. The bundled corpus derivatives are not covered by it: they are released
-under CC BY-SA 4.0, as recorded in
+MIT for the code. The bundled corpus derivatives are not covered by it. The
+three example lexica, installed as `lexsync/data/en_example.csv`,
+`lexsync/data/es_example.csv` and `lexsync/data/zh_example.csv`, are derived from
+'wordfreq' and are released under CC BY-SA 4.0, which asks anyone who
+redistributes them to credit the corpus authors, say that changes were made and
+keep the same terms on any adaptation. `LICENSE.note` states this inside the
+distribution itself, alongside `LICENSE`, so the terms travel with the installed
+package. The repository keeps the fuller record, including the retrieval date
+and checksum of every derived file, in
 [`LICENSE-DATA`](https://github.com/pablobernabeu/lexsync/blob/main/LICENSE-DATA).
 
 ## Contributing
