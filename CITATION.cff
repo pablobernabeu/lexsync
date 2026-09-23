@@ -25,6 +25,15 @@ doi: 10.32614/CRAN.package.lexsync
 repository-artifact: 'https://CRAN.R-project.org/package=lexsync'
 # The date CRAN published 0.1.0.
 date-released: '2026-09-22'
+# Both DOIs, since doi holds one. Zenodo's concept DOI resolves to the latest
+# archived GitHub release, which carries the Python package as well as the R one.
+identifiers:
+  - type: doi
+    value: 10.32614/CRAN.package.lexsync
+    description: The R package on CRAN, across all its versions.
+  - type: doi
+    value: 10.5281/zenodo.22906962
+    description: Every GitHub release of the repository, archived on Zenodo.
 # Two licences, because the release ships both: MIT for the code, CC BY-SA 4.0 for
 # the wordfreq-derived example lexica inside each package.
 license:

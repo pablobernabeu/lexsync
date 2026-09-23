@@ -8,6 +8,8 @@
   "codeRepository": "https://github.com/pablobernabeu/lexsync",
   "relatedLink": [
     "https://CRAN.R-project.org/package=lexsync",
+    "https://pypi.org/project/lexsync/",
+    "https://doi.org/10.5281/zenodo.22906962",
     "https://pablobernabeu.github.io/lexsync/"
   ],
   "programmingLanguage": [

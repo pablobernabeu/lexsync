@@ -149,9 +149,10 @@ The R package is on [CRAN](https://CRAN.R-project.org/package=lexsync), which
 keeps the source of every version it publishes. A single DOI,
 [10.32614/CRAN.package.lexsync](https://doi.org/10.32614/CRAN.package.lexsync),
 covers all of those versions, so the reference above names the version as well.
-The metadata for a Zenodo deposit sits in
-[`.zenodo.json`](https://github.com/pablobernabeu/lexsync/blob/main/.zenodo.json),
-but the deposit has not been made, so there is no Zenodo DOI.
+Zenodo also archives every GitHub release, which carries both packages, under
+the concept DOI [10.5281/zenodo.22906962](https://doi.org/10.5281/zenodo.22906962). That is the
+identifier the Python package cites, since the CRAN DOI names the R package
+alone.
 
 ## Contributing and support
 

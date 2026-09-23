@@ -30,7 +30,7 @@ The reference for the current version of the Python package is:
 <!-- The reference below follows the family form used on every other About page in this family,
      "R package version X" / "Python package version X", so that the two twins read alike. They end
      differently by design. The R reference gives the DOI that CRAN assigned to the R package, and
-     this one gives the repository, for the reason the paragraph after the block sets out.
+     this one the Zenodo concept DOI, for the reason the paragraph after the block sets out.
 
      The version used to be written out by hand three times on this page, in the reference, in the
      `note` field of the BibTeX entry and percent-encoded inside the download URI. That is how a page
@@ -54,18 +54,19 @@ bibtex = (
     "  author = {Pablo Bernabeu},\n"
     "  year   = {2026},\n"
     f"  note   = {{Python package version {version}}},\n"
-    "  url    = {https://github.com/pablobernabeu/lexsync},\n"
+    "  doi    = {10.5281/zenodo.22906962},\n"
+    "  url    = {https://pypi.org/project/lexsync/},\n"
     "}"
 )
 
 # The download link encodes the very string the fenced block below shows, so the
 # two can never disagree. safe="" is deliberate: the default would leave the
-# slashes in the repository URL unescaped.
+# slashes in the DOI and the URL unescaped.
 data_uri = "data:application/x-bibtex;charset=utf-8," + urllib.parse.quote(bibtex, safe="")
 
 print(
     "> Bernabeu, P. (2026). lexsync: Lexical optimisation and hardware-timed\n"
-    f"> experiment generation. Python package version {version}. https://github.com/pablobernabeu/lexsync\n"
+    f"> experiment generation. Python package version {version}. https://doi.org/10.5281/zenodo.22906962\n"
 )
 
 # The entry is printed as a fenced block so that Material gives it BibTeX highlighting
@@ -98,10 +99,11 @@ function lexsyncCopyBibtex(btn) {
 A manuscript describing lexsync is in preparation, under the title *lexsync: A cross-platform
 pipeline for multidimensional lexical optimisation and hardware-timed experiment generation*. It is
 unpublished and has no venue as yet. Once it is accepted, `CITATION.cff` will name it as the
-preferred citation, and until then the software reference above is the one to use. That file also
-carries a DOI, [10.32614/CRAN.package.lexsync](https://doi.org/10.32614/CRAN.package.lexsync).
-CRAN assigned it to the R package, and it resolves to that package's page, so the reference above
-names the Python package's version and the repository instead.
+preferred citation, and until then the software reference above is the one to use. The DOI that
+`CITATION.cff` gives first, [10.32614/CRAN.package.lexsync](https://doi.org/10.32614/CRAN.package.lexsync),
+is the one CRAN assigned to the R package, and it resolves to that package's page. The reference
+above gives the Zenodo concept DOI instead, which archives every release of the repository and so
+covers the Python package too.
 
 Cite the corpus as well. The software citation covers the tool, not the data it drew your items
 from, and the corpora are third-party work with their own terms. Every one is cited, with its
@@ -148,10 +150,9 @@ lexsync follows semantic versioning, and each release is tagged on GitHub, with 
 package carrying the same version. The R package is on
 [CRAN](https://CRAN.R-project.org/package=lexsync), which keeps the source of every version it
 publishes and gave the package the DOI mentioned above. The Python package is on
-[PyPI](https://pypi.org/project/lexsync/). Archival on Zenodo, which would cover both packages, has
-been prepared but not yet carried out. A `.zenodo.json` sits at the root of the repository, but
-nothing has been deposited, so there is no concept DOI to cite. Until a deposit exists, the software
-reference above, which names the version and the repository, is the one to use. The
+[PyPI](https://pypi.org/project/lexsync/). Zenodo archives every GitHub release, which carries both
+packages, and its concept DOI, [10.5281/zenodo.22906962](https://doi.org/10.5281/zenodo.22906962), always resolves to the latest one. The
+reference above cites it and names the version, so it identifies the release as well. The
 [changelog](changelog.md) records what changed in each release.
 
 ## Contributing and support

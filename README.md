@@ -3,6 +3,7 @@
 <!-- badges: start -->
 [![CRAN status](https://www.r-pkg.org/badges/version/lexsync)](https://CRAN.R-project.org/package=lexsync)
 [![PyPI](https://img.shields.io/pypi/v/lexsync)](https://pypi.org/project/lexsync/)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22906962.svg)](https://doi.org/10.5281/zenodo.22906962)
 [![R-CMD-check](https://github.com/pablobernabeu/lexsync/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/pablobernabeu/lexsync/actions/workflows/R-CMD-check.yaml)
 [![python-tests](https://github.com/pablobernabeu/lexsync/actions/workflows/python-tests.yaml/badge.svg)](https://github.com/pablobernabeu/lexsync/actions/workflows/python-tests.yaml)
 [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
@@ -263,8 +264,10 @@ If you use `lexsync`, please cite the software. The authoritative record is
 [`CITATION.cff`](CITATION.cff), which GitHub renders into several formats through its
 'Cite this repository' button, and each package's About page carries a formatted
 reference. The one for the R package gives the DOI that CRAN assigned on publication,
-[10.32614/CRAN.package.lexsync](https://doi.org/10.32614/CRAN.package.lexsync), which
-`CITATION.cff` records as well. A manuscript describing lexsync is in preparation.
+[10.32614/CRAN.package.lexsync](https://doi.org/10.32614/CRAN.package.lexsync). The one
+for the Python package gives the concept DOI of the Zenodo archive, which holds every
+GitHub release of both packages, [10.5281/zenodo.22906962](https://doi.org/10.5281/zenodo.22906962). `CITATION.cff`
+records both. A manuscript describing lexsync is in preparation.
 
 Cite the corpus as well as the software. The corpora are third-party work with their
 own terms, and each is credited, with its licence and retrieval date, in

@@ -2,6 +2,7 @@
 
 <!-- badges: start -->
 [![PyPI](https://img.shields.io/pypi/v/lexsync)](https://pypi.org/project/lexsync/)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22906962.svg)](https://doi.org/10.5281/zenodo.22906962)
 [![python-tests](https://github.com/pablobernabeu/lexsync/actions/workflows/python-tests.yaml/badge.svg)](https://github.com/pablobernabeu/lexsync/actions/workflows/python-tests.yaml)
 [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
 [![Code: MIT](https://img.shields.io/badge/code-MIT-blue.svg)](https://opensource.org/license/MIT)
@@ -143,10 +144,10 @@ Cite the software. The authoritative record is
 at the root of the repository, which GitHub renders into several formats through
 its 'Cite this repository' button. The [About
 page](https://pablobernabeu.github.io/lexsync/python/about/) carries a formatted
-reference for this package, with its version and the repository's address. The
-DOI that `CITATION.cff` records is the one CRAN assigned to the R package, so it
-does not identify the Python package. A manuscript describing lexsync is in
-preparation.
+reference for this package, which gives its version and the concept DOI of the
+Zenodo archive, [10.5281/zenodo.22906962](https://doi.org/10.5281/zenodo.22906962). The first DOI in
+`CITATION.cff` is the one CRAN assigned to the R package, so it does not
+identify the Python package. A manuscript describing lexsync is in preparation.
 
 Cite the corpus as well as the software. The corpora are third-party work with
 their own terms, and each is credited, with its licence and retrieval date, in

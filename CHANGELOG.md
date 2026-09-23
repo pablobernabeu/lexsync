@@ -25,8 +25,9 @@ promoting a covariance-aware distance to the default.
 
 lexsync 0.1.0 is the first public release. CRAN published the R package on
 2026-09-22 and assigned it the DOI 10.32614/CRAN.package.lexsync. The Python
-package is published on PyPI from the release tagged v0.1.0. The CRAN build
-predates the DOI, so its `citation("lexsync")` gives the repository's address.
+package is published on PyPI from the release tagged v0.1.0, which Zenodo
+archives under the concept DOI 10.5281/zenodo.22906962. The CRAN build predates the CRAN
+DOI, so its `citation("lexsync")` gives the repository's address.
 
 The first three entries under Added summarise the release. The others follow the
 package through its development, so they describe each change against the state

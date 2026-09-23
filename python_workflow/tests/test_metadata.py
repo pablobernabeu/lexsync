@@ -22,6 +22,13 @@ ORCID = "0000-0003-1083-2460"
 CRAN_DOI = "10.32614/CRAN.package.lexsync"
 CRAN_URL = "https://CRAN.R-project.org/package=lexsync"
 
+# Zenodo's concept DOI, which resolves to the latest archived GitHub release and
+# so covers the Python package, which the CRAN DOI does not.
+ZENODO_DOI = "10.5281/zenodo.22906962"
+ZENODO_FILES = ("CITATION.cff", "codemeta.json", "README.md", "CHANGELOG.md",
+                "R_workflow/vignettes/about.Rmd", "python_workflow/README.md",
+                "python_workflow/mkdocs.yml", "python_workflow/docs/about.md")
+
 # The hand-maintained files that cite the DOI, and so must all carry it.
 DOI_FILES = ("CITATION.cff", "codemeta.json", "README.md",
              "R_workflow/README.md", "R_workflow/inst/CITATION",
@@ -100,6 +107,19 @@ def test_every_copy_of_the_cran_doi_is_the_same():
         found = {d for d in doi.findall(text)
                  if d.lower().startswith("10.32614/cran") or "lexsync" in d.lower()}
         assert found == {CRAN_DOI}, f"{rel}: {sorted(found)}"
+
+
+def test_every_copy_of_the_zenodo_doi_is_the_concept_doi():
+    # Zenodo mints a DOI for each release as well as the concept DOI. A version
+    # DOI here would pin a reader to one release, and a slip in the digits sends
+    # them to someone else's record. The pattern takes any registrant prefix, so
+    # a slip in 10.5281 is caught as well.
+    dois = [i["value"] for i in _cff()["identifiers"] if i["type"] == "doi"]
+    assert dois == [CRAN_DOI, ZENODO_DOI]
+    for rel in ZENODO_FILES:
+        text = (REPO / rel).read_text(encoding="utf-8")
+        found = set(re.findall(r"10\.\d{4,9}/zenodo\.\d+", text))
+        assert found == {ZENODO_DOI}, f"{rel}: {sorted(found)}"
 
 
 def test_every_link_to_cran_uses_the_canonical_address():
