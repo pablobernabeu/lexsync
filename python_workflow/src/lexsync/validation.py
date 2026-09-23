@@ -67,15 +67,25 @@ def cohens_d_ci(x, y, alpha: float = 0.05) -> dict:
     """Cohen's *d* with a confidence interval, complementing the TOST verdict.
 
     The interval is the ``(1 - 2 * alpha)`` confidence interval for the
-    standardised mean difference; for ``alpha = 0.05`` this is the 90% interval
-    that corresponds exactly to a two one-sided tests (TOST) decision at the .05
-    level (Lakens, 2017). Reporting the interval, rather than only a binary
-    "equivalent / not" verdict, makes the realised imbalance and its sampling
-    uncertainty explicit and keeps the dependence on the number of items visible
-    rather than hidden: with few items the interval is wide, so a small point
-    estimate cannot be over-read as evidence of a small true difference
-    (Sassenhagen & Alday, 2016). The upper limit of the interval on ``|d|`` is the
-    largest imbalance still consistent with the stimuli.
+    standardised mean difference, so ``alpha = 0.05`` gives the 90% interval that
+    goes with a two one-sided tests (TOST) decision at the .05 level (Lakens,
+    2017). Reporting the interval, rather than only a binary "equivalent / not"
+    verdict, makes the realised imbalance and its sampling uncertainty explicit and
+    keeps the dependence on the number of items visible: with few items the
+    interval is wide, so a small point estimate cannot be over-read as evidence of
+    a small true difference (Sassenhagen & Alday, 2016). The upper limit of the
+    interval on ``|d|`` is the largest imbalance still consistent with the stimuli.
+
+    The limits are ``d +/- t * SE(d)``, where ``t`` is the Student *t* quantile on
+    ``nx + ny - 2`` degrees of freedom and ``SE(d)`` is the large-sample standard
+    error of *d*, ``sqrt(1/nx + 1/ny + d**2 / (2 * (nx + ny)))`` (Hedges & Olkin,
+    1985; Borenstein et al., 2009, eq. 4.20). The ``d**2`` term carries the
+    sampling error of the pooled standard deviation. It is negligible for a
+    well-matched control, where *d* is near zero, but it dominates for a
+    manipulated dimension and widens that interval several-fold. TOST tests the
+    raw mean difference, so the interval is fractionally wider than the one its
+    decision implies, and when a control's limit lies within a rounding step of
+    the bound, ``tost_p`` gives the verdict.
     """
     x = np.asarray(x, dtype=float); y = np.asarray(y, dtype=float)
     x = x[~np.isnan(x)]; y = y[~np.isnan(y)]
@@ -92,7 +102,14 @@ def cohens_d_ci(x, y, alpha: float = 0.05) -> dict:
             return dict(d=0.0, ci_low=0.0, ci_high=0.0)
         return dict(d=None, ci_low=None, ci_high=None)
     d = diff / sp
-    margin = float(stats.t.ppf(1 - alpha, nx + ny - 2) * math.sqrt(1 / nx + 1 / ny))
+    # Large-sample variance of d: 1/nx + 1/ny + d**2 / (2 * (nx + ny)) (Hedges &
+    # Olkin, 1985; Borenstein et al., 2009, eq. 4.20). Without the d**2 term the
+    # interval treated the pooled SD as known, which gave a manipulated dimension
+    # with d = 5.6 and 40 items a side a margin of 0.37 in place of 0.83. Written
+    # with d * d, not d ** 2, and summed in the same order as validation.R, so both
+    # engines round every step identically.
+    se = math.sqrt(1 / nx + 1 / ny + d * d / (2 * (nx + ny)))
+    margin = float(stats.t.ppf(1 - alpha, nx + ny - 2) * se)
     return dict(d=float(d), ci_low=d - margin, ci_high=d + margin)
 
 
@@ -170,6 +187,13 @@ def match_report(stimuli: pd.DataFrame, dims, schema: dict) -> dict:
     Every comparison is against the first condition in order of appearance, so a
     design with a single condition has nothing to compare and ``comparisons`` comes
     back with its columns and no rows.
+
+    Each row of ``comparisons`` names that first condition in ``reference`` and the
+    condition compared with it in ``condition``. The signed statistics run from the
+    reference to the other condition: ``cohens_d``, ``d_ci_low`` and ``d_ci_high``
+    are the reference mean minus the ``condition`` mean, in pooled standard
+    deviations, so a positive *d* means the reference scores higher. ``var_ratio``
+    is the other way up, the ``condition`` variance over the reference variance.
     """
     conds = list(dict.fromkeys(stimuli["condition"]))
     anchor = conds[0]

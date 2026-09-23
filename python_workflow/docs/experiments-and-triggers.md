@@ -312,6 +312,14 @@ condition marker starts at 101 and counts up per condition. The item marker star
 after 200 sets. `export_experiments` calls it for you, so you only need it directly if you are
 exporting one target at a time.
 
+The condition codes follow the order given in the `conditions` argument, or the order of first
+appearance when there is none. The order of first appearance in a shuffled trial list depends on the
+seed, so an analysis that decodes the codes should not rely on it. `export_experiments` therefore
+passes the order of the design's `conditions` entries, and the pipeline does the same, adding any
+other condition in the order the item source lists it, such as the words before the pseudowords of a
+generated lexical decision. The first condition the design lists is always 101, whatever the seed.
+A condition missing from the given order takes the next free code, in code-point order of its label.
+
 ```python exec="1" source="material-block" result="text" session="experiments"
 from lexsync.scripting import assign_triggers
 

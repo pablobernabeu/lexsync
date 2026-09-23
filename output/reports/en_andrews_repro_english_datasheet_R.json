@@ -92,8 +92,8 @@
       "dimension": "length",
       "role": "controlled",
       "cohens_d": -0.206,
-      "ci_low": -0.77,
-      "ci_high": 0.358,
+      "ci_low": -0.771,
+      "ci_high": 0.359,
       "var_ratio": 0.575,
       "tost_p": 0.192,
       "equivalent": false
@@ -112,8 +112,8 @@
       "dimension": "n_density",
       "role": "manipulated/free",
       "cohens_d": 3.19,
-      "ci_low": 2.626,
-      "ci_high": 3.754,
+      "ci_low": 2.341,
+      "ci_high": 4.04,
       "var_ratio": 0.041,
       "tost_p": 1,
       "equivalent": false
@@ -122,8 +122,8 @@
       "dimension": "old20",
       "role": "manipulated/free",
       "cohens_d": -5.756,
-      "ci_low": -6.32,
-      "ci_high": -5.192,
+      "ci_low": -7.034,
+      "ci_high": -4.478,
       "var_ratio": 1.129,
       "tost_p": 1,
       "equivalent": false
@@ -142,8 +142,8 @@
       "dimension": "frequency",
       "role": "manipulated/free",
       "cohens_d": 4.713,
-      "ci_low": 4.15,
-      "ci_high": 5.277,
+      "ci_low": 3.618,
+      "ci_high": 5.809,
       "var_ratio": 0.503,
       "tost_p": 1,
       "equivalent": false
@@ -153,7 +153,7 @@
       "role": "manipulated/free",
       "cohens_d": 0.103,
       "ci_low": -0.461,
-      "ci_high": 0.666,
+      "ci_high": 0.667,
       "var_ratio": 0.641,
       "tost_p": 0.1208,
       "equivalent": false
@@ -162,8 +162,8 @@
       "dimension": "old20",
       "role": "manipulated/free",
       "cohens_d": 0.104,
-      "ci_low": -0.459,
-      "ci_high": 0.668,
+      "ci_low": -0.46,
+      "ci_high": 0.669,
       "var_ratio": 1.023,
       "tost_p": 0.1218,
       "equivalent": false
@@ -182,8 +182,8 @@
       "dimension": "frequency",
       "role": "manipulated/free",
       "cohens_d": 5.185,
-      "ci_low": 4.621,
-      "ci_high": 5.748,
+      "ci_low": 4.008,
+      "ci_high": 6.362,
       "var_ratio": 0.387,
       "tost_p": 1,
       "equivalent": false
@@ -192,8 +192,8 @@
       "dimension": "n_density",
       "role": "manipulated/free",
       "cohens_d": 3.289,
-      "ci_low": 2.725,
-      "ci_high": 3.852,
+      "ci_low": 2.424,
+      "ci_high": 4.153,
       "var_ratio": 0.052,
       "tost_p": 1,
       "equivalent": false
@@ -202,8 +202,8 @@
       "dimension": "old20",
       "role": "manipulated/free",
       "cohens_d": -5.914,
-      "ci_low": -6.478,
-      "ci_high": -5.351,
+      "ci_low": -7.221,
+      "ci_high": -4.608,
       "var_ratio": 1.217,
       "tost_p": 1,
       "equivalent": false
@@ -254,7 +254,7 @@
     },
     {
       "file": "output/reports/en_andrews_repro_english_comparisons_R.csv",
-      "sha256": "48a25773f75fbc0ed76e61fd7c0bab3e19de24314ea1e758180cf39f2e925782"
+      "sha256": "93f27060bb31b71fe94c499e982eea02224ea05ad09feb42f41212a91c862835"
     },
     {
       "file": "output/experiments/en_andrews_repro_english_psychopy.py",
@@ -266,7 +266,7 @@
     },
     {
       "file": "output/experiments/en_andrews_repro_english.html",
-      "sha256": "1251df4e346ae35d5e79f47ad3b7d9f23f93a5ac23216af043a9521efb8a40b8"
+      "sha256": "ff5ef3fe22bafb37f1340cc8cdddcdcac6427e9c56677e3e9ff5752c5c74d58c"
     }
   ]
 }

@@ -15,7 +15,7 @@
     },
     {
       "file": "output/reports/en_resample_english_comparisons_py.csv",
-      "sha256": "e047a5f5eba0c289a494dc865b32c9d925f3b333f8ee85a16ae66bac06631f8a"
+      "sha256": "1d0652ce34edc9d71734f936f59206a97687fc73a1298a040e53fa2a5e798241"
     },
     {
       "file": "output/experiments/en_resample_english_psychopy.py",
@@ -27,7 +27,7 @@
     },
     {
       "file": "output/experiments/en_resample_english.html",
-      "sha256": "de95793ee13d8d8a9371a6119eebc1b7c7ce718a99e1bc440e4b3b860bc0adf5"
+      "sha256": "7605003384cf6552eca7b3dea26d36165c6aab80ff58b813643a375fb97383df"
     }
   ],
   "counterbalancing": {
@@ -107,8 +107,8 @@
       "var_ratio": 0.862
     },
     {
-      "ci_high": 5.595,
-      "ci_low": 5.169,
+      "ci_high": 5.84,
+      "ci_low": 4.924,
       "cohens_d": 5.382,
       "dimension": "frequency",
       "equivalent": false,

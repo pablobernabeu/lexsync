@@ -83,7 +83,7 @@ def build_wordfreq_lexicon(language: str, n_words: int = 10000,
         raise ModuleNotFoundError(
             f"lexsync: building a lexicon for '{language}' needs the wordfreq connector, "
             f"which ships in the optional [corpora] extra and is not installed. Install "
-            'it with: pip install "lexsync[corpora]".'
+            'it with: pip install "wordfreq>=3.0,<4".'
         ) from exc
 
     rx = re.compile(r"^[^\W\d_]+$", re.UNICODE)

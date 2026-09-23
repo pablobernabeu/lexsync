@@ -15,7 +15,7 @@
     },
     {
       "file": "output/reports/en_balanced_lists_english_comparisons_py.csv",
-      "sha256": "17777ad05455eb3e91db8f68e40d9d5184e4311dc42cbd3dc1f9b548e5b5d584"
+      "sha256": "c77e880b449445155111ae3c613827edc042a314ad863dfa00288a422fa57179"
     },
     {
       "file": "output/experiments/en_balanced_lists_english_psychopy.py",
@@ -27,7 +27,7 @@
     },
     {
       "file": "output/experiments/en_balanced_lists_english.html",
-      "sha256": "d1790bb061cc9d5327786f66124bd3670d5ba777504d5d4ec42220b2dc4a6ac0"
+      "sha256": "b6f9f871e376625313119595fab2458c4d122df2912463fe2968b31c48afb97f"
     }
   ],
   "counterbalancing": {
@@ -120,8 +120,8 @@
       "var_ratio": 0.897
     },
     {
-      "ci_high": 5.427,
-      "ci_low": 4.682,
+      "ci_high": 5.817,
+      "ci_low": 4.292,
       "cohens_d": 5.055,
       "dimension": "frequency",
       "equivalent": false,
@@ -131,7 +131,7 @@
     },
     {
       "ci_high": 0.422,
-      "ci_low": -0.322,
+      "ci_low": -0.323,
       "cohens_d": 0.05,
       "dimension": "n_density",
       "equivalent": true,

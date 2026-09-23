@@ -96,8 +96,8 @@
       "dimension": "frequency",
       "role": "manipulated/free",
       "cohens_d": 5.572,
-      "ci_low": 5.269,
-      "ci_high": 5.875,
+      "ci_low": 4.903,
+      "ci_high": 6.241,
       "var_ratio": 0.579,
       "tost_p": 1,
       "equivalent": false
@@ -116,7 +116,7 @@
       "dimension": "old20",
       "role": "manipulated/free",
       "cohens_d": 0.078,
-      "ci_low": -0.224,
+      "ci_low": -0.225,
       "ci_high": 0.381,
       "var_ratio": 0.404,
       "tost_p": 0.0113,
@@ -186,7 +186,7 @@
     },
     {
       "file": "output/reports/en_richdim_english_comparisons_R.csv",
-      "sha256": "d72dad9d360b720375c380a3f1d3688ae71cf6e4a0c27d1cb4a220dd384f065b"
+      "sha256": "b5eca2a560edc39ceccaa7dbd10e2280cb7d107234bf27a079c9abfb30d3e523"
     },
     {
       "file": "output/experiments/en_richdim_english_psychopy.py",
@@ -198,7 +198,7 @@
     },
     {
       "file": "output/experiments/en_richdim_english.html",
-      "sha256": "07236323d266c430e5e27675ce6e146422d24ab43b071d415b565b8dc64a0075"
+      "sha256": "6c803b3ff3f420274dcbc11b5db5942f0459f94a70bb4b1056ef99ac26201039"
     }
   ]
 }

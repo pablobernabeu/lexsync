@@ -29,27 +29,22 @@ Documentation, including the guides and the full API reference, is at
 
 ## Install
 
-The package is on [PyPI](https://pypi.org/project/lexsync/):
+The package is not on PyPI yet, so install it from the repository, where the
+Python package sits in the `python_workflow/` subdirectory:
 
 ```bash
-pip install lexsync
+pip install "git+https://github.com/pablobernabeu/lexsync.git#subdirectory=python_workflow"
 ```
 
 The `corpora` extra adds the 'wordfreq' connector, which reaches roughly forty
 languages through a single dependency, and the `experiment` extra adds
 'PsychoPy' and 'pyserial'. Note that the `experiment` extra is needed only to run
-a generated experiment on hardware, never to generate one:
+a generated experiment on hardware, never to generate one. An extra goes in
+brackets after the package name:
 
 ```bash
-pip install "lexsync[corpora]"
-pip install "lexsync[experiment]"
-```
-
-The development version installs from the repository, where the Python package
-sits in the `python_workflow/` subdirectory:
-
-```bash
-pip install "git+https://github.com/pablobernabeu/lexsync.git#subdirectory=python_workflow"
+pip install "lexsync[corpora] @ git+https://github.com/pablobernabeu/lexsync.git#subdirectory=python_workflow"
+pip install "lexsync[experiment] @ git+https://github.com/pablobernabeu/lexsync.git#subdirectory=python_workflow"
 ```
 
 ## Quick start

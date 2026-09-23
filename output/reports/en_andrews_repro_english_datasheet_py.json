@@ -15,7 +15,7 @@
     },
     {
       "file": "output/reports/en_andrews_repro_english_comparisons_py.csv",
-      "sha256": "48a25773f75fbc0ed76e61fd7c0bab3e19de24314ea1e758180cf39f2e925782"
+      "sha256": "93f27060bb31b71fe94c499e982eea02224ea05ad09feb42f41212a91c862835"
     },
     {
       "file": "output/experiments/en_andrews_repro_english_psychopy.py",
@@ -27,7 +27,7 @@
     },
     {
       "file": "output/experiments/en_andrews_repro_english.html",
-      "sha256": "1251df4e346ae35d5e79f47ad3b7d9f23f93a5ac23216af043a9521efb8a40b8"
+      "sha256": "ff5ef3fe22bafb37f1340cc8cdddcdcac6427e9c56677e3e9ff5752c5c74d58c"
     }
   ],
   "counterbalancing": {
@@ -99,8 +99,8 @@
   },
   "realised_control": [
     {
-      "ci_high": 0.358,
-      "ci_low": -0.77,
+      "ci_high": 0.359,
+      "ci_low": -0.771,
       "cohens_d": -0.206,
       "dimension": "length",
       "equivalent": false,
@@ -119,8 +119,8 @@
       "var_ratio": 1.072
     },
     {
-      "ci_high": 3.754,
-      "ci_low": 2.626,
+      "ci_high": 4.04,
+      "ci_low": 2.341,
       "cohens_d": 3.19,
       "dimension": "n_density",
       "equivalent": false,
@@ -129,8 +129,8 @@
       "var_ratio": 0.041
     },
     {
-      "ci_high": -5.192,
-      "ci_low": -6.32,
+      "ci_high": -4.478,
+      "ci_low": -7.034,
       "cohens_d": -5.756,
       "dimension": "old20",
       "equivalent": false,
@@ -149,8 +149,8 @@
       "var_ratio": 0.708
     },
     {
-      "ci_high": 5.277,
-      "ci_low": 4.15,
+      "ci_high": 5.809,
+      "ci_low": 3.618,
       "cohens_d": 4.713,
       "dimension": "frequency",
       "equivalent": false,
@@ -159,7 +159,7 @@
       "var_ratio": 0.503
     },
     {
-      "ci_high": 0.666,
+      "ci_high": 0.667,
       "ci_low": -0.461,
       "cohens_d": 0.103,
       "dimension": "n_density",
@@ -169,8 +169,8 @@
       "var_ratio": 0.641
     },
     {
-      "ci_high": 0.668,
-      "ci_low": -0.459,
+      "ci_high": 0.669,
+      "ci_low": -0.46,
       "cohens_d": 0.104,
       "dimension": "old20",
       "equivalent": false,
@@ -189,8 +189,8 @@
       "var_ratio": 0.708
     },
     {
-      "ci_high": 5.748,
-      "ci_low": 4.621,
+      "ci_high": 6.362,
+      "ci_low": 4.008,
       "cohens_d": 5.185,
       "dimension": "frequency",
       "equivalent": false,
@@ -199,8 +199,8 @@
       "var_ratio": 0.387
     },
     {
-      "ci_high": 3.852,
-      "ci_low": 2.725,
+      "ci_high": 4.153,
+      "ci_low": 2.424,
       "cohens_d": 3.289,
       "dimension": "n_density",
       "equivalent": false,
@@ -209,8 +209,8 @@
       "var_ratio": 0.052
     },
     {
-      "ci_high": -5.351,
-      "ci_low": -6.478,
+      "ci_high": -4.608,
+      "ci_low": -7.221,
       "cohens_d": -5.914,
       "dimension": "old20",
       "equivalent": false,

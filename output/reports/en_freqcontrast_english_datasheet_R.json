@@ -96,8 +96,8 @@
       "dimension": "frequency",
       "role": "manipulated/free",
       "cohens_d": 5.272,
-      "ci_low": 5.01,
-      "ci_high": 5.533,
+      "ci_low": 4.718,
+      "ci_high": 5.825,
       "var_ratio": 0.213,
       "tost_p": 1,
       "equivalent": false
@@ -166,7 +166,7 @@
     },
     {
       "file": "output/reports/en_freqcontrast_english_comparisons_R.csv",
-      "sha256": "5231caf378b817ca87c034ab6fdbf057b45f3965e7d3c20a15606f8b2643c7ee"
+      "sha256": "2f14682a0b198ae1755180e619e60cdd60b9044a0ed9d2473471953657b65ccc"
     },
     {
       "file": "output/experiments/en_freqcontrast_english_psychopy.py",
@@ -178,7 +178,7 @@
     },
     {
       "file": "output/experiments/en_freqcontrast_english.html",
-      "sha256": "e2058484bd9f898f22328666bef0aacc277fe6faae444a9715d5a52098a637ee"
+      "sha256": "efc4a9d620bae3f0291f6013f158ef18e47f857f470d9a60a6dce58eb3c0ee16"
     }
   ]
 }

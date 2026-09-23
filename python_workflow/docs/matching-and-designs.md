@@ -357,13 +357,19 @@ print(report["comparisons"].to_string(index=False))
 
 Four numbers per row, each answering something the others cannot.
 
-`cohens_d` is the standardised mean difference, using the pooled standard deviation. `d_ci_low` and
-`d_ci_high` bound it with the 90% interval that corresponds exactly to a two one-sided tests
-decision at the .05 level ([Lakens, 2017](references.md#lakens-2017)). The interval is reported
-alongside the verdict because it keeps the dependence on item count visible: with few items the
-interval is wide, so a small point estimate cannot be read as evidence that the true difference is
-small ([Sassenhagen & Alday, 2016](references.md#sassenhagen-2016)). Its upper limit is the largest
-imbalance still consistent with the stimuli you have.
+`cohens_d` is the standardised mean difference, using the pooled standard deviation. It is the mean
+of the first condition, named in `reference`, minus the mean of the condition in that row, so a
+positive *d* means the reference scores higher. `d_ci_low` and `d_ci_high` bound it with the 90%
+interval that goes with a two one-sided tests decision at the .05 level
+([Lakens, 2017](references.md#lakens-2017)), built from the large-sample standard error of *d*
+([Hedges & Olkin, 1985](references.md#hedges-1985)). That standard error grows with *d*, so the
+interval on the manipulated dimension is much wider than on a well-matched control. The interval is
+reported alongside the verdict because it keeps the dependence on item count visible: with few items
+the interval is wide, so a small point estimate cannot be read as evidence that the true difference
+is small ([Sassenhagen & Alday, 2016](references.md#sassenhagen-2016)). Its upper limit is the
+largest imbalance still consistent with the stimuli you have. TOST tests the raw mean difference,
+so the interval is fractionally wider than the one its decision implies, and for a limit that lands
+on the bound itself, `tost_p` is the verdict.
 
 `tost_p` and `equivalent` come from two one-sided tests against the schema's `equivalence.bound_d`,
 0.5 by default, at `equivalence.alpha`. This is the test that matches what a matched design is

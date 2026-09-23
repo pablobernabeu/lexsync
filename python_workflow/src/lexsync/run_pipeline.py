@@ -33,7 +33,7 @@ from .querying import (
     load_lexicon,
     load_pool,
 )
-from .scripting import export_experiments, resolve_trial_timing
+from .scripting import _design_condition_names, export_experiments, resolve_trial_timing
 from .validation import balance_check, match_report, match_report_continuous
 
 
@@ -306,6 +306,12 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
         if balance["max_passes_reached"]:
             runlog.log_step(log, "balance: the pass bound was reached, so the search "
                                  "stopped before it ran out of improving swaps")
+    # The trigger codes follow the design's conditions, then any other condition in
+    # the order the item source lists it (a generated lexical decision's words
+    # before its pseudowords, an item table's own order). Taken here, before the
+    # shuffle, because the order of first appearance after it depends on the seed.
+    condition_order = list(dict.fromkeys(
+        (_design_condition_names(design) or []) + [str(c) for c in stim["condition"]]))
     stim = counterbalance(stim, design, schema, list_of_set)
     # Practice and filler trials are presented but not analysed, so the frame splits
     # here: the experiment is generated from every presented trial, the stimuli file and
@@ -350,7 +356,8 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
     # Generated from the PRESENTED set: the experiment runs the practice and filler
     # trials too, even though they are absent from the stimuli file above.
     exps = export_experiments(presented, design, schema,
-                              os.path.join(outdir, "experiments"), base)
+                              os.path.join(outdir, "experiments"), base,
+                              conditions=condition_order)
     for path in exps.values():
         runlog.log_artefact(log, path)
 

@@ -15,7 +15,7 @@
     },
     {
       "file": "output/reports/zh_freqcontrast_chinese_comparisons_py.csv",
-      "sha256": "63bc2f8397e0a20a53a24036ff7f6fbc42dc7a30abc570f71a8e1746540b848a"
+      "sha256": "99e9ba1408e6da70cef98ca93bfb1c6214595d29ce1b3594a5fd6f6a7ea19277"
     },
     {
       "file": "output/experiments/zh_freqcontrast_chinese_psychopy.py",
@@ -27,7 +27,7 @@
     },
     {
       "file": "output/experiments/zh_freqcontrast_chinese.html",
-      "sha256": "8864b3151cb029bcca4662ea7505e5ee09c8401cc5b5eb915d1ce1cfe16a9ba0"
+      "sha256": "6f7ef119d12b2d06e088938a12b5f4c9e0f189191e124a91eb18df25a68502e9"
     }
   ],
   "counterbalancing": {
@@ -107,8 +107,8 @@
       "var_ratio": 1.0
     },
     {
-      "ci_high": 6.266,
-      "ci_low": 5.743,
+      "ci_high": 6.618,
+      "ci_low": 5.391,
       "cohens_d": 6.004,
       "dimension": "frequency",
       "equivalent": false,
@@ -128,7 +128,7 @@
     },
     {
       "ci_high": 0.368,
-      "ci_low": -0.155,
+      "ci_low": -0.156,
       "cohens_d": 0.106,
       "dimension": "old20",
       "equivalent": true,

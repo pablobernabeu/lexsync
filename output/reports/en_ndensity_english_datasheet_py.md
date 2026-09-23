@@ -24,8 +24,8 @@
 |---|---|---|---|---|---|---|
 | length | controlled | 0.00 | [-0.26, 0.26] | 1.00 | 0.0009 | True |
 | frequency | controlled | 0.00 | [-0.26, 0.26] | 1.00 | 0.0009 | True |
-| n_density | manipulated/free | 3.11 | [2.85, 3.37] | 0.02 | 1.0 | False |
-| old20 | manipulated/free | -2.30 | [-2.56, -2.04] | 1.64 | 1.0 | False |
+| n_density | manipulated/free | 3.11 | [2.72, 3.50] | 0.02 | 1.0 | False |
+| old20 | manipulated/free | -2.30 | [-2.64, -1.97] | 1.64 | 1.0 | False |
 
 ## Suggested analysis
 

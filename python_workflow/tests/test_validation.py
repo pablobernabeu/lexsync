@@ -62,6 +62,28 @@ def test_cohens_d_ci_brackets_point_estimate():
     assert abs(ci["d"] - cohens_d(x, y)) < 1e-9
 
 
+def test_cohens_d_ci_uses_the_large_sample_standard_error_of_d():
+    # SE(d) = sqrt(1/nx + 1/ny + d**2 / (2 * (nx + ny))) (Hedges & Olkin, 1985;
+    # Borenstein et al., 2009, eq. 4.20). The limits are the same literals asserted
+    # in test-validation.R, so the engines cannot drift apart. The interval that
+    # left out the d**2 term had a margin of 0.372 here, not 0.596.
+    from scipy import stats
+
+    x = [5, 6, 7, 8] * 10
+    y = [1, 2, 3, 4] * 10
+    ci = cohens_d_ci(x, y)
+    assert [round(ci[k], 9) for k in ("d", "ci_low", "ci_high")] == [
+        3.532704347, 2.937150129, 4.128258564]
+    se = math.sqrt(1 / 40 + 1 / 40 + ci["d"] ** 2 / 160)
+    assert math.isclose(ci["ci_high"] - ci["d"], stats.t.ppf(0.95, 78) * se, rel_tol=1e-12)
+    # The d**2 term is what widens a large effect's interval: at the same n, a
+    # difference near zero keeps close to the known-SD margin.
+    null = cohens_d_ci([4, 5, 6] * 20, [4, 5, 6] * 20)
+    assert math.isclose(null["ci_high"], stats.t.ppf(0.95, 118) * math.sqrt(2 / 60),
+                        rel_tol=1e-12)
+    assert ci["ci_high"] - ci["ci_low"] > 1.5 * (2 * stats.t.ppf(0.95, 78) * math.sqrt(1 / 20))
+
+
 def test_cohens_d_ci_width_shrinks_with_more_items():
     # The interval's dependence on the number of items is the property that makes
     # it a robust complement to the binary TOST verdict: few items -> wide CI.

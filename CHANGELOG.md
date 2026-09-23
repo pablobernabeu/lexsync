@@ -21,6 +21,50 @@ word-keyed norm table so the matcher can equate on it. Future directions include
 more bundled languages and, should a determinism-safe implementation be found,
 promoting a covariance-aware distance to the default.
 
+### Changed
+
+- The EEG condition codes follow the design, not the trial order.
+  `assign_triggers` numbered the conditions from 101 in the order they first
+  appeared in the table it received, which after `counterbalance` is the shuffled
+  trial order, so a different seed could swap two conditions' codes. Both engines'
+  `assign_triggers` gain an optional `conditions` argument that fixes the order,
+  and `export_experiments` gains one that defaults to the order of the design's
+  `conditions`. The pipeline passes the design's order, followed by any other
+  condition in the order the item source lists it (the words before the
+  pseudowords of a generated lexical decision). A condition missing from the
+  order takes the next free code, in code-point order of its label. The generated
+  experiments of 12 of the 21 demonstration designs change their condition codes;
+  `en_freqcontrast`, for instance, now gives `high_frequency`, the condition its
+  design lists first, 101 in place of 102. Calling `assign_triggers` without
+  `conditions` behaves as before. No stimulus moves.
+
+### Fixed
+
+- The confidence interval on Cohen's d was far too narrow for a large effect.
+  `cohens_d_ci` computed the margin as `t * sqrt(1/nx + 1/ny)`, which treats the
+  pooled standard deviation as known. Both engines now use the large-sample
+  standard error of d, `sqrt(1/nx + 1/ny + d^2 / (2 * (nx + ny)))` (Hedges &
+  Olkin, 1985; Borenstein et al., 2009), with the same t quantile. In the English
+  frequency contrast the manipulated dimension, d = 5.27, had the interval
+  [5.01, 5.53] and now has [4.72, 5.83]. A matched control, whose d is near zero,
+  moves by at most 0.002 across the demonstration designs, and no d, TOST p-value
+  or equivalence verdict changes. The interval is now fractionally wider than the
+  one the TOST decision implies, which the documentation states. The comparisons
+  files stay byte-identical across the engines.
+- `match_report` did not say which way its signed statistics run. Both engines now
+  document that `cohens_d` and its interval are the reference (first) condition's
+  mean minus the other condition's, and that `var_ratio` is the other condition's
+  variance over the reference's.
+- The Python install instructions pointed at PyPI, where lexsync is not yet
+  published, so `pip install lexsync` failed. The Python README, the
+  documentation's home and getting-started pages, the repository landing page and
+  the root README now give the install from GitHub, with the
+  `python_workflow` subdirectory, and the wordfreq error message names the
+  package to install instead of the extra.
+- The R `CITATION` entry names CRAN as its publisher, and its text version is the
+  APA reference for software, with the version, "[Computer software]", CRAN and
+  the DOI.
+
 ## [0.1.0] - 2026-09-22
 
 lexsync 0.1.0 is the first public release. CRAN published the R package on

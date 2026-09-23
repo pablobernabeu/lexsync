@@ -15,7 +15,7 @@
     },
     {
       "file": "output/reports/es_ndensity_spanish_comparisons_py.csv",
-      "sha256": "d91dd418778eb73b46ad0429f52d96dfb0cbf227e4ec3450ad475950d64c3c11"
+      "sha256": "f07edf0ac4bceea0a7fa1eae0e608f5399641960241f485d556ca82e3f4dbf33"
     },
     {
       "file": "output/experiments/es_ndensity_spanish_psychopy.py",
@@ -117,8 +117,8 @@
       "var_ratio": 1.0
     },
     {
-      "ci_high": 2.389,
-      "ci_low": 1.866,
+      "ci_high": 2.455,
+      "ci_low": 1.8,
       "cohens_d": 2.128,
       "dimension": "n_density",
       "equivalent": false,
@@ -127,8 +127,8 @@
       "var_ratio": 0.01
     },
     {
-      "ci_high": -2.159,
-      "ci_low": -2.683,
+      "ci_high": -2.077,
+      "ci_low": -2.765,
       "cohens_d": -2.421,
       "dimension": "old20",
       "equivalent": false,

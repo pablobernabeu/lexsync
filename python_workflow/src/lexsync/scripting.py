@@ -123,15 +123,47 @@ def find_template(relpath: str) -> str:
     raise FileNotFoundError(f"lexsync: template '{relpath}' not found.")
 
 
-def assign_triggers(stimuli: pd.DataFrame) -> pd.DataFrame:
+def assign_triggers(stimuli: pd.DataFrame, conditions=None) -> pd.DataFrame:
     """A per-condition marker and a per-item marker, both 0-255 EEG codes.
 
-    The item range holds 200 codes (an 8-bit-port constraint), so past 200 sets
-    the codes wrap and repeat, and a runtime notice says so.
+    ``condition_trigger`` numbers the conditions from 101 upwards and
+    ``item_trigger`` numbers the item sets from 40. The item range holds 200 codes
+    (an 8-bit-port constraint), so past 200 sets the codes wrap and repeat, and a
+    runtime notice says so.
+
+    The condition codes follow ``conditions`` when it is given: its first entry is
+    101, its second 102, and so on, whether or not every entry occurs in
+    ``stimuli``, so the same condition keeps the same code in a subset such as a
+    practice block. A condition present in ``stimuli`` but missing from
+    ``conditions`` takes the next free codes, in code-point order of its label.
+    Either way the mapping depends only on the labels, never on the row order.
+    Without ``conditions``, the codes follow the order in which the conditions
+    first appear in ``stimuli``, as in lexsync 0.1.0. On a shuffled trial list that
+    order comes from the shuffle, so a different seed can swap two conditions'
+    codes. ``export_experiments`` passes the design's order, and the pipeline
+    passes the order of the design's ``conditions``, followed by any other
+    condition in the order the item source lists it.
+
+    >>> stim = pd.DataFrame({"condition": ["low", "high", "low", "high"],
+    ...                      "set": [1, 1, 2, 2]})
+    >>> assign_triggers(stim)["condition_trigger"].tolist()
+    [101, 102, 101, 102]
+    >>> assign_triggers(stim, conditions=["high", "low"])["condition_trigger"].tolist()
+    [102, 101, 102, 101]
     """
     stimuli = stimuli.copy()
-    conds = list(dict.fromkeys(stimuli["condition"]))
-    stimuli["condition_trigger"] = stimuli["condition"].map(lambda c: 101 + conds.index(c))
+    if conditions is None:
+        conds = list(dict.fromkeys(stimuli["condition"]))
+        stimuli["condition_trigger"] = stimuli["condition"].map(lambda c: 101 + conds.index(c))
+    else:
+        if isinstance(conditions, str):
+            conditions = [conditions]
+        conds = list(dict.fromkeys(str(c) for c in conditions))
+        present = dict.fromkeys(str(c) for c in stimuli["condition"])
+        # sorted() on str is code-point order, the same order R's radix sort gives.
+        conds += sorted(c for c in present if c not in conds)
+        stimuli["condition_trigger"] = stimuli["condition"].map(
+            lambda c: 101 + conds.index(str(c)))
     sets = sorted(stimuli["set"].unique(), key=lambda s: str(s))
     # A wrapped code no longer identifies its item one to one, which the analyst
     # must hear about at generation time, not at decode time.
@@ -780,8 +812,32 @@ def export_jspsych(stimuli, design, schema, outdir, base=None) -> str:
     return _write_text(tmpl.rstrip("\n"), os.path.join(outdir, f"{base}.html"))
 
 
-def export_experiments(stimuli, design, schema, outdir, base=None) -> dict:
-    stimuli = assign_triggers(stimuli)
+def _design_condition_names(design) -> list | None:
+    """The names of a design's declared conditions, in the order the design lists
+    them, or None when it declares none (a generated lexical decision, an item
+    table, a continuous design). Mirrors .design_condition_names in scripting.R."""
+    conds = design.get("conditions")
+    if not isinstance(conds, list) or not conds:
+        return None
+    names = [str(c["name"]) for c in conds if isinstance(c, dict) and c.get("name") is not None]
+    return names or None
+
+
+def export_experiments(stimuli, design, schema, outdir, base=None, conditions=None) -> dict:
+    """Write every presentation target (PsychoPy, OpenSesame, jsPsych).
+
+    Assigns the EEG trigger codes with ``assign_triggers`` and then writes each
+    target. The condition codes follow ``conditions``, which defaults to the order
+    of the design's ``conditions`` entries, so in a design that declares its
+    conditions the first is 101, the second 102, and so on, whatever order the
+    counterbalanced trials put them in. A design with no ``conditions`` block (a
+    generated lexical decision, an item table) falls back to the order of first
+    appearance, unless ``conditions`` is given. Returns the generated paths by
+    target.
+    """
+    if conditions is None:
+        conditions = _design_condition_names(design)
+    stimuli = assign_triggers(stimuli, conditions)
     return {
         "psychopy": export_psychopy(stimuli, design, schema, outdir, base),
         "opensesame": export_opensesame(stimuli, design, schema, outdir, base),

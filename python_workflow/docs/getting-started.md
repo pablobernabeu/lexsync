@@ -8,23 +8,19 @@ handed to someone running the other engine.
 
 ## Install
 
-```bash
-pip install lexsync
-```
-
-That gives you the library and the `lexsync` console script. The `corpora` and `experiment` extras go
-in brackets, either on their own or together:
-
-```bash
-pip install "lexsync[corpora]"
-pip install "lexsync[corpora,experiment]"
-```
-
-The development version comes straight from the repository, where the Python package sits in the
-`python_workflow/` subdirectory:
+The package is not on PyPI yet, so install it from the repository, where the Python package sits in
+the `python_workflow/` subdirectory:
 
 ```bash
 pip install "git+https://github.com/pablobernabeu/lexsync.git#subdirectory=python_workflow"
+```
+
+That gives you the library and the `lexsync` console script. The `corpora` and `experiment` extras go
+in brackets after the package name, either on their own or together:
+
+```bash
+pip install "lexsync[corpora] @ git+https://github.com/pablobernabeu/lexsync.git#subdirectory=python_workflow"
+pip install "lexsync[corpora,experiment] @ git+https://github.com/pablobernabeu/lexsync.git#subdirectory=python_workflow"
 ```
 
 If you want the 21 worked designs, the derived corpora and the committed outputs as well, clone the

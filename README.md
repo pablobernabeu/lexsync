@@ -29,8 +29,9 @@ builds factorial word studies, lexical decision with deterministically generated
 pseudowords, priming, self-paced reading and cued categorisation from configuration
 rather than code, with word, pseudoword, paired and sentence stimuli, and with
 practice and filler blocks that run but are not analysed. It ships as two structurally identical,
-independently installable packages, an R package on CRAN and a Python package on
-PyPI, so a laboratory can adopt it in whichever ecosystem it already uses.
+independently installable packages, an R package on CRAN and a Python package
+installed from this repository, so a laboratory can adopt it in whichever ecosystem
+it already uses.
 
 Beyond matching, `lexsync` treats the stimulus set as a reproducible research
 artefact. Every run is deterministic and seeded, and under the two deterministic
@@ -84,7 +85,7 @@ generated output they share held at the root:
 ```
 lexsync/
 ├── R_workflow/        R package 'lexsync', published on CRAN
-├── python_workflow/   Python package 'lexsync', published on PyPI
+├── python_workflow/   Python package 'lexsync', installed from this repository
 ├── corpora/           many-language corpus registry + ingestion + attribution
 ├── config/            global schema + per-design configurations
 ├── items/             example item tables (priming pairs, SPR sentences)
@@ -129,9 +130,10 @@ reaches the same solver through `scipy`, which it requires anyway.
 To install the packages themselves rather than run them from a checkout, see
 [`R_workflow/README.md`](R_workflow/README.md) and
 [`python_workflow/README.md`](python_workflow/README.md). The R package is published
-on [CRAN](https://CRAN.R-project.org/package=lexsync) and the Python package on
-[PyPI](https://pypi.org/project/lexsync/), so `install.packages("lexsync")` or
-`pip install lexsync` is all it takes.
+on [CRAN](https://CRAN.R-project.org/package=lexsync), so `install.packages("lexsync")`
+is all it takes. The Python package is not on PyPI yet and installs from this
+repository with
+`pip install "git+https://github.com/pablobernabeu/lexsync.git#subdirectory=python_workflow"`.
 
 Neither the generation step nor its tests require 'PsychoPy', 'OpenSesame' or any
 parallel-port driver. These are needed only when the generated experiment is run on

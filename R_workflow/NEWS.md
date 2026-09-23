@@ -2,7 +2,32 @@
 
 * `citation("lexsync")` gives the DOI that CRAN assigned to the package,
   10.32614/CRAN.package.lexsync, with the CRAN page as its URL. The 0.1.0 build
-  on CRAN predates the DOI and gives the repository's address.
+  on CRAN predates the DOI and gives the repository's address. The entry names
+  CRAN as its publisher, and its text version is the APA reference for software:
+  author, year, title, version, "[Computer software]", CRAN and the DOI.
+* `cohens_d_ci()` uses the large-sample standard error of d,
+  `sqrt(1/nx + 1/ny + d^2 / (2 * (nx + ny)))` (Hedges & Olkin, 1985; Borenstein
+  et al., 2009). It left out the `d^2` term, which treated the pooled SD as known
+  and made the interval on a manipulated dimension far too narrow. In the English
+  frequency contrast, d = 5.27 had the interval [5.01, 5.53] and now has
+  [4.72, 5.83]. A matched control, whose d is near zero, moves by at most 0.002
+  across the 21 demonstration designs, and no d, TOST p-value or verdict changes.
+  The comparisons, datasheets and run logs of the designs with a manipulated
+  dimension change with it. No stimulus moves.
+* `match_report()` documents the direction of its signed statistics. `cohens_d`
+  and its interval are the reference (first) condition's mean minus the mean of
+  the condition in that row, and `var_ratio` is that condition's variance over
+  the reference's.
+* `assign_triggers()` gains a `conditions` argument that fixes the order of the
+  condition codes, and `export_experiments()` gains one that defaults to the
+  order of the design's `conditions`. The codes used to follow the order in which
+  the conditions first appeared in the counterbalanced trials, so a different
+  seed could swap them, and `low_frequency` was 101 in a design that lists
+  `high_frequency` first. The pipeline now passes the design's order, followed by
+  any other condition in the order the item source lists it, so the first
+  condition the design lists is 101. The condition codes of 12 of the 21
+  demonstration designs change with it. `assign_triggers()` called without
+  `conditions` behaves as before.
 
 # lexsync 0.1.0
 

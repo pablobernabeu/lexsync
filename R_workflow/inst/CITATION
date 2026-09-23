@@ -5,19 +5,22 @@ citHeader("To cite lexsync in publications, use:")
 # a copy installed from CRAN that has no CITATION file. The DOI names the
 # package as a whole, so the version in the note identifies the release cited.
 # R CMD check --as-cran looks the DOI up in the DOI registry, just as it checks
-# the url.
+# the url. CRAN is the publisher: it distributes the package and registered
+# the DOI. The text version is the APA 7 reference for software, the form the
+# package's own guides and the author's website give.
 bibentry(
   bibtype  = "Manual",
   title    = "{lexsync}: Lexical optimisation and hardware-timed experiment generation",
   author   = person("Pablo", "Bernabeu", comment = c(ORCID = "0000-0003-1083-2460")),
   year     = "2026",
+  publisher = "CRAN",
   note     = sprintf("R package version %s", meta$Version),
   doi      = "10.32614/CRAN.package.lexsync",
   url      = "https://CRAN.R-project.org/package=lexsync",
   textVersion = paste0(
     "Bernabeu, P. (2026). lexsync: Lexical optimisation and hardware-timed ",
-    "experiment generation. R package version ", meta$Version, ". ",
-    "https://doi.org/10.32614/CRAN.package.lexsync"
+    "experiment generation (Version ", meta$Version, ") [Computer software]. ",
+    "CRAN. https://doi.org/10.32614/CRAN.package.lexsync"
   )
 )
 

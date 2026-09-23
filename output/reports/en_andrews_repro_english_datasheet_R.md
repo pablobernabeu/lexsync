@@ -24,16 +24,16 @@
 |---|---|---|---|---|---|---|
 | length | controlled | -0.21 | [-0.77, 0.36] | 0.57 | 0.192 | FALSE |
 | frequency | manipulated/free | -0.11 | [-0.67, 0.46] | 1.07 | 0.1238 | FALSE |
-| n_density | manipulated/free | 3.19 | [2.63, 3.75] | 0.04 | 1 | FALSE |
-| old20 | manipulated/free | -5.76 | [-6.32, -5.19] | 1.13 | 1 | FALSE |
+| n_density | manipulated/free | 3.19 | [2.34, 4.04] | 0.04 | 1 | FALSE |
+| old20 | manipulated/free | -5.76 | [-7.03, -4.48] | 1.13 | 1 | FALSE |
 | length | controlled | 0.10 | [-0.46, 0.66] | 0.71 | 0.1186 | FALSE |
-| frequency | manipulated/free | 4.71 | [4.15, 5.28] | 0.50 | 1 | FALSE |
+| frequency | manipulated/free | 4.71 | [3.62, 5.81] | 0.50 | 1 | FALSE |
 | n_density | manipulated/free | 0.10 | [-0.46, 0.67] | 0.64 | 0.1208 | FALSE |
 | old20 | manipulated/free | 0.10 | [-0.46, 0.67] | 1.02 | 0.1218 | FALSE |
 | length | controlled | 0.10 | [-0.46, 0.66] | 0.71 | 0.1186 | FALSE |
-| frequency | manipulated/free | 5.18 | [4.62, 5.75] | 0.39 | 1 | FALSE |
-| n_density | manipulated/free | 3.29 | [2.73, 3.85] | 0.05 | 1 | FALSE |
-| old20 | manipulated/free | -5.91 | [-6.48, -5.35] | 1.22 | 1 | FALSE |
+| frequency | manipulated/free | 5.18 | [4.01, 6.36] | 0.39 | 1 | FALSE |
+| n_density | manipulated/free | 3.29 | [2.42, 4.15] | 0.05 | 1 | FALSE |
+| old20 | manipulated/free | -5.91 | [-7.22, -4.61] | 1.22 | 1 | FALSE |
 
 ## Suggested analysis
 

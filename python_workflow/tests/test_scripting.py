@@ -2,8 +2,10 @@ import pandas as pd
 
 from lexsync.io_utils import _round_dp
 from lexsync.scripting import (
+    _design_condition_names,
     _language_tag,
     assign_triggers,
+    export_experiments,
     export_jspsych,
     export_opensesame,
     export_psychopy,
@@ -24,6 +26,47 @@ def test_triggers_in_range():
     s = _stim()
     assert s["item_trigger"].between(40, 239).all()
     assert set(s["condition_trigger"]) == {101, 102}
+
+
+def _codes(s):
+    return dict(zip(s["condition"], s["condition_trigger"], strict=True))
+
+
+def test_condition_codes_follow_the_given_order_not_the_row_order():
+    # After counterbalance() shuffles the trials, first appearance depends on the
+    # seed, so it cannot be what fixes a condition's code. Pinned identically in
+    # test-scripting.R.
+    stim = pd.DataFrame({"condition": ["low", "high", "low", "high"], "set": [1, 1, 2, 2]})
+    # The default keeps the 0.1.0 behaviour: order of first appearance.
+    assert _codes(assign_triggers(stim)) == {"low": 101, "high": 102}
+    assert _codes(assign_triggers(stim, conditions=["high", "low"])) == {"high": 101, "low": 102}
+    assert _codes(assign_triggers(stim.iloc[::-1], conditions=["high", "low"])) == {
+        "high": 101, "low": 102}
+    # A listed condition absent from the rows keeps its code; an unlisted one takes
+    # the next free code in code-point order of its label.
+    sub = assign_triggers(stim[stim["condition"] == "low"], conditions=["high", "low"])
+    assert set(sub["condition_trigger"]) == {102}
+    extra = pd.concat([stim, pd.DataFrame({"condition": ["zeta", "Mid"], "set": [3, 3]})],
+                      ignore_index=True)
+    assert _codes(assign_triggers(extra.iloc[::-1], conditions="high")) == {
+        "high": 101, "Mid": 102, "low": 103, "zeta": 104}
+
+
+def test_export_experiments_numbers_conditions_in_the_design_order(schema, tmp_path):
+    stim = pd.DataFrame({"word": ["cat", "dog", "car", "cap"],
+                         "condition": ["a", "b", "a", "b"], "set": [1, 1, 2, 2],
+                         "trial": [1, 2, 3, 4]})
+    design = {"name": "t", "language": "english", "timing": {},
+              "conditions": [{"name": "b"}, {"name": "a"}]}
+    assert _design_condition_names(design) == ["b", "a"]
+    assert _design_condition_names({"name": "t"}) is None
+    export_experiments(stim, design, schema, str(tmp_path))
+    loop = pd.read_csv(tmp_path / "t_english_psychopy.csv")
+    assert _codes(loop) == {"b": 101, "a": 102}
+    # An explicit order overrides the design's.
+    export_experiments(stim, design, schema, str(tmp_path), conditions=["a", "b"])
+    loop = pd.read_csv(tmp_path / "t_english_psychopy.csv")
+    assert _codes(loop) == {"a": 101, "b": 102}
 
 
 def test_more_than_200_item_sets_discloses_the_trigger_wrap(capsys):

@@ -88,7 +88,7 @@
       "dimension": "length",
       "role": "controlled",
       "cohens_d": -0.109,
-      "ci_low": -0.642,
+      "ci_low": -0.643,
       "ci_high": 0.424,
       "var_ratio": 0.893,
       "tost_p": 0.1121,
@@ -98,8 +98,8 @@
       "dimension": "frequency",
       "role": "manipulated/free",
       "cohens_d": 3.528,
-      "ci_low": 2.995,
-      "ci_high": 4.061,
+      "ci_low": 2.676,
+      "ci_high": 4.38,
       "var_ratio": 0.832,
       "tost_p": 1,
       "equivalent": false
@@ -108,8 +108,8 @@
       "dimension": "n_density",
       "role": "controlled",
       "cohens_d": 0.13,
-      "ci_low": -0.403,
-      "ci_high": 0.663,
+      "ci_low": -0.404,
+      "ci_high": 0.664,
       "var_ratio": 0.832,
       "tost_p": 0.1245,
       "equivalent": false
@@ -118,8 +118,8 @@
       "dimension": "old20",
       "role": "controlled",
       "cohens_d": -0.241,
-      "ci_low": -0.775,
-      "ci_high": 0.292,
+      "ci_low": -0.777,
+      "ci_high": 0.294,
       "var_ratio": 0.624,
       "tost_p": 0.2093,
       "equivalent": false
@@ -168,7 +168,7 @@
     },
     {
       "file": "output/reports/en_supplied_pool_english_comparisons_R.csv",
-      "sha256": "565ab79229422c6b40de2f387167092089f8ffd0866800f74e89e40336f50447"
+      "sha256": "b95d7e1d5fc4a9e1c2ea688c9a51a2f6fd826ecfad621b71fe9f77c809d73dd9"
     },
     {
       "file": "output/experiments/en_supplied_pool_english_psychopy.py",
@@ -180,7 +180,7 @@
     },
     {
       "file": "output/experiments/en_supplied_pool_english.html",
-      "sha256": "9154ebfccfb166a12c7f6a4507062c42aec579eb5ac6caa937a3955009254dd9"
+      "sha256": "25e7ca71a854f4911063e5e840ebc50d1306669050c94cb66f76102f2da31b48"
     }
   ]
 }

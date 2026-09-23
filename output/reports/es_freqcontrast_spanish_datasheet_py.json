@@ -15,7 +15,7 @@
     },
     {
       "file": "output/reports/es_freqcontrast_spanish_comparisons_py.csv",
-      "sha256": "a513d7503d17d31a028b84abcc802fed8adea9ee53d9b6380df4110b2d310403"
+      "sha256": "647a6795b7d653184c1af3c399e22c3f32b6cb6189ed19c47971c3ca329fd756"
     },
     {
       "file": "output/experiments/es_freqcontrast_spanish_psychopy.py",
@@ -27,7 +27,7 @@
     },
     {
       "file": "output/experiments/es_freqcontrast_spanish.html",
-      "sha256": "35d567707d028bfe22ff8a1ff95f248017c11ab55994e6ec464e5d00c5fa69a0"
+      "sha256": "f7f63e6033cc37a62541ec379a3f0a5a38719064cb292822d7e8942712140782"
     }
   ],
   "counterbalancing": {
@@ -107,8 +107,8 @@
       "var_ratio": 0.83
     },
     {
-      "ci_high": 5.808,
-      "ci_low": 5.285,
+      "ci_high": 6.122,
+      "ci_low": 4.97,
       "cohens_d": 5.546,
       "dimension": "frequency",
       "equivalent": false,
@@ -118,7 +118,7 @@
     },
     {
       "ci_high": 0.339,
-      "ci_low": -0.184,
+      "ci_low": -0.185,
       "cohens_d": 0.077,
       "dimension": "n_density",
       "equivalent": true,

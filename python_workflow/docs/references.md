@@ -37,6 +37,10 @@ M., Buchanan, E. M., & Roettger, T. B. (2023). Reproducible research practices a
 across linguistics. *Glossa Psycholinguistics*, *2*(1). <https://doi.org/10.5070/G6011239>
 { #bochynska-2023 }
 
+Borenstein, M., Hedges, L. V., Higgins, J. P. T., & Rothstein, H. R. (2009). *Introduction to
+meta-analysis*. Wiley. <https://doi.org/10.1002/9780470743386>
+{ #borenstein-2009 }
+
 Clark, H. H. (1973). The language-as-fixed-effect fallacy: A critique of language statistics in
 psychological research. *Journal of Verbal Learning and Verbal Behavior*, *12*(4), 335–359.
 <https://doi.org/10.1016/S0022-5371(73)80014-3>
@@ -59,6 +63,10 @@ Hansen, B. B., & Klopfer, S. O. (2006). Optimal full matching and related design
 *Journal of Computational and Graphical Statistics*, *15*(3), 609–627.
 <https://doi.org/10.1198/106186006X137047>
 { #hansen-2006 }
+
+Hedges, L. V., & Olkin, I. (1985). *Statistical methods for meta-analysis*. Academic Press.
+<https://doi.org/10.1016/C2009-0-03396-0>
+{ #hedges-1985 }
 
 Keuleers, E., & Brysbaert, M. (2010). Wuggy: A multilingual pseudoword generator. *Behavior Research
 Methods*, *42*(3), 627–633. <https://doi.org/10.3758/BRM.42.3.627>

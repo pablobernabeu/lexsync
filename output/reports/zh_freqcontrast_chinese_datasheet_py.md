@@ -23,9 +23,9 @@
 | Dimension | Role | Cohen's d | 90% CI | Var ratio | TOST p | Equivalent |
 |---|---|---|---|---|---|---|
 | length | controlled | 0.00 | [0.00, 0.00] | 1.00 | 0.0 | True |
-| frequency | manipulated/free | 6.00 | [5.74, 6.27] | 0.47 | 1.0 | False |
+| frequency | manipulated/free | 6.00 | [5.39, 6.62] | 0.47 | 1.0 | False |
 | n_density | controlled | 0.07 | [-0.19, 0.33] | 0.65 | 0.0037 | True |
-| old20 | controlled | 0.11 | [-0.15, 0.37] | 0.44 | 0.0069 | True |
+| old20 | controlled | 0.11 | [-0.16, 0.37] | 0.44 | 0.0069 | True |
 
 ## Suggested analysis
 
@@ -34,7 +34,7 @@
 
 ## Methods paragraph
 
-80 items per condition were selected from the Chinese lexicon (wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md) and matched item by item on length, n_density, old20 using lexsync's standardised_euclidean matcher. The realised control was close. The largest standardised difference on any matched dimension was 0.11 (90% CI [-0.15, 0.37]), within the 0.5-SD equivalence bound. The smallest condition was selected from 948 eligible candidates, and the selection was deterministic and blind to any outcome measure. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.0).
+80 items per condition were selected from the Chinese lexicon (wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md) and matched item by item on length, n_density, old20 using lexsync's standardised_euclidean matcher. The realised control was close. The largest standardised difference on any matched dimension was 0.11 (90% CI [-0.16, 0.37]), within the 0.5-SD equivalence bound. The smallest condition was selected from 948 eligible candidates, and the selection was deterministic and blind to any outcome measure. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.0).
 
 ## Pre-registration template
 
@@ -54,7 +54,7 @@
 - Paradigm: factorial
 
 ### Materials (from the lexsync datasheet)
-80 items per condition were selected from the Chinese lexicon (wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md) and matched item by item on length, n_density, old20 using lexsync's standardised_euclidean matcher. The realised control was close. The largest standardised difference on any matched dimension was 0.11 (90% CI [-0.15, 0.37]), within the 0.5-SD equivalence bound. The smallest condition was selected from 948 eligible candidates, and the selection was deterministic and blind to any outcome measure. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.0).
+80 items per condition were selected from the Chinese lexicon (wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md) and matched item by item on length, n_density, old20 using lexsync's standardised_euclidean matcher. The realised control was close. The largest standardised difference on any matched dimension was 0.11 (90% CI [-0.16, 0.37]), within the 0.5-SD equivalence bound. The smallest condition was selected from 948 eligible candidates, and the selection was deterministic and blind to any outcome measure. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.0).
 
 ### Sampling plan
 - Sample size and justification:

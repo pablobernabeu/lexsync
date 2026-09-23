@@ -41,24 +41,21 @@ guarantee promises, how it is enforced and where it stops.
 
 ## Install
 
+The package is not on PyPI yet, so install it from the repository, where the Python package sits in
+the `python_workflow/` subdirectory:
+
 ```bash
-pip install lexsync
+pip install "git+https://github.com/pablobernabeu/lexsync.git#subdirectory=python_workflow"
 ```
 
 The `corpora` extra adds the wordfreq connector, which derives a lexicon for a language that is not
 bundled. The `experiment` extra adds PsychoPy and pyserial, and it is needed only to run a generated
-experiment on hardware. Generating one needs neither of them, only the core dependencies.
+experiment on hardware. Generating one needs neither of them, only the core dependencies. An extra
+goes in brackets after the package name:
 
 ```bash
-pip install "lexsync[corpora]"
-pip install "lexsync[corpora,experiment]"
-```
-
-The development version comes straight from the repository, where the Python package sits in the
-`python_workflow/` subdirectory:
-
-```bash
-pip install "git+https://github.com/pablobernabeu/lexsync.git#subdirectory=python_workflow"
+pip install "lexsync[corpora] @ git+https://github.com/pablobernabeu/lexsync.git#subdirectory=python_workflow"
+pip install "lexsync[corpora,experiment] @ git+https://github.com/pablobernabeu/lexsync.git#subdirectory=python_workflow"
 ```
 
 See [Getting started](getting-started.md) for what each extra carries, including the interpreters
