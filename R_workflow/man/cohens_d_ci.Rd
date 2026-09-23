@@ -29,8 +29,9 @@ The limits are \verb{d +/- t * SE(d)}, where \code{t} is the Student t quantile 
 error of d, \code{sqrt(1/nx + 1/ny + d^2 / (2 * (nx + ny)))} (Hedges & Olkin, 1985;
 Borenstein et al., 2009, eq. 4.20). The \code{d^2} term carries the sampling error
 of the pooled standard deviation. It is negligible for a well-matched control,
-where d is near zero, but it dominates for a manipulated dimension and widens
-that interval several-fold. TOST tests the raw mean difference, so the interval
-is fractionally wider than the one its decision implies, and when a control's
-limit lies within a rounding step of the bound, \code{tost_p} gives the verdict.
+where d is near zero, but it dominates for a manipulated dimension and can
+more than double the width of that interval. TOST tests the raw mean
+difference, so the interval is slightly wider than the one its decision
+implies, and when a control's limit lies close to the bound, \code{tost_p} gives the
+verdict.
 }

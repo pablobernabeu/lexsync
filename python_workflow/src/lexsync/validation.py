@@ -82,10 +82,10 @@ def cohens_d_ci(x, y, alpha: float = 0.05) -> dict:
     1985; Borenstein et al., 2009, eq. 4.20). The ``d**2`` term carries the
     sampling error of the pooled standard deviation. It is negligible for a
     well-matched control, where *d* is near zero, but it dominates for a
-    manipulated dimension and widens that interval several-fold. TOST tests the
-    raw mean difference, so the interval is fractionally wider than the one its
-    decision implies, and when a control's limit lies within a rounding step of
-    the bound, ``tost_p`` gives the verdict.
+    manipulated dimension and can more than double the width of that
+    interval. TOST tests the raw mean difference, so the interval is slightly
+    wider than the one its decision implies, and when a control's limit lies
+    close to the bound, ``tost_p`` gives the verdict.
     """
     x = np.asarray(x, dtype=float); y = np.asarray(y, dtype=float)
     x = x[~np.isnan(x)]; y = y[~np.isnan(y)]

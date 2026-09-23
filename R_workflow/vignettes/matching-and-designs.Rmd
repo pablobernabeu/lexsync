@@ -633,8 +633,8 @@ declares equivalence when the interval falls inside the bounds, and the interval
 and the verdict are two readings of nearly the same thing. They are not quite
 identical, because TOST tests the raw mean difference while the interval also
 allows for the sampling error of the pooled SD. For a control near zero the two
-agree to well within the published rounding. For a limit that lands on the bound
-itself, `tost_p` is the verdict.
+agree to well within the published rounding. For a limit close to the bound,
+`tost_p` is the verdict.
 
 The individual statistics are exported and can be called directly on any two
 vectors.

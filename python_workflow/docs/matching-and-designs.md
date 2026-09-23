@@ -368,8 +368,8 @@ reported alongside the verdict because it keeps the dependence on item count vis
 the interval is wide, so a small point estimate cannot be read as evidence that the true difference
 is small ([Sassenhagen & Alday, 2016](references.md#sassenhagen-2016)). Its upper limit is the
 largest imbalance still consistent with the stimuli you have. TOST tests the raw mean difference,
-so the interval is fractionally wider than the one its decision implies, and for a limit that lands
-on the bound itself, `tost_p` is the verdict.
+so the interval is slightly wider than the one its decision implies, and for a limit close to the
+bound, `tost_p` is the verdict.
 
 `tost_p` and `equivalent` come from two one-sided tests against the schema's `equivalence.bound_d`,
 0.5 by default, at `equivalence.alpha`. This is the test that matches what a matched design is
