@@ -17,10 +17,14 @@ authors:
     given-names: Pablo
     orcid: 'https://orcid.org/0000-0003-1083-2460'
 version: 0.1.0
-# This date describes a release that has not been tagged. Set it to the date the
-# first real release is cut, along with the version above, which nothing
-# generates either.
-date-released: '2026-06-07'
+# The DOI CRAN assigned to the R package on publication. It identifies the
+# package across all its versions, so the version above pins the release.
+doi: 10.32614/CRAN.package.lexsync
+# CRAN distributes the built package, which is what CFF's repository-artifact
+# field is for. The sources are on GitHub, in repository-code below.
+repository-artifact: 'https://CRAN.R-project.org/package=lexsync'
+# The date CRAN published 0.1.0.
+date-released: '2026-09-22'
 # Two licences, because the release ships both: MIT for the code, CC BY-SA 4.0 for
 # the wordfreq-derived example lexica inside each package.
 license:
@@ -39,13 +43,7 @@ keywords:
   - OpenSesame
   - jsPsych
   - FAIR
-preferred-citation:
-  # No venue is named: the manuscript has not been submitted. A journal will be
-  # added here only once the article is accepted.
-  type: unpublished
-  title: 'lexsync: A cross-platform pipeline for multidimensional lexical optimisation and hardware-timed experiment generation'
-  authors:
-    - family-names: Bernabeu
-      given-names: Pablo
-  year: 2026
-  notes: 'Manuscript in preparation; venue and details to be finalised on submission.'
+# No preferred-citation until the manuscript describing lexsync is accepted.
+# GitHub's 'Cite this repository' button renders preferred-citation in place of
+# the software record, so an entry for the unpublished manuscript sent readers to
+# a work they could not read, and left out the DOI above.

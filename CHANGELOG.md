@@ -10,8 +10,40 @@ no function signature changes.
 
 ## [Unreleased]
 
+### Planned
+
+The state-of-the-art roadmap from the initial competitor and literature review is
+now delivered (covariance-aware and optimal matching, a distributional balance
+diagnostic, continuous designs and Wuggy-style pseudowords). Further norm
+dimensions (concreteness, age of acquisition, English Lexicon Project behavioural
+measures) are supported today through the `merge_norms` connector, which joins any
+word-keyed norm table so the matcher can equate on it. Future directions include
+more bundled languages and, should a determinism-safe implementation be found,
+promoting a covariance-aware distance to the default.
+
+## [0.1.0] - 2026-09-22
+
+lexsync 0.1.0 is the first public release. CRAN published the R package on
+2026-09-22 and assigned it the DOI 10.32614/CRAN.package.lexsync. The Python
+package is published on PyPI from the release tagged v0.1.0. The CRAN build
+predates the DOI, so its `citation("lexsync")` gives the repository's address.
+
+The first three entries under Added summarise the release. The others follow the
+package through its development, so they describe each change against the state
+it replaced.
+
 ### Added
 
+- Initial dual-language (R + Python) release: many-language corpus access,
+  parallel multidimensional matching (standardised-Euclidean and joint methods),
+  counterbalancing, item resampling (items as a random factor), deterministic
+  pseudoword generation, and generation of hardware-timed PsychoPy, OpenSesame
+  and jsPsych experiments with the onset trigger flip-locked to stimulus onset.
+- Cross-engine byte-identical stimulus selection, verified on the 21 worked
+  designs across English, Spanish and Mandarin Chinese.
+- Materials datasheet with provenance, checksums and a realised-control report
+  (Cohen's d, 90% CI and a TOST equivalence test), alongside a pre-registration
+  template and a machine-readable corpus registry.
 - The experiment templates cannot drift between their three copies. `templates/` is
   the canonical set and both packages carry a mirror so an installed copy can reach
   one. Nothing checked that the three agreed, and no functional test could, because a
@@ -618,28 +650,5 @@ no function signature changes.
   jsPsych library loads from a CDN, so the machine running the file needs an
   internet connection.
 
-### Planned
-
-The state-of-the-art roadmap from the initial competitor and literature review is
-now delivered (covariance-aware and optimal matching, a distributional balance
-diagnostic, continuous designs and Wuggy-style pseudowords). Further norm
-dimensions (concreteness, age of acquisition, English Lexicon Project behavioural
-measures) are supported today through the `merge_norms` connector, which joins any
-word-keyed norm table so the matcher can equate on it. Future directions include
-more bundled languages and, should a determinism-safe implementation be found,
-promoting a covariance-aware distance to the default.
-
-## [0.1.0] - 2026-06-07
-
-### Added
-
-- Initial dual-language (R + Python) release: many-language corpus access,
-  parallel multidimensional matching (standardised-Euclidean and joint methods),
-  counterbalancing, item resampling (items as a random factor), deterministic
-  pseudoword generation, and generation of hardware-timed PsychoPy, OpenSesame
-  and jsPsych experiments with the onset trigger flip-locked to stimulus onset.
-- Cross-engine byte-identical stimulus selection, verified on twelve worked
-  examples across English, Spanish and Mandarin Chinese.
-- Materials datasheet with provenance, checksums and a realised-control report
-  (Cohen's d, 90% CI and a TOST equivalence test), alongside a pre-registration
-  template and a machine-readable corpus registry.
+[Unreleased]: https://github.com/pablobernabeu/lexsync/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/pablobernabeu/lexsync/releases/tag/v0.1.0

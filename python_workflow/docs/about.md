@@ -25,11 +25,12 @@ design is therefore something a reader can rerun.
 Cite the software. The authoritative record is
 [`CITATION.cff`](https://github.com/pablobernabeu/lexsync/blob/main/CITATION.cff) at the root of the
 repository, which GitHub also renders into several formats through the 'Cite this repository' button.
-Rendered as a reference, the current version is:
+The reference for the current version of the Python package is:
 
 <!-- The reference below follows the family form used on every other About page in this family,
-     "R package version X" / "Python package version X", so that the two twins read alike and both
-     agree with what citation("lexsync") prints on the R side.
+     "R package version X" / "Python package version X", so that the two twins read alike. They end
+     differently by design. The R reference gives the DOI that CRAN assigned to the R package, and
+     this one gives the repository, for the reason the paragraph after the block sets out.
 
      The version used to be written out by hand three times on this page, in the reference, in the
      `note` field of the BibTeX entry and percent-encoded inside the download URI. That is how a page
@@ -94,10 +95,13 @@ function lexsyncCopyBibtex(btn) {
 }
 </script>
 
-A manuscript describing lexsync is in preparation. `CITATION.cff` lists it as the preferred citation
-once it exists, under the title *lexsync: A cross-platform pipeline for multidimensional lexical
-optimisation and hardware-timed experiment generation*, but it is unpublished and has no venue, so
-until it does the software reference above is the one to use. There is no deposited DOI.
+A manuscript describing lexsync is in preparation, under the title *lexsync: A cross-platform
+pipeline for multidimensional lexical optimisation and hardware-timed experiment generation*. It is
+unpublished and has no venue as yet. Once it is accepted, `CITATION.cff` will name it as the
+preferred citation, and until then the software reference above is the one to use. That file also
+carries a DOI, [10.32614/CRAN.package.lexsync](https://doi.org/10.32614/CRAN.package.lexsync).
+CRAN assigned it to the R package, and it resolves to that package's page, so the reference above
+names the Python package's version and the repository instead.
 
 Cite the corpus as well. The software citation covers the tool, not the data it drew your items
 from, and the corpora are third-party work with their own terms. Every one is cited, with its
@@ -115,9 +119,11 @@ Institute. His [ORCID record](https://orcid.org/0000-0003-1083-2460) lists his o
 
 ## The two packages
 
-This site documents the Python package. The R package is documented at
-[its own site](https://pablobernabeu.github.io/lexsync/r/), and the two are built from one
-repository and released in lockstep under one version.
+This site documents the Python package, which is published on
+[PyPI](https://pypi.org/project/lexsync/). The R package is documented at
+[its own site](https://pablobernabeu.github.io/lexsync/r/) and published on
+[CRAN](https://CRAN.R-project.org/package=lexsync). The two are built from one repository and share
+one version number.
 
 [The R package](https://pablobernabeu.github.io/lexsync/r/){ .md-button }
 [Source on GitHub](https://github.com/pablobernabeu/lexsync){ .md-button }
@@ -139,9 +145,12 @@ are not covered by it. See [Licence](licence.md) for the text and the distinctio
 ## Versioning and archival
 
 lexsync follows semantic versioning, and each release is tagged on GitHub, with the R and the Python
-package carrying the same version. Archival on Zenodo has been prepared but not yet carried out, so
-although a `.zenodo.json` sits at the root of the repository, nothing has been deposited and no DOI
-has been minted. There is therefore no concept DOI to cite, and until a deposit exists the software
+package carrying the same version. The R package is on
+[CRAN](https://CRAN.R-project.org/package=lexsync), which keeps the source of every version it
+publishes and gave the package the DOI mentioned above. The Python package is on
+[PyPI](https://pypi.org/project/lexsync/). Archival on Zenodo, which would cover both packages, has
+been prepared but not yet carried out. A `.zenodo.json` sits at the root of the repository, but
+nothing has been deposited, so there is no concept DOI to cite. Until a deposit exists, the software
 reference above, which names the version and the repository, is the one to use. The
 [changelog](changelog.md) records what changed in each release.
 

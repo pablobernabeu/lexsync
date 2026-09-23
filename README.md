@@ -1,6 +1,8 @@
 # lexsync <img src="R_workflow/man/figures/logo.svg" align="right" height="139" alt="" />
 
 <!-- badges: start -->
+[![CRAN status](https://www.r-pkg.org/badges/version/lexsync)](https://CRAN.R-project.org/package=lexsync)
+[![PyPI](https://img.shields.io/pypi/v/lexsync)](https://pypi.org/project/lexsync/)
 [![R-CMD-check](https://github.com/pablobernabeu/lexsync/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/pablobernabeu/lexsync/actions/workflows/R-CMD-check.yaml)
 [![python-tests](https://github.com/pablobernabeu/lexsync/actions/workflows/python-tests.yaml/badge.svg)](https://github.com/pablobernabeu/lexsync/actions/workflows/python-tests.yaml)
 [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
@@ -26,8 +28,8 @@ builds factorial word studies, lexical decision with deterministically generated
 pseudowords, priming, self-paced reading and cued categorisation from configuration
 rather than code, with word, pseudoword, paired and sentence stimuli, and with
 practice and filler blocks that run but are not analysed. It ships as two structurally identical,
-independently installable packages, a CRAN-ready R package and a PyPI-ready Python
-package, so a laboratory can adopt it in whichever ecosystem it already uses.
+independently installable packages, an R package on CRAN and a Python package on
+PyPI, so a laboratory can adopt it in whichever ecosystem it already uses.
 
 Beyond matching, `lexsync` treats the stimulus set as a reproducible research
 artefact. Every run is deterministic and seeded, and under the two deterministic
@@ -80,8 +82,8 @@ generated output they share held at the root:
 
 ```
 lexsync/
-├── R_workflow/        CRAN-ready R package 'lexsync'
-├── python_workflow/   PyPI-ready Python package 'lexsync'
+├── R_workflow/        R package 'lexsync', published on CRAN
+├── python_workflow/   Python package 'lexsync', published on PyPI
 ├── corpora/           many-language corpus registry + ingestion + attribution
 ├── config/            global schema + per-design configurations
 ├── items/             example item tables (priming pairs, SPR sentences)
@@ -125,7 +127,10 @@ reaches the same solver through `scipy`, which it requires anyway.
 
 To install the packages themselves rather than run them from a checkout, see
 [`R_workflow/README.md`](R_workflow/README.md) and
-[`python_workflow/README.md`](python_workflow/README.md).
+[`python_workflow/README.md`](python_workflow/README.md). The R package is published
+on [CRAN](https://CRAN.R-project.org/package=lexsync) and the Python package on
+[PyPI](https://pypi.org/project/lexsync/), so `install.packages("lexsync")` or
+`pip install lexsync` is all it takes.
 
 Neither the generation step nor its tests require 'PsychoPy', 'OpenSesame' or any
 parallel-port driver. These are needed only when the generated experiment is run on
@@ -256,8 +261,10 @@ is a hard constraint on which algorithms can be adopted as defaults.
 
 If you use `lexsync`, please cite the software. The authoritative record is
 [`CITATION.cff`](CITATION.cff), which GitHub renders into several formats through its
-'Cite this repository' button, and each package's About page carries the same citation
-as a formatted reference. A manuscript describing lexsync is in preparation.
+'Cite this repository' button, and each package's About page carries a formatted
+reference. The one for the R package gives the DOI that CRAN assigned on publication,
+[10.32614/CRAN.package.lexsync](https://doi.org/10.32614/CRAN.package.lexsync), which
+`CITATION.cff` records as well. A manuscript describing lexsync is in preparation.
 
 Cite the corpus as well as the software. The corpora are third-party work with their
 own terms, and each is credited, with its licence and retrieval date, in

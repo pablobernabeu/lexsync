@@ -83,10 +83,21 @@ home:
       # "cite" component is more reliable than overriding the built-in in place.
       # It points at the About page rather than pkgdown's default
       # authors.html#citation, matching the rest of the family. No trailing stop.
+      # The DOI sits under the link because a reader who only wants the
+      # identifier should not have to open the About page for it. pkgdown adds
+      # the "View on CRAN" entry under Links by itself, with no configuration
+      # here, when it finds the package on CRAN at build time. The entry links
+      # the cloud.r-project.org mirror, the one CRAN address on the site not in
+      # the CRAN.R-project.org form used everywhere else. The <wbr> lets the DOI
+      # break after its slash. Unbroken, the DOI was wider than the sidebar
+      # between the md and lg breakpoints, where body's overflow-x: hidden
+      # clipped its end.
       cite:
         title: Citation
         text: |
           [How to cite lexsync](articles/about.html)
+
+          DOI [10.32614/<wbr>CRAN.package.lexsync](https://doi.org/10.32614/CRAN.package.lexsync)
 
 navbar:
   structure:

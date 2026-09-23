@@ -1,6 +1,7 @@
 # lexsync (Python)
 
 <!-- badges: start -->
+[![PyPI](https://img.shields.io/pypi/v/lexsync)](https://pypi.org/project/lexsync/)
 [![python-tests](https://github.com/pablobernabeu/lexsync/actions/workflows/python-tests.yaml/badge.svg)](https://github.com/pablobernabeu/lexsync/actions/workflows/python-tests.yaml)
 [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
 [![Code: MIT](https://img.shields.io/badge/code-MIT-blue.svg)](https://opensource.org/license/MIT)
@@ -141,8 +142,10 @@ Cite the software. The authoritative record is
 [`CITATION.cff`](https://github.com/pablobernabeu/lexsync/blob/main/CITATION.cff)
 at the root of the repository, which GitHub renders into several formats through
 its 'Cite this repository' button. The [About
-page](https://pablobernabeu.github.io/lexsync/python/about/) carries the same
-citation as a formatted reference. A manuscript describing lexsync is in
+page](https://pablobernabeu.github.io/lexsync/python/about/) carries a formatted
+reference for this package, with its version and the repository's address. The
+DOI that `CITATION.cff` records is the one CRAN assigned to the R package, so it
+does not identify the Python package. A manuscript describing lexsync is in
 preparation.
 
 Cite the corpus as well as the software. The corpora are third-party work with

@@ -1,5 +1,25 @@
 # lexsync (development version)
 
+* `citation("lexsync")` gives the DOI that CRAN assigned to the package,
+  10.32614/CRAN.package.lexsync, with the CRAN page as its URL. The 0.1.0 build
+  on CRAN predates the DOI and gives the repository's address.
+
+# lexsync 0.1.0
+
+* First release: multilingual corpus access, parallel multidimensional matching,
+  counterbalancing, item resampling, deterministic pseudoword generation, and
+  generation of hardware-timed PsychoPy, OpenSesame and jsPsych experiments. The
+  R and Python engines select byte-identical stimuli, and every run ships a
+  materials datasheet (provenance, checksums, realised control) and a
+  pre-registration template.
+* See the top-level `CHANGELOG.md` for the full, cross-language history and the
+  planned methodological roadmap.
+
+## Changes made before the release
+
+These notes follow the package through its development up to the release, so
+they describe each change against the state it replaced.
+
 * The package now declares `Depends: R (>= 4.0.0)`. `tools::R_user_dir` does not
   exist before 4.0.0, and `round()`'s post-4.0 algorithm shapes artefact bytes, so an
   older R would fail obscurely or write different bytes without complaint.
@@ -332,14 +352,3 @@
   renders. pkgdown passes the calling terminal's colour support into its build
   subprocess, so a coloured message or error would otherwise reach the reader as
   escape sequences in the middle of the text.
-* See the top-level `CHANGELOG.md` for the full, cross-language history and the
-  planned methodological roadmap.
-
-# lexsync 0.1.0
-
-* First release: multilingual corpus access, parallel multidimensional matching,
-  counterbalancing, item resampling, deterministic pseudoword generation, and
-  generation of hardware-timed PsychoPy, OpenSesame and jsPsych experiments. The
-  R and Python engines select byte-identical stimuli, and every run ships a
-  materials datasheet (provenance, checksums, realised control) and a
-  pre-registration template.

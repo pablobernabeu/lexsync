@@ -37,7 +37,8 @@ download when none is on the path.
 
 ```r
 install.packages(c("shiny", "bslib", "DT", "zip"))
-# install lexsync from R_workflow first (e.g. devtools::install("R_workflow"))
+# install lexsync first, with install.packages("lexsync") from CRAN or, to
+# match this checkout, with devtools::install("R_workflow")
 shiny::runApp("apps/r_shiny", port = 8502)
 ```
 

@@ -316,12 +316,13 @@ h3 { font-size: 1.25rem; margin-top: 1.8rem; }
   color: var(--brand-muted);
 }
 
-// Badges row (R-CMD-check, python-tests, licence). pkgdown caps the width of an
-// image inside `main` but not of one inside the sidebar, which is where the home
-// page's status badges live, so between the md and lg breakpoints the widest of
-// them ran past the right edge of a column only 156px wide. The footer's
-// full-bleed band sets `body { overflow-x: hidden }`, so the overhang was
-// clipped rather than merely off-screen: there was no way to scroll to it.
+// Badges row (CRAN status, R-CMD-check, lifecycle, licence). pkgdown caps the
+// width of an image inside `main` but not of one inside the sidebar, which is
+// where the home page's status badges live, so between the md and lg
+// breakpoints the widest of them ran past the right edge of a column only 156px
+// wide. The footer's full-bleed band sets `body { overflow-x: hidden }`, so the
+// overhang was clipped rather than merely off-screen: there was no way to
+// scroll to it.
 .template-home :is(.contents, main) .badge,
 .template-home img[src*="badge"],
 aside img[src*="badge"] {
