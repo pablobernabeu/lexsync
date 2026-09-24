@@ -27,11 +27,13 @@ recorded so it can be cited; consult \code{\link[=list_corpora]{list_corpora()}}
 \details{
 The file lands in \code{\link[=lexsync_cache_dir]{lexsync_cache_dir()}} unless \code{dest} names somewhere else.
 The cache directory is created only once the registry entry and its URL have
-been accepted, so a refused call writes nothing. Each download into the cache
-begins by deleting any \code{.part} sidecar that an interrupted transfer left there.
-The cache persists between sessions, and one corpus may reach the 200 MB
-download cap, so several of them add up. \code{\link[=lexsync_cache_clear]{lexsync_cache_clear()}} removes one
-corpus or the whole cache, and the next call downloads the corpus again. A
-\code{dest} outside the cache is the caller's own: its directory must already
-exist, and nothing beside it is deleted.
+been accepted, so a refused call writes nothing. A download to the default
+destination begins by deleting any \code{.part} sidecar in the cache that an
+interrupted transfer left there more than a day earlier. The cache persists
+between sessions, and one corpus may reach the 200 MB download cap, so several
+of them add up. \code{\link[=lexsync_cache_clear]{lexsync_cache_clear()}} removes one corpus or the whole cache,
+and the next call downloads the corpus again. A \code{dest} the caller names, inside
+the cache or not, is used as given. Its directory must already exist, no
+sidecar is swept, and the only file beside it that lexsync writes or deletes is
+the \verb{<dest>.part} sidecar of the download itself.
 }

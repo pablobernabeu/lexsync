@@ -48,6 +48,12 @@ seed_cache <- function(files) {
   invisible(lexsync_cache_dir())
 }
 
+# Backdates cache files by two days, past the day after which the sweep treats a
+# sidecar as abandoned.
+age_files <- function(files) {
+  Sys.setFileTime(file.path(lexsync_cache_dir(), files), Sys.time() - 2 * 24 * 60 * 60)
+}
+
 CSV_BODY <- charToRaw("word,freq_zipf\ndog,4.5\n")
 
 write_head <- function(bytes) {
@@ -280,7 +286,8 @@ test_that("a refused fetch leaves the cache uncreated", {
 # Pins the same contract as test_fetch_corpus_creates_the_cache_and_sweeps_stale_sidecars
 # in the Python engine's test_corpora.py. An interrupt or a dead process leaves
 # a '.part' that no handler removed; the next download into the cache deletes
-# every such sidecar, and nothing else.
+# every such sidecar a day old or more, and nothing else. A younger one may be a
+# download still running in another session, so it is left alone.
 test_that("a default-destination fetch creates the cache and sweeps stale sidecars", {
   local_mocked_bindings(download.file = mock_download(CSV_BODY))
   with_user_cache({
@@ -291,17 +298,22 @@ test_that("a default-destination fetch creates the cache and sweeps stale sideca
     expect_identical(out, file.path(lexsync_cache_dir(), "fake.csv"))
     expect_identical(list.files(lexsync_cache_dir()), "fake.csv")
 
-    seed_cache(c("fake.csv.part", "other.csv.part", "other.csv"))
+    seed_cache(c("fake.csv.part", "other.csv.part", "other.csv", "busy.csv.part"))
+    age_files(c("fake.csv.part", "other.csv.part"))
     expect_message(
       fetch_corpus("fake", registry_path = temp_registry("https://example.invalid/good.csv")),
       "downloaded 'fake'"
     )
-    expect_identical(list.files(lexsync_cache_dir()), c("fake.csv", "other.csv"))
+    expect_identical(list.files(lexsync_cache_dir()),
+                     c("busy.csv.part", "fake.csv", "other.csv"))
   })
 })
 
-# The sweep happens as the download starts, so a transfer that then fails still
-# leaves the cache free of the stale sidecars it found.
+# Pins the same contract as
+# test_stale_sidecars_are_swept_even_when_the_download_then_fails in the Python
+# engine's test_corpora.py. The sweep happens as the download starts, so a
+# transfer that then fails still leaves the cache free of the stale sidecars it
+# found.
 test_that("stale sidecars are swept even when the download then fails", {
   local_mocked_bindings(download.file = function(url, destfile, ...) {
     writeBin(charToRaw("word,freq_zipf\ndog,4"), destfile)
@@ -309,6 +321,7 @@ test_that("stale sidecars are swept even when the download then fails", {
   })
   with_user_cache({
     seed_cache(c("other.csv.part", "other.csv"))
+    age_files("other.csv.part")
     expect_error(
       fetch_corpus("fake", registry_path = temp_registry("https://example.invalid/flaky.csv")),
       "could not download corpus 'fake'"
@@ -317,8 +330,9 @@ test_that("stale sidecars are swept even when the download then fails", {
   })
 })
 
-# A caller's `dest` may sit beside files lexsync never wrote, so the sweep is
-# confined to the cache, which such a call does not create either.
+# This test has no Python twin, because that engine's fetch_corpus() takes no
+# dest. A caller's `dest` may sit beside files lexsync never wrote, so the sweep
+# is confined to the cache, which such a call does not create either.
 test_that("a fetch to a caller's dest sweeps nothing and leaves the cache alone", {
   dir <- temp_cache()
   file.create(file.path(dir, "unrelated.part"))
@@ -369,19 +383,58 @@ test_that("lexsync_cache_clear on an absent cache removes and creates nothing", 
 
 # Pins the same contract as test_cache_clear_refuses_a_path in the Python
 # engine's test_corpora.py: the name is joined onto the cache directory, so a
-# separator would reach outside it.
+# separator, or the colon of a Windows drive, would reach outside it.
 test_that("lexsync_cache_clear refuses a name that is not a single corpus name", {
   with_user_cache({
     dir <- seed_cache("fake.csv")
     # The file that "../outside" would reach, beside the cache directory.
     outside <- file.path(dirname(dir), "outside.csv")
     file.create(outside)
-    for (bad in list("../outside", "..\\outside", "a/b", "", NA_character_, c("a", "b"), 1)) {
+    for (bad in list("../outside", "..\\outside", "a/b", "C:outside", "a:b", "",
+                     NA_character_, c("a", "b"), 1)) {
       expect_error(lexsync_cache_clear(bad), "not a path", info = deparse(bad))
     }
     expect_true(file.exists(outside))
     expect_identical(list.files(dir), "fake.csv")
   })
+})
+
+# Pins the same contract as test_cache_clear_takes_a_name_literally in the
+# Python engine's test_corpora.py. unlink() expands wildcards unless told not
+# to, so "*" once emptied the cache while reporting nothing removed. A name
+# names one corpus's files, and a directory that happens to carry that name is
+# not one of them.
+test_that("lexsync_cache_clear takes a name literally", {
+  with_user_cache({
+    dir <- seed_cache(c("a.csv", "b.csv"))
+    dir.create(file.path(dir, "d.csv"))
+    for (pattern in c("*", "?", "[ab]")) {
+      expect_identical(lexsync_cache_clear(pattern), character(0), info = pattern)
+    }
+    expect_identical(lexsync_cache_clear("d"), character(0))
+    expect_identical(list.files(dir), c("a.csv", "b.csv", "d.csv"))
+  })
+})
+
+# A cache path holding brackets must name itself. Globbed, <tmp>/a[1] matched
+# <tmp>/a1, so clearing one cache deleted another. The Python engine joins paths
+# literally, so this test has no twin.
+test_that("lexsync_cache_clear() empties its own cache when the path holds brackets", {
+  root <- tempfile("lexsync-")
+  own <- file.path(root, "a[1]")
+  sibling <- file.path(root, "a1", "R", "lexsync")
+  dir.create(sibling, recursive = TRUE)
+  file.create(file.path(sibling, "keep.csv"))
+  old <- Sys.getenv("R_USER_CACHE_DIR", unset = NA)
+  on.exit({
+    if (is.na(old)) Sys.unsetenv("R_USER_CACHE_DIR") else Sys.setenv(R_USER_CACHE_DIR = old)
+    unlink(root, recursive = TRUE)
+  }, add = TRUE)
+  Sys.setenv(R_USER_CACHE_DIR = own)
+  seed_cache("fake.csv")
+  expect_identical(basename(lexsync_cache_clear()), "fake.csv")
+  expect_false(dir.exists(lexsync_cache_dir()))
+  expect_true(file.exists(file.path(sibling, "keep.csv")))
 })
 
 test_that("list_corpora surfaces the registry status", {

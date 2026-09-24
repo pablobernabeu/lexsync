@@ -114,9 +114,12 @@ connector and citation. `lexsync fetch` takes either a registry entry name or a 
 the name is one of the thirty language codes registered for the wordfreq connector, a lexicon is
 built with wordfreq and cached under `~/.lexsync/cache`. Otherwise the registered delimited file is
 downloaded there. Either way the path is printed and the citation for the source goes to standard
-output with it. The cache persists between sessions. `lexsync.corpora.cache_clear("fr")` removes one
-corpus from it, and `cache_clear()` with no name removes the whole cache. Fetching is Python-only. The R package can read the result as an ordinary corpus but
-cannot build one, so an R laboratory reaches the wider language set through lexica derived here.
+output with it. The cache persists between sessions. `lexsync.corpora.cache_clear("fr")` removes
+one corpus from it, and `cache_clear()` with no name removes the whole cache. Building a wordfreq
+lexicon is Python-only. The R package can read the result as an ordinary corpus but cannot build
+one, so an R laboratory reaches the wider language set through lexica derived here. Registered
+corpora fetched from R go to a separate cache under `tools::R_user_dir("lexsync", "cache")`, which
+`lexsync_cache_clear()` empties.
 
 ## Anatomy of a design
 

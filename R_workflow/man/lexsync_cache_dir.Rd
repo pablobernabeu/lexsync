@@ -20,11 +20,11 @@ download into it, so until then it does not exist.
 The cache persists between sessions. A registered corpus is a delimited word
 list, and a download is refused above 200 MB, so a cache holding several
 large corpora can reach a few hundred megabytes. Each download into the cache
-first deletes any partial download that an interrupted transfer left behind,
-and fetching a corpus again replaces the earlier copy. Downloaded corpora
-otherwise stay until \code{\link[=lexsync_cache_clear]{lexsync_cache_clear()}} removes them, one corpus at a
-time or all together. Nothing kept there is irreplaceable, so the next call
-downloads afresh.
+first deletes any partial download that an interrupted transfer left there
+more than a day earlier, and fetching a corpus again replaces the earlier
+copy. Downloaded corpora otherwise stay until \code{\link[=lexsync_cache_clear]{lexsync_cache_clear()}} removes
+them, one corpus at a time or all together. Nothing kept there is
+irreplaceable, so the next call downloads afresh.
 }
 \examples{
 lexsync_cache_dir()

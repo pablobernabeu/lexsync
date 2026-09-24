@@ -15,11 +15,11 @@
 #' The cache persists between sessions. A registered corpus is a delimited word
 #' list, and a download is refused above 200 MB, so a cache holding several
 #' large corpora can reach a few hundred megabytes. Each download into the cache
-#' first deletes any partial download that an interrupted transfer left behind,
-#' and fetching a corpus again replaces the earlier copy. Downloaded corpora
-#' otherwise stay until [lexsync_cache_clear()] removes them, one corpus at a
-#' time or all together. Nothing kept there is irreplaceable, so the next call
-#' downloads afresh.
+#' first deletes any partial download that an interrupted transfer left there
+#' more than a day earlier, and fetching a corpus again replaces the earlier
+#' copy. Downloaded corpora otherwise stay until [lexsync_cache_clear()] removes
+#' them, one corpus at a time or all together. Nothing kept there is
+#' irreplaceable, so the next call downloads afresh.
 #'
 #' @return The cache directory path, which need not exist yet.
 #' @seealso [lexsync_cache_clear()] to empty the cache.
@@ -46,44 +46,54 @@ lexsync_cache_dir <- function() {
 #'   there was nothing to remove.
 #' @seealso [lexsync_cache_dir()] for where the cache lives.
 #' @examples
-#' \dontshow{
-#' # A throwaway cache holding two corpora and an interrupted download, so that
-#' # example() and R CMD check leave the real cache alone.
-#' .old_cache <- Sys.getenv("R_USER_CACHE_DIR", unset = NA)
-#' Sys.setenv(R_USER_CACHE_DIR = tempfile("lexsync-"))
-#' dir.create(lexsync_cache_dir(), recursive = TRUE)
-#' invisible(file.create(file.path(lexsync_cache_dir(),
-#'   c("subtlex_nl.csv", "subtlex_nl.csv.part", "lexique_fr.csv"))))
-#' }
-#' # One corpus, with its partial download
-#' basename(lexsync_cache_clear("subtlex_nl"))
-#' # Everything else, and the directory itself
-#' basename(lexsync_cache_clear())
-#' dir.exists(lexsync_cache_dir())
-#' \dontshow{
-#' if (is.na(.old_cache)) Sys.unsetenv("R_USER_CACHE_DIR") else
-#'   Sys.setenv(R_USER_CACHE_DIR = .old_cache)
-#' rm(.old_cache)
-#' }
+#' # A throwaway cache stands in for yours, so running this leaves your own alone.
+#' local({
+#'   tmp <- tempfile("lexsync-")
+#'   old <- Sys.getenv("R_USER_CACHE_DIR", unset = NA)
+#'   on.exit({
+#'     if (is.na(old)) Sys.unsetenv("R_USER_CACHE_DIR") else
+#'       Sys.setenv(R_USER_CACHE_DIR = old)
+#'     unlink(tmp, recursive = TRUE)
+#'   })
+#'   Sys.setenv(R_USER_CACHE_DIR = tmp)
+#'   # Two corpora and an interrupted download
+#'   dir.create(lexsync_cache_dir(), recursive = TRUE)
+#'   invisible(file.create(file.path(lexsync_cache_dir(),
+#'     c("subtlex_nl.csv", "subtlex_nl.csv.part", "lexique_fr.csv"))))
+#'   # One corpus, with its partial download
+#'   print(basename(lexsync_cache_clear("subtlex_nl")))
+#'   # Everything else, and the directory itself
+#'   print(basename(lexsync_cache_clear()))
+#'   dir.exists(lexsync_cache_dir())
+#' })
 #' @export
 lexsync_cache_clear <- function(name = NULL) {
-  dir <- lexsync_cache_dir()
+  # Mirrors cache_clear() in python_workflow/src/lexsync/corpora.py, which also
+  # removes the <name>_wordfreq.csv that only that engine builds. The tilde is
+  # expanded here because unlink() below expands nothing, and R_user_dir() keeps a
+  # leading '~' from R_USER_CACHE_DIR as it is.
+  dir <- path.expand(lexsync_cache_dir())
   if (is.null(name)) {
     removed <- list.files(dir, recursive = TRUE, full.names = TRUE, all.files = TRUE)
     targets <- dir
   } else {
-    # The name becomes a file name inside the cache, so a separator would let it
-    # reach a file outside it.
+    # The name becomes a file name inside the cache, so a path separator, or the
+    # colon of a Windows drive or stream name, would let it reach a file other than
+    # the corpus's own. The Python twin refuses the same three characters.
     if (!is.character(name) || length(name) != 1L || is.na(name) || !nzchar(name) ||
-        grepl("[/\\\\]", name)) {
+        grepl("[/\\\\:]", name)) {
       stop("lexsync: 'name' must be a single corpus name, not a path.", call. = FALSE)
     }
     targets <- file.path(dir, paste0(name, c(".csv", ".csv.part")))
-    removed <- targets[file.exists(targets)]
+    # Files only, as the twin's os.path.isfile() has it.
+    targets <- targets[file.exists(targets) & !dir.exists(targets)]
+    removed <- targets
   }
-  # unlink() reports a file it could not delete (one held open on Windows, say)
-  # only through its return code, so what survives is checked for directly.
-  unlink(targets, recursive = TRUE)
+  # With expand = FALSE a name or cache path holding *, ? or [ ] names itself and
+  # nothing else; with the default, "*" would empty the cache. unlink() reports a
+  # file it could not delete (one held open on Windows, say) only through its
+  # return code, so what survives is checked for directly.
+  unlink(targets, recursive = is.null(name), expand = FALSE)
   left <- targets[file.exists(targets)]
   if (length(left)) {
     stop(sprintf("lexsync: could not remove %s from the cache; check that no other process is using it.",
@@ -96,14 +106,23 @@ lexsync_cache_clear <- function(name = NULL) {
 # python_workflow/src/lexsync/corpora.py. A '.part' sidecar outlives its fetch
 # only when the transfer was cut short in a way fetch_corpus()'s handlers never
 # see: an interrupt reaches neither the error nor the warning branch, and a
-# process that dies runs no handler at all. Nothing else writes a sidecar into
-# the cache, so, with one fetch into it at a time, any found here is stale.
+# process that dies runs no handler at all. A sidecar can also belong to a
+# download still running in another session, which writes to it as it goes and
+# gives up on a stalled server after options(timeout). A day without a write
+# therefore marks a sidecar as abandoned, and only those are deleted. A younger
+# one is left to its download, and a retry of the same corpus truncates its own.
 .prepare_cache <- function() {
-  dir <- lexsync_cache_dir()
+  dir <- path.expand(lexsync_cache_dir())
   dir.create(dir, recursive = TRUE, showWarnings = FALSE)
-  unlink(list.files(dir, pattern = "\\.part$", full.names = TRUE, all.files = TRUE))
+  parts <- list.files(dir, pattern = "\\.part$", full.names = TRUE, all.files = TRUE)
+  stale <- difftime(Sys.time(), file.mtime(parts), units = "secs") > .stale_part_seconds()
+  unlink(parts[!is.na(stale) & stale], expand = FALSE)
   dir
 }
+
+# How long a sidecar may go unwritten before the sweep treats it as abandoned.
+# Mirrors _STALE_PART_SECONDS in python_workflow/src/lexsync/corpora.py.
+.stale_part_seconds <- function() 24 * 60 * 60
 
 #' Locate the corpus registry
 #' @keywords internal
@@ -179,13 +198,15 @@ list_corpora <- function(registry_path = NULL) {
 #'
 #' The file lands in [lexsync_cache_dir()] unless `dest` names somewhere else.
 #' The cache directory is created only once the registry entry and its URL have
-#' been accepted, so a refused call writes nothing. Each download into the cache
-#' begins by deleting any `.part` sidecar that an interrupted transfer left there.
-#' The cache persists between sessions, and one corpus may reach the 200 MB
-#' download cap, so several of them add up. [lexsync_cache_clear()] removes one
-#' corpus or the whole cache, and the next call downloads the corpus again. A
-#' `dest` outside the cache is the caller's own: its directory must already
-#' exist, and nothing beside it is deleted.
+#' been accepted, so a refused call writes nothing. A download to the default
+#' destination begins by deleting any `.part` sidecar in the cache that an
+#' interrupted transfer left there more than a day earlier. The cache persists
+#' between sessions, and one corpus may reach the 200 MB download cap, so several
+#' of them add up. [lexsync_cache_clear()] removes one corpus or the whole cache,
+#' and the next call downloads the corpus again. A `dest` the caller names, inside
+#' the cache or not, is used as given. Its directory must already exist, no
+#' sidecar is swept, and the only file beside it that lexsync writes or deletes is
+#' the `<dest>.part` sidecar of the download itself.
 #'
 #' @param name A corpus name present in the registry.
 #' @param registry_path Optional path to `registry.yaml`.

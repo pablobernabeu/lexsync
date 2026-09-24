@@ -30,9 +30,11 @@
   on every call, so asking where the cache was left an empty directory behind.
   `fetch_corpus()` now creates the cache when a download into it starts, once
   the registry entry and its URL have been accepted, so a refused call writes
-  nothing. That download begins by deleting any `.part` sidecar in the cache,
-  which an interrupt or a process that died mid-transfer leaves behind and no
-  handler removes. A `dest` of the caller's choosing behaves as before.
+  nothing. That download begins by deleting any `.part` sidecar in the cache
+  that has gone a day without a write. An interrupt or a process that died
+  mid-transfer leaves one behind, and no handler removes it. A younger sidecar
+  may belong to a download still running in another session, so it is left
+  alone. A `dest` of the caller's choosing behaves as before.
 * `citation("lexsync")` gives the DOI that CRAN assigned to the package,
   10.32614/CRAN.package.lexsync, with the CRAN page as its URL. The 0.1.0 build
   on CRAN predates the DOI and gives the repository's address. The entry names

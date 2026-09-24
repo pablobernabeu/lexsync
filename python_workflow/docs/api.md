@@ -14,8 +14,8 @@ cite is listed in full on the [references page](references.md).
 ## Corpora and lexica
 
 Languages are supplied through a corpus registry, so reaching a new one takes a registry entry and
-no code. These functions find a corpus, fetch it if it is not already local, and read a
-derived lexicon or a prepared item table into the frame everything else expects.
+no code. These functions find a corpus, download it into a per-user cache that can be cleared
+again, and read a derived lexicon or a prepared item table into the frame everything else expects.
 
 ::: lexsync.list_corpora
 

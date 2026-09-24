@@ -46,10 +46,11 @@ described under Changed.
   empty directory in the user's home filespace. Both now only report the path.
   `fetch_corpus` creates the directory once the registry entry and its URL have
   been accepted, or the wordfreq lexicon has been built, so a refused call writes
-  nothing. Each fetch into the cache begins by deleting any `.part` sidecar there,
-  which an interrupt or a process that died mid-transfer leaves behind and
-  neither engine's handlers remove. R's `fetch_corpus` sweeps nothing when given
-  a `dest` outside the cache.
+  nothing. Each fetch into the cache begins by deleting any `.part` sidecar there
+  that has gone a day without a write. An interrupt or a process that died
+  mid-transfer leaves one behind, and neither engine's handlers remove it. A
+  younger sidecar may belong to a download still running in another process, so
+  it is left alone. R's `fetch_corpus` sweeps nothing when given a `dest`.
 - The EEG condition codes follow the design, not the trial order.
   `assign_triggers` numbered the conditions from 101 in the order they first
   appeared in the table it received, which after `counterbalance` is the shuffled

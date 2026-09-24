@@ -122,6 +122,26 @@ jobs:
           "$RUNNER_TEMP/wheel-venv/bin/lexsync" run config/design_en_freqcontrast.yaml --outdir out
           test -f out/stimuli/en_freqcontrast_english_stimuli_py.csv
 
+      # The sdist ships tests/, and conda-forge, Debian and Nix run them wherever
+      # they unpack it. Here it is unpacked beside neighbours of the kind CRAN's
+      # hosts gave the R check (see R-CMD-check.yaml), and beside a python_workflow/
+      # and an R_workflow/DESCRIPTION naming another package, so only the package
+      # name tells them from the lexsync repository. A test that takes any of them
+      # for the repository fails here instead of skipping. The sdist's own sources
+      # go first on the path, so its tests exercise its own code. One leg is enough.
+      - name: Run the sdist's tests beside unrelated neighbours
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
+        run: |
+          sd="$RUNNER_TEMP/sd"
+          mkdir -p "$sd/templates/R" "$sd/config" "$sd/R_workflow" "$sd/python_workflow"
+          printf 'Package: templates\nVersion: 0.3.0\n' > "$sd/templates/DESCRIPTION"
+          printf 'addAttr <- function(x) x\n' > "$sd/templates/R/addAttr.R"
+          printf 'Package: config\nVersion: 0.3.2\n' > "$sd/config/DESCRIPTION"
+          printf 'Package: notlexsync\nVersion: 1.0\n' > "$sd/R_workflow/DESCRIPTION"
+          tar -xzf dist/lexsync-*.tar.gz -C "$sd"
+          cd "$sd"/lexsync-*/
+          PYTHONPATH="$PWD/src" python -m pytest -q -p no:cacheprovider tests
+
   # The parity suite compares the Python engine against output/stimuli/*_R.csv.
   # Run on a single platform: parity is a property of the two engines, not of the
   # operating system, and this is the one job that needs both toolchains.

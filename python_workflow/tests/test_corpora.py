@@ -1,5 +1,6 @@
 import hashlib
 import os
+import time
 import urllib.error
 import urllib.request
 
@@ -92,6 +93,14 @@ def _seed_cache(cache, names):
 
 def _listing(cache):
     return sorted(p.name for p in cache.iterdir())
+
+
+def _age(cache, names):
+    """Backdate cache files by two days, past the day after which the sweep
+    treats a sidecar as abandoned."""
+    then = time.time() - 2 * 24 * 60 * 60
+    for name in names:
+        os.utime(cache / name, (then, then))
 
 
 def _wordfreq_registry(tmp_path):
@@ -329,7 +338,8 @@ def test_a_wordfreq_fetch_without_the_extra_leaves_the_cache_uncreated(tmp_path,
 # Pins the same contract as "a default-destination fetch creates the cache and
 # sweeps stale sidecars" in the R engine's test-corpora.R. An interrupt or a dead
 # process leaves a '.part' that no handler removed; the next fetch into the cache
-# deletes every such sidecar, and nothing else.
+# deletes every such sidecar a day old or more, and nothing else. A younger one
+# may be a download still running in another process, so it is left alone.
 def test_fetch_corpus_creates_the_cache_and_sweeps_stale_sidecars(tmp_path, monkeypatch):
     path = _temp_registry(tmp_path, "https://example.invalid/good.csv")
     cache = _absent_cache(tmp_path, monkeypatch)
@@ -337,9 +347,10 @@ def test_fetch_corpus_creates_the_cache_and_sweeps_stale_sidecars(tmp_path, monk
     assert fetch_corpus("fake", registry_path=path) == str(cache / "fake.csv")
     assert _listing(cache) == ["fake.csv"]
 
-    _seed_cache(cache, ["fake.csv.part", "other.csv.part", "other.csv"])
+    _seed_cache(cache, ["fake.csv.part", "other.csv.part", "other.csv", "busy.csv.part"])
+    _age(cache, ["fake.csv.part", "other.csv.part"])
     fetch_corpus("fake", registry_path=path)
-    assert _listing(cache) == ["fake.csv", "other.csv"]
+    assert _listing(cache) == ["busy.csv.part", "fake.csv", "other.csv"]
 
 
 # Pins the same contract as "stale sidecars are swept even when the download then
@@ -348,6 +359,7 @@ def test_stale_sidecars_are_swept_even_when_the_download_then_fails(tmp_path, mo
     path = _temp_registry(tmp_path, "https://example.invalid/gone.csv")
     cache = _absent_cache(tmp_path, monkeypatch)
     _seed_cache(cache, ["other.csv.part", "other.csv"])
+    _age(cache, ["other.csv.part"])
 
     def fake_urlopen(url, timeout=None):
         raise urllib.error.HTTPError(url, 404, "Not Found", None, None)
@@ -367,9 +379,10 @@ def test_a_wordfreq_fetch_creates_the_cache_and_sweeps_stale_sidecars(tmp_path, 
     registry_path = _wordfreq_registry(tmp_path)
     assert fetch_corpus("xx", registry_path=registry_path) == str(cache / "xx_wordfreq.csv")
 
-    _seed_cache(cache, ["other.csv.part", "other.csv"])
+    _seed_cache(cache, ["other.csv.part", "other.csv", "busy.csv.part"])
+    _age(cache, ["other.csv.part"])
     fetch_corpus("xx", registry_path=registry_path)
-    assert _listing(cache) == ["other.csv", "xx_wordfreq.csv"]
+    assert _listing(cache) == ["busy.csv.part", "other.csv", "xx_wordfreq.csv"]
 
 
 # Pins the same contract as "lexsync_cache_clear removes one corpus and its
@@ -407,8 +420,10 @@ def test_cache_clear_on_an_absent_cache_creates_nothing(tmp_path, monkeypatch):
 
 # Pins the same contract as "lexsync_cache_clear refuses a name that is not a
 # single corpus name" in the R engine's test-corpora.R: the name is joined onto
-# the cache directory, so a separator would reach outside it.
-@pytest.mark.parametrize("bad", ["../outside", "..\\outside", "a/b", "", ["a", "b"], 1])
+# the cache directory, so a separator, or the colon of a Windows drive, would
+# reach outside it.
+@pytest.mark.parametrize("bad", ["../outside", "..\\outside", "a/b", "C:outside", "a:b", "",
+                                 ["a", "b"], 1])
 def test_cache_clear_refuses_a_path(tmp_path, monkeypatch, bad):
     cache = _absent_cache(tmp_path, monkeypatch)
     _seed_cache(cache, ["fake.csv"])
@@ -427,3 +442,50 @@ def test_list_corpora_surfaces_registry_status():
     assert status["subtlex_uk"] == "manual"
     assert status["subtlex_esp"] == "listed"
     assert "validated" not in set(status.values())
+
+
+# Pins the same contract as "lexsync_cache_clear takes a name literally" in the R
+# engine's test-corpora.R, where unlink() once expanded "*" and emptied the
+# cache. A name names one corpus's files, and a directory that happens to carry
+# that name is not one of them.
+def test_cache_clear_takes_a_name_literally(tmp_path, monkeypatch):
+    cache = _absent_cache(tmp_path, monkeypatch)
+    _seed_cache(cache, ["a.csv", "b.csv"])
+    (cache / "d.csv").mkdir()
+    for pattern in ("*", "?", "[ab]"):
+        assert corpora.cache_clear(pattern) == []
+    assert corpora.cache_clear("d") == []
+    assert _listing(cache) == ["a.csv", "b.csv", "d.csv"]
+
+
+# ~/.lexsync holds nothing but the cache, so emptying the cache must not leave an
+# empty directory behind in the user's home. Anything else kept there stays.
+def test_cache_clear_removes_the_emptied_lexsync_directory(tmp_path, monkeypatch):
+    home_dir = tmp_path / ".lexsync"
+    cache = home_dir / "cache"
+    monkeypatch.setattr(corpora, "cache_dir", lambda: str(cache))
+    home_dir.mkdir()
+    _seed_cache(cache, ["fake.csv"])
+    corpora.cache_clear()
+    assert not home_dir.exists()
+
+    home_dir.mkdir()
+    _seed_cache(cache, ["fake.csv"])
+    (home_dir / "notes.txt").write_bytes(b"")
+    corpora.cache_clear()
+    assert sorted(p.name for p in home_dir.iterdir()) == ["notes.txt"]
+
+
+# Pins the same contract as lexsync_cache_clear()'s survivor check in
+# R_workflow/R/corpora.R: a file that cannot be deleted (one held open on
+# Windows, say) is named in a lexsync error, not left to a bare OSError raised
+# partway through.
+def test_cache_clear_names_a_file_it_could_not_remove(tmp_path, monkeypatch):
+    cache = _absent_cache(tmp_path, monkeypatch)
+    _seed_cache(cache, ["fake.csv", "other.csv"])
+    monkeypatch.setattr(corpora.os, "remove", lambda path: None)
+    with pytest.raises(OSError, match=r"lexsync: could not remove .*fake\.csv"):
+        corpora.cache_clear("fake")
+    monkeypatch.setattr(corpora.shutil, "rmtree", lambda path, ignore_errors=False: None)
+    with pytest.raises(OSError, match="lexsync: could not remove"):
+        corpora.cache_clear()

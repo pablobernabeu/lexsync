@@ -4,8 +4,9 @@
 
 Update of 'lexsync' from 0.1.0 to 0.1.1. It fixes the test ERROR that the CRAN
 checks report for 0.1.0 on r-devel-linux-x86_64-debian-gcc,
-r-patched-linux-x86_64 and r-devel-linux-x86_64-fedora-clang. It follows 0.1.0
-closely for that reason.
+r-patched-linux-x86_64 and r-devel-linux-x86_64-fedora-clang. It also manages
+the corpus cache under `tools::R_user_dir()` actively, as the policy asks of such
+a cache. It follows 0.1.0 closely for these reasons.
 
 ## The check problems in 0.1.0
 
@@ -57,6 +58,14 @@ pass.
 - EEG condition codes follow the order of the design's conditions, not the
   shuffled trial order.
 - `citation("lexsync")` gives the CRAN DOI.
+- `lexsync_cache_dir()` only reports the path of the corpus cache. In 0.1.0 it
+  also created the directory, so merely asking where the cache was left an empty
+  directory under `tools::R_user_dir()`.
+- `fetch_corpus()` creates the cache only when a download into it starts, after
+  every refusal, and first deletes any partial download that an interrupted
+  transfer left there more than a day earlier.
+- The new export `lexsync_cache_clear()` removes one cached corpus, with its
+  partial download, or the whole cache.
 - Suggests asks for testthat 3.1.8, which the corpus tests' mocking of an
   imported function needs.
 
@@ -88,20 +97,33 @@ Everything else in the package, code and remaining data alike, is MIT.
 
 - No compiled code and no external system requirements.
 - Output-writing functions require a caller-supplied destination; they do not
-  choose a working-directory output path. `fetch_corpus()` uses an opt-in cache
-  under `tools::R_user_dir()` for downloaded corpora, a permitted cache location.
-  Nothing is written at load time, and no example writes outside `tempdir()`.
-  `?lexsync_cache_dir` and `?fetch_corpus` say where that cache lives, that it
-  persists between sessions, how large it can grow and that it may be deleted at
-  any time.
+  choose a working-directory output path. `fetch_corpus()` keeps downloaded
+  corpora in a cache under `tools::R_user_dir()` unless it is given a `dest`, and
+  nothing else in the package writes there. Nothing is written at load time. The
+  cache is kept small and actively managed, as the policy asks. A download is
+  refused above 200 MB, the directory is created only when a download into it
+  starts, each such download first deletes stale partial downloads there,
+  fetching a corpus again replaces the earlier copy, and `lexsync_cache_clear()`
+  removes one corpus or the whole cache. `?lexsync_cache_dir`,
+  `?lexsync_cache_clear` and `?fetch_corpus` say where the cache lives, that it
+  persists between sessions and how large it can grow.
 - Vignette display settings use knitr's scoped `R.options`, so rendering restores
   the caller's R options after each chunk.
-- Examples are executable and offline: they read only files bundled in
-  `inst/extdata`, located with `system.file()`. The package contains no
-  `\dontrun{}`.
+- Examples are executable and offline. They read only files bundled in
+  `inst/extdata`, located with `system.file()`, and write only under
+  `tempdir()`. The example for `lexsync_cache_clear()` needs a cache to empty, so
+  it points `R_USER_CACHE_DIR` at a new directory under `tempdir()`, visibly and
+  inside `local()`, and an `on.exit()` restores the variable, or unsets it if it
+  had no value, even if a call fails. Neither the check nor `example()` touches a
+  user's own cache. The package contains no `\dontrun{}`.
 - 'lexsync' *generates text* for PsychoPy, OpenSesame and jsPsych but never
   imports them. Those tools are needed only to run a generated experiment, not to
   use the package, so they are not dependencies.
 - Full lexical corpora are fetched on demand into `tools::R_user_dir()`, and only
-  the small example lexica described above are bundled. No example or CRAN-run
-  test calls the fetching functions.
+  the small example lexica described above are bundled. No example, test or
+  vignette downloads anything. The tests do call `fetch_corpus()`, but every call
+  that gets as far as a download goes through a local stand-in for
+  `download.file()`, and the calls that download to the default cache first
+  point `R_USER_CACHE_DIR` at a directory under `tempdir()` and restore it
+  afterwards. The calls that are refused, for an unknown corpus, a
+  landing-page-only entry or a non-http(s) URL, stop before anything is written.

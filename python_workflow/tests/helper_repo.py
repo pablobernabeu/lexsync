@@ -20,7 +20,14 @@ import pytest
 
 def repo_root():
     """The repository root, or None when the package is not inside its repository."""
-    root = Path(__file__).resolve().parents[2]
+    # In the repository this file sits at python_workflow/tests/, so it always has
+    # three parents. A shallower path, such as tests/ unpacked straight into / or
+    # C:\, cannot be the repository, and indexing past the root there would raise
+    # at import and halt collection of the whole suite.
+    parents = Path(__file__).resolve().parents
+    if len(parents) < 3:
+        return None
+    root = parents[2]
     desc = root / "R_workflow" / "DESCRIPTION"
     if not desc.is_file() or not (root / "python_workflow").is_dir():
         return None

@@ -23,25 +23,26 @@ cache directory. A corpus needed again is downloaded afresh by the next
 caller's choosing is not in the cache, and is never touched.
 }
 \examples{
-\dontshow{
-# A throwaway cache holding two corpora and an interrupted download, so that
-# example() and R CMD check leave the real cache alone.
-.old_cache <- Sys.getenv("R_USER_CACHE_DIR", unset = NA)
-Sys.setenv(R_USER_CACHE_DIR = tempfile("lexsync-"))
-dir.create(lexsync_cache_dir(), recursive = TRUE)
-invisible(file.create(file.path(lexsync_cache_dir(),
-  c("subtlex_nl.csv", "subtlex_nl.csv.part", "lexique_fr.csv"))))
-}
-# One corpus, with its partial download
-basename(lexsync_cache_clear("subtlex_nl"))
-# Everything else, and the directory itself
-basename(lexsync_cache_clear())
-dir.exists(lexsync_cache_dir())
-\dontshow{
-if (is.na(.old_cache)) Sys.unsetenv("R_USER_CACHE_DIR") else
-  Sys.setenv(R_USER_CACHE_DIR = .old_cache)
-rm(.old_cache)
-}
+# A throwaway cache stands in for yours, so running this leaves your own alone.
+local({
+  tmp <- tempfile("lexsync-")
+  old <- Sys.getenv("R_USER_CACHE_DIR", unset = NA)
+  on.exit({
+    if (is.na(old)) Sys.unsetenv("R_USER_CACHE_DIR") else
+      Sys.setenv(R_USER_CACHE_DIR = old)
+    unlink(tmp, recursive = TRUE)
+  })
+  Sys.setenv(R_USER_CACHE_DIR = tmp)
+  # Two corpora and an interrupted download
+  dir.create(lexsync_cache_dir(), recursive = TRUE)
+  invisible(file.create(file.path(lexsync_cache_dir(),
+    c("subtlex_nl.csv", "subtlex_nl.csv.part", "lexique_fr.csv"))))
+  # One corpus, with its partial download
+  print(basename(lexsync_cache_clear("subtlex_nl")))
+  # Everything else, and the directory itself
+  print(basename(lexsync_cache_clear()))
+  dir.exists(lexsync_cache_dir())
+})
 }
 \seealso{
 \code{\link[=lexsync_cache_dir]{lexsync_cache_dir()}} for where the cache lives.
