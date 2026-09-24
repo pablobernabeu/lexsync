@@ -168,6 +168,7 @@ reference:
   - list_corpora
   - fetch_corpus
   - lexsync_cache_dir
+  - lexsync_cache_clear
   - load_lexicon
   - load_items
   - load_pool

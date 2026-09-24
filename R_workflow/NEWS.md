@@ -23,6 +23,16 @@
   and its interval are the reference (first) condition's mean minus the mean of
   the condition in that row, and `var_ratio` is that condition's variance over
   the reference's.
+* New `lexsync_cache_clear()` removes a fetched corpus from the cache, together
+  with any partial download of it, or with no argument removes the whole cache.
+  It returns the paths it removed, invisibly.
+* `lexsync_cache_dir()` only reports the cache's path. It created the directory
+  on every call, so asking where the cache was left an empty directory behind.
+  `fetch_corpus()` now creates the cache when a download into it starts, once
+  the registry entry and its URL have been accepted, so a refused call writes
+  nothing. That download begins by deleting any `.part` sidecar in the cache,
+  which an interrupt or a process that died mid-transfer leaves behind and no
+  handler removes. A `dest` of the caller's choosing behaves as before.
 * `citation("lexsync")` gives the DOI that CRAN assigned to the package,
   10.32614/CRAN.package.lexsync, with the CRAN page as its URL. The 0.1.0 build
   on CRAN predates the DOI and gives the repository's address. The entry names

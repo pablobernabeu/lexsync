@@ -11,7 +11,8 @@ fetch_corpus(name, registry_path = NULL, dest = NULL)
 
 \item{registry_path}{Optional path to \code{registry.yaml}.}
 
-\item{dest}{Optional destination path; defaults to the cache.}
+\item{dest}{Optional destination file; defaults to \verb{<name>.csv} in
+\code{\link[=lexsync_cache_dir]{lexsync_cache_dir()}}.}
 }
 \value{
 The path to the downloaded file, invisibly.
@@ -25,8 +26,12 @@ recorded so it can be cited; consult \code{\link[=list_corpora]{list_corpora()}}
 }
 \details{
 The file lands in \code{\link[=lexsync_cache_dir]{lexsync_cache_dir()}} unless \code{dest} names somewhere else.
-That cache persists between sessions and the package never prunes it; one
-corpus may reach the 200 MB download cap, so several of them add up. Nothing
-kept there is irreplaceable, so the directory may be deleted at any time and
-the next call downloads the corpus again.
+The cache directory is created only once the registry entry and its URL have
+been accepted, so a refused call writes nothing. Each download into the cache
+begins by deleting any \code{.part} sidecar that an interrupted transfer left there.
+The cache persists between sessions, and one corpus may reach the 200 MB
+download cap, so several of them add up. \code{\link[=lexsync_cache_clear]{lexsync_cache_clear()}} removes one
+corpus or the whole cache, and the next call downloads the corpus again. A
+\code{dest} outside the cache is the caller's own: its directory must already
+exist, and nothing beside it is deleted.
 }

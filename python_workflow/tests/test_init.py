@@ -10,6 +10,7 @@ import lexsync
 # check below excludes it rather than forcing names into the Python top level.
 R_ONLY_INFRASTRUCTURE = {
     "assign_triggers",
+    "lexsync_cache_clear",
     "lexsync_cache_dir",
     "log_artefact",
     "log_step",

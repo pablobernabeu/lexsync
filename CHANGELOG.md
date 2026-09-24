@@ -24,12 +24,32 @@ promoting a covariance-aware distance to the default.
 ## [0.1.1] - Unreleased
 
 lexsync 0.1.1 fixes the test failure CRAN reported for 0.1.0 on its Linux check
-hosts, together with the condition-code order and the interval on Cohen's d. No
-stimulus moves. The generated experiments of 12 of the 21 demonstration designs
-change their EEG condition codes, as described under Changed.
+hosts, together with the condition-code order and the interval on Cohen's d.
+The corpus cache is now created only when a download needs it, and both engines
+gain a function that clears it. No stimulus moves. The generated experiments of
+12 of the 21 demonstration designs change their EEG condition codes, as
+described under Changed.
+
+### Added
+
+- Both engines can empty the corpus cache. R's `lexsync_cache_clear(name = NULL)`
+  and Python's `lexsync.corpora.cache_clear(name=None)` remove one corpus, with
+  any partial download of it, or the whole cache, and return the paths removed.
+  The Python function also removes the `<name>_wordfreq.csv` lexicon that its
+  wordfreq connector builds.
 
 ### Changed
 
+- The corpus cache is created only when a fetch needs it, and kept free of
+  partial downloads. `lexsync_cache_dir` (R) and `cache_dir` (Python) created the
+  directory each time they were called, so asking where the cache was left an
+  empty directory in the user's home filespace. Both now only report the path.
+  `fetch_corpus` creates the directory once the registry entry and its URL have
+  been accepted, or the wordfreq lexicon has been built, so a refused call writes
+  nothing. Each fetch into the cache begins by deleting any `.part` sidecar there,
+  which an interrupt or a process that died mid-transfer leaves behind and
+  neither engine's handlers remove. R's `fetch_corpus` sweeps nothing when given
+  a `dest` outside the cache.
 - The EEG condition codes follow the design, not the trial order.
   `assign_triggers` numbered the conditions from 101 in the order they first
   appeared in the table it received, which after `counterbalance` is the shuffled

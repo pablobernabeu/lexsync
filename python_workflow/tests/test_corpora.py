@@ -3,6 +3,7 @@ import os
 import urllib.error
 import urllib.request
 
+import pandas as pd
 import pytest
 import yaml
 
@@ -73,6 +74,33 @@ def _local_cache(tmp_path, monkeypatch):
     cache.mkdir()
     monkeypatch.setattr(corpora, "cache_dir", lambda: str(cache))
     return cache
+
+
+def _absent_cache(tmp_path, monkeypatch):
+    """Point cache_dir() at a directory that does not exist yet."""
+    cache = tmp_path / "cache"
+    monkeypatch.setattr(corpora, "cache_dir", lambda: str(cache))
+    return cache
+
+
+def _seed_cache(cache, names):
+    """Fill the (temporary) cache with empty files of the given names."""
+    cache.mkdir(exist_ok=True)
+    for name in names:
+        (cache / name).write_bytes(b"")
+
+
+def _listing(cache):
+    return sorted(p.name for p in cache.iterdir())
+
+
+def _wordfreq_registry(tmp_path):
+    """A registry whose wordfreq connector covers the one language 'xx'."""
+    reg = {"wordfreq_connector": {"languages": ["xx"], "citation": "Test (2026)."},
+           "corpora": {}}
+    path = tmp_path / "registry.yaml"
+    path.write_text(yaml.safe_dump(reg), encoding="utf-8")
+    return str(path)
 
 
 # Pins the same contract as "fetch_corpus refuses an entry that registers only a
@@ -255,6 +283,142 @@ def test_fetch_corpus_accepts_a_matching_checksum(tmp_path, monkeypatch):
     dest = fetch_corpus("fake", registry_path=path)
     assert [p.name for p in cache.iterdir()] == ["fake.csv"]
     assert os.path.basename(dest) == "fake.csv"
+
+
+# Pins the same contract as "lexsync_cache_dir reports the path without creating
+# it" in the R engine's test-corpora.R: asking where the cache is must not bring
+# it into being.
+def test_cache_dir_only_reports_the_path(tmp_path, monkeypatch):
+    # expanduser() reads USERPROFILE on Windows and HOME elsewhere.
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("USERPROFILE", str(tmp_path))
+    path = corpora.cache_dir()
+    assert path == os.path.join(str(tmp_path), ".lexsync", "cache")
+    assert not os.path.exists(path)
+    assert not (tmp_path / ".lexsync").exists()
+
+
+# Pins the same contract as "a refused fetch leaves the cache uncreated" in the R
+# engine's test-corpora.R: every refusal comes before the cache is created, so a
+# call that fetches nothing writes nothing.
+def test_a_refused_fetch_leaves_the_cache_uncreated(tmp_path, monkeypatch):
+    cache = _absent_cache(tmp_path, monkeypatch)
+    with pytest.raises(ValueError, match="not in the registry"):
+        fetch_corpus("subtlex_klingon", registry_path=_registry_path())
+    with pytest.raises(ValueError, match="landing page"):
+        fetch_corpus("subtlex_esp", registry_path=_registry_path())
+    with pytest.raises(ValueError, match="non-http"):
+        fetch_corpus("fake", registry_path=_temp_registry(tmp_path, "file:///etc/passwd"))
+    assert not cache.exists()
+
+
+# The wordfreq connector has no R twin; its refusal, a missing [corpora] extra,
+# must write nothing either.
+def test_a_wordfreq_fetch_without_the_extra_leaves_the_cache_uncreated(tmp_path, monkeypatch):
+    cache = _absent_cache(tmp_path, monkeypatch)
+
+    def missing(language, n_words):
+        raise ModuleNotFoundError("lexsync: ... needs the wordfreq connector")
+
+    monkeypatch.setattr(corpora, "build_wordfreq_lexicon", missing)
+    with pytest.raises(ModuleNotFoundError, match="wordfreq connector"):
+        fetch_corpus("xx", registry_path=_wordfreq_registry(tmp_path))
+    assert not cache.exists()
+
+
+# Pins the same contract as "a default-destination fetch creates the cache and
+# sweeps stale sidecars" in the R engine's test-corpora.R. An interrupt or a dead
+# process leaves a '.part' that no handler removed; the next fetch into the cache
+# deletes every such sidecar, and nothing else.
+def test_fetch_corpus_creates_the_cache_and_sweeps_stale_sidecars(tmp_path, monkeypatch):
+    path = _temp_registry(tmp_path, "https://example.invalid/good.csv")
+    cache = _absent_cache(tmp_path, monkeypatch)
+    _mock_transport(monkeypatch, b"word,freq_zipf\ndog,4.5\n")
+    assert fetch_corpus("fake", registry_path=path) == str(cache / "fake.csv")
+    assert _listing(cache) == ["fake.csv"]
+
+    _seed_cache(cache, ["fake.csv.part", "other.csv.part", "other.csv"])
+    fetch_corpus("fake", registry_path=path)
+    assert _listing(cache) == ["fake.csv", "other.csv"]
+
+
+# Pins the same contract as "stale sidecars are swept even when the download then
+# fails" in the R engine's test-corpora.R: the sweep happens as the fetch starts.
+def test_stale_sidecars_are_swept_even_when_the_download_then_fails(tmp_path, monkeypatch):
+    path = _temp_registry(tmp_path, "https://example.invalid/gone.csv")
+    cache = _absent_cache(tmp_path, monkeypatch)
+    _seed_cache(cache, ["other.csv.part", "other.csv"])
+
+    def fake_urlopen(url, timeout=None):
+        raise urllib.error.HTTPError(url, 404, "Not Found", None, None)
+
+    monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+    with pytest.raises(RuntimeError, match="could not download corpus 'fake'"):
+        fetch_corpus("fake", registry_path=path)
+    assert _listing(cache) == ["other.csv"]
+
+
+# A wordfreq build is a fetch into the same cache, so it prepares it the same way.
+def test_a_wordfreq_fetch_creates_the_cache_and_sweeps_stale_sidecars(tmp_path, monkeypatch):
+    cache = _absent_cache(tmp_path, monkeypatch)
+    lexicon = pd.DataFrame({"word": ["dog"], "freq_zipf": [4.5],
+                            "language": ["xx"], "source": ["wordfreq"]})
+    monkeypatch.setattr(corpora, "build_wordfreq_lexicon", lambda language, n_words: lexicon)
+    registry_path = _wordfreq_registry(tmp_path)
+    assert fetch_corpus("xx", registry_path=registry_path) == str(cache / "xx_wordfreq.csv")
+
+    _seed_cache(cache, ["other.csv.part", "other.csv"])
+    fetch_corpus("xx", registry_path=registry_path)
+    assert _listing(cache) == ["other.csv", "xx_wordfreq.csv"]
+
+
+# Pins the same contract as "lexsync_cache_clear removes one corpus and its
+# sidecar" in the R engine's test-corpora.R. This engine alone builds wordfreq
+# lexica, so it alone has a '<name>_wordfreq.csv' to remove.
+def test_cache_clear_removes_one_corpus(tmp_path, monkeypatch):
+    cache = _absent_cache(tmp_path, monkeypatch)
+    _seed_cache(cache, ["fake.csv", "fake.csv.part", "fake_wordfreq.csv",
+                        "other.csv", "fake_extra.csv"])
+    removed = corpora.cache_clear("fake")
+    assert removed == [str(cache / n) for n in ("fake.csv", "fake.csv.part", "fake_wordfreq.csv")]
+    assert _listing(cache) == ["fake_extra.csv", "other.csv"]
+    assert corpora.cache_clear("fake") == []
+
+
+# Pins the same contract as "lexsync_cache_clear() removes the whole cache" in
+# the R engine's test-corpora.R.
+def test_cache_clear_removes_the_whole_cache(tmp_path, monkeypatch):
+    cache = _absent_cache(tmp_path, monkeypatch)
+    _seed_cache(cache, ["fake.csv", "other.csv", "other.csv.part"])
+    removed = corpora.cache_clear()
+    assert sorted(os.path.basename(p) for p in removed) == [
+        "fake.csv", "other.csv", "other.csv.part"]
+    assert not cache.exists()
+
+
+# Pins the same contract as "lexsync_cache_clear on an absent cache removes and
+# creates nothing" in the R engine's test-corpora.R.
+def test_cache_clear_on_an_absent_cache_creates_nothing(tmp_path, monkeypatch):
+    cache = _absent_cache(tmp_path, monkeypatch)
+    assert corpora.cache_clear() == []
+    assert corpora.cache_clear("fake") == []
+    assert not cache.exists()
+
+
+# Pins the same contract as "lexsync_cache_clear refuses a name that is not a
+# single corpus name" in the R engine's test-corpora.R: the name is joined onto
+# the cache directory, so a separator would reach outside it.
+@pytest.mark.parametrize("bad", ["../outside", "..\\outside", "a/b", "", ["a", "b"], 1])
+def test_cache_clear_refuses_a_path(tmp_path, monkeypatch, bad):
+    cache = _absent_cache(tmp_path, monkeypatch)
+    _seed_cache(cache, ["fake.csv"])
+    # The file that "../outside" would reach, beside the cache directory.
+    outside = tmp_path / "outside.csv"
+    outside.write_bytes(b"")
+    with pytest.raises(ValueError, match="not a path"):
+        corpora.cache_clear(bad)
+    assert outside.exists()
+    assert _listing(cache) == ["fake.csv"]
 
 
 def test_list_corpora_surfaces_registry_status():

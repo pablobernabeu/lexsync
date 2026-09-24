@@ -6,8 +6,10 @@ languages are fetched on demand into a user cache.
 """
 from __future__ import annotations
 
+import contextlib
 import os
 import re
+import shutil
 
 import numpy as np
 import pandas as pd
@@ -45,22 +47,83 @@ def list_corpora(registry_path: str | None = None) -> pd.DataFrame:
 
 
 def cache_dir() -> str:
-    """Per-user cache directory for fetched corpora, created on first use.
+    """Per-user cache directory for fetched corpora.
 
-    Where :func:`fetch_corpus` puts a download unless told otherwise, and the only
-    place the package writes to without being handed a path.
+    Where :func:`fetch_corpus` puts what it fetches, and the only place the
+    package writes to without being handed a path. This function only reports
+    the path. The directory is created by the first fetch into it, so until then
+    it does not exist.
 
-    The cache persists between sessions and lexsync never prunes it. A registered
-    corpus is a delimited word list, and a download is refused above 200 MB, so a
-    cache holding several large corpora can reach a few hundred megabytes. It holds
-    nothing that cannot be fetched again, so it may be deleted at any time, whole or
-    file by file, and the next call downloads afresh. The R twin documents the same
-    contract in lexsync_cache_dir.Rd; only the location differs, since R uses
+    The cache persists between sessions. A registered corpus is a delimited word
+    list, and a download is refused above 200 MB, so a cache holding several
+    large corpora can reach a few hundred megabytes. Each fetch into the cache
+    first deletes any partial download that an interrupted transfer left behind,
+    and fetching a corpus again replaces the earlier copy. Fetched corpora
+    otherwise stay until :func:`cache_clear` removes them, one corpus at a time
+    or all together. Nothing kept there is irreplaceable, so the next call
+    downloads afresh. The R twin documents the same contract in
+    lexsync_cache_dir.Rd; only the location differs, since R uses
     tools::R_user_dir.
     """
-    path = os.path.join(os.path.expanduser("~"), ".lexsync", "cache")
-    os.makedirs(path, exist_ok=True)
-    return path
+    return os.path.join(os.path.expanduser("~"), ".lexsync", "cache")
+
+
+def cache_clear(name: str | None = None) -> list[str]:
+    """Remove fetched corpora from the cache.
+
+    Deletes what :func:`fetch_corpus` put in :func:`cache_dir`. Given a `name`,
+    that is the corpus's ``<name>.csv``, any ``<name>.csv.part`` that an
+    interrupted download left behind and the ``<name>_wordfreq.csv`` lexicon the
+    wordfreq connector builds. With `name` left as None it is the whole cache
+    directory. A corpus needed again is fetched afresh by the next
+    :func:`fetch_corpus` call. Mirrors lexsync_cache_clear() in
+    R_workflow/R/corpora.R, whose engine has no wordfreq connector and so no
+    ``_wordfreq.csv`` to remove.
+
+    Returns the paths of the files removed, empty when there was nothing to
+    remove.
+    """
+    cache = cache_dir()
+    if name is None:
+        if not os.path.isdir(cache):
+            return []
+        removed = sorted(os.path.join(root, fname)
+                         for root, _dirs, files in os.walk(cache) for fname in files)
+        shutil.rmtree(cache)
+        return removed
+    # The name becomes a file name inside the cache, so a separator would let it
+    # reach a file outside it. Both separators are refused on every platform, so
+    # the two engines refuse the same names.
+    if not isinstance(name, str) or not name or re.search(r"[/\\]", name):
+        raise ValueError("lexsync: 'name' must be a single corpus name, not a path.")
+    removed = []
+    for fname in (f"{name}.csv", f"{name}.csv.part", f"{name}_wordfreq.csv"):
+        path = os.path.join(cache, fname)
+        if os.path.isfile(path):
+            os.remove(path)
+            removed.append(path)
+    return removed
+
+
+def _prepare_cache() -> str:
+    """Ready the cache for a fetch into it, and return its path.
+
+    Mirrors .prepare_cache() in R_workflow/R/corpora.R. A '.part' sidecar
+    outlives its fetch only when the transfer was cut short in a way
+    fetch_corpus()'s handlers never see: a KeyboardInterrupt derives from
+    BaseException, which neither except clause catches, and a process that dies
+    runs no handler at all. Nothing else writes a sidecar into the cache, so,
+    with one fetch into it at a time, any found here is stale.
+    """
+    cache = cache_dir()
+    os.makedirs(cache, exist_ok=True)
+    for fname in os.listdir(cache):
+        if fname.endswith(".part"):
+            # Best effort, as R's unlink() is: a sidecar that cannot be deleted
+            # (held open on Windows, say) must not stop the fetch that follows.
+            with contextlib.suppress(OSError):
+                os.remove(os.path.join(cache, fname))
+    return cache
 
 
 def build_wordfreq_lexicon(language: str, n_words: int = 10000,
@@ -138,17 +201,20 @@ def fetch_corpus(name: str, registry_path: str | None = None, n_words: int = 100
     is renamed into the cache only after the size cap, the markup sniff and any
     registered sha256 have all passed.
 
-    The file lands in :func:`cache_dir`. That cache persists between sessions and
-    the package never prunes it; one corpus may reach the 200 MB download cap, so
-    several of them add up. Nothing kept there is irreplaceable, so the directory
-    may be deleted at any time and the next call downloads the corpus again.
+    The file lands in :func:`cache_dir`. The cache directory is created only once
+    the registry entry and its URL have been accepted, or the wordfreq lexicon
+    built, so a refused call writes nothing. Each fetch into the cache begins by
+    deleting any ``.part`` sidecar that an interrupted transfer left there. The
+    cache persists between sessions, and one corpus may reach the 200 MB download
+    cap, so several of them add up. :func:`cache_clear` removes one corpus or the
+    whole cache, and the next call fetches the corpus again.
     """
     with open(_registry_path(registry_path), encoding="utf-8") as handle:
         reg = yaml.safe_load(handle)
     wf = reg.get("wordfreq_connector") or {}
     if name in (wf.get("languages") or []):
         df = build_wordfreq_lexicon(name, n_words)
-        dest = os.path.join(cache_dir(), f"{name}_wordfreq.csv")
+        dest = os.path.join(_prepare_cache(), f"{name}_wordfreq.csv")
         # LF explicitly: pandas otherwise follows os.linesep, and the cached
         # lexicon's bytes (and any checksum of them) must not depend on the OS.
         df.to_csv(dest, index=False, encoding="utf-8", lineterminator="\n")
@@ -177,7 +243,8 @@ def fetch_corpus(name: str, registry_path: str | None = None, n_words: int = 100
         )
     import urllib.error
     import urllib.request
-    dest = os.path.join(cache_dir(), f"{name}.csv")
+    # Only now, with every refusal behind it, does the call touch the disk.
+    dest = os.path.join(_prepare_cache(), f"{name}.csv")
     # The transfer lands in a sidecar and is renamed over `dest` only after every
     # check below has passed, so a truncated or unverified body can never sit at
     # the cache path, where a later run would trust it.

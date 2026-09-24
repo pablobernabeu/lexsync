@@ -23,6 +23,8 @@ derived lexicon or a prepared item table into the frame everything else expects.
 
 ::: lexsync.corpora.cache_dir
 
+::: lexsync.corpora.cache_clear
+
 ::: lexsync.load_lexicon
 
 ::: lexsync.load_items
