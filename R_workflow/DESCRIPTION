@@ -35,7 +35,7 @@ Imports:
     tools,
     utils
 Suggests:
-    testthat (>= 3.0.0),
+    testthat (>= 3.1.8),
     knitr,
     rmarkdown,
     spelling,

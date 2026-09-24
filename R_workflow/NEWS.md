@@ -1,5 +1,15 @@
 # lexsync (development version)
 
+* The tests no longer take another package's sources for the lexsync repository.
+  CRAN's Linux hosts check each package beside the unpacked sources of the others,
+  and the test holding the bundled templates to the repository's `templates/`
+  directory found the unrelated 'templates' package there and failed. A test that
+  compares the package with repository files now accepts a root only if it holds
+  lexsync's own `DESCRIPTION` under `R_workflow/` and the Python package beside it,
+  and skips on CRAN.
+* Suggests now asks for testthat 3.1.8, the first release whose
+  `local_mocked_bindings()` can replace an imported function, as the corpus
+  download tests do with `download.file()`.
 * `citation("lexsync")` gives the DOI that CRAN assigned to the package,
   10.32614/CRAN.package.lexsync, with the CRAN page as its URL. The 0.1.0 build
   on CRAN predates the DOI and gives the repository's address. The entry names

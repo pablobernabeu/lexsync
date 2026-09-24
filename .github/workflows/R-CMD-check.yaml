@@ -49,6 +49,21 @@ jobs:
           needs: check
           working-directory: R_workflow
 
+      # CRAN's Linux hosts check each package beside the unpacked sources of the
+      # others, so a test that walks up out of lexsync.Rcheck meets directories named
+      # templates/ or config/ that belong to unrelated packages. 0.1.0 failed there
+      # exactly so. These stand-ins give the check directory the same neighbours; a
+      # test that takes any of them for the repository fails here, not on CRAN.
+      - name: Seed the check directory with CRAN-like neighbours
+        shell: bash
+        working-directory: R_workflow
+        run: |
+          mkdir -p check/templates/R check/config
+          printf 'Package: templates\nVersion: 0.3.0\n' > check/templates/DESCRIPTION
+          printf 'addAttr <- function(x) x\n' > check/templates/R/addAttr.R
+          printf 'Package: config\nVersion: 0.3.2\n' > check/config/DESCRIPTION
+          printf '# Another project\n' > check/README.md
+
       - uses: r-lib/actions/check-r-package@d3c5be51b12e724e68f33216ca3c148b66d5f0b6  # v2.12.1
         with:
           working-directory: R_workflow
