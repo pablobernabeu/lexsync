@@ -24,12 +24,12 @@
     "https://spdx.org/licenses/MIT.html",
     "https://spdx.org/licenses/CC-BY-SA-4.0.html"
   ],
-  "version": "0.1.0",
-  "softwareVersion": "0.1.0",
+  "version": "0.1.1",
+  "softwareVersion": "0.1.1",
   "developmentStatus": "active",
   "dateCreated": "2026-06-07",
   "datePublished": "2026-09-22",
-  "dateModified": "2026-09-22",
+  "dateModified": "2026-09-24",
   "keywords": [
     "psycholinguistics",
     "lexical statistics",
@@ -60,7 +60,7 @@
       "@id": "https://orcid.org/0000-0003-1083-2460"
     }
   ],
-  "citation": "Bernabeu, P. (2026). lexsync: Lexical optimisation and hardware-timed experiment generation. R package version 0.1.0. https://doi.org/10.32614/CRAN.package.lexsync",
+  "citation": "Bernabeu, P. (2026). lexsync: Lexical optimisation and hardware-timed experiment generation. R package version 0.1.1. https://doi.org/10.32614/CRAN.package.lexsync",
   "readme": "https://github.com/pablobernabeu/lexsync/blob/main/README.md",
   "issueTracker": "https://github.com/pablobernabeu/lexsync/issues",
   "copyrightHolder": {

@@ -112,7 +112,7 @@
     "seed": 2026,
     "versions": {
       "engine": "python",
-      "lexsync": "0.1.0",
+      "lexsync": "0.1.1",
       "numpy": "2.3.2",
       "os": "Windows AMD64",
       "pandas": "2.3.2",

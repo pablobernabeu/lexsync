@@ -1,13 +1,13 @@
-{"time":"2026-09-23 23:12:37.073994","message":"loading lexicon 'corpora/derived/en.csv'","data":null}
-{"time":"2026-09-23 23:12:38.268873","message":"lexicon loaded: 30000 words","data":{"words":30000}}
-{"time":"2026-09-23 23:12:38.30417","message":"pool after filters: 8177 words","data":{"pool":8177}}
-{"time":"2026-09-23 23:12:54.628422","message":"generated 120 items (words + pseudowords, subsyllabic)","data":{"conditions":"word, pseudoword"}}
-{"time":"2026-09-23 23:12:54.71382","message":"equivalence pseudoword vs word on 'length': d = 0.00 [-0.30, 0.30], TOST p = 0.004 (equivalent)","data":null}
-{"time":"2026-09-23 23:12:56.304341","message":"wrote 'en_lexdec_wuggy_english_stimuli_R.csv'","data":{"path":"output/stimuli/en_lexdec_wuggy_english_stimuli_R.csv","rows":120,"md5":"ab374e1c83a16a0968aee04c9e33ea09"}}
-{"time":"2026-09-23 23:12:56.476506","message":"wrote 'en_lexdec_wuggy_english_descriptives_R.csv'","data":{"path":"output/reports/en_lexdec_wuggy_english_descriptives_R.csv","rows":2,"md5":"f26ab1271c06e35b089d78a806602d3e"}}
-{"time":"2026-09-23 23:12:56.658016","message":"wrote 'en_lexdec_wuggy_english_comparisons_R.csv'","data":{"path":"output/reports/en_lexdec_wuggy_english_comparisons_R.csv","rows":1,"md5":"08fc5207d0e20aa470e1b3cf332e5830"}}
-{"time":"2026-09-23 23:12:59.084844","message":"wrote 'en_lexdec_wuggy_english_psychopy.py'","data":{"path":"output/experiments/en_lexdec_wuggy_english_psychopy.py","rows":"NA","md5":"ade00d0f5535fce2df80c73ebb678efe"}}
-{"time":"2026-09-23 23:12:59.17686","message":"wrote 'en_lexdec_wuggy_english.osexp'","data":{"path":"output/experiments/en_lexdec_wuggy_english.osexp","rows":"NA","md5":"4f6288b5b84d236e490c58ff0162e832"}}
-{"time":"2026-09-23 23:12:59.308429","message":"wrote 'en_lexdec_wuggy_english.html'","data":{"path":"output/experiments/en_lexdec_wuggy_english.html","rows":"NA","md5":"a56ba4f0b8b6e81e15ee02cd08577682"}}
-{"time":"2026-09-23 23:12:59.86397","message":"wrote 'en_lexdec_wuggy_english_datasheet_R.json'","data":{"path":"output/reports/en_lexdec_wuggy_english_datasheet_R.json","rows":"NA","md5":"c50aeb09bc7e4cf471268fc82effb9eb"}}
-{"time":"2026-09-23 23:12:59.965695","message":"wrote 'en_lexdec_wuggy_english_datasheet_R.md'","data":{"path":"output/reports/en_lexdec_wuggy_english_datasheet_R.md","rows":"NA","md5":"e1e8cf4fe54f18471ee90f1058e1b4dd"}}
+{"time":"2026-09-24 16:59:55.661983","message":"loading lexicon 'corpora/derived/en.csv'","data":null}
+{"time":"2026-09-24 16:59:56.325623","message":"lexicon loaded: 30000 words","data":{"words":30000}}
+{"time":"2026-09-24 16:59:56.34258","message":"pool after filters: 8177 words","data":{"pool":8177}}
+{"time":"2026-09-24 17:00:07.513562","message":"generated 120 items (words + pseudowords, subsyllabic)","data":{"conditions":"word, pseudoword"}}
+{"time":"2026-09-24 17:00:07.524947","message":"equivalence pseudoword vs word on 'length': d = 0.00 [-0.30, 0.30], TOST p = 0.004 (equivalent)","data":null}
+{"time":"2026-09-24 17:00:07.570965","message":"wrote 'en_lexdec_wuggy_english_stimuli_R.csv'","data":{"path":"output/stimuli/en_lexdec_wuggy_english_stimuli_R.csv","rows":120,"md5":"ab374e1c83a16a0968aee04c9e33ea09"}}
+{"time":"2026-09-24 17:00:07.590809","message":"wrote 'en_lexdec_wuggy_english_descriptives_R.csv'","data":{"path":"output/reports/en_lexdec_wuggy_english_descriptives_R.csv","rows":2,"md5":"f26ab1271c06e35b089d78a806602d3e"}}
+{"time":"2026-09-24 17:00:07.607506","message":"wrote 'en_lexdec_wuggy_english_comparisons_R.csv'","data":{"path":"output/reports/en_lexdec_wuggy_english_comparisons_R.csv","rows":1,"md5":"08fc5207d0e20aa470e1b3cf332e5830"}}
+{"time":"2026-09-24 17:00:07.743271","message":"wrote 'en_lexdec_wuggy_english_psychopy.py'","data":{"path":"output/experiments/en_lexdec_wuggy_english_psychopy.py","rows":"NA","md5":"ade00d0f5535fce2df80c73ebb678efe"}}
+{"time":"2026-09-24 17:00:07.754253","message":"wrote 'en_lexdec_wuggy_english.osexp'","data":{"path":"output/experiments/en_lexdec_wuggy_english.osexp","rows":"NA","md5":"4f6288b5b84d236e490c58ff0162e832"}}
+{"time":"2026-09-24 17:00:07.764995","message":"wrote 'en_lexdec_wuggy_english.html'","data":{"path":"output/experiments/en_lexdec_wuggy_english.html","rows":"NA","md5":"a56ba4f0b8b6e81e15ee02cd08577682"}}
+{"time":"2026-09-24 17:00:07.906179","message":"wrote 'en_lexdec_wuggy_english_datasheet_R.json'","data":{"path":"output/reports/en_lexdec_wuggy_english_datasheet_R.json","rows":"NA","md5":"8acca59df16635d204c29f3f3b5a24d4"}}
+{"time":"2026-09-24 17:00:07.918605","message":"wrote 'en_lexdec_wuggy_english_datasheet_R.md'","data":{"path":"output/reports/en_lexdec_wuggy_english_datasheet_R.md","rows":"NA","md5":"2d5e600b1f97664e66999589fbf1e6a5"}}

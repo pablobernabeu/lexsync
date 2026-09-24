@@ -2,26 +2,63 @@
 
 ## Submission
 
-New submission of 'lexsync' (version 0.1.0).
+Update of 'lexsync' from 0.1.0 to 0.1.1. It fixes the test ERROR that the CRAN
+checks report for 0.1.0 on r-devel-linux-x86_64-debian-gcc,
+r-patched-linux-x86_64 and r-devel-linux-x86_64-fedora-clang. It follows 0.1.0
+closely for that reason.
+
+## The check problems in 0.1.0
+
+The note on the Debian results attributed the failures to attempts to write to
+the read-only user library. No code that the checks run writes outside
+`tempdir()`. The two failures and the one warning came from a test that read
+from outside the check directory. `tests/testthat/test-templates.R` compared the
+installed templates with `../../../templates`, meant to be the repository's
+copy. On the Linux check hosts that path is the unpacked source of the CRAN
+package 'templates', so the file lists differed, and the warning is the failed
+attempt to open `<library>/lexsync/templates/DESCRIPTION`, a file that does not
+exist, for reading. The same failure occurs on fedora-clang.
+
+In 0.1.1 every test that compares the package with repository files finds the
+repository through one helper, `tests/testthat/helper-repo.R`. It accepts a
+directory only if it holds lexsync's own `DESCRIPTION` under `R_workflow/` and
+the Python package beside it, and those tests skip on CRAN.
+
+To confirm the cause, I checked 0.1.0 against a library locked against writes,
+with a stand-in 'templates' package beside the check directory. The tests gave
+CRAN's result exactly, `[ FAIL 2 | WARN 1 | SKIP 23 | PASS 991 ]`. After the
+full check every installed file was unchanged, and nothing had been written
+under HOME or the R user directories. The same check of 0.1.1, with stand-in
+'templates' and 'config' packages and a README beside it, passes with no failure
+or warning and again leaves the library unchanged.
 
 ## R CMD check results
 
 Local check with `R CMD check --as-cran` on a freshly built tarball, Windows 11,
-R 4.6.1:
+R 4.6.1, with the stand-in neighbours described above:
 
     Status: 1 NOTE
 
-The whole of the NOTE is the standard new-submission report from the CRAN
-incoming-feasibility check:
+The whole of the NOTE is the incoming-feasibility report of the short interval
+since 0.1.0, which this fix explains:
 
     * checking CRAN incoming feasibility ... NOTE
     Maintainer: 'Pablo Bernabeu <pcbernabeu@gmail.com>'
 
-    New submission
+    Days since last update: 2
 
-Nothing else is reported. The URL check raises no findings, and the top-level
-files, DESCRIPTION meta-information, examples, tests and vignette rebuilding all
+The URL check, top-level files, examples, tests and vignette rebuilding all
 pass.
+
+## Other changes in 0.1.1
+
+- `cohens_d_ci()` now includes the d^2 term in the standard error of d, so the
+  interval on a large effect is no longer too narrow.
+- EEG condition codes follow the order of the design's conditions, not the
+  shuffled trial order.
+- `citation("lexsync")` gives the CRAN DOI.
+- Suggests asks for testthat 3.1.8, which the corpus tests' mocking of an
+  imported function needs.
 
 ## Bundled third-party data
 
@@ -45,7 +82,7 @@ Everything else in the package, code and remaining data alike, is MIT.
 
 ## Test environments
 
-- Local: Windows 11, R 4.6.1.
+- Local: Windows 11, R 4.6.1, as above.
 
 ## Notes for the reviewer
 

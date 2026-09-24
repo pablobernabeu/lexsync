@@ -50,4 +50,4 @@ __all__ = [
     "build_datasheet", "methods_paragraph", "write_datasheet",
     "run_pipeline", "run_all",
 ]
-__version__ = "0.1.0"
+__version__ = "0.1.1"

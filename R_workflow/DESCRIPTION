@@ -1,7 +1,7 @@
 Package: lexsync
 Type: Package
 Title: Lexical Optimisation and Hardware-Timed Experiment Generation
-Version: 0.1.0
+Version: 0.1.1
 Authors@R: person("Pablo", "Bernabeu", email = "pcbernabeu@gmail.com", role = c("aut", "cre"),
     comment = c(ORCID = "0000-0003-1083-2460"))
 Description: A cross-platform toolkit that unifies many-language lexical-corpus

@@ -21,6 +21,13 @@ word-keyed norm table so the matcher can equate on it. Future directions include
 more bundled languages and, should a determinism-safe implementation be found,
 promoting a covariance-aware distance to the default.
 
+## [0.1.1] - Unreleased
+
+lexsync 0.1.1 fixes the test failure CRAN reported for 0.1.0 on its Linux check
+hosts, together with the condition-code order and the interval on Cohen's d. No
+stimulus moves. The generated experiments of 12 of the 21 demonstration designs
+change their EEG condition codes, as described under Changed.
+
 ### Changed
 
 - The EEG condition codes follow the design, not the trial order.
@@ -64,6 +71,17 @@ promoting a covariance-aware distance to the default.
 - The R `CITATION` entry names CRAN as its publisher, and its text version is the
   APA reference for software, with the version, "[Computer software]", CRAN and
   the DOI.
+- The R tests failed on CRAN's r-devel and r-patched Debian hosts and on r-devel
+  Fedora clang. The test holding the R package's bundled templates to the
+  repository's `templates/` looked three directories up from its own, and on those
+  hosts that directory holds the unpacked sources of other CRAN packages, so it
+  compared the templates with the unrelated 'templates' package. Nothing the
+  checks run writes outside the session's temporary directory. The R tests that
+  compare the package with repository files now find the repository in one
+  helper, which accepts a directory only if it holds lexsync's own `DESCRIPTION`
+  under `R_workflow/` and `python_workflow/` beside it, and they skip on CRAN. The
+  R check in CI runs beside stand-in neighbours of the same names. The R package
+  suggests testthat 3.1.8, the first release that mocks an imported function.
 
 ## [0.1.0] - 2026-09-22
 
@@ -695,5 +713,6 @@ it replaced.
   jsPsych library loads from a CDN, so the machine running the file needs an
   internet connection.
 
-[Unreleased]: https://github.com/pablobernabeu/lexsync/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/pablobernabeu/lexsync/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/pablobernabeu/lexsync/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/pablobernabeu/lexsync/releases/tag/v0.1.0

@@ -12,7 +12,7 @@
 - **Cross-engine determinism:** byte-identical
 - **Counterbalancing:** factorial, 1 list(s)
 - **Items:** 40 rows across 2 conditions (lower_frequency, higher_frequency)
-- **Seed:** 2026  |  **Versions:** engine python, lexsync 0.1.0, python 3.13.7, pandas 2.3.2, numpy 2.3.2, scipy 1.17.1, rapidfuzz 3.14.5, pyyaml 6.0.3, os Windows AMD64
+- **Seed:** 2026  |  **Versions:** engine python, lexsync 0.1.1, python 3.13.7, pandas 2.3.2, numpy 2.3.2, scipy 1.17.1, rapidfuzz 3.14.5, pyyaml 6.0.3, os Windows AMD64
 
 ## Selection transparency
 
@@ -35,7 +35,7 @@
 
 ## Methods paragraph
 
-20 English items per condition were selected from a supplied candidate pool and matched item by item on length, n_density, old20 using lexsync's standardised_euclidean matcher, with the matched dimensions taken from corpora/derived/en.csv. Equivalence was not confirmed on every matched dimension; the per-dimension differences are reported in the realised-control table. The smallest condition was selected from 31 eligible candidates, and the selection was deterministic and blind to any outcome measure. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.0).
+20 English items per condition were selected from a supplied candidate pool and matched item by item on length, n_density, old20 using lexsync's standardised_euclidean matcher, with the matched dimensions taken from corpora/derived/en.csv. Equivalence was not confirmed on every matched dimension; the per-dimension differences are reported in the realised-control table. The smallest condition was selected from 31 eligible candidates, and the selection was deterministic and blind to any outcome measure. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.1).
 
 ## Pre-registration template
 
@@ -55,7 +55,7 @@
 - Paradigm: factorial
 
 ### Materials (from the lexsync datasheet)
-20 English items per condition were selected from a supplied candidate pool and matched item by item on length, n_density, old20 using lexsync's standardised_euclidean matcher, with the matched dimensions taken from corpora/derived/en.csv. Equivalence was not confirmed on every matched dimension; the per-dimension differences are reported in the realised-control table. The smallest condition was selected from 31 eligible candidates, and the selection was deterministic and blind to any outcome measure. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.0).
+20 English items per condition were selected from a supplied candidate pool and matched item by item on length, n_density, old20 using lexsync's standardised_euclidean matcher, with the matched dimensions taken from corpora/derived/en.csv. Equivalence was not confirmed on every matched dimension; the per-dimension differences are reported in the realised-control table. The smallest condition was selected from 31 eligible candidates, and the selection was deterministic and blind to any outcome measure. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.1).
 
 ### Sampling plan
 - Sample size and justification:

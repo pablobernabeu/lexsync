@@ -1,16 +1,16 @@
-{"time":"2026-09-23 23:13:00.32046","message":"loading lexicon 'corpora/derived/en.csv'","data":null}
-{"time":"2026-09-23 23:13:01.405246","message":"lexicon loaded: 30000 words","data":{"words":30000}}
-{"time":"2026-09-23 23:13:01.453009","message":"pool after filters: 4557 words","data":{"pool":4557}}
-{"time":"2026-09-23 23:13:02.767007","message":"matched 160 items across 2 conditions","data":{"conditions":"dense_neighbourhood, sparse_neighbourhood"}}
-{"time":"2026-09-23 23:13:02.833322","message":"equivalence sparse_neighbourhood vs dense_neighbourhood on 'length': d = 0.00 [-0.26, 0.26], TOST p = 0.001 (equivalent)","data":null}
-{"time":"2026-09-23 23:13:02.847098","message":"equivalence sparse_neighbourhood vs dense_neighbourhood on 'frequency': d = 0.00 [-0.26, 0.26], TOST p = 0.001 (equivalent)","data":null}
-{"time":"2026-09-23 23:13:02.854756","message":"equivalence sparse_neighbourhood vs dense_neighbourhood on 'n_density': d = 3.11 [2.72, 3.50], TOST p = 1.000 (not shown equivalent)","data":null}
-{"time":"2026-09-23 23:13:02.862114","message":"equivalence sparse_neighbourhood vs dense_neighbourhood on 'old20': d = -2.30 [-2.64, -1.97], TOST p = 1.000 (not shown equivalent)","data":null}
-{"time":"2026-09-23 23:13:03.382431","message":"wrote 'en_ndensity_english_stimuli_R.csv'","data":{"path":"output/stimuli/en_ndensity_english_stimuli_R.csv","rows":160,"md5":"2f785563afd3cc575320ac35dbea3ea5"}}
-{"time":"2026-09-23 23:13:03.43423","message":"wrote 'en_ndensity_english_descriptives_R.csv'","data":{"path":"output/reports/en_ndensity_english_descriptives_R.csv","rows":8,"md5":"25e02256139ad746974a981fa0ba78f1"}}
-{"time":"2026-09-23 23:13:03.475058","message":"wrote 'en_ndensity_english_comparisons_R.csv'","data":{"path":"output/reports/en_ndensity_english_comparisons_R.csv","rows":4,"md5":"39f420a650e8857a7f9d65c8a36e9a6c"}}
-{"time":"2026-09-23 23:13:04.855532","message":"wrote 'en_ndensity_english_psychopy.py'","data":{"path":"output/experiments/en_ndensity_english_psychopy.py","rows":"NA","md5":"1f85015d5b69c92e56ad1c703129b039"}}
-{"time":"2026-09-23 23:13:04.900174","message":"wrote 'en_ndensity_english.osexp'","data":{"path":"output/experiments/en_ndensity_english.osexp","rows":"NA","md5":"15cadda213e1698d46019bffd5677d2f"}}
-{"time":"2026-09-23 23:13:04.924654","message":"wrote 'en_ndensity_english.html'","data":{"path":"output/experiments/en_ndensity_english.html","rows":"NA","md5":"088cf6eb4cbf699c316e3ee784cdd6fa"}}
-{"time":"2026-09-23 23:13:05.30072","message":"wrote 'en_ndensity_english_datasheet_R.json'","data":{"path":"output/reports/en_ndensity_english_datasheet_R.json","rows":"NA","md5":"ffd2b0965eaadba1efedcd9fc4414d6f"}}
-{"time":"2026-09-23 23:13:05.341445","message":"wrote 'en_ndensity_english_datasheet_R.md'","data":{"path":"output/reports/en_ndensity_english_datasheet_R.md","rows":"NA","md5":"1751e0b8751e5101d2fb91479db72476"}}
+{"time":"2026-09-24 17:00:07.958563","message":"loading lexicon 'corpora/derived/en.csv'","data":null}
+{"time":"2026-09-24 17:00:08.512994","message":"lexicon loaded: 30000 words","data":{"words":30000}}
+{"time":"2026-09-24 17:00:08.531556","message":"pool after filters: 4557 words","data":{"pool":4557}}
+{"time":"2026-09-24 17:00:09.587527","message":"matched 160 items across 2 conditions","data":{"conditions":"dense_neighbourhood, sparse_neighbourhood"}}
+{"time":"2026-09-24 17:00:09.621309","message":"equivalence sparse_neighbourhood vs dense_neighbourhood on 'length': d = 0.00 [-0.26, 0.26], TOST p = 0.001 (equivalent)","data":null}
+{"time":"2026-09-24 17:00:09.627541","message":"equivalence sparse_neighbourhood vs dense_neighbourhood on 'frequency': d = 0.00 [-0.26, 0.26], TOST p = 0.001 (equivalent)","data":null}
+{"time":"2026-09-24 17:00:09.637603","message":"equivalence sparse_neighbourhood vs dense_neighbourhood on 'n_density': d = 3.11 [2.72, 3.50], TOST p = 1.000 (not shown equivalent)","data":null}
+{"time":"2026-09-24 17:00:09.64787","message":"equivalence sparse_neighbourhood vs dense_neighbourhood on 'old20': d = -2.30 [-2.64, -1.97], TOST p = 1.000 (not shown equivalent)","data":null}
+{"time":"2026-09-24 17:00:09.737347","message":"wrote 'en_ndensity_english_stimuli_R.csv'","data":{"path":"output/stimuli/en_ndensity_english_stimuli_R.csv","rows":160,"md5":"2f785563afd3cc575320ac35dbea3ea5"}}
+{"time":"2026-09-24 17:00:09.772415","message":"wrote 'en_ndensity_english_descriptives_R.csv'","data":{"path":"output/reports/en_ndensity_english_descriptives_R.csv","rows":8,"md5":"25e02256139ad746974a981fa0ba78f1"}}
+{"time":"2026-09-24 17:00:09.798392","message":"wrote 'en_ndensity_english_comparisons_R.csv'","data":{"path":"output/reports/en_ndensity_english_comparisons_R.csv","rows":4,"md5":"39f420a650e8857a7f9d65c8a36e9a6c"}}
+{"time":"2026-09-24 17:00:10.352936","message":"wrote 'en_ndensity_english_psychopy.py'","data":{"path":"output/experiments/en_ndensity_english_psychopy.py","rows":"NA","md5":"1f85015d5b69c92e56ad1c703129b039"}}
+{"time":"2026-09-24 17:00:10.367301","message":"wrote 'en_ndensity_english.osexp'","data":{"path":"output/experiments/en_ndensity_english.osexp","rows":"NA","md5":"15cadda213e1698d46019bffd5677d2f"}}
+{"time":"2026-09-24 17:00:10.37716","message":"wrote 'en_ndensity_english.html'","data":{"path":"output/experiments/en_ndensity_english.html","rows":"NA","md5":"088cf6eb4cbf699c316e3ee784cdd6fa"}}
+{"time":"2026-09-24 17:00:10.55845","message":"wrote 'en_ndensity_english_datasheet_R.json'","data":{"path":"output/reports/en_ndensity_english_datasheet_R.json","rows":"NA","md5":"3322ba8c983d5a6d64fc503b470f793f"}}
+{"time":"2026-09-24 17:00:10.574658","message":"wrote 'en_ndensity_english_datasheet_R.md'","data":{"path":"output/reports/en_ndensity_english_datasheet_R.md","rows":"NA","md5":"4072fb228bdd7cddc15a12655e028209"}}

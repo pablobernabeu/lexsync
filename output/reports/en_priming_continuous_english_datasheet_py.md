@@ -11,7 +11,7 @@
 - **Cross-engine determinism:** byte-identical
 - **Counterbalancing:** latin_square_target, 2 list(s)
 - **Items:** 16 rows across 2 conditions (related, unrelated)
-- **Seed:** 2026  |  **Versions:** engine python, lexsync 0.1.0, python 3.13.7, pandas 2.3.2, numpy 2.3.2, scipy 1.17.1, rapidfuzz 3.14.5, pyyaml 6.0.3, os Windows AMD64
+- **Seed:** 2026  |  **Versions:** engine python, lexsync 0.1.1, python 3.13.7, pandas 2.3.2, numpy 2.3.2, scipy 1.17.1, rapidfuzz 3.14.5, pyyaml 6.0.3, os Windows AMD64
 
 ## Pair-keyed items
 
@@ -36,7 +36,7 @@
 
 ## Methods paragraph
 
-8 English prime-target pairs were selected to span target.frequency (a span of 1.45) continuously while holding target.length, pair.overlap near-constant, and the largest predictor-control correlation was |r| = 0.292, for analysis by regression or a mixed model rather than a between-condition contrast (Kuperman, 2015; Liben-Nowell et al., 2019). Materials were counterbalanced into 2 list(s) (a Latin-square rotation) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.0).
+8 English prime-target pairs were selected to span target.frequency (a span of 1.45) continuously while holding target.length, pair.overlap near-constant, and the largest predictor-control correlation was |r| = 0.292, for analysis by regression or a mixed model rather than a between-condition contrast (Kuperman, 2015; Liben-Nowell et al., 2019). Materials were counterbalanced into 2 list(s) (a Latin-square rotation) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.1).
 
 ## Pre-registration template
 
@@ -56,7 +56,7 @@
 - Paradigm: priming
 
 ### Materials (from the lexsync datasheet)
-8 English prime-target pairs were selected to span target.frequency (a span of 1.45) continuously while holding target.length, pair.overlap near-constant, and the largest predictor-control correlation was |r| = 0.292, for analysis by regression or a mixed model rather than a between-condition contrast (Kuperman, 2015; Liben-Nowell et al., 2019). Materials were counterbalanced into 2 list(s) (a Latin-square rotation) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.0).
+8 English prime-target pairs were selected to span target.frequency (a span of 1.45) continuously while holding target.length, pair.overlap near-constant, and the largest predictor-control correlation was |r| = 0.292, for analysis by regression or a mixed model rather than a between-condition contrast (Kuperman, 2015; Liben-Nowell et al., 2019). Materials were counterbalanced into 2 list(s) (a Latin-square rotation) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.1).
 
 ### Sampling plan
 - Sample size and justification:
