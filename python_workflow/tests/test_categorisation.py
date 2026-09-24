@@ -22,21 +22,18 @@ import os
 import pandas as pd
 import pytest
 import yaml
+from helper_repo import REPO
 
 from lexsync.counterbalancing import counterbalance
 from lexsync.paradigms import PARADIGMS, get_paradigm, required_fields, resolve_events
 from lexsync.querying import load_items
 from lexsync.scripting import export_jspsych, render_events
 
-REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-ITEMS = os.path.join(REPO, "items", "categorisation_en.csv")
-DESIGN_PATH = os.path.join(REPO, "config", "design_en_categorisation.yaml")
-
-
-@pytest.fixture()
-def schema():
-    with open(os.path.join(REPO, "config", "schema.yaml"), encoding="utf-8") as h:
-        return yaml.safe_load(h)
+# None away from the repository, where the tests that read them skip. The schema is
+# conftest.py's bundled copy, which test_config.py holds byte-identical to
+# config/schema.yaml, so the tests that need only a schema run anywhere.
+ITEMS = os.path.join(REPO, "items", "categorisation_en.csv") if REPO else None
+DESIGN_PATH = os.path.join(REPO, "config", "design_en_categorisation.yaml") if REPO else None
 
 
 @pytest.fixture()
@@ -68,11 +65,12 @@ def test_the_paradigm_rotates_rather_than_crossing():
     assert get_paradigm("categorisation")["counterbalance"] == "latin_square_target"
 
 
+@pytest.mark.skipif(REPO is None, reason="repository design absent")
 def test_required_fields_include_the_cue_and_the_answer(design):
     assert set(required_fields(design)) >= {"target", "category", "answer"}
 
 
-@pytest.mark.skipif(not os.path.exists(ITEMS), reason="repository item table absent")
+@pytest.mark.skipif(REPO is None, reason="repository item table absent")
 def test_the_answer_key_is_read_as_text_not_a_boolean(design):
     items = load_items(ITEMS, required_fields(design))
     assert set(items["answer"]) == {"f"}
@@ -88,7 +86,7 @@ def test_the_answer_key_is_read_as_text_not_a_boolean(design):
     assert False not in set(items["answer"])
 
 
-@pytest.mark.skipif(not os.path.exists(ITEMS), reason="repository item table absent")
+@pytest.mark.skipif(REPO is None, reason="repository item table absent")
 def test_each_target_appears_once_per_list(design, schema):
     items = load_items(ITEMS, required_fields(design))
     out = counterbalance(items, design, schema)
@@ -99,7 +97,7 @@ def test_each_target_appears_once_per_list(design, schema):
     assert counts.nunique() == 1
 
 
-@pytest.mark.skipif(not os.path.exists(ITEMS), reason="repository item table absent")
+@pytest.mark.skipif(REPO is None, reason="repository item table absent")
 def test_the_jspsych_export_carries_the_cue_and_the_answer(design, schema, tmp_path):
     """jsPsych is generated from the same event list as the other two targets, so the
     new paradigm needs no browser-specific code -- but "needs none" is a claim, and this

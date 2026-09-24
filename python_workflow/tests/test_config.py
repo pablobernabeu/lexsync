@@ -8,12 +8,11 @@ checks skip gracefully when the package is tested in isolation.
 """
 import os
 
-import pytest
 import yaml
+from helper_repo import repo_path
 
 import lexsync
 
-REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 BUNDLED_SCHEMA = os.path.join(os.path.dirname(lexsync.__file__), "data", "schema.yaml")
 
 
@@ -22,11 +21,10 @@ def _load(path):
         return yaml.safe_load(handle)
 
 
+# Inside the repository a missing file is a failure, not a reason to skip: the
+# shipped configuration is what these tests exist to hold in place.
 def _repo_file(*parts):
-    path = os.path.join(REPO, *parts)
-    if not os.path.exists(path):
-        pytest.skip("repository configuration not available")
-    return path
+    return repo_path(*parts, reason="repository configuration not available")
 
 
 def test_bundled_schema_matches_repo_schema():

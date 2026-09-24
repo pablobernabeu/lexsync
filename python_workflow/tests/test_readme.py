@@ -6,11 +6,14 @@ do so is build_pool: match_stimuli never reads the design's pool_filters, so an
 example that omits the pool step silently matches over the whole lexicon.
 """
 import re
-from pathlib import Path
 
 import pandas as pd
+import pytest
+from helper_repo import REPO
 
-REPO = Path(__file__).resolve().parents[2]
+# The example reads the repository's design and schema, and the check compares it with
+# the committed output, so it runs only from the repository.
+pytestmark = pytest.mark.skipif(REPO is None, reason="the README example runs only from the repository")
 
 
 def _use_snippet():

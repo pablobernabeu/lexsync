@@ -10,11 +10,13 @@ import os
 import zipfile
 
 import pytest
+from helper_repo import REPO
 
-APP_PATH = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
-    "apps", "python_streamlit", "lexsync_app.py",
-)
+# The app is not part of the package, and it is executed, so it is taken only from the
+# lexsync repository itself (see helper_repo.py), as test-apps.R takes the Shiny app.
+APP_PATH = os.path.join(REPO, "apps", "python_streamlit", "lexsync_app.py") if REPO else None
+
+pytestmark = pytest.mark.skipif(REPO is None, reason="the Streamlit app source is not in this tree")
 
 
 @pytest.fixture(scope="module")

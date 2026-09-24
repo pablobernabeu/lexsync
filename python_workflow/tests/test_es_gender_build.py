@@ -13,12 +13,13 @@ that no longer matches the one its parent file describes.
 """
 import importlib.util
 import sys
-from pathlib import Path
 
 import pytest
+from helper_repo import REPO
 
-REPO = Path(__file__).resolve().parents[2]
-BUILDER = REPO / "corpora" / "build_es_gender.py"
+# None away from the repository, where both tests skip. The builder is executed, so it
+# is taken only from the lexsync repository itself (see helper_repo.py).
+BUILDER = REPO / "corpora" / "build_es_gender.py" if REPO else None
 
 
 def _load_builder():
@@ -29,7 +30,7 @@ def _load_builder():
     return module
 
 
-@pytest.mark.skipif(not BUILDER.exists(), reason="repository-only script; absent from an installed copy")
+@pytest.mark.skipif(REPO is None, reason="repository-only script; absent from an installed copy")
 def test_committed_es_gender_matches_the_builder():
     build_es_gender = _load_builder()
     if not build_es_gender.SOURCE.exists() or not build_es_gender.TARGET.exists():
@@ -47,7 +48,7 @@ def test_committed_es_gender_matches_the_builder():
     assert built.equals(committed)
 
 
-@pytest.mark.skipif(not BUILDER.exists(), reason="repository-only script; absent from an installed copy")
+@pytest.mark.skipif(REPO is None, reason="repository-only script; absent from an installed copy")
 def test_gender_follows_the_final_letter():
     build_es_gender = _load_builder()
     if not build_es_gender.TARGET.exists():

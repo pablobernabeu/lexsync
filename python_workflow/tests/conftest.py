@@ -9,6 +9,12 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 SRC = os.path.join(os.path.dirname(HERE), "src")
 if SRC not in sys.path:
     sys.path.insert(0, SRC)
+# And helper_repo.py beside this file. pytest's default import mode puts this
+# directory on the path anyway, but --import-mode=importlib does not, and a
+# packager who runs the suite that way would otherwise lose every repo-coupled
+# module to an ImportError at collection, not a skip.
+if HERE not in sys.path:
+    sys.path.insert(0, HERE)
 
 import lexsync  # noqa: E402
 

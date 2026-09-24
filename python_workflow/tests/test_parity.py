@@ -10,10 +10,9 @@ import os
 
 import pandas as pd
 import pytest
+from helper_repo import REPO, repo_path
 
 from lexsync.run_pipeline import run_pipeline
-
-REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 
 # When the repository is present both engines must be compared; only a standalone
 # install of the package may skip.
@@ -90,7 +89,7 @@ ORDER_COLS: set = set()
 
 @pytest.mark.parametrize("base,design,cols", CASES)
 def test_r_python_parity(base, design, cols, tmp_path):
-    r_ref = os.path.join(REPO, "output", "stimuli", f"{base}_stimuli_R.csv")
+    r_ref = repo_path("output", "stimuli", f"{base}_stimuli_R.csv", required=REQUIRE_PARITY)
     if not os.path.exists(r_ref):
         if REQUIRE_PARITY:
             pytest.fail(f"R reference missing for {base}; the R pipeline did not run")

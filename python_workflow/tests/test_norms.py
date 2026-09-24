@@ -25,10 +25,14 @@ import pandas as pd
 import pytest
 import yaml
 
+import lexsync
 from lexsync.querying import apply_norms, load_lexicon
 from lexsync.run_pipeline import run_pipeline
 
-REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+# The bundled schema, as test-norms.R reads, and conftest.py's `schema` fixture with
+# it: with their own lexicon and norm table these tests need nothing from the
+# repository, so they run from an sdist as well.
+BUNDLED_SCHEMA = os.path.join(os.path.dirname(lexsync.__file__), "data", "schema.yaml")
 
 WORDS = ["cat", "dog", "car", "cap", "bat", "bag", "cot", "cog", "rat", "rag",
          "hat", "hag", "pot", "peg", "man", "map"]
@@ -55,12 +59,6 @@ def _norms(tmp_path, covered=None, name="conc.csv"):
         "concreteness": [2.0 + (i % 4) for i in range(len(words))],
     }).to_csv(path, index=False, lineterminator="\n")
     return path
-
-
-@pytest.fixture()
-def schema():
-    with open(os.path.join(REPO, "config", "schema.yaml"), encoding="utf-8") as handle:
-        return yaml.safe_load(handle)
 
 
 def test_apply_norms_joins_and_records_provenance(schema, tmp_path):
@@ -152,8 +150,7 @@ def test_the_pipeline_matches_on_a_norm_column_and_records_it(tmp_path):
         yaml.safe_dump(_norm_design(tmp_path, lexicon, norms_path), handle)
 
     outdir = tmp_path / "out"
-    run_pipeline(str(design_path), os.path.join(REPO, "config", "schema.yaml"),
-                 str(outdir), verbose=False)
+    run_pipeline(str(design_path), BUNDLED_SCHEMA, str(outdir), verbose=False)
 
     stim = pd.read_csv(outdir / "stimuli" / "normtest_english_stimuli_py.csv")
     # The norm column reached the stimuli table, and the pool filter held.

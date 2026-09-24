@@ -71,17 +71,23 @@ change their EEG condition codes, as described under Changed.
 - The R `CITATION` entry names CRAN as its publisher, and its text version is the
   APA reference for software, with the version, "[Computer software]", CRAN and
   the DOI.
-- The R tests failed on CRAN's r-devel and r-patched Debian hosts and on r-devel
-  Fedora clang. The test holding the R package's bundled templates to the
-  repository's `templates/` looked three directories up from its own, and on those
-  hosts that directory holds the unpacked sources of other CRAN packages, so it
-  compared the templates with the unrelated 'templates' package. Nothing the
-  checks run writes outside the session's temporary directory. The R tests that
-  compare the package with repository files now find the repository in one
-  helper, which accepts a directory only if it holds lexsync's own `DESCRIPTION`
-  under `R_workflow/` and `python_workflow/` beside it, and they skip on CRAN. The
-  R check in CI runs beside stand-in neighbours of the same names. The R package
-  suggests testthat 3.1.8, the first release that mocks an imported function.
+- The tests of both engines could take an unrelated directory for the lexsync
+  repository. The R tests failed on CRAN's r-devel and r-patched Debian hosts and
+  on r-devel Fedora clang. The test holding the R package's bundled templates to
+  the repository's `templates/` looked three directories up from its own, and on
+  those hosts that directory holds the unpacked sources of other CRAN packages, so
+  it compared the templates with the unrelated 'templates' package. Nothing the R
+  check runs writes outside the session's temporary directory. The Python tests
+  walked up the same way, and the sdist ships `tests/`, so a build from it could
+  have met the same fate wherever it was unpacked. In both engines a test that
+  reads repository files now accepts a root only if it holds lexsync's own
+  `DESCRIPTION` under `R_workflow/` and `python_workflow/` beside it, and skips
+  elsewhere. The R tests also skip on CRAN, and the R check in CI runs beside
+  stand-in neighbours of the same names. Several Python tests had no guard at all
+  and failed outside a checkout, and those that needed only the schema now read
+  the bundled copy and run anywhere.
+- The R package suggests testthat 3.1.8, the first release that mocks an imported
+  function, as the corpus download tests do.
 
 ## [0.1.0] - 2026-09-22
 

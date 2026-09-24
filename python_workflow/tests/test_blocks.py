@@ -28,18 +28,15 @@ import os
 import pandas as pd
 import pytest
 import yaml
+from helper_repo import REPO
 
 from lexsync.blocks import BLOCK_MAIN, add_blocks
 from lexsync.scripting import export_jspsych, loop_table, render_events
 
-REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-DESIGN_PATH = os.path.join(REPO, "config", "design_en_lexdec_blocks.yaml")
-
-
-@pytest.fixture()
-def schema():
-    with open(os.path.join(REPO, "config", "schema.yaml"), encoding="utf-8") as h:
-        return yaml.safe_load(h)
+# None away from the repository, where the tests that load the design skip. The
+# schema is conftest.py's bundled copy, which test_config.py holds byte-identical
+# to config/schema.yaml, so the tests that need only a schema run anywhere.
+DESIGN_PATH = os.path.join(REPO, "config", "design_en_lexdec_blocks.yaml") if REPO else None
 
 
 @pytest.fixture()
@@ -71,7 +68,7 @@ def test_a_design_without_blocks_is_untouched(schema):
     assert out["presented"].equals(stim)
 
 
-@pytest.mark.skipif(not os.path.exists(DESIGN_PATH), reason="repository design absent")
+@pytest.mark.skipif(REPO is None, reason="repository design absent")
 def test_practice_comes_first_and_fillers_interleave(design, schema):
     out = add_blocks(_main(), design, schema)
     order = list(out["presented"].sort_values("trial")["block"])
@@ -83,7 +80,7 @@ def test_practice_comes_first_and_fillers_interleave(design, schema):
     assert min(filler) < max(main) and max(filler) > min(main)
 
 
-@pytest.mark.skipif(not os.path.exists(DESIGN_PATH), reason="repository design absent")
+@pytest.mark.skipif(REPO is None, reason="repository design absent")
 def test_block_sets_do_not_collide_with_the_main_ones(design, schema):
     """`set` is part of the key the trial-order shuffle hashes, so two rows sharing one
     would be ordered by a coin the package does not own."""
@@ -94,7 +91,7 @@ def test_block_sets_do_not_collide_with_the_main_ones(design, schema):
     assert not (per_block["practice"] & per_block["filler"])
 
 
-@pytest.mark.skipif(not os.path.exists(DESIGN_PATH), reason="repository design absent")
+@pytest.mark.skipif(REPO is None, reason="repository design absent")
 def test_the_shuffle_key_columns_keep_their_integer_type(design, schema):
     """pandas promotes an integer column to float the moment a missing value enters it,
     and the shuffle formats an integer set as "3" but a float one as "3.0" -- which would
@@ -104,7 +101,7 @@ def test_the_shuffle_key_columns_keep_their_integer_type(design, schema):
         assert str(out[col].dtype).startswith("int"), (col, out[col].dtype)
 
 
-@pytest.mark.skipif(not os.path.exists(DESIGN_PATH), reason="repository design absent")
+@pytest.mark.skipif(REPO is None, reason="repository design absent")
 def test_every_block_appears_in_every_list(design, schema):
     stim = _main()
     stim["list"] = [1, 1, 1, 1, 2, 2, 2, 2]
@@ -113,7 +110,7 @@ def test_every_block_appears_in_every_list(design, schema):
         assert set(g["block"]) == {"practice", "filler", BLOCK_MAIN}, li
 
 
-@pytest.mark.skipif(not os.path.exists(DESIGN_PATH), reason="repository design absent")
+@pytest.mark.skipif(REPO is None, reason="repository design absent")
 def test_the_report_names_the_tables_and_their_checksums(design, schema):
     report = add_blocks(_main(), design, schema)["report"]
     assert report["analysed"] == BLOCK_MAIN

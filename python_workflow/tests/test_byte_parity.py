@@ -21,8 +21,8 @@ and were never meant to be.
 import os
 
 import pytest
+from helper_repo import repo_path
 
-REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 REQUIRE_PARITY = os.environ.get("LEXSYNC_REQUIRE_PARITY") == "1"
 
 # Artefacts whose bytes must match exactly. These carry values, not provenance.
@@ -37,8 +37,11 @@ PROVENANCE_ARTEFACTS = ("_datasheet_", "_run_log_")
 
 def _pairs():
     out = []
+    # Away from the repository there is no output/ to sweep, which a job that set
+    # LEXSYNC_REQUIRE_PARITY must not pass by skipping.
+    output = repo_path("output", required=REQUIRE_PARITY)
     for sub in ("stimuli", "reports"):
-        d = os.path.join(REPO, "output", sub)
+        d = os.path.join(output, sub)
         if not os.path.isdir(d):
             continue
         for name in sorted(os.listdir(d)):
@@ -94,7 +97,7 @@ def test_provenance_artefacts_are_excluded_deliberately():
     """The exclusion is asserted, not assumed: if a datasheet ever became
     byte-identical, the reason for excluding it would have gone away and this test
     should be revisited rather than silently over-excluding."""
-    d = os.path.join(REPO, "output", "reports")
+    d = repo_path("output", "reports")
     if not os.path.isdir(d):
         pytest.skip("no generated reports present")
     names = [n for n in os.listdir(d)

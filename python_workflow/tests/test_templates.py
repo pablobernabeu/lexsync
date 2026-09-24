@@ -15,23 +15,23 @@ records the wrong onset does not fail, it quietly collects unusable data.
 Comparing the bytes is the check that catches it. Twinned with
 R_workflow/tests/testthat/test-templates.R,
 which holds the R mirror to the same canonical copy. Both skip rather than fail
-when the repository is not present, since an installed package checked in
-isolation has no root templates/ to compare against.
+away from the repository, since an installed package checked in isolation has no
+root templates/ to compare against. helper_repo.py, like helper-repo.R on the R
+side, says why a directory named templates/ is not enough to go on.
 """
 
 import os
 
 import pytest
+from helper_repo import REPO
 
 import lexsync
 
-REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-CANONICAL = os.path.join(REPO, "templates")
+# None away from the repository, where every test below skips.
+CANONICAL = os.path.join(REPO, "templates") if REPO else None
 PACKAGED = os.path.join(os.path.dirname(lexsync.__file__), "templates")
 
-pytestmark = pytest.mark.skipif(
-    not os.path.isdir(CANONICAL), reason="repository templates not available"
-)
+pytestmark = pytest.mark.skipif(REPO is None, reason="repository templates not available")
 
 
 def _tree(root):
@@ -55,7 +55,7 @@ def test_the_packaged_mirror_holds_the_same_files_as_the_repository():
     assert _tree(PACKAGED) == canonical
 
 
-@pytest.mark.parametrize("relpath", _tree(CANONICAL) if os.path.isdir(CANONICAL) else [])
+@pytest.mark.parametrize("relpath", _tree(CANONICAL) if CANONICAL else [])
 def test_each_packaged_template_is_byte_identical_to_the_repository_copy(relpath):
     assert _read(os.path.join(PACKAGED, relpath)) == _read(os.path.join(CANONICAL, relpath))
 

@@ -9,11 +9,14 @@ licence, and descriptions that name every shipped generation target.
 import json
 import re
 from datetime import date
-from pathlib import Path
 
+import pytest
 import yaml
+from helper_repo import REPO
 
-REPO = Path(__file__).resolve().parents[2]
+# Every file read here sits at the repository root or in one of the two packages'
+# directories there, so the whole module skips away from the repository.
+pytestmark = pytest.mark.skipif(REPO is None, reason="the repository's metadata files are not in this tree")
 
 ORCID = "0000-0003-1083-2460"
 

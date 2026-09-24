@@ -1,10 +1,8 @@
-import os
 import re
 
-import lexsync
+from helper_repo import repo_path
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-NAMESPACE = os.path.join(os.path.dirname(os.path.dirname(HERE)), "R_workflow", "NAMESPACE")
+import lexsync
 
 # R exports a run-logging and trigger-assignment tier that Python keeps at submodule
 # level (lexsync.logging, lexsync.scripting, lexsync.corpora). That split predates the
@@ -21,7 +19,8 @@ R_ONLY_INFRASTRUCTURE = {
 
 
 def _r_exports():
-    with open(NAMESPACE, encoding="utf-8") as handle:
+    namespace = repo_path("R_workflow", "NAMESPACE", reason="the R package is not in this tree")
+    with open(namespace, encoding="utf-8") as handle:
         return set(re.findall(r"^export\((.+)\)$", handle.read(), flags=re.MULTILINE))
 
 
