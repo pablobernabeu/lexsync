@@ -1,0 +1,21 @@
+# Optimal (minimum-total-distance) pairing for a two-condition design
+
+Solves the linear-assignment problem globally rather than greedily, so
+it minimises the summed pair distance and leaves fewer poorly matched
+pairs (Gu and Rosenbaum, 1993; Hansen & Klopfer, 2006). Needs the 'clue'
+package. The solver's tie handling differs from the Python engine's, so
+the two agree closely but not byte-for-byte.
+
+## Usage
+
+``` r
+match_optimal(
+  subpools,
+  cond_names,
+  match_on,
+  center,
+  scale_,
+  n,
+  cap = .PAIRWISE_CAP
+)
+```
