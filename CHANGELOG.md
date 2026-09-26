@@ -21,14 +21,15 @@ word-keyed norm table so the matcher can equate on it. Future directions include
 more bundled languages and, should a determinism-safe implementation be found,
 promoting a covariance-aware distance to the default.
 
-## [0.1.1] - Unreleased
+## [0.1.1] - 2026-09-25
 
 lexsync 0.1.1 fixes the test failure CRAN reported for 0.1.0 on its Linux check
 hosts, together with the condition-code order and the interval on Cohen's d.
 The corpus cache is now created only when a download needs it, and both engines
 gain a function that clears it. No stimulus moves. The generated experiments of
 12 of the 21 demonstration designs change their EEG condition codes, as
-described under Changed.
+described under Changed. CRAN published the R package on 2026-09-25, and this is
+the first version of the Python package on PyPI.
 
 ### Added
 
@@ -83,12 +84,11 @@ described under Changed.
   document that `cohens_d` and its interval are the reference (first) condition's
   mean minus the other condition's, and that `var_ratio` is the other condition's
   variance over the reference's.
-- The Python install instructions pointed at PyPI, where lexsync is not yet
-  published, so `pip install lexsync` failed. The Python README, the
-  documentation's home and getting-started pages, the repository landing page and
-  the root README now give the install from GitHub, with the
-  `python_workflow` subdirectory, and the wordfreq error message names the
-  package to install instead of the extra.
+- The Python install instructions gave `pip install lexsync` before the package
+  was on PyPI, where 0.1.0 was never uploaded, so the command failed. From 0.1.1
+  the package is on PyPI and the command works. The development version still
+  installs from the repository's `python_workflow` subdirectory. The wordfreq
+  error message now names the package to install instead of the extra.
 - The R `CITATION` entry names CRAN as its publisher, and its text version is the
   APA reference for software, with the version, "[Computer software]", CRAN and
   the DOI.
@@ -113,10 +113,11 @@ described under Changed.
 ## [0.1.0] - 2026-09-22
 
 lexsync 0.1.0 is the first public release. CRAN published the R package on
-2026-09-22 and assigned it the DOI 10.32614/CRAN.package.lexsync. The Python
-package is published on PyPI from the release tagged v0.1.0, which Zenodo
-archives under the concept DOI 10.5281/zenodo.22906962. The CRAN build predates the CRAN
-DOI, so its `citation("lexsync")` gives the repository's address.
+2026-09-22 and assigned it the DOI 10.32614/CRAN.package.lexsync. Zenodo
+archives the release tagged v0.1.0 under the concept DOI 10.5281/zenodo.22906962.
+The Python package's upload to PyPI from that release did not go through, so its
+first version on PyPI is 0.1.1. The CRAN build predates the CRAN DOI, so its
+`citation("lexsync")` gives the repository's address.
 
 The first three entries under Added summarise the release. The others follow the
 package through its development, so they describe each change against the state

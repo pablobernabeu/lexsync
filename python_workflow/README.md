@@ -29,11 +29,10 @@ Documentation, including the guides and the full API reference, is at
 
 ## Install
 
-The package is not on PyPI yet, so install it from the repository, where the
-Python package sits in the `python_workflow/` subdirectory:
+The package is on [PyPI](https://pypi.org/project/lexsync/):
 
 ```bash
-pip install "git+https://github.com/pablobernabeu/lexsync.git#subdirectory=python_workflow"
+pip install lexsync
 ```
 
 The `corpora` extra adds the 'wordfreq' connector, which reaches roughly forty
@@ -48,8 +47,15 @@ explains why and suggests an interpreter for hardware work. An extra goes in
 brackets after the package name:
 
 ```bash
-pip install "lexsync[corpora] @ git+https://github.com/pablobernabeu/lexsync.git#subdirectory=python_workflow"
-pip install "lexsync[experiment] @ git+https://github.com/pablobernabeu/lexsync.git#subdirectory=python_workflow"
+pip install "lexsync[corpora]"
+pip install "lexsync[experiment]"
+```
+
+The development version installs from the repository, where the Python package
+sits in the `python_workflow/` subdirectory:
+
+```bash
+pip install "git+https://github.com/pablobernabeu/lexsync.git#subdirectory=python_workflow"
 ```
 
 ## Quick start

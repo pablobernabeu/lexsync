@@ -130,10 +130,9 @@ reaches the same solver through `scipy`, which it requires anyway.
 To install the packages themselves rather than run them from a checkout, see
 [`R_workflow/README.md`](R_workflow/README.md) and
 [`python_workflow/README.md`](python_workflow/README.md). The R package is published
-on [CRAN](https://CRAN.R-project.org/package=lexsync), so `install.packages("lexsync")`
-is all it takes. The Python package is not on PyPI yet and installs from this
-repository with
-`pip install "git+https://github.com/pablobernabeu/lexsync.git#subdirectory=python_workflow"`.
+on [CRAN](https://CRAN.R-project.org/package=lexsync) and the Python package on
+[PyPI](https://pypi.org/project/lexsync/), so `install.packages("lexsync")` or
+`pip install lexsync` is all it takes.
 
 Neither the generation step nor its tests require 'PsychoPy', 'OpenSesame' or any
 parallel-port driver. These are needed only when the generated experiment is run on

@@ -23,9 +23,8 @@ doi: 10.32614/CRAN.package.lexsync
 # CRAN distributes the built package, which is what CFF's repository-artifact
 # field is for. The sources are on GitHub, in repository-code below.
 repository-artifact: 'https://CRAN.R-project.org/package=lexsync'
-# The date CRAN published the latest release. Still 0.1.0's until CRAN publishes
-# 0.1.1, when the date moves with it.
-date-released: '2026-09-22'
+# The date CRAN published 0.1.1.
+date-released: '2026-09-25'
 # Both DOIs, since doi holds one. Zenodo's concept DOI resolves to the latest
 # archived GitHub release, which carries the Python package as well as the R one.
 identifiers:

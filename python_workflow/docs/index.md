@@ -41,11 +41,8 @@ guarantee promises, how it is enforced and where it stops.
 
 ## Install
 
-The package is not on PyPI yet, so install it from the repository, where the Python package sits in
-the `python_workflow/` subdirectory:
-
 ```bash
-pip install "git+https://github.com/pablobernabeu/lexsync.git#subdirectory=python_workflow"
+pip install lexsync
 ```
 
 The `corpora` extra adds the wordfreq connector, which derives a lexicon for a language that is not
@@ -54,8 +51,15 @@ experiment on hardware. Generating one needs neither of them, only the core depe
 goes in brackets after the package name:
 
 ```bash
-pip install "lexsync[corpora] @ git+https://github.com/pablobernabeu/lexsync.git#subdirectory=python_workflow"
-pip install "lexsync[corpora,experiment] @ git+https://github.com/pablobernabeu/lexsync.git#subdirectory=python_workflow"
+pip install "lexsync[corpora]"
+pip install "lexsync[corpora,experiment]"
+```
+
+The development version comes straight from the repository, where the Python package sits in the
+`python_workflow/` subdirectory:
+
+```bash
+pip install "git+https://github.com/pablobernabeu/lexsync.git#subdirectory=python_workflow"
 ```
 
 See [Getting started](getting-started.md) for what each extra carries, including the interpreters
