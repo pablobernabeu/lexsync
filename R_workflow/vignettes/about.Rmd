@@ -81,9 +81,10 @@ function lexsyncCopyBibtex(btn) {
 ', esc(bib), uri))
 ```
 
-R users can also retrieve this citation with `citation("lexsync")`, although
-the 0.1.0 release on CRAN, built before the DOI existed, prints the GitHub
-address and no DOI. The repository carries a machine-readable
+R users can also retrieve the reference with `citation("lexsync")`, which
+formats it as the APA reference for software. The 0.1.0 release on CRAN was
+built before the DOI existed and prints the GitHub address, while 0.1.1 and
+later print the DOI. The repository carries a machine-readable
 [`CITATION.cff`](https://github.com/pablobernabeu/lexsync/blob/main/CITATION.cff)
 as well, which GitHub turns into a ready-made citation through its 'Cite this
 repository' button and which reference managers can import.

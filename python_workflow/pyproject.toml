@@ -186,7 +186,8 @@ packages = ["src/lexsync"]
 # everything else that is tracked. That is shorter to write but wrong here: this
 # directory also holds docs/, overrides/, mkdocs.yml, run_pipeline.py and three
 # requirements files, none of which belong in a distribution, and every one of
-# them would have to be listed to keep it out. An include list only ever ships
-# what it names, so forgetting an entry costs a missing file, and forgetting one
-# in an exclude list costs a tarball quietly twice the size it should be.
+# them would have to be listed to keep it out. An include list ships what it
+# names, plus the repository's .gitignore, which hatchling always adds to an
+# sdist, so forgetting an entry costs a missing file, and forgetting one in an
+# exclude list costs a tarball quietly twice the size it should be.
 include = ["src/lexsync", "tests", "README.md", "LICENSE", "LICENSE.note", "pyproject.toml"]

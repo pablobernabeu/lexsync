@@ -7,7 +7,8 @@ citHeader("To cite lexsync in publications, use:")
 # R CMD check --as-cran looks the DOI up in the DOI registry, just as it checks
 # the url. CRAN is the publisher: it distributes the package and registered
 # the DOI. The text version is the APA 7 reference for software, the form the
-# package's own guides and the author's website give.
+# author's website gives. The About guide and codemeta.json show the shorter
+# "R package version" form of the same reference.
 bibentry(
   bibtype  = "Manual",
   title    = "{lexsync}: Lexical optimisation and hardware-timed experiment generation",
