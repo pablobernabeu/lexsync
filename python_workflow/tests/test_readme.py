@@ -20,8 +20,8 @@ def _use_snippet():
     text = (REPO / "python_workflow" / "README.md").read_text(encoding="utf-8")
     # The first python fence under "## Use", not necessarily the line after the
     # heading: the section opens with a sentence saying what the example does and
-    # that it must be run from a checkout, and it closes with a bash fence for the
-    # command-line equivalent.
+    # a bash fence that clones the repository to run it from, and it closes with a
+    # bash fence for the command-line equivalent.
     match = re.search(r"## Use\b.*?```python\n(.*?)```", text, re.DOTALL)
     assert match, "README 'Use' python fence not found"
     return match.group(1)

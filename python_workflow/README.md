@@ -39,7 +39,12 @@ pip install "git+https://github.com/pablobernabeu/lexsync.git#subdirectory=pytho
 The `corpora` extra adds the 'wordfreq' connector, which reaches roughly forty
 languages through a single dependency, and the `experiment` extra adds
 'PsychoPy' and 'pyserial'. Note that the `experiment` extra is needed only to run
-a generated experiment on hardware, never to generate one. An extra goes in
+a generated experiment on hardware, never to generate one. PsychoPy currently
+supports Python 3.10 to 3.12, so on a newer interpreter that extra stops with a
+message naming psychopy, while the rest of the package installs on any supported
+version. [Getting
+started](https://pablobernabeu.github.io/lexsync/python/getting-started/)
+explains why and suggests an interpreter for hardware work. An extra goes in
 brackets after the package name:
 
 ```bash
@@ -100,8 +105,14 @@ reads the report column by column.
 
 The example below builds a matched stimulus set from a design file and writes
 the experiment scripts for it. It reads the schema, the derived corpus and the
-design from the repository, so run it from a checkout rather than from an
-arbitrary directory.
+design from the repository, so clone [the
+repository](https://github.com/pablobernabeu/lexsync) and run it from the root
+of the clone:
+
+```bash
+git clone https://github.com/pablobernabeu/lexsync.git
+cd lexsync
+```
 
 ```python
 import yaml, lexsync
@@ -124,7 +135,8 @@ lexsync.export_experiments(
 ```
 
 The same operations are available from the command line, which runs a whole
-design end to end, lists the registered corpora and derives a new lexicon:
+design end to end (again from the root of the clone), lists the registered
+corpora and derives a new lexicon:
 
 ```bash
 lexsync run config/design_en_freqcontrast.yaml

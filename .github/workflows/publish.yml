@@ -3,10 +3,19 @@
 #
 # One-time setup on PyPI: add this repository as a pending publisher for the
 # lexsync project (owner "pablobernabeu", repository "lexsync", workflow file
-# "publish.yml", environment "pypi"; PyPI creates the project on the first
-# upload). The workflow runs when a GitHub release is published; the manual
-# trigger exists so a release cut before this workflow was added can still be
-# shipped from the same commit.
+# "publish.yml", environment "pypi"). The first upload creates the project and
+# makes the publisher permanent. Until then a pending publisher does not reserve
+# the name, and PyPI deletes it if it is still unused 30 days after it was
+# added, so add it shortly before the release that will use it. If it has
+# lapsed, the upload fails with "invalid-publisher": add it again and re-run the
+# failed publish job.
+#
+# The workflow runs when a GitHub release is published. The manual trigger lets
+# a version reach PyPI from its tag before the GitHub release is published, so
+# Zenodo, which archives the release, never records "on PyPI" before it is true.
+# It also retries a release whose run is past GitHub's 30-day re-run window. A
+# manual run must be started on the release tag, and the check below refuses a
+# branch.
 #
 # The test suite is not repeated here. python-tests.yaml already runs pytest
 # across five interpreters and three operating systems, builds the distribution,
@@ -50,29 +59,37 @@ jobs:
       #
       # Both `v0.1.0` and `0.1.0` are accepted. Requiring one form would only mean
       # a release cut in the other form fails for a reason that has nothing to do
-      # with the version being wrong. The step is skipped for workflow_dispatch,
-      # where github.event.release does not exist and there is no tag to compare
-      # against; a manual run is a re-run of a release that was already checked,
-      # or a first upload from a commit that predates this workflow.
-      - name: Fail if pyproject.toml disagrees with the release tag
-        if: github.event_name == 'release'
+      # with the version being wrong.
+      #
+      # The tag comes from github.ref_name, which a release event and a manual
+      # run on a tag both set, so the check runs under both triggers. A manual
+      # run on a branch is refused outright: it would build whatever version the
+      # branch carries, with no tag, no GitHub release and no Zenodo record, and
+      # the pypi environment has no rule of its own to stop it.
+      - name: Fail unless the run is on a tag that matches pyproject.toml
         working-directory: python_workflow
         env:
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
         run: |
           python - <<'EOF'
           import os, sys, tomllib
-          tag = os.environ["RELEASE_TAG"].removeprefix("v")
+          if os.environ["REF_TYPE"] != "tag":
+              sys.exit(
+                  "This workflow publishes only from a release tag. Start a manual run "
+                  "on the tag (gh workflow run publish.yml --ref v0.1.1), not on a branch."
+              )
+          tag = os.environ["REF_NAME"].removeprefix("v")
           with open("pyproject.toml", "rb") as f:
               declared = tomllib.load(f)["project"]["version"]
           if declared != tag:
               sys.exit(
-                  "pyproject.toml declares version %s but the release is tagged %s. "
-                  "Fix whichever is wrong and cut the release again; a version "
-                  "uploaded under the wrong number cannot be reused on PyPI."
+                  "pyproject.toml declares version %s but the run is on tag %s. "
+                  "Fix whichever is wrong and tag again; a version uploaded under "
+                  "the wrong number cannot be reused on PyPI."
                   % (declared, tag)
               )
-          print("pyproject.toml and the release tag agree on %s" % declared)
+          print("pyproject.toml and the tag agree on %s" % declared)
           EOF
 
       # working-directory is given per step rather than as a job-level
@@ -123,10 +140,15 @@ jobs:
       # Leaving it out would send the action looking in ./dist, which in a
       # monorepo whose package sits in a subdirectory is empty.
       #
-      # skip-existing lets a re-run of a partially completed release finish
-      # without failing on the files that already went up. It does not weaken the
-      # check above: that one runs before the build and refuses the wrong number
-      # outright, whereas this only forgives a number already correctly uploaded.
+      # skip-existing lets a release finish when its files are already on PyPI, as
+      # they are when the release event follows a manual run on the same tag, or
+      # when "Re-run all jobs" rebuilds after an upload that stopped part-way.
+      # PyPI accepts a byte-identical file a second time anyway, so the flag only
+      # changes the outcome when a file of the same name is there with different
+      # bytes. It then skips that file by name without comparing contents, and
+      # the run still finishes green. The tag check above refuses a wrong version
+      # number, but it cannot tell a second build of a number already on PyPI from
+      # the first, so after a rebuild check the files on pypi.org.
       #
       # Pinned to a commit rather than the v1.14.2 tag, on the same reasoning as
       # the r-lib pins in python-tests.yaml. A tag can be moved to point at

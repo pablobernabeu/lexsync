@@ -87,14 +87,16 @@ dev = ["pytest>=7.0", "build", "twine", "streamlit>=1.30"]
 lexsync = "lexsync.cli:main"
 
 [project.urls]
-# Repository and Changelog are the two labels PyPI treats specially, giving each
-# its own icon in the sidebar, so both are spelled the way PyPI expects. The
+# Homepage, Repository (an alias of Source), Documentation, Changelog and Issues
+# are well-known labels in the packaging specification, which PyPI shows with
+# their own icons in the sidebar, so each is spelled the way the specification
+# expects. "R twin" is not one of them and appears as a plain link. The
 # changelog points at the documentation page instead of the file at the root of
 # the monorepo because that page includes CHANGELOG.md verbatim through the
 # snippets extension, so the two cannot disagree, and a reader arriving from PyPI
-# lands on a rendered page beside the rest of the documentation. "R twin" is not
-# a label PyPI knows, and it renders as the plain text with a generic
-# external-link icon, which is what theoryforge's identical entry already does.
+# lands on a rendered page beside the rest of the documentation. Every address
+# sits under the repository's github.com or github.io paths, which PyPI can mark
+# as verified for a package uploaded through trusted publishing.
 Homepage = "https://github.com/pablobernabeu/lexsync"
 Repository = "https://github.com/pablobernabeu/lexsync"
 Documentation = "https://pablobernabeu.github.io/lexsync/python/"
