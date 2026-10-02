@@ -387,6 +387,13 @@ variance ratios and TOST verdicts. What it could have chosen instead is in
 `candidate_pool`, which records how many items satisfied each condition before
 matching.
 
+The record keeps each statistic as the comparisons report rounded it, to three
+places and the TOST *p* to four. The Markdown rendering and the methods paragraph
+show them at two or three places and the TOST *p* at four. The rounding is done
+by lexsync's own formatter, half away from zero from that record, so both
+engines print the same digits. A *d* of 0.1649 is stored as 0.165 and is
+therefore shown as 0.17.
+
 ```{r checksums}
 ds$materials_source$sha256
 str(ds$selection$tolerance_k)

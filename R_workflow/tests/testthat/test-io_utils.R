@@ -97,6 +97,35 @@ test_that("a continuous design over a supplied pool takes the continuous path", 
                "cannot be combined with items.source 'generate'", fixed = TRUE)
 })
 
+# The datasheet's numbers used to go through sprintf(), which hands the rounding to
+# the platform's C library. R 4.6.1 on Windows printed 0.0825 at three places as
+# "0.082" and 0.165 at two as "0.16", where Python printed "0.083" and "0.17".
+# .fmt_dp prints the integer that .round_dp's own arithmetic gives, so no printf
+# rounds anything. test_io_utils.py pins the same strings for _fmt_dp.
+test_that(".fmt_dp rounds half away from zero without the platform printf", {
+  fmt <- lexsync:::.fmt_dp
+  expect_identical(fmt(0.0825, 3), "0.083")
+  expect_identical(fmt(0.1125, 3), "0.113")
+  expect_identical(fmt(0.165, 2), "0.17")
+  expect_identical(fmt(0.0005, 4), "0.0005")
+  expect_identical(fmt(-0.0825, 3), "-0.083")
+  expect_identical(fmt(-0.465, 2), "-0.47")
+  expect_identical(fmt(1, 4), "1.0000")
+  expect_identical(fmt(3.05, 3), "3.050")
+  expect_identical(fmt(12.5, 0), "13")
+  # A value that rounds to zero never prints as "-0".
+  expect_identical(fmt(-0.0004, 3), "0.000")
+  # The stored record keeps four places, so a display at three rounds twice: 0.08249
+  # is stored as 0.0825 and shown as 0.083. This is the documented residual.
+  expect_identical(fmt(lexsync:::.round_dp(0.08249, 4), 3), "0.083")
+  # Missing values print the placeholder, and a vector is formatted elementwise.
+  expect_identical(fmt(NULL, 2), "--")
+  expect_identical(fmt(NA_real_, 2), "--")
+  expect_identical(fmt(NA_real_, 2, na = "n/a"), "n/a")
+  expect_identical(fmt(c(0.165, NA, -1.5), 2), c("0.17", "--", "-1.50"))
+  expect_identical(fmt(c(Inf, -Inf), 2), c("Inf", "-Inf"))
+})
+
 test_that("clean_field rejects control characters but allows commas and quotes", {
   expect_error(clean_field("cat\ndog", "word"), "control characters")
   expect_identical(clean_field('the "big" cat, asleep', "word"), 'the "big" cat, asleep')

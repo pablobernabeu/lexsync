@@ -297,11 +297,53 @@ def _round_dp(x, dp: int) -> float:
     # math.trunc(inf) raises instead.
     if math.isinf(y):
         return v
+    return _round_dp_scaled(y) / p
+
+
+def _round_dp_scaled(y: float) -> int:
+    """The integer _round_dp divides back down.
+
+    ``y`` is the value already scaled by 10**dp, and must be finite. It is truncated
+    toward zero and stepped away from zero at a remainder of a half. Shared with
+    _fmt_dp, so a printed number and a rounded one cannot disagree. Twin of
+    .round_dp_scaled in R_workflow/R/io_utils.R.
+    """
     t = math.trunc(y)
     r = y - t
     # The step is away from zero, so a negative value moves down, not up.
     adj = (1 if y > 0 else -1) if abs(r) >= 0.5 else 0
-    return (t + adj) / p
+    return t + adj
+
+
+# ---- One number formatter, shared by both engines --------------------------
+#
+# A format specification such as :.3f rounds correctly, and R's sprintf("%.3f")
+# hands the rounding to the platform's C library, which is the disagreement
+# described above: R 4.6.1 on Windows prints 0.0825 as "0.082" where this engine
+# prints "0.083". Every number shown in the Markdown datasheet and the Methods
+# paragraph therefore comes from here. It takes the scaled integer from _round_dp's
+# own arithmetic, prints that integer's digits and places the decimal point by string
+# operations. The sign is taken from the rounded integer, so a value that rounds to
+# zero prints without a minus sign. Missing values print `na`, and infinities print
+# as "Inf" and "-Inf", as R prints them.
+# Must stay identical to .fmt_dp in R_workflow/R/io_utils.R.
+
+
+def _fmt_dp(x, dp: int, na: str = "--") -> str:
+    if x is None:
+        return na
+    v = float(x)
+    if v != v:
+        return na
+    y = v * 10.0 ** dp
+    # An infinite scaled value, from an infinite input or one too large to scale.
+    if math.isinf(y):
+        return "Inf" if y > 0 else "-Inf"
+    t = _round_dp_scaled(y)
+    digits = str(abs(t)).rjust(dp + 1, "0")
+    if dp > 0:
+        digits = digits[:-dp] + "." + digits[-dp:]
+    return ("-" if t < 0 else "") + digits
 
 
 def _round_dp_vec(x, dp: int):

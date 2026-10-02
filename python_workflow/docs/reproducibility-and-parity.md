@@ -247,8 +247,14 @@ bias auditable ([Forster, 2000](references.md#forster-2000);
 object from a set of 80 chosen from 85.
 
 The realised control is a table, not a claim, giving each dimension its role, Cohen's *d*, the 90%
-interval, the variance ratio, the TOST *p* and the verdict. The suggested analysis is a crossed
-mixed-model formula, `response ~ condition + (1 + condition | subject) + (1 | item)`, which is there
+interval, the variance ratio, the TOST *p* and the verdict. The JSON keeps each statistic as the
+comparisons report rounded it, to three places and the TOST *p* to four. The Markdown and the
+Methods paragraph show them at two or three places and the TOST *p* at four. The rounding is done
+by lexsync's own formatter, half away from zero from that record, so both engines print the same
+digits. A *d* of 0.1649 is stored as 0.165 and is therefore shown as 0.17.
+
+The suggested analysis is a crossed mixed-model formula,
+`response ~ condition + (1 + condition | subject) + (1 | item)`, which is there
 to guard against the language-as-fixed-effect fallacy ([Clark, 1973](references.md#clark-1973);
 [Baayen et al., 2008](references.md#baayen-2008)): items are a sample of the language, and an
 analysis that treats them as fixed over-generalises. The maximal structure is suggested

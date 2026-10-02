@@ -1,8 +1,8 @@
 # lexsync run log: zh_freqcontrast
 
 - Engine: Python 3.13.7
-- Started: 2026-09-24T16:59:39
-- Finished: 2026-09-24T16:59:40
+- Started: 2026-10-02T12:22:57
+- Finished: 2026-10-02T12:23:00
 
 ## Run metadata
 
@@ -15,46 +15,46 @@
 
 ## Steps
 
-- **2026-09-24T16:59:39**: loading lexicon 'corpora/derived/zh.csv'
-- **2026-09-24T16:59:39**: lexicon loaded: 20000 words
+- **2026-10-02T12:22:57**: loading lexicon 'corpora/derived/zh.csv'
+- **2026-10-02T12:22:58**: lexicon loaded: 20000 words
     - words: 20000
-- **2026-09-24T16:59:39**: pool after filters: 13613 words
+- **2026-10-02T12:22:58**: pool after filters: 13613 words
     - pool: 13613
-- **2026-09-24T16:59:40**: matched 160 items across 2 conditions
+- **2026-10-02T12:22:59**: matched 160 items across 2 conditions
     - conditions: high_frequency, low_frequency
-- **2026-09-24T16:59:40**: equivalence low_frequency vs high_frequency on 'length': d = 0.00 [0.00, 0.00], TOST p = 0.0 (equivalent)
-- **2026-09-24T16:59:40**: equivalence low_frequency vs high_frequency on 'frequency': d = 6.00 [5.39, 6.62], TOST p = 1.0 (not shown equivalent)
-- **2026-09-24T16:59:40**: equivalence low_frequency vs high_frequency on 'n_density': d = 0.07 [-0.19, 0.33], TOST p = 0.0037 (equivalent)
-- **2026-09-24T16:59:40**: equivalence low_frequency vs high_frequency on 'old20': d = 0.11 [-0.16, 0.37], TOST p = 0.0069 (equivalent)
-- **2026-09-24T16:59:40**: wrote 'zh_freqcontrast_chinese_stimuli_py.csv'
+- **2026-10-02T12:22:59**: equivalence low_frequency vs high_frequency on 'length': d = 0.00 [0.00, 0.00], TOST p = 0.0 (equivalent)
+- **2026-10-02T12:22:59**: equivalence low_frequency vs high_frequency on 'frequency': d = 6.00 [5.39, 6.62], TOST p = 1.0 (not shown equivalent)
+- **2026-10-02T12:22:59**: equivalence low_frequency vs high_frequency on 'n_density': d = 0.07 [-0.19, 0.33], TOST p = 0.0037 (equivalent)
+- **2026-10-02T12:22:59**: equivalence low_frequency vs high_frequency on 'old20': d = 0.11 [-0.16, 0.37], TOST p = 0.0069 (equivalent)
+- **2026-10-02T12:22:59**: wrote 'zh_freqcontrast_chinese_stimuli_py.csv'
     - path: output\stimuli\zh_freqcontrast_chinese_stimuli_py.csv
     - rows: 160
     - md5: 696c6e672dbfab97f0f90a7f5ff60067
-- **2026-09-24T16:59:40**: wrote 'zh_freqcontrast_chinese_descriptives_py.csv'
+- **2026-10-02T12:22:59**: wrote 'zh_freqcontrast_chinese_descriptives_py.csv'
     - path: output\reports\zh_freqcontrast_chinese_descriptives_py.csv
     - rows: 8
     - md5: 83e6b799f70ff4dedee81fce775e7267
-- **2026-09-24T16:59:40**: wrote 'zh_freqcontrast_chinese_comparisons_py.csv'
+- **2026-10-02T12:23:00**: wrote 'zh_freqcontrast_chinese_comparisons_py.csv'
     - path: output\reports\zh_freqcontrast_chinese_comparisons_py.csv
     - rows: 4
     - md5: 9823b728460d1fa1069400ef92b274d5
-- **2026-09-24T16:59:40**: wrote 'zh_freqcontrast_chinese_psychopy.py'
+- **2026-10-02T12:23:00**: wrote 'zh_freqcontrast_chinese_psychopy.py'
     - path: output\experiments\zh_freqcontrast_chinese_psychopy.py
     - rows: None
     - md5: e125056b7a1fae42e45ee23c544b0077
-- **2026-09-24T16:59:40**: wrote 'zh_freqcontrast_chinese.osexp'
+- **2026-10-02T12:23:00**: wrote 'zh_freqcontrast_chinese.osexp'
     - path: output\experiments\zh_freqcontrast_chinese.osexp
     - rows: None
     - md5: 61241d2f316024fe20ddc8ea700d7816
-- **2026-09-24T16:59:40**: wrote 'zh_freqcontrast_chinese.html'
+- **2026-10-02T12:23:00**: wrote 'zh_freqcontrast_chinese.html'
     - path: output\experiments\zh_freqcontrast_chinese.html
     - rows: None
     - md5: 04f5aba638eeed04e20d12e5763d50a7
-- **2026-09-24T16:59:40**: wrote 'zh_freqcontrast_chinese_datasheet_py.json'
+- **2026-10-02T12:23:00**: wrote 'zh_freqcontrast_chinese_datasheet_py.json'
     - path: output\reports\zh_freqcontrast_chinese_datasheet_py.json
     - rows: None
     - md5: 4fbd6d64daf5f211651f55a3253fdd4a
-- **2026-09-24T16:59:40**: wrote 'zh_freqcontrast_chinese_datasheet_py.md'
+- **2026-10-02T12:23:00**: wrote 'zh_freqcontrast_chinese_datasheet_py.md'
     - path: output\reports\zh_freqcontrast_chinese_datasheet_py.md
     - rows: None
-    - md5: 49330db4d4dbb93760a0985f0f8d45ac
+    - md5: 8fb9992a4a75fff096c263a96f30d071

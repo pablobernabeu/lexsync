@@ -433,3 +433,73 @@ def test_a_dotted_model_term_earns_the_patsy_quoting_note(schema):
                             schema, None, _stim(), "x.csv",
                             {"stimuli": None, "experiments": {}}, 2026)
     assert "Patsy" not in plain["analysis"]["note"]
+
+
+# ---- Numbers are printed by lexsync, not by each language's printf ----------
+# Format specifications such as :.2f round correctly, so an exact tie such as -0.125
+# goes to the even digit, while R's sprintf() hands ties to the platform's C library
+# and printed 0.165 at two places as "0.16" on Windows. Every number in the Markdown
+# and the Methods paragraph now goes through _fmt_dp, which rounds half away from
+# zero by the package's own arithmetic. test-datasheet.R pins the same strings.
+
+def _tie_rows():
+    return [
+        {"dimension": "length", "role": "controlled", "cohens_d": 0.165,
+         "ci_low": -0.125, "ci_high": 0.455, "var_ratio": 0.0825, "tost_p": 0.0009,
+         "equivalent": True},
+        {"dimension": "old20", "role": "controlled", "cohens_d": 0.1, "ci_low": -0.2,
+         "ci_high": 0.3, "var_ratio": 1.0, "tost_p": 0.0, "equivalent": True},
+        {"dimension": "frequency", "role": "manipulated/free", "cohens_d": 5.27,
+         "ci_low": 4.72, "ci_high": 5.83, "var_ratio": 0.21, "tost_p": 1.0,
+         "equivalent": False},
+    ]
+
+
+def test_decimal_ties_print_the_same_in_the_methods_paragraph_and_the_table(schema):
+    ds = build_datasheet(_design(), schema, None, _stim(), "x.csv",
+                         {"stimuli": None, "experiments": {}}, 2026)
+    ds["realised_control"] = _tie_rows()
+    assert "was 0.17 (90% CI [-0.13, 0.46]), within" in methods_paragraph(ds)
+    md = render_datasheet_md(ds)
+    # The TOST p is printed to four places, and a stored 0 as a bound.
+    assert "| length | controlled | 0.17 | [-0.13, 0.46] | 0.08 | 0.0009 |" in md
+    assert "| old20 | controlled | 0.10 | [-0.20, 0.30] | 1.00 | < 0.0001 |" in md
+    assert "| frequency | manipulated/free | 5.27 | [4.72, 5.83] | 0.21 | 1.0000 |" in md
+
+
+def test_a_continuous_design_prints_its_span_and_correlations_through_the_formatter(schema):
+    ds = build_datasheet({"name": "c", "language": "english",
+                          "continuous": {"predictor": "frequency", "controls": ["length"]},
+                          "n_per_condition": 4, "counterbalance": {"lists": 1}},
+                         schema, None, _stim(), "x.csv",
+                         {"stimuli": None, "experiments": {}}, 2026)
+    ds["realised_control"] = [
+        {"dimension": "frequency", "role": "predictor", "pearson_r": None,
+         "predictor_span": 0.165},
+        {"dimension": "length", "role": "control", "pearson_r": -0.0825,
+         "predictor_span": 0.165},
+    ]
+    m = methods_paragraph(ds)
+    assert "span frequency (a span of 0.17) continuously" in m
+    assert "correlation was |r| = 0.083," in m
+    md = render_datasheet_md(ds)
+    assert "| frequency | predictor | -- | 0.165 |" in md
+    assert "| length | control | -0.083 | 0.165 |" in md
+
+
+def test_the_methods_paragraph_from_the_r_record_matches_the_r_rendering():
+    # The Methods paragraph is the part of the datasheet meant to be identical across
+    # engines; the rest of the Markdown names its engine and is excluded from the
+    # cross-engine diff. This engine renders the paragraph from the R engine's
+    # committed record of en_freqcontrast, read back from JSON as a reader would, and
+    # it must match the paragraph the R engine wrote. test-datasheet.R does the same
+    # from the Python record.
+    from helper_repo import repo_path
+    base = repo_path("output", "reports", "en_freqcontrast_english_datasheet_R",
+                     reason="committed reports not available")
+    with open(str(base) + ".json", encoding="utf-8") as fh:
+        ds = json.load(fh)
+    with open(str(base) + ".md", encoding="utf-8") as fh:
+        md = fh.read().split("\n")
+    at = md.index("## Methods paragraph")
+    assert methods_paragraph(ds) == md[at + 2]

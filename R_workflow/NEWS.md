@@ -27,6 +27,21 @@
   Python, and one that gives `language_tag` without `language` stops, as it does
   in Python. The Python engine was never affected.
 
+* Numbers in the Markdown datasheet and the Methods paragraph are formatted by
+  lexsync itself, not by each language's printf, which rounds decimal ties
+  differently: R on Windows printed 0.0825 as 0.082 where Python printed 0.083.
+  A displayed value is rounded half away from zero from the value the JSON record
+  stores, so a statistic stored as 0.745 now shows as 0.75 in both engines, where
+  both printed 0.74. Some two-place cells in the committed datasheets of 10 designs
+  change for this reason, and the Methods paragraph of `es_freqcontrast` now gives
+  the interval as [-0.19, 0.34]. A cell in which the R datasheet of
+  `en_andrews_repro` disagreed with Python's (-0.46 against -0.47) now agrees. The
+  TOST p column is printed to four places in both engines, and a p that rounds to
+  zero is shown as < 0.0001. R wrote such a column as 9e-04 and 1, Python as
+  0.0009 and 1.0. No JSON record, stimulus, report table or experiment changes.
+  The run logs of the 10 designs change with their datasheets, whose MD5 they
+  record.
+
 # lexsync 0.1.1
 
 * `assign_triggers()` gains a `conditions` argument that fixes the order of the

@@ -22,9 +22,9 @@
 
 | Dimension | Role | Cohen's d | 90% CI | Var ratio | TOST p | Equivalent |
 |---|---|---|---|---|---|---|
-| length | controlled | 0.03 | [-0.23, 0.29] | 0.90 | 0.0016 | True |
-| frequency | manipulated/free | 5.27 | [4.72, 5.83] | 0.21 | 1.0 | False |
-| n_density | controlled | 0.04 | [-0.22, 0.30] | 0.80 | 0.002 | True |
+| length | controlled | 0.03 | [-0.24, 0.29] | 0.90 | 0.0016 | True |
+| frequency | manipulated/free | 5.27 | [4.72, 5.83] | 0.21 | 1.0000 | False |
+| n_density | controlled | 0.04 | [-0.22, 0.30] | 0.80 | 0.0020 | True |
 | old20 | controlled | 0.01 | [-0.25, 0.27] | 0.91 | 0.0011 | True |
 
 ## Suggested analysis

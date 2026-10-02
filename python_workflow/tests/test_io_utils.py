@@ -46,6 +46,35 @@ def test_read_csv_utf8_keeps_words_that_look_like_missing_values(tmp_path):
     assert out["word"][2:].isna().all()
 
 
+# The datasheet's numbers used to go through format specifications such as :.3f,
+# which round correctly here but differently from R's sprintf(), which hands the
+# rounding to the platform's C library: R 4.6.1 on Windows printed 0.0825 at three
+# places as "0.082" and 0.165 at two as "0.16". _fmt_dp prints the integer that
+# _round_dp's own arithmetic gives, so no printf rounds anything. test-io_utils.R
+# pins the same strings for .fmt_dp.
+def test_fmt_dp_rounds_half_away_from_zero_without_a_printf():
+    from lexsync.io_utils import _fmt_dp, _round_dp
+    assert _fmt_dp(0.0825, 3) == "0.083"
+    assert _fmt_dp(0.1125, 3) == "0.113"
+    assert _fmt_dp(0.165, 2) == "0.17"
+    assert _fmt_dp(0.0005, 4) == "0.0005"
+    assert _fmt_dp(-0.0825, 3) == "-0.083"
+    assert _fmt_dp(-0.465, 2) == "-0.47"
+    assert _fmt_dp(1, 4) == "1.0000"
+    assert _fmt_dp(3.05, 3) == "3.050"
+    assert _fmt_dp(12.5, 0) == "13"
+    # A value that rounds to zero never prints as "-0".
+    assert _fmt_dp(-0.0004, 3) == "0.000"
+    # The stored record keeps four places, so a display at three rounds twice:
+    # 0.08249 is stored as 0.0825 and shown as 0.083. This is the documented residual.
+    assert _fmt_dp(_round_dp(0.08249, 4), 3) == "0.083"
+    # Missing values print the placeholder.
+    assert _fmt_dp(None, 2) == "--"
+    assert _fmt_dp(float("nan"), 2) == "--"
+    assert _fmt_dp(None, 2, na="n/a") == "n/a"
+    assert [_fmt_dp(v, 2) for v in (float("inf"), float("-inf"))] == ["Inf", "-Inf"]
+
+
 def test_clean_field_rejects_control_characters():
     with pytest.raises(ValueError, match="control characters"):
         clean_field("cat\ndog", "word")

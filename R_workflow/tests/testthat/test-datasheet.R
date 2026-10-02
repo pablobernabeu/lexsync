@@ -429,3 +429,75 @@ test_that("a dotted model term earns the Patsy quoting note", {
                            list(stimuli = NULL, experiments = list()), 2026, engine = "R")
   expect_false(grepl("Patsy", plain$analysis$note, fixed = TRUE))
 })
+
+# ---- Numbers are printed by lexsync, not by each language's printf ----------
+# sprintf() hands decimal ties to the platform's C library: R 4.6.1 on Windows
+# printed 0.165 at two places as "0.16" where Python printed "0.17", and an exact
+# tie such as -0.125 goes to the even digit in Python. Every number in the
+# Markdown and the Methods paragraph now goes through .fmt_dp, which rounds half
+# away from zero by the package's own arithmetic. test_datasheet.py pins the same
+# strings.
+
+tie_rows <- function() {
+  list(
+    list(dimension = "length", role = "controlled", cohens_d = 0.165,
+         ci_low = -0.125, ci_high = 0.455, var_ratio = 0.0825, tost_p = 9e-04,
+         equivalent = TRUE),
+    list(dimension = "old20", role = "controlled", cohens_d = 0.1, ci_low = -0.2,
+         ci_high = 0.3, var_ratio = 1, tost_p = 0, equivalent = TRUE),
+    list(dimension = "frequency", role = "manipulated/free", cohens_d = 5.27,
+         ci_low = 4.72, ci_high = 5.83, var_ratio = 0.21, tost_p = 1,
+         equivalent = FALSE))
+}
+
+test_that("decimal ties print the same in the Methods paragraph and the table", {
+  ds <- build_datasheet(ds_design(), ds_schema(), NULL, ds_stim(), "x.csv",
+                        list(stimuli = NULL, experiments = list()), 2026, engine = "R")
+  ds$realised_control <- tie_rows()
+  expect_true(grepl("was 0.17 (90% CI [-0.13, 0.46]), within", methods_paragraph(ds),
+                    fixed = TRUE))
+  md <- lexsync:::render_datasheet_md(ds)
+  # The TOST p is printed to four places, and a stored 0 as a bound.
+  expect_true(grepl("| length | controlled | 0.17 | [-0.13, 0.46] | 0.08 | 0.0009 |",
+                    md, fixed = TRUE))
+  expect_true(grepl("| old20 | controlled | 0.10 | [-0.20, 0.30] | 1.00 | < 0.0001 |",
+                    md, fixed = TRUE))
+  expect_true(grepl("| frequency | manipulated/free | 5.27 | [4.72, 5.83] | 0.21 | 1.0000 |",
+                    md, fixed = TRUE))
+})
+
+test_that("a continuous design prints its span and correlations through the formatter", {
+  ds <- build_datasheet(list(name = "c", language = "english",
+                             continuous = list(predictor = "frequency",
+                                               controls = list("length")),
+                             n_per_condition = 4, counterbalance = list(lists = 1)),
+                        ds_schema(), NULL, ds_stim(), "x.csv",
+                        list(stimuli = NULL, experiments = list()), 2026, engine = "R")
+  ds$realised_control <- list(
+    list(dimension = "frequency", role = "predictor", pearson_r = NULL,
+         predictor_span = 0.165),
+    list(dimension = "length", role = "control", pearson_r = -0.0825,
+         predictor_span = 0.165))
+  m <- methods_paragraph(ds)
+  expect_true(grepl("span frequency (a span of 0.17) continuously", m, fixed = TRUE))
+  expect_true(grepl("correlation was |r| = 0.083,", m, fixed = TRUE))
+  md <- lexsync:::render_datasheet_md(ds)
+  expect_true(grepl("| frequency | predictor | -- | 0.165 |", md, fixed = TRUE))
+  expect_true(grepl("| length | control | -0.083 | 0.165 |", md, fixed = TRUE))
+})
+
+# The Methods paragraph is the part of the datasheet meant to be identical across
+# engines; the rest of the Markdown names its engine and is excluded from the
+# cross-engine diff. This engine renders the paragraph from the Python engine's
+# committed record of en_freqcontrast, read back from JSON as a reader would, and it
+# must match the paragraph the Python engine wrote. test_datasheet.py does the same
+# from the R record.
+test_that("the Methods paragraph from the Python record matches the Python rendering", {
+  reports <- repo_path("output", "reports", message = "committed reports not available")
+  base <- file.path(reports, "en_freqcontrast_english_datasheet_py")
+  ds <- jsonlite::fromJSON(paste0(base, ".json"), simplifyVector = FALSE)
+  md <- readLines(paste0(base, ".md"), encoding = "UTF-8", warn = FALSE)
+  at <- match("## Methods paragraph", md)
+  expect_false(is.na(at))
+  expect_identical(methods_paragraph(ds), md[[at + 2L]])
+})

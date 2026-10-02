@@ -13,7 +13,7 @@ from __future__ import annotations
 import json
 import platform
 
-from .io_utils import _is_continuous, _round_dp, sha256_file
+from .io_utils import _fmt_dp, _is_continuous, _round_dp, sha256_file
 
 # The cap the pairwise (joint, optimal) matchers apply before pairing. Imported from
 # matching so the datasheet can only ever record the value the selection used.
@@ -447,6 +447,18 @@ def _num(v):
         return None
 
 
+def _fmt_tost_p(p) -> str:
+    """The TOST p as the Markdown shows it.
+
+    Four places, the precision the comparisons report stores, through _fmt_dp like
+    every other number. It was printed raw, so this engine wrote 0.0009 and 1.0 where
+    R wrote 9e-04 and 1. A p that rounds to zero at four places is shown as the bound
+    it is below. Mirrors .fmt_tost_p in datasheet.R.
+    """
+    s = _fmt_dp(p, 4)
+    return "< 0.0001" if s == "0.0000" else s
+
+
 def _bool(v):
     return None if v is None or (isinstance(v, float) and v != v) else bool(v)
 
@@ -467,6 +479,13 @@ def _norms_note(ds: dict) -> str:
 
 
 def methods_paragraph(ds: dict) -> str:
+    """A ready-to-adapt Methods paragraph rendered from a datasheet.
+
+    Every number in the paragraph is printed by lexsync's own formatter, rounded
+    half away from zero from the value the datasheet stores, so the R and Python
+    engines write the same text from the same record, a record read back from its
+    JSON included. Mirrors methods_paragraph in datasheet.R.
+    """
     d = ds["design"]
     src = ds["materials_source"]["type"]
     n = d["n_per_condition"]
@@ -484,11 +503,13 @@ def methods_paragraph(ds: dict) -> str:
         span = next((r.get("predictor_span") for r in rc if r.get("predictor_span") is not None), None)
         rs = [abs(r["pearson_r"]) for r in rc
               if r.get("pearson_r") is not None and r["pearson_r"] == r["pearson_r"]]
-        span_str = f" (a span of {span:.2f})" if span is not None else ""
-        # Report |r| at 3 dp (its stored precision) so the text is identical across
-        # engines; a 2-dp format of, say, 0.165 rounds to 0.17 in Python and 0.16 in R.
-        corr_str = (f", and the largest predictor-control correlation was |r| = {max(rs):.3f}"
-                    if rs else "")
+        span_str = f" (a span of {_fmt_dp(span, 2)})" if span is not None else ""
+        # |r| is printed at three places, the precision of the comparisons report it
+        # comes from (the record keeps up to four, see _num), so the record holds the
+        # digit shown. _fmt_dp prints it, as every number here, because R's sprintf()
+        # rounds a tie such as 0.0825 to 0.082 on Windows where this engine gives 0.083.
+        corr_str = (", and the largest predictor-control correlation was |r| = "
+                    + _fmt_dp(max(rs), 3) if rs else "")
         cb = ds["counterbalancing"]
         recipe_label = {"latin_square_target": "a Latin-square rotation",
                         "factorial": "a factorial split"}.get(cb["recipe"], cb["recipe"])
@@ -534,8 +555,9 @@ def methods_paragraph(ds: dict) -> str:
         if all_equivalent and defined:
             worst = max(defined, key=lambda r: abs(r["cohens_d"]))
             control = (f". The realised control was close. The largest standardised difference on "
-                       f"any matched dimension was {worst['cohens_d']:.2f} "
-                       f"(90% CI [{worst['ci_low']:.2f}, {worst['ci_high']:.2f}]), within the "
+                       f"any matched dimension was {_fmt_dp(worst['cohens_d'], 2)} "
+                       f"(90% CI [{_fmt_dp(worst['ci_low'], 2)}, "
+                       f"{_fmt_dp(worst['ci_high'], 2)}]), within the "
                        f"{ds['equivalence']['bound_d']}-SD equivalence bound")
         else:
             control = (". Equivalence was not confirmed on every matched dimension; "
@@ -688,10 +710,11 @@ def render_datasheet_md(ds: dict) -> str:
                   "| Dimension | Role | r with predictor | Predictor span |",
                   "|---|---|---|---|"]
         for r in ds["realised_control"]:
-            # "--", not an em dash: the R renderer's placeholder, kept identical.
-            rr = "--" if r.get("pearson_r") is None else f"{r['pearson_r']:.3f}"
-            sp = "--" if r.get("predictor_span") is None else f"{r['predictor_span']:.3f}"
-            lines.append(f"| {r['dimension']} | {r['role']} | {rr} | {sp} |")
+            # A missing value prints "--", not an em dash: the R renderer's
+            # placeholder, kept identical.
+            lines.append(f"| {r['dimension']} | {r['role']} | "
+                         f"{_fmt_dp(r.get('pearson_r'), 3)} | "
+                         f"{_fmt_dp(r.get('predictor_span'), 3)} |")
         lines.append("")
     elif ds["realised_control"]:
         lines += ["## Realised control", "",
@@ -700,12 +723,11 @@ def render_datasheet_md(ds: dict) -> str:
         for r in ds["realised_control"]:
             # "--", not an em dash: the R renderer's placeholder, kept identical.
             # An undefined d (unequal constants) reaches every one of these cells.
-            ci = (f"[{r['ci_low']:.2f}, {r['ci_high']:.2f}]"
+            ci = (f"[{_fmt_dp(r['ci_low'], 2)}, {_fmt_dp(r['ci_high'], 2)}]"
                   if r["ci_low"] is not None else "--")
-            d_str = "--" if r["cohens_d"] is None else f"{r['cohens_d']:.2f}"
-            vr = "--" if r.get("var_ratio") is None else f"{r['var_ratio']:.2f}"
-            lines.append(f"| {r['dimension']} | {r['role']} | {d_str} | {ci} | {vr} | "
-                         f"{r['tost_p']} | {r['equivalent']} |")
+            lines.append(f"| {r['dimension']} | {r['role']} | {_fmt_dp(r['cohens_d'], 2)} | "
+                         f"{ci} | {_fmt_dp(r.get('var_ratio'), 2)} | "
+                         f"{_fmt_tost_p(r['tost_p'])} | {r['equivalent']} |")
         lines.append("")
     a = ds.get("analysis")
     if a:

@@ -113,6 +113,15 @@ DATASHEET_VERSION <- "1.1"
 
 .r4 <- function(v) if (is.null(v) || is.na(v)) NULL else .round_dp(as.numeric(v), 4)
 
+# The TOST p as the Markdown shows it: four places, the precision the comparisons
+# report stores, through .fmt_dp like every other number. It was printed raw, so R
+# wrote 9e-04 and 1 where Python wrote 0.0009 and 1.0. A p that rounds to zero at
+# four places is shown as the bound it is below. Mirrors _fmt_tost_p in datasheet.py.
+.fmt_tost_p <- function(p) {
+  s <- .fmt_dp(p, 4)
+  if (identical(s, "0.0000")) "< 0.0001" else s
+}
+
 # A suggested crossed mixed-model formula for the design. Handing the user an
 # items-crossed model guards against the language-as-fixed-effect fallacy
 # (Clark, 1973; Baayen et al., 2008): items are a random sample of the language,
@@ -389,6 +398,11 @@ build_datasheet <- function(design, schema, report, stimuli, source_path, artifa
 
 #' A ready-to-adapt methods paragraph rendered from a datasheet
 #'
+#' Every number in the paragraph is printed by lexsync's own formatter, rounded
+#' half away from zero from the value the datasheet stores, so the R and Python
+#' engines write the same text from the same record, a record read back from its
+#' JSON included.
+#'
 #' @param ds A datasheet list, from [build_datasheet()].
 #' @return A single character string describing the materials procedure.
 #' @export
@@ -412,11 +426,14 @@ methods_paragraph <- function(ds) {
       if (!is.null(r$predictor_span) && is.null(span)) span <- r$predictor_span
       if (!is.null(r$pearson_r)) rs <- c(rs, abs(r$pearson_r))
     }
-    span_str <- if (!is.null(span)) sprintf(" (a span of %.2f)", span) else ""
-    # Report |r| at 3 dp (its stored precision) so the text is identical across
-    # engines; a 2-dp format of, say, 0.165 rounds to 0.16 in R and 0.17 in Python.
+    span_str <- if (!is.null(span)) sprintf(" (a span of %s)", .fmt_dp(span, 2)) else ""
+    # |r| is printed at three places, the precision of the comparisons report it
+    # comes from (the record keeps up to four, see .r4), so the record holds the
+    # digit shown. .fmt_dp prints it, as every number here, because sprintf() would
+    # round a tie such as 0.0825 to 0.082 on Windows where Python gives 0.083.
     corr_str <- if (length(rs))
-      sprintf(", and the largest predictor-control correlation was |r| = %.3f", max(rs)) else ""
+      paste0(", and the largest predictor-control correlation was |r| = ",
+             .fmt_dp(max(rs), 3)) else ""
     cb <- ds$counterbalancing
     recipe_label <- switch(cb$recipe, latin_square_target = "a Latin-square rotation",
                            factorial = "a factorial split", cb$recipe)
@@ -468,10 +485,10 @@ methods_paragraph <- function(ds) {
     if (all_equivalent && length(defined)) {
       worst <- defined[[which.max(vapply(defined, function(r) abs(r$cohens_d), numeric(1)))]]
       control <- sprintf(paste0(". The realised control was close. The largest standardised difference ",
-                                "on any matched dimension was %.2f (90%% CI [%.2f, %.2f]), within the ",
+                                "on any matched dimension was %s (90%% CI [%s, %s]), within the ",
                                 "%s-SD equivalence bound"),
-                         worst$cohens_d, worst$ci_low, worst$ci_high,
-                         ds$equivalence$bound_d)
+                         .fmt_dp(worst$cohens_d, 2), .fmt_dp(worst$ci_low, 2),
+                         .fmt_dp(worst$ci_high, 2), ds$equivalence$bound_d)
     } else {
       control <- paste0(". Equivalence was not confirmed on every matched dimension; ",
                         "the per-dimension differences are reported in the ",
@@ -639,9 +656,8 @@ render_datasheet_md <- function(ds) {
                "| Dimension | Role | r with predictor | Predictor span |",
                "|---|---|---|---|")
     for (r in ds$realised_control) {
-      rr <- if (is.null(r$pearson_r)) "--" else sprintf("%.3f", r$pearson_r)
-      sp <- if (is.null(r$predictor_span)) "--" else sprintf("%.3f", r$predictor_span)
-      lines <- c(lines, sprintf("| %s | %s | %s | %s |", r$dimension, r$role, rr, sp))
+      lines <- c(lines, sprintf("| %s | %s | %s | %s |", r$dimension, r$role,
+                                .fmt_dp(r$pearson_r, 3), .fmt_dp(r$predictor_span, 3)))
     }
     lines <- c(lines, "")
   } else if (length(ds$realised_control)) {
@@ -649,11 +665,11 @@ render_datasheet_md <- function(ds) {
                "| Dimension | Role | Cohen's d | 90% CI | Var ratio | TOST p | Equivalent |",
                "|---|---|---|---|---|---|---|")
     for (r in ds$realised_control) {
-      ci <- if (!is.null(r$ci_low)) sprintf("[%.2f, %.2f]", r$ci_low, r$ci_high) else "--"
-      dstr <- if (is.null(r$cohens_d)) "--" else sprintf("%.2f", r$cohens_d)
-      vr <- if (is.null(r$var_ratio)) "--" else sprintf("%.2f", r$var_ratio)
+      ci <- if (!is.null(r$ci_low))
+        sprintf("[%s, %s]", .fmt_dp(r$ci_low, 2), .fmt_dp(r$ci_high, 2)) else "--"
       lines <- c(lines, sprintf("| %s | %s | %s | %s | %s | %s | %s |", r$dimension, r$role,
-                                dstr, ci, vr, r$tost_p %||% "--", r$equivalent %||% "--"))
+                                .fmt_dp(r$cohens_d, 2), ci, .fmt_dp(r$var_ratio, 2),
+                                .fmt_tost_p(r$tost_p), r$equivalent %||% "--"))
     }
     lines <- c(lines, "")
   }

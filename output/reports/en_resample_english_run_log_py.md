@@ -1,8 +1,8 @@
 # lexsync run log: en_resample
 
 - Engine: Python 3.13.7
-- Started: 2026-10-02T05:55:56
-- Finished: 2026-10-02T05:55:58
+- Started: 2026-10-02T12:22:44
+- Finished: 2026-10-02T12:22:47
 
 ## Run metadata
 
@@ -15,46 +15,46 @@
 
 ## Steps
 
-- **2026-10-02T05:55:56**: loading lexicon 'corpora/derived/en.csv'
-- **2026-10-02T05:55:56**: lexicon loaded: 30000 words
+- **2026-10-02T12:22:44**: loading lexicon 'corpora/derived/en.csv'
+- **2026-10-02T12:22:44**: lexicon loaded: 30000 words
     - words: 30000
-- **2026-10-02T05:55:56**: pool after filters: 10205 words
+- **2026-10-02T12:22:44**: pool after filters: 10205 words
     - pool: 10205
-- **2026-10-02T05:55:58**: resampled 3 disjoint matched sets (240 items total)
+- **2026-10-02T12:22:46**: resampled 3 disjoint matched sets (240 items total)
     - conditions: high_frequency, low_frequency
-- **2026-10-02T05:55:58**: equivalence low_frequency vs high_frequency on 'length': d = 0.04 [-0.17, 0.26], TOST p = 0.0002 (equivalent)
-- **2026-10-02T05:55:58**: equivalence low_frequency vs high_frequency on 'frequency': d = 5.38 [4.92, 5.84], TOST p = 1.0 (not shown equivalent)
-- **2026-10-02T05:55:58**: equivalence low_frequency vs high_frequency on 'n_density': d = 0.03 [-0.18, 0.24], TOST p = 0.0002 (equivalent)
-- **2026-10-02T05:55:58**: equivalence low_frequency vs high_frequency on 'old20': d = 0.02 [-0.20, 0.23], TOST p = 0.0001 (equivalent)
-- **2026-10-02T05:55:58**: wrote 'en_resample_english_stimuli_py.csv'
+- **2026-10-02T12:22:46**: equivalence low_frequency vs high_frequency on 'length': d = 0.04 [-0.17, 0.26], TOST p = 0.0002 (equivalent)
+- **2026-10-02T12:22:46**: equivalence low_frequency vs high_frequency on 'frequency': d = 5.38 [4.92, 5.84], TOST p = 1.0 (not shown equivalent)
+- **2026-10-02T12:22:46**: equivalence low_frequency vs high_frequency on 'n_density': d = 0.03 [-0.18, 0.24], TOST p = 0.0002 (equivalent)
+- **2026-10-02T12:22:46**: equivalence low_frequency vs high_frequency on 'old20': d = 0.02 [-0.20, 0.23], TOST p = 0.0001 (equivalent)
+- **2026-10-02T12:22:46**: wrote 'en_resample_english_stimuli_py.csv'
     - path: output\stimuli\en_resample_english_stimuli_py.csv
     - rows: 240
     - md5: 32440a4d5753ad21bf307a389773cd05
-- **2026-10-02T05:55:58**: wrote 'en_resample_english_descriptives_py.csv'
+- **2026-10-02T12:22:46**: wrote 'en_resample_english_descriptives_py.csv'
     - path: output\reports\en_resample_english_descriptives_py.csv
     - rows: 8
     - md5: 19a03d1d55d822bdbb75c074c9f3bdc0
-- **2026-10-02T05:55:58**: wrote 'en_resample_english_comparisons_py.csv'
+- **2026-10-02T12:22:46**: wrote 'en_resample_english_comparisons_py.csv'
     - path: output\reports\en_resample_english_comparisons_py.csv
     - rows: 4
     - md5: 70cb67a8e7d4f1d34dc1c7d4d2c6f28e
-- **2026-10-02T05:55:58**: wrote 'en_resample_english_psychopy.py'
+- **2026-10-02T12:22:46**: wrote 'en_resample_english_psychopy.py'
     - path: output\experiments\en_resample_english_psychopy.py
     - rows: None
     - md5: 5dfa6ea79de17442db4c7c2c81e2e589
-- **2026-10-02T05:55:58**: wrote 'en_resample_english.osexp'
+- **2026-10-02T12:22:46**: wrote 'en_resample_english.osexp'
     - path: output\experiments\en_resample_english.osexp
     - rows: None
     - md5: a2da54b9b205406c3555856687996ccd
-- **2026-10-02T05:55:58**: wrote 'en_resample_english.html'
+- **2026-10-02T12:22:47**: wrote 'en_resample_english.html'
     - path: output\experiments\en_resample_english.html
     - rows: None
     - md5: 0bbb5250caae16e7265d68ddeee31041
-- **2026-10-02T05:55:58**: wrote 'en_resample_english_datasheet_py.json'
+- **2026-10-02T12:22:47**: wrote 'en_resample_english_datasheet_py.json'
     - path: output\reports\en_resample_english_datasheet_py.json
     - rows: None
     - md5: 9a9b711e58b9640ec525ab72176bf988
-- **2026-10-02T05:55:58**: wrote 'en_resample_english_datasheet_py.md'
+- **2026-10-02T12:22:47**: wrote 'en_resample_english_datasheet_py.md'
     - path: output\reports\en_resample_english_datasheet_py.md
     - rows: None
-    - md5: ebecb37759f50b18db0cd9616d7a41cb
+    - md5: 53963aba3a45a51a5383c1310dddafae

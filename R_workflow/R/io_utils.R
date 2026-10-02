@@ -257,14 +257,52 @@ write_lines_lf <- function(x, path) {
 # change here must land in both of them.
 #' @keywords internal
 .round_dp <- function(x, dp) {
-  p <- 10^dp
-  y <- as.numeric(x) * p
+  y <- as.numeric(x) * 10^dp
+  out <- .round_dp_scaled(y) / 10^dp
+  out[!is.finite(y)] <- as.numeric(x)[!is.finite(y)]
+  out
+}
+
+# The integer .round_dp divides back down: y = x * 10^dp, truncated toward zero and
+# stepped away from zero at a remainder of a half. Shared with .fmt_dp, so a printed
+# number and a rounded one cannot disagree. Twin of _round_dp_scaled in io_utils.py.
+.round_dp_scaled <- function(y) {
   t <- trunc(y)
   r <- y - t
   # sign(y), because a negative value must step away from zero too.
-  adj <- ifelse(is.finite(r) & abs(r) >= 0.5, sign(y), 0)
-  out <- (t + adj) / p
-  out[!is.finite(y)] <- as.numeric(x)[!is.finite(y)]
+  t + ifelse(is.finite(r) & abs(r) >= 0.5, sign(y), 0)
+}
+
+# ---- One number formatter, shared by both engines --------------------------
+#
+# sprintf("%.3f") hands the rounding to the platform's C library, which is the
+# disagreement described above: R 4.6.1 on Windows prints 0.0825 as "0.082" where
+# Python prints "0.083". Every number shown in the Markdown datasheet and the
+# Methods paragraph therefore comes from here. It takes the scaled integer from
+# .round_dp's own arithmetic, prints that integer's digits and places the decimal
+# point by string operations. sprintf("%.0f") of an integer-valued double involves
+# no rounding and is exact below 2^53, far beyond any statistic shown at four places.
+# The sign is taken from the rounded integer, so a value that rounds to zero prints
+# without a minus sign. Missing values print `na`, and infinities print as "Inf" and
+# "-Inf". It is vectorised, and must stay identical to _fmt_dp in
+# python_workflow/src/lexsync/io_utils.py.
+#' @keywords internal
+.fmt_dp <- function(x, dp, na = "--") {
+  if (is.null(x) || !length(x)) return(na)
+  x <- as.numeric(x)
+  y <- x * 10^dp
+  t <- .round_dp_scaled(y)
+  digits <- sprintf("%.0f", abs(t))
+  short <- nchar(digits) < dp + 1L
+  digits[short] <- paste0(strrep("0", dp + 1L - nchar(digits[short])), digits[short])
+  n <- nchar(digits)
+  out <- if (dp > 0)
+    paste0(substr(digits, 1L, n - dp), ".", substr(digits, n - dp + 1L, n))
+  else digits
+  out <- paste0(ifelse(t < 0, "-", ""), out)
+  # An infinite scaled value, from an infinite input or one too large to scale.
+  out[is.infinite(y)] <- ifelse(y[is.infinite(y)] > 0, "Inf", "-Inf")
+  out[is.na(x)] <- na
   out
 }
 

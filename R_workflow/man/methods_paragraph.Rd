@@ -13,5 +13,8 @@ methods_paragraph(ds)
 A single character string describing the materials procedure.
 }
 \description{
-A ready-to-adapt methods paragraph rendered from a datasheet
+Every number in the paragraph is printed by lexsync's own formatter, rounded
+half away from zero from the value the datasheet stores, so the R and Python
+engines write the same text from the same record, a record read back from its
+JSON included.
 }
