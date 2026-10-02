@@ -1,12 +1,13 @@
-# Priming with variable timing: a per-trial stimulus-onset asynchrony read from
-# the item table, and a jittered inter-trial interval.
+# Priming with variable timing: a per-trial prime duration read from the item
+# table, and a jittered inter-trial interval.
 #
 # Two things vary from trial to trial here, and they vary for different reasons.
-# The prime's duration is the SOA, the theoretical lever that separates automatic
-# from strategic priming, so it is a manipulated variable read from the items
-# (`from_column`) and analysed as a predictor. The blank that ends the trial is
-# jittered only to decorrelate the design matrix, as EEG and fMRI designs
-# routinely do, so it is drawn from a range rather than specified per item.
+# The prime's duration is read per trial from the items (`prime_ms`). A 33 ms mask
+# follows the prime, so the stimulus-onset asynchrony is prime_ms plus 33 ms. The
+# SOA is the theoretical lever that separates automatic from strategic priming, so
+# it is a manipulated variable and is analysed as a predictor. The blank that ends
+# the trial is jittered only to decorrelate the design matrix, as EEG and fMRI
+# designs routinely do, so it is drawn from a range rather than specified per item.
 #
 # Neither draws a random number. A jittered value is a uniform integer keyed on
 # the seed, the column name, the list, the set and the condition, so the R and
@@ -16,7 +17,7 @@
 name: en_priming_jitter
 language: english
 paradigm: priming
-description: 'Priming with a per-trial stimulus-onset asynchrony read from the items and a jittered inter-trial interval, both recorded as trial-level variables.'
+description: 'Priming with a per-trial prime duration read from the items, which sets the stimulus-onset asynchrony, and a jittered inter-trial interval, both recorded as trial-level variables.'
 
 items:
   source: table
@@ -31,7 +32,7 @@ events:
     duration_ms: 500
   - type: text
     content: '{prime}'
-    duration: {from_column: soa_ms}
+    duration: {from_column: prime_ms}
     trigger: 20
     onset_locked: true
   - type: mask
@@ -50,5 +51,7 @@ events:
   - type: blank
     duration: {jitter: [400, 800], as: iti_ms}
 
+# The events list has no say in the counterbalancing. The priming paradigm's Latin
+# square still applies, so each list shows each target once, in one condition.
 counterbalance:
   lists: 2

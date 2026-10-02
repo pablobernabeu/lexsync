@@ -31,6 +31,20 @@
     }
   ],
   "counterbalancing": {
+    "cells": [
+      {
+        "condition": "feminine",
+        "list": 1,
+        "n_trials": 48
+      },
+      {
+        "condition": "masculine",
+        "list": 1,
+        "n_trials": 48
+      }
+    ],
+    "complete": true,
+    "issues": [],
     "lists": 1,
     "recipe": "factorial"
   },
@@ -88,7 +102,7 @@
     "stimuli_file": "output/stimuli/es_gender_repro_spanish_stimuli_py.csv",
     "stimuli_sha256": "eb7d3011aaa498cc50263f2636e20ec4be0b7950194d29ea8c2832ef70c837be"
   },
-  "lexsync_datasheet_version": "1.1",
+  "lexsync_datasheet_version": "1.2",
   "materials_source": {
     "path": "corpora/derived/es_gender.csv",
     "provenance": "wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md",
@@ -140,7 +154,7 @@
   "relational": null,
   "reproducibility": {
     "design_sha256": "d30dc7616299d6fc538066bf435a44c2739dd24d0136d4843b214f0630a198c1",
-    "schema_sha256": "483a9cec49314b9479fe656ad39840083a551f2e4313ca164efe3e9c064fb255",
+    "schema_sha256": "978979ec5f0c6182ac2611863021a722f3412cc179039614f63311b3e3ff3331",
     "seed": 2026,
     "versions": {
       "engine": "python",

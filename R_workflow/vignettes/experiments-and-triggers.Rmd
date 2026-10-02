@@ -188,16 +188,17 @@ A duration need not be the same on every trial. An event may instead declare a
 ```yaml
 - type: text
   content: '{prime}'
-  duration: {from_column: soa_ms}            # read per trial from the items
+  duration: {from_column: prime_ms}          # read per trial from the items
 - type: blank
   duration: {jitter: [400, 800], as: iti_ms} # drawn per trial, in milliseconds
 ```
 
 The two exist for different reasons. A duration read from a column is a
-manipulated variable: the stimulus-onset asynchrony of a priming study is the
-lever that separates automatic from strategic processing, so it belongs in the
-item table and in the analysis. A jittered duration is not manipulated at all. It
-decorrelates the design matrix, as EEG and fMRI designs routinely require.
+manipulated variable. Here it is the prime's duration, which with the mask that
+follows sets the stimulus-onset asynchrony, the lever that separates automatic
+from strategic processing. It belongs in the item table and in the analysis. A
+jittered duration is not manipulated at all. It decorrelates the design matrix,
+as EEG and fMRI designs routinely require.
 
 Neither draws a random number. A jittered value is a uniform integer keyed on the
 seed, the column name, the list, the set and the condition, so both engines
@@ -208,7 +209,8 @@ they would share a single value.
 Either form writes the realised milliseconds into the stimuli table and the loop
 table, because timing that varies is a variable the analysis needs, not
 presentation detail. `config/design_en_priming_jitter.yaml` is a worked
-example carrying both.
+example carrying both. Its prime lasts `prime_ms` and a 33 ms mask follows, so its
+stimulus-onset asynchrony is `prime_ms` plus 33 ms.
 
 ## The paradigm registry
 
@@ -260,11 +262,29 @@ both the related and the unrelated version of one target would let them see the
 manipulation, and showing the same word under both category cues would turn the
 second presentation into a repetition-priming trial. The Latin square gives each
 item exactly one condition per list and rotates it across lists, so no target
-repeats within a list and conditions stay balanced.
+repeats within a list.
 
 ```{r counterbalance-recipes}
 table(list = stim$list, condition = stim$condition)
 ```
+
+The paradigm decides the recipe whether or not a design lists its own events. A
+design's events have no say in it, so a priming design that reads its prime's
+duration from the items keeps its Latin square. `counterbalance.recipe` names a
+recipe outright, `factorial` or `latin_square_target`, for a design that needs the
+other one. The factorial recipe refuses more lists than item sets, since the surplus
+lists would be empty.
+
+A Latin-square rotation is complete only when the lists and the item sets are
+multiples of the number of conditions. One list confounds item and condition, since
+every participant sees each item in the same condition. Two lists for three
+conditions show each item in only two of them, and nine items in two conditions
+leave each list with five trials in one condition and four in the other. The run
+log and the datasheet report such a rotation, and the Methods text calls it
+incomplete. `counterbalance.incomplete: error` refuses it instead, set in the
+design or, for every design, in the schema. The datasheet's `counterbalancing`
+record gives the recipe that ran, the lists the stimuli table holds, whether the
+rotation is complete and the trials each list gives each condition.
 
 ### Balanced list assignment
 
@@ -551,9 +571,10 @@ basename(unlist(custom_files))
 
 Nothing in the backends changed. All three targets rendered a sequence they had
 never seen, because each one walks the event list and knows nothing about
-paradigms. The design also inherits a consequence of declaring its own events: a
-design with an explicit `events` list counterbalances factorially, since the
-Latin-square recipe belongs to the registered paradigms that need it.
+paradigms. Declaring events changes only the trial. The counterbalancing recipe
+still follows the paradigm the design names, `factorial` here, so a priming
+design that adjusts a duration keeps its Latin square, and a design that names no
+paradigm counterbalances factorially.
 
 To register a paradigm for reuse across designs, add an entry to the
 `PARADIGMS` registry in `R/paradigms.R`, giving its `stimulus_fields`, its

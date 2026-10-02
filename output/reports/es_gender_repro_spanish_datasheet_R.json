@@ -1,5 +1,5 @@
 {
-  "lexsync_datasheet_version": "1.1",
+  "lexsync_datasheet_version": "1.2",
   "design": {
     "name": "es_gender_repro",
     "language": "spanish",
@@ -124,7 +124,21 @@
   ],
   "counterbalancing": {
     "recipe": "factorial",
-    "lists": 1
+    "lists": 1,
+    "complete": true,
+    "issues": [],
+    "cells": [
+      {
+        "list": 1,
+        "condition": "feminine",
+        "n_trials": 48
+      },
+      {
+        "list": 1,
+        "condition": "masculine",
+        "n_trials": 48
+      }
+    ]
   },
   "resampling": null,
   "items": {
@@ -152,7 +166,7 @@
       "os": "Windows x86-64"
     },
     "design_sha256": "d30dc7616299d6fc538066bf435a44c2739dd24d0136d4843b214f0630a198c1",
-    "schema_sha256": "483a9cec49314b9479fe656ad39840083a551f2e4313ca164efe3e9c064fb255"
+    "schema_sha256": "978979ec5f0c6182ac2611863021a722f3412cc179039614f63311b3e3ff3331"
   },
   "artifacts": [
     {

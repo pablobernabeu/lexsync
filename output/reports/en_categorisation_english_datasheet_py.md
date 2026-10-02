@@ -1,6 +1,6 @@
 # Materials datasheet — en_categorisation (english)
 
-*lexsync datasheet v1.1; python engine.*
+*lexsync datasheet v1.2; python engine.*
 
 ## Provenance
 
@@ -12,6 +12,15 @@
 - **Counterbalancing:** latin_square_target, 2 list(s)
 - **Items:** 32 rows across 2 conditions (narrow, broad)
 - **Seed:** 2026  |  **Versions:** engine python, lexsync 0.1.1, python 3.13.7, pandas 2.3.2, numpy 2.3.2, scipy 1.17.1, rapidfuzz 3.14.5, pyyaml 6.0.3, os Windows AMD64
+
+## Counterbalanced lists
+
+| List | Condition | Trials |
+|---|---|---|
+| 1 | broad | 8 |
+| 1 | narrow | 8 |
+| 2 | broad | 8 |
+| 2 | narrow | 8 |
 
 ## Suggested analysis
 

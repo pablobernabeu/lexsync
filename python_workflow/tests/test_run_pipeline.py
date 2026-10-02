@@ -306,6 +306,75 @@ def test_verbose_false_keeps_the_console_silent(tmp_path, capsys):
     assert runlog.get_verbose() is True
 
 
+def test_an_incomplete_rotation_reaches_the_run_log_and_the_datasheet(tmp_path):
+    """Three conditions in two lists run under the default counterbalance.incomplete:
+    allow, and the run log, the datasheet and the Methods text say what the rotation
+    leaves out. Pinned identically in test-run-pipeline.R."""
+    import json
+    items = os.path.join(str(tmp_path), "items.csv")
+    rows = ["%d,%s,%s%d,t%d" % (s, c, c[:3], s, s)
+            for s in range(1, 7) for c in ("identity", "related", "unrelated")]
+    with open(items, "w", encoding="utf-8", newline="\n") as handle:
+        handle.write("\n".join(["item,condition,prime,target"] + rows) + "\n")
+    design = _write_design(str(tmp_path), [
+        "name: guard_incomplete",
+        "language: english",
+        "paradigm: priming",
+        "items:",
+        "  source: table",
+        "  path: " + _yaml_path(items),
+        "counterbalance:",
+        "  lists: 2",
+    ])
+    res = _run(design, tmp_path)
+    issue = "With 2 lists and 3 conditions, each item appears in only 2 of its 3 conditions."
+    with open(res["log"], encoding="utf-8") as handle:
+        assert "counterbalancing: " + issue in handle.read()
+    reports = os.path.join(str(tmp_path), "reports")
+    with open(os.path.join(reports, "guard_incomplete_english_datasheet_py.json"),
+              encoding="utf-8") as handle:
+        record = json.load(handle)["counterbalancing"]
+    assert record["complete"] is False
+    assert record["issues"] == [issue]
+    assert record["lists"] == 2
+    with open(os.path.join(reports, "guard_incomplete_english_datasheet_py.md"),
+              encoding="utf-8") as handle:
+        assert "(an incomplete Latin-square rotation)" in handle.read()
+
+
+def test_a_condition_no_list_reaches_is_still_counted(tmp_path):
+    """One item set in three conditions, dealt to two lists, never shows its third
+    condition. The check counts the conditions of the table the pipeline dealt, not
+    those the lists hold, so it reports three conditions and gives the condition left
+    out an empty cell in each list. Pinned identically in test-run-pipeline.R."""
+    import json
+    items = os.path.join(str(tmp_path), "items.csv")
+    with open(items, "w", encoding="utf-8", newline="\n") as handle:
+        handle.write("item,condition,prime,target\n1,identity,ide1,t1\n"
+                     "1,related,rel1,t1\n1,unrelated,unr1,t1\n")
+    design = _write_design(str(tmp_path), [
+        "name: guard_unreached",
+        "language: english",
+        "paradigm: priming",
+        "items:",
+        "  source: table",
+        "  path: " + _yaml_path(items),
+        "counterbalance:",
+        "  lists: 2",
+    ])
+    _run(design, tmp_path)
+    with open(os.path.join(str(tmp_path), "reports", "guard_unreached_english_datasheet_py.json"),
+              encoding="utf-8") as handle:
+        record = json.load(handle)["counterbalancing"]
+    assert record["issues"] == [
+        "With 2 lists and 3 conditions, each item appears in only 2 of its 3 conditions.",
+        "With 1 item set and 3 conditions, the item sets are not a multiple of the "
+        "conditions, so the conditions within each list differ by one trial."]
+    assert [(c["list"], c["condition"], c["n_trials"]) for c in record["cells"]] == [
+        (1, "identity", 1), (1, "related", 0), (1, "unrelated", 0),
+        (2, "identity", 0), (2, "related", 1), (2, "unrelated", 0)]
+
+
 def test_continuous_over_a_supplied_pool_selects_continuously(tmp_path):
     # The predicate that gates the continuous selector must treat a supplied
     # pool like a corpus; before the fix this design fell through to the

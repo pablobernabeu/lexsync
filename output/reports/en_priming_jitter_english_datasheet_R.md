@@ -1,17 +1,26 @@
 # Materials datasheet -- en_priming_jitter (english)
 
-*lexsync datasheet v1.1; R engine.*
+*lexsync datasheet v1.2; R engine.*
 
 ## Provenance
 
 - **Paradigm:** priming  |  **Item source:** table
-- **Description:** Priming with a per-trial stimulus-onset asynchrony read from the items and a jittered inter-trial interval, both recorded as trial-level variables.
-- **Materials source:** `items/priming_pairs_en_soa.csv` (sha256 `305b3a91aa296713...`)
+- **Description:** Priming with a per-trial prime duration read from the items, which sets the stimulus-onset asynchrony, and a jittered inter-trial interval, both recorded as trial-level variables.
+- **Materials source:** `items/priming_pairs_en_soa.csv` (sha256 `9994855aa658ec5e...`)
 - **Selection:** item table (user-supplied)
 - **Cross-engine determinism:** n/a (user-supplied items)
 - **Counterbalancing:** latin_square_target, 2 list(s)
 - **Items:** 24 rows across 2 conditions (related, unrelated)
 - **Seed:** 2026  |  **Versions:** engine R, lexsync 0.1.1, R 4.6.1, readr 2.2.0, stringdist 0.9.17, jsonlite 2.0.0, digest 0.6.39, yaml 2.3.12, stringi 1.8.7, os Windows x86-64
+
+## Counterbalanced lists
+
+| List | Condition | Trials |
+|---|---|---|
+| 1 | related | 6 |
+| 1 | unrelated | 6 |
+| 2 | related | 6 |
+| 2 | unrelated | 6 |
 
 ## Suggested analysis
 

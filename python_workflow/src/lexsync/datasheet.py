@@ -13,6 +13,10 @@ from __future__ import annotations
 import json
 import platform
 
+# The recipe and the rotation check come from the module that counterbalances, so
+# the record describes the counterbalancing that ran.
+from .counterbalancing import _recipe
+from .counterbalancing import counterbalance_check as _counterbalance_check
 from .io_utils import _fmt_dp, _is_continuous, _round_dp, sha256_file
 
 # The cap the pairwise (joint, optimal) matchers apply before pairing. Imported from
@@ -25,7 +29,16 @@ from .matching import PAIRWISE_CAP
 # that anything affecting item selection is recorded here: a norm table can carry the
 # manipulated variable itself, and the pair path performs a real selection that the
 # record used to describe as "n/a (user-supplied items)".
-DATASHEET_VERSION = "1.1"
+#
+# 1.2 records the counterbalancing that ran. Each later field of 1.2 adds a line here.
+#   counterbalancing.recipe     the recipe counterbalance() applied (1.1 inferred it
+#                               from the item source)
+#   counterbalancing.lists      the lists the stimuli table holds (1.1 copied
+#                               counterbalance.lists, with a default of 1)
+#   counterbalancing.complete   whether a Latin-square rotation is complete
+#   counterbalancing.issues     what leaves it incomplete
+#   counterbalancing.cells      the trials per list and condition
+DATASHEET_VERSION = "1.2"
 
 # Datasheet labels for the pseudoword generators in generation.py, keyed by the
 # items.generation.method token. Kept character-for-character identical to
@@ -218,7 +231,8 @@ def _analysis(design: dict, source: str) -> dict:
 def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
                     seed, engine="python", candidate_pool=None, norms=None,
                     balance=None, blocks=None, design_path=None, schema_path=None,
-                    selection_audit=None, neighbourhood_reference=None) -> dict:
+                    selection_audit=None, neighbourhood_reference=None,
+                    counterbalance_check=None) -> dict:
     """Assemble the datasheet dictionary from the pipeline's objects.
 
     ``candidate_pool`` (optional) is a list of ``{"condition", "n_candidates"}``
@@ -246,6 +260,13 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
     ``neighbourhood_reference`` (optional) records the lexicon the neighbourhood
     dimensions were computed against (``{"source", "n_words", "sha256"}``),
     verbatim.
+
+    ``counterbalance_check`` (optional) is the pipeline's ``counterbalance_check``
+    report on the counterbalanced table. Without it, the check is run here on
+    ``stimuli``. The record gives the recipe that ran and the lists the table holds,
+    or for a table without a ``list`` column the lists counterbalance() would deal. It
+    says whether a Latin-square rotation is complete and counts the trials per list
+    and condition.
     """
     source = (design.get("items") or {}).get("source", "corpus")
     is_continuous = _is_continuous(design)
@@ -363,13 +384,23 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
     schema_dims = schema.get("dimensions") or {}
     dims = {d: schema_dims[d] for d in schema_dims if all_dims or d in controlled}
 
+    # The recipe comes from the resolver counterbalance() dispatches on, and the lists
+    # from the table. The record used to infer the recipe from the item source and to
+    # copy counterbalance.lists with a default of 1, though a Latin square without
+    # that key deals one list per condition.
+    recipe = _recipe(design)
+    check = (counterbalance_check if counterbalance_check is not None
+             else _counterbalance_check(stimuli, design, recipe))
+    counterbalancing = {
+        "recipe": recipe,
+        "lists": int(check["lists"]),
+        "complete": bool(check["complete"]),
+        "issues": list(check["issues"]),
+        "cells": list(check["cells"]),
+    }
     # The balance report is added only when the optimiser ran, for the same reason the
     # norms record is: a key that is null on every design that does not use the feature
     # is noise in a research artefact.
-    counterbalancing = {
-        "recipe": "latin_square_target" if source == "table" else "factorial",
-        "lists": (design.get("counterbalance") or {}).get("lists", 1),
-    }
     if balance:
         counterbalancing["optimise"] = balance
     # Practice and filler trials change what a participant sees but not what is
@@ -478,6 +509,20 @@ def _norms_note(ds: dict) -> str:
             "coverage are recorded in the datasheet." % files)
 
 
+def _recipe_label(cb: dict) -> str:
+    """The counterbalancing recipe as the Methods text names it.
+
+    A Latin square the check found incomplete is called incomplete, since the bare
+    label would claim a rotation the lists or the item sets did not complete. A
+    record without the check, written before datasheet 1.2, keeps the bare label.
+    Mirrors .recipe_label in datasheet.R.
+    """
+    if cb["recipe"] == "latin_square_target":
+        return ("an incomplete Latin-square rotation" if cb.get("complete") is False
+                else "a Latin-square rotation")
+    return {"factorial": "a factorial split"}.get(cb["recipe"], cb["recipe"])
+
+
 def methods_paragraph(ds: dict) -> str:
     """A ready-to-adapt Methods paragraph rendered from a datasheet.
 
@@ -511,8 +556,7 @@ def methods_paragraph(ds: dict) -> str:
         corr_str = (", and the largest predictor-control correlation was |r| = "
                     + _fmt_dp(max(rs), 3) if rs else "")
         cb = ds["counterbalancing"]
-        recipe_label = {"latin_square_target": "a Latin-square rotation",
-                        "factorial": "a factorial split"}.get(cb["recipe"], cb["recipe"])
+        recipe_label = _recipe_label(cb)
         return (f"{n} {lang} {unit} were selected to span {predictor}{span_str} continuously "
                 f"while holding {controls} near-constant{corr_str}, for analysis by regression "
                 f"or a mixed model rather than a between-condition contrast (Kuperman, 2015; "
@@ -567,8 +611,7 @@ def methods_paragraph(ds: dict) -> str:
     resamp = (f". {rs['n_sets']} disjoint matched item sets were drawn, so items can be "
               f"treated as a random factor" if rs else "")
     cb = ds["counterbalancing"]
-    recipe_label = {"latin_square_target": "a Latin-square rotation",
-                    "factorial": "a factorial split"}.get(cb["recipe"], cb["recipe"])
+    recipe_label = _recipe_label(cb)
     tail = (resamp + f". Materials were counterbalanced into {cb['lists']} list(s) "
             f"({recipe_label}) and generated for PsychoPy, OpenSesame and jsPsych. The "
             f"selection is deterministic and reproducible (seed "
@@ -681,6 +724,23 @@ def render_datasheet_md(ds: dict) -> str:
                   ("- The search is a deterministic integer descent with a keyed-hash "
                    "tie-break, so it uses no random number generator and the R and "
                    "Python engines produce the same assignment."), ""]
+    # The trials each list gives each condition, and whatever leaves a Latin-square
+    # rotation incomplete, so a reader can check the rotation against the counts.
+    # Mirrors render_datasheet_md in datasheet.R.
+    cbk = ds.get("counterbalancing") or {}
+    issues = cbk.get("issues") or []
+    cells = cbk.get("cells") or []
+    if issues or cells:
+        lines += ["## Counterbalanced lists", ""]
+        if issues:
+            lines += ["- **Incomplete rotation:** " + issue for issue in issues] + [""]
+        if cells:
+            with_rep = any("replicate" in c for c in cells)
+            lines += (["| Replicate | List | Condition | Trials |", "|---|---|---|---|"]
+                      if with_rep else ["| List | Condition | Trials |", "|---|---|---|"])
+            lines += [("| %s | " % c["replicate"] if with_rep else "| ")
+                      + "%s | %s | %s |" % (c["list"], c["condition"], c["n_trials"])
+                      for c in cells] + [""]
     rel = ds.get("relational")
     if rel:
         lines += ["## Pair-keyed items", "",
@@ -693,8 +753,7 @@ def render_datasheet_md(ds: dict) -> str:
                   "- **Relational dimensions** (the pair): "
                   + ", ".join(rel["relational_dimensions"]),
                   "- Selection ran on one row per pair and the result was re-expanded, so "
-                  "every condition row of every chosen pair is present and the Latin-square "
-                  "rotation is complete.", ""]
+                  "every condition row of every chosen pair is present.", ""]
     cp = (ds.get("selection") or {}).get("candidate_pool")
     if cp:
         parts = ", ".join(f"{c['condition']}: {c['n_candidates']}" for c in cp

@@ -43,7 +43,7 @@ BLOCK_START_TRIGGER = 254
 BLOCK_END_TRIGGER = 255
 
 # The trial event sequence (declarative data, written by lexsync).
-EVENTS = json.loads(r"""[{"type":"fixation","text":"+","ms":500},{"type":"text","field":"prime","ms_column":"soa_ms","trigger":20},{"type":"mask","text":"#####","ms":33},{"type":"text","field":"target","ms":800,"trigger":"@condition_trigger"},{"type":"response","keys":["left","right"],"timeout":2},{"type":"blank","ms_column":"iti_ms"}]""")
+EVENTS = json.loads(r"""[{"type":"fixation","text":"+","ms":500},{"type":"text","field":"prime","ms_column":"prime_ms","trigger":20},{"type":"mask","text":"#####","ms":33},{"type":"text","field":"target","ms":800,"trigger":"@condition_trigger"},{"type":"response","keys":["left","right"],"timeout":2},{"type":"blank","ms_column":"iti_ms"}]""")
 
 
 class MockPort:

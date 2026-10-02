@@ -31,6 +31,50 @@
     }
   ],
   "counterbalancing": {
+    "cells": [
+      {
+        "condition": "high_frequency",
+        "list": 1,
+        "n_trials": 10
+      },
+      {
+        "condition": "low_frequency",
+        "list": 1,
+        "n_trials": 10
+      },
+      {
+        "condition": "high_frequency",
+        "list": 2,
+        "n_trials": 10
+      },
+      {
+        "condition": "low_frequency",
+        "list": 2,
+        "n_trials": 10
+      },
+      {
+        "condition": "high_frequency",
+        "list": 3,
+        "n_trials": 10
+      },
+      {
+        "condition": "low_frequency",
+        "list": 3,
+        "n_trials": 10
+      },
+      {
+        "condition": "high_frequency",
+        "list": 4,
+        "n_trials": 10
+      },
+      {
+        "condition": "low_frequency",
+        "list": 4,
+        "n_trials": 10
+      }
+    ],
+    "complete": true,
+    "issues": [],
     "lists": 4,
     "optimise": {
       "cost_after": 53820,
@@ -101,7 +145,7 @@
     "stimuli_file": "output/stimuli/en_balanced_lists_english_stimuli_py.csv",
     "stimuli_sha256": "c2315baac536c882744e53cb65f08026bcc77bc4266b2a48dc616159614b6aa2"
   },
-  "lexsync_datasheet_version": "1.1",
+  "lexsync_datasheet_version": "1.2",
   "materials_source": {
     "path": "corpora/derived/en.csv",
     "provenance": "wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md",
@@ -153,7 +197,7 @@
   "relational": null,
   "reproducibility": {
     "design_sha256": "3b871bdbff36cccc407b9a0feef29bddd5db66fdc30f9061475337a17a4c5aa7",
-    "schema_sha256": "483a9cec49314b9479fe656ad39840083a551f2e4313ca164efe3e9c064fb255",
+    "schema_sha256": "978979ec5f0c6182ac2611863021a722f3412cc179039614f63311b3e3ff3331",
     "seed": 2026,
     "versions": {
       "engine": "python",

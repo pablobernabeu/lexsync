@@ -1,6 +1,6 @@
 # Materials datasheet -- en_spr (english)
 
-*lexsync datasheet v1.1; R engine.*
+*lexsync datasheet v1.2; R engine.*
 
 ## Provenance
 
@@ -12,6 +12,15 @@
 - **Counterbalancing:** latin_square_target, 2 list(s)
 - **Items:** 20 rows across 2 conditions (ungrammatical, grammatical)
 - **Seed:** 2026  |  **Versions:** engine R, lexsync 0.1.1, R 4.6.1, readr 2.2.0, stringdist 0.9.17, jsonlite 2.0.0, digest 0.6.39, yaml 2.3.12, stringi 1.8.7, os Windows x86-64
+
+## Counterbalanced lists
+
+| List | Condition | Trials |
+|---|---|---|
+| 1 | grammatical | 5 |
+| 1 | ungrammatical | 5 |
+| 2 | grammatical | 5 |
+| 2 | ungrammatical | 5 |
 
 ## Suggested analysis
 

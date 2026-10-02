@@ -1,6 +1,6 @@
 # Materials datasheet — en_priming_continuous (english)
 
-*lexsync datasheet v1.1; python engine.*
+*lexsync datasheet v1.2; python engine.*
 
 ## Provenance
 
@@ -13,13 +13,22 @@
 - **Items:** 16 rows across 2 conditions (related, unrelated)
 - **Seed:** 2026  |  **Versions:** engine python, lexsync 0.1.1, python 3.13.7, pandas 2.3.2, numpy 2.3.2, scipy 1.17.1, rapidfuzz 3.14.5, pyyaml 6.0.3, os Windows AMD64
 
+## Counterbalanced lists
+
+| List | Condition | Trials |
+|---|---|---|
+| 1 | related | 4 |
+| 1 | unrelated | 4 |
+| 2 | related | 4 |
+| 2 | unrelated | 4 |
+
 ## Pair-keyed items
 
 - **Members:** prime, target  |  **Pairs:** 8
 - **Member lexicon:** `corpora/derived/en.csv` (sha256 `575833489e04d6a4…`)
 - **Member-level dimensions** (one word): freq_zipf, frequency, length, n_density, n_syllables, old20
 - **Relational dimensions** (the pair): pair.lev, pair.overlap
-- Selection ran on one row per pair and the result was re-expanded, so every condition row of every chosen pair is present and the Latin-square rotation is complete.
+- Selection ran on one row per pair and the result was re-expanded, so every condition row of every chosen pair is present.
 
 ## Realised control (continuous predictor)
 

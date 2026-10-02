@@ -1,5 +1,5 @@
 {
-  "lexsync_datasheet_version": "1.1",
+  "lexsync_datasheet_version": "1.2",
   "design": {
     "name": "es_ndensity",
     "language": "spanish",
@@ -125,7 +125,21 @@
   ],
   "counterbalancing": {
     "recipe": "factorial",
-    "lists": 1
+    "lists": 1,
+    "complete": true,
+    "issues": [],
+    "cells": [
+      {
+        "list": 1,
+        "condition": "dense_neighbourhood",
+        "n_trials": 80
+      },
+      {
+        "list": 1,
+        "condition": "sparse_neighbourhood",
+        "n_trials": 80
+      }
+    ]
   },
   "resampling": null,
   "items": {
@@ -153,7 +167,7 @@
       "os": "Windows x86-64"
     },
     "design_sha256": "d72b9e8c0e26a2faba2f39023b4f00d44cfe6a922d136d7b07d110025b69c608",
-    "schema_sha256": "483a9cec49314b9479fe656ad39840083a551f2e4313ca164efe3e9c064fb255"
+    "schema_sha256": "978979ec5f0c6182ac2611863021a722f3412cc179039614f63311b3e3ff3331"
   },
   "artifacts": [
     {

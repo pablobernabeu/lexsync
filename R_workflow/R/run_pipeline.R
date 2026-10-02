@@ -59,6 +59,10 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
                 "a 'continuous' block; remove them or use a continuous design."),
          call. = FALSE)
   }
+  # counterbalance.recipe and counterbalance.incomplete take closed sets of values, so
+  # a misspelt one is refused here, before any lexicon is read or file written.
+  recipe <- .cb_recipe(design)
+  incomplete_policy <- .cb_incomplete_policy(design, schema)
 
   log <- new_run_log(design[["name"]], meta = list(
     design = design[["name"]], language = design[["language"]],
@@ -288,7 +292,16 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
   # shuffle, because the order of first appearance after it depends on the seed.
   condition_order <- unique(c(.design_condition_names(design),
                               as.character(unique(stim$condition))))
+  # The conditions the table holds before it is dealt, which a Latin square with fewer
+  # item sets than conditions can leave out of every list.
+  cb_conditions <- unique(as.character(stim$condition))
   stim <- counterbalance(stim, design, schema, list_of_set)
+  # An incomplete rotation is a design decision the researcher may accept, so under
+  # the default policy it is reported, in the run log here and in the datasheet, and
+  # only counterbalance.incomplete: error refuses it.
+  cb_check <- .counterbalance_check(stim, design, recipe, conditions = cb_conditions)
+  for (issue in cb_check$issues) log <- log_step(log, paste0("counterbalancing: ", issue))
+  .check_incomplete(cb_check, incomplete_policy)
   # Practice and filler trials are presented but not analysed, so the frame splits here:
   # the experiment is generated from every presented trial, the stimuli file and the
   # reports from the main ones. A design declaring neither block is unaffected, down to
@@ -369,7 +382,7 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
                         norms = norms, balance = balance, blocks = blocks,
                         design_path = design_path, schema_path = schema_path,
                         selection_audit = selection_audit,
-                        neighbourhood_reference = nref)
+                        neighbourhood_reference = nref, counterbalance_check = cb_check)
   ds_json <- file.path(outdir, "reports", paste0(base, "_datasheet_R.json"))
   ds_md <- file.path(outdir, "reports", paste0(base, "_datasheet_R.md"))
   write_datasheet(ds, ds_json, ds_md)

@@ -11,7 +11,16 @@
 # anything affecting item selection is recorded here: a norm table can carry the
 # manipulated variable itself, and the pair path performs a real selection that the
 # record used to describe as "n/a (user-supplied items)".
-DATASHEET_VERSION <- "1.1"
+#
+# 1.2 records the counterbalancing that ran. Each later field of 1.2 adds a line here.
+#   counterbalancing$recipe     the recipe counterbalance() applied (1.1 inferred it
+#                               from the item source)
+#   counterbalancing$lists      the lists the stimuli table holds (1.1 copied
+#                               counterbalance.lists, with a default of 1)
+#   counterbalancing$complete   whether a Latin-square rotation is complete
+#   counterbalancing$issues     what leaves it incomplete
+#   counterbalancing$cells      the trials per list and condition
+DATASHEET_VERSION <- "1.2"
 
 # Datasheet labels for the pseudoword generators in generation.R, keyed by the
 # items.generation.method token. Kept character-for-character identical to
@@ -207,13 +216,19 @@ DATASHEET_VERSION <- "1.1"
 #' @param neighbourhood_reference Optional record of the lexicon the
 #'   neighbourhood dimensions were computed against
 #'   (`list(source, n_words, sha256)`), recorded verbatim.
+#' @param counterbalance_check Optional report of the pipeline's rotation check on
+#'   the counterbalanced table. Without it, the check is run here on `stimuli`. The
+#'   record gives the recipe that ran and the lists the table holds, or for a table
+#'   without a `list` column the lists [counterbalance()] would deal. It says whether
+#'   a Latin-square rotation is complete and counts the trials per list and
+#'   condition.
 #' @return The datasheet as a nested list, ready for [write_datasheet()].
 #' @export
 build_datasheet <- function(design, schema, report, stimuli, source_path, artifacts,
                             seed, engine = "R", candidate_pool = NULL, norms = NULL,
                             balance = NULL, blocks = NULL, design_path = NULL,
                             schema_path = NULL, selection_audit = NULL,
-                            neighbourhood_reference = NULL) {
+                            neighbourhood_reference = NULL, counterbalance_check = NULL) {
   source <- design[["items"]][["source"]] %||% "corpus"
   is_continuous <- .is_continuous(design)
   controlled <- .controlled_dims(design, source)
@@ -331,12 +346,21 @@ build_datasheet <- function(design, schema, report, stimuli, source_path, artifa
     rep(TRUE, length(schema[["dimensions"]]))
   else names(schema[["dimensions"]]) %in% controlled
 
+  # The recipe comes from the resolver counterbalance() dispatches on, and the lists
+  # from the table. The record used to infer the recipe from the item source and to
+  # copy counterbalance.lists with a default of 1, though a Latin square without that
+  # key deals one list per condition. as.list() keeps a single issue a JSON array.
+  recipe <- .cb_recipe(design)
+  check <- counterbalance_check %||% .counterbalance_check(stimuli, design, recipe)
+  counterbalancing <- list(
+    recipe = recipe,
+    lists = as.integer(check$lists),
+    complete = isTRUE(check$complete),
+    issues = as.list(check$issues),
+    cells = check$cells)
   # The balance report is added only when the optimiser ran, for the same reason the
   # norms record is: a key that is null on every design that does not use the feature
   # is noise in a research artefact.
-  counterbalancing <- list(
-    recipe = if (identical(source, "table")) "latin_square_target" else "factorial",
-    lists = design[["counterbalance"]][["lists"]] %||% 1L)
   if (!is.null(balance)) counterbalancing$optimise <- balance
   # Practice and filler trials change what a participant sees but not what is
   # analysed, so the record has to state both counts: a reader comparing the stimuli
@@ -396,6 +420,18 @@ build_datasheet <- function(design, schema, report, stimuli, source_path, artifa
                  "coverage are recorded in the datasheet."), files)
 }
 
+# The counterbalancing recipe as the Methods text names it. A Latin square the check
+# found incomplete is called incomplete, since the bare label would claim a rotation
+# the lists or the item sets did not complete. A record without the check, written
+# before datasheet 1.2, keeps the bare label. Mirrors _recipe_label in datasheet.py.
+.recipe_label <- function(cb) {
+  if (identical(cb$recipe, "latin_square_target")) {
+    return(if (isFALSE(cb$complete)) "an incomplete Latin-square rotation"
+           else "a Latin-square rotation")
+  }
+  switch(cb$recipe, factorial = "a factorial split", cb$recipe)
+}
+
 #' A ready-to-adapt methods paragraph rendered from a datasheet
 #'
 #' Every number in the paragraph is printed by lexsync's own formatter, rounded
@@ -435,8 +471,7 @@ methods_paragraph <- function(ds) {
       paste0(", and the largest predictor-control correlation was |r| = ",
              .fmt_dp(max(rs), 3)) else ""
     cb <- ds$counterbalancing
-    recipe_label <- switch(cb$recipe, latin_square_target = "a Latin-square rotation",
-                           factorial = "a factorial split", cb$recipe)
+    recipe_label <- .recipe_label(cb)
     return(sprintf(paste0("%s %s %s were selected to span %s%s continuously while holding ",
                           "%s near-constant%s, for analysis by regression or a mixed model rather ",
                           "than a between-condition contrast (Kuperman, 2015; Liben-Nowell et al., ",
@@ -499,10 +534,7 @@ methods_paragraph <- function(ds) {
     sprintf(". %s disjoint matched item sets were drawn, so items can be treated as a random factor",
             ds$resampling$n_sets) else ""
   cb <- ds$counterbalancing
-  recipe_label <- switch(cb$recipe,
-                         latin_square_target = "a Latin-square rotation",
-                         factorial = "a factorial split",
-                         cb$recipe)
+  recipe_label <- .recipe_label(cb)
   tail <- sprintf(paste0(resamp, ". Materials were counterbalanced into %s list(s) (%s) and generated for ",
                          "PsychoPy, OpenSesame and jsPsych. The selection is deterministic and ",
                          "reproducible (seed %s; lexsync %s)."),
@@ -625,6 +657,25 @@ render_datasheet_md <- function(ds) {
                       "tie-break, so it uses no random number generator and the R and ",
                       "Python engines produce the same assignment."), "")
   }
+  # The trials each list gives each condition, and whatever leaves a Latin-square
+  # rotation incomplete, so a reader can check the rotation against the counts.
+  # Mirrors render_datasheet_md in datasheet.py.
+  issues <- unlist(ds$counterbalancing$issues)
+  cells <- ds$counterbalancing$cells
+  if (length(issues) || length(cells)) {
+    lines <- c(lines, "## Counterbalanced lists", "")
+    if (length(issues)) lines <- c(lines, paste0("- **Incomplete rotation:** ", issues), "")
+    if (length(cells)) {
+      with_rep <- any(vapply(cells, function(x) !is.null(x$replicate), logical(1)))
+      lines <- c(lines,
+                 if (with_rep) c("| Replicate | List | Condition | Trials |", "|---|---|---|---|")
+                 else c("| List | Condition | Trials |", "|---|---|---|"),
+                 vapply(cells, function(x) {
+                   paste0(if (with_rep) sprintf("| %s | ", x$replicate) else "| ",
+                          sprintf("%s | %s | %s |", x$list, x$condition, x$n_trials))
+                 }, character(1)), "")
+    }
+  }
   rel <- ds$relational
   if (!is.null(rel)) {
     lines <- c(lines, "## Pair-keyed items", "",
@@ -637,8 +688,7 @@ render_datasheet_md <- function(ds) {
                sprintf("- **Relational dimensions** (the pair): %s",
                        paste(unlist(rel$relational_dimensions), collapse = ", ")),
                paste0("- Selection ran on one row per pair and the result was re-expanded, ",
-                      "so every condition row of every chosen pair is present and the ",
-                      "Latin-square rotation is complete."), "")
+                      "so every condition row of every chosen pair is present."), "")
   }
   cp <- ds$selection$candidate_pool
   if (!is.null(cp) && length(cp)) {

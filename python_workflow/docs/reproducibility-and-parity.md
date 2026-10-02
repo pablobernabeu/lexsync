@@ -276,6 +276,13 @@ analysis that treats them as fixed over-generalises. The maximal structure is su
 ([Barr et al., 2013](references.md#barr-2013)) with the advice to reduce it if it does not converge
 ([Matuschek et al., 2017](references.md#matuschek-2017)).
 
+The `counterbalancing` record says how the items were dealt to lists. It gives the recipe that ran,
+the number of lists in the stimuli table and the trials each list gives each condition. It also says
+whether a Latin-square rotation is complete and, if not, what leaves it incomplete. The Markdown
+renders the counts as a table, so a claim of a rotation can be checked against them, and the Methods
+text calls an incomplete rotation incomplete
+([Experiments and triggers](experiments-and-triggers.md#counterbalancing)).
+
 `methods_paragraph` turns the datasheet into prose you can paste into a Methods section, filled from
 the numbers above. The pipeline writes it into the Markdown datasheet, and you can call it on a
 datasheet dictionary yourself with `lexsync.methods_paragraph(ds)`. For this design it reads:

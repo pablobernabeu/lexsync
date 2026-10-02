@@ -2,16 +2,160 @@
 # participant counterbalancing tables. Two recipes: the original `factorial` one
 # (every matched item shown, lists split the matched sets) and
 # `latin_square_target` for paired/sentence paradigms (each item appears once per
-# list in one rotated condition, so a target is never repeated within a list).
+# list in one rotated condition, so a target is never repeated within a list). The
+# design's paradigm chooses between them, and `counterbalance.recipe` overrides it.
 # Trial order within a list comes from a seeded, keyed-hash shuffle, so the R and
-# Python engines produce the same order byte for byte. Mirrors
+# Python engines produce the same order byte for byte. .counterbalance_check()
+# reports a rotation that the lists or the item sets leave incomplete. Mirrors
 # python_workflow/src/lexsync/counterbalancing.py.
 
+# The recipes counterbalance() knows, which counterbalance.recipe may name, and the
+# policies counterbalance.incomplete accepts. Both are closed sets, so a misspelt
+# value is refused, and the error names it.
+.CB_RECIPES <- c("factorial", "latin_square_target")
+.CB_INCOMPLETE_POLICIES <- c("allow", "error")
+
+# The recipe counterbalance() applies to a design: counterbalance.recipe when the
+# design names one, else the recipe of the paradigm it names, else factorial. An
+# `events` list has no say in it. It used to switch the recipe to factorial. A
+# priming design that read its prime's duration from the items then showed every
+# target in both conditions of each list, the repetition the paradigm's Latin square
+# exists to prevent. The datasheet takes its recipe from here too, so the record
+# names the recipe that ran. Mirrors _recipe in counterbalancing.py.
 .cb_recipe <- function(design) {
-  if (!is.null(design[["events"]]) && length(design[["events"]])) return("factorial")
+  named <- design[["counterbalance"]][["recipe"]]
+  if (!is.null(named)) {
+    if (!is.character(named) || length(named) != 1L || !named %in% .CB_RECIPES) {
+      stop(sprintf("lexsync: unknown counterbalance.recipe '%s'. Known recipes: %s.",
+                   paste(named, collapse = ", "), paste(.CB_RECIPES, collapse = ", ")),
+           call. = FALSE)
+    }
+    return(named)
+  }
   name <- design[["paradigm"]] %||% "factorial"
   p <- tryCatch(get_paradigm(name), error = function(e) NULL)
-  if (is.null(p)) "factorial" else (p$counterbalance %||% "factorial")
+  if (is.null(p)) "factorial" else (p[["counterbalance"]] %||% "factorial")
+}
+
+# Resolve counterbalance.incomplete: the design's, else the schema's, else "allow".
+# This is the cascade of matching.shortfall, and %||% takes any value that is present,
+# as the Python twin does. Mirrors _incomplete_policy in counterbalancing.py.
+.cb_incomplete_policy <- function(design, schema) {
+  val <- design[["counterbalance"]][["incomplete"]] %||%
+    schema[["counterbalance"]][["incomplete"]] %||% "allow"
+  if (!is.character(val) || length(val) != 1L || !val %in% .CB_INCOMPLETE_POLICIES) {
+    stop(sprintf("lexsync: unknown counterbalance.incomplete policy '%s'. Known policies: %s.",
+                 paste(val, collapse = ", "), paste(.CB_INCOMPLETE_POLICIES, collapse = ", ")),
+         call. = FALSE)
+  }
+  val
+}
+
+# The lists counterbalance() deals when the frame does not say: the declared
+# counterbalance.lists, else one per condition for a Latin square and one list for
+# the factorial recipe.
+.cb_default_lists <- function(design, recipe, n_cond) {
+  lists <- design[["counterbalance"]][["lists"]]
+  if (is.null(lists)) return(if (identical(recipe, "latin_square_target")) n_cond else 1L)
+  as.integer(lists)
+}
+
+# Whether a counterbalanced table rotates its conditions completely.
+#
+# A Latin square is complete when every item takes each of its conditions in the same
+# number of lists and every list holds each condition equally often. Four things
+# break that, and each one is reported in a sentence that both engines word
+# identically. One list shows every participant an item in the same condition, which
+# confounds item and condition fully. Fewer lists than conditions leave each item out
+# of some of its conditions. More lists than conditions, but not a multiple of them,
+# give an item some conditions in more lists than others. And item sets that are not
+# a multiple of the conditions leave the conditions within a list one trial apart. The
+# factorial recipe raises none of these: it shows every item in every condition, and
+# counterbalance() refuses lists it would leave empty.
+#
+# `stimuli` is the table counterbalance() returned. Without a `list` column, the lists
+# are the ones counterbalance() would deal. `conditions` names the conditions the
+# design rotates through, by default those the table holds. The pipeline passes them
+# from the table it counterbalanced, since a Latin square with fewer item sets than
+# conditions can leave a condition out of every list.
+#
+# Returns list(complete, issues, lists, cells). `complete` says whether no issue was
+# found and `issues` gives the sentences. `lists` is the number of lists, and `cells`
+# counts the trials in each cell of (replicate, when the table has one) by list by
+# condition, empty cells included. Mirrors counterbalance_check in
+# counterbalancing.py.
+.counterbalance_check <- function(stimuli, design, recipe = .cb_recipe(design),
+                                  conditions = NULL) {
+  conds <- sort(unique(as.character(conditions %||% stimuli$condition)), method = "radix")
+  n_cond <- length(conds)
+  has_list <- "list" %in% names(stimuli)
+  n_lists <- if (has_list) length(unique(stimuli$list))
+             else .cb_default_lists(design, recipe, n_cond)
+  has_rep <- "replicate" %in% names(stimuli)
+  reps <- if (has_rep) sort(unique(stimuli$replicate)) else NA
+  part_of <- function(r) {
+    if (has_rep) stimuli[stimuli$replicate == r, , drop = FALSE] else stimuli
+  }
+
+  issues <- character(0)
+  if (identical(recipe, "latin_square_target") && n_cond > 1L) {
+    if (n_lists == 1L) {
+      issues <- c(issues, paste0("With one list, every participant sees each item in the ",
+                                 "same condition, so item and condition are fully ",
+                                 "confounded."))
+    } else if (n_lists < n_cond) {
+      issues <- c(issues, sprintf(paste0("With %d lists and %d conditions, each item ",
+                                         "appears in only %d of its %d conditions."),
+                                  n_lists, n_cond, n_lists, n_cond))
+    } else if (n_lists %% n_cond != 0L) {
+      issues <- c(issues, sprintf(paste0("With %d lists and %d conditions, the lists are ",
+                                         "not a multiple of the conditions, so each item ",
+                                         "appears in some conditions in more lists than ",
+                                         "in others."), n_lists, n_cond))
+    }
+    # Each replicate is rotated on its own, so each is checked on its own. Replicates
+    # of one size give one sentence between them.
+    for (r in reps) {
+      n_sets <- length(unique(part_of(r)$set))
+      if (n_sets %% n_cond != 0L) {
+        issues <- union(issues, sprintf(
+          paste0("With %d item %s and %d conditions, the item sets are not a multiple ",
+                 "of the conditions, so the conditions within each list differ by one ",
+                 "trial."),
+          n_sets, if (n_sets == 1L) "set" else "sets", n_cond))
+      }
+    }
+  }
+
+  cells <- list()
+  if (has_list) {
+    lists <- sort(unique(as.integer(stimuli$list)))
+    for (r in reps) {
+      part <- part_of(r)
+      labels <- as.character(part$condition)
+      for (l in lists) {
+        in_list <- part$list == l
+        for (cnd in conds) {
+          cell <- list(list = l, condition = cnd,
+                       n_trials = as.integer(sum(in_list & labels == cnd)))
+          if (has_rep) cell <- c(list(replicate = as.integer(r)), cell)
+          cells[[length(cells) + 1L]] <- cell
+        }
+      }
+    }
+  }
+  list(complete = !length(issues), issues = issues, lists = as.integer(n_lists),
+       cells = cells)
+}
+
+# Refuse an incomplete rotation when counterbalance.incomplete is "error". Must stay
+# identical to _check_incomplete in python_workflow/src/lexsync/counterbalancing.py.
+.check_incomplete <- function(check, policy) {
+  if (isTRUE(check$complete) || !identical(policy, "error")) return(invisible(NULL))
+  stop(paste0("lexsync: the Latin-square rotation is incomplete and ",
+              "counterbalance.incomplete is 'error'. ", paste(check$issues, collapse = " "),
+              " Make the lists and the item sets multiples of the number of conditions, ",
+              "or set counterbalance.incomplete: allow."), call. = FALSE)
 }
 
 # A trial's position within its list is decided by a keyed hash, not a random
@@ -310,11 +454,15 @@ balance_lists <- function(stimuli, design, schema) {
 
 #' Assign stimuli to lists and a randomised, reproducible trial order
 #'
-#' Dispatches on the design's paradigm: the factorial recipe for matched word
-#' lists, or a Latin square over conditions for paired/sentence paradigms.
+#' The recipe is `counterbalance.recipe` when the design names one, and otherwise
+#' the recipe of the paradigm it names. That is the factorial recipe for matched word
+#' lists, or a Latin square over conditions for the paired and sentence paradigms. A
+#' design's own `events` list has no say in the recipe. The factorial recipe refuses
+#' more lists than item sets, since the surplus lists would be empty.
 #'
 #' @param stimuli A stimuli data frame (matched set or loaded item table).
-#' @param design A parsed design configuration.
+#' @param design A parsed design configuration. Reads `paradigm`,
+#'   `counterbalance.recipe` and `counterbalance.lists`.
 #' @param schema The parsed global schema (provides the seed).
 #' @param list_of_set Optional named integer vector mapping each `set` to a list,
 #'   from [balance_lists()]. Supplied by the pipeline when
@@ -348,9 +496,22 @@ counterbalance_factorial <- function(stimuli, design, schema, list_of_set = NULL
   n_lists <- design[["counterbalance"]][["lists"]] %||% 1L
   seed <- schema[["seed"]] %||% 1L
 
-  stimuli$list <- 1L
+  stimuli$list <- rep(1L, nrow(stimuli))
+  sets <- sort(unique(stimuli$set))
+  if (n_lists > length(sets)) {
+    # Each list receives whole item sets, so lists beyond the number of sets would be
+    # empty, and the datasheet would describe lists that do not exist. Must stay
+    # identical to the refusal in counterbalance_factorial in counterbalancing.py.
+    n_sets <- length(sets)
+    have <- if (n_sets == 1L) "there is only 1 item set"
+            else sprintf("there are only %d item sets", n_sets)
+    empty <- if (n_lists == n_sets + 1L) sprintf("list %d", n_sets + 1L)
+             else sprintf("lists %d to %d", n_sets + 1L, as.integer(n_lists))
+    stop(sprintf(paste0("lexsync: counterbalance.lists is %d but %s, so %s would be ",
+                        "empty; lower lists or add items."), as.integer(n_lists), have, empty),
+         call. = FALSE)
+  }
   if (n_lists > 1) {
-    sets <- sort(unique(stimuli$set))
     if (!is.null(list_of_set)) {
       # A balanced assignment from balance_lists(). Looked up by set VALUE, since the
       # map is keyed by it; a set the map does not name is a caller error rather than
@@ -380,10 +541,12 @@ counterbalance_factorial <- function(stimuli, design, schema, list_of_set = NULL
 #' One row per item per list, condition rotated across lists (Latin square)
 #'
 #' Each item (`set`) contributes exactly one trial to a list, so its target is
-#' never repeated within a list; conditions are balanced because items rotate
-#' through them. With `lists` unset the number of lists equals the number of
-#' conditions. Mirrors the Python recipe (byte-order condition list, zero-based
-#' rotation), so the two engines assign the same condition to each item per list.
+#' never repeated within a list. The conditions are balanced when the lists and the
+#' item sets are both multiples of the number of conditions, and
+#' `.counterbalance_check()` reports a rotation that is not. With `lists` unset the
+#' number of lists equals the number of conditions. Mirrors the Python recipe
+#' (byte-order condition list, zero-based rotation), so the two engines assign the
+#' same condition to each item per list.
 #' @keywords internal
 counterbalance_latin_square <- function(stimuli, design, schema) {
   seed <- schema[["seed"]] %||% 1L

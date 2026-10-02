@@ -1,17 +1,26 @@
 # Materials datasheet — en_priming_jitter (english)
 
-*lexsync datasheet v1.1; python engine.*
+*lexsync datasheet v1.2; python engine.*
 
 ## Provenance
 
 - **Paradigm:** priming  |  **Item source:** table
-- **Description:** Priming with a per-trial stimulus-onset asynchrony read from the items and a jittered inter-trial interval, both recorded as trial-level variables.
-- **Materials source:** `items/priming_pairs_en_soa.csv` (sha256 `305b3a91aa296713…`)
+- **Description:** Priming with a per-trial prime duration read from the items, which sets the stimulus-onset asynchrony, and a jittered inter-trial interval, both recorded as trial-level variables.
+- **Materials source:** `items/priming_pairs_en_soa.csv` (sha256 `9994855aa658ec5e…`)
 - **Selection:** item table (user-supplied)
 - **Cross-engine determinism:** n/a (user-supplied items)
 - **Counterbalancing:** latin_square_target, 2 list(s)
 - **Items:** 24 rows across 2 conditions (related, unrelated)
 - **Seed:** 2026  |  **Versions:** engine python, lexsync 0.1.1, python 3.13.7, pandas 2.3.2, numpy 2.3.2, scipy 1.17.1, rapidfuzz 3.14.5, pyyaml 6.0.3, os Windows AMD64
+
+## Counterbalanced lists
+
+| List | Condition | Trials |
+|---|---|---|
+| 1 | related | 6 |
+| 1 | unrelated | 6 |
+| 2 | related | 6 |
+| 2 | unrelated | 6 |
 
 ## Suggested analysis
 

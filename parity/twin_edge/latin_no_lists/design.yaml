@@ -1,0 +1,13 @@
+# Twin-edge case: a priming design that leaves counterbalance.lists unset, as
+# config/design_en_priming.yaml would without its counterbalance block. The Latin
+# square then deals one list per condition, two here. The datasheet recorded
+# counterbalance.lists with a default of 1, and the Methods text said "1 list(s)",
+# while the stimuli table held two lists.
+# The prime-target pairs are common English words paired for this fixture.
+name: twin_edge_latin_no_lists
+language: english
+paradigm: priming
+description: 'Related and unrelated prime-target pairs, with counterbalance.lists left unset.'
+items:
+  source: table
+  path: items.csv

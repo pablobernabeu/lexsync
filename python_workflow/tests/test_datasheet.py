@@ -41,7 +41,7 @@ def test_datasheet_structure_and_realised_control(schema):
     report = match_report(stim, ["length", "frequency", "n_density", "old20"], schema)
     ds = build_datasheet(_design(), schema, report, stim, "corpora/derived/en.csv",
                          {"stimuli": None, "experiments": {}}, 2026, engine="python")
-    assert ds["lexsync_datasheet_version"] == "1.1"
+    assert ds["lexsync_datasheet_version"] == "1.2"
     assert ds["design"]["name"] == "t"
     assert ds["reproducibility"]["seed"] == 2026
     assert "python" in ds["reproducibility"]["versions"]
@@ -68,7 +68,7 @@ def test_write_datasheet_emits_json_and_prereg(schema, tmp_path):
                          {"stimuli": None, "experiments": {}}, 2026)
     jp, mp = write_datasheet(ds, str(tmp_path / "d.json"), str(tmp_path / "d.md"))
     loaded = json.load(open(jp, encoding="utf-8"))
-    assert loaded["lexsync_datasheet_version"] == "1.1"
+    assert loaded["lexsync_datasheet_version"] == "1.2"
     md = open(mp, encoding="utf-8").read()
     assert "Pre-registration template" in md and "Materials (from the lexsync datasheet)" in md
 
@@ -114,6 +114,99 @@ def test_datasheet_without_report_table_source(schema):
     assert ds["counterbalancing"]["recipe"] == "latin_square_target"
     assert "item table" in methods_paragraph(ds)
     assert ds["dimensions"] == {}
+
+
+# --- Datasheet v1.2: the counterbalancing that ran ---------------------------
+# test-datasheet.R asserts the same properties.
+
+def _priming_table(conditions=("related", "unrelated"), n_sets=4):
+    return pd.DataFrame([{"item": s, "set": s, "condition": c,
+                          "prime": "%s%d" % (c[:3], s), "target": "t%d" % s}
+                         for s in range(1, n_sets + 1) for c in conditions])
+
+
+def _table_design(**extra):
+    design = {"name": "p", "language": "english", "paradigm": "priming",
+              "items": {"source": "table", "path": "items/p.csv"}}
+    design.update(extra)
+    return design
+
+
+def test_the_datasheet_records_the_realised_lists(schema):
+    # A Latin square without counterbalance.lists realises one list per condition,
+    # but the record read counterbalance.lists with a default of 1, and the Methods
+    # text said "1 list(s)". The latin_no_lists twin-edge case pins the same run.
+    from lexsync.counterbalancing import counterbalance
+    design = _table_design()
+    out = counterbalance(_priming_table(), design, schema)
+    ds = build_datasheet(design, schema, None, out, "items/p.csv",
+                         {"stimuli": None, "experiments": {}}, 2026)
+    record = ds["counterbalancing"]
+    assert record["recipe"] == "latin_square_target"
+    assert record["lists"] == 2
+    assert record["complete"] is True and record["issues"] == []
+    assert record["cells"] == [{"list": lst, "condition": c, "n_trials": 2}
+                               for lst in (1, 2) for c in ("related", "unrelated")]
+    assert "counterbalanced into 2 list(s) (a Latin-square rotation)" in methods_paragraph(ds)
+    md = render_datasheet_md(ds)
+    assert "## Counterbalanced lists" in md
+    assert "| 2 | unrelated | 2 |" in md
+
+
+def test_build_datasheet_accepts_a_frame_without_list(schema):
+    # build_datasheet is exported, so it may be given a frame that was never
+    # counterbalanced. The record then gives the lists counterbalance() would deal:
+    # one per condition for a Latin square, else counterbalance.lists or 1.
+    stim = _priming_table()
+    files = {"stimuli": None, "experiments": {}}
+    ds = build_datasheet(_table_design(), schema, None, stim, "items/p.csv", files, 2026)
+    assert ds["counterbalancing"]["lists"] == 2
+    assert ds["counterbalancing"]["cells"] == []
+    four = build_datasheet(_table_design(counterbalance={"lists": 4}), schema, None, stim,
+                           "items/p.csv", files, 2026)
+    assert four["counterbalancing"]["lists"] == 4
+    corpus = build_datasheet(_design(), schema, None, _stim(), "x.csv", files, 2026)
+    assert corpus["counterbalancing"]["lists"] == 1
+    unset = {k: v for k, v in _design().items() if k != "counterbalance"}
+    assert build_datasheet(unset, schema, None, _stim(), "x.csv", files,
+                           2026)["counterbalancing"]["lists"] == 1
+
+
+def test_the_datasheet_records_the_recipe_counterbalance_applied(schema):
+    # The record inferred the recipe from items.source while counterbalance()
+    # dispatched on the paradigm, so a table-sourced lexical-decision design was
+    # recorded as a Latin-square rotation it never had.
+    stim = pd.DataFrame({"target": ["a", "b"], "condition": ["word", "pseudoword"],
+                         "set": [1, 1]})
+    files = {"stimuli": None, "experiments": {}}
+    design = {"name": "t", "language": "english", "paradigm": "lexical_decision",
+              "items": {"source": "table", "path": "items/t.csv"},
+              "counterbalance": {"lists": 1}}
+    ds = build_datasheet(design, schema, None, stim, "items/t.csv", files, 2026)
+    assert ds["counterbalancing"]["recipe"] == "factorial"
+    assert "Latin-square" not in methods_paragraph(ds)
+    design["paradigm"] = "priming"
+    design["events"] = [{"type": "text", "content": "{target}", "duration_ms": 800}]
+    ds = build_datasheet(design, schema, None, stim, "items/t.csv", files, 2026)
+    assert ds["counterbalancing"]["recipe"] == "latin_square_target"
+    design["counterbalance"] = {"lists": 1, "recipe": "factorial"}
+    ds = build_datasheet(design, schema, None, stim, "items/t.csv", files, 2026)
+    assert ds["counterbalancing"]["recipe"] == "factorial"
+
+
+def test_an_incomplete_rotation_is_described_as_incomplete(schema):
+    from lexsync.counterbalancing import counterbalance
+    design = _table_design(counterbalance={"lists": 2})
+    out = counterbalance(_priming_table(("identity", "related", "unrelated"), 6), design,
+                         schema)
+    ds = build_datasheet(design, schema, None, out, "items/p.csv",
+                         {"stimuli": None, "experiments": {}}, 2026)
+    issue = "With 2 lists and 3 conditions, each item appears in only 2 of its 3 conditions."
+    assert ds["counterbalancing"]["complete"] is False
+    assert ds["counterbalancing"]["issues"] == [issue]
+    assert ("counterbalanced into 2 list(s) (an incomplete Latin-square rotation)"
+            in methods_paragraph(ds))
+    assert "- **Incomplete rotation:** " + issue in render_datasheet_md(ds)
 
 
 def test_datasheet_records_the_tolerance_windows_the_matcher_applied(schema):

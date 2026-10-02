@@ -20,6 +20,199 @@ test_that("participant_table varies the first factor fastest with three factors"
   expect_equal(pt$c, c("p", "p", "p", "p", "q", "q", "q", "q"))
 })
 
+# ---- The recipe that runs, and incomplete rotations --------------------------
+# Every test in this block is pinned identically in test_counterbalancing.py.
+
+# The design block of config/design_en_priming_jitter.yaml: the priming paradigm with
+# its own events, which read the prime's duration from the items and jitter the blank.
+cb_jitter_events <- function() {
+  list(
+    list(type = "fixation", content = "+", duration_ms = 500L),
+    list(type = "text", content = "{prime}", duration = list(from_column = "prime_ms"),
+         trigger = 20L, onset_locked = TRUE),
+    list(type = "mask", content = "#####", duration_ms = 33L),
+    list(type = "text", content = "{target}", duration_ms = 800L, trigger = "condition",
+         onset_locked = TRUE),
+    list(type = "response", keys = c("left", "right"), timeout_ms = 2000L),
+    list(type = "blank", duration = list(jitter = c(400L, 800L), as = "iti_ms"))
+  )
+}
+
+# items/priming_pairs_en_soa.csv: each target with its related and unrelated prime and
+# the prime's duration in milliseconds.
+cb_soa_items <- function() {
+  target <- c("doctor", "cat", "king", "bread", "hot", "black", "moon", "salt", "day",
+              "hand", "north", "cup")
+  related <- c("nurse", "dog", "queen", "butter", "cold", "white", "star", "pepper",
+               "night", "foot", "south", "saucer")
+  unrelated <- c("window", "table", "pencil", "planet", "paper", "river", "chair",
+                 "engine", "carpet", "cloud", "lemon", "tractor")
+  n <- length(target)
+  data.frame(item = rep(seq_len(n), each = 2L), set = rep(seq_len(n), each = 2L),
+             condition = rep(c("related", "unrelated"), n),
+             prime = as.vector(rbind(related, unrelated)),
+             target = rep(target, each = 2L),
+             prime_ms = rep(rep(c(60L, 250L, 1200L), 4L), each = 2L),
+             stringsAsFactors = FALSE)
+}
+
+# A priming table with three conditions per target, which the Latin square sorts by
+# byte order: identity, related, unrelated.
+cb_three_condition_items <- function(n_sets = 6L) {
+  conds <- c("identity", "related", "unrelated")
+  s <- rep(seq_len(n_sets), each = 3L)
+  data.frame(item = s, set = s, condition = rep(conds, n_sets),
+             prime = paste0(rep(substr(conds, 1L, 3L), n_sets), s),
+             target = paste0("t", s), stringsAsFactors = FALSE)
+}
+
+# The message of the error an expression raises, or NA when it raises none, so a
+# refusal can be compared with its full text as the Python suite compares it.
+cb_error <- function(expr) {
+  tryCatch({ force(expr); NA_character_ }, error = function(e) conditionMessage(e))
+}
+
+# Any `events:` list used to make counterbalance() deal the items factorially, so
+# en_priming_jitter showed six targets per list, each in both conditions, while the
+# datasheet and the Methods text described a Latin square. Per-trial timing can be
+# declared only inside events, so every priming, categorisation or self-paced reading
+# design with such timing was dealt this way.
+test_that("explicit events keep the paradigm's Latin square", {
+  design <- list(paradigm = "priming", events = cb_jitter_events(),
+                 counterbalance = list(lists = 2L))
+  expect_identical(lexsync:::.cb_recipe(design), "latin_square_target")
+  out <- counterbalance(cb_soa_items(), design, list(seed = 2026L))
+  expect_identical(max(table(paste(out$list, out$set))), 1L)
+  expect_identical(as.vector(tapply(out$set, out$list, function(s) length(unique(s)))),
+                   c(12L, 12L))
+  # The other Latin-square paradigms keep theirs too, whatever their events hold.
+  for (paradigm in c("categorisation", "self_paced_reading")) {
+    own <- list(paradigm = paradigm, events = list(list(type = "blank", duration_ms = 250L)))
+    expect_identical(lexsync:::.cb_recipe(own), "latin_square_target")
+  }
+  # A design that names no paradigm still counterbalances factorially.
+  expect_identical(lexsync:::.cb_recipe(list(events = cb_jitter_events())), "factorial")
+  # The optimiser is refused for these designs, as for every Latin square.
+  optimised <- design
+  optimised$counterbalance <- list(lists = 2L, optimise = TRUE)
+  optimised$match_on <- list("prime_ms")
+  expect_error(balance_lists(cb_soa_items(), optimised, list(seed = 2026L)),
+               "does not apply to a Latin-square design", fixed = TRUE)
+})
+
+test_that("counterbalance.recipe override is validated", {
+  # counterbalance.recipe wins over the paradigm's recipe, in either direction.
+  expect_identical(lexsync:::.cb_recipe(list(paradigm = "priming",
+                                             counterbalance = list(recipe = "factorial"))),
+                   "factorial")
+  expect_identical(lexsync:::.cb_recipe(list(counterbalance =
+                                               list(recipe = "latin_square_target"))),
+                   "latin_square_target")
+  out <- counterbalance(cb_soa_items(),
+                        list(paradigm = "priming",
+                             counterbalance = list(recipe = "factorial", lists = 2L)),
+                        list(seed = 2026L))
+  expect_identical(max(table(paste(out$list, out$set))), 2L)
+  expect_identical(
+    cb_error(counterbalance(cb_soa_items(),
+                            list(paradigm = "priming",
+                                 counterbalance = list(recipe = "latin_square")),
+                            list(seed = 2026L))),
+    paste0("lexsync: unknown counterbalance.recipe 'latin_square'. ",
+           "Known recipes: factorial, latin_square_target."))
+})
+
+test_that("an incomplete Latin square is reported", {
+  # Three conditions in two lists: each item is shown in only two of its three
+  # conditions, and nothing used to say so.
+  design <- list(paradigm = "priming", counterbalance = list(lists = 2L))
+  out <- counterbalance(cb_three_condition_items(), design, list(seed = 2026L))
+  check <- lexsync:::.counterbalance_check(out, design)
+  expect_false(check$complete)
+  expect_identical(check$lists, 2L)
+  expect_identical(check$issues,
+                   "With 2 lists and 3 conditions, each item appears in only 2 of its 3 conditions.")
+  cells <- list()
+  for (l in 1:2) for (cnd in c("identity", "related", "unrelated")) {
+    cells[[length(cells) + 1L]] <- list(list = l, condition = cnd, n_trials = 2L)
+  }
+  expect_identical(check$cells, cells)
+  # Item sets that are not a multiple of the conditions leave the cells unequal.
+  seven <- counterbalance(cb_three_condition_items(7L), design, list(seed = 2026L))
+  expect_identical(
+    lexsync:::.counterbalance_check(seven, design)$issues,
+    c("With 2 lists and 3 conditions, each item appears in only 2 of its 3 conditions.",
+      paste0("With 7 item sets and 3 conditions, the item sets are not a multiple of the ",
+             "conditions, so the conditions within each list differ by one trial.")))
+  # One list confounds item and condition completely, and lists that are not a
+  # multiple of the conditions rotate some conditions more often than others.
+  one <- counterbalance(cb_soa_items(), list(paradigm = "priming",
+                                             counterbalance = list(lists = 1L)),
+                        list(seed = 2026L))
+  expect_identical(lexsync:::.counterbalance_check(one, list(paradigm = "priming"))$issues,
+                   paste0("With one list, every participant sees each item in the same ",
+                          "condition, so item and condition are fully confounded."))
+  three <- counterbalance(cb_soa_items(), list(paradigm = "priming",
+                                               counterbalance = list(lists = 3L)),
+                          list(seed = 2026L))
+  expect_identical(lexsync:::.counterbalance_check(three, list(paradigm = "priming"))$issues,
+                   paste0("With 3 lists and 2 conditions, the lists are not a multiple of ",
+                          "the conditions, so each item appears in some conditions in more ",
+                          "lists than in others."))
+  full <- counterbalance(cb_soa_items(), list(paradigm = "priming"), list(seed = 2026L))
+  expect_true(lexsync:::.counterbalance_check(full, list(paradigm = "priming"))$complete)
+
+  # counterbalance.incomplete: error refuses the run with the issue text.
+  dir <- tempfile("cb-incomplete-")
+  dir.create(dir)
+  items <- file.path(dir, "items.csv")
+  write_csv_utf8(cb_three_condition_items()[, c("item", "condition", "prime", "target")],
+                 items)
+  design_path <- file.path(dir, "design.yaml")
+  writeLines(c("name: incomplete_test", "language: english", "paradigm: priming",
+               "items:", "  source: table", paste0("  path: ", gsub("\\\\", "/", items)),
+               "counterbalance:", "  lists: 2", "  incomplete: error"),
+             design_path, useBytes = TRUE)
+  msg <- cb_error(run_pipeline(design_path,
+                               system.file("extdata", "schema.yaml", package = "lexsync"),
+                               outdir = file.path(dir, "out"), verbose = FALSE))
+  expect_identical(msg, paste0(
+    "lexsync: the Latin-square rotation is incomplete and counterbalance.incomplete ",
+    "is 'error'. With 2 lists and 3 conditions, each item appears in only 2 of its 3 ",
+    "conditions. Make the lists and the item sets multiples of the number of ",
+    "conditions, or set counterbalance.incomplete: allow."))
+  unlink(dir, recursive = TRUE)
+})
+
+test_that("counterbalance.incomplete resolves design over schema over default", {
+  strict <- list(counterbalance = list(incomplete = "error"))
+  expect_identical(lexsync:::.cb_incomplete_policy(list(), list()), "allow")
+  expect_identical(lexsync:::.cb_incomplete_policy(list(), strict), "error")
+  expect_identical(lexsync:::.cb_incomplete_policy(
+    list(counterbalance = list(incomplete = "allow")), strict), "allow")
+  expect_identical(
+    cb_error(lexsync:::.cb_incomplete_policy(list(counterbalance = list(incomplete = "warn")),
+                                             list())),
+    "lexsync: unknown counterbalance.incomplete policy 'warn'. Known policies: allow, error.")
+})
+
+test_that("a factorial design with more lists than sets is refused", {
+  # The surplus lists used to come out empty, and the datasheet still recorded them.
+  stim <- data.frame(word = letters[1:6], condition = rep(c("x", "y"), 3),
+                     set = rep(1:3, each = 2), stringsAsFactors = FALSE)
+  expect_identical(
+    cb_error(counterbalance(stim, list(counterbalance = list(lists = 4L)), list(seed = 1L))),
+    paste0("lexsync: counterbalance.lists is 4 but there are only 3 item sets, so list 4 ",
+           "would be empty; lower lists or add items."))
+  expect_identical(
+    cb_error(counterbalance(stim, list(counterbalance = list(lists = 5L)), list(seed = 1L))),
+    paste0("lexsync: counterbalance.lists is 5 but there are only 3 item sets, so lists 4 ",
+           "to 5 would be empty; lower lists or add items."))
+  # As many lists as sets is allowed, one set to each.
+  out <- counterbalance(stim, list(counterbalance = list(lists = 3L)), list(seed = 1L))
+  expect_identical(sort(unique(out$list)), 1:3)
+})
+
 test_that("counterbalance adds list and trial columns", {
   stim <- data.frame(
     word = c("a", "b", "c", "d"), condition = c("x", "x", "y", "y"),

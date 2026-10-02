@@ -16,7 +16,14 @@ import os
 
 from . import logging as runlog
 from .blocks import BLOCK_MAIN, add_blocks
-from .counterbalancing import balance_lists, counterbalance
+from .counterbalancing import (
+    _check_incomplete,
+    _incomplete_policy,
+    _recipe,
+    balance_lists,
+    counterbalance,
+    counterbalance_check,
+)
 from .datasheet import build_datasheet, write_datasheet
 from .generation import build_lexdec_stimuli
 from .io_utils import _is_continuous, read_config, slugify, write_csv_utf8
@@ -93,6 +100,10 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
         raise ValueError("lexsync: pool_filters have no effect for items.source 'table' "
                          "without a 'continuous' block; remove them or use a continuous "
                          "design.")
+    # counterbalance.recipe and counterbalance.incomplete take closed sets of values,
+    # so a misspelt one is refused here, before any lexicon is read or file written.
+    recipe = _recipe(design)
+    incomplete_policy = _incomplete_policy(design, schema)
 
     log = runlog.new_run_log(design["name"], meta={
         "design": design["name"], "language": design["language"],
@@ -312,7 +323,17 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
     # shuffle, because the order of first appearance after it depends on the seed.
     condition_order = list(dict.fromkeys(
         (_design_condition_names(design) or []) + [str(c) for c in stim["condition"]]))
+    # The conditions the table holds before it is dealt, which a Latin square with
+    # fewer item sets than conditions can leave out of every list.
+    cb_conditions = list(dict.fromkeys(str(c) for c in stim["condition"]))
     stim = counterbalance(stim, design, schema, list_of_set)
+    # An incomplete rotation is a design decision the researcher may accept, so under
+    # the default policy it is reported, in the run log here and in the datasheet,
+    # and only counterbalance.incomplete: error refuses it.
+    cb_check = counterbalance_check(stim, design, recipe, conditions=cb_conditions)
+    for issue in cb_check["issues"]:
+        runlog.log_step(log, "counterbalancing: " + issue)
+    _check_incomplete(cb_check, incomplete_policy)
     # Practice and filler trials are presented but not analysed, so the frame splits
     # here: the experiment is generated from every presented trial, the stimuli file and
     # the reports from the main ones. A design declaring neither block is unaffected,
@@ -393,7 +414,7 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
                          norms=norms, balance=balance, blocks=blocks,
                          design_path=design_path, schema_path=schema_path,
                          selection_audit=selection_audit,
-                         neighbourhood_reference=nref)
+                         neighbourhood_reference=nref, counterbalance_check=cb_check)
     ds_json = os.path.join(outdir, "reports", f"{base}_datasheet_py.json")
     ds_md = os.path.join(outdir, "reports", f"{base}_datasheet_py.md")
     write_datasheet(ds, ds_json, ds_md)

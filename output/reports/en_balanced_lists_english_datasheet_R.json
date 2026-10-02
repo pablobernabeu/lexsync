@@ -1,5 +1,5 @@
 {
-  "lexsync_datasheet_version": "1.1",
+  "lexsync_datasheet_version": "1.2",
   "design": {
     "name": "en_balanced_lists",
     "language": "english",
@@ -126,6 +126,50 @@
   "counterbalancing": {
     "recipe": "factorial",
     "lists": 4,
+    "complete": true,
+    "issues": [],
+    "cells": [
+      {
+        "list": 1,
+        "condition": "high_frequency",
+        "n_trials": 10
+      },
+      {
+        "list": 1,
+        "condition": "low_frequency",
+        "n_trials": 10
+      },
+      {
+        "list": 2,
+        "condition": "high_frequency",
+        "n_trials": 10
+      },
+      {
+        "list": 2,
+        "condition": "low_frequency",
+        "n_trials": 10
+      },
+      {
+        "list": 3,
+        "condition": "high_frequency",
+        "n_trials": 10
+      },
+      {
+        "list": 3,
+        "condition": "low_frequency",
+        "n_trials": 10
+      },
+      {
+        "list": 4,
+        "condition": "high_frequency",
+        "n_trials": 10
+      },
+      {
+        "list": 4,
+        "condition": "low_frequency",
+        "n_trials": 10
+      }
+    ],
     "optimise": {
       "dimensions": [
         "length",
@@ -166,7 +210,7 @@
       "os": "Windows x86-64"
     },
     "design_sha256": "3b871bdbff36cccc407b9a0feef29bddd5db66fdc30f9061475337a17a4c5aa7",
-    "schema_sha256": "483a9cec49314b9479fe656ad39840083a551f2e4313ca164efe3e9c064fb255"
+    "schema_sha256": "978979ec5f0c6182ac2611863021a722f3412cc179039614f63311b3e3ff3331"
   },
   "artifacts": [
     {

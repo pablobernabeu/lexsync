@@ -1,6 +1,6 @@
 # Materials datasheet — en_supplied_pool (english)
 
-*lexsync datasheet v1.1; python engine.*
+*lexsync datasheet v1.2; python engine.*
 
 ## Provenance
 
@@ -13,6 +13,13 @@
 - **Counterbalancing:** factorial, 1 list(s)
 - **Items:** 40 rows across 2 conditions (lower_frequency, higher_frequency)
 - **Seed:** 2026  |  **Versions:** engine python, lexsync 0.1.1, python 3.13.7, pandas 2.3.2, numpy 2.3.2, scipy 1.17.1, rapidfuzz 3.14.5, pyyaml 6.0.3, os Windows AMD64
+
+## Counterbalanced lists
+
+| List | Condition | Trials |
+|---|---|---|
+| 1 | higher_frequency | 20 |
+| 1 | lower_frequency | 20 |
 
 ## Selection transparency
 

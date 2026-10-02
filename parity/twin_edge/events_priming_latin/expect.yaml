@@ -1,0 +1,7 @@
+# Both engines rotate the six targets through the Latin square, one row per target in
+# each list, and realise the same prime durations and jittered blanks.
+outcome: artefacts
+compare: [stimuli]
+datasheet:
+  counterbalancing.recipe: latin_square_target
+  counterbalancing.lists: 2

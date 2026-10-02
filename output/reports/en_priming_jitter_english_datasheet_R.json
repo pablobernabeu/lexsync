@@ -1,17 +1,17 @@
 {
-  "lexsync_datasheet_version": "1.1",
+  "lexsync_datasheet_version": "1.2",
   "design": {
     "name": "en_priming_jitter",
     "language": "english",
     "paradigm": "priming",
     "source": "table",
-    "description": "Priming with a per-trial stimulus-onset asynchrony read from the items and a jittered inter-trial interval, both recorded as trial-level variables.",
+    "description": "Priming with a per-trial prime duration read from the items, which sets the stimulus-onset asynchrony, and a jittered inter-trial interval, both recorded as trial-level variables.",
     "n_per_condition": null
   },
   "materials_source": {
     "type": "table",
     "path": "items/priming_pairs_en_soa.csv",
-    "sha256": "305b3a91aa29671307aee0bdfe044f5ea48a00b3e63197a7110eba8d31da30ac",
+    "sha256": "9994855aa658ec5e824ad3fbb4a9cf8a0471d4afd7ae8a9850926da957a55bb9",
     "provenance": "user-supplied item table"
   },
   "dimensions": {},
@@ -32,7 +32,31 @@
   "realised_control": [],
   "counterbalancing": {
     "recipe": "latin_square_target",
-    "lists": 2
+    "lists": 2,
+    "complete": true,
+    "issues": [],
+    "cells": [
+      {
+        "list": 1,
+        "condition": "related",
+        "n_trials": 6
+      },
+      {
+        "list": 1,
+        "condition": "unrelated",
+        "n_trials": 6
+      },
+      {
+        "list": 2,
+        "condition": "related",
+        "n_trials": 6
+      },
+      {
+        "list": 2,
+        "condition": "unrelated",
+        "n_trials": 6
+      }
+    ]
   },
   "resampling": null,
   "items": {
@@ -43,7 +67,7 @@
       "unrelated"
     ],
     "stimuli_file": "output/stimuli/en_priming_jitter_english_stimuli_R.csv",
-    "stimuli_sha256": "72aaa8ee8d28c35792e306ad6b7981566e8ca89c9f5a158719f5c68ed02ed307"
+    "stimuli_sha256": "74fd43b1058f08252522405397d8dcd839c385832ec57d99803ae3bab517fea4"
   },
   "reproducibility": {
     "seed": 2026,
@@ -59,25 +83,25 @@
       "stringi": "1.8.7",
       "os": "Windows x86-64"
     },
-    "design_sha256": "5948b0b66dcdd984810e697568e2ccb184a3a075a7df10bd1ac61b90404ab1c2",
-    "schema_sha256": "483a9cec49314b9479fe656ad39840083a551f2e4313ca164efe3e9c064fb255"
+    "design_sha256": "d3e01a766c834148f6f16b192c892a3c04edb74e71d0b68955e1f5ae8c99fd90",
+    "schema_sha256": "978979ec5f0c6182ac2611863021a722f3412cc179039614f63311b3e3ff3331"
   },
   "artifacts": [
     {
       "file": "output/stimuli/en_priming_jitter_english_stimuli_R.csv",
-      "sha256": "72aaa8ee8d28c35792e306ad6b7981566e8ca89c9f5a158719f5c68ed02ed307"
+      "sha256": "74fd43b1058f08252522405397d8dcd839c385832ec57d99803ae3bab517fea4"
     },
     {
       "file": "output/experiments/en_priming_jitter_english_psychopy.py",
-      "sha256": "fdac313aa3128d0af09d1ee0482c0375c0c42db2d854d809e7f9cbdbed9af864"
+      "sha256": "7d32c8d179547629d5dea1122adba352074597533f441c959692c048e6df2794"
     },
     {
       "file": "output/experiments/en_priming_jitter_english.osexp",
-      "sha256": "df0d732bf0dbe5e3726b26788be740ed79f43cba7fecdbeda061667beb7e4fc5"
+      "sha256": "ba29edecbb263a266e7b69b0b3613ae51f306af1125ac6ae0c8a6f8792bd9304"
     },
     {
       "file": "output/experiments/en_priming_jitter_english.html",
-      "sha256": "5ccf55875fd61bcb328080fb2635280e7cb834e93bf1dd87ac4260f00ccb7360"
+      "sha256": "b55e7f68a97fcaf7b8849efb4d40b9ff4f095d26ec6401ee1ff0d41868615773"
     }
   ]
 }

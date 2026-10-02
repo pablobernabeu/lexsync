@@ -23,6 +23,30 @@
     }
   ],
   "counterbalancing": {
+    "cells": [
+      {
+        "condition": "broad",
+        "list": 1,
+        "n_trials": 8
+      },
+      {
+        "condition": "narrow",
+        "list": 1,
+        "n_trials": 8
+      },
+      {
+        "condition": "broad",
+        "list": 2,
+        "n_trials": 8
+      },
+      {
+        "condition": "narrow",
+        "list": 2,
+        "n_trials": 8
+      }
+    ],
+    "complete": true,
+    "issues": [],
     "lists": 2,
     "recipe": "latin_square_target"
   },
@@ -49,7 +73,7 @@
     "stimuli_file": "output/stimuli/en_categorisation_english_stimuli_py.csv",
     "stimuli_sha256": "9610d97fc11575205e384e5f736251ad7da05efff6cd2c3bdb722f45e99be6a9"
   },
-  "lexsync_datasheet_version": "1.1",
+  "lexsync_datasheet_version": "1.2",
   "materials_source": {
     "path": "items/categorisation_en.csv",
     "provenance": "user-supplied item table",
@@ -60,7 +84,7 @@
   "relational": null,
   "reproducibility": {
     "design_sha256": "0535f924775a71d520cd2125b385c4752d7fe1ad336ef0a65e854b68ac356679",
-    "schema_sha256": "483a9cec49314b9479fe656ad39840083a551f2e4313ca164efe3e9c064fb255",
+    "schema_sha256": "978979ec5f0c6182ac2611863021a722f3412cc179039614f63311b3e3ff3331",
     "seed": 2026,
     "versions": {
       "engine": "python",

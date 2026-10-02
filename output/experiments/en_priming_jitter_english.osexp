@@ -92,7 +92,7 @@ define inline_script lexsync_e1
 	c.text(_lexsync_row()[u'prime'])
 	var.onset_time = c.show()
 	send_trigger(20)
-	clock.sleep(int(float(var.get(u'soa_ms', _eval=False))))
+	clock.sleep(int(float(var.get(u'prime_ms', _eval=False))))
 	__end__
 
 define inline_script lexsync_e2

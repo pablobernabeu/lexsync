@@ -43,16 +43,17 @@ A duration need not be the same on every trial. An event may instead declare a
 ```yaml
 - type: text
   content: '{prime}'
-  duration: {from_column: soa_ms}            # read per trial from the items
+  duration: {from_column: prime_ms}          # read per trial from the items
 - type: blank
   duration: {jitter: [400, 800], as: iti_ms} # drawn per trial, in milliseconds
 ```
 
 The two exist for different reasons. A duration read from a column is a
-manipulated variable: the stimulus-onset asynchrony of a priming study is the
-lever that separates automatic from strategic processing, so it belongs in the
-item table and in the analysis. A jittered duration is not manipulated at all. It
-decorrelates the design matrix, as EEG and fMRI designs routinely require.
+manipulated variable. Here it is the prime's duration, which with the mask that
+follows sets the stimulus-onset asynchrony, the lever that separates automatic
+from strategic processing. It belongs in the item table and in the analysis. A
+jittered duration is not manipulated at all. It decorrelates the design matrix,
+as EEG and fMRI designs routinely require.
 
 Neither draws a random number. A jittered value is a uniform integer keyed on the
 seed, the column name, the list, the set and the condition, so both engines
@@ -63,7 +64,8 @@ they would share a single value.
 Either form writes the realised milliseconds into the stimuli table and the loop
 table, because timing that varies is a variable the analysis needs, not
 presentation detail. `config/design_en_priming_jitter.yaml` is a worked
-example carrying both.
+example carrying both. Its prime lasts `prime_ms` and a 33 ms mask follows, so its
+stimulus-onset asynchrony is `prime_ms` plus 33 ms.
 
 ## The five paradigms
 
@@ -184,9 +186,11 @@ that one design error would surface as three different failures, one per target.
 
 ## Counterbalancing
 
-`counterbalance` picks a recipe from the design's paradigm and applies it. Trial order within each
-list comes from a keyed-hash shuffle seeded by `schema.seed`, and a `trial` column numbers the
-result.
+`counterbalance` picks a recipe from the design's paradigm and applies it. A design's own `events`
+list has no say in the recipe, so a priming design that reads its prime's duration from the items
+keeps its Latin square. `counterbalance.recipe` names a recipe outright, `factorial` or
+`latin_square_target`, for a design that needs the other one. Trial order within each list comes
+from a keyed-hash shuffle seeded by `schema.seed`, and a `trial` column numbers the result.
 
 The rest of this page follows one small design through to its three exported experiments. It runs
 against the bundled lexicon, so the output shown is the output you will get.
@@ -222,13 +226,21 @@ stimuli = lexsync.match_stimuli(pool, design, schema)
 
 `factorial` shows every matched item. With more than one list, matched sets are dealt to lists round
 robin by set index, so a list gets a balanced slice of the design rather than a contiguous block of
-it.
+it. More lists than item sets are refused, since the surplus lists would be empty.
 
 `latin_square_target` is for the paired and sentence paradigms, where showing the same target twice
 in one list would ruin it. Each item contributes exactly one trial to each list, in a condition
-rotated by the list number, so no target repeats within a list and conditions stay balanced because
-items rotate through them. With `counterbalance.lists` unset, the number of lists equals the number
-of conditions, which is the fully counterbalanced case.
+rotated by the list number, so no target repeats within a list. With `counterbalance.lists` unset,
+the number of lists equals the number of conditions, which is the fully counterbalanced case.
+
+The rotation is complete only when the lists and the item sets are multiples of the number of
+conditions. One list confounds item and condition, since every participant sees each item in the
+same condition. Two lists for three conditions show each item in only two of them, and nine items in
+two conditions leave each list with five trials in one condition and four in the other. The run log
+and the datasheet report such a rotation, and the Methods text calls it incomplete.
+`counterbalance.incomplete: error` refuses it instead, set in the design or, for every design, in the
+schema. The datasheet's `counterbalancing` record gives the recipe that ran, the lists the stimuli
+table holds, whether the rotation is complete and the trials each list gives each condition.
 
 ```python exec="1" source="material-block" result="text" session="experiments"
 stimuli = lexsync.counterbalance(stimuli, design, schema)

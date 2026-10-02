@@ -82,6 +82,35 @@
   engines now read it as zero. Every demonstration's stimuli and reports are
   unchanged.
 
+* Changes list assignment: a paradigm's Latin-square recipe now applies when a
+  design lists its own `events`. Any `events:` list made `counterbalance()` deal
+  the items factorially, so a priming, categorisation or self-paced reading design
+  with per-trial timing showed every target in both conditions of each list (in
+  `en_priming_jitter`, six targets per list, each twice), while the datasheet and
+  the Methods text described a Latin square. `counterbalance.recipe` (`factorial`
+  or `latin_square_target`) overrides the paradigm's recipe, and
+  `counterbalance.optimise` is now refused for these designs, as for every
+  Latin-square design. Of the shipped examples only `en_priming_jitter` moves: each
+  of its two lists now shows all twelve targets once, and its stimuli, experiments
+  and datasheets are regenerated.
+
+* The datasheet, now format 1.2, records the counterbalancing that ran. It takes
+  the recipe from the resolver that `counterbalance()` dispatches on, and no longer
+  infers it from the item source, which recorded a table-sourced lexical-decision
+  design as a Latin square. It records the lists the counterbalancing realised, in
+  place of `counterbalance.lists` with a default of 1, and gives per-list cell
+  counts. An incomplete Latin-square rotation (a single list, or lists or item sets
+  not a multiple of the number of conditions) is reported in the run log and the
+  datasheet and described as incomplete in the Methods text, and
+  `counterbalance.incomplete: error`, in the design or the schema, refuses it. A
+  factorial design asking for more lists than item sets is refused, because the
+  surplus lists would be empty. Every committed datasheet and run log is
+  regenerated, and no other stimulus moves.
+
+* The `en_priming_jitter` example names its per-trial column `prime_ms`. It was
+  called `soa_ms`, but a 33 ms mask follows the prime, so the stimulus-onset
+  asynchrony is `prime_ms` plus 33 ms.
+
 # lexsync 0.1.1
 
 * `assign_triggers()` gains a `conditions` argument that fixes the order of the

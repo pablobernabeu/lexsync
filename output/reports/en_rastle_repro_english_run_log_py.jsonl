@@ -1,8 +1,8 @@
-{"time": "2026-10-02T16:52:53", "message": "loading items 'items/rastle_priming_en.csv'", "data": null}
-{"time": "2026-10-02T16:52:53", "message": "loaded 12 items across 2 conditions", "data": {"conditions": "related, unrelated"}}
-{"time": "2026-10-02T16:52:54", "message": "wrote 'en_rastle_repro_english_stimuli_py.csv'", "data": {"path": "output\\stimuli\\en_rastle_repro_english_stimuli_py.csv", "rows": 24, "md5": "3f0b27cc792db7c4971b4627b5e24899"}}
-{"time": "2026-10-02T16:52:54", "message": "wrote 'en_rastle_repro_english_psychopy.py'", "data": {"path": "output\\experiments\\en_rastle_repro_english_psychopy.py", "rows": null, "md5": "5909228815113897317255c3d0af49d6"}}
-{"time": "2026-10-02T16:52:54", "message": "wrote 'en_rastle_repro_english.osexp'", "data": {"path": "output\\experiments\\en_rastle_repro_english.osexp", "rows": null, "md5": "9f27f68463ad00101e4c1f927b7ae043"}}
-{"time": "2026-10-02T16:52:54", "message": "wrote 'en_rastle_repro_english.html'", "data": {"path": "output\\experiments\\en_rastle_repro_english.html", "rows": null, "md5": "af1434fd4d490c6315dc7298a3207b91"}}
-{"time": "2026-10-02T16:52:55", "message": "wrote 'en_rastle_repro_english_datasheet_py.json'", "data": {"path": "output\\reports\\en_rastle_repro_english_datasheet_py.json", "rows": null, "md5": "651ba0baca016f405315378fff6ecb39"}}
-{"time": "2026-10-02T16:52:55", "message": "wrote 'en_rastle_repro_english_datasheet_py.md'", "data": {"path": "output\\reports\\en_rastle_repro_english_datasheet_py.md", "rows": null, "md5": "da38d0659369c7b47b89a6e34339e2bf"}}
+{"time": "2026-10-02T21:07:14", "message": "loading items 'items/rastle_priming_en.csv'", "data": null}
+{"time": "2026-10-02T21:07:14", "message": "loaded 12 items across 2 conditions", "data": {"conditions": "related, unrelated"}}
+{"time": "2026-10-02T21:07:14", "message": "wrote 'en_rastle_repro_english_stimuli_py.csv'", "data": {"path": "output\\stimuli\\en_rastle_repro_english_stimuli_py.csv", "rows": 24, "md5": "3f0b27cc792db7c4971b4627b5e24899"}}
+{"time": "2026-10-02T21:07:15", "message": "wrote 'en_rastle_repro_english_psychopy.py'", "data": {"path": "output\\experiments\\en_rastle_repro_english_psychopy.py", "rows": null, "md5": "5909228815113897317255c3d0af49d6"}}
+{"time": "2026-10-02T21:07:15", "message": "wrote 'en_rastle_repro_english.osexp'", "data": {"path": "output\\experiments\\en_rastle_repro_english.osexp", "rows": null, "md5": "9f27f68463ad00101e4c1f927b7ae043"}}
+{"time": "2026-10-02T21:07:16", "message": "wrote 'en_rastle_repro_english.html'", "data": {"path": "output\\experiments\\en_rastle_repro_english.html", "rows": null, "md5": "af1434fd4d490c6315dc7298a3207b91"}}
+{"time": "2026-10-02T21:07:16", "message": "wrote 'en_rastle_repro_english_datasheet_py.json'", "data": {"path": "output\\reports\\en_rastle_repro_english_datasheet_py.json", "rows": null, "md5": "4a222c2b87b75eaaab971a7f4a69738f"}}
+{"time": "2026-10-02T21:07:17", "message": "wrote 'en_rastle_repro_english_datasheet_py.md'", "data": {"path": "output\\reports\\en_rastle_repro_english_datasheet_py.md", "rows": null, "md5": "166ed0b4407dfd7461cc3908a79ef39a"}}

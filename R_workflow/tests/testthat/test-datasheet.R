@@ -28,7 +28,7 @@ test_that("datasheet captures structure and realised control", {
   report <- match_report(stim, c("length", "frequency", "n_density", "old20"), schema)
   ds <- build_datasheet(ds_design(), schema, report, stim, "x.csv",
                         list(stimuli = NULL, experiments = list()), 2026, engine = "R")
-  expect_identical(ds$lexsync_datasheet_version, "1.1")
+  expect_identical(ds$lexsync_datasheet_version, "1.2")
   expect_equal(ds$reproducibility$seed, 2026)
   roles <- stats::setNames(vapply(ds$realised_control, function(r) r$role, character(1)),
                            vapply(ds$realised_control, function(r) r$dimension, character(1)))
@@ -48,7 +48,7 @@ test_that("methods paragraph reads naturally and prereg template is emitted", {
   out <- tempfile("ds"); dir.create(out)
   paths <- write_datasheet(ds, file.path(out, "d.json"), file.path(out, "d.md"))
   loaded <- jsonlite::fromJSON(paths[1], simplifyVector = FALSE)
-  expect_identical(loaded$lexsync_datasheet_version, "1.1")
+  expect_identical(loaded$lexsync_datasheet_version, "1.2")
   md <- paste(readLines(paths[2], warn = FALSE), collapse = "\n")
   expect_true(grepl("Pre-registration template", md, fixed = TRUE))
 })
@@ -66,6 +66,110 @@ test_that("datasheet builds for a table source without a report", {
   expect_identical(ds$counterbalancing$recipe, "latin_square_target")
   expect_true(grepl("item table", methods_paragraph(ds), fixed = TRUE))
   expect_length(ds$dimensions, 0L)
+})
+
+# ---- Datasheet v1.2: the counterbalancing that ran --------------------------
+# test_datasheet.py asserts the same properties.
+
+ds_priming_table <- function(conditions = c("related", "unrelated"), n_sets = 4L) {
+  s <- rep(seq_len(n_sets), each = length(conditions))
+  data.frame(item = s, set = s, condition = rep(conditions, n_sets),
+             prime = paste0(rep(substr(conditions, 1L, 3L), n_sets), s),
+             target = paste0("t", s), stringsAsFactors = FALSE)
+}
+
+ds_table_design <- function(...) {
+  utils::modifyList(list(name = "p", language = "english", paradigm = "priming",
+                         items = list(source = "table", path = "items/p.csv")),
+                    list(...))
+}
+
+test_that("the datasheet records the realised lists", {
+  # A Latin square without counterbalance.lists realises one list per condition, but
+  # the record read counterbalance.lists with a default of 1, and the Methods text
+  # said "1 list(s)". The latin_no_lists twin-edge case pins the same run.
+  schema <- ds_schema()
+  design <- ds_table_design()
+  out <- counterbalance(ds_priming_table(), design, schema)
+  ds <- build_datasheet(design, schema, NULL, out, "items/p.csv",
+                        list(stimuli = NULL, experiments = list()), 2026, engine = "R")
+  record <- ds$counterbalancing
+  expect_identical(record$recipe, "latin_square_target")
+  expect_identical(record$lists, 2L)
+  expect_true(record$complete)
+  expect_length(record$issues, 0L)
+  cells <- list()
+  for (l in 1:2) for (cnd in c("related", "unrelated")) {
+    cells[[length(cells) + 1L]] <- list(list = l, condition = cnd, n_trials = 2L)
+  }
+  expect_identical(record$cells, cells)
+  expect_true(grepl("counterbalanced into 2 list(s) (a Latin-square rotation)",
+                    methods_paragraph(ds), fixed = TRUE))
+  md <- lexsync:::render_datasheet_md(ds)
+  expect_true(grepl("## Counterbalanced lists", md, fixed = TRUE))
+  expect_true(grepl("| 2 | unrelated | 2 |", md, fixed = TRUE))
+})
+
+test_that("build_datasheet accepts a frame without list", {
+  # build_datasheet is exported, so it may be given a frame that was never
+  # counterbalanced. The record then gives the lists counterbalance() would deal: one
+  # per condition for a Latin square, else counterbalance.lists or 1.
+  schema <- ds_schema()
+  stim <- ds_priming_table()
+  files <- list(stimuli = NULL, experiments = list())
+  ds <- build_datasheet(ds_table_design(), schema, NULL, stim, "items/p.csv", files, 2026,
+                        engine = "R")
+  expect_identical(ds$counterbalancing$lists, 2L)
+  expect_length(ds$counterbalancing$cells, 0L)
+  four <- build_datasheet(ds_table_design(counterbalance = list(lists = 4L)), schema, NULL,
+                          stim, "items/p.csv", files, 2026, engine = "R")
+  expect_identical(four$counterbalancing$lists, 4L)
+  corpus <- build_datasheet(ds_design(), schema, NULL, ds_stim(), "x.csv", files, 2026,
+                            engine = "R")
+  expect_identical(corpus$counterbalancing$lists, 1L)
+  unset <- ds_design()
+  unset$counterbalance <- NULL
+  expect_identical(build_datasheet(unset, schema, NULL, ds_stim(), "x.csv", files, 2026,
+                                   engine = "R")$counterbalancing$lists, 1L)
+})
+
+test_that("the datasheet records the recipe counterbalance applied", {
+  # The record inferred the recipe from items.source while counterbalance() dispatched
+  # on the paradigm, so a table-sourced lexical-decision design was recorded as a
+  # Latin-square rotation it never had.
+  schema <- ds_schema()
+  stim <- data.frame(target = c("a", "b"), condition = c("word", "pseudoword"),
+                     set = c(1, 1), stringsAsFactors = FALSE)
+  files <- list(stimuli = NULL, experiments = list())
+  design <- list(name = "t", language = "english", paradigm = "lexical_decision",
+                 items = list(source = "table", path = "items/t.csv"),
+                 counterbalance = list(lists = 1L))
+  ds <- build_datasheet(design, schema, NULL, stim, "items/t.csv", files, 2026, engine = "R")
+  expect_identical(ds$counterbalancing$recipe, "factorial")
+  expect_false(grepl("Latin-square", methods_paragraph(ds), fixed = TRUE))
+  design$paradigm <- "priming"
+  design$events <- list(list(type = "text", content = "{target}", duration_ms = 800L))
+  ds <- build_datasheet(design, schema, NULL, stim, "items/t.csv", files, 2026, engine = "R")
+  expect_identical(ds$counterbalancing$recipe, "latin_square_target")
+  design$counterbalance <- list(lists = 1L, recipe = "factorial")
+  ds <- build_datasheet(design, schema, NULL, stim, "items/t.csv", files, 2026, engine = "R")
+  expect_identical(ds$counterbalancing$recipe, "factorial")
+})
+
+test_that("an incomplete rotation is described as incomplete", {
+  schema <- ds_schema()
+  design <- ds_table_design(counterbalance = list(lists = 2L))
+  out <- counterbalance(ds_priming_table(c("identity", "related", "unrelated"), 6L),
+                        design, schema)
+  ds <- build_datasheet(design, schema, NULL, out, "items/p.csv",
+                        list(stimuli = NULL, experiments = list()), 2026, engine = "R")
+  issue <- "With 2 lists and 3 conditions, each item appears in only 2 of its 3 conditions."
+  expect_false(ds$counterbalancing$complete)
+  expect_identical(unlist(ds$counterbalancing$issues), issue)
+  expect_true(grepl("counterbalanced into 2 list(s) (an incomplete Latin-square rotation)",
+                    methods_paragraph(ds), fixed = TRUE))
+  expect_true(grepl(paste0("- **Incomplete rotation:** ", issue),
+                    lexsync:::render_datasheet_md(ds), fixed = TRUE))
 })
 
 test_that("the datasheet records the tolerance windows the matcher applied", {

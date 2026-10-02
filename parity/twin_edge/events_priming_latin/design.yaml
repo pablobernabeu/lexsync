@@ -1,0 +1,38 @@
+# Twin-edge case: a priming design that lists its own events, reading the prime's
+# duration from the items and jittering the blank, as config/design_en_priming_jitter
+# does. Listing events used to switch the recipe to factorial, so each list showed
+# its targets in both conditions. The priming paradigm's Latin square now applies, and
+# each list shows each of the six targets once.
+# The prime-target pairs are common English words paired for this fixture, and the
+# prime durations are illustrative.
+name: twin_edge_events_priming_latin
+language: english
+paradigm: priming
+description: 'Priming with its own events: a per-trial prime duration and a jittered blank.'
+items:
+  source: table
+  path: items.csv
+events:
+  - type: fixation
+    content: '+'
+    duration_ms: 500
+  - type: text
+    content: '{prime}'
+    duration: {from_column: prime_ms}
+    trigger: 20
+    onset_locked: true
+  - type: mask
+    content: '#####'
+    duration_ms: 33
+  - type: text
+    content: '{target}'
+    duration_ms: 800
+    trigger: condition
+    onset_locked: true
+  - type: response
+    keys: [left, right]
+    timeout_ms: 2000
+  - type: blank
+    duration: {jitter: [400, 800], as: iti_ms}
+counterbalance:
+  lists: 2

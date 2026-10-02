@@ -47,11 +47,11 @@ CASES = [
     ("en_resample_english", "config/design_en_resample.yaml",
      ["replicate", "word", "condition", "set"]),
     ("en_priming_english", "config/design_en_priming.yaml", ["list", "set", "condition", "prime", "target"]),
-    # Variable timing: soa_ms is read from the items, iti_ms is drawn from the
+    # Variable timing: prime_ms is read from the items, iti_ms is drawn from the
     # keyed hash. Both are identity columns, so the engines must agree on the
     # realised milliseconds and not merely on which stimuli were chosen.
     ("en_priming_jitter_english", "config/design_en_priming_jitter.yaml",
-     ["list", "set", "condition", "prime", "target", "soa_ms", "iti_ms"]),
+     ["list", "set", "condition", "prime", "target", "prime_ms", "iti_ms"]),
     # The pair-keyed model: member norms joined onto both words, a relational
     # dimension computed in-engine, and continuous selection over pairs. The
     # member and pair columns are identity columns, so the engines must agree on

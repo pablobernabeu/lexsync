@@ -1,0 +1,13 @@
+item,condition,prime,target
+1,related,nurse,doctor
+1,unrelated,window,doctor
+2,related,dog,cat
+2,unrelated,table,cat
+3,related,queen,king
+3,unrelated,pencil,king
+4,related,butter,bread
+4,unrelated,planet,bread
+5,related,cold,hot
+5,unrelated,paper,hot
+6,related,white,black
+6,unrelated,river,black

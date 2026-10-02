@@ -1,0 +1,13 @@
+item,condition,prime,target,prime_ms,set,list,trial,iti_ms
+2,unrelated,table,cat,250,2,1,1,667
+5,related,cold,hot,250,5,1,2,800
+4,unrelated,planet,bread,60,4,1,3,605
+6,unrelated,river,black,1200,6,1,4,536
+3,related,queen,king,1200,3,1,5,518
+1,related,nurse,doctor,60,1,1,6,750
+2,related,dog,cat,250,2,2,1,563
+1,unrelated,window,doctor,60,1,2,2,760
+3,unrelated,pencil,king,1200,3,2,3,543
+6,related,white,black,1200,6,2,4,791
+4,related,butter,bread,60,4,2,5,578
+5,unrelated,paper,hot,250,5,2,6,515

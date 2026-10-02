@@ -3,9 +3,11 @@
 Mirrors R_workflow/R/counterbalancing.R. Two recipes are provided: the original
 ``factorial`` one (every matched item is shown, lists split the matched sets) and
 ``latin_square_target`` for paired/sentence paradigms (each item appears once per
-list in one rotated condition, so a target is never repeated within a list). Trial
-order within a list comes from a seeded, keyed-hash shuffle, so the R and Python
-engines produce the same order byte for byte.
+list in one rotated condition, so a target is never repeated within a list). The
+design's paradigm chooses between them, and ``counterbalance.recipe`` overrides it.
+Trial order within a list comes from a seeded, keyed-hash shuffle, so the R and
+Python engines produce the same order byte for byte. ``counterbalance_check``
+reports a rotation that the lists or the item sets leave incomplete.
 """
 from __future__ import annotations
 
@@ -19,15 +21,154 @@ import pandas as pd
 from .io_utils import _key_part
 from .paradigms import get_paradigm
 
+# The recipes counterbalance() knows, which counterbalance.recipe may name, and the
+# policies counterbalance.incomplete accepts. Both are closed sets, so a misspelt
+# value is refused, and the error names it.
+RECIPES = ("factorial", "latin_square_target")
+INCOMPLETE_POLICIES = ("allow", "error")
+
 
 def _recipe(design: dict) -> str:
-    if design.get("events"):
-        return "factorial"
+    """The recipe counterbalance() applies to a design.
+
+    ``counterbalance.recipe`` when the design names one, else the recipe of the
+    paradigm it names, else ``factorial``. An ``events`` list has no say in it. It
+    used to switch the recipe to ``factorial``. A priming design that read its
+    prime's duration from the items then showed every target in both conditions of
+    each list, the repetition the paradigm's Latin square exists to prevent. The
+    datasheet takes its recipe from here too, so the record names the recipe that
+    ran. Mirrors .cb_recipe in R_workflow/R/counterbalancing.R.
+    """
+    # Read on presence, as R's %||% reads it, so an empty string is refused like any
+    # other unknown name and never falls through to the paradigm.
+    named = (design.get("counterbalance") or {}).get("recipe")
+    if named is not None:
+        if not isinstance(named, str) or named not in RECIPES:
+            raise ValueError(f"lexsync: unknown counterbalance.recipe '{named}'. "
+                             f"Known recipes: {', '.join(RECIPES)}.")
+        return named
     name = design.get("paradigm", "factorial")
     try:
         return get_paradigm(name).get("counterbalance", "factorial")
     except ValueError:
         return "factorial"
+
+
+def _incomplete_policy(design: dict, schema: dict) -> str:
+    """Resolve ``counterbalance.incomplete``: the design's, else the schema's, else ``allow``.
+
+    This is the cascade of matching.shortfall. Like R's %||%, it takes any value that
+    is present, so the two engines resolve the same one. Mirrors
+    .cb_incomplete_policy in R_workflow/R/counterbalancing.R.
+    """
+    val = (design.get("counterbalance") or {}).get("incomplete")
+    if val is None:
+        val = (schema.get("counterbalance") or {}).get("incomplete")
+    if val is None:
+        val = "allow"
+    if not isinstance(val, str) or val not in INCOMPLETE_POLICIES:
+        raise ValueError(f"lexsync: unknown counterbalance.incomplete policy '{val}'. "
+                         f"Known policies: {', '.join(INCOMPLETE_POLICIES)}.")
+    return val
+
+
+def _default_lists(design: dict, recipe: str, n_cond: int) -> int:
+    """The lists counterbalance() deals when the frame does not say: the declared
+    ``counterbalance.lists``, else one per condition for a Latin square and one list
+    for the factorial recipe."""
+    lists = (design.get("counterbalance") or {}).get("lists")
+    if lists is None:
+        return n_cond if recipe == "latin_square_target" else 1
+    return int(lists)
+
+
+def counterbalance_check(stimuli: pd.DataFrame, design: dict, recipe: str | None = None,
+                         conditions=None) -> dict:
+    """Whether a counterbalanced table rotates its conditions completely.
+
+    A Latin square is complete when every item takes each of its conditions in the
+    same number of lists and every list holds each condition equally often. Four
+    things break that, and each one is reported in a sentence that both engines word
+    identically. One list shows every participant an item in the same condition,
+    which confounds item and condition fully. Fewer lists than conditions leave each
+    item out of some of its conditions. More lists than conditions, but not a
+    multiple of them, give an item some conditions in more lists than others. And
+    item sets that are not a multiple of the conditions leave the conditions within a
+    list one trial apart. The factorial recipe raises none of these: it shows every
+    item in every condition, and counterbalance() refuses lists it would leave empty.
+
+    ``stimuli`` is the table counterbalance() returned. Without a ``list`` column, the
+    lists are the ones counterbalance() would deal. ``conditions`` names the conditions
+    the design rotates through, by default those the table holds. The pipeline passes
+    them from the table it counterbalanced, since a Latin square with fewer item sets
+    than conditions can leave a condition out of every list.
+
+    Returns ``{"complete", "issues", "lists", "cells"}``. ``complete`` says whether no
+    issue was found and ``issues`` gives the sentences. ``lists`` is the number of
+    lists, and ``cells`` counts the trials in each cell of (replicate, when the table
+    has one) by list by condition, empty cells included. Mirrors
+    .counterbalance_check in R_workflow/R/counterbalancing.R.
+    """
+    recipe = recipe if recipe is not None else _recipe(design)
+    source = stimuli["condition"] if conditions is None else conditions
+    conds = sorted({str(c) for c in source}, key=lambda s: s.encode("utf-8"))
+    n_cond = len(conds)
+    has_list = "list" in stimuli.columns
+    n_lists = (int(stimuli["list"].nunique()) if has_list
+               else _default_lists(design, recipe, n_cond))
+    has_rep = "replicate" in stimuli.columns
+    parts = ([(int(r), g) for r, g in stimuli.groupby("replicate", sort=True)]
+             if has_rep else [(None, stimuli)])
+
+    issues = []
+    if recipe == "latin_square_target" and n_cond > 1:
+        if n_lists == 1:
+            issues.append("With one list, every participant sees each item in the same "
+                          "condition, so item and condition are fully confounded.")
+        elif n_lists < n_cond:
+            issues.append(f"With {n_lists} lists and {n_cond} conditions, each item "
+                          f"appears in only {n_lists} of its {n_cond} conditions.")
+        elif n_lists % n_cond:
+            issues.append(f"With {n_lists} lists and {n_cond} conditions, the lists are "
+                          "not a multiple of the conditions, so each item appears in some "
+                          "conditions in more lists than in others.")
+        # Each replicate is rotated on its own, so each is checked on its own.
+        # Replicates of one size give one sentence between them.
+        for _, part in parts:
+            n_sets = int(part["set"].nunique())
+            if n_sets % n_cond:
+                issue = (f"With {n_sets} item {'set' if n_sets == 1 else 'sets'} and "
+                         f"{n_cond} conditions, the item sets are not a multiple of the "
+                         "conditions, so the conditions within each list differ by one "
+                         "trial.")
+                if issue not in issues:
+                    issues.append(issue)
+
+    cells = []
+    if has_list:
+        lists = sorted(int(v) for v in stimuli["list"].unique())
+        for rep, part in parts:
+            labels = part["condition"].astype(str)
+            for lst in lists:
+                in_list = part["list"] == lst
+                for cond in conds:
+                    cell = {"list": lst, "condition": cond,
+                            "n_trials": int((in_list & (labels == cond)).sum())}
+                    cells.append(cell if rep is None else {"replicate": rep, **cell})
+    return {"complete": not issues, "issues": issues, "lists": n_lists, "cells": cells}
+
+
+def _check_incomplete(check: dict, policy: str) -> None:
+    """Refuse an incomplete rotation when counterbalance.incomplete is ``error``.
+
+    Must stay identical to .check_incomplete in R_workflow/R/counterbalancing.R.
+    """
+    if check["complete"] or policy != "error":
+        return
+    raise ValueError("lexsync: the Latin-square rotation is incomplete and "
+                     "counterbalance.incomplete is 'error'. " + " ".join(check["issues"])
+                     + " Make the lists and the item sets multiples of the number of "
+                     "conditions, or set counterbalance.incomplete: allow.")
 
 
 def _shuffle_deterministic(df: pd.DataFrame, seed) -> pd.DataFrame:
@@ -313,6 +454,21 @@ def balance_lists(stimuli: pd.DataFrame, design: dict, schema: dict) -> dict:
 
 def counterbalance(stimuli: pd.DataFrame, design: dict, schema: dict,
                    list_of_set=None) -> pd.DataFrame:
+    """Assign stimuli to lists and a randomised, reproducible trial order.
+
+    The recipe is ``counterbalance.recipe`` when the design names one, and otherwise
+    the recipe of the paradigm it names. That is the factorial recipe for matched word
+    lists, or a Latin square over conditions for the paired and sentence paradigms. A
+    design's own ``events`` list has no say in the recipe. The factorial recipe
+    refuses more lists than item sets, since the surplus lists would be empty.
+
+    ``list_of_set`` optionally maps each ``set`` to a list, from ``balance_lists``.
+    The pipeline supplies it when ``counterbalance.optimise`` is on. Without it, the
+    factorial recipe deals sets to lists by rank.
+
+    Returns ``stimuli`` with added ``list`` and ``trial`` columns. Mirrors
+    counterbalance() in R_workflow/R/counterbalancing.R.
+    """
     # Resampled designs counterbalance each replicate (an independent item set)
     # on its own, so trial order is numbered within each replicate.
     if "replicate" in stimuli.columns and stimuli["replicate"].nunique() > 1:
@@ -335,8 +491,20 @@ def counterbalance_factorial(stimuli: pd.DataFrame, design: dict, schema: dict,
     seed = schema.get("seed", 1)
     stimuli = stimuli.copy()
     stimuli["list"] = 1
+    sets = sorted(stimuli["set"].unique())
+    if n_lists > len(sets):
+        # Each list receives whole item sets, so lists beyond the number of sets would
+        # be empty, and the datasheet would describe lists that do not exist. Must
+        # stay identical to the refusal in counterbalance_factorial in
+        # R_workflow/R/counterbalancing.R.
+        n_sets = len(sets)
+        have = ("there is only 1 item set" if n_sets == 1
+                else f"there are only {n_sets} item sets")
+        empty = (f"list {n_sets + 1}" if n_lists == n_sets + 1
+                 else f"lists {n_sets + 1} to {n_lists}")
+        raise ValueError(f"lexsync: counterbalance.lists is {n_lists} but {have}, so "
+                         f"{empty} would be empty; lower lists or add items.")
     if n_lists > 1:
-        sets = sorted(stimuli["set"].unique())
         if list_of_set is not None:
             # A balanced assignment from balance_lists(). Looked up by set VALUE, since
             # the map is keyed by it; a set the map does not name is a caller error
@@ -362,9 +530,11 @@ def counterbalance_latin_square(stimuli: pd.DataFrame, design: dict, schema: dic
     """One row per item per list, condition rotated across lists (Latin square).
 
     Each item (``set``) contributes exactly one trial to a list, so its target is
-    never repeated within a list; conditions are balanced because items rotate
-    through them. With ``lists`` unset the number of lists equals the number of
-    conditions, the canonical fully-counterbalanced design.
+    never repeated within a list. The conditions are balanced when the lists and the
+    item sets are both multiples of the number of conditions, and
+    ``counterbalance_check`` reports a rotation that is not. With ``lists`` unset the
+    number of lists equals the number of conditions, the canonical
+    fully-counterbalanced design.
     """
     seed = schema.get("seed", 1)
     conds = sorted(stimuli["condition"].unique(), key=lambda s: str(s).encode("utf-8"))

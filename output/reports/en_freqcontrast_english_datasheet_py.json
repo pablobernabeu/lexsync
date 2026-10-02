@@ -31,6 +31,20 @@
     }
   ],
   "counterbalancing": {
+    "cells": [
+      {
+        "condition": "high_frequency",
+        "list": 1,
+        "n_trials": 80
+      },
+      {
+        "condition": "low_frequency",
+        "list": 1,
+        "n_trials": 80
+      }
+    ],
+    "complete": true,
+    "issues": [],
     "lists": 1,
     "recipe": "factorial"
   },
@@ -88,7 +102,7 @@
     "stimuli_file": "output/stimuli/en_freqcontrast_english_stimuli_py.csv",
     "stimuli_sha256": "bddfbecb36d87c6146d463cc201d4844277c2942411d9fd533f89d7507b297b9"
   },
-  "lexsync_datasheet_version": "1.1",
+  "lexsync_datasheet_version": "1.2",
   "materials_source": {
     "path": "corpora/derived/en.csv",
     "provenance": "wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md",
@@ -140,7 +154,7 @@
   "relational": null,
   "reproducibility": {
     "design_sha256": "c32f871683d2576c71d5d84aaa73c3ee3829da2015ae00495cab580e4dcada73",
-    "schema_sha256": "483a9cec49314b9479fe656ad39840083a551f2e4313ca164efe3e9c064fb255",
+    "schema_sha256": "978979ec5f0c6182ac2611863021a722f3412cc179039614f63311b3e3ff3331",
     "seed": 2026,
     "versions": {
       "engine": "python",

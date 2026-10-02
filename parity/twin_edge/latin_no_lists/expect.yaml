@@ -1,0 +1,8 @@
+# Both engines deal the six targets into one list per condition, and the datasheet
+# records the two lists the table holds.
+outcome: artefacts
+compare: [stimuli]
+datasheet:
+  counterbalancing.recipe: latin_square_target
+  counterbalancing.lists: 2
+  counterbalancing.complete: true

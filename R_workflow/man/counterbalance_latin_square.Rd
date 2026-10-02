@@ -8,9 +8,11 @@ counterbalance_latin_square(stimuli, design, schema)
 }
 \description{
 Each item (\code{set}) contributes exactly one trial to a list, so its target is
-never repeated within a list; conditions are balanced because items rotate
-through them. With \code{lists} unset the number of lists equals the number of
-conditions. Mirrors the Python recipe (byte-order condition list, zero-based
-rotation), so the two engines assign the same condition to each item per list.
+never repeated within a list. The conditions are balanced when the lists and the
+item sets are both multiples of the number of conditions, and
+\code{.counterbalance_check()} reports a rotation that is not. With \code{lists} unset the
+number of lists equals the number of conditions. Mirrors the Python recipe
+(byte-order condition list, zero-based rotation), so the two engines assign the
+same condition to each item per list.
 }
 \keyword{internal}

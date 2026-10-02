@@ -54,6 +54,20 @@
         }
       ]
     },
+    "cells": [
+      {
+        "condition": "pseudoword",
+        "list": 1,
+        "n_trials": 20
+      },
+      {
+        "condition": "word",
+        "list": 1,
+        "n_trials": 20
+      }
+    ],
+    "complete": true,
+    "issues": [],
     "lists": 1,
     "recipe": "factorial"
   },
@@ -86,7 +100,7 @@
     "stimuli_file": "output/stimuli/en_lexdec_blocks_english_stimuli_py.csv",
     "stimuli_sha256": "ca9c63f17f5bdc019e694cd56f4ee1b2c4915f7b470ee9d90ca871000318cd74"
   },
-  "lexsync_datasheet_version": "1.1",
+  "lexsync_datasheet_version": "1.2",
   "materials_source": {
     "path": "corpora/derived/en.csv",
     "provenance": "wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md",
@@ -108,7 +122,7 @@
   "relational": null,
   "reproducibility": {
     "design_sha256": "c356ede15b8587796968b9e45f4f1db651fee0d9dac6da8934890f85bf3ed626",
-    "schema_sha256": "483a9cec49314b9479fe656ad39840083a551f2e4313ca164efe3e9c064fb255",
+    "schema_sha256": "978979ec5f0c6182ac2611863021a722f3412cc179039614f63311b3e3ff3331",
     "seed": 2026,
     "versions": {
       "engine": "python",

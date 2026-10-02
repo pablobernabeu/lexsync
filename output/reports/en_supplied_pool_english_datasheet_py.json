@@ -31,6 +31,20 @@
     }
   ],
   "counterbalancing": {
+    "cells": [
+      {
+        "condition": "higher_frequency",
+        "list": 1,
+        "n_trials": 20
+      },
+      {
+        "condition": "lower_frequency",
+        "list": 1,
+        "n_trials": 20
+      }
+    ],
+    "complete": true,
+    "issues": [],
     "lists": 1,
     "recipe": "factorial"
   },
@@ -88,7 +102,7 @@
     "stimuli_file": "output/stimuli/en_supplied_pool_english_stimuli_py.csv",
     "stimuli_sha256": "13f355dbfa4669d3352ec765364c4ced12f067b510abe6ec44df9e49fc909263"
   },
-  "lexsync_datasheet_version": "1.1",
+  "lexsync_datasheet_version": "1.2",
   "materials_source": {
     "dimensions_from": "corpora/derived/en.csv",
     "dimensions_sha256": "575833489e04d6a4001fda56a56e3daa383811dece1f819c44060ee79ca56976",
@@ -142,7 +156,7 @@
   "relational": null,
   "reproducibility": {
     "design_sha256": "919571123fbe696f3c3b7e491f26f74727eb76fe2686b7c4487253faf97973a4",
-    "schema_sha256": "483a9cec49314b9479fe656ad39840083a551f2e4313ca164efe3e9c064fb255",
+    "schema_sha256": "978979ec5f0c6182ac2611863021a722f3412cc179039614f63311b3e3ff3331",
     "seed": 2026,
     "versions": {
       "engine": "python",

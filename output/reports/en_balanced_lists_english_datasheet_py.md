@@ -1,6 +1,6 @@
 # Materials datasheet — en_balanced_lists (english)
 
-*lexsync datasheet v1.1; python engine.*
+*lexsync datasheet v1.2; python engine.*
 
 ## Provenance
 
@@ -20,6 +20,19 @@
 - **Cost unit:** summed absolute deviation of each list's dimension total from its fair share, in milli-units of the dimension's mean, scaled by the number of item sets
 - The search ran to a local optimum: no single exchange of two item sets between lists would reduce the imbalance further.
 - The search is a deterministic integer descent with a keyed-hash tie-break, so it uses no random number generator and the R and Python engines produce the same assignment.
+
+## Counterbalanced lists
+
+| List | Condition | Trials |
+|---|---|---|
+| 1 | high_frequency | 10 |
+| 1 | low_frequency | 10 |
+| 2 | high_frequency | 10 |
+| 2 | low_frequency | 10 |
+| 3 | high_frequency | 10 |
+| 3 | low_frequency | 10 |
+| 4 | high_frequency | 10 |
+| 4 | low_frequency | 10 |
 
 ## Selection transparency
 

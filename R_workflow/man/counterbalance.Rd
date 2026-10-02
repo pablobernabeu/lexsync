@@ -9,7 +9,8 @@ counterbalance(stimuli, design, schema, list_of_set = NULL)
 \arguments{
 \item{stimuli}{A stimuli data frame (matched set or loaded item table).}
 
-\item{design}{A parsed design configuration.}
+\item{design}{A parsed design configuration. Reads \code{paradigm},
+\code{counterbalance.recipe} and \code{counterbalance.lists}.}
 
 \item{schema}{The parsed global schema (provides the seed).}
 
@@ -22,6 +23,9 @@ lists by rank as before.}
 \code{stimuli} with added \code{list} and \code{trial} columns.
 }
 \description{
-Dispatches on the design's paradigm: the factorial recipe for matched word
-lists, or a Latin square over conditions for paired/sentence paradigms.
+The recipe is \code{counterbalance.recipe} when the design names one, and otherwise
+the recipe of the paradigm it names. That is the factorial recipe for matched word
+lists, or a Latin square over conditions for the paired and sentence paradigms. A
+design's own \code{events} list has no say in the recipe. The factorial recipe refuses
+more lists than item sets, since the surplus lists would be empty.
 }

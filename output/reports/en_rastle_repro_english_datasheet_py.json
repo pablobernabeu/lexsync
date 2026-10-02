@@ -23,6 +23,30 @@
     }
   ],
   "counterbalancing": {
+    "cells": [
+      {
+        "condition": "related",
+        "list": 1,
+        "n_trials": 6
+      },
+      {
+        "condition": "unrelated",
+        "list": 1,
+        "n_trials": 6
+      },
+      {
+        "condition": "related",
+        "list": 2,
+        "n_trials": 6
+      },
+      {
+        "condition": "unrelated",
+        "list": 2,
+        "n_trials": 6
+      }
+    ],
+    "complete": true,
+    "issues": [],
     "lists": 2,
     "recipe": "latin_square_target"
   },
@@ -49,7 +73,7 @@
     "stimuli_file": "output/stimuli/en_rastle_repro_english_stimuli_py.csv",
     "stimuli_sha256": "fe1a1ee921eebb9429580b57eeb8c3c8728ce581687c2b2a78a34bcedb21d2f0"
   },
-  "lexsync_datasheet_version": "1.1",
+  "lexsync_datasheet_version": "1.2",
   "materials_source": {
     "path": "items/rastle_priming_en.csv",
     "provenance": "user-supplied item table",
@@ -60,7 +84,7 @@
   "relational": null,
   "reproducibility": {
     "design_sha256": "305de9ee748ee1fa071157bb8856610961be4304d2505331d7e7e636539ce4e8",
-    "schema_sha256": "483a9cec49314b9479fe656ad39840083a551f2e4313ca164efe3e9c064fb255",
+    "schema_sha256": "978979ec5f0c6182ac2611863021a722f3412cc179039614f63311b3e3ff3331",
     "seed": 2026,
     "versions": {
       "engine": "python",

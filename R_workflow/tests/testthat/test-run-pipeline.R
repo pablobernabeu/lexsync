@@ -347,6 +347,76 @@ test_that("a pair design's window relaxation reaches the datasheet", {
   expect_true(grepl("tolerance window relaxed", log, fixed = TRUE))
 })
 
+# Three conditions in two lists run under the default counterbalance.incomplete: allow,
+# and the run log, the datasheet and the Methods text say what the rotation leaves out.
+# Pinned identically in tests/test_run_pipeline.py.
+test_that("an incomplete rotation reaches the run log and the datasheet", {
+  out <- tmp_out()
+  items <- file.path(out, "items.csv")
+  grid <- expand.grid(c = c("identity", "related", "unrelated"), s = 1:6,
+                      stringsAsFactors = FALSE)
+  writeLines(c("item,condition,prime,target",
+               sprintf("%d,%s,%s%d,t%d", grid$s, grid$c, substr(grid$c, 1L, 3L), grid$s,
+                       grid$s)),
+             items, useBytes = TRUE)
+  design <- write_design(out, c(
+    "name: guard_incomplete",
+    "language: english",
+    "paradigm: priming",
+    "items:",
+    "  source: table",
+    paste0("  path: ", as_yaml_path(items)),
+    "counterbalance:",
+    "  lists: 2"
+  ))
+  res <- run_quiet(design, extdata("schema.yaml"), outdir = out)
+  issue <- "With 2 lists and 3 conditions, each item appears in only 2 of its 3 conditions."
+  log <- paste(readLines(res$log, warn = FALSE), collapse = "\n")
+  expect_true(grepl(paste0("counterbalancing: ", issue), log, fixed = TRUE))
+  record <- jsonlite::fromJSON(file.path(out, "reports",
+                                         "guard_incomplete_english_datasheet_R.json"),
+                               simplifyVector = FALSE)$counterbalancing
+  expect_false(record$complete)
+  expect_identical(unlist(record$issues), issue)
+  expect_identical(as.integer(record$lists), 2L)
+  md <- paste(readLines(file.path(out, "reports", "guard_incomplete_english_datasheet_R.md"),
+                        warn = FALSE), collapse = "\n")
+  expect_true(grepl("(an incomplete Latin-square rotation)", md, fixed = TRUE))
+})
+
+# One item set in three conditions, dealt to two lists, never shows its third
+# condition. The check counts the conditions of the table the pipeline dealt, not those
+# the lists hold, so it reports three conditions and gives the condition left out an
+# empty cell in each list. Pinned identically in tests/test_run_pipeline.py.
+test_that("a condition no list reaches is still counted", {
+  out <- tmp_out()
+  items <- file.path(out, "items.csv")
+  writeLines(c("item,condition,prime,target", "1,identity,ide1,t1", "1,related,rel1,t1",
+               "1,unrelated,unr1,t1"), items, useBytes = TRUE)
+  design <- write_design(out, c(
+    "name: guard_unreached",
+    "language: english",
+    "paradigm: priming",
+    "items:",
+    "  source: table",
+    paste0("  path: ", as_yaml_path(items)),
+    "counterbalance:",
+    "  lists: 2"
+  ))
+  run_quiet(design, extdata("schema.yaml"), outdir = out)
+  record <- jsonlite::fromJSON(file.path(out, "reports",
+                                         "guard_unreached_english_datasheet_R.json"),
+                               simplifyVector = FALSE)$counterbalancing
+  expect_identical(unlist(record$issues), c(
+    "With 2 lists and 3 conditions, each item appears in only 2 of its 3 conditions.",
+    paste0("With 1 item set and 3 conditions, the item sets are not a multiple of the ",
+           "conditions, so the conditions within each list differ by one trial.")))
+  cells <- vapply(record$cells, function(x) sprintf("%s %s %s", x$list, x$condition,
+                                                    x$n_trials), character(1))
+  expect_identical(cells, c("1 identity 1", "1 related 0", "1 unrelated 0",
+                            "2 identity 0", "2 related 1", "2 unrelated 0"))
+})
+
 test_that("a continuous design over a supplied pool selects continuously", {
   # The predicate that gates the continuous selector must treat a supplied
   # pool like a corpus; before the fix this design fell through to the

@@ -1,4 +1,4 @@
-item,condition,prime,target,soa_ms
+item,condition,prime,target,prime_ms
 1,related,nurse,doctor,60
 1,unrelated,window,doctor,60
 2,related,dog,cat,250

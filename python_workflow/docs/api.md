@@ -97,9 +97,10 @@ event sequence, or supplies its own `events`.
 
 ## Counterbalancing
 
-Two recipes are available, and the paradigm chooses between them. Trial order comes from a seeded,
-keyed-hash shuffle, a pure function of the design with no generator behind it, so the same seed
-gives the same order in both engines. `balance_lists` is the optional search for a list assignment
+Two recipes are available, and the paradigm chooses between them unless the design names one in
+`counterbalance.recipe`. A design's own `events` do not change the choice. Trial order comes from a
+seeded, keyed-hash shuffle, a pure function of the design with no generator behind it, so the same
+seed gives the same order in both engines. `balance_lists` is the optional search for a list assignment
 whose lists are equated on the item dimensions, where the plain deal goes by set rank.
 
 ::: lexsync.counterbalance

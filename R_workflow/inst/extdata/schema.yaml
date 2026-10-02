@@ -95,6 +95,14 @@ matching:
   # two engines select identical stimuli without an RNG.
 
 # ---- Counterbalancing list assignment --------------------------------------
+# A design's paradigm decides its counterbalancing recipe, whether or not the design
+# lists its own events: `factorial` for the factorial and lexical_decision paradigms,
+# and `latin_square_target` for priming, self_paced_reading and categorisation. A
+# design may name the recipe itself:
+#
+#   counterbalance:
+#     recipe: latin_square_target   # factorial | latin_square_target
+#
 # The factorial recipe deals item sets to lists by rank: set 1 to list 1, set 2 to
 # list 2, and so on. That is reproducible but arbitrary with respect to the items, so
 # one list can end up holding systematically shorter or more frequent words than
@@ -128,6 +136,14 @@ matching:
 # It does not apply to the Latin-square recipe and is refused there: every item
 # appears in every list already, so the lists are balanced on the items by
 # construction and the rotation decides only which condition each item takes.
+#
+# A Latin-square rotation is incomplete when there is one list, or when the lists or
+# the item sets are not a multiple of the number of conditions. Under `allow`, the
+# run log and the datasheet report it, and the Methods text calls the rotation
+# incomplete. Under `error`, the run is refused. A design's own
+# counterbalance.incomplete overrides the setting here.
+counterbalance:
+  incomplete: allow   # what to do with an incomplete Latin-square rotation: allow | error
 
 # ---- Equivalence testing (reported in the descriptives) -------------------
 # Equivalence is assessed by two one-sided tests (TOST), fixed in validation.py /
@@ -181,7 +197,7 @@ presentation:
   # An event's duration may also vary from trial to trial, declared per event in
   # a design rather than here:
   #
-  #   duration: {from_column: soa_ms}              read per trial from the items
+  #   duration: {from_column: prime_ms}            read per trial from the items
   #   duration: {jitter: [400, 800], as: iti_ms}   drawn per trial, uniform, in ms
   #
   # A drawn value is not a random number. It is a uniform integer keyed on the

@@ -31,6 +31,30 @@
     }
   ],
   "counterbalancing": {
+    "cells": [
+      {
+        "condition": "HF_largeN",
+        "list": 1,
+        "n_trials": 18
+      },
+      {
+        "condition": "HF_smallN",
+        "list": 1,
+        "n_trials": 18
+      },
+      {
+        "condition": "LF_largeN",
+        "list": 1,
+        "n_trials": 18
+      },
+      {
+        "condition": "LF_smallN",
+        "list": 1,
+        "n_trials": 18
+      }
+    ],
+    "complete": true,
+    "issues": [],
     "lists": 1,
     "recipe": "factorial"
   },
@@ -90,7 +114,7 @@
     "stimuli_file": "output/stimuli/en_andrews_repro_english_stimuli_py.csv",
     "stimuli_sha256": "8eb4efce71ba544a64d2113a66f34b43f0d12239551351eac6a9416ce30e2f2d"
   },
-  "lexsync_datasheet_version": "1.1",
+  "lexsync_datasheet_version": "1.2",
   "materials_source": {
     "path": "corpora/derived/en.csv",
     "provenance": "wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md",
@@ -222,7 +246,7 @@
   "relational": null,
   "reproducibility": {
     "design_sha256": "6bd31fec16bab4d4b0226db68258c34e2615b9dc6bdf226a50b6535796b5672a",
-    "schema_sha256": "483a9cec49314b9479fe656ad39840083a551f2e4313ca164efe3e9c064fb255",
+    "schema_sha256": "978979ec5f0c6182ac2611863021a722f3412cc179039614f63311b3e3ff3331",
     "seed": 2026,
     "versions": {
       "engine": "python",
