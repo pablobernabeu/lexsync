@@ -1152,3 +1152,113 @@ def test_n_syllables_is_checked_on_the_filtered_pool(tmp_path, freq, refused):
         _refused_before_writing(lines, tmp_path, _SYLLABLES_REFUSED % 1)
     else:
         _run(_write_design(str(tmp_path), lines), tmp_path)
+
+
+# ---- schema resolution -------------------------------------------------------
+# Twinned with the same section of test-run-pipeline.R. Each test runs from a
+# temporary working directory, as an installed package is run outside a clone.
+
+def _write_schema(path, seed):
+    """The bundled schema with its seed changed, so the record shows which file ran."""
+    with open(_pkg_data("schema.yaml"), encoding="utf-8") as handle:
+        text = handle.read()
+    assert "\nseed: 2026\n" in text
+    with open(path, "w", encoding="utf-8", newline="\n") as handle:
+        handle.write(text.replace("\nseed: 2026\n", "\nseed: %d\n" % seed, 1))
+
+
+def _reproducibility(outdir, name="guard_test"):
+    import json
+    with open(os.path.join(str(outdir), "reports", name + "_english_datasheet_py.json"),
+              encoding="utf-8") as handle:
+        return json.load(handle)["reproducibility"]
+
+
+def _same_file(a, b):
+    return os.path.normcase(os.path.abspath(a)) == os.path.normcase(os.path.abspath(b))
+
+
+def test_run_pipeline_falls_back_to_the_bundled_schema_outside_a_checkout(
+        tmp_path, monkeypatch, capsys):
+    # The default used to be config/schema.yaml relative to the working directory,
+    # so the one-call pipeline stopped with "configuration not found" anywhere but
+    # the root of a clone, while the command line already fell back.
+    monkeypatch.chdir(tmp_path)
+    design = _corpus_design(str(tmp_path))
+    out = tmp_path / "out"
+    run_pipeline(design, outdir=str(out), verbose=False)
+    err = capsys.readouterr().err.strip()
+    assert err.startswith("lexsync: using the schema at '")
+    used = err[len("lexsync: using the schema at '"):].split("'")[0]
+    assert _same_file(used, _pkg_data("schema.yaml"))
+    rep = _reproducibility(out)
+    assert rep["seed"] == 2026
+    assert "\\" not in rep["schema_path"]
+    assert _same_file(rep["schema_path"], _pkg_data("schema.yaml"))
+    with open(os.path.join(str(out), "reports", "guard_test_english_run_log_py.md"),
+              encoding="utf-8") as handle:
+        assert "- schema_path: " + rep["schema_path"] in handle.read()
+
+
+def test_run_pipeline_reads_config_then_the_design_directory(tmp_path, monkeypatch, capsys):
+    # With no schema named, ./config/schema.yaml comes first (the old default), then
+    # the schema beside the design, and only then the bundled copy.
+    monkeypatch.chdir(tmp_path)
+    study = tmp_path / "study"
+    study.mkdir()
+    _write_schema(str(study / "schema.yaml"), 99)
+    design = _corpus_design(str(study))
+    run_pipeline(design, outdir=str(tmp_path / "beside"), verbose=False)
+    rep = _reproducibility(tmp_path / "beside")
+    assert rep["seed"] == 99
+    assert _same_file(rep["schema_path"], str(study / "schema.yaml"))
+    (tmp_path / "config").mkdir()
+    _write_schema(str(tmp_path / "config" / "schema.yaml"), 7)
+    run_pipeline(design, outdir=str(tmp_path / "config_first"), verbose=False)
+    rep = _reproducibility(tmp_path / "config_first")
+    assert rep["seed"] == 7
+    assert rep["schema_path"] == "config/schema.yaml"
+    assert "lexsync: using the schema at 'config" in capsys.readouterr().err
+
+
+def test_an_explicit_missing_schema_is_an_error(tmp_path, monkeypatch):
+    # A schema the caller named is never substituted: the error names the bundled
+    # copy so the caller can pass it on purpose.
+    monkeypatch.chdir(tmp_path)
+    design = _corpus_design(str(tmp_path))
+    with pytest.raises(FileNotFoundError, match="schema not found: 'missing.yaml'") as exc:
+        run_pipeline(design, "missing.yaml", outdir=str(tmp_path), verbose=False)
+    assert "importlib.resources" in str(exc.value)
+    assert os.path.normcase(_pkg_data("schema.yaml")) in os.path.normcase(str(exc.value))
+
+
+def test_run_all_falls_back_to_the_bundled_schema(tmp_path, monkeypatch, capsys):
+    # run_all read config_dir/schema.yaml and nothing else, so a folder of designs
+    # without a schema of its own stopped with "configuration not found".
+    from lexsync.run_pipeline import run_all
+    monkeypatch.chdir(tmp_path)
+    cfg = tmp_path / "designs"
+    cfg.mkdir()
+    os.replace(_corpus_design(str(cfg)), str(cfg / "design_guard.yaml"))
+    run_all(str(cfg), outdir=str(tmp_path / "out"), verbose=False)
+    err = capsys.readouterr().err
+    assert err.count("lexsync: using the schema at '") == 1
+    assert _same_file(_reproducibility(tmp_path / "out")["schema_path"],
+                      _pkg_data("schema.yaml"))
+
+
+@pytest.mark.parametrize("config_dir", ["study", "study/"])
+def test_the_schema_notice_names_the_path_as_the_record_does(
+        tmp_path, monkeypatch, capsys, config_dir):
+    # The notice and the record give the path in POSIX form in both engines, and a
+    # folder named with a trailing separator gains no second one (R's file.path()
+    # gave "study//schema.yaml" where os.path.join gives "study/schema.yaml").
+    from lexsync.datasheet import _posix
+    from lexsync.paths import resolve_schema
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "study").mkdir()
+    _write_schema(str(tmp_path / "study" / "schema.yaml"), 99)
+    path, origin = resolve_schema(config_dir=config_dir)
+    assert origin == "config_dir"
+    assert _posix(path) == "study/schema.yaml"
+    assert capsys.readouterr().err == "lexsync: using the schema at 'study/schema.yaml'\n"

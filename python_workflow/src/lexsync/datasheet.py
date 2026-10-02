@@ -83,6 +83,7 @@ from .scripting import _refresh_hz, _response_windows, presentation_versions
 #   materials_source["provenance"]    for a corpus or generated design, the credit of
 #                                     the lexicon read (see _lexicon_provenance).
 #                                     Earlier records credited wordfreq for any file.
+#   reproducibility.schema_path   the schema file the run read, in POSIX form
 DATASHEET_VERSION = "1.2"
 
 # Datasheet labels for the pseudoword generators in generation.py, keyed by the
@@ -442,7 +443,9 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
 
     ``design_path`` / ``schema_path`` (optional) are the design and schema files the
     run read; when given, their sha256 checksums complete the reproducibility
-    record, because those two files decide everything the seed does not.
+    record, because those two files decide everything the seed does not. The
+    schema's path is recorded too, in POSIX form, since an unnamed schema is chosen
+    from several candidates.
 
     ``selection_audit`` (optional) is the matcher's audit record; its
     ``window_relaxations`` entries are recorded because a relaxed window changes
@@ -677,6 +680,9 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
     if design_path is not None:
         reproducibility["design_sha256"] = sha256_file(design_path)
     if schema_path is not None:
+        # The path as well as the checksum: when no schema was named, the run chose
+        # one of several files, and the record has to say which.
+        reproducibility["schema_path"] = _posix(schema_path)
         reproducibility["schema_sha256"] = sha256_file(schema_path)
 
     return {

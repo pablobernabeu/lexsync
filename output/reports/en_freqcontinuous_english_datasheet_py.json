@@ -155,6 +155,7 @@
   "relational": null,
   "reproducibility": {
     "design_sha256": "37d98d331dcd43c9638f18197b5529d98ab15bfc287d0bafbd73df61fccf01bc",
+    "schema_path": "config/schema.yaml",
     "schema_sha256": "60217cd58fd3da4a9c1deee500c9d3d56ee9bde8658644581a102a7bd1c2baa4",
     "seed": 2026,
     "versions": {

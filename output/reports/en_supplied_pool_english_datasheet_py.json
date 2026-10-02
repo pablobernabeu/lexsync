@@ -179,6 +179,7 @@
   "relational": null,
   "reproducibility": {
     "design_sha256": "919571123fbe696f3c3b7e491f26f74727eb76fe2686b7c4487253faf97973a4",
+    "schema_path": "config/schema.yaml",
     "schema_sha256": "60217cd58fd3da4a9c1deee500c9d3d56ee9bde8658644581a102a7bd1c2baa4",
     "seed": 2026,
     "versions": {

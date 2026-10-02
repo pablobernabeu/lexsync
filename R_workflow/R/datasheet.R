@@ -46,6 +46,7 @@
 #   materials_source$provenance    for a corpus or generated design, the credit of the
 #                                  lexicon read (see .lexicon_provenance). Earlier
 #                                  records credited wordfreq for any file.
+#   reproducibility$schema_path   the schema file the run read, in POSIX form
 DATASHEET_VERSION <- "1.2"
 
 # Datasheet labels for the pseudoword generators in generation.R, keyed by the
@@ -377,7 +378,8 @@ DATASHEET_VERSION <- "1.2"
 #' @param design_path,schema_path Optional paths of the design and schema files
 #'   the run read; when given, their sha256 checksums complete the
 #'   reproducibility record, because those two files decide everything the seed
-#'   does not.
+#'   does not. The schema's path is recorded too, in POSIX form, since an unnamed
+#'   schema is chosen from several candidates.
 #' @param selection_audit Optional matcher audit record; its `window_relaxations`
 #'   entries are recorded because a relaxed window changes what "matched" means
 #'   for that condition. Its `incomplete_dropped` entries (`list(condition, n)`)
@@ -615,7 +617,12 @@ build_datasheet <- function(design, schema, report, stimuli, source_path, artifa
   # The design and schema decide everything the seed does not, so their checksums
   # complete the reproducibility record when the pipeline names them.
   if (!is.null(design_path)) reproducibility$design_sha256 <- sha256_file(design_path)
-  if (!is.null(schema_path)) reproducibility$schema_sha256 <- sha256_file(schema_path)
+  # The path as well as the checksum: when no schema was named, the run chose one of
+  # several files, and the record has to say which.
+  if (!is.null(schema_path)) {
+    reproducibility$schema_path <- .posix_path(schema_path)
+    reproducibility$schema_sha256 <- sha256_file(schema_path)
+  }
 
   list(
     lexsync_datasheet_version = DATASHEET_VERSION,

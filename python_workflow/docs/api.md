@@ -168,7 +168,8 @@ versions. `run_pipeline` builds and writes one for every run.
 designs. `validate_design` is the check `run_pipeline` applies before anything is selected or
 written, and `design_stem` gives the stem every written file is named after. The logging functions
 are reached as `lexsync.logging.*`, which does not shadow the standard library's `logging` for
-absolute imports.
+absolute imports. All three entry points choose the schema through
+`lexsync.paths.resolve_schema`.
 
 ::: lexsync.run_pipeline
 
@@ -177,6 +178,10 @@ absolute imports.
 ::: lexsync.validate_design
 
 ::: lexsync.design_stem
+
+::: lexsync.paths.resolve_schema
+
+::: lexsync.paths.bundled_schema
 
 ::: lexsync.logging.new_run_log
 

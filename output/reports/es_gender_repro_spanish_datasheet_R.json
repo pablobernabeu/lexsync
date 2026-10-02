@@ -180,6 +180,7 @@
       "os": "Windows x86-64"
     },
     "design_sha256": "d30dc7616299d6fc538066bf435a44c2739dd24d0136d4843b214f0630a198c1",
+    "schema_path": "config/schema.yaml",
     "schema_sha256": "60217cd58fd3da4a9c1deee500c9d3d56ee9bde8658644581a102a7bd1c2baa4"
   },
   "artifacts": [

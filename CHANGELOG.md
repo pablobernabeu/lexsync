@@ -434,6 +434,25 @@ no function signature changes.
   stimulus moves. The schema's description of the method, corrected in all three
   copies, changes `config/schema.yaml`, so every committed datasheet records a new
   schema digest and every run log a new datasheet checksum.
+- `lexsync run --config-dir DIR` reads `DIR/schema.yaml`, as `run_all()` does in
+  both engines. It silently ran the bundled schema whenever the working directory
+  had no `config/schema.yaml`, so a study's own seed and tolerances were ignored.
+  The command line, `run_pipeline()` and `run_all()` share one resolver,
+  `lexsync.paths.resolve_schema`, say which schema they use when none was named
+  and record its path in the run log (`schema_path`) and the datasheet
+  (`reproducibility.schema_path`). Every committed datasheet and run log gains
+  that field. No stimulus, report table or experiment changes.
+- `run_pipeline()` and `run_all()` fall back to the schema bundled with the
+  package when none is named and none is found beside the designs, as the command
+  line already did, so the one-call pipeline works outside a clone. Before the
+  bundled copy, `run_pipeline()` looks for `config/schema.yaml` and then for
+  `schema.yaml` beside the design, and `run_all()` looks in `config_dir` and then
+  in `config/`. The first place each function looks is its old default, so a call
+  that worked before reads the same file. A named schema that does not exist is
+  still an error, and the message gives the bundled copy's location.
+- The command line prints lexsync's own error messages without a Python traceback
+  and exits with status 1. `lexsync --traceback` shows the traceback, and a usage
+  error keeps argparse's status 2.
 
 ### Security
 

@@ -95,6 +95,7 @@
       "os": "Windows x86-64"
     },
     "design_sha256": "3d060b7a7653715ce8f6785b20f2be9f062fa0da5f157d6c88423af290332d29",
+    "schema_path": "config/schema.yaml",
     "schema_sha256": "60217cd58fd3da4a9c1deee500c9d3d56ee9bde8658644581a102a7bd1c2baa4"
   },
   "artifacts": [

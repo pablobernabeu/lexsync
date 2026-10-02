@@ -105,13 +105,26 @@ scripts. Its flags:
 
 | Flag | Default | Meaning |
 | --- | --- | --- |
-| `--schema` | `config/schema.yaml` | The global schema and defaults. |
+| `--schema` | resolved | The global schema and defaults, resolved as described below when left out. |
 | `--config-dir` | `config` | Where to look for designs when no design is named. |
 | `--outdir` | `output` | Root of the written artefacts (`stimuli/`, `reports/`, `experiments/`). |
 
 Paths in a design are resolved relative to the working directory, so run these from the root of a
 clone. With no design argument, `lexsync run` globs `design_*.yaml` and `design_*.yml` from
 `--config-dir`, sorts them and runs each in turn.
+
+A schema named with `--schema` is used as given, and one that does not exist is an error. When the
+flag is left out, the schema is resolved in order. Running every design, `lexsync run` reads
+`schema.yaml` in `--config-dir` and then `config/schema.yaml` in the working directory. Running one
+design, it reads `config/schema.yaml` in the working directory and then `schema.yaml` beside the
+design. Either way the copy bundled with the package comes last, and a line on standard error names
+the file chosen. The run log records it as `schema_path` and the datasheet as
+`reproducibility.schema_path`. `run_pipeline()` and `run_all()` resolve a schema they are not given
+in the same way, through `lexsync.paths.resolve_schema`.
+
+A failing command prints lexsync's own message to standard error and exits with status 1.
+`lexsync --traceback run ...` shows the Python traceback as well. A mistyped flag exits with
+argparse's usage status, 2.
 
 `lexsync corpora list` prints the registry as a table of name, language, ISO code, status,
 connector and citation. `lexsync fetch` takes either a registry entry name or a language code. If

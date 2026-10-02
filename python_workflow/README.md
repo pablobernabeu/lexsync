@@ -150,6 +150,12 @@ lexsync corpora list
 lexsync fetch fr            # build a French lexicon via wordfreq
 ```
 
+Outside a clone, name the schema with `--schema` or leave it out. `lexsync run` then
+looks for `schema.yaml` beside the designs and falls back to the copy bundled with
+the package, and it says on standard error which file it used. A command that fails
+prints lexsync's message and exits with status 1, and `lexsync --traceback run ...`
+shows the Python traceback as well.
+
 ## Citation
 
 Cite the software. The authoritative record is

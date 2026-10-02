@@ -69,7 +69,8 @@ differ and the record must say why.}
 \item{design_path, schema_path}{Optional paths of the design and schema files
 the run read; when given, their sha256 checksums complete the
 reproducibility record, because those two files decide everything the seed
-does not.}
+does not. The schema's path is recorded too, in POSIX form, since an unnamed
+schema is chosen from several candidates.}
 
 \item{selection_audit}{Optional matcher audit record; its \code{window_relaxations}
 entries are recorded because a relaxed window changes what "matched" means

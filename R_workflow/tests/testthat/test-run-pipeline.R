@@ -1267,3 +1267,140 @@ test_that("n_syllables is checked on the filtered pool", {
     }
   }
 })
+
+# ---- schema resolution -------------------------------------------------------
+# Twinned with the same section of test_run_pipeline.py. Each test runs from a
+# temporary working directory, as an installed package is run outside a clone.
+
+schema_design <- function(dir, file = "design.yaml") {
+  p <- file.path(dir, file)
+  writeLines(c(
+    "name: guard_test",
+    "language: english",
+    paste0("lexicon: ", as_yaml_path(extdata("en_example.csv"))),
+    "n_per_condition: 5",
+    "pool_filters: {length: [3, 7], frequency: [3.8, 7]}",
+    "conditions:",
+    "  - {name: high, define_by: {frequency: [5.0, 7.0]}}",
+    "  - {name: low, define_by: {frequency: [3.8, 4.4]}}",
+    "match_on: [length]"
+  ), p, useBytes = TRUE)
+  p
+}
+
+# The bundled schema with its seed changed, so the record shows which file ran.
+write_seeded_schema <- function(path, seed) {
+  text <- readLines(extdata("schema.yaml"), warn = FALSE, encoding = "UTF-8")
+  at <- which(text == "seed: 2026")
+  stopifnot(length(at) == 1L)
+  text[at] <- sprintf("seed: %d", seed)
+  writeLines(text, path, useBytes = TRUE)
+}
+
+reproducibility_of <- function(outdir, name = "guard_test") {
+  jsonlite::fromJSON(file.path(outdir, "reports", paste0(name, "_english_datasheet_R.json")),
+                     simplifyVector = FALSE)$reproducibility
+}
+
+same_file <- function(a, b) {
+  identical(normalizePath(a, winslash = "/"), normalizePath(b, winslash = "/"))
+}
+
+# Evaluates `expr` and returns the schema notices it emitted, muffled.
+schema_notices <- function(expr) {
+  msgs <- character()
+  withCallingHandlers(expr, message = function(m) {
+    msgs <<- c(msgs, conditionMessage(m))
+    invokeRestart("muffleMessage")
+  })
+  grep("using the schema", msgs, value = TRUE)
+}
+
+test_that("run_pipeline falls back to the bundled schema outside a checkout", {
+  # The default used to be config/schema.yaml relative to the working directory, so
+  # the one-call pipeline stopped with "configuration not found" anywhere but the
+  # root of a clone, while the Python command line already fell back.
+  dir <- tmp_out()
+  old <- setwd(dir); on.exit(setwd(old), add = TRUE)
+  design <- schema_design(dir)
+  out <- file.path(dir, "out")
+  notices <- schema_notices(run_quiet(design, outdir = out))
+  expect_length(notices, 1L)
+  expect_match(notices, "^lexsync: using the schema at '")
+  used <- sub("^lexsync: using the schema at '(.*)'\\s*$", "\\1", notices)
+  expect_true(same_file(used, extdata("schema.yaml")))
+  rep <- reproducibility_of(out)
+  expect_identical(as.integer(rep$seed), 2026L)
+  expect_false(grepl("\\", rep$schema_path, fixed = TRUE))
+  expect_true(same_file(rep$schema_path, extdata("schema.yaml")))
+  log <- readLines(file.path(out, "reports", "guard_test_english_run_log_R.md"), warn = FALSE)
+  expect_true(paste0("- schema_path: ", rep$schema_path) %in% log)
+})
+
+test_that("run_pipeline reads config then the design directory", {
+  # With no schema named, ./config/schema.yaml comes first (the old default), then
+  # the schema beside the design, and only then the bundled copy.
+  dir <- tmp_out()
+  old <- setwd(dir); on.exit(setwd(old), add = TRUE)
+  study <- file.path(dir, "study")
+  dir.create(study)
+  write_seeded_schema(file.path(study, "schema.yaml"), 99)
+  design <- schema_design(study)
+  schema_notices(run_quiet(design, outdir = file.path(dir, "beside")))
+  rep <- reproducibility_of(file.path(dir, "beside"))
+  expect_identical(as.integer(rep$seed), 99L)
+  expect_true(same_file(rep$schema_path, file.path(study, "schema.yaml")))
+  dir.create(file.path(dir, "config"))
+  write_seeded_schema(file.path(dir, "config", "schema.yaml"), 7)
+  notices <- schema_notices(run_quiet(design, outdir = file.path(dir, "config_first")))
+  rep <- reproducibility_of(file.path(dir, "config_first"))
+  expect_identical(as.integer(rep$seed), 7L)
+  expect_identical(rep$schema_path, "config/schema.yaml")
+  expect_match(notices, "lexsync: using the schema at 'config", fixed = TRUE)
+})
+
+test_that("an explicit missing schema is an error", {
+  # A schema the caller named is never substituted: the error names the bundled
+  # copy so the caller can pass it on purpose.
+  dir <- tmp_out()
+  old <- setwd(dir); on.exit(setwd(old), add = TRUE)
+  design <- schema_design(dir)
+  expect_error(run_quiet(design, "missing.yaml", outdir = dir),
+               "schema not found: 'missing.yaml'", fixed = TRUE)
+  expect_error(run_quiet(design, "missing.yaml", outdir = dir),
+               'system.file("extdata", "schema.yaml", package = "lexsync")', fixed = TRUE)
+})
+
+test_that("run_all falls back to the bundled schema", {
+  # run_all read config_dir/schema.yaml and nothing else, so a folder of designs
+  # without a schema of its own stopped with "configuration not found".
+  dir <- tmp_out()
+  old <- setwd(dir); on.exit(setwd(old), add = TRUE)
+  cfg <- file.path(dir, "designs")
+  dir.create(cfg)
+  schema_design(cfg, "design_guard.yaml")
+  notices <- schema_notices(run_all(cfg, outdir = file.path(dir, "out"), verbose = FALSE))
+  expect_length(notices, 1L)
+  expect_true(same_file(reproducibility_of(file.path(dir, "out"))$schema_path,
+                        extdata("schema.yaml")))
+})
+
+test_that("the schema notice names the path as the record does", {
+  # The notice and the record give the path in POSIX form in both engines, and a
+  # folder named with a trailing separator gains no second one (file.path() gave
+  # "study//schema.yaml" where Python's os.path.join gives "study/schema.yaml").
+  dir <- tmp_out()
+  old <- setwd(dir); on.exit(setwd(old), add = TRUE)
+  dir.create("study")
+  write_seeded_schema(file.path("study", "schema.yaml"), 99)
+  for (config_dir in c("study", "study/")) {
+    notices <- character()
+    res <- withCallingHandlers(.resolve_schema(config_dir = config_dir), message = function(m) {
+      notices <<- c(notices, conditionMessage(m))
+      invokeRestart("muffleMessage")
+    })
+    expect_identical(res$origin, "config_dir")
+    expect_identical(.posix_path(res$path), "study/schema.yaml")
+    expect_identical(notices, "lexsync: using the schema at 'study/schema.yaml'\n")
+  }
+})

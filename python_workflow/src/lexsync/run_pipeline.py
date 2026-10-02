@@ -25,7 +25,7 @@ from .counterbalancing import (
     counterbalance,
     counterbalance_check,
 )
-from .datasheet import build_datasheet, write_datasheet
+from .datasheet import _posix, build_datasheet, write_datasheet
 from .design import (
     _exclude_words,
     _referenced_dimensions,
@@ -38,6 +38,7 @@ from .io_utils import _is_continuous, read_config, write_csv_utf8
 from .matching import _resolve_policy, match_stimuli, resample_stimuli, select_continuous_stimuli
 from .pairs import join_member_norms, member_lexicon_path, select_continuous_pairs
 from .paradigms import required_fields
+from .paths import resolve_schema
 from .querying import (
     _apply_exclude_words,
     _neighbourhood_reference,
@@ -140,7 +141,7 @@ def _restores_verbosity(fn):
 
 
 @_restores_verbosity
-def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
+def run_pipeline(design_path, schema_path=None, outdir="output",
                  reference_words=None, verbose=True) -> dict:
     """Run the lexsync pipeline for one design.
 
@@ -164,7 +165,12 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
 
     Args:
         design_path: Path to a design configuration (YAML).
-        schema_path: Path to the global schema (YAML).
+        schema_path: The schema to read. Left as None, it is resolved by
+            :func:`lexsync.paths.resolve_schema`: ``config/schema.yaml`` in the
+            working directory, then ``schema.yaml`` beside the design, then the copy
+            bundled with the package, with a line on stderr naming the file chosen.
+            A named schema that does not exist is an error. The path used is recorded
+            in the run log and in the datasheet's ``reproducibility.schema_path``.
         outdir: Output directory, in which the subdirectories ``stimuli``,
             ``reports`` and ``experiments`` are created.
         reference_words: Optional list of words to compute the derived dimensions
@@ -184,8 +190,11 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
         A mapping of the output paths written.
     """
     runlog.set_verbose(verbose)
-    schema = read_config(schema_path)
+    # The design first, so a mistyped design path is reported on its own and not
+    # after a line announcing which schema the run would have used.
     design = read_config(design_path)
+    schema_path, _ = resolve_schema(schema_path, design_path=design_path)
+    schema = read_config(schema_path)
     # Everything a design can be refused for without reading its lexicon is checked
     # here, before the output directory is touched: the keys, the name and language,
     # n_per_condition, the metadata written into the experiments, the events, the
@@ -231,6 +240,7 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
         "design": design["name"], "language": design["language"],
         "paradigm": paradigm, "source": source, "seed": schema.get("seed"),
         "mode": "continuous" if is_continuous else "conditions",
+        "schema_path": _posix(schema_path),
     })
     for note in key_notes:
         runlog.log_step(log, note)
@@ -654,7 +664,16 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
 
 
 def run_all(config_dir="config", schema_path=None, outdir="output", verbose=True) -> dict:
-    schema_path = schema_path or os.path.join(config_dir, "schema.yaml")
+    """Run every ``design_*.yaml`` in ``config_dir`` and return each design's paths.
+
+    ``schema_path`` left as None is resolved by :func:`lexsync.paths.resolve_schema`:
+    ``<config_dir>/schema.yaml``, then ``config/schema.yaml`` in the working
+    directory, then the copy bundled with the package, with a line on stderr naming
+    the file chosen. A named schema that does not exist is an error, raised before
+    any design runs.
+    """
+    if schema_path is not None:
+        schema_path, _ = resolve_schema(schema_path)
     designs = sorted(glob.glob(os.path.join(config_dir, "design_*.yaml")) +
                      glob.glob(os.path.join(config_dir, "design_*.yml")))
     if not designs:
@@ -671,6 +690,10 @@ def run_all(config_dir="config", schema_path=None, outdir="output", verbose=True
                              f"'{os.path.basename(design)}' would write the same files "
                              f"('{stem}'); give the designs distinct names.")
         stems[stem] = design
+    if schema_path is None:
+        # Resolved once, after the designs are found, so a folder without designs is
+        # reported on its own and every design reads the same file.
+        schema_path, _ = resolve_schema(config_dir=config_dir)
     results = {}
     for design in designs:
         if verbose:

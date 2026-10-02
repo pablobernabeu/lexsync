@@ -85,7 +85,13 @@
 #' the words a generated pseudoword must not equal, keep them.
 #'
 #' @param design_path Path to a design configuration (YAML).
-#' @param schema_path Path to the global schema (YAML).
+#' @param schema_path Path to the global schema (YAML), or `NULL` (the default)
+#'   to resolve it: `config/schema.yaml` in the working directory, then
+#'   `schema.yaml` beside the design, then the copy bundled with the package,
+#'   `system.file("extdata", "schema.yaml", package = "lexsync")`. A message names
+#'   the file chosen. A named schema that does not exist is an error. The path used
+#'   is recorded in the run log and in the datasheet's
+#'   `reproducibility$schema_path`.
 #' @param outdir Output directory supplied by the caller (subdirectories
 #'   `stimuli`, `reports`, `experiments` are created). It must be supplied;
 #'   lexsync does not choose a default output location.
@@ -102,7 +108,7 @@
 #' @param verbose Logical; print progress.
 #' @return A named list of output paths, invisibly.
 #' @export
-run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
+run_pipeline <- function(design_path, schema_path = NULL,
                          outdir = NULL, reference_words = NULL, verbose = TRUE) {
   if (is.null(outdir) || !is.character(outdir) || length(outdir) != 1L ||
       is.na(outdir) || !nzchar(outdir)) {
@@ -114,8 +120,11 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
   # the gate is module state restored by a decorator.
   old_opts <- options(lexsync.verbose = verbose)
   on.exit(options(old_opts), add = TRUE)
-  schema <- read_config(schema_path)
+  # The design first, so a mistyped design path is reported on its own and not after
+  # a message announcing which schema the run would have used.
   design <- read_config(design_path)
+  schema_path <- .resolve_schema(schema_path, design_path = design_path)$path
+  schema <- read_config(schema_path)
   # Everything a design can be refused for without reading its lexicon is checked
   # here, before the output directory is touched: the keys, the name and language,
   # n_per_condition, the metadata written into the experiments, the events, the
@@ -158,7 +167,8 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
   log <- new_run_log(design[["name"]], meta = list(
     design = design[["name"]], language = design[["language"]],
     paradigm = paradigm, source = source, seed = schema[["seed"]] %||% NA,
-    mode = if (is_continuous) "continuous" else "conditions"
+    mode = if (is_continuous) "continuous" else "conditions",
+    schema_path = .posix_path(schema_path)
   ))
   for (note in key_notes) log <- log_step(log, note)
   # Only a corpus or a supplied pool has derived dimensions to compute. Elsewhere the
@@ -598,19 +608,25 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
 #' Run the lexsync pipeline for every design configuration
 #'
 #' @param config_dir Directory of `design_*.yaml` configurations.
-#' @param schema_path Path to the global schema.
+#' @param schema_path Path to the global schema, or `NULL` (the default) to
+#'   resolve it: `schema.yaml` in `config_dir`, then `config/schema.yaml` in the
+#'   working directory, then the copy bundled with the package,
+#'   `system.file("extdata", "schema.yaml", package = "lexsync")`. A message names
+#'   the file chosen. A named schema that does not exist is an error, raised before
+#'   any design runs.
 #' @param outdir Output directory supplied by the caller. It must be supplied;
 #'   lexsync does not choose a default output location.
 #' @param verbose Logical; print progress.
 #' @return A named list of per-design results, invisibly.
 #' @export
-run_all <- function(config_dir = "config", schema_path = file.path(config_dir, "schema.yaml"),
+run_all <- function(config_dir = "config", schema_path = NULL,
                     outdir = NULL, verbose = TRUE) {
   if (is.null(outdir) || !is.character(outdir) || length(outdir) != 1L ||
       is.na(outdir) || !nzchar(outdir)) {
     stop("lexsync: outdir must be supplied; no output directory is chosen by default.",
          call. = FALSE)
   }
+  if (!is.null(schema_path)) schema_path <- .resolve_schema(schema_path)$path
   designs <- list.files(config_dir, pattern = "^design_.*\\.ya?ml$", full.names = TRUE)
   if (!length(designs)) stop(sprintf("lexsync: no design_*.yaml files in '%s'.", config_dir), call. = FALSE)
   # Two designs with one stem write the same files, and the second would overwrite the
@@ -628,6 +644,9 @@ run_all <- function(config_dir = "config", schema_path = file.path(config_dir, "
     }
     stems[d] <- stem
   }
+  # Resolved once, after the designs are found, so a folder without designs is
+  # reported on its own and every design reads the same file.
+  if (is.null(schema_path)) schema_path <- .resolve_schema(config_dir = config_dir)$path
   results <- list()
   for (d in designs) {
     if (verbose) cat(sprintf("\n=== lexsync: design '%s' ===\n", basename(d)))

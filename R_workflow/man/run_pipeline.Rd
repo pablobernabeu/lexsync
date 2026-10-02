@@ -6,7 +6,7 @@
 \usage{
 run_pipeline(
   design_path,
-  schema_path = "config/schema.yaml",
+  schema_path = NULL,
   outdir = NULL,
   reference_words = NULL,
   verbose = TRUE
@@ -15,7 +15,13 @@ run_pipeline(
 \arguments{
 \item{design_path}{Path to a design configuration (YAML).}
 
-\item{schema_path}{Path to the global schema (YAML).}
+\item{schema_path}{Path to the global schema (YAML), or \code{NULL} (the default)
+to resolve it: \code{config/schema.yaml} in the working directory, then
+\code{schema.yaml} beside the design, then the copy bundled with the package,
+\code{system.file("extdata", "schema.yaml", package = "lexsync")}. A message names
+the file chosen. A named schema that does not exist is an error. The path used
+is recorded in the run log and in the datasheet's
+\code{reproducibility$schema_path}.}
 
 \item{outdir}{Output directory supplied by the caller (subdirectories
 \code{stimuli}, \code{reports}, \code{experiments} are created). It must be supplied;

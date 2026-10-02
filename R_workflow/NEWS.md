@@ -448,6 +448,19 @@
   `config/schema.yaml`, so every committed datasheet records a new schema digest
   and every run log a new datasheet checksum.
 
+* `run_pipeline()` and `run_all()` fall back to the schema bundled with the
+  package when none is named and none is found beside the designs, as the Python
+  command line already did, so the one-call pipeline works outside a clone. Both
+  now default to `schema_path = NULL`. Before the bundled copy, `run_pipeline()`
+  looks for `config/schema.yaml` and then for `schema.yaml` beside the design, and
+  `run_all()` looks in `config_dir` and then in `config/`. The first place each
+  function looks is its old default, so a call that worked before reads the same
+  file. A message names the schema chosen, and the run log (`schema_path`) and the
+  datasheet (`reproducibility$schema_path`) record its path, so the choice is
+  visible even when messages are suppressed. Every committed datasheet and run
+  log gains that field. A named schema that does not exist is still an error, and
+  the message gives the bundled copy's location.
+
 # lexsync 0.1.1
 
 * `assign_triggers()` gains a `conditions` argument that fixes the order of the
