@@ -1,5 +1,6 @@
-# Relational continuous priming: pairs selected to span a continuous predictor,
-# with member-level and pair-level controls held near-constant.
+# Relational continuous priming: pairs spread over the ranks of a continuous
+# predictor, with tolerance windows trimming the tails of the member-level and
+# pair-level controls.
 #
 # This is the design class the pair-keyed item model exists for. A priming study's
 # theoretical variable is a property of the PAIR (distributional similarity,
@@ -29,7 +30,7 @@
 name: en_priming_continuous
 language: english
 paradigm: priming
-description: 'Prime-target pairs selected to span target frequency continuously, with target length and prime-target orthographic overlap held near-constant; Latin-square counterbalanced over two lists.'
+description: 'Prime-target pairs spread over the ranks of target frequency, with the tails of target length and prime-target orthographic overlap trimmed by tolerance windows; Latin-square counterbalanced over two lists.'
 
 items:
   source: table

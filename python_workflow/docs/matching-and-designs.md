@@ -44,6 +44,12 @@ Three columns are derived on the way in: `length` in characters, `n_syllables` f
 print(lexicon.head(3).to_string(index=False))
 ```
 
+`load_lexicon` takes the lexicon as given and screens nothing for lexical status. About a quarter
+(24%) of the bundled English slice loaded here is absent from SUBTLEX-US or is written there with a
+capital in more than 90% of its uses, as proper names and acronyms are. N and OLD20 count such forms
+as neighbours. [Choosing and screening a lexicon](#choosing-and-screening-a-lexicon) below says
+what that does to a selection and how to screen the forms out.
+
 `build_pool` narrows that lexicon to the candidates a design will consider. A two-element numeric
 range is read as an inclusive `[min, max]` band, and anything else is read as a set of allowed
 values, compared as strings. Rows missing the filtered column are dropped, and a filter naming a
@@ -474,16 +480,23 @@ interval that goes with a two one-sided tests decision at the .05 level
 ([Hedges & Olkin, 1985](references.md#hedges-1985)). That standard error grows with *d*, so the
 interval on the manipulated dimension is much wider than on a well-matched control. The interval is
 reported alongside the verdict because it keeps the dependence on item count visible: with few items
-the interval is wide, so a small point estimate cannot be read as evidence that the true difference
-is small ([Sassenhagen & Alday, 2016](references.md#sassenhagen-2016)). Its upper limit is the
-largest imbalance still consistent with the stimuli you have. TOST tests the raw mean difference,
-so the interval is slightly wider than the one its decision implies, and for a limit close to the
-bound, `tost_p` is the verdict.
+it is wide, whatever the point estimate. Its upper limit is the largest imbalance still consistent
+with the stimuli you have. TOST tests the raw mean difference, so the interval is slightly wider than
+the one its decision implies, and for a limit close to the bound, `tost_p` is the verdict.
 
 `tost_p` and `equivalent` come from two one-sided tests against the schema's `equivalence.bound_d`,
-0.5 by default, at `equivalence.alpha`. This is the test that matches what a matched design is
-claiming. A non-significant *t*-test says the data failed to show a difference, which is not the same
-as showing there is none. TOST says the difference is smaller than the bound you declared uninteresting.
+0.5 by default, at `equivalence.alpha`. A non-significant *t*-test says the data failed to show a
+difference, which is not the same as showing there is none. TOST says the difference is smaller than
+the bound you declared uninteresting ([Lakens, 2017](references.md#lakens-2017)). The bound of 0.5 is
+a convention and not a default of Lakens's, who asks for the bound to be justified for the study at
+hand, so set one you can defend. The verdict also depends on the number of items: at a bound of 0.5
+and an alpha of .05, no dimension that varies can pass with fewer than 23 items per condition, even
+when the conditions are identical.
+
+Both statistics treat the selected items as a sample from a larger population, which they are not.
+[Sassenhagen and Alday (2016)](references.md#sassenhagen-2016) point out that a test on stimuli
+concerns a closed population (the items you chose). They recommend describing the stimuli, which the
+descriptives do, and entering potential confounds in the analysis as covariates.
 
 `var_ratio` is the condition's variance over the reference's. It is there because everything above
 is about means, and two conditions can share a mean while differing in spread, which still confounds
@@ -504,8 +517,8 @@ print(lexsync.balance_check(stimuli, "condition"))    # empty when balanced
 Splitting a continuous predictor into high and low conditions throws away information, costs power
 and can introduce selection artefacts ([Kuperman, 2015](references.md#kuperman-2015);
 [Liben-Nowell et al., 2019](references.md#liben-nowell-2019)). A design can replace its
-`conditions` with a `continuous` block, and select a set that spans the predictor evenly while
-holding the controls near-constant, for analysis by regression or a mixed model.
+`conditions` with a `continuous` block, and select a set that spreads over the predictor's ranks
+while windows trim the controls' tails, for analysis by regression or a mixed model.
 
 ```python exec="1" source="material-block" result="text" session="matching"
 design = {
@@ -528,19 +541,26 @@ print(report["comparisons"].to_string(index=False))
 ```
 
 The selection is two deterministic passes, with no per-item matching and no random numbers. An even
-spread over the predictor across the whole pool sets a tolerance window on each control. The pool is
-then filtered to those windows, and a second even spread over the filtered pool is the selection.
-Because
+spread over the predictor's ranks across the whole pool sets a tolerance window on each control. The
+pool is then filtered to those windows, and a second even spread over the ranks of the filtered pool
+is the selection. Because
 both passes reuse the matcher's even-spread primitive, the two engines select byte-identical stimuli
 here as well.
+
+Because the spread is over ranks and not values, the selection follows the pool's distribution of
+the predictor. In the `en_freqcontinuous` demonstration its quantiles lie within 0.03 of the pool's,
+and 94% of the items fall in the lower half of the frequency range, since frequent words are rare in
+any lexicon. The windows trim the controls' tails without holding the controls constant.
 
 `match_report_continuous` returns the same `{descriptives, comparisons}` shape as `match_report`, so
 the pipeline and the datasheet stay uniform, but the comparisons describe a predictor. Its realised
 span replaces the effect size, and each control's Pearson
 correlation with the predictor replaces the equivalence verdict. Those correlations are what you
-report: at *k* = 1.5 the three controls sit between −0.195 and 0.100, which is the sense in which
-they are held constant. Tightening *k* pushes them nearer zero at the cost of a smaller eligible
-pool.
+report: at *k* = 1.5 the three controls sit between −0.195 and 0.100, and a control that stays
+correlated belongs in the model as a covariate. Tightening *k* does not reliably lower the
+correlations. In `en_freqcontinuous`, *k* = 1.0 gave *r* = 0.213 between frequency and `n_density`,
+against −0.049 at *k* = 1.5. At *k* = 0.25 no item falls within the windows, so the selector relaxes
+them to the whole pool.
 
 `match_on` must equal `continuous.controls`, the predictor must not appear among the controls, and
 there must be at least one control. All three are checked, and a design that breaks one of them
@@ -603,24 +623,32 @@ omitted, which is rarely what you want.
 Two methods are available, chosen per design under `items.generation.method`.
 
 `letter_substitution`, the default, changes as few letters as possible subject to three constraints:
-every resulting bigram must be attested in the corpus, the form must not be a real word or one
+every resulting bigram must be attested in the corpus, the form must not be in the reference list or
 already generated, and the length must be preserved exactly. Single substitutions are searched
-first, then pairs as a fallback. Among the legal candidates the most bigram-plausible wins, with a
+first, then pairs as a fallback. Among the legal candidates the most bigram-typical wins, with a
 byte-order tie-break.
 
 `subsyllabic` splits each word into onset, nucleus and coda constituents and swaps whole
 constituents for attested alternatives of the same role and length, so the pseudowords keep their
 syllabic structure. Codas and nuclei are changed before onsets, which carry the most identifying
-orthography. Roughly two thirds of a word's constituents are targeted, each swap preserves length,
-and a word with no legal swap falls back to letter substitution, so every word yields a pseudoword.
-It is a deterministic orthographic approximation of Wuggy
-([Keuleers & Brysbaert, 2010](references.md#keuleers-2010)), trading Wuggy's phonological model for
-exact length matching and cross-engine reproducibility.
+orthography. Up to ceil(2*k*/3) of a word's *k* constituents are replaced, each swap preserves
+length, and a word with no legal swap falls back to letter substitution, so every word yields a
+pseudoword. It is a deterministic orthographic approximation of Wuggy
+([Keuleers & Brysbaert, 2010](references.md#keuleers-2010)), and it differs from Wuggy in more than
+the phonological model. Wuggy matches the template's transition frequencies, matches letter length
+by default and has orthographic modules for several languages, and by default it keeps two thirds of
+the segments where lexsync replaces up to two thirds. What lexsync gains is cross-engine
+reproducibility.
 
 ```python exec="1" source="material-block" session="matching"
 subsyllabic = lexsync.build_lexdec_stimuli(
     pool, n=8, reference_words=lexicon["word"].tolist(), method="subsyllabic")
 ```
+
+In both methods, the scoring picks the most bigram-typical candidate and does not match the base word,
+so the pseudowords come out more bigram-typical than their words. The difference in mean bigram
+probability is about *d* = −1.5, words minus pseudowords, in `en_lexdec` and `en_lexdec_wuggy` alike.
+Read the generated forms before a study runs.
 
 Both generators process base words in byte order, so the set of already-used pseudowords evolves
 identically in R and Python, and both select byte-identical stimuli. Both are also orthographic

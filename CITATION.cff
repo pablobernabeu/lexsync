@@ -3,8 +3,9 @@ message: 'If you use lexsync, please cite the software. A manuscript describing 
 title: 'lexsync: Lexical optimisation and hardware-timed experiment generation'
 abstract: >-
   lexsync is a cross-platform, dual-language (R and Python) toolkit that unifies
-  many-language lexical-corpus access, parallel multidimensional stimulus
-  matching, counterbalancing, item resampling, deterministic pseudoword
+  lexical-corpus access (bundled English, Spanish and Mandarin lexica and a
+  registry of citable corpora), parallel multidimensional stimulus matching,
+  counterbalancing, item resampling, deterministic pseudoword
   generation and the automated generation of hardware-timed PsychoPy,
   OpenSesame and jsPsych experiment scripts for EEG/ERP and browser-based
   research. The MIT licence covers the source code; the bundled example lexica

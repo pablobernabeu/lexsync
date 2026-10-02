@@ -72,9 +72,12 @@ def cohens_d_ci(x, y, alpha: float = 0.05) -> dict:
     2017). Reporting the interval, rather than only a binary "equivalent / not"
     verdict, makes the realised imbalance and its sampling uncertainty explicit and
     keeps the dependence on the number of items visible: with few items the
-    interval is wide, so a small point estimate cannot be over-read as evidence of
-    a small true difference (Sassenhagen & Alday, 2016). The upper limit of the
-    interval on ``|d|`` is the largest imbalance still consistent with the stimuli.
+    interval is wide, whatever the point estimate. The upper limit of the interval
+    on ``|d|`` is the largest imbalance still consistent with the stimuli. Both the
+    interval and the TOST treat the selected items as a sample, although a test on
+    stimuli concerns a closed population. Sassenhagen and Alday (2016) recommend
+    describing the stimuli and entering potential confounds in the analysis as
+    covariates.
 
     The limits are ``d +/- t * SE(d)``, where ``t`` is the Student *t* quantile on
     ``nx + ny - 2`` degrees of freedom and ``SE(d)`` is the large-sample standard

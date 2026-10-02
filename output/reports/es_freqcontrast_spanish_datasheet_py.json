@@ -177,7 +177,7 @@
   "relational": null,
   "reproducibility": {
     "design_sha256": "08428e5f090244fb55490364bcbc218561e71a8fca325d0497f1a36c1c0b1580",
-    "schema_sha256": "c843341aaf32f9f474fde3e653b746e3abd535f853906d02ac47eb6609f94bb7",
+    "schema_sha256": "56920528039aab921b60693e2c422726817d65b53c57c81fcde7f718dfeb6f3e",
     "seed": 2026,
     "versions": {
       "engine": "python",

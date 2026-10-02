@@ -619,15 +619,19 @@ match_optimal <- function(subpools, cond_names, match_on, center, scale_, n, cap
   out
 }
 
-#' Select a set spanning a continuous predictor, holding controls constant
+#' Select a set spread over a continuous predictor, with windows on the controls
 #'
 #' Instead of dichotomising the predictor into conditions and matching, items are
-#' chosen to cover the predictor's range evenly while the control dimensions are
-#' held within a tolerance band, so they stay near-constant and near-uncorrelated
-#' with the predictor. The set is analysed by regression / mixed models rather than
-#' between-condition contrasts (Kuperman, 2015; Liben-Nowell et al., 2019). Two
-#' deterministic even-spread passes make the R and Python engines select
-#' byte-identical stimuli. Mirrors select_continuous_stimuli in matching.py.
+#' spread evenly over the predictor's ranks in the pool, so the selection follows
+#' the pool's distribution of the predictor and does not cover its range evenly.
+#' The control dimensions are held within a tolerance band, which trims their
+#' tails without holding them constant, so read each control's correlation with
+#' the predictor in [match_report_continuous()] before relying on it. Tightening
+#' `tolerance_k` does not reliably lower those correlations. The set is analysed
+#' by regression / mixed models rather than between-condition contrasts
+#' (Kuperman, 2015; Liben-Nowell et al., 2019). Two deterministic even-spread
+#' passes make the R and Python engines select byte-identical stimuli. Mirrors
+#' select_continuous_stimuli in matching.py.
 #'
 #' The design is checked before anything is selected, so a design that cannot be
 #' honoured is refused outright. `continuous.controls` must be non-empty and must not

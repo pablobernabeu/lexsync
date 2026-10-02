@@ -398,6 +398,37 @@
   SHA-256, and their run logs are regenerated. No stimulus, report table or
   experiment changes.
 
+* The documentation now states what the lexica derived from `wordfreq` contain:
+  proper names, acronyms and other non-standard forms among the most frequent
+  forms, spread unevenly over frequency bands, with N and OLD20 computed over
+  them. It says that a continuous design spreads items over the predictor's
+  ranks and not over its range, so the selection follows the pool's
+  distribution and the tolerance windows trim the controls' tails without
+  holding them constant, which the 0.1.0 entry for
+  `select_continuous_stimuli()` misstated. It also says that generated
+  pseudowords are more bigram-typical than their base words, that the `priming`
+  paradigm is backward-masked, that `en_rastle_repro` and `en_andrews_repro`
+  reproduce item selection and not a lexical-decision task, and how each
+  presentation target times its events.
+
+* The corpus registry no longer maps `freq_zipf` to the SUBTLEX-US and
+  SUBTLEX-DE log-count columns or to a column that the Chinese SUBTLEX file does
+  not contain. It says that its column maps are not yet applied and that no
+  entry can yet be downloaded by `fetch_corpus()`, and DESCRIPTION names what
+  the corpus access covers in place of calling it many-language.
+
+* The documentation of `cohens_d_ci()` and `tost_equiv()` cites Sassenhagen and
+  Alday (2016) and Lakens (2017) for what they argue, and calls the 0.5 bound a
+  convention. The quick start in the README and the Get started vignette uses 60
+  items per condition, as the Python twin's does, in place of 15: at the default
+  bound and alpha, no dimension that varies can pass the equivalence test with
+  fewer than 23 items per condition. No stimulus, report table or experiment
+  changes. Every JSON datasheet records the new schema digest, the five
+  demonstrations whose design files were corrected record new design digests,
+  and the Markdown datasheets of the four whose descriptions changed
+  (`en_andrews_repro`, `en_freqcontinuous`, `en_priming_continuous` and
+  `en_rastle_repro`) change with them, as do the run logs.
+
 # lexsync 0.1.1
 
 * `assign_triggers()` gains a `conditions` argument that fixes the order of the

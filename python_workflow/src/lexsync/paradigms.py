@@ -60,8 +60,11 @@ PARADIGMS = {
             {"type": "blank", "duration_frames": _ISI},
         ],
     },
-    # Priming: a briefly-presented prime, a mask, then the target. The prime
-    # onset carries a fixed marker; the target onset carries the condition marker.
+    # Priming, backward pattern-masked: the prime for 3 frames (50 ms at 60 Hz), a
+    # '#####' mask for 2 frames (33 ms), then the target, so the SOA is 83 ms at
+    # 60 Hz. There is no forward mask, and prime and target keep the item table's
+    # letter case. The prime onset carries a fixed marker and the target onset the
+    # condition marker.
     "priming": {
         "stimulus_fields": ["prime", "target"],
         "counterbalance": "latin_square_target",

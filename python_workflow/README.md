@@ -35,9 +35,9 @@ The package is on [PyPI](https://pypi.org/project/lexsync/):
 pip install lexsync
 ```
 
-The `corpora` extra adds the 'wordfreq' connector, which reaches roughly forty
-languages through a single dependency, and the `experiment` extra adds
-'PsychoPy' and 'pyserial'. Note that the `experiment` extra is needed only to run
+The `corpora` extra adds the 'wordfreq' connector, which builds lexica for thirty
+registered languages (wordfreq covers 42) through a single dependency, and the
+`experiment` extra adds 'PsychoPy' and 'pyserial'. Note that the `experiment` extra is needed only to run
 a generated experiment on hardware, never to generate one. PsychoPy currently
 supports Python 3.10 to 3.12, so on a newer interpreter that extra stops with a
 message naming psychopy, while the rest of the package installs on any supported

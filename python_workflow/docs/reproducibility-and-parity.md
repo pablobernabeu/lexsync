@@ -207,6 +207,14 @@ wordfreq connector is pinned to its frozen 3.x line, a stable snapshot of usage 
 corpus from a URL that changes and lexsync cannot help you. The datasheet's SHA-256 of the
 source file will at least tell you that it changed.
 
+A reproducible lexicon is not a screened one. The bundled lexica are the most frequent forms
+wordfreq returns, so they hold proper names, acronyms and other forms that are not words of the
+language, and N and OLD20 are computed over them. Their share differs between frequency bands, which
+can confound a frequency contrast. The repository's `corpora/derived/en_v2.csv` marks such forms in
+the English lexicon, and [What the derived lexica
+contain](https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md#what-the-derived-lexica-contain)
+says what to check in a selection.
+
 ## How it is tested
 
 The claim is checked, not merely stated. `tests/test_parity.py` carries 21 cases, one per

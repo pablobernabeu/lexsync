@@ -119,9 +119,11 @@ Everything else in the package, code and remaining data alike, is MIT.
 - 'lexsync' *generates text* for PsychoPy, OpenSesame and jsPsych but never
   imports them. Those tools are needed only to run a generated experiment, not to
   use the package, so they are not dependencies.
-- Full lexical corpora are fetched on demand into `tools::R_user_dir()`, and only
-  the small example lexica described above are bundled. No example, test or
-  vignette downloads anything. The tests do call `fetch_corpus()`, but every call
+- Only the small example lexica described above are bundled. `fetch_corpus()`
+  downloads into `tools::R_user_dir()` a corpus whose registry entry names a
+  delimited file, and no entry in the shipped registry does yet, so a user
+  otherwise loads a corpus file of their own. No example, test or vignette
+  downloads anything. The tests do call `fetch_corpus()`, but every call
   that gets as far as a download goes through a local stand-in for
   `download.file()`, and the calls that download to the default cache first
   point `R_USER_CACHE_DIR` at a directory under `tempdir()` and restore it

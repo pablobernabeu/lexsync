@@ -7,6 +7,7 @@ import urllib.request
 import pandas as pd
 import pytest
 import yaml
+from helper_repo import REPO
 
 import lexsync
 from lexsync import corpora
@@ -161,6 +162,30 @@ def test_subtlex_uk_advertises_a_landing_page_not_a_dead_download(registry):
 def test_openlexicon_key_and_supported_status_agree(registry):
     for name, entry in registry["corpora"].items():
         assert bool(entry.get("openlexicon")) == (entry.get("status") == "supported"), name
+
+
+# SUBTLEX-US's Lg10WF and SUBTLEX-DE's lgSUBTLEX are log10 word counts, which read
+# about 1.3 and 1.6 below Zipf, and SUBTLEX-CH publishes no WCpmw column. A user
+# who renamed columns as the registry said would filter and match on the wrong
+# scale. Pins the same contract as the test of this name in test-corpora.R, and
+# reads every copy of the registry that is around: all three in a checkout, the
+# bundled one otherwise.
+def _registry_copies():
+    paths = [_registry_path()]
+    if REPO is not None:
+        paths += [str(REPO / "corpora" / "registry.yaml"),
+                  str(REPO / "R_workflow" / "inst" / "extdata" / "registry.yaml")]
+    return paths
+
+
+def test_registry_column_maps_are_not_log_counts():
+    for path in _registry_copies():
+        with open(path, encoding="utf-8") as handle:
+            entries = yaml.safe_load(handle)["corpora"]
+        for name, entry in entries.items():
+            columns = entry.get("columns") or {}
+            assert columns.get("freq_zipf") not in {"Lg10WF", "lgSUBTLEX", "WCpmw"}, (path, name)
+        assert entries["subtlex_us"]["columns"].get("freq_permillion") == "SUBTLWF", path
 
 
 # Pins the same contract as "fetch_corpus refuses a non-http(s) URL" in the R

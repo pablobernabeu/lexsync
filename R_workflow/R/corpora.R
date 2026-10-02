@@ -1,8 +1,9 @@
 # corpora.R -- access to the many-language corpus registry. The R package reads
 # the bundled, pre-derived lexica for the demonstrations and can download
-# CSV-format corpora (Connector A) on demand into a user cache. The wordfreq
-# connector (Connector B, ~40 languages) is provided by the Python package; its
-# pre-derived outputs are read here as ordinary lexica.
+# CSV-format corpora (Connector A) on demand into a user cache, although no
+# registered entry names a downloadable file yet. The wordfreq connector
+# (Connector B, thirty registered languages; wordfreq covers 42) is provided by
+# the Python package; its pre-derived outputs are read here as ordinary lexica.
 
 #' Per-user cache directory for fetched corpora
 #'

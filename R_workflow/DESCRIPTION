@@ -4,8 +4,9 @@ Title: Lexical Optimisation and Hardware-Timed Experiment Generation
 Version: 0.1.1
 Authors@R: person("Pablo", "Bernabeu", email = "pcbernabeu@gmail.com", role = c("aut", "cre"),
     comment = c(ORCID = "0000-0003-1083-2460"))
-Description: A cross-platform toolkit that unifies many-language lexical-corpus
-    access, parallel multidimensional stimulus matching, deterministic pseudoword
+Description: A cross-platform toolkit that unifies lexical-corpus access
+    (bundled English, Spanish and Mandarin lexica and a registry of citable
+    corpora), parallel multidimensional stimulus matching, deterministic pseudoword
     generation, counterbalancing and the automated generation of experiments from a
     declarative trial-event model, for 'PsychoPy', 'OpenSesame' and the browser
     ('jsPsych'). The laboratory targets bind electroencephalography onset triggers

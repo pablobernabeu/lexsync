@@ -35,7 +35,12 @@ dichotomy, and the report that tells you what control the selection actually
 achieved.
 
 Everything below runs on the English example lexicon bundled with the package, a
-3000-word slice that needs no download.
+3000-word slice that needs no download. Like the derived lexica it is cut from, it
+is not screened for lexical status. About a quarter of its forms (24%) are absent
+from SUBTLEX-US or are written there with a capital in more than 90% of their
+uses, as proper names and acronyms are. N and OLD20 count them as neighbours.
+[Choosing and screening a lexicon](#choosing-and-screening-a-lexicon) below says
+what that does to a selection and how to screen the forms out.
 
 ```{r setup}
 library(lexsync)
@@ -686,11 +691,16 @@ nrow(cont)
 range(cont$frequency)
 ```
 
-Selection runs in two passes. An even spread over the pool defines the control
-windows from its own distribution, the pool is filtered to those windows, and a
-second even spread over what survives is the selection. The result covers the
-predictor's range while the controls stay near-constant, and therefore
-near-uncorrelated with the predictor, which is what the regression needs.
+Selection runs in two passes. An even spread over the pool's ranks on the
+predictor defines the control windows from its own distribution, the pool is
+filtered to those windows, and a second even spread over the ranks of what
+survives is the selection. Because the spread is over ranks and not values, the
+selection follows the pool's distribution of the predictor. In the
+`en_freqcontinuous` demonstration its quantiles lie within 0.03 of the pool's,
+and 94% of the items fall in the lower half of the frequency range, since
+frequent words are rare in any lexicon. The windows trim the controls' tails
+without holding the controls constant, so how far each control is still
+correlated with the predictor has to be read from the report.
 
 ```{r continuous-report}
 cont_report <- match_report_continuous(
@@ -704,9 +714,12 @@ The report is read differently from a matched one. `predictor_span` is the
 realised range of the predictor in the selected set and should be wide, since it
 is the variation the regression has to work with. Each control's `pearson_r` is its correlation
 with the predictor and should be near zero, since a control that still correlates
-with the predictor is still a confound. Tightening `tolerance_k` pushes those
-correlations down at the cost of a smaller eligible pool, and that is the dial to
-turn when a control will not come loose.
+with the predictor is still a confound. Tightening `tolerance_k` does not reliably
+lower those correlations. In `en_freqcontinuous`, k = 1.0 gave a correlation of
+0.213 between frequency and `n_density`, against -0.049 at k = 1.5, and at
+k = 0.25 no item falls within the windows, so the selector relaxes them to the
+whole pool. A control that stays correlated belongs in the model as a
+covariate.
 
 The datasheet for a continuous design reports the span, the correlations and a
 suggested regression model in which the controls enter as covariates.
@@ -755,9 +768,7 @@ not the point estimate, is the primary summary of a controlled dimension. Its
 upper limit is the largest imbalance still consistent with the stimuli you have,
 and with few items that limit can be substantial even when the point estimate is
 almost zero. Reporting the interval keeps the dependence on set size visible,
-where a bare 'no significant difference' hides it. The width is a property of the
-number of items, so a small set cannot demonstrate tight control however good its
-point estimates look (Sassenhagen & Alday, 2016).
+where a bare 'no significant difference' hides it.
 
 `var_ratio` is the condition's variance over the anchor's. Two conditions can
 share a mean and still confound if one is far more spread out than the other,
@@ -779,16 +790,28 @@ str(schema$equivalence)
 ```
 
 A bound of 0.5 SD is the schema default and it is a convention rather than a
-finding. It is a permissive bound for a nuisance dimension in a design where that
-dimension has a strong effect on the response, and a study that cares about a
-particular confound should set a bound it can defend. The 90% interval is the
-1 - 2 x alpha interval so that it goes with the TOST decision at alpha: the test
+finding. It is not a default of Lakens (2017), who asks for the bound to be
+justified for the study at hand. Half a standard deviation is a permissive bound
+for a nuisance dimension in a design where that dimension has a strong effect on
+the response. A study that cares about a particular confound should set a bound
+it can defend. The verdict also depends on the number of items: at a bound of 0.5
+and an alpha of .05, no dimension that varies can pass with fewer than 23 items
+per condition, even when the conditions are identical.
+
+The 90% interval is the 1 - 2 x alpha interval so that it goes with the TOST
+decision at alpha: the test
 declares equivalence when the interval falls inside the bounds, and the interval
 and the verdict are two readings of nearly the same thing. They are not quite
 identical, because TOST tests the raw mean difference while the interval also
 allows for the sampling error of the pooled SD. For a control near zero the two
 agree to well within the published rounding. For a limit close to the bound,
 `tost_p` is the verdict.
+
+Both statistics treat the selected items as a sample from a larger population,
+which they are not. Sassenhagen and Alday (2016) point out that a test on stimuli
+concerns a closed population (the items you chose). They recommend describing the
+stimuli, which the descriptives do, and entering potential confounds in the
+analysis as covariates.
 
 The individual statistics are exported and can be called directly on any two
 vectors.
@@ -835,19 +858,23 @@ Two methods are available, chosen per design under `items.generation.method`.
 
 `letter_substitution`, the default, changes as few letters as possible subject to
 three constraints: every resulting bigram must be attested in the corpus, the form
-must not be a real word or one already generated, and the length must be preserved
-exactly. Single substitutions are searched first, then pairs as a fallback. Among
-the legal candidates the most bigram-plausible wins, with a byte-order tie-break.
+must not be in the reference list or already generated, and the length must be
+preserved exactly. Single substitutions are searched first, then pairs as a
+fallback. Among the legal candidates the most bigram-typical wins, with a
+byte-order tie-break.
 
 `subsyllabic` splits each word into onset, nucleus and coda constituents and swaps
 whole constituents for attested alternatives of the same role and length, so the
 pseudowords keep their syllabic structure. Codas and nuclei are changed before
-onsets, which carry the most identifying orthography. Roughly two thirds of a
-word's constituents are targeted, each swap preserves length, and a word with no
-legal swap falls back to letter substitution, so every word yields a pseudoword.
-It is a deterministic orthographic approximation of Wuggy (Keuleers & Brysbaert,
-2010), trading Wuggy's phonological model for exact length matching and
-cross-engine reproducibility.
+onsets, which carry the most identifying orthography. Up to ceil(2k/3) of a
+word's k constituents are replaced, each swap preserves length, and a word with
+no legal swap falls back to letter substitution, so every word yields a
+pseudoword. It is a deterministic orthographic approximation of Wuggy (Keuleers
+& Brysbaert, 2010), and it differs from Wuggy in more than the phonological
+model. Wuggy matches the template's transition frequencies, matches letter length
+by default and has orthographic modules for several languages, and by default it
+keeps two thirds of the segments where lexsync replaces up to two thirds. What
+lexsync gains is cross-engine reproducibility.
 
 ```{r subsyllabic}
 sub_stim <- build_lexdec_stimuli(
@@ -860,6 +887,12 @@ merge(
   by = "set", suffixes = c("_word", "_pseudoword")
 )[1:4, ]
 ```
+
+In both methods, the scoring picks the most bigram-typical candidate and does not
+match the base word, so the pseudowords come out more bigram-typical than their
+words. The difference in mean bigram probability is about d = -1.5, words minus
+pseudowords, in `en_lexdec` and `en_lexdec_wuggy` alike. Read the generated forms
+before a study runs.
 
 Both generators process base words in byte order, so the set of already-used
 pseudowords evolves identically in the two engines and both select byte-identical

@@ -1,8 +1,9 @@
 """Access to the many-language corpus registry.
 
 Mirrors R_workflow/R/corpora.R, and adds the wordfreq connector (Connector B,
-~40 languages). The demonstrations read the bundled, pre-derived lexica; new
-languages are fetched on demand into a user cache.
+thirty registered languages; wordfreq covers 42). The demonstrations read the
+bundled, pre-derived lexica; new languages are fetched on demand into a user
+cache.
 """
 from __future__ import annotations
 

@@ -629,15 +629,18 @@ def select_continuous_stimuli(pool: pd.DataFrame, design: dict, schema: dict,
                               verbose: bool = False, key: str = "word",
                               label: str | None = "continuous",
                               renumber_sets: bool = True) -> pd.DataFrame:
-    """Select a set that spans a continuous predictor, holding controls constant.
+    """Select a set spread over a continuous predictor, with windows on the controls.
 
     Instead of dichotomising the predictor into conditions and matching, items are
-    chosen to cover the predictor's range evenly while the control dimensions are
-    held within a tolerance band, so they stay near-constant and near-uncorrelated
-    with the predictor. The set is analysed by regression / mixed models rather
-    than by between-condition contrasts, which avoids the loss of power and the
-    selection artefacts of matched dichotomies (Kuperman, 2015; Liben-Nowell et
-    al., 2019).
+    spread evenly over the predictor's ranks in the pool, so the selection follows
+    the pool's distribution of the predictor and does not cover its range evenly.
+    The control dimensions are held within a tolerance band, which trims their
+    tails without holding them constant, so read each control's correlation with
+    the predictor in ``match_report_continuous`` before relying on it. Tightening
+    ``tolerance_k`` does not reliably lower those correlations. The set is analysed
+    by regression / mixed models rather than by between-condition contrasts, which
+    avoids the loss of power and the selection artefacts of matched dichotomies
+    (Kuperman, 2015; Liben-Nowell et al., 2019).
 
     Two deterministic passes reuse the matcher's even-spread primitive, so the R
     and Python engines select byte-identical stimuli: an even spread over the

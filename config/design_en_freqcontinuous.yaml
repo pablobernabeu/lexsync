@@ -1,7 +1,10 @@
 # Continuous (non-dichotomised) frequency design. Instead of splitting frequency
-# into high and low conditions and matching, items are selected to span the full
-# frequency range evenly while length, neighbourhood density and OLD20 are held
-# near-constant (and so near-uncorrelated with frequency). The set is analysed by
+# into high and low conditions and matching, items are spread over the ranks of
+# frequency in the pool, so the selection follows the pool's distribution: its
+# quantiles lie within 0.03 of the pool's, and 94% of the items fall in the lower
+# half of the frequency range. Tolerance windows trim the tails of length,
+# neighbourhood density and OLD20 without holding them constant, so read each
+# control's correlation with frequency in the report. The set is analysed by
 # regression or a linear mixed-effects model rather than a between-condition
 # contrast, which keeps the predictor continuous and avoids the power loss and
 # selection artefacts of matched dichotomies (Kuperman, 2015; Liben-Nowell et
@@ -10,7 +13,7 @@
 name: en_freqcontinuous
 language: english
 lexicon: corpora/derived/en.csv
-description: 'English words spanning the frequency range continuously, with length, neighbourhood density and OLD20 held near-constant, for regression / mixed-model analysis.'
+description: 'English words spread over the ranks of frequency in the pool, with the tails of length, neighbourhood density and OLD20 trimmed by tolerance windows, for regression / mixed-model analysis.'
 
 # Total number of items (reuses the n_per_condition key; there is one implicit group).
 n_per_condition: 80
@@ -20,17 +23,18 @@ pool_filters:
   frequency: [3.8, 7.0]
 
 # Declares the continuous mode (mutually exclusive with `conditions`).
-#   predictor: the dimension spanned evenly (the experimental regressor).
-#   controls:  the dimensions held near-constant; must equal match_on.
+#   predictor: the dimension whose ranks the selection spreads over (the experimental regressor).
+#   controls:  the dimensions whose tails the windows trim; must equal match_on.
 continuous:
   predictor: frequency
   controls: [length, n_density, old20]
 
 match_on: [length, n_density, old20]
 
-# Per-control window half-width (mean +/- k * SD of the even-spread set). Tighter k
-# holds the controls more tightly (lower predictor-control correlation) at the cost
-# of a smaller eligible pool.
+# Per-control window half-width (mean +/- k * SD of the even-spread set). A tighter
+# k does not reliably lower the predictor-control correlations: k = 1.0 gave
+# r(frequency, n_density) = 0.213 against -0.049 at k = 1.5, and at k = 0.25 no
+# item falls within the windows, so the selector relaxes them to the whole pool.
 matching:
   tolerance_k:
     length: 1.5

@@ -3,15 +3,18 @@
 # Andrews (1989, JEP:LMC) crossed word frequency (high/low) with orthographic
 # neighbourhood size (Coltheart's N: large/small) in a 2x2 lexical-decision design,
 # holding word length constant, and found that N facilitated responses more for
-# low-frequency words. lexsync reproduces the design to the same criteria, namely a
-# 2x2 of frequency x neighbourhood size over short words, with all four cells matched
-# on length. Frequencies come from a contemporary corpus (wordfreq; Speer 2022)
-# instead of the Kucera-Francis counts of the original. The realised bands therefore
-# differ, while the factorial structure and the length control are reproduced.
+# low-frequency words. lexsync reproduces the item-selection structure to the same
+# criteria, namely a 2x2 of frequency x neighbourhood size over short words, with all
+# four cells matched on length. Frequencies come from a contemporary corpus
+# (wordfreq; Speer 2022) instead of the Kucera-Francis counts of the original. The
+# realised bands therefore differ, while the factorial structure and the length
+# control are reproduced. The design has no nonwords and no response mapping, so it
+# is not a lexical-decision task. Its low-frequency cells also hold many names and
+# acronyms from the unscreened lexicon (see corpora/ATTRIBUTION.md).
 name: en_andrews_repro
 language: english
 lexicon: corpora/derived/en.csv
-description: 'Reproducing Andrews (1989): frequency x orthographic neighbourhood size (Coltheart''s N), a 2x2 lexical-decision design with every cell matched on length.'
+description: 'Reproducing the item selection of Andrews (1989): frequency x orthographic neighbourhood size (Coltheart''s N), a 2x2 of words with every cell matched on length; no nonwords or response mapping, so not a lexical-decision task.'
 n_per_condition: 18
 pool_filters:
   length: [3, 5]

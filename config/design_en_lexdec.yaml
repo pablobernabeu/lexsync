@@ -1,9 +1,12 @@
 # Demonstration paradigm: English lexical decision.
 # Real words (a frequency band) are contrasted with length-matched, orthographically
-# legal pseudowords generated deterministically by constrained letter substitution
-# (a cross-engine-reproducible orthographic cousin of Wuggy). The presented string
-# is the 'target'; conditions are 'word' and 'pseudoword'; each word is paired with
-# its pseudoword by 'set'. Trial events: fixation -> target (onset-locked condition
+# legal pseudowords generated deterministically by constrained letter substitution.
+# Lexicality is checked against the reference lexicon only, since the design names
+# no items.generation.exclude list, so a form missing from it may still be a word.
+# The most bigram-typical candidate wins, so the pseudowords are more bigram-typical
+# than their words (d about -1.5, words minus pseudowords). The presented string is
+# the 'target'; conditions are 'word' and 'pseudoword'; each word is paired with its
+# pseudoword by 'set'. Trial events: fixation -> target (onset-locked condition
 # marker) -> response -> blank.
 name: en_lexdec
 language: english

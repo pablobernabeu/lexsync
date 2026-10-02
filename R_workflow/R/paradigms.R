@@ -50,6 +50,11 @@ PARADIGMS <- list(
       list(type = "blank", duration_frames = 15L)
     )
   ),
+  # Priming, backward pattern-masked: the prime for 3 frames (50 ms at 60 Hz), a
+  # '#####' mask for 2 frames (33 ms), then the target, so the SOA is 83 ms at
+  # 60 Hz. There is no forward mask, and prime and target keep the item table's
+  # letter case. The prime onset carries a fixed marker and the target onset the
+  # condition marker.
   priming = list(
     stimulus_fields = c("prime", "target"),
     counterbalance = "latin_square_target",

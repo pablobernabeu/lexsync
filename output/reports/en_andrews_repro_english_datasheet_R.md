@@ -5,7 +5,7 @@
 ## Provenance
 
 - **Paradigm:** factorial  |  **Item source:** corpus
-- **Description:** Reproducing Andrews (1989): frequency x orthographic neighbourhood size (Coltheart's N), a 2x2 lexical-decision design with every cell matched on length.
+- **Description:** Reproducing the item selection of Andrews (1989): frequency x orthographic neighbourhood size (Coltheart's N), a 2x2 of words with every cell matched on length; no nonwords or response mapping, so not a lexical-decision task.
 - **Materials source:** `corpora/derived/en.csv` (sha256 `575833489e04d6a4...`)
 - **Selection:** standardised_euclidean
 - **Cross-engine determinism:** byte-identical

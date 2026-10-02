@@ -62,8 +62,8 @@ step.
 ## Continuous designs
 
 Dichotomising a continuous predictor costs power and can introduce selection artefacts. A design may
-instead span the predictor evenly while holding its controls near-constant, and be analysed by
-regression or a mixed model.
+instead spread its items over the predictor's ranks, following the pool's distribution, while
+tolerance windows trim the tails of its controls, and be analysed by regression or a mixed model.
 
 ::: lexsync.select_continuous_stimuli
 

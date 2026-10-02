@@ -23,12 +23,20 @@ for event in lexsync.resolve_events({"paradigm": "lexical_decision"}):
 An event's `type` is one of `fixation`, `text`, `mask`, `blank`, `region_by_region`, `response`,
 `question` or `feedback`. Its `content` is either a literal, such as `"+"` or `"#####"`, or a field reference in
 braces, such as `"{target}"`, which is filled per trial from the loop table. `duration_ms` is the
-event's length in milliseconds, the unit all three targets present, so a design means the same
-interval wherever it runs. The PsychoPy script measures the display's refresh at start-up and
+event's length in milliseconds, the unit all three targets present, so a design asks for the same
+interval wherever it runs, although each target delivers it differently (below). The PsychoPy script measures the display's refresh at start-up and
 converts it to the nearest whole number of flips. `duration_frames` is still accepted for designs
 written before that change and is converted at `presentation.assumed_refresh_hz`. `trigger` is an
 integer EEG code, or the token `condition` or `item`, and `onset_locked` asks for it to be written
 on the event's onset flip.
+
+Each target realises those durations in its own way. PsychoPy rounds them to whole flips at the
+measured refresh and locks the trigger to the flip. The generated OpenSesame experiment builds each
+canvas at run time, sends the onset trigger as a blocking 10 ms pulse and then sleeps for the full
+duration, so every event overruns its stated length. At 60 Hz, a 50 ms prime is predicted to last
+about 67 ms, and the 83 ms stimulus-onset asynchrony of the `priming` paradigm about 117 ms. In the
+browser, timing varies with the machine and the browser, and primes of 33 to 50 ms are not reliably
+realised online. Whatever the target, verify the timing a study depends on with a photodiode.
 
 `resolve_events` returns a design's `events` list if it has one, and otherwise the default sequence
 of the paradigm it names, defaulting to `factorial`. Supplying `events` explicitly is how you build
@@ -100,7 +108,7 @@ counterbalancing recipe and its default event sequence.
 | --- | --- | --- | --- |
 | `factorial` | `word` | `factorial` | Fixation, the critical word carrying the onset-locked condition marker, response, blank. |
 | `lexical_decision` | `target` | `factorial` | The same shape, with a generic target field so a real word and a pseudoword are interchangeable. |
-| `priming` | `prime`, `target` | `latin_square_target` | Fixation, a 3-frame prime with its own fixed marker, a 2-frame mask, then the target with the condition marker. |
+| `priming` | `prime`, `target` | `latin_square_target` | Backward pattern-masked: fixation, a 50 ms prime with its own fixed marker, a 33 ms `#####` mask, then the target with the condition marker (an 83 ms stimulus-onset asynchrony at 60 Hz). There is no forward mask, and prime and target keep the item table's letter case. |
 | `self_paced_reading` | `sentence`, `question` | `latin_square_target` | Fixation, the sentence region by region with the critical region marked, then a yes/no comprehension question. |
 | `categorisation` | `target`, `category`, `answer` | `latin_square_target` | Fixation, the category cue, then the word to judge against it with the condition marker, response, blank. |
 
@@ -521,9 +529,11 @@ immediately after the onset it marks. The word and its response window are one s
 is flushed once the trigger is out and polled while the word is shown, then over a blank screen
 until the window closes. The response time is taken from the word's onset. The script computes
 `correct` from the trial's `answer` itself. OpenSesame's own `correct_response` is not used, since
-its variable syntax differs between 3.3 and 4.x. The setup block opens a parallel or serial device
-and falls back to a printing stub when neither is available, so the experiment opens and runs on a
-machine with no trigger hardware.
+its variable syntax differs between 3.3 and 4.x. The setup block opens the parallel port and falls back
+to a printing stub when it is not available, so the experiment opens and runs on a machine with no
+trigger hardware. The setup's code has a serial branch, but nothing in the design selects it, so a
+serial device needs the setup script edited by hand. OpenSesame takes full screen or a window from
+the mode it is launched in, while the PsychoPy script runs in a 1280 × 1024 window.
 
 The word in that script does not come from OpenSesame's variable store, because OpenSesame
 evaluates what a loop table puts there. In both versions, a cell holding `[=...]` runs as Python,

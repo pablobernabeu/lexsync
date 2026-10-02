@@ -65,13 +65,14 @@ is built first, exactly as the pipeline does, and matching then runs over it.
 
 ```{r design}
 design <- list(
-  name = "vignette_demo", language = "english", n_per_condition = 15,
-  pool_filters = list(length = c(3, 7), frequency = c(3.8, 7)),
+  name = "quick_start", language = "english", n_per_condition = 60,
+  pool_filters = list(length = c(3, 8), frequency = c(3.8, 7.0)),
   conditions = list(
-    list(name = "high", define_by = list(frequency = c(5.2, 7.0))),
-    list(name = "low",  define_by = list(frequency = c(3.8, 4.4)))
+    list(name = "high_frequency", define_by = list(frequency = c(5.2, 7.0))),
+    list(name = "low_frequency",  define_by = list(frequency = c(3.8, 4.4)))
   ),
-  match_on = list("length", "n_density", "old20")
+  match_on = list("length", "n_density", "old20"),
+  counterbalance = list(lists = 1)
 )
 pool <- build_pool(lex, design$pool_filters)
 stim <- match_stimuli(pool, design, schema)
@@ -243,10 +244,12 @@ knitr::kable(
 )
 ```
 
-The manipulated dimension (frequency) differs strongly, while the controlled
-dimensions (length, neighbourhood density and OLD20) are closely equated. The
-report leads with the standardised mean difference (`cohens_d`) and its 90%
-confidence interval (`d_ci_low`, `d_ci_high`). A non-significant difference test is
+The manipulated dimension (frequency) differs strongly, while on the controlled
+dimensions (length, neighbourhood density and OLD20) the differences are small
+and each passes the equivalence test. Showing equivalence needs enough items: at
+the default bound and alpha no dimension that varies can pass with fewer than 23
+items per condition. The report leads with the standardised mean difference
+(`cohens_d`) and its 90% confidence interval (`d_ci_low`, `d_ci_high`). A non-significant difference test is
 not evidence of matching, and its outcome depends on the number of items. The
 effect size and its interval, whose upper limit is the largest imbalance still
 consistent with the stimuli, are therefore the primary summary. The TOST equivalence test

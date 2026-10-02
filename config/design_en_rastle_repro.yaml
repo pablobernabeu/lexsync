@@ -10,18 +10,21 @@
 # Their result (equal priming for transparent and opaque, none for form) argued
 # for an early morpho-orthographic decomposition stage blind to meaning.
 #
-# lexsync expresses the design with its priming paradigm: each target appears with a
-# related prime (of its assigned prime_type) and an unrelated, length-matched control.
-# Latin-square counterbalancing ensures a target is seen once per list. prime_type
+# lexsync reproduces the item-selection structure of the design, not the masked-
+# priming task. Each target appears with a related prime (of its assigned
+# prime_type) and an unrelated, length-matched control, and Latin-square
+# counterbalancing ensures a target is seen once per list. prime_type
 # (transparent | opaque | form) is the between-items factor carried for analysis.
-# This is a representative item set following the prime-type STRUCTURE of Rastle et
-# al. (2004), not their materials: they used 150 prime-target pairs, 50 per condition,
-# each target also appearing with an unrelated control prime, plus 50 filler word pairs
-# and 200 nonword targets.
+# The trials come from lexsync's priming paradigm, which is backward pattern-masked
+# with no forward mask, and the design has no nonword targets, so it is not a
+# lexical-decision task. This is a representative item set following the
+# prime-type STRUCTURE of Rastle et al. (2004), not their materials: they used 150
+# prime-target pairs, 50 per condition, each target also appearing with an
+# unrelated control prime, plus 50 filler word pairs and 200 nonword targets.
 name: en_rastle_repro
 language: english
 paradigm: priming
-description: 'Reproducing Rastle, Davis & New (2004): masked priming contrasting transparent, opaque and orthographic (form) prime-target relationships, each against an unrelated baseline; Latin-square counterbalanced over two lists.'
+description: 'Reproducing the item-selection structure of Rastle, Davis & New (2004): transparent, opaque and orthographic (form) prime-target relationships, each against an unrelated baseline, presented with the backward-masked priming paradigm and no nonword targets, so not their masked-priming lexical-decision task; Latin-square counterbalanced over two lists.'
 items:
   source: table
   path: items/rastle_priming_en.csv

@@ -1,8 +1,8 @@
 # lexsync run log: en_resample
 
 - Engine: Python 3.13.7
-- Started: 2026-10-09T05:24:51
-- Finished: 2026-10-09T05:24:53
+- Started: 2026-10-09T05:59:04
+- Finished: 2026-10-09T05:59:06
 
 ## Run metadata
 
@@ -15,82 +15,82 @@
 
 ## Steps
 
-- **2026-10-09T05:24:51**: loading lexicon 'corpora/derived/en.csv'
-- **2026-10-09T05:24:51**: lexicon loaded: 30000 words
+- **2026-10-09T05:59:04**: loading lexicon 'corpora/derived/en.csv'
+- **2026-10-09T05:59:04**: lexicon loaded: 30000 words
     - words: 30000
-- **2026-10-09T05:24:51**: pool after filters: 10205 words
+- **2026-10-09T05:59:04**: pool after filters: 10205 words
     - pool: 10205
-- **2026-10-09T05:24:53**: resampled 3 disjoint matched sets (240 items total)
+- **2026-10-09T05:59:05**: resampled 3 disjoint matched sets (240 items total)
     - conditions: high_frequency, low_frequency
-- **2026-10-09T05:24:53**: equivalence low_frequency vs high_frequency on 'length': d = 0.04 [-0.17, 0.26], TOST p = 0.0002 (equivalent)
-- **2026-10-09T05:24:53**: equivalence low_frequency vs high_frequency on 'frequency': d = 5.38 [4.92, 5.84], TOST p = 1.0 (not shown equivalent)
-- **2026-10-09T05:24:53**: equivalence low_frequency vs high_frequency on 'n_density': d = 0.03 [-0.18, 0.24], TOST p = 0.0002 (equivalent)
-- **2026-10-09T05:24:53**: equivalence low_frequency vs high_frequency on 'old20': d = 0.02 [-0.20, 0.23], TOST p = 0.0001 (equivalent)
-- **2026-10-09T05:24:53**: wrote 'en_resample_english_stimuli_py.csv'
+- **2026-10-09T05:59:05**: equivalence low_frequency vs high_frequency on 'length': d = 0.04 [-0.17, 0.26], TOST p = 0.0002 (equivalent)
+- **2026-10-09T05:59:05**: equivalence low_frequency vs high_frequency on 'frequency': d = 5.38 [4.92, 5.84], TOST p = 1.0 (not shown equivalent)
+- **2026-10-09T05:59:05**: equivalence low_frequency vs high_frequency on 'n_density': d = 0.03 [-0.18, 0.24], TOST p = 0.0002 (equivalent)
+- **2026-10-09T05:59:05**: equivalence low_frequency vs high_frequency on 'old20': d = 0.02 [-0.20, 0.23], TOST p = 0.0001 (equivalent)
+- **2026-10-09T05:59:05**: wrote 'en_resample_english_stimuli_py.csv'
     - path: output\stimuli\en_resample_english_stimuli_py.csv
     - rows: 240
     - md5: 32440a4d5753ad21bf307a389773cd05
-- **2026-10-09T05:24:53**: wrote 'en_resample_english_descriptives_py.csv'
+- **2026-10-09T05:59:05**: wrote 'en_resample_english_descriptives_py.csv'
     - path: output\reports\en_resample_english_descriptives_py.csv
     - rows: 8
     - md5: 19a03d1d55d822bdbb75c074c9f3bdc0
-- **2026-10-09T05:24:53**: wrote 'en_resample_english_comparisons_py.csv'
+- **2026-10-09T05:59:05**: wrote 'en_resample_english_comparisons_py.csv'
     - path: output\reports\en_resample_english_comparisons_py.csv
     - rows: 4
     - md5: 70cb67a8e7d4f1d34dc1c7d4d2c6f28e
-- **2026-10-09T05:24:53**: wrote 'en_resample_english_psychopy.py'
+- **2026-10-09T05:59:06**: wrote 'en_resample_english_psychopy.py'
     - path: output\experiments\en_resample_english_psychopy.py
     - rows: None
     - md5: 1fc42901153966c672dc2bb9de85938a
-- **2026-10-09T05:24:53**: wrote 'en_resample_english_rep1_list1.osexp'
+- **2026-10-09T05:59:06**: wrote 'en_resample_english_rep1_list1.osexp'
     - path: output\experiments\en_resample_english_rep1_list1.osexp
     - rows: None
     - md5: 67de3c762c3ef699f34636f7ed61b9c2
-- **2026-10-09T05:24:53**: wrote 'en_resample_english_rep2_list1.osexp'
+- **2026-10-09T05:59:06**: wrote 'en_resample_english_rep2_list1.osexp'
     - path: output\experiments\en_resample_english_rep2_list1.osexp
     - rows: None
     - md5: 2ca12ce90e1d8e3017309d74a004e91f
-- **2026-10-09T05:24:53**: wrote 'en_resample_english_rep3_list1.osexp'
+- **2026-10-09T05:59:06**: wrote 'en_resample_english_rep3_list1.osexp'
     - path: output\experiments\en_resample_english_rep3_list1.osexp
     - rows: None
     - md5: 349c6741014c7ed32f18ba6916c8207e
-- **2026-10-09T05:24:53**: wrote 'en_resample_english.html'
+- **2026-10-09T05:59:06**: wrote 'en_resample_english.html'
     - path: output\experiments\en_resample_english.html
     - rows: None
     - md5: 99fbb7de6f9cc58a87595c175fea7c0d
-- **2026-10-09T05:24:53**: wrote 'en_resample_english_psychopy.csv'
+- **2026-10-09T05:59:06**: wrote 'en_resample_english_psychopy.csv'
     - path: output\experiments\en_resample_english_psychopy.csv
     - rows: None
     - md5: 2408c078f6b1e41505eb3c5da1d3b89c
-- **2026-10-09T05:24:53**: wrote 'en_resample_english_rep1_list1_opensesame.csv'
+- **2026-10-09T05:59:06**: wrote 'en_resample_english_rep1_list1_opensesame.csv'
     - path: output\experiments\en_resample_english_rep1_list1_opensesame.csv
     - rows: None
     - md5: faf6c046eb12e7ff7667246f48f04c90
-- **2026-10-09T05:24:53**: wrote 'en_resample_english_rep1_list1_opensesame_text.csv'
+- **2026-10-09T05:59:06**: wrote 'en_resample_english_rep1_list1_opensesame_text.csv'
     - path: output\experiments\en_resample_english_rep1_list1_opensesame_text.csv
     - rows: None
     - md5: bc1d25a186229324b42781040b963050
-- **2026-10-09T05:24:53**: wrote 'en_resample_english_rep2_list1_opensesame.csv'
+- **2026-10-09T05:59:06**: wrote 'en_resample_english_rep2_list1_opensesame.csv'
     - path: output\experiments\en_resample_english_rep2_list1_opensesame.csv
     - rows: None
     - md5: 53e1c07d9d8fabfe74108fb02f263493
-- **2026-10-09T05:24:53**: wrote 'en_resample_english_rep2_list1_opensesame_text.csv'
+- **2026-10-09T05:59:06**: wrote 'en_resample_english_rep2_list1_opensesame_text.csv'
     - path: output\experiments\en_resample_english_rep2_list1_opensesame_text.csv
     - rows: None
     - md5: d5e018e5e73f7e77bebda77436b80ef6
-- **2026-10-09T05:24:53**: wrote 'en_resample_english_rep3_list1_opensesame.csv'
+- **2026-10-09T05:59:06**: wrote 'en_resample_english_rep3_list1_opensesame.csv'
     - path: output\experiments\en_resample_english_rep3_list1_opensesame.csv
     - rows: None
     - md5: fff54ac32667248a70d2bbde92cbc1be
-- **2026-10-09T05:24:53**: wrote 'en_resample_english_rep3_list1_opensesame_text.csv'
+- **2026-10-09T05:59:06**: wrote 'en_resample_english_rep3_list1_opensesame_text.csv'
     - path: output\experiments\en_resample_english_rep3_list1_opensesame_text.csv
     - rows: None
     - md5: 2929b2f3e05344e62a9092800cc1a7ff
-- **2026-10-09T05:24:53**: wrote 'en_resample_english_datasheet_py.json'
+- **2026-10-09T05:59:06**: wrote 'en_resample_english_datasheet_py.json'
     - path: output\reports\en_resample_english_datasheet_py.json
     - rows: None
-    - md5: 3df94235588c3b0501efe2c94ea110d3
-- **2026-10-09T05:24:53**: wrote 'en_resample_english_datasheet_py.md'
+    - md5: 24b389be6309abbdadd6034729d47b97
+- **2026-10-09T05:59:06**: wrote 'en_resample_english_datasheet_py.md'
     - path: output\reports\en_resample_english_datasheet_py.md
     - rows: None
     - md5: 197ad9c5f878a8411f36e58aeaba00a7

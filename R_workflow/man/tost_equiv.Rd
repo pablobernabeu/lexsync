@@ -10,7 +10,10 @@ tost_equiv(x, y, bound_d = 0.5, alpha = 0.05)
 \item{x, y}{Numeric vectors.}
 
 \item{bound_d}{Smallest effect size of interest (Cohen's d); defaults to the
-schema value of 0.5 (Lakens, 2017).}
+schema value of 0.5. That value is a convention and not a default of Lakens
+(2017), who asks for the bound to be justified for the study. At 0.5 and
+alpha .05, no dimension that varies can pass with fewer than 23 items per
+condition, even when the conditions are identical.}
 
 \item{alpha}{Significance level.}
 }

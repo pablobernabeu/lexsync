@@ -1,17 +1,25 @@
 # generation.R -- deterministic, orthographically-controlled pseudoword generation.
 # For each real base word a pseudoword is produced by constrained letter
 # substitution: change the fewest letters so that every resulting bigram is
-# attested in the corpus, the form is not a real word, and the length is
-# preserved. Among the legal non-word neighbours the most bigram-plausible is
+# attested in the corpus, the form is not in the reference word list, and the
+# length is preserved. Among the legal candidates the most bigram-typical is
 # chosen, with byte-order (radix) tie-breaks, so the R and Python engines generate
-# the identical pseudoword from the identical corpus. A deterministic orthographic
-# cousin of Wuggy (Keuleers & Brysbaert, 2010). Mirrors generation.py.
+# the identical pseudoword from the identical corpus. Mirrors generation.py.
 #
 # A real word is anything in the reference list, so a low-frequency word below the
 # lexicon's floor (Zipf 2.95 in the bundled English lexicon) is not one. The
 # generators therefore take an `exclude` list of further known word forms, which a
 # pseudoword must not equal either, and .read_known_forms() reads such lists for a
-# design's items.generation.exclude.
+# design's items.generation.exclude. Lexicality is checked against those forms
+# only, so a form missing from all of them may still be a word: crier, pall and
+# titer have come through with the English lexicon and no exclusion list. Because
+# the scoring picks the most typical candidate and does not match the base word,
+# pseudowords are more bigram-typical than their base words (d about -1.5, words
+# minus pseudowords, in en_lexdec). The subsyllabic method is an orthographic
+# approximation of Wuggy (Keuleers & Brysbaert, 2010) and differs from it: Wuggy
+# matches the template's transition frequencies, matches letter length by default
+# and has orthographic language plugins, and by default keeps two thirds of the
+# segments, whereas lexsync replaces up to ceil(2k/3) of a word's k constituents.
 
 # The forms a pseudoword must not equal, as an environment used as a set: the
 # reference words and `exclude`. The excluded forms are trimmed, lower-cased and put

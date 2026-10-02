@@ -2,19 +2,29 @@
 
 For each real base word a pseudoword is produced by *constrained letter
 substitution*: change the fewest letters so that (i) every resulting letter
-bigram is attested in the corpus (orthographic legality), (ii) the form is not a
-real word, and (iii) the length is preserved exactly. Among the legal non-word
-neighbours the most bigram-plausible is chosen, with byte-order tie-breaks, so
-the R and Python engines generate the identical pseudoword from the identical
-corpus (see R_workflow/R/generation.R). This is a deterministic orthographic
-cousin of Wuggy (Keuleers & Brysbaert, 2010); it trades Wuggy's subsyllabic model
-for exact length matching and cross-engine reproducibility.
+bigram is attested in the corpus (orthographic legality), (ii) the form is not in
+the reference word list, and (iii) the length is preserved exactly. Among the
+legal candidates the most bigram-typical is chosen, with byte-order tie-breaks,
+so the R and Python engines generate the identical pseudoword from the identical
+corpus (see R_workflow/R/generation.R).
 
 A real word is anything in the reference list, so a low-frequency word below the
 lexicon's floor (Zipf 2.95 in the bundled English lexicon) is not one. The
 generators therefore take an ``exclude`` list of further known word forms, which a
 pseudoword must not equal either, and ``_read_known_forms`` reads such lists for a
-design's ``items.generation.exclude``.
+design's ``items.generation.exclude``. Lexicality is checked against those forms
+only, so a form missing from all of them may still be a word: crier, pall and
+titer have come through with the English lexicon and no exclusion list. Because
+the scoring picks the most typical candidate and does not match the base word,
+pseudowords are more bigram-typical than their base words (d about -1.5, words
+minus pseudowords, in en_lexdec).
+
+The subsyllabic method is an orthographic approximation of Wuggy (Keuleers &
+Brysbaert, 2010), and it differs from Wuggy in several ways. Wuggy matches the
+template's transition frequencies, matches letter length by default and has
+orthographic language plugins. By default it keeps two thirds of the segments,
+whereas lexsync's subsyllabic method replaces up to ceil(2k/3) of a word's k
+constituents.
 """
 from __future__ import annotations
 

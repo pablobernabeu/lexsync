@@ -5,7 +5,7 @@
     "language": "english",
     "paradigm": "priming",
     "source": "table",
-    "description": "Prime-target pairs selected to span target frequency continuously, with target length and prime-target orthographic overlap held near-constant; Latin-square counterbalanced over two lists.",
+    "description": "Prime-target pairs spread over the ranks of target frequency, with the tails of target length and prime-target orthographic overlap trimmed by tolerance windows; Latin-square counterbalanced over two lists.",
     "n_per_condition": 8
   },
   "materials_source": {
@@ -177,8 +177,8 @@
       "stringi": "1.8.7",
       "os": "Windows x86-64"
     },
-    "design_sha256": "ccfdfb44d3a32c3642b8dec85fe32f9cce173b90185d10bb1d8016379576cd6f",
-    "schema_sha256": "c843341aaf32f9f474fde3e653b746e3abd535f853906d02ac47eb6609f94bb7"
+    "design_sha256": "0c0c118a2b61b6f0c26ce5f44d7f14ce0e03116cd385203a551f6394b96731d8",
+    "schema_sha256": "56920528039aab921b60693e2c422726817d65b53c57c81fcde7f718dfeb6f3e"
   },
   "artifacts": [
     {

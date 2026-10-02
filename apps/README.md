@@ -6,9 +6,10 @@ pipeline that the package and command line use, displays the matched stimuli, th
 realised-control report and the materials datasheet, and exports the reproducible
 R, Python and command-line code that reproduces the operation. The applications are
 front-ends only: every result they show is produced by the installed lexsync
-package, and the design they build is an ordinary YAML configuration file. The two
-engines select byte-identical stimuli, so a design built in either application runs
-the same way in either ecosystem.
+package, and the design they build is an ordinary YAML configuration file. Under
+the deterministic matching methods, which include the default, the two engines
+select byte-identical stimuli, so a design built in either application runs the
+same way in either ecosystem.
 
 Both cover the corpus-matching workflow (conditions defined by numeric windows or by
 a categorical column, including full 2 × 2 cells), the lexical-decision paradigm with

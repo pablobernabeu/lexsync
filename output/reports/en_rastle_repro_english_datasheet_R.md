@@ -5,7 +5,7 @@
 ## Provenance
 
 - **Paradigm:** priming  |  **Item source:** table
-- **Description:** Reproducing Rastle, Davis & New (2004): masked priming contrasting transparent, opaque and orthographic (form) prime-target relationships, each against an unrelated baseline; Latin-square counterbalanced over two lists.
+- **Description:** Reproducing the item-selection structure of Rastle, Davis & New (2004): transparent, opaque and orthographic (form) prime-target relationships, each against an unrelated baseline, presented with the backward-masked priming paradigm and no nonword targets, so not their masked-priming lexical-decision task; Latin-square counterbalanced over two lists.
 - **Materials source:** `items/rastle_priming_en.csv` (sha256 `53bd365a801a3e82...`)
 - **Selection:** item table (user-supplied)
 - **Cross-engine determinism:** n/a (user-supplied items)

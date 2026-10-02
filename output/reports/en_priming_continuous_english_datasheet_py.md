@@ -5,7 +5,7 @@
 ## Provenance
 
 - **Paradigm:** priming  |  **Item source:** table
-- **Description:** Prime-target pairs selected to span target frequency continuously, with target length and prime-target orthographic overlap held near-constant; Latin-square counterbalanced over two lists.
+- **Description:** Prime-target pairs spread over the ranks of target frequency, with the tails of target length and prime-target orthographic overlap trimmed by tolerance windows; Latin-square counterbalanced over two lists.
 - **Materials source:** `items/priming_pairs_en.csv` (sha256 `088f506b3166368b…`)
 - **Selection:** continuous even-spread (predictor spanned, controls banded)
 - **Cross-engine determinism:** byte-identical

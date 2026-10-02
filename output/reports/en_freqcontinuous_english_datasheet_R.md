@@ -5,7 +5,7 @@
 ## Provenance
 
 - **Paradigm:** factorial  |  **Item source:** corpus
-- **Description:** English words spanning the frequency range continuously, with length, neighbourhood density and OLD20 held near-constant, for regression / mixed-model analysis.
+- **Description:** English words spread over the ranks of frequency in the pool, with the tails of length, neighbourhood density and OLD20 trimmed by tolerance windows, for regression / mixed-model analysis.
 - **Materials source:** `corpora/derived/en.csv` (sha256 `575833489e04d6a4...`)
 - **Selection:** continuous even-spread (predictor spanned, controls banded)
 - **Cross-engine determinism:** byte-identical

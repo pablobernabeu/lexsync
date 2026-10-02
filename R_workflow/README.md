@@ -60,13 +60,14 @@ lex <- load_lexicon(
 )
 
 design <- list(
-  name = "readme_demo", language = "english", n_per_condition = 15,
-  pool_filters = list(length = c(3, 7), frequency = c(3.8, 7)),
+  name = "quick_start", language = "english", n_per_condition = 60,
+  pool_filters = list(length = c(3, 8), frequency = c(3.8, 7.0)),
   conditions = list(
-    list(name = "high", define_by = list(frequency = c(5.2, 7.0))),
-    list(name = "low",  define_by = list(frequency = c(3.8, 4.4)))
+    list(name = "high_frequency", define_by = list(frequency = c(5.2, 7.0))),
+    list(name = "low_frequency",  define_by = list(frequency = c(3.8, 4.4)))
   ),
-  match_on = list("length", "n_density", "old20")
+  match_on = list("length", "n_density", "old20"),
+  counterbalance = list(lists = 1)
 )
 
 pool <- build_pool(lex, design$pool_filters)
@@ -76,6 +77,9 @@ stim <- match_stimuli(pool, design, schema)
 # and a complementary equivalence test.
 match_report(stim, c("length", "frequency", "n_density", "old20"), schema)
 ```
+
+Showing equivalence needs enough items: at the default bound and alpha no
+dimension that varies can pass with fewer than 23 items per condition.
 
 The [Get started](https://pablobernabeu.github.io/lexsync/r/articles/lexsync.html)
 vignette works through the same example with its output, and the other articles

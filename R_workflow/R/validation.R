@@ -85,8 +85,11 @@ cohens_d <- function(x, y) {
 #' TOST decision at the .05 level (Lakens, 2017). Reporting the interval, rather
 #' than only a binary verdict, makes the realised imbalance and its sampling
 #' uncertainty explicit, and keeps the dependence on the number of items visible.
-#' With few items the interval is wide, so a small point estimate cannot be
-#' over-read as evidence of a small true difference (Sassenhagen & Alday, 2016).
+#' With few items the interval is wide, whatever the point estimate. Both the
+#' interval and the TOST treat the selected items as a sample, although a test on
+#' stimuli concerns a closed population. Sassenhagen and Alday (2016) recommend
+#' describing the stimuli and entering potential confounds in the analysis as
+#' covariates.
 #'
 #' The limits are `d +/- t * SE(d)`, where `t` is the Student t quantile on
 #' `nx + ny - 2` degrees of freedom and `SE(d)` is the large-sample standard
@@ -138,7 +141,10 @@ cohens_d_ci <- function(x, y, alpha = 0.05) {
 #'
 #' @param x,y Numeric vectors.
 #' @param bound_d Smallest effect size of interest (Cohen's d); defaults to the
-#'   schema value of 0.5 (Lakens, 2017).
+#'   schema value of 0.5. That value is a convention and not a default of Lakens
+#'   (2017), who asks for the bound to be justified for the study. At 0.5 and
+#'   alpha .05, no dimension that varies can pass with fewer than 23 items per
+#'   condition, even when the conditions are identical.
 #' @param alpha Significance level.
 #' @return A list with `p` and logical `equivalent`.
 #' @importFrom stats pt

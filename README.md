@@ -29,9 +29,8 @@ builds factorial word studies, lexical decision with deterministically generated
 pseudowords, priming, self-paced reading and cued categorisation from configuration
 rather than code, with word, pseudoword, paired and sentence stimuli, and with
 practice and filler blocks that run but are not analysed. It ships as two structurally identical,
-independently installable packages, an R package on CRAN and a Python package
-installed from this repository, so a laboratory can adopt it in whichever ecosystem
-it already uses.
+independently installable packages, an R package on CRAN and a Python package on
+PyPI, so a laboratory can adopt it in whichever ecosystem it already uses.
 
 Beyond matching, `lexsync` treats the stimulus set as a reproducible research
 artefact. Every run is deterministic and seeded, and under the two deterministic
@@ -85,7 +84,7 @@ generated output they share held at the root:
 ```
 lexsync/
 ├── R_workflow/        R package 'lexsync', published on CRAN
-├── python_workflow/   Python package 'lexsync', installed from this repository
+├── python_workflow/   Python package 'lexsync', published on PyPI
 ├── corpora/           many-language corpus registry + ingestion + attribution
 ├── config/            global schema + per-design configurations
 ├── items/             example item tables (priming pairs, SPR sentences)
@@ -148,7 +147,8 @@ report and the materials datasheet. Each one also exports the design configurati
 and the one-line R, Python and command-line code that reproduces the operation, so
 what the interface yields is a shareable artefact a reader can retrace.
 A Streamlit app wraps the Python engine and a Shiny app wraps the R engine, and the
-two select byte-identical stimuli. See `apps/README.md` for details.
+two select byte-identical stimuli under the deterministic matching methods, which
+include the default. See `apps/README.md` for details.
 
 ```bash
 streamlit run apps/python_streamlit/lexsync_app.py             # Python
@@ -157,23 +157,31 @@ Rscript -e "shiny::runApp('apps/r_shiny', port = 8502)"        # R
 
 ## Corpora
 
-Languages are supplied through `corpora/registry.yaml`. Two connectors are
-provided: a curated SUBTLEX-family/'openlexicon' connector (individually citable
-corpora under CC BY-SA 4.0) and a 'wordfreq' connector that reaches roughly
-forty languages through a single dependency. English, Spanish and Mandarin
-Chinese are bundled and demonstrated end to end (the last a logographic-script
-example, showing that the matching and script generation are not limited to
-alphabetic writing). Those three come from 'wordfreq', not from the openlexicon
-connector, and carry its CC BY-SA 4.0 data terms. The registry's SUBTLEX entries
-are separate corpora a user loads directly. Further languages are fetched on
-demand into a user cache, though not equally from both engines. The
-'openlexicon' connector is available in R and Python alike, whereas 'wordfreq'
-is Python-only: `lexsync fetch <language>` derives those lexica from the Python
-package, and the R package can read the result as an ordinary corpus but cannot
-build one itself. An R-only laboratory therefore reaches the wider language set
-only through lexica derived elsewhere. Every corpus is cited, with its licence
-and retrieval date, in `corpora/ATTRIBUTION.md`. The bundled corpora are a
-fixed, checksummed snapshot, so the demonstrations reproduce with no download.
+Languages are supplied through `corpora/registry.yaml`, which documents two
+connectors: a curated SUBTLEX-family/'openlexicon' connector (individually citable
+corpora under CC BY-SA 4.0) and a 'wordfreq' connector with thirty registered
+languages (wordfreq covers 42). English, Spanish and Mandarin Chinese are bundled
+and demonstrated end to end (the last a logographic-script example, showing that
+the matching and script generation are not limited to alphabetic writing). Those
+three come from 'wordfreq', not from the openlexicon connector, and carry its
+CC BY-SA 4.0 data terms. They are not screened for lexical status, so they hold
+proper names, acronyms and other forms that are not words of the language, and
+`corpora/ATTRIBUTION.md` measures the extent. The repository's
+`corpora/derived/en_v2.csv` marks those forms in the English lexicon.
+
+`fetch_corpus()` can download only an entry that registers a delimited file, and
+no registry entry does yet. A SUBTLEX-family file is therefore loaded by hand.
+Download it from the corpus's own page and rename its columns to `word` and
+`freq_zipf`, converting a per-million frequency with Zipf = log10(per million) +
+3. Then save it comma-separated and pass it to `load_lexicon()`. The registry's
+`columns` map names the source columns, though lexsync does not yet apply it.
+Lexica for the wordfreq languages are built by the Python package only.
+`lexsync fetch <language>` derives one into a user cache, and the R package can
+read the result as an ordinary corpus but cannot build one itself. An R-only
+laboratory therefore reaches the wider language set only through lexica derived
+elsewhere. Every corpus is cited, with its licence and retrieval date, in
+`corpora/ATTRIBUTION.md`. The bundled corpora are a fixed, checksummed snapshot,
+so the demonstrations reproduce with no download.
 'wordfreq' itself was frozen in 2024, giving a stable snapshot of usage through
 roughly 2021, which keeps fetched corpora reproducible where a live source would
 let them drift.
@@ -196,8 +204,8 @@ To add a presentation target, add an `export_<target>()` function in
 `R_workflow/R/scripting.R` and `python_workflow/src/lexsync/scripting.py` that walks
 the same rendered event list.
 
-To add a corpus or language, add an entry to `corpora/registry.yaml`. No code change
-is required for SUBTLEX-family or 'wordfreq' sources.
+Adding a corpus is a registry entry in `corpora/registry.yaml`, and making it
+downloadable needs a delimited-file URL and its SHA-256.
 
 ## Tests and continuous integration
 
@@ -227,9 +235,10 @@ applies.
 ## Continuous designs
 
 A design may replace its discrete `conditions` with a `continuous:` block,
-naming a predictor and the controls to hold constant. lexsync then selects a set
-that spans the predictor's range evenly while keeping the controls near-constant
-and near-uncorrelated with it, ready for analysis by regression or a mixed model
+naming a predictor and its controls. lexsync then spreads the selection over the
+predictor's ranks in the pool, so the set follows the pool's distribution of the
+predictor, while tolerance windows trim the controls' tails without holding them
+constant. The set is ready for analysis by regression or a mixed model
 (Kuperman, 2015; Liben-Nowell et al., 2019). The datasheet reports the
 predictor's span, the predictor-control correlations and a suggested regression
 model, and the two engines select byte-identical stimuli. See

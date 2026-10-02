@@ -15,10 +15,14 @@
 #
 # 'connector' selects the ingestion path:
 #   openlexicon -> a SUBTLEX-family/openlexicon delimited file (Connector A)
-#   wordfreq    -> the wordfreq Python package, ~40 languages (Connector B)
-# The 'columns' map names source columns onto the lexsync schema; 'freq_zipf'
-# is computed from 'freq_permillion' when the source lacks a Zipf column
-# (Zipf = log10(freq_per_million) + 3).
+#   wordfreq    -> the wordfreq Python package, thirty registered languages
+#                  (wordfreq covers 42) (Connector B)
+# The 'columns' map documents how a source's columns correspond to lexsync's.
+# lexsync does not yet apply it: rename the columns by hand and, for a source
+# without a Zipf column, convert with Zipf = log10(per million) + 3 before
+# load_lexicon(). SUBTLEX-UK's own Zipf column is Laplace-smoothed (van Heuven
+# et al., 2014) and wordfreq's is not. No entry is currently downloadable by
+# fetch_corpus().
 
 defaults:
   licence: 'CC BY-SA 4.0'
@@ -43,7 +47,9 @@ corpora:
       Published only as zipped xlsx/txt archives, which the delimited-file
       connector cannot ingest, so no 'openlexicon' key: download
       SUBTLEX-UK.txt.zip from the landing page, unzip it, and pass the file to
-      load_lexicon(). The 'columns' map above names its columns.
+      load_lexicon(). The 'columns' map above names its columns, which lexsync
+      does not rename for you: rename Spelling to word and LogFreq(Zipf) to
+      freq_zipf, and save the table comma-separated first.
 
   subtlex_esp:
     language: { name: 'Spanish', iso: es }
@@ -63,7 +69,8 @@ corpora:
     licence: 'CC BY-SA 4.0 (Brysbaert terms)'
     citation_key: brysbaert2009subtlexus
     citation: 'Brysbaert & New (2009). Behavior Research Methods, 41(4), 977-990. doi:10.3758/BRM.41.4.977'
-    columns: { word: 'Word', freq_zipf: 'Lg10WF', pos: 'Dom_PoS_SUBTLEX' }
+    # Lg10WF is log10(count + 1), not Zipf, so the map names the per-million rate.
+    columns: { word: 'Word', freq_permillion: 'SUBTLWF', pos: 'Dom_PoS_SUBTLEX' }
 
   subtlex_nl:
     language: { name: 'Dutch', iso: nl }
@@ -81,7 +88,8 @@ corpora:
     licence: 'CC BY-SA 4.0 (Brysbaert terms)'
     citation_key: brysbaert2011subtlexde
     citation: 'Brysbaert et al. (2011). SUBTLEX-DE. Experimental Psychology, 58(5), 412-424. doi:10.1027/1618-3169/a000123'
-    columns: { word: 'Word', freq_zipf: 'lgSUBTLEX' }
+    # lgSUBTLEX is a log count, not Zipf, so the map names the per-million rate.
+    columns: { word: 'Word', freq_permillion: 'SUBTLEX' }
 
   lexique_fr:
     language: { name: 'French', iso: fr }
@@ -108,7 +116,8 @@ corpora:
     licence: 'CC BY-SA 4.0 (Brysbaert terms)'
     citation_key: cai2010subtlexch
     citation: 'Cai & Brysbaert (2010). SUBTLEX-CH. PLoS ONE, 5(6), e10729. doi:10.1371/journal.pone.0010729'
-    columns: { word: 'Word', freq_zipf: 'WCpmw' }
+    # W/million is the per-million rate: confirm against the file at ingestion.
+    columns: { word: 'Word', freq_permillion: 'W/million' }
     notes: 'Character-based; length/N/OLD20 semantics differ for logographic scripts.'
 
   subtlex_pl:
@@ -133,7 +142,7 @@ corpora:
 wordfreq_connector:
   connector: wordfreq
   status: supported
-  description: 'Programmatic word frequencies for ~40 languages via the wordfreq package; lexsync derives length itself, and N, OLD20 and bigram frequency for any design that refers to them.'
+  description: 'Programmatic word frequencies for thirty registered languages (wordfreq covers 42) via the wordfreq package; lexsync derives length itself, and N, OLD20 and bigram frequency for any design that refers to them.'
   # Two different licences, and the data one is what matters for redistribution:
   # wordfreq's code is Apache-2.0 (it was MIT up to 3.0.2 and relicensed at
   # 3.0.3, which the >=3.0,<4 pin spans), while its data files are

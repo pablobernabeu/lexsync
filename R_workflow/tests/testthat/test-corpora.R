@@ -124,6 +124,30 @@ test_that("the openlexicon key and 'supported' status agree", {
   }
 })
 
+# Pins the same contract as test_registry_column_maps_are_not_log_counts in the
+# Python engine's test_corpora.py. SUBTLEX-US's Lg10WF and SUBTLEX-DE's lgSUBTLEX
+# are log10 word counts, which read about 1.3 and 1.6 below Zipf, and SUBTLEX-CH
+# publishes no WCpmw column. A user who renamed columns as the registry said would
+# filter and match on the wrong scale. Every copy of the registry that is around
+# is read: all three in a checkout, the bundled one otherwise.
+test_that("registry column maps are not log counts", {
+  paths <- registry_path()
+  root <- repo_root()
+  if (!is.null(root)) {
+    paths <- c(paths, file.path(root, "corpora", "registry.yaml"),
+               file.path(root, "python_workflow", "src", "lexsync", "data", "registry.yaml"))
+  }
+  for (path in paths) {
+    entries <- yaml::read_yaml(path)$corpora
+    for (name in names(entries)) {
+      zipf <- entries[[name]]$columns$freq_zipf
+      expect_false(!is.null(zipf) && zipf %in% c("Lg10WF", "lgSUBTLEX", "WCpmw"),
+                   info = paste(path, name))
+    }
+    expect_identical(entries$subtlex_us$columns$freq_permillion, "SUBTLWF", info = path)
+  }
+})
+
 # Pins the same contract as test_fetch_corpus_refuses_a_non_http_url in the Python
 # engine's test_corpora.py. A registry is editable and fetch_corpus() writes
 # wherever it points, so 'file://' must not be read under the guise of a download.

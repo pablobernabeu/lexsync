@@ -86,12 +86,21 @@ presents a segmented sentence one region at a time, advancing on a key.
 under practice blocks below.
 
 Durations are given in milliseconds, as `duration_ms`. That is the unit a
-methods section reports and the unit all three targets present, so a design means
-the same interval wherever it runs. A visual stimulus can still only appear on a
+methods section reports and the unit all three targets present, so a design asks
+for the same interval wherever it runs. How closely each target delivers it
+differs, as described below. A visual stimulus can still only appear on a
 refresh, so the PsychoPy script measures the display's refresh rate when it starts
 and converts each duration into the nearest whole number of flips: 50 ms is three
-flips at 60 Hz and seven at 144 Hz. The trigger stays bound to the flip, and the
-residual quantisation is reported.
+flips at 60 Hz and seven at 144 Hz. The trigger stays bound to the flip.
+
+The other two targets time their events differently. The generated OpenSesame
+experiment builds each canvas at run time, sends the onset trigger as a blocking
+10 ms pulse and then sleeps for the full duration, so every event overruns its
+stated length. At 60 Hz, a 50 ms prime is predicted to last about 67 ms, and the
+83 ms stimulus-onset asynchrony of the `priming` paradigm about 117 ms. In the
+browser, timing varies with the machine and the browser, and primes of 33 to
+50 ms are not reliably realised online. Whatever the target, verify the timing a
+study depends on with a photodiode.
 
 A duration may also be given as `duration_frames`, which designs written before
 this change still use. A frame count is converted to milliseconds when the design
@@ -263,10 +272,12 @@ data.frame(
 
 `factorial` shows a matched word per trial. `lexical_decision` is the same shape
 but presents a `target`, which is a real word or a generated pseudoword.
-`priming` adds a brief prime and a mask before the target. `self_paced_reading`
-replaces the word event with a region-by-region sentence and adds a comprehension
-question. `categorisation` shows a category cue and then the word to judge against
-it.
+`priming` is backward pattern-masked: a 50 ms prime and a 33 ms `#####` mask come
+before the target, so the stimulus-onset asynchrony is 83 ms at 60 Hz. There is no
+forward mask, and prime and target keep the item table's letter case.
+`self_paced_reading` replaces the word event with a region-by-region sentence and
+adds a comprehension question. `categorisation` shows a category cue and then the
+word to judge against it.
 
 That last one is worth a paragraph, because what separates it from lexical
 decision is not the shape of the trial but where the question lives. The cue is
@@ -478,8 +489,12 @@ realised durations can be checked against the declared ones there.
 OpenSesame (Mathôt et al., 2012) is generated as a complete plain-text `.osexp`,
 block by block, with each event becoming an inline script. It gets its trigger by
 a different route, discussed below, and it opens the trigger device with a
-fallback: if no parallel port or serial device is available, it prints the codes
-and carries on, so the experiment still runs on a machine without the hardware.
+fallback: if no parallel port is available, it prints the codes and carries on,
+so the experiment still runs on a machine without the hardware. The generated
+setup opens the parallel port only. Its code has a serial branch, but nothing in
+the design selects it, so a serial device needs the setup script edited by hand.
+OpenSesame takes full screen or a window from the mode it is launched in, while
+the PsychoPy script runs in a 1280 x 1024 window.
 
 OpenSesame also evaluates what its loop table holds. In both versions, a cell
 holding `[=...]` runs as Python, and so does one holding a single `{` in

@@ -90,7 +90,28 @@ here with the reason.
 The screen covers English only. No source of letter case or of known words with a
 verified licence exists for Spanish or Chinese. `es`, `es_gender` and `zh`
 therefore still hold names, acronyms, loans and other non-standard forms, and
-their N and OLD20 count those forms as neighbours.
+their N and OLD20 count those forms as neighbours. The known-form lists above do
+not fill that gap, since they come from wordfreq itself and hold the same kinds of
+forms.
+
+## What the derived lexica contain
+
+The `en`, `es` and `zh` lexica hold the most frequent forms wordfreq returns for
+each script (for English, every form that matches `^[a-z]+$` after
+lower-casing), with no screening for lexical status. They therefore include
+proper names (aaron, dubai), acronyms and abbreviations (bbc, atm, aclu),
+interjections and internet forms (lmao, alot) and loanwords. The Spanish lexicon
+also holds English words (blue, chat) and spellings that drop an accent (ano for
+año). Coltheart's N and OLD20 are computed over all of these forms, so a name or
+an acronym counts as a neighbour like any word.
+
+Such forms are not spread evenly over frequency bands, so they can confound a
+frequency manipulation. In the `en_andrews_repro` demonstration, which reads
+`en.csv`, 24 of the 36 low-frequency items are forms that the screen above marks
+as non-standard, against none of the 36 high-frequency items. A design on
+`en.csv`, `es.csv` or `zh.csv` should therefore have its selection read before a
+study runs, and what is found removed with `exclude_words`. For English,
+`en_v2.csv` marks those forms itself.
 
 ## Data currency and reproducibility
 

@@ -20,8 +20,11 @@ mean difference, so \code{alpha = 0.05} gives the 90\% interval that goes with a
 TOST decision at the .05 level (Lakens, 2017). Reporting the interval, rather
 than only a binary verdict, makes the realised imbalance and its sampling
 uncertainty explicit, and keeps the dependence on the number of items visible.
-With few items the interval is wide, so a small point estimate cannot be
-over-read as evidence of a small true difference (Sassenhagen & Alday, 2016).
+With few items the interval is wide, whatever the point estimate. Both the
+interval and the TOST treat the selected items as a sample, although a test on
+stimuli concerns a closed population. Sassenhagen and Alday (2016) recommend
+describing the stimuli and entering potential confounds in the analysis as
+covariates.
 }
 \details{
 The limits are \verb{d +/- t * SE(d)}, where \code{t} is the Student t quantile on

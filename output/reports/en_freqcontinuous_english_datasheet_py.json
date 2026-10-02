@@ -58,7 +58,7 @@
     "versions": 1
   },
   "design": {
-    "description": "English words spanning the frequency range continuously, with length, neighbourhood density and OLD20 held near-constant, for regression / mixed-model analysis.",
+    "description": "English words spread over the ranks of frequency in the pool, with the tails of length, neighbourhood density and OLD20 trimmed by tolerance windows, for regression / mixed-model analysis.",
     "language": "english",
     "n_per_condition": 80,
     "name": "en_freqcontinuous",
@@ -154,8 +154,8 @@
   ],
   "relational": null,
   "reproducibility": {
-    "design_sha256": "e63493a09f6744207e21768586f88ac0a27970654bb2182ac26a82f1e6604353",
-    "schema_sha256": "c843341aaf32f9f474fde3e653b746e3abd535f853906d02ac47eb6609f94bb7",
+    "design_sha256": "37d98d331dcd43c9638f18197b5529d98ab15bfc287d0bafbd73df61fccf01bc",
+    "schema_sha256": "56920528039aab921b60693e2c422726817d65b53c57c81fcde7f718dfeb6f3e",
     "seed": 2026,
     "versions": {
       "engine": "python",

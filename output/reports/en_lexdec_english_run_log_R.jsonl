@@ -1,16 +1,16 @@
-{"time":"2026-10-09 05:23:01.011702","message":"loading lexicon 'corpora/derived/en.csv'","data":null}
-{"time":"2026-10-09 05:23:02.124749","message":"lexicon loaded: 30000 words","data":{"words":30000}}
-{"time":"2026-10-09 05:23:02.147157","message":"pool after filters: 8177 words","data":{"pool":8177}}
-{"time":"2026-10-09 05:23:03.75687","message":"generated 120 items (words + pseudowords, letter_substitution)","data":{"conditions":"word, pseudoword"}}
-{"time":"2026-10-09 05:23:04.055391","message":"equivalence pseudoword vs word on 'length': d = 0.00 [-0.30, 0.30], TOST p = 0.004 (equivalent)","data":null}
-{"time":"2026-10-09 05:23:04.444558","message":"wrote 'en_lexdec_english_stimuli_R.csv'","data":{"path":"output/stimuli/en_lexdec_english_stimuli_R.csv","rows":120,"md5":"d99b79dee80a0803d326cce5157ad553"}}
-{"time":"2026-10-09 05:23:04.470146","message":"wrote 'en_lexdec_english_descriptives_R.csv'","data":{"path":"output/reports/en_lexdec_english_descriptives_R.csv","rows":2,"md5":"f26ab1271c06e35b089d78a806602d3e"}}
-{"time":"2026-10-09 05:23:04.494896","message":"wrote 'en_lexdec_english_comparisons_R.csv'","data":{"path":"output/reports/en_lexdec_english_comparisons_R.csv","rows":1,"md5":"08fc5207d0e20aa470e1b3cf332e5830"}}
-{"time":"2026-10-09 05:23:05.129293","message":"wrote 'en_lexdec_english_psychopy.py'","data":{"path":"output/experiments/en_lexdec_english_psychopy.py","rows":"NA","md5":"a9c90173d7b34b6b6c1a914fa5132f57"}}
-{"time":"2026-10-09 05:23:05.148424","message":"wrote 'en_lexdec_english.osexp'","data":{"path":"output/experiments/en_lexdec_english.osexp","rows":"NA","md5":"694c11f70ca325181628b5da1922e729"}}
-{"time":"2026-10-09 05:23:05.168882","message":"wrote 'en_lexdec_english.html'","data":{"path":"output/experiments/en_lexdec_english.html","rows":"NA","md5":"3307ed89b9e2aaa71ac5dfcff505306d"}}
-{"time":"2026-10-09 05:23:05.188141","message":"wrote 'en_lexdec_english_psychopy.csv'","data":{"path":"output/experiments/en_lexdec_english_psychopy.csv","rows":"NA","md5":"1fe32d4aaed880e77a845f82eb6df4a6"}}
-{"time":"2026-10-09 05:23:05.202024","message":"wrote 'en_lexdec_english_opensesame.csv'","data":{"path":"output/experiments/en_lexdec_english_opensesame.csv","rows":"NA","md5":"d0ffb15c8bb700fa775f65d16d8ae164"}}
-{"time":"2026-10-09 05:23:05.213115","message":"wrote 'en_lexdec_english_opensesame_text.csv'","data":{"path":"output/experiments/en_lexdec_english_opensesame_text.csv","rows":"NA","md5":"706132481e716f2a1ada15a83b56c292"}}
-{"time":"2026-10-09 05:23:05.513669","message":"wrote 'en_lexdec_english_datasheet_R.json'","data":{"path":"output/reports/en_lexdec_english_datasheet_R.json","rows":"NA","md5":"116afdbcf7ea416c2236d8cebd8d7714"}}
-{"time":"2026-10-09 05:23:05.530798","message":"wrote 'en_lexdec_english_datasheet_R.md'","data":{"path":"output/reports/en_lexdec_english_datasheet_R.md","rows":"NA","md5":"b6ca69c890ba3002f7a3ea7d576c1737"}}
+{"time":"2026-10-09 05:57:42.553677","message":"loading lexicon 'corpora/derived/en.csv'","data":null}
+{"time":"2026-10-09 05:57:43.445317","message":"lexicon loaded: 30000 words","data":{"words":30000}}
+{"time":"2026-10-09 05:57:43.463483","message":"pool after filters: 8177 words","data":{"pool":8177}}
+{"time":"2026-10-09 05:57:44.948167","message":"generated 120 items (words + pseudowords, letter_substitution)","data":{"conditions":"word, pseudoword"}}
+{"time":"2026-10-09 05:57:44.964828","message":"equivalence pseudoword vs word on 'length': d = 0.00 [-0.30, 0.30], TOST p = 0.004 (equivalent)","data":null}
+{"time":"2026-10-09 05:57:45.024742","message":"wrote 'en_lexdec_english_stimuli_R.csv'","data":{"path":"output/stimuli/en_lexdec_english_stimuli_R.csv","rows":120,"md5":"d99b79dee80a0803d326cce5157ad553"}}
+{"time":"2026-10-09 05:57:45.049368","message":"wrote 'en_lexdec_english_descriptives_R.csv'","data":{"path":"output/reports/en_lexdec_english_descriptives_R.csv","rows":2,"md5":"f26ab1271c06e35b089d78a806602d3e"}}
+{"time":"2026-10-09 05:57:45.074461","message":"wrote 'en_lexdec_english_comparisons_R.csv'","data":{"path":"output/reports/en_lexdec_english_comparisons_R.csv","rows":1,"md5":"08fc5207d0e20aa470e1b3cf332e5830"}}
+{"time":"2026-10-09 05:57:45.681108","message":"wrote 'en_lexdec_english_psychopy.py'","data":{"path":"output/experiments/en_lexdec_english_psychopy.py","rows":"NA","md5":"a9c90173d7b34b6b6c1a914fa5132f57"}}
+{"time":"2026-10-09 05:57:45.693256","message":"wrote 'en_lexdec_english.osexp'","data":{"path":"output/experiments/en_lexdec_english.osexp","rows":"NA","md5":"694c11f70ca325181628b5da1922e729"}}
+{"time":"2026-10-09 05:57:45.705281","message":"wrote 'en_lexdec_english.html'","data":{"path":"output/experiments/en_lexdec_english.html","rows":"NA","md5":"3307ed89b9e2aaa71ac5dfcff505306d"}}
+{"time":"2026-10-09 05:57:45.722673","message":"wrote 'en_lexdec_english_psychopy.csv'","data":{"path":"output/experiments/en_lexdec_english_psychopy.csv","rows":"NA","md5":"1fe32d4aaed880e77a845f82eb6df4a6"}}
+{"time":"2026-10-09 05:57:45.729875","message":"wrote 'en_lexdec_english_opensesame.csv'","data":{"path":"output/experiments/en_lexdec_english_opensesame.csv","rows":"NA","md5":"d0ffb15c8bb700fa775f65d16d8ae164"}}
+{"time":"2026-10-09 05:57:45.739305","message":"wrote 'en_lexdec_english_opensesame_text.csv'","data":{"path":"output/experiments/en_lexdec_english_opensesame_text.csv","rows":"NA","md5":"706132481e716f2a1ada15a83b56c292"}}
+{"time":"2026-10-09 05:57:46.000569","message":"wrote 'en_lexdec_english_datasheet_R.json'","data":{"path":"output/reports/en_lexdec_english_datasheet_R.json","rows":"NA","md5":"fe4315b07f001b5fb0fe373e0851faee"}}
+{"time":"2026-10-09 05:57:46.014668","message":"wrote 'en_lexdec_english_datasheet_R.md'","data":{"path":"output/reports/en_lexdec_english_datasheet_R.md","rows":"NA","md5":"b6ca69c890ba3002f7a3ea7d576c1737"}}

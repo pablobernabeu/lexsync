@@ -1,8 +1,8 @@
 # lexsync run log: en_freqcontinuous
 
 - Engine: Python 3.13.7
-- Started: 2026-10-09T05:24:41
-- Finished: 2026-10-09T05:24:42
+- Started: 2026-10-09T05:58:56
+- Finished: 2026-10-09T05:58:57
 
 ## Run metadata
 
@@ -15,57 +15,57 @@
 
 ## Steps
 
-- **2026-10-09T05:24:41**: loading lexicon 'corpora/derived/en.csv'
-- **2026-10-09T05:24:41**: lexicon loaded: 30000 words
+- **2026-10-09T05:58:56**: loading lexicon 'corpora/derived/en.csv'
+- **2026-10-09T05:58:56**: lexicon loaded: 30000 words
     - words: 30000
-- **2026-10-09T05:24:41**: pool after filters: 7230 words
+- **2026-10-09T05:58:56**: pool after filters: 7230 words
     - pool: 7230
-- **2026-10-09T05:24:42**: selected 80 items spanning 'frequency' (continuous design)
+- **2026-10-09T05:58:56**: selected 80 items spanning 'frequency' (continuous design)
     - predictor: frequency
-- **2026-10-09T05:24:42**: continuous: 'length' correlation with the predictor r = -0.165
-- **2026-10-09T05:24:42**: continuous: 'n_density' correlation with the predictor r = -0.049
-- **2026-10-09T05:24:42**: continuous: 'old20' correlation with the predictor r = -0.077
-- **2026-10-09T05:24:42**: wrote 'en_freqcontinuous_english_stimuli_py.csv'
+- **2026-10-09T05:58:56**: continuous: 'length' correlation with the predictor r = -0.165
+- **2026-10-09T05:58:56**: continuous: 'n_density' correlation with the predictor r = -0.049
+- **2026-10-09T05:58:56**: continuous: 'old20' correlation with the predictor r = -0.077
+- **2026-10-09T05:58:56**: wrote 'en_freqcontinuous_english_stimuli_py.csv'
     - path: output\stimuli\en_freqcontinuous_english_stimuli_py.csv
     - rows: 80
     - md5: fcdccc1e813095d734281114acba796a
-- **2026-10-09T05:24:42**: wrote 'en_freqcontinuous_english_descriptives_py.csv'
+- **2026-10-09T05:58:56**: wrote 'en_freqcontinuous_english_descriptives_py.csv'
     - path: output\reports\en_freqcontinuous_english_descriptives_py.csv
     - rows: 4
     - md5: 116b7845ef563fc194dbc065dfb7fde8
-- **2026-10-09T05:24:42**: wrote 'en_freqcontinuous_english_comparisons_py.csv'
+- **2026-10-09T05:58:56**: wrote 'en_freqcontinuous_english_comparisons_py.csv'
     - path: output\reports\en_freqcontinuous_english_comparisons_py.csv
     - rows: 4
     - md5: f654bdcb431ebfcdcf053b49444c4408
-- **2026-10-09T05:24:42**: wrote 'en_freqcontinuous_english_psychopy.py'
+- **2026-10-09T05:58:57**: wrote 'en_freqcontinuous_english_psychopy.py'
     - path: output\experiments\en_freqcontinuous_english_psychopy.py
     - rows: None
     - md5: eb33927cb5ffc03ddc21140706f775ac
-- **2026-10-09T05:24:42**: wrote 'en_freqcontinuous_english.osexp'
+- **2026-10-09T05:58:57**: wrote 'en_freqcontinuous_english.osexp'
     - path: output\experiments\en_freqcontinuous_english.osexp
     - rows: None
     - md5: e828442b3ab854bfc29799262417e044
-- **2026-10-09T05:24:42**: wrote 'en_freqcontinuous_english.html'
+- **2026-10-09T05:58:57**: wrote 'en_freqcontinuous_english.html'
     - path: output\experiments\en_freqcontinuous_english.html
     - rows: None
     - md5: d3a78d062bd1e137e29e12cf8fe93318
-- **2026-10-09T05:24:42**: wrote 'en_freqcontinuous_english_psychopy.csv'
+- **2026-10-09T05:58:57**: wrote 'en_freqcontinuous_english_psychopy.csv'
     - path: output\experiments\en_freqcontinuous_english_psychopy.csv
     - rows: None
     - md5: 68560cf1003f06eb724c06ee197aaa3a
-- **2026-10-09T05:24:42**: wrote 'en_freqcontinuous_english_opensesame.csv'
+- **2026-10-09T05:58:57**: wrote 'en_freqcontinuous_english_opensesame.csv'
     - path: output\experiments\en_freqcontinuous_english_opensesame.csv
     - rows: None
     - md5: 667f183c9bffc66dfd04f92645e07466
-- **2026-10-09T05:24:42**: wrote 'en_freqcontinuous_english_opensesame_text.csv'
+- **2026-10-09T05:58:57**: wrote 'en_freqcontinuous_english_opensesame_text.csv'
     - path: output\experiments\en_freqcontinuous_english_opensesame_text.csv
     - rows: None
     - md5: 762f172d8368b925699ddfc7209ad8ba
-- **2026-10-09T05:24:42**: wrote 'en_freqcontinuous_english_datasheet_py.json'
+- **2026-10-09T05:58:57**: wrote 'en_freqcontinuous_english_datasheet_py.json'
     - path: output\reports\en_freqcontinuous_english_datasheet_py.json
     - rows: None
-    - md5: a435b332a673bd6296780ad0aebd3f3e
-- **2026-10-09T05:24:42**: wrote 'en_freqcontinuous_english_datasheet_py.md'
+    - md5: 62d2e820e835a7d44d2cb3aa0589558c
+- **2026-10-09T05:58:57**: wrote 'en_freqcontinuous_english_datasheet_py.md'
     - path: output\reports\en_freqcontinuous_english_datasheet_py.md
     - rows: None
-    - md5: 80ca6bc47f099c2002103834ef3d5d68
+    - md5: 651f7742fa6b319d1750c83ae995baed

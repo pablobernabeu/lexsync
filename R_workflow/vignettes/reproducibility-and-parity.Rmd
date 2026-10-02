@@ -621,6 +621,15 @@ data is a stable snapshot of usage through roughly 2021. And where cross-engine
 reproducibility matters, prefer the default matching methods, since they are the
 ones that carry the guarantee.
 
+A reproducible lexicon is not a screened one. The bundled lexica are the most
+frequent forms `wordfreq` returns, so they hold proper names, acronyms and other
+forms that are not words of the language, and N and OLD20 are computed over them.
+Their share differs between frequency bands, which can confound a frequency
+contrast. The repository's `corpora/derived/en_v2.csv` marks such forms in the
+English lexicon, and [What the derived lexica
+contain](https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md#what-the-derived-lexica-contain)
+says what to check in a selection.
+
 ## References
 
 Bochynska, A., Keeble, L., Halfacre, C., Casillas, J. V., Champagne, I.-A., Chen,
