@@ -1,0 +1,22 @@
+# Twin-edge case: the baseline design over a lexicon carrying two columns the design
+# never names, which pass through to the stimuli. `tf` holds T and F, which both
+# engines read as text, and `flag` holds True and FALSE, which both read as logical
+# and write as TRUE and FALSE. The R engine used to read T and F as logical, so the
+# two engines wrote `F` and `FALSE` for the same cell.
+# The word forms are common English words. The Zipf frequencies are invented for
+# this fixture and describe no corpus.
+name: twin_edge_tf_column
+language: english
+lexicon: lexicon.csv
+description: 'Nouns versus verbs from a forty-word lexicon with T/F and TRUE/FALSE columns.'
+n_per_condition: 8
+conditions:
+  - name: noun
+    define_by:
+      pos: [noun]
+  - name: verb
+    define_by:
+      pos: [verb]
+match_on: [length, frequency]
+counterbalance:
+  lists: 2

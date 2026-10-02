@@ -219,6 +219,37 @@ counterbalancing no longer touches the random number generator at all, since
 nothing in the package consults one, so calling it cannot disturb the stream your
 own code is drawing from.
 
+## The CSV input contract
+
+Both engines read a lexicon, a norm table, a supplied pool or an item table by
+one rule. Each reads every cell as text and converts it itself. readr and pandas
+guess types by different heuristics, and the guesses used to disagree: a padded
+category made the Python engine refuse a design this engine ran, and a column of
+`T` and `F` was written `FALSE` here and `F` there.
+
+Header names and cells are trimmed of spaces, tabs, carriage returns and line
+feeds. After trimming, an empty cell and `NA` (quoted or not) are missing, and
+every other word is a value. A column is numeric only when every value is a plain
+decimal number, with an optional sign, point and exponent and no thousands
+separators, so `1,000` is text. It is logical only when every value is TRUE or
+FALSE in upper, lower or title case, so `T` and `F` stay text. Any other column
+is text, a column of dates included. Every row counts towards the type. The columns
+a paradigm presents, and an item table's `item` and `condition`, are always
+text. A header that names a column twice is refused, and an empty header cell is
+named by its position (`...3`).
+
+The numbers themselves are parsed to the same double in both engines. Python's
+`float()` returns the double nearest the decimal. readr's parser and R's
+`as.numeric()` can each miss it by one unit in the last place, readr's on
+`50.768212762897100` and `as.numeric()` on `0.586135918132`, for instance. This
+engine therefore computes every number of up to 15 significant digits, with a
+power of ten within 10^22, as one exact integer multiplied or divided by one
+exact power of ten. IEEE-754 rounds that single operation correctly, so the
+result is Python's double. Every value in the shipped lexica is of that kind.
+Any other number goes through `as.numeric()`. It misses far less often than
+readr's parser, but the engines may then differ in its last bit. A negative zero
+is read as zero, since the two engines would otherwise write it as `-0` and `0`.
+
 ## The Unicode input contract
 
 Word matching, deduplication and the `length` dimension operate on Unicode code

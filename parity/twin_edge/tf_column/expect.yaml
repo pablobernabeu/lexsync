@@ -1,0 +1,3 @@
+# Both engines write `tf` as T and F and `flag` as TRUE and FALSE.
+outcome: artefacts
+compare: [stimuli, descriptives, comparisons]

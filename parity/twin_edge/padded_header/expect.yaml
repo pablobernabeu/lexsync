@@ -1,0 +1,3 @@
+# Both engines find the padded columns and select the eight noun-verb sets.
+outcome: artefacts
+compare: [stimuli, descriptives, comparisons]

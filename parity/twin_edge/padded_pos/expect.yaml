@@ -1,0 +1,3 @@
+# Both engines select the eight noun-verb sets and write the trimmed labels.
+outcome: artefacts
+compare: [stimuli, descriptives, comparisons]

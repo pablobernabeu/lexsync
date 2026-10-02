@@ -11,50 +11,168 @@
 #' @keywords internal
 `%||%` <- function(a, b) if (is.null(a)) b else a
 
-#' Read a UTF-8 CSV file
+# ---- One CSV reading rule, shared by both engines ----------------------------
+#
+# readr and pandas each guess a column's type by their own heuristics, and the two
+# disagreed on ordinary input. readr trimmed fields and headers and pandas trimmed
+# nothing, so a padded category made the Python engine refuse a design this engine ran.
+# readr guessed types from the first 1,000 rows, read T and F as logical, "1,000" as a
+# number and ISO dates as dates, so a pass-through column was written `FALSE` here and
+# `F` by the Python engine. Both engines therefore read every cell as text and convert
+# it here, by one rule written out in each. Must stay identical to read_csv_utf8 and
+# _type_column in python_workflow/src/lexsync/io_utils.py.
+#
+# The characters trimmed from every header name and cell: the ASCII whitespace readr's
+# trim_ws removed. A no-break space is data in both engines.
+.CSV_TRIM <- "^[ \t\r\n]+|[ \t\r\n]+$"
+# A plain decimal number: an optional sign, digits with an optional point, and an
+# optional exponent. No thousands separators and no Inf or NaN.
+.NUMERIC_CELL <- "^[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)([eE][+-]?[0-9]+)?$"
+# Not T and F, which readr took as logical: a design coding its two response keys as
+# f and t had them turned into FALSE and TRUE (see NEWS for 0.1.0).
+.LOGICAL_TRUE <- c("TRUE", "true", "True")
+.LOGICAL_FALSE <- c("FALSE", "false", "False")
+# 10^0 to 10^22, each built by an exact multiplication: every one of them is a double.
+.POW10 <- Reduce(function(p, i) p * 10, seq_len(22L), accumulate = TRUE, 1)
+
+# Trimmed cells, with "" and "NA" (quoted or not) as NA.
+.csv_cells <- function(x) {
+  x <- gsub(.CSV_TRIM, "", x)
+  x[is.na(x) | x %in% c("", "NA")] <- NA_character_
+  x
+}
+
+# Trimmed header names. An empty name is named by its position, as readr names it
+# ("...3"), and a name given twice is refused: each reader would otherwise rename one
+# copy by its own rule, and neither would know which of them is `word`.
+.csv_names <- function(header, path) {
+  nm <- gsub(.CSV_TRIM, "", header)
+  nm[is.na(nm)] <- ""
+  empty <- !nzchar(nm)
+  nm[empty] <- paste0("...", which(empty))
+  dup <- nm[duplicated(nm)]
+  if (length(dup)) {
+    stop(sprintf(paste("lexsync: the header of '%s' names column '%s' more than once",
+                       "(after trimming whitespace); each column name may appear",
+                       "once."), path, dup[1]), call. = FALSE)
+  }
+  nm
+}
+
+#' Parse plain decimal numbers to the correctly rounded double
+#'
+#' Python's `float()` returns the double nearest the decimal, and neither of R's own
+#' parsers does in every case: measured over 200,000 random decimals, readr's
+#' `parse_double()` missed by one unit in the last place on 26,706 and `as.numeric()`
+#' on 35, among them `0.586135918132` and `2.91e-11`. A value with at most 15
+#' significant digits and a power of ten within 10^22 is therefore computed as one
+#' exact integer times or divided by one exact power of ten. That is a single IEEE-754
+#' operation, which is correctly rounded, so both engines reach the same double. Every
+#' value in the shipped lexica is of that kind. Any other value falls back to
+#' `as.numeric()`, and the engines may then differ in its last bit. readr's parser is
+#' not used there: over 60,008 random values of that kind it missed the nearest double on 21,644 and
+#' `as.numeric()` on 25, and it read `1e400` as 1e307 and `1e-400` as 1e-307, where
+#' `as.numeric()` and `float()` give `Inf` and 0. A negative zero is read as zero,
+#' because the two engines' writers would print it as `-0` and `0`.
+#'
+#' @param x A character vector whose non-missing values match `.NUMERIC_CELL`.
+#' @return A double vector.
+#' @keywords internal
+.parse_decimal <- function(x) {
+  out <- rep(NA_real_, length(x))
+  ok <- which(!is.na(x))
+  if (!length(ok)) return(out)
+  s <- x[ok]
+  neg <- startsWith(s, "-")
+  body <- sub("^[+-]", "", s)
+  has_exp <- grepl("[eE]", body)
+  mant <- sub("[eE].*$", "", body)
+  ex <- rep(0, length(s))
+  ex[has_exp] <- as.numeric(sub("^[^eE]*[eE]", "", body[has_exp]))
+  has_point <- grepl(".", mant, fixed = TRUE)
+  frac <- ifelse(has_point, sub("^[^.]*[.]", "", mant), "")
+  digits <- sub("^0+", "", paste0(sub("[.].*$", "", mant), frac))
+  # Trailing zeros move into the exponent, so 1.50000000000000000 is 15 times 10^-1.
+  kept <- sub("0+$", "", digits)
+  e10 <- ex - nchar(frac) + (nchar(digits) - nchar(kept))
+  m <- ifelse(nzchar(kept), as.numeric(ifelse(nzchar(kept), kept, "0")), 0)
+  fast <- nchar(kept) <= 15L & abs(e10) <= 22
+  v <- rep(NA_real_, length(s))
+  up <- fast & e10 >= 0
+  down <- fast & e10 < 0
+  v[up] <- m[up] * .POW10[e10[up] + 1]
+  v[down] <- m[down] / .POW10[-e10[down] + 1]
+  v[fast & !nzchar(kept)] <- 0
+  v[fast & neg] <- -v[fast & neg]
+  if (any(!fast)) v[!fast] <- as.numeric(s[!fast])
+  v[which(v == 0)] <- 0
+  out[ok] <- v
+  out
+}
+
+#' Type one column by the rule both engines share
+#'
+#' Numeric when every non-missing value is a plain decimal number, parsed by
+#' [.parse_decimal()]. Logical when every non-missing value is TRUE, FALSE, true,
+#' false, True or False. Text otherwise. A column with no values at all is numeric,
+#' all missing. Dates are never parsed.
+#'
+#' @param x A character vector of trimmed cells, `NA` for missing.
+#' @return A double, logical or character vector.
+#' @keywords internal
+.type_column <- function(x) {
+  v <- x[!is.na(x)]
+  if (all(grepl(.NUMERIC_CELL, v, perl = TRUE))) return(.parse_decimal(x))
+  if (all(v %in% c(.LOGICAL_TRUE, .LOGICAL_FALSE))) {
+    out <- x %in% .LOGICAL_TRUE
+    out[is.na(x)] <- NA
+    return(out)
+  }
+  x
+}
+
+#' Read a UTF-8 CSV file by the rule both engines share
+#'
+#' Every header name and cell is trimmed of spaces, tabs, carriage returns and line
+#' feeds. After trimming, an empty cell and `NA` (quoted or not) are missing, and
+#' every other word, `null`, `nan` and `none` included, is a value. Each column not named in
+#' `as_character` then takes its type from all of its values: numeric when every value
+#' is a plain decimal number (no thousands separators), logical when every value is
+#' TRUE or FALSE in upper, lower or title case, and text otherwise. Dates are never
+#' parsed. A UTF-8 byte-order mark is ignored.
 #'
 #' @param path Path to a CSV file.
-#' @param as_character Character vector of column names whose type must not be guessed,
-#'   read as text instead. A name the file's header does not carry is ignored, since
-#'   readr warns about a parser for a column that is not there.
-#' @return A data frame (a tibble), as returned by [readr::read_csv()].
+#' @param as_character Character vector of column names that stay text, trimmed. A
+#'   name the file's header does not carry is ignored.
+#' @return A data frame (a tibble). An empty file gives one with no columns.
 #' @importFrom readr read_csv locale
 #' @keywords internal
 read_csv_utf8 <- function(path, as_character = character(0)) {
   if (!file.exists(path)) {
     stop(sprintf("lexsync: file not found: '%s'", path), call. = FALSE)
   }
-  # `as_character` names columns whose type must NOT be guessed. readr reads a column
-  # whose values are all `f`, `t`, `T` or `F` as LOGICAL, so an item table coding its
-  # two response keys as f and j had `answer` turned into FALSE, while pandas kept the
-  # string "f". Measured, not supposed: readr 2.2.0 reads f and t as logical and j, y
-  # and n as character, which is the worst possible split because f/j and t/f are the
-  # two commonest key pairs in a two-choice task. The paradigm's presented fields are
-  # therefore read as text; every other column keeps its inferred type, so a numeric
-  # column a design filters on still arrives numeric.
-  col_types <- NULL
-  if (length(as_character)) {
-    # Only name columns the file actually has: readr warns about a parser for a column
-    # that is not there, and a caller naming a paradigm's required fields cannot know
-    # whether the table supplies them. Reporting the missing column is load_items's
-    # job, and its message says which ones. Reading the header alone costs one line.
-    header <- names(readr::read_csv(path, n_max = 0, show_col_types = FALSE,
-                                    progress = FALSE,
-                                    locale = readr::locale(encoding = "UTF-8")))
-    want <- intersect(as_character, header)
-    if (length(want)) {
-      col_types <- do.call(readr::cols, c(stats::setNames(
-        replicate(length(want), readr::col_character(), simplify = FALSE),
-        want), list(.default = readr::col_guess())))
-    }
-  }
-  readr::read_csv(
+  # The header row is read as data, so that the names are seen before readr repairs a
+  # duplicate, and every cell as text with nothing trimmed or treated as missing, so
+  # that the rule below is the only one applied.
+  raw <- readr::read_csv(
     path,
-    col_types = col_types,
+    col_names = FALSE,
+    col_types = readr::cols(.default = readr::col_character()),
+    na = character(0),
+    trim_ws = FALSE,
     show_col_types = FALSE,
     progress = FALSE,
     locale = readr::locale(encoding = "UTF-8")
   )
+  if (!nrow(raw)) return(raw)
+  nm <- .csv_names(unlist(raw[1L, ], use.names = FALSE), path)
+  out <- raw[-1L, , drop = FALSE]
+  names(out) <- nm
+  for (j in seq_along(nm)) {
+    cells <- .csv_cells(out[[j]])
+    out[[j]] <- if (nm[j] %in% as_character) cells else .type_column(cells)
+  }
+  out
 }
 
 # Where readr leaves fixed notation. Beyond it readr's layout could not be reproduced

@@ -1,0 +1,22 @@
+# Twin-edge case: the baseline design over a lexicon whose header names are padded
+# with spaces and a tab, and whose frequency cells are padded on alternate rows. Both
+# engines trim header names and cells when they read a CSV, so `word` and `freq_zipf`
+# are found. Untrimmed, the Python engine reported the required columns missing and
+# the R engine ran.
+# The word forms are common English words. The Zipf frequencies are invented for
+# this fixture and describe no corpus.
+name: twin_edge_padded_header
+language: english
+lexicon: lexicon.csv
+description: 'Nouns versus verbs from a forty-word lexicon with a padded header.'
+n_per_condition: 8
+conditions:
+  - name: noun
+    define_by:
+      pos: [noun]
+  - name: verb
+    define_by:
+      pos: [verb]
+match_on: [length, frequency]
+counterbalance:
+  lists: 2

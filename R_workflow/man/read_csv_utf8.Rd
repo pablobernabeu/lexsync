@@ -2,21 +2,26 @@
 % Please edit documentation in R/io_utils.R
 \name{read_csv_utf8}
 \alias{read_csv_utf8}
-\title{Read a UTF-8 CSV file}
+\title{Read a UTF-8 CSV file by the rule both engines share}
 \usage{
 read_csv_utf8(path, as_character = character(0))
 }
 \arguments{
 \item{path}{Path to a CSV file.}
 
-\item{as_character}{Character vector of column names whose type must not be guessed,
-read as text instead. A name the file's header does not carry is ignored, since
-readr warns about a parser for a column that is not there.}
+\item{as_character}{Character vector of column names that stay text, trimmed. A
+name the file's header does not carry is ignored.}
 }
 \value{
-A data frame (a tibble), as returned by \code{\link[readr:read_csv]{readr::read_csv()}}.
+A data frame (a tibble). An empty file gives one with no columns.
 }
 \description{
-Read a UTF-8 CSV file
+Every header name and cell is trimmed of spaces, tabs, carriage returns and line
+feeds. After trimming, an empty cell and \code{NA} (quoted or not) are missing, and
+every other word, \code{null}, \code{nan} and \code{none} included, is a value. Each column not named in
+\code{as_character} then takes its type from all of its values: numeric when every value
+is a plain decimal number (no thousands separators), logical when every value is
+TRUE or FALSE in upper, lower or title case, and text otherwise. Dates are never
+parsed. A UTF-8 byte-order mark is ignored.
 }
 \keyword{internal}

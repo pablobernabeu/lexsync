@@ -137,6 +137,19 @@ def test_load_lexicon_reports_an_empty_lexicon(schema, tmp_path, body):
         load_lexicon(str(path), schema, "english")
 
 
+# Pins the same contract as "load_lexicon refuses a frequency column that is not
+# numeric" in test-querying.R. A thousands separator makes the column text under the
+# shared reading rule. This engine then failed inside pandas' float conversion, and the
+# R engine had read "1,000" as 1000.
+def test_load_lexicon_refuses_a_frequency_column_that_is_not_numeric(schema, tmp_path):
+    path = tmp_path / "grouped.csv"
+    path.write_text('word,freq_zipf\ncat,"1,000"\ndog,2\n', encoding="utf-8")
+    msg = ("lexsync: lexicon column 'freq_zipf' must hold plain decimal numbers, "
+           "but it holds '1,000'.")
+    with pytest.raises(ValueError, match=re.escape(msg)):
+        load_lexicon(str(path), schema, "english")
+
+
 def test_missing_column_raises(schema, tmp_path):
     bad = tmp_path / "bad.csv"
     pd.DataFrame({"notword": ["x"]}).to_csv(bad, index=False)
@@ -149,9 +162,9 @@ def test_missing_column_raises(schema, tmp_path):
 
 
 # Pins the same contract as "load_items trims the ASCII whitespace readr trims"
-# in the R engine's test-querying.R. readr's trim_ws strips padding from every
-# field before Python ever sees it, so without this the same table gives
-# different stimulus text, set ids and condition labels per engine.
+# in the R engine's test-querying.R. Both engines' readers trim every field, so
+# the same padded table gives the same stimulus text, set ids and condition
+# labels in each.
 def test_load_items_trims_ascii_whitespace(tmp_path):
     path = tmp_path / "items.csv"
     path.write_text(
@@ -182,9 +195,8 @@ def test_load_items_keeps_non_ascii_whitespace(tmp_path):
 # Pins the same contract as "load_items refuses missing or blank cells" in the R
 # engine's test-querying.R. A missing cell used to arrive as NaN, be stringified
 # to the literal 'nan' and flow on; a blank condition then defeated the hash-key
-# guard downstream. The two readers reach the refusal at different stages (readr
-# reads a blank or 'NA' or all-whitespace cell as NA; pandas keeps a quoted
-# whitespace cell as text until the trim), but the message is the same.
+# guard downstream. Both readers read a blank, 'NA' or all-whitespace cell as
+# missing, and the message is the same.
 @pytest.mark.parametrize(
     "body,col",
     [

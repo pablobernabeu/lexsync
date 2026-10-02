@@ -63,6 +63,25 @@
   The run logs of the 10 designs change with their datasheets, whose MD5 they
   record.
 
+* Both engines read CSV input by one rule. Header names and fields are trimmed,
+  and an empty field or `NA` is missing. A column is numeric only when every
+  value is a plain decimal number (no thousands separators), logical only when
+  every value is TRUE or FALSE (in upper, lower or title case), and text
+  otherwise. The Python engine did not trim, so a padded category or header made
+  it refuse a design the R engine ran. The R engine guessed types from the first
+  1,000 rows and read `T` and `F` as logical, `1,000` as a number and ISO dates
+  as dates, so a pass-through column could be written `F` by one engine and
+  `FALSE` by the other. A header that names a column twice is now refused, an
+  empty header cell is named by its position (`...3`), and `load_lexicon()`
+  refuses a frequency column that is not numeric, naming the first value that is
+  not a plain number. The R engine parses every number of up to 15 significant
+  digits, with a power of ten within 10^22, to the nearest double, as Python's
+  `float()` does, because readr's parser could miss it by one unit in the last
+  place (`50.768212762897100`, for instance). Any other number goes through
+  `as.numeric()`. R wrote a negative zero as `-0` and Python as `0`, so both
+  engines now read it as zero. Every demonstration's stimuli and reports are
+  unchanged.
+
 # lexsync 0.1.1
 
 * `assign_triggers()` gains a `conditions` argument that fixes the order of the

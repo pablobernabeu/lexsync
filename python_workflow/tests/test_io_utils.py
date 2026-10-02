@@ -1,3 +1,5 @@
+import struct
+
 import pandas as pd
 import pytest
 
@@ -73,6 +75,133 @@ def test_fmt_dp_rounds_half_away_from_zero_without_a_printf():
     assert _fmt_dp(float("nan"), 2) == "--"
     assert _fmt_dp(None, 2, na="n/a") == "n/a"
     assert [_fmt_dp(v, 2) for v in (float("inf"), float("-inf"))] == ["Inf", "-Inf"]
+
+
+
+def _csv_fixture():
+    """The CSV-reading fixture, built row by row exactly as test-io_utils.R builds it.
+
+    1,200 rows, so that a reader guessing types from the first 1,000 sees only numbers
+    in `late` and misses the 'n/a' at row 1,101.
+    """
+    lines = ["word , freq_zipf,pos,tf,flag,grouped,late,date,miss,n,num,inf"]
+    for i in range(1, 1201):
+        lines.append(",".join([
+            "w%04d" % i,
+            " 3.25 " if i == 1 else "4.5",
+            {1: '" NOUN "', 2: "\tverb\t", 3: ""}.get(i, "noun"),
+            "T" if i % 2 else "F",
+            "" if i == 4 else ("TRUE" if i % 2 else "False"),
+            '"1,000"' if i == 1 else "2",
+            "n/a" if i == 1101 else str(i),
+            "2026-10-02",
+            {1: " NA ", 2: '"NA"'}.get(i, "1.5"),
+            str(i),
+            {1: "+1.5", 2: ".5", 3: "5.", 4: "-2E-2", 5: "1e3"}.get(i, "0"),
+            "Inf" if i == 1 else "1",
+        ]))
+    return ("\n".join(lines) + "\n").encode("ascii")
+
+
+def _kind(col):
+    """A column's type as the cross-engine contract names it."""
+    if col.dtype == "int64":
+        return "integer"
+    if col.dtype == "float64":
+        return "number"
+    if col.dtype == bool or all(isinstance(v, bool) for v in col.dropna()):
+        return "logical"
+    return "text"
+
+
+def _cells(col, n):
+    return [None if pd.isna(v) else v for v in col[:n]]
+
+
+# The same fixture, types and values are pinned by "one CSV fixture reads the same in
+# both engines" in test-io_utils.R.
+def test_one_csv_fixture_reads_the_same_in_both_engines(tmp_path):
+    path = tmp_path / "f.csv"
+    path.write_bytes(_csv_fixture())
+    out = read_csv_utf8(str(path))
+    assert list(out.columns) == ["word", "freq_zipf", "pos", "tf", "flag", "grouped",
+                                 "late", "date", "miss", "n", "num", "inf"]
+    assert {c: _kind(out[c]) for c in out.columns} == {
+        "word": "text", "freq_zipf": "number", "pos": "text", "tf": "text",
+        "flag": "logical", "grouped": "text", "late": "text", "date": "text",
+        "miss": "number", "n": "integer", "num": "number", "inf": "text"}
+    assert len(out) == 1200
+    assert _cells(out["freq_zipf"], 2) == [3.25, 4.5]
+    assert _cells(out["pos"], 4) == ["NOUN", "verb", None, "noun"]
+    assert _cells(out["tf"], 2) == ["T", "F"]
+    assert _cells(out["flag"], 5) == [True, False, True, None, True]
+    assert _cells(out["grouped"], 2) == ["1,000", "2"]
+    assert out["late"][1100] == "n/a" and out["late"][0] == "1"
+    assert out["date"][0] == "2026-10-02"
+    assert _cells(out["miss"], 3) == [None, None, 1.5]
+    assert list(out["n"]) == list(range(1, 1201))
+    assert _cells(out["num"], 6) == [1.5, 0.5, 5.0, -0.02, 1000.0, 0.0]
+    assert _cells(out["inf"], 2) == ["Inf", "1"]
+
+
+def test_read_csv_utf8_keeps_as_character_columns_as_trimmed_text(tmp_path):
+    path = tmp_path / "f.csv"
+    path.write_bytes(_csv_fixture())
+    out = read_csv_utf8(str(path), as_character=["n", "flag", "freq_zipf", "absent"])
+    assert _cells(out["n"], 2) == ["1", "2"]
+    assert _cells(out["flag"], 4) == ["TRUE", "False", "TRUE", None]
+    assert _cells(out["freq_zipf"], 2) == ["3.25", "4.5"]
+    assert "absent" not in out.columns
+
+
+def test_read_csv_utf8_refuses_a_column_name_given_twice(tmp_path):
+    # Trimming the header can make two names one, and either engine's reader would
+    # then rename one of them by its own rule, so neither would know which is `word`.
+    path = tmp_path / "f.csv"
+    path.write_bytes(b"word,freq_zipf,word \ncat,4,dog\n")
+    with pytest.raises(ValueError, match="names column 'word' more than once"):
+        read_csv_utf8(str(path))
+
+
+def test_read_csv_utf8_names_an_empty_header_cell_by_its_position(tmp_path):
+    path = tmp_path / "f.csv"
+    path.write_bytes(b"word,,freq_zipf,\ncat,x,4,\n")
+    out = read_csv_utf8(str(path))
+    assert list(out.columns) == ["word", "...2", "freq_zipf", "...4"]
+
+
+def test_read_csv_utf8_reads_an_empty_file_as_no_columns(tmp_path):
+    path = tmp_path / "f.csv"
+    path.write_bytes(b"")
+    out = read_csv_utf8(str(path))
+    assert list(out.columns) == [] and len(out) == 0
+
+
+# Pins the same bits as "read_csv_utf8 parses a number to the double both engines
+# reach" in test-io_utils.R. Each value takes a path where one of R's parsers misses
+# the nearest double: as.numeric() on the first and third, readr on the second,
+# fourth and fifth. A negative zero is read as zero, which both writers print as "0".
+NUMBER_BITS = [
+    ("0.586135918132", "3fe2c1a01cec6975"),
+    ("50.768212762897100", "40496254cbba81a5"),
+    ("2.91e-11", "3dbffeebfc8b81b5"),
+    ("0.12345678901234567", "3fbf9add3746f65e"),
+    ("1e-400", "0000000000000000"),
+    ("-0", "0000000000000000"),
+    ("-0.00", "0000000000000000"),
+]
+
+
+def test_read_csv_utf8_parses_a_number_to_the_double_both_engines_reach(tmp_path):
+    path = tmp_path / "f.csv"
+    path.write_bytes(("x\n" + "\n".join(s for s, _ in NUMBER_BITS) + "\n").encode("ascii"))
+    out = read_csv_utf8(str(path))
+    assert out["x"].dtype == "float64"
+    assert [struct.pack(">d", v).hex() for v in out["x"]] == [b for _, b in NUMBER_BITS]
+    path.write_bytes(b"z\n-0.00\n1.5\n")
+    written = tmp_path / "w.csv"
+    write_csv_utf8(read_csv_utf8(str(path)), str(written))
+    assert written.read_bytes() == b"z\n0\n1.5\n"
 
 
 def test_clean_field_rejects_control_characters():

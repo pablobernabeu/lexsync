@@ -1,0 +1,24 @@
+# Twin-edge case: the baseline design over a lexicon whose part-of-speech cells are
+# padded, some with spaces inside quotes and some with tabs. Both engines trim every
+# cell when they read a CSV, so the pool filter and the conditions see `noun` and
+# `verb`. Untrimmed, the Python engine lost the padded rows and could not fill the
+# eight sets, while the R engine ran.
+# The word forms are common English words. The Zipf frequencies are invented for
+# this fixture and describe no corpus.
+name: twin_edge_padded_pos
+language: english
+lexicon: lexicon.csv
+description: 'Nouns versus verbs from a forty-word lexicon with padded part-of-speech cells.'
+n_per_condition: 8
+pool_filters:
+  pos: [noun, verb]
+conditions:
+  - name: noun
+    define_by:
+      pos: [noun]
+  - name: verb
+    define_by:
+      pos: [verb]
+match_on: [length, frequency]
+counterbalance:
+  lists: 2

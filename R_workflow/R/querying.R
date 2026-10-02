@@ -83,6 +83,27 @@ count_syllables <- function(word) {
   }, integer(1), USE.NAMES = FALSE)
 }
 
+#' Refuse a lexicon column that the shared CSV rule did not read as numbers
+#'
+#' A value such as "1,000" leaves the whole column text under that rule. `as.numeric()`
+#' would then turn it into `NA` with a warning, while the Python engine failed inside
+#' pandas' float conversion, so the refusal is spelled out, naming the first value that
+#' is not a plain decimal number. Mirrors `_require_numbers` in
+#' python_workflow/src/lexsync/querying.py.
+#'
+#' @param x The column.
+#' @param name Its name, for the message.
+#' @return `NULL`, invisibly, or an error.
+#' @keywords internal
+.require_numbers <- function(x, name) {
+  if (is.numeric(x)) return(invisible(NULL))
+  v <- x[!is.na(x)]
+  bad <- if (is.logical(v)) ifelse(v, "TRUE", "FALSE") else
+    v[!grepl(.NUMERIC_CELL, v, perl = TRUE)]
+  stop(sprintf(paste("lexsync: lexicon column '%s' must hold plain decimal numbers, but",
+                     "it holds '%s'."), name, bad[1]), call. = FALSE)
+}
+
 #' Load a lexicon from a CSV file
 #'
 #' Reads a derived lexicon, validates the column contract, lower-cases the
@@ -111,6 +132,7 @@ load_lexicon <- function(path, schema, language = NULL) {
   df <- as.data.frame(read_csv_utf8(path), stringsAsFactors = FALSE)
   validate_lexicon(df, schema)
   freq_col <- schema[["dimensions"]][["frequency"]][["column"]] %||% "freq_zipf"
+  .require_numbers(df[[freq_col]], freq_col)
   df$word <- .lower_invariant(.trim_invariant(df$word))
   keep <- !is.na(df$word) & nzchar(df$word) & !is.na(df[[freq_col]])
   df <- df[keep, , drop = FALSE]
@@ -475,11 +497,11 @@ load_pool <- function(path, schema, lexicon = NULL, language = NULL) {
 load_items <- function(path, required_fields) {
   parts <- strsplit(gsub("\\\\", "/", path), "/", fixed = TRUE)[[1]]
   if (".." %in% parts) stop("lexsync: items path must not contain '..'.", call. = FALSE)
-  # The item id, the condition label and the paradigm's presented fields are read as
-  # text, never type-guessed: readr reads a column of `f` or `t` as logical, which
-  # silently turned a design's `answer: f` response key into FALSE here while the
-  # Python engine kept "f", and an `item` column left to inference number-parsed
-  # '01' down to '1' (pandas, with a missing cell, to '1.0'). See read_csv_utf8.
+  # The item id, the condition label and the paradigm's presented fields stay text.
+  # Typed by their values, a column of response keys such as TRUE and FALSE would
+  # become logical, and an `item` column of numbers would lose the zero of '01'. The
+  # reader trims every cell and reads a blank, all-whitespace or 'NA' cell as
+  # missing, in both engines (see read_csv_utf8).
   df <- as.data.frame(read_csv_utf8(path, as_character = c("item", "condition", required_fields)),
                       stringsAsFactors = FALSE)
   needed <- c("item", "condition", required_fields)
@@ -498,29 +520,7 @@ load_items <- function(path, required_fields) {
                    col), call. = FALSE)
     }
   }
-  # readr trims ASCII whitespace from every field (trim_ws defaults to TRUE) and
-  # pandas trims nothing, so the same padded table would yield different stimulus
-  # text, set ids and condition labels per engine. Trimming here, rather than
-  # switching the reader off, keeps one definition of a field's value in both
-  # sources: readr's trim_ws also drives its type inference, so disabling it
-  # would read a padded ' 3.5 ' as text in R while pandas still parsed a float.
-  # Only ASCII whitespace is trimmed, because that is all readr removes. A no-break
-  # space survives in both engines, so they still agree.
-  trim <- function(x) trimws(as.character(x), whitespace = "[ \t\r\n]")
-  for (f in intersect(required_fields, names(df))) df[[f]] <- trim(df[[f]])
-  item_key <- trim(df$item)
-  df$condition <- trim(df$condition)
-  # A quoted all-whitespace cell survives the reader as text here and as text in
-  # pandas; trimmed empty, it is a missing value in all but spelling, so it gets
-  # the same refusal in both engines.
-  for (col in needed) {
-    v <- if (identical(col, "item")) item_key else df[[col]]
-    if (any(!nzchar(v))) {
-      stop(sprintf(paste("lexsync: the items table has missing value(s) in column '%s';",
-                         "every item, condition and presented field must be filled."),
-                   col), call. = FALSE)
-    }
-  }
+  item_key <- df$item
   # A repeated item-condition pair is a slip that would silently duplicate a trial
   # in every generated list; the first repeat in file order is reported. The key is
   # length-prefixed because a bare separator could recur inside a label and collide;

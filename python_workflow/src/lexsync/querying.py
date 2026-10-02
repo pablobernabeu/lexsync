@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 from rapidfuzz.distance import Hamming, Levenshtein
 
-from .io_utils import _round_dp, clean_field, read_csv_utf8, sha256_file
+from .io_utils import _NUMERIC_CELL, _round_dp, clean_field, read_csv_utf8, sha256_file
 
 # Maximal runs of (possibly accented) Latin vowels approximate syllable nuclei. The
 # R mirror builds the same 26 accented code points with intToUtf8, to keep its source
@@ -20,13 +20,6 @@ from .io_utils import _round_dp, clean_field, read_csv_utf8, sha256_file
 # design may match on. Must cover the same code points as .VOWELS in
 # R_workflow/R/querying.R.
 _VOWELS = re.compile(r"[aeiouyàáâãäåèéêëìíîïòóôõöøùúûüýÿ]+")
-
-# readr trims ASCII whitespace from every field (trim_ws defaults to TRUE) and
-# pandas trims nothing, so the same padded item table would otherwise yield
-# different stimulus text, set ids and condition labels per engine. This pins the
-# set readr removes; R_workflow/R/querying.R states the same trim, and explains
-# why the reader's own trim_ws is left alone.
-_ASCII_WS = " \t\r\n"
 
 
 def count_syllables(word) -> int:
@@ -42,6 +35,29 @@ def validate_lexicon(df: pd.DataFrame, schema: dict) -> None:
         raise ValueError(f"lexsync: lexicon is missing required column(s): {cols}")
 
 
+def _require_numbers(col: pd.Series, name: str) -> None:
+    """Refuse a lexicon column that the shared CSV rule did not read as numbers.
+
+    A value such as "1,000" leaves the whole column text under that rule. pandas' float
+    conversion then failed with its own message here, while the R engine took
+    as.numeric()'s NA with a warning, so the refusal is spelled out, naming the first
+    value that is not a plain decimal number. Mirrors .require_numbers in
+    R_workflow/R/querying.R.
+    """
+    if pd.api.types.is_numeric_dtype(col) and not pd.api.types.is_bool_dtype(col):
+        return
+    for v in col:
+        if isinstance(v, bool):
+            bad = "TRUE" if v else "FALSE"
+        elif pd.isna(v) or _NUMERIC_CELL.fullmatch(str(v)):
+            continue
+        else:
+            bad = str(v)
+        raise ValueError(
+            "lexsync: lexicon column '%s' must hold plain decimal numbers, but it holds "
+            "'%s'." % (name, bad))
+
+
 def load_lexicon(path: str, schema: dict, language: str | None = None) -> pd.DataFrame:
     df = read_csv_utf8(path)
     validate_lexicon(df, schema)
@@ -50,6 +66,7 @@ def load_lexicon(path: str, schema: dict, language: str | None = None) -> pd.Dat
     # default argument only covers an ABSENT key, so the two engines answered the
     # same schema with a column name and an AttributeError.
     freq_col = ((schema.get("dimensions") or {}).get("frequency") or {}).get("column") or "freq_zipf"
+    _require_numbers(df[freq_col], freq_col)
     # Filter before coercing: astype(str) renders a missing word as the literal
     # string "nan", which survives both guards below, whereas the R engine (where
     # as.character(NA) stays NA) drops the row. Coercing first would therefore
@@ -388,40 +405,26 @@ def load_items(path: str, required_fields) -> pd.DataFrame:
     parts = str(path).replace("\\", "/").split("/")
     if ".." in parts:
         raise ValueError("lexsync: items path must not contain '..'.")
-    # The item id, the condition label and the paradigm's presented fields are read as
-    # text, never type-guessed. This engine happens to keep "f" a string anyway, but the
-    # R engine's reader turns a column of `f` or `t` into a LOGICAL, so a design coding
-    # its two response keys as f and j had `answer` become FALSE there and "f" here; and
-    # `item` left to inference float-promoted a numeric id column, so '01' became '1'
-    # (or, with a missing cell, '1.0'). Forcing the type on both sides makes the
-    # agreement structural, where it would otherwise be coincidental.
+    # The item id, the condition label and the paradigm's presented fields stay text.
+    # Typed by their values, a column of response keys such as TRUE and FALSE would
+    # become logical, and an `item` column of numbers would lose the zero of '01'. The
+    # reader trims every cell and reads a blank, all-whitespace or 'NA' cell as
+    # missing, in both engines (see read_csv_utf8).
     df = read_csv_utf8(path, as_character=["item", "condition"] + list(required_fields))
     needed = ["item", "condition"] + list(required_fields)
     missing = [c for c in needed if c not in df.columns]
     if missing:
         raise ValueError(f"lexsync: items table '{path}' is missing column(s): {', '.join(missing)}.")
-    # Missingness is tested before any string coercion: a missing cell in a dtype=str
-    # column still arrives as NaN, and str() would render it as the literal 'nan',
-    # which a blank condition then carries past the hash-key guard downstream.
+    # Missingness is tested before any string coercion: str() would render a missing
+    # cell as the literal 'nan', which a blank condition then carries past the
+    # hash-key guard downstream.
     for col in needed:
         if df[col].isna().any():
             raise ValueError(
                 f"lexsync: the items table has missing value(s) in column '{col}'; "
                 "every item, condition and presented field must be filled.")
     df = df.copy()
-    for f in [c for c in required_fields if c in df.columns]:
-        df[f] = [str(v).strip(_ASCII_WS) for v in df[f]]
-    item_key = df["item"].astype(str).str.strip(_ASCII_WS)
-    df["condition"] = df["condition"].astype(str).str.strip(_ASCII_WS)
-    # An all-whitespace cell is already missing in the R engine's reader (readr trims
-    # before matching its na strings), so refusing the trimmed-empty value here keeps
-    # the two engines refusing the same tables, with the same message.
-    for col in needed:
-        vals = item_key if col == "item" else df[col]
-        if (vals == "").any():
-            raise ValueError(
-                f"lexsync: the items table has missing value(s) in column '{col}'; "
-                "every item, condition and presented field must be filled.")
+    item_key = df["item"].astype(str)
     # A repeated item-condition pair is a slip that would silently duplicate a trial
     # in every generated list; the first repeat in file order is reported.
     seen = set()

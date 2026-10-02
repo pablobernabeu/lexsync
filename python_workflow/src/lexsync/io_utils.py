@@ -16,22 +16,120 @@ import numpy as np
 import pandas as pd
 import yaml
 
+# ---- One CSV reading rule, shared by both engines ----------------------------
+#
+# pandas and readr each guess a column's type by their own heuristics, and the two
+# disagreed on ordinary input. readr trimmed fields and headers and pandas trimmed
+# nothing, so a padded category made this engine refuse a design the R engine ran.
+# readr guessed types from the first 1,000 rows, read T and F as logical, "1,000" as a
+# number and ISO dates as dates, so a pass-through column was written `F` by one engine
+# and `FALSE` by the other. Both engines therefore read every cell as text and convert
+# it here, by one rule written out in each. Must stay identical to read_csv_utf8 and
+# .type_column in R_workflow/R/io_utils.R.
+#
+# The characters trimmed from every header name and cell: the ASCII whitespace readr's
+# trim_ws removed. A no-break space is data in both engines.
+_CSV_WS = " \t\r\n"
+# A plain decimal number: an optional sign, digits with an optional point, and an
+# optional exponent. No thousands separators, no Inf or NaN, and only ASCII digits,
+# which is why the class is spelled out: Python's \d also matches other scripts' digits.
+_NUMERIC_CELL = re.compile(r"[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?")
+_INTEGER_CELL = re.compile(r"[+-]?[0-9]+")
+# Not T and F, which readr took as logical: a design coding its two response keys as
+# f and t had them turned into FALSE and TRUE there (see CHANGELOG 0.1.0).
+_LOGICAL_CELLS = {"TRUE": True, "true": True, "True": True,
+                  "FALSE": False, "false": False, "False": False}
+_INT64 = (-(2 ** 63), 2 ** 63 - 1)
+
+
+def _csv_cells(values) -> list:
+    """Trimmed cells, with "" and "NA" (quoted or not) as None."""
+    out = []
+    for v in values:
+        s = v.strip(_CSV_WS) if isinstance(v, str) else ""
+        out.append(None if s in ("", "NA") else s)
+    return out
+
+
+def _csv_names(header, path) -> list:
+    """Trimmed header names. An empty name is named by its position, as readr names
+    it ("...3"), and a name given twice is refused: each reader would otherwise rename
+    one copy by its own rule, and neither would know which of them is `word`."""
+    names = [h.strip(_CSV_WS) if isinstance(h, str) else "" for h in header]
+    names = [n or "...%d" % j for j, n in enumerate(names, 1)]
+    seen = set()
+    for n in names:
+        if n in seen:
+            raise ValueError(
+                "lexsync: the header of '%s' names column '%s' more than once (after "
+                "trimming whitespace); each column name may appear once." % (path, n))
+        seen.add(n)
+    return names
+
+
+def _type_column(cells) -> pd.Series:
+    """A column's type from all of its values, by the rule both engines apply.
+
+    Numeric when every non-missing value is a plain decimal number. It is int64 when
+    every value is an integer literal and none is missing, and float64 otherwise,
+    through float(), which is correctly rounded. R's double and this int64 both write
+    "3". The R engine reaches the same double by exact arithmetic for every value of
+    up to 15 significant digits with a power of ten within 10^22 (.parse_decimal in
+    io_utils.R). Beyond that it falls back to as.numeric(), which can differ in the
+    last bit. A negative zero is read as zero, because the two engines' writers print
+    it as "0" and "-0". Logical when every non-missing value is TRUE, FALSE, true,
+    false, True or False. Text otherwise. A column with no values at all is numeric,
+    all missing. Dates are never parsed.
+    """
+    present = [v for v in cells if v is not None]
+    if all(_NUMERIC_CELL.fullmatch(v) for v in present):
+        if present and len(present) == len(cells) and all(
+                _INTEGER_CELL.fullmatch(v) for v in present):
+            ints = [int(v) for v in present]
+            if _INT64[0] <= min(ints) and max(ints) <= _INT64[1]:
+                return pd.Series(ints, dtype="int64")
+        # `+ 0.0` turns -0.0 into 0.0 and leaves every other double as it is.
+        return pd.Series([np.nan if v is None else float(v) + 0.0 for v in cells],
+                         dtype="float64")
+    if all(v in _LOGICAL_CELLS for v in present):
+        if len(present) == len(cells):
+            return pd.Series([_LOGICAL_CELLS[v] for v in cells], dtype=bool)
+        # object, not pandas' nullable boolean: its pd.NA would reach the CSV writer
+        # as "<NA>", where NaN is written as an empty field.
+        return pd.Series([np.nan if v is None else _LOGICAL_CELLS[v] for v in cells],
+                         dtype=object)
+    return pd.Series([np.nan if v is None else v for v in cells], dtype=object)
+
 
 def read_csv_utf8(path: str, as_character=None) -> pd.DataFrame:
+    """Read a UTF-8 CSV file by the rule both engines share.
+
+    Every header name and cell is trimmed of spaces, tabs, carriage returns and line
+    feeds. After trimming, an empty cell and ``NA`` (quoted or not) are missing, and
+    every other word, ``null``, ``nan`` and ``none`` included, is a value. Each column
+    not named in ``as_character`` then takes its type from all of its values (see
+    _type_column), and a column named there stays text. A name in ``as_character`` that
+    the header does not carry is ignored. A UTF-8 byte-order mark is ignored.
+
+    The header row is read as data, so that this function sees the names before
+    pandas renames a duplicate and can refuse it, as the R engine does.
+    """
     if not os.path.exists(path):
         raise FileNotFoundError(f"lexsync: file not found: '{path}'")
-    # `as_character` names columns whose type must NOT be inferred. This engine already
-    # keeps a single "f" a string, but the R engine's readr reads a column of `f`, `t`,
-    # `T` or `F` as LOGICAL, so a design coding its two response keys as f and j had
-    # `answer` turned into FALSE there. Forcing the type on both sides makes the
-    # agreement structural, where it used to rest on two readers' heuristics agreeing.
-    #
-    # Treat only "" and "NA" as missing, matching R's readr default. Pandas would
-    # otherwise read the real words 'null', 'nan', 'none', 'true' etc. as NaN and
-    # silently drop them, diverging from the R engine.
-    dtype = {c: str for c in (as_character or [])} or None
-    return pd.read_csv(path, encoding="utf-8", keep_default_na=False,
-                       na_values=["", "NA"], dtype=dtype)
+    try:
+        raw = pd.read_csv(path, encoding="utf-8", header=None, dtype=str,
+                          keep_default_na=False, na_filter=False)
+    except pd.errors.EmptyDataError:
+        # readr reads an empty file as a frame of no columns, and so does this engine.
+        return pd.DataFrame()
+    names = _csv_names(raw.iloc[0].tolist(), path)
+    text = set(as_character or [])
+    cols = {}
+    for j, name in enumerate(names):
+        cells = _csv_cells(raw.iloc[1:, j].tolist())
+        cols[name] = (pd.Series([np.nan if v is None else v for v in cells], dtype=object)
+                      if name in text else _type_column(cells))
+    return pd.DataFrame(cols, columns=names)
 
 
 def _readr_sci(v: float) -> str:

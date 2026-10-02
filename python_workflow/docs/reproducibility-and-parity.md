@@ -54,12 +54,27 @@ matched dimension is missing, and its distance is then NaN. A bare `min()` over 
 row it happened to see first, which makes the selection depend on pool row order. The matcher sorts
 NaN last, as R's `order(na.last = TRUE)` does.
 
-Text is read the same way by both engines. pandas treats `null`, `nan`, `none` and `true` as missing
-by default, which would silently drop those real English words and leave the two engines with
-different lexica, so `read_csv_utf8` sets `keep_default_na=False` and recognises only `""` and `NA`,
-matching readr's default. `load_lexicon` also drops missing words before coercing types: `astype(str)`
-renders a missing word as the literal string `"nan"`, which survives every guard downstream, while
-R's `as.character(NA)` stays `NA` and drops the row. One extra row shifts every id after it.
+CSV input is read by one rule in both engines. Each engine reads every cell as text and converts it
+itself, because pandas and readr guess types by different heuristics. Header names and cells are
+trimmed of spaces, tabs, carriage returns and line feeds. After trimming, an empty cell and `NA`
+(quoted or not) are missing. Every other word is a value, `null`, `nan`, `none` and `true`
+included, which pandas would otherwise have dropped as missing. A column is numeric only when every
+value is a plain decimal number (an optional sign, digits, an optional point and exponent, and no
+thousands separators). It is logical only when every value is TRUE or FALSE in upper, lower or
+title case, so `T` and `F` stay text. Any other column is text, a date included. The columns a
+paradigm presents, and an item table's `item` and `condition`, are always text. A header that names
+a column twice is refused, and an empty header cell is named by its position (`...3`). Python
+parses a number with `float()`, which returns the nearest double. readr's parser and R's
+`as.numeric()` can each miss that double by one unit in the last place. For a number of up to 15
+significant digits, with a power of ten within 10^22, R therefore multiplies or divides one exact
+integer by one exact power of ten. That single operation is correctly rounded and gives Python's
+double. Any other number goes through `as.numeric()`. It misses far less often than readr's
+parser, but the engines may then differ in its last bit. A negative zero is read as zero, since the
+two engines would otherwise write it as `-0` and `0`.
+
+`load_lexicon` drops missing words before coercing types: `astype(str)` renders a missing word as
+the literal string `"nan"`, which survives every guard downstream, while R's `as.character(NA)`
+stays `NA` and drops the row. One extra row shifts every id after it.
 
 Text is written the same way too. pandas defaults its line terminator to `os.linesep`, so the same
 selection would carry a different SHA-256 on Windows than on Linux. The datasheet advertises those

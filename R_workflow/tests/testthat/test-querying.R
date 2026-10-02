@@ -133,6 +133,21 @@ test_that("load_lexicon reports a lexicon left with no rows", {
   }
 })
 
+# Pins the same contract as
+# test_load_lexicon_refuses_a_frequency_column_that_is_not_numeric in
+# test_querying.py. A thousands separator makes the column text under the shared
+# reading rule. This engine had read "1,000" as 1000, and the Python engine failed
+# inside pandas' float conversion.
+test_that("load_lexicon refuses a frequency column that is not numeric", {
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  path <- tempfile(fileext = ".csv")
+  on.exit(unlink(path), add = TRUE)
+  writeLines(c("word,freq_zipf", "cat,\"1,000\"", "dog,2"), path)
+  expect_error(load_lexicon(path, schema, language = "english"),
+               paste("lexsync: lexicon column 'freq_zipf' must hold plain decimal numbers,",
+                     "but it holds '1,000'."), fixed = TRUE)
+})
+
 test_that(".lower_invariant reproduces Unicode default casing whatever the locale", {
   # Written as code points so the source stays ASCII (CRAN), and so the expected
   # Greek final sigma (U+03C2) and dotted-I expansion are unambiguous.
@@ -155,9 +170,8 @@ test_that(".lower_invariant reproduces Unicode default casing whatever the local
 })
 
 # Pins the same contract as test_load_items_trims_ascii_whitespace in the Python
-# engine's test_querying.py. readr strips this padding before R ever sees it and
-# pandas does not, so the Python engine trims to match; the assertion holds both
-# to the trimmed value rather than to either reader's default.
+# engine's test_querying.py. Both engines' readers trim every field, so the same
+# padded table gives the same stimulus text, set ids and condition labels in each.
 test_that("load_items trims the ASCII whitespace readr trims", {
   path <- tempfile(fileext = ".csv")
   on.exit(unlink(path), add = TRUE)
@@ -193,10 +207,9 @@ test_that("missing required columns raise an informative error", {
 
 # Pins the same contract as test_load_items_refuses_missing_cells in the Python
 # engine's test_querying.py. An NA used to flow into cryptic downstream failures
-# here, while Python stringified it to the literal 'nan' and carried on. The two
-# readers reach the refusal at different stages (readr reads a blank or 'NA' or
-# all-whitespace cell as NA; pandas keeps a quoted whitespace cell as text until
-# the trim), but the message is the same.
+# here, while Python stringified it to the literal 'nan' and carried on. Both
+# readers read a blank, 'NA' or all-whitespace cell as missing, and the message is
+# the same.
 test_that("load_items refuses missing or blank cells", {
   cases <- list(
     "blank-item"           = list(body = c("item,condition,target", ",related,cat"),
