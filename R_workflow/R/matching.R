@@ -20,7 +20,7 @@
 # a closed vocabulary, mirroring how tolerance_k is resolved. Must stay identical
 # to _resolve_policy in python_workflow/src/lexsync/matching.py.
 .resolve_policy <- function(design, schema, key, default, known) {
-  val <- design$matching[[key]] %||% schema$matching[[key]] %||% default
+  val <- design[["matching"]][[key]] %||% schema[["matching"]][[key]] %||% default
   if (!val %in% known) {
     stop(sprintf("lexsync: unknown %s policy '%s'. Known policies: %s.",
                  key, val, paste(known, collapse = ", ")), call. = FALSE)
@@ -85,21 +85,21 @@
 #'   index pairing matched items across conditions.
 #' @export
 match_stimuli <- function(pool, design, schema, verbose = FALSE) {
-  conditions <- design$conditions
+  conditions <- design[["conditions"]]
   if (is.null(conditions) || length(conditions) == 0) {
     # Without this, the anchor lookup below dies with a bare subscript error in R
     # and a KeyError in Python, two different messages for the same mistake.
     stop("lexsync: the design has no conditions; a matched design needs a conditions list.",
          call. = FALSE)
   }
-  match_on <- unlist(design$match_on, use.names = FALSE)
-  n <- design$n_per_condition %||% design$n_per_cell %||% 20L
+  match_on <- unlist(design[["match_on"]], use.names = FALSE)
+  n <- design[["n_per_condition"]] %||% design[["n_per_cell"]] %||% 20L
   # Tolerance window k per dimension (window = anchor mean +/- k * SD). A design
   # may override the schema defaults per dimension, e.g. to reproduce a published
   # study's exact windows (Gonzalez Alonso et al. used SD/9 for frequency).
-  tol_k <- schema$matching$tolerance_k
-  if (!is.null(design$matching$tolerance_k)) {
-    tol_k <- utils::modifyList(tol_k, design$matching$tolerance_k)
+  tol_k <- schema[["matching"]][["tolerance_k"]]
+  if (!is.null(design[["matching"]][["tolerance_k"]])) {
+    tol_k <- utils::modifyList(tol_k, design[["matching"]][["tolerance_k"]])
   }
   shortfall <- .resolve_policy(design, schema, "shortfall", "error", c("error", "allow"))
   on_tol <- .resolve_policy(design, schema, "on_insufficient_tolerance", "relax",
@@ -118,20 +118,20 @@ match_stimuli <- function(pool, design, schema, verbose = FALSE) {
                    d), call. = FALSE)
     }
   }
-  cnames <- vapply(conditions, function(cd) cd$name, character(1))
+  cnames <- vapply(conditions, function(cd) cd[["name"]], character(1))
   dup_name <- cnames[duplicated(cnames)]
   if (length(dup_name)) {
     stop(sprintf("lexsync: condition name '%s' appears more than once; condition names must be unique.",
                  dup_name[1]), call. = FALSE)
   }
   for (cd in conditions) {
-    for (d in names(cd$define_by)) {
+    for (d in names(cd[["define_by"]])) {
       # build_pool skips a column it does not recognise, so a misspelt define_by
       # key would silently hand the condition the whole pool as its subpool and
       # the manipulated contrast would vanish while matching proceeds.
       if (!d %in% names(pool)) {
         stop(sprintf("lexsync: dimension '%s' in condition '%s' is absent from the pool.",
-                     d, cd$name), call. = FALSE)
+                     d, cd[["name"]]), call. = FALSE)
       }
     }
   }
@@ -146,10 +146,11 @@ match_stimuli <- function(pool, design, schema, verbose = FALSE) {
     sweep(sweep(m, 2, center, "-"), 2, scale_, "/")
   }
 
-  subpools <- lapply(conditions, function(cd) build_pool(pool, cd$define_by))
-  cond_names <- vapply(conditions, function(cd) cd$name, character(1))
+  subpools <- lapply(conditions, function(cd) build_pool(pool, cd[["define_by"]]))
+  cond_names <- vapply(conditions, function(cd) cd[["name"]], character(1))
 
-  method <- design$matching$method %||% schema$matching$method %||% "standardised_euclidean"
+  method <- design[["matching"]][["method"]] %||% schema[["matching"]][["method"]] %||%
+    "standardised_euclidean"
   # Fixed order, as documented in schema.yaml; not sort(), which is locale-collated
   # on character vectors and would drift from the Python engine's message.
   known_methods <- c("standardised_euclidean", "joint", "mahalanobis", "optimal")
@@ -183,7 +184,7 @@ match_stimuli <- function(pool, design, schema, verbose = FALSE) {
   if (nrow(anchor_pool) == 0) {
     stop(sprintf("lexsync: anchor condition '%s' has no candidates.", cond_names[1]), call. = FALSE)
   }
-  ord_dim <- names(conditions[[1]]$define_by)[1]
+  ord_dim <- names(conditions[[1]][["define_by"]])[1]
   if (is.null(ord_dim) || !ord_dim %in% names(anchor_pool)) ord_dim <- "frequency"
   anchor_pool <- anchor_pool[order(anchor_pool[[ord_dim]], anchor_pool$word, method = "radix"), , drop = FALSE]
   n_take <- min(n, nrow(anchor_pool))
@@ -514,10 +515,10 @@ match_optimal <- function(subpools, cond_names, match_on, center, scale_, n, cap
 select_continuous_stimuli <- function(pool, design, schema, verbose = FALSE,
                                       key = "word", label = "continuous",
                                       renumber_sets = TRUE) {
-  cfg <- design$continuous
-  predictor <- cfg$predictor
-  controls <- unlist(cfg$controls, use.names = FALSE)
-  match_on <- unlist(design$match_on, use.names = FALSE)
+  cfg <- design[["continuous"]]
+  predictor <- cfg[["predictor"]]
+  controls <- unlist(cfg[["controls"]], use.names = FALSE)
+  match_on <- unlist(design[["match_on"]], use.names = FALSE)
   if (length(controls) == 0) {
     stop("lexsync: a continuous design needs at least one control dimension (continuous.controls must be non-empty).",
          call. = FALSE)
@@ -535,10 +536,10 @@ select_continuous_stimuli <- function(pool, design, schema, verbose = FALSE,
       stop(sprintf("lexsync: dimension '%s' is absent from the pool.", d), call. = FALSE)
     }
   }
-  n <- design$n_per_condition %||% design$n_per_cell %||% 60L
-  tol_k <- schema$matching$tolerance_k
-  if (!is.null(design$matching$tolerance_k)) {
-    tol_k <- utils::modifyList(tol_k, design$matching$tolerance_k)
+  n <- design[["n_per_condition"]] %||% design[["n_per_cell"]] %||% 60L
+  tol_k <- schema[["matching"]][["tolerance_k"]]
+  if (!is.null(design[["matching"]][["tolerance_k"]])) {
+    tol_k <- utils::modifyList(tol_k, design[["matching"]][["tolerance_k"]])
   }
   shortfall <- .resolve_policy(design, schema, "shortfall", "error", c("error", "allow"))
   on_tol <- .resolve_policy(design, schema, "on_insufficient_tolerance", "relax",

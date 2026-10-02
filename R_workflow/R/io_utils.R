@@ -308,12 +308,12 @@ sha256_file <- function(path) {
 # Must stay identical to _is_continuous in python_workflow/src/lexsync/io_utils.py.
 #' @keywords internal
 .is_continuous <- function(design) {
-  src <- (design$items$source %||% "corpus")
-  if (!is.null(design$continuous) && identical(src, "generate")) {
+  src <- (design[["items"]][["source"]] %||% "corpus")
+  if (!is.null(design[["continuous"]]) && identical(src, "generate")) {
     stop("lexsync: a 'continuous' block cannot be combined with items.source 'generate'.",
          call. = FALSE)
   }
-  !is.null(design$continuous) && src %in% c("corpus", "pool", "table")
+  !is.null(design[["continuous"]]) && src %in% c("corpus", "pool", "table")
 }
 
 # Render one component of a hash key. Never interpolate a number directly: R

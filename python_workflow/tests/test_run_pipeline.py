@@ -230,6 +230,54 @@ def test_a_pair_designs_window_relaxation_reaches_the_datasheet(tmp_path):
     assert "tolerance window relaxed" in log
 
 
+def test_a_key_that_only_begins_a_design_key_is_not_read(tmp_path):
+    """R's `$` matched a list name partially, so `font_size: 40` stood in for the
+    absent `font` and set every target's font to '40', while this engine ignored
+    the key. Pinned identically in test-run-pipeline.R."""
+    design = _write_design(str(tmp_path), [
+        "name: prefix_test",
+        "language: english",
+        "lexicon: " + _yaml_path(_pkg_data("en_example.csv")),
+        "n_per_condition: 5",
+        "pool_filters: {length: [3, 7], frequency: [3.8, 7]}",
+        "conditions:",
+        "  - {name: high, define_by: {frequency: [5.0, 7.0]}}",
+        "  - {name: low, define_by: {frequency: [3.8, 4.4]}}",
+        "match_on: [length]",
+        "font_size: 40",
+    ])
+    res = _run(design, tmp_path)
+    exps = res["experiments"]
+    with open(exps["psychopy"], encoding="utf-8") as handle:
+        assert 'WORD_FONT = "Courier New"' in handle.read().splitlines()
+    with open(exps["opensesame"], encoding="utf-8") as handle:
+        assert "set font_family mono" in handle.read().splitlines()
+    with open(exps["jspsych"], encoding="utf-8") as handle:
+        assert 'font-family: "Courier New"' in handle.read()
+
+
+def test_an_annotation_key_does_not_make_a_design_continuous(tmp_path):
+    """R read `continuous_notes` as `continuous` and failed on this factorial
+    design. Pinned identically in test-run-pipeline.R."""
+    import pandas as pd
+    design = _write_design(str(tmp_path), [
+        "name: annotated_test",
+        "language: english",
+        "lexicon: " + _yaml_path(_pkg_data("en_example.csv")),
+        "n_per_condition: 5",
+        "pool_filters: {length: [3, 7], frequency: [3.8, 7]}",
+        "conditions:",
+        "  - {name: high, define_by: {frequency: [5.0, 7.0]}}",
+        "  - {name: low, define_by: {frequency: [3.8, 4.4]}}",
+        "match_on: [length]",
+        "continuous_notes: frequency defines the two conditions",
+    ])
+    res = _run(design, tmp_path)
+    stim = pd.read_csv(res["stimuli"])
+    assert sorted(stim["condition"].unique()) == ["high", "low"]
+    assert stim["condition"].value_counts().tolist() == [5, 5]
+
+
 def test_verbose_false_keeps_the_console_silent(tmp_path, capsys):
     # log_step used to print unconditionally, so run_pipeline(verbose=False)
     # narrated every step; the Streamlit app embeds the pipeline and expects the

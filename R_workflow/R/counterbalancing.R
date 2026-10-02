@@ -8,8 +8,8 @@
 # python_workflow/src/lexsync/counterbalancing.py.
 
 .cb_recipe <- function(design) {
-  if (!is.null(design$events) && length(design$events)) return("factorial")
-  name <- design$paradigm %||% "factorial"
+  if (!is.null(design[["events"]]) && length(design[["events"]])) return("factorial")
+  name <- design[["paradigm"]] %||% "factorial"
   p <- tryCatch(get_paradigm(name), error = function(e) NULL)
   if (is.null(p)) "factorial" else (p$counterbalance %||% "factorial")
 }
@@ -100,8 +100,8 @@
   dims <- unlist(cb[["balance_on"]] %||% list(), use.names = FALSE)
   if (!length(dims)) dims <- unlist(design[["match_on"]] %||% list(), use.names = FALSE)
   if (!length(dims) && !is.null(design[["continuous"]])) {
-    dims <- c(design$continuous$predictor,
-              unlist(design$continuous$controls %||% list(), use.names = FALSE))
+    dims <- c(design[["continuous"]][["predictor"]],
+              unlist(design[["continuous"]][["controls"]] %||% list(), use.names = FALSE))
   }
   unique(as.character(dims))
 }
@@ -202,8 +202,8 @@
 #'   of swaps taken, and whether the pass bound was reached).
 #' @export
 balance_lists <- function(stimuli, design, schema) {
-  n_lists <- as.integer(design$counterbalance$lists %||% 1L)
-  seed <- schema$seed %||% 1L
+  n_lists <- as.integer(design[["counterbalance"]][["lists"]] %||% 1L)
+  seed <- schema[["seed"]] %||% 1L
   if (identical(.cb_recipe(design), "latin_square_target")) {
     stop(paste("lexsync: counterbalance.optimise does not apply to a Latin-square",
                "design. Every item already appears in every list there, so the lists",
@@ -252,7 +252,7 @@ balance_lists <- function(stimuli, design, schema) {
     pairs_i <- integer(0); pairs_j <- integer(0)
   }
 
-  max_passes <- as.integer(design$counterbalance$max_passes %||% 500L)
+  max_passes <- as.integer(design[["counterbalance"]][["max_passes"]] %||% 500L)
   n_swaps <- 0L
   cost <- cost0
   hit_bound <- FALSE
@@ -345,8 +345,8 @@ counterbalance <- function(stimuli, design, schema, list_of_set = NULL) {
 
 #' @keywords internal
 counterbalance_factorial <- function(stimuli, design, schema, list_of_set = NULL) {
-  n_lists <- design$counterbalance$lists %||% 1L
-  seed <- schema$seed %||% 1L
+  n_lists <- design[["counterbalance"]][["lists"]] %||% 1L
+  seed <- schema[["seed"]] %||% 1L
 
   stimuli$list <- 1L
   if (n_lists > 1) {
@@ -386,10 +386,10 @@ counterbalance_factorial <- function(stimuli, design, schema, list_of_set = NULL
 #' rotation), so the two engines assign the same condition to each item per list.
 #' @keywords internal
 counterbalance_latin_square <- function(stimuli, design, schema) {
-  seed <- schema$seed %||% 1L
+  seed <- schema[["seed"]] %||% 1L
   conds <- sort(unique(as.character(stimuli$condition)), method = "radix")
   n_cond <- length(conds)
-  n_lists <- design$counterbalance$lists %||% n_cond
+  n_lists <- design[["counterbalance"]][["lists"]] %||% n_cond
   sets <- sort(unique(stimuli$set))
 
   parts <- list()

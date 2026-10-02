@@ -374,6 +374,54 @@ test_that("a continuous design over a supplied pool selects continuously", {
   expect_equal(sort(unique(stim$set)), 1:10)
 })
 
+# `$` on a list matches a name partially when no name matches exactly, so a design
+# key that only began another key's name stood in for it. These two designs carry
+# such keys, which the Python engine never read, and the pair is pinned identically
+# in tests/test_run_pipeline.py.
+test_that("a key that only begins a design key is not read", {
+  out <- tmp_out()
+  design <- write_design(out, c(
+    "name: prefix_test",
+    "language: english",
+    paste0("lexicon: ", as_yaml_path(extdata("en_example.csv"))),
+    "n_per_condition: 5",
+    "pool_filters: {length: [3, 7], frequency: [3.8, 7]}",
+    "conditions:",
+    "  - {name: high, define_by: {frequency: [5.0, 7.0]}}",
+    "  - {name: low, define_by: {frequency: [3.8, 4.4]}}",
+    "match_on: [length]",
+    "font_size: 40"
+  ))
+  res <- run_quiet(design, extdata("schema.yaml"), outdir = out)
+  # `font_size` is not `font`, so every target keeps the schema's fonts.
+  psychopy <- readLines(res$experiments$psychopy, warn = FALSE)
+  expect_true('WORD_FONT = "Courier New"' %in% psychopy)
+  osexp <- readLines(res$experiments$opensesame, warn = FALSE)
+  expect_true("set font_family mono" %in% osexp)
+  html <- paste(readLines(res$experiments$jspsych, warn = FALSE), collapse = "\n")
+  expect_true(grepl('font-family: "Courier New"', html, fixed = TRUE))
+})
+
+test_that("an annotation key does not make a design continuous", {
+  out <- tmp_out()
+  design <- write_design(out, c(
+    "name: annotated_test",
+    "language: english",
+    paste0("lexicon: ", as_yaml_path(extdata("en_example.csv"))),
+    "n_per_condition: 5",
+    "pool_filters: {length: [3, 7], frequency: [3.8, 7]}",
+    "conditions:",
+    "  - {name: high, define_by: {frequency: [5.0, 7.0]}}",
+    "  - {name: low, define_by: {frequency: [3.8, 4.4]}}",
+    "match_on: [length]",
+    "continuous_notes: frequency defines the two conditions"
+  ))
+  res <- run_quiet(design, extdata("schema.yaml"), outdir = out)
+  stim <- read_csv_utf8(res$stimuli)
+  expect_setequal(unique(stim$condition), c("high", "low"))
+  expect_equal(as.integer(table(stim$condition)), c(5L, 5L))
+})
+
 test_that("run_pipeline leaves the verbosity option as it found it", {
   # An exported function that set an option and walked away would silence, or
   # unsilence, the rest of the caller's session. Both exit paths are covered,

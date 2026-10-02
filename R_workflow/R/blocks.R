@@ -84,7 +84,7 @@
     # so adding this feature moves no existing artefact.
     return(list(presented = stimuli, report = NULL))
   }
-  seed <- schema$seed %||% 1L
+  seed <- schema[["seed"]] %||% 1L
   stimuli$block <- .BLOCK_MAIN
   if (is.null(stimuli$list)) stimuli$list <- 1L
   lists <- sort(unique(stimuli$list))

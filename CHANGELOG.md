@@ -37,6 +37,15 @@ no function signature changes.
   The bounds of the second factor, which the one-factor presets leave empty, are
   now numeric columns, so a bound typed there is kept as a number. They were
   logical columns, on which DT warned and stored the typed text.
+- The R engine no longer reads a design key by partial matching. R's `$`
+  accepts the start of a name when no name matches in full, so a key that began
+  another key's name stood in for that key when it was absent. `font_size: 40`
+  set the font of all three generated experiments to '40', `language_tag` served
+  as `language`, and an annotation named `continuous_notes` made a factorial
+  design fail. Design, schema and corpus-registry entries are now read by exact
+  name, so a design carrying `font_size` or `continuous_notes` runs as it does in
+  Python, and one that gives `language_tag` without `language` stops, as it does
+  in Python. The Python engine was never affected.
 
 ### Planned
 

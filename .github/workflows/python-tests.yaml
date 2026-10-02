@@ -181,12 +181,15 @@ jobs:
       # R CMD check runs the suite from an installed copy, where the repository
       # files are absent and every repo-coupled test skips itself. Running the
       # suite once from the source tree is what actually exercises them, so
-      # assert none of them skipped rather than trusting a green tick.
+      # assert none of them skipped rather than trusting a green tick. A warning
+      # fails the step too: tests/testthat/setup.R turns any partial match by `$`
+      # into one, and such a match reads a design key the Python engine ignores.
       - name: Run the R suite from the source tree
         run: |
           Rscript -e 'res <- as.data.frame(testthat::test_local("R_workflow", reporter = "summary"));
-                      cat(sprintf("FAIL %d | SKIP %d | PASS %d\n", sum(res$failed), sum(res$skipped), sum(res$passed)));
+                      cat(sprintf("FAIL %d | WARN %d | SKIP %d | PASS %d\n", sum(res$failed), sum(res$warning), sum(res$skipped), sum(res$passed)));
                       if (sum(res$failed) > 0) stop("R test failures");
+                      if (sum(res$warning) > 0) stop("R test warnings, such as a partial match by $");
                       if (sum(res$skipped) > 0) stop("A repo-coupled R test skipped; it is guarding nothing here.")'
 
       # Same rule as the Python matrix: a suite that writes into the tracked tree

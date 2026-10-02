@@ -149,14 +149,14 @@ default_registry_path <- function() {
 #' @export
 list_corpora <- function(registry_path = NULL) {
   reg <- yaml::read_yaml(registry_path %||% default_registry_path())
-  corp <- reg$corpora
+  corp <- reg[["corpora"]]
   data.frame(
     name = names(corp),
-    language = vapply(corp, function(x) x$language$name %||% NA_character_, character(1)),
-    iso = vapply(corp, function(x) x$language$iso %||% NA_character_, character(1)),
-    status = vapply(corp, function(x) x$status %||% NA_character_, character(1)),
-    connector = vapply(corp, function(x) x$connector %||% "openlexicon", character(1)),
-    citation = vapply(corp, function(x) x$citation %||% NA_character_, character(1)),
+    language = vapply(corp, function(x) x[["language"]][["name"]] %||% NA_character_, character(1)),
+    iso = vapply(corp, function(x) x[["language"]][["iso"]] %||% NA_character_, character(1)),
+    status = vapply(corp, function(x) x[["status"]] %||% NA_character_, character(1)),
+    connector = vapply(corp, function(x) x[["connector"]] %||% "openlexicon", character(1)),
+    citation = vapply(corp, function(x) x[["citation"]] %||% NA_character_, character(1)),
     stringsAsFactors = FALSE, row.names = NULL
   )
 }
@@ -218,18 +218,18 @@ list_corpora <- function(registry_path = NULL) {
 #' @export
 fetch_corpus <- function(name, registry_path = NULL, dest = NULL) {
   reg <- yaml::read_yaml(registry_path %||% default_registry_path())
-  entry <- reg$corpora[[name]]
+  entry <- reg[["corpora"]][[name]]
   if (is.null(entry)) {
     stop(sprintf("lexsync: corpus '%s' is not in the registry.", name), call. = FALSE)
   }
   # Only 'openlexicon' names a delimited file; 'url' is the landing page, and
   # downloading that would silently cache an HTML document as <name>.csv.
-  url <- entry$openlexicon
+  url <- entry[["openlexicon"]]
   if (is.null(url)) {
     stop(sprintf(paste0("lexsync: corpus '%s' registers only a landing page (%s); lexsync ",
                         "cannot download it automatically. Retrieve the delimited file ",
                         "manually and pass it to load_lexicon()."),
-                 name, entry$url %||% "see corpora/registry.yaml"), call. = FALSE)
+                 name, entry[["url"]] %||% "see corpora/registry.yaml"), call. = FALSE)
   }
   # A registry is editable, and fetch_corpus() writes wherever it points, so a
   # 'file://' or 'ftp://' entry would read a local path under the guise of a
@@ -277,7 +277,7 @@ fetch_corpus <- function(name, registry_path = NULL, dest = NULL) {
   }
   # 'sha256' is optional per registry entry; when present the download must
   # match it before it may enter the cache.
-  if (!is.null(entry$sha256) && !identical(sha256_file(part), entry$sha256)) {
+  if (!is.null(entry[["sha256"]]) && !identical(sha256_file(part), entry[["sha256"]])) {
     unlink(part)
     stop(sprintf(paste0("lexsync: checksum mismatch for corpus '%s'; the download does not ",
                         "match the registry's sha256. Retry the download, or verify the ",
@@ -287,6 +287,7 @@ fetch_corpus <- function(name, registry_path = NULL, dest = NULL) {
   # file.rename() will not overwrite an existing file on Windows.
   if (file.exists(dest)) unlink(dest)
   file.rename(part, dest)
-  message(sprintf("lexsync: downloaded '%s'. Please cite: %s", name, entry$citation %||% "(see registry)"))
+  message(sprintf("lexsync: downloaded '%s'. Please cite: %s", name,
+                  entry[["citation"]] %||% "(see registry)"))
   invisible(dest)
 }

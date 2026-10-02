@@ -30,7 +30,7 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
   on.exit(options(old_opts), add = TRUE)
   schema <- read_config(schema_path)
   design <- read_config(design_path)
-  n_req <- design$n_per_condition %||% design$n_per_cell
+  n_req <- design[["n_per_condition"]] %||% design[["n_per_cell"]]
   # is.finite rather than is.na: trunc(Inf) is Inf, so an infinite request passed both
   # the integrality and the lower-bound test here and went on to select the whole pool,
   # while the Python engine's int() raised OverflowError on it. Both engines now refuse
@@ -40,18 +40,18 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
        n_req < 1 || n_req != trunc(n_req))) {
     stop("lexsync: n_per_condition must be a positive whole number.", call. = FALSE)
   }
-  items_cfg <- design$items %||% list()
-  source <- items_cfg$source %||% "corpus"
-  paradigm <- design$paradigm %||% "factorial"
+  items_cfg <- design[["items"]] %||% list()
+  source <- items_cfg[["source"]] %||% "corpus"
+  paradigm <- design[["paradigm"]] %||% "factorial"
   is_continuous <- .is_continuous(design)
   if (is_continuous && identical(source, "table") &&
-      !length(unlist(items_cfg$members %||% list(), use.names = FALSE))) {
+      !length(unlist(items_cfg[["members"]] %||% list(), use.names = FALSE))) {
     # Without members the table branch loads the rows and never selects, while the
     # log and datasheet would still record continuous mode, which is a provenance lie.
     stop("lexsync: a 'continuous' block with items.source 'table' requires items.members.",
          call. = FALSE)
   }
-  if (identical(source, "table") && !is_continuous && !is.null(design$pool_filters)) {
+  if (identical(source, "table") && !is_continuous && !is.null(design[["pool_filters"]])) {
     # Only the continuous pairs selector consumes pool_filters on the table path; a
     # curated item table is the researcher's selection, so a stray filter here is
     # always a mistake rather than a request to drop rows.
@@ -60,9 +60,9 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
          call. = FALSE)
   }
 
-  log <- new_run_log(design$name, meta = list(
-    design = design$name, language = design$language,
-    paradigm = paradigm, source = source, seed = schema$seed %||% NA,
+  log <- new_run_log(design[["name"]], meta = list(
+    design = design[["name"]], language = design[["language"]],
+    paradigm = paradigm, source = source, seed = schema[["seed"]] %||% NA,
     mode = if (is_continuous) "continuous" else "conditions"
   ))
 
@@ -109,10 +109,10 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
       # A supplied word list, given the matcher's dimensions rather than dressed up as
       # a corpus lexicon. `reference` comes back separately because the neighbourhood
       # dimensions are properties of the language, not of the supplied list.
-      pool_path <- items_cfg$path
-      lexicon <- items_cfg$lexicon %||% design$lexicon
+      pool_path <- items_cfg[["path"]]
+      lexicon <- items_cfg[["lexicon"]] %||% design[["lexicon"]]
       log <- log_step(log, sprintf("loading supplied pool '%s'", pool_path))
-      lp <- load_pool(pool_path, schema, lexicon = lexicon, language = design$language)
+      lp <- load_pool(pool_path, schema, lexicon = lexicon, language = design[["language"]])
       lex <- lp$pool
       ref_words <- lp$reference
       log <- log_step(log, sprintf("supplied pool: %d words%s", nrow(lex),
@@ -120,9 +120,9 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
                                    else sprintf(" (dimensions from '%s')", lexicon)),
                       list(words = nrow(lex), lexicon = lexicon %||% NA_character_))
     } else {
-      lexicon <- items_cfg$lexicon %||% design$lexicon
+      lexicon <- items_cfg[["lexicon"]] %||% design[["lexicon"]]
       log <- log_step(log, sprintf("loading lexicon '%s'", lexicon))
-      lex <- load_lexicon(lexicon, schema, language = design$language)
+      lex <- load_lexicon(lexicon, schema, language = design[["language"]])
       log <- log_step(log, sprintf("lexicon loaded: %d words", nrow(lex)), list(words = nrow(lex)))
       ref_words <- lex$word
     }
@@ -131,17 +131,17 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
     # would silently leave the pool unfiltered; the pair path carries the same
     # guard. Checked after the norms join, which legitimately adds filterable
     # columns.
-    unknown <- setdiff(names(design$pool_filters %||% list()), names(lex))
+    unknown <- setdiff(names(design[["pool_filters"]] %||% list()), names(lex))
     if (length(unknown)) {
       stop(sprintf("lexsync: pool_filters name column(s) the lexicon does not have: %s.",
                    paste(unknown, collapse = ", ")), call. = FALSE)
     }
-    pool <- build_pool(lex, design$pool_filters)
+    pool <- build_pool(lex, design[["pool_filters"]])
     log <- log_step(log, sprintf("pool after filters: %d words", nrow(pool)), list(pool = nrow(pool)))
   }
 
   if (source %in% c("corpus", "pool")) {
-    match_on <- unlist(design$match_on, use.names = FALSE)
+    match_on <- unlist(design[["match_on"]], use.names = FALSE)
     ref <- reference_words %||% ref_words
     needed <- intersect(c("n_density", "old20"), match_on)
     if (length(needed) && any(!needed %in% names(pool))) {
@@ -153,17 +153,18 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
       pool <- add_bigram_frequency(pool, reference = ref)
     }
     if (is_continuous) {
-      predictor <- design$continuous$predictor
-      controls <- unlist(design$continuous$controls, use.names = FALSE)
+      predictor <- design[["continuous"]][["predictor"]]
+      controls <- unlist(design[["continuous"]][["controls"]], use.names = FALSE)
       stim <- take_audit(select_continuous_stimuli(pool, design, schema, verbose = verbose))
       log <- log_step(log, sprintf("selected %d items spanning '%s' (continuous design)",
                                    nrow(stim), predictor), list(predictor = predictor))
       report <- match_report_continuous(stim, predictor, controls, schema)
     } else {
-      if (!is.null(design$resample)) {
+      if (!is.null(design[["resample"]])) {
         # Per-replicate audits are dropped with the rbind inside resample_stimuli;
         # a relaxation there still reaches the console via verbose.
-        stim <- resample_stimuli(pool, design, schema, design$resample$n_sets %||% 2L, verbose = verbose)
+        stim <- resample_stimuli(pool, design, schema, design[["resample"]][["n_sets"]] %||% 2L,
+                                 verbose = verbose)
         log <- log_step(log, sprintf("resampled %d disjoint matched sets (%d items total)",
                                      length(unique(stim$replicate)), nrow(stim)),
                         list(conditions = paste(unique(stim$condition), collapse = ", ")))
@@ -183,8 +184,8 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
       report <- match_report(stim, dims, schema)
     }
   } else if (source == "generate") {
-    n <- design$n_per_condition %||% design$n_per_cell %||% 40L
-    gen_method <- items_cfg$generation$method %||% "letter_substitution"
+    n <- design[["n_per_condition"]] %||% design[["n_per_cell"]] %||% 40L
+    gen_method <- items_cfg[["generation"]][["method"]] %||% "letter_substitution"
     stim <- build_lexdec_stimuli(pool, n, reference_words = lex$word, method = gen_method)
     sf <- .resolve_policy(design, schema, "shortfall", "error", c("error", "allow"))
     realised <- length(unique(stim$set))
@@ -201,20 +202,20 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
                     list(conditions = paste(unique(stim$condition), collapse = ", ")))
     report <- match_report(stim, "length", schema)
   } else if (source == "table") {
-    path <- items_cfg$path
+    path <- items_cfg[["path"]]
     log <- log_step(log, sprintf("loading items '%s'", path))
     stim <- load_items(path, required_fields(design))
     log <- log_step(log, sprintf("loaded %d items across %d conditions",
                                  length(unique(stim$set)), length(unique(stim$condition))),
                     list(conditions = paste(unique(stim$condition), collapse = ", ")))
-    members <- unlist(items_cfg$members %||% list(), use.names = FALSE)
+    members <- unlist(items_cfg[["members"]] %||% list(), use.names = FALSE)
     if (length(members)) {
       # Load the member lexicon here rather than inside .join_member_norms, so the
       # design's `norms:` block reaches the members too: a semantic predictor such as
       # `target.concreteness` needs the norm columns present before they are prefixed.
       mem_lexicon <- .member_lexicon_path(items_cfg, design)
       log <- log_step(log, sprintf("loading member lexicon '%s'", mem_lexicon))
-      mem_lex <- load_lexicon(mem_lexicon, schema, language = design$language)
+      mem_lex <- load_lexicon(mem_lexicon, schema, language = design[["language"]])
       jn <- join_norms(mem_lex, log); mem_lex <- jn$lexicon; log <- jn$log
       stim <- .join_member_norms(stim, members, items_cfg, design, schema, lex = mem_lex)
       log <- log_step(log, sprintf("joined word-level norms onto %s", paste(members, collapse = " and ")))
@@ -228,8 +229,8 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
         res <- .select_continuous_pairs(stim, items_cfg, design, schema, verbose)
         stim <- take_audit(res$stim); report <- res$report; pair_eligible <- res$n_eligible
         log <- log_step(log, sprintf("selected %d pairs spanning '%s' (%d eligible)",
-                                     length(unique(stim$set)), design$continuous$predictor,
-                                     res$n_eligible),
+                                     length(unique(stim$set)),
+                                     design[["continuous"]][["predictor"]], res$n_eligible),
                         list(sets = length(unique(stim$set)), eligible = res$n_eligible))
       }
     }
@@ -264,13 +265,13 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
   # rejects it: there every item is in every list already.
   list_of_set <- NULL
   balance <- NULL
-  if (isTRUE(design$counterbalance$optimise)) {
+  if (isTRUE(design[["counterbalance"]][["optimise"]])) {
     bl <- balance_lists(stim, design, schema)
     list_of_set <- bl$list_of_set
     balance <- bl$report
     log <- log_step(log, sprintf(
       "balanced %d item sets across %d lists on %s: cost %s -> %s in %d swap(s)",
-      length(list_of_set), design$counterbalance$lists %||% 1L,
+      length(list_of_set), design[["counterbalance"]][["lists"]] %||% 1L,
       paste(unlist(balance$dimensions), collapse = ", "),
       format(balance$cost_before, scientific = FALSE),
       format(balance$cost_after, scientific = FALSE), balance$n_swaps),
@@ -313,7 +314,7 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
                                  nrow(presented), nrow(stim)))
   }
 
-  base <- slugify(design$name, design$language)
+  base <- slugify(design[["name"]], design[["language"]])
   for (sub in c("stimuli", "reports", "experiments")) {
     dir.create(file.path(outdir, sub), recursive = TRUE, showWarnings = FALSE)
   }
@@ -338,7 +339,7 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
   # A materials datasheet (machine + human readable) and a pre-registration
   # template: the shareable provenance record the reproducibility literature asks
   # for (Bochynska et al., 2023; Roettger, 2019).
-  source_path <- items_cfg$path %||% items_cfg$lexicon %||% design$lexicon
+  source_path <- items_cfg[["path"]] %||% items_cfg[["lexicon"]] %||% design[["lexicon"]]
   artifacts <- list(stimuli = stim_path, descriptives = desc_path,
                     comparisons = comp_path, experiments = exps)
   candidate_pool <- NULL
@@ -350,8 +351,8 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
   } else if (is_continuous) {
     candidate_pool <- list(list(condition = "continuous", n_candidates = nrow(pool)))
   } else if (source %in% c("corpus", "pool")) {
-    candidate_pool <- lapply(design$conditions, function(cnd)
-      list(condition = cnd$name, n_candidates = nrow(build_pool(pool, cnd$define_by))))
+    candidate_pool <- lapply(design[["conditions"]], function(cnd)
+      list(condition = cnd[["name"]], n_candidates = nrow(build_pool(pool, cnd[["define_by"]]))))
   } else if (identical(source, "generate")) {
     candidate_pool <- list(list(condition = "words in band", n_candidates = nrow(pool)))
   }
@@ -364,7 +365,7 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
                                          algo = "sha256", serialize = FALSE))
   }
   ds <- build_datasheet(design, schema, report, stim, source_path, artifacts,
-                        schema$seed, engine = "R", candidate_pool = candidate_pool,
+                        schema[["seed"]], engine = "R", candidate_pool = candidate_pool,
                         norms = norms, balance = balance, blocks = blocks,
                         design_path = design_path, schema_path = schema_path,
                         selection_audit = selection_audit,

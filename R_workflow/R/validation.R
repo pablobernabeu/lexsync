@@ -230,8 +230,8 @@ match_report <- function(stimuli, dims, schema) {
   conds <- unique(stimuli$condition)
   anchor <- conds[1]
   desc <- describe_stimuli(stimuli, dims, by = "condition")
-  bound <- schema$equivalence$bound_d %||% 0.5
-  alpha <- schema$equivalence$alpha %||% 0.05
+  bound <- schema[["equivalence"]][["bound_d"]] %||% 0.5
+  alpha <- schema[["equivalence"]][["alpha"]] %||% 0.05
   comp <- list()
   for (cc in conds[-1]) {
     for (dim in dims) {

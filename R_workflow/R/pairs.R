@@ -68,7 +68,7 @@
 .join_member_norms <- function(stim, members, items_cfg, design, schema, lex = NULL) {
   .check_members(members, stim)
   lexicon <- .member_lexicon_path(items_cfg, design)
-  if (is.null(lex)) lex <- load_lexicon(lexicon, schema, language = design$language)
+  if (is.null(lex)) lex <- load_lexicon(lexicon, schema, language = design[["language"]])
   # `id` is a row identifier rather than a dimension; joining it would put a
   # meaningless `prime.id` in the stimuli file and in the datasheet.
   dims <- setdiff(names(lex), c("word", "language", "source", "id"))
@@ -103,13 +103,13 @@
 # or relational value is recomputed and so none can drift.
 #' @keywords internal
 .select_continuous_pairs <- function(stim, items_cfg, design, schema, verbose = FALSE) {
-  cfg <- design$continuous
-  predictor <- cfg$predictor
-  controls <- unlist(cfg$controls, use.names = FALSE)
+  cfg <- design[["continuous"]]
+  predictor <- cfg[["predictor"]]
+  controls <- unlist(cfg[["controls"]], use.names = FALSE)
 
   # build_pool silently skips a column it does not recognise, which on this path
   # would mean a mistyped filter quietly widening the selection.
-  unknown <- setdiff(names(design$pool_filters %||% list()), names(stim))
+  unknown <- setdiff(names(design[["pool_filters"]] %||% list()), names(stim))
   if (length(unknown)) {
     stop(sprintf("lexsync: pool_filters name column(s) the item table does not have: %s.",
                  paste(sprintf("'%s'", sort(unknown, method = "radix")), collapse = ", ")),
@@ -118,7 +118,7 @@
 
   # Step A: a set is eligible only if EVERY one of its rows passes the filters.
   stim[["..lexsync_pair_row"]] <- seq_len(nrow(stim))
-  passed <- build_pool(stim, design$pool_filters)
+  passed <- build_pool(stim, design[["pool_filters"]])
   failed <- unique(stim$set[!(stim[["..lexsync_pair_row"]] %in% passed[["..lexsync_pair_row"]])])
   eligible <- setdiff(unique(stim$set), failed)
   stim[["..lexsync_pair_row"]] <- NULL
@@ -129,7 +129,7 @@
   # Step B: collapse to the anchor condition. The default is the byte-first
   # condition, using the same sort the Latin square uses, so the two engines agree
   # without inventing a new convention.
-  anchor_cond <- items_cfg$anchor_condition %||%
+  anchor_cond <- items_cfg[["anchor_condition"]] %||%
     sort(unique(as.character(stim$condition)), method = "radix")[1]
   anchor <- stim[stim$set %in% eligible & as.character(stim$condition) == anchor_cond, ,
                  drop = FALSE]

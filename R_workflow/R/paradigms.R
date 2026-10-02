@@ -121,8 +121,8 @@ get_paradigm <- function(name) {
 #'        function(e) e$type, character(1))
 #' @export
 resolve_events <- function(design) {
-  if (!is.null(design$events) && length(design$events)) return(design$events)
-  get_paradigm(design$paradigm %||% "factorial")$events
+  if (!is.null(design[["events"]]) && length(design[["events"]])) return(design[["events"]])
+  get_paradigm(design[["paradigm"]] %||% "factorial")$events
 }
 
 #' If `content` is a single braced field reference, return the bare field name
@@ -138,7 +138,7 @@ content_field <- function(content) {
 referenced_fields <- function(events) {
   fields <- character(0)
   for (ev in events) {
-    f <- content_field(ev$content)
+    f <- content_field(ev[["content"]])
     if (!is.null(f) && !(f %in% fields)) fields <- c(fields, f)
   }
   fields
@@ -152,7 +152,7 @@ referenced_fields <- function(events) {
 #' required_fields(list(paradigm = "categorisation"))
 #' @export
 required_fields <- function(design) {
-  name <- design$paradigm %||% "factorial"
+  name <- design[["paradigm"]] %||% "factorial"
   base <- if (!is.null(PARADIGMS[[name]])) PARADIGMS[[name]]$stimulus_fields else character(0)
   for (f in referenced_fields(resolve_events(design))) {
     if (!(f %in% base)) base <- c(base, f)

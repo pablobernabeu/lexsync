@@ -9,7 +9,7 @@
 #' @return `TRUE`, invisibly; stops with an informative error otherwise.
 #' @keywords internal
 validate_lexicon <- function(df, schema) {
-  required <- unlist(schema$lexicon_schema$required, use.names = FALSE)
+  required <- unlist(schema[["lexicon_schema"]][["required"]], use.names = FALSE)
   missing <- setdiff(required, names(df))
   if (length(missing)) {
     stop(sprintf("lexsync: lexicon is missing required column(s): %s",
@@ -110,7 +110,7 @@ count_syllables <- function(word) {
 load_lexicon <- function(path, schema, language = NULL) {
   df <- as.data.frame(read_csv_utf8(path), stringsAsFactors = FALSE)
   validate_lexicon(df, schema)
-  freq_col <- schema$dimensions$frequency$column %||% "freq_zipf"
+  freq_col <- schema[["dimensions"]][["frequency"]][["column"]] %||% "freq_zipf"
   df$word <- .lower_invariant(.trim_invariant(df$word))
   keep <- !is.na(df$word) & nzchar(df$word) & !is.na(df[[freq_col]])
   df <- df[keep, , drop = FALSE]

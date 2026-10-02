@@ -68,7 +68,7 @@ DATASHEET_VERSION <- "1.1"
 # property of the pair, and only the second is unavailable from any word-level norm
 # database. Mirrors datasheet.py.
 .relational_record <- function(design, stimuli) {
-  items_cfg <- design$items %||% list()
+  items_cfg <- design[["items"]] %||% list()
   members <- unlist(items_cfg[["members"]] %||% list(), use.names = FALSE)
   if (!length(members)) return(NULL)
   cols <- names(stimuli)
@@ -97,16 +97,16 @@ DATASHEET_VERSION <- "1.1"
 # never consult them, which is why the datasheet attaches this block only for the
 # methods that do. Mirrors datasheet.py.
 .resolve_tolerance_k <- function(design, schema) {
-  tol_k <- schema$matching$tolerance_k %||% list()
-  if (!is.null(design$matching$tolerance_k))
-    tol_k <- utils::modifyList(tol_k, design$matching$tolerance_k)
+  tol_k <- schema[["matching"]][["tolerance_k"]] %||% list()
+  if (!is.null(design[["matching"]][["tolerance_k"]]))
+    tol_k <- utils::modifyList(tol_k, design[["matching"]][["tolerance_k"]])
   tol_k
 }
 
 .controlled_dims <- function(design, source) {
   # A supplied pool goes through the same matcher as a corpus, so it controls the same
   # dimensions; only the origin of the candidate words differs.
-  if (source %in% c("corpus", "pool")) unlist(design$match_on, use.names = FALSE)
+  if (source %in% c("corpus", "pool")) unlist(design[["match_on"]], use.names = FALSE)
   else if (identical(source, "generate")) "length"
   else character(0)
 }
@@ -118,10 +118,10 @@ DATASHEET_VERSION <- "1.1"
 # (Clark, 1973; Baayen et al., 2008): items are a random sample of the language,
 # so an analysis that treats them as fixed over-generalises. Mirrors datasheet.py.
 .analysis_R <- function(design, source) {
-  cont <- design$continuous
+  cont <- design[["continuous"]]
   if (!is.null(cont)) {
-    predictor <- cont$predictor
-    controls <- unlist(cont$controls, use.names = FALSE)
+    predictor <- cont[["predictor"]]
+    controls <- unlist(cont[["controls"]], use.names = FALSE)
     fixed <- paste(c(predictor, controls), collapse = " + ")
     note <- paste0("The predictor is kept continuous and analysed by regression or a ",
                    "mixed model rather than dichotomised (Kuperman, 2015; Liben-Nowell ",
@@ -140,7 +140,7 @@ DATASHEET_VERSION <- "1.1"
       note = note
     ))
   }
-  paradigm <- design$paradigm %||% "factorial"
+  paradigm <- design[["paradigm"]] %||% "factorial"
   if (identical(source, "generate") || identical(paradigm, "lexical_decision")) {
     factor <- "lexicality"; item_re <- "(1 | item)"
   } else if (paradigm %in% c("priming", "self_paced_reading")) {
@@ -205,7 +205,7 @@ build_datasheet <- function(design, schema, report, stimuli, source_path, artifa
                             balance = NULL, blocks = NULL, design_path = NULL,
                             schema_path = NULL, selection_audit = NULL,
                             neighbourhood_reference = NULL) {
-  source <- design$items$source %||% "corpus"
+  source <- design[["items"]][["source"]] %||% "corpus"
   is_continuous <- .is_continuous(design)
   controlled <- .controlled_dims(design, source)
   relational <- .relational_record(design, stimuli)
@@ -239,11 +239,12 @@ build_datasheet <- function(design, schema, report, stimuli, source_path, artifa
     # The controls are banded by the same tolerance windows the matcher uses, so
     # the record states them here too; without them the banding is unreproducible.
     list(method = "continuous even-spread (predictor spanned, controls banded)",
-         predictor = design$continuous$predictor,
-         controls = as.list(unlist(design$continuous$controls, use.names = FALSE)),
+         predictor = design[["continuous"]][["predictor"]],
+         controls = as.list(unlist(design[["continuous"]][["controls"]], use.names = FALSE)),
          tolerance_k = .resolve_tolerance_k(design, schema))
   } else if (source %in% c("corpus", "pool")) {
-    method <- design$matching$method %||% schema$matching$method %||% "standardised_euclidean"
+    method <- design[["matching"]][["method"]] %||% schema[["matching"]][["method"]] %||%
+      "standardised_euclidean"
     sel <- list(method = method, match_on = as.list(controlled))
     if (method %in% c("joint", "optimal")) {
       # The pairwise methods rank whole pairs and never consult the tolerance
@@ -262,7 +263,7 @@ build_datasheet <- function(design, schema, report, stimuli, source_path, artifa
     }
     sel
   } else if (identical(source, "generate")) {
-    gen_method <- design$items$generation$method %||% "letter_substitution"
+    gen_method <- design[["items"]][["generation"]][["method"]] %||% "letter_substitution"
     list(method = .GENERATION_LABELS[[gen_method]] %||%
            paste0(gen_method, " (deterministic pseudowords)"),
          generation_method = gen_method,
@@ -301,7 +302,7 @@ build_datasheet <- function(design, schema, report, stimuli, source_path, artifa
   # lexicon is where every matched value came from, so it is named and checksummed
   # here: `path` above records only the word list itself.
   if (identical(source, "pool")) {
-    dim_lex <- design$items$lexicon %||% design$lexicon
+    dim_lex <- design[["items"]][["lexicon"]] %||% design[["lexicon"]]
     materials_source$dimensions_from <- if (is.null(dim_lex))
       "the supplied pool's own columns (no lexicon given)" else dim_lex
     if (!is.null(dim_lex)) materials_source$dimensions_sha256 <- sha256_file(dim_lex)
@@ -318,15 +319,15 @@ build_datasheet <- function(design, schema, report, stimuli, source_path, artifa
   # form keeps the names attribute, so an empty result is a named list() and
   # serialises as {} rather than [], matching Python.
   keep_dims <- if (source %in% c("corpus", "pool") || !is.null(relational))
-    rep(TRUE, length(schema$dimensions))
-  else names(schema$dimensions) %in% controlled
+    rep(TRUE, length(schema[["dimensions"]]))
+  else names(schema[["dimensions"]]) %in% controlled
 
   # The balance report is added only when the optimiser ran, for the same reason the
   # norms record is: a key that is null on every design that does not use the feature
   # is noise in a research artefact.
   counterbalancing <- list(
     recipe = if (identical(source, "table")) "latin_square_target" else "factorial",
-    lists = design$counterbalance$lists %||% 1L)
+    lists = design[["counterbalance"]][["lists"]] %||% 1L)
   if (!is.null(balance)) counterbalancing$optimise <- balance
   # Practice and filler trials change what a participant sees but not what is
   # analysed, so the record has to state both counts: a reader comparing the stimuli
@@ -336,8 +337,8 @@ build_datasheet <- function(design, schema, report, stimuli, source_path, artifa
 
   # The equivalence settings the report's TOST verdicts were computed against,
   # recorded so the Methods prose can state the bound it actually ran with.
-  equivalence <- list(bound_d = schema$equivalence$bound_d %||% 0.5,
-                      alpha = schema$equivalence$alpha %||% 0.05)
+  equivalence <- list(bound_d = schema[["equivalence"]][["bound_d"]] %||% 0.5,
+                      alpha = schema[["equivalence"]][["alpha"]] %||% 0.05)
 
   reproducibility <- list(seed = seed, versions = .versions_R(engine))
   # The design and schema decide everything the seed does not, so their checksums
@@ -347,20 +348,20 @@ build_datasheet <- function(design, schema, report, stimuli, source_path, artifa
 
   list(
     lexsync_datasheet_version = DATASHEET_VERSION,
-    design = list(name = design$name, language = design$language,
-                  paradigm = design$paradigm %||% "factorial", source = source,
-                  description = design$description,
-                  n_per_condition = design$n_per_condition %||% design$n_per_cell),
+    design = list(name = design[["name"]], language = design[["language"]],
+                  paradigm = design[["paradigm"]] %||% "factorial", source = source,
+                  description = design[["description"]],
+                  n_per_condition = design[["n_per_condition"]] %||% design[["n_per_cell"]]),
     materials_source = materials_source,
-    dimensions = schema$dimensions[keep_dims],
+    dimensions = schema[["dimensions"]][keep_dims],
     selection = selection,
     relational = relational,
     analysis = .analysis_R(design, source),
     equivalence = equivalence,
     realised_control = realised,
     counterbalancing = counterbalancing,
-    resampling = if (!is.null(design$resample))
-      list(n_sets = design$resample$n_sets, disjoint = TRUE) else NULL,
+    resampling = if (!is.null(design[["resample"]]))
+      list(n_sets = design[["resample"]][["n_sets"]], disjoint = TRUE) else NULL,
     items = list(n_total = nrow(stimuli), n_conditions = length(conditions),
                  conditions = as.list(conditions),
                  stimuli_file = artifacts$stimuli, stimuli_sha256 = sha256_file(artifacts$stimuli)),
