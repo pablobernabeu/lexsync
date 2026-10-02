@@ -162,12 +162,18 @@ versions. `run_pipeline` builds and writes one for every run.
 ## Pipeline and logging
 
 `run_pipeline` is the orchestrator behind `lexsync run`, and `run_all` loops it over a directory of
-designs. The logging functions are reached as `lexsync.logging.*`, which does not shadow the standard
-library's `logging` for absolute imports.
+designs. `validate_design` is the check `run_pipeline` applies before anything is selected or
+written, and `design_stem` gives the stem every written file is named after. The logging functions
+are reached as `lexsync.logging.*`, which does not shadow the standard library's `logging` for
+absolute imports.
 
 ::: lexsync.run_pipeline
 
 ::: lexsync.run_all
+
+::: lexsync.validate_design
+
+::: lexsync.design_stem
 
 ::: lexsync.logging.new_run_log
 

@@ -430,12 +430,12 @@ loop_table <- function(stimuli, events = NULL) {
 #' @param design A parsed design configuration.
 #' @param schema The parsed global schema (trigger and presentation settings).
 #' @param outdir Output directory.
-#' @param base Optional file-name stem.
+#' @param base Optional file-name stem. By default the design's [design_stem()].
 #' @return The path to the generated `.py`, invisibly.
 #' @importFrom jsonlite toJSON
 #' @export
 export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
-  base <- base %||% slugify(design[["name"]], design[["language"]])
+  base <- base %||% design_stem(design)
   events <- resolve_events(design)
   rendered <- render_events(events, design[["timing"]] %||% list(), .refresh_hz(schema))
   csv_name <- paste0(base, "_psychopy.csv")
@@ -769,7 +769,7 @@ build_osexp <- function(design, conditions_file, schema, rendered, font = "mono"
 #' @return The path to the generated `.osexp`, invisibly.
 #' @export
 export_opensesame <- function(stimuli, design, schema, outdir, base = NULL) {
-  base <- base %||% slugify(design[["name"]], design[["language"]])
+  base <- base %||% design_stem(design)
   events <- resolve_events(design)
   rendered <- render_events(events, design[["timing"]] %||% list(), .refresh_hz(schema))
   tables <- .opensesame_tables(stimuli, events)
@@ -854,7 +854,7 @@ export_opensesame <- function(stimuli, design, schema, outdir, base = NULL) {
 #' @importFrom jsonlite toJSON
 #' @export
 export_jspsych <- function(stimuli, design, schema, outdir, base = NULL) {
-  base <- base %||% slugify(design[["name"]], design[["language"]])
+  base <- base %||% design_stem(design)
   events <- resolve_events(design)
   rendered <- .map_keys_jspsych(
     render_events(events, design[["timing"]] %||% list(), .refresh_hz(schema)))

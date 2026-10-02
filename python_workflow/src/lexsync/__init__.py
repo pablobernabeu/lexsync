@@ -2,6 +2,7 @@
 from .corpora import fetch_corpus, list_corpora
 from .counterbalancing import balance_lists, counterbalance, participant_table
 from .datasheet import build_datasheet, methods_paragraph, write_datasheet
+from .design import design_stem, validate_design
 from .generation import build_lexdec_stimuli, generate_pseudowords, make_pseudoword
 from .matching import match_stimuli, resample_stimuli, select_continuous_stimuli
 from .paradigms import PARADIGMS, required_fields, resolve_events
@@ -48,6 +49,6 @@ __all__ = [
     "add_pair_overlap",
     "list_corpora", "fetch_corpus",
     "build_datasheet", "methods_paragraph", "write_datasheet",
-    "run_pipeline", "run_all",
+    "run_pipeline", "run_all", "validate_design", "design_stem",
 ]
 __version__ = "0.1.1"

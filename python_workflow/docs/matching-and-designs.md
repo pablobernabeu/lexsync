@@ -237,6 +237,9 @@ and the tolerance windows then drop it from the pool.
 ## How matching works
 
 `match_stimuli` runs in two stages, and understanding the split explains most of its behaviour.
+Both need at least one dimension in `match_on`. Without one, every candidate lies at distance zero
+from every anchor and the byte-order tie-break alone would choose the words, so a design with
+conditions and no `match_on`, or an empty one, is refused before anything is selected.
 
 First it standardises. Every matched dimension is z-scored against the whole pool's mean and sample
 standard deviation, so a distance in letters and a distance in Zipf units become comparable. A
@@ -253,8 +256,11 @@ window, mean ± *k* × SD, where *k* comes from `matching.tolerance_k` in the sc
 overridden per dimension by the design. This is the anchored path, so it is what
 `standardised_euclidean` and `mahalanobis` do. `joint` and `optimal` score cross-condition pairs
 directly and never read `tolerance_k` at all. The defaults are 2.0 for `length`, `n_density` and `old20`,
-and 1.0 for `frequency`. Each remaining condition is filtered to its window, and then every anchor
-item is assigned its nearest unused candidate by standardised distance.
+and 1.0 for `frequency`, and any other dimension takes 2. The design's values are merged over the
+schema's as R's `modifyList()` merges two lists. A `null` in the schema is ignored, and a `null` in
+the design removes the schema's value for that dimension, so either leaves *k* at 2. Each remaining
+condition is filtered to its window, and then every anchor item is assigned its nearest unused
+candidate by standardised distance.
 
 The assignment is where determinism is bought. Distances are rounded to nine decimal places before
 they are compared, which absorbs last-bit floating-point differences between the two engines. Ties

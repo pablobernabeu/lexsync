@@ -1,3 +1,4 @@
+import re
 import struct
 
 import pandas as pd
@@ -244,6 +245,109 @@ def test_read_config_refuses_a_duplicated_mapping_key(tmp_path):
     # And an ordinary config still loads, so the strict loader costs nothing.
     path.write_text("name: a\nitems:\n  source: pool\n", encoding="utf-8")
     assert read_config(str(path)) == {"name": "a", "items": {"source": "pool"}}
+
+
+# The two key vocabularies, joined by newlines and hashed. test-io_utils.R pins the
+# same digests for .DESIGN_KEYS and .SCHEMA_KEYS, so a key added to one engine only
+# fails both suites.
+DESIGN_KEYS_SHA256 = "1037170e8f3cdc7cc6be46953a131189c8cfc6d6dd7898a11064c92016649042"
+SCHEMA_KEYS_SHA256 = "b95ca3dc4e1ba437004cf45bf92514656790fb06389176642a51d95a61c55082"
+
+
+def test_the_key_vocabularies_agree_across_engines():
+    import hashlib
+
+    from lexsync.design import DESIGN_KEYS, SCHEMA_KEYS
+    for keys, digest in ((DESIGN_KEYS, DESIGN_KEYS_SHA256), (SCHEMA_KEYS, SCHEMA_KEYS_SHA256)):
+        assert hashlib.sha256("\n".join(keys).encode("utf-8")).hexdigest() == digest
+
+
+def _valid_design(**extra):
+    return {"name": "kt", "language": "english", "conditions": [
+        {"name": "high", "define_by": {"frequency": [5, 7]}},
+        {"name": "low", "define_by": {"frequency": [1, 3]}}],
+        "match_on": ["length"], **extra}
+
+
+def test_a_key_near_a_known_one_is_refused_and_any_other_is_noted():
+    """One edit is a typo for a key of up to five characters and two for a longer
+    one; a transposition counts as one edit. `notes` is two edits from `norms` and so
+    is only noted. Pinned identically in test-io_utils.R."""
+    from lexsync.design import validate_design
+    refusals = {
+        "nmae": "'nmae' (did you mean 'name'?)",
+        "langauge": "'langauge' (did you mean 'language'?)",
+        "fonts": "'fonts' (did you mean 'font'?)",
+    }
+    for key, tail in refusals.items():
+        with pytest.raises(ValueError, match=re.escape("lexsync: unknown design key " + tail)):
+            validate_design(_valid_design(**{key: "x"}), {})
+    with pytest.raises(ValueError, match=re.escape(
+            "lexsync: unknown design key 'counterbalance.list' "
+            "(did you mean 'counterbalance.lists'?)")):
+        validate_design(_valid_design(counterbalance={"list": 2}), {})
+    with pytest.raises(ValueError, match=re.escape(
+            "lexsync: unknown design key 'conditions[2].nmae' "
+            "(did you mean 'conditions[2].name'?)")):
+        validate_design({"name": "kt", "language": "english", "match_on": ["length"],
+                         "conditions": [{"name": "a"}, {"nmae": "b"}]}, {})
+    with pytest.raises(ValueError, match=re.escape(
+            "lexsync: unknown schema key 'matchin' (did you mean 'matching'?)")):
+        validate_design(_valid_design(), {"matchin": {}})
+    # The schema may set counterbalance.incomplete, which the counterbalancing reads,
+    # so it is neither refused nor noted as ignored.
+    assert validate_design(_valid_design(), {"counterbalance": {"incomplete": "error"}}) == []
+    with pytest.raises(ValueError, match=re.escape(
+            "lexsync: unknown schema key 'counterbalance.incomplet' "
+            "(did you mean 'counterbalance.incomplete'?)")):
+        validate_design(_valid_design(), {"counterbalance": {"incomplet": "error"}})
+    notes = validate_design(_valid_design(notes="x", date="May", x_owner="pb",
+                                          events=[{"type": "blank", "duration_ms": 100,
+                                                   "colour": "red"}]),
+                            {"x_site": "Oxford", "comment": "y"})
+    assert notes == [
+        "lexsync: design key '%s' is not read by lexsync and is ignored; a later release "
+        "will refuse it. Put annotations in `description` or a key beginning `x_`." % k
+        for k in ("notes", "date", "events[1].colour")] + [
+        "lexsync: schema key 'comment' is not read by lexsync and is ignored; a later "
+        "release will refuse it. Put annotations in `description` or a key beginning `x_`."]
+
+
+def test_repeated_and_blank_names_are_judged_alike_in_both_engines():
+    """The first entry that repeats an earlier name is the one reported, as R's
+    duplicated() reports it. Only spaces, tabs and line breaks make a name blank, as
+    for R's trimws(): a no-break space is a name, and a vertical tab is a control
+    character. str.strip() called both blank. Pinned identically in test-io_utils.R."""
+    from lexsync.design import design_stem, validate_design
+    with pytest.raises(ValueError, match=re.escape(
+            "lexsync: condition name 'b' appears more than once")):
+        validate_design({"name": "kt", "language": "english", "match_on": ["length"],
+                         "conditions": [{"name": n} for n in ("a", "b", "b", "a")]}, {})
+    assert validate_design({"name": " ", "language": "english"}, {}) == []
+    assert design_stem({"name": " ", "language": "english"}) == "english_fc0557ea"
+    with pytest.raises(ValueError, match=re.escape(
+            "lexsync: the design's `name` contains control characters")):
+        validate_design({"name": "\x0b", "language": "english"}, {})
+    with pytest.raises(ValueError, match=re.escape("lexsync: the design has no `name`.")):
+        validate_design({"name": " \t\r\n", "language": "english"}, {})
+
+
+def test_design_stem_keeps_ascii_names_and_checksums_others():
+    """Designs named 词频 and 笔画 in Chinese both wrote chinese_*, and an all-Chinese
+    name and language wrote files beginning with an underscore or a dot. The suffix is
+    over the NFC form, so canonically equivalent spellings share a stem. Pinned
+    identically in test-io_utils.R."""
+    from lexsync.design import design_stem
+    assert design_stem({"name": "En Lexdec", "language": "english"}) == "en_lexdec_english"
+    assert design_stem({"name": "词频", "language": "chinese"}) == "chinese_14aadfa7"
+    assert design_stem({"name": "笔画", "language": "chinese"}) == "chinese_444a1c5f"
+    assert design_stem({"name": "频率", "language": "中文"}) == "e525cb84"
+    assert design_stem({"name": "café", "language": "french"}) == "caf_french_b679d075"
+    assert design_stem({"name": "café", "language": "french"}) == "caf_french_b679d075"
+    with pytest.raises(ValueError, match="hold no letter or digit"):
+        design_stem({"name": "!!", "language": "--"})
+    with pytest.raises(ValueError, match="the design has no `name`"):
+        design_stem({"language": "english"})
 
 
 def test_a_continuous_design_over_a_supplied_pool_takes_the_continuous_path():

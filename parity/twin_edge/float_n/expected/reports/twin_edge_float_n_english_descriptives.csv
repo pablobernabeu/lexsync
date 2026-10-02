@@ -1,0 +1,5 @@
+group,dimension,n,mean,sd,min,median,max
+noun,length,4,6,0,6,6,6
+noun,frequency,4,4.3,0.59,3.66,4.295,4.95
+verb,length,4,6,0,6,6,6
+verb,frequency,4,4.288,0.506,3.77,4.25,4.88

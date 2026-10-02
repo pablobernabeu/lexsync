@@ -65,6 +65,29 @@ no function signature changes.
 - The `en_priming_jitter` example names its per-trial column `prime_ms`. It was
   called `soa_ms`, but a 33 ms mask follows the prime, so the stimulus-onset
   asynchrony is `prime_ms` plus 33 ms.
+- Designs are checked before anything is selected or written, by the new
+  `validate_design`, which `run_pipeline` calls right after reading the design and
+  the schema. A key one edit from a known key of up to five characters, or two
+  edits from a longer one, is refused as a probable typo and named with the key it
+  was probably meant to be (`n_per_conditon` silently gave the default 20 items).
+  Any other unknown key is reported in the run log and will be refused in a later
+  release, so annotations belong in `description` or a key beginning `x_`. A
+  missing or non-text `name` or `language`, an unsafe name or font, a bad trigger
+  address or response key, a non-text or repeated condition name and a missing or
+  empty `match_on` are refused with one message in both engines. They used to fail at
+  export, after four files had been written, or at different points in each
+  engine, and without `match_on` the R engine paired the alphabetically first
+  words.
+- A design whose name or language has non-ASCII characters writes its files under
+  a stem with an eight-character checksum suffix, given by the new `design_stem`,
+  so designs named 词频 and 笔画 no longer overwrite each other's files and an
+  all-Chinese name no longer gives files whose names begin with a dot or
+  underscore. `run_all` refuses two designs that would write the same files, such
+  as `en-lexdec` and `en_lexdec`.
+- The schema gains comments on the key check and on a `null` tolerance, so the 42
+  committed datasheets, which record its SHA-256, and the run logs, which record
+  the datasheets' MD5, are regenerated. No stimulus, report table or experiment
+  changes.
 
 ### Fixed
 
@@ -106,6 +129,11 @@ no function signature changes.
   0.0009 and 1.0. No JSON record, stimulus, report table or experiment changes.
   The run logs of the 10 designs change with their datasheets, whose MD5 they
   record.
+- `n_per_condition` is resolved by one rule everywhere. A whole number written as
+  `4.0` is accepted, and 0 is refused by `match_stimuli` and
+  `select_continuous_stimuli`, which returned their default size in Python. A
+  `null` tolerance is read as R's `modifyList()` reads it, and a schema without a
+  `matching:` block works in Python.
 
 ### Security
 

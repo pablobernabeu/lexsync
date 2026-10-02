@@ -281,3 +281,108 @@ test_that("slugify folds case whatever the locale", {
   expect_identical(slugify("STUDY_I"), "study_i")
   expect_identical(slugify("En Lexdec", "English!"), "en_lexdec_english")
 })
+
+# The two key vocabularies, joined by newlines and hashed. test_io_utils.py pins the
+# same digests for DESIGN_KEYS and SCHEMA_KEYS, so a key added to one engine only
+# fails both suites.
+test_that("the_key_vocabularies_agree_across_engines", {
+  digest_of <- function(keys) digest::digest(paste(keys, collapse = "\n"), algo = "sha256",
+                                             serialize = FALSE)
+  expect_identical(digest_of(.DESIGN_KEYS),
+                   "1037170e8f3cdc7cc6be46953a131189c8cfc6d6dd7898a11064c92016649042")
+  expect_identical(digest_of(.SCHEMA_KEYS),
+                   "b95ca3dc4e1ba437004cf45bf92514656790fb06389176642a51d95a61c55082")
+})
+
+valid_design <- function(...) {
+  c(list(name = "kt", language = "english",
+         conditions = list(list(name = "high", define_by = list(frequency = c(5, 7))),
+                           list(name = "low", define_by = list(frequency = c(1, 3)))),
+         match_on = list("length")), list(...))
+}
+
+test_that("a_key_near_a_known_one_is_refused_and_any_other_is_noted", {
+  # One edit is a typo for a key of up to five characters and two for a longer one;
+  # a transposition counts as one edit. `notes` is two edits from `norms` and so is
+  # only noted. Pinned identically in test_io_utils.py.
+  refusals <- c(nmae = "'nmae' (did you mean 'name'?)",
+                langauge = "'langauge' (did you mean 'language'?)",
+                fonts = "'fonts' (did you mean 'font'?)")
+  for (key in names(refusals)) {
+    d <- valid_design()
+    d[[key]] <- "x"
+    expect_error(validate_design(d, list()),
+                 paste0("lexsync: unknown design key ", refusals[[key]]), fixed = TRUE)
+  }
+  expect_error(validate_design(valid_design(counterbalance = list(list = 2L)), list()),
+               paste("lexsync: unknown design key 'counterbalance.list'",
+                     "(did you mean 'counterbalance.lists'?)"), fixed = TRUE)
+  expect_error(validate_design(list(name = "kt", language = "english", match_on = list("length"),
+                                    conditions = list(list(name = "a"), list(nmae = "b"))),
+                               list()),
+               paste("lexsync: unknown design key 'conditions[2].nmae'",
+                     "(did you mean 'conditions[2].name'?)"), fixed = TRUE)
+  expect_error(validate_design(valid_design(), list(matchin = list())),
+               "lexsync: unknown schema key 'matchin' (did you mean 'matching'?)",
+               fixed = TRUE)
+  # The schema may set counterbalance.incomplete, which the counterbalancing reads,
+  # so it is neither refused nor noted as ignored.
+  expect_identical(validate_design(valid_design(),
+                                   list(counterbalance = list(incomplete = "error"))),
+                   character(0))
+  expect_error(validate_design(valid_design(),
+                               list(counterbalance = list(incomplet = "error"))),
+               paste("lexsync: unknown schema key 'counterbalance.incomplet'",
+                     "(did you mean 'counterbalance.incomplete'?)"), fixed = TRUE)
+  notes <- validate_design(
+    valid_design(notes = "x", date = "May", x_owner = "pb",
+                 events = list(list(type = "blank", duration_ms = 100L, colour = "red"))),
+    list(x_site = "Oxford", comment = "y"))
+  tail <- paste("is not read by lexsync and is ignored; a later release will refuse it.",
+                "Put annotations in `description` or a key beginning `x_`.")
+  expect_identical(notes, c(
+    sprintf("lexsync: design key '%s' %s", c("notes", "date", "events[1].colour"), tail),
+    sprintf("lexsync: schema key 'comment' %s", tail)))
+})
+
+test_that("repeated_and_blank_names_are_judged_alike_in_both_engines", {
+  # The first entry that repeats an earlier name is the one reported. Only spaces,
+  # tabs and line breaks make a name blank: a no-break space is a name, and a vertical
+  # tab is a control character. The Python engine's str.strip() called both blank.
+  # Pinned identically in test_io_utils.py.
+  expect_error(validate_design(list(name = "kt", language = "english", match_on = list("length"),
+                                    conditions = lapply(c("a", "b", "b", "a"),
+                                                        function(n) list(name = n))),
+                               list()),
+               "lexsync: condition name 'b' appears more than once", fixed = TRUE)
+  expect_identical(validate_design(list(name = " ", language = "english"), list()),
+                   character(0))
+  expect_identical(design_stem(list(name = " ", language = "english")),
+                   "english_fc0557ea")
+  expect_error(validate_design(list(name = "\x0b", language = "english"), list()),
+               "lexsync: the design's `name` contains control characters", fixed = TRUE)
+  expect_error(validate_design(list(name = " \t\r\n", language = "english"), list()),
+               "lexsync: the design has no `name`.", fixed = TRUE)
+})
+
+test_that("design_stem_keeps_ascii_names_and_checksums_others", {
+  # Two designs with Chinese names and the language 'chinese' both wrote chinese_*,
+  # and an all-Chinese name and language wrote files beginning with an underscore or
+  # a dot. The suffix is over the NFC form, so canonically equivalent spellings share
+  # a stem. Pinned identically in test_io_utils.py.
+  expect_identical(design_stem(list(name = "En Lexdec", language = "english")),
+                   "en_lexdec_english")
+  expect_identical(design_stem(list(name = "\u8bcd\u9891", language = "chinese")),
+                   "chinese_14aadfa7")
+  expect_identical(design_stem(list(name = "\u7b14\u753b", language = "chinese")),
+                   "chinese_444a1c5f")
+  expect_identical(design_stem(list(name = "\u9891\u7387", language = "\u4e2d\u6587")),
+                   "e525cb84")
+  expect_identical(design_stem(list(name = "caf\u00e9", language = "french")),
+                   "caf_french_b679d075")
+  expect_identical(design_stem(list(name = "cafe\u0301", language = "french")),
+                   "caf_french_b679d075")
+  expect_error(design_stem(list(name = "!!", language = "--")), "hold no letter or digit")
+  expect_error(design_stem(list(language = "english")), "the design has no `name`",
+               fixed = TRUE)
+})

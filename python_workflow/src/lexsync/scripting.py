@@ -17,6 +17,7 @@ import re
 
 import pandas as pd
 
+from .design import design_stem
 from .io_utils import (
     _key_part,
     _readr_cell,
@@ -26,7 +27,6 @@ from .io_utils import (
     clean_meta,
     clean_port,
     hash_int_range,
-    slugify,
     write_csv_utf8,
 )
 from .paradigms import content_field, referenced_fields, resolve_events
@@ -463,7 +463,7 @@ def _write_text(text: str, path: str) -> str:
 
 
 def export_psychopy(stimuli, design, schema, outdir, base=None) -> str:
-    base = base or slugify(design["name"], design["language"])
+    base = base or design_stem(design)
     events = resolve_events(design)
     rendered = render_events(events, design.get("timing") or {}, _refresh_hz(schema))
     csv_name = f"{base}_psychopy.csv"
@@ -804,14 +804,15 @@ def export_opensesame(stimuli, design, schema, outdir, base=None) -> str:
     outdir : str
         Output directory.
     base : str, optional
-        File-name stem, by default the design's name and language.
+        File-name stem, by default ``lexsync.design.design_stem(design)``, built
+        from the design's name and language.
 
     Returns
     -------
     str
         The path to the generated ``.osexp``.
     """
-    base = base or slugify(design["name"], design["language"])
+    base = base or design_stem(design)
     events = resolve_events(design)
     rendered = render_events(events, design.get("timing") or {}, _refresh_hz(schema))
     numbers, text = _opensesame_tables(stimuli, events)
@@ -924,7 +925,7 @@ def export_jspsych(stimuli, design, schema, outdir, base=None) -> str:
     Onset triggers are recorded in each trial's data (a browser cannot drive a
     parallel port); online EEG synchronisation needs WebSerial/LSL or a photodiode.
     """
-    base = base or slugify(design["name"], design["language"])
+    base = base or design_stem(design)
     events = resolve_events(design)
     rendered = _map_keys_for_jspsych(
         render_events(events, design.get("timing") or {}, _refresh_hz(schema)))

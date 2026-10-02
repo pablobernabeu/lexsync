@@ -453,6 +453,91 @@ test_that("a design without conditions is an error", {
                "the design has no conditions")
 })
 
+test_that("a_missing_or_empty_match_on_is_refused", {
+  # Without match_on this engine scored every candidate at distance zero and returned
+  # the byte-first words; with an empty list both engines did, under every anchored
+  # method. Pinned identically in test_matching.py.
+  msg <- "a matched design needs `match_on` naming at least one dimension"
+  for (method in c("standardised_euclidean", "joint", "mahalanobis")) {
+    d <- small_design(3L, matching = list(method = method))
+    d$match_on <- NULL
+    expect_error(match_stimuli(small_pool(), d, tiny_schema()), msg, fixed = TRUE)
+    d$match_on <- list()
+    expect_error(match_stimuli(small_pool(), d, tiny_schema()), msg, fixed = TRUE)
+  }
+})
+
+test_that("a_whole_float_n_is_accepted_by_both_selectors", {
+  # The Python engine raised a TypeError on 4.0. Pinned identically in
+  # test_matching.py.
+  s <- match_stimuli(small_pool(), small_design(3.0), tiny_schema())
+  expect_identical(s$set, c(1L, 2L, 3L, 1L, 2L, 3L))
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  lex <- load_lexicon(system.file("extdata", "en_example.csv", package = "lexsync"), schema, "english")
+  pool <- build_pool(lex, make_continuous_design()$pool_filters)
+  d <- make_continuous_design()
+  d$n_per_condition <- 10.0
+  expect_equal(nrow(select_continuous_stimuli(pool, d, schema)), 10L)
+})
+
+test_that("n_per_condition_zero_is_refused_by_both_selectors", {
+  # The Python engine read a configured 0 as absent and returned its default sizes;
+  # this one failed inside the selection with 'replacement has 1 row'. Pinned
+  # identically in test_matching.py.
+  msg <- "n_per_condition must be a positive whole number"
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  lex <- load_lexicon(system.file("extdata", "en_example.csv", package = "lexsync"), schema, "english")
+  pool <- build_pool(lex, make_continuous_design()$pool_filters)
+  for (n_per_cell in list(NULL, 3L)) {
+    d <- small_design(0L)
+    d$n_per_cell <- n_per_cell
+    expect_error(match_stimuli(small_pool(), d, tiny_schema()), msg, fixed = TRUE)
+    d <- make_continuous_design()
+    d$n_per_condition <- 0L
+    d$n_per_cell <- n_per_cell
+    expect_error(select_continuous_stimuli(pool, d, schema), msg, fixed = TRUE)
+  }
+})
+
+null_tolerance_pool <- function() {
+  # The anchors' concreteness has mean 3 and SD 1, so k = 0.01 admits one low
+  # candidate and relaxes the window, while k = 2 admits three and does not.
+  data.frame(
+    id = 1:7,
+    word = c("haa", "hab", "hac", "laa", "lab", "lac", "lad"),
+    frequency = c(5.0, 5.5, 6.0, 1.0, 1.5, 2.0, 2.5),
+    concreteness = c(2.0, 3.0, 4.0, 2.5, 3.0, 3.5, 9.0),
+    stringsAsFactors = FALSE
+  )
+}
+
+test_that("a_null_tolerance_is_read_as_modifylist_reads_it", {
+  # A null in the schema's tolerance_k is dropped and k falls back to 2; a null in
+  # the design's deletes the schema's value. The Python engine raised a TypeError on
+  # either. Pinned identically in test_matching.py.
+  tight <- list(matching = list(tolerance_k = list(concreteness = 0.01)))
+  relaxed <- match_stimuli(null_tolerance_pool(), small_design(3L), tight)
+  expect_false(is.null(attr(relaxed, "audit")))
+  deleted <- match_stimuli(null_tolerance_pool(),
+                           small_design(3L, matching = list(
+                             tolerance_k = list(concreteness = NULL))), tight)
+  expect_null(attr(deleted, "audit"))
+  dropped <- match_stimuli(null_tolerance_pool(), small_design(3L),
+                           list(matching = list(tolerance_k = list(concreteness = NULL))))
+  expect_null(attr(dropped, "audit"))
+  expect_identical(dropped$word, deleted$word)
+  expect_identical(dropped$word, c("haa", "hab", "hac", "laa", "lab", "lac"))
+})
+
+test_that("a_schema_without_a_matching_block_is_accepted", {
+  # Pinned identically in test_matching.py, where both selectors raised KeyError.
+  expect_equal(nrow(match_stimuli(small_pool(), small_design(3L), list())), 6L)
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  lex <- load_lexicon(system.file("extdata", "en_example.csv", package = "lexsync"), schema, "english")
+  pool <- build_pool(lex, make_continuous_design()$pool_filters)
+  expect_equal(nrow(select_continuous_stimuli(pool, make_continuous_design(), list())), 40L)
+})
+
 test_that("selection ignores unused columns and the seed", {
   # Metamorphic invariants: an inert extra column must not steer selection, and
   # the schema seed only ever reaches the shuffle keys, never the matcher.

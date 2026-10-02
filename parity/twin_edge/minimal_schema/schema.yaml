@@ -1,0 +1,4 @@
+# The smallest schema lexsync runs on: a seed and the lexicon's column contract.
+seed: 2026
+lexicon_schema:
+  required: [word, freq_zipf]

@@ -1,0 +1,25 @@
+# Twin-edge case: tolerance_k entries set to null. The schema beside this design gives
+# length a null and frequency 1.0, and the design nulls frequency. Both engines read
+# them as R's modifyList() does: a null in the schema is dropped, a null in the design
+# deletes the schema's value, and both dimensions fall back to k = 2. The Python engine
+# multiplied None by the standard deviation and raised a TypeError.
+# The word forms are common English words. The Zipf frequencies are invented for
+# this fixture and describe no corpus.
+name: twin_edge_null_tolerance
+language: english
+lexicon: lexicon.csv
+description: 'Nouns versus verbs with null tolerance windows in the schema and the design.'
+n_per_condition: 8
+conditions:
+  - name: noun
+    define_by:
+      pos: [noun]
+  - name: verb
+    define_by:
+      pos: [verb]
+match_on: [length, frequency]
+matching:
+  tolerance_k:
+    frequency: null
+counterbalance:
+  lists: 2

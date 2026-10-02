@@ -17,6 +17,10 @@ import platform
 # the record describes the counterbalancing that ran.
 from .counterbalancing import _recipe
 from .counterbalancing import counterbalance_check as _counterbalance_check
+
+# The tolerance windows as match_stimuli resolves them: one resolver, so the record
+# cannot drift from the selection.
+from .design import _resolve_tolerance_k
 from .io_utils import _fmt_dp, _is_continuous, _round_dp, sha256_file
 
 # The cap the pairwise (joint, optimal) matchers apply before pairing. Imported from
@@ -148,19 +152,6 @@ def _relational_record(design: dict, stimuli) -> dict | None:
         "relational_dimensions": sorted((c for c in cols if c.startswith("pair.")),
                                         key=lambda s: s.encode("utf-8")),
     }
-
-
-def _resolve_tolerance_k(design: dict, schema: dict) -> dict:
-    """The tolerance windows as match_stimuli resolves them.
-
-    Schema defaults, overridden per dimension by the design, the same resolution
-    the matcher performs. The nearest-neighbour methods apply these windows; the
-    pairwise ``joint`` and ``optimal`` methods never consult them, which is why the
-    datasheet attaches this block only for the methods that do.
-    """
-    tol_k = dict((schema.get("matching") or {}).get("tolerance_k") or {})
-    tol_k.update((design.get("matching") or {}).get("tolerance_k") or {})
-    return tol_k
 
 
 def _controlled(design: dict, source: str) -> list:

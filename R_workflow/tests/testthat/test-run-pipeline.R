@@ -527,3 +527,186 @@ test_that("run_pipeline leaves the verbosity option as it found it", {
                "positive whole number")
   expect_identical(getOption("lexsync.verbose"), before)
 })
+
+# Every file under `root`, relative to it, so a refusal can be shown to leave nothing
+# behind.
+files_under <- function(root) sort(list.files(root, recursive = TRUE, all.files = TRUE))
+
+# Run a design that must be refused, and check that nothing reached outdir.
+refused_before_writing <- function(lines, message, schema = extdata("schema.yaml")) {
+  dir <- tmp_out()
+  design <- write_design(dir, lines)
+  outdir <- file.path(dir, "out")
+  expect_error(run_quiet(design, schema, outdir = outdir), message, fixed = TRUE)
+  expect_identical(files_under(outdir), character(0))
+}
+
+corpus_lines <- function(name = "check_test", extra = character(0), n = "5") {
+  c(paste0("name: ", name),
+    "language: english",
+    paste0("lexicon: ", as_yaml_path(extdata("en_example.csv"))),
+    paste0("n_per_condition: ", n),
+    "pool_filters: {length: [3, 7], frequency: [3.8, 7]}",
+    "conditions:",
+    "  - {name: high, define_by: {frequency: [5.0, 7.0]}}",
+    "  - {name: low, define_by: {frequency: [3.8, 4.4]}}",
+    "match_on: [length]",
+    extra)
+}
+
+test_that("a_misspelt_design_key_is_refused_with_a_suggestion", {
+  # `n_per_conditon: 8` was ignored, so the design silently got the default twenty
+  # items per condition. Pinned identically in test_run_pipeline.py.
+  lines <- corpus_lines()
+  lines <- c(lines[!startsWith(lines, "n_per_condition")], "n_per_conditon: 8")
+  refused_before_writing(
+    lines, "lexsync: unknown design key 'n_per_conditon' (did you mean 'n_per_condition'?)")
+  refused_before_writing(
+    corpus_lines(extra = "matching: {methd: joint}"),
+    "lexsync: unknown design key 'matching.methd' (did you mean 'matching.method'?)")
+})
+
+test_that("an_unknown_design_key_is_reported_in_the_run_log", {
+  # A key far from every known one is not refused yet, but the run log says it was
+  # ignored. `description` and a key beginning `x_` are annotations and pass quietly.
+  # Pinned identically in test_run_pipeline.py.
+  out <- tmp_out()
+  design <- write_design(out, corpus_lines(extra = c(
+    "notes: piloted in May",
+    "description: two frequency bands",
+    "x_reviewer: second author",
+    "conditions_comment: high against low")))
+  res <- run_quiet(design, extdata("schema.yaml"), outdir = out)
+  log <- paste(readLines(res$log, encoding = "UTF-8"), collapse = "\n")
+  for (key in c("notes", "conditions_comment")) {
+    expect_true(grepl(sprintf(paste(
+      "lexsync: design key '%s' is not read by lexsync and is ignored; a later",
+      "release will refuse it. Put annotations in `description` or a key",
+      "beginning `x_`."), key), log, fixed = TRUE), info = key)
+  }
+  expect_false(grepl("'description'", log, fixed = TRUE))
+  expect_false(grepl("x_reviewer", log, fixed = TRUE))
+})
+
+test_that("a_whole_float_n_per_condition_is_accepted", {
+  # Pinned identically in test_run_pipeline.py, where 4.0 raised a TypeError.
+  out <- tmp_out()
+  res <- run_quiet(write_design(out, corpus_lines(n = "4.0")), extdata("schema.yaml"),
+                   outdir = out)
+  stim <- read_csv_utf8(res$stimuli)
+  expect_equal(as.integer(table(stim$condition)), c(4L, 4L))
+})
+
+test_that("a_whole_float_n_reaches_the_generate_path", {
+  out <- tmp_out()
+  design <- write_design(out, c(
+    "name: float_gen",
+    "language: english",
+    "paradigm: lexical_decision",
+    "items:",
+    "  source: generate",
+    paste0("  lexicon: ", as_yaml_path(extdata("en_example.csv"))),
+    "n_per_condition: 4.0",
+    "pool_filters: {length: [4, 7], frequency: [3.5, 6.0]}"))
+  res <- run_quiet(design, extdata("schema.yaml"), outdir = out)
+  expect_length(unique(read_csv_utf8(res$stimuli)$set), 4L)
+})
+
+test_that("a_schema_of_seed_and_lexicon_schema_runs", {
+  # Every other schema block has a default, so a schema holding only these two runs.
+  # The Python engine raised KeyError 'matching'. Pinned identically in
+  # test_run_pipeline.py.
+  out <- tmp_out()
+  schema <- file.path(out, "schema.yaml")
+  writeLines(c("seed: 7", "lexicon_schema:", "  required: [word, freq_zipf]"), schema)
+  res <- run_quiet(write_design(out, corpus_lines()), schema, outdir = file.path(out, "out"))
+  expect_true(file.exists(res$stimuli))
+})
+
+test_that("a_design_without_a_name_is_refused_before_anything_is_written", {
+  # This engine wrote four files and then failed with 'argument is of length zero';
+  # the Python engine raised a bare KeyError. Pinned identically in
+  # test_run_pipeline.py.
+  lines <- corpus_lines()
+  refused_before_writing(lines[!startsWith(lines, "name:")],
+                         "lexsync: the design has no `name`.")
+})
+
+test_that("language_tag_does_not_stand_in_for_language", {
+  lines <- corpus_lines()
+  lines[startsWith(lines, "language:")] <- "language_tag: en-GB"
+  refused_before_writing(lines, "lexsync: the design has no `language`.")
+})
+
+test_that("a_language_that_yaml_reads_as_a_boolean_is_refused", {
+  lines <- corpus_lines()
+  lines[startsWith(lines, "language:")] <- "language: no"
+  refused_before_writing(lines, paste(
+    "lexsync: the design's `language` must be text; quote it if it is a code",
+    "such as 'no'."))
+})
+
+test_that("an_unsafe_name_is_refused_before_any_file_exists", {
+  # The name used to be checked only at export, after the stimuli, both reports and
+  # the PsychoPy loop table were on disk.
+  refused_before_writing(corpus_lines(name = "\"bad'name\""), "cannot be written safely")
+})
+
+test_that("an_unsafe_font_or_port_is_refused_before_any_file_exists", {
+  refused_before_writing(corpus_lines(extra = "font: \"Arial'\""), "cannot be written safely")
+  dir <- tmp_out()
+  schema <- file.path(dir, "schema.yaml")
+  text <- readLines(extdata("schema.yaml"), encoding = "UTF-8")
+  writeLines(sub("parallel_address: '0x0378'", "parallel_address: 'LPT1'", text,
+                 fixed = TRUE), schema, useBytes = TRUE)
+  refused_before_writing(corpus_lines(), "must be a port address", schema = schema)
+})
+
+test_that("a_bad_response_key_is_refused_before_any_file_exists", {
+  refused_before_writing(corpus_lines(extra = c(
+    "events:",
+    "  - {type: text, content: '{word}', duration_ms: 500, trigger: condition}",
+    "  - {type: response, keys: ['a;b']}")), "must be a key name")
+})
+
+test_that("a_matched_design_without_match_on_is_refused", {
+  # Without match_on this engine paired the byte-first words, and with an empty list
+  # both engines did. Pinned identically in test_run_pipeline.py.
+  message <- "lexsync: a matched design needs `match_on` naming at least one dimension."
+  lines <- corpus_lines()
+  lines <- lines[!startsWith(lines, "match_on")]
+  refused_before_writing(lines, message)
+  refused_before_writing(c(lines, "match_on: []"), message)
+})
+
+test_that("a_condition_name_that_is_not_text_is_refused", {
+  refused_before_writing(sub("name: high", "name: 1", corpus_lines(), fixed = TRUE),
+                         "lexsync: condition names must be text; quote '1'.")
+})
+
+test_that("a_non_ascii_name_writes_under_a_checksummed_stem", {
+  # Two designs with Chinese names and the language 'chinese' both wrote chinese_*,
+  # so the second overwrote the first. Pinned identically in test_run_pipeline.py.
+  out <- tmp_out()
+  lines <- corpus_lines(name = "\u8bcd\u9891")
+  lines[startsWith(lines, "language:")] <- "language: chinese"
+  res <- run_quiet(write_design(out, enc2utf8(lines)), extdata("schema.yaml"), outdir = out)
+  expect_identical(basename(res$stimuli), "chinese_14aadfa7_stimuli_R.csv")
+  expect_identical(basename(res$experiments$opensesame), "chinese_14aadfa7.osexp")
+})
+
+test_that("run_all_refuses_designs_that_would_write_the_same_files", {
+  # `en-lexdec` and `en_lexdec` slugify alike, so the second design overwrote the
+  # first's files. Pinned identically in test_run_pipeline.py.
+  dir <- tmp_out()
+  cfg <- file.path(dir, "config")
+  dir.create(cfg)
+  writeLines(corpus_lines(name = "en-lexdec"), file.path(cfg, "design_a.yaml"))
+  writeLines(corpus_lines(name = "en_lexdec"), file.path(cfg, "design_b.yaml"))
+  outdir <- file.path(dir, "out")
+  expect_error(run_all(cfg, extdata("schema.yaml"), outdir, verbose = FALSE),
+               paste("lexsync: 'design_a.yaml' and 'design_b.yaml' would write the same",
+                     "files ('en_lexdec_english'); give the designs distinct names."),
+               fixed = TRUE)
+  expect_identical(files_under(outdir), character(0))
+})

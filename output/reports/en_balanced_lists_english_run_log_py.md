@@ -1,8 +1,8 @@
 # lexsync run log: en_balanced_lists
 
 - Engine: Python 3.13.7
-- Started: 2026-10-02T21:06:05
-- Finished: 2026-10-02T21:06:10
+- Started: 2026-10-03T00:45:00
+- Finished: 2026-10-03T00:45:07
 
 ## Run metadata
 
@@ -15,50 +15,50 @@
 
 ## Steps
 
-- **2026-10-02T21:06:05**: loading lexicon 'corpora/derived/en.csv'
-- **2026-10-02T21:06:06**: lexicon loaded: 30000 words
+- **2026-10-03T00:45:00**: loading lexicon 'corpora/derived/en.csv'
+- **2026-10-03T00:45:02**: lexicon loaded: 30000 words
     - words: 30000
-- **2026-10-02T21:06:06**: pool after filters: 7230 words
+- **2026-10-03T00:45:02**: pool after filters: 7230 words
     - pool: 7230
-- **2026-10-02T21:06:06**: matched 80 items across 2 conditions
+- **2026-10-03T00:45:03**: matched 80 items across 2 conditions
     - conditions: high_frequency, low_frequency
-- **2026-10-02T21:06:06**: equivalence low_frequency vs high_frequency on 'length': d = 0.02 [-0.35, 0.39], TOST p = 0.0178 (equivalent)
-- **2026-10-02T21:06:06**: equivalence low_frequency vs high_frequency on 'frequency': d = 5.05 [4.29, 5.82], TOST p = 1.0 (not shown equivalent)
-- **2026-10-02T21:06:06**: equivalence low_frequency vs high_frequency on 'n_density': d = 0.05 [-0.32, 0.42], TOST p = 0.0237 (equivalent)
-- **2026-10-02T21:06:06**: equivalence low_frequency vs high_frequency on 'old20': d = 0.05 [-0.32, 0.43], TOST p = 0.0246 (equivalent)
-- **2026-10-02T21:06:06**: balanced 40 item sets across 4 lists on length, n_density, old20, frequency: cost 1121480 -> 53820 in 10 swap(s)
+- **2026-10-03T00:45:03**: equivalence low_frequency vs high_frequency on 'length': d = 0.02 [-0.35, 0.39], TOST p = 0.0178 (equivalent)
+- **2026-10-03T00:45:03**: equivalence low_frequency vs high_frequency on 'frequency': d = 5.05 [4.29, 5.82], TOST p = 1.0 (not shown equivalent)
+- **2026-10-03T00:45:03**: equivalence low_frequency vs high_frequency on 'n_density': d = 0.05 [-0.32, 0.42], TOST p = 0.0237 (equivalent)
+- **2026-10-03T00:45:03**: equivalence low_frequency vs high_frequency on 'old20': d = 0.05 [-0.32, 0.43], TOST p = 0.0246 (equivalent)
+- **2026-10-03T00:45:04**: balanced 40 item sets across 4 lists on length, n_density, old20, frequency: cost 1121480 -> 53820 in 10 swap(s)
     - cost_before: 1121480
     - cost_after: 53820
     - swaps: 10
-- **2026-10-02T21:06:07**: wrote 'en_balanced_lists_english_stimuli_py.csv'
+- **2026-10-03T00:45:04**: wrote 'en_balanced_lists_english_stimuli_py.csv'
     - path: output\stimuli\en_balanced_lists_english_stimuli_py.csv
     - rows: 80
     - md5: ea6027af81e16cad2979e4e8c1afe7a2
-- **2026-10-02T21:06:07**: wrote 'en_balanced_lists_english_descriptives_py.csv'
+- **2026-10-03T00:45:04**: wrote 'en_balanced_lists_english_descriptives_py.csv'
     - path: output\reports\en_balanced_lists_english_descriptives_py.csv
     - rows: 8
     - md5: 0773a3bf93269e14568726dfea032629
-- **2026-10-02T21:06:07**: wrote 'en_balanced_lists_english_comparisons_py.csv'
+- **2026-10-03T00:45:04**: wrote 'en_balanced_lists_english_comparisons_py.csv'
     - path: output\reports\en_balanced_lists_english_comparisons_py.csv
     - rows: 4
     - md5: 488dd8d3168996fb298b771d15a79bd2
-- **2026-10-02T21:06:08**: wrote 'en_balanced_lists_english_psychopy.py'
+- **2026-10-03T00:45:05**: wrote 'en_balanced_lists_english_psychopy.py'
     - path: output\experiments\en_balanced_lists_english_psychopy.py
     - rows: None
     - md5: 27a96761cd60bfc463da1a2a9b6ad759
-- **2026-10-02T21:06:08**: wrote 'en_balanced_lists_english.osexp'
+- **2026-10-03T00:45:05**: wrote 'en_balanced_lists_english.osexp'
     - path: output\experiments\en_balanced_lists_english.osexp
     - rows: None
     - md5: b3f65c1089d250662965e2a12edb455f
-- **2026-10-02T21:06:09**: wrote 'en_balanced_lists_english.html'
+- **2026-10-03T00:45:06**: wrote 'en_balanced_lists_english.html'
     - path: output\experiments\en_balanced_lists_english.html
     - rows: None
     - md5: 5d72eac05e183404c3048ac4b51a50b2
-- **2026-10-02T21:06:10**: wrote 'en_balanced_lists_english_datasheet_py.json'
+- **2026-10-03T00:45:07**: wrote 'en_balanced_lists_english_datasheet_py.json'
     - path: output\reports\en_balanced_lists_english_datasheet_py.json
     - rows: None
-    - md5: cb023cdeb26ac229a07b56ad681f750a
-- **2026-10-02T21:06:10**: wrote 'en_balanced_lists_english_datasheet_py.md'
+    - md5: 730a1350651898f6c7d9cb0f95961e1e
+- **2026-10-03T00:45:07**: wrote 'en_balanced_lists_english_datasheet_py.md'
     - path: output\reports\en_balanced_lists_english_datasheet_py.md
     - rows: None
     - md5: d4b3c81418f496e1d55f37c9795d31a6

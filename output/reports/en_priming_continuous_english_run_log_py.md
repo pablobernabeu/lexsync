@@ -1,8 +1,8 @@
 # lexsync run log: en_priming_continuous
 
 - Engine: Python 3.13.7
-- Started: 2026-10-02T21:07:02
-- Finished: 2026-10-02T21:07:08
+- Started: 2026-10-03T00:45:53
+- Finished: 2026-10-03T00:45:58
 
 ## Run metadata
 
@@ -15,46 +15,46 @@
 
 ## Steps
 
-- **2026-10-02T21:07:02**: loading items 'items/priming_pairs_en.csv'
-- **2026-10-02T21:07:02**: loaded 12 items across 2 conditions
+- **2026-10-03T00:45:53**: loading items 'items/priming_pairs_en.csv'
+- **2026-10-03T00:45:53**: loaded 12 items across 2 conditions
     - conditions: related, unrelated
-- **2026-10-02T21:07:02**: loading member lexicon 'corpora/derived/en.csv'
-- **2026-10-02T21:07:04**: joined word-level norms onto prime and target
-- **2026-10-02T21:07:04**: computed relational dimensions (pair.lev, pair.overlap)
-- **2026-10-02T21:07:04**: selected 8 pairs spanning 'target.frequency' (12 eligible)
+- **2026-10-03T00:45:53**: loading member lexicon 'corpora/derived/en.csv'
+- **2026-10-03T00:45:54**: joined word-level norms onto prime and target
+- **2026-10-03T00:45:54**: computed relational dimensions (pair.lev, pair.overlap)
+- **2026-10-03T00:45:55**: selected 8 pairs spanning 'target.frequency' (12 eligible)
     - sets: 8
     - eligible: 12
-- **2026-10-02T21:07:04**: continuous: 'target.length' correlation with the predictor r = -0.292
-- **2026-10-02T21:07:04**: continuous: 'pair.overlap' correlation with the predictor r = -0.227
-- **2026-10-02T21:07:05**: wrote 'en_priming_continuous_english_stimuli_py.csv'
+- **2026-10-03T00:45:55**: continuous: 'target.length' correlation with the predictor r = -0.292
+- **2026-10-03T00:45:55**: continuous: 'pair.overlap' correlation with the predictor r = -0.227
+- **2026-10-03T00:45:55**: wrote 'en_priming_continuous_english_stimuli_py.csv'
     - path: output\stimuli\en_priming_continuous_english_stimuli_py.csv
     - rows: 16
     - md5: 8a2bb9907edffd68183a1ed5f6c23030
-- **2026-10-02T21:07:05**: wrote 'en_priming_continuous_english_descriptives_py.csv'
+- **2026-10-03T00:45:55**: wrote 'en_priming_continuous_english_descriptives_py.csv'
     - path: output\reports\en_priming_continuous_english_descriptives_py.csv
     - rows: 3
     - md5: 1cae97ee35a1cce758b47ec9cf803b60
-- **2026-10-02T21:07:05**: wrote 'en_priming_continuous_english_comparisons_py.csv'
+- **2026-10-03T00:45:55**: wrote 'en_priming_continuous_english_comparisons_py.csv'
     - path: output\reports\en_priming_continuous_english_comparisons_py.csv
     - rows: 3
     - md5: 5f9405c3b989e0e9fa2d0672cd43c720
-- **2026-10-02T21:07:06**: wrote 'en_priming_continuous_english_psychopy.py'
+- **2026-10-03T00:45:56**: wrote 'en_priming_continuous_english_psychopy.py'
     - path: output\experiments\en_priming_continuous_english_psychopy.py
     - rows: None
     - md5: 0feed505e220db017528a85ea3e2c27d
-- **2026-10-02T21:07:06**: wrote 'en_priming_continuous_english.osexp'
+- **2026-10-03T00:45:56**: wrote 'en_priming_continuous_english.osexp'
     - path: output\experiments\en_priming_continuous_english.osexp
     - rows: None
     - md5: 542e450ae871b28bf8181d2f76fa66bf
-- **2026-10-02T21:07:07**: wrote 'en_priming_continuous_english.html'
+- **2026-10-03T00:45:57**: wrote 'en_priming_continuous_english.html'
     - path: output\experiments\en_priming_continuous_english.html
     - rows: None
     - md5: 0698986fa2935e67cd12c069f27a61dc
-- **2026-10-02T21:07:08**: wrote 'en_priming_continuous_english_datasheet_py.json'
+- **2026-10-03T00:45:58**: wrote 'en_priming_continuous_english_datasheet_py.json'
     - path: output\reports\en_priming_continuous_english_datasheet_py.json
     - rows: None
-    - md5: a77d3f9246e3231311161c5c1f66b6ff
-- **2026-10-02T21:07:08**: wrote 'en_priming_continuous_english_datasheet_py.md'
+    - md5: 77a2185a5df40fe9747f0532ea846d7a
+- **2026-10-03T00:45:58**: wrote 'en_priming_continuous_english_datasheet_py.md'
     - path: output\reports\en_priming_continuous_english_datasheet_py.md
     - rows: None
     - md5: 77acfea68caa7cf3671828ec695bde9c

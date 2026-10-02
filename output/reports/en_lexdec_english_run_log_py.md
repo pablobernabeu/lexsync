@@ -1,8 +1,8 @@
 # lexsync run log: en_lexdec
 
 - Engine: Python 3.13.7
-- Started: 2026-10-02T21:06:28
-- Finished: 2026-10-02T21:06:35
+- Started: 2026-10-03T00:45:22
+- Finished: 2026-10-03T00:45:28
 
 ## Run metadata
 
@@ -15,43 +15,43 @@
 
 ## Steps
 
-- **2026-10-02T21:06:28**: loading lexicon 'corpora/derived/en.csv'
-- **2026-10-02T21:06:30**: lexicon loaded: 30000 words
+- **2026-10-03T00:45:22**: loading lexicon 'corpora/derived/en.csv'
+- **2026-10-03T00:45:24**: lexicon loaded: 30000 words
     - words: 30000
-- **2026-10-02T21:06:30**: pool after filters: 8177 words
+- **2026-10-03T00:45:24**: pool after filters: 8177 words
     - pool: 8177
-- **2026-10-02T21:06:30**: generated 120 items (words + pseudowords, letter_substitution)
+- **2026-10-03T00:45:25**: generated 120 items (words + pseudowords, letter_substitution)
     - conditions: word, pseudoword
-- **2026-10-02T21:06:30**: equivalence pseudoword vs word on 'length': d = 0.00 [-0.30, 0.30], TOST p = 0.0036 (equivalent)
-- **2026-10-02T21:06:31**: wrote 'en_lexdec_english_stimuli_py.csv'
+- **2026-10-03T00:45:25**: equivalence pseudoword vs word on 'length': d = 0.00 [-0.30, 0.30], TOST p = 0.0036 (equivalent)
+- **2026-10-03T00:45:25**: wrote 'en_lexdec_english_stimuli_py.csv'
     - path: output\stimuli\en_lexdec_english_stimuli_py.csv
     - rows: 120
     - md5: d99b79dee80a0803d326cce5157ad553
-- **2026-10-02T21:06:32**: wrote 'en_lexdec_english_descriptives_py.csv'
+- **2026-10-03T00:45:26**: wrote 'en_lexdec_english_descriptives_py.csv'
     - path: output\reports\en_lexdec_english_descriptives_py.csv
     - rows: 2
     - md5: f26ab1271c06e35b089d78a806602d3e
-- **2026-10-02T21:06:32**: wrote 'en_lexdec_english_comparisons_py.csv'
+- **2026-10-03T00:45:26**: wrote 'en_lexdec_english_comparisons_py.csv'
     - path: output\reports\en_lexdec_english_comparisons_py.csv
     - rows: 1
     - md5: 08fc5207d0e20aa470e1b3cf332e5830
-- **2026-10-02T21:06:33**: wrote 'en_lexdec_english_psychopy.py'
+- **2026-10-03T00:45:26**: wrote 'en_lexdec_english_psychopy.py'
     - path: output\experiments\en_lexdec_english_psychopy.py
     - rows: None
     - md5: f9e9b82991e8ffb552fe92ba01b86e58
-- **2026-10-02T21:06:33**: wrote 'en_lexdec_english.osexp'
+- **2026-10-03T00:45:26**: wrote 'en_lexdec_english.osexp'
     - path: output\experiments\en_lexdec_english.osexp
     - rows: None
     - md5: 14dc876a96ac2b3b5e755d8e5353c5f8
-- **2026-10-02T21:06:34**: wrote 'en_lexdec_english.html'
+- **2026-10-03T00:45:26**: wrote 'en_lexdec_english.html'
     - path: output\experiments\en_lexdec_english.html
     - rows: None
     - md5: 05d63ae6ec738c055aea3769358ef22a
-- **2026-10-02T21:06:35**: wrote 'en_lexdec_english_datasheet_py.json'
+- **2026-10-03T00:45:28**: wrote 'en_lexdec_english_datasheet_py.json'
     - path: output\reports\en_lexdec_english_datasheet_py.json
     - rows: None
-    - md5: 1577dfda8782b5d376384c0748d943b9
-- **2026-10-02T21:06:35**: wrote 'en_lexdec_english_datasheet_py.md'
+    - md5: 392f4f1e96fc5f524ce9c920a953fe15
+- **2026-10-03T00:45:28**: wrote 'en_lexdec_english_datasheet_py.md'
     - path: output\reports\en_lexdec_english_datasheet_py.md
     - rows: None
     - md5: e2c341beb33cf2153173cf8bae61717c

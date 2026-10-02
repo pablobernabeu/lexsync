@@ -125,6 +125,20 @@ candidates from lower-case a to z, so both are orthographic approximations defin
 orthographies and unavailable for other scripts. The shipped Chinese design matches on `length`,
 `n_density` and `old20` for exactly this reason.
 
+## File names
+
+Every file a run writes is named after a stem built from the design's `name` and `language`, which
+`design_stem` computes in both engines. The stem keeps ASCII letters and digits only, so names that
+differ only outside ASCII would share it, and two designs named 词频 and 笔画, both in `chinese`,
+would write the same files, the second overwriting the first. Whenever the name or the language
+holds a non-ASCII character, the stem therefore ends in an underscore and the first eight
+hexadecimal digits of the SHA-256 of the NFC-normalised text `name|language`. The two designs
+above write `chinese_14aadfa7` and `chinese_444a1c5f`. A name and language with no ASCII letter or
+digit at all, which used to give file names beginning with an underscore or a dot, get the eight
+digits alone, such as `e525cb84`. Normalising to NFC here keeps a precomposed and a decomposed
+spelling of one name on one stem. Names in plain ASCII are unaffected. `run_all` also computes every design's stem before it runs any, and refuses two
+designs that would write the same files, such as `en-lexdec` and `en_lexdec`.
+
 ## Where it stops
 
 Two exceptions, and both are documented here.
@@ -307,7 +321,8 @@ pipeline, though `run_pipeline` calls them for you.
 Alongside the datasheet, each run writes a log in Markdown and JSON Lines, with a timestamped entry
 per stage: which lexicon was loaded and how many words it held, the pool size after filtering, which
 dimensions were derived, how many items were matched, the equivalence verdict on each dimension, and
-every artefact written with its row count and MD5.
+every artefact written with its row count and MD5. A design or schema key that lexsync does not read
+is noted there too, since it changed nothing about the run.
 
 ```python
 # illustrative: writes run_log.md and run_log.jsonl into the working tree

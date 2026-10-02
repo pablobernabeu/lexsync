@@ -1,0 +1,6 @@
+# Both nulls leave the default k = 2, so the recorded windows are empty and both
+# engines select, report and deal the same eight sets.
+outcome: artefacts
+compare: [stimuli, descriptives, comparisons]
+datasheet:
+  selection.tolerance_k: {}

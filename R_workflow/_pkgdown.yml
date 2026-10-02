@@ -235,10 +235,12 @@ reference:
   - write_datasheet
   - methods_paragraph
 - title: Pipeline and logging
-  desc: Run a design end to end, and log every step and artefact as it is written.
+  desc: Check a design, run it end to end, and log every step and artefact as it is written.
   contents:
   - run_pipeline
   - run_all
+  - validate_design
+  - design_stem
   - new_run_log
   - log_step
   - log_artefact

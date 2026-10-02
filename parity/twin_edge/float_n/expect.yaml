@@ -1,0 +1,5 @@
+# Both engines select, report and deal the same four noun-verb sets.
+outcome: artefacts
+compare: [stimuli, descriptives, comparisons]
+datasheet:
+  design.n_per_condition: 4

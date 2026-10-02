@@ -1,0 +1,20 @@
+# Twin-edge case: the schema beside this design holds only a seed and the lexicon's
+# column contract. Every other schema block has a default, which the R engine used
+# while the Python engine raised KeyError 'matching'.
+# The word forms are common English words. The Zipf frequencies are invented for
+# this fixture and describe no corpus.
+name: twin_edge_minimal_schema
+language: english
+lexicon: lexicon.csv
+description: 'Nouns versus verbs under a schema of a seed and a lexicon contract only.'
+n_per_condition: 8
+conditions:
+  - name: noun
+    define_by:
+      pos: [noun]
+  - name: verb
+    define_by:
+      pos: [verb]
+match_on: [length, frequency]
+counterbalance:
+  lists: 2

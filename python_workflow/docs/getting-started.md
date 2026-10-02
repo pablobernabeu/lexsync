@@ -161,10 +161,12 @@ timing:
 
 `name` and `language` are required, and together they form the slug that every written file is
 named after. `en_freqcontrast` plus `english` becomes `en_freqcontrast_english`, and from that come
-`en_freqcontrast_english_stimuli_py.csv`, `en_freqcontrast_english.osexp` and the rest. `language`
-is a free-text label rather than a code, because it is what the experiment displays. When the
-browser target needs a real BCP 47 tag it maps the common labels and falls back to `und`, or you
-can state `language_tag` outright.
+`en_freqcontrast_english_stimuli_py.csv`, `en_freqcontrast_english.osexp` and the rest. A name or
+language holding a character outside ASCII also adds an eight-character checksum to the stem, as
+[Reproducibility and parity](reproducibility-and-parity.md) explains. `language` is a free-text
+label rather than a code, because it is what the experiment displays. When the browser target needs
+a real BCP 47 tag it maps the common labels and falls back to `und`, or you can state
+`language_tag` outright.
 
 `lexicon` names the derived corpus to read. It may also be written as `items.lexicon`, which is the
 form the lexical-decision designs use, since they also need to say where the items come from.
@@ -191,8 +193,9 @@ the pool by the same filter syntax. Two conditions make a contrast. Four make th
 a `continuous` block and dispense with conditions altogether, which
 [Matching and designs](matching-and-designs.md) covers.
 
-`match_on` lists the dimensions to equate across conditions. `n_per_condition` is how many items you
-want in each. Both are the heart of the design, and both are discussed at length in the matching
+`match_on` lists the dimensions to equate across conditions, and a design that matches its
+conditions must name at least one. `n_per_condition` is how many items you want in each, a whole number written as
+`80` or `80.0`. Both are the heart of the design, and both are discussed at length in the matching
 guide.
 
 `matching` overrides the schema defaults for this design alone. `matching.method` picks one of the
@@ -213,13 +216,36 @@ counterbalancing recipe. Omitting it gives `factorial`. A design may instead sup
 `events` list and describe its own trial. Both routes are covered in
 [Experiments and triggers](experiments-and-triggers.md).
 
+### What is checked before a run
+
+Before it reads a lexicon or writes a file, `run_pipeline` checks the design and the schema with
+`validate_design`, and a design that cannot be honoured is refused with the same message in both
+engines. Every key is looked up in the vocabulary of keys lexsync reads at its level, which
+`lexsync.design` holds as `DESIGN_KEYS` and `SCHEMA_KEYS`. A key one edit from a known key of up to
+five characters, or two edits from a longer one, is taken for a typo. It is refused with the key it
+was probably meant to be. `n_per_conditon: 8` now stops with
+`unknown design key 'n_per_conditon' (did you mean 'n_per_condition'?)`, where it used to leave
+the design on the default of twenty items. Any other unknown key is noted in the run log and
+otherwise ignored, and a later release will refuse it. Notes and comments therefore belong in `description` or in a key beginning `x_`, which
+are never checked.
+
+The same step checks the values. It refuses a missing or non-text `name` or `language` (quote a
+code such as `'no'`, which YAML reads as false) and an `n_per_condition` that is not a whole number
+of at least 1. It refuses a name, language or font that cannot be written safely into the
+generated experiments, a trigger port that is not an address, and an unknown timing key or
+malformed response key. Last, it refuses a condition name that is not text or appears twice, and a
+corpus or pool design with conditions but no `match_on`. These used to surface at export, after the stimuli and
+reports had been written, or at a different point in each engine.
+
 ### The schema
 
 `config/schema.yaml` is the other half, and it is worth reading once. It fixes the seed, states the
 column contract that a derived lexicon must satisfy (`word` and `freq_zipf` are required), declares
 the six lexical dimensions and how each is obtained, and sets the defaults a design may override:
 the matching method, the per-dimension tolerance windows, the equivalence bound and alpha, the
-parallel-port address and trigger timing, and the presentation fonts.
+parallel-port address and trigger timing, and the presentation fonts. A schema holding only the
+seed and the column contract is enough, since every other block falls back to the defaults the code
+carries.
 
 Two things in it are deliberately not configurable. Equivalence is assessed by two one-sided tests,
 and only the bound and alpha are settings. The tie-break order in the matcher is fixed at

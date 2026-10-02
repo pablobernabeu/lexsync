@@ -78,7 +78,9 @@
 #' @param pool A lexicon/pool with all `match_on` dimensions present (see
 #'   [add_neighbourhood()]).
 #' @param design A parsed design configuration (conditions, `match_on`,
-#'   `n_per_condition`/`n_per_cell`).
+#'   `n_per_condition`/`n_per_cell`). `match_on` must name at least one dimension,
+#'   and the number of items is a whole number of at least 1, 20 when neither key is
+#'   given.
 #' @param schema The parsed global schema (tolerances live here).
 #' @param verbose Logical; report tolerance relaxations and a shrunk anchor.
 #' @return A data frame of selected stimuli with a `condition` label and a `set`
@@ -92,15 +94,14 @@ match_stimuli <- function(pool, design, schema, verbose = FALSE) {
     stop("lexsync: the design has no conditions; a matched design needs a conditions list.",
          call. = FALSE)
   }
-  match_on <- unlist(design[["match_on"]], use.names = FALSE)
-  n <- design[["n_per_condition"]] %||% design[["n_per_cell"]] %||% 20L
+  # Refused here as well as in validate_design(), for a direct call: without a
+  # dimension every distance is zero and the tie-break alone would pick the words.
+  match_on <- .require_match_on(design)
+  n <- .resolve_n(design, 20L)
   # Tolerance window k per dimension (window = anchor mean +/- k * SD). A design
   # may override the schema defaults per dimension, e.g. to reproduce a published
   # study's exact windows (Gonzalez Alonso et al. used SD/9 for frequency).
-  tol_k <- schema[["matching"]][["tolerance_k"]]
-  if (!is.null(design[["matching"]][["tolerance_k"]])) {
-    tol_k <- utils::modifyList(tol_k, design[["matching"]][["tolerance_k"]])
-  }
+  tol_k <- .resolve_tolerance_k(design, schema)
   shortfall <- .resolve_policy(design, schema, "shortfall", "error", c("error", "allow"))
   on_tol <- .resolve_policy(design, schema, "on_insufficient_tolerance", "relax",
                             c("relax", "error"))
@@ -536,11 +537,8 @@ select_continuous_stimuli <- function(pool, design, schema, verbose = FALSE,
       stop(sprintf("lexsync: dimension '%s' is absent from the pool.", d), call. = FALSE)
     }
   }
-  n <- design[["n_per_condition"]] %||% design[["n_per_cell"]] %||% 60L
-  tol_k <- schema[["matching"]][["tolerance_k"]]
-  if (!is.null(design[["matching"]][["tolerance_k"]])) {
-    tol_k <- utils::modifyList(tol_k, design[["matching"]][["tolerance_k"]])
-  }
+  n <- .resolve_n(design, 60L)
+  tol_k <- .resolve_tolerance_k(design, schema)
   shortfall <- .resolve_policy(design, schema, "shortfall", "error", c("error", "allow"))
   on_tol <- .resolve_policy(design, schema, "on_insufficient_tolerance", "relax",
                             c("relax", "error"))

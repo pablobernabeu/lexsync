@@ -1,0 +1,17 @@
+# Twin-edge case: a misspelt design key. `n_per_conditon` used to be ignored, so the
+# design silently got the default of twenty items per condition. A key one or two
+# edits from a known one is now refused with the key it was probably meant to be.
+# The word forms are common English words. The Zipf frequencies are invented for
+# this fixture and describe no corpus.
+name: twin_edge_typo_key
+language: english
+lexicon: lexicon.csv
+n_per_conditon: 3
+conditions:
+  - name: noun
+    define_by:
+      pos: [noun]
+  - name: verb
+    define_by:
+      pos: [verb]
+match_on: [length, frequency]

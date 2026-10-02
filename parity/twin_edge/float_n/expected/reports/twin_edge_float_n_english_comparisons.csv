@@ -1,0 +1,3 @@
+condition,reference,dimension,cohens_d,d_ci_low,d_ci_high,var_ratio,tost_p,equivalent
+verb,noun,length,0,0,0,1,0,TRUE
+verb,noun,frequency,0.023,-1.351,1.397,0.736,0.2624,FALSE

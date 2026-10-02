@@ -28,6 +28,7 @@ import pandas as pd
 # distances are rounded to nine places on top of that. That argument is weaker than
 # identity by construction, which is what the package claims, and switching these was
 # verified to change no design's selection.
+from .design import _require_match_on, _resolve_n, _resolve_tolerance_k
 from .io_utils import _exact_mean, _exact_sd, _round_dp_vec
 from .querying import build_pool
 
@@ -270,6 +271,11 @@ def match_stimuli(pool: pd.DataFrame, design: dict, schema: dict, verbose: bool 
     shrink) and ``on_insufficient_tolerance`` ("relax", the default, widens an
     undersupplied tolerance window to the full condition subpool and records the
     relaxation in ``out.attrs["audit"]``; "error" refuses instead).
+
+    ``match_on`` must name at least one dimension. The number of items per
+    condition is ``n_per_condition``, else ``n_per_cell``, else 20, and must be a
+    whole number of at least 1. A ``null`` tolerance is read as R's ``modifyList()``
+    reads it (see the schema's ``tolerance_k`` comment).
     """
     conditions = design.get("conditions")
     if not conditions:
@@ -277,13 +283,14 @@ def match_stimuli(pool: pd.DataFrame, design: dict, schema: dict, verbose: bool 
         # bare subscript error in R, two different messages for the same mistake.
         raise ValueError("lexsync: the design has no conditions; a matched design "
                          "needs a conditions list.")
-    match_on = list(design["match_on"])
-    n = design.get("n_per_condition") or design.get("n_per_cell") or 20
+    # Refused here as well as in validate_design, for a direct call: without a
+    # dimension every distance is zero and the tie-break alone would pick the words.
+    match_on = _require_match_on(design)
+    n = _resolve_n(design, 20)
     # Tolerance window k per dimension (window = anchor mean +/- k * SD). A design
     # may override the schema defaults per dimension, e.g. to reproduce a published
     # study's exact windows (Gonzalez Alonso et al. used SD/9 for frequency).
-    tol_k = dict(schema["matching"].get("tolerance_k") or {})
-    tol_k.update((design.get("matching") or {}).get("tolerance_k") or {})
+    tol_k = _resolve_tolerance_k(design, schema)
     shortfall = _resolve_policy(design, schema, "shortfall", "error", ("error", "allow"))
     on_tol = _resolve_policy(design, schema, "on_insufficient_tolerance", "relax",
                              ("relax", "error"))
@@ -515,9 +522,8 @@ def select_continuous_stimuli(pool: pd.DataFrame, design: dict, schema: dict,
     if key not in pool.columns:
         raise ValueError(
             "lexsync: the continuous tie-break column '%s' is absent from the pool." % key)
-    n = design.get("n_per_condition") or design.get("n_per_cell") or 60
-    tol_k = dict(schema["matching"].get("tolerance_k") or {})
-    tol_k.update((design.get("matching") or {}).get("tolerance_k") or {})
+    n = _resolve_n(design, 60)
+    tol_k = _resolve_tolerance_k(design, schema)
     shortfall = _resolve_policy(design, schema, "shortfall", "error", ("error", "allow"))
     on_tol = _resolve_policy(design, schema, "on_insufficient_tolerance", "relax",
                              ("relax", "error"))

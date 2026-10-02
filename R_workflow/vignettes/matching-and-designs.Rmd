@@ -294,7 +294,11 @@ exactly as `pool_filters` is. The first condition listed is the anchor. Its item
 are chosen by an even spread across the sorted candidate subpool, so the anchor
 covers the whole of its region on the manipulated dimension and does not cluster
 at one end. Every later condition is then matched to the anchor item by item, and
-the `set` column records the pairing.
+the `set` column records the pairing. The matching needs at least one dimension in
+`match_on`. Without one, every candidate lies at distance zero from every anchor
+and the byte-order tie-break alone would choose the words, so a design with
+conditions and no `match_on`, or an empty one, is refused before anything is
+selected.
 
 ```{r design}
 design <- list(
@@ -437,7 +441,10 @@ Smaller *k* is stricter. The default of 2.0 on the orthographic dimensions is
 permissive, admitting most of a normal distribution, and it is meant as a backstop
 against a wild counterpart. The distance ranking within the window is what does
 the work of control. A design tightens the window per dimension, and only the
-named dimensions are overridden.
+named dimensions are overridden. A dimension the schema does not list takes *k* = 2.
+The design's values are merged over the schema's by `modifyList()`. A `null` in
+the schema is ignored, and a `null` in the design removes the schema's value for
+that dimension, so either leaves *k* at 2.
 
 The window belongs to the anchored path, so it is what `standardised_euclidean`
 and `mahalanobis` apply. `joint` and `optimal` score cross-condition pairs

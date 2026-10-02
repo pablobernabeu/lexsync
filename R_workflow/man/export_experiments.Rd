@@ -22,7 +22,7 @@ export_experiments(
 
 \item{outdir}{Output directory.}
 
-\item{base}{Optional file-name stem.}
+\item{base}{Optional file-name stem. By default the design's \code{\link[=design_stem]{design_stem()}}.}
 
 \item{conditions}{Optional character vector of condition labels in the order
 that assigns their trigger codes (see \code{\link[=assign_triggers]{assign_triggers()}}). \code{NULL} (the

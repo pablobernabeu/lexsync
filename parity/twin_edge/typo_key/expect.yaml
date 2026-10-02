@@ -1,0 +1,2 @@
+outcome: refusal
+refusal: "lexsync: unknown design key 'n_per_conditon' (did you mean 'n_per_condition'?)"

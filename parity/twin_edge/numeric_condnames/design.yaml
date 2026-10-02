@@ -1,0 +1,17 @@
+# Twin-edge case: condition names written as bare numbers, which YAML reads as
+# integers. The engines failed late and differently (a vapply type error in R, a
+# join of non-strings in Python); both now refuse the design before selecting.
+# The word forms are common English words. The Zipf frequencies are invented for
+# this fixture and describe no corpus.
+name: twin_edge_numeric_condnames
+language: english
+lexicon: lexicon.csv
+n_per_condition: 3
+conditions:
+  - name: 1
+    define_by:
+      pos: [noun]
+  - name: 2
+    define_by:
+      pos: [verb]
+match_on: [length, frequency]

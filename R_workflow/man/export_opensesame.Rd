@@ -15,7 +15,7 @@ export_opensesame(stimuli, design, schema, outdir, base = NULL)
 
 \item{outdir}{Output directory.}
 
-\item{base}{Optional file-name stem.}
+\item{base}{Optional file-name stem. By default the design's \code{\link[=design_stem]{design_stem()}}.}
 }
 \value{
 The path to the generated \code{.osexp}, invisibly.

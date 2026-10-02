@@ -478,6 +478,83 @@ def test_missing_conditions_raise():
         match_stimuli(_small_pool(), d, _tiny_schema())
 
 
+def test_a_missing_or_empty_match_on_is_refused():
+    """Without match_on the R engine scored every candidate at distance zero and
+    returned the byte-first words; with an empty list both engines did, under every
+    anchored method. Pinned identically in test-matching.R."""
+    msg = "a matched design needs `match_on` naming at least one dimension"
+    for method in ("standardised_euclidean", "joint", "mahalanobis"):
+        d = _small_design(3, method=method)
+        del d["match_on"]
+        with pytest.raises(ValueError, match=msg):
+            match_stimuli(_small_pool(), d, _tiny_schema())
+        d["match_on"] = []
+        with pytest.raises(ValueError, match=msg):
+            match_stimuli(_small_pool(), d, _tiny_schema())
+
+
+def test_a_whole_float_n_is_accepted_by_both_selectors(schema, en_lexicon_path):
+    """`4.0` raised a TypeError here and ran in R. Pinned identically in
+    test-matching.R."""
+    s = match_stimuli(_small_pool(), _small_design(3.0), _tiny_schema())
+    assert s["set"].tolist() == [1, 2, 3, 1, 2, 3]
+    d = dict(_continuous_design(), n_per_condition=10.0)
+    c = select_continuous_stimuli(_continuous_pool(schema, en_lexicon_path), d, schema)
+    assert len(c) == 10
+
+
+def test_n_per_condition_zero_is_refused_by_both_selectors(schema, en_lexicon_path):
+    """`or` read a configured 0 as absent, so the selectors returned their default
+    sizes (40 and 60 rows), or n_per_cell when it was set. Pinned identically in
+    test-matching.R."""
+    msg = "n_per_condition must be a positive whole number"
+    pool = _continuous_pool(schema, en_lexicon_path)
+    for extra in ({}, {"n_per_cell": 3}):
+        with pytest.raises(ValueError, match=msg):
+            match_stimuli(_small_pool(), dict(_small_design(0), **extra), _tiny_schema())
+        with pytest.raises(ValueError, match=msg):
+            select_continuous_stimuli(pool, dict(_continuous_design(), n_per_condition=0,
+                                                 **extra), schema)
+
+
+def _null_tolerance_pool():
+    # The anchors' concreteness has mean 3 and SD 1, so k = 0.01 admits one low
+    # candidate and relaxes the window, while k = 2 admits three and does not.
+    return pd.DataFrame({
+        "id": [1, 2, 3, 4, 5, 6, 7],
+        "word": ["haa", "hab", "hac", "laa", "lab", "lac", "lad"],
+        "frequency": [5.0, 5.5, 6.0, 1.0, 1.5, 2.0, 2.5],
+        "concreteness": [2.0, 3.0, 4.0, 2.5, 3.0, 3.5, 9.0],
+    })
+
+
+def test_a_null_tolerance_is_read_as_modifylist_reads_it():
+    """A null in the schema's tolerance_k is dropped and k falls back to 2; a null in
+    the design's deletes the schema's value. This engine raised a TypeError on
+    either. Pinned identically in test-matching.R."""
+    tight = {"matching": {"tolerance_k": {"concreteness": 0.01}}}
+    relaxed = match_stimuli(_null_tolerance_pool(), _small_design(3), tight)
+    assert relaxed.attrs.get("audit") is not None
+    deleted = match_stimuli(_null_tolerance_pool(),
+                            _small_design(3, tolerance_k={"concreteness": None}), tight)
+    assert deleted.attrs.get("audit") is None
+    dropped = match_stimuli(_null_tolerance_pool(), _small_design(3),
+                            {"matching": {"tolerance_k": {"concreteness": None}}})
+    assert dropped.attrs.get("audit") is None
+    assert list(dropped["word"]) == list(deleted["word"]) == [
+        "haa", "hab", "hac", "laa", "lab", "lac"]
+
+
+def test_a_schema_without_a_matching_block_is_accepted(schema, en_lexicon_path):
+    """Both selectors subscripted schema['matching'] and raised KeyError on a schema
+    that R reads without complaint. Pinned identically in test-matching.R."""
+    s = match_stimuli(_small_pool(), _small_design(3), {})
+    assert len(s) == 6
+    c = select_continuous_stimuli(_continuous_pool(schema, en_lexicon_path),
+                                  _continuous_design(), {})
+    assert len(c) == 40
+
+
 def test_selection_ignores_unused_columns_and_the_seed():
     # Metamorphic invariants: an inert extra column must not steer selection, and
     # the schema seed only ever reaches the shuffle keys, never the matcher.

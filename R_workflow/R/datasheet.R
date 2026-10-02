@@ -100,17 +100,8 @@ DATASHEET_VERSION <- "1.2"
        relational_dimensions = as.list(sort(cols[startsWith(cols, "pair.")], method = "radix")))
 }
 
-# The tolerance windows as match_stimuli resolves them (schema defaults, overridden
-# per dimension by the design), the same resolution the matcher performs. The
-# nearest-neighbour methods apply these windows; the pairwise joint/optimal methods
-# never consult them, which is why the datasheet attaches this block only for the
-# methods that do. Mirrors datasheet.py.
-.resolve_tolerance_k <- function(design, schema) {
-  tol_k <- schema[["matching"]][["tolerance_k"]] %||% list()
-  if (!is.null(design[["matching"]][["tolerance_k"]]))
-    tol_k <- utils::modifyList(tol_k, design[["matching"]][["tolerance_k"]])
-  tol_k
-}
+# The tolerance windows recorded below come from .resolve_tolerance_k() in design.R,
+# the resolver the matchers use, so the record cannot drift from the selection.
 
 .controlled_dims <- function(design, source) {
   # A supplied pool goes through the same matcher as a corpus, so it controls the same

@@ -1,0 +1,11 @@
+# A schema whose tolerance windows hold a null (length) and a value the design nulls
+# (frequency). Every block it leaves out takes its default.
+seed: 2026
+lexicon_schema:
+  required: [word, freq_zipf]
+  optional: [pos]
+matching:
+  method: standardised_euclidean
+  tolerance_k:
+    length: null
+    frequency: 1.0

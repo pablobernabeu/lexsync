@@ -3,6 +3,13 @@
 # Every numeric constant lives here (and in the per-design configs), so adding a
 # language or a design needs a configuration file, not a change to the code.
 # This file is read identically by the R package and the Python package.
+#
+# The keys below, and the keys of a design, are checked before anything is selected
+# or written, against the vocabularies in design.py and design.R. A key one edit from
+# a known one at its level (two for a known key of more than five characters) is
+# refused as a probable typo. Any other unknown key is noted in the run log, and a
+# later release will refuse it. Annotations belong in `description` or in a key
+# beginning `x_`.
 
 seed: 2026
 
@@ -77,7 +84,11 @@ matching:
   # so the two engines agree closely but not byte-for-byte.
   # Stage 1, tolerance pre-filter: keep candidates within mean +/- k * SD of the
   # target condition on each dimension. This generalises the original workflow's
-  # mean +/- SD/9 (frequency) and mean +/- 2*SD (letters) windows.
+  # mean +/- SD/9 (frequency) and mean +/- 2*SD (letters) windows. A dimension
+  # without an entry takes k = 2. A design's own matching: tolerance_k: overrides
+  # these per dimension, merged as R's modifyList() merges two lists. A null here is
+  # dropped, and a null in the design deletes this file's value for that dimension,
+  # so either leaves k = 2.
   tolerance_k:
     length: 2.0
     frequency: 1.0

@@ -1,0 +1,5 @@
+# Both engines select, report and deal the same eight sets under the defaults.
+outcome: artefacts
+compare: [stimuli, descriptives, comparisons]
+datasheet:
+  selection.method: standardised_euclidean

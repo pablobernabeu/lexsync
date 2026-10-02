@@ -11,7 +11,6 @@ from __future__ import annotations
 import functools
 import glob
 import hashlib
-import math
 import os
 
 from . import logging as runlog
@@ -25,8 +24,9 @@ from .counterbalancing import (
     counterbalance_check,
 )
 from .datasheet import build_datasheet, write_datasheet
+from .design import _resolve_n, design_stem, validate_design
 from .generation import build_lexdec_stimuli
-from .io_utils import _is_continuous, read_config, slugify, write_csv_utf8
+from .io_utils import _is_continuous, read_config, write_csv_utf8
 from .matching import _resolve_policy, match_stimuli, resample_stimuli, select_continuous_stimuli
 from .pairs import join_member_norms, member_lexicon_path, select_continuous_pairs
 from .paradigms import required_fields
@@ -68,21 +68,11 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
     runlog.set_verbose(verbose)
     schema = read_config(schema_path)
     design = read_config(design_path)
-    # Resolved on presence, not truth: `or` treats a configured 0 as absent and would
-    # fall through to n_per_cell and then to the matcher's default n, where the R
-    # engine's %||% falls back on NULL alone and so reaches the refusal below. A
-    # design asking for zero items must be refused by both engines, not silently
-    # given twenty by one of them.
-    n_req = design.get("n_per_condition")
-    if n_req is None:
-        n_req = design.get("n_per_cell")
-    # isfinite, not a bare NaN test: int(inf) raises OverflowError here, while R's
-    # trunc(Inf) equals Inf and let an infinite request through to select the whole
-    # pool. Both engines refuse it now, with this message.
-    if n_req is not None and (not isinstance(n_req, (int, float)) or isinstance(n_req, bool)
-                              or not math.isfinite(n_req) or n_req < 1
-                              or n_req != int(n_req)):
-        raise ValueError("lexsync: n_per_condition must be a positive whole number.")
+    # Everything a design can be refused for without reading its lexicon is checked
+    # here, before the output directory is touched: the keys, the name and language,
+    # n_per_condition, the metadata written into the experiments, the events, the
+    # condition names and match_on. Unknown keys come back as notes for the run log.
+    key_notes = validate_design(design, schema)
     items_cfg = design.get("items") or {}
     source = items_cfg.get("source", "corpus")
     paradigm = design.get("paradigm", "factorial")
@@ -110,6 +100,8 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
         "paradigm": paradigm, "source": source, "seed": schema.get("seed"),
         "mode": "continuous" if is_continuous else "conditions",
     })
+    for note in key_notes:
+        runlog.log_step(log, note)
 
     report = None
     pair_eligible = None
@@ -225,7 +217,7 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
             dims = [d for d in dict.fromkeys(std + match_on) if d in stim.columns]
             report = match_report(stim, dims, schema)
     elif source == "generate":
-        n = design.get("n_per_condition") or design.get("n_per_cell") or 40
+        n = _resolve_n(design, 40)
         gen_method = (items_cfg.get("generation") or {}).get("method", "letter_substitution")
         stim = build_lexdec_stimuli(pool, n, reference_words=lex["word"].tolist(),
                                     method=gen_method)
@@ -358,7 +350,7 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
         runlog.log_step(log, "presented %d trial(s); %d analysed"
                              % (len(presented), len(stim)))
 
-    base = slugify(design["name"], design["language"])
+    base = design_stem(design)
     for sub in ("stimuli", "reports", "experiments"):
         os.makedirs(os.path.join(outdir, sub), exist_ok=True)
 
@@ -436,6 +428,18 @@ def run_all(config_dir="config", schema_path=None, outdir="output", verbose=True
                      glob.glob(os.path.join(config_dir, "design_*.yml")))
     if not designs:
         raise FileNotFoundError(f"lexsync: no design_*.yaml files in '{config_dir}'.")
+    # Two designs with one stem write the same files, and the second would overwrite
+    # the first's without a word, so every stem is checked before any design runs.
+    # `en-lexdec` and `en_lexdec` collide this way, as names differing only outside
+    # ASCII did before design_stem gave them a checksum.
+    stems: dict = {}
+    for design in designs:
+        stem = design_stem(read_config(design))
+        if stem in stems:
+            raise ValueError(f"lexsync: '{os.path.basename(stems[stem])}' and "
+                             f"'{os.path.basename(design)}' would write the same files "
+                             f"('{stem}'); give the designs distinct names.")
+        stems[stem] = design
     results = {}
     for design in designs:
         if verbose:

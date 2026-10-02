@@ -1,0 +1,17 @@
+# Twin-edge case: a matched design whose match_on is an empty list, which both apps
+# produce when Match on is cleared. Every candidate then scored distance zero and
+# both engines returned the byte-first words as a "matched" set. Both refuse it.
+# The word forms are common English words. The Zipf frequencies are invented for
+# this fixture and describe no corpus.
+name: twin_edge_empty_matchon
+language: english
+lexicon: lexicon.csv
+n_per_condition: 3
+conditions:
+  - name: noun
+    define_by:
+      pos: [noun]
+  - name: verb
+    define_by:
+      pos: [verb]
+match_on: []

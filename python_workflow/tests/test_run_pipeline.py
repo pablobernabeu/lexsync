@@ -375,6 +375,207 @@ def test_a_condition_no_list_reaches_is_still_counted(tmp_path):
         (2, "identity", 0), (2, "related", 1), (2, "unrelated", 0)]
 
 
+def _files_under(root):
+    """Every file under `root`, relative to it, so a refusal can be shown to leave
+    nothing behind."""
+    out = []
+    for d, _, files in os.walk(root):
+        out += [os.path.relpath(os.path.join(d, f), root) for f in files]
+    return sorted(out)
+
+
+def _refused_before_writing(lines, tmp_path, message):
+    """Run a design that must be refused, and check that nothing reached outdir."""
+    import re
+    design = _write_design(str(tmp_path), lines)
+    outdir = os.path.join(str(tmp_path), "out")
+    with pytest.raises(ValueError, match=re.escape(message)):
+        run_pipeline(design, _pkg_data("schema.yaml"), outdir=outdir, verbose=False)
+    assert _files_under(outdir) == []
+
+
+def _corpus_lines(name="check_test", extra=(), n="5"):
+    return [
+        "name: " + name,
+        "language: english",
+        "lexicon: " + _yaml_path(_pkg_data("en_example.csv")),
+        "n_per_condition: " + n,
+        "pool_filters: {length: [3, 7], frequency: [3.8, 7]}",
+        "conditions:",
+        "  - {name: high, define_by: {frequency: [5.0, 7.0]}}",
+        "  - {name: low, define_by: {frequency: [3.8, 4.4]}}",
+        "match_on: [length]",
+        *extra,
+    ]
+
+
+def test_a_misspelt_design_key_is_refused_with_a_suggestion(tmp_path):
+    """`n_per_conditon: 8` was ignored, so the design silently got the default twenty
+    items per condition. Pinned identically in test-run-pipeline.R."""
+    lines = [ln for ln in _corpus_lines() if not ln.startswith("n_per_condition")]
+    _refused_before_writing(
+        lines + ["n_per_conditon: 8"], tmp_path,
+        "lexsync: unknown design key 'n_per_conditon' (did you mean 'n_per_condition'?)")
+    _refused_before_writing(
+        _corpus_lines(extra=["matching: {methd: joint}"]), tmp_path,
+        "lexsync: unknown design key 'matching.methd' (did you mean 'matching.method'?)")
+
+
+def test_an_unknown_design_key_is_reported_in_the_run_log(tmp_path):
+    """A key far from every known one is not refused yet, but the run log says it was
+    ignored. `description` and a key beginning `x_` are annotations and pass quietly.
+    Pinned identically in test-run-pipeline.R."""
+    design = _write_design(str(tmp_path), _corpus_lines(extra=[
+        "notes: piloted in May",
+        "description: two frequency bands",
+        "x_reviewer: second author",
+        "conditions_comment: high against low",
+    ]))
+    res = _run(design, tmp_path)
+    with open(res["log"], encoding="utf-8") as handle:
+        log = handle.read()
+    for key in ("notes", "conditions_comment"):
+        assert ("lexsync: design key '%s' is not read by lexsync and is ignored; a later "
+                "release will refuse it. Put annotations in `description` or a key "
+                "beginning `x_`." % key) in log
+    assert "'description'" not in log
+    assert "x_reviewer" not in log
+
+
+def test_a_whole_float_n_per_condition_is_accepted(tmp_path):
+    """YAML reads `4.0` as a float, which this engine refused with a TypeError deep
+    in the matcher. Pinned identically in test-run-pipeline.R."""
+    import pandas as pd
+    res = _run(_write_design(str(tmp_path), _corpus_lines(n="4.0")), tmp_path)
+    stim = pd.read_csv(res["stimuli"])
+    assert stim["condition"].value_counts().tolist() == [4, 4]
+
+
+def test_a_whole_float_n_reaches_the_generate_path(tmp_path):
+    import pandas as pd
+    design = _write_design(str(tmp_path), [
+        "name: float_gen",
+        "language: english",
+        "paradigm: lexical_decision",
+        "items:",
+        "  source: generate",
+        "  lexicon: " + _yaml_path(_pkg_data("en_example.csv")),
+        "n_per_condition: 4.0",
+        "pool_filters: {length: [4, 7], frequency: [3.5, 6.0]}",
+    ])
+    res = _run(design, tmp_path)
+    stim = pd.read_csv(res["stimuli"])
+    assert stim["set"].nunique() == 4
+
+
+def test_a_schema_of_seed_and_lexicon_schema_runs(tmp_path):
+    """Every other schema block has a default, so a schema holding only these two
+    runs. This engine raised KeyError 'matching'. Pinned identically in
+    test-run-pipeline.R."""
+    schema = os.path.join(str(tmp_path), "schema.yaml")
+    with open(schema, "w", encoding="utf-8") as handle:
+        handle.write("seed: 7\nlexicon_schema:\n  required: [word, freq_zipf]\n")
+    design = _write_design(str(tmp_path), _corpus_lines())
+    res = run_pipeline(design, schema, outdir=os.path.join(str(tmp_path), "out"),
+                       verbose=False)
+    assert os.path.exists(res["stimuli"])
+
+
+def test_a_design_without_a_name_is_refused_before_anything_is_written(tmp_path):
+    """The R engine wrote four files and then failed with 'argument is of length
+    zero'; this one raised a bare KeyError. Pinned identically in
+    test-run-pipeline.R."""
+    lines = [ln for ln in _corpus_lines() if not ln.startswith("name:")]
+    _refused_before_writing(lines, tmp_path, "lexsync: the design has no `name`.")
+
+
+def test_language_tag_does_not_stand_in_for_language(tmp_path):
+    lines = [ln if not ln.startswith("language:") else "language_tag: en-GB"
+             for ln in _corpus_lines()]
+    _refused_before_writing(lines, tmp_path, "lexsync: the design has no `language`.")
+
+
+def test_a_language_that_yaml_reads_as_a_boolean_is_refused(tmp_path):
+    lines = [ln if not ln.startswith("language:") else "language: no"
+             for ln in _corpus_lines()]
+    _refused_before_writing(
+        lines, tmp_path,
+        "lexsync: the design's `language` must be text; quote it if it is a code "
+        "such as 'no'.")
+
+
+def test_an_unsafe_name_is_refused_before_any_file_exists(tmp_path):
+    """The name used to be checked only at export, after the stimuli, both reports
+    and the PsychoPy loop table were on disk."""
+    _refused_before_writing(_corpus_lines(name="\"bad'name\""), tmp_path,
+                            "cannot be written safely")
+
+
+def test_an_unsafe_font_or_port_is_refused_before_any_file_exists(tmp_path):
+    _refused_before_writing(_corpus_lines(extra=["font: \"Arial'\""]), tmp_path,
+                            "cannot be written safely")
+    schema = os.path.join(str(tmp_path), "schema.yaml")
+    with open(_pkg_data("schema.yaml"), encoding="utf-8") as handle:
+        text = handle.read()
+    with open(schema, "w", encoding="utf-8") as handle:
+        handle.write(text.replace("parallel_address: '0x0378'", "parallel_address: 'LPT1'"))
+    design = _write_design(str(tmp_path), _corpus_lines())
+    outdir = os.path.join(str(tmp_path), "out_port")
+    with pytest.raises(ValueError, match="must be a port address"):
+        run_pipeline(design, schema, outdir=outdir, verbose=False)
+    assert _files_under(outdir) == []
+
+
+def test_a_bad_response_key_is_refused_before_any_file_exists(tmp_path):
+    _refused_before_writing(_corpus_lines(extra=[
+        "events:",
+        "  - {type: text, content: '{word}', duration_ms: 500, trigger: condition}",
+        "  - {type: response, keys: ['a;b']}",
+    ]), tmp_path, "must be a key name")
+
+
+def test_a_matched_design_without_match_on_is_refused(tmp_path):
+    """Without match_on the R engine paired the byte-first words, and with an empty
+    list both engines did. Pinned identically in test-run-pipeline.R."""
+    message = "lexsync: a matched design needs `match_on` naming at least one dimension."
+    lines = [ln for ln in _corpus_lines() if not ln.startswith("match_on")]
+    _refused_before_writing(lines, tmp_path, message)
+    _refused_before_writing(lines + ["match_on: []"], tmp_path, message)
+
+
+def test_a_condition_name_that_is_not_text_is_refused(tmp_path):
+    lines = [ln.replace("name: high", "name: 1") for ln in _corpus_lines()]
+    _refused_before_writing(lines, tmp_path,
+                            "lexsync: condition names must be text; quote '1'.")
+
+
+def test_a_non_ascii_name_writes_under_a_checksummed_stem(tmp_path):
+    """Designs named 词频 and 笔画 in Chinese both wrote chinese_*, so the second
+    overwrote the first. Pinned identically in test-run-pipeline.R."""
+    lines = [ln if not ln.startswith("language:") else "language: chinese"
+             for ln in _corpus_lines(name="词频")]
+    res = _run(_write_design(str(tmp_path), lines), tmp_path)
+    assert os.path.basename(res["stimuli"]) == "chinese_14aadfa7_stimuli_py.csv"
+    assert os.path.basename(res["experiments"]["opensesame"]) == "chinese_14aadfa7.osexp"
+
+
+def test_run_all_refuses_designs_that_would_write_the_same_files(tmp_path):
+    """`en-lexdec` and `en_lexdec` slugify alike, so the second design overwrote the
+    first's files. Pinned identically in test-run-pipeline.R."""
+    from lexsync.run_pipeline import run_all
+    cfg = os.path.join(str(tmp_path), "config")
+    os.makedirs(cfg)
+    for fname, name in (("design_a.yaml", "en-lexdec"), ("design_b.yaml", "en_lexdec")):
+        with open(os.path.join(cfg, fname), "w", encoding="utf-8") as handle:
+            handle.write("\n".join(_corpus_lines(name=name)) + "\n")
+    outdir = os.path.join(str(tmp_path), "out")
+    with pytest.raises(ValueError, match=(
+            "lexsync: 'design_a.yaml' and 'design_b.yaml' would write the same files "
+            r"\('en_lexdec_english'\); give the designs distinct names.")):
+        run_all(cfg, _pkg_data("schema.yaml"), outdir, verbose=False)
+    assert _files_under(outdir) == []
+
+
 def test_continuous_over_a_supplied_pool_selects_continuously(tmp_path):
     # The predicate that gates the continuous selector must treat a supplied
     # pool like a corpus; before the fix this design fell through to the

@@ -1,16 +1,16 @@
-{"time":"2026-10-02 20:53:50.369192","message":"loading lexicon 'corpora/derived/es_gender.csv'","data":null}
-{"time":"2026-10-02 20:53:58.332628","message":"lexicon loaded: 10185 words","data":{"words":10185}}
-{"time":"2026-10-02 20:53:58.868106","message":"pool after filters: 9294 words","data":{"pool":9294}}
-{"time":"2026-10-02 20:53:59.966586","message":"matched 96 items across 2 conditions","data":{"conditions":"feminine, masculine"}}
-{"time":"2026-10-02 20:54:00.756891","message":"equivalence masculine vs feminine on 'length': d = 0.00 [-0.34, 0.34], TOST p = 0.008 (equivalent)","data":null}
-{"time":"2026-10-02 20:54:01.022606","message":"equivalence masculine vs feminine on 'frequency': d = 0.02 [-0.32, 0.36], TOST p = 0.010 (equivalent)","data":null}
-{"time":"2026-10-02 20:54:01.031188","message":"equivalence masculine vs feminine on 'n_density': d = 0.20 [-0.14, 0.54], TOST p = 0.070 (not shown equivalent)","data":null}
-{"time":"2026-10-02 20:54:01.062558","message":"equivalence masculine vs feminine on 'old20': d = -0.08 [-0.42, 0.26], TOST p = 0.022 (equivalent)","data":null}
-{"time":"2026-10-02 20:54:05.48175","message":"wrote 'es_gender_repro_spanish_stimuli_R.csv'","data":{"path":"output/stimuli/es_gender_repro_spanish_stimuli_R.csv","rows":96,"md5":"b415e828f6a2dcff9ef0563c8cdc8cb0"}}
-{"time":"2026-10-02 20:54:06.767889","message":"wrote 'es_gender_repro_spanish_descriptives_R.csv'","data":{"path":"output/reports/es_gender_repro_spanish_descriptives_R.csv","rows":8,"md5":"be7ae753395f531c36d15adb38e8057f"}}
-{"time":"2026-10-02 20:54:07.903644","message":"wrote 'es_gender_repro_spanish_comparisons_R.csv'","data":{"path":"output/reports/es_gender_repro_spanish_comparisons_R.csv","rows":4,"md5":"d88c76a973db00923cedb4b340978bc7"}}
-{"time":"2026-10-02 20:54:51.789006","message":"wrote 'es_gender_repro_spanish_psychopy.py'","data":{"path":"output/experiments/es_gender_repro_spanish_psychopy.py","rows":"NA","md5":"3d67e943357bbcaa45fb551904a24427"}}
-{"time":"2026-10-02 20:54:52.251478","message":"wrote 'es_gender_repro_spanish.osexp'","data":{"path":"output/experiments/es_gender_repro_spanish.osexp","rows":"NA","md5":"c574ab6331d7c6ddfd4fae05a62cb9a8"}}
-{"time":"2026-10-02 20:54:52.446426","message":"wrote 'es_gender_repro_spanish.html'","data":{"path":"output/experiments/es_gender_repro_spanish.html","rows":"NA","md5":"4cc7e83a7c772e0f32e078c6efb80a42"}}
-{"time":"2026-10-02 20:54:53.860741","message":"wrote 'es_gender_repro_spanish_datasheet_R.json'","data":{"path":"output/reports/es_gender_repro_spanish_datasheet_R.json","rows":"NA","md5":"8cb342b4baffa0f8d5ddc9dfbc1dfc57"}}
-{"time":"2026-10-02 20:54:53.884265","message":"wrote 'es_gender_repro_spanish_datasheet_R.md'","data":{"path":"output/reports/es_gender_repro_spanish_datasheet_R.md","rows":"NA","md5":"7dadb6f34efabe108b6e17cd5c2ca514"}}
+{"time":"2026-10-03 00:38:54.57725","message":"loading lexicon 'corpora/derived/es_gender.csv'","data":null}
+{"time":"2026-10-03 00:38:57.202321","message":"lexicon loaded: 10185 words","data":{"words":10185}}
+{"time":"2026-10-03 00:38:57.283203","message":"pool after filters: 9294 words","data":{"pool":9294}}
+{"time":"2026-10-03 00:38:57.707309","message":"matched 96 items across 2 conditions","data":{"conditions":"feminine, masculine"}}
+{"time":"2026-10-03 00:38:58.096023","message":"equivalence masculine vs feminine on 'length': d = 0.00 [-0.34, 0.34], TOST p = 0.008 (equivalent)","data":null}
+{"time":"2026-10-03 00:38:58.145139","message":"equivalence masculine vs feminine on 'frequency': d = 0.02 [-0.32, 0.36], TOST p = 0.010 (equivalent)","data":null}
+{"time":"2026-10-03 00:38:58.509971","message":"equivalence masculine vs feminine on 'n_density': d = 0.20 [-0.14, 0.54], TOST p = 0.070 (not shown equivalent)","data":null}
+{"time":"2026-10-03 00:38:58.61181","message":"equivalence masculine vs feminine on 'old20': d = -0.08 [-0.42, 0.26], TOST p = 0.022 (equivalent)","data":null}
+{"time":"2026-10-03 00:39:02.401118","message":"wrote 'es_gender_repro_spanish_stimuli_R.csv'","data":{"path":"output/stimuli/es_gender_repro_spanish_stimuli_R.csv","rows":96,"md5":"b415e828f6a2dcff9ef0563c8cdc8cb0"}}
+{"time":"2026-10-03 00:39:03.710609","message":"wrote 'es_gender_repro_spanish_descriptives_R.csv'","data":{"path":"output/reports/es_gender_repro_spanish_descriptives_R.csv","rows":8,"md5":"be7ae753395f531c36d15adb38e8057f"}}
+{"time":"2026-10-03 00:39:05.137977","message":"wrote 'es_gender_repro_spanish_comparisons_R.csv'","data":{"path":"output/reports/es_gender_repro_spanish_comparisons_R.csv","rows":4,"md5":"d88c76a973db00923cedb4b340978bc7"}}
+{"time":"2026-10-03 00:39:48.210513","message":"wrote 'es_gender_repro_spanish_psychopy.py'","data":{"path":"output/experiments/es_gender_repro_spanish_psychopy.py","rows":"NA","md5":"3d67e943357bbcaa45fb551904a24427"}}
+{"time":"2026-10-03 00:39:48.242785","message":"wrote 'es_gender_repro_spanish.osexp'","data":{"path":"output/experiments/es_gender_repro_spanish.osexp","rows":"NA","md5":"c574ab6331d7c6ddfd4fae05a62cb9a8"}}
+{"time":"2026-10-03 00:39:48.863785","message":"wrote 'es_gender_repro_spanish.html'","data":{"path":"output/experiments/es_gender_repro_spanish.html","rows":"NA","md5":"4cc7e83a7c772e0f32e078c6efb80a42"}}
+{"time":"2026-10-03 00:39:51.755782","message":"wrote 'es_gender_repro_spanish_datasheet_R.json'","data":{"path":"output/reports/es_gender_repro_spanish_datasheet_R.json","rows":"NA","md5":"c9ccd633aae72a710355ab27541284a6"}}
+{"time":"2026-10-03 00:39:52.757887","message":"wrote 'es_gender_repro_spanish_datasheet_R.md'","data":{"path":"output/reports/es_gender_repro_spanish_datasheet_R.md","rows":"NA","md5":"7dadb6f34efabe108b6e17cd5c2ca514"}}

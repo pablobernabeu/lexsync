@@ -269,6 +269,22 @@ are orthographic approximations defined for Latin orthographies and unavailable
 for other scripts. The shipped Chinese design matches on `length`, `n_density`
 and `old20` for exactly this reason.
 
+## File names
+
+Every file a run writes is named after a stem built from the design's `name` and
+`language`, which `design_stem()` computes in both engines. The stem keeps ASCII
+letters and digits only, so names that differ only outside ASCII would share it:
+two designs with Chinese names, both in `chinese`, would write the same files, the
+second overwriting the first. Whenever the name or the language holds a non-ASCII
+character, the stem therefore ends in an underscore and the first eight
+hexadecimal digits of the SHA-256 of the NFC-normalised text `name|language`, such
+as `chinese_14aadfa7`. A name and language with no ASCII letter or digit at all,
+which used to give file names beginning with an underscore or a dot, get those
+eight digits alone. Normalising to NFC here keeps a precomposed and a decomposed spelling of one
+name on one stem. Names in plain ASCII are unaffected. `run_all()` also computes
+every design's stem before it runs any, and refuses two designs that would write
+the same files, such as `en-lexdec` and `en_lexdec`.
+
 ## The documented exceptions
 
 `mahalanobis` and `optimal` are equivalent to their byte-identical siblings in
@@ -531,7 +547,9 @@ cat(readLines(log_md), sep = "\n")
 
 The pipeline builds this log as it goes, recording each stage with its parameters,
 the equivalence verdict on every dimension, any balance warning, and an entry per
-file written with its row count and MD5. Both a Markdown log and a JSON Lines log
+file written with its row count and MD5. A design or schema key that lexsync does
+not read is noted there too, since it changed nothing about the run. Both a
+Markdown log and a JSON Lines log
 are emitted, the latter so that a run can be checked by a script. The MD5 here is a
 content fingerprint for spotting drift between runs, whereas the datasheet's
 SHA-256 is the stronger one that belongs in a permanent record.

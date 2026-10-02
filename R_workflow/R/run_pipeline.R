@@ -30,16 +30,11 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
   on.exit(options(old_opts), add = TRUE)
   schema <- read_config(schema_path)
   design <- read_config(design_path)
-  n_req <- design[["n_per_condition"]] %||% design[["n_per_cell"]]
-  # is.finite rather than is.na: trunc(Inf) is Inf, so an infinite request passed both
-  # the integrality and the lower-bound test here and went on to select the whole pool,
-  # while the Python engine's int() raised OverflowError on it. Both engines now refuse
-  # it with this message.
-  if (!is.null(n_req) &&
-      (!is.numeric(n_req) || length(n_req) != 1L || !is.finite(n_req) ||
-       n_req < 1 || n_req != trunc(n_req))) {
-    stop("lexsync: n_per_condition must be a positive whole number.", call. = FALSE)
-  }
+  # Everything a design can be refused for without reading its lexicon is checked
+  # here, before the output directory is touched: the keys, the name and language,
+  # n_per_condition, the metadata written into the experiments, the events, the
+  # condition names and match_on. Unknown keys come back as notes for the run log.
+  key_notes <- validate_design(design, schema)
   items_cfg <- design[["items"]] %||% list()
   source <- items_cfg[["source"]] %||% "corpus"
   paradigm <- design[["paradigm"]] %||% "factorial"
@@ -69,6 +64,7 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
     paradigm = paradigm, source = source, seed = schema[["seed"]] %||% NA,
     mode = if (is_continuous) "continuous" else "conditions"
   ))
+  for (note in key_notes) log <- log_step(log, note)
 
   report <- NULL
   pair_eligible <- NULL
@@ -188,7 +184,7 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
       report <- match_report(stim, dims, schema)
     }
   } else if (source == "generate") {
-    n <- design[["n_per_condition"]] %||% design[["n_per_cell"]] %||% 40L
+    n <- .resolve_n(design, 40L)
     gen_method <- items_cfg[["generation"]][["method"]] %||% "letter_substitution"
     stim <- build_lexdec_stimuli(pool, n, reference_words = lex$word, method = gen_method)
     sf <- .resolve_policy(design, schema, "shortfall", "error", c("error", "allow"))
@@ -327,7 +323,7 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
                                  nrow(presented), nrow(stim)))
   }
 
-  base <- slugify(design[["name"]], design[["language"]])
+  base <- design_stem(design)
   for (sub in c("stimuli", "reports", "experiments")) {
     dir.create(file.path(outdir, sub), recursive = TRUE, showWarnings = FALSE)
   }
@@ -414,6 +410,21 @@ run_all <- function(config_dir = "config", schema_path = file.path(config_dir, "
   }
   designs <- list.files(config_dir, pattern = "^design_.*\\.ya?ml$", full.names = TRUE)
   if (!length(designs)) stop(sprintf("lexsync: no design_*.yaml files in '%s'.", config_dir), call. = FALSE)
+  # Two designs with one stem write the same files, and the second would overwrite the
+  # first's without a word, so every stem is checked before any design runs.
+  # `en-lexdec` and `en_lexdec` collide this way, as names differing only outside ASCII
+  # did before design_stem() gave them a checksum.
+  stems <- character(0)
+  for (d in designs) {
+    stem <- design_stem(read_config(d))
+    if (stem %in% stems) {
+      stop(sprintf(paste("lexsync: '%s' and '%s' would write the same files ('%s'); give",
+                         "the designs distinct names."),
+                   basename(names(stems)[match(stem, stems)]), basename(d), stem),
+           call. = FALSE)
+    }
+    stems[d] <- stem
+  }
   results <- list()
   for (d in designs) {
     if (verbose) cat(sprintf("\n=== lexsync: design '%s' ===\n", basename(d)))

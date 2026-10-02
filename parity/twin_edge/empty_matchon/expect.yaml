@@ -1,0 +1,2 @@
+outcome: refusal
+refusal: "lexsync: a matched design needs `match_on` naming at least one dimension."

@@ -11,7 +11,9 @@ match_stimuli(pool, design, schema, verbose = FALSE)
 \code{\link[=add_neighbourhood]{add_neighbourhood()}}).}
 
 \item{design}{A parsed design configuration (conditions, \code{match_on},
-\code{n_per_condition}/\code{n_per_cell}).}
+\code{n_per_condition}/\code{n_per_cell}). \code{match_on} must name at least one dimension,
+and the number of items is a whole number of at least 1, 20 when neither key is
+given.}
 
 \item{schema}{The parsed global schema (tolerances live here).}
 
