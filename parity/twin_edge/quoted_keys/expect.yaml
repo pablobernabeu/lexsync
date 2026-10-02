@@ -1,0 +1,3 @@
+# The keys reach every generated experiment as the strings y and n.
+outcome: artefacts
+compare: [stimuli, descriptives, comparisons, experiments]

@@ -1,0 +1,33 @@
+# Twin-edge case: a generated lexical decision whose response keys are the quoted
+# strings 'y' and 'n'. Unquoted, R's YAML reader follows YAML 1.1 and reads y and n
+# as booleans, while PyYAML keeps them as strings. Quoted, both engines read the
+# strings, and the generated experiments are pinned.
+# The word forms are common English words. The Zipf frequencies are invented for
+# this fixture and describe no corpus.
+name: twin_edge_quoted_keys
+language: english
+paradigm: lexical_decision
+description: 'Lexical decision on a forty-word lexicon with quoted y and n response keys.'
+items:
+  source: generate
+  lexicon: lexicon.csv
+n_per_condition: 4
+pool_filters:
+  length: [5, 6]
+  frequency: [4.0, 5.0]
+events:
+  - type: fixation
+    content: '+'
+    duration_ms: 500
+  - type: text
+    content: '{target}'
+    duration_ms: 800
+    trigger: condition
+    onset_locked: true
+  - type: response
+    keys: ['y', 'n']
+    timeout_ms: 2000
+  - type: blank
+    duration_ms: 250
+counterbalance:
+  lists: 1

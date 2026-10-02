@@ -1,0 +1,20 @@
+# Twin-edge case: the smallest ordinary corpus design, the reference point for the
+# edge cases beside it. Forty words, nouns against verbs, matched on length and
+# frequency and dealt to two lists.
+# The word forms are common English words. The Zipf frequencies are invented for
+# this fixture and describe no corpus.
+name: twin_edge_baseline_small
+language: english
+lexicon: lexicon.csv
+description: 'Nouns versus verbs from a forty-word lexicon, matched on length and frequency.'
+n_per_condition: 8
+conditions:
+  - name: noun
+    define_by:
+      pos: [noun]
+  - name: verb
+    define_by:
+      pos: [verb]
+match_on: [length, frequency]
+counterbalance:
+  lists: 2

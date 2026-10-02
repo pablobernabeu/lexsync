@@ -1,0 +1,6 @@
+# Both engines select, report and deal the same eight noun-verb sets.
+outcome: artefacts
+compare: [stimuli, descriptives, comparisons]
+datasheet:
+  counterbalancing.lists: 2
+  selection.method: standardised_euclidean

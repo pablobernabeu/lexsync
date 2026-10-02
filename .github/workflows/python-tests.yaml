@@ -235,6 +235,13 @@ jobs:
           diff -r -x '*_datasheet_*' -x '*_run_log_*' /tmp/eng_r /tmp/eng_py \
             || { echo "::error::the engines generated different artefacts"; exit 1; }
 
+      # The shipped designs' inputs are clean, so the step above never reaches the
+      # code paths that padded fields, missing values or unusual YAML take. The
+      # twin-edge cases do. The two suites hold each engine to every case's pinned
+      # result, and this step compares the engines with each other on those cases.
+      - name: Fail if the two engines differ on the twin-edge cases
+        run: python tools/compare_engines.py --config parity/twin_edge
+
   # Every other job installs whatever pip resolves on the day, so the floors
   # declared in pyproject.toml are never actually exercised and could rot
   # unnoticed. This job installs them exactly, on the oldest supported

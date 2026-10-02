@@ -324,6 +324,25 @@ stale snapshot that the regression matches. And the R suite is run once from the
 source tree with a check that nothing skipped, because the repository-coupled
 tests silently skip when run from an installed copy.
 
+The shipped designs have clean inputs: every cell is in NFC, none is padded and
+the norms cover every word. The gate therefore never reaches the code that padded
+fields, missing values or unusual YAML would take, and a defect both engines
+share would pass it, since they agree. The twin-edge cases cover that ground.
+Each is a folder under `parity/twin_edge/` at the repository root, holding a
+small `design.yaml`, its inputs (paths relative to the folder), an optional
+`schema.yaml` and an `expect.yaml` that pins the outcome. An artefacts case keeps
+the files the design must produce, byte for byte, in `expected/`, and may assert
+values in the datasheet. A refusal case gives a substring of the error the design
+must raise. The R suite's `test-twin-edge.R` and the Python suite's
+`test_twin_edge.py` each hold their own engine to every case. CI also runs
+`tools/compare_engines.py`, which compares the two engines on the same cases and
+repeats the whole-tree comparison on any machine. To add a case, create its
+folder with `design.yaml` and `expect.yaml` and write `expected/` with
+`python tools/twin_edge.py --update <case>`. Read the pinned files to confirm
+they are right, then run this suite, which checks that the R engine writes the
+same bytes. A fix for an input defect adds its case in the same commit, so the
+gate never lands red.
+
 ## The materials datasheet
 
 Each run emits a datasheet in two forms, a JSON record for machines and a

@@ -178,6 +178,23 @@ compare the last engine to run against itself. Only the two per-engine provenanc
 datasheet and the run log, are excluded from that comparison. It is the step standing between a
 cross-engine divergence in any generated artefact and a green tick.
 
+The shipped designs have clean inputs: every cell is in NFC, none is padded and the norms cover
+every word. The gate above therefore never reaches the code that padded fields, missing values or
+unusual YAML would take, and a defect both engines share would pass it, since they agree. The
+twin-edge cases cover that ground. Each is a folder under `parity/twin_edge/` at the repository
+root, holding a small `design.yaml`, its inputs (paths relative to the folder), an optional
+`schema.yaml` and an `expect.yaml` that pins the outcome. An artefacts case keeps the files the
+design must produce, byte for byte, in `expected/`, and may assert values in the datasheet. A
+refusal case gives a substring of the error the design must raise. `tests/test_twin_edge.py` and
+the R suite's `test-twin-edge.R` each hold their own engine to every case, and CI also runs
+`tools/compare_engines.py --config parity/twin_edge`, which compares the two engines on the same
+cases. Run without arguments, `python tools/compare_engines.py` repeats the whole-tree comparison
+on your own machine, Windows included. It finds Rscript on the `PATH` or through
+`LEXSYNC_RSCRIPT`. To add a case, create its folder with `design.yaml` and `expect.yaml` and write
+`expected/` with `python tools/twin_edge.py --update <case>`. Read the pinned files to confirm they
+are right, then run the R suite, which checks that the R engine writes the same bytes. A fix for an
+input defect adds its case in the same commit, so the gate never lands red.
+
 The rest of the suite covers the parts hardware would otherwise gate: a mock-PsychoPy harness that
 runs the generated script and asserts the onset trigger is flip-locked, a structural validator for
 the generated OpenSesame experiment, and checks that the jsPsych export is well formed and escapes

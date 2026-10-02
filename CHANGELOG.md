@@ -10,6 +10,16 @@ no function signature changes.
 
 ## [Unreleased]
 
+### Changed
+
+- The parity gate also runs both engines over small edge-case designs (padded
+  fields, missing values, unusual YAML) and compares each with a pinned expected
+  result, so a defect the two engines share can no longer pass because they
+  agree. The cases live in `parity/twin_edge/`, and each suite holds its own
+  engine to them (`test_twin_edge.py`, `test-twin-edge.R`).
+  `tools/compare_engines.py` runs the whole-tree comparison locally, and
+  `tools/twin_edge.py --update` writes a case's pinned files.
+
 ### Fixed
 
 - 28 of the committed datasheets recorded the SHA-256 of a copy of

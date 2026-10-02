@@ -1,0 +1,2 @@
+outcome: refusal
+refusal: "lexsync: unknown matching method 'foo'"

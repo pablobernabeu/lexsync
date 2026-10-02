@@ -173,12 +173,13 @@ packages = ["src/lexsync"]
 #
 # tests is here because the sdist is what conda-forge, Debian and Nix build from,
 # and a packager who receives no suite can do nothing more than import the module
-# and hope. The 37 files it adds include the tests that pin values the R twin
+# and hope. The 38 files it adds include the tests that pin values the R twin
 # computes, many of them bit for bit, and those are the only check a build from
 # the sdist gets that this engine still agrees with R. That agreement is
 # precisely what a rebuild on an unfamiliar platform might disturb. The
 # comparisons of whole artefacts with the R engine's output, test_parity.py and
-# test_byte_parity.py, need the rest of the repository and skip there, as does
+# test_byte_parity.py, and the twin-edge cases of test_twin_edge.py, need the
+# rest of the repository and skip there, as does
 # every other test that reads it. tests/helper_repo.py says how they tell the
 # repository from whatever else surrounds the unpacked sdist.
 #
