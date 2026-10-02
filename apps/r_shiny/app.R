@@ -54,7 +54,10 @@ preset_df <- function(preset) {
     name = character(), dimension = character(), lower = numeric(), upper = numeric(),
     categories = character(), dimension2 = character(), lower2 = numeric(), upper2 = numeric(),
     stringsAsFactors = FALSE)
-  r <- function(name, dim, lo, hi, cats = "", dim2 = "", lo2 = NA, hi2 = NA)
+  # The second factor's bounds default to a numeric NA. DT::editData() keeps a
+  # column's type only for types it knows, and on a logical column it warns and
+  # stores the typed text, which turns the whole column into character.
+  r <- function(name, dim, lo, hi, cats = "", dim2 = "", lo2 = NA_real_, hi2 = NA_real_)
     data.frame(name = name, dimension = dim, lower = lo, upper = hi, categories = cats,
                dimension2 = dim2, lower2 = lo2, upper2 = hi2, stringsAsFactors = FALSE)
   switch(preset,
@@ -208,7 +211,10 @@ server <- function(input, output, session) {
   conds <- reactiveVal(preset_df("High vs low frequency"))
   observeEvent(input$preset, conds(preset_df(input$preset)), ignoreInit = TRUE)
   observeEvent(input$cond_tbl_cell_edit, {
-    conds(DT::editData(conds(), input$cond_tbl_cell_edit, "cond_tbl"))
+    # The table is rendered without row names, so the client numbers its columns
+    # from 0 at 'name'. editData() assumes a row-name column unless told
+    # otherwise, and it would write every edit one column to the left.
+    conds(DT::editData(conds(), input$cond_tbl_cell_edit, "cond_tbl", rownames = FALSE))
   })
   bundle <- reactiveVal(NULL)
 

@@ -10,6 +10,13 @@
   experiment changes. The run logs of the 14 designs concerned change with their
   datasheets, whose MD5 they record.
 
+* The Shiny app writes an edit to the conditions table into the cell that was
+  edited. Every edit landed one column to the left, because `DT::editData()` was
+  called without `rownames = FALSE`, so a custom condition could not be entered.
+  The bounds of the second factor, which the one-factor presets leave empty, are
+  now numeric columns, so a bound typed there is kept as a number. They were
+  logical columns, on which DT warned and stored the typed text.
+
 # lexsync 0.1.1
 
 * `assign_triggers()` gains a `conditions` argument that fixes the order of the

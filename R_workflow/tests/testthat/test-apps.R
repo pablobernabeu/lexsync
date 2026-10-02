@@ -100,3 +100,42 @@ test_that("the design YAML is written with LF endings on every platform", {
   expect_identical(raw[length(raw)], as.raw(0x0a))
   expect_identical(yaml::read_yaml(path)$name, "t")
 })
+
+test_that("a conditions-table edit changes only the edited column", {
+  e <- app_env()
+  # DataTables numbers the displayed columns from 0, and the table is rendered
+  # without row names, so column 0 is 'name'. DT::editData() assumes a row-name
+  # column unless told otherwise, so it wrote every edit one column to the left.
+  # An edit to 'name' renamed the row, an edit to 'upper' moved 'lower' and no
+  # edit could reach 'upper2'. The first row of each preset is edited once per
+  # column, with text that the row does not already hold.
+  typed <- c(name = "edited", dimension = "old20", lower = "1.5", upper = "2.5",
+             categories = "masc, fem", dimension2 = "old20", lower2 = "1.5",
+             upper2 = "2.5")
+  bounds <- c("lower", "upper", "lower2", "upper2")
+  for (preset in c("High vs low frequency", "Dense vs sparse neighbourhood",
+                   "2x2 frequency x neighbourhood", "Custom")) {
+    before <- e$preset_df(preset)
+    expect_identical(names(before), names(typed))
+    shiny::testServer(e$server, {
+      for (j in seq_along(typed)) {
+        conds(before)
+        column <- names(typed)[[j]]
+        what <- sprintf("the '%s' table after an edit to '%s'", preset, column)
+        # DT's cell_edit input: the 1-based row, the 0-based displayed column and
+        # the text typed. DT warns when it cannot keep a column's type.
+        edit <- data.frame(row = 1L, col = j - 1L, value = typed[[j]],
+                           stringsAsFactors = FALSE)
+        expect_no_warning(session$setInputs(cond_tbl_cell_edit = edit))
+        after <- conds()
+        changed <- names(before)[!mapply(identical, before, after)]
+        expect_identical(changed, column, label = paste("the columns changed in", what))
+        # A bound is a number, including a bound of the second factor that a
+        # one-factor preset leaves empty.
+        expected <- before
+        expected[1, j] <- if (column %in% bounds) as.numeric(typed[[j]]) else typed[[j]]
+        expect_equal(after, expected, label = what)
+      }
+    })
+  }
+})
