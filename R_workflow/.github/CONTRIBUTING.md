@@ -46,6 +46,11 @@ regenerates every artefact under `output/`. Run both, and commit the result of
 both together: the two engines write the same experiment files, so regenerating
 with only one leaves the repository in a state where they disagree.
 
+Regenerate outputs only from a checkout whose files have the repository's line
+endings, which `.gitattributes` sets to LF. Each datasheet records the SHA-256 of
+the files the run read and wrote. A copy converted to CRLF puts a digest in it
+that no checkout reproduces, and the digest tests in both suites then fail.
+
 ## The one convention that governs everything
 
 The two engines must produce byte-identical artefacts, and nothing may draw a

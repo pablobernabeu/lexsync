@@ -94,7 +94,7 @@
   "materials_source": {
     "path": "corpora/derived/en.csv",
     "provenance": "wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md",
-    "sha256": "c20549b920d816809d11cfa673ad0df1dd70d3e73176ee66cbec18021627f65d",
+    "sha256": "575833489e04d6a4001fda56a56e3daa383811dece1f819c44060ee79ca56976",
     "type": "corpus"
   },
   "realised_control": [

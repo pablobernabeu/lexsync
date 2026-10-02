@@ -6,7 +6,7 @@
 
 - **Paradigm:** lexical_decision  |  **Item source:** generate
 - **Description:** Lexical decision with subsyllabic (Wuggy-style) pseudowords: real words versus length-matched pseudowords built by swapping whole onset/nucleus/coda constituents.
-- **Materials source:** `corpora/derived/en.csv` (sha256 `c20549b920d81680...`)
+- **Materials source:** `corpora/derived/en.csv` (sha256 `575833489e04d6a4...`)
 - **Selection:** subsyllabic constituent swap (Wuggy-style, deterministic pseudowords)
 - **Cross-engine determinism:** byte-identical
 - **Counterbalancing:** factorial, 1 list(s)

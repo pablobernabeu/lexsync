@@ -6,7 +6,7 @@
 
 - **Paradigm:** factorial  |  **Item source:** corpus
 - **Description:** English words spanning the frequency range continuously, with length, neighbourhood density and OLD20 held near-constant, for regression / mixed-model analysis.
-- **Materials source:** `corpora/derived/en.csv` (sha256 `c20549b920d81680...`)
+- **Materials source:** `corpora/derived/en.csv` (sha256 `575833489e04d6a4...`)
 - **Selection:** continuous even-spread (predictor spanned, controls banded)
 - **Cross-engine determinism:** byte-identical
 - **Counterbalancing:** factorial, 1 list(s)

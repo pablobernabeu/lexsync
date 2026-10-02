@@ -10,6 +10,18 @@ no function signature changes.
 
 ## [Unreleased]
 
+### Fixed
+
+- 28 of the committed datasheets recorded the SHA-256 of a copy of
+  `corpora/derived/en.csv` or `es.csv` whose line endings one machine had
+  converted to CRLF, so the digest could not be reproduced from a checkout and
+  read as altered materials. Two of them also recorded such a copy of
+  `config/design_en_priming_continuous.yaml`. The datasheets are regenerated from
+  the committed bytes, and a test in both engines recomputes every recorded
+  digest, the design and schema digests included. No stimulus, report table or
+  experiment changes. The run logs of the 14 designs concerned change with their
+  datasheets, whose MD5 they record.
+
 ### Planned
 
 The state-of-the-art roadmap from the initial competitor and literature review is

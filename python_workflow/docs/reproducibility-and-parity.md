@@ -208,7 +208,7 @@ frequency contrast:
 ## Provenance
 
 - **Paradigm:** factorial  |  **Item source:** corpus
-- **Materials source:** `corpora/derived/en.csv` (sha256 `c20549b920d81680…`)
+- **Materials source:** `corpora/derived/en.csv` (sha256 `575833489e04d6a4…`)
 - **Selection:** standardised_euclidean
 - **Cross-engine determinism:** byte-identical
 - **Counterbalancing:** factorial, 1 list(s)

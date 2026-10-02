@@ -16,7 +16,7 @@
 ## Pair-keyed items
 
 - **Members:** prime, target  |  **Pairs:** 8
-- **Member lexicon:** `corpora/derived/en.csv` (sha256 `c20549b920d81680...`)
+- **Member lexicon:** `corpora/derived/en.csv` (sha256 `575833489e04d6a4...`)
 - **Member-level dimensions** (one word): freq_zipf, frequency, length, n_density, n_syllables, old20
 - **Relational dimensions** (the pair): pair.lev, pair.overlap
 - Selection ran on one row per pair and the result was re-expanded, so every condition row of every chosen pair is present and the Latin-square rotation is complete.

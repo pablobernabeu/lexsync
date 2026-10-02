@@ -7,7 +7,7 @@
 - **Paradigm:** factorial  |  **Item source:** pool
 - **Description:** Concrete nouns from a supplied candidate pool, split by frequency and matched item by item on length, neighbourhood density and OLD20.
 - **Materials source:** `items/pool_en_concrete_nouns.csv` (sha256 `09d0706a853b4bb3...`)
-- **Dimensions from:** `corpora/derived/en.csv` (sha256 `c20549b920d81680...`)
+- **Dimensions from:** `corpora/derived/en.csv` (sha256 `575833489e04d6a4...`)
 - **Selection:** standardised_euclidean
 - **Cross-engine determinism:** byte-identical
 - **Counterbalancing:** factorial, 1 list(s)

@@ -91,7 +91,7 @@
   "lexsync_datasheet_version": "1.1",
   "materials_source": {
     "dimensions_from": "corpora/derived/en.csv",
-    "dimensions_sha256": "c20549b920d816809d11cfa673ad0df1dd70d3e73176ee66cbec18021627f65d",
+    "dimensions_sha256": "575833489e04d6a4001fda56a56e3daa383811dece1f819c44060ee79ca56976",
     "path": "items/pool_en_concrete_nouns.csv",
     "provenance": "user-supplied word pool, matched by lexsync",
     "sha256": "09d0706a853b4bb30580e892a64061835db0f460ee7595b674a2fc8f56d5775f",

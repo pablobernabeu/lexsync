@@ -125,7 +125,7 @@
       "old20"
     ],
     "member_lexicon": "corpora/derived/en.csv",
-    "member_lexicon_sha256": "c20549b920d816809d11cfa673ad0df1dd70d3e73176ee66cbec18021627f65d",
+    "member_lexicon_sha256": "575833489e04d6a4001fda56a56e3daa383811dece1f819c44060ee79ca56976",
     "members": [
       "prime",
       "target"
@@ -137,7 +137,7 @@
     ]
   },
   "reproducibility": {
-    "design_sha256": "aa538f8c33f01a3abc3176fe37c89c25107a97a03bc2ec0109070cf4eb9c8b23",
+    "design_sha256": "ccfdfb44d3a32c3642b8dec85fe32f9cce173b90185d10bb1d8016379576cd6f",
     "schema_sha256": "483a9cec49314b9479fe656ad39840083a551f2e4313ca164efe3e9c064fb255",
     "seed": 2026,
     "versions": {

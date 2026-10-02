@@ -6,7 +6,7 @@
 
 - **Paradigm:** factorial  |  **Item source:** corpus
 - **Description:** High versus low frequency Spanish words, matched on length, neighbourhood density and OLD20.
-- **Materials source:** `corpora/derived/es.csv` (sha256 `02732e5f00d09951...`)
+- **Materials source:** `corpora/derived/es.csv` (sha256 `e9f93013c16ec974...`)
 - **Selection:** standardised_euclidean
 - **Cross-engine determinism:** byte-identical
 - **Counterbalancing:** factorial, 1 list(s)
