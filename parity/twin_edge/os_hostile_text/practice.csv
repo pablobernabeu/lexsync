@@ -1,0 +1,3 @@
+item,condition,word,word_ms,sentence,question,answer
+1,a,ready,300,This|is|practice.,Is this practice?,f
+2,b,{steady},300,Practice|ends|{here}.,Was that {all}?,j

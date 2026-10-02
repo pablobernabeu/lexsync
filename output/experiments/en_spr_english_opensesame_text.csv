@@ -1,0 +1,21 @@
+lexsync_row,condition,sentence,question,answer
+1,ungrammatical,The|report|about the islands|were|detailed.,Was the report detailed?,f
+2,grammatical,The|captain|of the ships|was|brave.,Was someone brave?,f
+3,grammatical,The|letter|from the lawyers|was|urgent.,Was the letter urgent?,f
+4,ungrammatical,The|window|in the offices|were|broken.,Was something broken?,f
+5,grammatical,The|window|in the offices|was|broken.,Was something broken?,f
+6,grammatical,The|report|about the islands|was|detailed.,Was the report detailed?,f
+7,grammatical,The|key|to the cabinets|was|rusty.,Was something rusty?,f
+8,grammatical,The|garden|behind the cottages|was|quiet.,Was the garden noisy?,j
+9,ungrammatical,The|recipe|for the cookies|were|simple.,Was the recipe hard?,j
+10,ungrammatical,The|author|of the novels|were|famous.,Was someone famous?,f
+11,ungrammatical,The|garden|behind the cottages|were|quiet.,Was the garden noisy?,j
+12,grammatical,The|bridge|near the houses|was|old.,Was the bridge new?,j
+13,ungrammatical,The|bridge|near the houses|were|old.,Was the bridge new?,j
+14,ungrammatical,The|letter|from the lawyers|were|urgent.,Was the letter urgent?,f
+15,grammatical,The|author|of the novels|was|famous.,Was someone famous?,f
+16,grammatical,The|recipe|for the cookies|was|simple.,Was the recipe hard?,j
+17,grammatical,The|picture|of the children|was|lovely.,Was something lovely?,f
+18,ungrammatical,The|picture|of the children|were|lovely.,Was something lovely?,f
+19,ungrammatical,The|captain|of the ships|were|brave.,Was someone brave?,f
+20,ungrammatical,The|key|to the cabinets|were|rusty.,Was something rusty?,f

@@ -5,21 +5,32 @@ handed to a collaborator running the other engine. The recipient runs it and ope
 generated PsychoPy script, OpenSesame experiment or jsPsych page -- which is the only
 thing those files are for. Every value the design controls therefore has to stay data.
 
-Stimulus text always did: it travels in the loop-table CSV the experiment reads at run
-time. Design METADATA did not. The name, language label, font, parallel-port address
-and the column names on jitter and feedback events were substituted straight into code
-and markup positions, so a quote or an angle bracket there stopped being text.
+Stimulus text travels in a CSV the experiment reads at run time, and PsychoPy and
+jsPsych read it as data. OpenSesame evaluates every cell of its loop table, so that table
+holds numbers only and the scripts read the text from a companion table. Design METADATA
+was the other way in. The name, language label, font, parallel-port address and the
+column names on jitter and feedback events were substituted straight into code and
+markup positions, so a quote or an angle bracket there stopped being text.
 
 Mirrors test-injection.R. Both suites assert refusal rather than escaping: see
 clean_meta in io_utils for why one rule beats three escapes across two engines.
 """
+import csv
+import re
 from importlib.resources import files
 
 import pandas as pd
 import pytest
 import yaml
 
-from lexsync.scripting import _language_tag, _pyq, export_jspsych, export_opensesame, export_psychopy
+from lexsync.scripting import (
+    _language_tag,
+    _pyq,
+    assign_triggers,
+    export_jspsych,
+    export_opensesame,
+    export_psychopy,
+)
 
 
 @pytest.fixture
@@ -196,3 +207,79 @@ def test_the_html_escape_covers_the_javascript_line_separators():
     out = _json_html({"w": "a\u2028b\u2029c"})
     assert "\u2028" not in out and "\u2029" not in out   # no raw separator survives
     assert r"\u2028" in out and r"\u2029" in out          # both arrive escaped
+
+
+# ---- OpenSesame evaluates the cells of its loop table ----------------------------------
+
+# Presented text that OpenSesame would run or retype in a loop cell. A single brace makes
+# the cell a Python f-string in OpenSesame 4.x, and a leading '=' runs Python in 3.3. In
+# both versions, '[=...]' runs Python, '[name]' is replaced by another variable, and
+# 'infinity', 'nan' and '007' come back as numbers, as does 'True' in 4.x. None of them
+# may be refused, since they are words.
+OS_HOSTILE = ["{__import__('os').getpid()}", "[=1+1]", "=1+1", "[name]", "infinity",
+              "nan", "True", "007", "The report {was} detailed."]
+PLAIN_NUMBER = re.compile(r"\A-?[0-9]+(\.[0-9]+)?\Z")
+
+
+def _os_stim():
+    n = len(OS_HOSTILE)
+    return assign_triggers(pd.DataFrame({
+        "word": OS_HOSTILE,
+        "sentence": ["The|report|{was}|detailed."] + [f"Region|{w}|ends." for w in OS_HOSTILE[1:]],
+        "question": [f"Was it {w}?" for w in OS_HOSTILE],
+        "condition": ["a", "b"] * 4 + ["a"], "set": list(range(1, n + 1)), "list": [1] * n,
+        "trial": list(range(1, n + 1)), "critical_region": [2] * n,
+        "answer": ["f", "j"] * 4 + ["f"], "iti_ms": [400 + 25 * i for i in range(n)],
+    }))
+
+
+def _os_design():
+    return _design(events=[
+        {"type": "fixation", "content": "+", "duration_ms": 500},
+        {"type": "text", "content": "{word}", "duration_ms": 300, "trigger": "condition"},
+        {"type": "response", "keys": ["f", "j"], "timeout_ms": 2000},
+        {"type": "feedback", "answer": "answer", "duration_ms": 600},
+        {"type": "region_by_region", "content": "{sentence}", "critical_region_trigger": "item"},
+        {"type": "question", "content": "{question}", "keys": ["f", "j"], "timeout_ms": 4000},
+        {"type": "blank", "duration": {"from_column": "iti_ms"}},
+    ])
+
+
+def test_the_opensesame_loop_table_holds_only_numbers(schema, tmp_path):
+    """Mirrors test_that("the OpenSesame loop table holds only numbers") in R."""
+    stim = _os_stim()
+    osexp = export_opensesame(stim, _os_design(), schema, str(tmp_path))
+    with open(tmp_path / "inj_english_opensesame.csv", newline="", encoding="utf-8") as handle:
+        rows = list(csv.reader(handle))
+    assert rows[0] == ["lexsync_row", "lexsync_trial", "lexsync_list", "lexsync_set",
+                       "iti_ms", "critical_region", "condition_trigger", "item_trigger"]
+    cells = [cell for row in rows[1:] for cell in row]
+    assert cells and all(PLAIN_NUMBER.match(cell) for cell in cells)
+    with open(tmp_path / "inj_english_opensesame_text.csv", newline="",
+              encoding="utf-8") as handle:
+        text = list(csv.DictReader(handle))
+    assert list(text[0]) == ["lexsync_row", "condition", "word", "sentence", "question",
+                             "answer"]
+    assert [row["word"] for row in text] == OS_HOSTILE
+    assert [row["sentence"] for row in text] == list(stim["sentence"])
+    assert [row["question"] for row in text] == list(stim["question"])
+    with open(osexp, encoding="utf-8") as handle:
+        lines = handle.read().splitlines()
+    assert not [line for line in lines
+                if re.search(r"var\.(word|sentence|question|condition|answer|block)\b", line)]
+    reads = [line for line in lines if "var.get(" in line]
+    assert reads and all("_eval=False" in line for line in reads)
+
+
+def test_a_loop_column_that_is_not_a_number_is_refused_for_opensesame(schema, tmp_path):
+    stim = _os_stim()
+    stim["critical_region"] = ["3a"] + [2] * (len(stim) - 1)
+    with pytest.raises(ValueError, match=re.escape("column 'critical_region' holds '3a'")):
+        export_opensesame(stim, _os_design(), schema, str(tmp_path))
+    # Only the OpenSesame target refuses: the other two read the value as data.
+    export_psychopy(stim, _os_design(), schema, str(tmp_path))
+    export_jspsych(stim, _os_design(), schema, str(tmp_path))
+    # An empty cell is inert in both OpenSesame versions, and a filler sentence may
+    # have no critical region, so a missing value passes.
+    stim["critical_region"] = [None] + [2] * (len(stim) - 1)
+    export_opensesame(stim, _os_design(), schema, str(tmp_path))

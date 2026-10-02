@@ -333,6 +333,16 @@ render_events <- function(events, timing, hz = 60) {
   out
 }
 
+# The per-trial duration columns an event list reads, in event order.
+.ms_columns <- function(events) {
+  cols <- character(0)
+  for (i in seq_along(events)) {
+    s <- .duration_spec(events[[i]], i)
+    if (!is.null(s) && !(s$column %in% cols)) cols <- c(cols, s$column)
+  }
+  cols
+}
+
 #' Per-trial table carrying exactly the fields the events reference
 #' @keywords internal
 loop_table <- function(stimuli, events = NULL) {
@@ -340,13 +350,7 @@ loop_table <- function(stimuli, events = NULL) {
     (if ("word" %in% names(stimuli)) "word" else character(0))
   # A per-trial duration is read from the loop table at run time, so its column
   # has to travel with the trials, and cannot stay behind in the stimuli file.
-  ms_cols <- character(0)
-  if (!is.null(events)) {
-    for (i in seq_along(events)) {
-      s <- .duration_spec(events[[i]], i)
-      if (!is.null(s) && !(s$column %in% ms_cols)) ms_cols <- c(ms_cols, s$column)
-    }
-  }
+  ms_cols <- .ms_columns(events)
   # `block` travels with the trials because the runners need it: it is what an
   # event's `blocks:` restriction is matched against, and what a runner watches to
   # know a block boundary has been reached. Absent unless the design declares a
@@ -359,6 +363,65 @@ loop_table <- function(stimuli, events = NULL) {
   if ("trial" %in% names(tab)) tab <- tab[order(tab$trial), , drop = FALSE]
   rownames(tab) <- NULL
   tab
+}
+
+# The loop-table columns the OpenSesame target carries as numbers, under the names its
+# loop table gives them. OpenSesame evaluates every cell of a loop table. In 4.x, a cell
+# holding a single `{` runs as a Python f-string, and in 3.3 a cell starting with `=` or
+# holding `[=...]` runs as Python. Both versions retype a cell such as 'nan' or '007'.
+# That loop table therefore holds numbers only, and the presented text travels in a
+# companion table that the inline scripts read with the csv module. OpenSesame 4 also
+# makes every loop column a global of the inline scripts, where `list` and `set` would
+# shadow Python's builtins, so those two are renamed and `trial` with them. Must match
+# _OS_NUMERIC in scripting.py.
+.OS_NUMERIC <- c(trial = "lexsync_trial", list = "lexsync_list", replicate = "replicate",
+                 set = "lexsync_set", critical_region = "critical_region",
+                 condition_trigger = "condition_trigger", item_trigger = "item_trigger")
+# A plain decimal number, which both OpenSesame versions store and read back as written.
+# \z and not $, for the reason given beside .PORT_SHAPE in io_utils.R.
+.PLAIN_NUMBER <- "^-?[0-9]+(\\.[0-9]+)?\\z"
+
+# Refuse a numeric loop column holding anything but plain numbers and empty cells. The
+# cells are checked as write_csv_utf8() renders them, so the check sees the bytes
+# OpenSesame will read, and refuses exactly what the Python twin refuses.
+.check_opensesame_numbers <- function(x, col) {
+  one <- data.frame(x = x, stringsAsFactors = FALSE)
+  .check_csv_writable(one)
+  cells <- utils::read.csv(text = readr::format_csv(one, na = ""), colClasses = "character",
+                           na.strings = character(0), quote = "\"", encoding = "UTF-8")$x
+  bad <- which(nzchar(cells) & !grepl(.PLAIN_NUMBER, cells, perl = TRUE))
+  if (length(bad)) {
+    stop(sprintf(paste("lexsync: column '%s' holds '%s', and the OpenSesame loop table",
+                       "holds numbers only, because OpenSesame evaluates the cells of a",
+                       "loop table."), col, cells[bad[1]]), call. = FALSE)
+  }
+  invisible(x)
+}
+
+# The OpenSesame target's loop table and its companion text table. Both are the loop
+# table, split by column and joined by `lexsync_row`, the trial's position in loop order
+# (1..N). The loop table holds `lexsync_row` and the numeric columns of .OS_NUMERIC plus
+# any per-trial duration. The text table holds `lexsync_row`, every presented field and
+# every other column (`condition`, `block`, `answer`). A presented field that is also
+# numeric goes to both. An empty numeric cell passes, since OpenSesame leaves it alone
+# and a filler sentence may have no critical region. Must match _opensesame_tables in
+# scripting.py.
+.opensesame_tables <- function(stimuli, events) {
+  tab <- loop_table(stimuli, events)
+  presented <- referenced_fields(events)
+  numeric <- c(names(.OS_NUMERIC), .ms_columns(events))
+  rows <- seq_len(nrow(tab))
+  numbers <- data.frame(lexsync_row = rows)
+  text <- data.frame(lexsync_row = rows)
+  for (col in names(tab)) {
+    if (col %in% numeric) {
+      .check_opensesame_numbers(tab[[col]], col)
+      renamed <- if (col %in% names(.OS_NUMERIC)) .OS_NUMERIC[[col]] else col
+      numbers[[renamed]] <- tab[[col]]
+    }
+    if (col %in% presented || !(col %in% numeric)) text[[col]] <- tab[[col]]
+  }
+  list(numbers = numbers, text = text)
 }
 
 #' Export a runnable PsychoPy script that interprets the event sequence
@@ -422,13 +485,19 @@ export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
   paste0("u'", s, "'")
 }
 
+# A trial's text for `field`, from its row of the companion table.
+.text_expr <- function(field) sprintf("_lexsync_row()[%s]", .pyq(field))
+
+# A trial's value of a numeric loop column, read without evaluation.
+.number_expr <- function(column) sprintf("int(var.get(%s, _eval=False))", .pyq(column))
+
 .content_expr <- function(ev) {
-  if (!is.null(ev[["field"]])) paste0("var.", ev[["field"]]) else .pyq(ev[["text"]] %||% "")
+  if (!is.null(ev[["field"]])) .text_expr(ev[["field"]]) else .pyq(ev[["text"]] %||% "")
 }
 
 .trigger_expr <- function(spec) {
   if (is.null(spec)) return(NULL)
-  if (is.character(spec) && startsWith(spec, "@")) return(paste0("var.", substring(spec, 2)))
+  if (is.character(spec) && startsWith(spec, "@")) return(.number_expr(substring(spec, 2)))
   as.character(as.integer(spec))
 }
 
@@ -451,6 +520,13 @@ export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
 # `elif default is not None: val = default / else: raise VariableDoesNotExist(var)`, so
 # passing None explicitly is indistinguishable from passing no default and RAISES rather
 # than yielding None. A non-None sentinel is the only default that works.
+#
+# And no text from `var` at all. OpenSesame evaluates a loop cell when the loop sets it
+# and again when a script reads it. The presented text, the block and the answer
+# therefore come from the trial's row of the companion table (`_lexsync_row()`, defined
+# by the setup script). What is still read from `var`, the numeric loop columns and the
+# response, is read with `_eval=False`: an evaluated read in 4.x turns a timed-out
+# response, stored as None, into the string 'None'.
 
 # Restrict an inline script's body to the named blocks.
 #
@@ -462,7 +538,7 @@ export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
 .osexp_block_guard <- function(body, blocks) {
   if (is.null(blocks) || !length(blocks)) return(body)
   wanted <- paste(vapply(as.character(unlist(blocks)), .pyq, character(1)), collapse = ", ")
-  c(sprintf("if str(var.get(u'block', u'main')) in [%s]:", wanted),
+  c(sprintf("if _lexsync_row().get(u'block', u'main') in [%s]:", wanted),
     paste0("    ", body))
 }
 
@@ -482,7 +558,8 @@ export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
   # [[ ]], not $: `$` partial-matches on a list, so `ev$ms` would return the value
   # of `ms_column` for a per-trial duration and emit the column name as a literal.
   sleep_arg <- if (!is.null(ev[["ms_column"]]))
-    sprintf("int(var.%s)", clean_column(ev[["ms_column"]], "a jittered duration's `as`")) else
+    sprintf("int(float(var.get(%s, _eval=False)))",
+            .pyq(clean_column(ev[["ms_column"]], "a jittered duration's `as`"))) else
     sprintf("%d", as.integer(ev[["ms"]] %||% 0L))
   if (t %in% c("fixation", "text", "mask", "blank")) {
     body <- "c = Canvas()"
@@ -498,9 +575,10 @@ export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
   if (t == "region") {
     trig <- .trigger_expr(ev[["crit_trigger"]])
     body <- c(
-      sprintf("_regions = [r for r in var.%s.split(%s) if r != u'']", ev[["field"]],
+      sprintf("_regions = [r for r in %s.split(%s) if r != u'']", .text_expr(ev[["field"]]),
               .pyq(ev[["sep"]] %||% "|")),
-      "_crit = int(var.get(u'critical_region', 0) or 0)",
+      # An empty cell, a sentence with no critical region, reads as 0: no trigger.
+      "_crit = int(var.get(u'critical_region', 0, _eval=False) or 0)",
       sprintf("_kb = Keyboard(keylist=[%s], timeout=None)", .pyq(ev[["key"]] %||% "space")),
       "for _i, _region in enumerate(_regions, start=1):",
       "    c = Canvas(); c.text(_region); c.show()")
@@ -512,7 +590,7 @@ export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
   if (t == "question") {
     keys_list <- paste(vapply(ev[["keys"]] %||% c("f", "j"), .pyq, character(1)), collapse = ", ")
     body <- c(
-      sprintf("c = Canvas(); c.text(var.%s); c.show()", ev[["field"]]),
+      sprintf("c = Canvas(); c.text(%s); c.show()", .text_expr(ev[["field"]])),
       sprintf("_kb = Keyboard(keylist=[%s], timeout=%d)", keys_list,
               as.integer((ev[["timeout"]] %||% 5) * 1000)),
       "var.response, var.response_time = _kb.get_key()")
@@ -520,17 +598,18 @@ export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
                                       .osexp_block_guard(body, blocks)), run = name))
   }
   if (t == "feedback") {
-    # `var.response` is set by the keyboard_response above; `var.answer` (or whichever
-    # column the event names) holds the KEY that is correct, so scoring is a string
-    # comparison. A timeout leaves the response None, which is reported separately
-    # because on a timed task it means something different from a wrong key.
+    # `var.response` is set by the keyboard_response above. The answer column (or
+    # whichever column the event names) holds the KEY that is correct, so scoring is a
+    # string comparison. A timeout is reported separately, because on a timed task it
+    # means something different from a wrong key. OpenSesame 4.x stores it as None and
+    # 3.3 as the string 'None', so both count as no response.
     body <- c(
-      sprintf("_want = str(var.get(u'%s', u'')).strip()",
+      sprintf("_want = str(_lexsync_row().get(u'%s', u'')).strip()",
               clean_column(ev[["answer"]] %||% "answer", "a feedback event's `answer`")),
-      "_got = var.get(u'response', u'')",
-      sprintf("if _got is None or _got == u'': _msg = %s", .pyq(ev[["no_response"]] %||% "Too slow")),
-      sprintf("elif str(_got).strip() == _want: _msg = %s",
-              .pyq(ev[["correct"]] %||% "Correct")),
+      "_got = var.get(u'response', u'', _eval=False)",
+      "_got = u'' if _got is None else str(_got).strip()",
+      sprintf("if _got in (u'', u'None'): _msg = %s", .pyq(ev[["no_response"]] %||% "Too slow")),
+      sprintf("elif _got == _want: _msg = %s", .pyq(ev[["correct"]] %||% "Correct")),
       sprintf("else: _msg = %s", .pyq(ev[["incorrect"]] %||% "Incorrect")),
       "c = Canvas(); c.text(_msg); c.show()",
       sprintf("clock.sleep(%s)", sleep_arg))
@@ -556,8 +635,22 @@ export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
 }
 
 #' Build a complete plain-text OpenSesame experiment from rendered events
+#'
+#' The loop table and its companion text table are both looked up through OpenSesame's
+#' file pool, which also searches the experiment's own folder. Mirrors `build_osexp`
+#' in the Python engine.
+#'
+#' @param design A parsed design configuration.
+#' @param conditions_file File name of the loop table.
+#' @param schema The parsed global schema (trigger settings).
+#' @param rendered Rendered events, from [render_events()].
+#' @param font The font family OpenSesame draws text in.
+#' @param text_file File name of the companion text table. `NULL` (the default) puts
+#'   `_text` before the `.csv` of `conditions_file`.
+#' @return The experiment's text, one string.
 #' @keywords internal
-build_osexp <- function(design, conditions_file, schema, rendered, font = "mono") {
+build_osexp <- function(design, conditions_file, schema, rendered, font = "mono",
+                        text_file = NULL) {
   addr <- clean_port(schema[["triggers"]][["parallel_address"]] %||% "0x378")
   design_name <- clean_meta(design[["name"]], "the design's `name`")
   language <- clean_meta(design[["language"]], "the design's `language`")
@@ -565,7 +658,17 @@ build_osexp <- function(design, conditions_file, schema, rendered, font = "mono"
   # here rather than at the caller: an .osexp is line-oriented and a newline would add
   # items to the experiment.
   font <- clean_meta(font, "the font")
+  text_file <- text_file %||% paste0(sub("\\.csv$", "", conditions_file), "_text.csv")
   setup <- c(
+    # The trial texts, read as data with the csv module and keyed by the loop's
+    # `lexsync_row` (not by the loop's position, which a user who switches the loop to
+    # random order would change). utf-8-sig also reads a copy that a spreadsheet saved
+    # with a byte-order mark.
+    "import csv as _csv",
+    sprintf("with open(pool[%s], encoding=u'utf-8-sig', newline=u'') as _f:", .pyq(text_file)),
+    "    _LEXSYNC_ROWS = {int(_r[u'lexsync_row']): _r for _r in _csv.DictReader(_f)}",
+    "def _lexsync_row():",
+    "    return _LEXSYNC_ROWS[int(var.get(u'lexsync_row', _eval=False))]",
     "var.trigger_backend = u'parallel'",
     sprintf("var.parallel_port_address = %s", addr),
     "var.test_mode = u'no'",
@@ -622,7 +725,8 @@ build_osexp <- function(design, conditions_file, schema, rendered, font = "mono"
     "set coordinates uniform", "set compensation 0", "set color_backend legacy",
     "set clock_backend legacy", "set canvas_backend xpyriment", "set background black", "",
     "define inline_script lexsync_trigger_setup",
-    '\tset description "Open the trigger device with a test-mode fallback"',
+    paste('\tset description "Load the trial texts and open the trigger device with a',
+          'test-mode fallback"'),
     '\tset _run ""', "\t___prepare__", paste0("\t", setup), "\t__end__", ""
   )
   trial <- c(
@@ -647,6 +751,20 @@ build_osexp <- function(design, conditions_file, schema, rendered, font = "mono"
 
 #' Export a complete plain-text OpenSesame experiment
 #'
+#' Writes `<base>.osexp` and the two tables it reads. Its loop runs over
+#' `<base>_opensesame.csv`, which holds numbers only: `lexsync_row` (the trial's
+#' position in loop order, from 1), `lexsync_trial`, `lexsync_list`, `lexsync_set`,
+#' the trigger codes, `critical_region` and any per-trial duration. The presented
+#' text, `condition`, `block` and `answer` are in `<base>_opensesame_text.csv`, which
+#' the inline scripts read with Python's `csv` module, so OpenSesame never evaluates
+#' them. Copy both tables with the experiment.
+#'
+#' OpenSesame evaluates the cells of a loop table: in 4.x a cell holding `{` runs as a
+#' Python f-string, and in 3.3 a cell starting with `=` or holding `[=...]` runs as
+#' Python. A value in a numeric column that is not a plain number is therefore
+#' refused, naming the column. An empty cell passes. These rules were checked against
+#' the sources of OpenSesame 3.3.14 and 4.1.20.
+#'
 #' @inheritParams export_psychopy
 #' @return The path to the generated `.osexp`, invisibly.
 #' @export
@@ -654,11 +772,14 @@ export_opensesame <- function(stimuli, design, schema, outdir, base = NULL) {
   base <- base %||% slugify(design[["name"]], design[["language"]])
   events <- resolve_events(design)
   rendered <- render_events(events, design[["timing"]] %||% list(), .refresh_hz(schema))
+  tables <- .opensesame_tables(stimuli, events)
   csv_name <- paste0(base, "_opensesame.csv")
-  write_csv_utf8(loop_table(stimuli, events), file.path(outdir, csv_name))
+  text_name <- paste0(base, "_opensesame_text.csv")
   presentation <- schema[["presentation"]] %||% list()
   font <- design[["font"]] %||% presentation[["opensesame_font"]] %||% "mono"
-  txt <- build_osexp(design, csv_name, schema, rendered, font = font)
+  txt <- build_osexp(design, csv_name, schema, rendered, font = font, text_file = text_name)
+  write_csv_utf8(tables$numbers, file.path(outdir, csv_name))
+  write_csv_utf8(tables$text, file.path(outdir, text_name))
   out <- file.path(outdir, paste0(base, ".osexp"))
   write_lines_lf(txt, out)
   invisible(out)

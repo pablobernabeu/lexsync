@@ -9,6 +9,27 @@
   digest, the design and schema digests included. No stimulus, report table or
   experiment changes. The run logs of the 14 designs concerned change with their
   datasheets, whose MD5 they record.
+* Generated OpenSesame experiments no longer pass stimulus text through
+  OpenSesame's variable store, which evaluates it. In OpenSesame 4.x, a loop cell
+  containing `{` runs as a Python f-string, and in 3.3 a leading `=` or `[=...]`
+  runs Python, so an item table shared with a laboratory could execute code on
+  the machine that presents it. Ordinary words in the English lexicon, such as
+  'infinity' and 'nan', could stop an OpenSesame 4.x session, though no
+  demonstration design selected one. The loop table now holds only numbers:
+  `lexsync_row`, the trial's position in loop order, with
+  `lexsync_trial`, `lexsync_list`, `lexsync_set`, the trigger codes,
+  `critical_region` and any per-trial duration. The prefix stops the columns from
+  shadowing Python's built-in `list` and `set` in OpenSesame 4's inline scripts.
+  The inline scripts read the presented text, `condition`, `block` and `answer`
+  from a companion file, `<base>_opensesame_text.csv`, to be copied with the
+  experiment. `export_opensesame()` refuses a value in one of the numeric columns
+  that is not a plain number, naming the column. A practice timeout is reported
+  as 'Too slow'. Both versions scored it as a wrong key, because the response
+  came back as the string 'None'. The 0.1.0 notes said stimulus text was always
+  safe. That held for PsychoPy and jsPsych but not for OpenSesame. Every
+  demonstration's `.osexp` and OpenSesame loop table change, and each
+  demonstration gains a text table. The datasheets and run logs change with them,
+  since they record the experiment's checksum. No stimulus moves.
 
 * The Shiny app writes an edit to the conditions table into the cell that was
   edited. Every edit landed one column to the left, because `DT::editData()` was

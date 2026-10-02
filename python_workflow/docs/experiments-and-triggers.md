@@ -421,9 +421,9 @@ define inline_script lexsync_e1
 	set _prepare ""
 	___run__
 	c = Canvas()
-	c.text(var.word)
+	c.text(_lexsync_row()[u'word'])
 	var.onset_time = c.show()
-	send_trigger(var.condition_trigger)
+	send_trigger(int(var.get(u'condition_trigger', _eval=False)))
 	clock.sleep(500)
 ```
 
@@ -432,12 +432,32 @@ immediately after the onset it marks. The setup block opens a parallel or serial
 back to a printing stub when neither is available, so the experiment opens and runs on a machine
 with no trigger hardware.
 
+The word in that script does not come from OpenSesame's variable store, because OpenSesame
+evaluates what a loop table puts there. In both versions, a cell holding `[=...]` runs as Python,
+and so does one holding a single `{` in OpenSesame 4.x, where it is read as an f-string, or starting
+with `=` in 3.3. Both versions also retype a word such as `nan` or `007`, and 4.x shows `True` as 1.
+In 4.x, `infinity` and `nan`, both in the English lexicon, stop the session. An item table passed
+between laboratories could otherwise run code on the machine that presents it.
+
+The loop table, `<base>_opensesame.csv`, therefore holds numbers only: `lexsync_row`, the trial's
+position in loop order, with `lexsync_trial`, `lexsync_list`, `lexsync_set`, the trigger codes,
+`critical_region` and any per-trial duration. The prefix matters because OpenSesame 4 makes every
+loop column a global of the inline scripts, where `list` and `set` would shadow Python's built-in
+functions of those names. The presented text, `condition`, `block` and `answer` are in a companion
+file, `<base>_opensesame_text.csv`, which the setup script reads with Python's `csv` module, and
+each script looks up its trial's row by `lexsync_row`. Copy both files with the experiment. A value
+in a numeric column that is not a plain number is refused when the experiment is generated. The
+feedback script reads the response without evaluation, so a timeout shows `no_response` in both
+versions. These rules were checked against the sources of OpenSesame 3.3.14 and 4.1.20.
+
 Two details in the generated file are deliberate. The loop is set to `sequential`, because
 OpenSesame's default is random, which would discard the seeded trial order the CSV is sorted by and
 put this target out of step with the other two. A `response` event is preceded by a blank canvas,
 because a `keyboard_response` draws nothing and the preceding stimulus would otherwise stay on
 screen for the whole response window instead of offsetting at its stated duration. A structural
-validator in the test suite checks the generated file's blocks and references.
+validator in the test suite checks the generated file's blocks and references. A second test runs
+its scripts under an emulation of each version's variable store, on item text that OpenSesame would
+otherwise evaluate.
 
 ### jsPsych
 

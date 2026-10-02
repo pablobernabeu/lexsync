@@ -30,9 +30,14 @@ set canvas_backend xpyriment
 set background black
 
 define inline_script lexsync_trigger_setup
-	set description "Open the trigger device with a test-mode fallback"
+	set description "Load the trial texts and open the trigger device with a test-mode fallback"
 	set _run ""
 	___prepare__
+	import csv as _csv
+	with open(pool[u'zh_freqcontrast_chinese_opensesame_text.csv'], encoding=u'utf-8-sig', newline=u'') as _f:
+	    _LEXSYNC_ROWS = {int(_r[u'lexsync_row']): _r for _r in _csv.DictReader(_f)}
+	def _lexsync_row():
+	    return _LEXSYNC_ROWS[int(var.get(u'lexsync_row', _eval=False))]
 	var.trigger_backend = u'parallel'
 	var.parallel_port_address = 0x0378
 	var.test_mode = u'no'
@@ -84,9 +89,9 @@ define inline_script lexsync_e1
 	set _prepare ""
 	___run__
 	c = Canvas()
-	c.text(var.word)
+	c.text(_lexsync_row()[u'word'])
 	var.onset_time = c.show()
-	send_trigger(var.condition_trigger)
+	send_trigger(int(var.get(u'condition_trigger', _eval=False)))
 	clock.sleep(500)
 	__end__
 

@@ -542,10 +542,13 @@ _CTRL_RE = re.compile(r"[\x00-\x1f\x7f]")
 def clean_field(value, field: str = "field", max_len: int = 1000) -> str:
     """Validate a single stimulus value for safe inclusion in generated files.
 
-    Rejects control characters and over-long strings; returns the value as a
-    plain string. Commas and quotation marks are allowed (they are written as
-    data into a properly quoted CSV that the experiment reads at run time, never
-    interpolated into generated code), so ordinary sentences pass unchanged.
+    Rejects control characters and over-long strings, and returns the value as a
+    plain string. Commas, quotation marks, braces and brackets are allowed, so
+    ordinary sentences pass unchanged. A value is written as data into a properly
+    quoted CSV that the experiment reads at run time, never interpolated into
+    generated code, and no target evaluates it. OpenSesame, which evaluates the
+    cells of its loop table, reads stimulus text from a companion table with
+    Python's ``csv`` module.
     """
     s = str(value)
     if _CTRL_RE.search(s):

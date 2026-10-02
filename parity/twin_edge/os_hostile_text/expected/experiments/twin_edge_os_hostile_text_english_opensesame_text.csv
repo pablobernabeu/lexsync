@@ -1,0 +1,11 @@
+lexsync_row,block,condition,word,sentence,question,answer
+1,practice,a,ready,This|is|practice.,Is this practice?,f
+2,practice,b,{steady},Practice|ends|{here}.,Was that {all}?,j
+3,main,a,{__import__('os').getpid()},The|report|{was}|detailed.,Was the report {detailed}?,f
+4,main,b,nan,The|value|was|nan.,Was the value nan?,j
+5,main,b,[name],The|[name]|field|was empty.,Was [name] empty?,j
+6,main,a,=1+1,=1+1|is|two.,=Was it two?,f
+7,main,b,007,Agent|007|returned.,Was it 007?,j
+8,main,a,infinity,The|count|ran to|infinity.,Did it reach infinity?,f
+9,main,a,True,It|was|True.,Was it True?,f
+10,main,b,[=1+1],The|sum|[=1+1]|was right.,Was the sum [=2+2]?,j

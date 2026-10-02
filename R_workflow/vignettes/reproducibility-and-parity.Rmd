@@ -211,8 +211,8 @@ bear no systematic relation to its position, and a different seed gives a
 different order. What changed is that the permutation is engine-invariant, so it
 now sits inside the cross-engine contract, and the guarantee reaches the
 generated experiments whole: for every shipped design, the PsychoPy script, the
-OpenSesame file, the jsPsych page and both loop-table CSVs are byte-identical
-across the engines.
+OpenSesame file, the jsPsych page and the three CSV tables that the PsychoPy and
+OpenSesame experiments read are byte-identical across the engines.
 
 One detail matters to anyone embedding `lexsync` in a longer script:
 counterbalancing no longer touches the random number generator at all, since

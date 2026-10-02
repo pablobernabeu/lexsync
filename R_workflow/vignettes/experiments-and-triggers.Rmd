@@ -392,10 +392,11 @@ difference is the interesting part.
 list.files(out)
 ```
 
-PsychoPy and OpenSesame each got their own trial table and read it at run time,
-which is why two CSVs appear alongside the three scripts. The jsPsych target has
-no second file, because it embeds its trials in the HTML. That single file is
-enough to reproduce the procedure in a browser.
+PsychoPy and OpenSesame read their trials at run time from tables written beside
+them, which is why CSVs appear alongside the three scripts. PsychoPy has one and
+OpenSesame two, since its text travels apart from its loop table for the reason
+given below. The jsPsych target has no second file, because it embeds its trials
+in the HTML. That single file is enough to reproduce the procedure in a browser.
 
 PsychoPy (Peirce et al., 2019) is the reference target. The generated script
 carries the event list as embedded JSON and interprets it, and it writes onset
@@ -407,6 +408,35 @@ block by block, with each event becoming an inline script. It gets its trigger b
 a different route, discussed below, and it opens the trigger device with a
 fallback: if no parallel port or serial device is available, it prints the codes
 and carries on, so the experiment still runs on a machine without the hardware.
+
+OpenSesame also evaluates what its loop table holds. In both versions, a cell
+holding `[=...]` runs as Python, and so does one holding a single `{` in
+OpenSesame 4.x, where it is read as an f-string, or starting with `=` in 3.3.
+Both versions retype a word such as `nan` or `007`, and 4.x shows `True` as 1. In
+4.x, `infinity` and `nan`, both in the English lexicon, stop the session. An item
+table passed between laboratories could otherwise run code on the machine that
+presents it.
+
+The loop table, `vignette_experiment_english_opensesame.csv` here, therefore
+holds numbers only: `lexsync_row`, the trial's position in loop order, with
+`lexsync_trial`, `lexsync_list`, `lexsync_set`, the trigger codes,
+`critical_region` and any per-trial duration. The prefix matters because
+OpenSesame 4 makes every loop column a global of the inline scripts, where `list`
+and `set` would shadow Python's built-in functions of those names. The presented
+text, `condition`, `block` and `answer` are in
+`vignette_experiment_english_opensesame_text.csv`, which the setup script reads
+with Python's `csv` module, and each script looks up its trial's row by
+`lexsync_row`. Copy both files with the experiment. A value in a numeric column
+that is not a plain number is refused when the experiment is generated. The
+feedback script reads the response without evaluation, so a timeout shows its
+`no_response` text in both versions. These rules were checked against the
+sources of OpenSesame 3.3.14 and 4.1.20.
+
+```{r opensesame-tables}
+opensesame_csv <- file.path(out, "vignette_experiment_english_opensesame.csv")
+names(read.csv(opensesame_csv))
+names(read.csv(sub("\\.csv$", "_text.csv", opensesame_csv)))
+```
 
 jsPsych is the browser target. A browser cannot address a parallel port, so the
 trigger codes go into each trial's data and no marker leaves the machine. That
@@ -481,7 +511,7 @@ sends the trigger on the line after `c.show()`:
 
 ```
 var.onset_time = c.show()
-send_trigger(var.condition_trigger)
+send_trigger(int(var.get(u'condition_trigger', _eval=False)))
 ```
 
 This is sound because `show()` blocks until the display refresh and returns at it,

@@ -15,9 +15,9 @@ For the deterministic matching methods, the R and Python engines produce byte-id
 identical input, and the guarantee has three layers. The selection: the same words, paired the same
 way, assigned to the same conditions and lists. The computed dimensions: every value an engine
 derives at run time and writes into the stimuli CSV. And the full generated experiment: the
-PsychoPy script, the OpenSesame experiment, the jsPsych page and both loop tables, trial order
-included. Not statistically equivalent sets, not files that agree to several decimal places. The
-same bytes.
+PsychoPy script, the OpenSesame experiment, the jsPsych page and the three tables the first two
+read, trial order included. Not statistically equivalent sets, not files that agree to several
+decimal places. The same bytes.
 
 That is a stronger claim than it may look, because the two engines share no code. They are separate
 implementations, in different languages, on different linear-algebra stacks, and each is a package
@@ -72,8 +72,8 @@ rounded, and the subsyllabic constituent inventory is integer counts keyed by ro
 is order-independent. Neither depends on the order in which the corpus was accumulated.
 
 The generated experiments are byte-identical as well, all of them: the PsychoPy script, the
-OpenSesame experiment, the jsPsych page and both loop tables, 105 files across the 21
-worked designs. One place they could drift is the event JSON embedded in the PsychoPy script, since
+OpenSesame experiment, the jsPsych page and the three tables the first two read, 126 files across
+the 21 worked designs. One place they could drift is the event JSON embedded in the PsychoPy script, since
 jsonlite pads no separators and drops a whole number's fractional part, serialising a 2000 ms
 timeout as `2` rather than `2.0`. Python is the side that conforms.
 

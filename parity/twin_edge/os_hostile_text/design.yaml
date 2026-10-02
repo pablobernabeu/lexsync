@@ -1,0 +1,43 @@
+# Twin-edge case: presented text that OpenSesame would evaluate if it reached a loop
+# cell. A single brace runs as a Python f-string in OpenSesame 4.x, and a leading '='
+# runs Python in 3.3. In both versions, '[=...]' runs Python, '[name]' is replaced by
+# another variable, and 'infinity', 'nan' and '007' come back as numbers. The OpenSesame
+# loop table must hold numbers only, the companion text table must hold every string
+# verbatim, and both engines must write the same bytes. The practice rows carry no
+# critical region, so the loop table also holds empty cells, which OpenSesame leaves
+# alone. Every event type the OpenSesame emitter writes is used once.
+name: twin_edge_os_hostile_text
+language: english
+description: 'Presented text that OpenSesame would evaluate in a loop cell, on every event type.'
+items:
+  source: table
+  path: items.csv
+practice:
+  path: practice.csv
+events:
+  - type: fixation
+    content: '+'
+    duration_ms: 500
+  - type: text
+    content: '{word}'
+    duration: {from_column: word_ms}
+    trigger: condition
+    onset_locked: true
+  - type: response
+    keys: [f, j]
+    timeout_ms: 2000
+  - type: feedback
+    answer: answer
+    duration_ms: 600
+    blocks: [practice]
+  - type: region_by_region
+    content: '{sentence}'
+    critical_region_trigger: item
+  - type: question
+    content: '{question}'
+    keys: [f, j]
+    timeout_ms: 4000
+  - type: blank
+    duration: {jitter: [400, 800], as: iti_ms}
+counterbalance:
+  lists: 1

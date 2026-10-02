@@ -1,0 +1,17 @@
+lexsync_row,condition,prime,target
+1,related,pepper,salt
+2,unrelated,pencil,king
+3,related,cold,hot
+4,related,dog,cat
+5,unrelated,river,black
+6,unrelated,paper,hot
+7,unrelated,table,cat
+8,unrelated,engine,salt
+9,unrelated,planet,bread
+10,related,night,day
+11,related,queen,king
+12,unrelated,tractor,cup
+13,unrelated,carpet,day
+14,related,butter,bread
+15,related,saucer,cup
+16,related,white,black

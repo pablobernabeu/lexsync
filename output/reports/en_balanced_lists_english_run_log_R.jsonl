@@ -1,17 +1,17 @@
-{"time":"2026-10-02 12:18:30.116512","message":"loading lexicon 'corpora/derived/en.csv'","data":null}
-{"time":"2026-10-02 12:18:32.219221","message":"lexicon loaded: 30000 words","data":{"words":30000}}
-{"time":"2026-10-02 12:18:32.333567","message":"pool after filters: 7230 words","data":{"pool":7230}}
-{"time":"2026-10-02 12:18:33.389757","message":"matched 80 items across 2 conditions","data":{"conditions":"high_frequency, low_frequency"}}
-{"time":"2026-10-02 12:18:34.265849","message":"equivalence low_frequency vs high_frequency on 'length': d = 0.02 [-0.35, 0.39], TOST p = 0.018 (equivalent)","data":null}
-{"time":"2026-10-02 12:18:34.398612","message":"equivalence low_frequency vs high_frequency on 'frequency': d = 5.05 [4.29, 5.82], TOST p = 1.000 (not shown equivalent)","data":null}
-{"time":"2026-10-02 12:18:34.518639","message":"equivalence low_frequency vs high_frequency on 'n_density': d = 0.05 [-0.32, 0.42], TOST p = 0.024 (equivalent)","data":null}
-{"time":"2026-10-02 12:18:34.559719","message":"equivalence low_frequency vs high_frequency on 'old20': d = 0.05 [-0.32, 0.43], TOST p = 0.025 (equivalent)","data":null}
-{"time":"2026-10-02 12:18:34.614904","message":"balanced 40 item sets across 4 lists on length, n_density, old20, frequency: cost 1121480 -> 53820 in 10 swap(s)","data":{"cost_before":1121480,"cost_after":53820,"swaps":10}}
-{"time":"2026-10-02 12:18:35.875141","message":"wrote 'en_balanced_lists_english_stimuli_R.csv'","data":{"path":"output/stimuli/en_balanced_lists_english_stimuli_R.csv","rows":80,"md5":"ea6027af81e16cad2979e4e8c1afe7a2"}}
-{"time":"2026-10-02 12:18:36.205204","message":"wrote 'en_balanced_lists_english_descriptives_R.csv'","data":{"path":"output/reports/en_balanced_lists_english_descriptives_R.csv","rows":8,"md5":"0773a3bf93269e14568726dfea032629"}}
-{"time":"2026-10-02 12:18:36.464857","message":"wrote 'en_balanced_lists_english_comparisons_R.csv'","data":{"path":"output/reports/en_balanced_lists_english_comparisons_R.csv","rows":4,"md5":"488dd8d3168996fb298b771d15a79bd2"}}
-{"time":"2026-10-02 12:18:39.810377","message":"wrote 'en_balanced_lists_english_psychopy.py'","data":{"path":"output/experiments/en_balanced_lists_english_psychopy.py","rows":"NA","md5":"27a96761cd60bfc463da1a2a9b6ad759"}}
-{"time":"2026-10-02 12:18:39.905577","message":"wrote 'en_balanced_lists_english.osexp'","data":{"path":"output/experiments/en_balanced_lists_english.osexp","rows":"NA","md5":"22c24451fbd512e17ba8d8f8923ca3d3"}}
-{"time":"2026-10-02 12:18:39.980119","message":"wrote 'en_balanced_lists_english.html'","data":{"path":"output/experiments/en_balanced_lists_english.html","rows":"NA","md5":"5d72eac05e183404c3048ac4b51a50b2"}}
-{"time":"2026-10-02 12:18:42.053496","message":"wrote 'en_balanced_lists_english_datasheet_R.json'","data":{"path":"output/reports/en_balanced_lists_english_datasheet_R.json","rows":"NA","md5":"7e3ff08a9c99d24d3a68a4083895009b"}}
-{"time":"2026-10-02 12:18:42.428786","message":"wrote 'en_balanced_lists_english_datasheet_R.md'","data":{"path":"output/reports/en_balanced_lists_english_datasheet_R.md","rows":"NA","md5":"0a1ccd651f193aa7288b83e5cb766a51"}}
+{"time":"2026-10-02 16:41:25.434198","message":"loading lexicon 'corpora/derived/en.csv'","data":null}
+{"time":"2026-10-02 16:41:27.811889","message":"lexicon loaded: 30000 words","data":{"words":30000}}
+{"time":"2026-10-02 16:41:27.969716","message":"pool after filters: 7230 words","data":{"pool":7230}}
+{"time":"2026-10-02 16:41:28.916989","message":"matched 80 items across 2 conditions","data":{"conditions":"high_frequency, low_frequency"}}
+{"time":"2026-10-02 16:41:29.217833","message":"equivalence low_frequency vs high_frequency on 'length': d = 0.02 [-0.35, 0.39], TOST p = 0.018 (equivalent)","data":null}
+{"time":"2026-10-02 16:41:29.24155","message":"equivalence low_frequency vs high_frequency on 'frequency': d = 5.05 [4.29, 5.82], TOST p = 1.000 (not shown equivalent)","data":null}
+{"time":"2026-10-02 16:41:29.311495","message":"equivalence low_frequency vs high_frequency on 'n_density': d = 0.05 [-0.32, 0.42], TOST p = 0.024 (equivalent)","data":null}
+{"time":"2026-10-02 16:41:29.336295","message":"equivalence low_frequency vs high_frequency on 'old20': d = 0.05 [-0.32, 0.43], TOST p = 0.025 (equivalent)","data":null}
+{"time":"2026-10-02 16:41:29.393764","message":"balanced 40 item sets across 4 lists on length, n_density, old20, frequency: cost 1121480 -> 53820 in 10 swap(s)","data":{"cost_before":1121480,"cost_after":53820,"swaps":10}}
+{"time":"2026-10-02 16:41:31.539148","message":"wrote 'en_balanced_lists_english_stimuli_R.csv'","data":{"path":"output/stimuli/en_balanced_lists_english_stimuli_R.csv","rows":80,"md5":"ea6027af81e16cad2979e4e8c1afe7a2"}}
+{"time":"2026-10-02 16:41:32.281849","message":"wrote 'en_balanced_lists_english_descriptives_R.csv'","data":{"path":"output/reports/en_balanced_lists_english_descriptives_R.csv","rows":8,"md5":"0773a3bf93269e14568726dfea032629"}}
+{"time":"2026-10-02 16:41:33.355494","message":"wrote 'en_balanced_lists_english_comparisons_R.csv'","data":{"path":"output/reports/en_balanced_lists_english_comparisons_R.csv","rows":4,"md5":"488dd8d3168996fb298b771d15a79bd2"}}
+{"time":"2026-10-02 16:41:54.152573","message":"wrote 'en_balanced_lists_english_psychopy.py'","data":{"path":"output/experiments/en_balanced_lists_english_psychopy.py","rows":"NA","md5":"27a96761cd60bfc463da1a2a9b6ad759"}}
+{"time":"2026-10-02 16:41:54.225291","message":"wrote 'en_balanced_lists_english.osexp'","data":{"path":"output/experiments/en_balanced_lists_english.osexp","rows":"NA","md5":"b3f65c1089d250662965e2a12edb455f"}}
+{"time":"2026-10-02 16:41:54.375517","message":"wrote 'en_balanced_lists_english.html'","data":{"path":"output/experiments/en_balanced_lists_english.html","rows":"NA","md5":"5d72eac05e183404c3048ac4b51a50b2"}}
+{"time":"2026-10-02 16:41:57.527784","message":"wrote 'en_balanced_lists_english_datasheet_R.json'","data":{"path":"output/reports/en_balanced_lists_english_datasheet_R.json","rows":"NA","md5":"a5b46308d25b1b7c04dc3a0c53e4658a"}}
+{"time":"2026-10-02 16:41:58.300117","message":"wrote 'en_balanced_lists_english_datasheet_R.md'","data":{"path":"output/reports/en_balanced_lists_english_datasheet_R.md","rows":"NA","md5":"0a1ccd651f193aa7288b83e5cb766a51"}}

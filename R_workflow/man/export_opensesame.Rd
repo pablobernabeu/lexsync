@@ -21,5 +21,18 @@ export_opensesame(stimuli, design, schema, outdir, base = NULL)
 The path to the generated \code{.osexp}, invisibly.
 }
 \description{
-Export a complete plain-text OpenSesame experiment
+Writes \verb{<base>.osexp} and the two tables it reads. Its loop runs over
+\verb{<base>_opensesame.csv}, which holds numbers only: \code{lexsync_row} (the trial's
+position in loop order, from 1), \code{lexsync_trial}, \code{lexsync_list}, \code{lexsync_set},
+the trigger codes, \code{critical_region} and any per-trial duration. The presented
+text, \code{condition}, \code{block} and \code{answer} are in \verb{<base>_opensesame_text.csv}, which
+the inline scripts read with Python's \code{csv} module, so OpenSesame never evaluates
+them. Copy both tables with the experiment.
+}
+\details{
+OpenSesame evaluates the cells of a loop table: in 4.x a cell holding \verb{\{} runs as a
+Python f-string, and in 3.3 a cell starting with \code{=} or holding \verb{[=...]} runs as
+Python. A value in a numeric column that is not a plain number is therefore
+refused, naming the column. An empty cell passes. These rules were checked against
+the sources of OpenSesame 3.3.14 and 4.1.20.
 }

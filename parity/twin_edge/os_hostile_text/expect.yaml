@@ -1,0 +1,4 @@
+# Both engines write the same experiments, and OpenSesame's loop table holds numbers
+# only while the companion text table carries the strings verbatim.
+outcome: artefacts
+compare: [experiments]

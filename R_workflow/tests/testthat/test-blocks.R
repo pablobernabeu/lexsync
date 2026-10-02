@@ -160,9 +160,18 @@ test_that("the OpenSesame emitter guards a restricted event and refuses an impos
   # str, not unicode: OpenSesame 3.3+ runs inline scripts in a Python 3 workspace and
   # does not inject the Python 2 builtin, so the earlier spelling died with NameError on
   # the first trial of any design using a feedback event or a blocks restriction.
-  expect_true(grepl("if str(var.get(u'block', u'main')) in [u'practice']:",
-                    txt, fixed = TRUE))
   expect_false(grepl("unicode(", txt, fixed = TRUE))
+  # The block and the answer are text, so they come from the trial's row of the
+  # companion table, never from OpenSesame's variable store.
+  expect_true(grepl("if _lexsync_row().get(u'block', u'main') in [u'practice']:",
+                    txt, fixed = TRUE))
+  expect_true(grepl("_want = str(_lexsync_row().get(u'answer', u'')).strip()",
+                    txt, fixed = TRUE))
+  # The response is read without evaluation, and a timeout counts as no response in
+  # both versions. 4.x stores None and 3.3 the string 'None', and an evaluated read in
+  # 4.x turned None into 'None' as well, so a timeout was scored as a wrong key.
+  expect_true(grepl("_got = var.get(u'response', u'', _eval=False)", txt, fixed = TRUE))
+  expect_true(grepl("if _got in (u'', u'None'):", txt, fixed = TRUE))
   # var.get(name, None) is indistinguishable from no default in OpenSesame's var_store
   # and RAISES; only a non-None sentinel yields a value.
   expect_false(grepl("var.get(u'response', None)", txt, fixed = TRUE))

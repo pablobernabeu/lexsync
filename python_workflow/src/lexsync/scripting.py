@@ -19,6 +19,7 @@ import pandas as pd
 
 from .io_utils import (
     _key_part,
+    _readr_cell,
     _round_dp,
     clean_column,
     clean_key,
@@ -37,6 +38,22 @@ from .paradigms import content_field, referenced_fields, resolve_events
 # block, so no existing loop table gains a column.
 _STD_COLS = ["trial", "list", "block", "set", "condition", "critical_region", "answer",
              "condition_trigger", "item_trigger"]
+
+# The loop-table columns the OpenSesame target carries as numbers, under the names its
+# loop table gives them. OpenSesame evaluates every cell of a loop table. In 4.x, a cell
+# holding a single `{` runs as a Python f-string, and in 3.3 a cell starting with `=` or
+# holding `[=...]` runs as Python. Both versions retype a cell such as 'nan' or '007'.
+# That loop table therefore holds numbers only, and the presented text travels in a
+# companion table that the inline scripts read with the csv module. OpenSesame 4 also
+# makes every loop column a global of the inline scripts, where `list` and `set` would
+# shadow Python's builtins, so those two are renamed and `trial` with them. Must match
+# .OS_NUMERIC in scripting.R.
+_OS_NUMERIC = {"trial": "lexsync_trial", "list": "lexsync_list", "replicate": "replicate",
+               "set": "lexsync_set", "critical_region": "critical_region",
+               "condition_trigger": "condition_trigger", "item_trigger": "item_trigger"}
+# A plain decimal number, which both OpenSesame versions store and read back as written.
+# [0-9], not \d, which in Python also matches the digits of other scripts.
+_PLAIN_NUMBER = re.compile(r"\A-?[0-9]+(\.[0-9]+)?\Z")
 
 
 def _frames_to_ms(frames, hz) -> int:
@@ -373,16 +390,22 @@ def render_events(events: list, timing: dict, hz: float = 60) -> list:
     return out
 
 
+def _ms_columns(events: list | None) -> list:
+    """The per-trial duration columns an event list reads, in event order."""
+    cols = []
+    for i, ev in enumerate(events or [], start=1):
+        s = _duration_spec(ev, i)
+        if s is not None and s["column"] not in cols:
+            cols.append(s["column"])
+    return cols
+
+
 def loop_table(stimuli: pd.DataFrame, events: list | None = None) -> pd.DataFrame:
     """Per-trial table carrying exactly the fields the events reference."""
     fields = referenced_fields(events) if events else (["word"] if "word" in stimuli.columns else [])
     # A per-trial duration is read from the loop table at run time, so its column
     # has to travel with the trials, and cannot stay behind in the stimuli file.
-    ms_cols = []
-    for i, ev in enumerate(events or [], start=1):
-        s = _duration_spec(ev, i)
-        if s is not None and s["column"] not in ms_cols:
-            ms_cols.append(s["column"])
+    ms_cols = _ms_columns(events)
     cols = []
     for c in _STD_COLS[:5] + fields + ms_cols + _STD_COLS[5:]:
         if c in stimuli.columns and c not in cols:
@@ -394,6 +417,42 @@ def loop_table(stimuli: pd.DataFrame, events: list | None = None) -> pd.DataFram
         # their incoming order or the two engines write different loop tables.
         tab = tab.sort_values("trial", kind="stable").reset_index(drop=True)
     return tab
+
+
+def _opensesame_tables(stimuli: pd.DataFrame, events: list) -> tuple:
+    """The OpenSesame target's loop table and its companion text table.
+
+    Both are the loop table, split by column and joined by ``lexsync_row``, the trial's
+    position in loop order (1..N). The loop table holds ``lexsync_row`` and the numeric
+    columns of ``_OS_NUMERIC`` plus any per-trial duration. The text table holds
+    ``lexsync_row``, every presented field and every other column (``condition``,
+    ``block``, ``answer``). A presented field that is also numeric goes to both.
+
+    A numeric column's cells are checked as ``write_csv_utf8`` renders them, so the
+    check sees the bytes OpenSesame will read. A cell that is not a plain decimal
+    number is refused, naming the column. An empty cell passes, since OpenSesame leaves
+    it alone and a filler sentence may have no critical region. Must match
+    .opensesame_tables in scripting.R.
+    """
+    tab = loop_table(stimuli, events)
+    presented = referenced_fields(events)
+    numeric = list(_OS_NUMERIC) + _ms_columns(events)
+    rows = list(range(1, len(tab) + 1))
+    numbers = pd.DataFrame({"lexsync_row": rows})
+    text = pd.DataFrame({"lexsync_row": rows})
+    for col in tab.columns:
+        if col in numeric:
+            for value in tab[col]:
+                cell = _readr_cell(value)
+                if cell and not _PLAIN_NUMBER.match(cell):
+                    raise ValueError(
+                        "lexsync: column '%s' holds '%s', and the OpenSesame loop table "
+                        "holds numbers only, because OpenSesame evaluates the cells of a "
+                        "loop table." % (col, cell))
+            numbers[_OS_NUMERIC.get(col, col)] = tab[col].to_numpy()
+        if col in presented or col not in numeric:
+            text[col] = tab[col].to_numpy()
+    return numbers, text
 
 
 def _write_text(text: str, path: str) -> str:
@@ -451,15 +510,25 @@ def _pyq(s: str) -> str:
             .replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t") + "'")
 
 
+def _text_expr(field: str) -> str:
+    """A trial's text for `field`, from its row of the companion table."""
+    return "_lexsync_row()[%s]" % _pyq(field)
+
+
+def _number_expr(column: str) -> str:
+    """A trial's value of a numeric loop column, read without evaluation."""
+    return "int(var.get(%s, _eval=False))" % _pyq(column)
+
+
 def _content_expr(ev: dict) -> str:
-    return f"var.{ev['field']}" if "field" in ev else _pyq(ev.get("text", ""))
+    return _text_expr(ev["field"]) if "field" in ev else _pyq(ev.get("text", ""))
 
 
 def _trigger_expr(spec) -> str | None:
     if spec is None:
         return None
     if isinstance(spec, str) and spec.startswith("@"):
-        return f"var.{spec[1:]}"
+        return _number_expr(spec[1:])
     return str(int(spec))
 
 
@@ -476,6 +545,13 @@ def _trigger_expr(spec) -> str | None:
 # `elif default is not None: val = default / else: raise VariableDoesNotExist(var)`, so
 # passing None explicitly is indistinguishable from passing no default and RAISES rather
 # than yielding None. A non-None sentinel is the only default that works.
+#
+# And no text from `var` at all. OpenSesame evaluates a loop cell when the loop sets it
+# and again when a script reads it. The presented text, the block and the answer
+# therefore come from the trial's row of the companion table (`_lexsync_row()`, defined
+# by the setup script). What is still read from `var`, the numeric loop columns and the
+# response, is read with `_eval=False`: an evaluated read in 4.x turns a timed-out
+# response, stored as None, into the string 'None'.
 
 
 def _osexp_block_guard(body: list, blocks) -> list:
@@ -489,7 +565,7 @@ def _osexp_block_guard(body: list, blocks) -> list:
     if not blocks:
         return body
     wanted = ", ".join(_pyq(str(b)) for b in blocks)
-    return (["if str(var.get(u'block', u'main')) in [%s]:" % wanted]
+    return (["if _lexsync_row().get(u'block', u'main') in [%s]:" % wanted]
             + ["    " + line for line in body])
 
 
@@ -506,7 +582,8 @@ def _osexp_event_block(name: str, ev: dict) -> tuple:
     # A fixed duration is a literal; one that varies per trial reads the loop-table
     # column, which OpenSesame exposes on `var`. Must match .osexp_event_block in
     # scripting.R, since the two engines write the same .osexp.
-    sleep_arg = ("int(var.%s)" % clean_column(ev["ms_column"], "a jittered duration's `as`")
+    sleep_arg = ("int(float(var.get(%s, _eval=False)))"
+                 % _pyq(clean_column(ev["ms_column"], "a jittered duration's `as`"))
                  if ev.get("ms_column") else str(int(ev.get("ms", 0))))
     if t in ("fixation", "text", "mask", "blank"):
         body = ["c = Canvas()"]
@@ -523,8 +600,10 @@ def _osexp_event_block(name: str, ev: dict) -> tuple:
     if t == "region":
         trig = _trigger_expr(ev.get("crit_trigger"))
         body = [
-            f"_regions = [r for r in var.{ev['field']}.split({_pyq(ev.get('sep', '|'))}) if r != u'']",
-            "_crit = int(var.get(u'critical_region', 0) or 0)",
+            f"_regions = [r for r in {_text_expr(ev['field'])}.split({_pyq(ev.get('sep', '|'))})"
+            " if r != u'']",
+            # An empty cell, a sentence with no critical region, reads as 0: no trigger.
+            "_crit = int(var.get(u'critical_region', 0, _eval=False) or 0)",
             f"_kb = Keyboard(keylist=[{_pyq(ev.get('key', 'space'))}], timeout=None)",
             "for _i, _region in enumerate(_regions, start=1):",
             "    c = Canvas(); c.text(_region); c.show()",
@@ -536,7 +615,7 @@ def _osexp_event_block(name: str, ev: dict) -> tuple:
                               _osexp_block_guard(body, blocks), run=True), [name])
     if t == "question":
         body = [
-            f"c = Canvas(); c.text(var.{ev['field']}); c.show()",
+            f"c = Canvas(); c.text({_text_expr(ev['field'])}); c.show()",
             f"_kb = Keyboard(keylist=[{', '.join(_pyq(k) for k in ev.get('keys', ['f', 'j']))}], "
             f"timeout={int(ev.get('timeout', 5) * 1000)})",
             "var.response, var.response_time = _kb.get_key()",
@@ -544,16 +623,18 @@ def _osexp_event_block(name: str, ev: dict) -> tuple:
         return (_inline_block(name, "Comprehension question",
                               _osexp_block_guard(body, blocks), run=True), [name])
     if t == "feedback":
-        # `var.response` is set by the keyboard_response above; `var.answer` (or whichever
-        # column the event names) holds the KEY that is correct, so scoring is a string
-        # comparison. A timeout leaves the response None, which is reported separately
-        # because on a timed task it means something different from a wrong key.
+        # `var.response` is set by the keyboard_response above. The answer column (or
+        # whichever column the event names) holds the KEY that is correct, so scoring is
+        # a string comparison. A timeout is reported separately, because on a timed task
+        # it means something different from a wrong key. OpenSesame 4.x stores it as
+        # None and 3.3 as the string 'None', so both count as no response.
         body = [
-            "_want = str(var.get(u'%s', u'')).strip()"
+            "_want = str(_lexsync_row().get(u'%s', u'')).strip()"
             % clean_column(ev.get("answer", "answer"), "a feedback event's `answer`"),
-            "_got = var.get(u'response', u'')",
-            "if _got is None or _got == u'': _msg = %s" % _pyq(ev.get("no_response", "Too slow")),
-            "elif str(_got).strip() == _want: _msg = %s" % _pyq(ev.get("correct", "Correct")),
+            "_got = var.get(u'response', u'', _eval=False)",
+            "_got = u'' if _got is None else str(_got).strip()",
+            "if _got in (u'', u'None'): _msg = %s" % _pyq(ev.get("no_response", "Too slow")),
+            "elif _got == _want: _msg = %s" % _pyq(ev.get("correct", "Correct")),
             "else: _msg = %s" % _pyq(ev.get("incorrect", "Incorrect")),
             "c = Canvas(); c.text(_msg); c.show()",
             "clock.sleep(%s)" % sleep_arg,
@@ -588,7 +669,14 @@ def _inline_block(name: str, desc: str, body: list, run: bool) -> list:
 
 
 def build_osexp(design: dict, conditions_file: str, schema: dict, rendered: list,
-                font: str = "mono") -> str:
+                font: str = "mono", text_file: str | None = None) -> str:
+    """The plain text of an OpenSesame experiment for a rendered event list.
+
+    ``conditions_file`` names the loop table and ``text_file`` its companion text
+    table, which defaults to the loop table's name with ``_text`` before ``.csv``.
+    Both are looked up through OpenSesame's file pool, which also searches the
+    experiment's own folder. Must match build_osexp in scripting.R.
+    """
     addr = clean_port((schema.get("triggers") or {}).get("parallel_address", "0x378"))
     design_name = clean_meta(design["name"], "the design's `name`")
     language = clean_meta(design["language"], "the design's `language`")
@@ -596,8 +684,19 @@ def build_osexp(design: dict, conditions_file: str, schema: dict, rendered: list
     # guarded here rather than at the caller: an .osexp is line-oriented and a newline
     # would add items to the experiment.
     font = clean_meta(font, "the font")
+    if text_file is None:
+        text_file = re.sub(r"\.csv$", "", conditions_file) + "_text.csv"
 
     setup = [
+        # The trial texts, read as data with the csv module and keyed by the loop's
+        # `lexsync_row` (not by the loop's position, which a user who switches the loop
+        # to random order would change). utf-8-sig also reads a copy that a spreadsheet
+        # saved with a byte-order mark.
+        "import csv as _csv",
+        "with open(pool[%s], encoding=u'utf-8-sig', newline=u'') as _f:" % _pyq(text_file),
+        "    _LEXSYNC_ROWS = {int(_r[u'lexsync_row']): _r for _r in _csv.DictReader(_f)}",
+        "def _lexsync_row():",
+        "    return _LEXSYNC_ROWS[int(var.get(u'lexsync_row', _eval=False))]",
         "var.trigger_backend = u'parallel'",
         f"var.parallel_port_address = {addr}",
         "var.test_mode = u'no'",
@@ -653,7 +752,8 @@ def build_osexp(design: dict, conditions_file: str, schema: dict, rendered: list
         "set coordinates uniform", "set compensation 0", "set color_backend legacy",
         "set clock_backend legacy", "set canvas_backend xpyriment", "set background black", "",
         "define inline_script lexsync_trigger_setup",
-        '\tset description "Open the trigger device with a test-mode fallback"',
+        '\tset description "Load the trial texts and open the trigger device with a '
+        'test-mode fallback"',
         '\tset _run ""', "\t___prepare__", *["\t" + s for s in setup], "\t__end__", "",
     ]
     trial = [
@@ -677,15 +777,52 @@ def build_osexp(design: dict, conditions_file: str, schema: dict, rendered: list
 
 
 def export_opensesame(stimuli, design, schema, outdir, base=None) -> str:
+    """Write a complete plain-text OpenSesame experiment and the two tables it reads.
+
+    ``<base>.osexp`` loops over ``<base>_opensesame.csv``, which holds numbers only:
+    ``lexsync_row`` (the trial's position in loop order, from 1), ``lexsync_trial``,
+    ``lexsync_list``, ``lexsync_set``, the trigger codes, ``critical_region`` and any
+    per-trial duration. The presented text, ``condition``, ``block`` and ``answer`` are
+    in ``<base>_opensesame_text.csv``, which the inline scripts read with Python's
+    ``csv`` module, so OpenSesame never evaluates them. Copy both tables with the
+    experiment.
+
+    OpenSesame evaluates the cells of a loop table: in 4.x a cell holding ``{`` runs as
+    a Python f-string, and in 3.3 a cell starting with ``=`` or holding ``[=...]`` runs
+    as Python. A value in a numeric column that is not a plain number is therefore
+    refused, naming the column. An empty cell passes. These rules were checked against
+    the sources of OpenSesame 3.3.14 and 4.1.20.
+
+    Parameters
+    ----------
+    stimuli : pandas.DataFrame
+        Stimuli with trigger columns (see ``lexsync.scripting.assign_triggers``).
+    design : dict
+        A parsed design configuration.
+    schema : dict
+        The parsed global schema (trigger and presentation settings).
+    outdir : str
+        Output directory.
+    base : str, optional
+        File-name stem, by default the design's name and language.
+
+    Returns
+    -------
+    str
+        The path to the generated ``.osexp``.
+    """
     base = base or slugify(design["name"], design["language"])
     events = resolve_events(design)
     rendered = render_events(events, design.get("timing") or {}, _refresh_hz(schema))
+    numbers, text = _opensesame_tables(stimuli, events)
     csv_name = f"{base}_opensesame.csv"
-    write_csv_utf8(loop_table(stimuli, events), os.path.join(outdir, csv_name))
+    text_name = f"{base}_opensesame_text.csv"
     presentation = schema.get("presentation") or {}
     font = design.get("font") or presentation.get("opensesame_font") or "mono"
-    text = build_osexp(design, csv_name, schema, rendered, font=font)
-    return _write_text(text, os.path.join(outdir, f"{base}.osexp"))
+    osexp = build_osexp(design, csv_name, schema, rendered, font=font, text_file=text_name)
+    write_csv_utf8(numbers, os.path.join(outdir, csv_name))
+    write_csv_utf8(text, os.path.join(outdir, text_name))
+    return _write_text(osexp, os.path.join(outdir, f"{base}.osexp"))
 
 
 # BCP 47 tags for the human-readable language labels the designs carry, covering the

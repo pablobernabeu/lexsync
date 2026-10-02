@@ -1,0 +1,9 @@
+item,condition,word,word_ms,sentence,critical_region,question,answer
+1,a,{__import__('os').getpid()},300,The|report|{was}|detailed.,3,Was the report {detailed}?,f
+1,b,[=1+1],300,The|sum|[=1+1]|was right.,3,Was the sum [=2+2]?,j
+2,a,=1+1,350,=1+1|is|two.,1,=Was it two?,f
+2,b,[name],350,The|[name]|field|was empty.,2,Was [name] empty?,j
+3,a,infinity,400,The|count|ran to|infinity.,4,Did it reach infinity?,f
+3,b,nan,400,The|value|was|nan.,4,Was the value nan?,j
+4,a,True,450,It|was|True.,3,Was it True?,f
+4,b,007,450,Agent|007|returned.,2,Was it 007?,j

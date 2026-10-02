@@ -4,9 +4,35 @@
 \alias{build_osexp}
 \title{Build a complete plain-text OpenSesame experiment from rendered events}
 \usage{
-build_osexp(design, conditions_file, schema, rendered, font = "mono")
+build_osexp(
+  design,
+  conditions_file,
+  schema,
+  rendered,
+  font = "mono",
+  text_file = NULL
+)
+}
+\arguments{
+\item{design}{A parsed design configuration.}
+
+\item{conditions_file}{File name of the loop table.}
+
+\item{schema}{The parsed global schema (trigger settings).}
+
+\item{rendered}{Rendered events, from \code{\link[=render_events]{render_events()}}.}
+
+\item{font}{The font family OpenSesame draws text in.}
+
+\item{text_file}{File name of the companion text table. \code{NULL} (the default) puts
+\verb{_text} before the \code{.csv} of \code{conditions_file}.}
+}
+\value{
+The experiment's text, one string.
 }
 \description{
-Build a complete plain-text OpenSesame experiment from rendered events
+The loop table and its companion text table are both looked up through OpenSesame's
+file pool, which also searches the experiment's own folder. Mirrors \code{build_osexp}
+in the Python engine.
 }
 \keyword{internal}

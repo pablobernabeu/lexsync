@@ -19,13 +19,20 @@ design:
   and shows the target word and sends the onset marker immediately after
   `show()` returns.
 
-The generated `.osexp` expects a loop table (CSV) beside it. Each row carries the
-stimulus fields that design's events reference (`word` for the single-word
-designs, `prime` and `target` for priming, `sentence` and `question` for
-self-paced reading), plus the `condition_trigger` and `item_trigger` markers that
-`assign_triggers` adds. The snippet above sends `item_trigger` and then
-`condition_trigger`. Adjust those names if you paste it into a design whose
-loop table names its markers differently.
+The generated `.osexp` expects two tables (CSV) beside it, and both must be
+copied with it. OpenSesame evaluates the cells of a loop table: a cell holding
+`[=...]` runs as Python, and so does one holding `{` in OpenSesame 4.x or
+starting with `=` in 3.3. The loop table therefore holds numbers only, among them
+the `condition_trigger` and `item_trigger` markers that `assign_triggers` adds.
+The stimulus fields that the design's events reference (`word` for the
+single-word designs, `prime` and `target` for priming, `sentence` and `question`
+for self-paced reading) are in `<base>_opensesame_text.csv`. The generated
+scripts read it with Python's `csv` module. The snippet above reads `var.word`
+from your own loop table, so keep braces, square brackets and a leading `=` out
+of the words there. Read that way, a word such as `nan` or `infinity` also
+stops OpenSesame 4.x. The snippet sends `item_trigger` and then
+`condition_trigger`. Adjust those names if you paste it into a design whose loop
+table names its markers differently.
 
 Timing: the word is drawn and shown from inside an `inline_script`, and the
 trigger is sent immediately after `canvas.show()` returns. Because `show()`

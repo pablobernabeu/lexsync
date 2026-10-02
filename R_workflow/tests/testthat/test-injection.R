@@ -5,8 +5,10 @@
 # generated PsychoPy script, OpenSesame experiment or jsPsych page, which is the only
 # thing those files are for. Every value the design controls therefore has to stay data.
 #
-# Stimulus text always did: it travels in the loop-table CSV the experiment reads at run
-# time. Design METADATA did not. The name, language label, font, parallel-port address
+# Stimulus text travels in a CSV the experiment reads at run time, and PsychoPy and
+# jsPsych read it as data. OpenSesame evaluates every cell of its loop table, so that
+# table holds numbers only and the scripts read the text from a companion table. Design
+# METADATA was the other way in. The name, language label, font, parallel-port address
 # and the column names on jitter and feedback events were substituted straight into code
 # and markup positions, so a quote or an angle bracket there stopped being text.
 #
@@ -196,4 +198,85 @@ test_that("the html escape covers the JavaScript line separators", {
   expect_false(grepl("\u2029", out, fixed = TRUE))
   expect_true(grepl("\\u2028", out, fixed = TRUE))
   expect_true(grepl("\\u2029", out, fixed = TRUE))
+})
+
+# ---- OpenSesame evaluates the cells of its loop table ----------------------------------
+
+# Presented text that OpenSesame would run or retype in a loop cell. A single brace makes
+# the cell a Python f-string in OpenSesame 4.x, and a leading '=' runs Python in 3.3. In
+# both versions, '[=...]' runs Python, '[name]' is replaced by another variable, and
+# 'infinity', 'nan' and '007' come back as numbers, as does 'True' in 4.x. None of them
+# may be refused, since they are words.
+os_hostile <- c("{__import__('os').getpid()}", "[=1+1]", "=1+1", "[name]", "infinity",
+                "nan", "True", "007", "The report {was} detailed.")
+os_plain_number <- "^-?[0-9]+(\\.[0-9]+)?\\z"
+
+stim_for_opensesame <- function() {
+  n <- length(os_hostile)
+  assign_triggers(data.frame(
+    word = os_hostile,
+    sentence = c("The|report|{was}|detailed.", sprintf("Region|%s|ends.", os_hostile[-1])),
+    question = sprintf("Was it %s?", os_hostile),
+    condition = c(rep(c("a", "b"), 4), "a"), set = seq_len(n), list = 1L,
+    trial = seq_len(n), critical_region = 2L, answer = c(rep(c("f", "j"), 4), "f"),
+    iti_ms = 400L + 25L * (seq_len(n) - 1L), stringsAsFactors = FALSE
+  ))
+}
+
+design_for_opensesame <- function() {
+  list(name = "inj", language = "english", timing = list(), events = list(
+    list(type = "fixation", content = "+", duration_ms = 500L),
+    list(type = "text", content = "{word}", duration_ms = 300L, trigger = "condition"),
+    list(type = "response", keys = c("f", "j"), timeout_ms = 2000L),
+    list(type = "feedback", answer = "answer", duration_ms = 600L),
+    list(type = "region_by_region", content = "{sentence}", critical_region_trigger = "item"),
+    list(type = "question", content = "{question}", keys = c("f", "j"), timeout_ms = 4000L),
+    list(type = "blank", duration = list(from_column = "iti_ms"))
+  ))
+}
+
+read_cells <- function(path) {
+  utils::read.csv(path, colClasses = "character", na.strings = character(0),
+                  quote = "\"", check.names = FALSE, encoding = "UTF-8")
+}
+
+test_that("the OpenSesame loop table holds only numbers", {
+  # Mirrors test_the_opensesame_loop_table_holds_only_numbers in test_injection.py.
+  schema <- schema_for_injection()
+  out <- tempfile(); dir.create(out)
+  stim <- stim_for_opensesame()
+  osexp <- export_opensesame(stim, design_for_opensesame(), schema, out)
+  loop <- read_cells(file.path(out, "inj_english_opensesame.csv"))
+  expect_identical(names(loop), c("lexsync_row", "lexsync_trial", "lexsync_list",
+                                  "lexsync_set", "iti_ms", "critical_region",
+                                  "condition_trigger", "item_trigger"))
+  cells <- unlist(loop, use.names = FALSE)
+  expect_true(length(cells) > 0L && all(grepl(os_plain_number, cells, perl = TRUE)))
+  text <- read_cells(file.path(out, "inj_english_opensesame_text.csv"))
+  expect_identical(names(text), c("lexsync_row", "condition", "word", "sentence",
+                                  "question", "answer"))
+  expect_identical(text$word, os_hostile)
+  expect_identical(text$sentence, stim$sentence)
+  expect_identical(text$question, stim$question)
+  os <- readLines(osexp, warn = FALSE)
+  expect_false(any(grepl("var\\.(word|sentence|question|condition|answer|block)\\b", os,
+                         perl = TRUE)))
+  reads <- grep("var.get(", os, fixed = TRUE, value = TRUE)
+  expect_true(length(reads) > 0L && all(grepl("_eval=False", reads, fixed = TRUE)))
+})
+
+test_that("a loop column that is not a number is refused for OpenSesame", {
+  schema <- schema_for_injection()
+  out <- tempfile(); dir.create(out)
+  stim <- stim_for_opensesame()
+  stim$critical_region <- c("3a", rep("2", nrow(stim) - 1L))
+  expect_error(export_opensesame(stim, design_for_opensesame(), schema, out),
+               "column 'critical_region' holds '3a'", fixed = TRUE)
+  # Only the OpenSesame target refuses: the other two read the value as data.
+  expect_silent(export_psychopy(stim, design_for_opensesame(), schema, out))
+  expect_silent(export_jspsych(stim, design_for_opensesame(), schema, out))
+  # An empty cell is inert in both OpenSesame versions, and a filler sentence may have
+  # no critical region, so a missing value passes.
+  stim$critical_region <- c(NA, rep(2L, nrow(stim) - 1L))
+  expect_silent(export_opensesame(stim, design_for_opensesame(), schema, out))
 })

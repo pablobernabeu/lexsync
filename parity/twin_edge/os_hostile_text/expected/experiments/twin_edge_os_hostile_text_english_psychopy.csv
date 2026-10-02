@@ -1,0 +1,11 @@
+trial,list,block,set,condition,word,sentence,question,word_ms,iti_ms,critical_region,answer,condition_trigger,item_trigger
+1,1,practice,5,a,ready,This|is|practice.,Is this practice?,300,430,,f,101,44
+2,1,practice,6,b,{steady},Practice|ends|{here}.,Was that {all}?,300,479,,j,102,45
+3,1,main,1,a,{__import__('os').getpid()},The|report|{was}|detailed.,Was the report {detailed}?,300,451,3,f,101,40
+4,1,main,3,b,nan,The|value|was|nan.,Was the value nan?,400,483,4,j,102,42
+5,1,main,2,b,[name],The|[name]|field|was empty.,Was [name] empty?,350,706,2,j,102,41
+6,1,main,2,a,=1+1,=1+1|is|two.,=Was it two?,350,646,1,f,101,41
+7,1,main,4,b,007,Agent|007|returned.,Was it 007?,450,495,2,j,102,43
+8,1,main,3,a,infinity,The|count|ran to|infinity.,Did it reach infinity?,400,712,4,f,101,42
+9,1,main,4,a,True,It|was|True.,Was it True?,450,552,3,f,101,43
+10,1,main,1,b,[=1+1],The|sum|[=1+1]|was right.,Was the sum [=2+2]?,300,546,3,j,102,40

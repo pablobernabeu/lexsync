@@ -208,12 +208,21 @@ def test_the_opensesame_emitter_writes_python_3():
     does not inject the Python 2 builtin, so the earlier spelling died with NameError on
     the first trial of any design using a feedback event or a blocks restriction. And
     var.get(name, None) is indistinguishable from no default in OpenSesame's var_store,
-    which RAISES rather than yielding None."""
+    which RAISES rather than yielding None.
+
+    The block and the answer are text, so they come from the trial's row of the
+    companion table, never from OpenSesame's variable store. The response is read
+    without evaluation, and a timeout counts as no response in both versions. 4.x
+    stores None and 3.3 the string 'None', and an evaluated read in 4.x turned None
+    into 'None' as well, so a timeout was scored as a wrong key."""
     from lexsync.scripting import _osexp_event_block
     ev = render_events(_feedback_design()["events"], {}, 60)
     lines, _ = _osexp_event_block("ev_fb", ev[-1])
     txt = "\n".join(lines)
-    assert "if str(var.get(u'block', u'main')) in [u'practice']:" in txt
+    assert "if _lexsync_row().get(u'block', u'main') in [u'practice']:" in txt
+    assert "_want = str(_lexsync_row().get(u'answer', u'')).strip()" in txt
+    assert "_got = var.get(u'response', u'', _eval=False)" in txt
+    assert "if _got in (u'', u'None'):" in txt
     assert "unicode(" not in txt
     assert "var.get(u'response', None)" not in txt
 
