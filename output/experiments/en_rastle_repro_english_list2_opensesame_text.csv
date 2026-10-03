@@ -1,0 +1,13 @@
+lexsync_row,condition,prime,target
+1,related,spinach,spin
+2,related,archer,arch
+3,unrelated,satchel,broth
+4,related,scandal,scan
+5,unrelated,harvest,teach
+6,unrelated,gateway,clean
+7,unrelated,hospital,cat
+8,related,hunter,hunt
+9,related,sparrow,spar
+10,unrelated,candle,moth
+11,related,corner,corn
+12,unrelated,anthem,deal

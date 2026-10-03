@@ -19,7 +19,7 @@
     },
     {
       "file": "output/experiments/es_freqcontrast_spanish_psychopy.py",
-      "sha256": "fa8a94de8f9314b49d5cada043f8aaa7cd04e1efc9916f4250cb45dff35f5296"
+      "sha256": "a0b9d7a0bbb62a4c4d08e7912b8037eb29ae228f730ebdd4c0679597bd890d1b"
     },
     {
       "file": "output/experiments/es_freqcontrast_spanish.osexp",
@@ -27,10 +27,23 @@
     },
     {
       "file": "output/experiments/es_freqcontrast_spanish.html",
-      "sha256": "f7f63e6033cc37a62541ec379a3f0a5a38719064cb292822d7e8942712140782"
+      "sha256": "c6b0bab96cceed7fbe46ff22a28118192d6cc68b22e41e99f30b1db9ccbe2801"
+    },
+    {
+      "file": "output/experiments/es_freqcontrast_spanish_psychopy.csv",
+      "sha256": "5340355e655a20aa436ffe7302a2736dacda15655a2d7ae582fafacf7039609b"
+    },
+    {
+      "file": "output/experiments/es_freqcontrast_spanish_opensesame.csv",
+      "sha256": "1e25b9106227e8e2c653f141054c90e9e9042e05938ecae6586eae3e7b592dd5"
+    },
+    {
+      "file": "output/experiments/es_freqcontrast_spanish_opensesame_text.csv",
+      "sha256": "e4a02b053c50c71cc3d12730d9569635e31856fbfef1b205a5b930e2b209c598"
     }
   ],
   "counterbalancing": {
+    "assignment": "version = ((participant - 1) mod 1) + 1 unless a version is given at launch",
     "cells": [
       {
         "condition": "high_frequency",
@@ -46,7 +59,8 @@
     "complete": true,
     "issues": [],
     "lists": 1,
-    "recipe": "factorial"
+    "recipe": "factorial",
+    "versions": 1
   },
   "design": {
     "description": "High versus low frequency Spanish words, matched on length, neighbourhood density and OLD20.",

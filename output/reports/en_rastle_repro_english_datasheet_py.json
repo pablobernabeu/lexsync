@@ -11,18 +11,43 @@
     },
     {
       "file": "output/experiments/en_rastle_repro_english_psychopy.py",
-      "sha256": "e8692810c2f2f5f1625a75f44fc8056e063f750e05f1a940a9e928e096dd78c8"
+      "sha256": "23b72f0a958f8cf6d641fac583b910687405db7a9ca93146641169ec2af28e35"
     },
     {
-      "file": "output/experiments/en_rastle_repro_english.osexp",
-      "sha256": "b88814e3e71aea2a73c7c33a3fec5c6e42ff2cd34e6391d5a656f34794e2ae8d"
+      "file": "output/experiments/en_rastle_repro_english_list1.osexp",
+      "sha256": "f81f9b914a55154a80c3cc1acb32088dee8c76fd32f608af8a308dbe675157c4"
+    },
+    {
+      "file": "output/experiments/en_rastle_repro_english_list2.osexp",
+      "sha256": "d02ca06237e7ae00f1c091a394fd8e4acda84a561ecaa5f2a97422bac74464f0"
     },
     {
       "file": "output/experiments/en_rastle_repro_english.html",
-      "sha256": "d0e8bad60eb6170e9b80a2da25f116ba777994f4ae0887e6c35b7ab6bcc3d289"
+      "sha256": "7d0334720bfb6b2e8625bb4836b6d6beabd1cac7d1f3209df3745d88e6f98eda"
+    },
+    {
+      "file": "output/experiments/en_rastle_repro_english_psychopy.csv",
+      "sha256": "630ee96d012f1b1b9d37f2b49f9e384404422d4726341dc021c1684d0f4ba316"
+    },
+    {
+      "file": "output/experiments/en_rastle_repro_english_list1_opensesame.csv",
+      "sha256": "bbdc716b6f1513045ff7ee47bc5386b82ea2472e2e1d07974f5f62411e1b6d1c"
+    },
+    {
+      "file": "output/experiments/en_rastle_repro_english_list1_opensesame_text.csv",
+      "sha256": "acdf72c09fd2be1f2780e43da228f1210018cd86d8fadcce017c44e92e28f54e"
+    },
+    {
+      "file": "output/experiments/en_rastle_repro_english_list2_opensesame.csv",
+      "sha256": "7a8252c67b7088afbb40a27fe8e32c336092a4ff5a3d8f9bfb0c5f7dbfb7483c"
+    },
+    {
+      "file": "output/experiments/en_rastle_repro_english_list2_opensesame_text.csv",
+      "sha256": "b10fcc530827c7fa540c64b0927dd5010103487fe3d0a1c5a610d98720a424a9"
     }
   ],
   "counterbalancing": {
+    "assignment": "version = ((participant - 1) mod 2) + 1 unless a version is given at launch",
     "cells": [
       {
         "condition": "related",
@@ -48,7 +73,8 @@
     "complete": true,
     "issues": [],
     "lists": 2,
-    "recipe": "latin_square_target"
+    "recipe": "latin_square_target",
+    "versions": 2
   },
   "design": {
     "description": "Reproducing Rastle, Davis & New (2004): masked priming contrasting transparent, opaque and orthographic (form) prime-target relationships, each against an unrelated baseline; Latin-square counterbalanced over two lists.",

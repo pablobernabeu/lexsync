@@ -1,0 +1,5 @@
+lexsync_row,lexsync_trial,lexsync_list,replicate,lexsync_set,condition_trigger,item_trigger
+1,1,2,2,2,102,41
+2,2,2,2,4,101,43
+3,3,2,2,4,102,43
+4,4,2,2,2,101,41

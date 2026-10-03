@@ -19,7 +19,7 @@
     },
     {
       "file": "output/experiments/en_lexdec_english_psychopy.py",
-      "sha256": "ea54fe94a02efd0275ec59eb8b446bc2dd10bdada77c29814abdea4856240391"
+      "sha256": "c554b7aef919991132dded03ca4e0f243cd8bb0f79d532c87de54b121e324045"
     },
     {
       "file": "output/experiments/en_lexdec_english.osexp",
@@ -27,10 +27,23 @@
     },
     {
       "file": "output/experiments/en_lexdec_english.html",
-      "sha256": "7d67e4407f024714eea4579d863a516626a8cd451b9e84992df445edf7109428"
+      "sha256": "6773747e5d8750154b0c60a69e82a689c9aff0740e60fa2af11fffffd2b4f269"
+    },
+    {
+      "file": "output/experiments/en_lexdec_english_psychopy.csv",
+      "sha256": "d77caafbdcf75879fd929e74c24af86ff3d46b7e9a44c2f5dbdee3711449d42a"
+    },
+    {
+      "file": "output/experiments/en_lexdec_english_opensesame.csv",
+      "sha256": "8bf045e4f061953932ea7a17fa2f78916d3c688e903fec71c75091613e54d105"
+    },
+    {
+      "file": "output/experiments/en_lexdec_english_opensesame_text.csv",
+      "sha256": "64da890a39e037a94e823829c43a164e2b7cf6f9e82c8cc5e1d7fbabf505aeb7"
     }
   ],
   "counterbalancing": {
+    "assignment": "version = ((participant - 1) mod 1) + 1 unless a version is given at launch",
     "cells": [
       {
         "condition": "pseudoword",
@@ -46,7 +59,8 @@
     "complete": true,
     "issues": [],
     "lists": 1,
-    "recipe": "factorial"
+    "recipe": "factorial",
+    "versions": 1
   },
   "design": {
     "description": "Lexical decision: real words versus length-matched, orthographically legal pseudowords (deterministically generated).",

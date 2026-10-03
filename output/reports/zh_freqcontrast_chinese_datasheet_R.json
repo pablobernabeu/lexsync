@@ -139,7 +139,9 @@
         "condition": "low_frequency",
         "n_trials": 80
       }
-    ]
+    ],
+    "versions": 1,
+    "assignment": "version = ((participant - 1) mod 1) + 1 unless a version is given at launch"
   },
   "resampling": null,
   "items": {
@@ -184,7 +186,7 @@
     },
     {
       "file": "output/experiments/zh_freqcontrast_chinese_psychopy.py",
-      "sha256": "e4f89dd3a6ef14f565f0b09a4f7922b623eddc95522ce07747014c1f0a93a371"
+      "sha256": "6789bfbe717d1d8aaeefb02f0c51033e61e363419eae054c4feb8e0a9ed9c60e"
     },
     {
       "file": "output/experiments/zh_freqcontrast_chinese.osexp",
@@ -192,7 +194,19 @@
     },
     {
       "file": "output/experiments/zh_freqcontrast_chinese.html",
-      "sha256": "6f7ef119d12b2d06e088938a12b5f4c9e0f189191e124a91eb18df25a68502e9"
+      "sha256": "29b6342aefc7365efd20c9c897ff6267097893828485559468e7b14205a77f03"
+    },
+    {
+      "file": "output/experiments/zh_freqcontrast_chinese_psychopy.csv",
+      "sha256": "ce8759c4b14bbcc181c95bc0094508a1e0ebbfb5f54d7d1c3d8618f4e8e3a968"
+    },
+    {
+      "file": "output/experiments/zh_freqcontrast_chinese_opensesame.csv",
+      "sha256": "1e25b9106227e8e2c653f141054c90e9e9042e05938ecae6586eae3e7b592dd5"
+    },
+    {
+      "file": "output/experiments/zh_freqcontrast_chinese_opensesame_text.csv",
+      "sha256": "fdd9e7fac63e395633374eab4392d0ccb2409001ceee3d39e0cce51e3e942e7a"
     }
   ]
 }

@@ -11,18 +11,43 @@
     },
     {
       "file": "output/experiments/en_priming_jitter_english_psychopy.py",
-      "sha256": "7d32c8d179547629d5dea1122adba352074597533f441c959692c048e6df2794"
+      "sha256": "a7b03620c41969b118d77b0af81d97b4c307eb1b8116c28985f75f9a72c2d9b3"
     },
     {
-      "file": "output/experiments/en_priming_jitter_english.osexp",
-      "sha256": "ba29edecbb263a266e7b69b0b3613ae51f306af1125ac6ae0c8a6f8792bd9304"
+      "file": "output/experiments/en_priming_jitter_english_list1.osexp",
+      "sha256": "63f5a30b46a04669b37c391d9d48290785f4bab3b479fd16b6d82cbd94c40cc5"
+    },
+    {
+      "file": "output/experiments/en_priming_jitter_english_list2.osexp",
+      "sha256": "85882283fd3c356489d07517cba363f214d6a11407fed2c2e736246449438dd8"
     },
     {
       "file": "output/experiments/en_priming_jitter_english.html",
-      "sha256": "b55e7f68a97fcaf7b8849efb4d40b9ff4f095d26ec6401ee1ff0d41868615773"
+      "sha256": "ba6373531e634710f1b9d1e26e3f2d425db6b7a441ed1175b293c5df1c0bee98"
+    },
+    {
+      "file": "output/experiments/en_priming_jitter_english_psychopy.csv",
+      "sha256": "f0ebe019f148b6eed9a98b9be82137c4c72aef04c4779bc57bf41dfb68ff6190"
+    },
+    {
+      "file": "output/experiments/en_priming_jitter_english_list1_opensesame.csv",
+      "sha256": "b8a01a38da775177862d0b17548e62f885456f629a415885bbc419702325ac2e"
+    },
+    {
+      "file": "output/experiments/en_priming_jitter_english_list1_opensesame_text.csv",
+      "sha256": "aa9fccadb3ad167e84623e76084da0ed7a4563c74d3a96eef0ca2844ca2e9f40"
+    },
+    {
+      "file": "output/experiments/en_priming_jitter_english_list2_opensesame.csv",
+      "sha256": "bcaea33869e322c22b2183429d166b9fa3a92ada1f31e3a37a741b342f0a9ded"
+    },
+    {
+      "file": "output/experiments/en_priming_jitter_english_list2_opensesame_text.csv",
+      "sha256": "9fc2d639ecb9e34d389cc089e202379ed642d6a47e7afd76b16a941af50650b9"
     }
   ],
   "counterbalancing": {
+    "assignment": "version = ((participant - 1) mod 2) + 1 unless a version is given at launch",
     "cells": [
       {
         "condition": "related",
@@ -48,7 +73,8 @@
     "complete": true,
     "issues": [],
     "lists": 2,
-    "recipe": "latin_square_target"
+    "recipe": "latin_square_target",
+    "versions": 2
   },
   "design": {
     "description": "Priming with a per-trial prime duration read from the items, which sets the stimulus-onset asynchrony, and a jittered inter-trial interval, both recorded as trial-level variables.",

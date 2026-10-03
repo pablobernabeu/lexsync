@@ -1,8 +1,8 @@
 # lexsync run log: en_priming
 
 - Engine: R 4.6.1
-- Started: 2026-10-03 09:48:50.33689
-- Finished: 2026-10-03 09:48:55.731666
+- Started: 2026-10-03 11:26:28.446853
+- Finished: 2026-10-03 11:26:34.967287
 
 ## Run metadata
 
@@ -15,30 +15,54 @@
 
 ## Steps
 
-- **2026-10-03 09:48:50.396264**: loading items 'items/priming_pairs_en.csv'
-- **2026-10-03 09:48:50.907378**: loaded 12 items across 2 conditions
+- **2026-10-03 11:26:28.460931**: loading items 'items/priming_pairs_en.csv'
+- **2026-10-03 11:26:28.539827**: loaded 12 items across 2 conditions
     - conditions: related, unrelated
-- **2026-10-03 09:48:51.342605**: wrote 'en_priming_english_stimuli_R.csv'
+- **2026-10-03 11:26:29.45474**: wrote 'en_priming_english_stimuli_R.csv'
     - path: output/stimuli/en_priming_english_stimuli_R.csv
     - rows: 24
     - md5: b3a0f1575da65f040ed2a2c3e7e25353
-- **2026-10-03 09:48:54.474798**: wrote 'en_priming_english_psychopy.py'
+- **2026-10-03 11:26:32.257319**: wrote 'en_priming_english_psychopy.py'
     - path: output/experiments/en_priming_english_psychopy.py
     - rows: NA
-    - md5: 98600707e1f150905fc9605d462b1bd2
-- **2026-10-03 09:48:54.606236**: wrote 'en_priming_english.osexp'
-    - path: output/experiments/en_priming_english.osexp
+    - md5: 938fa975093cb01e85131e8790704c15
+- **2026-10-03 11:26:32.356793**: wrote 'en_priming_english_list1.osexp'
+    - path: output/experiments/en_priming_english_list1.osexp
     - rows: NA
-    - md5: a0931303c0167831c464a40b1a0a089e
-- **2026-10-03 09:48:54.709621**: wrote 'en_priming_english.html'
+    - md5: e61b54a7b12040baf69b8f7739cc158c
+- **2026-10-03 11:26:32.45824**: wrote 'en_priming_english_list2.osexp'
+    - path: output/experiments/en_priming_english_list2.osexp
+    - rows: NA
+    - md5: a53fd638f2899b55b037f617eee1f031
+- **2026-10-03 11:26:32.617269**: wrote 'en_priming_english.html'
     - path: output/experiments/en_priming_english.html
     - rows: NA
-    - md5: d0faeaba3e3038b59e938657a2ae942b
-- **2026-10-03 09:48:55.421219**: wrote 'en_priming_english_datasheet_R.json'
+    - md5: 7f138a9c93f62aae8d231e2daa15ced1
+- **2026-10-03 11:26:32.77183**: wrote 'en_priming_english_psychopy.csv'
+    - path: output/experiments/en_priming_english_psychopy.csv
+    - rows: NA
+    - md5: 8d937171690cabcc72a29489ef15c7cb
+- **2026-10-03 11:26:32.874403**: wrote 'en_priming_english_list1_opensesame.csv'
+    - path: output/experiments/en_priming_english_list1_opensesame.csv
+    - rows: NA
+    - md5: 0e2b073e248ca34d8dd60b5879e8394c
+- **2026-10-03 11:26:32.998114**: wrote 'en_priming_english_list1_opensesame_text.csv'
+    - path: output/experiments/en_priming_english_list1_opensesame_text.csv
+    - rows: NA
+    - md5: 309938eafed1eaeaa495f8ea232031f3
+- **2026-10-03 11:26:33.07476**: wrote 'en_priming_english_list2_opensesame.csv'
+    - path: output/experiments/en_priming_english_list2_opensesame.csv
+    - rows: NA
+    - md5: f658e984956caa1ae12417a10473fcd9
+- **2026-10-03 11:26:33.162564**: wrote 'en_priming_english_list2_opensesame_text.csv'
+    - path: output/experiments/en_priming_english_list2_opensesame_text.csv
+    - rows: NA
+    - md5: 68c47c52e0391f25ce8c8ef8199984fc
+- **2026-10-03 11:26:34.756725**: wrote 'en_priming_english_datasheet_R.json'
     - path: output/reports/en_priming_english_datasheet_R.json
     - rows: NA
-    - md5: 27a4e1c274682f1a6a2c0ea240078fb0
-- **2026-10-03 09:48:55.56365**: wrote 'en_priming_english_datasheet_R.md'
+    - md5: 9e12f0de37cc1fe8bfc0707548d20c3c
+- **2026-10-03 11:26:34.831973**: wrote 'en_priming_english_datasheet_R.md'
     - path: output/reports/en_priming_english_datasheet_R.md
     - rows: NA
-    - md5: e2d670153ae0afc359cfef03cdcb4641
+    - md5: 0153a8d1a498f76ce203924a9909864f

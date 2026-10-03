@@ -522,6 +522,51 @@ test_that("an incomplete rotation reaches the run log and the datasheet", {
   expect_true(grepl("(an incomplete Latin-square rotation)", md, fixed = TRUE))
 })
 
+# Two lists give two OpenSesame experiments, each with its own loop and text tables. The
+# run log recorded the three experiment scripts only, and the datasheet listed no loop
+# table, although the loop tables hold the trial order and the trigger codes. Pinned
+# identically in tests/test_run_pipeline.py.
+test_that("the run log and the datasheet name every experiment file", {
+  out <- tmp_out()
+  items <- file.path(out, "items.csv")
+  grid <- expand.grid(c = c("related", "unrelated"), s = 1:4, stringsAsFactors = FALSE)
+  writeLines(c("item,condition,prime,target",
+               sprintf("%d,%s,%s%d,t%d", grid$s, grid$c, substr(grid$c, 1L, 3L), grid$s,
+                       grid$s)),
+             items, useBytes = TRUE)
+  design <- write_design(out, c(
+    "name: guard_versions",
+    "language: english",
+    "paradigm: priming",
+    "items:",
+    "  source: table",
+    paste0("  path: ", as_yaml_path(items)),
+    "counterbalance:",
+    "  lists: 2"
+  ))
+  res <- run_quiet(design, extdata("schema.yaml"), outdir = out)
+  files <- res$experiments$files
+  expect_identical(basename(files), c(
+    "guard_versions_english_psychopy.py", "guard_versions_english_list1.osexp",
+    "guard_versions_english_list2.osexp", "guard_versions_english.html",
+    "guard_versions_english_psychopy.csv",
+    "guard_versions_english_list1_opensesame.csv",
+    "guard_versions_english_list1_opensesame_text.csv",
+    "guard_versions_english_list2_opensesame.csv",
+    "guard_versions_english_list2_opensesame_text.csv"))
+  expect_identical(res$experiments$opensesame, files[2])
+  log <- paste(readLines(res$log, warn = FALSE), collapse = "\n")
+  for (p in files) {
+    expect_true(grepl(sprintf("wrote '%s'", basename(p)), log, fixed = TRUE), info = p)
+  }
+  record <- jsonlite::fromJSON(file.path(out, "reports",
+                                         "guard_versions_english_datasheet_R.json"),
+                               simplifyVector = FALSE)
+  recorded <- vapply(record$artifacts, function(a) basename(a$file), character(1))
+  expect_identical(recorded[-1], basename(files))
+  expect_identical(as.integer(record$counterbalancing$versions), 2L)
+})
+
 # One item set in three conditions, dealt to two lists, never shows its third
 # condition. The check counts the conditions of the table the pipeline dealt, not those
 # the lists hold, so it reports three conditions and gives the condition left out an

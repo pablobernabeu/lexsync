@@ -13,11 +13,17 @@
     jsPsych library and stylesheet are loaded from a CDN (unpkg), so the machine
     running it needs an internet connection; to run offline, download jspsych@7.3.4,
     the html-keyboard-response plugin and jspsych.css and point the three tags below
-    at the local copies. A welcome screen precedes the trials and a completion
-    screen follows them. Every recorded row carries the item's design fields
-    (condition, item id, counterbalancing list and so on) alongside the onset
-    marker (the 'marker' field), so responses can be scored without re-joining to
-    the stimulus table.
+    at the local copies. The trials of every presentation version are embedded,
+    and a run presents the one the page's address names. The address
+    ?participant=N runs version ((N - 1) mod V) + 1 of the V versions, ?version=K
+    runs version K, and ?list=K runs list K when the versions do not span several
+    replicates. A page with more than one version, opened without any of these,
+    says how to open it and runs nothing. A welcome screen precedes the trials and
+    a completion screen follows them. Every recorded row carries the item's design
+    fields (condition, item id, counterbalancing list and so on) alongside the
+    onset marker (the 'marker' field), and the participant, version, list and
+    replicate of the run, so responses can be scored without re-joining to the
+    stimulus table.
     When the run finishes the data are offered as a CSV download (jsPsych
     localSave), so no server is required to collect them. A browser cannot drive a
     parallel port, so for online EEG synchronisation route the marker through
@@ -41,11 +47,80 @@
 <script>
   const EVENTS = [{"type":"fixation","text":"+","ms":500},{"type":"text","field":"target","ms":800,"trigger":"@condition_trigger"},{"type":"response","keys":["f","j"],"timeout":2},{"type":"feedback","answer":"answer","correct":"Correct","incorrect":"Incorrect","no_response":"Too slow","ms":600,"blocks":["practice"]},{"type":"blank","ms":250}];
   const TRIALS = [{"trial":1,"list":1,"block":"practice","set":29,"condition":"word","target":"clock","answer":"f","condition_trigger":101,"item_trigger":61},{"trial":2,"list":1,"block":"practice","set":34,"condition":"pseudoword","target":"frelt","answer":"j","condition_trigger":102,"item_trigger":67},{"trial":3,"list":1,"block":"practice","set":32,"condition":"pseudoword","target":"skirn","answer":"j","condition_trigger":102,"item_trigger":65},{"trial":4,"list":1,"block":"practice","set":31,"condition":"word","target":"brave","answer":"f","condition_trigger":101,"item_trigger":64},{"trial":5,"list":1,"block":"practice","set":30,"condition":"pseudoword","target":"plank","answer":"j","condition_trigger":102,"item_trigger":63},{"trial":6,"list":1,"block":"practice","set":36,"condition":"pseudoword","target":"plost","answer":"j","condition_trigger":102,"item_trigger":69},{"trial":7,"list":1,"block":"practice","set":33,"condition":"word","target":"light","answer":"f","condition_trigger":101,"item_trigger":66},{"trial":8,"list":1,"block":"practice","set":35,"condition":"word","target":"chair","answer":"f","condition_trigger":101,"item_trigger":68},{"trial":9,"list":1,"block":"main","set":4,"condition":"pseudoword","target":"chinl","condition_trigger":102,"item_trigger":70},{"trial":10,"list":1,"block":"main","set":12,"condition":"word","target":"nana","condition_trigger":101,"item_trigger":43},{"trial":11,"list":1,"block":"filler","set":21,"condition":"word","target":"bridge","answer":"f","condition_trigger":101,"item_trigger":53},{"trial":12,"list":1,"block":"main","set":1,"condition":"pseudoword","target":"aarin","condition_trigger":102,"item_trigger":40},{"trial":13,"list":1,"block":"main","set":12,"condition":"pseudoword","target":"nang","condition_trigger":102,"item_trigger":43},{"trial":14,"list":1,"block":"main","set":19,"condition":"pseudoword","target":"rersion","condition_trigger":102,"item_trigger":50},{"trial":15,"list":1,"block":"main","set":8,"condition":"pseudoword","target":"glastes","condition_trigger":102,"item_trigger":74},{"trial":16,"list":1,"block":"main","set":18,"condition":"pseudoword","target":"tind","condition_trigger":102,"item_trigger":49},{"trial":17,"list":1,"block":"main","set":14,"condition":"word","target":"purse","condition_trigger":101,"item_trigger":45},{"trial":18,"list":1,"block":"main","set":7,"condition":"word","target":"females","condition_trigger":101,"item_trigger":73},{"trial":19,"list":1,"block":"main","set":5,"condition":"word","target":"curator","condition_trigger":101,"item_trigger":71},{"trial":20,"list":1,"block":"filler","set":23,"condition":"word","target":"marble","answer":"f","condition_trigger":101,"item_trigger":55},{"trial":21,"list":1,"block":"main","set":6,"condition":"word","target":"drums","condition_trigger":101,"item_trigger":72},{"trial":22,"list":1,"block":"main","set":3,"condition":"pseudoword","target":"eracket","condition_trigger":102,"item_trigger":62},{"trial":23,"list":1,"block":"main","set":9,"condition":"word","target":"horizon","condition_trigger":101,"item_trigger":75},{"trial":24,"list":1,"block":"main","set":4,"condition":"word","target":"chill","condition_trigger":101,"item_trigger":70},{"trial":25,"list":1,"block":"main","set":9,"condition":"pseudoword","target":"horinon","condition_trigger":102,"item_trigger":75},{"trial":26,"list":1,"block":"main","set":2,"condition":"pseudoword","target":"atid","condition_trigger":102,"item_trigger":51},{"trial":27,"list":1,"block":"main","set":13,"condition":"word","target":"paul","condition_trigger":101,"item_trigger":44},{"trial":28,"list":1,"block":"main","set":18,"condition":"word","target":"tied","condition_trigger":101,"item_trigger":49},{"trial":29,"list":1,"block":"filler","set":27,"condition":"pseudoword","target":"blorge","answer":"j","condition_trigger":102,"item_trigger":59},{"trial":30,"list":1,"block":"main","set":20,"condition":"word","target":"zurich","condition_trigger":101,"item_trigger":52},{"trial":31,"list":1,"block":"main","set":11,"condition":"word","target":"mailed","condition_trigger":101,"item_trigger":42},{"trial":32,"list":1,"block":"filler","set":26,"condition":"pseudoword","target":"strunk","answer":"j","condition_trigger":102,"item_trigger":58},{"trial":33,"list":1,"block":"main","set":3,"condition":"word","target":"bracket","condition_trigger":101,"item_trigger":62},{"trial":34,"list":1,"block":"filler","set":24,"condition":"word","target":"candle","answer":"f","condition_trigger":101,"item_trigger":56},{"trial":35,"list":1,"block":"filler","set":28,"condition":"pseudoword","target":"vantle","answer":"j","condition_trigger":102,"item_trigger":60},{"trial":36,"list":1,"block":"main","set":20,"condition":"pseudoword","target":"zerich","condition_trigger":102,"item_trigger":52},{"trial":37,"list":1,"block":"main","set":2,"condition":"word","target":"avid","condition_trigger":101,"item_trigger":51},{"trial":38,"list":1,"block":"main","set":16,"condition":"word","target":"shoe","condition_trigger":101,"item_trigger":47},{"trial":39,"list":1,"block":"main","set":15,"condition":"pseudoword","target":"reller","condition_trigger":102,"item_trigger":46},{"trial":40,"list":1,"block":"main","set":1,"condition":"word","target":"aaron","condition_trigger":101,"item_trigger":40},{"trial":41,"list":1,"block":"main","set":11,"condition":"pseudoword","target":"mained","condition_trigger":102,"item_trigger":42},{"trial":42,"list":1,"block":"main","set":17,"condition":"pseudoword","target":"sters","condition_trigger":102,"item_trigger":48},{"trial":43,"list":1,"block":"main","set":19,"condition":"word","target":"version","condition_trigger":101,"item_trigger":50},{"trial":44,"list":1,"block":"main","set":16,"condition":"pseudoword","target":"shon","condition_trigger":102,"item_trigger":47},{"trial":45,"list":1,"block":"main","set":8,"condition":"word","target":"glasses","condition_trigger":101,"item_trigger":74},{"trial":46,"list":1,"block":"main","set":15,"condition":"word","target":"roller","condition_trigger":101,"item_trigger":46},{"trial":47,"list":1,"block":"main","set":14,"condition":"pseudoword","target":"perse","condition_trigger":102,"item_trigger":45},{"trial":48,"list":1,"block":"main","set":17,"condition":"word","target":"stems","condition_trigger":101,"item_trigger":48},{"trial":49,"list":1,"block":"filler","set":22,"condition":"word","target":"tundra","answer":"f","condition_trigger":101,"item_trigger":54},{"trial":50,"list":1,"block":"main","set":10,"condition":"word","target":"kingdom","condition_trigger":101,"item_trigger":41},{"trial":51,"list":1,"block":"main","set":10,"condition":"pseudoword","target":"tingdom","condition_trigger":102,"item_trigger":41},{"trial":52,"list":1,"block":"main","set":7,"condition":"pseudoword","target":"ferales","condition_trigger":102,"item_trigger":73},{"trial":53,"list":1,"block":"filler","set":25,"condition":"pseudoword","target":"plimth","answer":"j","condition_trigger":102,"item_trigger":57},{"trial":54,"list":1,"block":"main","set":5,"condition":"pseudoword","target":"curater","condition_trigger":102,"item_trigger":71},{"trial":55,"list":1,"block":"main","set":6,"condition":"pseudoword","target":"erums","condition_trigger":102,"item_trigger":72},{"trial":56,"list":1,"block":"main","set":13,"condition":"pseudoword","target":"pall","condition_trigger":102,"item_trigger":44}];
-  // A filename for the saved data, derived from the page title so no design value
-  // is interpolated into JavaScript; non-filename characters become underscores.
-  const DATA_FILE = document.title.replace(/[^A-Za-z0-9_.-]+/g, "_") + ".csv";
+  // The presentation versions, one per (replicate, list) pair of TRIALS, numbered in
+  // that order. One page serves every participant, and a run presents one version.
+  const VERSIONS = [{"version":1,"replicate":1,"list":1,"n_trials":56}];
+
+  // A replicate or list value. A trial without the field is replicate 1, or list 1.
+  function whole(value) {
+    return (value === undefined || value === null || value === "") ? 1 : Number(value);
+  }
+
+  // The version this run presents, from the page's address: ?version=K, ?list=K when
+  // the versions do not span several replicates, or ?participant=N, whose version is
+  // ((N - 1) mod V) + 1, the rule lexsync's participant_table() allocates by. Only
+  // whole numbers from 1 are accepted. A static page cannot count its participants,
+  // so a study run without participant numbers hands out one ?version= link per
+  // version.
+  function chooseVersion() {
+    const n = VERSIONS.length;
+    if (!n) return { error: "This experiment holds no trials." };
+    const usage = "Open this page with ?participant=N for participant number N, or with "
+      + "?version=K for K from 1 to " + n + ".";
+    const params = new URLSearchParams(window.location.search);
+    const read = {};
+    for (const name of ["participant", "version", "list"]) {
+      const raw = params.get(name);
+      if (raw === null || raw === "") continue;
+      if (!/^\d+$/.test(raw) || parseInt(raw, 10) < 1)
+        return { error: "The address gives " + name + "=" + raw + ", but " + name
+                   + " takes a whole number from 1. " + usage };
+      read[name] = parseInt(raw, 10);
+    }
+    let chosen;
+    if (read.version !== undefined) {
+      if (read.version > n)
+        return { error: "The address asks for version " + read.version + ", but this "
+                   + "experiment has " + (n === 1 ? "one version" : n + " versions") + ". "
+                   + usage };
+      chosen = VERSIONS[read.version - 1];
+    } else if (read.list !== undefined) {
+      if (new Set(VERSIONS.map(v => v.replicate)).size > 1)
+        return { error: "This experiment's versions span several replicates, so a list "
+                   + "does not name one. " + usage };
+      chosen = VERSIONS.find(v => v.list === read.list);
+      if (!chosen)
+        return { error: "The address asks for list " + read.list + ", which this "
+                   + "experiment does not have. " + usage };
+    } else if (read.participant !== undefined) {
+      chosen = VERSIONS[(read.participant - 1) % n];
+    } else if (n === 1) {
+      chosen = VERSIONS[0];
+    } else {
+      return { error: "This experiment has " + n + " versions, and each participant runs "
+                 + "one of them. " + usage };
+    }
+    return { version: chosen, participant: read.participant };
+  }
+
+  const RUN = chooseVersion();
+  const RUN_TRIALS = TRIALS.filter(t => !RUN.error
+    && whole(t.replicate) === RUN.version.replicate && whole(t.list) === RUN.version.list);
+  // A filename for the saved data, derived from the page title and the run's
+  // participant and version, so no design value is interpolated into JavaScript;
+  // non-filename characters become underscores.
+  const DATA_FILE = document.title.replace(/[^A-Za-z0-9_.-]+/g, "_")
+    + (RUN.participant === undefined ? "" : "_p" + RUN.participant)
+    + (RUN.error ? "" : "_v" + RUN.version.version) + ".csv";
 
   const jsPsych = initJsPsych();
+  if (!RUN.error) {
+    // Every recorded row says which participant and version it came from.
+    const run = { version: RUN.version.version, replicate: RUN.version.replicate,
+                  list: RUN.version.list };
+    if (RUN.participant !== undefined) run.participant = RUN.participant;
+    jsPsych.data.addProperties(run);
+  }
 
   function htmlEscape(s) {
     return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -75,10 +150,21 @@
   const timeline = [];
 
   // Welcome and instructions. The keys are described only if the task asks for a
-  // response, so a passive-reading design does not mention a keyboard.
+  // response, so a passive-reading design does not mention a keyboard. Without a
+  // version to run, the page says how to open it instead, and nothing else runs.
   (function () {
+    if (RUN.error) {
+      timeline.push({
+        type: jsPsychHtmlKeyboardResponse,
+        stimulus: "<div class='lexsync-note'><h1>No version chosen</h1><p>"
+          + htmlEscape(RUN.error) + "</p></div>",
+        choices: "NO_KEYS",
+        data: { lexsync_event: "version_error" }
+      });
+      return;
+    }
     const keys = responseKeys();
-    const n = TRIALS.length;
+    const n = RUN_TRIALS.length;
     let body = "<h1>Welcome</h1><p>Thank you for taking part. In this task you will see "
       + "items presented one at a time on the screen.</p>";
     if (keys.length)
@@ -105,7 +191,7 @@
 
   let previousBlock = null;
   let trialCounter = 0;
-  for (const trial of TRIALS) {
+  for (const trial of RUN_TRIALS) {
     // Identifies this trial's rows in the data store. A feedback screen has to score the
     // key pressed on ITS OWN trial, and eventApplies can drop a response event from a
     // block, so a trial can reach feedback with no response row of its own. Reading "the
@@ -208,7 +294,7 @@
   // Completion: save the collected data as a CSV download (no server needed) and
   // thank the participant. on_load fires as the screen appears, so every trial
   // above is already in the data store.
-  timeline.push({
+  if (!RUN.error) timeline.push({
     type: jsPsychHtmlKeyboardResponse,
     stimulus: "<div class='lexsync-note'><h1>All done</h1>"
       + "<p>The task is complete. Your data file (<code>" + htmlEscape(DATA_FILE)

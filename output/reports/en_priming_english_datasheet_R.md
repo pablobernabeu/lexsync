@@ -10,6 +10,7 @@
 - **Selection:** item table (user-supplied)
 - **Cross-engine determinism:** n/a (user-supplied items)
 - **Counterbalancing:** latin_square_target, 2 list(s)
+- **Presentation versions:** 2, assigned as version = ((participant - 1) mod 2) + 1 unless a version is given at launch
 - **Items:** 24 rows across 2 conditions (related, unrelated)
 - **Seed:** 2026  |  **Versions:** engine R, lexsync 0.1.1, R 4.6.1, readr 2.2.0, stringdist 0.9.17, jsonlite 2.0.0, digest 0.6.39, yaml 2.3.12, stringi 1.8.7, os Windows x86-64
 
@@ -29,7 +30,7 @@
 
 ## Methods paragraph
 
-12 items were drawn from an item table for a priming design (English). Materials were counterbalanced into 2 list(s) (a Latin-square rotation) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.1).
+12 items were drawn from an item table for a priming design (English). Materials were counterbalanced into 2 list(s) (a Latin-square rotation) and generated for PsychoPy, OpenSesame and jsPsych. Each participant was presented one of the 2 lists, assigned in rotation by participant number. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.1).
 
 ## Pre-registration template
 
@@ -49,7 +50,7 @@
 - Paradigm: priming
 
 ### Materials (from the lexsync datasheet)
-12 items were drawn from an item table for a priming design (English). Materials were counterbalanced into 2 list(s) (a Latin-square rotation) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.1).
+12 items were drawn from an item table for a priming design (English). Materials were counterbalanced into 2 list(s) (a Latin-square rotation) and generated for PsychoPy, OpenSesame and jsPsych. Each participant was presented one of the 2 lists, assigned in rotation by participant number. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.1).
 
 ### Sampling plan
 - Sample size and justification:

@@ -11,18 +11,43 @@
     },
     {
       "file": "output/experiments/en_spr_english_psychopy.py",
-      "sha256": "31f2c9f74d34edca6f577b2abb541dc4dc53ed3f7759628baed6c88b8f4a501c"
+      "sha256": "18482a8a872af41e3de5745363031ba40f159ebd6cab019f56e77b117fc5087d"
     },
     {
-      "file": "output/experiments/en_spr_english.osexp",
-      "sha256": "765ceb8433f8f018d25bc4025994bd9b3041d0a1765046035abdf6aa20c45953"
+      "file": "output/experiments/en_spr_english_list1.osexp",
+      "sha256": "28d0a98f23371210740ec4ac97ebb3c22605a7fbcbf173b153e776ae867850e9"
+    },
+    {
+      "file": "output/experiments/en_spr_english_list2.osexp",
+      "sha256": "9b8b7b764f2094690858d3e6943e0c785421f392ed8c47a8cdcef35ecdeb2bb5"
     },
     {
       "file": "output/experiments/en_spr_english.html",
-      "sha256": "ac27d99776222915ee695b229a5fa4ca4ae165f6af17a0eaec8433e7df1d54d5"
+      "sha256": "08de885e81524298e48697a6a6622890f634e7f9a6c3d6a1c47dc041fef2a7a0"
+    },
+    {
+      "file": "output/experiments/en_spr_english_psychopy.csv",
+      "sha256": "b325af3241691ab301f88f9bbd81e0a11e8161787b798b41131de5f223f44761"
+    },
+    {
+      "file": "output/experiments/en_spr_english_list1_opensesame.csv",
+      "sha256": "142fa189cafcd8694fdfecc1806fd00fc7f222a6919cb4a21415ed4d300f1c5a"
+    },
+    {
+      "file": "output/experiments/en_spr_english_list1_opensesame_text.csv",
+      "sha256": "b5a4f960cf72332d9d6db0f2c4f715cd166130b021cc4994b97c88031e82e7fa"
+    },
+    {
+      "file": "output/experiments/en_spr_english_list2_opensesame.csv",
+      "sha256": "fc4b925361204433aa17a509e9d297dc2a4fbc74af01a882063b26c3cf98176e"
+    },
+    {
+      "file": "output/experiments/en_spr_english_list2_opensesame_text.csv",
+      "sha256": "b9a4179252c8ab08c35304d6c81d00627a429bcb0870a3675efcbc990b97e2bd"
     }
   ],
   "counterbalancing": {
+    "assignment": "version = ((participant - 1) mod 2) + 1 unless a version is given at launch",
     "cells": [
       {
         "condition": "grammatical",
@@ -48,7 +73,8 @@
     "complete": true,
     "issues": [],
     "lists": 2,
-    "recipe": "latin_square_target"
+    "recipe": "latin_square_target",
+    "versions": 2
   },
   "design": {
     "description": "Self-paced reading: grammatical versus ungrammatical sentences presented region by region, with a comprehension question.",

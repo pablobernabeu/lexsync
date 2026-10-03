@@ -13,11 +13,17 @@
     jsPsych library and stylesheet are loaded from a CDN (unpkg), so the machine
     running it needs an internet connection; to run offline, download jspsych@7.3.4,
     the html-keyboard-response plugin and jspsych.css and point the three tags below
-    at the local copies. A welcome screen precedes the trials and a completion
-    screen follows them. Every recorded row carries the item's design fields
-    (condition, item id, counterbalancing list and so on) alongside the onset
-    marker (the 'marker' field), so responses can be scored without re-joining to
-    the stimulus table.
+    at the local copies. The trials of every presentation version are embedded,
+    and a run presents the one the page's address names. The address
+    ?participant=N runs version ((N - 1) mod V) + 1 of the V versions, ?version=K
+    runs version K, and ?list=K runs list K when the versions do not span several
+    replicates. A page with more than one version, opened without any of these,
+    says how to open it and runs nothing. A welcome screen precedes the trials and
+    a completion screen follows them. Every recorded row carries the item's design
+    fields (condition, item id, counterbalancing list and so on) alongside the
+    onset marker (the 'marker' field), and the participant, version, list and
+    replicate of the run, so responses can be scored without re-joining to the
+    stimulus table.
     When the run finishes the data are offered as a CSV download (jsPsych
     localSave), so no server is required to collect them. A browser cannot drive a
     parallel port, so for online EEG synchronisation route the marker through
@@ -40,12 +46,81 @@
 <body></body>
 <script>
   const EVENTS = [{"type":"fixation","text":"+","ms":500},{"type":"region","field":"sentence","sep":"|","key":" ","crit_trigger":"@condition_trigger"},{"type":"question","field":"question","keys":["f","j"],"timeout":5},{"type":"blank","ms":250}];
-  const TRIALS = [{"trial":1,"list":1,"set":2,"condition":"ungrammatical","sentence":"The|report|about the islands|were|detailed.","question":"Was the report detailed?","critical_region":4,"answer":"f","condition_trigger":102,"item_trigger":42},{"trial":1,"list":2,"set":8,"condition":"grammatical","sentence":"The|captain|of the ships|was|brave.","question":"Was someone brave?","critical_region":4,"answer":"f","condition_trigger":101,"item_trigger":48},{"trial":2,"list":1,"set":9,"condition":"grammatical","sentence":"The|letter|from the lawyers|was|urgent.","question":"Was the letter urgent?","critical_region":4,"answer":"f","condition_trigger":101,"item_trigger":49},{"trial":2,"list":2,"set":7,"condition":"ungrammatical","sentence":"The|window|in the offices|were|broken.","question":"Was something broken?","critical_region":4,"answer":"f","condition_trigger":102,"item_trigger":47},{"trial":3,"list":1,"set":7,"condition":"grammatical","sentence":"The|window|in the offices|was|broken.","question":"Was something broken?","critical_region":4,"answer":"f","condition_trigger":101,"item_trigger":47},{"trial":3,"list":2,"set":2,"condition":"grammatical","sentence":"The|report|about the islands|was|detailed.","question":"Was the report detailed?","critical_region":4,"answer":"f","condition_trigger":101,"item_trigger":42},{"trial":4,"list":1,"set":1,"condition":"grammatical","sentence":"The|key|to the cabinets|was|rusty.","question":"Was something rusty?","critical_region":4,"answer":"f","condition_trigger":101,"item_trigger":40},{"trial":4,"list":2,"set":10,"condition":"grammatical","sentence":"The|garden|behind the cottages|was|quiet.","question":"Was the garden noisy?","critical_region":4,"answer":"j","condition_trigger":101,"item_trigger":41},{"trial":5,"list":1,"set":6,"condition":"ungrammatical","sentence":"The|recipe|for the cookies|were|simple.","question":"Was the recipe hard?","critical_region":4,"answer":"j","condition_trigger":102,"item_trigger":46},{"trial":5,"list":2,"set":3,"condition":"ungrammatical","sentence":"The|author|of the novels|were|famous.","question":"Was someone famous?","critical_region":4,"answer":"f","condition_trigger":102,"item_trigger":43},{"trial":6,"list":1,"set":10,"condition":"ungrammatical","sentence":"The|garden|behind the cottages|were|quiet.","question":"Was the garden noisy?","critical_region":4,"answer":"j","condition_trigger":102,"item_trigger":41},{"trial":6,"list":2,"set":4,"condition":"grammatical","sentence":"The|bridge|near the houses|was|old.","question":"Was the bridge new?","critical_region":4,"answer":"j","condition_trigger":101,"item_trigger":44},{"trial":7,"list":1,"set":4,"condition":"ungrammatical","sentence":"The|bridge|near the houses|were|old.","question":"Was the bridge new?","critical_region":4,"answer":"j","condition_trigger":102,"item_trigger":44},{"trial":7,"list":2,"set":9,"condition":"ungrammatical","sentence":"The|letter|from the lawyers|were|urgent.","question":"Was the letter urgent?","critical_region":4,"answer":"f","condition_trigger":102,"item_trigger":49},{"trial":8,"list":1,"set":3,"condition":"grammatical","sentence":"The|author|of the novels|was|famous.","question":"Was someone famous?","critical_region":4,"answer":"f","condition_trigger":101,"item_trigger":43},{"trial":8,"list":2,"set":6,"condition":"grammatical","sentence":"The|recipe|for the cookies|was|simple.","question":"Was the recipe hard?","critical_region":4,"answer":"j","condition_trigger":101,"item_trigger":46},{"trial":9,"list":1,"set":5,"condition":"grammatical","sentence":"The|picture|of the children|was|lovely.","question":"Was something lovely?","critical_region":4,"answer":"f","condition_trigger":101,"item_trigger":45},{"trial":9,"list":2,"set":5,"condition":"ungrammatical","sentence":"The|picture|of the children|were|lovely.","question":"Was something lovely?","critical_region":4,"answer":"f","condition_trigger":102,"item_trigger":45},{"trial":10,"list":1,"set":8,"condition":"ungrammatical","sentence":"The|captain|of the ships|were|brave.","question":"Was someone brave?","critical_region":4,"answer":"f","condition_trigger":102,"item_trigger":48},{"trial":10,"list":2,"set":1,"condition":"ungrammatical","sentence":"The|key|to the cabinets|were|rusty.","question":"Was something rusty?","critical_region":4,"answer":"f","condition_trigger":102,"item_trigger":40}];
-  // A filename for the saved data, derived from the page title so no design value
-  // is interpolated into JavaScript; non-filename characters become underscores.
-  const DATA_FILE = document.title.replace(/[^A-Za-z0-9_.-]+/g, "_") + ".csv";
+  const TRIALS = [{"trial":1,"list":1,"set":2,"condition":"ungrammatical","sentence":"The|report|about the islands|were|detailed.","question":"Was the report detailed?","critical_region":4,"answer":"f","condition_trigger":102,"item_trigger":42},{"trial":2,"list":1,"set":9,"condition":"grammatical","sentence":"The|letter|from the lawyers|was|urgent.","question":"Was the letter urgent?","critical_region":4,"answer":"f","condition_trigger":101,"item_trigger":49},{"trial":3,"list":1,"set":7,"condition":"grammatical","sentence":"The|window|in the offices|was|broken.","question":"Was something broken?","critical_region":4,"answer":"f","condition_trigger":101,"item_trigger":47},{"trial":4,"list":1,"set":1,"condition":"grammatical","sentence":"The|key|to the cabinets|was|rusty.","question":"Was something rusty?","critical_region":4,"answer":"f","condition_trigger":101,"item_trigger":40},{"trial":5,"list":1,"set":6,"condition":"ungrammatical","sentence":"The|recipe|for the cookies|were|simple.","question":"Was the recipe hard?","critical_region":4,"answer":"j","condition_trigger":102,"item_trigger":46},{"trial":6,"list":1,"set":10,"condition":"ungrammatical","sentence":"The|garden|behind the cottages|were|quiet.","question":"Was the garden noisy?","critical_region":4,"answer":"j","condition_trigger":102,"item_trigger":41},{"trial":7,"list":1,"set":4,"condition":"ungrammatical","sentence":"The|bridge|near the houses|were|old.","question":"Was the bridge new?","critical_region":4,"answer":"j","condition_trigger":102,"item_trigger":44},{"trial":8,"list":1,"set":3,"condition":"grammatical","sentence":"The|author|of the novels|was|famous.","question":"Was someone famous?","critical_region":4,"answer":"f","condition_trigger":101,"item_trigger":43},{"trial":9,"list":1,"set":5,"condition":"grammatical","sentence":"The|picture|of the children|was|lovely.","question":"Was something lovely?","critical_region":4,"answer":"f","condition_trigger":101,"item_trigger":45},{"trial":10,"list":1,"set":8,"condition":"ungrammatical","sentence":"The|captain|of the ships|were|brave.","question":"Was someone brave?","critical_region":4,"answer":"f","condition_trigger":102,"item_trigger":48},{"trial":1,"list":2,"set":8,"condition":"grammatical","sentence":"The|captain|of the ships|was|brave.","question":"Was someone brave?","critical_region":4,"answer":"f","condition_trigger":101,"item_trigger":48},{"trial":2,"list":2,"set":7,"condition":"ungrammatical","sentence":"The|window|in the offices|were|broken.","question":"Was something broken?","critical_region":4,"answer":"f","condition_trigger":102,"item_trigger":47},{"trial":3,"list":2,"set":2,"condition":"grammatical","sentence":"The|report|about the islands|was|detailed.","question":"Was the report detailed?","critical_region":4,"answer":"f","condition_trigger":101,"item_trigger":42},{"trial":4,"list":2,"set":10,"condition":"grammatical","sentence":"The|garden|behind the cottages|was|quiet.","question":"Was the garden noisy?","critical_region":4,"answer":"j","condition_trigger":101,"item_trigger":41},{"trial":5,"list":2,"set":3,"condition":"ungrammatical","sentence":"The|author|of the novels|were|famous.","question":"Was someone famous?","critical_region":4,"answer":"f","condition_trigger":102,"item_trigger":43},{"trial":6,"list":2,"set":4,"condition":"grammatical","sentence":"The|bridge|near the houses|was|old.","question":"Was the bridge new?","critical_region":4,"answer":"j","condition_trigger":101,"item_trigger":44},{"trial":7,"list":2,"set":9,"condition":"ungrammatical","sentence":"The|letter|from the lawyers|were|urgent.","question":"Was the letter urgent?","critical_region":4,"answer":"f","condition_trigger":102,"item_trigger":49},{"trial":8,"list":2,"set":6,"condition":"grammatical","sentence":"The|recipe|for the cookies|was|simple.","question":"Was the recipe hard?","critical_region":4,"answer":"j","condition_trigger":101,"item_trigger":46},{"trial":9,"list":2,"set":5,"condition":"ungrammatical","sentence":"The|picture|of the children|were|lovely.","question":"Was something lovely?","critical_region":4,"answer":"f","condition_trigger":102,"item_trigger":45},{"trial":10,"list":2,"set":1,"condition":"ungrammatical","sentence":"The|key|to the cabinets|were|rusty.","question":"Was something rusty?","critical_region":4,"answer":"f","condition_trigger":102,"item_trigger":40}];
+  // The presentation versions, one per (replicate, list) pair of TRIALS, numbered in
+  // that order. One page serves every participant, and a run presents one version.
+  const VERSIONS = [{"version":1,"replicate":1,"list":1,"n_trials":10},{"version":2,"replicate":1,"list":2,"n_trials":10}];
+
+  // A replicate or list value. A trial without the field is replicate 1, or list 1.
+  function whole(value) {
+    return (value === undefined || value === null || value === "") ? 1 : Number(value);
+  }
+
+  // The version this run presents, from the page's address: ?version=K, ?list=K when
+  // the versions do not span several replicates, or ?participant=N, whose version is
+  // ((N - 1) mod V) + 1, the rule lexsync's participant_table() allocates by. Only
+  // whole numbers from 1 are accepted. A static page cannot count its participants,
+  // so a study run without participant numbers hands out one ?version= link per
+  // version.
+  function chooseVersion() {
+    const n = VERSIONS.length;
+    if (!n) return { error: "This experiment holds no trials." };
+    const usage = "Open this page with ?participant=N for participant number N, or with "
+      + "?version=K for K from 1 to " + n + ".";
+    const params = new URLSearchParams(window.location.search);
+    const read = {};
+    for (const name of ["participant", "version", "list"]) {
+      const raw = params.get(name);
+      if (raw === null || raw === "") continue;
+      if (!/^\d+$/.test(raw) || parseInt(raw, 10) < 1)
+        return { error: "The address gives " + name + "=" + raw + ", but " + name
+                   + " takes a whole number from 1. " + usage };
+      read[name] = parseInt(raw, 10);
+    }
+    let chosen;
+    if (read.version !== undefined) {
+      if (read.version > n)
+        return { error: "The address asks for version " + read.version + ", but this "
+                   + "experiment has " + (n === 1 ? "one version" : n + " versions") + ". "
+                   + usage };
+      chosen = VERSIONS[read.version - 1];
+    } else if (read.list !== undefined) {
+      if (new Set(VERSIONS.map(v => v.replicate)).size > 1)
+        return { error: "This experiment's versions span several replicates, so a list "
+                   + "does not name one. " + usage };
+      chosen = VERSIONS.find(v => v.list === read.list);
+      if (!chosen)
+        return { error: "The address asks for list " + read.list + ", which this "
+                   + "experiment does not have. " + usage };
+    } else if (read.participant !== undefined) {
+      chosen = VERSIONS[(read.participant - 1) % n];
+    } else if (n === 1) {
+      chosen = VERSIONS[0];
+    } else {
+      return { error: "This experiment has " + n + " versions, and each participant runs "
+                 + "one of them. " + usage };
+    }
+    return { version: chosen, participant: read.participant };
+  }
+
+  const RUN = chooseVersion();
+  const RUN_TRIALS = TRIALS.filter(t => !RUN.error
+    && whole(t.replicate) === RUN.version.replicate && whole(t.list) === RUN.version.list);
+  // A filename for the saved data, derived from the page title and the run's
+  // participant and version, so no design value is interpolated into JavaScript;
+  // non-filename characters become underscores.
+  const DATA_FILE = document.title.replace(/[^A-Za-z0-9_.-]+/g, "_")
+    + (RUN.participant === undefined ? "" : "_p" + RUN.participant)
+    + (RUN.error ? "" : "_v" + RUN.version.version) + ".csv";
 
   const jsPsych = initJsPsych();
+  if (!RUN.error) {
+    // Every recorded row says which participant and version it came from.
+    const run = { version: RUN.version.version, replicate: RUN.version.replicate,
+                  list: RUN.version.list };
+    if (RUN.participant !== undefined) run.participant = RUN.participant;
+    jsPsych.data.addProperties(run);
+  }
 
   function htmlEscape(s) {
     return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -75,10 +150,21 @@
   const timeline = [];
 
   // Welcome and instructions. The keys are described only if the task asks for a
-  // response, so a passive-reading design does not mention a keyboard.
+  // response, so a passive-reading design does not mention a keyboard. Without a
+  // version to run, the page says how to open it instead, and nothing else runs.
   (function () {
+    if (RUN.error) {
+      timeline.push({
+        type: jsPsychHtmlKeyboardResponse,
+        stimulus: "<div class='lexsync-note'><h1>No version chosen</h1><p>"
+          + htmlEscape(RUN.error) + "</p></div>",
+        choices: "NO_KEYS",
+        data: { lexsync_event: "version_error" }
+      });
+      return;
+    }
     const keys = responseKeys();
-    const n = TRIALS.length;
+    const n = RUN_TRIALS.length;
     let body = "<h1>Welcome</h1><p>Thank you for taking part. In this task you will see "
       + "items presented one at a time on the screen.</p>";
     if (keys.length)
@@ -105,7 +191,7 @@
 
   let previousBlock = null;
   let trialCounter = 0;
-  for (const trial of TRIALS) {
+  for (const trial of RUN_TRIALS) {
     // Identifies this trial's rows in the data store. A feedback screen has to score the
     // key pressed on ITS OWN trial, and eventApplies can drop a response event from a
     // block, so a trial can reach feedback with no response row of its own. Reading "the
@@ -208,7 +294,7 @@
   // Completion: save the collected data as a CSV download (no server needed) and
   // thank the participant. on_load fires as the screen appears, so every trial
   // above is already in the data store.
-  timeline.push({
+  if (!RUN.error) timeline.push({
     type: jsPsychHtmlKeyboardResponse,
     stimulus: "<div class='lexsync-note'><h1>All done</h1>"
       + "<p>The task is complete. Your data file (<code>" + htmlEscape(DATA_FILE)

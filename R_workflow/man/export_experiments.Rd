@@ -29,7 +29,11 @@ that assigns their trigger codes (see \code{\link[=assign_triggers]{assign_trigg
 default) takes the order of the design's \code{conditions}.}
 }
 \value{
-A named list of generated file paths.
+A named list of generated file paths: \code{psychopy}, \code{opensesame} (version 1's
+experiment when a design has several, see \code{\link[=export_opensesame]{export_opensesame()}}) and \code{jspsych}.
+\code{files} lists every file written, in a fixed order: the PsychoPy script, each
+OpenSesame experiment in version order, the jsPsych page, the PsychoPy conditions
+file, and then each OpenSesame experiment's loop table and text table.
 }
 \description{
 Assigns the EEG trigger codes with \code{\link[=assign_triggers]{assign_triggers()}} and then writes each

@@ -387,7 +387,9 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
   # trials too, even though they are absent from the stimuli file above.
   exps <- export_experiments(presented, design, schema, file.path(outdir, "experiments"), base,
                              conditions = condition_order)
-  for (p in exps) log <- log_artefact(log, p)
+  # Every file, the loop and text tables included: they hold the trial order and the
+  # trigger codes the experiments present, and the scripts alone did not record them.
+  for (p in exps[["files"]]) log <- log_artefact(log, p)
 
   # A materials datasheet (machine + human readable) and a pre-registration
   # template: the shareable provenance record the reproducibility literature asks

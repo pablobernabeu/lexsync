@@ -29,3 +29,12 @@ locally, so no server is required either to run it or to collect them. Onset
 triggers are recorded in each trial's data (a browser cannot drive a parallel
 port).
 }
+\details{
+The page embeds every presentation version of the design, one per (replicate,
+list) pair, and runs one, named in its address: \code{?version=K}, \code{?list=K} when there
+are no replicates, or \code{?participant=N}, whose version is \verb{((N - 1) mod V) + 1}. A
+page with more than one version, opened with none of these, shows a screen naming
+them and runs nothing. The data rows carry the participant, the version, the list
+and the replicate, and the data file is named after the participant and the
+version.
+}

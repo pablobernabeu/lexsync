@@ -1,0 +1,7 @@
+# Both engines draw the same two item samples, deal each into two lists and write one
+# OpenSesame experiment per replicate and list, four in all.
+outcome: artefacts
+compare: [stimuli, experiments]
+datasheet:
+  counterbalancing.lists: 2
+  counterbalancing.versions: 4

@@ -10,7 +10,9 @@ build_osexp(
   schema,
   rendered,
   font = "mono",
-  text_file = NULL
+  text_file = NULL,
+  version = NULL,
+  n_versions = NULL
 )
 }
 \arguments{
@@ -26,6 +28,11 @@ build_osexp(
 
 \item{text_file}{File name of the companion text table. \code{NULL} (the default) puts
 \verb{_text} before the \code{.csv} of \code{conditions_file}.}
+
+\item{version, n_versions}{The experiment is version \code{version} of \code{n_versions}. With
+more than one version, it checks OpenSesame's subject number against its own before
+the loop and warns when the participant would normally run another. \code{NULL} (the
+default) marks a design with one version, which needs no check.}
 }
 \value{
 The experiment's text, one string.

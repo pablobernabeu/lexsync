@@ -25,7 +25,10 @@ them through. That does renumber the main trials, which is correct: adding fille
 changes the sequence, and the stimuli file records where each item actually appeared.
 
 Both blocks appear in EVERY list. They are not counterbalanced, because they carry no
-manipulation to rotate; every participant should get the same practice.
+manipulation to rotate; every participant should get the same practice. In a resampled
+design each replicate's copy of a list is a presentation version of its own, given to
+its own participants, so the blocks are added to every (replicate, list) pair, and the
+trials are numbered within it.
 
 Mirrors R_workflow/R/blocks.R.
 """
@@ -97,7 +100,9 @@ def add_blocks(stimuli: pd.DataFrame, design: dict, schema: dict) -> dict:
     every trial the experiment runs, in order, with a ``block`` column when more than
     one block exists; the per-block counts and item-table checksums, or None when the
     design declares no extra block; and ``{"changed", "collapsed"}``, what Unicode NFC
-    normalisation did to the practice and filler tables (see ``load_items``).
+    normalisation did to the practice and filler tables (see ``load_items``). Trials are
+    numbered from 1 within each list, or within each (replicate, list) pair of a
+    resampled design, and the counts are per list or pair.
     """
     practice_cfg = design.get("practice")
     filler_cfg = design.get("fillers")
@@ -112,7 +117,12 @@ def add_blocks(stimuli: pd.DataFrame, design: dict, schema: dict) -> dict:
     stimuli["block"] = BLOCK_MAIN
     if "list" not in stimuli.columns:
         stimuli["list"] = 1
-    lists = sorted(stimuli["list"].unique())
+    # The unit the blocks are added to is a presentation version: a list, or in a
+    # resampled design a (replicate, list) pair. Added per list, the practice and filler
+    # rows carried no replicate, so only the first replicate's version presented them.
+    by_replicate = "replicate" in stimuli.columns
+    units = (sorted(set(zip(stimuli["replicate"], stimuli["list"], strict=True)))
+             if by_replicate else [(None, li) for li in sorted(stimuli["list"].unique())])
     offset = int(max([0] + [int(s) for s in stimuli["set"]]))
 
     fillers = None
@@ -123,25 +133,34 @@ def add_blocks(stimuli: pd.DataFrame, design: dict, schema: dict) -> dict:
     if practice_cfg:
         practice = _load_block(practice_cfg, design, "practice", offset)
 
+    def in_unit(rep, li):
+        keep = stimuli["list"] == li
+        return keep & (stimuli["replicate"] == rep) if by_replicate else keep
+
     parts = []
-    for li in lists:
-        body = stimuli[stimuli["list"] == li].reset_index(drop=True)
+    for rep, li in units:
+        body = stimuli[in_unit(rep, li)].reset_index(drop=True)
         if fillers is not None:
             f = fillers.copy()
             f["list"] = li
+            if by_replicate:
+                f["replicate"] = rep
             body = _concat_blocks(body, f)
         # One shuffle over main and fillers together is what interleaves them.
         body = _shuffle_deterministic(body, seed).reset_index(drop=True)
         if practice is not None:
             p = practice.copy()
             p["list"] = li
+            if by_replicate:
+                p["replicate"] = rep
             p = _shuffle_deterministic(p, seed).reset_index(drop=True)
             body = _concat_blocks(p, body)
         body["trial"] = range(1, len(body) + 1)
         parts.append(body)
     out = pd.concat(parts, ignore_index=True)
 
-    n_main = int((stimuli["list"] == lists[0]).sum())
+    # Counted in the first version, as the other blocks are counted per version.
+    n_main = int(in_unit(*units[0]).sum())
     report = {"blocks": [{"block": BLOCK_MAIN, "n_per_list": n_main}]}
     if fillers is not None:
         report["blocks"].append({

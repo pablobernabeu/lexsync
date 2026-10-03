@@ -210,3 +210,158 @@ test_that("the BCP 47 lookup folds case as the Python engine does", {
   expect_identical(.language_tag(list(language = "ITALIAN")), "it")
   expect_identical(.language_tag(list(language = paste0(intToUtf8(0x130), "TALIAN"))), "und")
 })
+
+# ---- One counterbalancing version per participant ----------------------------------
+# A presentation version is one (replicate, list) pair of the presented trials, numbered
+# from 1 in that order. test_scripting.py pins the same files, names and texts, and the
+# Python suite runs the generated PsychoPy script and jsPsych page themselves.
+
+# Two targets, each related in one list and unrelated in the other.
+two_list_stim <- function(schema) {
+  stim <- data.frame(prime = c("hot", "sky", "sun", "big"),
+                     target = c("cold", "cold", "moon", "moon"),
+                     condition = rep(c("related", "unrelated"), 2), set = c(1, 1, 2, 2),
+                     stringsAsFactors = FALSE)
+  design <- list(name = "t", language = "english", paradigm = "priming",
+                 counterbalance = list(lists = 2L))
+  list(stimuli = assign_triggers(counterbalance(stim, design, schema)), design = design)
+}
+
+# Three disjoint item samples, each dealt into one list, as en_resample is.
+three_replicates <- function(schema) {
+  stim <- data.frame(word = sprintf("w%02d", 0:11), condition = rep(c("hi", "lo"), 6),
+                     set = rep(c(1, 1, 2, 2), 3), replicate = rep(1:3, each = 4),
+                     stringsAsFactors = FALSE)
+  design <- list(name = "r", language = "english", counterbalance = list(lists = 1L))
+  list(stimuli = assign_triggers(counterbalance(stim, design, schema)), design = design)
+}
+
+test_that("one OpenSesame experiment per version", {
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  out <- tempfile("lexsync"); dir.create(out)
+  two <- two_list_stim(schema)
+  first <- export_opensesame(two$stimuli, two$design, schema, out)
+  expect_identical(basename(first), "t_english_list1.osexp")
+  expect_identical(sort(list.files(out), method = "radix"), c(
+    "t_english_list1.osexp", "t_english_list1_opensesame.csv",
+    "t_english_list1_opensesame_text.csv", "t_english_list2.osexp",
+    "t_english_list2_opensesame.csv", "t_english_list2_opensesame_text.csv"))
+  for (k in 1:2) {
+    numbers <- utils::read.csv(file.path(out, sprintf("t_english_list%d_opensesame.csv", k)))
+    expect_identical(unique(numbers$lexsync_list), k)
+    expect_identical(numbers$lexsync_row, 1:2)
+    text <- utils::read.csv(file.path(out, sprintf("t_english_list%d_opensesame_text.csv", k)),
+                            stringsAsFactors = FALSE)
+    expect_identical(sort(text$target), c("cold", "moon"))
+    lines <- readLines(file.path(out, sprintf("t_english_list%d.osexp", k)), warn = FALSE)
+    expect_true(sprintf('\tset source_file "t_english_list%d_opensesame.csv"', k) %in% lines)
+    expect_true(sprintf(paste0("\twith open(pool[u't_english_list%d_opensesame_text.csv'], ",
+                               "encoding=u'utf-8-sig', newline=u'') as _f:"), k) %in% lines)
+    # Each experiment checks the subject number against its own version before the
+    # loop, and no run line carries a condition.
+    expect_true("define inline_script lexsync_version_check" %in% lines)
+    expect_true(sprintf("\t_version = %d", k) %in% lines)
+    expect_true("\t_versions = 2" %in% lines)
+    runs <- grep("^\trun ", lines, value = TRUE)
+    expect_identical(utils::tail(runs, 3),
+                     c("\trun lexsync_trigger_setup always",
+                       "\trun lexsync_version_check always", "\trun lexsync_loop always"))
+    expect_false(any(grepl('"', runs, fixed = TRUE)))
+  }
+})
+
+test_that("single-version designs keep their file names", {
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  out <- tempfile("lexsync"); dir.create(out)
+  res <- export_experiments(make_stim(), list(name = "t", language = "english",
+                                              timing = list()), schema, out)
+  # The three elements callers read are unchanged, and `files` lists every file written.
+  expect_identical(names(res), c("psychopy", "opensesame", "jspsych", "files"))
+  expect_identical(basename(res$files), c(
+    "t_english_psychopy.py", "t_english.osexp", "t_english.html",
+    "t_english_psychopy.csv", "t_english_opensesame.csv", "t_english_opensesame_text.csv"))
+  expect_identical(res$files[1:3], c(res$psychopy, res$opensesame, res$jspsych))
+  expect_identical(sort(list.files(out), method = "radix"),
+                   sort(basename(res$files), method = "radix"))
+  expect_false(any(grepl("lexsync_version_check", readLines(res$opensesame, warn = FALSE),
+                         fixed = TRUE)))
+})
+
+test_that("export_experiments lists every version file", {
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  out <- tempfile("lexsync"); dir.create(out)
+  two <- two_list_stim(schema)
+  res <- export_experiments(two$stimuli, two$design, schema, out)
+  expect_identical(basename(res$files), c(
+    "t_english_psychopy.py", "t_english_list1.osexp", "t_english_list2.osexp",
+    "t_english.html", "t_english_psychopy.csv",
+    "t_english_list1_opensesame.csv", "t_english_list1_opensesame_text.csv",
+    "t_english_list2_opensesame.csv", "t_english_list2_opensesame_text.csv"))
+  expect_identical(res$opensesame, res$files[2])
+  expect_identical(sort(list.files(out), method = "radix"),
+                   sort(basename(res$files), method = "radix"))
+})
+
+test_that("resampled replicates are separate versions", {
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  three <- three_replicates(schema)
+  expect_identical(.presentation_versions(three$stimuli), lapply(1:3, function(r)
+    list(version = r, replicate = r, list = 1L, n_trials = 4L)))
+  # The loop table carries the replicate and keeps each replicate's trials together, in
+  # trial order. Trials are numbered within a replicate, so sorting on the trial alone
+  # interleaved the replicates.
+  loop <- loop_table(three$stimuli)
+  expect_identical(names(loop)[1:3], c("trial", "list", "replicate"))
+  expect_identical(paste(loop$replicate, loop$trial),
+                   paste(rep(1:3, each = 4), rep(1:4, 3)))
+  out <- tempfile("lexsync"); dir.create(out)
+  res <- export_experiments(three$stimuli, three$design, schema, out)
+  expect_identical(basename(grep("\\.osexp$", res$files, value = TRUE)),
+                   c("r_english_rep1_list1.osexp", "r_english_rep2_list1.osexp",
+                     "r_english_rep3_list1.osexp"))
+  numbers <- utils::read.csv(file.path(out, "r_english_rep2_list1_opensesame.csv"))
+  expect_identical(unique(numbers$replicate), 2L)
+})
+
+test_that("the PsychoPy script and the page carry the versions", {
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  out <- tempfile("lexsync"); dir.create(out)
+  two <- two_list_stim(schema)
+  versions <- paste0('[{"version":1,"replicate":1,"list":1,"n_trials":2},',
+                     '{"version":2,"replicate":1,"list":2,"n_trials":2}]')
+  py <- paste(readLines(export_psychopy(two$stimuli, two$design, schema, out), warn = FALSE),
+              collapse = "\n")
+  expect_true(grepl(sprintf('VERSIONS = json.loads(r"""%s""")', versions), py, fixed = TRUE))
+  html <- paste(readLines(export_jspsych(two$stimuli, two$design, schema, out), warn = FALSE),
+                collapse = "\n")
+  expect_true(grepl(sprintf("const VERSIONS = %s;", versions), html, fixed = TRUE))
+  for (text in c(py, html)) expect_false(grepl("{{", text, fixed = TRUE))
+})
+
+test_that("a presentation version is numbered by whole-number lists", {
+  # A table without `list` or `replicate` is one list of one replicate.
+  expect_identical(.presentation_versions(data.frame(word = c("a", "b"))),
+                   list(list(version = 1L, replicate = 1L, list = 1L, n_trials = 2L)))
+  # Lists are put in numeric order, so list 10 follows list 9.
+  v <- .presentation_versions(data.frame(list = c(10, 9, 10)))
+  expect_identical(vapply(v, function(x) x$list, integer(1)), c(9L, 10L))
+  expect_identical(vapply(v, function(x) x$n_trials, integer(1)), c(1L, 2L))
+  expect_error(.presentation_versions(data.frame(list = c("1", "A"))),
+               paste("lexsync: the trials' `list` column holds 'A', but a presentation",
+                     "version is numbered by whole-number lists and replicates."),
+               fixed = TRUE)
+  expect_error(.presentation_versions(data.frame(replicate = 1.5)), "column holds '1.5'",
+               fixed = TRUE)
+  # Both engines read a list by one rule: a number by its value, and text as a plain
+  # decimal number. as.numeric() alone took "0x10", Python's float() took "1_0" and other
+  # scripts' digits, and as.character() rounded 1.0000000000000002 to 1.
+  for (odd in list("1_0", "0x10", intToUtf8(0xFF11), "1e1", 1.0000000000000002)) {
+    expect_error(.presentation_versions(data.frame(list = odd)),
+                 "presentation version is numbered", fixed = TRUE)
+  }
+  expect_error(.presentation_versions(data.frame(list = 1.0000000000000002)),
+               "holds '1.0000000000000002'", fixed = TRUE)
+  v <- .presentation_versions(data.frame(list = c(" 2 ", "2.0", "10", "3")))
+  expect_identical(lapply(v, function(x) c(x$list, x$n_trials)),
+                   list(c(2L, 2L), c(3L, 1L), c(10L, 1L)))
+})

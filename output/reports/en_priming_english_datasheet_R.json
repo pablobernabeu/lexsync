@@ -56,7 +56,9 @@
         "condition": "unrelated",
         "n_trials": 6
       }
-    ]
+    ],
+    "versions": 2,
+    "assignment": "version = ((participant - 1) mod 2) + 1 unless a version is given at launch"
   },
   "resampling": null,
   "items": {
@@ -93,15 +95,39 @@
     },
     {
       "file": "output/experiments/en_priming_english_psychopy.py",
-      "sha256": "c42d243b229c80e1a0772bfebc8b5e2fd190c97b680808f9013326e88a4012e1"
+      "sha256": "8c4fd56beed7ac03f0621bd72d38ba1fd36a1bb35a6e571c35b96bdb1e320e24"
     },
     {
-      "file": "output/experiments/en_priming_english.osexp",
-      "sha256": "e4b29f5f1d36a4a13391512e4329865f42536aca564842316d10ea51798cfe94"
+      "file": "output/experiments/en_priming_english_list1.osexp",
+      "sha256": "7e7ccc986e32c12ceed3afcdea5e8fcc1d1753a8a28cb2db8a35d0f1d804be7c"
+    },
+    {
+      "file": "output/experiments/en_priming_english_list2.osexp",
+      "sha256": "94143a13ea530e6ef3ccb3fb2bb7e04e2c4abe5db56756fe57eb132ea21da4b6"
     },
     {
       "file": "output/experiments/en_priming_english.html",
-      "sha256": "e4a81a46f3da2bd5db0fef5d68e64900a30d6c05253f28d30b4a16bda434eb10"
+      "sha256": "1feca0c0b4cae595edb3aec62cf7f9c110f5e5a97cb57f472df75694a6973495"
+    },
+    {
+      "file": "output/experiments/en_priming_english_psychopy.csv",
+      "sha256": "94df70a1f0c5b5f99901a92dd8079b8b2a004c81a7926404fa4bf40ae1821dcd"
+    },
+    {
+      "file": "output/experiments/en_priming_english_list1_opensesame.csv",
+      "sha256": "bbdc716b6f1513045ff7ee47bc5386b82ea2472e2e1d07974f5f62411e1b6d1c"
+    },
+    {
+      "file": "output/experiments/en_priming_english_list1_opensesame_text.csv",
+      "sha256": "aa9fccadb3ad167e84623e76084da0ed7a4563c74d3a96eef0ca2844ca2e9f40"
+    },
+    {
+      "file": "output/experiments/en_priming_english_list2_opensesame.csv",
+      "sha256": "7a8252c67b7088afbb40a27fe8e32c336092a4ff5a3d8f9bfb0c5f7dbfb7483c"
+    },
+    {
+      "file": "output/experiments/en_priming_english_list2_opensesame_text.csv",
+      "sha256": "9fc2d639ecb9e34d389cc089e202379ed642d6a47e7afd76b16a941af50650b9"
     }
   ]
 }

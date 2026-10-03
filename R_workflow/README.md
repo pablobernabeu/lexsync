@@ -106,7 +106,8 @@ demonstration](https://pablobernabeu.github.io/lexsync/demos/en_lexdec_english.h
 is a single HTML file, self-contained apart from the jsPsych library it loads from
 a CDN, written by the same pipeline that emits the PsychoPy and OpenSesame
 scripts. All 21 are listed at [the demos
-index](https://pablobernabeu.github.io/lexsync/demos/), one per worked design.
+index](https://pablobernabeu.github.io/lexsync/demos/), and a design with several
+counterbalancing versions has a link for each.
 
 ## Citation
 

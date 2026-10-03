@@ -11,11 +11,17 @@ Only the four scalar keys needed here are read (``name``, ``language``,
 YAML parser and runs on a bare Python. The card text is the design's own
 ``description``, which the author wrote and which therefore describes the
 experiment better than anything derivable from the filename.
+
+A page runs one presentation version of its design, chosen by its address, and a
+page with several versions runs none without one. Each version therefore gets its
+own card, linking ``?version=k``, and the versions are read from the ``VERSIONS``
+list the staged page embeds.
 """
 
 from __future__ import annotations
 
 import html
+import json
 import re
 from pathlib import Path
 
@@ -41,6 +47,15 @@ SCALAR = re.compile(r"^(name|language|paradigm|description)\s*:\s*(.+?)\s*$")
 # label that every paradigm-less design takes, and the one continuous
 # demonstration is published as a factorial word contrast.
 CONTINUOUS = re.compile(r"^continuous\s*:\s*$")
+
+# The presentation versions a generated page embeds, one per (replicate, list) pair.
+VERSIONS = re.compile(r"const VERSIONS = (\[.*?\]);\n", re.S)
+
+
+def versions_of(page: Path) -> list[dict]:
+    """The presentation versions a staged page runs, or one for a page without the list."""
+    match = VERSIONS.search(page.read_text(encoding="utf-8"))
+    return json.loads(match.group(1)) if match else [{"version": 1}]
 
 
 def unquote(value: str) -> str:
@@ -91,15 +106,19 @@ def collect() -> list[dict[str, str]]:
             label = PARADIGM_LABELS["continuous"]
         else:
             label = PARADIGM_LABELS["factorial_word"]
-        demos.append(
-            {
-                "file": target.name,
-                "name": name,
-                "language": language.capitalize(),
-                "paradigm": label or paradigm.replace("_", " ").capitalize(),
-                "description": design.get("description", ""),
-            }
-        )
+        versions = versions_of(target)
+        for v in versions:
+            several = len(versions) > 1
+            demos.append(
+                {
+                    "file": f"{target.name}?version={v['version']}" if several else target.name,
+                    "name": name,
+                    "language": language.capitalize(),
+                    "paradigm": label or paradigm.replace("_", " ").capitalize(),
+                    "description": design.get("description", ""),
+                    "version": f"version {v['version']} of {len(versions)}" if several else "",
+                }
+            )
     return demos
 
 
@@ -169,19 +188,25 @@ PAGE = """<!doctype html>
 CARD = """    <a class="card" href="{file}">
       <h2>{paradigm}</h2>
       <p>{description}</p>
-      <span class="chip">{language}</span><span class="chip">{name}</span>
+      <span class="chip">{language}</span><span class="chip">{name}</span>{version}
     </a>"""
+
+
+def card(demo: dict[str, str]) -> str:
+    """One card, with a chip naming the version when the design has several."""
+    fields = {k: html.escape(v) for k, v in demo.items()}
+    if demo["version"]:
+        fields["version"] = f'<span class="chip">{fields["version"]}</span>'
+    return CARD.format(**fields)
 
 
 def main() -> None:
     demos = collect()
     if not demos:
         raise SystemExit("no demos matched a design configuration; refusing to write an empty index")
-    cards = "\n".join(
-        CARD.format(**{k: html.escape(v) for k, v in demo.items()}) for demo in demos
-    )
+    cards = "\n".join(card(demo) for demo in demos)
     (DEMO_DIR / "index.html").write_text(PAGE.format(cards=cards), encoding="utf-8")
-    print(f"wrote {DEMO_DIR / 'index.html'} with {len(demos)} experiments")
+    print(f"wrote {DEMO_DIR / 'index.html'} with {len(demos)} cards")
 
 
 if __name__ == "__main__":

@@ -19,7 +19,7 @@
     },
     {
       "file": "output/experiments/en_lexdec_blocks_english_psychopy.py",
-      "sha256": "2ab021bdaaa0f9d502a62fcf1570d8fb7031dac6b22f8e358909f73d1fa6f9c7"
+      "sha256": "de5ecb4ddf7f0f9c9011a571c459e963c52825fa37698a18c33ad90e3b570fde"
     },
     {
       "file": "output/experiments/en_lexdec_blocks_english.osexp",
@@ -27,10 +27,23 @@
     },
     {
       "file": "output/experiments/en_lexdec_blocks_english.html",
-      "sha256": "264381375c77bb3e6bd3cd4a176ee0ab7bb19409be3ab2c49fc96d2e17815252"
+      "sha256": "7a51d4757d226ba87fd9cc2b20332a0af9f2ee41c9c1497bfcf043b87f191089"
+    },
+    {
+      "file": "output/experiments/en_lexdec_blocks_english_psychopy.csv",
+      "sha256": "26f757898861da6f818df881621ff6e99ae6241e8e7564fdae56d9e7d7eab0ef"
+    },
+    {
+      "file": "output/experiments/en_lexdec_blocks_english_opensesame.csv",
+      "sha256": "ef4bdfb3f314040e0c7a19d6f806937e22a690e87670f08d21f4db1fba29dac2"
+    },
+    {
+      "file": "output/experiments/en_lexdec_blocks_english_opensesame_text.csv",
+      "sha256": "3a2a225b4be030f0d4058f7d1727a2cb9bb00f43e0b11a730b31bf08a2578259"
     }
   ],
   "counterbalancing": {
+    "assignment": "version = ((participant - 1) mod 1) + 1 unless a version is given at launch",
     "blocks": {
       "analysed": "main",
       "blocks": [
@@ -69,7 +82,8 @@
     "complete": true,
     "issues": [],
     "lists": 1,
-    "recipe": "factorial"
+    "recipe": "factorial",
+    "versions": 1
   },
   "design": {
     "description": "English lexical decision with a feedback-bearing practice block and interleaved fillers, neither of which is analysed.",

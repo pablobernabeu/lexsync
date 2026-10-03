@@ -111,6 +111,36 @@ def test_every_block_appears_in_every_list(design, schema):
 
 
 @pytest.mark.skipif(REPO is None, reason="repository design absent")
+def test_every_block_appears_in_every_version_of_a_resampled_design(design, schema):
+    """Each replicate's copy of a list is a presentation version, run by its own
+    participants, so each needs the practice block and the fillers. Added per list,
+    their rows carried no replicate, and only replicate 1's version presented them.
+    test-blocks.R pins the same order, which the seeded hash makes the same in both
+    engines."""
+    stim = _main()
+    stim["trial"] = [1, 2, 3, 4] * 2
+    stim["replicate"] = [1] * 4 + [2] * 4
+    out = add_blocks(stim, design, schema)
+    presented = out["presented"]
+    assert str(presented["replicate"].dtype).startswith("int")
+    assert sorted(set(zip(presented["replicate"], presented["list"], strict=True))) == [
+        (1, 1), (2, 1)]
+    for rep, g in presented.groupby("replicate"):
+        assert list(g["trial"]) == list(range(1, 21)), rep
+        assert list(g["block"][:8]) == ["practice"] * 8, rep
+        assert g["block"].value_counts().to_dict() == {"practice": 8, "filler": 8,
+                                                       BLOCK_MAIN: 4}, rep
+        assert set(g.loc[g["block"] == BLOCK_MAIN, "target"]) == set(
+            stim.loc[stim["replicate"] == rep, "target"]), rep
+    assert list(presented.loc[presented["replicate"] == 2, "target"]) == [
+        "plank", "light", "chair", "plost", "skirn", "clock", "frelt", "brave",
+        "strunk", "candle", "vantle", "plimth", "w05", "tundra", "blorge", "w07", "w06",
+        "marble", "bridge", "w08"]
+    # The main block is counted per version, as the practice and the fillers are.
+    assert [b["n_per_list"] for b in out["report"]["blocks"]] == [4, 8, 8]
+
+
+@pytest.mark.skipif(REPO is None, reason="repository design absent")
 def test_the_report_names_the_tables_and_their_checksums(design, schema):
     report = add_blocks(_main(), design, schema)["report"]
     assert report["analysed"] == BLOCK_MAIN

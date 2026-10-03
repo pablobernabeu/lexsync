@@ -361,7 +361,9 @@ deterministic shuffle mixes them through, which does renumber the main trials.
 That is correct, since adding fillers changes the sequence and the stimuli file
 records where each item actually appeared. Both blocks appear in every list and
 neither is counterbalanced, because they carry no manipulation to rotate and
-every participant should get the same practice.
+every participant should get the same practice. In a resampled design, the copy
+of a list in each replicate is a presentation version of its own, and it gets both
+blocks too.
 
 Each block's item table is read with the same validation as any other, and given a
 `set` range that cannot collide with the main items, which a naive read would not
@@ -401,12 +403,13 @@ same in each. What differs is what the platform can do.
 out <- file.path(tempdir(), "lexsync_experiment")
 dir.create(out, showWarnings = FALSE)
 files <- export_experiments(stim, design, schema, out)
-basename(unlist(files))
+basename(unlist(files[c("psychopy", "opensesame", "jspsych")]))
 ```
 
 `export_experiments()` calls `assign_triggers()` first, then each exporter, and
-returns the three experiment scripts. The directory holds more than that, and the
-difference is the interesting part.
+returns the three experiment scripts, with every file it wrote listed as `files`.
+The directory holds more than the scripts, and the difference is the interesting
+part.
 
 ```{r export-dir}
 list.files(out)
@@ -483,6 +486,62 @@ The trial table carries exactly the columns the events reference plus the
 bookkeeping ones. A field no event mentions is not exported, which keeps the
 generated table minimal and means the trial table is itself a readable statement
 of what the experiment uses.
+
+## Running a counterbalanced experiment
+
+A design with more than one list, or with resampled item sets, has several
+presentation versions. A version is one (replicate, list) pair of the presented
+trials, and the versions are numbered from 1 in that order, so in a design without
+replicates version *k* is list *k*. Each participant is presented one version.
+Presenting them all would show each target of a Latin square in every condition,
+which is the repetition the rotation exists to prevent, and every item sample of a
+resampled design. Participant *p* runs version `((p - 1) mod V) + 1` of the *V*
+versions, the rule `participant_table()` allocates by.
+
+```{r versions}
+two <- utils::modifyList(design, list(name = "vignette_two_lists",
+                                      counterbalance = list(lists = 2)))
+two_files <- export_experiments(counterbalance(stim, two, schema), two, schema, out)
+basename(grep("\\.osexp$", two_files$files, value = TRUE))
+participant_table(list(list = 1:2), 4)
+```
+
+The PsychoPy script runs the participant's version when launched as
+`python <base>_psychopy.py --participant 3`. `--version 2` runs a version outright,
+and so does `--list 2` in a design without replicates. Launched with none of these,
+the script asks for the participant number and the version in a dialogue, where a
+blank version takes the participant's by the rule. A version the script does not
+have stops the run, with a message, before any window opens.
+
+The jsPsych page reads the same choice from its address: `page.html?participant=3`,
+`?version=2`, or `?list=2` without replicates, each a whole number from 1. A page
+with more than one version, opened with none of these, shows a screen saying how to
+open it and runs nothing. A static page cannot count its participants, so a study
+recruited online without participant numbers hands out one `?version=k` link per
+version. The welcome screen counts the trials of the version, every data row
+carries the participant, the version, the list and the replicate, and the data file
+is named `<title>_p<participant>_v<version>.csv`.
+
+The OpenSesame target writes one experiment per version, as above:
+`<base>_list<k>.osexp`, or `<base>_rep<r>_list<k>.osexp` when the versions span
+several replicates. Each has its own loop and text tables, holding only that
+version's trials, and the experimenter opens the participant's. At start-up, each
+experiment compares the subject number OpenSesame asks for with its own version.
+When that participant would normally run another one, it says so and waits for a
+key. Space goes on with this file, and escape stops the session. A design with one
+version keeps `<base>.osexp`. The check runs once, before the loop, so the
+experiment needs no run-if condition, a syntax that differs between OpenSesame 3.3
+and 4.x.
+
+The datasheet records the number of versions as `counterbalancing$versions` and
+the rule as `counterbalancing$assignment`, and its Methods text says that each
+participant was presented one version. Its artefact list and the run log name every
+file `export_experiments()` wrote, the loop and text tables included, since those
+hold the trial order and the trigger codes the experiments present. The loop tables
+keep each version's trials together, ordered by replicate, list and trial. They
+carry `replicate` when the design has one. Item codes are allocated by set, so in a
+resampled design an item code identifies an item only within its replicate, which
+the `replicate` column tells apart.
 
 ## Trigger timing and the flip lock
 
@@ -566,7 +625,7 @@ custom$events <- list(
 )
 required_fields(custom)
 custom_files <- export_experiments(stim, custom, schema, out)
-basename(unlist(custom_files))
+basename(unlist(custom_files[c("psychopy", "opensesame", "jspsych")]))
 ```
 
 Nothing in the backends changed. All three targets rendered a sequence they had

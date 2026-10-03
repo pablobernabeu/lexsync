@@ -10,6 +10,7 @@
 - **Selection:** standardised_euclidean
 - **Cross-engine determinism:** byte-identical
 - **Counterbalancing:** factorial, 4 list(s)
+- **Presentation versions:** 4, assigned as version = ((participant - 1) mod 4) + 1 unless a version is given at launch
 - **Items:** 80 rows across 2 conditions (low_frequency, high_frequency)
 - **Seed:** 2026  |  **Versions:** engine R, lexsync 0.1.1, R 4.6.1, readr 2.2.0, stringdist 0.9.17, jsonlite 2.0.0, digest 0.6.39, yaml 2.3.12, stringi 1.8.7, os Windows x86-64
 
@@ -55,7 +56,7 @@
 
 ## Methods paragraph
 
-40 items per condition were selected from the English lexicon (wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md) and matched item by item on length, n_density, old20 using lexsync's standardised_euclidean matcher. The realised control was close. The largest standardised difference on any matched dimension was 0.05 (90% CI [-0.32, 0.43]), within the 0.5-SD equivalence bound. The smallest condition was selected from 544 eligible candidates, and the selection was deterministic and blind to any outcome measure. Item sets were assigned to lists so as to equate the lists on length, n_density, old20, frequency rather than by an arbitrary deal, by a deterministic integer search (10 swap(s); imbalance reduced from 1121480 to 53820). Materials were counterbalanced into 4 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.1).
+40 items per condition were selected from the English lexicon (wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md) and matched item by item on length, n_density, old20 using lexsync's standardised_euclidean matcher. The realised control was close. The largest standardised difference on any matched dimension was 0.05 (90% CI [-0.32, 0.43]), within the 0.5-SD equivalence bound. The smallest condition was selected from 544 eligible candidates, and the selection was deterministic and blind to any outcome measure. Item sets were assigned to lists so as to equate the lists on length, n_density, old20, frequency rather than by an arbitrary deal, by a deterministic integer search (10 swap(s); imbalance reduced from 1121480 to 53820). Materials were counterbalanced into 4 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. Each participant was presented one of the 4 lists, assigned in rotation by participant number. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.1).
 
 ## Pre-registration template
 
@@ -75,7 +76,7 @@
 - Paradigm: factorial
 
 ### Materials (from the lexsync datasheet)
-40 items per condition were selected from the English lexicon (wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md) and matched item by item on length, n_density, old20 using lexsync's standardised_euclidean matcher. The realised control was close. The largest standardised difference on any matched dimension was 0.05 (90% CI [-0.32, 0.43]), within the 0.5-SD equivalence bound. The smallest condition was selected from 544 eligible candidates, and the selection was deterministic and blind to any outcome measure. Item sets were assigned to lists so as to equate the lists on length, n_density, old20, frequency rather than by an arbitrary deal, by a deterministic integer search (10 swap(s); imbalance reduced from 1121480 to 53820). Materials were counterbalanced into 4 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.1).
+40 items per condition were selected from the English lexicon (wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md) and matched item by item on length, n_density, old20 using lexsync's standardised_euclidean matcher. The realised control was close. The largest standardised difference on any matched dimension was 0.05 (90% CI [-0.32, 0.43]), within the 0.5-SD equivalence bound. The smallest condition was selected from 544 eligible candidates, and the selection was deterministic and blind to any outcome measure. Item sets were assigned to lists so as to equate the lists on length, n_density, old20, frequency rather than by an arbitrary deal, by a deterministic integer search (10 swap(s); imbalance reduced from 1121480 to 53820). Materials were counterbalanced into 4 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. Each participant was presented one of the 4 lists, assigned in rotation by participant number. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.1).
 
 ### Sampling plan
 - Sample size and justification:

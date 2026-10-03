@@ -106,6 +106,36 @@ test_that("every block appears in every list", {
   }
 })
 
+test_that("every block appears in every version of a resampled design", {
+  # Each replicate's copy of a list is a presentation version, run by its own
+  # participants, so each needs the practice block and the fillers. Added per list,
+  # their rows carried no replicate, and only replicate 1's version presented them.
+  # test_blocks.py pins the same order, which the seeded hash makes the same in both
+  # engines.
+  skip_if_not(file.exists(blk_design_path()), "repository design absent")
+  stim <- blk_main(); stim$trial <- rep(1:4, 2L); stim$replicate <- rep(1:2, each = 4L)
+  out <- blk_in_repo(lexsync:::.add_blocks(stim, yaml::read_yaml(blk_design_path()),
+                                           blk_schema()))
+  p <- out$presented
+  expect_true(is.integer(p$replicate))
+  expect_identical(unique(paste(p$replicate, p$list)), c("1 1", "2 1"))
+  for (r in 1:2) {
+    g <- p[p$replicate == r, , drop = FALSE]
+    expect_identical(g$trial, 1:20)
+    expect_identical(g$block[1:8], rep("practice", 8L))
+    expect_identical(as.vector(table(factor(g$block, c("practice", "filler", "main")))),
+                     c(8L, 8L, 4L))
+    expect_setequal(g$target[g$block == "main"], stim$target[stim$replicate == r])
+  }
+  expect_identical(p$target[p$replicate == 2L], c(
+    "plank", "light", "chair", "plost", "skirn", "clock", "frelt", "brave",
+    "strunk", "candle", "vantle", "plimth", "w05", "tundra", "blorge", "w07", "w06",
+    "marble", "bridge", "w08"))
+  # The main block is counted per version, as the practice and the fillers are.
+  expect_identical(vapply(out$report$blocks, function(b) b$n_per_list, integer(1)),
+                   c(4L, 8L, 8L))
+})
+
 test_that("the report names the tables and their checksums", {
   skip_if_not(file.exists(blk_design_path()), "repository design absent")
   out <- blk_in_repo(lexsync:::.add_blocks(blk_main(), yaml::read_yaml(blk_design_path()),

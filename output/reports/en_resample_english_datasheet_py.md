@@ -10,6 +10,7 @@
 - **Selection:** standardised_euclidean
 - **Cross-engine determinism:** byte-identical
 - **Counterbalancing:** factorial, 1 list(s)
+- **Presentation versions:** 3, assigned as version = ((participant - 1) mod 3) + 1 unless a version is given at launch
 - **Items:** 240 rows across 2 conditions (low_frequency, high_frequency)
 - **Seed:** 2026  |  **Versions:** engine python, lexsync 0.1.1, python 3.13.7, pandas 2.3.2, numpy 2.3.2, scipy 1.17.1, rapidfuzz 3.14.5, pyyaml 6.0.3, os Windows AMD64
 
@@ -45,7 +46,7 @@
 
 ## Methods paragraph
 
-40 items per condition were selected from the English lexicon (wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md) and matched item by item on length, n_density, old20 using lexsync's standardised_euclidean matcher. The realised control was close. The largest standardised difference on any matched dimension was 0.04 (90% CI [-0.17, 0.26]), within the 0.5-SD equivalence bound. The smallest condition was selected from 462 eligible candidates, and the selection was deterministic and blind to any outcome measure. 3 disjoint matched item sets were drawn, so items can be treated as a random factor. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.1).
+40 items per condition were selected from the English lexicon (wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md) and matched item by item on length, n_density, old20 using lexsync's standardised_euclidean matcher. The realised control was close. The largest standardised difference on any matched dimension was 0.04 (90% CI [-0.17, 0.26]), within the 0.5-SD equivalence bound. The smallest condition was selected from 462 eligible candidates, and the selection was deterministic and blind to any outcome measure. 3 disjoint matched item sets were drawn, so items can be treated as a random factor. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. Each participant was presented one of the 3 presentation versions (one list of one item set), assigned in rotation by participant number. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.1).
 
 ## Pre-registration template
 
@@ -65,7 +66,7 @@
 - Paradigm: factorial
 
 ### Materials (from the lexsync datasheet)
-40 items per condition were selected from the English lexicon (wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md) and matched item by item on length, n_density, old20 using lexsync's standardised_euclidean matcher. The realised control was close. The largest standardised difference on any matched dimension was 0.04 (90% CI [-0.17, 0.26]), within the 0.5-SD equivalence bound. The smallest condition was selected from 462 eligible candidates, and the selection was deterministic and blind to any outcome measure. 3 disjoint matched item sets were drawn, so items can be treated as a random factor. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.1).
+40 items per condition were selected from the English lexicon (wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md) and matched item by item on length, n_density, old20 using lexsync's standardised_euclidean matcher. The realised control was close. The largest standardised difference on any matched dimension was 0.04 (90% CI [-0.17, 0.26]), within the 0.5-SD equivalence bound. The smallest condition was selected from 462 eligible candidates, and the selection was deterministic and blind to any outcome measure. 3 disjoint matched item sets were drawn, so items can be treated as a random factor. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. Each participant was presented one of the 3 presentation versions (one list of one item set), assigned in rotation by participant number. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.1).
 
 ### Sampling plan
 - Sample size and justification:

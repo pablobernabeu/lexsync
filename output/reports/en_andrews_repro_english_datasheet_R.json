@@ -235,7 +235,9 @@
         "condition": "LF_smallN",
         "n_trials": 18
       }
-    ]
+    ],
+    "versions": 1,
+    "assignment": "version = ((participant - 1) mod 1) + 1 unless a version is given at launch"
   },
   "resampling": null,
   "items": {
@@ -282,7 +284,7 @@
     },
     {
       "file": "output/experiments/en_andrews_repro_english_psychopy.py",
-      "sha256": "e6e4b4302c2b6e80275add808f01bc8175750dce4f434ad90bd19480473fa561"
+      "sha256": "0b14559e65b1ea311635990360f6a95977513a7de3bb96337440cdcf42b5bc78"
     },
     {
       "file": "output/experiments/en_andrews_repro_english.osexp",
@@ -290,7 +292,19 @@
     },
     {
       "file": "output/experiments/en_andrews_repro_english.html",
-      "sha256": "ff5ef3fe22bafb37f1340cc8cdddcdcac6427e9c56677e3e9ff5752c5c74d58c"
+      "sha256": "9a87e332d4085f0047e573fa5b399720601ab100b7717eec1ae4c63f8f28431f"
+    },
+    {
+      "file": "output/experiments/en_andrews_repro_english_psychopy.csv",
+      "sha256": "6c406be5a0efecf2fefe9892a7b0dd9d4afb6f5ce86dbf4163095a8c9edaa5c2"
+    },
+    {
+      "file": "output/experiments/en_andrews_repro_english_opensesame.csv",
+      "sha256": "b93e4992012b57bbe223b2e6ab014cdece619b1767e2099a7efb6e104a35aaf8"
+    },
+    {
+      "file": "output/experiments/en_andrews_repro_english_opensesame_text.csv",
+      "sha256": "ae3b94189dbe2e8c9060b005efa64ee65dee8639f57da6550f98998fc3429f9c"
     }
   ]
 }

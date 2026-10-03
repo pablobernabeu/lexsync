@@ -109,6 +109,21 @@ write_yaml_lf <- function(x, path) {
 positive_tolerances <- function(values)
   Filter(function(k) length(k) == 1L && !is.na(k) && k > 0, values)
 
+#' Every experiment file a run wrote, for the Experiment tab
+#'
+#' A design with several counterbalancing versions writes one OpenSesame experiment
+#' per version, each with its own tables, and export_experiments() lists them all
+#' under `files`. A result without `files`, from an older lexsync, offers its three
+#' scripts. Mirrors experiment_files() in the Streamlit app.
+#'
+#' @param experiments The `experiments` element of run_pipeline()'s result.
+#' @return A character vector of paths, in the order the export wrote them.
+experiment_files <- function(experiments) {
+  if (!is.null(experiments[["files"]])) return(as.character(experiments[["files"]]))
+  paths <- lapply(c("psychopy", "opensesame", "jspsych"), function(k) experiments[[k]])
+  as.character(unlist(paths, use.names = FALSE))
+}
+
 #' Map each repository-bundled input the design names to its source file
 #'
 #' A design built from a bundled corpus or example item table records the
@@ -447,13 +462,15 @@ server <- function(input, output, session) {
   })
 
   output$exp_ui <- renderUI({
-    b <- bundle(); exps <- b$paths$experiments
+    b <- bundle(); files <- experiment_files(b$paths$experiments)
     tagList(
-      helpText("The same matched stimuli compile to three presentation targets."),
-      lapply(names(exps), function(k) {
-        p <- exps[[k]]
-        if (is.null(p) || !file.exists(p)) return(NULL)
-        id <- paste0("dl_exp_", k)
+      helpText("The same matched stimuli compile to three presentation targets. A ",
+               "PsychoPy or OpenSesame experiment reads the tables that share its name, ",
+               "so download them together."),
+      lapply(seq_along(files), function(i) {
+        p <- files[[i]]
+        if (!file.exists(p)) return(NULL)
+        id <- paste0("dl_exp_", i)
         output[[id]] <- downloadHandler(
           filename = function() basename(p),
           content = function(file) file.copy(p, file, overwrite = TRUE))

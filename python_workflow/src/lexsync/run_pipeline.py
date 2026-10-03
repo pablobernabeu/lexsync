@@ -411,7 +411,9 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
     exps = export_experiments(presented, design, schema,
                               os.path.join(outdir, "experiments"), base,
                               conditions=condition_order)
-    for path in exps.values():
+    # Every file, the loop and text tables included: they hold the trial order and the
+    # trigger codes the experiments present, and the scripts alone did not record them.
+    for path in exps["files"]:
         runlog.log_artefact(log, path)
 
     # A materials datasheet (machine + human readable) and a pre-registration

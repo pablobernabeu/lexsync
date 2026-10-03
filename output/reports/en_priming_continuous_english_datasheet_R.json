@@ -139,7 +139,9 @@
         "condition": "unrelated",
         "n_trials": 4
       }
-    ]
+    ],
+    "versions": 2,
+    "assignment": "version = ((participant - 1) mod 2) + 1 unless a version is given at launch"
   },
   "resampling": null,
   "items": {
@@ -184,15 +186,39 @@
     },
     {
       "file": "output/experiments/en_priming_continuous_english_psychopy.py",
-      "sha256": "7fdb11b6cd0678420481e1d0c0090abb48be9a537e563cb8e25a8428e1055c50"
+      "sha256": "e20da72be71b67add3643e86aee4118fb9626b1eb0628b500cd079cb4914efb4"
     },
     {
-      "file": "output/experiments/en_priming_continuous_english.osexp",
-      "sha256": "49fafec777e8bf75f545de506c22721c7345795bc24056834d2a60884f88210a"
+      "file": "output/experiments/en_priming_continuous_english_list1.osexp",
+      "sha256": "683de674d0d0bb0f5acbaf8c9789f45f52821cf44395a80070d51f75cf2df7a7"
+    },
+    {
+      "file": "output/experiments/en_priming_continuous_english_list2.osexp",
+      "sha256": "69cd608b578ec44aca2c993c1b7ceb184cd2216128fc0cc2a8ac3079843d20dc"
     },
     {
       "file": "output/experiments/en_priming_continuous_english.html",
-      "sha256": "6b6d16ffa44fd5e53c1ff778b9ce20cf4f74cd70cabe30bd2b9b877e8785c45e"
+      "sha256": "6f6a8f258b7bb2ebee4df89072e6ae465f1f939258df2f67dc6c8484d8a6f297"
+    },
+    {
+      "file": "output/experiments/en_priming_continuous_english_psychopy.csv",
+      "sha256": "c5cf2f908f4464ac8cd6b4153ec5a7ccaad39e5a3968d17a00da19651277540b"
+    },
+    {
+      "file": "output/experiments/en_priming_continuous_english_list1_opensesame.csv",
+      "sha256": "6c7746fa1c824087dff502b2f14080889ac15dcfa22061d46f4a70ed194c4157"
+    },
+    {
+      "file": "output/experiments/en_priming_continuous_english_list1_opensesame_text.csv",
+      "sha256": "4f9c0c5a8ae4f18f216e6aa8eb591364443789ad1fd4a016c488ddb597043827"
+    },
+    {
+      "file": "output/experiments/en_priming_continuous_english_list2_opensesame.csv",
+      "sha256": "a208589b43ca5a5ea1f248b17a8aff50522a43d5534ffcc99f5d1de2db0d884d"
+    },
+    {
+      "file": "output/experiments/en_priming_continuous_english_list2_opensesame_text.csv",
+      "sha256": "03b5ac0be6c3347c1e253f2188d352e5892b4993b5220a8b4f39a047698244e4"
     }
   ]
 }

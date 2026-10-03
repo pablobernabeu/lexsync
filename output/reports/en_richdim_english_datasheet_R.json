@@ -159,7 +159,9 @@
         "condition": "low_frequency",
         "n_trials": 60
       }
-    ]
+    ],
+    "versions": 1,
+    "assignment": "version = ((participant - 1) mod 1) + 1 unless a version is given at launch"
   },
   "resampling": null,
   "items": {
@@ -204,7 +206,7 @@
     },
     {
       "file": "output/experiments/en_richdim_english_psychopy.py",
-      "sha256": "b423eb4f2a351c6744c976354ea4361742d0f0d5c9db52cb61e04593aa5176b1"
+      "sha256": "afa2ea89735affac2ff0d05fa5415468fe85ad5693dc5e16b615bf3104a8e215"
     },
     {
       "file": "output/experiments/en_richdim_english.osexp",
@@ -212,7 +214,19 @@
     },
     {
       "file": "output/experiments/en_richdim_english.html",
-      "sha256": "6c803b3ff3f420274dcbc11b5db5942f0459f94a70bb4b1056ef99ac26201039"
+      "sha256": "3d6e0d4d262dea0041286526269197712727554c12aa15c3ffb22baf01fd41c9"
+    },
+    {
+      "file": "output/experiments/en_richdim_english_psychopy.csv",
+      "sha256": "125ee07d9892cddaa3a99fb85bf74cbe15cd866bd69f0b386e78ac2e44194b4d"
+    },
+    {
+      "file": "output/experiments/en_richdim_english_opensesame.csv",
+      "sha256": "63dbf821a96c852c4e1218d8205385fda9cc2afdfa2a6a58517a2b38f15177eb"
+    },
+    {
+      "file": "output/experiments/en_richdim_english_opensesame_text.csv",
+      "sha256": "9d7bdb7d49b30d63660e1832fb33e32f6556de8ca6d0eaa7565f223feff9c8b5"
     }
   ]
 }

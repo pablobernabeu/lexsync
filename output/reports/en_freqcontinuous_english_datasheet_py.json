@@ -19,7 +19,7 @@
     },
     {
       "file": "output/experiments/en_freqcontinuous_english_psychopy.py",
-      "sha256": "469ecb7a834210821e6b6b58f271bd8328cdfd4476080f048822ff6a0fc5315d"
+      "sha256": "6f286f1227cbbf197fd2e6ce421ca2b1b928887c9a8b0d1fb0b8cf015a9863ec"
     },
     {
       "file": "output/experiments/en_freqcontinuous_english.osexp",
@@ -27,10 +27,23 @@
     },
     {
       "file": "output/experiments/en_freqcontinuous_english.html",
-      "sha256": "ebf0c48a06e24fb35133388eb314e9b5a9056a272a9211e29ad2dc0f9b92f515"
+      "sha256": "ae64f947207106692a114bcae1937f3daf82a13567cbadee0b1e33203bf4fe66"
+    },
+    {
+      "file": "output/experiments/en_freqcontinuous_english_psychopy.csv",
+      "sha256": "7fa112b312eb6ec1862cfed32d827800d3d1c60a14b01ebba684948c9d47e580"
+    },
+    {
+      "file": "output/experiments/en_freqcontinuous_english_opensesame.csv",
+      "sha256": "3283664ddd9537aaea75893acca3ef68006f3732ccc62edbe024ebd90d07a221"
+    },
+    {
+      "file": "output/experiments/en_freqcontinuous_english_opensesame_text.csv",
+      "sha256": "86215bb3a79b03090836e4f0e375a9a0b8b85bff7a199fc6feb5688b283a55a2"
     }
   ],
   "counterbalancing": {
+    "assignment": "version = ((participant - 1) mod 1) + 1 unless a version is given at launch",
     "cells": [
       {
         "condition": "continuous",
@@ -41,7 +54,8 @@
     "complete": true,
     "issues": [],
     "lists": 1,
-    "recipe": "factorial"
+    "recipe": "factorial",
+    "versions": 1
   },
   "design": {
     "description": "English words spanning the frequency range continuously, with length, neighbourhood density and OLD20 held near-constant, for regression / mixed-model analysis.",

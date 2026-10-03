@@ -73,7 +73,9 @@
         "condition": "word",
         "n_trials": 60
       }
-    ]
+    ],
+    "versions": 1,
+    "assignment": "version = ((participant - 1) mod 1) + 1 unless a version is given at launch"
   },
   "resampling": null,
   "items": {
@@ -118,7 +120,7 @@
     },
     {
       "file": "output/experiments/en_lexdec_wuggy_english_psychopy.py",
-      "sha256": "0ddafd1272ce445112888164813efffc5e610dd13fd6d3ede1f46a7f66df7d6b"
+      "sha256": "645025740c8f8b0f2f4ff8f4200de91516ffd7a2035d5d2c3d24066305dddf73"
     },
     {
       "file": "output/experiments/en_lexdec_wuggy_english.osexp",
@@ -126,7 +128,19 @@
     },
     {
       "file": "output/experiments/en_lexdec_wuggy_english.html",
-      "sha256": "b78d5928a6144482196b695bffc91dc5a1f712a35f71a85ce0fd716714298c16"
+      "sha256": "6e7415a13e3ae38d9b49f22aad1d5e63f4e688dae76812978a796a0aee77eda9"
+    },
+    {
+      "file": "output/experiments/en_lexdec_wuggy_english_psychopy.csv",
+      "sha256": "814ca5d278760c4fcc6f8fc6fbdd3be8d7b46d64b0465a7cefcd78a913efc618"
+    },
+    {
+      "file": "output/experiments/en_lexdec_wuggy_english_opensesame.csv",
+      "sha256": "8bf045e4f061953932ea7a17fa2f78916d3c688e903fec71c75091613e54d105"
+    },
+    {
+      "file": "output/experiments/en_lexdec_wuggy_english_opensesame_text.csv",
+      "sha256": "e3363b7c798da8aec0e10fe5a61ff9e6d7337c58b8cbe5a9f02a5b2bd58a1dc3"
     }
   ]
 }

@@ -116,7 +116,8 @@ shown to be equivalent rather than merely failing to differ significantly.
 column.
 
 Adding the experiment is two more calls. `counterbalance` assigns lists and a seeded trial order,
-and `export_experiments` writes all three targets from the same event list:
+and `export_experiments` writes all three targets from the same event list, listing every file it
+writes under `files`:
 
 ```python
 # illustrative: writes the generated experiment files into the working directory
@@ -126,21 +127,21 @@ stimuli = lexsync.counterbalance(stimuli, design, schema)
 paths = lexsync.export_experiments(
     stimuli, design, schema, outdir="output/experiments"
 )
-print(sorted(os.path.basename(p) for p in paths.values()))
+print(sorted(os.path.basename(p) for p in paths["files"]))
 ```
 
 ```text
-['sixty_seconds_english.html', 'sixty_seconds_english.osexp', 'sixty_seconds_english_psychopy.py']
+['sixty_seconds_english.html', 'sixty_seconds_english.osexp', 'sixty_seconds_english_opensesame.csv', 'sixty_seconds_english_opensesame_text.csv', 'sixty_seconds_english_psychopy.csv', 'sixty_seconds_english_psychopy.py']
 ```
 
 The jsPsych file is self-contained apart from the library itself, so opening it in
 a browser runs the experiment. Every worked design in the repository is published
 that way, and the Demo link in the header opens the generated lexical-decision
 task. All 21 are listed at
-[the demos index](https://pablobernabeu.github.io/lexsync/demos/), one per worked
-design, including cued categorisation, a lexical decision carrying practice and
-filler blocks, relational priming over pairs, and a Mandarin Chinese contrast on a
-logographic script.
+[the demos index](https://pablobernabeu.github.io/lexsync/demos/), including cued
+categorisation, a lexical decision carrying practice and filler blocks, relational
+priming over pairs, and a Mandarin Chinese contrast on a logographic script. A design
+with several counterbalancing versions has a link for each.
 
 ## Where to go next
 

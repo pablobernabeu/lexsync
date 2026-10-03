@@ -86,6 +86,22 @@ test_that("the app offers exactly the pseudoword generators the engine implement
   expect_equal(e$GENERATION_METHODS, c("letter_substitution", "subsyllabic"))
 })
 
+test_that("the experiment tab offers every file the export wrote", {
+  e <- app_env()
+  # A design with several counterbalancing versions writes one OpenSesame experiment
+  # per version, and each runs from its own tables, so the tab offers every file
+  # export_experiments() lists, not only the three scripts. Pinned identically in
+  # tests/test_apps.py.
+  files <- c("a_psychopy.py", "a_list1.osexp", "a_list2.osexp", "a.html", "a_psychopy.csv")
+  expect_identical(e$experiment_files(list(psychopy = files[1], opensesame = files[2],
+                                           jspsych = files[4], files = files)), files)
+  # A result without `files`, from an older lexsync, still offers its three scripts.
+  expect_identical(e$experiment_files(list(psychopy = "a.py", opensesame = "a.osexp",
+                                           jspsych = "a.html")),
+                   c("a.py", "a.osexp", "a.html"))
+  expect_identical(e$experiment_files(list()), character(0))
+})
+
 test_that("the design YAML is written with LF endings on every platform", {
   e <- app_env()
   # The pipeline hashes the design file it ran into the datasheet's

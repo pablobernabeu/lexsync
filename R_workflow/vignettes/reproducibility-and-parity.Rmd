@@ -563,10 +563,11 @@ cat(readLines(log_md), sep = "\n")
 
 The pipeline builds this log as it goes, recording each stage with its parameters,
 the equivalence verdict on every dimension, any balance warning, and an entry per
-file written with its row count and MD5. A design or schema key that lexsync does
-not read is noted there too, since it changed nothing about the run. Both a
-Markdown log and a JSON Lines log
-are emitted, the latter so that a run can be checked by a script. The MD5 here is a
+file written with its MD5. The experiments' loop and text tables are among them,
+and the stimuli and report tables are logged with their row counts too. A design
+or schema key that lexsync does not read is noted there as well, since it changed
+nothing about the run. Both a Markdown log and a JSON Lines log are emitted, the
+latter so that a run can be checked by a script. The MD5 here is a
 content fingerprint for spotting drift between runs, whereas the datasheet's
 SHA-256 is the stronger one that belongs in a permanent record.
 

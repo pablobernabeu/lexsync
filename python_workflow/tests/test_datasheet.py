@@ -194,6 +194,60 @@ def test_the_datasheet_records_the_recipe_counterbalance_applied(schema):
     assert ds["counterbalancing"]["recipe"] == "factorial"
 
 
+def test_the_datasheet_lists_every_experiment_file(schema, tmp_path):
+    # The record listed the three experiment scripts only, so it could not verify the
+    # loop tables, which hold the trial order and the trigger codes those experiments
+    # present. It now lists every file export_experiments wrote.
+    from lexsync.counterbalancing import counterbalance
+    from lexsync.scripting import export_experiments
+    design = _table_design(counterbalance={"lists": 2})
+    stim = counterbalance(_priming_table(), design, schema)
+    out = export_experiments(stim, design, schema, str(tmp_path))
+    ds = build_datasheet(design, schema, None, stim, "items/p.csv",
+                         {"stimuli": None, "experiments": out}, 2026)
+    assert [a["file"] for a in ds["artifacts"]] == [p.replace("\\", "/") for p in out["files"]]
+    assert [a["file"].rsplit("/", 1)[1] for a in ds["artifacts"]][4:] == [
+        "p_english_psychopy.csv", "p_english_list1_opensesame.csv",
+        "p_english_list1_opensesame_text.csv", "p_english_list2_opensesame.csv",
+        "p_english_list2_opensesame_text.csv"]
+    assert all(len(a["sha256"]) == 64 for a in ds["artifacts"])
+
+
+def test_the_datasheet_records_the_presentation_versions(schema):
+    from lexsync.counterbalancing import counterbalance
+    design = _table_design(counterbalance={"lists": 2})
+    ds = build_datasheet(design, schema, None, counterbalance(_priming_table(), design, schema),
+                         "items/p.csv", {"stimuli": None, "experiments": {}}, 2026)
+    assert ds["counterbalancing"]["versions"] == 2
+    assert ds["counterbalancing"]["assignment"] == (
+        "version = ((participant - 1) mod 2) + 1 unless a version is given at launch")
+    assert ("generated for PsychoPy, OpenSesame and jsPsych. Each participant was presented "
+            "one of the 2 lists, assigned in rotation by participant number. The selection"
+            in methods_paragraph(ds))
+    assert ("- **Presentation versions:** 2, assigned as version = ((participant - 1) mod "
+            "2) + 1 unless a version is given at launch") in render_datasheet_md(ds)
+    # One version: nothing to assign, and nothing said about it.
+    single = build_datasheet(_design(), schema, None, _stim(), "x.csv",
+                             {"stimuli": None, "experiments": {}}, 2026)
+    assert single["counterbalancing"]["versions"] == 1
+    assert "Each participant was presented" not in methods_paragraph(single)
+    assert "Presentation versions" not in render_datasheet_md(single)
+    # Replicates multiply the versions, and a frame without `list` counts the lists
+    # counterbalance() would deal.
+    reps = pd.concat([_priming_table().assign(replicate=r) for r in (1, 2, 3)],
+                     ignore_index=True)
+    resampled = dict(design, resample={"n_sets": 3})
+    ds = build_datasheet(resampled, schema, None, counterbalance(reps, resampled, schema),
+                         "items/p.csv", {"stimuli": None, "experiments": {}}, 2026)
+    assert ds["counterbalancing"]["versions"] == 6
+    assert ("Each participant was presented one of the 6 presentation versions (one list "
+            "of one item set), assigned in rotation by participant number."
+            in methods_paragraph(ds))
+    unlisted = build_datasheet(resampled, schema, None, reps, "items/p.csv",
+                               {"stimuli": None, "experiments": {}}, 2026)
+    assert unlisted["counterbalancing"]["versions"] == 6
+
+
 def test_an_incomplete_rotation_is_described_as_incomplete(schema):
     from lexsync.counterbalancing import counterbalance
     design = _table_design(counterbalance={"lists": 2})

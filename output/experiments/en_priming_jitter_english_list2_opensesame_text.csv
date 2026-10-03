@@ -1,0 +1,13 @@
+lexsync_row,condition,prime,target
+1,related,foot,hand
+2,related,star,moon
+3,unrelated,engine,salt
+4,related,night,day
+5,unrelated,planet,bread
+6,unrelated,window,doctor
+7,unrelated,lemon,north
+8,related,queen,king
+9,related,saucer,cup
+10,unrelated,river,black
+11,related,cold,hot
+12,unrelated,table,cat

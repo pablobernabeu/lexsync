@@ -486,6 +486,51 @@ def test_an_incomplete_rotation_reaches_the_run_log_and_the_datasheet(tmp_path):
         assert "(an incomplete Latin-square rotation)" in handle.read()
 
 
+def test_the_run_log_and_the_datasheet_name_every_experiment_file(tmp_path):
+    """Two lists give two OpenSesame experiments, each with its own loop and text
+    tables. The run log recorded the three experiment scripts only, and the datasheet
+    listed no loop table, although the loop tables hold the trial order and the trigger
+    codes. Pinned identically in test-run-pipeline.R."""
+    import json
+    items = os.path.join(str(tmp_path), "items.csv")
+    rows = ["%d,%s,%s%d,t%d" % (s, c, c[:3], s, s)
+            for s in range(1, 5) for c in ("related", "unrelated")]
+    with open(items, "w", encoding="utf-8", newline="\n") as handle:
+        handle.write("\n".join(["item,condition,prime,target"] + rows) + "\n")
+    design = _write_design(str(tmp_path), [
+        "name: guard_versions",
+        "language: english",
+        "paradigm: priming",
+        "items:",
+        "  source: table",
+        "  path: " + _yaml_path(items),
+        "counterbalance:",
+        "  lists: 2",
+    ])
+    res = _run(design, tmp_path)
+    files = res["experiments"]["files"]
+    assert [os.path.basename(p) for p in files] == [
+        "guard_versions_english_psychopy.py", "guard_versions_english_list1.osexp",
+        "guard_versions_english_list2.osexp", "guard_versions_english.html",
+        "guard_versions_english_psychopy.csv",
+        "guard_versions_english_list1_opensesame.csv",
+        "guard_versions_english_list1_opensesame_text.csv",
+        "guard_versions_english_list2_opensesame.csv",
+        "guard_versions_english_list2_opensesame_text.csv"]
+    assert res["experiments"]["opensesame"] == files[1]
+    with open(res["log"], encoding="utf-8") as handle:
+        log = handle.read()
+    for path in files:
+        assert "wrote '%s'" % os.path.basename(path) in log
+    reports = os.path.join(str(tmp_path), "reports")
+    with open(os.path.join(reports, "guard_versions_english_datasheet_py.json"),
+              encoding="utf-8") as handle:
+        record = json.load(handle)
+    recorded = [a["file"].rsplit("/", 1)[1] for a in record["artifacts"]]
+    assert recorded[1:] == [os.path.basename(p) for p in files]
+    assert record["counterbalancing"]["versions"] == 2
+
+
 def test_a_condition_no_list_reaches_is_still_counted(tmp_path):
     """One item set in three conditions, dealt to two lists, never shows its third
     condition. The check counts the conditions of the table the pipeline dealt, not

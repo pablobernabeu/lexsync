@@ -1,5 +1,10 @@
-import pandas as pd
+import os
+import re
 
+import pandas as pd
+import pytest
+
+from lexsync.counterbalancing import counterbalance
 from lexsync.io_utils import _round_dp
 from lexsync.scripting import (
     _design_condition_names,
@@ -9,6 +14,8 @@ from lexsync.scripting import (
     export_jspsych,
     export_opensesame,
     export_psychopy,
+    loop_table,
+    presentation_versions,
     render_events,
 )
 
@@ -212,3 +219,140 @@ def test_default_font_is_latin(schema, tmp_path):
     design = {"name": "t", "language": "english", "timing": {}}
     py = open(export_psychopy(_stim(), design, schema, str(tmp_path)), encoding="utf-8").read()
     assert 'WORD_FONT = "Courier New"' in py
+
+
+# ---- One counterbalancing version per participant ------------------------------------
+#
+# A presentation version is one (replicate, list) pair of the presented trials, numbered
+# from 1 in that order. test-scripting.R pins the same files, names and texts.
+
+def _two_list_stimuli(schema):
+    """Two targets, each related in one list and unrelated in the other."""
+    stim = pd.DataFrame({"prime": ["hot", "sky", "sun", "big"],
+                         "target": ["cold", "cold", "moon", "moon"],
+                         "condition": ["related", "unrelated"] * 2, "set": [1, 1, 2, 2]})
+    design = {"name": "t", "language": "english", "paradigm": "priming",
+              "counterbalance": {"lists": 2}}
+    return assign_triggers(counterbalance(stim, design, schema)), design
+
+
+def _three_replicates(schema):
+    """Three disjoint item samples, each dealt into one list, as en_resample is."""
+    stim = pd.DataFrame({"word": ["w%02d" % i for i in range(12)],
+                         "condition": ["hi", "lo"] * 6, "set": [1, 1, 2, 2] * 3,
+                         "replicate": [1] * 4 + [2] * 4 + [3] * 4})
+    design = {"name": "r", "language": "english", "counterbalance": {"lists": 1}}
+    return assign_triggers(counterbalance(stim, design, schema)), design
+
+
+def test_one_opensesame_experiment_per_version(schema, tmp_path):
+    stim, design = _two_list_stimuli(schema)
+    first = export_opensesame(stim, design, schema, str(tmp_path))
+    assert os.path.basename(first) == "t_english_list1.osexp"
+    assert sorted(os.listdir(tmp_path)) == [
+        "t_english_list1.osexp", "t_english_list1_opensesame.csv",
+        "t_english_list1_opensesame_text.csv", "t_english_list2.osexp",
+        "t_english_list2_opensesame.csv", "t_english_list2_opensesame_text.csv"]
+    for k in (1, 2):
+        numbers = pd.read_csv(tmp_path / f"t_english_list{k}_opensesame.csv")
+        assert set(numbers["lexsync_list"]) == {k}
+        assert list(numbers["lexsync_row"]) == [1, 2]
+        text = pd.read_csv(tmp_path / f"t_english_list{k}_opensesame_text.csv")
+        assert sorted(text["target"]) == ["cold", "moon"]
+        lines = (tmp_path / f"t_english_list{k}.osexp").read_text(encoding="utf-8").splitlines()
+        assert f'\tset source_file "t_english_list{k}_opensesame.csv"' in lines
+        assert ("\twith open(pool[u't_english_list%d_opensesame_text.csv'], "
+                "encoding=u'utf-8-sig', newline=u'') as _f:" % k) in lines
+        # Each experiment checks the subject number against its own version before
+        # the loop, and no run line carries a condition.
+        assert "define inline_script lexsync_version_check" in lines
+        assert f"\t_version = {k}" in lines and "\t_versions = 2" in lines
+        runs = [line for line in lines if line.startswith("\trun ")]
+        assert runs[-3:] == ["\trun lexsync_trigger_setup always",
+                             "\trun lexsync_version_check always",
+                             "\trun lexsync_loop always"]
+        assert not any('"' in line for line in runs)
+
+
+def test_single_version_designs_keep_their_file_names(schema, tmp_path):
+    design = {"name": "t", "language": "english", "timing": {}}
+    out = export_experiments(_stim(), design, schema, str(tmp_path))
+    # The three keys callers read are unchanged, and `files` lists every file written.
+    assert list(out) == ["psychopy", "opensesame", "jspsych", "files"]
+    assert [os.path.basename(p) for p in out["files"]] == [
+        "t_english_psychopy.py", "t_english.osexp", "t_english.html",
+        "t_english_psychopy.csv", "t_english_opensesame.csv",
+        "t_english_opensesame_text.csv"]
+    assert out["files"][:3] == [out["psychopy"], out["opensesame"], out["jspsych"]]
+    assert sorted(os.listdir(tmp_path)) == sorted(os.path.basename(p) for p in out["files"])
+    osexp = open(out["opensesame"], encoding="utf-8").read()
+    assert "lexsync_version_check" not in osexp
+
+
+def test_export_experiments_lists_every_version_file(schema, tmp_path):
+    stim, design = _two_list_stimuli(schema)
+    out = export_experiments(stim, design, schema, str(tmp_path))
+    assert [os.path.basename(p) for p in out["files"]] == [
+        "t_english_psychopy.py", "t_english_list1.osexp", "t_english_list2.osexp",
+        "t_english.html", "t_english_psychopy.csv",
+        "t_english_list1_opensesame.csv", "t_english_list1_opensesame_text.csv",
+        "t_english_list2_opensesame.csv", "t_english_list2_opensesame_text.csv"]
+    assert out["opensesame"] == out["files"][1]
+    assert sorted(os.listdir(tmp_path)) == sorted(os.path.basename(p) for p in out["files"])
+
+
+def test_resampled_replicates_are_separate_versions(schema, tmp_path):
+    stim, design = _three_replicates(schema)
+    assert presentation_versions(stim) == [
+        {"version": v, "replicate": v, "list": 1, "n_trials": 4} for v in (1, 2, 3)]
+    # The loop table carries the replicate and keeps each replicate's trials together,
+    # in trial order. Trials are numbered within a replicate, so sorting on the trial
+    # alone interleaved the replicates.
+    loop = loop_table(stim)
+    assert list(loop.columns[:3]) == ["trial", "list", "replicate"]
+    assert list(zip(loop["replicate"], loop["trial"], strict=True)) == [
+        (r, t) for r in (1, 2, 3) for t in (1, 2, 3, 4)]
+    out = export_experiments(stim, design, schema, str(tmp_path))
+    assert [os.path.basename(p) for p in out["files"] if p.endswith(".osexp")] == [
+        "r_english_rep1_list1.osexp", "r_english_rep2_list1.osexp",
+        "r_english_rep3_list1.osexp"]
+    numbers = pd.read_csv(tmp_path / "r_english_rep2_list1_opensesame.csv")
+    assert set(numbers["replicate"]) == {2}
+
+
+def test_the_psychopy_script_and_the_page_carry_the_versions(schema, tmp_path):
+    stim, design = _two_list_stimuli(schema)
+    versions = ('[{"version":1,"replicate":1,"list":1,"n_trials":2},'
+                '{"version":2,"replicate":1,"list":2,"n_trials":2}]')
+    py = open(export_psychopy(stim, design, schema, str(tmp_path)), encoding="utf-8").read()
+    assert f'VERSIONS = json.loads(r"""{versions}""")' in py
+    html = open(export_jspsych(stim, design, schema, str(tmp_path)), encoding="utf-8").read()
+    assert f"const VERSIONS = {versions};" in html
+    for text in (py, html):
+        assert "{{" not in text
+
+
+def test_a_presentation_version_is_numbered_by_whole_number_lists():
+    # A table without `list` or `replicate` is one list of one replicate.
+    assert presentation_versions(pd.DataFrame({"word": ["a", "b"]})) == [
+        {"version": 1, "replicate": 1, "list": 1, "n_trials": 2}]
+    # Lists are put in numeric order, so list 10 follows list 9.
+    lists = pd.DataFrame({"list": [10, 9, 10]})
+    assert [(v["list"], v["n_trials"]) for v in presentation_versions(lists)] == [(9, 1), (10, 2)]
+    with pytest.raises(ValueError, match=re.escape(
+            "lexsync: the trials' `list` column holds 'A', but a presentation version is "
+            "numbered by whole-number lists and replicates.")):
+        presentation_versions(pd.DataFrame({"list": [1, "A"]}))
+    with pytest.raises(ValueError, match=re.escape("column holds '1.5'")):
+        presentation_versions(pd.DataFrame({"replicate": [1.5]}))
+    # Both engines read a list by one rule: a number by its value, and text as a plain
+    # decimal number. float() alone took "1_0" and other scripts' digits, R's
+    # as.numeric() took "0x10", and R's as.character() rounded 1.0000000000000002 to 1.
+    for odd in ("1_0", "0x10", "１", "1e1", 1.0000000000000002):
+        with pytest.raises(ValueError, match="presentation version is numbered"):
+            presentation_versions(pd.DataFrame({"list": [odd]}))
+    with pytest.raises(ValueError, match=re.escape("holds '1.0000000000000002'")):
+        presentation_versions(pd.DataFrame({"list": [1.0000000000000002]}))
+    mixed = pd.DataFrame({"list": [" 2 ", "2.0", "10", "3"]})
+    assert [(v["list"], v["n_trials"]) for v in presentation_versions(mixed)] == [
+        (2, 2), (3, 1), (10, 1)]

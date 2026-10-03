@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import math
+import numbers
 import os
 import re
 
@@ -35,9 +36,12 @@ from .paradigms import content_field, referenced_fields, resolve_events
 # `block` travels with the trials because the runners need it: it is what an event's
 # `blocks:` restriction is matched against, and what a runner watches to know a block
 # boundary has been reached. Absent unless the design declares a practice or filler
-# block, so no existing loop table gains a column.
-_STD_COLS = ["trial", "list", "block", "set", "condition", "critical_region", "answer",
-             "condition_trigger", "item_trigger"]
+# block, so no existing loop table gains a column. `replicate`, present only in a
+# resampled design, is what tells its item samples apart, since each is numbered from
+# trial 1 and set 1. The first six are written before the event fields.
+_STD_COLS = ["trial", "list", "replicate", "block", "set", "condition", "critical_region",
+             "answer", "condition_trigger", "item_trigger"]
+_LEADING_COLS = 6
 
 # The loop-table columns the OpenSesame target carries as numbers, under the names its
 # loop table gives them. OpenSesame evaluates every cell of a loop table. In 4.x, a cell
@@ -401,22 +405,116 @@ def _ms_columns(events: list | None) -> list:
 
 
 def loop_table(stimuli: pd.DataFrame, events: list | None = None) -> pd.DataFrame:
-    """Per-trial table carrying exactly the fields the events reference."""
+    """Per-trial table carrying exactly the fields the events reference.
+
+    The rows are in presentation order within each version: by replicate when the
+    table has one, then by list, then by trial. `trial` restarts at 1 in every list
+    and in every replicate, so ordering on it alone interleaved the versions. The
+    sort is stable, as R's order() is, so rows that tie keep their incoming order and
+    the two engines write the same table.
+    """
     fields = referenced_fields(events) if events else (["word"] if "word" in stimuli.columns else [])
     # A per-trial duration is read from the loop table at run time, so its column
     # has to travel with the trials, and cannot stay behind in the stimuli file.
     ms_cols = _ms_columns(events)
     cols = []
-    for c in _STD_COLS[:5] + fields + ms_cols + _STD_COLS[5:]:
+    for c in _STD_COLS[:_LEADING_COLS] + fields + ms_cols + _STD_COLS[_LEADING_COLS:]:
         if c in stimuli.columns and c not in cols:
             cols.append(c)
     tab = stimuli[cols].copy()
-    if "trial" in tab.columns:
-        # Stable, as R's order() is: `trial` repeats across lists (and across a
-        # resampled design's replicates), and on those ties the rows must keep
-        # their incoming order or the two engines write different loop tables.
-        tab = tab.sort_values("trial", kind="stable").reset_index(drop=True)
+    keys = [c for c in ("replicate", "list", "trial") if c in tab.columns]
+    if keys:
+        tab = tab.sort_values(keys, kind="stable").reset_index(drop=True)
     return tab
+
+
+def _version_key(stimuli: pd.DataFrame, column: str) -> list:
+    """Each row's replicate or list, as a whole number.
+
+    A table without the column is one replicate, or one list, numbered 1, and so is a
+    row that leaves it empty. Any other value that is not a whole number is refused,
+    because a version is numbered by those whole numbers in order. A number is judged
+    by its value, and text only when it is a plain decimal number (``_PLAIN_NUMBER``),
+    as .version_key in scripting.R judges them: float() alone also takes "1_0" and the
+    digits of other scripts, and R's as.numeric() takes "0x10". A refused number is
+    shown to 17 significant digits in both engines.
+    """
+    if column not in stimuli.columns:
+        return [1] * len(stimuli)
+    out = []
+    for value in stimuli[column]:
+        if pd.isna(value):
+            out.append(1)
+            continue
+        if isinstance(value, numbers.Real) and not isinstance(value, bool):
+            number = float(value)
+            shown = "%.17g" % number
+        else:
+            # The characters R's trimws() removes, and no other space.
+            shown = str(value).strip(" \t\r\n")
+            if not shown:
+                out.append(1)
+                continue
+            number = float(shown) if _PLAIN_NUMBER.fullmatch(shown) else math.nan
+        if not (math.isfinite(number) and number == math.trunc(number)):
+            raise ValueError(f"lexsync: the trials' `{column}` column holds '{shown}', but a "
+                             "presentation version is numbered by whole-number lists and "
+                             "replicates.")
+        out.append(int(number))
+    return out
+
+
+def _version_keys(stimuli: pd.DataFrame) -> list:
+    """Each row's (replicate, list) pair."""
+    return list(zip(_version_key(stimuli, "replicate"), _version_key(stimuli, "list"),
+                    strict=True))
+
+
+def presentation_versions(stimuli: pd.DataFrame) -> list:
+    """The presentation versions a set of trials holds, in the order they are numbered.
+
+    A version is one (replicate, list) pair of the trials, and each participant is
+    presented one version. Version 1 is the first pair in (replicate, list) order,
+    version 2 the next, and so on. A table without a ``replicate`` column is one
+    replicate, numbered 1, and one without ``list`` is one list. Participant ``p`` runs
+    version ``((p - 1) mod V) + 1`` of ``V`` unless another is chosen at launch, the
+    rule ``participant_table`` allocates by. Every generated experiment carries this
+    list, and ``export_opensesame`` writes one experiment per version when there is
+    more than one. Mirrors .presentation_versions in scripting.R.
+
+    Args:
+        stimuli: The presented trials, with the ``list`` (and any ``replicate``)
+            column that ``counterbalance`` adds.
+
+    Returns:
+        A list of ``{"version", "replicate", "list", "n_trials"}`` dictionaries, one per
+        version, numbered from 1.
+
+    Raises:
+        ValueError: If a ``list`` or ``replicate`` value is not a whole number.
+
+    >>> stim = pd.DataFrame({"list": [2, 1, 2], "set": [1, 1, 2]})
+    >>> [(v["version"], v["list"], v["n_trials"]) for v in presentation_versions(stim)]
+    [(1, 1, 1), (2, 2, 2)]
+    """
+    keys = _version_keys(stimuli)
+    return [{"version": k, "replicate": rep, "list": lst,
+             "n_trials": sum(1 for key in keys if key == (rep, lst))}
+            for k, (rep, lst) in enumerate(sorted(set(keys)), start=1)]
+
+
+def _version_rows(stimuli: pd.DataFrame, version: dict) -> pd.DataFrame:
+    """The rows of one presentation version, in their incoming order."""
+    wanted = (version["replicate"], version["list"])
+    mask = pd.Series([key == wanted for key in _version_keys(stimuli)], index=stimuli.index,
+                     dtype=bool)
+    return stimuli.loc[mask].reset_index(drop=True)
+
+
+def _spans_replicates(versions: list) -> bool:
+    """Whether the versions come from more than one replicate. A list then names no
+    single version, so file names and launch options name the replicate as well."""
+    return len({v["replicate"] for v in versions}) > 1
 
 
 def _opensesame_tables(stimuli: pd.DataFrame, events: list) -> tuple:
@@ -463,9 +561,34 @@ def _write_text(text: str, path: str) -> str:
 
 
 def export_psychopy(stimuli, design, schema, outdir, base=None) -> str:
+    """Write a runnable PsychoPy script and the conditions file it reads.
+
+    The conditions file, ``<base>_psychopy.csv``, holds every presentation version
+    (see :func:`presentation_versions`), and the script presents one per run: the
+    version given by ``--version`` (or ``--list`` when there are no replicates), else
+    the participant's by the rule ``((participant - 1) mod V) + 1`` from
+    ``--participant``, else what a start-up dialogue asks for. A version the script does
+    not have stops the run with a message.
+
+    Args:
+        stimuli: Stimuli with trigger columns (see :func:`assign_triggers`).
+        design: A parsed design configuration.
+        schema: The parsed global schema (trigger and presentation settings).
+        outdir: Output directory.
+        base: Optional file-name stem, by default the design's :func:`design_stem`.
+
+    Returns:
+        The path to the generated ``.py``.
+    """
+    return _psychopy_files(stimuli, design, schema, outdir, base)[0]
+
+
+def _psychopy_files(stimuli, design, schema, outdir, base=None) -> list:
+    """Write the PsychoPy script and its conditions file, and return both paths."""
     base = base or design_stem(design)
     events = resolve_events(design)
     rendered = render_events(events, design.get("timing") or {}, _refresh_hz(schema))
+    versions = presentation_versions(stimuli)
     csv_name = f"{base}_psychopy.csv"
     write_csv_utf8(loop_table(stimuli, events), os.path.join(outdir, csv_name))
     with open(find_template("psychopy/trial_runner_template.py"), encoding="utf-8") as handle:
@@ -492,10 +615,12 @@ def export_psychopy(stimuli, design, schema, outdir, base=None) -> str:
         # The fallback used only when the script cannot measure the display.
         "ASSUMED_REFRESH_HZ": "%.17g" % _refresh_hz(schema),
         "EVENTS_JSON": _json_r(rendered),
+        "VERSIONS_JSON": _json_r(versions),
     }
     for key, value in subs.items():
         tmpl = tmpl.replace("{{" + key + "}}", str(value))
-    return _write_text(tmpl.rstrip("\n"), os.path.join(outdir, f"{base}_psychopy.py"))
+    script = _write_text(tmpl.rstrip("\n"), os.path.join(outdir, f"{base}_psychopy.py"))
+    return [script, os.path.join(outdir, csv_name)]
 
 
 def _pyq(s: str) -> str:
@@ -668,14 +793,53 @@ def _inline_block(name: str, desc: str, body: list, run: bool) -> list:
     ]
 
 
+def _osexp_version_check(version: int, n_versions: int) -> list:
+    """The inline script that checks the subject number against this file's version.
+
+    A design with several presentation versions gets one experiment per version, and
+    the experimenter opens the participant's. OpenSesame asks for a subject number at
+    start-up, and participant p normally runs version ((p - 1) mod V) + 1. When the
+    number belongs to another version, this shows a screen saying so and waits for a
+    key. Space goes on with this file, and escape stops the session. It runs before the
+    loop, so the experiment needs no run-if condition, a syntax that differs between
+    OpenSesame 3.3 and 4.x. Must match .osexp_version_check in scripting.R.
+    """
+    body = [
+        f"_version = {int(version)}",
+        f"_versions = {int(n_versions)}",
+        "try:",
+        "    _p = int(var.get(u'subject_nr', 0, _eval=False))",
+        "except (TypeError, ValueError):",
+        "    _p = 0",
+        "_expected = (_p - 1) % _versions + 1",
+        "if _expected != _version:",
+        "    c = Canvas()",
+        "    c.text(u'Participant %d would normally run version %d, and this file runs "
+        "version %d. Press space to continue with this one or escape to stop.' "
+        "% (_p, _expected, _version))",
+        "    c.show()",
+        "    _key, _t = Keyboard(keylist=[u'space', u'escape'], timeout=None).get_key()",
+        "    if _key == u'escape':",
+        "        raise RuntimeError(u'lexsync: stopped at the version check, because "
+        "participant %d would normally run version %d.' % (_p, _expected))",
+    ]
+    return _inline_block("lexsync_version_check",
+                         "Warn when the subject number belongs to another version", body,
+                         run=True)
+
+
 def build_osexp(design: dict, conditions_file: str, schema: dict, rendered: list,
-                font: str = "mono", text_file: str | None = None) -> str:
+                font: str = "mono", text_file: str | None = None,
+                version: int | None = None, n_versions: int | None = None) -> str:
     """The plain text of an OpenSesame experiment for a rendered event list.
 
     ``conditions_file`` names the loop table and ``text_file`` its companion text
     table, which defaults to the loop table's name with ``_text`` before ``.csv``.
     Both are looked up through OpenSesame's file pool, which also searches the
-    experiment's own folder. Must match build_osexp in scripting.R.
+    experiment's own folder. ``version`` and ``n_versions`` mark the experiment as
+    version ``version`` of ``n_versions``. With more than one version, the experiment
+    checks OpenSesame's subject number against its own before the loop and warns when
+    the participant would normally run another. Must match build_osexp in scripting.R.
     """
     addr = clean_port((schema.get("triggers") or {}).get("parallel_address", "0x378"))
     design_name = clean_meta(design["name"], "the design's `name`")
@@ -756,6 +920,8 @@ def build_osexp(design: dict, conditions_file: str, schema: dict, rendered: list
         'test-mode fallback"',
         '\tset _run ""', "\t___prepare__", *["\t" + s for s in setup], "\t__end__", "",
     ]
+    checked = version is not None and n_versions is not None and int(n_versions) > 1
+    check = _osexp_version_check(version, n_versions) if checked else []
     trial = [
         "define sequence lexsync_trial",
         "\tset flush_keyboard yes",
@@ -771,13 +937,15 @@ def build_osexp(design: dict, conditions_file: str, schema: dict, rendered: list
         "define sequence lexsync_experiment",
         "\tset flush_keyboard yes",
         '\tset description "Top-level experiment sequence"',
-        "\trun lexsync_trigger_setup always", "\trun lexsync_loop always", "",
+        "\trun lexsync_trigger_setup always",
+        *(["\trun lexsync_version_check always"] if checked else []),
+        "\trun lexsync_loop always", "",
     ]
-    return "\n".join(header + event_blocks + trial)
+    return "\n".join(header + check + event_blocks + trial)
 
 
 def export_opensesame(stimuli, design, schema, outdir, base=None) -> str:
-    """Write a complete plain-text OpenSesame experiment and the two tables it reads.
+    """Write complete plain-text OpenSesame experiments and the two tables each reads.
 
     ``<base>.osexp`` loops over ``<base>_opensesame.csv``, which holds numbers only:
     ``lexsync_row`` (the trial's position in loop order, from 1), ``lexsync_trial``,
@@ -786,6 +954,14 @@ def export_opensesame(stimuli, design, schema, outdir, base=None) -> str:
     in ``<base>_opensesame_text.csv``, which the inline scripts read with Python's
     ``csv`` module, so OpenSesame never evaluates them. Copy both tables with the
     experiment.
+
+    A design with more than one presentation version (see
+    :func:`presentation_versions`) gets one experiment per version instead, each with
+    its own two tables holding only that version's trials: ``<base>_list<k>.osexp``, or
+    ``<base>_rep<r>_list<k>.osexp`` when the versions span several replicates. Each one
+    checks OpenSesame's subject number at start-up and shows a warning when that
+    participant would normally run another version. ``export_experiments`` lists every
+    file written.
 
     OpenSesame evaluates the cells of a loop table: in 4.x a cell holding ``{`` runs as
     a Python f-string, and in 3.3 a cell starting with ``=`` or holding ``[=...]`` runs
@@ -810,20 +986,47 @@ def export_opensesame(stimuli, design, schema, outdir, base=None) -> str:
     Returns
     -------
     str
-        The path to the generated ``.osexp``.
+        The path to the generated ``.osexp``, version 1's when there are several.
+    """
+    return _opensesame_files(stimuli, design, schema, outdir, base)[0][0]
+
+
+def _opensesame_files(stimuli, design, schema, outdir, base=None) -> tuple:
+    """Write the OpenSesame experiments and their tables, one experiment per version.
+
+    Returns ``(experiments, tables)``: the ``.osexp`` paths in version order, and each
+    version's loop table and text table in the same order. Every table is checked
+    before anything is written, so a refused value leaves no partial set behind.
     """
     base = base or design_stem(design)
     events = resolve_events(design)
     rendered = render_events(events, design.get("timing") or {}, _refresh_hz(schema))
-    numbers, text = _opensesame_tables(stimuli, events)
-    csv_name = f"{base}_opensesame.csv"
-    text_name = f"{base}_opensesame_text.csv"
     presentation = schema.get("presentation") or {}
     font = design.get("font") or presentation.get("opensesame_font") or "mono"
-    osexp = build_osexp(design, csv_name, schema, rendered, font=font, text_file=text_name)
-    write_csv_utf8(numbers, os.path.join(outdir, csv_name))
-    write_csv_utf8(text, os.path.join(outdir, text_name))
-    return _write_text(osexp, os.path.join(outdir, f"{base}.osexp"))
+    versions = presentation_versions(stimuli)
+    if len(versions) <= 1:
+        # One version keeps the file names an experiment has always had.
+        parts = [(base, stimuli, None)]
+    else:
+        by_replicate = _spans_replicates(versions)
+        parts = [((f"{base}_rep{v['replicate']}_list{v['list']}" if by_replicate
+                   else f"{base}_list{v['list']}"), _version_rows(stimuli, v), v)
+                 for v in versions]
+    written = []
+    for stem, rows, v in parts:
+        numbers, text = _opensesame_tables(rows, events)
+        csv_name, text_name = f"{stem}_opensesame.csv", f"{stem}_opensesame_text.csv"
+        osexp = build_osexp(design, csv_name, schema, rendered, font=font, text_file=text_name,
+                            version=None if v is None else v["version"],
+                            n_versions=len(versions))
+        written.append((stem, csv_name, text_name, numbers, text, osexp))
+    experiments, tables = [], []
+    for stem, csv_name, text_name, numbers, text, osexp in written:
+        write_csv_utf8(numbers, os.path.join(outdir, csv_name))
+        write_csv_utf8(text, os.path.join(outdir, text_name))
+        experiments.append(_write_text(osexp, os.path.join(outdir, f"{stem}.osexp")))
+        tables += [os.path.join(outdir, csv_name), os.path.join(outdir, text_name)]
+    return experiments, tables
 
 
 # BCP 47 tags for the human-readable language labels the designs carry, covering the
@@ -924,11 +1127,19 @@ def export_jspsych(stimuli, design, schema, outdir, base=None) -> str:
     are saved locally, so no server is required either to run it or to collect them.
     Onset triggers are recorded in each trial's data (a browser cannot drive a
     parallel port); online EEG synchronisation needs WebSerial/LSL or a photodiode.
+
+    The page embeds every presentation version (see :func:`presentation_versions`) and
+    runs one, named in its address: ``?version=K``, ``?list=K`` when there are no
+    replicates, or ``?participant=N``, whose version is ``((N - 1) mod V) + 1``. A page
+    with more than one version, opened with none of these, shows a screen naming them
+    and runs nothing. The data rows carry the participant, the version, the list and
+    the replicate, and the data file is named after the participant and the version.
     """
     base = base or design_stem(design)
     events = resolve_events(design)
     rendered = _map_keys_for_jspsych(
         render_events(events, design.get("timing") or {}, _refresh_hz(schema)))
+    versions = presentation_versions(stimuli)
     trials = loop_table(stimuli, events).to_dict(orient="records")
     presentation = schema.get("presentation") or {}
     font = design.get("font") or presentation.get("font") or "Courier New"
@@ -944,6 +1155,7 @@ def export_jspsych(stimuli, design, schema, outdir, base=None) -> str:
         "LANGUAGE": clean_meta(design["language"], "the design's `language`"),
         "LANGUAGE_TAG": _language_tag(design), "WORD_FONT": clean_meta(font, "the font"),
         "EVENTS_JSON": _json_html(rendered), "TRIALS_JSON": _json_html(trials),
+        "VERSIONS_JSON": _json_html(versions),
     }
     for k, v in subs.items():
         tmpl = tmpl.replace("{{" + k + "}}", str(v))
@@ -970,14 +1182,23 @@ def export_experiments(stimuli, design, schema, outdir, base=None, conditions=No
     conditions the first is 101, the second 102, and so on, whatever order the
     counterbalanced trials put them in. A design with no ``conditions`` block (a
     generated lexical decision, an item table) falls back to the order of first
-    appearance, unless ``conditions`` is given. Returns the generated paths by
-    target.
+    appearance, unless ``conditions`` is given.
+
+    Returns the generated paths by target: ``psychopy``, ``opensesame`` (version 1's
+    experiment when a design has several, see :func:`export_opensesame`) and
+    ``jspsych``. ``files`` lists every file written, in a fixed order: the PsychoPy
+    script, each OpenSesame experiment in version order, the jsPsych page, the PsychoPy
+    conditions file, and then each OpenSesame experiment's loop table and text table.
     """
     if conditions is None:
         conditions = _design_condition_names(design)
     stimuli = assign_triggers(stimuli, conditions)
+    script, conditions_file = _psychopy_files(stimuli, design, schema, outdir, base)
+    experiments, tables = _opensesame_files(stimuli, design, schema, outdir, base)
+    page = export_jspsych(stimuli, design, schema, outdir, base)
     return {
-        "psychopy": export_psychopy(stimuli, design, schema, outdir, base),
-        "opensesame": export_opensesame(stimuli, design, schema, outdir, base),
-        "jspsych": export_jspsych(stimuli, design, schema, outdir, base),
+        "psychopy": script,
+        "opensesame": experiments[0],
+        "jspsych": page,
+        "files": [script, *experiments, page, conditions_file, *tables],
     }

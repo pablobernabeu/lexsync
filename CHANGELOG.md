@@ -184,6 +184,44 @@ no function signature changes.
   Python ran. The R engine's compensated sum now returns NA for such input, as the
   Python engine's returns NaN. It also returns NaN where opposite infinities make
   the running sum NaN, a case in which it stopped in the same way.
+- Generated experiments present one counterbalancing version to each participant.
+  The PsychoPy, OpenSesame and jsPsych experiments used to present every list in one
+  session, interleaved, so in a Latin-square design each target appeared in both
+  conditions (in `en_priming`, all 12 targets twice, three of them on consecutive
+  trials), and in a resampled design every participant saw all the replicates. The
+  0.1.0 notes said that a categorisation participant never sees the same target
+  twice. That held within a list only. A version is one (replicate, list) pair of
+  the presented trials, numbered from 1 in that order, and participant *p* runs
+  version ((*p* - 1) mod *V*) + 1 of *V*, the rule `participant_table` uses. The
+  PsychoPy script reads `--participant` and `--version`, or `--list` without
+  replicates, from its command line. Launched with neither, it asks for them in a
+  dialogue, which a design with one version also shows and runs on blank answers. It
+  stops on a version it does not have. The jsPsych page reads
+  `?participant=`, `?version=` or `?list=` from its address, and a page with several
+  versions opened without one says how to open it and runs nothing. Every page names
+  its data file after the participant and the version, so a page with one version
+  saves `<title>_v1.csv`. The OpenSesame target writes one experiment per version
+  (`<base>_list<k>.osexp`, or `<base>_rep<r>_list<k>.osexp` with replicates), each
+  with its own tables, and each warns when the subject number belongs to another
+  version. A design with one list and no replicates keeps its file names.
+  `lexsync.scripting.presentation_versions` lists the versions of a set of trials,
+  and `export_experiments` lists every file it wrote under `files`, so code that
+  iterates over the result's values must now skip that list. The exporters refuse a
+  `list` or `replicate` value that is not a whole number, read by one rule in both
+  engines, since the versions are numbered by those values. In a resampled design
+  with practice or filler trials, each version has its own copy of them, and fillers
+  no longer stop such a design with an error about a missing hash-key component.
+  The loop tables carry `replicate` and keep each version's trials together. The
+  datasheet records `counterbalancing.versions` and `counterbalancing.assignment`,
+  and its Methods text says that each participant was presented one version. Its
+  artefact list and the run log include the loop and text tables, which hold the
+  trial order and the trigger codes. Every demonstration's experiments, datasheets
+  and run logs change, and the seven multi-list designs and `en_resample` have one
+  OpenSesame experiment per version in place of `<base>.osexp`. The demos index
+  links each version of a page, and the landing page links version 1 of the
+  self-paced reading demonstration. One twin-edge case, `resample_two_lists`, pins
+  the four versions of a resampled two-list design in both engines. No stimulus
+  changes.
 
 ### Security
 

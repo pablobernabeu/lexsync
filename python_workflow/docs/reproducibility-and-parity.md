@@ -336,8 +336,9 @@ pipeline, though `run_pipeline` calls them for you.
 Alongside the datasheet, each run writes a log in Markdown and JSON Lines, with a timestamped entry
 per stage: which lexicon was loaded and how many words it held, the pool size after filtering, which
 dimensions were derived, how many items were matched, the equivalence verdict on each dimension, and
-every artefact written with its row count and MD5. A design or schema key that lexsync does not read
-is noted there too, since it changed nothing about the run.
+every artefact written with its MD5. The experiments' loop and text tables are among them, and the
+stimuli and report tables are logged with their row counts too. A design or schema key that lexsync
+does not read is noted there as well, since it changed nothing about the run.
 
 ```python
 # illustrative: writes run_log.md and run_log.jsonl into the working tree

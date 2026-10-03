@@ -56,7 +56,9 @@
         "condition": "narrow",
         "n_trials": 8
       }
-    ]
+    ],
+    "versions": 2,
+    "assignment": "version = ((participant - 1) mod 2) + 1 unless a version is given at launch"
   },
   "resampling": null,
   "items": {
@@ -93,15 +95,39 @@
     },
     {
       "file": "output/experiments/en_categorisation_english_psychopy.py",
-      "sha256": "f1946751f35dd94dfb94d1b301ca38144775613e1fae6e4aee600c6686806eac"
+      "sha256": "4fb64f1fdc886bb092fd31e219893ceb19f4f17d09385bc82c8aef830352d9d3"
     },
     {
-      "file": "output/experiments/en_categorisation_english.osexp",
-      "sha256": "17fdb92714aa606681b0a855a1911071809b5482eaf1147f5e79aae6109ca63b"
+      "file": "output/experiments/en_categorisation_english_list1.osexp",
+      "sha256": "50ed4c58ae41333e7a022f84994ed6f087dc1fb68abed7e0e3e3f219013a5d80"
+    },
+    {
+      "file": "output/experiments/en_categorisation_english_list2.osexp",
+      "sha256": "ba3b0949c0cc12376314e79c40337e78573803ec3f1c2fa661c87cf0516205c3"
     },
     {
       "file": "output/experiments/en_categorisation_english.html",
-      "sha256": "f8977bf007666032ec8bf5bcfa23bd35e0ab83e2e83036871aa794fd28c85f45"
+      "sha256": "2bad48180cea2f31a49a3c0eb577933aa7ec5455437481455ec4f4c4513c11d3"
+    },
+    {
+      "file": "output/experiments/en_categorisation_english_psychopy.csv",
+      "sha256": "850d6c7f0359f9e72e41d579087a321d820832346f5256a448846efcd6c755dd"
+    },
+    {
+      "file": "output/experiments/en_categorisation_english_list1_opensesame.csv",
+      "sha256": "5315adde2553179bd8bf5684ab28b4a8ec55d8a3866f1d5c5f43f81197694c20"
+    },
+    {
+      "file": "output/experiments/en_categorisation_english_list1_opensesame_text.csv",
+      "sha256": "9c06034b05a8e90e440438c9db4ca3f3c1a2c0e8d33fa2423cd2c468eec98491"
+    },
+    {
+      "file": "output/experiments/en_categorisation_english_list2_opensesame.csv",
+      "sha256": "28628df08e2a5d7512a5a14879f4586fb893763925873f74de9f2b368e5d7507"
+    },
+    {
+      "file": "output/experiments/en_categorisation_english_list2_opensesame_text.csv",
+      "sha256": "289ac67946d244fd6338ddef45c62b5e95aa0e44b862cf9464a9b7334b052d9a"
     }
   ]
 }

@@ -19,18 +19,67 @@
     },
     {
       "file": "output/experiments/en_balanced_lists_english_psychopy.py",
-      "sha256": "f958ab8c6bc0cfade2d9d67d32beec0fedd5cb0d5b056597c59da4b6e57c885b"
+      "sha256": "b73bb0252592f0640da903515e0cac17836cf5adecc5ad050a5f68c34f0c0f26"
     },
     {
-      "file": "output/experiments/en_balanced_lists_english.osexp",
-      "sha256": "c81b480200c478f7bfa7540eb928ac694982928e3bc4d8de017f4cb33edb32b1"
+      "file": "output/experiments/en_balanced_lists_english_list1.osexp",
+      "sha256": "ae0a0d72a135a0b00be650d2175ea63c0c286785ee2e7760dff7eb3a76344cf4"
+    },
+    {
+      "file": "output/experiments/en_balanced_lists_english_list2.osexp",
+      "sha256": "f87319f989be4a6bd0b4a81c564e861d17fef71fc00bb54c615d55bbf6a3d485"
+    },
+    {
+      "file": "output/experiments/en_balanced_lists_english_list3.osexp",
+      "sha256": "fbf8eee8156a2481500ea074589e1009d0d62fc50b940d498f0a69963f342fcd"
+    },
+    {
+      "file": "output/experiments/en_balanced_lists_english_list4.osexp",
+      "sha256": "768e5883ab390769355e1c9dbb9bad4c8d4a02f38212002547f8f9b47bad0874"
     },
     {
       "file": "output/experiments/en_balanced_lists_english.html",
-      "sha256": "b6f9f871e376625313119595fab2458c4d122df2912463fe2968b31c48afb97f"
+      "sha256": "a8713911a50d8626fe11a1b40abc801c5aadca39777b7e668798cde4810d86a9"
+    },
+    {
+      "file": "output/experiments/en_balanced_lists_english_psychopy.csv",
+      "sha256": "00c6deb8b3392acf7edf99cca7e9b8ed80bba88111d2ac005c976b12da7e44ea"
+    },
+    {
+      "file": "output/experiments/en_balanced_lists_english_list1_opensesame.csv",
+      "sha256": "0ce9b1a1af5b1c4f543b743dcb41eb1f2bab369ebcda97be0062bb1bb214cec2"
+    },
+    {
+      "file": "output/experiments/en_balanced_lists_english_list1_opensesame_text.csv",
+      "sha256": "3f228c73e0364ca261000fa44c54b986ebdb74c18cfbf6e857c362e94fab1941"
+    },
+    {
+      "file": "output/experiments/en_balanced_lists_english_list2_opensesame.csv",
+      "sha256": "2bbe5933d6da5d2b080986279085818db1d48e4f6e48db6ec17725d57a0de08e"
+    },
+    {
+      "file": "output/experiments/en_balanced_lists_english_list2_opensesame_text.csv",
+      "sha256": "7faeb800a85ddd5aa76a5caa19c252b676371cabe5de955abc2914fbcaaaeffb"
+    },
+    {
+      "file": "output/experiments/en_balanced_lists_english_list3_opensesame.csv",
+      "sha256": "23e46ba5708f925e20ae344b9e60c538f58b0e5b7e2f0a62f8ed2d0fd278f167"
+    },
+    {
+      "file": "output/experiments/en_balanced_lists_english_list3_opensesame_text.csv",
+      "sha256": "0e619182c756978d58329ddc6f90028da4e8cad4405be062a7e38304bc3b0dc1"
+    },
+    {
+      "file": "output/experiments/en_balanced_lists_english_list4_opensesame.csv",
+      "sha256": "941a5aacf9bed32b4b8f6ff4e4c4dc046f175e435c9179f841a0b3e310a9cea3"
+    },
+    {
+      "file": "output/experiments/en_balanced_lists_english_list4_opensesame_text.csv",
+      "sha256": "d214f0d0058f7c7068811c05d8da1d3d087a0de35f2adf685190868a5bdd814b"
     }
   ],
   "counterbalancing": {
+    "assignment": "version = ((participant - 1) mod 4) + 1 unless a version is given at launch",
     "cells": [
       {
         "condition": "high_frequency",
@@ -89,7 +138,8 @@
       "max_passes_reached": false,
       "n_swaps": 10
     },
-    "recipe": "factorial"
+    "recipe": "factorial",
+    "versions": 4
   },
   "design": {
     "description": "High versus low frequency English words, matched on length, neighbourhood density and OLD20, dealt into four counterbalancing lists that are themselves equated on those dimensions.",

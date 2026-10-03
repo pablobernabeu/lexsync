@@ -27,7 +27,10 @@
 # appeared.
 #
 # Both blocks appear in EVERY list. They are not counterbalanced, because they carry no
-# manipulation to rotate; every participant should get the same practice.
+# manipulation to rotate; every participant should get the same practice. In a resampled
+# design each replicate's copy of a list is a presentation version of its own, given to
+# its own participants, so the blocks are added to every (replicate, list) pair, and the
+# trials are numbered within it.
 #
 # Mirrors python_workflow/src/lexsync/blocks.py.
 
@@ -79,7 +82,9 @@
 #'   `block` column when more than one block exists), `report` (per-block counts and
 #'   the item tables' checksums, or `NULL` when the design declares no extra block) and
 #'   `normalisation` (`list(changed, collapsed)`, what Unicode NFC normalisation did to
-#'   the practice and filler tables; see [load_items()]).
+#'   the practice and filler tables; see [load_items()]). Trials are numbered from 1
+#'   within each list, or within each (replicate, list) pair of a resampled design, and
+#'   the counts are per list or pair.
 #' @keywords internal
 .add_blocks <- function(stimuli, design, schema) {
   practice_cfg <- design[["practice"]]
@@ -93,7 +98,20 @@
   seed <- schema[["seed"]] %||% 1L
   stimuli$block <- .BLOCK_MAIN
   if (is.null(stimuli$list)) stimuli$list <- 1L
-  lists <- sort(unique(stimuli$list))
+  # The unit the blocks are added to is a presentation version: a list, or in a
+  # resampled design a (replicate, list) pair. Added per list, the practice and filler
+  # rows carried no replicate, so only the first replicate's version presented them.
+  by_replicate <- "replicate" %in% names(stimuli)
+  units <- if (by_replicate) unique(stimuli[c("replicate", "list")]) else
+    data.frame(list = sort(unique(stimuli$list)))
+  if (by_replicate) {
+    units <- units[order(units$replicate, units$list, method = "radix"), , drop = FALSE]
+  }
+  in_unit <- function(i) {
+    keep <- stimuli$list == units$list[i]
+    if (by_replicate) keep <- keep & stimuli$replicate == units$replicate[i]
+    keep
+  }
   offset <- max(c(0L, as.integer(stimuli$set)))
 
   fillers <- NULL
@@ -107,16 +125,19 @@
   }
 
   parts <- list()
-  for (li in lists) {
-    body <- stimuli[stimuli$list == li, , drop = FALSE]
+  for (i in seq_len(nrow(units))) {
+    li <- units$list[i]
+    body <- stimuli[in_unit(i), , drop = FALSE]
     if (!is.null(fillers)) {
       f <- fillers; f$list <- li
+      if (by_replicate) f$replicate <- units$replicate[i]
       body <- .rbind_blocks(body, f)
     }
     # One shuffle over main and fillers together is what interleaves them.
     body <- .shuffle_deterministic(body, seed)
     if (!is.null(practice)) {
       p <- practice; p$list <- li
+      if (by_replicate) p$replicate <- units$replicate[i]
       p <- .shuffle_deterministic(p, seed)
       body <- .rbind_blocks(p, body)
     }
@@ -126,8 +147,8 @@
   out <- do.call(rbind, parts)
   rownames(out) <- NULL
 
-  report <- list(blocks = list(list(block = .BLOCK_MAIN,
-                                    n_per_list = sum(stimuli$list == lists[1]))))
+  # Counted in the first version, as the other blocks are counted per version.
+  report <- list(blocks = list(list(block = .BLOCK_MAIN, n_per_list = sum(in_unit(1L)))))
   if (!is.null(fillers)) {
     report$blocks[[length(report$blocks) + 1L]] <- list(
       block = "filler", n_per_list = nrow(fillers), path = filler_cfg[["path"]],

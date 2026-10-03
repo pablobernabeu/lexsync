@@ -354,3 +354,77 @@ def test_the_scripts_present_the_text_verbatim_and_score_a_timeout(version, sche
     codes = [code for _, code in sent]
     assert codes and all(type(code) is int for code in codes)
     assert [ms for name, ms in slept if name == "lexsync_e6"] == list(stim["iti_ms"])
+
+
+# ---- One experiment per counterbalancing version ---------------------------------------
+
+def _two_list_design(schema):
+    from lexsync.counterbalancing import counterbalance
+    stim = pd.DataFrame({"prime": ["hot", "sky", "sun", "big"],
+                         "target": ["cold", "cold", "moon", "moon"],
+                         "condition": ["related", "unrelated"] * 2, "set": [1, 1, 2, 2]})
+    design = {"name": "t", "language": "english", "paradigm": "priming",
+              "counterbalance": {"lists": 2}}
+    return assign_triggers(counterbalance(stim, design, schema)), design
+
+
+def _run_version_check(osexp_path, version, subject_nr, key):
+    """Run an experiment's version check under `version`'s variable store, with
+    OpenSesame's subject number set and `key` pressed at any prompt, and return the
+    texts it showed."""
+    with open(osexp_path, encoding="utf-8") as handle:
+        items = _items(handle.read())
+    store, shown = {"subject_nr": subject_nr}, []
+
+    class Var:
+        def __getattr__(self, name):
+            return self.get(name)
+
+        def get(self, name, default=None, _eval=True):
+            if name in store:
+                return read_value(version, store[name], _eval)
+            if default is None:
+                raise KeyError(f"OpenSesame has no variable '{name}'")
+            return default
+
+    class Canvas:
+        def text(self, text, *args, **kwargs):
+            shown.append(text)
+
+        def show(self):
+            return 0.0
+
+    class Keyboard:
+        def __init__(self, keylist=None, timeout=None):
+            assert key in keylist
+
+        def get_key(self, **kwargs):
+            return key, 0.0
+
+    exec("\n".join(items["lexsync_version_check"]["___run__"]),
+         {"var": Var(), "Canvas": Canvas, "Keyboard": Keyboard})
+    return shown
+
+
+@pytest.mark.parametrize("version", ["3.3", "4.x"])
+def test_each_experiment_warns_when_the_subject_number_belongs_to_another_version(
+        version, schema, tmp_path):
+    stim, design = _two_list_design(schema)
+    export_opensesame(stim, design, schema, str(tmp_path))
+    for k in (1, 2):
+        path = tmp_path / f"t_english_list{k}.osexp"
+        assert validate_osexp(path.read_text(encoding="utf-8"))
+        _assert_inert(tmp_path / f"t_english_list{k}_opensesame.csv")
+        for subject in (1, 2, 3, 4):
+            expected = (subject - 1) % 2 + 1
+            shown = _run_version_check(path, version, subject, "space")
+            if expected == k:
+                assert shown == [], (k, subject)
+            else:
+                assert shown == [
+                    f"Participant {subject} would normally run version {expected}, and "
+                    f"this file runs version {k}. Press space to continue with this one "
+                    "or escape to stop."], (k, subject)
+        # Escape at the warning stops the session.
+        with pytest.raises(RuntimeError, match="lexsync: stopped at the version check"):
+            _run_version_check(path, version, 3 - k, "escape")

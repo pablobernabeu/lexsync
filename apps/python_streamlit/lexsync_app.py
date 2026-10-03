@@ -173,6 +173,29 @@ def positive_tolerances(values: dict) -> dict:
     return {d: float(k) for d, k in values.items() if k is not None and k > 0}
 
 
+def experiment_files(experiments: dict) -> list:
+    """Every experiment file a run wrote, for the Experiment tab.
+
+    A design with several counterbalancing versions writes one OpenSesame experiment
+    per version, each with its own tables, and ``export_experiments`` lists them all
+    under ``files``. A result without ``files``, from an older lexsync, offers its
+    three scripts. Mirrors experiment_files() in the Shiny app.
+
+    Parameters
+    ----------
+    experiments : dict
+        The ``experiments`` entry of ``run_pipeline``'s result.
+
+    Returns
+    -------
+    list
+        The paths, in the order the export wrote them.
+    """
+    if "files" in experiments:
+        return list(experiments["files"])
+    return [experiments[k] for k in ("psychopy", "opensesame", "jspsych") if experiments.get(k)]
+
+
 def bundled_inputs(design: dict) -> dict:
     """Map each repository-bundled input the design names to its source file.
 
@@ -562,13 +585,14 @@ if "bundle" in st.session_state:
             st.info("No datasheet was produced for this design.")
 
     with tabs[3]:
-        st.caption("The same matched stimuli compile to three presentation targets.")
-        exps = bundle["paths"].get("experiments", {})
-        for label, path in exps.items():
+        st.caption("The same matched stimuli compile to three presentation targets. A "
+                   "PsychoPy or OpenSesame experiment reads the tables that share its name, "
+                   "so download them together.")
+        for path in experiment_files(bundle["paths"].get("experiments", {})):
             if path and os.path.exists(path):
                 with open(path, "rb") as fh:
                     st.download_button(f"Download {os.path.basename(path)}", fh.read(),
-                                       file_name=os.path.basename(path), key=f"dl_{label}_{path}")
+                                       file_name=os.path.basename(path), key=f"dl_exp_{path}")
 
     with tabs[4]:
         code = reproduction_code(design, design_filename)

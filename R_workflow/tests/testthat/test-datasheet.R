@@ -156,6 +156,65 @@ test_that("the datasheet records the recipe counterbalance applied", {
   expect_identical(ds$counterbalancing$recipe, "factorial")
 })
 
+test_that("the datasheet lists every experiment file", {
+  # The record listed the three experiment scripts only, so it could not verify the
+  # loop tables, which hold the trial order and the trigger codes those experiments
+  # present. It now lists every file export_experiments() wrote.
+  schema <- ds_schema()
+  design <- ds_table_design(counterbalance = list(lists = 2L))
+  stim <- counterbalance(ds_priming_table(), design, schema)
+  out <- tempfile("ds"); dir.create(out)
+  res <- export_experiments(stim, design, schema, out)
+  ds <- build_datasheet(design, schema, NULL, stim, "items/p.csv",
+                        list(stimuli = NULL, experiments = res), 2026, engine = "R")
+  files <- vapply(ds$artifacts, function(a) a$file, character(1))
+  expect_identical(files, res$files)
+  expect_identical(basename(files)[-(1:4)], c(
+    "p_english_psychopy.csv", "p_english_list1_opensesame.csv",
+    "p_english_list1_opensesame_text.csv", "p_english_list2_opensesame.csv",
+    "p_english_list2_opensesame_text.csv"))
+  expect_true(all(nchar(vapply(ds$artifacts, function(a) a$sha256, character(1))) == 64L))
+})
+
+test_that("the datasheet records the presentation versions", {
+  schema <- ds_schema()
+  design <- ds_table_design(counterbalance = list(lists = 2L))
+  ds <- build_datasheet(design, schema, NULL, counterbalance(ds_priming_table(), design, schema),
+                        "items/p.csv", list(stimuli = NULL, experiments = list()), 2026,
+                        engine = "R")
+  expect_identical(ds$counterbalancing$versions, 2L)
+  expect_identical(ds$counterbalancing$assignment,
+                   "version = ((participant - 1) mod 2) + 1 unless a version is given at launch")
+  expect_true(grepl(paste("generated for PsychoPy, OpenSesame and jsPsych. Each participant",
+                          "was presented one of the 2 lists, assigned in rotation by",
+                          "participant number. The selection"),
+                    methods_paragraph(ds), fixed = TRUE))
+  expect_true(grepl(paste("- **Presentation versions:** 2, assigned as version =",
+                          "((participant - 1) mod 2) + 1 unless a version is given at launch"),
+                    lexsync:::render_datasheet_md(ds), fixed = TRUE))
+  # One version: nothing to assign, and nothing said about it.
+  single <- build_datasheet(ds_design(), schema, NULL, ds_stim(), "x.csv",
+                            list(stimuli = NULL, experiments = list()), 2026, engine = "R")
+  expect_identical(single$counterbalancing$versions, 1L)
+  expect_false(grepl("Each participant was presented", methods_paragraph(single), fixed = TRUE))
+  expect_false(grepl("Presentation versions", lexsync:::render_datasheet_md(single),
+                     fixed = TRUE))
+  # Replicates multiply the versions, and a frame without `list` counts the lists
+  # counterbalance() would deal.
+  reps <- do.call(rbind, lapply(1:3, function(r) cbind(ds_priming_table(), replicate = r)))
+  resampled <- utils::modifyList(design, list(resample = list(n_sets = 3L)))
+  ds <- build_datasheet(resampled, schema, NULL, counterbalance(reps, resampled, schema),
+                        "items/p.csv", list(stimuli = NULL, experiments = list()), 2026,
+                        engine = "R")
+  expect_identical(ds$counterbalancing$versions, 6L)
+  expect_true(grepl(paste("Each participant was presented one of the 6 presentation",
+                          "versions (one list of one item set), assigned in rotation by",
+                          "participant number."), methods_paragraph(ds), fixed = TRUE))
+  unlisted <- build_datasheet(resampled, schema, NULL, reps, "items/p.csv",
+                              list(stimuli = NULL, experiments = list()), 2026, engine = "R")
+  expect_identical(unlisted$counterbalancing$versions, 6L)
+})
+
 test_that("an incomplete rotation is described as incomplete", {
   schema <- ds_schema()
   design <- ds_table_design(counterbalance = list(lists = 2L))

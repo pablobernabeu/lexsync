@@ -34,6 +34,16 @@ stops OpenSesame 4.x. The snippet sends `item_trigger` and then
 `condition_trigger`. Adjust those names if you paste it into a design whose loop
 table names its markers differently.
 
+A design with more than one counterbalancing list, or with resampled item sets,
+has several presentation versions, and each participant runs one. It gets one
+experiment per version, `<base>_list<k>.osexp` (`<base>_rep<r>_list<k>.osexp`
+with resampled item sets), each with its own two tables holding only that
+version's trials. Open the participant's: participant *p* runs version
+((*p* - 1) mod *V*) + 1 of the *V* versions. Each experiment compares the
+subject number OpenSesame asks for at start-up with its own version. When that
+participant would normally run another, it says so and waits for a key. Space
+goes on with this file, and escape stops the session.
+
 Timing: the word is drawn and shown from inside an `inline_script`, and the
 trigger is sent immediately after `canvas.show()` returns. Because `show()`
 blocks until the display refresh (with the `psycho`/`xpyriment` backends), the

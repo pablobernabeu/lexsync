@@ -133,9 +133,10 @@ no corpus-matching report, and the tab says as much where an empty table would o
 'Datasheet' renders the materials datasheet for the run, carrying the provenance of the corpus, the
 checksums, the realised control and the pre-registration skeleton.
 
-'Experiment scripts' offers one download per generated experiment, the PsychoPy script, the
-OpenSesame `.osexp` and the jsPsych HTML that runs in a browser, all three compiled from the same
-trial description.
+'Experiment scripts' offers one download per generated file. The PsychoPy script, the OpenSesame
+`.osexp` and the jsPsych HTML that runs in a browser are all compiled from the same trial
+description. A design with several counterbalancing versions has one `.osexp` per version, and the
+PsychoPy and OpenSesame experiments come with the tables they read.
 
 'Reproducible code' is what stops a session in the app from being a dead end. It shows the design
 configuration as YAML, with repository-relative paths such as `corpora/derived/en.csv` rather than

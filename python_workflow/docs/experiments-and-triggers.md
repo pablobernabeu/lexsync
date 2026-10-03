@@ -155,7 +155,9 @@ is a second block the participant can tell apart. They are merged in
 before the order is drawn, so one deterministic shuffle mixes them through, which does renumber the
 main trials. That is correct, since adding fillers changes the sequence and the stimuli file records
 where each item actually appeared. Both blocks appear in every list and neither is counterbalanced,
-because they carry no manipulation to rotate and every participant should get the same practice.
+because they carry no manipulation to rotate and every participant should get the same practice. In
+a resampled design, the copy of a list in each replicate is a presentation version of its own, and
+it gets both blocks too.
 
 Each block's item table is read with the same validation as any other, and given a `set` range that
 cannot collide with the main items, which a naive read would not manage since practice item 1 and
@@ -362,16 +364,20 @@ override them. The older `triggers.reset_after_frames` is still accepted and con
 
 ## The three targets
 
-`export_experiments` writes all three from the same rendered event list and returns their paths.
+`export_experiments` writes all three from the same rendered event list and returns their paths,
+with every file it wrote, the tables the experiments read included, listed under `files`.
 
 ```python
-# illustrative: writes three experiment files into the working directory
+# illustrative: writes the experiment files into the working directory
 paths = lexsync.export_experiments(
     stimuli, design, schema, outdir="output/experiments"
 )
 # {'psychopy': '.../demo_english_psychopy.py',
 #  'opensesame': '.../demo_english.osexp',
-#  'jspsych': '.../demo_english.html'}
+#  'jspsych': '.../demo_english.html',
+#  'files': ['.../demo_english_psychopy.py', '.../demo_english.osexp',
+#            '.../demo_english.html', '.../demo_english_psychopy.csv',
+#            '.../demo_english_opensesame.csv', '.../demo_english_opensesame_text.csv']}
 ```
 
 Generation imports neither PsychoPy nor pyserial. It writes text. That is what lets the whole
@@ -493,3 +499,55 @@ label is mapped to a BCP 47 tag for the `lang` attribute, falling back to `und` 
 
 Every worked design in the repository is published as one of these files, which is what the Demo
 link in the header opens.
+
+## Running a counterbalanced experiment
+
+A design with more than one list, or with resampled item sets, has several presentation versions.
+A version is one (replicate, list) pair of the presented trials, and the versions are numbered from 1
+in that order, so in a design without replicates version *k* is list *k*. Each participant is
+presented one version. Presenting them all would show each target of a Latin square in every
+condition, which is the repetition the rotation exists to prevent, and every item sample of a
+resampled design. Participant *p* runs version `((p - 1) mod V) + 1` of the *V* versions, the rule
+`participant_table` allocates by. Participants 1 to 4 of a two-list design therefore run lists 1, 2,
+1 and 2. `lexsync.scripting.presentation_versions` lists the versions of a set of trials, and every
+generated experiment carries the same list.
+
+```python
+# illustrative: the versions of a counterbalanced two-list design
+lexsync.scripting.presentation_versions(stimuli)
+# [{'version': 1, 'replicate': 1, 'list': 1, 'n_trials': 12},
+#  {'version': 2, 'replicate': 1, 'list': 2, 'n_trials': 12}]
+```
+
+The PsychoPy script runs the participant's version when launched as
+`python <base>_psychopy.py --participant 3`. `--version 2` runs a version outright, and so does
+`--list 2` in a design without replicates. Launched with none of these, the script asks for the
+participant number and the version in a dialogue, where a blank version takes the participant's by
+the rule. A version the script does not have stops the run, with a message, before any window
+opens.
+
+The jsPsych page reads the same choice from its address: `page.html?participant=3`,
+`?version=2`, or `?list=2` without replicates, each a whole number from 1. A page with more than
+one version, opened with none of these, shows a screen saying how to open it and runs nothing. A
+static page cannot count its participants, so a study recruited online without participant numbers
+hands out one `?version=k` link per version. The welcome screen counts the trials of the version,
+every data row carries the participant, the version, the list and the replicate, and the data file
+is named `<title>_p<participant>_v<version>.csv`.
+
+The OpenSesame target writes one experiment per version, `<base>_list<k>.osexp`, or
+`<base>_rep<r>_list<k>.osexp` when the versions span several replicates. Each has its own loop and
+text tables, holding only that version's trials, and the experimenter opens the participant's. At
+start-up, each experiment compares the subject number OpenSesame asks for with its own version.
+When that participant would normally run another one, it says so and waits for a key. Space goes on
+with this file, and escape stops the session. A design with one version keeps `<base>.osexp`. The
+check runs once, before the loop, so the experiment needs no run-if condition, a syntax that differs
+between OpenSesame 3.3 and 4.x.
+
+The datasheet records the number of versions as `counterbalancing.versions` and the rule as
+`counterbalancing.assignment`, and its Methods text says that each participant was presented one
+version. Its artefact list and the run log name every file `export_experiments` wrote, the loop and
+text tables included, since those hold the trial order and the trigger codes the experiments
+present. The loop tables keep each version's trials together, ordered by replicate, list and trial.
+They carry `replicate` when the design has one. Item codes are allocated by set, so in a resampled
+design an item code identifies an item only within its replicate, which the `replicate` column
+tells apart.

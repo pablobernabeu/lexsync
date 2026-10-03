@@ -1,0 +1,11 @@
+lexsync_row,condition,sentence,question,answer
+1,ungrammatical,The|report|about the islands|were|detailed.,Was the report detailed?,f
+2,grammatical,The|letter|from the lawyers|was|urgent.,Was the letter urgent?,f
+3,grammatical,The|window|in the offices|was|broken.,Was something broken?,f
+4,grammatical,The|key|to the cabinets|was|rusty.,Was something rusty?,f
+5,ungrammatical,The|recipe|for the cookies|were|simple.,Was the recipe hard?,j
+6,ungrammatical,The|garden|behind the cottages|were|quiet.,Was the garden noisy?,j
+7,ungrammatical,The|bridge|near the houses|were|old.,Was the bridge new?,j
+8,grammatical,The|author|of the novels|was|famous.,Was someone famous?,f
+9,grammatical,The|picture|of the children|was|lovely.,Was something lovely?,f
+10,ungrammatical,The|captain|of the ships|were|brave.,Was someone brave?,f

@@ -1,8 +1,14 @@
-{"time":"2026-10-03 09:49:52.126606","message":"loading items 'items/spr_sentences_en.csv'","data":null}
-{"time":"2026-10-03 09:49:52.428215","message":"loaded 10 items across 2 conditions","data":{"conditions":"grammatical, ungrammatical"}}
-{"time":"2026-10-03 09:49:52.768523","message":"wrote 'en_spr_english_stimuli_R.csv'","data":{"path":"output/stimuli/en_spr_english_stimuli_R.csv","rows":20,"md5":"cc5846d69b7b5c04eddc6719a4aaf101"}}
-{"time":"2026-10-03 09:49:54.473056","message":"wrote 'en_spr_english_psychopy.py'","data":{"path":"output/experiments/en_spr_english_psychopy.py","rows":"NA","md5":"b191573435441af3ae5141405f2891ef"}}
-{"time":"2026-10-03 09:49:54.613074","message":"wrote 'en_spr_english.osexp'","data":{"path":"output/experiments/en_spr_english.osexp","rows":"NA","md5":"9848b7148a8abb7a1f4652919e47d050"}}
-{"time":"2026-10-03 09:49:54.820581","message":"wrote 'en_spr_english.html'","data":{"path":"output/experiments/en_spr_english.html","rows":"NA","md5":"148017941cfd341a3eb719b2ee147340"}}
-{"time":"2026-10-03 09:49:55.789654","message":"wrote 'en_spr_english_datasheet_R.json'","data":{"path":"output/reports/en_spr_english_datasheet_R.json","rows":"NA","md5":"999a43c603dea9083ca25fee97490ebd"}}
-{"time":"2026-10-03 09:49:55.918584","message":"wrote 'en_spr_english_datasheet_R.md'","data":{"path":"output/reports/en_spr_english_datasheet_R.md","rows":"NA","md5":"c722c948b7b6f40dbcf8e1ac2301cc0a"}}
+{"time":"2026-10-03 11:27:59.262903","message":"loading items 'items/spr_sentences_en.csv'","data":null}
+{"time":"2026-10-03 11:27:59.344237","message":"loaded 10 items across 2 conditions","data":{"conditions":"grammatical, ungrammatical"}}
+{"time":"2026-10-03 11:27:59.752653","message":"wrote 'en_spr_english_stimuli_R.csv'","data":{"path":"output/stimuli/en_spr_english_stimuli_R.csv","rows":20,"md5":"cc5846d69b7b5c04eddc6719a4aaf101"}}
+{"time":"2026-10-03 11:28:04.037994","message":"wrote 'en_spr_english_psychopy.py'","data":{"path":"output/experiments/en_spr_english_psychopy.py","rows":"NA","md5":"4f151c1942790b0f164a9a2a187d8c97"}}
+{"time":"2026-10-03 11:28:04.105075","message":"wrote 'en_spr_english_list1.osexp'","data":{"path":"output/experiments/en_spr_english_list1.osexp","rows":"NA","md5":"6941d7480d34f8e724181f70d01fd622"}}
+{"time":"2026-10-03 11:28:04.188475","message":"wrote 'en_spr_english_list2.osexp'","data":{"path":"output/experiments/en_spr_english_list2.osexp","rows":"NA","md5":"b10dd991501fede9b8e4bd83c0c15565"}}
+{"time":"2026-10-03 11:28:04.297283","message":"wrote 'en_spr_english.html'","data":{"path":"output/experiments/en_spr_english.html","rows":"NA","md5":"d58cca8f8cd9f072a96972cfafa4749e"}}
+{"time":"2026-10-03 11:28:04.455279","message":"wrote 'en_spr_english_psychopy.csv'","data":{"path":"output/experiments/en_spr_english_psychopy.csv","rows":"NA","md5":"b60a2c3b02a39b0db598bdb2f49b48ec"}}
+{"time":"2026-10-03 11:28:04.560397","message":"wrote 'en_spr_english_list1_opensesame.csv'","data":{"path":"output/experiments/en_spr_english_list1_opensesame.csv","rows":"NA","md5":"04fff2fed799dc631643cd5dc5cef6c9"}}
+{"time":"2026-10-03 11:28:04.632528","message":"wrote 'en_spr_english_list1_opensesame_text.csv'","data":{"path":"output/experiments/en_spr_english_list1_opensesame_text.csv","rows":"NA","md5":"b86a2b717908aee2630bafc065ba67ab"}}
+{"time":"2026-10-03 11:28:04.748617","message":"wrote 'en_spr_english_list2_opensesame.csv'","data":{"path":"output/experiments/en_spr_english_list2_opensesame.csv","rows":"NA","md5":"8deb1f20e834a71a7db6a3e92d7af2c4"}}
+{"time":"2026-10-03 11:28:04.859534","message":"wrote 'en_spr_english_list2_opensesame_text.csv'","data":{"path":"output/experiments/en_spr_english_list2_opensesame_text.csv","rows":"NA","md5":"1ec7845ad9c3797cad9a0bad9d1fa6e0"}}
+{"time":"2026-10-03 11:28:05.742518","message":"wrote 'en_spr_english_datasheet_R.json'","data":{"path":"output/reports/en_spr_english_datasheet_R.json","rows":"NA","md5":"db9aa4be6996efd5d260d27b4b5d6e95"}}
+{"time":"2026-10-03 11:28:06.007854","message":"wrote 'en_spr_english_datasheet_R.md'","data":{"path":"output/reports/en_spr_english_datasheet_R.md","rows":"NA","md5":"b4a039ffe8e219ef79de7ded5ba5b81d"}}

@@ -344,6 +344,12 @@ render_events <- function(events, timing, hz = 60) {
 }
 
 #' Per-trial table carrying exactly the fields the events reference
+#'
+#' The rows are in presentation order within each version: by replicate when the
+#' table has one, then by list, then by trial. `trial` restarts at 1 in every list
+#' and in every replicate, so ordering on it alone interleaved the versions. The
+#' sort is stable, so rows that tie keep their incoming order and the two engines
+#' write the same table.
 #' @keywords internal
 loop_table <- function(stimuli, events = NULL) {
   fields <- if (!is.null(events)) referenced_fields(events) else
@@ -354,15 +360,92 @@ loop_table <- function(stimuli, events = NULL) {
   # `block` travels with the trials because the runners need it: it is what an
   # event's `blocks:` restriction is matched against, and what a runner watches to
   # know a block boundary has been reached. Absent unless the design declares a
-  # practice or filler block, so no existing loop table gains a column.
-  order_cols <- c("trial", "list", "block", "set", "condition", fields, ms_cols,
-                  "critical_region", "answer", "condition_trigger", "item_trigger")
+  # practice or filler block, so no existing loop table gains a column. `replicate`,
+  # present only in a resampled design, is what tells its item samples apart, since
+  # each is numbered from trial 1 and set 1.
+  order_cols <- c("trial", "list", "replicate", "block", "set", "condition", fields,
+                  ms_cols, "critical_region", "answer", "condition_trigger", "item_trigger")
   cols <- character(0)
   for (c in order_cols) if (c %in% names(stimuli) && !(c %in% cols)) cols <- c(cols, c)
   tab <- stimuli[, cols, drop = FALSE]
-  if ("trial" %in% names(tab)) tab <- tab[order(tab$trial), , drop = FALSE]
+  keys <- intersect(c("replicate", "list", "trial"), names(tab))
+  if (length(keys)) {
+    tab <- tab[do.call(order, c(unname(as.list(tab[keys])), list(method = "radix"))), ,
+               drop = FALSE]
+  }
   rownames(tab) <- NULL
   tab
+}
+
+# Each row's replicate or list, as a whole number. A table without the column is one
+# replicate, or one list, numbered 1, and so is a row that leaves it empty. Any other
+# value that is not a whole number is refused, because a version is numbered by those
+# whole numbers in order. A number is judged by its value, since as.character() keeps
+# only 15 significant digits, and text only when it is a plain decimal number
+# (.PLAIN_NUMBER): as.numeric() alone also takes "0x10", and Python's float() takes
+# "1_0". A refused number is shown to 17 significant digits. Mirrors _version_key in
+# scripting.py.
+.version_key <- function(stimuli, column) {
+  n <- nrow(stimuli)
+  if (!column %in% names(stimuli)) return(rep(1L, n))
+  x <- stimuli[[column]]
+  if (is.numeric(x)) {
+    number <- as.numeric(x)
+    missing <- is.na(number)
+    shown <- sprintf("%.17g", number)
+  } else {
+    shown <- trimws(as.character(x))
+    missing <- is.na(shown) | !nzchar(shown)
+    plain <- !missing & grepl(.PLAIN_NUMBER, shown, perl = TRUE)
+    number <- rep(NA_real_, n)
+    number[plain] <- as.numeric(shown[plain])
+  }
+  bad <- !missing & !(is.finite(number) & number == trunc(number))
+  if (any(bad)) {
+    stop(sprintf(paste("lexsync: the trials' `%s` column holds '%s', but a presentation",
+                       "version is numbered by whole-number lists and replicates."),
+                 column, shown[bad][1]), call. = FALSE)
+  }
+  out <- rep(1L, n)
+  out[!missing] <- as.integer(number[!missing])
+  out
+}
+
+# The presentation versions a set of trials holds, in the order they are numbered. A
+# version is one (replicate, list) pair of the trials, and each participant is
+# presented one version: version 1 is the first pair in (replicate, list) order,
+# version 2 the next, and so on. A table without a `replicate` column is one replicate,
+# numbered 1, and one without `list` is one list. Participant p runs version
+# ((p - 1) mod V) + 1 of V unless another is chosen at launch, the rule
+# participant_table() allocates by. Every generated experiment carries this list, and
+# export_opensesame() writes one experiment per version when there is more than one.
+# Returns a list of list(version, replicate, list, n_trials). Mirrors
+# presentation_versions in scripting.py.
+.presentation_versions <- function(stimuli) {
+  reps <- .version_key(stimuli, "replicate")
+  lists <- .version_key(stimuli, "list")
+  if (!length(reps)) return(list())
+  key <- unique(data.frame(replicate = reps, list = lists))
+  key <- key[order(key$replicate, key$list, method = "radix"), , drop = FALSE]
+  lapply(seq_len(nrow(key)), function(i) {
+    list(version = i, replicate = key$replicate[i], list = key$list[i],
+         n_trials = sum(reps == key$replicate[i] & lists == key$list[i]))
+  })
+}
+
+# The rows of one presentation version, in their incoming order.
+.version_rows <- function(stimuli, version) {
+  keep <- .version_key(stimuli, "replicate") == version[["replicate"]] &
+    .version_key(stimuli, "list") == version[["list"]]
+  out <- stimuli[keep, , drop = FALSE]
+  rownames(out) <- NULL
+  out
+}
+
+# Whether the versions come from more than one replicate. A list then names no single
+# version, so file names and launch options name the replicate as well.
+.spans_replicates <- function(versions) {
+  length(unique(vapply(versions, function(v) v[["replicate"]], integer(1)))) > 1L
 }
 
 # The loop-table columns the OpenSesame target carries as numbers, under the names its
@@ -426,6 +509,13 @@ loop_table <- function(stimuli, events = NULL) {
 
 #' Export a runnable PsychoPy script that interprets the event sequence
 #'
+#' The conditions file, `<base>_psychopy.csv`, holds every presentation version of
+#' the design, one per (replicate, list) pair, and the script presents one per run:
+#' the version given by `--version` (or `--list` when there are no replicates), else
+#' the participant's by the rule `((participant - 1) mod V) + 1` from
+#' `--participant`, else what a start-up dialogue asks for. A version the script does
+#' not have stops the run with a message.
+#'
 #' @param stimuli Stimuli with trigger columns (see [assign_triggers()]).
 #' @param design A parsed design configuration.
 #' @param schema The parsed global schema (trigger and presentation settings).
@@ -435,9 +525,15 @@ loop_table <- function(stimuli, events = NULL) {
 #' @importFrom jsonlite toJSON
 #' @export
 export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
+  invisible(.psychopy_files(stimuli, design, schema, outdir, base)[[1]])
+}
+
+# Write the PsychoPy script and its conditions file, and return both paths.
+.psychopy_files <- function(stimuli, design, schema, outdir, base = NULL) {
   base <- base %||% design_stem(design)
   events <- resolve_events(design)
   rendered <- render_events(events, design[["timing"]] %||% list(), .refresh_hz(schema))
+  versions <- .presentation_versions(stimuli)
   csv_name <- paste0(base, "_psychopy.csv")
   write_csv_utf8(loop_table(stimuli, events), file.path(outdir, csv_name))
   tmpl <- paste(readLines(find_template("psychopy/trial_runner_template.py"), warn = FALSE),
@@ -460,14 +556,15 @@ export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
     FULLSCREEN = "False",
     # The fallback used only when the script cannot measure the display.
     ASSUMED_REFRESH_HZ = sprintf("%.17g", .refresh_hz(schema)),
-    EVENTS_JSON = as.character(jsonlite::toJSON(rendered, auto_unbox = TRUE))
+    EVENTS_JSON = as.character(jsonlite::toJSON(rendered, auto_unbox = TRUE)),
+    VERSIONS_JSON = as.character(jsonlite::toJSON(versions, auto_unbox = TRUE))
   )
   for (k in names(subs)) {
     tmpl <- gsub(sprintf("{{%s}}", k), as.character(subs[[k]]), tmpl, fixed = TRUE)
   }
   out <- file.path(outdir, paste0(base, "_psychopy.py"))
   write_lines_lf(tmpl, out)
-  invisible(out)
+  c(out, file.path(outdir, csv_name))
 }
 
 # ---- OpenSesame code generation ------------------------------------------
@@ -634,6 +731,37 @@ export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
   stop(sprintf("lexsync: unknown event type '%s'.", t), call. = FALSE)
 }
 
+# The inline script that checks the subject number against this file's version. A
+# design with several presentation versions gets one experiment per version, and the
+# experimenter opens the participant's. OpenSesame asks for a subject number at
+# start-up, and participant p normally runs version ((p - 1) mod V) + 1. When the number
+# belongs to another version, this shows a screen saying so and waits for a key. Space
+# goes on with this file, and escape stops the session. It runs before the loop, so the
+# experiment needs no run-if condition, a syntax that differs between OpenSesame 3.3
+# and 4.x. Must match _osexp_version_check in scripting.py.
+.osexp_version_check <- function(version, n_versions) {
+  body <- c(
+    sprintf("_version = %d", as.integer(version)),
+    sprintf("_versions = %d", as.integer(n_versions)),
+    "try:",
+    "    _p = int(var.get(u'subject_nr', 0, _eval=False))",
+    "except (TypeError, ValueError):",
+    "    _p = 0",
+    "_expected = (_p - 1) % _versions + 1",
+    "if _expected != _version:",
+    "    c = Canvas()",
+    paste0("    c.text(u'Participant %d would normally run version %d, and this file runs ",
+           "version %d. Press space to continue with this one or escape to stop.' ",
+           "% (_p, _expected, _version))"),
+    "    c.show()",
+    "    _key, _t = Keyboard(keylist=[u'space', u'escape'], timeout=None).get_key()",
+    "    if _key == u'escape':",
+    paste0("        raise RuntimeError(u'lexsync: stopped at the version check, because ",
+           "participant %d would normally run version %d.' % (_p, _expected))"))
+  .inline_block("lexsync_version_check",
+                "Warn when the subject number belongs to another version", body)
+}
+
 #' Build a complete plain-text OpenSesame experiment from rendered events
 #'
 #' The loop table and its companion text table are both looked up through OpenSesame's
@@ -647,10 +775,14 @@ export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
 #' @param font The font family OpenSesame draws text in.
 #' @param text_file File name of the companion text table. `NULL` (the default) puts
 #'   `_text` before the `.csv` of `conditions_file`.
+#' @param version,n_versions The experiment is version `version` of `n_versions`. With
+#'   more than one version, it checks OpenSesame's subject number against its own before
+#'   the loop and warns when the participant would normally run another. `NULL` (the
+#'   default) marks a design with one version, which needs no check.
 #' @return The experiment's text, one string.
 #' @keywords internal
 build_osexp <- function(design, conditions_file, schema, rendered, font = "mono",
-                        text_file = NULL) {
+                        text_file = NULL, version = NULL, n_versions = NULL) {
   addr <- clean_port(schema[["triggers"]][["parallel_address"]] %||% "0x378")
   design_name <- clean_meta(design[["name"]], "the design's `name`")
   language <- clean_meta(design[["language"]], "the design's `language`")
@@ -729,6 +861,8 @@ build_osexp <- function(design, conditions_file, schema, rendered, font = "mono"
           'test-mode fallback"'),
     '\tset _run ""', "\t___prepare__", paste0("\t", setup), "\t__end__", ""
   )
+  checked <- !is.null(version) && !is.null(n_versions) && as.integer(n_versions) > 1L
+  check <- if (checked) .osexp_version_check(version, n_versions) else character(0)
   trial <- c(
     "define sequence lexsync_trial",
     "\tset flush_keyboard yes",
@@ -744,9 +878,11 @@ build_osexp <- function(design, conditions_file, schema, rendered, font = "mono"
     "define sequence lexsync_experiment",
     "\tset flush_keyboard yes",
     '\tset description "Top-level experiment sequence"',
-    "\trun lexsync_trigger_setup always", "\trun lexsync_loop always", ""
+    "\trun lexsync_trigger_setup always",
+    if (checked) "\trun lexsync_version_check always",
+    "\trun lexsync_loop always", ""
   )
-  paste(c(header, event_blocks, trial), collapse = "\n")
+  paste(c(header, check, event_blocks, trial), collapse = "\n")
 }
 
 #' Export a complete plain-text OpenSesame experiment
@@ -759,6 +895,14 @@ build_osexp <- function(design, conditions_file, schema, rendered, font = "mono"
 #' the inline scripts read with Python's `csv` module, so OpenSesame never evaluates
 #' them. Copy both tables with the experiment.
 #'
+#' A design with more than one presentation version, one per (replicate, list) pair
+#' of the trials, gets one experiment per version instead, each with its own two
+#' tables holding only that version's trials: `<base>_list<k>.osexp`, or
+#' `<base>_rep<r>_list<k>.osexp` when the versions span several replicates. Each one
+#' checks OpenSesame's subject number at start-up and shows a warning when that
+#' participant would normally run another version. [export_experiments()] lists every
+#' file written.
+#'
 #' OpenSesame evaluates the cells of a loop table: in 4.x a cell holding `{` runs as a
 #' Python f-string, and in 3.3 a cell starting with `=` or holding `[=...]` runs as
 #' Python. A value in a numeric column that is not a plain number is therefore
@@ -766,23 +910,56 @@ build_osexp <- function(design, conditions_file, schema, rendered, font = "mono"
 #' the sources of OpenSesame 3.3.14 and 4.1.20.
 #'
 #' @inheritParams export_psychopy
-#' @return The path to the generated `.osexp`, invisibly.
+#' @return The path to the generated `.osexp`, version 1's when there are several,
+#'   invisibly.
 #' @export
 export_opensesame <- function(stimuli, design, schema, outdir, base = NULL) {
+  invisible(.opensesame_files(stimuli, design, schema, outdir, base)$experiments[[1]])
+}
+
+# Write the OpenSesame experiments and their tables, one experiment per version.
+# Returns list(experiments, tables): the .osexp paths in version order, and each
+# version's loop table and text table in the same order. Every table is checked before
+# anything is written, so a refused value leaves no partial set behind. Mirrors
+# _opensesame_files in scripting.py.
+.opensesame_files <- function(stimuli, design, schema, outdir, base = NULL) {
   base <- base %||% design_stem(design)
   events <- resolve_events(design)
   rendered <- render_events(events, design[["timing"]] %||% list(), .refresh_hz(schema))
-  tables <- .opensesame_tables(stimuli, events)
-  csv_name <- paste0(base, "_opensesame.csv")
-  text_name <- paste0(base, "_opensesame_text.csv")
   presentation <- schema[["presentation"]] %||% list()
   font <- design[["font"]] %||% presentation[["opensesame_font"]] %||% "mono"
-  txt <- build_osexp(design, csv_name, schema, rendered, font = font, text_file = text_name)
-  write_csv_utf8(tables$numbers, file.path(outdir, csv_name))
-  write_csv_utf8(tables$text, file.path(outdir, text_name))
-  out <- file.path(outdir, paste0(base, ".osexp"))
-  write_lines_lf(txt, out)
-  invisible(out)
+  versions <- .presentation_versions(stimuli)
+  parts <- if (length(versions) <= 1L) {
+    # One version keeps the file names an experiment has always had.
+    list(list(stem = base, rows = stimuli, version = NULL))
+  } else {
+    by_replicate <- .spans_replicates(versions)
+    lapply(versions, function(v) {
+      stem <- if (by_replicate) sprintf("%s_rep%d_list%d", base, v[["replicate"]], v[["list"]])
+              else sprintf("%s_list%d", base, v[["list"]])
+      list(stem = stem, rows = .version_rows(stimuli, v), version = v[["version"]])
+    })
+  }
+  written <- lapply(parts, function(p) {
+    csv_name <- paste0(p[["stem"]], "_opensesame.csv")
+    text_name <- paste0(p[["stem"]], "_opensesame_text.csv")
+    list(stem = p[["stem"]], csv_name = csv_name, text_name = text_name,
+         tables = .opensesame_tables(p[["rows"]], events),
+         osexp = build_osexp(design, csv_name, schema, rendered, font = font,
+                             text_file = text_name, version = p[["version"]],
+                             n_versions = length(versions)))
+  })
+  experiments <- character(0)
+  tables <- character(0)
+  for (w in written) {
+    write_csv_utf8(w$tables$numbers, file.path(outdir, w$csv_name))
+    write_csv_utf8(w$tables$text, file.path(outdir, w$text_name))
+    out <- file.path(outdir, paste0(w$stem, ".osexp"))
+    write_lines_lf(w$osexp, out)
+    experiments <- c(experiments, out)
+    tables <- c(tables, file.path(outdir, w$csv_name), file.path(outdir, w$text_name))
+  }
+  list(experiments = experiments, tables = tables)
 }
 
 # BCP 47 tags for the human-readable language labels the designs carry, covering the
@@ -849,6 +1026,14 @@ export_opensesame <- function(stimuli, design, schema, outdir, base = NULL) {
 #' triggers are recorded in each trial's data (a browser cannot drive a parallel
 #' port).
 #'
+#' The page embeds every presentation version of the design, one per (replicate,
+#' list) pair, and runs one, named in its address: `?version=K`, `?list=K` when there
+#' are no replicates, or `?participant=N`, whose version is `((N - 1) mod V) + 1`. A
+#' page with more than one version, opened with none of these, shows a screen naming
+#' them and runs nothing. The data rows carry the participant, the version, the list
+#' and the replicate, and the data file is named after the participant and the
+#' version.
+#'
 #' @inheritParams export_psychopy
 #' @return The path to the generated `.html`, invisibly.
 #' @importFrom jsonlite toJSON
@@ -858,6 +1043,7 @@ export_jspsych <- function(stimuli, design, schema, outdir, base = NULL) {
   events <- resolve_events(design)
   rendered <- .map_keys_jspsych(
     render_events(events, design[["timing"]] %||% list(), .refresh_hz(schema)))
+  versions <- .presentation_versions(stimuli)
   trials <- loop_table(stimuli, events)
   presentation <- schema[["presentation"]] %||% list()
   font <- design[["font"]] %||% presentation[["font"]] %||% "Courier New"
@@ -868,7 +1054,8 @@ export_jspsych <- function(stimuli, design, schema, outdir, base = NULL) {
     LANGUAGE = clean_meta(design[["language"]], "the design's `language`"),
     LANGUAGE_TAG = .language_tag(design), WORD_FONT = clean_meta(font, "the font"),
     EVENTS_JSON = .json_html(jsonlite::toJSON(rendered, auto_unbox = TRUE)),
-    TRIALS_JSON = .json_html(jsonlite::toJSON(trials, dataframe = "rows"))
+    TRIALS_JSON = .json_html(jsonlite::toJSON(trials, dataframe = "rows")),
+    VERSIONS_JSON = .json_html(jsonlite::toJSON(versions, auto_unbox = TRUE))
   )
   for (k in names(subs)) {
     tmpl <- gsub(sprintf("{{%s}}", k), as.character(subs[[k]]), tmpl, fixed = TRUE)
@@ -892,14 +1079,23 @@ export_jspsych <- function(stimuli, design, schema, outdir, base = NULL) {
 #' @param conditions Optional character vector of condition labels in the order
 #'   that assigns their trigger codes (see [assign_triggers()]). `NULL` (the
 #'   default) takes the order of the design's `conditions`.
-#' @return A named list of generated file paths.
+#' @return A named list of generated file paths: `psychopy`, `opensesame` (version 1's
+#'   experiment when a design has several, see [export_opensesame()]) and `jspsych`.
+#'   `files` lists every file written, in a fixed order: the PsychoPy script, each
+#'   OpenSesame experiment in version order, the jsPsych page, the PsychoPy conditions
+#'   file, and then each OpenSesame experiment's loop table and text table.
 #' @export
 export_experiments <- function(stimuli, design, schema, outdir, base = NULL,
                                conditions = NULL) {
   stimuli <- assign_triggers(stimuli, conditions %||% .design_condition_names(design))
+  psychopy <- .psychopy_files(stimuli, design, schema, outdir, base)
+  opensesame <- .opensesame_files(stimuli, design, schema, outdir, base)
+  jspsych <- export_jspsych(stimuli, design, schema, outdir, base)
   list(
-    psychopy = export_psychopy(stimuli, design, schema, outdir, base),
-    opensesame = export_opensesame(stimuli, design, schema, outdir, base),
-    jspsych = export_jspsych(stimuli, design, schema, outdir, base)
+    psychopy = psychopy[[1]],
+    opensesame = opensesame$experiments[[1]],
+    jspsych = jspsych,
+    files = c(psychopy[[1]], opensesame$experiments, jspsych, psychopy[[2]],
+              opensesame$tables)
   )
 }

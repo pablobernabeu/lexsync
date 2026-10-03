@@ -143,6 +143,20 @@ def test_dropdowns_offer_exactly_the_methods_the_engine_implements(app):
     assert app.GENERATION_METHODS == ["letter_substitution", "subsyllabic"]
 
 
+def test_the_experiment_tab_offers_every_file_the_export_wrote(app):
+    """A design with several counterbalancing versions writes one OpenSesame
+    experiment per version, and each runs from its own tables, so the tab offers every
+    file export_experiments lists, not only the three scripts. Pinned identically in
+    test-apps.R."""
+    files = ["a_psychopy.py", "a_list1.osexp", "a_list2.osexp", "a.html", "a_psychopy.csv"]
+    assert app.experiment_files({"psychopy": files[0], "opensesame": files[1],
+                                 "jspsych": files[3], "files": files}) == files
+    # A result without `files`, from an older lexsync, still offers its three scripts.
+    assert app.experiment_files({"psychopy": "a.py", "opensesame": "a.osexp",
+                                 "jspsych": "a.html"}) == ["a.py", "a.osexp", "a.html"]
+    assert app.experiment_files({}) == []
+
+
 def test_the_run_design_yaml_is_written_with_lf_endings(app, tmp_path):
     """The pipeline hashes the design file it ran into the datasheet's
     design_sha256, so the bytes must not record which operating system wrote

@@ -18,7 +18,8 @@ export_opensesame(stimuli, design, schema, outdir, base = NULL)
 \item{base}{Optional file-name stem. By default the design's \code{\link[=design_stem]{design_stem()}}.}
 }
 \value{
-The path to the generated \code{.osexp}, invisibly.
+The path to the generated \code{.osexp}, version 1's when there are several,
+invisibly.
 }
 \description{
 Writes \verb{<base>.osexp} and the two tables it reads. Its loop runs over
@@ -30,6 +31,14 @@ the inline scripts read with Python's \code{csv} module, so OpenSesame never eva
 them. Copy both tables with the experiment.
 }
 \details{
+A design with more than one presentation version, one per (replicate, list) pair
+of the trials, gets one experiment per version instead, each with its own two
+tables holding only that version's trials: \verb{<base>_list<k>.osexp}, or
+\verb{<base>_rep<r>_list<k>.osexp} when the versions span several replicates. Each one
+checks OpenSesame's subject number at start-up and shows a warning when that
+participant would normally run another version. \code{\link[=export_experiments]{export_experiments()}} lists every
+file written.
+
 OpenSesame evaluates the cells of a loop table: in 4.x a cell holding \verb{\{} runs as a
 Python f-string, and in 3.3 a cell starting with \code{=} or holding \verb{[=...]} runs as
 Python. A value in a numeric column that is not a plain number is therefore

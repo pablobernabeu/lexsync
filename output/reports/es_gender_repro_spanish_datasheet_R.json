@@ -138,7 +138,9 @@
         "condition": "masculine",
         "n_trials": 48
       }
-    ]
+    ],
+    "versions": 1,
+    "assignment": "version = ((participant - 1) mod 1) + 1 unless a version is given at launch"
   },
   "resampling": null,
   "items": {
@@ -183,7 +185,7 @@
     },
     {
       "file": "output/experiments/es_gender_repro_spanish_psychopy.py",
-      "sha256": "9baa583e222c86daac15068659236fc48c1e08c3e98a360e207a61ea3b48ae24"
+      "sha256": "7e9d8ff236e424484689028c2caa770565059e1ea7f6b28920692e0d1c99b8ce"
     },
     {
       "file": "output/experiments/es_gender_repro_spanish.osexp",
@@ -191,7 +193,19 @@
     },
     {
       "file": "output/experiments/es_gender_repro_spanish.html",
-      "sha256": "7833685a73914ec847107d1ad293552c31418ba241a11d8d3b3e479887de361f"
+      "sha256": "9a6f38a1ed439bb3b9270a49a2132ea253189b6dc0b5886f11a0740057824bb5"
+    },
+    {
+      "file": "output/experiments/es_gender_repro_spanish_psychopy.csv",
+      "sha256": "ea3cef6b6bfb6110a2e6fd879bf24adcda1d24fd554a4c8374c0083f2a6f41f7"
+    },
+    {
+      "file": "output/experiments/es_gender_repro_spanish_opensesame.csv",
+      "sha256": "d640e82fd28384cb840b3d19303542f57e1133be014af2f65ada65cf3064a261"
+    },
+    {
+      "file": "output/experiments/es_gender_repro_spanish_opensesame_text.csv",
+      "sha256": "8065191d5446910d6e55d0a9a2dc1a8b156c6210ad983c59b46f4ea0e02f5bf2"
     }
   ]
 }

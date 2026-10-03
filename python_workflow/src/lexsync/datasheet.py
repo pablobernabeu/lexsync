@@ -27,6 +27,10 @@ from .io_utils import _fmt_dp, _is_continuous, _round_dp, sha256_file
 # matching so the datasheet can only ever record the value the selection used.
 from .matching import PAIRWISE_CAP
 
+# The versions come from the module that writes the experiments, so the record counts
+# the versions the participants are given.
+from .scripting import presentation_versions
+
 # 1.1 added `materials_source["norms"]` (the design's joined norm tables, with their
 # checksums and per-column coverage) and, for a pair-keyed design, a `relational`
 # block plus an honest `selection["cross_engine"]`. Both were required by the rule
@@ -47,6 +51,8 @@ from .matching import PAIRWISE_CAP
 #                                             it changed something
 #   selection.incomplete_dropped  the candidates each condition lost for missing a
 #                               matched dimension, present only when it lost any
+#   counterbalancing.versions   the presentation versions, one per (replicate, list)
+#   counterbalancing.assignment the rule that gives each participant one version
 DATASHEET_VERSION = "1.2"
 
 # Datasheet labels for the pseudoword generators in generation.py, keyed by the
@@ -265,13 +271,20 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
     ``stimuli``. The record gives the recipe that ran and the lists the table holds,
     or for a table without a ``list`` column the lists counterbalance() would deal. It
     says whether a Latin-square rotation is complete and counts the trials per list
-    and condition.
+    and condition. It also gives the presentation versions, one per (replicate, list)
+    pair, and the rule that assigns each participant one of them.
 
     ``input_normalisation`` (optional) is ``{"changed", "collapsed"}``: how many text
     keys the run's inputs held that Unicode NFC normalisation rewrote, and how many
     duplicates the rewriting created and removed. Recorded only when given, which the
     pipeline does only when either count is above zero, because a merged spelling
     changes the candidate pool.
+
+    ``artifacts`` names the files written for the design: ``stimuli``,
+    ``descriptives``, ``comparisons`` and ``experiments``, the result of
+    ``export_experiments``. Each file is recorded with its sha256: the three tables,
+    then every file in ``experiments["files"]``, the loop and text tables included,
+    or the three experiment paths of a result that has no ``files``.
     """
     source = (design.get("items") or {}).get("source", "corpus")
     is_continuous = _is_continuous(design)
@@ -410,12 +423,16 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
     recipe = _recipe(design)
     check = (counterbalance_check if counterbalance_check is not None
              else _counterbalance_check(stimuli, design, recipe))
+    versions = _version_count(stimuli, int(check["lists"]))
     counterbalancing = {
         "recipe": recipe,
         "lists": int(check["lists"]),
         "complete": bool(check["complete"]),
         "issues": list(check["issues"]),
         "cells": list(check["cells"]),
+        "versions": versions,
+        "assignment": (f"version = ((participant - 1) mod {versions}) + 1 unless a version "
+                       "is given at launch"),
     }
     # The balance report is added only when the optimiser ran, for the same reason the
     # norms record is: a key that is null on every design that does not use the feature
@@ -484,10 +501,46 @@ def _posix(path):
 
 
 def _artifact_paths(artifacts: dict) -> list:
+    """The files the record checksums: the three tables, then every experiment file.
+
+    ``export_experiments`` lists every file it wrote under ``files``, the loop and text
+    tables that hold the trial order and the trigger codes among them. A result without
+    ``files`` contributes its three experiment paths. Mirrors .artifact_paths in
+    datasheet.R.
+    """
     paths = [artifacts.get(k) for k in ("stimuli", "descriptives", "comparisons")]
     exps = artifacts.get("experiments") or {}
-    paths += list(exps.values())
+    files = exps.get("files")
+    paths += list(files) if files is not None else list(exps.values())
     return paths
+
+
+def _version_count(stimuli, lists: int) -> int:
+    """The presentation versions the trials give, one per (replicate, list) pair.
+
+    A table without a ``list`` column has the lists counterbalance() would deal in
+    each replicate, ``lists`` of them, as the record's ``lists`` does. Mirrors
+    .version_count in datasheet.R.
+    """
+    if "list" in stimuli.columns:
+        return len(presentation_versions(stimuli))
+    replicates = int(stimuli["replicate"].nunique()) if "replicate" in stimuli.columns else 1
+    return max(replicates, 1) * int(lists)
+
+
+def _versions_note(ds: dict) -> str:
+    """How participants met the presentation versions, for the Methods text.
+
+    Empty for a single version, and for a record written before the field existed.
+    Mirrors .versions_note in datasheet.R.
+    """
+    n = (ds.get("counterbalancing") or {}).get("versions")
+    if not n or n < 2:
+        return ""
+    unit = ("presentation versions (one list of one item set)" if ds.get("resampling")
+            else "lists")
+    return (f" Each participant was presented one of the {n} {unit}, assigned in rotation "
+            "by participant number.")
 
 
 def _num(v):
@@ -581,8 +634,8 @@ def methods_paragraph(ds: dict) -> str:
                 f"or a mixed model rather than a between-condition contrast (Kuperman, 2015; "
                 f"Liben-Nowell et al., 2019).{_norms_note(ds)} Materials were counterbalanced "
                 f"into {cb['lists']} list(s) ({recipe_label}) and generated for PsychoPy, "
-                f"OpenSesame and jsPsych. The selection is deterministic and reproducible "
-                f"(seed {ds['reproducibility']['seed']}; lexsync "
+                f"OpenSesame and jsPsych.{_versions_note(ds)} The selection is deterministic "
+                f"and reproducible (seed {ds['reproducibility']['seed']}; lexsync "
                 f"{ds['reproducibility']['versions']['lexsync']}).")
     if src == "corpus":
         ctrl = ", ".join(ds["selection"]["match_on"]) or "the control dimensions"
@@ -632,9 +685,9 @@ def methods_paragraph(ds: dict) -> str:
     cb = ds["counterbalancing"]
     recipe_label = _recipe_label(cb)
     tail = (resamp + f". Materials were counterbalanced into {cb['lists']} list(s) "
-            f"({recipe_label}) and generated for PsychoPy, OpenSesame and jsPsych. The "
-            f"selection is deterministic and reproducible (seed "
-            f"{ds['reproducibility']['seed']}; lexsync "
+            f"({recipe_label}) and generated for PsychoPy, OpenSesame and "
+            f"jsPsych.{_versions_note(ds)} The selection is deterministic and reproducible "
+            f"(seed {ds['reproducibility']['seed']}; lexsync "
             f"{ds['reproducibility']['versions']['lexsync']}).")
     cp = (ds.get("selection") or {}).get("candidate_pool")
     # The candidate pool counts the candidates excluded for a missing matched value,
@@ -717,7 +770,13 @@ def render_datasheet_md(ds: dict) -> str:
         f"- **Selection:** {ds['selection']['method']}",
         f"- **Cross-engine determinism:** {ds['selection'].get('cross_engine', 'byte-identical')}",
         f"- **Counterbalancing:** {ds['counterbalancing']['recipe']}, "
-        f"{ds['counterbalancing']['lists']} list(s)",
+        f"{ds['counterbalancing']['lists']} list(s)"]
+    # Said only where there is a choice to make, so a single-version record reads as
+    # it always has.
+    if (ds["counterbalancing"].get("versions") or 1) > 1:
+        lines.append(f"- **Presentation versions:** {ds['counterbalancing']['versions']}, "
+                     f"assigned as {ds['counterbalancing']['assignment']}")
+    lines += [
         f"- **Items:** {ds['items']['n_total']} rows across "
         f"{ds['items']['n_conditions']} conditions "
         f"({', '.join(ds['items']['conditions'])})",

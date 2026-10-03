@@ -10,6 +10,7 @@
 - **Selection:** item table (user-supplied)
 - **Cross-engine determinism:** n/a (user-supplied items)
 - **Counterbalancing:** latin_square_target, 2 list(s)
+- **Presentation versions:** 2, assigned as version = ((participant - 1) mod 2) + 1 unless a version is given at launch
 - **Items:** 20 rows across 2 conditions (ungrammatical, grammatical)
 - **Seed:** 2026  |  **Versions:** engine python, lexsync 0.1.1, python 3.13.7, pandas 2.3.2, numpy 2.3.2, scipy 1.17.1, rapidfuzz 3.14.5, pyyaml 6.0.3, os Windows AMD64
 
@@ -29,7 +30,7 @@
 
 ## Methods paragraph
 
-10 items were drawn from an item table for a self_paced_reading design (English). Materials were counterbalanced into 2 list(s) (a Latin-square rotation) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.1).
+10 items were drawn from an item table for a self_paced_reading design (English). Materials were counterbalanced into 2 list(s) (a Latin-square rotation) and generated for PsychoPy, OpenSesame and jsPsych. Each participant was presented one of the 2 lists, assigned in rotation by participant number. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.1).
 
 ## Pre-registration template
 
@@ -49,7 +50,7 @@
 - Paradigm: self_paced_reading
 
 ### Materials (from the lexsync datasheet)
-10 items were drawn from an item table for a self_paced_reading design (English). Materials were counterbalanced into 2 list(s) (a Latin-square rotation) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.1).
+10 items were drawn from an item table for a self_paced_reading design (English). Materials were counterbalanced into 2 list(s) (a Latin-square rotation) and generated for PsychoPy, OpenSesame and jsPsych. Each participant was presented one of the 2 lists, assigned in rotation by participant number. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.1).
 
 ### Sampling plan
 - Sample size and justification:

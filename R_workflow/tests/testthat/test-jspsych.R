@@ -70,3 +70,38 @@ test_that("key mapping does not invent a 'key' element on a response event", {
   reg <- list(list(type = "region", field = "sentence", sep = "|", key = "space"))
   expect_identical(lexsync:::.map_keys_jspsych(reg)[[1]][["key"]], " ")
 })
+
+test_that("the page carries the versions and selects one", {
+  # The page embeds every version's trials, because one page serves every participant,
+  # and its timeline used to run them all. test_jspsych_export.py pins the same page
+  # and runs its script.
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  out <- tempfile("lx"); dir.create(out)
+  stim <- data.frame(prime = c("hot", "sky", "sun", "big"),
+                     target = c("cold", "cold", "moon", "moon"),
+                     condition = rep(c("related", "unrelated"), 2), set = c(1, 1, 2, 2),
+                     stringsAsFactors = FALSE)
+  design <- list(name = "t", language = "english", paradigm = "priming",
+                 counterbalance = list(lists = 2L))
+  stim <- assign_triggers(counterbalance(stim, design, schema))
+  html <- paste(readLines(export_jspsych(stim, design, schema, out), warn = FALSE),
+                collapse = "\n")
+  vs <- regmatches(html, regexec("const VERSIONS = (.*?);\\n", html))[[1]][2]
+  versions <- jsonlite::fromJSON(vs, simplifyDataFrame = FALSE)
+  expect_equal(versions, list(list(version = 1L, replicate = 1L, list = 1L, n_trials = 2L),
+                              list(version = 2L, replicate = 1L, list = 2L, n_trials = 2L)))
+  expect_true(grepl("const RUN_TRIALS = TRIALS.filter(", html, fixed = TRUE))
+  tr <- regmatches(html, regexec("const TRIALS = (.*?);\\n", html))[[1]][2]
+  trials <- jsonlite::fromJSON(tr, simplifyDataFrame = FALSE)
+  # The page's filter keeps a trial whose replicate and list are the version's, a trial
+  # without either column counting as replicate 1 or list 1.
+  for (v in versions) {
+    rows <- Filter(function(t) {
+      identical(as.integer(t[["replicate"]] %||% 1L), v[["replicate"]]) &&
+        identical(as.integer(t[["list"]] %||% 1L), v[["list"]])
+    }, trials)
+    expect_length(rows, v[["n_trials"]])
+    expect_identical(sort(vapply(rows, function(t) t[["target"]], character(1))),
+                     c("cold", "moon"))
+  }
+})

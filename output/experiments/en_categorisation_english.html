@@ -13,11 +13,17 @@
     jsPsych library and stylesheet are loaded from a CDN (unpkg), so the machine
     running it needs an internet connection; to run offline, download jspsych@7.3.4,
     the html-keyboard-response plugin and jspsych.css and point the three tags below
-    at the local copies. A welcome screen precedes the trials and a completion
-    screen follows them. Every recorded row carries the item's design fields
-    (condition, item id, counterbalancing list and so on) alongside the onset
-    marker (the 'marker' field), so responses can be scored without re-joining to
-    the stimulus table.
+    at the local copies. The trials of every presentation version are embedded,
+    and a run presents the one the page's address names. The address
+    ?participant=N runs version ((N - 1) mod V) + 1 of the V versions, ?version=K
+    runs version K, and ?list=K runs list K when the versions do not span several
+    replicates. A page with more than one version, opened without any of these,
+    says how to open it and runs nothing. A welcome screen precedes the trials and
+    a completion screen follows them. Every recorded row carries the item's design
+    fields (condition, item id, counterbalancing list and so on) alongside the
+    onset marker (the 'marker' field), and the participant, version, list and
+    replicate of the run, so responses can be scored without re-joining to the
+    stimulus table.
     When the run finishes the data are offered as a CSV download (jsPsych
     localSave), so no server is required to collect them. A browser cannot drive a
     parallel port, so for online EEG synchronisation route the marker through
@@ -40,12 +46,81 @@
 <body></body>
 <script>
   const EVENTS = [{"type":"fixation","text":"+","ms":500},{"type":"text","field":"category","ms":750},{"type":"text","field":"target","ms":800,"trigger":"@condition_trigger"},{"type":"response","keys":["f","j"],"timeout":2.5},{"type":"blank","ms":250}];
-  const TRIALS = [{"trial":1,"list":1,"set":12,"condition":"narrow","category":"A BIRD?","target":"turkey","answer":"f","condition_trigger":101,"item_trigger":43},{"trial":1,"list":2,"set":13,"condition":"narrow","category":"A MAMMAL?","target":"rabbit","answer":"f","condition_trigger":101,"item_trigger":44},{"trial":2,"list":1,"set":11,"condition":"broad","category":"AN ANIMAL?","target":"parrot","answer":"f","condition_trigger":102,"item_trigger":42},{"trial":2,"list":2,"set":16,"condition":"broad","category":"A PLANT?","target":"carrot","answer":"f","condition_trigger":102,"item_trigger":47},{"trial":3,"list":1,"set":3,"condition":"broad","category":"AN OBJECT?","target":"hammer","answer":"f","condition_trigger":102,"item_trigger":49},{"trial":3,"list":2,"set":2,"condition":"broad","category":"A PLANT?","target":"onion","answer":"f","condition_trigger":102,"item_trigger":48},{"trial":4,"list":1,"set":10,"condition":"narrow","category":"A MAMMAL?","target":"beaver","answer":"f","condition_trigger":101,"item_trigger":41},{"trial":4,"list":2,"set":5,"condition":"narrow","category":"A CONTAINER?","target":"kettle","answer":"f","condition_trigger":101,"item_trigger":51},{"trial":5,"list":1,"set":16,"condition":"narrow","category":"A VEGETABLE?","target":"carrot","answer":"f","condition_trigger":101,"item_trigger":47},{"trial":5,"list":2,"set":12,"condition":"broad","category":"AN ANIMAL?","target":"turkey","answer":"f","condition_trigger":102,"item_trigger":43},{"trial":6,"list":1,"set":2,"condition":"narrow","category":"A VEGETABLE?","target":"onion","answer":"f","condition_trigger":101,"item_trigger":48},{"trial":6,"list":2,"set":9,"condition":"narrow","category":"A FISH?","target":"salmon","answer":"f","condition_trigger":101,"item_trigger":55},{"trial":7,"list":1,"set":5,"condition":"broad","category":"AN OBJECT?","target":"kettle","answer":"f","condition_trigger":102,"item_trigger":51},{"trial":7,"list":2,"set":6,"condition":"broad","category":"AN OBJECT?","target":"bottle","answer":"f","condition_trigger":102,"item_trigger":52},{"trial":8,"list":1,"set":15,"condition":"broad","category":"A PLANT?","target":"lemon","answer":"f","condition_trigger":102,"item_trigger":46},{"trial":8,"list":2,"set":1,"condition":"narrow","category":"A BIRD?","target":"robin","answer":"f","condition_trigger":101,"item_trigger":40},{"trial":9,"list":1,"set":14,"condition":"narrow","category":"A FRUIT?","target":"apple","answer":"f","condition_trigger":101,"item_trigger":45},{"trial":9,"list":2,"set":7,"condition":"narrow","category":"A METAL?","target":"copper","answer":"f","condition_trigger":101,"item_trigger":53},{"trial":10,"list":1,"set":1,"condition":"broad","category":"AN ANIMAL?","target":"robin","answer":"f","condition_trigger":102,"item_trigger":40},{"trial":10,"list":2,"set":3,"condition":"narrow","category":"A TOOL?","target":"hammer","answer":"f","condition_trigger":101,"item_trigger":49},{"trial":11,"list":1,"set":13,"condition":"broad","category":"AN ANIMAL?","target":"rabbit","answer":"f","condition_trigger":102,"item_trigger":44},{"trial":11,"list":2,"set":15,"condition":"narrow","category":"A FRUIT?","target":"lemon","answer":"f","condition_trigger":101,"item_trigger":46},{"trial":12,"list":1,"set":7,"condition":"broad","category":"A SUBSTANCE?","target":"copper","answer":"f","condition_trigger":102,"item_trigger":53},{"trial":12,"list":2,"set":8,"condition":"broad","category":"A SUBSTANCE?","target":"marble","answer":"f","condition_trigger":102,"item_trigger":54},{"trial":13,"list":1,"set":6,"condition":"narrow","category":"A CONTAINER?","target":"bottle","answer":"f","condition_trigger":101,"item_trigger":52},{"trial":13,"list":2,"set":14,"condition":"broad","category":"A PLANT?","target":"apple","answer":"f","condition_trigger":102,"item_trigger":45},{"trial":14,"list":1,"set":9,"condition":"broad","category":"AN ANIMAL?","target":"salmon","answer":"f","condition_trigger":102,"item_trigger":55},{"trial":14,"list":2,"set":10,"condition":"broad","category":"AN ANIMAL?","target":"beaver","answer":"f","condition_trigger":102,"item_trigger":41},{"trial":15,"list":1,"set":8,"condition":"narrow","category":"A STONE?","target":"marble","answer":"f","condition_trigger":101,"item_trigger":54},{"trial":15,"list":2,"set":11,"condition":"narrow","category":"A BIRD?","target":"parrot","answer":"f","condition_trigger":101,"item_trigger":42},{"trial":16,"list":1,"set":4,"condition":"narrow","category":"A TOOL?","target":"shovel","answer":"f","condition_trigger":101,"item_trigger":50},{"trial":16,"list":2,"set":4,"condition":"broad","category":"AN OBJECT?","target":"shovel","answer":"f","condition_trigger":102,"item_trigger":50}];
-  // A filename for the saved data, derived from the page title so no design value
-  // is interpolated into JavaScript; non-filename characters become underscores.
-  const DATA_FILE = document.title.replace(/[^A-Za-z0-9_.-]+/g, "_") + ".csv";
+  const TRIALS = [{"trial":1,"list":1,"set":12,"condition":"narrow","category":"A BIRD?","target":"turkey","answer":"f","condition_trigger":101,"item_trigger":43},{"trial":2,"list":1,"set":11,"condition":"broad","category":"AN ANIMAL?","target":"parrot","answer":"f","condition_trigger":102,"item_trigger":42},{"trial":3,"list":1,"set":3,"condition":"broad","category":"AN OBJECT?","target":"hammer","answer":"f","condition_trigger":102,"item_trigger":49},{"trial":4,"list":1,"set":10,"condition":"narrow","category":"A MAMMAL?","target":"beaver","answer":"f","condition_trigger":101,"item_trigger":41},{"trial":5,"list":1,"set":16,"condition":"narrow","category":"A VEGETABLE?","target":"carrot","answer":"f","condition_trigger":101,"item_trigger":47},{"trial":6,"list":1,"set":2,"condition":"narrow","category":"A VEGETABLE?","target":"onion","answer":"f","condition_trigger":101,"item_trigger":48},{"trial":7,"list":1,"set":5,"condition":"broad","category":"AN OBJECT?","target":"kettle","answer":"f","condition_trigger":102,"item_trigger":51},{"trial":8,"list":1,"set":15,"condition":"broad","category":"A PLANT?","target":"lemon","answer":"f","condition_trigger":102,"item_trigger":46},{"trial":9,"list":1,"set":14,"condition":"narrow","category":"A FRUIT?","target":"apple","answer":"f","condition_trigger":101,"item_trigger":45},{"trial":10,"list":1,"set":1,"condition":"broad","category":"AN ANIMAL?","target":"robin","answer":"f","condition_trigger":102,"item_trigger":40},{"trial":11,"list":1,"set":13,"condition":"broad","category":"AN ANIMAL?","target":"rabbit","answer":"f","condition_trigger":102,"item_trigger":44},{"trial":12,"list":1,"set":7,"condition":"broad","category":"A SUBSTANCE?","target":"copper","answer":"f","condition_trigger":102,"item_trigger":53},{"trial":13,"list":1,"set":6,"condition":"narrow","category":"A CONTAINER?","target":"bottle","answer":"f","condition_trigger":101,"item_trigger":52},{"trial":14,"list":1,"set":9,"condition":"broad","category":"AN ANIMAL?","target":"salmon","answer":"f","condition_trigger":102,"item_trigger":55},{"trial":15,"list":1,"set":8,"condition":"narrow","category":"A STONE?","target":"marble","answer":"f","condition_trigger":101,"item_trigger":54},{"trial":16,"list":1,"set":4,"condition":"narrow","category":"A TOOL?","target":"shovel","answer":"f","condition_trigger":101,"item_trigger":50},{"trial":1,"list":2,"set":13,"condition":"narrow","category":"A MAMMAL?","target":"rabbit","answer":"f","condition_trigger":101,"item_trigger":44},{"trial":2,"list":2,"set":16,"condition":"broad","category":"A PLANT?","target":"carrot","answer":"f","condition_trigger":102,"item_trigger":47},{"trial":3,"list":2,"set":2,"condition":"broad","category":"A PLANT?","target":"onion","answer":"f","condition_trigger":102,"item_trigger":48},{"trial":4,"list":2,"set":5,"condition":"narrow","category":"A CONTAINER?","target":"kettle","answer":"f","condition_trigger":101,"item_trigger":51},{"trial":5,"list":2,"set":12,"condition":"broad","category":"AN ANIMAL?","target":"turkey","answer":"f","condition_trigger":102,"item_trigger":43},{"trial":6,"list":2,"set":9,"condition":"narrow","category":"A FISH?","target":"salmon","answer":"f","condition_trigger":101,"item_trigger":55},{"trial":7,"list":2,"set":6,"condition":"broad","category":"AN OBJECT?","target":"bottle","answer":"f","condition_trigger":102,"item_trigger":52},{"trial":8,"list":2,"set":1,"condition":"narrow","category":"A BIRD?","target":"robin","answer":"f","condition_trigger":101,"item_trigger":40},{"trial":9,"list":2,"set":7,"condition":"narrow","category":"A METAL?","target":"copper","answer":"f","condition_trigger":101,"item_trigger":53},{"trial":10,"list":2,"set":3,"condition":"narrow","category":"A TOOL?","target":"hammer","answer":"f","condition_trigger":101,"item_trigger":49},{"trial":11,"list":2,"set":15,"condition":"narrow","category":"A FRUIT?","target":"lemon","answer":"f","condition_trigger":101,"item_trigger":46},{"trial":12,"list":2,"set":8,"condition":"broad","category":"A SUBSTANCE?","target":"marble","answer":"f","condition_trigger":102,"item_trigger":54},{"trial":13,"list":2,"set":14,"condition":"broad","category":"A PLANT?","target":"apple","answer":"f","condition_trigger":102,"item_trigger":45},{"trial":14,"list":2,"set":10,"condition":"broad","category":"AN ANIMAL?","target":"beaver","answer":"f","condition_trigger":102,"item_trigger":41},{"trial":15,"list":2,"set":11,"condition":"narrow","category":"A BIRD?","target":"parrot","answer":"f","condition_trigger":101,"item_trigger":42},{"trial":16,"list":2,"set":4,"condition":"broad","category":"AN OBJECT?","target":"shovel","answer":"f","condition_trigger":102,"item_trigger":50}];
+  // The presentation versions, one per (replicate, list) pair of TRIALS, numbered in
+  // that order. One page serves every participant, and a run presents one version.
+  const VERSIONS = [{"version":1,"replicate":1,"list":1,"n_trials":16},{"version":2,"replicate":1,"list":2,"n_trials":16}];
+
+  // A replicate or list value. A trial without the field is replicate 1, or list 1.
+  function whole(value) {
+    return (value === undefined || value === null || value === "") ? 1 : Number(value);
+  }
+
+  // The version this run presents, from the page's address: ?version=K, ?list=K when
+  // the versions do not span several replicates, or ?participant=N, whose version is
+  // ((N - 1) mod V) + 1, the rule lexsync's participant_table() allocates by. Only
+  // whole numbers from 1 are accepted. A static page cannot count its participants,
+  // so a study run without participant numbers hands out one ?version= link per
+  // version.
+  function chooseVersion() {
+    const n = VERSIONS.length;
+    if (!n) return { error: "This experiment holds no trials." };
+    const usage = "Open this page with ?participant=N for participant number N, or with "
+      + "?version=K for K from 1 to " + n + ".";
+    const params = new URLSearchParams(window.location.search);
+    const read = {};
+    for (const name of ["participant", "version", "list"]) {
+      const raw = params.get(name);
+      if (raw === null || raw === "") continue;
+      if (!/^\d+$/.test(raw) || parseInt(raw, 10) < 1)
+        return { error: "The address gives " + name + "=" + raw + ", but " + name
+                   + " takes a whole number from 1. " + usage };
+      read[name] = parseInt(raw, 10);
+    }
+    let chosen;
+    if (read.version !== undefined) {
+      if (read.version > n)
+        return { error: "The address asks for version " + read.version + ", but this "
+                   + "experiment has " + (n === 1 ? "one version" : n + " versions") + ". "
+                   + usage };
+      chosen = VERSIONS[read.version - 1];
+    } else if (read.list !== undefined) {
+      if (new Set(VERSIONS.map(v => v.replicate)).size > 1)
+        return { error: "This experiment's versions span several replicates, so a list "
+                   + "does not name one. " + usage };
+      chosen = VERSIONS.find(v => v.list === read.list);
+      if (!chosen)
+        return { error: "The address asks for list " + read.list + ", which this "
+                   + "experiment does not have. " + usage };
+    } else if (read.participant !== undefined) {
+      chosen = VERSIONS[(read.participant - 1) % n];
+    } else if (n === 1) {
+      chosen = VERSIONS[0];
+    } else {
+      return { error: "This experiment has " + n + " versions, and each participant runs "
+                 + "one of them. " + usage };
+    }
+    return { version: chosen, participant: read.participant };
+  }
+
+  const RUN = chooseVersion();
+  const RUN_TRIALS = TRIALS.filter(t => !RUN.error
+    && whole(t.replicate) === RUN.version.replicate && whole(t.list) === RUN.version.list);
+  // A filename for the saved data, derived from the page title and the run's
+  // participant and version, so no design value is interpolated into JavaScript;
+  // non-filename characters become underscores.
+  const DATA_FILE = document.title.replace(/[^A-Za-z0-9_.-]+/g, "_")
+    + (RUN.participant === undefined ? "" : "_p" + RUN.participant)
+    + (RUN.error ? "" : "_v" + RUN.version.version) + ".csv";
 
   const jsPsych = initJsPsych();
+  if (!RUN.error) {
+    // Every recorded row says which participant and version it came from.
+    const run = { version: RUN.version.version, replicate: RUN.version.replicate,
+                  list: RUN.version.list };
+    if (RUN.participant !== undefined) run.participant = RUN.participant;
+    jsPsych.data.addProperties(run);
+  }
 
   function htmlEscape(s) {
     return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -75,10 +150,21 @@
   const timeline = [];
 
   // Welcome and instructions. The keys are described only if the task asks for a
-  // response, so a passive-reading design does not mention a keyboard.
+  // response, so a passive-reading design does not mention a keyboard. Without a
+  // version to run, the page says how to open it instead, and nothing else runs.
   (function () {
+    if (RUN.error) {
+      timeline.push({
+        type: jsPsychHtmlKeyboardResponse,
+        stimulus: "<div class='lexsync-note'><h1>No version chosen</h1><p>"
+          + htmlEscape(RUN.error) + "</p></div>",
+        choices: "NO_KEYS",
+        data: { lexsync_event: "version_error" }
+      });
+      return;
+    }
     const keys = responseKeys();
-    const n = TRIALS.length;
+    const n = RUN_TRIALS.length;
     let body = "<h1>Welcome</h1><p>Thank you for taking part. In this task you will see "
       + "items presented one at a time on the screen.</p>";
     if (keys.length)
@@ -105,7 +191,7 @@
 
   let previousBlock = null;
   let trialCounter = 0;
-  for (const trial of TRIALS) {
+  for (const trial of RUN_TRIALS) {
     // Identifies this trial's rows in the data store. A feedback screen has to score the
     // key pressed on ITS OWN trial, and eventApplies can drop a response event from a
     // block, so a trial can reach feedback with no response row of its own. Reading "the
@@ -208,7 +294,7 @@
   // Completion: save the collected data as a CSV download (no server needed) and
   // thank the participant. on_load fires as the screen appears, so every trial
   // above is already in the data store.
-  timeline.push({
+  if (!RUN.error) timeline.push({
     type: jsPsychHtmlKeyboardResponse,
     stimulus: "<div class='lexsync-note'><h1>All done</h1>"
       + "<p>The task is complete. Your data file (<code>" + htmlEscape(DATA_FILE)

@@ -21,5 +21,10 @@ export_psychopy(stimuli, design, schema, outdir, base = NULL)
 The path to the generated \code{.py}, invisibly.
 }
 \description{
-Export a runnable PsychoPy script that interprets the event sequence
+The conditions file, \verb{<base>_psychopy.csv}, holds every presentation version of
+the design, one per (replicate, list) pair, and the script presents one per run:
+the version given by \code{--version} (or \code{--list} when there are no replicates), else
+the participant's by the rule \verb{((participant - 1) mod V) + 1} from
+\code{--participant}, else what a start-up dialogue asks for. A version the script does
+not have stops the run with a message.
 }

@@ -139,7 +139,9 @@
         "condition": "sparse_neighbourhood",
         "n_trials": 80
       }
-    ]
+    ],
+    "versions": 1,
+    "assignment": "version = ((participant - 1) mod 1) + 1 unless a version is given at launch"
   },
   "resampling": null,
   "items": {
@@ -184,7 +186,7 @@
     },
     {
       "file": "output/experiments/en_ndensity_english_psychopy.py",
-      "sha256": "edccc65dd45676d150ef62d0cdb0c5196783c18273f0fb8c149793d17dae60cd"
+      "sha256": "0309b9c909b771fe30aa880d91317143cff14a1671def39331a5615489f37230"
     },
     {
       "file": "output/experiments/en_ndensity_english.osexp",
@@ -192,7 +194,19 @@
     },
     {
       "file": "output/experiments/en_ndensity_english.html",
-      "sha256": "a884555ee8a063b6fb72d5bc8bdf21f031ae9cbc40410f793436106cbf123cc2"
+      "sha256": "4a46f5ce5e624edcbc368d05c00078287440061b837d00d524e737611afeffd1"
+    },
+    {
+      "file": "output/experiments/en_ndensity_english_psychopy.csv",
+      "sha256": "b6514ec23076d672b80a3273f322788574ca7b12451031dadcf5273082f895e0"
+    },
+    {
+      "file": "output/experiments/en_ndensity_english_opensesame.csv",
+      "sha256": "6048f83661ef5abdb0b4354a7e2b7e0b6e5d697361a0e5d28e80263e77705159"
+    },
+    {
+      "file": "output/experiments/en_ndensity_english_opensesame_text.csv",
+      "sha256": "9098df12680ea97cfd238692dfa5c2735d4116beaa53b01a17e7bd56b71e327f"
     }
   ]
 }

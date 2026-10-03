@@ -1,0 +1,17 @@
+lexsync_row,condition,category,target,answer
+1,narrow,A MAMMAL?,rabbit,f
+2,broad,A PLANT?,carrot,f
+3,broad,A PLANT?,onion,f
+4,narrow,A CONTAINER?,kettle,f
+5,broad,AN ANIMAL?,turkey,f
+6,narrow,A FISH?,salmon,f
+7,broad,AN OBJECT?,bottle,f
+8,narrow,A BIRD?,robin,f
+9,narrow,A METAL?,copper,f
+10,narrow,A TOOL?,hammer,f
+11,narrow,A FRUIT?,lemon,f
+12,broad,A SUBSTANCE?,marble,f
+13,broad,A PLANT?,apple,f
+14,broad,AN ANIMAL?,beaver,f
+15,narrow,A BIRD?,parrot,f
+16,broad,AN OBJECT?,shovel,f

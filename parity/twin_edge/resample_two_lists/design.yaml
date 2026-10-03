@@ -1,0 +1,24 @@
+# Twin-edge case: two disjoint item samples (replicates), each dealt into two lists, so
+# the design has four presentation versions. Both engines must write the same loop
+# table, which keeps each replicate's trials together, the same versions in the
+# PsychoPy script and the jsPsych page, and one OpenSesame experiment per replicate and
+# list.
+# The word forms are common English words. The Zipf frequencies are invented for
+# this fixture and describe no corpus.
+name: twin_edge_resample_two_lists
+language: english
+lexicon: lexicon.csv
+description: 'Nouns versus verbs in two disjoint matched item samples, each dealt to two lists.'
+n_per_condition: 4
+conditions:
+  - name: noun
+    define_by:
+      pos: [noun]
+  - name: verb
+    define_by:
+      pos: [verb]
+match_on: [length, frequency]
+resample:
+  n_sets: 2
+counterbalance:
+  lists: 2

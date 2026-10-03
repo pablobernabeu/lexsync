@@ -25,6 +25,8 @@
 #                                          changed something
 #   selection$incomplete_dropped  the candidates each condition lost for missing a
 #                               matched dimension, present only when it lost any
+#   counterbalancing$versions   the presentation versions, one per (replicate, list)
+#   counterbalancing$assignment the rule that gives each participant one version
 DATASHEET_VERSION <- "1.2"
 
 # Datasheet labels for the pseudoword generators in generation.R, keyed by the
@@ -185,8 +187,11 @@ DATASHEET_VERSION <- "1.2"
 #'   [match_report_continuous()], or `NULL` for generated or tabled items.
 #' @param stimuli The selected stimulus data frame.
 #' @param source_path Path of the lexicon or item table the stimuli came from.
-#' @param artifacts Named list of the artifact paths written for the design
-#'   (stimuli, descriptives, comparisons, experiments).
+#' @param artifacts Named list of the artifact paths written for the design:
+#'   `stimuli`, `descriptives`, `comparisons` and `experiments`, the result of
+#'   [export_experiments()]. Each file is recorded with its sha256: the three tables,
+#'   then every file in `experiments$files`, the loop and text tables included, or the
+#'   three experiment paths of a result that has no `files`.
 #' @param seed The integer seed recorded for the counterbalanced trial order.
 #' @param engine Engine label recorded in the record (default `"R"`).
 #' @param candidate_pool Optional list of per-condition candidate-pool sizes
@@ -220,7 +225,8 @@ DATASHEET_VERSION <- "1.2"
 #'   record gives the recipe that ran and the lists the table holds, or for a table
 #'   without a `list` column the lists [counterbalance()] would deal. It says whether
 #'   a Latin-square rotation is complete and counts the trials per list and
-#'   condition.
+#'   condition. It also gives the presentation versions, one per (replicate, list)
+#'   pair, and the rule that assigns each participant one of them.
 #' @param input_normalisation Optional `list(changed, collapsed)`: how many text
 #'   keys the run's inputs held that Unicode NFC normalisation rewrote, and how many
 #'   duplicates the rewriting created and removed. Recorded only when given, which
@@ -377,12 +383,16 @@ build_datasheet <- function(design, schema, report, stimuli, source_path, artifa
   # key deals one list per condition. as.list() keeps a single issue a JSON array.
   recipe <- .cb_recipe(design)
   check <- counterbalance_check %||% .counterbalance_check(stimuli, design, recipe)
+  versions <- .version_count(stimuli, as.integer(check$lists))
   counterbalancing <- list(
     recipe = recipe,
     lists = as.integer(check$lists),
     complete = isTRUE(check$complete),
     issues = as.list(check$issues),
-    cells = check$cells)
+    cells = check$cells,
+    versions = versions,
+    assignment = sprintf(paste("version = ((participant - 1) mod %d) + 1 unless a version",
+                               "is given at launch"), versions))
   # The balance report is added only when the optimiser ran, for the same reason the
   # norms record is: a key that is null on every design that does not use the feature
   # is noise in a research artefact.
@@ -429,9 +439,36 @@ build_datasheet <- function(design, schema, report, stimuli, source_path, artifa
   )
 }
 
+# The files the record checksums: the three tables, then every experiment file.
+# export_experiments() lists every file it wrote under `files`, the loop and text tables
+# that hold the trial order and the trigger codes among them. A result without `files`
+# contributes its three experiment paths. Mirrors _artifact_paths in datasheet.py.
 .artifact_paths <- function(artifacts) {
-  c(artifacts$stimuli, artifacts$descriptives, artifacts$comparisons,
-    unlist(artifacts$experiments, use.names = FALSE))
+  exps <- artifacts[["experiments"]]
+  files <- if (!is.null(exps[["files"]])) exps[["files"]] else unlist(exps, use.names = FALSE)
+  c(artifacts[["stimuli"]], artifacts[["descriptives"]], artifacts[["comparisons"]], files)
+}
+
+# The presentation versions the trials give, one per (replicate, list) pair. A table
+# without a `list` column has the lists counterbalance() would deal in each replicate,
+# `lists` of them, as the record's `lists` does. Mirrors _version_count in datasheet.py.
+.version_count <- function(stimuli, lists) {
+  if ("list" %in% names(stimuli)) return(length(.presentation_versions(stimuli)))
+  replicates <- if ("replicate" %in% names(stimuli))
+    length(unique(stats::na.omit(stimuli$replicate))) else 1L
+  as.integer(max(replicates, 1L) * lists)
+}
+
+# How participants met the presentation versions, for the Methods text. Empty for a
+# single version, and for a record written before the field existed. Mirrors
+# _versions_note in datasheet.py.
+.versions_note <- function(ds) {
+  n <- ds[["counterbalancing"]][["versions"]]
+  if (is.null(n) || n < 2) return("")
+  unit <- if (!is.null(ds[["resampling"]])) "presentation versions (one list of one item set)"
+          else "lists"
+  sprintf(paste(" Each participant was presented one of the %d %s, assigned in rotation",
+                "by participant number."), as.integer(n), unit)
 }
 
 # The norm tables named in the Methods prose. Basenames only: the full paths and
@@ -501,10 +538,10 @@ methods_paragraph <- function(ds) {
                           "%s near-constant%s, for analysis by regression or a mixed model rather ",
                           "than a between-condition contrast (Kuperman, 2015; Liben-Nowell et al., ",
                           "2019).%s Materials were counterbalanced into %s list(s) (%s) and generated ",
-                          "for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and ",
+                          "for PsychoPy, OpenSesame and jsPsych.%s The selection is deterministic and ",
                           "reproducible (seed %s; lexsync %s)."),
                    n, lang, unit, predictor, span_str, controls, corr_str, .norms_note(ds),
-                   cb$lists, recipe_label,
+                   cb$lists, recipe_label, .versions_note(ds),
                    ds$reproducibility$seed, ds$reproducibility$versions$lexsync))
   }
   if (identical(src, "corpus")) {
@@ -561,9 +598,10 @@ methods_paragraph <- function(ds) {
   cb <- ds$counterbalancing
   recipe_label <- .recipe_label(cb)
   tail <- sprintf(paste0(resamp, ". Materials were counterbalanced into %s list(s) (%s) and generated for ",
-                         "PsychoPy, OpenSesame and jsPsych. The selection is deterministic and ",
+                         "PsychoPy, OpenSesame and jsPsych.%s The selection is deterministic and ",
                          "reproducible (seed %s; lexsync %s)."),
-                  cb$lists, recipe_label, ds$reproducibility$seed, ds$reproducibility$versions$lexsync)
+                  cb$lists, recipe_label, .versions_note(ds), ds$reproducibility$seed,
+                  ds$reproducibility$versions$lexsync)
   bal <- ds$counterbalancing$optimise
   bal_note <- if (is.null(bal)) "" else sprintf(
     paste0(". Item sets were assigned to lists so as to equate the lists on %s rather ",
@@ -659,6 +697,12 @@ render_datasheet_md <- function(ds) {
     sprintf("- **Cross-engine determinism:** %s", ds$selection$cross_engine %||% "byte-identical"),
     sprintf("- **Counterbalancing:** %s, %s list(s)", ds$counterbalancing$recipe,
             ds$counterbalancing$lists),
+    # Said only where there is a choice to make, so a single-version record reads as it
+    # always has.
+    if ((ds$counterbalancing[["versions"]] %||% 1L) > 1L)
+      sprintf("- **Presentation versions:** %s, assigned as %s",
+              ds$counterbalancing[["versions"]], ds$counterbalancing[["assignment"]])
+    else NULL,
     sprintf("- **Items:** %s rows across %s conditions (%s)", ds$items$n_total,
             ds$items$n_conditions, paste(unlist(ds$items$conditions), collapse = ", ")),
     sprintf("- **Seed:** %s  |  **Versions:** %s", ds$reproducibility$seed, versions), "")

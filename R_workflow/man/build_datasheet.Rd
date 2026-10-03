@@ -37,8 +37,11 @@ build_datasheet(
 
 \item{source_path}{Path of the lexicon or item table the stimuli came from.}
 
-\item{artifacts}{Named list of the artifact paths written for the design
-(stimuli, descriptives, comparisons, experiments).}
+\item{artifacts}{Named list of the artifact paths written for the design:
+\code{stimuli}, \code{descriptives}, \code{comparisons} and \code{experiments}, the result of
+\code{\link[=export_experiments]{export_experiments()}}. Each file is recorded with its sha256: the three tables,
+then every file in \code{experiments$files}, the loop and text tables included, or the
+three experiment paths of a result that has no \code{files}.}
 
 \item{seed}{The integer seed recorded for the counterbalanced trial order.}
 
@@ -82,7 +85,8 @@ the counterbalanced table. Without it, the check is run here on \code{stimuli}. 
 record gives the recipe that ran and the lists the table holds, or for a table
 without a \code{list} column the lists \code{\link[=counterbalance]{counterbalance()}} would deal. It says whether
 a Latin-square rotation is complete and counts the trials per list and
-condition.}
+condition. It also gives the presentation versions, one per (replicate, list)
+pair, and the rule that assigns each participant one of them.}
 
 \item{input_normalisation}{Optional \code{list(changed, collapsed)}: how many text
 keys the run's inputs held that Unicode NFC normalisation rewrote, and how many

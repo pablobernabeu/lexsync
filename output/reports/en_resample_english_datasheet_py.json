@@ -19,18 +19,55 @@
     },
     {
       "file": "output/experiments/en_resample_english_psychopy.py",
-      "sha256": "a06af248c8fbed8a484eb7040233efb989c4ab8514b593c113c62dcb65f45d81"
+      "sha256": "29277b5bc5731e18de1987e6f293c35cea8377bdbb1af5b31e36bad1afafada5"
     },
     {
-      "file": "output/experiments/en_resample_english.osexp",
-      "sha256": "c770461b73f6f600c9ad2f2fb574fff88151b594e6dec131dad29792d30cf53a"
+      "file": "output/experiments/en_resample_english_rep1_list1.osexp",
+      "sha256": "ad139caa2dea71a7b111000ed75db1a0455c04804aeb969ec80e52a75c8f21c3"
+    },
+    {
+      "file": "output/experiments/en_resample_english_rep2_list1.osexp",
+      "sha256": "495f268e2a97a13593156e14bfdef4d20c467a8826a3c4b96a46e9f9c7e8fea1"
+    },
+    {
+      "file": "output/experiments/en_resample_english_rep3_list1.osexp",
+      "sha256": "a7d90e4b0085b29c4756abaee71a4c0ff1b285d053000689cce90797d7c898cb"
     },
     {
       "file": "output/experiments/en_resample_english.html",
-      "sha256": "7605003384cf6552eca7b3dea26d36165c6aab80ff58b813643a375fb97383df"
+      "sha256": "48d2f819dc9249b01bf39f9ee9a0057d8fabadcf065b97faf6aa204da6527b63"
+    },
+    {
+      "file": "output/experiments/en_resample_english_psychopy.csv",
+      "sha256": "783229e3ad9e3eb85b1709495eef6b8a28df2e94b713a214002693479fe2f20b"
+    },
+    {
+      "file": "output/experiments/en_resample_english_rep1_list1_opensesame.csv",
+      "sha256": "1d23b5d81f6d0a75ae3304e2770cc1cbae116508b48802475c5514489216f810"
+    },
+    {
+      "file": "output/experiments/en_resample_english_rep1_list1_opensesame_text.csv",
+      "sha256": "8dfb1da39248a66d7ba50689733afa1699fd5b1a53fff9949eeca485f9cea369"
+    },
+    {
+      "file": "output/experiments/en_resample_english_rep2_list1_opensesame.csv",
+      "sha256": "f96e1ac7d0bf41a9f35aee763a837697d2c986068d3286075e9eca5e7f82801a"
+    },
+    {
+      "file": "output/experiments/en_resample_english_rep2_list1_opensesame_text.csv",
+      "sha256": "2b0a716ebf557ca6c0d8a156aefbcabf531c628db04fef11f5ecf7a93c780b11"
+    },
+    {
+      "file": "output/experiments/en_resample_english_rep3_list1_opensesame.csv",
+      "sha256": "249a8f60b4a02bf09251f2b78abce3d8c239c6c4301279a36a3ea6038ae85386"
+    },
+    {
+      "file": "output/experiments/en_resample_english_rep3_list1_opensesame_text.csv",
+      "sha256": "e2dbeefd6ddf8de914cca16ff2fc80a58e95e377fabf676ac1af64f69cdfa9ec"
     }
   ],
   "counterbalancing": {
+    "assignment": "version = ((participant - 1) mod 3) + 1 unless a version is given at launch",
     "cells": [
       {
         "condition": "high_frequency",
@@ -72,7 +109,8 @@
     "complete": true,
     "issues": [],
     "lists": 1,
-    "recipe": "factorial"
+    "recipe": "factorial",
+    "versions": 3
   },
   "design": {
     "description": "High versus low frequency English words in three disjoint matched item sets (items as a random factor).",
