@@ -265,6 +265,44 @@ def _require_match_on(design: dict) -> list:
     return match_on
 
 
+def _names(value) -> list:
+    """A design entry that lists names, as a list: a lone name counts as one."""
+    if value is None:
+        return []
+    if isinstance(value, (list, tuple)):
+        return [_key_name(v) for v in value]
+    return [_key_name(value)]
+
+
+def _referenced_dimensions(design: dict) -> list:
+    """Every dimension the design names, in first-mention order.
+
+    The names come from ``match_on``, each condition's ``define_by`` keys, the
+    ``pool_filters`` keys, the continuous predictor and controls, and
+    ``counterbalance.balance_on``, in that order and without repeats. The pipeline
+    derives any of ``n_density``, ``old20`` and ``bigram_freq`` in this list that the
+    lexicon lacks. Only ``match_on`` used to trigger the derivation, so a design that
+    manipulated, filtered on or regressed on a derived dimension stopped with "absent
+    from the pool". Must stay identical to .referenced_dimensions in
+    R_workflow/R/design.R.
+    """
+    names = _names(design.get("match_on"))
+    for cond in design.get("conditions") or []:
+        if isinstance(cond, dict) and isinstance(cond.get("define_by"), dict):
+            names += _names(list(cond["define_by"]))
+    filters = design.get("pool_filters")
+    if isinstance(filters, dict):
+        names += _names(list(filters))
+    continuous = design.get("continuous")
+    if isinstance(continuous, dict):
+        names += _names(continuous.get("predictor"))
+        names += _names(continuous.get("controls"))
+    counterbalance = design.get("counterbalance")
+    if isinstance(counterbalance, dict):
+        names += _names(counterbalance.get("balance_on"))
+    return list(dict.fromkeys(names))
+
+
 def design_stem(design: dict) -> str:
     """The stem every file a design writes is named after.
 

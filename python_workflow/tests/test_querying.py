@@ -352,3 +352,69 @@ def test_build_pool_refuses_a_non_finite_bound():
 def test_build_pool_keeps_a_degenerate_range():
     df = pd.DataFrame({"word": list("abcde"), "frequency": [1, 2, 3, 4, 5]})
     assert build_pool(df, {"frequency": [2, 2]})["word"].tolist() == ["b"]
+
+
+def _neighbourhood_by_loop(words, reference, n_old=20):
+    """The word-by-word computation add_neighbourhood used before it was vectorised,
+    kept here as the specification the matrix version must reproduce."""
+    import numpy as np
+    from rapidfuzz.distance import Hamming, Levenshtein
+    ref = list(dict.fromkeys(reference))
+    n_density, old = [], []
+    for w in words:
+        same_len = [r for r in ref if len(r) == len(w)]
+        n_density.append(int(sum(Hamming.distance(w, s) == 1 for s in same_len)))
+        ld = np.array([Levenshtein.distance(w, r) for r in ref], dtype=float)
+        ld = ld[ld > 0]
+        k = min(n_old, ld.size)
+        old.append(float(np.mean(np.partition(ld, k - 1)[:k])) if k else float("nan"))
+    return n_density, old
+
+
+def test_vectorised_add_neighbourhood_equals_the_loop_on_500_words(schema, en_lexicon_path):
+    lex = load_lexicon(en_lexicon_path, schema)
+    reference = lex["word"].tolist()
+    # 500 words spread over the byte order, so every length the lexicon holds is in.
+    sample = lex.iloc[::6].head(500).reset_index(drop=True)
+    out = add_neighbourhood(sample[["word"]], reference=reference)
+    n_density, old = _neighbourhood_by_loop(sample["word"].tolist(), reference)
+    assert out["n_density"].tolist() == n_density
+    assert out["old20"].tolist() == old
+
+
+def test_add_neighbourhood_handles_an_empty_frame_and_reference():
+    empty = add_neighbourhood(pd.DataFrame({"word": pd.Series([], dtype=object)}),
+                              reference=["cat"])
+    assert empty["n_density"].tolist() == [] and empty["old20"].tolist() == []
+    alone = add_neighbourhood(pd.DataFrame({"word": ["cat"]}), reference=["cat"])
+    assert alone["n_density"].tolist() == [0]
+    assert pd.isna(alone["old20"].iloc[0])
+
+
+def test_load_pool_keeps_only_reference_members_in_the_reference(schema, tmp_path):
+    from lexsync.querying import load_pool
+    lexicon = tmp_path / "lexicon.csv"
+    lexicon.write_text("word,freq_zipf,reference_member\ncat,5.0,1\ncap,4.0,0\n"
+                       "cot,4.1,1\ndog,5.2,0\n", encoding="utf-8")
+    pool = tmp_path / "pool.csv"
+    pool.write_text("word\ncat\ndog\n", encoding="utf-8")
+    res = load_pool(str(pool), schema, lexicon=str(lexicon))
+    assert res["reference"] == ["cat", "cot"]
+
+
+def test_a_reference_member_column_must_hold_zero_or_one(schema, tmp_path):
+    from lexsync.querying import load_pool
+    lexicon = tmp_path / "lexicon.csv"
+    lexicon.write_text("word,freq_zipf,reference_member\ncat,5.0,1\ncap,4.0,2\n",
+                       encoding="utf-8")
+    pool = tmp_path / "pool.csv"
+    pool.write_text("word\ncat\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="lexsync: lexicon column 'reference_member' must "
+                                         "hold 0 or 1 for every word."):
+        load_pool(str(pool), schema, lexicon=str(lexicon))
+    lexicon.write_text("word,freq_zipf,reference_member\ncat,5.0,0\ncap,4.0,0\n",
+                       encoding="utf-8")
+    with pytest.raises(ValueError, match="lexsync: lexicon column 'reference_member' marks "
+                                         "no word as a member of the neighbourhood "
+                                         "reference."):
+        load_pool(str(pool), schema, lexicon=str(lexicon))

@@ -175,8 +175,15 @@ one dimension that always needs a separate call.
 `add_neighbourhood` computes both neighbourhood measures against a reference word list, which
 should normally be the full lexicon, since a word's neighbours do not stop
 existing because your design excluded them. The pipeline passes the full lexicon for exactly that
-reason, and computes these only when the design's `match_on` asks for them, because the calculation
-is quadratic in the reference size and easily the slowest step in a run.
+reason. It computes `n_density`, `old20` and `bigram_freq` for a lexicon that lacks them whenever
+the design refers to them, whether in `match_on`, a condition's `define_by`, `pool_filters`, a
+continuous predictor or control, or `counterbalance.balance_on`. The filters the lexicon can answer
+run first and those on a derived dimension after it is computed, so the calculation, quadratic in the
+reference size, runs on the smaller pool. A lexicon can name the words that make up the reference
+with a `reference_member` column (1 for a member, 0 otherwise). Passing `reference_words` to
+`run_pipeline` recomputes N and OLD20, and `bigram_freq` where the lexicon carries it or the design
+uses it, against that list instead, overriding the lexicon's columns. The datasheet's `selection.neighbourhood_reference`
+then records the list with the columns it was applied to.
 
 `add_bigram_frequency` averages, over a word's adjacent letter bigrams, the corpus probability of
 each. It works from integer counts and rounds the result to nine decimal places, which keeps

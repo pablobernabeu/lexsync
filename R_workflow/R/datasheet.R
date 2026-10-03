@@ -27,6 +27,10 @@
 #                               matched dimension, present only when it lost any
 #   counterbalancing$versions   the presentation versions, one per (replicate, list)
 #   counterbalancing$assignment the rule that gives each participant one version
+#   selection$neighbourhood_reference$applied_to
+#                               the derived columns a supplied reference_words list
+#                               recomputed. The record is now written only when one
+#                               ran.
 DATASHEET_VERSION <- "1.2"
 
 # Datasheet labels for the pseudoword generators in generation.R, keyed by the
@@ -217,9 +221,10 @@ DATASHEET_VERSION <- "1.2"
 #'   count the candidates excluded for missing a matched dimension, which
 #'   `candidate_pool` still includes. They are recorded because the selection drew
 #'   on a smaller pool than the window holds.
-#' @param neighbourhood_reference Optional record of the lexicon the
-#'   neighbourhood dimensions were computed against
-#'   (`list(source, n_words, sha256)`), recorded verbatim.
+#' @param neighbourhood_reference Optional record of a supplied reference the
+#'   derived dimensions were recomputed against
+#'   (`list(source, n_words, sha256, applied_to)`, where `applied_to` lists the
+#'   recomputed columns), recorded verbatim.
 #' @param counterbalance_check Optional report of the pipeline's rotation check on
 #'   the counterbalanced table. Without it, the check is run here on `stimuli`. The
 #'   record gives the recipe that ran and the lists the table holds, or for a table

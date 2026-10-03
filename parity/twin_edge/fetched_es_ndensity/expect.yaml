@@ -1,0 +1,6 @@
+# Both engines derive N and OLD20 and select the same four sets.
+outcome: artefacts
+compare: [stimuli, descriptives, comparisons]
+datasheet:
+  selection.candidate_pool.0.n_candidates: 7
+  selection.candidate_pool.1.n_candidates: 11

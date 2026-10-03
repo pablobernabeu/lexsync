@@ -860,3 +860,231 @@ def test_continuous_over_a_supplied_pool_selects_continuously(tmp_path):
     stim = pd.read_csv(res["stimuli"])
     assert (stim["condition"] == "continuous").all()
     assert stim["set"].nunique() == 10
+
+
+# ---- Derived dimensions (n_density, old20, bigram_freq) ---------------------------
+# lexsync derived these only for dimensions named in match_on, and checked pool_filters
+# against the lexicon before deriving anything, so a design that manipulated, filtered
+# on or regressed on a derived dimension stopped with "absent from the pool". Each test
+# below is pinned identically in test-run-pipeline.R.
+
+def _read_json(path):
+    import json
+    with open(path, encoding="utf-8") as handle:
+        return json.load(handle)
+
+
+def _datasheet(tmp_path, stem):
+    return _read_json(os.path.join(str(tmp_path), "reports", stem + "_datasheet_py.json"))
+
+
+def _lexicon_without(tmp_path, source, drop, name="lexicon.csv"):
+    """A copy of a bundled lexicon without the named columns, as `lexsync fetch`
+    writes one (word, freq_zipf, language, source)."""
+    import pandas as pd
+    lex = pd.read_csv(_pkg_data(source), keep_default_na=False)
+    path = os.path.join(str(tmp_path), name)
+    lex.drop(columns=list(drop)).to_csv(path, index=False, lineterminator="\n")
+    return path
+
+
+def test_a_bigram_contrast_runs_on_a_lexicon_without_bigram_freq(tmp_path):
+    import pandas as pd
+    design = _write_design(str(tmp_path), [
+        "name: bigram_contrast",
+        "language: english",
+        "lexicon: " + _yaml_path(_pkg_data("en_example.csv")),
+        "n_per_condition: 5",
+        "pool_filters: {length: [4, 7], frequency: [3.8, 7]}",
+        "conditions:",
+        "  - {name: high_bigram, define_by: {bigram_freq: [0.009, 1]}}",
+        "  - {name: low_bigram, define_by: {bigram_freq: [0, 0.004]}}",
+        "match_on: [length, frequency]",
+    ])
+    res = _run(design, tmp_path)
+    stim = pd.read_csv(res["stimuli"])
+    assert stim["condition"].value_counts().tolist() == [5, 5]
+    assert (stim.loc[stim["condition"] == "high_bigram", "bigram_freq"] >= 0.009).all()
+    assert (stim.loc[stim["condition"] == "low_bigram", "bigram_freq"] <= 0.004).all()
+
+
+def test_a_continuous_design_can_take_bigram_freq_as_its_predictor(tmp_path):
+    import pandas as pd
+    design = _write_design(str(tmp_path), [
+        "name: bigram_continuous",
+        "language: english",
+        "lexicon: " + _yaml_path(_pkg_data("en_example.csv")),
+        "n_per_condition: 10",
+        "pool_filters: {length: [4, 7], frequency: [3.8, 7]}",
+        "continuous:",
+        "  predictor: bigram_freq",
+        "  controls: [length]",
+        "match_on: [length]",
+    ])
+    res = _run(design, tmp_path)
+    stim = pd.read_csv(res["stimuli"])
+    assert stim["set"].nunique() == 10
+    assert stim["bigram_freq"].notna().all()
+
+
+def test_a_pool_filter_on_bigram_freq_runs(tmp_path):
+    import pandas as pd
+    design = _write_design(str(tmp_path), [
+        "name: bigram_filter",
+        "language: english",
+        "lexicon: " + _yaml_path(_pkg_data("en_example.csv")),
+        "n_per_condition: 5",
+        "pool_filters: {length: [3, 7], frequency: [3.8, 7], bigram_freq: [0.005, 0.02]}",
+        "conditions:",
+        "  - {name: high, define_by: {frequency: [5.0, 7.0]}}",
+        "  - {name: low, define_by: {frequency: [3.8, 4.4]}}",
+        "match_on: [length]",
+    ])
+    res = _run(design, tmp_path)
+    stim = pd.read_csv(res["stimuli"])
+    assert len(stim) == 10
+    assert stim["bigram_freq"].between(0.005, 0.02).all()
+
+
+def test_an_ndensity_design_runs_on_a_lexicon_without_n_and_old20(tmp_path):
+    """design_es_ndensity on a lexicon such as `lexsync fetch es` writes. The measures
+    are computed against the whole lexicon, not against the filtered pool."""
+    import pandas as pd
+
+    from lexsync.querying import add_neighbourhood
+    lexicon = _lexicon_without(tmp_path, "es_example.csv", ["n_density", "old20"])
+    design = _write_design(str(tmp_path), [
+        "name: fetched_ndensity",
+        "language: spanish",
+        "lexicon: " + _yaml_path(lexicon),
+        "n_per_condition: 5",
+        "pool_filters: {length: [3, 6], frequency: [3.8, 7.0]}",
+        "conditions:",
+        "  - {name: dense_neighbourhood, define_by: {n_density: [3, 100]}}",
+        "  - {name: sparse_neighbourhood, define_by: {n_density: [0, 1]}}",
+        "match_on: [length, frequency]",
+        "matching: {method: joint}",
+    ])
+    res = _run(design, tmp_path)
+    stim = pd.read_csv(res["stimuli"], keep_default_na=False)
+    assert stim["condition"].value_counts().tolist() == [5, 5]
+    assert (stim.loc[stim["condition"] == "dense_neighbourhood", "n_density"] >= 3).all()
+    words = pd.read_csv(lexicon, keep_default_na=False)["word"].tolist()
+    want = add_neighbourhood(stim[["word"]], reference=words)
+    assert stim["n_density"].tolist() == want["n_density"].tolist()
+    assert stim["old20"].tolist() == want["old20"].tolist()
+
+
+def test_reference_words_recomputes_n_and_old20_and_is_recorded(tmp_path):
+    """Every bundled lexicon carries n_density and old20, so the override was ignored
+    while the datasheet recorded it as applied."""
+    import pandas as pd
+    design = _corpus_design(str(tmp_path))
+    res = run_pipeline(design, _pkg_data("schema.yaml"), outdir=str(tmp_path),
+                       reference_words=["zzzz", "qqqq"], verbose=False)
+    from lexsync.querying import add_neighbourhood
+    stim = pd.read_csv(res["stimuli"])
+    want = add_neighbourhood(stim[["word"]], reference=["zzzz", "qqqq"])
+    assert (stim["n_density"] == 0).all()
+    assert stim["old20"].tolist() == want["old20"].tolist()
+    nref = _datasheet(tmp_path, "guard_test_english")["selection"]["neighbourhood_reference"]
+    assert nref["applied_to"] == ["n_density", "old20"]
+    assert nref["n_words"] == 2
+    assert nref["source"] == "user-supplied"
+    with open(res["log"], encoding="utf-8") as handle:
+        assert ("recomputed n_density, old20 against a supplied reference of 2 words"
+                in handle.read())
+
+
+def test_reference_words_recomputes_bigram_freq_when_the_design_uses_it(tmp_path):
+    design = _write_design(str(tmp_path), [
+        "name: guard_test",
+        "language: english",
+        "lexicon: " + _yaml_path(_pkg_data("en_example.csv")),
+        "n_per_condition: 5",
+        "pool_filters: {length: [3, 7], frequency: [3.8, 7]}",
+        "conditions:",
+        "  - {name: high, define_by: {frequency: [5.0, 7.0]}}",
+        "  - {name: low, define_by: {frequency: [3.8, 4.4]}}",
+        "match_on: [length, bigram_freq]",
+    ])
+    res = run_pipeline(design, _pkg_data("schema.yaml"), outdir=str(tmp_path),
+                       reference_words=["zzzz", "qqqq"], verbose=False)
+    nref = _datasheet(tmp_path, "guard_test_english")["selection"]["neighbourhood_reference"]
+    assert nref["applied_to"] == ["n_density", "old20", "bigram_freq"]
+    with open(res["log"], encoding="utf-8") as handle:
+        assert ("recomputed n_density, old20, bigram_freq against a supplied reference "
+                "of 2 words" in handle.read())
+
+
+def test_reference_words_on_a_generate_design_is_ignored_and_not_recorded(tmp_path):
+    design = _write_design(str(tmp_path), [
+        "name: gen_ref",
+        "language: english",
+        "paradigm: lexical_decision",
+        "items:",
+        "  source: generate",
+        "  lexicon: " + _yaml_path(_pkg_data("en_example.csv")),
+        "n_per_condition: 5",
+        "pool_filters: {length: [4, 7], frequency: [3.5, 6.0]}",
+    ])
+    res = run_pipeline(design, _pkg_data("schema.yaml"), outdir=str(tmp_path),
+                       reference_words=["zzzz", "qqqq"], verbose=False)
+    assert "neighbourhood_reference" not in _datasheet(tmp_path, "gen_ref_english")["selection"]
+    with open(res["log"], encoding="utf-8") as handle:
+        assert ("reference_words is not used by items.source 'generate' and was ignored"
+                in handle.read())
+
+
+@pytest.mark.parametrize("words", [[], ["zzzz", None]])
+def test_reference_words_must_hold_a_word_and_no_missing_value(tmp_path, words):
+    """Once the override took effect, an empty list set every N to 0 and every OLD20
+    to missing, and the selection went ahead on those values."""
+    design = _corpus_design(str(tmp_path))
+    with pytest.raises(ValueError, match="lexsync: reference_words must hold at least one "
+                                         "word and no missing value."):
+        run_pipeline(design, _pkg_data("schema.yaml"), outdir=str(tmp_path),
+                     reference_words=words, verbose=False)
+    assert not os.path.exists(os.path.join(str(tmp_path), "reports"))
+
+
+def test_a_lone_reference_word_is_one_word(tmp_path):
+    """R reads a character scalar as one word, so a Python string is one word too and
+    is not split into its letters."""
+    import pandas as pd
+
+    from lexsync.querying import add_neighbourhood
+    design = _corpus_design(str(tmp_path))
+    res = run_pipeline(design, _pkg_data("schema.yaml"), outdir=str(tmp_path),
+                       reference_words="zzzz", verbose=False)
+    nref = _datasheet(tmp_path, "guard_test_english")["selection"]["neighbourhood_reference"]
+    assert nref["n_words"] == 1
+    stim = pd.read_csv(res["stimuli"])
+    want = add_neighbourhood(stim[["word"]], reference=["zzzz"])
+    assert stim["old20"].tolist() == want["old20"].tolist()
+
+
+def test_a_reference_member_column_sets_the_neighbourhood_reference(tmp_path):
+    """A lexicon may mark the forms that make up the neighbourhood reference. The
+    measures it lacks are then computed against those rows alone."""
+    import pandas as pd
+    lexicon = os.path.join(str(tmp_path), "lexicon.csv")
+    rows = [("cat", 5.0, 1), ("cot", 4.0, 1), ("cut", 4.1, 1), ("cap", 4.2, 0),
+            ("car", 5.1, 0), ("dog", 5.2, 1), ("dig", 4.3, 1), ("dug", 4.0, 0)]
+    pd.DataFrame(rows, columns=["word", "freq_zipf", "reference_member"]).to_csv(
+        lexicon, index=False, lineterminator="\n")
+    design = _write_design(str(tmp_path), [
+        "name: member_ref",
+        "language: english",
+        "lexicon: " + _yaml_path(lexicon),
+        "n_per_condition: 3",
+        "conditions:",
+        "  - {name: high, define_by: {frequency: [5.0, 7.0]}}",
+        "  - {name: low, define_by: {frequency: [3.0, 4.5]}}",
+        "match_on: [length, n_density]",
+    ])
+    res = _run(design, tmp_path)
+    stim = pd.read_csv(res["stimuli"]).set_index("word")
+    # Against the members cat, cot, cut, dog and dig: cat neighbours cot and cut but
+    # not the non-members cap and car, and car and dog have one member neighbour each.
+    assert stim.loc[["cat", "car", "dog"], "n_density"].tolist() == [2, 1, 1]

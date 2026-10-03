@@ -41,5 +41,7 @@ The returned \code{reference} matters as much as the pool. \code{n_density} and 
 properties of a word in its \emph{language}, not among the handful of words a study
 happens to use, so computing them against a 200-word supplied list would give
 numbers that mean nothing. When a lexicon is given, the reference is the lexicon's
-words; only without one does it fall back to the pool itself.
+words; only without one does it fall back to the pool itself. A
+\code{reference_member} column on whichever of the two supplies the reference keeps
+only the rows it marks 1.
 }

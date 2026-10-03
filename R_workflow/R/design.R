@@ -216,6 +216,31 @@
   match_on
 }
 
+# Every dimension the design names, in first-mention order: `match_on`, each
+# condition's `define_by` keys, the `pool_filters` keys, the continuous predictor and
+# controls, and `counterbalance.balance_on`, in that order and without repeats. The
+# pipeline derives any of `n_density`, `old20` and `bigram_freq` in this list that the
+# lexicon lacks. Only `match_on` used to trigger the derivation, so a design that
+# manipulated, filtered on or regressed on a derived dimension stopped with "absent
+# from the pool". Must stay identical to _referenced_dimensions in design.py.
+.referenced_dimensions <- function(design) {
+  as_names <- function(x) as.character(unlist(x, use.names = FALSE))
+  out <- as_names(design[["match_on"]])
+  for (cond in design[["conditions"]] %||% list()) {
+    if (.is_mapping(cond) && .is_mapping(cond[["define_by"]])) {
+      out <- c(out, names(cond[["define_by"]]))
+    }
+  }
+  if (.is_mapping(design[["pool_filters"]])) out <- c(out, names(design[["pool_filters"]]))
+  continuous <- design[["continuous"]]
+  if (.is_mapping(continuous)) {
+    out <- c(out, as_names(continuous[["predictor"]]), as_names(continuous[["controls"]]))
+  }
+  counterbalance <- design[["counterbalance"]]
+  if (.is_mapping(counterbalance)) out <- c(out, as_names(counterbalance[["balance_on"]]))
+  unique(out)
+}
+
 #' The stem every file a design writes is named after
 #'
 #' The slug of the design's `name` and `language`, which keeps letters and digits

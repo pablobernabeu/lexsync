@@ -1,8 +1,8 @@
 # lexsync run log: es_freqcontrast
 
 - Engine: R 4.6.1
-- Started: 2026-10-03 11:28:17.212691
-- Finished: 2026-10-03 11:28:29.461688
+- Started: 2026-10-03 13:12:28.971853
+- Finished: 2026-10-03 13:12:37.902162
 
 ## Run metadata
 
@@ -15,58 +15,58 @@
 
 ## Steps
 
-- **2026-10-03 11:28:17.446716**: loading lexicon 'corpora/derived/es.csv'
-- **2026-10-03 11:28:20.462082**: lexicon loaded: 30000 words
+- **2026-10-03 13:12:29.033302**: loading lexicon 'corpora/derived/es.csv'
+- **2026-10-03 13:12:31.102336**: lexicon loaded: 30000 words
     - words: 30000
-- **2026-10-03 11:28:20.540203**: pool after filters: 7172 words
+- **2026-10-03 13:12:31.20591**: pool after filters: 7172 words
     - pool: 7172
-- **2026-10-03 11:28:21.127789**: matched 160 items across 2 conditions
+- **2026-10-03 13:12:32.120226**: matched 160 items across 2 conditions
     - conditions: high_frequency, low_frequency
-- **2026-10-03 11:28:21.370657**: equivalence low_frequency vs high_frequency on 'length': d = 0.05 [-0.21, 0.31], TOST p = 0.002 (equivalent)
-- **2026-10-03 11:28:21.462106**: equivalence low_frequency vs high_frequency on 'frequency': d = 5.55 [4.97, 6.12], TOST p = 1.000 (not shown equivalent)
-- **2026-10-03 11:28:21.571256**: equivalence low_frequency vs high_frequency on 'n_density': d = 0.08 [-0.18, 0.34], TOST p = 0.004 (equivalent)
-- **2026-10-03 11:28:21.691938**: equivalence low_frequency vs high_frequency on 'old20': d = 0.01 [-0.26, 0.27], TOST p = 0.001 (equivalent)
-- **2026-10-03 11:28:23.062715**: wrote 'es_freqcontrast_spanish_stimuli_R.csv'
+- **2026-10-03 13:12:32.225279**: equivalence low_frequency vs high_frequency on 'length': d = 0.05 [-0.21, 0.31], TOST p = 0.002 (equivalent)
+- **2026-10-03 13:12:32.243808**: equivalence low_frequency vs high_frequency on 'frequency': d = 5.55 [4.97, 6.12], TOST p = 1.000 (not shown equivalent)
+- **2026-10-03 13:12:32.256349**: equivalence low_frequency vs high_frequency on 'n_density': d = 0.08 [-0.18, 0.34], TOST p = 0.004 (equivalent)
+- **2026-10-03 13:12:32.266162**: equivalence low_frequency vs high_frequency on 'old20': d = 0.01 [-0.26, 0.27], TOST p = 0.001 (equivalent)
+- **2026-10-03 13:12:33.174625**: wrote 'es_freqcontrast_spanish_stimuli_R.csv'
     - path: output/stimuli/es_freqcontrast_spanish_stimuli_R.csv
     - rows: 160
     - md5: 02356c7368366cd271e652d1d217f136
-- **2026-10-03 11:28:23.551712**: wrote 'es_freqcontrast_spanish_descriptives_R.csv'
+- **2026-10-03 13:12:33.317154**: wrote 'es_freqcontrast_spanish_descriptives_R.csv'
     - path: output/reports/es_freqcontrast_spanish_descriptives_R.csv
     - rows: 8
     - md5: 27efe7a7db42facb9f011a7a0d1ca3f0
-- **2026-10-03 11:28:23.837728**: wrote 'es_freqcontrast_spanish_comparisons_R.csv'
+- **2026-10-03 13:12:33.42814**: wrote 'es_freqcontrast_spanish_comparisons_R.csv'
     - path: output/reports/es_freqcontrast_spanish_comparisons_R.csv
     - rows: 4
     - md5: 9b43165868c2f00f9c9250e59cacd4ce
-- **2026-10-03 11:28:28.845665**: wrote 'es_freqcontrast_spanish_psychopy.py'
+- **2026-10-03 13:12:37.05489**: wrote 'es_freqcontrast_spanish_psychopy.py'
     - path: output/experiments/es_freqcontrast_spanish_psychopy.py
     - rows: NA
     - md5: 25ac249ec19404ec5212cb2c41cfc348
-- **2026-10-03 11:28:28.87677**: wrote 'es_freqcontrast_spanish.osexp'
+- **2026-10-03 13:12:37.085252**: wrote 'es_freqcontrast_spanish.osexp'
     - path: output/experiments/es_freqcontrast_spanish.osexp
     - rows: NA
     - md5: 77125398dc3b65a41cd504d5005526fc
-- **2026-10-03 11:28:28.9226**: wrote 'es_freqcontrast_spanish.html'
+- **2026-10-03 13:12:37.132811**: wrote 'es_freqcontrast_spanish.html'
     - path: output/experiments/es_freqcontrast_spanish.html
     - rows: NA
     - md5: 0408a54545c9e24a43530a75b7f7ec7d
-- **2026-10-03 11:28:28.969032**: wrote 'es_freqcontrast_spanish_psychopy.csv'
+- **2026-10-03 13:12:37.203087**: wrote 'es_freqcontrast_spanish_psychopy.csv'
     - path: output/experiments/es_freqcontrast_spanish_psychopy.csv
     - rows: NA
     - md5: 630290868a6a4a77aa25b6ca1b303f1d
-- **2026-10-03 11:28:29.003719**: wrote 'es_freqcontrast_spanish_opensesame.csv'
+- **2026-10-03 13:12:37.308904**: wrote 'es_freqcontrast_spanish_opensesame.csv'
     - path: output/experiments/es_freqcontrast_spanish_opensesame.csv
     - rows: NA
     - md5: 92e29c7a204d46f2df23de8018ad235a
-- **2026-10-03 11:28:29.028777**: wrote 'es_freqcontrast_spanish_opensesame_text.csv'
+- **2026-10-03 13:12:37.363452**: wrote 'es_freqcontrast_spanish_opensesame_text.csv'
     - path: output/experiments/es_freqcontrast_spanish_opensesame_text.csv
     - rows: NA
     - md5: 1d4555119c5865cce1ed2d8e06b6b1e9
-- **2026-10-03 11:28:29.380193**: wrote 'es_freqcontrast_spanish_datasheet_R.json'
+- **2026-10-03 13:12:37.837715**: wrote 'es_freqcontrast_spanish_datasheet_R.json'
     - path: output/reports/es_freqcontrast_spanish_datasheet_R.json
     - rows: NA
-    - md5: c278703f17b82191e771a630a7a00afa
-- **2026-10-03 11:28:29.40773**: wrote 'es_freqcontrast_spanish_datasheet_R.md'
+    - md5: 3dd24b2a1e2a9ae9cd33aa17e6f60074
+- **2026-10-03 13:12:37.868885**: wrote 'es_freqcontrast_spanish_datasheet_R.md'
     - path: output/reports/es_freqcontrast_spanish_datasheet_R.md
     - rows: NA
     - md5: 8ac8408d5fc18dfeb8ff9e92573bda4c

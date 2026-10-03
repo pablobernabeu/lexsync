@@ -1,0 +1,21 @@
+# Twin-edge case: a contrast on bigram frequency, which the lexicon does not carry.
+# lexsync derived bigram_freq only for a dimension named in match_on, so both engines
+# stopped with "dimension 'bigram_freq' in condition 'high_bigram' is absent from the
+# pool". Both now compute it against the lexicon and select.
+# The word forms are common English words. The Zipf frequencies are invented for
+# this fixture and describe no corpus.
+name: twin_edge_bigram_contrast
+language: english
+lexicon: lexicon.csv
+description: 'High against low mean bigram probability from a forty-word lexicon without a bigram_freq column, matched on length and frequency.'
+n_per_condition: 5
+conditions:
+  - name: high_bigram
+    define_by:
+      bigram_freq: [0.0145, 1]
+  - name: low_bigram
+    define_by:
+      bigram_freq: [0, 0.0109]
+match_on: [length, frequency]
+counterbalance:
+  lists: 1

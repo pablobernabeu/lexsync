@@ -1,0 +1,6 @@
+# Both engines derive bigram_freq and select the same five sets.
+outcome: artefacts
+compare: [stimuli, descriptives, comparisons]
+datasheet:
+  selection.candidate_pool.0.n_candidates: 13
+  selection.candidate_pool.1.n_candidates: 17

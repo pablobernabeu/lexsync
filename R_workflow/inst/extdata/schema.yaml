@@ -25,11 +25,18 @@ lexicon_schema:
     - pos             # part of speech (source tag)
     - language        # ISO 639-1 / BCP-47 code
     - source          # corpus identifier (matches corpora/registry.yaml)
+    - reference_member # 1 for a word in the neighbourhood reference, 0 otherwise.
+                       # Without the column, every word is in it.
 
 # ---- Lexical dimensions ----------------------------------------------------
 # 'column' dimensions are read straight from the lexicon; 'derived' dimensions
-# are computed at load time from the orthographic form, identically in R and
-# Python (Coltheart's N and OLD20 from Levenshtein distances).
+# come from the orthographic form, identically in R and Python (Coltheart's N and
+# OLD20 from Levenshtein distances). length and n_syllables are computed at load
+# time. n_density, old20 and bigram_freq are computed on the pool when the lexicon
+# lacks them and the design refers to them anywhere (match_on, define_by,
+# pool_filters, a continuous predictor or control, balance_on), against the
+# lexicon's words or its reference_member rows. A reference_words list given to
+# run_pipeline recomputes them against that list, overriding the lexicon's columns.
 dimensions:
   length:    { type: derived, compute: n_letters,    unit: 'characters' }
   frequency: { type: column,  column: freq_zipf,     unit: 'Zipf' }

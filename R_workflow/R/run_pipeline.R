@@ -4,16 +4,72 @@
 # run log, and exports the PsychoPy and OpenSesame scripts. run_all() loops over
 # every design configuration, automating the work across languages and designs.
 
+# The dimensions lexsync derives from the forms when a lexicon lacks them, in the
+# order add_neighbourhood() and add_bigram_frequency() add them.
+.DERIVED_DIMS <- c("n_density", "old20", "bigram_freq")
+
+# The derived dimensions the run must compute, in .DERIVED_DIMS order: those the
+# design refers to and the lexicon lacks. With a supplied reference (`override`) also
+# n_density and old20, which every report shows, and bigram_freq when the lexicon
+# carries it, since the lexicon's columns were computed against a different
+# reference. Mirrors _dims_to_derive in run_pipeline.py.
+.dims_to_derive <- function(design, columns, override) {
+  referenced <- .referenced_dimensions(design)
+  keep <- vapply(.DERIVED_DIMS, function(d) {
+    (d %in% referenced && !(d %in% columns)) ||
+      (override && (d != "bigram_freq" || d %in% columns || d %in% referenced))
+  }, logical(1))
+  .DERIVED_DIMS[keep]
+}
+
+# Compute the named derived dimensions on `frame` against `reference`. N and OLD20
+# come from one pass and are computed together. A recomputation against a supplied
+# reference overwrites the lexicon's columns in place and is logged as one step
+# naming them.
+.derive_dims <- function(frame, dims, reference, log, n_supplied = NULL) {
+  if (!length(dims)) return(list(frame = frame, log = log))
+  if (!is.null(n_supplied)) {
+    log <- log_step(log, sprintf("recomputed %s against a supplied reference of %d words",
+                                 paste(dims, collapse = ", "), n_supplied))
+  }
+  if (any(c("n_density", "old20") %in% dims)) {
+    if (is.null(n_supplied)) {
+      log <- log_step(log, "computing orthographic neighbourhood (N, OLD20)")
+    }
+    frame <- add_neighbourhood(frame, reference = reference)
+  }
+  if ("bigram_freq" %in% dims) {
+    if (is.null(n_supplied)) {
+      log <- log_step(log, "computing bigram frequency (phonotactic-probability proxy)")
+    }
+    frame <- add_bigram_frequency(frame, reference = reference)
+  }
+  list(frame = frame, log = log)
+}
+
 #' Run the lexsync pipeline for one design
+#'
+#' A design may refer to a derived dimension (`n_density`, `old20`, `bigram_freq`) in
+#' `match_on`, a condition's `define_by`, `pool_filters`, a continuous predictor or
+#' control, or `counterbalance.balance_on`. When the lexicon lacks it, the pipeline
+#' computes it on the pool against the neighbourhood reference, after the filters the
+#' lexicon can answer and before those on the derived dimension.
 #'
 #' @param design_path Path to a design configuration (YAML).
 #' @param schema_path Path to the global schema (YAML).
 #' @param outdir Output directory supplied by the caller (subdirectories
 #'   `stimuli`, `reports`, `experiments` are created). It must be supplied;
 #'   lexsync does not choose a default output location.
-#' @param reference_words Optional reference word list for neighbourhood
-#'   computation; defaults to the whole lexicon. Its words are normalised to
-#'   Unicode NFC before use, like every other text key the pipeline reads.
+#' @param reference_words Optional character vector of words to compute the derived
+#'   dimensions against. By default they are computed against the lexicon, or
+#'   against its rows marked 1 in a `reference_member` column. For a corpus or pool
+#'   design, a supplied list recomputes `n_density` and `old20`, and `bigram_freq`
+#'   when the lexicon carries it or the design refers to it, overriding the
+#'   lexicon's columns. The datasheet then records the list's size and checksum and
+#'   the columns it was applied to. A generate or table design does not use it, and
+#'   the run log says so. A list that is empty or holds a missing value is refused.
+#'   Its words are normalised to Unicode NFC before use, like every other text key
+#'   the pipeline reads.
 #' @param verbose Logical; print progress.
 #' @return A named list of output paths, invisibly.
 #' @export
@@ -59,6 +115,12 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
   # a misspelt one is refused here, before any lexicon is read or file written.
   recipe <- .cb_recipe(design)
   incomplete_policy <- .cb_incomplete_policy(design, schema)
+  # An empty list would set every word's N to 0 and its OLD20 to NA, and the selection
+  # would go ahead on those values. Mirrors the Python twin.
+  if (!is.null(reference_words) && (!length(reference_words) || anyNA(reference_words))) {
+    stop("lexsync: reference_words must hold at least one word and no missing value.",
+         call. = FALSE)
+  }
 
   log <- new_run_log(design[["name"]], meta = list(
     design = design[["name"]], language = design[["language"]],
@@ -66,6 +128,13 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
     mode = if (is_continuous) "continuous" else "conditions"
   ))
   for (note in key_notes) log <- log_step(log, note)
+  # Only a corpus or a supplied pool has derived dimensions to compute. Elsewhere the
+  # argument changes nothing, so it is said here and kept out of the datasheet.
+  override <- !is.null(reference_words) && source %in% c("corpus", "pool")
+  if (!is.null(reference_words) && !override) {
+    log <- log_step(log, sprintf("reference_words is not used by items.source '%s' and was ignored",
+                                 source))
+  }
 
   report <- NULL
   pair_eligible <- NULL
@@ -122,7 +191,18 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
     list(lexicon = joined$lexicon, log = log)
   }
 
+  # A supplied reference list is a set of word keys like any other, so it is put in
+  # NFC too, before any derived dimension is computed against it. The datasheet's
+  # checksum below stays that of the list as supplied.
+  ref_supplied <- NULL
+  if (!is.null(reference_words)) {
+    nf <- .nfc_count(reference_words)
+    ref_supplied <- nf$value
+    tally(nf)
+  }
+
   ref_words <- NULL
+  derived <- character(0)
   if (source %in% c("corpus", "generate", "pool")) {
     if (identical(source, "pool")) {
       # A supplied word list, given the matcher's dimensions rather than dressed up as
@@ -145,43 +225,41 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
       lex <- load_lexicon(lexicon, schema, language = design[["language"]])
       tally(attr(lex, "input_normalisation"))
       log <- log_step(log, sprintf("lexicon loaded: %d words", nrow(lex)), list(words = nrow(lex)))
-      ref_words <- lex$word
+      ref_words <- .neighbourhood_reference(lex)
     }
     jn <- join_norms(lex, log); lex <- jn$lexicon; log <- jn$log
+    filters <- design[["pool_filters"]] %||% list()
+    derived <- .dims_to_derive(design, names(lex), override)
+    reference <- if (override) ref_supplied else ref_words
+    n_supplied <- if (override) length(reference_words) else NULL
+    # A filter on a dimension still to be derived waits until it is: the other filters
+    # run first and the derivation, quadratic in the reference, then runs on the
+    # smaller frame. The values do not depend on which rows carry them, because every
+    # word is measured against the whole reference.
+    deferred <- intersect(names(filters), derived)
     # build_pool skips a filter column it does not recognise, so a misspelt key
     # would silently leave the pool unfiltered; the pair path carries the same
     # guard. Checked after the norms join, which legitimately adds filterable
     # columns.
-    unknown <- setdiff(names(design[["pool_filters"]] %||% list()), names(lex))
+    unknown <- setdiff(names(filters), c(names(lex), deferred))
     if (length(unknown)) {
       stop(sprintf("lexsync: pool_filters name column(s) the lexicon does not have: %s.",
                    paste(unknown, collapse = ", ")), call. = FALSE)
     }
-    pool <- build_pool(lex, design[["pool_filters"]])
+    pool <- build_pool(lex, filters[setdiff(names(filters), deferred)])
+    pending <- derived
+    if (length(deferred)) {
+      dd <- .derive_dims(pool, derived, reference, log, n_supplied)
+      pool <- build_pool(dd$frame, filters[deferred]); log <- dd$log
+      pending <- character(0)
+    }
     log <- log_step(log, sprintf("pool after filters: %d words", nrow(pool)), list(pool = nrow(pool)))
-  }
-
-  # A supplied reference list is a set of word keys like any other, so it is put in
-  # NFC too. The datasheet's checksum below stays that of the list as supplied.
-  ref_supplied <- NULL
-  if (!is.null(reference_words)) {
-    nf <- .nfc_count(reference_words)
-    ref_supplied <- nf$value
-    tally(nf)
   }
 
   if (source %in% c("corpus", "pool")) {
     match_on <- unlist(design[["match_on"]], use.names = FALSE)
-    ref <- ref_supplied %||% ref_words
-    needed <- intersect(c("n_density", "old20"), match_on)
-    if (length(needed) && any(!needed %in% names(pool))) {
-      log <- log_step(log, "computing orthographic neighbourhood (N, OLD20)")
-      pool <- add_neighbourhood(pool, reference = ref)
-    }
-    if ("bigram_freq" %in% match_on && !("bigram_freq" %in% names(pool))) {
-      log <- log_step(log, "computing bigram frequency (phonotactic-probability proxy)")
-      pool <- add_bigram_frequency(pool, reference = ref)
-    }
+    dd <- .derive_dims(pool, pending, reference, log, n_supplied)
+    pool <- dd$frame; log <- dd$log
     if (is_continuous) {
       predictor <- design[["continuous"]][["predictor"]]
       controls <- unlist(design[["continuous"]][["controls"]], use.names = FALSE)
@@ -412,12 +490,14 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
     candidate_pool <- list(list(condition = "words in band", n_candidates = nrow(pool)))
   }
   # The neighbourhood reference is provenance: overriding it changes n_density,
-  # old20 and bigram_freq without touching any input file the datasheet hashes.
+  # old20 and bigram_freq without touching any input file the datasheet hashes. It is
+  # recorded only when a recomputation ran, with the columns it was applied to.
   nref <- NULL
-  if (!is.null(reference_words)) {
+  if (override && length(derived)) {
     nref <- list(source = "user-supplied", n_words = length(reference_words),
                  sha256 = digest::digest(paste(enc2utf8(reference_words), collapse = "\n"),
-                                         algo = "sha256", serialize = FALSE))
+                                         algo = "sha256", serialize = FALSE),
+                 applied_to = as.list(derived))
   }
   ds <- build_datasheet(design, schema, report, stim, source_path, artifacts,
                         schema[["seed"]], engine = "R", candidate_pool = candidate_pool,

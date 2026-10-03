@@ -112,6 +112,17 @@ the pipeline computes them on the pool alone, and why the reference should still
 be the whole lexicon: a word's neighbours are its neighbours in the language,
 not among the handful of words that survived your filters.
 
+`run_pipeline()` computes `n_density`, `old20` and `bigram_freq` for a lexicon
+that lacks them whenever the design refers to them, in `match_on`, a condition's
+`define_by`, `pool_filters`, a continuous predictor or control, or
+`counterbalance.balance_on`. A filter on a derived dimension waits until it is
+computed, after the others have shrunk the pool. A lexicon can name the words
+that make up the reference with a `reference_member` column (1 for a member, 0
+otherwise). The `reference_words` argument recomputes N and OLD20, and
+`bigram_freq` where the lexicon carries it or the design uses it, against a list
+of your own, overriding the lexicon's columns. The datasheet then records the list with the columns it
+was applied to.
+
 ```{r neighbourhood}
 sample_words <- lex[lex$word %in% c("cat", "dog", "house", "rhythm"), ]
 add_neighbourhood(

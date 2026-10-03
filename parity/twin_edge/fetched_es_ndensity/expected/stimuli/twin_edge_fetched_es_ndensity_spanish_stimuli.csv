@@ -1,0 +1,9 @@
+word,freq_zipf,language,source,id,length,n_syllables,frequency,n_density,old20,condition,set,list,trial
+nube,4.3,spanish,fixture,23,4,2,4.3,0,3.95,sparse_neighbourhood,1,1,1
+masa,4,spanish,fixture,20,4,2,4,4,2.1,dense_neighbourhood,1,1,2
+fuego,4.9,spanish,fixture,12,5,2,4.9,0,3.7,sparse_neighbourhood,4,1,3
+lápiz,4,spanish,fixture,17,5,2,4,0,4.9,sparse_neighbourhood,2,1,4
+tigre,3.9,spanish,fixture,38,5,2,3.9,0,4.65,sparse_neighbourhood,3,1,5
+pato,3.9,spanish,fixture,27,4,2,3.9,5,2,dense_neighbourhood,3,1,6
+casa,5.4,spanish,fixture,6,4,2,5.4,8,2,dense_neighbourhood,4,1,7
+palo,4,spanish,fixture,24,4,2,4,5,2.05,dense_neighbourhood,2,1,8

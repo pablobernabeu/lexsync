@@ -21,9 +21,16 @@ run_pipeline(
 \code{stimuli}, \code{reports}, \code{experiments} are created). It must be supplied;
 lexsync does not choose a default output location.}
 
-\item{reference_words}{Optional reference word list for neighbourhood
-computation; defaults to the whole lexicon. Its words are normalised to
-Unicode NFC before use, like every other text key the pipeline reads.}
+\item{reference_words}{Optional character vector of words to compute the derived
+dimensions against. By default they are computed against the lexicon, or
+against its rows marked 1 in a \code{reference_member} column. For a corpus or pool
+design, a supplied list recomputes \code{n_density} and \code{old20}, and \code{bigram_freq}
+when the lexicon carries it or the design refers to it, overriding the
+lexicon's columns. The datasheet then records the list's size and checksum and
+the columns it was applied to. A generate or table design does not use it, and
+the run log says so. A list that is empty or holds a missing value is refused.
+Its words are normalised to Unicode NFC before use, like every other text key
+the pipeline reads.}
 
 \item{verbose}{Logical; print progress.}
 }
@@ -31,5 +38,9 @@ Unicode NFC before use, like every other text key the pipeline reads.}
 A named list of output paths, invisibly.
 }
 \description{
-Run the lexsync pipeline for one design
+A design may refer to a derived dimension (\code{n_density}, \code{old20}, \code{bigram_freq}) in
+\code{match_on}, a condition's \code{define_by}, \code{pool_filters}, a continuous predictor or
+control, or \code{counterbalance.balance_on}. When the lexicon lacks it, the pipeline
+computes it on the pool against the neighbourhood reference, after the filters the
+lexicon can answer and before those on the derived dimension.
 }

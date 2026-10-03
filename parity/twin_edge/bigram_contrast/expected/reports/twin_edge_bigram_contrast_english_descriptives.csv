@@ -1,0 +1,5 @@
+group,dimension,n,mean,sd,min,median,max
+high_bigram,length,5,6,0,6,6,6
+high_bigram,frequency,5,4.06,0.44,3.74,3.92,4.83
+low_bigram,length,5,6,0,6,6,6
+low_bigram,frequency,5,3.996,0.211,3.77,3.97,4.33

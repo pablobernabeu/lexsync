@@ -458,6 +458,27 @@ merge_norms <- function(lexicon, norms, on = "word", columns = NULL) {
        normalisation = list(changed = changed, collapsed = collapsed))
 }
 
+# The words a lexicon offers as the reference for the derived dimensions: every word,
+# unless the lexicon carries a `reference_member` column, in which case the rows
+# marked 1. A lexicon that keeps proper names or acronyms for selection can so leave
+# them out of the neighbourhoods. The column must hold 0 or 1 in every row and mark
+# at least one word. Mirrors _neighbourhood_reference in querying.py.
+.neighbourhood_reference <- function(lex) {
+  if (!("reference_member" %in% names(lex))) return(lex$word)
+  flags <- lex$reference_member
+  if (!(is.numeric(flags) || is.logical(flags)) || anyNA(flags) ||
+      !all(flags %in% c(0, 1))) {
+    stop("lexsync: lexicon column 'reference_member' must hold 0 or 1 for every word.",
+         call. = FALSE)
+  }
+  members <- lex$word[flags == 1]
+  if (!length(members)) {
+    stop(paste("lexsync: lexicon column 'reference_member' marks no word as a member",
+               "of the neighbourhood reference."), call. = FALSE)
+  }
+  members
+}
+
 #' Load a supplied candidate pool of words and give it the matcher's dimensions
 #'
 #' A researcher who already has a curated word list (from a previous study, a norming
@@ -476,7 +497,9 @@ merge_norms <- function(lexicon, norms, on = "word", columns = NULL) {
 #' properties of a word in its *language*, not among the handful of words a study
 #' happens to use, so computing them against a 200-word supplied list would give
 #' numbers that mean nothing. When a lexicon is given, the reference is the lexicon's
-#' words; only without one does it fall back to the pool itself.
+#' words; only without one does it fall back to the pool itself. A
+#' `reference_member` column on whichever of the two supplies the reference keeps
+#' only the rows it marks 1.
 #'
 #' @param path Path to a UTF-8 CSV with at least a `word` column.
 #' @param schema The parsed schema (used when a lexicon is loaded).
@@ -512,7 +535,7 @@ load_pool <- function(path, schema, lexicon = NULL, language = NULL) {
   df <- df[order(df$word, method = "radix"), , drop = FALSE]
   rownames(df) <- NULL
 
-  reference <- df$word
+  reference <- if (is.null(lexicon)) .neighbourhood_reference(df) else NULL
   if (!is.null(lexicon)) {
     lex <- load_lexicon(lexicon, schema, language = language)
     # The lexicon's own normalisation is reported with the pool's, since the run read
@@ -520,7 +543,7 @@ load_pool <- function(path, schema, lexicon = NULL, language = NULL) {
     lex_record <- attr(lex, "input_normalisation")
     nf$changed <- nf$changed + (lex_record$changed %||% 0L)
     nf$collapsed <- nf$collapsed + (lex_record$collapsed %||% 0L)
-    reference <- lex$word
+    reference <- .neighbourhood_reference(lex)
     # `id` is the lexicon's own row number, meaningless once the pool is a subset.
     dims <- setdiff(names(lex), c("word", "language", "source", "id"))
     clash <- intersect(dims, names(df))

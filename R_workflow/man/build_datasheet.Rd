@@ -76,9 +76,10 @@ count the candidates excluded for missing a matched dimension, which
 \code{candidate_pool} still includes. They are recorded because the selection drew
 on a smaller pool than the window holds.}
 
-\item{neighbourhood_reference}{Optional record of the lexicon the
-neighbourhood dimensions were computed against
-(\code{list(source, n_words, sha256)}), recorded verbatim.}
+\item{neighbourhood_reference}{Optional record of a supplied reference the
+derived dimensions were recomputed against
+(\code{list(source, n_words, sha256, applied_to)}, where \code{applied_to} lists the
+recomputed columns), recorded verbatim.}
 
 \item{counterbalance_check}{Optional report of the pipeline's rotation check on
 the counterbalanced table. Without it, the check is run here on \code{stimuli}. The

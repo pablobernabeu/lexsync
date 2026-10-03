@@ -375,3 +375,33 @@ test_that("build_pool keeps a degenerate range", {
   df <- data.frame(word = letters[1:5], frequency = 1:5, stringsAsFactors = FALSE)
   expect_identical(build_pool(df, list(frequency = c(2, 2)))$word, "b")
 })
+
+test_that("load_pool keeps only reference members in the reference", {
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  dir <- tempfile("lexsync-")
+  dir.create(dir)
+  lexicon <- file.path(dir, "lexicon.csv")
+  writeLines(c("word,freq_zipf,reference_member", "cat,5.0,1", "cap,4.0,0", "cot,4.1,1",
+               "dog,5.2,0"), lexicon)
+  pool <- file.path(dir, "pool.csv")
+  writeLines(c("word", "cat", "dog"), pool)
+  res <- load_pool(pool, schema, lexicon = lexicon)
+  expect_identical(res$reference, c("cat", "cot"))
+})
+
+test_that("a reference_member column must hold zero or one", {
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  dir <- tempfile("lexsync-")
+  dir.create(dir)
+  lexicon <- file.path(dir, "lexicon.csv")
+  pool <- file.path(dir, "pool.csv")
+  writeLines(c("word", "cat"), pool)
+  writeLines(c("word,freq_zipf,reference_member", "cat,5.0,1", "cap,4.0,2"), lexicon)
+  expect_error(load_pool(pool, schema, lexicon = lexicon),
+               "lexsync: lexicon column 'reference_member' must hold 0 or 1 for every word.",
+               fixed = TRUE)
+  writeLines(c("word,freq_zipf,reference_member", "cat,5.0,0", "cap,4.0,0"), lexicon)
+  expect_error(load_pool(pool, schema, lexicon = lexicon),
+               paste("lexsync: lexicon column 'reference_member' marks no word as a member",
+                     "of the neighbourhood reference."), fixed = TRUE)
+})

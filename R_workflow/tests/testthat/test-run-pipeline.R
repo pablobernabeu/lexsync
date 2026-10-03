@@ -991,3 +991,215 @@ test_that("run_all_refuses_designs_that_would_write_the_same_files", {
                fixed = TRUE)
   expect_identical(files_under(outdir), character(0))
 })
+
+# ---- Derived dimensions (n_density, old20, bigram_freq) ---------------------------
+# lexsync derived these only for dimensions named in match_on, and checked pool_filters
+# against the lexicon before deriving anything, so a design that manipulated, filtered
+# on or regressed on a derived dimension stopped with "absent from the pool". Each test
+# below is pinned identically in test_run_pipeline.py.
+
+read_datasheet <- function(out, stem) {
+  jsonlite::fromJSON(file.path(out, "reports", paste0(stem, "_datasheet_R.json")),
+                     simplifyVector = FALSE)
+}
+
+read_log <- function(res) paste(readLines(res$log, encoding = "UTF-8"), collapse = "\n")
+
+# A copy of a bundled lexicon without the named columns, as `lexsync fetch` writes one
+# (word, freq_zipf, language, source).
+lexicon_without <- function(out, source, drop, name = "lexicon.csv") {
+  lex <- read_csv_utf8(extdata(source))
+  lex <- lex[, setdiff(names(lex), drop), drop = FALSE]
+  path <- file.path(out, name)
+  write_csv_utf8(lex, path)
+  path
+}
+
+test_that("a_bigram_contrast_runs_on_a_lexicon_without_bigram_freq", {
+  out <- tmp_out()
+  design <- write_design(out, c(
+    "name: bigram_contrast",
+    "language: english",
+    paste0("lexicon: ", as_yaml_path(extdata("en_example.csv"))),
+    "n_per_condition: 5",
+    "pool_filters: {length: [4, 7], frequency: [3.8, 7]}",
+    "conditions:",
+    "  - {name: high_bigram, define_by: {bigram_freq: [0.009, 1]}}",
+    "  - {name: low_bigram, define_by: {bigram_freq: [0, 0.004]}}",
+    "match_on: [length, frequency]"
+  ))
+  res <- run_quiet(design, extdata("schema.yaml"), outdir = out)
+  stim <- read_csv_utf8(res$stimuli)
+  expect_equal(as.integer(table(stim$condition)), c(5L, 5L))
+  expect_true(all(stim$bigram_freq[stim$condition == "high_bigram"] >= 0.009))
+  expect_true(all(stim$bigram_freq[stim$condition == "low_bigram"] <= 0.004))
+})
+
+test_that("a_continuous_design_can_take_bigram_freq_as_its_predictor", {
+  out <- tmp_out()
+  design <- write_design(out, c(
+    "name: bigram_continuous",
+    "language: english",
+    paste0("lexicon: ", as_yaml_path(extdata("en_example.csv"))),
+    "n_per_condition: 10",
+    "pool_filters: {length: [4, 7], frequency: [3.8, 7]}",
+    "continuous:",
+    "  predictor: bigram_freq",
+    "  controls: [length]",
+    "match_on: [length]"
+  ))
+  res <- run_quiet(design, extdata("schema.yaml"), outdir = out)
+  stim <- read_csv_utf8(res$stimuli)
+  expect_identical(length(unique(stim$set)), 10L)
+  expect_false(anyNA(stim$bigram_freq))
+})
+
+test_that("a_pool_filter_on_bigram_freq_runs", {
+  out <- tmp_out()
+  design <- write_design(out, c(
+    "name: bigram_filter",
+    "language: english",
+    paste0("lexicon: ", as_yaml_path(extdata("en_example.csv"))),
+    "n_per_condition: 5",
+    "pool_filters: {length: [3, 7], frequency: [3.8, 7], bigram_freq: [0.005, 0.02]}",
+    "conditions:",
+    "  - {name: high, define_by: {frequency: [5.0, 7.0]}}",
+    "  - {name: low, define_by: {frequency: [3.8, 4.4]}}",
+    "match_on: [length]"
+  ))
+  res <- run_quiet(design, extdata("schema.yaml"), outdir = out)
+  stim <- read_csv_utf8(res$stimuli)
+  expect_identical(nrow(stim), 10L)
+  expect_true(all(stim$bigram_freq >= 0.005 & stim$bigram_freq <= 0.02))
+})
+
+test_that("an_ndensity_design_runs_on_a_lexicon_without_n_and_old20", {
+  # design_es_ndensity on a lexicon such as `lexsync fetch es` writes. The measures
+  # are computed against the whole lexicon, not against the filtered pool.
+  out <- tmp_out()
+  lexicon <- lexicon_without(out, "es_example.csv", c("n_density", "old20"))
+  design <- write_design(out, c(
+    "name: fetched_ndensity",
+    "language: spanish",
+    paste0("lexicon: ", as_yaml_path(lexicon)),
+    "n_per_condition: 5",
+    "pool_filters: {length: [3, 6], frequency: [3.8, 7.0]}",
+    "conditions:",
+    "  - {name: dense_neighbourhood, define_by: {n_density: [3, 100]}}",
+    "  - {name: sparse_neighbourhood, define_by: {n_density: [0, 1]}}",
+    "match_on: [length, frequency]",
+    "matching: {method: joint}"
+  ))
+  res <- run_quiet(design, extdata("schema.yaml"), outdir = out)
+  stim <- read_csv_utf8(res$stimuli)
+  expect_equal(as.integer(table(stim$condition)), c(5L, 5L))
+  expect_true(all(stim$n_density[stim$condition == "dense_neighbourhood"] >= 3))
+  want <- add_neighbourhood(stim[, "word", drop = FALSE],
+                            reference = read_csv_utf8(lexicon)$word)
+  expect_identical(as.integer(stim$n_density), as.integer(want$n_density))
+  expect_identical(stim$old20, want$old20)
+})
+
+test_that("reference_words_recomputes_n_and_old20_and_is_recorded", {
+  # Every bundled lexicon carries n_density and old20, so the override was ignored
+  # while the datasheet recorded it as applied.
+  out <- tmp_out()
+  design <- write_design(out, corpus_lines(name = "guard_test"))
+  res <- run_pipeline(design, extdata("schema.yaml"), outdir = out,
+                      reference_words = c("zzzz", "qqqq"), verbose = FALSE)
+  stim <- read_csv_utf8(res$stimuli)
+  want <- add_neighbourhood(stim[, "word", drop = FALSE], reference = c("zzzz", "qqqq"))
+  expect_true(all(stim$n_density == 0))
+  expect_identical(stim$old20, want$old20)
+  nref <- read_datasheet(out, "guard_test_english")$selection$neighbourhood_reference
+  expect_identical(unlist(nref$applied_to), c("n_density", "old20"))
+  expect_identical(as.integer(nref$n_words), 2L)
+  expect_identical(nref$source, "user-supplied")
+  expect_true(grepl("recomputed n_density, old20 against a supplied reference of 2 words",
+                    read_log(res), fixed = TRUE))
+})
+
+test_that("reference_words_recomputes_bigram_freq_when_the_design_uses_it", {
+  out <- tmp_out()
+  lines <- corpus_lines(name = "guard_test")
+  lines[startsWith(lines, "match_on")] <- "match_on: [length, bigram_freq]"
+  res <- run_pipeline(write_design(out, lines), extdata("schema.yaml"), outdir = out,
+                      reference_words = c("zzzz", "qqqq"), verbose = FALSE)
+  nref <- read_datasheet(out, "guard_test_english")$selection$neighbourhood_reference
+  expect_identical(unlist(nref$applied_to), c("n_density", "old20", "bigram_freq"))
+  expect_true(grepl(paste("recomputed n_density, old20, bigram_freq against a supplied",
+                          "reference of 2 words"), read_log(res), fixed = TRUE))
+})
+
+test_that("reference_words_on_a_generate_design_is_ignored_and_not_recorded", {
+  out <- tmp_out()
+  design <- write_design(out, c(
+    "name: gen_ref",
+    "language: english",
+    "paradigm: lexical_decision",
+    "items:",
+    "  source: generate",
+    paste0("  lexicon: ", as_yaml_path(extdata("en_example.csv"))),
+    "n_per_condition: 5",
+    "pool_filters: {length: [4, 7], frequency: [3.5, 6.0]}"
+  ))
+  res <- run_pipeline(design, extdata("schema.yaml"), outdir = out,
+                      reference_words = c("zzzz", "qqqq"), verbose = FALSE)
+  expect_false("neighbourhood_reference" %in%
+                 names(read_datasheet(out, "gen_ref_english")$selection))
+  expect_true(grepl("reference_words is not used by items.source 'generate' and was ignored",
+                    read_log(res), fixed = TRUE))
+})
+
+test_that("reference_words_must_hold_a_word_and_no_missing_value", {
+  # Once the override took effect, an empty list set every N to 0 and every OLD20 to
+  # missing, and the selection went ahead on those values.
+  for (words in list(character(0), c("zzzz", NA))) {
+    out <- tmp_out()
+    design <- write_design(out, corpus_lines(name = "guard_test"))
+    expect_error(run_pipeline(design, extdata("schema.yaml"), outdir = out,
+                              reference_words = words, verbose = FALSE),
+                 "lexsync: reference_words must hold at least one word and no missing value.",
+                 fixed = TRUE)
+    expect_false(dir.exists(file.path(out, "reports")))
+  }
+})
+
+test_that("a_lone_reference_word_is_one_word", {
+  # A character scalar is one word here. The Python twin reads a string the same way
+  # and does not split it into its letters.
+  out <- tmp_out()
+  design <- write_design(out, corpus_lines(name = "guard_test"))
+  res <- run_pipeline(design, extdata("schema.yaml"), outdir = out,
+                      reference_words = "zzzz", verbose = FALSE)
+  nref <- read_datasheet(out, "guard_test_english")$selection$neighbourhood_reference
+  expect_identical(as.integer(nref$n_words), 1L)
+  stim <- read_csv_utf8(res$stimuli)
+  want <- add_neighbourhood(stim[, "word", drop = FALSE], reference = "zzzz")
+  expect_identical(stim$old20, want$old20)
+})
+
+test_that("a_reference_member_column_sets_the_neighbourhood_reference", {
+  # A lexicon may mark the forms that make up the neighbourhood reference. The
+  # measures it lacks are then computed against those rows alone.
+  out <- tmp_out()
+  lexicon <- file.path(out, "lexicon.csv")
+  writeLines(c("word,freq_zipf,reference_member", "cat,5.0,1", "cot,4.0,1", "cut,4.1,1",
+               "cap,4.2,0", "car,5.1,0", "dog,5.2,1", "dig,4.3,1", "dug,4.0,0"), lexicon)
+  design <- write_design(out, c(
+    "name: member_ref",
+    "language: english",
+    paste0("lexicon: ", as_yaml_path(lexicon)),
+    "n_per_condition: 3",
+    "conditions:",
+    "  - {name: high, define_by: {frequency: [5.0, 7.0]}}",
+    "  - {name: low, define_by: {frequency: [3.0, 4.5]}}",
+    "match_on: [length, n_density]"
+  ))
+  res <- run_quiet(design, extdata("schema.yaml"), outdir = out)
+  stim <- read_csv_utf8(res$stimuli)
+  # Against the members cat, cot, cut, dog and dig: cat neighbours cot and cut but
+  # not the non-members cap and car, and car and dog have one member neighbour each.
+  expect_identical(as.integer(stim$n_density[match(c("cat", "car", "dog"), stim$word)]),
+                   c(2L, 1L, 1L))
+})

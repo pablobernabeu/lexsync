@@ -1,0 +1,3 @@
+condition,reference,dimension,cohens_d,d_ci_low,d_ci_high,var_ratio,tost_p,equivalent
+low_bigram,high_bigram,length,0,0,0,1,0,TRUE
+low_bigram,high_bigram,frequency,0.186,-0.993,1.364,0.23,0.3162,FALSE

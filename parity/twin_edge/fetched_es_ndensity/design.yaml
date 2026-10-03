@@ -1,0 +1,23 @@
+# Twin-edge case: design_es_ndensity on a lexicon such as `lexsync fetch es` writes,
+# with word, freq_zipf, language and source and no n_density or old20. Both engines
+# stopped with "dimension 'n_density' in condition 'dense_neighbourhood' is absent from
+# the pool". Both now compute N and OLD20 against the lexicon and select.
+# The word forms are common Spanish words, three with an accented vowel. The Zipf
+# frequencies are invented for this fixture and describe no corpus.
+name: twin_edge_fetched_es_ndensity
+language: spanish
+lexicon: lexicon.csv
+description: 'Dense against sparse orthographic neighbourhoods from a forty-word lexicon without neighbourhood columns, matched on length and frequency.'
+n_per_condition: 4
+pool_filters:
+  length: [4, 5]
+conditions:
+  - name: dense_neighbourhood
+    define_by:
+      n_density: [4, 100]
+  - name: sparse_neighbourhood
+    define_by:
+      n_density: [0, 0]
+match_on: [length, frequency]
+counterbalance:
+  lists: 1

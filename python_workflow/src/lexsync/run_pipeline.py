@@ -13,6 +13,8 @@ import glob
 import hashlib
 import os
 
+import pandas as pd
+
 from . import logging as runlog
 from .blocks import BLOCK_MAIN, add_blocks
 from .counterbalancing import (
@@ -24,13 +26,14 @@ from .counterbalancing import (
     counterbalance_check,
 )
 from .datasheet import build_datasheet, write_datasheet
-from .design import _resolve_n, design_stem, validate_design
+from .design import _referenced_dimensions, _resolve_n, design_stem, validate_design
 from .generation import build_lexdec_stimuli
 from .io_utils import _is_continuous, read_config, write_csv_utf8
 from .matching import _resolve_policy, match_stimuli, resample_stimuli, select_continuous_stimuli
 from .pairs import join_member_norms, member_lexicon_path, select_continuous_pairs
 from .paradigms import required_fields
 from .querying import (
+    _neighbourhood_reference,
     _nfc_count,
     _nfc_record,
     add_bigram_frequency,
@@ -44,6 +47,51 @@ from .querying import (
 )
 from .scripting import _design_condition_names, export_experiments, resolve_trial_timing
 from .validation import balance_check, match_report, match_report_continuous
+
+# The dimensions lexsync derives from the forms when a lexicon lacks them, in the
+# order add_neighbourhood and add_bigram_frequency add them.
+DERIVED_DIMS = ("n_density", "old20", "bigram_freq")
+
+
+def _dims_to_derive(design: dict, columns, override: bool) -> list:
+    """The derived dimensions the run must compute, in DERIVED_DIMS order.
+
+    Those the design refers to and the lexicon lacks. With a supplied reference
+    (``override``) also n_density and old20, which every report shows, and bigram_freq
+    when the lexicon carries it, since the lexicon's columns were computed against a
+    different reference. Mirrors .dims_to_derive in R_workflow/R/run_pipeline.R.
+    """
+    referenced = _referenced_dimensions(design)
+    out = []
+    for d in DERIVED_DIMS:
+        if d in referenced and d not in columns:
+            out.append(d)
+        elif override and (d != "bigram_freq" or d in columns or d in referenced):
+            out.append(d)
+    return out
+
+
+def _derive_dims(frame, dims, reference, log, n_supplied=None):
+    """Compute the named derived dimensions on `frame` against `reference`.
+
+    N and OLD20 come from one pass and are computed together. A recomputation against
+    a supplied reference overwrites the lexicon's columns in place and is logged as
+    one step naming them.
+    """
+    if not dims:
+        return frame
+    if n_supplied is not None:
+        runlog.log_step(log, "recomputed %s against a supplied reference of %d words"
+                             % (", ".join(dims), n_supplied))
+    if "n_density" in dims or "old20" in dims:
+        if n_supplied is None:
+            runlog.log_step(log, "computing orthographic neighbourhood (N, OLD20)")
+        frame = add_neighbourhood(frame, reference=reference)
+    if "bigram_freq" in dims:
+        if n_supplied is None:
+            runlog.log_step(log, "computing bigram frequency (phonotactic-probability proxy)")
+        frame = add_bigram_frequency(frame, reference=reference)
+    return frame
 
 
 def _restores_verbosity(fn):
@@ -67,6 +115,36 @@ def _restores_verbosity(fn):
 @_restores_verbosity
 def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
                  reference_words=None, verbose=True) -> dict:
+    """Run the lexsync pipeline for one design.
+
+    A design may refer to a derived dimension (``n_density``, ``old20``,
+    ``bigram_freq``) in ``match_on``, a condition's ``define_by``, ``pool_filters``,
+    a continuous predictor or control, or ``counterbalance.balance_on``. When the
+    lexicon lacks it, the pipeline computes it on the pool against the neighbourhood
+    reference, after the filters the lexicon can answer and before those on the
+    derived dimension.
+
+    Args:
+        design_path: Path to a design configuration (YAML).
+        schema_path: Path to the global schema (YAML).
+        outdir: Output directory, in which the subdirectories ``stimuli``,
+            ``reports`` and ``experiments`` are created.
+        reference_words: Optional list of words to compute the derived dimensions
+            against. By default they are computed against the lexicon, or against
+            its rows marked 1 in a ``reference_member`` column. For a corpus or pool
+            design, a supplied list recomputes ``n_density`` and ``old20``, and
+            ``bigram_freq`` when the lexicon carries it or the design refers to it,
+            overriding the lexicon's columns. The datasheet then records the list's
+            size and checksum and the columns it was applied to. A generate or table
+            design does not use it, and the run log says so. A lone string is one
+            word. A list that is empty or holds a missing value is refused. Its words
+            are normalised to Unicode NFC before use, like every other text key the
+            pipeline reads.
+        verbose: Whether to print progress.
+
+    Returns:
+        A mapping of the output paths written.
+    """
     runlog.set_verbose(verbose)
     schema = read_config(schema_path)
     design = read_config(design_path)
@@ -96,6 +174,16 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
     # so a misspelt one is refused here, before any lexicon is read or file written.
     recipe = _recipe(design)
     incomplete_policy = _incomplete_policy(design, schema)
+    # A lone string is one word, as R reads a character scalar, not a list of letters.
+    # An empty list would set every word's N to 0 and its OLD20 to NaN, and the
+    # selection would go ahead on those values. Mirrors the R twin.
+    if isinstance(reference_words, str):
+        reference_words = [reference_words]
+    if reference_words is not None:
+        reference_words = list(reference_words)
+        if not reference_words or any(pd.isna(w) for w in reference_words):
+            raise ValueError("lexsync: reference_words must hold at least one word and no "
+                             "missing value.")
 
     log = runlog.new_run_log(design["name"], meta={
         "design": design["name"], "language": design["language"],
@@ -104,6 +192,12 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
     })
     for note in key_notes:
         runlog.log_step(log, note)
+    # Only a corpus or a supplied pool has derived dimensions to compute. Elsewhere the
+    # argument changes nothing, so it is said here and kept out of the datasheet.
+    override = reference_words is not None and source in ("corpus", "pool")
+    if reference_words is not None and not override:
+        runlog.log_step(log, "reference_words is not used by items.source '%s' and was "
+                             "ignored" % source)
 
     report = None
     pair_eligible = None
@@ -157,7 +251,16 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
                             {"norms": rec["path"], "sha256": rec["sha256"]})
         return joined["lexicon"]
 
+    # A supplied reference list is a set of word keys like any other, so it is put in
+    # NFC too, before any derived dimension is computed against it. The datasheet's
+    # checksum below stays that of the list as supplied.
+    ref_supplied = None
+    if reference_words is not None:
+        ref_supplied, n_changed, n_collapsed = _nfc_count(list(reference_words))
+        tally({"changed": n_changed, "collapsed": n_collapsed})
+
     ref_words = None
+    derived = []
     if source in ("corpus", "generate", "pool"):
         if source == "pool":
             # A supplied word list, given the matcher's dimensions rather than dressed
@@ -181,36 +284,36 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
             lex = load_lexicon(lexicon, schema, language=design["language"])
             tally(lex.attrs.get("input_normalisation"))
             runlog.log_step(log, f"lexicon loaded: {len(lex)} words", {"words": len(lex)})
-            ref_words = lex["word"].tolist()
+            ref_words = _neighbourhood_reference(lex)
         lex = join_norms(lex)
+        filters = dict(design.get("pool_filters") or {})
+        derived = _dims_to_derive(design, lex.columns, override)
+        reference = ref_supplied if override else ref_words
+        n_supplied = len(reference_words) if override else None
+        # A filter on a dimension still to be derived waits until it is: the other
+        # filters run first and the derivation, quadratic in the reference, then runs
+        # on the smaller frame. The values do not depend on which rows carry them,
+        # because every word is measured against the whole reference.
+        deferred = {k: v for k, v in filters.items() if k in derived}
         # build_pool skips a filter column it does not recognise, so a misspelt key
         # would silently leave the pool unfiltered; the pair path carries the same
         # guard. Checked after the norms join, which legitimately adds filterable
         # columns.
-        unknown = [c for c in (design.get("pool_filters") or {}) if c not in lex.columns]
+        unknown = [c for c in filters if c not in lex.columns and c not in deferred]
         if unknown:
             raise ValueError("lexsync: pool_filters name column(s) the lexicon does not "
                              "have: %s." % ", ".join(unknown))
-        pool = build_pool(lex, design.get("pool_filters"))
+        pool = build_pool(lex, {k: v for k, v in filters.items() if k not in deferred})
+        pending = derived
+        if deferred:
+            pool = build_pool(_derive_dims(pool, derived, reference, log, n_supplied),
+                              deferred)
+            pending = []
         runlog.log_step(log, f"pool after filters: {len(pool)} words", {"pool": len(pool)})
-
-    # A supplied reference list is a set of word keys like any other, so it is put in
-    # NFC too. The datasheet's checksum below stays that of the list as supplied.
-    ref_supplied = None
-    if reference_words is not None:
-        ref_supplied, n_changed, n_collapsed = _nfc_count(list(reference_words))
-        tally({"changed": n_changed, "collapsed": n_collapsed})
 
     if source in ("corpus", "pool"):
         match_on = list(design.get("match_on") or [])
-        ref = ref_supplied if ref_supplied is not None else ref_words
-        needed = [d for d in ("n_density", "old20") if d in match_on]
-        if needed and any(d not in pool.columns for d in needed):
-            runlog.log_step(log, "computing orthographic neighbourhood (N, OLD20)")
-            pool = add_neighbourhood(pool, reference=ref)
-        if "bigram_freq" in match_on and "bigram_freq" not in pool.columns:
-            runlog.log_step(log, "computing bigram frequency (phonotactic-probability proxy)")
-            pool = add_bigram_frequency(pool, reference=ref)
+        pool = _derive_dims(pool, pending, reference, log, n_supplied)
         if is_continuous:
             predictor = design["continuous"]["predictor"]
             controls = list(design["continuous"].get("controls") or [])
@@ -438,11 +541,13 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
     elif source == "generate":
         candidate_pool = [{"condition": "words in band", "n_candidates": int(len(pool))}]
     # The neighbourhood reference is provenance: overriding it changes n_density,
-    # old20 and bigram_freq without touching any input file the datasheet hashes.
+    # old20 and bigram_freq without touching any input file the datasheet hashes. It
+    # is recorded only when a recomputation ran, with the columns it was applied to.
     nref = None
-    if reference_words is not None:
+    if override and derived:
         nref = {"source": "user-supplied", "n_words": len(reference_words),
-                "sha256": hashlib.sha256("\n".join(reference_words).encode("utf-8")).hexdigest()}
+                "sha256": hashlib.sha256("\n".join(reference_words).encode("utf-8")).hexdigest(),
+                "applied_to": list(derived)}
     ds = build_datasheet(design, schema, report, stim, source_path, artifacts,
                          schema.get("seed"), engine="python", candidate_pool=candidate_pool,
                          norms=norms, balance=balance, blocks=blocks,

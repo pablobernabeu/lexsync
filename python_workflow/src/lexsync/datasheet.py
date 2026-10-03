@@ -53,6 +53,10 @@ from .scripting import presentation_versions
 #                               matched dimension, present only when it lost any
 #   counterbalancing.versions   the presentation versions, one per (replicate, list)
 #   counterbalancing.assignment the rule that gives each participant one version
+#   selection.neighbourhood_reference.applied_to
+#                               the derived columns a supplied reference_words list
+#                               recomputed. The record is now written only when one
+#                               ran.
 DATASHEET_VERSION = "1.2"
 
 # Datasheet labels for the pseudoword generators in generation.py, keyed by the
@@ -262,9 +266,9 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
     dimension, which ``candidate_pool`` still includes. They are recorded because
     the selection drew on a smaller pool than the window holds.
 
-    ``neighbourhood_reference`` (optional) records the lexicon the neighbourhood
-    dimensions were computed against (``{"source", "n_words", "sha256"}``),
-    verbatim.
+    ``neighbourhood_reference`` (optional) records a supplied reference the derived
+    dimensions were recomputed against (``{"source", "n_words", "sha256",
+    "applied_to"}``, where ``applied_to`` lists the recomputed columns), verbatim.
 
     ``counterbalance_check`` (optional) is the pipeline's ``counterbalance_check``
     report on the counterbalanced table. Without it, the check is run here on

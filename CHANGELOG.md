@@ -222,6 +222,38 @@ no function signature changes.
   self-paced reading demonstration. One twin-edge case, `resample_two_lists`, pins
   the four versions of a resampled two-list design in both engines. No stimulus
   changes.
+- A design can refer to a derived dimension (`n_density`, `old20`, `bigram_freq`)
+  in a condition's `define_by`, in `pool_filters`, as a continuous predictor or
+  control, or in `counterbalance.balance_on`, as well as in `match_on`. When the
+  lexicon lacks the dimension, `run_pipeline` computes it against the lexicon,
+  after the filters the lexicon can answer and before those on the derived
+  dimension. A high- against low-bigram contrast, a continuous design with
+  `bigram_freq` as its predictor, or an N design on a lexicon built by
+  `lexsync fetch` used to fail with 'absent from the pool'. Two twin-edge cases,
+  `bigram_contrast` and `fetched_es_ndensity`, pin the result in both engines.
+- The `reference_words` argument of `run_pipeline` takes effect. For a corpus or
+  pool design, the pipeline recomputes N and OLD20, and bigram frequency where the
+  lexicon carries it or the design uses it, against the supplied list, overriding
+  the lexicon's columns, and logs the step. The datasheet's
+  `selection.neighbourhood_reference` gains `applied_to`, the columns recomputed,
+  and is written only when the list was applied. Every bundled lexicon carries N
+  and OLD20, so the argument was ignored while the datasheet recorded it as
+  applied. A generate or table design does not use the argument, and its run log
+  now says that it was ignored. The 0.1.0 notes said the override changes the
+  neighbourhood dimensions, which held only for a lexicon without them. A list
+  that is empty or holds a missing value is refused, since it would set every N
+  to 0 and every OLD20 to missing, and a lone string is read as one word, as R
+  reads it, not as a list of letters. A lexicon may mark the forms that make up
+  the neighbourhood reference with a `reference_member` column of 0 and 1, which
+  `load_pool` honours too.
+- (Python) `add_neighbourhood` computes N and OLD20 from a rapidfuzz distance
+  matrix, block by block, about 20 times faster than the word-by-word loop (0.9 s
+  against 19 s for 500 words against the 30,000-word English lexicon), with
+  identical values.
+- The schema documents `reference_member` and when the derived dimensions are
+  computed, so the committed datasheets, which record its SHA-256, and the run
+  logs, which record the datasheets' MD5, are regenerated. No stimulus, report
+  table or experiment changes.
 
 ### Security
 
