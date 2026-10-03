@@ -444,9 +444,13 @@ the schema's defaults rather than the defaults a design may have replaced. What
 the selection achieved is in `realised_control`, as the effect sizes, intervals,
 variance ratios and TOST verdicts. What it could have chosen instead is in
 `candidate_pool`, which records how many items satisfied each condition before
-matching. How the items were dealt to lists is in `counterbalancing`. It gives the
-recipe that ran, the lists the stimuli table holds and the trials each list gives
-each condition, and it says whether a Latin-square rotation is complete.
+matching. A candidate missing a matched dimension satisfies its condition but
+cannot be matched. Such candidates are counted in `incomplete_dropped`, present
+only when a condition lost any, and the methods paragraph leaves them out of its
+count of eligible candidates. How the items were dealt to lists is in
+`counterbalancing`. It gives the recipe that ran, the lists the stimuli table
+holds and the trials each list gives each condition, and it says whether a
+Latin-square rotation is complete.
 
 The record keeps each statistic as the comparisons report rounded it, to three
 places and the TOST *p* to four. The Markdown rendering and the methods paragraph

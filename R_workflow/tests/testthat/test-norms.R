@@ -10,8 +10,8 @@
 # manipulates, so a run whose datasheet did not name the file would describe a
 # selection over columns of unstated origin -- unreproducible from the record that
 # exists to make it reproducible. Coverage is recorded for the same reason: a word the
-# table does not cover gets an NA, and the tolerance windows then drop it from the pool
-# without saying so.
+# table does not cover gets an NA, which takes it out of any selection that filters,
+# matches or spans on the column.
 #
 # No norm data is bundled. These tests write their own tiny lexicon and norm table, so
 # the feature is covered end to end without shipping a norm dataset.

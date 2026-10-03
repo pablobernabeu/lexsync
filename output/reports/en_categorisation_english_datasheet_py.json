@@ -84,7 +84,7 @@
   "relational": null,
   "reproducibility": {
     "design_sha256": "0535f924775a71d520cd2125b385c4752d7fe1ad336ef0a65e854b68ac356679",
-    "schema_sha256": "bed8236b46a718d2e1fe689f706a7c5b58a1b96ecf4d317123274a1d1706bbbc",
+    "schema_sha256": "b77ec1f1dc7c13e0bfd8b4177258ee56fef2f8b6b2ec62720cdf8bd574466ac7",
     "seed": 2026,
     "versions": {
       "engine": "python",

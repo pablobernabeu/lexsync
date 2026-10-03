@@ -369,8 +369,8 @@ def merge_norms(lexicon: pd.DataFrame, norms, on: str = "word", columns=None) ->
 # for build_datasheet() to write down.
 #
 # Coverage is recorded per column rather than per file, because one table can cover a
-# dimension well and another badly, and an unmatched row becomes a NaN that the
-# tolerance windows then drop from the pool without saying so.
+# dimension well and another badly, and an unmatched row becomes a NaN that takes the
+# word out of any selection that filters, matches or spans on the column.
 #
 # Mirrors .norm_specs / .apply_norms in R_workflow/R/querying.R.
 

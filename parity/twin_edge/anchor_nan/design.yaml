@@ -1,0 +1,22 @@
+# Twin-edge case: nouns against verbs matched on length and on a rating that a norm
+# table gives for 37 of the 40 words. Two nouns, one of them the first word of the
+# anchor spread, and one verb get no rating. Both engines exclude the three before
+# selecting and record the count per condition.
+# The word forms are common English words. The Zipf frequencies and the ratings are
+# invented for this fixture and describe no corpus or norm.
+name: twin_edge_anchor_nan
+language: english
+lexicon: lexicon.csv
+description: 'Nouns versus verbs matched on length and a rating that three of the words lack.'
+norms:
+  - path: ratings.csv
+    columns: [rating]
+n_per_condition: 6
+conditions:
+  - name: noun
+    define_by:
+      pos: [noun]
+  - name: verb
+    define_by:
+      pos: [verb]
+match_on: [length, rating]

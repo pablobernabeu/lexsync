@@ -118,11 +118,19 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
             nfc_total[k] += int((record or {}).get(k, 0))
 
     # Read the matcher's audit attribute straight off the returned frame (pd.concat
-    # and rbind drop attrs) and put any window relaxation on the run log; the
-    # datasheet records it too. Returns the frame unchanged.
+    # and rbind drop attrs) and put any excluded candidates and window relaxations on
+    # the run log, in the order the matcher met them. The datasheet records both too.
+    # Returns the frame unchanged.
     def take_audit(stim):
         nonlocal selection_audit
         selection_audit = stim.attrs.get("audit")
+        for dx in (selection_audit or {}).get("incomplete_dropped", []):
+            if is_continuous:
+                msg = "dropped %d candidate(s) missing the predictor or a control" % dx["n"]
+            else:
+                msg = ("dropped %d candidate(s) of condition '%s' missing a matched "
+                       "dimension" % (dx["n"], dx["condition"]))
+            runlog.log_step(log, msg, {"condition": dx["condition"], "n": dx["n"]})
         for rx in (selection_audit or {}).get("window_relaxations", []):
             runlog.log_step(log,
                             "tolerance window relaxed for condition '%s'"
@@ -213,11 +221,12 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
         else:
             resample = design.get("resample")
             if resample:
-                # Per-replicate audits are dropped with the concat inside
-                # resample_stimuli; a relaxation there still reaches the console
-                # via verbose.
+                # resample_stimuli records the first replicate's exclusions, which
+                # are the whole pool's. A window relaxation inside a replicate
+                # reaches only the console, via verbose.
                 n_sets = resample.get("n_sets", 2)
-                stim = resample_stimuli(pool, design, schema, n_sets, verbose=verbose)
+                stim = take_audit(resample_stimuli(pool, design, schema, n_sets,
+                                                   verbose=verbose))
                 runlog.log_step(log, f"resampled {stim['replicate'].nunique()} disjoint matched "
                                      f"sets ({len(stim)} items total)",
                                 {"conditions": ", ".join(dict.fromkeys(stim["condition"]))})

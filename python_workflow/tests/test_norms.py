@@ -10,8 +10,8 @@ That record is not decoration. A norm table can supply the very variable a desig
 manipulates, so a run whose datasheet did not name the file would describe a
 selection over columns of unstated origin -- unreproducible from the record that
 exists to make it reproducible. Coverage is recorded for the same reason: a word the
-table does not cover gets a missing value, and the tolerance windows then drop it
-from the pool without saying so.
+table does not cover gets a missing value, which takes it out of any selection that
+filters, matches or spans on the column.
 
 No norm data is bundled. These tests write their own tiny lexicon and norm table, so
 the feature is covered end to end without shipping a norm dataset.

@@ -1,0 +1,7 @@
+# Both engines select the same ten sets, every one scored. Before the exclusion,
+# both filled an eleventh set with 'basket', which has no rating.
+outcome: artefacts
+compare: [stimuli, descriptives, comparisons]
+datasheet:
+  selection.incomplete_dropped.0.condition: noun
+  selection.incomplete_dropped.0.n: 2

@@ -147,6 +147,43 @@ no function signature changes.
   `select_continuous_stimuli`, which returned their default size in Python. A
   `null` tolerance is read as R's `modifyList()` reads it, and a schema without a
   `matching:` block works in Python.
+- Matching excludes candidates that lack a matched dimension, in every method and
+  before anything is selected, and the run log and the datasheet record how many
+  each condition lost (`selection.incomplete_dropped`, a 1.2 field present only
+  when a condition lost any). An anchor item missing a matched value used to be
+  paired with the alphabetically first candidate in its window, or to re-pick a
+  used candidate and stop the run with a false 'overlapping conditions' error.
+  `joint` filled a shortfall with incomplete pairs, `optimal` failed with a solver
+  error that differed between the engines, and `select_continuous_stimuli`
+  selected items without the predictor (4 of 10 when 40% of the pool lacked it).
+  The documentation already promised the exclusion. The shortfall policy applies
+  to what remains, a condition left without a complete candidate is refused by
+  name, and a word repeated within one condition, which used to be reported as
+  overlapping conditions, is reported as an internal error. The datasheet's
+  verdict on whether the pairwise cap fired, and the Methods text's count of
+  eligible candidates, leave the excluded candidates out. For a design whose pool
+  has such candidates the selection changes, which the rule above counts as a
+  breaking change. No shipped design has one, so no stimulus, report table or
+  experiment moves. The schema's note on norm coverage, corrected in all three
+  copies, changes `config/schema.yaml`, so every committed datasheet records a new
+  schema digest and every run log a new datasheet checksum. Three twin-edge cases
+  pin the outcome: `anchor_nan`, `joint_nan` and `cont_nan_predictor`.
+- `resample_stimuli` records the candidates its first replicate excluded for a
+  missing matched value, those of the whole pool, so the run log and the
+  datasheet of a resampled design report them as well. Its `attrs["audit"]` had
+  been present only when all the replicates held the same one, and in the R
+  engine it was that of the first replicate. A selection no longer passes on an
+  audit its pool already carried. This engine did so whatever the method, and the
+  R engine in `select_continuous_stimuli`.
+- `mahalanobis` matching estimates the correlations from the rows complete on the
+  matched dimensions, and refuses a pool with fewer than k + 2 of them for k
+  dimensions. A dimension with any missing value used to lose all its
+  correlations and enter the distance as an independent term.
+- In the R engine, joint matching on a dimension with missing values over more
+  than 1,200 candidates failed ('missing value where TRUE/FALSE needed') where
+  Python ran. The R engine's compensated sum now returns NA for such input, as the
+  Python engine's returns NaN. It also returns NaN where opposite infinities make
+  the running sum NaN, a case in which it stopped in the same way.
 
 ### Security
 

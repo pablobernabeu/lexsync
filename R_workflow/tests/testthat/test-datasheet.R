@@ -291,7 +291,7 @@ test_that("the datasheet records the joined norm tables", {
                         norms = norms)
   expect_identical(ds$materials_source$norms, norms)
   # Coverage is rendered, because the rows a norm table does not cover carry a
-  # missing value and are then dropped from the pool by the tolerance windows.
+  # missing value and drop out of any selection that uses the column.
   md <- lexsync:::render_datasheet_md(ds)
   expect_true(grepl("## Joined norms", md, fixed = TRUE))
   expect_true(grepl("900 / 1000", md, fixed = TRUE))
@@ -504,6 +504,56 @@ test_that("the datasheet records design and schema checksums and the matcher aud
   expect_false("schema_sha256" %in% names(plain$reproducibility))
   expect_false("window_relaxations" %in% names(plain$selection))
   expect_false("neighbourhood_reference" %in% names(plain$selection))
+})
+
+test_that("the datasheet records the candidates excluded for a missing value", {
+  # A candidate missing a matched dimension is excluded before anything is selected,
+  # and the record says how many each condition lost. The field is absent when nothing
+  # was excluded, so the datasheets of complete pools do not change. Twinned with
+  # test_datasheet.py.
+  audit <- list(incomplete_dropped = list(list(condition = "hi", n = 3L),
+                                          list(condition = "lo", n = 1L)))
+  ds <- build_datasheet(ds_design(), ds_schema(), NULL, ds_stim(), "x.csv",
+                        list(stimuli = NULL, experiments = list()), 2026, engine = "R",
+                        selection_audit = audit)
+  expect_identical(ds$selection$incomplete_dropped,
+                   list(list(condition = "hi", n = 3L), list(condition = "lo", n = 1L)))
+  plain <- build_datasheet(ds_design(), ds_schema(), NULL, ds_stim(), "x.csv",
+                           list(stimuli = NULL, experiments = list()), 2026, engine = "R",
+                           selection_audit = list(window_relaxations = list()))
+  expect_false("incomplete_dropped" %in% names(plain$selection))
+  # The excluded candidates never reach the pairwise cap, so a condition the exclusion
+  # brings under it is recorded as uncapped.
+  design <- ds_design()
+  design$matching <- list(method = "joint")
+  capped <- build_datasheet(design, ds_schema(), NULL, ds_stim(), "x.csv",
+                            list(stimuli = NULL, experiments = list()), 2026, engine = "R",
+                            candidate_pool = list(list(condition = "hi", n_candidates = 1250L),
+                                                  list(condition = "lo", n_candidates = 1300L)),
+                            selection_audit = list(incomplete_dropped = list(
+                              list(condition = "hi", n = 100L))))
+  expect_identical(capped$selection$candidate_cap$applied, list(hi = FALSE, lo = TRUE))
+})
+
+test_that("the Methods text counts only the candidates that could be matched", {
+  # The candidate pool counts every word in a condition's window, the ones excluded for
+  # a missing matched value among them. Those were never eligible, so the Methods text
+  # takes them off, and here the exclusion makes 'hi' the smaller condition. Twinned
+  # with test_datasheet.py.
+  ds <- build_datasheet(ds_design(), ds_schema(), NULL, ds_stim(), "x.csv",
+                        list(stimuli = NULL, experiments = list()), 2026, engine = "R",
+                        candidate_pool = list(list(condition = "hi", n_candidates = 30L),
+                                              list(condition = "lo", n_candidates = 25L)),
+                        selection_audit = list(incomplete_dropped = list(
+                          list(condition = "hi", n = 14L))))
+  m <- methods_paragraph(ds)
+  expect_true(grepl("The smallest condition was selected from 16 eligible candidates", m,
+                    fixed = TRUE))
+  # A record read back from its JSON renders the same text.
+  out <- tempfile("ds"); dir.create(out)
+  paths <- write_datasheet(ds, file.path(out, "d.json"), file.path(out, "d.md"))
+  loaded <- jsonlite::fromJSON(paths[1], simplifyVector = FALSE)
+  expect_identical(methods_paragraph(loaded), m)
 })
 
 test_that("the versions block records the OS and the parsing packages", {

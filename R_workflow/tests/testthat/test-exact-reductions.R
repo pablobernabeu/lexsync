@@ -53,6 +53,30 @@ test_that("degenerate inputs are not silently zero", {
   expect_identical(lexsync:::.exact_sd(c(2, 2)), 0)
 })
 
+test_that(".exact_sum propagates NA", {
+  # The comparison inside the loop is NA on a missing value, and R stopped there with
+  # "missing value where TRUE/FALSE needed" where the Python twin returns NaN. Joint
+  # matching over more than 1,200 candidates with a missing matched value therefore
+  # ran in Python and failed here. The mean, variance and standard deviation inherit
+  # the contract. test_exact_reductions.py pins the same cases.
+  xs <- c(1, NA, 3)
+  expect_identical(lexsync:::.exact_sum(xs), NA_real_)
+  expect_identical(lexsync:::.exact_sum(c(1, NaN, 3)), NA_real_)
+  expect_true(is.na(lexsync:::.exact_mean(xs)))
+  expect_true(is.na(lexsync:::.exact_var(xs)))
+  expect_true(is.na(lexsync:::.exact_sd(xs)))
+})
+
+test_that("an exact sum of opposite infinities is not a number", {
+  # No input is missing here, but Inf + -Inf makes the running sum NaN. The comparison
+  # inside the loop was then NA on the next value, and R stopped where the Python twin
+  # returns NaN. A cell such as 1e999 reads as an infinity in both engines.
+  # test_exact_reductions.py pins the same cases.
+  expect_true(is.nan(lexsync:::.exact_sum(c(Inf, -Inf, 1))))
+  expect_true(is.nan(lexsync:::.exact_mean(c(Inf, -Inf, 1))))
+  expect_true(is.nan(lexsync:::.exact_sum(c(1, Inf, 2))))
+})
+
 test_that("variance survives data far from zero", {
   # The one-pass "sum of squares minus n times squared mean" form cancels
   # catastrophically here and can even return a negative variance; the two-pass form

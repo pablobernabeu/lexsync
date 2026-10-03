@@ -97,21 +97,42 @@ def test_mahalanobis_matches_and_is_deterministic(schema, en_lexicon_path):
     assert list(s["word"]) == list(match_stimuli(lex, d, schema)["word"])
 
 
-def test_a_missing_value_reduces_the_mahalanobis_metric_to_identity():
-    """np.corrcoef returns NaN for any pair involving a column that holds one, and
-    _maha_metric reads NaN as no correlation, so the metric collapses and mahalanobis
-    matching becomes the standardised Euclidean matching it was chosen over. Nothing
-    upstream prevents it, which is what the comment there now says; this pins the
-    behaviour so a change of estimator cannot pass unnoticed. Pinned identically in
-    test-matching.R."""
-    z = np.array([[1.0, 4.0], [2.0, 3.0], [3.0, 2.0], [4.0, 1.0]])
-    informative = _maha_metric(z)
-    assert abs(informative[0, 1]) > 0.5                 # the correlation is used
+def _maha_pool():
+    # Six rows complete on all three dimensions, then one row missing each of the
+    # first two. The complete rows correlate, so a metric that dropped them would
+    # differ from the pinned one in every off-diagonal cell.
+    nan = np.nan
+    return np.array([[1.0, 2.0, 0.5], [2.0, 2.5, 1.5], [3.0, 2.0, 1.0],
+                     [4.0, 3.5, 2.5], [5.0, 4.0, 2.0], [6.0, 5.5, 3.5],
+                     [nan, 3.0, 2.0], [3.5, nan, 1.0]])
 
-    z[1, 0] = np.nan
-    collapsed = _maha_metric(z)
-    assert collapsed[0, 1] == 0
-    assert np.allclose(collapsed, np.eye(2) / (1 + 1e-6), atol=1e-12)
+
+# The inverse of the six complete rows' correlation matrix plus the 1e-6 ridge. The
+# same values are pinned in test-matching.R, so the two engines' metrics agree to 1e-9.
+_MAHA_COMPLETE_CASE = np.array([
+    [6.508789703372, -4.641761938509, -1.404061170998],
+    [-4.641761938509, 12.925495086475, -8.100175947949],
+    [-1.404061170998, -8.100175947949, 9.918090174968],
+])
+
+
+def test_mahalanobis_correlations_come_from_complete_rows():
+    """np.corrcoef returns NaN for every pair involving a column with a missing value,
+    and _maha_metric read NaN as no correlation, so such a dimension lost all its
+    correlations and entered the distance as an independent term. The correlations
+    now come from the rows complete on every matched dimension. Pinned identically in
+    test-matching.R."""
+    metric = _maha_metric(_maha_pool())
+    assert np.allclose(metric, _MAHA_COMPLETE_CASE, rtol=0, atol=1e-9)
+
+
+def test_mahalanobis_refuses_a_pool_with_too_few_complete_rows():
+    """k dimensions need k + 2 complete rows here. Twinned with test-matching.R."""
+    z = _maha_pool()[[0, 1, 2, 3, 6, 7]]          # four complete rows of three dimensions
+    with pytest.raises(ValueError, match=r"needs at least 5 items complete on the matched "
+                                         r"dimensions to estimate their correlations, but "
+                                         r"the pool has 4\."):
+        _maha_metric(z)
 
 
 def test_optimal_matches_confound_and_is_deterministic(schema, en_lexicon_path):
@@ -250,16 +271,16 @@ def test_undersized_condition_raises_instead_of_duplicating():
 
 def test_na_depleted_condition_raises_instead_of_duplicating():
     # The raw row count clears n_per_condition, but only two rows carry the matched
-    # dimension. The rest rank last on a NaN distance and are never assigned, so the
-    # greedy pass would exhaust the usable rows and re-pick them. Pinned identically
-    # in test-matching.R.
+    # dimension. The other three are excluded before matching, so two candidates
+    # face four anchors and the matcher raises rather than re-picking them. Pinned
+    # identically in test-matching.R.
     pool = pd.DataFrame({
         "id": [1, 2, 3, 4, 5, 6, 7, 8, 9],
         "word": ["laa", "lab", "lac", "lad", "lae", "hab", "hac", "had", "hae"],
         "frequency": [1.0, 1.5, 2.0, 2.5, 3.0, 5.0, 5.5, 6.0, 6.5],
         "concreteness": [3.0, 3.1, np.nan, np.nan, np.nan, 3.0, 3.1, 2.9, 3.2],
     })
-    with pytest.raises(ValueError, match="condition 'low' has only 2 usable candidate"):
+    with pytest.raises(ValueError, match="condition 'low' has only 2 candidate"):
         match_stimuli(pool, _na_design(n=4), _tiny_schema())
 
 
@@ -285,6 +306,198 @@ def test_single_item_anchor_relaxes_rather_than_selecting_na():
     s = match_stimuli(pool, design, _tiny_schema())
     assert list(s.loc[s.condition == "low", "word"]) == ["bbb"]
     assert not s["word"].isna().any()
+
+
+# ---- candidates missing a matched dimension ----------------------------------
+# Twinned with test-matching.R, which pins the same words, counts and messages.
+
+def _x_pool(rows):
+    # rows: (word, frequency, x). Condition A spans frequency 5 to 7 and B 1 to 3.
+    df = pd.DataFrame(rows, columns=["word", "frequency", "x"])
+    df.insert(0, "id", range(1, len(df) + 1))
+    return df
+
+
+_B_ROWS = [("eagle", 2.0, 1.1), ("fig", 2.1, 2.1), ("grape", 2.2, 3.1),
+           ("hat", 2.3, 0.5), ("igloo", 2.4, 2.6), ("jam", 2.5, 1.6)]
+
+
+def _x_design(n, **matching):
+    return {
+        "name": "x", "language": "english", "n_per_condition": n,
+        "conditions": [
+            {"name": "A", "define_by": {"frequency": [5.0, 7.0]}},
+            {"name": "B", "define_by": {"frequency": [1.0, 3.0]}},
+        ],
+        "match_on": ["x"],
+        **({"matching": matching} if matching else {}),
+    }
+
+
+def _x_schema():
+    return {"matching": {"method": "standardised_euclidean", "tolerance_k": {"x": 2.0}}}
+
+
+def test_an_incomplete_anchor_never_reuses_a_candidate():
+    # cloud lacks x. Used candidates were set to Inf and a missing distance ranked
+    # after Inf, so cloud re-picked eagle and the run stopped with a false
+    # 'overlapping conditions' error. cloud is now excluded before the anchor spread.
+    pool = _x_pool([("apple", 6.0, 1.0), ("brick", 6.1, 2.0), ("cloud", 6.2, np.nan),
+                    ("drum", 6.3, 3.0)] + _B_ROWS)
+    with pytest.raises(ValueError, match="4 sets per condition were requested but only 3"):
+        match_stimuli(pool, _x_design(4), _x_schema())
+    s = match_stimuli(pool, _x_design(4, shortfall="allow"), _x_schema())
+    assert list(s.loc[s.condition == "A", "word"]) == ["apple", "brick", "drum"]
+    assert list(s.loc[s.condition == "B", "word"]) == ["eagle", "fig", "grape"]
+    assert s.attrs["audit"]["incomplete_dropped"] == [{"condition": "A", "n": 1}]
+
+
+def test_an_incomplete_first_anchor_is_excluded():
+    # apple lacks x and comes first in the anchor spread. Its distance to every
+    # candidate was missing, so the byte-first word in the window, fig, became its
+    # counterpart.
+    pool = _x_pool([("apple", 6.0, np.nan), ("brick", 6.1, 2.0), ("cloud", 6.2, 2.5),
+                    ("drum", 6.3, 3.0)] + _B_ROWS)
+    s = match_stimuli(pool, _x_design(3), _x_schema())
+    assert list(s.loc[s.condition == "A", "word"]) == ["brick", "cloud", "drum"]
+    assert list(s.loc[s.condition == "B", "word"]) == ["fig", "igloo", "grape"]
+    assert not s["x"].isna().any()
+    assert s.attrs["audit"]["incomplete_dropped"] == [{"condition": "A", "n": 1}]
+
+
+def _joint_x_pool():
+    # Condition A has three complete rows and two that lack x. All six rows of B are
+    # complete.
+    return _x_pool([("aa", 6.0, 1.0), ("ab", 6.1, 2.0), ("ac", 6.2, 3.0),
+                    ("ad", 6.3, np.nan), ("ae", 6.4, np.nan)] + _B_ROWS)
+
+
+def _pairs(s):
+    by_set = s.groupby("set")["word"].apply(list)
+    return sorted(tuple(w) for w in by_set)
+
+
+def test_joint_reports_a_shortfall_instead_of_pairing_incomplete_rows():
+    # A missing cost sorted after every real one, so once the complete pairs ran out
+    # joint paired ad, which lacks x, to reach n.
+    with pytest.raises(ValueError, match="4 sets per condition were requested but only 3"):
+        match_stimuli(_joint_x_pool(), _x_design(4, method="joint"), _x_schema())
+    s = match_stimuli(_joint_x_pool(), _x_design(4, method="joint", shortfall="allow"),
+                      _x_schema())
+    assert _pairs(s) == [("aa", "eagle"), ("ab", "fig"), ("ac", "grape")]
+    assert s.attrs["audit"]["incomplete_dropped"] == [{"condition": "A", "n": 2}]
+
+
+def test_optimal_selects_cleanly_with_an_incomplete_row():
+    # A missing cost reached the assignment solver, which refused it with an error
+    # that differed between the engines.
+    pytest.importorskip("scipy")
+    s = match_stimuli(_joint_x_pool(), _x_design(3, method="optimal"), _x_schema())
+    assert _pairs(s) == [("aa", "eagle"), ("ab", "fig"), ("ac", "grape")]
+    assert s.attrs["audit"]["incomplete_dropped"] == [{"condition": "A", "n": 2}]
+
+
+def test_a_condition_left_without_complete_candidates_is_refused_by_name():
+    # Every low candidate lacks the matched dimension. Without the check the
+    # condition would be reported as having no candidates, although its window
+    # holds two words.
+    pool = pd.DataFrame({
+        "id": [1, 2, 3, 4, 5],
+        "word": ["hab", "hac", "had", "laa", "lab"],
+        "frequency": [5.0, 6.0, 7.0, 1.0, 2.0],
+        "concreteness": [3.0, 3.1, 2.9, np.nan, np.nan],
+    })
+    with pytest.raises(ValueError, match=r"condition 'low' has no candidates complete on "
+                                         r"the matched dimensions \(2 lacked a value\)"):
+        match_stimuli(pool, _na_design(n=2), _tiny_schema())
+
+
+def test_verbose_matching_reports_the_excluded_candidates(capsys):
+    # The console reports the exclusion as it happens, as it reports a relaxed window.
+    pool = _x_pool([("apple", 6.0, np.nan), ("brick", 6.1, 2.0), ("cloud", 6.2, 2.5),
+                    ("drum", 6.3, 3.0)] + _B_ROWS)
+    match_stimuli(pool, _x_design(3), _x_schema(), verbose=True)
+    assert ("lexsync: dropped 1 candidate(s) of condition 'A' missing a matched "
+            "dimension.") in capsys.readouterr().out
+
+
+def test_a_within_condition_repeat_is_reported_as_an_internal_error():
+    # A repeat inside one condition is a defect of the matcher, which used to be
+    # reported as overlapping conditions.
+    from lexsync.matching import _assert_distinct_words
+    out = pd.DataFrame({"word": ["apple", "apple", "eagle", "fig"],
+                        "condition": ["A", "A", "B", "B"]})
+    with pytest.raises(ValueError, match=r"lexsync: internal error: condition 'A' "
+                                         r"selected the word 'apple' more than once; "
+                                         r"please report this\."):
+        _assert_distinct_words(out)
+
+
+def _continuous_x_pool():
+    # 50 words of one length, 20 of them (40%) without x. The other 30 values of x
+    # are distinct, so the spread has no ties to break.
+    i = np.arange(50)
+    x = ((37 * i) % 50) / 10
+    x[(i % 5) < 2] = np.nan
+    return pd.DataFrame({"id": i + 1, "word": ["w%03d" % k for k in i],
+                         "frequency": 4.0, "length": 4, "x": x})
+
+
+def _continuous_x_design():
+    return {"name": "cx", "language": "english", "n_per_condition": 10,
+            "continuous": {"predictor": "x", "controls": ["length"]},
+            "match_on": ["length"]}
+
+
+def test_the_continuous_selector_excludes_rows_missing_the_predictor():
+    # A missing predictor sorted last and the even spread always takes the last
+    # row, so 4 of the 10 items selected here lacked it.
+    s = select_continuous_stimuli(_continuous_x_pool(), _continuous_x_design(),
+                                  _tiny_schema())
+    assert list(s["word"]) == ["w023", "w038", "w003", "w014", "w029",
+                               "w044", "w009", "w047", "w012", "w027"]
+    assert not s["x"].isna().any()
+    assert s.attrs["audit"]["incomplete_dropped"] == [{"condition": "continuous", "n": 20}]
+
+
+def test_a_continuous_pool_without_a_complete_row_is_refused():
+    pool = _continuous_x_pool().assign(x=np.nan)
+    with pytest.raises(ValueError, match=r"no item in the pool is complete on the "
+                                         r"predictor and the controls \(50 lacked a "
+                                         r"value\)"):
+        select_continuous_stimuli(pool, _continuous_x_design(), _tiny_schema())
+
+
+def test_a_selection_does_not_inherit_an_audit_from_its_pool():
+    # pandas carries attrs through a row subset, and through pd.concat when every part
+    # holds the same. An audit already on the pool therefore reached the result as if
+    # this selection had made it, whatever the method. R carried it through the
+    # continuous selector. Twinned with test-matching.R.
+    stale = {"incomplete_dropped": [{"condition": "A", "n": 99}]}
+    pool = _x_pool([("apple", 6.0, 1.0), ("brick", 6.1, 2.0), ("drum", 6.2, 3.0)]
+                   + _B_ROWS)
+    pool.attrs["audit"] = stale
+    assert "audit" not in match_stimuli(pool, _x_design(3), _x_schema()).attrs
+    cpool = _continuous_x_pool().dropna(subset=["x"])
+    cpool.attrs["audit"] = stale
+    sel = select_continuous_stimuli(cpool, _continuous_x_design(), _tiny_schema())
+    assert "audit" not in sel.attrs
+
+
+def test_a_resampled_selection_records_the_first_replicates_exclusions():
+    # The first replicate draws on the whole pool, so its exclusions are recorded, and
+    # only it relaxes a window here, which is not. pd.concat dropped an audit that
+    # differed between replicates while R's rbind kept the first replicate's, window
+    # relaxation included, so the two engines returned different records. Twinned with
+    # test-matching.R.
+    pool = _x_pool([("ace", 6.0, 1.0), ("bay", 6.1, 0.0), ("cod", 6.2, 5.0),
+                    ("dew", 6.3, 1.0), ("elk", 6.4, np.nan), ("fir", 2.0, 0.2),
+                    ("gem", 2.1, 0.4), ("hop", 2.2, 4.8), ("ink", 2.3, 4.6),
+                    ("jot", 2.4, 2.0), ("kin", 2.5, np.nan)])
+    s = resample_stimuli(pool, _x_design(2), _x_schema(), 2)
+    assert list(s["word"]) == ["ace", "dew", "gem", "fir", "bay", "cod", "jot", "hop"]
+    assert s.attrs["audit"] == {"incomplete_dropped": [{"condition": "A", "n": 1},
+                                                      {"condition": "B", "n": 1}]}
 
 
 def test_unknown_method_raises(schema, en_lexicon_path):
@@ -400,6 +613,13 @@ def test_relaxation_is_recorded_in_the_audit():
     assert rx[0]["condition"] == "low"
     assert isinstance(rx[0]["n_within_tolerance"], int)
     assert rx[0]["n_needed"] == 3
+
+
+def test_a_complete_pool_records_no_exclusion():
+    # Every shipped design has complete matched dimensions, so neither its audit nor
+    # the datasheet built from it may gain an entry.
+    s = match_stimuli(_small_pool(), _small_design(3), _tiny_schema())
+    assert "incomplete_dropped" not in s.attrs.get("audit", {})
 
 
 def _overlapping_design(n, method):

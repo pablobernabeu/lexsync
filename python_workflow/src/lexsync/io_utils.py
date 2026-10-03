@@ -303,6 +303,12 @@ def write_csv_utf8(x: pd.DataFrame, path: str) -> str:
 
 
 def _exact_sum(x) -> float:
+    # A missing value propagates: the comparison below is False on a NaN, so the sum
+    # comes back NaN, as it does when opposite infinities make the running sum NaN.
+    # The R twin has to say so explicitly, because the same comparison is NA there
+    # and R would stop on it. The mean, variance and standard deviation are built on
+    # this sum and inherit the contract. The median is the deliberate exception,
+    # dropping missing values before it sorts.
     s = 0.0
     comp = 0.0
     for v in x:

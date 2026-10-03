@@ -61,8 +61,10 @@ dimensions:
 # written into the materials datasheet with its sha256 and its per-column coverage,
 # because a norm table can carry the very variable a design manipulates, and a
 # selection over columns of unstated origin is not reproducible. Coverage matters
-# too -- a word the table does not cover gets a missing value, and the tolerance
-# windows then drop it from the pool.
+# too -- a word the table does not cover gets a missing value. A filter on the
+# column drops it, and matching excludes every candidate missing a matched
+# dimension, or in a continuous design the predictor or a control, before anything
+# is selected. The run log and the datasheet count the exclusions per condition.
 
 # ---- Default matching configuration ---------------------------------------
 # Pseudoword generation (the lexical_decision paradigm) is chosen per design under

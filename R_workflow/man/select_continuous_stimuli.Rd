@@ -57,4 +57,8 @@ honoured is refused outright. \code{continuous.controls} must be non-empty and m
 name the predictor, \code{match_on} must name exactly the same dimensions as
 \code{continuous.controls}, every dimension named and the \code{key} column must be present
 in the pool, no \code{tolerance_k} may be negative, and the pool must not be empty.
+
+A row missing the predictor or a control is excluded before the first pass, and
+the number excluded is recorded in the \code{"audit"} attribute's \code{incomplete_dropped}
+entry under the condition \code{continuous}. A pool with no complete row is refused.
 }

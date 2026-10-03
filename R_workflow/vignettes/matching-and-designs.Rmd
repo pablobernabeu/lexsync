@@ -156,7 +156,9 @@ datasheet with its checksum and its per-column coverage, because a norm table ca
 supply the very variable a design manipulates, and a selection over columns of
 unstated origin is not reproducible from the record that exists to make it so.
 Coverage is recorded for a related reason: a word the table does not cover gets a
-missing value, and the tolerance windows then drop it from the pool.
+missing value. A filter on the column drops it, and the matcher excludes it before
+selecting whenever the column is a matched dimension, a continuous predictor or a
+control. The run log and the datasheet count those exclusions per condition.
 
 ## Pool filters
 
@@ -330,7 +332,10 @@ distribution is whatever matching to that anchor produces.
 The method is set with `matching.method` in a design, or left to the schema
 default. All four minimise a distance in standardised space, computed by
 z-scoring each `match_on` dimension against the whole pool, so that a letter and a
-Zipf unit become comparable. They differ in what they minimise it over.
+Zipf unit become comparable. They differ in what they minimise it over. A
+candidate missing any `match_on` dimension has no place in that space, so every
+method starts from the rows complete on all of them. The run log and the
+datasheet count what each condition lost.
 
 `standardised_euclidean`, the default, walks the anchor items in order and gives
 each one its nearest unused counterpart, greedily. Because the anchor is selected
@@ -349,7 +354,10 @@ is no longer under your control. It requires exactly two conditions.
 `mahalanobis` replaces the Euclidean metric with one weighted by the inverse of
 the pool's correlation matrix, so that dimensions sharing variance are not
 counted twice. It suits the case where the matched dimensions are strongly
-intercorrelated, which is the normal case for orthographic measures.
+intercorrelated, which is the normal case for orthographic measures. The
+correlations come from the pool's rows that are complete on every matched
+dimension, and with *k* matched dimensions the pool needs at least *k* + 2 such
+rows.
 
 ```{r correlations}
 round(cor(pool[, c("length", "n_density", "old20")]), 2)

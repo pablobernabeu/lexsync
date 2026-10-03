@@ -1,0 +1,7 @@
+group,dimension,n,mean,sd,min,median,max
+noun,length,6,5.667,0.516,5,6,6
+noun,frequency,6,4.527,0.833,3.71,4.415,5.62
+noun,rating,6,3.483,0.859,2.5,3.6,4.5
+verb,length,6,5.833,0.408,5,6,6
+verb,frequency,6,4.267,0.429,3.83,4.195,5.08
+verb,rating,6,3.017,0.567,2.4,2.95,4

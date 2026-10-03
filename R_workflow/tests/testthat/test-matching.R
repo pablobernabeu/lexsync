@@ -81,21 +81,36 @@ test_that("mahalanobis matching balances and is deterministic within an engine",
   expect_identical(s$word, match_stimuli(lex, d, schema)$word)
 })
 
-test_that("a missing value on a matched dimension reduces the mahalanobis metric to identity", {
-  # cor() under its default use = "everything" returns NA for any pair involving a
-  # column that holds one, and .maha_metric reads NA as no correlation, so the metric
-  # collapses and mahalanobis matching becomes the standardised Euclidean matching it
-  # was chosen over. Nothing upstream prevents it, which is what the comment there now
-  # says; this pins the behaviour so a change of estimator cannot pass unnoticed.
-  # Pinned identically in tests/test_matching.py.
-  z <- cbind(c(1, 2, 3, 4), c(4, 3, 2, 1))
-  informative <- .maha_metric(z)
-  expect_gt(abs(informative[1, 2]), 0.5)                 # the correlation is used
+maha_pool <- function() {
+  # Six rows complete on all three dimensions, then one row missing each of the first
+  # two. The complete rows correlate, so a metric that dropped them would differ from
+  # the pinned one in every off-diagonal cell.
+  rbind(c(1, 2, 0.5), c(2, 2.5, 1.5), c(3, 2, 1), c(4, 3.5, 2.5), c(5, 4, 2),
+        c(6, 5.5, 3.5), c(NA, 3, 2), c(3.5, NA, 1))
+}
 
-  z[2, 1] <- NA_real_
-  collapsed <- .maha_metric(z)
-  expect_equal(collapsed[1, 2], 0)
-  expect_equal(collapsed, diag(2) / (1 + 1e-6), tolerance = 1e-12)
+test_that("mahalanobis correlations come from complete rows", {
+  # cor() under its default use = "everything" returns NA for every pair involving a
+  # column with a missing value, and .maha_metric read NA as no correlation, so such a
+  # dimension lost all its correlations and entered the distance as an independent
+  # term. The correlations now come from the rows complete on every matched
+  # dimension. The expected matrix is the inverse of the six complete rows'
+  # correlation matrix plus the 1e-6 ridge, pinned identically in test_matching.py, so
+  # the two engines' metrics agree to 1e-9.
+  expected <- rbind(c(6.508789703372, -4.641761938509, -1.404061170998),
+                    c(-4.641761938509, 12.925495086475, -8.100175947949),
+                    c(-1.404061170998, -8.100175947949, 9.918090174968))
+  metric <- .maha_metric(maha_pool())
+  expect_lt(max(abs(metric - expected)), 1e-9)
+})
+
+test_that("mahalanobis refuses a pool with too few complete rows", {
+  # k dimensions need k + 2 complete rows here. Twinned with test_matching.py.
+  z <- maha_pool()[c(1, 2, 3, 4, 7, 8), ]       # four complete rows of three dimensions
+  expect_error(.maha_metric(z),
+               paste0("needs at least 5 items complete on the matched dimensions to ",
+                      "estimate their correlations, but the pool has 4."),
+               fixed = TRUE)
 })
 
 test_that("optimal matching equates the confound and is deterministic within an engine", {
@@ -233,9 +248,9 @@ test_that("an undersized condition raises rather than duplicating words", {
 
 test_that("an NA-depleted condition raises rather than duplicating words", {
   # The raw row count clears n_per_condition, but only two rows carry the matched
-  # dimension. The rest rank last on an NA distance and are never assigned, so the
-  # greedy pass would exhaust the usable rows and re-pick them. Pinned identically in
-  # test_matching.py.
+  # dimension. The other three are excluded before matching, so two candidates face
+  # four anchors and the matcher raises rather than re-picking them. Pinned
+  # identically in test_matching.py.
   pool <- data.frame(
     id = 1:9,
     word = c("laa", "lab", "lac", "lad", "lae", "hab", "hac", "had", "hae"),
@@ -244,7 +259,7 @@ test_that("an NA-depleted condition raises rather than duplicating words", {
     stringsAsFactors = FALSE
   )
   expect_error(match_stimuli(pool, na_design(4L), tiny_schema()),
-               "condition 'low' has only 2 usable candidate")
+               "condition 'low' has only 2 candidate")
 })
 
 test_that("a single-item anchor relaxes the window rather than selecting NA", {
@@ -268,6 +283,199 @@ test_that("a single-item anchor relaxes the window rather than selecting NA", {
   s <- match_stimuli(pool, design, tiny_schema())
   expect_identical(s$word[s$condition == "low"], "bbb")
   expect_false(any(is.na(s$word)))
+})
+
+# ---- candidates missing a matched dimension ----------------------------------
+# Twinned with test_matching.py, which pins the same words, counts and messages.
+
+x_pool <- function(a_words, a_x) {
+  # Condition A spans frequency 5 to 7 and B 1 to 3. B's six candidates are complete.
+  data.frame(
+    id = seq_len(length(a_words) + 6L),
+    word = c(a_words, "eagle", "fig", "grape", "hat", "igloo", "jam"),
+    frequency = c(c(6.0, 6.1, 6.2, 6.3, 6.4)[seq_along(a_words)],
+                  2.0, 2.1, 2.2, 2.3, 2.4, 2.5),
+    x = c(a_x, 1.1, 2.1, 3.1, 0.5, 2.6, 1.6),
+    stringsAsFactors = FALSE
+  )
+}
+
+x_design <- function(n, matching = NULL) {
+  d <- list(name = "x", language = "english", n_per_condition = n,
+            conditions = list(
+              list(name = "A", define_by = list(frequency = c(5.0, 7.0))),
+              list(name = "B", define_by = list(frequency = c(1.0, 3.0)))
+            ),
+            match_on = list("x"))
+  if (!is.null(matching)) d$matching <- matching
+  d
+}
+
+x_schema <- function() {
+  list(matching = list(method = "standardised_euclidean", tolerance_k = list(x = 2.0)))
+}
+
+test_that("an incomplete anchor never reuses a candidate", {
+  # cloud lacks x. Used candidates were set to Inf and a missing distance ranked after
+  # Inf, so cloud re-picked eagle and the run stopped with a false 'overlapping
+  # conditions' error. cloud is now excluded before the anchor spread.
+  pool <- x_pool(c("apple", "brick", "cloud", "drum"), c(1.0, 2.0, NA, 3.0))
+  expect_error(match_stimuli(pool, x_design(4L), x_schema()),
+               "4 sets per condition were requested but only 3", fixed = TRUE)
+  s <- match_stimuli(pool, x_design(4L, list(shortfall = "allow")), x_schema())
+  expect_identical(s$word[s$condition == "A"], c("apple", "brick", "drum"))
+  expect_identical(s$word[s$condition == "B"], c("eagle", "fig", "grape"))
+  expect_identical(attr(s, "audit")$incomplete_dropped, list(list(condition = "A", n = 1L)))
+})
+
+test_that("an incomplete first anchor is excluded", {
+  # apple lacks x and comes first in the anchor spread. Its distance to every
+  # candidate was missing, so the byte-first word in the window, fig, became its
+  # counterpart.
+  pool <- x_pool(c("apple", "brick", "cloud", "drum"), c(NA, 2.0, 2.5, 3.0))
+  s <- match_stimuli(pool, x_design(3L), x_schema())
+  expect_identical(s$word[s$condition == "A"], c("brick", "cloud", "drum"))
+  expect_identical(s$word[s$condition == "B"], c("fig", "igloo", "grape"))
+  expect_false(anyNA(s$x))
+  expect_identical(attr(s, "audit")$incomplete_dropped, list(list(condition = "A", n = 1L)))
+})
+
+joint_x_pool <- function() {
+  # Condition A has three complete rows and two that lack x. All six rows of B are
+  # complete.
+  x_pool(c("aa", "ab", "ac", "ad", "ae"), c(1.0, 2.0, 3.0, NA, NA))
+}
+
+x_pairs <- function(s) {
+  sort(vapply(split(s$word, s$set), paste, character(1), collapse = "+"),
+       method = "radix")
+}
+
+test_that("joint reports a shortfall instead of pairing incomplete rows", {
+  # A missing cost sorted after every real one, so once the complete pairs ran out
+  # joint paired ad, which lacks x, to reach n.
+  expect_error(match_stimuli(joint_x_pool(), x_design(4L, list(method = "joint")), x_schema()),
+               "4 sets per condition were requested but only 3", fixed = TRUE)
+  s <- match_stimuli(joint_x_pool(), x_design(4L, list(method = "joint", shortfall = "allow")),
+                     x_schema())
+  expect_identical(unname(x_pairs(s)), c("aa+eagle", "ab+fig", "ac+grape"))
+  expect_identical(attr(s, "audit")$incomplete_dropped, list(list(condition = "A", n = 2L)))
+})
+
+test_that("optimal selects cleanly with an incomplete row", {
+  # A missing cost reached the assignment solver, which refused it with an error that
+  # differed between the engines.
+  skip_if_not_installed("clue")
+  s <- match_stimuli(joint_x_pool(), x_design(3L, list(method = "optimal")), x_schema())
+  expect_identical(unname(x_pairs(s)), c("aa+eagle", "ab+fig", "ac+grape"))
+  expect_identical(attr(s, "audit")$incomplete_dropped, list(list(condition = "A", n = 2L)))
+})
+
+test_that("a condition left without complete candidates is refused by name", {
+  # Every low candidate lacks the matched dimension. Without the check the condition
+  # would be reported as having no candidates, although its window holds two words.
+  pool <- data.frame(
+    id = 1:5,
+    word = c("hab", "hac", "had", "laa", "lab"),
+    frequency = c(5.0, 6.0, 7.0, 1.0, 2.0),
+    concreteness = c(3.0, 3.1, 2.9, NA, NA),
+    stringsAsFactors = FALSE
+  )
+  expect_error(match_stimuli(pool, na_design(2L), tiny_schema()),
+               paste0("condition 'low' has no candidates complete on the matched ",
+                      "dimensions (2 lacked a value)"),
+               fixed = TRUE)
+})
+
+test_that("verbose matching reports the excluded candidates", {
+  # The console reports the exclusion as it happens, as it reports a relaxed window.
+  pool <- x_pool(c("apple", "brick", "cloud", "drum"), c(NA, 2.0, 2.5, 3.0))
+  expect_message(match_stimuli(pool, x_design(3L), x_schema(), verbose = TRUE),
+                 "lexsync: dropped 1 candidate(s) of condition 'A' missing a matched dimension.",
+                 fixed = TRUE)
+})
+
+test_that("a within-condition repeat is reported as an internal error", {
+  # A repeat inside one condition is a defect of the matcher, which used to be
+  # reported as overlapping conditions.
+  out <- data.frame(word = c("apple", "apple", "eagle", "fig"),
+                    condition = c("A", "A", "B", "B"), stringsAsFactors = FALSE)
+  expect_error(.assert_distinct_words(out),
+               paste0("lexsync: internal error: condition 'A' selected the word 'apple' ",
+                      "more than once; please report this."),
+               fixed = TRUE)
+})
+
+continuous_x_pool <- function() {
+  # 50 words of one length, 20 of them (40%) without x. The other 30 values of x are
+  # distinct, so the spread has no ties to break.
+  i <- 0:49
+  x <- ((37 * i) %% 50) / 10
+  x[(i %% 5) < 2] <- NA_real_
+  data.frame(id = i + 1L, word = sprintf("w%03d", i), frequency = 4.0, length = 4L,
+             x = x, stringsAsFactors = FALSE)
+}
+
+continuous_x_design <- function() {
+  list(name = "cx", language = "english", n_per_condition = 10L,
+       continuous = list(predictor = "x", controls = list("length")),
+       match_on = list("length"))
+}
+
+test_that("the continuous selector excludes rows missing the predictor", {
+  # A missing predictor sorted last and the even spread always takes the last row, so
+  # 4 of the 10 items selected here lacked it.
+  s <- select_continuous_stimuli(continuous_x_pool(), continuous_x_design(), tiny_schema())
+  expect_identical(s$word, c("w023", "w038", "w003", "w014", "w029",
+                             "w044", "w009", "w047", "w012", "w027"))
+  expect_false(anyNA(s$x))
+  expect_identical(attr(s, "audit")$incomplete_dropped,
+                   list(list(condition = "continuous", n = 20L)))
+})
+
+test_that("a continuous pool without a complete row is refused", {
+  pool <- continuous_x_pool()
+  pool$x <- NA_real_
+  expect_error(select_continuous_stimuli(pool, continuous_x_design(), tiny_schema()),
+               paste0("no item in the pool is complete on the predictor and the controls ",
+                      "(50 lacked a value)"),
+               fixed = TRUE)
+})
+
+test_that("a selection does not inherit an audit from its pool", {
+  # R keeps attributes through a row subset, so an audit already on the pool reached
+  # the continuous selector's result as if the selection had made it. The matcher
+  # subsets columns before it binds, which drops them, but pandas carried the audit
+  # through every method. Twinned with test_matching.py.
+  stale <- list(incomplete_dropped = list(list(condition = "A", n = 99L)))
+  pool <- x_pool(c("apple", "brick", "drum"), c(1.0, 2.0, 3.0))
+  attr(pool, "audit") <- stale
+  expect_null(attr(match_stimuli(pool, x_design(3L), x_schema()), "audit"))
+  cpool <- continuous_x_pool()
+  cpool <- cpool[!is.na(cpool$x), , drop = FALSE]
+  attr(cpool, "audit") <- stale
+  sel <- select_continuous_stimuli(cpool, continuous_x_design(), tiny_schema())
+  expect_null(attr(sel, "audit"))
+})
+
+test_that("a resampled selection records the first replicate's exclusions", {
+  # The first replicate draws on the whole pool, so its exclusions are recorded, and
+  # only it relaxes a window here, which is not. pd.concat dropped an audit that
+  # differed between replicates while rbind kept the first replicate's, window
+  # relaxation included, so the two engines returned different records. Twinned with
+  # test_matching.py.
+  pool <- data.frame(
+    id = 1:11,
+    word = c("ace", "bay", "cod", "dew", "elk", "fir", "gem", "hop", "ink", "jot", "kin"),
+    frequency = c(6.0, 6.1, 6.2, 6.3, 6.4, 2.0, 2.1, 2.2, 2.3, 2.4, 2.5),
+    x = c(1.0, 0.0, 5.0, 1.0, NA, 0.2, 0.4, 4.8, 4.6, 2.0, NA),
+    stringsAsFactors = FALSE
+  )
+  s <- resample_stimuli(pool, x_design(2L), x_schema(), 2L)
+  expect_identical(s$word, c("ace", "dew", "gem", "fir", "bay", "cod", "jot", "hop"))
+  expect_identical(attr(s, "audit"),
+                   list(incomplete_dropped = list(list(condition = "A", n = 1L),
+                                                  list(condition = "B", n = 1L))))
 })
 
 test_that("an unknown matching method is an error, not a silent fallback", {
@@ -377,6 +585,13 @@ test_that("a window relaxation is recorded in the audit attribute", {
   expect_length(rx, 1)
   expect_identical(rx[[1]]$condition, "low")
   expect_identical(rx[[1]]$n_needed, 3L)
+})
+
+test_that("a complete pool records no exclusion", {
+  # Every shipped design has complete matched dimensions, so neither its audit nor the
+  # datasheet built from it may gain an entry.
+  s <- match_stimuli(small_pool(), small_design(3L), tiny_schema())
+  expect_null(attr(s, "audit")[["incomplete_dropped"]])
 })
 
 overlapping_design <- function(n, method) {

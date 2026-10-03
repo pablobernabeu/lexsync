@@ -49,9 +49,20 @@
 
 # A word selected for two conditions is a confound, not a match. The anchored and
 # joint paths prevent it structurally; the optimal path can only be steered away by
-# a finite penalty, so the invariant is asserted on every path's output.
+# a finite penalty, so the invariant is asserted on every path's output. A word
+# repeated within one condition breaks the no-reuse rule every method keeps, so it is
+# reported as an internal error of the matcher.
 # Must stay identical to _assert_distinct_words in python_workflow/src/lexsync/matching.py.
 .assert_distinct_words <- function(out) {
+  for (cond in unique(out$condition)) {
+    words <- out$word[out$condition == cond]
+    repeated <- words[duplicated(words)]
+    if (length(repeated)) {
+      stop(sprintf(paste0("lexsync: internal error: condition '%s' selected the word '%s' ",
+                          "more than once; please report this."), cond, repeated[1]),
+           call. = FALSE)
+    }
+  }
   dup <- out$word[duplicated(out$word)]
   if (length(dup)) {
     stop(sprintf(paste0("lexsync: overlapping conditions selected the word '%s' in more ",
@@ -59,6 +70,23 @@
                         "n_per_condition."), dup[1]), call. = FALSE)
   }
   invisible(NULL)
+}
+
+# Record the relaxed windows and the excluded candidates on the result. The pipeline
+# reads the record immediately after the call, before any reshaping can lose it. A
+# selection with nothing to record carries no audit at all, as before. R keeps
+# attributes through a row subset, and rbind keeps its first part's. pandas carries
+# attrs through a row subset, and through pd.concat when every part holds the same.
+# An audit already on the pool would therefore reach the result as if this selection
+# had made it, so both engines clear it here first. Must stay identical to
+# _attach_audit in python_workflow/src/lexsync/matching.py.
+.attach_audit <- function(out, relaxations, incomplete) {
+  attr(out, "audit") <- NULL
+  audit <- list()
+  if (length(relaxations)) audit[["window_relaxations"]] <- relaxations
+  if (length(incomplete)) audit[["incomplete_dropped"]] <- incomplete
+  if (length(audit)) attr(out, "audit") <- audit
+  out
 }
 
 #' Match stimuli across conditions on several lexical dimensions
@@ -74,6 +102,12 @@
 #' shrink) and `on_insufficient_tolerance` (`"relax"`, the default, widens an
 #' undersupplied tolerance window to the full condition subpool and records the
 #' relaxation in an `"audit"` attribute; `"error"` refuses instead).
+#'
+#' A candidate missing any `match_on` dimension cannot be scored, so every method
+#' excludes it before selecting, and the number excluded per condition is recorded
+#' in the `"audit"` attribute's `incomplete_dropped` entry. The shortfall policy
+#' then applies to what remains, and a condition left with no complete candidate
+#' is refused.
 #'
 #' @param pool A lexicon/pool with all `match_on` dimensions present (see
 #'   [add_neighbourhood()]).
@@ -165,17 +199,44 @@ match_stimuli <- function(pool, design, schema, verbose = FALSE) {
     stop(sprintf("lexsync: matching method '%s' requires exactly two conditions, got %d.",
                  method, length(conditions)), call. = FALSE)
   }
+
+  # A candidate missing a matched dimension has no distance to any counterpart, so
+  # whatever a method did with it, the tie-break decided. The anchored path paired
+  # such an anchor with the byte-first word in its window, or re-picked a used
+  # candidate. Joint matching took it once the complete pairs ran out, and optimal
+  # matching handed the missing cost to a solver that refused it. Every method
+  # therefore starts from the rows complete on match_on, and the count excluded per
+  # condition goes into the audit for the run log and the datasheet.
+  incomplete <- list()
+  for (i in seq_along(subpools)) {
+    sp <- subpools[[i]]
+    complete <- stats::complete.cases(sp[, match_on, drop = FALSE])
+    n_drop <- sum(!complete)
+    if (!n_drop) next
+    if (!any(complete)) {
+      stop(sprintf(paste0("lexsync: condition '%s' has no candidates complete on the ",
+                          "matched dimensions (%d lacked a value)."),
+                   cond_names[i], n_drop), call. = FALSE)
+    }
+    if (verbose) {
+      message(sprintf("lexsync: dropped %d candidate(s) of condition '%s' missing a matched dimension.",
+                      n_drop, cond_names[i]))
+    }
+    incomplete[[length(incomplete) + 1L]] <- list(condition = cond_names[i], n = n_drop)
+    subpools[[i]] <- sp[complete, , drop = FALSE]
+  }
+
   if (identical(method, "joint") && length(conditions) == 2L) {
     out <- match_joint(subpools, cond_names, match_on, center, scale_, n)
     .check_shortfall(length(unique(out$set)), n, shortfall)
     .assert_distinct_words(out)
-    return(out)
+    return(.attach_audit(out, list(), incomplete))
   }
   if (identical(method, "optimal") && length(conditions) == 2L) {
     out <- match_optimal(subpools, cond_names, match_on, center, scale_, n)
     .check_shortfall(length(unique(out$set)), n, shortfall)
     .assert_distinct_words(out)
-    return(out)
+    return(.attach_audit(out, list(), incomplete))
   }
   # A covariance-aware metric for Mahalanobis matching (NULL -> plain Euclidean).
   metric <- if (identical(method, "mahalanobis")) .maha_metric(zmat(pool)) else NULL
@@ -249,16 +310,16 @@ match_stimuli <- function(pool, design, schema, verbose = FALSE) {
       cand_f <- cand
     }
     if (nrow(cand_f) < n_take) {
-      # The assignment below would otherwise re-pick an exhausted pool's first item
-      # (every remaining distance is Inf, so the tie-break decides), and emit the
-      # same word in several sets.
+      # The assignment below gives every anchor item an unused candidate, which an
+      # exhausted pool cannot supply.
       stop(sprintf(paste0("lexsync: condition '%s' has only %d candidate(s) but %d are needed; ",
                           "widen pool_filters/define_by or lower n_per_condition."),
                    cname, nrow(cand_f), n_take), call. = FALSE)
     }
-    # Relaxing the window re-admits rows missing a matched dimension. Their distance
-    # is NA and they rank last, so they are never assigned; counting them would let an
-    # NA-depleted pool past the guard above and back into re-picking used rows.
+    # The subpools hold only rows complete on match_on (see the exclusion above), so
+    # this repeats the guard before it. It stays as the assignment's precondition: a
+    # candidate whose distance is missing cannot be matched, so n_take complete unused
+    # candidates must remain however the subpool was built.
     usable <- sum(stats::complete.cases(cand_f[, match_on, drop = FALSE]))
     if (usable < n_take) {
       stop(sprintf(paste0("lexsync: condition '%s' has only %d usable candidate(s) complete on the ",
@@ -283,8 +344,13 @@ match_stimuli <- function(pool, design, schema, verbose = FALSE) {
       } else {
         dvec <- .round_dp(sqrt(pmax(rowSums((delta %*% metric) * delta), 0)), 9)
       }
-      dvec[used] <- Inf
-      best <- order(dvec, cand_f$word, cand_f$id, method = "radix")[1]  # stable, locale-independent tie-break
+      # Only unused candidates compete. Giving a used one an infinite distance was not
+      # enough, because order() ranks a missing distance after infinity and an anchor
+      # without a value then re-picked a used candidate. order()'s na.last default
+      # still ranks a missing distance last, as the Python engine does.
+      free <- which(!used)
+      best <- free[order(dvec[free], cand_f$word[free], cand_f$id[free],
+                         method = "radix")[1]]  # stable, locale-independent tie-break
       pick[a] <- best
       used[best] <- TRUE
     }
@@ -299,12 +365,7 @@ match_stimuli <- function(pool, design, schema, verbose = FALSE) {
   out$set <- rep(seq_len(n_take), times = length(conditions))
   rownames(out) <- NULL
   .assert_distinct_words(out)
-  if (length(relaxations)) {
-    # rbind and pd.concat both drop attributes, so the pipeline reads this
-    # immediately after the call, before any reshaping.
-    attr(out, "audit") <- list(window_relaxations = relaxations)
-  }
-  out
+  .attach_audit(out, relaxations, incomplete)
 }
 
 # Column means for the overlap-cap centroid, through the compensated reduction rather
@@ -381,23 +442,30 @@ match_joint <- function(subpools, cond_names, match_on, center, scale_, n, cap =
 
 # The metric matrix for Mahalanobis distance in standardised space: the inverse of
 # the pool's correlation matrix, so the distance down-weights correlated dimensions
-# instead of double-counting their shared variance (Rubin, 1980; Stuart, 2010). A
-# small ridge keeps it invertible under near collinearity. Uses a matrix inverse,
-# so not byte-identical to the Python engine (see the file header).
+# instead of double-counting their shared variance (Rubin, 1980; Stuart, 2010). The
+# correlations are estimated from the pool rows complete on every matched dimension,
+# and a pool with fewer than k + 2 such rows for k dimensions is refused. A small
+# ridge keeps it invertible under near collinearity. Uses a matrix inverse, so not
+# byte-identical to the Python engine (see the file header).
 .maha_metric <- function(z_pool, ridge = 1e-6) {
   if (ncol(z_pool) == 1L) return(matrix(1, 1, 1))
-  cmat <- stats::cor(z_pool)
-  # An undefined correlation is treated as no correlation, which covers two cases
-  # worth telling apart. A constant dimension has no correlation to estimate, and
-  # zero is the right reading. A dimension carrying even one missing value also
-  # gives NA here, under cor()'s default use = "everything", and zeroing it drops
-  # that dimension's whole row and column; if every dimension is affected the metric
-  # is the identity and Mahalanobis matching becomes the standardised Euclidean
-  # matching it was chosen over. Nothing upstream prevents that: the completeness
-  # guards in match_stimuli count usable candidates per condition and pass easily on
-  # a large pool with a handful of missing values. It is the one respect in which
-  # this method is quietly sensitive to pool quality, so a design choosing it should
-  # match on dimensions the lexicon covers completely.
+  # cor() under its default use = "everything" returns NA for every pair involving a
+  # column with a missing value, and zeroing that NA used to drop the dimension's
+  # whole row and column, so a partially covering norm entered the distance as an
+  # independent term. The rows complete on every dimension are the cases the matcher
+  # can score at all, since match_stimuli excludes the others before it selects.
+  # Below k + 1 rows the k-by-k sample correlation matrix is singular, and the guard
+  # asks for one row more, so the metric never rests on the bare minimum.
+  k <- ncol(z_pool)
+  complete <- z_pool[stats::complete.cases(z_pool), , drop = FALSE]
+  if (nrow(complete) < k + 2L) {
+    stop(sprintf(paste0("lexsync: mahalanobis matching needs at least %d items complete ",
+                        "on the matched dimensions to estimate their correlations, but the ",
+                        "pool has %d."), k + 2L, nrow(complete)), call. = FALSE)
+  }
+  cmat <- stats::cor(complete)
+  # A constant dimension has no correlation to estimate, which cor() reports as NA,
+  # and zero is the right reading of it.
   # Must stay identical to _maha_metric in python_workflow/src/lexsync/matching.py.
   cmat[is.na(cmat)] <- 0
   diag(cmat) <- 1
@@ -494,6 +562,10 @@ match_optimal <- function(subpools, cond_names, match_on, center, scale_, n, cap
 #' `continuous.controls`, every dimension named and the `key` column must be present
 #' in the pool, no `tolerance_k` may be negative, and the pool must not be empty.
 #'
+#' A row missing the predictor or a control is excluded before the first pass, and
+#' the number excluded is recorded in the `"audit"` attribute's `incomplete_dropped`
+#' entry under the condition `continuous`. A pool with no complete row is refused.
+#'
 #' @param pool A candidate pool with the predictor and control dimensions present.
 #' @param design A parsed design configuration carrying a `continuous` block.
 #' @param schema The parsed global schema (tolerance windows).
@@ -553,6 +625,25 @@ select_continuous_stimuli <- function(pool, design, schema, verbose = FALSE,
     stop(sprintf("lexsync: the continuous tie-break column '%s' is absent from the pool.", key),
          call. = FALSE)
   }
+  # A row missing the predictor sorts last and the even spread always takes the last
+  # row, so such rows were selected and then analysed without their predictor. A row
+  # missing a control fails every window but comes back when the window relaxes to the
+  # whole pool. Both are excluded before the first pass.
+  complete <- stats::complete.cases(pool[, c(predictor, controls), drop = FALSE])
+  n_drop <- sum(!complete)
+  incomplete <- list()
+  if (n_drop) {
+    if (!any(complete)) {
+      stop(sprintf(paste0("lexsync: no item in the pool is complete on the predictor and ",
+                          "the controls (%d lacked a value)."), n_drop), call. = FALSE)
+    }
+    if (verbose) {
+      message(sprintf("lexsync: dropped %d candidate(s) missing the predictor or a control.",
+                      n_drop))
+    }
+    incomplete[[1L]] <- list(condition = "continuous", n = n_drop)
+    pool <- pool[complete, , drop = FALSE]
+  }
   even_spread <- function(df) {
     if (nrow(df) == 0) return(df)
     # `key` is the deterministic tie-break when two rows share a predictor value.
@@ -607,10 +698,7 @@ select_continuous_stimuli <- function(pool, design, schema, verbose = FALSE,
   if (!is.null(label)) sel$condition <- label
   if (isTRUE(renumber_sets)) sel$set <- seq_len(nrow(sel))
   rownames(sel) <- NULL
-  if (length(relaxations)) {
-    attr(sel, "audit") <- list(window_relaxations = relaxations)
-  }
-  sel
+  .attach_audit(sel, relaxations, incomplete)
 }
 
 #' Produce several disjoint matched item sets (items as a random factor)
@@ -628,22 +716,28 @@ select_continuous_stimuli <- function(pool, design, schema, verbose = FALSE,
 #' @param n_sets Number of disjoint matched sets to draw.
 #' @param verbose Logical; passed to [match_stimuli()].
 #' @return A data frame of matched stimuli with an added `replicate` column. The
-#'   replicates are bound together, which drops the `"audit"` attribute
-#'   [match_stimuli()] uses to report a relaxed tolerance window, so a relaxation
-#'   inside a replicate reaches the console under `verbose` but not the run log or
-#'   the datasheet.
+#'   first replicate draws on the whole pool, so its count of the candidates
+#'   excluded for a missing matched value is the one recorded in the `"audit"`
+#'   attribute's `incomplete_dropped` entry, as [match_stimuli()] records it. A
+#'   relaxed tolerance window inside a replicate is not recorded: it reaches the
+#'   console under `verbose` but not the run log or the datasheet.
 #' @export
 resample_stimuli <- function(pool, design, schema, n_sets, verbose = FALSE) {
   used <- character(0)
   parts <- list()
+  incomplete <- list()
   for (k in seq_len(as.integer(n_sets))) {
     pk <- pool[!(pool$word %in% used), , drop = FALSE]
     sk <- match_stimuli(pk, design, schema, verbose = verbose)
+    if (k == 1L) incomplete <- attr(sk, "audit")[["incomplete_dropped"]] %||% list()
     sk$replicate <- k
     used <- c(used, sk$word)
     parts[[k]] <- sk
   }
   out <- do.call(rbind, parts)
   rownames(out) <- NULL
-  out
+  # rbind keeps the first replicate's audit whatever the others hold, and pd.concat
+  # keeps one only when every replicate holds the same. The record is therefore set
+  # explicitly, and both engines return the same one.
+  .attach_audit(out, list(), incomplete)
 }

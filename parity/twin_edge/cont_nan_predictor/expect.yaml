@@ -1,0 +1,7 @@
+# Both engines select the same ten words, each with a rating. Before the exclusion,
+# four of the ten selected words had none.
+outcome: artefacts
+compare: [stimuli, descriptives, comparisons]
+datasheet:
+  selection.incomplete_dropped.0.condition: continuous
+  selection.incomplete_dropped.0.n: 16

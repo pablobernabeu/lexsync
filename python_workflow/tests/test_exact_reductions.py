@@ -66,6 +66,28 @@ def test_degenerate_inputs_are_not_silently_zero():
     assert _exact_sd([2.0, 2.0]) == 0.0
 
 
+def test_exact_sum_propagates_nan():
+    # The R twin now keeps this contract too. It stopped with "missing value where
+    # TRUE/FALSE needed" where this engine returned NaN, so joint matching over more
+    # than 1,200 candidates with a missing matched value ran here and failed in R.
+    # The mean, variance and standard deviation inherit the contract.
+    xs = [1.0, float("nan"), 3.0]
+    assert math.isnan(_exact_sum(xs))
+    assert math.isnan(_exact_mean(xs))
+    assert math.isnan(_exact_var(xs))
+    assert math.isnan(_exact_sd(xs))
+
+
+def test_an_exact_sum_of_opposite_infinities_is_not_a_number():
+    # No input is missing here, but inf + -inf makes the running sum NaN. This engine
+    # returns NaN, and the R twin, whose comparison was then NA, stopped instead. A
+    # cell such as 1e999 reads as an infinity in both engines.
+    inf = float("inf")
+    assert math.isnan(_exact_sum([inf, -inf, 1.0]))
+    assert math.isnan(_exact_mean([inf, -inf, 1.0]))
+    assert math.isnan(_exact_sum([1.0, inf, 2.0]))
+
+
 def test_variance_survives_data_far_from_zero():
     # The one-pass "sum of squares minus n times squared mean" form cancels
     # catastrophically here and can even return a negative variance; the two-pass form

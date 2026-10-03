@@ -1,0 +1,24 @@
+# Twin-edge case: joint matching of nouns and verbs on length and a rating that three
+# nouns lack. Two of the three fall within the frequency band, so 10 complete nouns
+# face 13 verbs and at most 10 pairs can be scored. Both engines exclude the two
+# before pairing and, under shortfall: allow, select 10 sets.
+# The word forms are common English words. The Zipf frequencies and the ratings are
+# invented for this fixture and describe no corpus or norm.
+name: twin_edge_joint_nan
+language: english
+lexicon: lexicon.csv
+description: 'Nouns versus verbs paired jointly on length and a rating that three nouns lack.'
+pool_filters:
+  frequency: [3.6, 4.6]
+n_per_condition: 11
+conditions:
+  - name: noun
+    define_by:
+      pos: [noun]
+  - name: verb
+    define_by:
+      pos: [verb]
+match_on: [length, rating]
+matching:
+  method: joint
+  shortfall: allow

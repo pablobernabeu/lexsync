@@ -19,10 +19,11 @@ resample_stimuli(pool, design, schema, n_sets, verbose = FALSE)
 }
 \value{
 A data frame of matched stimuli with an added \code{replicate} column. The
-replicates are bound together, which drops the \code{"audit"} attribute
-\code{\link[=match_stimuli]{match_stimuli()}} uses to report a relaxed tolerance window, so a relaxation
-inside a replicate reaches the console under \code{verbose} but not the run log or
-the datasheet.
+first replicate draws on the whole pool, so its count of the candidates
+excluded for a missing matched value is the one recorded in the \code{"audit"}
+attribute's \code{incomplete_dropped} entry, as \code{\link[=match_stimuli]{match_stimuli()}} records it. A
+relaxed tolerance window inside a replicate is not recorded: it reaches the
+console under \code{verbose} but not the run log or the datasheet.
 }
 \description{
 Each replicate is an independent, fully matched set drawn from the pool with the

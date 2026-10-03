@@ -1,8 +1,8 @@
 # lexsync run log: en_supplied_pool
 
 - Engine: Python 3.13.7
-- Started: 2026-10-03T00:46:23
-- Finished: 2026-10-03T00:46:27
+- Started: 2026-10-03T09:52:53
+- Finished: 2026-10-03T09:52:56
 
 ## Run metadata
 
@@ -15,47 +15,47 @@
 
 ## Steps
 
-- **2026-10-03T00:46:23**: loading supplied pool 'items/pool_en_concrete_nouns.csv'
-- **2026-10-03T00:46:25**: supplied pool: 131 words (dimensions from 'corpora/derived/en.csv')
+- **2026-10-03T09:52:53**: loading supplied pool 'items/pool_en_concrete_nouns.csv'
+- **2026-10-03T09:52:54**: supplied pool: 131 words (dimensions from 'corpora/derived/en.csv')
     - words: 131
     - lexicon: corpora/derived/en.csv
-- **2026-10-03T00:46:25**: pool after filters: 131 words
+- **2026-10-03T09:52:54**: pool after filters: 131 words
     - pool: 131
-- **2026-10-03T00:46:25**: matched 40 items across 2 conditions
+- **2026-10-03T09:52:54**: matched 40 items across 2 conditions
     - conditions: higher_frequency, lower_frequency
-- **2026-10-03T00:46:26**: equivalence lower_frequency vs higher_frequency on 'length': d = -0.11 [-0.64, 0.42], TOST p = 0.1121 (not shown equivalent)
-- **2026-10-03T00:46:26**: equivalence lower_frequency vs higher_frequency on 'frequency': d = 3.53 [2.68, 4.38], TOST p = 1.0 (not shown equivalent)
-- **2026-10-03T00:46:26**: equivalence lower_frequency vs higher_frequency on 'n_density': d = 0.13 [-0.40, 0.66], TOST p = 0.1245 (not shown equivalent)
-- **2026-10-03T00:46:26**: equivalence lower_frequency vs higher_frequency on 'old20': d = -0.24 [-0.78, 0.29], TOST p = 0.2093 (not shown equivalent)
-- **2026-10-03T00:46:26**: wrote 'en_supplied_pool_english_stimuli_py.csv'
+- **2026-10-03T09:52:54**: equivalence lower_frequency vs higher_frequency on 'length': d = -0.11 [-0.64, 0.42], TOST p = 0.1121 (not shown equivalent)
+- **2026-10-03T09:52:54**: equivalence lower_frequency vs higher_frequency on 'frequency': d = 3.53 [2.68, 4.38], TOST p = 1.0 (not shown equivalent)
+- **2026-10-03T09:52:54**: equivalence lower_frequency vs higher_frequency on 'n_density': d = 0.13 [-0.40, 0.66], TOST p = 0.1245 (not shown equivalent)
+- **2026-10-03T09:52:54**: equivalence lower_frequency vs higher_frequency on 'old20': d = -0.24 [-0.78, 0.29], TOST p = 0.2093 (not shown equivalent)
+- **2026-10-03T09:52:55**: wrote 'en_supplied_pool_english_stimuli_py.csv'
     - path: output\stimuli\en_supplied_pool_english_stimuli_py.csv
     - rows: 40
     - md5: 5f9123dce72c73b1f532a5b393c0ee55
-- **2026-10-03T00:46:26**: wrote 'en_supplied_pool_english_descriptives_py.csv'
+- **2026-10-03T09:52:55**: wrote 'en_supplied_pool_english_descriptives_py.csv'
     - path: output\reports\en_supplied_pool_english_descriptives_py.csv
     - rows: 8
     - md5: 084478a4ea1b2982354267964701bdf0
-- **2026-10-03T00:46:26**: wrote 'en_supplied_pool_english_comparisons_py.csv'
+- **2026-10-03T09:52:55**: wrote 'en_supplied_pool_english_comparisons_py.csv'
     - path: output\reports\en_supplied_pool_english_comparisons_py.csv
     - rows: 4
     - md5: 35a87203c30fae56f60a96fc70db958c
-- **2026-10-03T00:46:26**: wrote 'en_supplied_pool_english_psychopy.py'
+- **2026-10-03T09:52:55**: wrote 'en_supplied_pool_english_psychopy.py'
     - path: output\experiments\en_supplied_pool_english_psychopy.py
     - rows: None
     - md5: f2a329e0d8bf81270a33cc700ab8d858
-- **2026-10-03T00:46:26**: wrote 'en_supplied_pool_english.osexp'
+- **2026-10-03T09:52:55**: wrote 'en_supplied_pool_english.osexp'
     - path: output\experiments\en_supplied_pool_english.osexp
     - rows: None
     - md5: bcb603fe84755a2829b1b8733d10b18f
-- **2026-10-03T00:46:26**: wrote 'en_supplied_pool_english.html'
+- **2026-10-03T09:52:55**: wrote 'en_supplied_pool_english.html'
     - path: output\experiments\en_supplied_pool_english.html
     - rows: None
     - md5: 96361646fdb301915726601716042d9e
-- **2026-10-03T00:46:27**: wrote 'en_supplied_pool_english_datasheet_py.json'
+- **2026-10-03T09:52:56**: wrote 'en_supplied_pool_english_datasheet_py.json'
     - path: output\reports\en_supplied_pool_english_datasheet_py.json
     - rows: None
-    - md5: 1abaeb1d1a8ee22e2f9becb0a2ea293c
-- **2026-10-03T00:46:27**: wrote 'en_supplied_pool_english_datasheet_py.md'
+    - md5: d53fca8642da177ab0149309a3b2f75a
+- **2026-10-03T09:52:56**: wrote 'en_supplied_pool_english_datasheet_py.md'
     - path: output\reports\en_supplied_pool_english_datasheet_py.md
     - rows: None
     - md5: 19c82eae9a948e9d0fc43847b8d19241

@@ -289,7 +289,7 @@ def test_datasheet_records_the_joined_norm_tables(schema, tmp_path):
                          {"stimuli": None, "experiments": {}}, 2026, norms=norms)
     assert ds["materials_source"]["norms"] == norms
     # Coverage is rendered, because the rows a norm table does not cover carry a
-    # missing value and are then dropped from the pool by the tolerance windows.
+    # missing value and drop out of any selection that uses the column.
     md = render_datasheet_md(ds)
     assert "## Joined norms" in md and "900 / 1000" in md
     assert "en_conc.csv" in methods_paragraph(ds)
@@ -495,6 +495,53 @@ def test_datasheet_records_design_and_schema_checksums_and_the_matcher_audit(sch
     assert "schema_sha256" not in plain["reproducibility"]
     assert "window_relaxations" not in plain["selection"]
     assert "neighbourhood_reference" not in plain["selection"]
+
+
+def test_datasheet_records_the_candidates_excluded_for_a_missing_value(schema):
+    # A candidate missing a matched dimension is excluded before anything is
+    # selected, and the record says how many each condition lost. The field is absent
+    # when nothing was excluded, so the datasheets of complete pools do not change.
+    # Twinned with test-datasheet.R.
+    audit = {"incomplete_dropped": [{"condition": "hi", "n": 3}, {"condition": "lo", "n": 1}]}
+    ds = build_datasheet(_design(), schema, None, _stim(), "x.csv",
+                         {"stimuli": None, "experiments": {}}, 2026, selection_audit=audit)
+    assert ds["selection"]["incomplete_dropped"] == [
+        {"condition": "hi", "n": 3}, {"condition": "lo", "n": 1}]
+    plain = build_datasheet(_design(), schema, None, _stim(), "x.csv",
+                            {"stimuli": None, "experiments": {}}, 2026,
+                            selection_audit={"window_relaxations": []})
+    assert "incomplete_dropped" not in plain["selection"]
+    # The excluded candidates never reach the pairwise cap, so a condition the
+    # exclusion brings under it is recorded as uncapped.
+    design = _design()
+    design["matching"] = {"method": "joint"}
+    capped = build_datasheet(design, schema, None, _stim(), "x.csv",
+                             {"stimuli": None, "experiments": {}}, 2026,
+                             candidate_pool=[{"condition": "hi", "n_candidates": 1250},
+                                             {"condition": "lo", "n_candidates": 1300}],
+                             selection_audit={"incomplete_dropped": [
+                                 {"condition": "hi", "n": 100}]})
+    assert capped["selection"]["candidate_cap"]["applied"] == {"hi": False, "lo": True}
+
+
+def test_the_methods_text_counts_only_the_candidates_that_could_be_matched(schema, tmp_path):
+    # The candidate pool counts every word in a condition's window, the ones excluded
+    # for a missing matched value among them. Those were never eligible, so the Methods
+    # text takes them off, and here the exclusion makes 'hi' the smaller condition.
+    # Twinned with test-datasheet.R.
+    ds = build_datasheet(_design(), schema, None, _stim(), "x.csv",
+                         {"stimuli": None, "experiments": {}}, 2026,
+                         candidate_pool=[{"condition": "hi", "n_candidates": 30},
+                                         {"condition": "lo", "n_candidates": 25}],
+                         selection_audit={"incomplete_dropped": [
+                             {"condition": "hi", "n": 14}]})
+    m = methods_paragraph(ds)
+    assert "The smallest condition was selected from 16 eligible candidates" in m
+    # A record read back from its JSON renders the same text.
+    jpath, mpath = str(tmp_path / "d.json"), str(tmp_path / "d.md")
+    write_datasheet(ds, jpath, mpath)
+    with open(jpath, encoding="utf-8") as handle:
+        assert methods_paragraph(json.load(handle)) == m
 
 
 def test_versions_block_records_the_os_and_the_parsing_packages():

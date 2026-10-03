@@ -410,8 +410,8 @@ merge_norms <- function(lexicon, norms, on = "word", columns = NULL) {
 # for build_datasheet() to write down.
 #
 # Coverage is recorded per column rather than per file, because one table can cover a
-# dimension well and another badly, and an unmatched row becomes an NA that the
-# tolerance windows then drop from the pool without saying so.
+# dimension well and another badly, and an unmatched row becomes an NA that takes the
+# word out of any selection that filters, matches or spans on the column.
 
 # YAML gives a sequence of mappings as an unnamed list of named lists, and a single
 # bare mapping as one named list. Writing one entry as a bare mapping is the obvious

@@ -1,0 +1,10 @@
+# Both engines select the same six noun-verb sets from the words the rating covers.
+# Before the exclusion, both stopped with a false 'overlapping conditions' error on
+# 'arrive', which an anchor without a rating had re-picked.
+outcome: artefacts
+compare: [stimuli, descriptives, comparisons]
+datasheet:
+  selection.incomplete_dropped.0.condition: noun
+  selection.incomplete_dropped.0.n: 2
+  selection.incomplete_dropped.1.condition: verb
+  selection.incomplete_dropped.1.n: 1

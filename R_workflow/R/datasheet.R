@@ -23,6 +23,8 @@
 #   materials_source$input_normalisation   what NFC normalisation did to the inputs
 #                                          (changed, collapsed), present only when it
 #                                          changed something
+#   selection$incomplete_dropped  the candidates each condition lost for missing a
+#                               matched dimension, present only when it lost any
 DATASHEET_VERSION <- "1.2"
 
 # Datasheet labels for the pseudoword generators in generation.R, keyed by the
@@ -206,7 +208,10 @@ DATASHEET_VERSION <- "1.2"
 #'   does not.
 #' @param selection_audit Optional matcher audit record; its `window_relaxations`
 #'   entries are recorded because a relaxed window changes what "matched" means
-#'   for that condition.
+#'   for that condition. Its `incomplete_dropped` entries (`list(condition, n)`)
+#'   count the candidates excluded for missing a matched dimension, which
+#'   `candidate_pool` still includes. They are recorded because the selection drew
+#'   on a smaller pool than the window holds.
 #' @param neighbourhood_reference Optional record of the lexicon the
 #'   neighbourhood dimensions were computed against
 #'   (`list(source, n_words, sha256)`), recorded verbatim.
@@ -234,6 +239,10 @@ build_datasheet <- function(design, schema, report, stimuli, source_path, artifa
   controlled <- .controlled_dims(design, source)
   relational <- .relational_record(design, stimuli)
   conditions <- unique(as.character(stimuli$condition))
+  incomplete <- selection_audit[["incomplete_dropped"]] %||% list()
+  dropped <- stats::setNames(
+    vapply(incomplete, function(d) as.integer(d[["n"]]), integer(1)),
+    vapply(incomplete, function(d) as.character(d[["condition"]]), character(1)))
 
   realised <- list()
   if (!is.null(report)) {
@@ -274,13 +283,18 @@ build_datasheet <- function(design, schema, report, stimuli, source_path, artifa
       # The pairwise methods rank whole pairs and never consult the tolerance
       # windows; recording tolerance_k here would claim a filter that was not
       # applied. They get the cap they do apply instead, with a per-condition
-      # verdict on whether it fired.
+      # verdict on whether it fired. The candidates excluded for a missing matched
+      # value never reach the cap, so the verdict counts the rest.
       entries <- Filter(function(x) !is.null(x$condition) && !is.null(x$n_candidates) &&
                           !is.na(x$n_candidates), candidate_pool %||% list())
+      n_lost <- function(cond) {
+        if (cond %in% names(dropped)) dropped[[cond]] else 0L
+      }
       sel$candidate_cap <- list(
         cap = as.integer(.PAIRWISE_CAP),
         applied = stats::setNames(
-          lapply(entries, function(x) isTRUE(x$n_candidates > .PAIRWISE_CAP)),
+          lapply(entries, function(x)
+            isTRUE(x$n_candidates - n_lost(as.character(x$condition)) > .PAIRWISE_CAP)),
           vapply(entries, function(x) as.character(x$condition), character(1))))
     } else {
       sel$tolerance_k <- .resolve_tolerance_k(design, schema)
@@ -309,6 +323,12 @@ build_datasheet <- function(design, schema, report, stimuli, source_path, artifa
       list(condition = r$condition,
            n_within_tolerance = as.integer(r$n_within_tolerance),
            n_needed = as.integer(r$n_needed)))
+  }
+  # The candidates excluded for missing a matched dimension, which candidate_pool
+  # still counts: the selection drew on a smaller pool than the windows hold.
+  if (length(incomplete)) {
+    selection$incomplete_dropped <- lapply(incomplete, function(d)
+      list(condition = d[["condition"]], n = as.integer(d[["n"]])))
   }
   if (!is.null(neighbourhood_reference))
     selection$neighbourhood_reference <- neighbourhood_reference
@@ -553,10 +573,22 @@ methods_paragraph <- function(ds) {
     format(bal$cost_before, scientific = FALSE),
     format(bal$cost_after, scientific = FALSE))
   cp <- ds$selection$candidate_pool
+  # The candidate pool counts the candidates excluded for a missing matched value,
+  # which were never eligible, so they come off the count of the condition that lost
+  # them. Mirrors methods_paragraph in datasheet.py.
+  lost <- function(cond) {
+    n <- 0
+    for (d in ds[["selection"]][["incomplete_dropped"]] %||% list()) {
+      if (identical(as.character(d[["condition"]]), as.character(cond))) {
+        n <- n + as.numeric(d[["n"]])
+      }
+    }
+    n
+  }
   pool_note <- ""
   if (!is.null(cp) && length(cp)) {
-    sizes <- vapply(cp, function(x) if (is.null(x$n_candidates)) NA_real_ else as.numeric(x$n_candidates),
-                    numeric(1))
+    sizes <- vapply(cp, function(x) if (is.null(x$n_candidates)) NA_real_ else
+      as.numeric(x$n_candidates) - lost(x$condition %||% NA_character_), numeric(1))
     sizes <- sizes[!is.na(sizes)]
     if (length(sizes))
       pool_note <- sprintf(paste0(". The smallest condition was selected from %d eligible ",

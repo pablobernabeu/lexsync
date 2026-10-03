@@ -68,7 +68,10 @@ does not.}
 
 \item{selection_audit}{Optional matcher audit record; its \code{window_relaxations}
 entries are recorded because a relaxed window changes what "matched" means
-for that condition.}
+for that condition. Its \code{incomplete_dropped} entries (\code{list(condition, n)})
+count the candidates excluded for missing a matched dimension, which
+\code{candidate_pool} still includes. They are recorded because the selection drew
+on a smaller pool than the window holds.}
 
 \item{neighbourhood_reference}{Optional record of the lexicon the
 neighbourhood dimensions were computed against

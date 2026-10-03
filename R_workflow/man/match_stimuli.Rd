@@ -36,4 +36,10 @@ default, refuses to return fewer sets than requested; \code{"allow"} accepts the
 shrink) and \code{on_insufficient_tolerance} (\code{"relax"}, the default, widens an
 undersupplied tolerance window to the full condition subpool and records the
 relaxation in an \code{"audit"} attribute; \code{"error"} refuses instead).
+
+A candidate missing any \code{match_on} dimension cannot be scored, so every method
+excludes it before selecting, and the number excluded per condition is recorded
+in the \code{"audit"} attribute's \code{incomplete_dropped} entry. The shortfall policy
+then applies to what remains, and a condition left with no complete candidate
+is refused.
 }

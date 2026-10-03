@@ -231,8 +231,10 @@ lexsync ships no norm data: licences vary, and the citation is yours to honour. 
 record what you joined. Every table appears in the materials datasheet with its checksum and its
 per-column coverage, because a norm table can supply the very variable a design manipulates, and a
 selection over columns of unstated origin is not reproducible from the record that exists to make it
-so. Coverage is recorded for a related reason: a word the table does not cover gets a missing value,
-and the tolerance windows then drop it from the pool.
+so. Coverage is recorded for a related reason: a word the table does not cover gets a missing value.
+A filter on the column drops it, and the matcher excludes it before selecting whenever the column is a
+matched dimension, a continuous predictor or a control. The run log and the datasheet count those
+exclusions per condition.
 
 ## How matching works
 
@@ -243,7 +245,10 @@ conditions and no `match_on`, or an empty one, is refused before anything is sel
 
 First it standardises. Every matched dimension is z-scored against the whole pool's mean and sample
 standard deviation, so a distance in letters and a distance in Zipf units become comparable. A
-dimension with zero or undefined spread gets a scale of 1, which keeps the distance finite.
+dimension with zero or undefined spread gets a scale of 1, which keeps the distance finite. A
+candidate missing any matched dimension has no place in that space, so every condition's subpool is
+cut to its complete rows before any method runs. The run log and the datasheet count what each
+condition lost, and the `shortfall` policy below applies to what remains.
 
 Then it picks an anchor. The first condition in the design is the anchor, and its subpool is sorted
 by the first dimension its `define_by` mentions, with a byte-order tie-break, after which the
@@ -264,15 +269,13 @@ candidate by standardised distance.
 
 The assignment is where determinism is bought. Distances are rounded to nine decimal places before
 they are compared, which absorbs last-bit floating-point differences between the two engines. Ties
-are broken by the word's UTF-8 bytes and then by its lexicon id. Candidates already used are pushed
-to infinity, and candidates whose matched dimensions are missing rank last rather than first, which
-is what R's `order(na.last = TRUE)` does and what a naive `min()` over NaN would get wrong.
+are broken by the word's UTF-8 bytes and then by its lexicon id. Each anchor item chooses among the
+candidates not yet used, so no word can be assigned twice.
 
 Two guards are worth knowing about because they turn silent corruption into an error. If a condition
 has fewer candidates inside its window than the anchor has items, the window is relaxed to the whole
-subpool, and `verbose=True` says so. If even the relaxed subpool is too small, or if too few of its
-rows are complete on the matched dimensions, `match_stimuli` raises. Without
-the second check an exhausted pool would let the tie-break re-pick the same word into several sets.
+subpool, and `verbose=True` says so. If even the relaxed subpool is too small, `match_stimuli` raises.
+Without that check, an exhausted pool would leave an anchor item with no unused candidate to take.
 
 Both behaviours are policies, and the schema's `matching` block names them.
 `on_insufficient_tolerance` governs the window fallback. Its default of `relax` keeps the behaviour
@@ -306,7 +309,9 @@ same rounded-distance and byte-rank tie-breaks as everything else.
 `mahalanobis` uses the inverse of the pool's correlation matrix in standardised space as its metric,
 with a small ridge to survive near-collinear dimensions, so that two dimensions measuring much the
 same thing are not counted twice ([Rubin, 1980](references.md#rubin-1980);
-[Stuart, 2010](references.md#stuart-2010)). `optimal` minimises the summed pair distance over all
+[Stuart, 2010](references.md#stuart-2010)). The correlations come from the pool's rows that are
+complete on every matched dimension, and with *k* matched dimensions the pool needs at least *k* + 2
+such rows. `optimal` minimises the summed pair distance over all
 pairings at once, which produces fewer badly matched pairs than taking the locally cheapest pair at
 each step ([Gu & Rosenbaum, 1993](references.md#gu-1993)).
 

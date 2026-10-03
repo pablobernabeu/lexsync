@@ -1,0 +1,14 @@
+# Twin-edge case: a continuous design whose predictor, a rating, is missing for 16 of
+# the 40 words (40%). Both engines exclude those words before the first pass and
+# record the count, so every selected item carries the predictor.
+# The word forms are common English words. The Zipf frequencies and the ratings are
+# invented for this fixture and describe no corpus or norm.
+name: twin_edge_cont_nan_predictor
+language: english
+lexicon: lexicon.csv
+description: 'Words spread over a rating that 40% of the lexicon lacks, with length as the control.'
+n_per_condition: 10
+continuous:
+  predictor: rating
+  controls: [length]
+match_on: [length]

@@ -80,10 +80,20 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
   }
 
   # Read the matcher's audit attribute straight off the returned frame (rbind and
-  # pd.concat drop attributes) and put any window relaxation on the run log; the
-  # datasheet records it too. Returns the frame unchanged.
+  # pd.concat drop attributes) and put any excluded candidates and window relaxations
+  # on the run log, in the order the matcher met them. The datasheet records both too.
+  # Returns the frame unchanged.
   take_audit <- function(stim) {
     selection_audit <<- attr(stim, "audit")
+    for (dx in selection_audit[["incomplete_dropped"]] %||% list()) {
+      msg <- if (is_continuous) {
+        sprintf("dropped %d candidate(s) missing the predictor or a control", dx[["n"]])
+      } else {
+        sprintf("dropped %d candidate(s) of condition '%s' missing a matched dimension",
+                dx[["n"]], dx[["condition"]])
+      }
+      log <<- log_step(log, msg, list(condition = dx[["condition"]], n = dx[["n"]]))
+    }
     for (rx in selection_audit$window_relaxations %||% list()) {
       log <<- log_step(log, sprintf("tolerance window relaxed for condition '%s' (%d within tolerance, %d needed)",
                                     rx$condition, rx$n_within_tolerance, rx$n_needed),
@@ -181,10 +191,12 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
       report <- match_report_continuous(stim, predictor, controls, schema)
     } else {
       if (!is.null(design[["resample"]])) {
-        # Per-replicate audits are dropped with the rbind inside resample_stimuli;
-        # a relaxation there still reaches the console via verbose.
-        stim <- resample_stimuli(pool, design, schema, design[["resample"]][["n_sets"]] %||% 2L,
-                                 verbose = verbose)
+        # resample_stimuli records the first replicate's exclusions, which are the
+        # whole pool's. A window relaxation inside a replicate reaches only the
+        # console, via verbose.
+        stim <- take_audit(resample_stimuli(pool, design, schema,
+                                            design[["resample"]][["n_sets"]] %||% 2L,
+                                            verbose = verbose))
         log <- log_step(log, sprintf("resampled %d disjoint matched sets (%d items total)",
                                      length(unique(stim$replicate)), nrow(stim)),
                         list(conditions = paste(unique(stim$condition), collapse = ", ")))

@@ -49,10 +49,11 @@ engines can compute the same distance and differ in the last bit, and if that bi
 comparison then a stable tie-break is not stable at all. Rounding first is what makes the tie-break
 mean anything.
 
-Missing values are ranked last, explicitly. A relaxed tolerance window can readmit a row whose
-matched dimension is missing, and its distance is then NaN. A bare `min()` over NaN keeps whichever
-row it happened to see first, which makes the selection depend on pool row order. The matcher sorts
-NaN last, as R's `order(na.last = TRUE)` does.
+Missing values are kept out of the comparisons. A candidate missing a matched dimension, or in a
+continuous design the predictor or a control, has no distance to rank. A bare `min()` over NaN keeps
+whichever row it happened to see first, which makes the selection depend on pool row order. Both
+engines therefore exclude such candidates before selecting, and the matcher still sorts a NaN
+distance last, as R's `order(na.last = TRUE)` does.
 
 CSV input is read by one rule in both engines. Each engine reads every cell as text and converts it
 itself, because pandas and readr guess types by different heuristics. Header names and cells are
@@ -284,7 +285,10 @@ this design the answer is 544 high-frequency candidates and 4295 low-frequency o
 the size of the discretionary pool the selection drew from, and reporting it makes item-selection
 bias auditable ([Forster, 2000](references.md#forster-2000);
 [Simmons et al., 2011](references.md#simmons-2011)). A set of 80 chosen from 544 is a different
-object from a set of 80 chosen from 85.
+object from a set of 80 chosen from 85. A candidate missing a matched dimension satisfies its window
+but cannot be matched. The JSON record counts such candidates per condition in
+`selection.incomplete_dropped`, and the Methods paragraph leaves them out of its count of eligible
+candidates.
 
 The realised control is a table, not a claim, giving each dimension its role, Cohen's *d*, the 90%
 interval, the variance ratio, the TOST *p* and the verdict. The JSON keeps each statistic as the

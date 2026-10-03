@@ -45,6 +45,8 @@ from .matching import PAIRWISE_CAP
 #   materials_source["input_normalisation"]   what NFC normalisation did to the inputs
 #                                             ({changed, collapsed}), present only when
 #                                             it changed something
+#   selection.incomplete_dropped  the candidates each condition lost for missing a
+#                               matched dimension, present only when it lost any
 DATASHEET_VERSION = "1.2"
 
 # Datasheet labels for the pseudoword generators in generation.py, keyed by the
@@ -249,7 +251,10 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
 
     ``selection_audit`` (optional) is the matcher's audit record; its
     ``window_relaxations`` entries are recorded because a relaxed window changes
-    what "matched" means for that condition.
+    what "matched" means for that condition. Its ``incomplete_dropped`` entries
+    (``{"condition", "n"}``) count the candidates excluded for missing a matched
+    dimension, which ``candidate_pool`` still includes. They are recorded because
+    the selection drew on a smaller pool than the window holds.
 
     ``neighbourhood_reference`` (optional) records the lexicon the neighbourhood
     dimensions were computed against (``{"source", "n_words", "sha256"}``),
@@ -273,6 +278,8 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
     controlled = _controlled(design, source)
     relational = _relational_record(design, stimuli)
     conditions = list(dict.fromkeys(stimuli["condition"]))
+    incomplete = (selection_audit or {}).get("incomplete_dropped") or []
+    dropped = {d["condition"]: int(d["n"]) for d in incomplete}
 
     realised = []
     if report is not None:
@@ -309,10 +316,13 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
             # The pairwise methods rank whole pairs and never consult the tolerance
             # windows; recording tolerance_k here would claim a filter that was not
             # applied. They get the cap they do apply instead, with a per-condition
-            # verdict on whether it fired.
+            # verdict on whether it fired. The candidates excluded for a missing
+            # matched value never reach the cap, so the verdict counts the rest.
             selection["candidate_cap"] = {
                 "cap": int(PAIRWISE_CAP),
-                "applied": {c["condition"]: bool(c["n_candidates"] > PAIRWISE_CAP)
+                "applied": {c["condition"]: bool(c["n_candidates"]
+                                                 - dropped.get(c["condition"], 0)
+                                                 > PAIRWISE_CAP)
                             for c in (candidate_pool or [])
                             if c.get("condition") is not None
                             and c.get("n_candidates") is not None},
@@ -342,6 +352,11 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
             {"condition": r["condition"],
              "n_within_tolerance": int(r["n_within_tolerance"]),
              "n_needed": int(r["n_needed"])} for r in relaxations]
+    # The candidates excluded for missing a matched dimension, which candidate_pool
+    # still counts: the selection drew on a smaller pool than the windows hold.
+    if incomplete:
+        selection["incomplete_dropped"] = [
+            {"condition": d["condition"], "n": int(d["n"])} for d in incomplete]
     if neighbourhood_reference is not None:
         selection["neighbourhood_reference"] = neighbourhood_reference
 
@@ -622,9 +637,16 @@ def methods_paragraph(ds: dict) -> str:
             f"{ds['reproducibility']['seed']}; lexsync "
             f"{ds['reproducibility']['versions']['lexsync']}).")
     cp = (ds.get("selection") or {}).get("candidate_pool")
+    # The candidate pool counts the candidates excluded for a missing matched value,
+    # which were never eligible, so they come off the count of the condition that
+    # lost them. Mirrors methods_paragraph in datasheet.R.
+    lost = {}
+    for d in (ds.get("selection") or {}).get("incomplete_dropped") or []:
+        lost[d["condition"]] = lost.get(d["condition"], 0) + int(d["n"])
     pool_note = ""
     if cp:
-        sizes = [c["n_candidates"] for c in cp if c.get("n_candidates") is not None]
+        sizes = [c["n_candidates"] - lost.get(c.get("condition"), 0) for c in cp
+                 if c.get("n_candidates") is not None]
         if sizes:
             pool_note = (f". The smallest condition was selected from {min(sizes)} "
                          "eligible candidates, and the selection was deterministic and "

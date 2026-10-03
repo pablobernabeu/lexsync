@@ -347,6 +347,144 @@ test_that("a pair design's window relaxation reaches the datasheet", {
   expect_true(grepl("tolerance window relaxed", log, fixed = TRUE))
 })
 
+# Ten nouns and ten verbs. Two nouns and one verb have no rating, as words a norm table
+# does not cover would have none. The ratings are invented for this test.
+rated_lexicon <- function(dir) {
+  path <- file.path(dir, "lexicon.csv")
+  writeLines(c("word,freq_zipf,pos,rating",
+               "anchor,3.66,noun,2.1", "basket,3.88,noun,", "bottle,4.58,noun,3.0",
+               "button,4.29,noun,2.6", "candle,3.79,noun,2.2", "carpet,3.92,noun,",
+               "forest,4.62,noun,3.4", "garden,4.83,noun,2.8", "ladder,3.74,noun,2.4",
+               "mirror,4.33,noun,3.1", "arrive,4.27,verb,2.0", "borrow,3.95,verb,2.7",
+               "decide,4.88,verb,", "divide,3.98,verb,2.3", "escape,4.52,verb,3.3",
+               "follow,5.08,verb,2.9", "gather,4.18,verb,2.5", "invite,4.03,verb,3.2",
+               "listen,4.91,verb,2.2", "punish,3.77,verb,3.0"),
+             path, useBytes = TRUE)
+  path
+}
+
+test_that("an exclusion for a missing matched value reaches the record", {
+  # Matching excludes a candidate missing a matched dimension, and the run log and the
+  # datasheet say how many each condition lost. Twinned with test_run_pipeline.py.
+  out <- tmp_out()
+  design <- write_design(out, c(
+    "name: guard_incomplete",
+    "language: english",
+    paste0("lexicon: ", as_yaml_path(rated_lexicon(out))),
+    "n_per_condition: 4",
+    "conditions:",
+    "  - {name: noun, define_by: {pos: [noun]}}",
+    "  - {name: verb, define_by: {pos: [verb]}}",
+    "match_on: [length, rating]"
+  ))
+  res <- run_quiet(design, extdata("schema.yaml"), outdir = out)
+  ds <- jsonlite::fromJSON(file.path(out, "reports",
+                                     "guard_incomplete_english_datasheet_R.json"),
+                           simplifyVector = FALSE)
+  expect_identical(ds$selection$incomplete_dropped,
+                   list(list(condition = "noun", n = 2L), list(condition = "verb", n = 1L)))
+  log <- paste(readLines(res$log, warn = FALSE), collapse = "\n")
+  expect_true(grepl("dropped 2 candidate(s) of condition 'noun' missing a matched dimension",
+                    log, fixed = TRUE))
+  expect_true(grepl("dropped 1 candidate(s) of condition 'verb' missing a matched dimension",
+                    log, fixed = TRUE))
+})
+
+test_that("a continuous design's exclusion reaches the record", {
+  out <- tmp_out()
+  design <- write_design(out, c(
+    "name: guard_incomplete_cont",
+    "language: english",
+    paste0("lexicon: ", as_yaml_path(rated_lexicon(out))),
+    "n_per_condition: 6",
+    "continuous: {predictor: rating, controls: [length]}",
+    "match_on: [length]"
+  ))
+  res <- run_quiet(design, extdata("schema.yaml"), outdir = out)
+  ds <- jsonlite::fromJSON(file.path(out, "reports",
+                                     "guard_incomplete_cont_english_datasheet_R.json"),
+                           simplifyVector = FALSE)
+  expect_identical(ds$selection$incomplete_dropped,
+                   list(list(condition = "continuous", n = 3L)))
+  log <- paste(readLines(res$log, warn = FALSE), collapse = "\n")
+  expect_true(grepl("dropped 3 candidate(s) missing the predictor or a control", log,
+                    fixed = TRUE))
+})
+
+test_that("a pair design's exclusion reaches the record", {
+  # The pair path selects over one row per set and copies the selector's audit onto
+  # the re-expanded table. 'across' has no rating, so its set is excluded and the
+  # count reaches the run log and the datasheet. Twinned with test_run_pipeline.py.
+  out <- tmp_out()
+  items <- file.path(out, "pairs.csv")
+  writeLines(c("item,condition,prime,target",
+               "1,related,aaa,flat", "1,unrelated,abba,flat",
+               "2,related,acne,glass", "2,unrelated,aaron,glass",
+               "3,related,alarm,across", "3,unrelated,abrams,across",
+               "4,related,aha,house", "4,unrelated,abdel,house"),
+             items, useBytes = TRUE)
+  ratings <- file.path(out, "ratings.csv")
+  writeLines(c("word,rating", "flat,2.5", "glass,3.1", "house,4.0"), ratings,
+             useBytes = TRUE)
+  design <- write_design(out, c(
+    "name: guard_pair_incomplete",
+    "language: english",
+    "paradigm: priming",
+    "norms:",
+    paste0("  - {path: ", as_yaml_path(ratings), ", columns: [rating]}"),
+    "items:",
+    "  source: table",
+    paste0("  path: ", as_yaml_path(items)),
+    "  members: [prime, target]",
+    paste0("  lexicon: ", as_yaml_path(extdata("en_example.csv"))),
+    "  anchor_condition: related",
+    "n_per_condition: 3",
+    "continuous:",
+    "  predictor: target.rating",
+    "  controls: [target.length]",
+    "match_on: [target.length]"
+  ))
+  res <- run_quiet(design, extdata("schema.yaml"), outdir = out)
+  ds <- jsonlite::fromJSON(file.path(out, "reports",
+                                     "guard_pair_incomplete_english_datasheet_R.json"),
+                           simplifyVector = FALSE)
+  expect_identical(ds$selection$incomplete_dropped,
+                   list(list(condition = "continuous", n = 1L)))
+  log <- paste(readLines(res$log, warn = FALSE), collapse = "\n")
+  expect_true(grepl("dropped 1 candidate(s) missing the predictor or a control", log,
+                    fixed = TRUE))
+  expect_false(any(grepl("across", readLines(res$stimuli, warn = FALSE), fixed = TRUE)))
+})
+
+test_that("a resampled design's exclusion reaches the record", {
+  # resample_stimuli records the first replicate's exclusions, which are the whole
+  # pool's, and the pipeline used to discard its audit. Twinned with
+  # test_run_pipeline.py.
+  out <- tmp_out()
+  design <- write_design(out, c(
+    "name: guard_incomplete_resample",
+    "language: english",
+    paste0("lexicon: ", as_yaml_path(rated_lexicon(out))),
+    "n_per_condition: 3",
+    "conditions:",
+    "  - {name: noun, define_by: {pos: [noun]}}",
+    "  - {name: verb, define_by: {pos: [verb]}}",
+    "match_on: [length, rating]",
+    "resample: {n_sets: 2}"
+  ))
+  res <- run_quiet(design, extdata("schema.yaml"), outdir = out)
+  ds <- jsonlite::fromJSON(file.path(out, "reports",
+                                     "guard_incomplete_resample_english_datasheet_R.json"),
+                           simplifyVector = FALSE)
+  expect_identical(ds$selection$incomplete_dropped,
+                   list(list(condition = "noun", n = 2L), list(condition = "verb", n = 1L)))
+  log <- paste(readLines(res$log, warn = FALSE), collapse = "\n")
+  expect_true(grepl("dropped 2 candidate(s) of condition 'noun' missing a matched dimension",
+                    log, fixed = TRUE))
+  expect_true(grepl("dropped 1 candidate(s) of condition 'verb' missing a matched dimension",
+                    log, fixed = TRUE))
+})
+
 # Three conditions in two lists run under the default counterbalance.incomplete: allow,
 # and the run log, the datasheet and the Methods text say what the rotation leaves out.
 # Pinned identically in tests/test_run_pipeline.py.

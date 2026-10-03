@@ -294,12 +294,21 @@ write_lines_lf <- function(x, path) {
 
 #' @keywords internal
 .exact_sum <- function(x) {
+  x <- as.numeric(x)
+  # A missing value propagates, which is the contract the Python engine keeps: there
+  # `abs(s) >= abs(v)` on a NaN is False and the sum comes back NaN, while here the
+  # same comparison is NA and R would stop. The mean, variance and standard deviation
+  # are built on this sum and inherit the contract. The median is the deliberate
+  # exception, dropping missing values before it sorts.
+  if (anyNA(x)) return(NA_real_)
   s <- 0; comp <- 0
-  for (v in as.numeric(x)) {
+  for (v in x) {
     t <- s + v
     # The larger magnitude keeps its low bits; the smaller one's are what get lost, so
-    # the correction is computed from whichever term is smaller.
-    comp <- comp + if (abs(s) >= abs(v)) ((s - t) + v) else ((v - t) + s)
+    # the correction is computed from whichever term is smaller. Opposite infinities
+    # make the running sum NaN, and isTRUE() then takes the branch Python's False
+    # takes, where a bare comparison would be NA and stop.
+    comp <- comp + if (isTRUE(abs(s) >= abs(v))) ((s - t) + v) else ((v - t) + s)
     s <- t
   }
   s + comp

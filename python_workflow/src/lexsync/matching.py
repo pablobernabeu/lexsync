@@ -80,14 +80,44 @@ def _assert_distinct_words(out):
 
     The anchored and joint paths prevent it structurally; the optimal path can
     only be steered away by a finite penalty, so the invariant is asserted on
-    every path's output. Must stay identical to .assert_distinct_words in
-    R_workflow/R/matching.R.
+    every path's output. A word repeated within one condition breaks the no-reuse
+    rule every method keeps, so it is reported as an internal error of the matcher.
+    Must stay identical to .assert_distinct_words in R_workflow/R/matching.R.
     """
+    for cond in dict.fromkeys(out["condition"]):
+        words = out.loc[out["condition"] == cond, "word"]
+        repeated = words[words.duplicated()]
+        if len(repeated):
+            raise ValueError(f"lexsync: internal error: condition '{cond}' selected the "
+                             f"word '{repeated.iloc[0]}' more than once; please report "
+                             f"this.")
     dup = out["word"][out["word"].duplicated()]
     if len(dup):
         raise ValueError(f"lexsync: overlapping conditions selected the word "
                          f"'{dup.iloc[0]}' in more than one condition; make the "
                          f"conditions disjoint or lower n_per_condition.")
+
+
+def _attach_audit(out, relaxations, incomplete):
+    """Record the relaxed windows and the excluded candidates on the result.
+
+    The pipeline reads the record immediately after the call, before any reshaping
+    can lose it. A selection with nothing to record carries no audit at all, as
+    before. pandas carries attrs through a row subset, and through pd.concat when
+    every part holds the same. R keeps attributes through a row subset, and rbind
+    keeps its first part's. An audit already on the pool would therefore reach the
+    result as if this selection had made it, so both engines clear it here first.
+    Must stay identical to .attach_audit in R_workflow/R/matching.R.
+    """
+    out.attrs.pop("audit", None)
+    audit = {}
+    if relaxations:
+        audit["window_relaxations"] = relaxations
+    if incomplete:
+        audit["incomplete_dropped"] = incomplete
+    if audit:
+        out.attrs["audit"] = audit
+    return out
 
 
 def _zmat(df: pd.DataFrame, match_on, center, scale) -> np.ndarray:
@@ -178,25 +208,31 @@ def _maha_metric(z_pool: np.ndarray, ridge: float = 1e-6) -> np.ndarray:
     Returns the inverse of the pool's correlation matrix (the covariance of the
     z-scored dimensions), so the distance down-weights correlated dimensions
     instead of double-counting the variance they share (Rubin, 1980; Stuart,
-    2010). A small ridge keeps the matrix invertible when dimensions are nearly
-    collinear. This inverse is a linear-algebra operation, so its last bits, and
-    hence occasionally a matched item under a near-tie, may differ from the R
-    engine (see the module note).
+    2010). The correlations are estimated from the pool rows complete on every
+    matched dimension, and a pool with fewer than k + 2 such rows for k dimensions
+    is refused. A small ridge keeps the matrix invertible when dimensions are
+    nearly collinear. This inverse is a linear-algebra operation, so its last
+    bits, and hence occasionally a matched item under a near-tie, may differ from
+    the R engine (see the module note).
     """
     if z_pool.shape[1] == 1:
         return np.array([[1.0]])
-    c = np.atleast_2d(np.corrcoef(z_pool, rowvar=False))
-    # An undefined correlation is treated as no correlation, which covers two cases
-    # worth telling apart. A constant dimension has no correlation to estimate, and
-    # zero is the right reading. A dimension carrying even one missing value also
-    # gives NaN here, and zeroing it drops that dimension's whole row and column; if
-    # every dimension is affected the metric is the identity and Mahalanobis matching
-    # becomes the standardised Euclidean matching it was chosen over. Nothing
-    # upstream prevents that: the completeness guards in match_stimuli count usable
-    # candidates per condition and pass easily on a large pool with a handful of
-    # missing values. It is the one respect in which this method is quietly sensitive
-    # to pool quality, so a design choosing it should match on dimensions the lexicon
-    # covers completely.
+    # np.corrcoef returns NaN for every pair involving a column with a missing
+    # value, and zeroing that NaN used to drop the dimension's whole row and column,
+    # so a partially covering norm entered the distance as an independent term. The
+    # rows complete on every dimension are the cases the matcher can score at all,
+    # since match_stimuli excludes the others before it selects. Below k + 1 rows the
+    # k-by-k sample correlation matrix is singular, and the guard asks for one row
+    # more, so the metric never rests on the bare minimum.
+    k = z_pool.shape[1]
+    complete = z_pool[~np.isnan(z_pool).any(axis=1)]
+    if len(complete) < k + 2:
+        raise ValueError(f"lexsync: mahalanobis matching needs at least {k + 2} items "
+                         f"complete on the matched dimensions to estimate their "
+                         f"correlations, but the pool has {len(complete)}.")
+    c = np.atleast_2d(np.corrcoef(complete, rowvar=False))
+    # A constant dimension has no correlation to estimate, which corrcoef reports as
+    # NaN, and zero is the right reading of it.
     # Must stay identical to .maha_metric in R_workflow/R/matching.R.
     c = np.nan_to_num(c, nan=0.0)
     np.fill_diagonal(c, 1.0)
@@ -276,6 +312,12 @@ def match_stimuli(pool: pd.DataFrame, design: dict, schema: dict, verbose: bool 
     condition is ``n_per_condition``, else ``n_per_cell``, else 20, and must be a
     whole number of at least 1. A ``null`` tolerance is read as R's ``modifyList()``
     reads it (see the schema's ``tolerance_k`` comment).
+
+    A candidate missing any ``match_on`` dimension cannot be scored, so every
+    method excludes it before selecting, and the number excluded per condition is
+    recorded in ``out.attrs["audit"]["incomplete_dropped"]``. The shortfall policy
+    then applies to what remains, and a condition left with no complete candidate
+    is refused.
     """
     conditions = design.get("conditions")
     if not conditions:
@@ -339,16 +381,40 @@ def match_stimuli(pool: pd.DataFrame, design: dict, schema: dict, verbose: bool 
         # make the datasheet's recorded method differ from the one actually used.
         raise ValueError(f"lexsync: matching method '{method}' requires exactly two "
                          f"conditions, got {len(conditions)}.")
+
+    # A candidate missing a matched dimension has no distance to any counterpart, so
+    # whatever a method did with it, the tie-break decided. The anchored path paired
+    # such an anchor with the byte-first word in its window, or re-picked a used
+    # candidate. Joint matching took it once the complete pairs ran out, and optimal
+    # matching handed the missing cost to a solver that refused it. Every method
+    # therefore starts from the rows complete on match_on, and the count excluded per
+    # condition goes into the audit for the run log and the datasheet.
+    incomplete = []
+    for i, sp in enumerate(subpools):
+        complete = sp[match_on].notna().all(axis=1).to_numpy()
+        n_drop = int((~complete).sum())
+        if not n_drop:
+            continue
+        if not complete.any():
+            raise ValueError(f"lexsync: condition '{cond_names[i]}' has no candidates "
+                             f"complete on the matched dimensions ({n_drop} lacked a "
+                             f"value).")
+        if verbose:
+            print(f"lexsync: dropped {n_drop} candidate(s) of condition "
+                  f"'{cond_names[i]}' missing a matched dimension.")
+        incomplete.append({"condition": cond_names[i], "n": n_drop})
+        subpools[i] = sp[complete]
+
     if method == "joint" and len(conditions) == 2:
         out = _match_joint(subpools, cond_names, match_on, center, scale, n)
         _check_shortfall(out["set"].nunique(), n, shortfall)
         _assert_distinct_words(out)
-        return out
+        return _attach_audit(out, [], incomplete)
     if method == "optimal" and len(conditions) == 2:
         out = _match_optimal(subpools, cond_names, match_on, center, scale, n)
         _check_shortfall(out["set"].nunique(), n, shortfall)
         _assert_distinct_words(out)
-        return out
+        return _attach_audit(out, [], incomplete)
     # A covariance-aware metric for Mahalanobis matching (None -> plain Euclidean).
     metric = _maha_metric(_zmat(pool, match_on, center, scale)) if method == "mahalanobis" else None
 
@@ -413,15 +479,15 @@ def match_stimuli(pool: pd.DataFrame, design: dict, schema: dict, verbose: bool 
                                 "n_needed": int(n_take)})
             cand_f = cand
         if len(cand_f) < n_take:
-            # The assignment below would otherwise re-pick an exhausted pool's first
-            # item (every remaining distance is Inf, so the tie-break decides), and
-            # emit the same word in several sets.
+            # The assignment below gives every anchor item an unused candidate, which
+            # an exhausted pool cannot supply.
             raise ValueError(f"lexsync: condition '{cname}' has only {len(cand_f)} candidate(s) "
                              f"but {n_take} are needed; widen pool_filters/define_by or lower "
                              f"n_per_condition.")
-        # Relaxing the window re-admits rows missing a matched dimension. Their distance
-        # is NaN and they rank last, so they are never assigned; counting them would let an
-        # NA-depleted pool past the guard above and back into re-picking used rows.
+        # The subpools hold only rows complete on match_on (see the exclusion above), so
+        # this repeats the guard before it. It stays as the assignment's precondition: a
+        # candidate whose distance is missing cannot be matched, so n_take complete
+        # unused candidates must remain however the subpool was built.
         usable = int(cand_f[match_on].notna().all(axis=1).sum())
         if usable < n_take:
             raise ValueError(f"lexsync: condition '{cname}' has only {usable} usable candidate(s) "
@@ -445,13 +511,15 @@ def match_stimuli(pool: pd.DataFrame, design: dict, schema: dict, verbose: bool 
                 dvec = _round_dp_vec(np.sqrt((delta ** 2).sum(axis=1)), 9)
             else:
                 dvec = _round_dp_vec(np.sqrt(np.maximum((delta @ metric * delta).sum(axis=1), 0.0)), 9)
-            dvec = np.where(used, np.inf, dvec)
-            # A relaxed window can admit a row whose matched dimension is missing, and
-            # its distance is NaN. Rank those last, as R's order(na.last = TRUE) does:
-            # a bare min() over NaN keeps whichever row it saw first, so the selection
-            # would otherwise depend on pool row order and diverge from the R engine.
+            # Only unused candidates compete. Giving a used one an infinite distance
+            # was not enough, because a missing distance ranks after infinity and an
+            # anchor without a value then re-picked a used candidate.
+            free = np.flatnonzero(~used)
+            # A NaN distance still ranks last, as R's order(na.last = TRUE) ranks it: a
+            # bare min() over NaN keeps whichever row it saw first, which would make the
+            # selection depend on pool row order and diverge from the R engine.
             nan_last = np.isnan(dvec)
-            best = min(range(len(cand_f)),
+            best = min(free,
                        key=lambda j: (bool(nan_last[j]), 0.0 if nan_last[j] else dvec[j],
                                       words[j].encode("utf-8"), int(ids[j])))
             pick[a] = best
@@ -465,11 +533,7 @@ def match_stimuli(pool: pd.DataFrame, design: dict, schema: dict, verbose: bool 
     out = pd.concat([s[common] for s in selected], ignore_index=True)
     out["set"] = list(range(1, n_take + 1)) * len(conditions)
     _assert_distinct_words(out)
-    if relaxations:
-        # pd.concat and rbind both drop attrs, so the pipeline reads this
-        # immediately after the call, before any reshaping.
-        out.attrs["audit"] = {"window_relaxations": relaxations}
-    return out
+    return _attach_audit(out, relaxations, incomplete)
 
 
 def select_continuous_stimuli(pool: pd.DataFrame, design: dict, schema: dict,
@@ -498,6 +562,10 @@ def select_continuous_stimuli(pool: pd.DataFrame, design: dict, schema: dict,
     as ``continuous.controls``, every dimension named and the ``key`` column must be
     present in the pool, no ``tolerance_k`` may be negative, and the pool must not be
     empty.
+
+    A row missing the predictor or a control is excluded before the first pass, and
+    the number excluded is recorded in ``attrs["audit"]["incomplete_dropped"]`` under
+    the condition ``continuous``. A pool with no complete row is refused.
 
     Returns the selected stimuli. Unless ``label`` is ``None`` the ``condition``
     column is set to it, ``continuous`` by default, and unless ``renumber_sets`` is
@@ -532,6 +600,23 @@ def select_continuous_stimuli(pool: pd.DataFrame, design: dict, schema: dict,
         if isinstance(k, (int, float)) and k < 0:
             raise ValueError(f"lexsync: tolerance_k for dimension '{d}' is negative; "
                              f"tolerances must be zero or positive.")
+
+    # A row missing the predictor sorts last and the even spread always takes the
+    # last row, so such rows were selected and then analysed without their
+    # predictor. A row missing a control fails every window but comes back when the
+    # window relaxes to the whole pool. Both are excluded before the first pass.
+    complete = pool[[predictor] + controls].notna().all(axis=1).to_numpy()
+    n_drop = int((~complete).sum())
+    incomplete = []
+    if n_drop:
+        if not complete.any():
+            raise ValueError(f"lexsync: no item in the pool is complete on the predictor "
+                             f"and the controls ({n_drop} lacked a value).")
+        if verbose:
+            print(f"lexsync: dropped {n_drop} candidate(s) missing the predictor or a "
+                  f"control.")
+        incomplete.append({"condition": "continuous", "n": n_drop})
+        pool = pool[complete]
 
     def even_spread(df):
         # `key` is the deterministic tie-break when two rows share a predictor
@@ -588,9 +673,7 @@ def select_continuous_stimuli(pool: pd.DataFrame, design: dict, schema: dict,
         sel["condition"] = label
     if renumber_sets:
         sel["set"] = list(range(1, len(sel) + 1))
-    if relaxations:
-        sel.attrs["audit"] = {"window_relaxations": relaxations}
-    return sel
+    return _attach_audit(sel, relaxations, incomplete)
 
 
 def resample_stimuli(pool: pd.DataFrame, design: dict, schema: dict,
@@ -604,17 +687,24 @@ def resample_stimuli(pool: pd.DataFrame, design: dict, schema: dict,
     of treating them as a fixed set (Clark, 1973; Yarkoni, 2022). Deterministic: the
     matcher is deterministic and the used-item set evolves identically across engines.
 
-    The replicates are concatenated, which drops the ``attrs["audit"]`` entry
-    :func:`match_stimuli` uses to report a relaxed tolerance window, so a relaxation
-    inside a replicate reaches the console under ``verbose`` but not the run log or
-    the datasheet.
+    The first replicate draws on the whole pool, so its count of the candidates
+    excluded for a missing matched value is the one recorded in
+    ``attrs["audit"]["incomplete_dropped"]``, as :func:`match_stimuli` records it.
+    A relaxed tolerance window inside a replicate is not recorded: it reaches the
+    console under ``verbose`` but not the run log or the datasheet.
     """
     used: set = set()
     parts = []
+    incomplete = []
     for k in range(1, int(n_sets) + 1):
         pk = pool[~pool["word"].isin(used)].reset_index(drop=True)
         sk = match_stimuli(pk, design, schema, verbose=verbose).copy()
+        if k == 1:
+            incomplete = (sk.attrs.get("audit") or {}).get("incomplete_dropped") or []
         sk["replicate"] = k
         used |= set(sk["word"])
         parts.append(sk)
-    return pd.concat(parts, ignore_index=True)
+    # pd.concat keeps an audit only when every replicate holds the same one, and
+    # rbind keeps the first replicate's whatever the others hold. The record is
+    # therefore set explicitly, and both engines return the same one.
+    return _attach_audit(pd.concat(parts, ignore_index=True), [], incomplete)

@@ -230,6 +230,150 @@ def test_a_pair_designs_window_relaxation_reaches_the_datasheet(tmp_path):
     assert "tolerance window relaxed" in log
 
 
+def _rated_lexicon(tmp_path):
+    # Ten nouns and ten verbs. Two nouns and one verb have no rating, as words a norm
+    # table does not cover would have none. The ratings are invented for this test.
+    rows = [("anchor", 3.66, "noun", "2.1"), ("basket", 3.88, "noun", ""),
+            ("bottle", 4.58, "noun", "3.0"), ("button", 4.29, "noun", "2.6"),
+            ("candle", 3.79, "noun", "2.2"), ("carpet", 3.92, "noun", ""),
+            ("forest", 4.62, "noun", "3.4"), ("garden", 4.83, "noun", "2.8"),
+            ("ladder", 3.74, "noun", "2.4"), ("mirror", 4.33, "noun", "3.1"),
+            ("arrive", 4.27, "verb", "2.0"), ("borrow", 3.95, "verb", "2.7"),
+            ("decide", 4.88, "verb", ""), ("divide", 3.98, "verb", "2.3"),
+            ("escape", 4.52, "verb", "3.3"), ("follow", 5.08, "verb", "2.9"),
+            ("gather", 4.18, "verb", "2.5"), ("invite", 4.03, "verb", "3.2"),
+            ("listen", 4.91, "verb", "2.2"), ("punish", 3.77, "verb", "3.0")]
+    path = os.path.join(str(tmp_path), "lexicon.csv")
+    with open(path, "w", encoding="utf-8", newline="\n") as handle:
+        handle.write("word,freq_zipf,pos,rating\n")
+        handle.writelines("%s,%s,%s,%s\n" % r for r in rows)
+    return path
+
+
+def test_an_exclusion_for_a_missing_matched_value_reaches_the_record(tmp_path):
+    # Matching excludes a candidate missing a matched dimension, and the run log and
+    # the datasheet say how many each condition lost. Twinned with
+    # test-run-pipeline.R.
+    import json
+    design = _write_design(str(tmp_path), [
+        "name: guard_incomplete",
+        "language: english",
+        "lexicon: " + _yaml_path(_rated_lexicon(tmp_path)),
+        "n_per_condition: 4",
+        "conditions:",
+        "  - {name: noun, define_by: {pos: [noun]}}",
+        "  - {name: verb, define_by: {pos: [verb]}}",
+        "match_on: [length, rating]",
+    ])
+    res = _run(design, tmp_path)
+    with open(os.path.join(str(tmp_path), "reports",
+                           "guard_incomplete_english_datasheet_py.json"),
+              encoding="utf-8") as handle:
+        ds = json.load(handle)
+    assert ds["selection"]["incomplete_dropped"] == [
+        {"condition": "noun", "n": 2}, {"condition": "verb", "n": 1}]
+    with open(res["log"], encoding="utf-8") as handle:
+        log = handle.read()
+    assert "dropped 2 candidate(s) of condition 'noun' missing a matched dimension" in log
+    assert "dropped 1 candidate(s) of condition 'verb' missing a matched dimension" in log
+
+
+def test_a_continuous_designs_exclusion_reaches_the_record(tmp_path):
+    import json
+    design = _write_design(str(tmp_path), [
+        "name: guard_incomplete_cont",
+        "language: english",
+        "lexicon: " + _yaml_path(_rated_lexicon(tmp_path)),
+        "n_per_condition: 6",
+        "continuous: {predictor: rating, controls: [length]}",
+        "match_on: [length]",
+    ])
+    res = _run(design, tmp_path)
+    with open(os.path.join(str(tmp_path), "reports",
+                           "guard_incomplete_cont_english_datasheet_py.json"),
+              encoding="utf-8") as handle:
+        ds = json.load(handle)
+    assert ds["selection"]["incomplete_dropped"] == [{"condition": "continuous", "n": 3}]
+    with open(res["log"], encoding="utf-8") as handle:
+        log = handle.read()
+    assert "dropped 3 candidate(s) missing the predictor or a control" in log
+
+
+def test_a_pair_designs_exclusion_reaches_the_record(tmp_path):
+    # The pair path selects over one row per set and copies the selector's audit onto
+    # the re-expanded table. 'across' has no rating, so its set is excluded and the
+    # count reaches the run log and the datasheet. Twinned with test-run-pipeline.R.
+    import json
+    items = os.path.join(str(tmp_path), "pairs.csv")
+    with open(items, "w", encoding="utf-8", newline="\n") as handle:
+        handle.write("item,condition,prime,target\n"
+                     "1,related,aaa,flat\n1,unrelated,abba,flat\n"
+                     "2,related,acne,glass\n2,unrelated,aaron,glass\n"
+                     "3,related,alarm,across\n3,unrelated,abrams,across\n"
+                     "4,related,aha,house\n4,unrelated,abdel,house\n")
+    ratings = os.path.join(str(tmp_path), "ratings.csv")
+    with open(ratings, "w", encoding="utf-8", newline="\n") as handle:
+        handle.write("word,rating\nflat,2.5\nglass,3.1\nhouse,4.0\n")
+    design = _write_design(str(tmp_path), [
+        "name: guard_pair_incomplete",
+        "language: english",
+        "paradigm: priming",
+        "norms:",
+        "  - {path: " + _yaml_path(ratings) + ", columns: [rating]}",
+        "items:",
+        "  source: table",
+        "  path: " + _yaml_path(items),
+        "  members: [prime, target]",
+        "  lexicon: " + _yaml_path(_pkg_data("en_example.csv")),
+        "  anchor_condition: related",
+        "n_per_condition: 3",
+        "continuous:",
+        "  predictor: target.rating",
+        "  controls: [target.length]",
+        "match_on: [target.length]",
+    ])
+    res = _run(design, tmp_path)
+    with open(os.path.join(str(tmp_path), "reports",
+                           "guard_pair_incomplete_english_datasheet_py.json"),
+              encoding="utf-8") as handle:
+        ds = json.load(handle)
+    assert ds["selection"]["incomplete_dropped"] == [{"condition": "continuous", "n": 1}]
+    with open(res["log"], encoding="utf-8") as handle:
+        log = handle.read()
+    assert "dropped 1 candidate(s) missing the predictor or a control" in log
+    with open(res["stimuli"], encoding="utf-8") as handle:
+        assert "across" not in handle.read()
+
+
+def test_a_resampled_designs_exclusion_reaches_the_record(tmp_path):
+    # resample_stimuli records the first replicate's exclusions, which are the whole
+    # pool's, and the pipeline used to discard its audit. Twinned with
+    # test-run-pipeline.R.
+    import json
+    design = _write_design(str(tmp_path), [
+        "name: guard_incomplete_resample",
+        "language: english",
+        "lexicon: " + _yaml_path(_rated_lexicon(tmp_path)),
+        "n_per_condition: 3",
+        "conditions:",
+        "  - {name: noun, define_by: {pos: [noun]}}",
+        "  - {name: verb, define_by: {pos: [verb]}}",
+        "match_on: [length, rating]",
+        "resample: {n_sets: 2}",
+    ])
+    res = _run(design, tmp_path)
+    with open(os.path.join(str(tmp_path), "reports",
+                           "guard_incomplete_resample_english_datasheet_py.json"),
+              encoding="utf-8") as handle:
+        ds = json.load(handle)
+    assert ds["selection"]["incomplete_dropped"] == [
+        {"condition": "noun", "n": 2}, {"condition": "verb", "n": 1}]
+    with open(res["log"], encoding="utf-8") as handle:
+        log = handle.read()
+    assert "dropped 2 candidate(s) of condition 'noun' missing a matched dimension" in log
+    assert "dropped 1 candidate(s) of condition 'verb' missing a matched dimension" in log
+
+
 def test_a_key_that_only_begins_a_design_key_is_not_read(tmp_path):
     """R's `$` matched a list name partially, so `font_size: 40` stood in for the
     absent `font` and set every target's font to '40', while this engine ignored
