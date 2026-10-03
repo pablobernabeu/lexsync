@@ -27,7 +27,7 @@ from .counterbalancing import (
 )
 from .datasheet import build_datasheet, write_datasheet
 from .design import _referenced_dimensions, _resolve_n, design_stem, validate_design
-from .generation import build_lexdec_stimuli
+from .generation import _lexdec_eligible, _read_known_forms, build_lexdec_stimuli
 from .io_utils import _is_continuous, read_config, write_csv_utf8
 from .matching import _resolve_policy, match_stimuli, resample_stimuli, select_continuous_stimuli
 from .pairs import join_member_norms, member_lexicon_path, select_continuous_pairs
@@ -201,6 +201,7 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
 
     report = None
     pair_eligible = None
+    generation_exclude = None
     norms: list = []
     selection_audit = None
     # What NFC normalisation did to the inputs this run read (see querying._nfc_count),
@@ -349,9 +350,21 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
             report = match_report(stim, dims, schema)
     elif source == "generate":
         n = _resolve_n(design, 40)
-        gen_method = (items_cfg.get("generation") or {}).get("method", "letter_substitution")
+        gen_cfg = items_cfg.get("generation") or {}
+        gen_method = gen_cfg.get("method", "letter_substitution")
+        # Further known word forms a pseudoword must not equal. The lexicon stops at
+        # its frequency floor, so on its own it lets real low-frequency words through.
+        exclude = None
+        if gen_cfg.get("exclude") is not None:
+            known = _read_known_forms(gen_cfg.get("exclude"))
+            exclude = known["forms"]
+            generation_exclude = known["records"]
+            for rec in generation_exclude:
+                runlog.log_step(log, "pseudowords checked against %d known word form(s) "
+                                     "from '%s'" % (rec["n_forms"], rec["source"]),
+                                {"exclude": rec["source"], "sha256": rec["sha256"]})
         stim = build_lexdec_stimuli(pool, n, reference_words=lex["word"].tolist(),
-                                    method=gen_method)
+                                    method=gen_method, exclude=exclude)
         sf = _resolve_policy(design, schema, "shortfall", "error", ("error", "allow"))
         realised = int(stim["set"].nunique())
         if realised < n and sf != "allow":
@@ -539,7 +552,10 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
                            "n_candidates": int(len(build_pool(pool, c.get("define_by"))))}
                           for c in (design.get("conditions") or [])]
     elif source == "generate":
-        candidate_pool = [{"condition": "words in band", "n_candidates": int(len(pool))}]
+        # The words the generator can use, which build_lexdec_stimuli draws from: the
+        # band after the a-z filter, not before it.
+        candidate_pool = [{"condition": "words in band",
+                           "n_candidates": int(len(_lexdec_eligible(pool)))}]
     # The neighbourhood reference is provenance: overriding it changes n_density,
     # old20 and bigram_freq without touching any input file the datasheet hashes. It
     # is recorded only when a recomputation ran, with the columns it was applied to.
@@ -554,7 +570,8 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
                          design_path=design_path, schema_path=schema_path,
                          selection_audit=selection_audit,
                          neighbourhood_reference=nref, counterbalance_check=cb_check,
-                         input_normalisation=input_normalisation)
+                         input_normalisation=input_normalisation,
+                         generation_exclude=generation_exclude)
     ds_json = os.path.join(outdir, "reports", f"{base}_datasheet_py.json")
     ds_md = os.path.join(outdir, "reports", f"{base}_datasheet_py.md")
     write_datasheet(ds, ds_json, ds_md)

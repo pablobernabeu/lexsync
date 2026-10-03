@@ -9,13 +9,25 @@ the R and Python engines generate the identical pseudoword from the identical
 corpus (see R_workflow/R/generation.R). This is a deterministic orthographic
 cousin of Wuggy (Keuleers & Brysbaert, 2010); it trades Wuggy's subsyllabic model
 for exact length matching and cross-engine reproducibility.
+
+A real word is anything in the reference list, so a low-frequency word below the
+lexicon's floor (Zipf 2.95 in the bundled English lexicon) is not one. The
+generators therefore take an ``exclude`` list of further known word forms, which a
+pseudoword must not equal either, and ``_read_known_forms`` reads such lists for a
+design's ``items.generation.exclude``.
 """
 from __future__ import annotations
 
+import os
+import re
+
 import numpy as np
 import pandas as pd
+import yaml
 
-from .querying import _VOWELS
+from . import corpora as _corpora
+from .io_utils import read_csv_utf8, sha256_file
+from .querying import _VOWELS, _norm_key
 
 _LETTERS = "abcdefghijklmnopqrstuvwxyz"
 # Order in which subsyllabic constituents are considered for substitution: codas
@@ -83,14 +95,38 @@ def make_pseudoword(word: str, bigrams: dict, lexicon: set, used: set) -> str | 
     return min(cands, key=lambda c: (-_score(c, bigrams), c.encode("utf-8")))
 
 
-def generate_pseudowords(base_words, reference_words) -> pd.DataFrame:
+def _norm_forms(values) -> list:
+    """Word forms keyed as a lexicon's words are: trimmed, lower-cased, NFC."""
+    return _norm_key(pd.Series(list(values), dtype=object)).tolist()
+
+
+def _known_set(reference_words, exclude) -> set:
+    """The forms a pseudoword must not equal: the reference words and ``exclude``.
+
+    The excluded forms are trimmed, lower-cased and put in NFC, as a lexicon's words
+    are, so a list written in another case or spelling still matches. They only
+    widen this set. The bigram statistics and the constituent inventory still come
+    from the reference words alone, so an exclusion list removes candidates without
+    changing how the others are scored. Mirrors .known_set in generation.R.
+    """
+    known = set(str(w) for w in reference_words)
+    if exclude is not None:
+        # A bare string is one form, as the R twin's length-one vector is.
+        forms = [exclude] if isinstance(exclude, str) else exclude
+        known.update(v for v in _norm_forms(forms) if v)
+    return known
+
+
+def generate_pseudowords(base_words, reference_words, exclude=None) -> pd.DataFrame:
     """A length-matched pseudoword for each base word.
 
     Base words are processed in byte order so the ``used`` set evolves identically
-    across engines. Returns a frame with ``base_word`` and ``pseudoword``.
+    across engines. ``exclude`` (optional) lists further word forms no pseudoword
+    may equal, such as a list of low-frequency words the reference lacks. Returns a
+    frame with ``base_word`` and ``pseudoword``.
     """
     base = [str(w) for w in base_words]
-    lexicon = set(str(w) for w in reference_words)
+    lexicon = _known_set(reference_words, exclude)
     bigrams = bigram_counts(reference_words)
     order = sorted(range(len(base)), key=lambda i: base[i].encode("utf-8"))
     used: set = set()
@@ -207,15 +243,17 @@ def make_subsyllabic_pseudoword(word, inv, bigrams, lexicon, used):
     return final
 
 
-def generate_pseudowords_subsyllabic(base_words, reference_words) -> pd.DataFrame:
+def generate_pseudowords_subsyllabic(base_words, reference_words,
+                                     exclude=None) -> pd.DataFrame:
     """A subsyllabic pseudoword for each base word (with letter-substitution fallback).
 
     Base words are processed in byte order so the ``used`` set evolves identically
     across engines; a base word with no legal subsyllabic swap falls back to the
-    letter-substitution generator, so every word yields a pseudoword.
+    letter-substitution generator, so every word yields a pseudoword. ``exclude``
+    is as for :func:`generate_pseudowords`.
     """
     base = [str(w) for w in base_words]
-    lexicon = set(str(w) for w in reference_words)
+    lexicon = _known_set(reference_words, exclude)
     bigrams = bigram_counts(reference_words)
     inv = build_constituent_inventory(reference_words)
     order = sorted(range(len(base)), key=lambda i: base[i].encode("utf-8"))
@@ -232,8 +270,21 @@ def generate_pseudowords_subsyllabic(base_words, reference_words) -> pd.DataFram
     return pd.DataFrame({"base_word": base, "pseudoword": pseudo})
 
 
+def _lexdec_eligible(pool: pd.DataFrame) -> pd.DataFrame:
+    """The rows of a pool the pseudoword generators can use, in the pool's order.
+
+    The generators are orthographic and defined for Latin a-z words, so a word with
+    any other character (an accent, a hyphen, a digit) is left out. The pipeline
+    counts these rows as a generated design's candidates: counting the whole band
+    reported, for a Spanish band, accented words the generator never sees. Mirrors
+    .lexdec_eligible in generation.R.
+    """
+    keep = pool["word"].astype(str).str.fullmatch(r"[a-z]+").fillna(False).astype(bool)
+    return pool[keep.to_numpy()].reset_index(drop=True)
+
+
 def build_lexdec_stimuli(pool: pd.DataFrame, n: int, reference_words=None,
-                         method: str = "letter_substitution") -> pd.DataFrame:
+                         method: str = "letter_substitution", exclude=None) -> pd.DataFrame:
     """Assemble a word-vs-pseudoword lexical-decision set from a candidate pool.
 
     Real words are drawn by an even spread across the byte-ordered pool (the same
@@ -243,15 +294,16 @@ def build_lexdec_stimuli(pool: pd.DataFrame, n: int, reference_words=None,
     eligible pool can be smaller than the request; the pipeline's shortfall
     policy then decides whether that errors. ``reference_words`` (the full lexicon)
     supplies the bigram statistics and the real-word list a pseudoword must avoid;
-    it falls back to the pool when not given. The presented string is the
-    ``target`` column; conditions are ``word`` and ``pseudoword`` and ``set``
-    pairs them.
+    it falls back to the pool when not given. ``exclude`` (optional) lists further
+    known word forms a pseudoword must not equal, which the reference may lack. The
+    presented string is the ``target`` column; conditions are ``word`` and
+    ``pseudoword`` and ``set`` pairs them.
     """
     pool = (pool.assign(_k=pool["word"].map(lambda w: w.encode("utf-8")))
             .sort_values("_k").drop(columns="_k").reset_index(drop=True))
     # The pseudoword generators are orthographic and defined for Latin a-z words;
     # any word with another character is skipped, keeping the two engines in step.
-    pool = pool[pool["word"].astype(str).str.fullmatch(r"[a-z]+")].reset_index(drop=True)
+    pool = _lexdec_eligible(pool)
     if len(pool) == 0:
         raise ValueError("lexsync: lexical-decision pool has no a-z words.")
     n_take = min(n, len(pool))
@@ -259,9 +311,9 @@ def build_lexdec_stimuli(pool: pd.DataFrame, n: int, reference_words=None,
     words = pool.iloc[idx].reset_index(drop=True)
     ref = list(reference_words) if reference_words is not None else pool["word"].tolist()
     if method == "subsyllabic":
-        gen = generate_pseudowords_subsyllabic(words["word"].tolist(), ref)
+        gen = generate_pseudowords_subsyllabic(words["word"].tolist(), ref, exclude=exclude)
     elif method == "letter_substitution":
-        gen = generate_pseudowords(words["word"].tolist(), ref)
+        gen = generate_pseudowords(words["word"].tolist(), ref, exclude=exclude)
     else:
         raise ValueError(f"lexsync: unknown pseudoword generation method '{method}'.")
     pw_map = dict(zip(gen["base_word"], gen["pseudoword"], strict=True))
@@ -278,3 +330,146 @@ def build_lexdec_stimuli(pool: pd.DataFrame, n: int, reference_words=None,
     })
     out = pd.concat([real, pseudo], ignore_index=True)
     return out
+
+
+# A registry corpus is named by a bare token; anything else in an exclusion list is a
+# path. Mirrors .REGISTRY_NAME in generation.R.
+_REGISTRY_NAME = re.compile(r"[A-Za-z0-9_-]+")
+_EXCLUDE_MESSAGE = ("lexsync: items.generation.exclude must list file paths or registry "
+                    "corpus names.")
+
+
+def _registry_entry(name: str):
+    """The registry's `corpora` entry for a bare name, or None.
+
+    A registry that cannot be found or read leaves the name to be read as a path.
+    """
+    if not _REGISTRY_NAME.fullmatch(name):
+        return None
+    try:
+        with open(_corpora._registry_path(None), encoding="utf-8") as handle:
+            reg = yaml.safe_load(handle) or {}
+    except (OSError, ValueError, yaml.YAMLError):
+        return None
+    entry = (reg.get("corpora") or {}).get(name)
+    return entry if isinstance(entry, dict) else None
+
+
+def _read_text_bytes(path: str) -> list:
+    """The lines of a UTF-8 file, without a byte-order mark or line feeds.
+
+    A file in another encoding is refused, because its accented forms would be
+    misread, and the R twin's reader would find no forms in it at all.
+    """
+    with open(path, "rb") as handle:
+        data = handle.read()
+    try:
+        text = data.decode("utf-8")
+    except UnicodeDecodeError:
+        raise ValueError(f"lexsync: known-form list '{path}' is not UTF-8 text.") from None
+    if text.startswith("\ufeff"):
+        text = text[1:]
+    return text.split("\n")
+
+
+# A line of a one-form-per-line list that holds one of these is a table row, which
+# would be kept whole as one form and match no pseudoword, so the list would exclude
+# nothing while the datasheet counted its rows. SUBTLEX-US, for one, is distributed as
+# a tab-separated .txt file. Mirrors .TABLE_SEPARATORS in generation.R.
+_TABLE_SEPARATORS = ("\t", ",", ";")
+
+
+def _forms_from_lines(lines, path: str) -> list:
+    """Word forms from a one-form-per-line list. Blank lines and lines beginning '#'
+    are skipped, and every form is trimmed, lower-cased and put in NFC. A line that
+    holds a tab, a comma or a semicolon is refused, since the file is then a table."""
+    out = []
+    for i, v in enumerate(_norm_forms(lines), start=1):
+        if not v or v.startswith("#"):
+            continue
+        if any(sep in v for sep in _TABLE_SEPARATORS):
+            raise ValueError(
+                f"lexsync: line {i} of the known-form list '{path}' holds a tab, comma or "
+                f"semicolon, so the file is a table. List one form per line, or give a "
+                f"CSV file with a 'word' column.")
+        out.append(v)
+    return out
+
+
+def _forms_from_tab_table(path: str, column: str) -> list:
+    """One column of a tab-separated table, the layout openlexicon serves. Read by
+    splitting each line, with no quoting rule, so both engines read the same cells."""
+    lines = [ln for ln in _read_text_bytes(path) if ln.strip(" \t\r\n")]
+    if not lines:
+        return []
+    header = [h.strip(" \t\r\n") for h in lines[0].split("\t")]
+    if column not in header:
+        raise ValueError(f"lexsync: known-form table '{path}' has no '{column}' column.")
+    j = header.index(column)
+    cells = [row.split("\t")[j] if len(row.split("\t")) > j else "" for row in lines[1:]]
+    return [v for v in _norm_forms(cells) if v]
+
+
+def _forms_from_csv(path: str, column: str) -> list:
+    table = read_csv_utf8(path, as_character=[column])
+    if column not in table.columns:
+        raise ValueError(f"lexsync: known-form table '{path}' has no '{column}' column.")
+    return [v for v in _norm_forms(table[column]) if v]
+
+
+def _read_known_forms(entries) -> dict:
+    """Read the word-form lists of a design's ``items.generation.exclude``.
+
+    Each entry is a path or the name of a corpus in the registry. A path ending in
+    ``.csv`` is a table whose ``word`` column holds the forms; any other path is a
+    UTF-8 text file with one form per line, in which blank lines and lines beginning
+    ``#`` are skipped and a line holding a tab, comma or semicolon is refused as a
+    table row. A registry name is read from the copy ``fetch_corpus`` put in
+    the cache, by the column the registry maps to ``word``, and is refused with the
+    fetch command when no copy is there. Every form is trimmed, lower-cased and put
+    in NFC, as a lexicon's words are.
+
+    Returns ``{"forms": [...], "records": [...]}``: the distinct forms of all the
+    lists in UTF-8 byte order, and for each list its ``source`` (the path with '/'
+    separators, or the registry name), the ``sha256`` of the file read and
+    ``n_forms``, the number of distinct forms it holds. Mirrors .read_known_forms in
+    generation.R.
+    """
+    if entries is None:
+        entries = []
+    elif isinstance(entries, str):
+        entries = [entries]
+    elif not isinstance(entries, (list, tuple)):
+        raise ValueError(_EXCLUDE_MESSAGE)
+    forms: set = set()
+    records = []
+    for entry in entries:
+        if not isinstance(entry, str) or not entry.strip(" \t\r\n"):
+            raise ValueError(_EXCLUDE_MESSAGE)
+        reg = _registry_entry(entry)
+        if reg is not None:
+            path = os.path.join(_corpora.cache_dir(), f"{entry}.csv")
+            if not os.path.isfile(path):
+                raise ValueError(
+                    f"lexsync: items.generation.exclude names the registry corpus "
+                    f"'{entry}', which is not in the cache ({path}). Fetch it first with "
+                    f"fetch_corpus('{entry}'), or list a word-form file instead.")
+            column = str((reg.get("columns") or {}).get("word") or "word")
+            first = _read_text_bytes(path)[0]
+            got = (_forms_from_tab_table(path, column) if "\t" in first
+                   else _forms_from_csv(path, column))
+            source = entry
+        else:
+            if not os.path.isfile(entry):
+                raise ValueError(
+                    f"lexsync: items.generation.exclude names '{entry}', which is neither "
+                    f"a readable file nor a corpus in the registry.")
+            path = entry
+            got = (_forms_from_csv(path, "word") if entry.lower().endswith(".csv")
+                   else _forms_from_lines(_read_text_bytes(path), entry))
+            source = entry.replace("\\", "/")
+        distinct = set(got)
+        forms.update(distinct)
+        records.append({"source": source, "sha256": sha256_file(path),
+                        "n_forms": len(distinct)})
+    return {"forms": sorted(forms, key=lambda w: w.encode("utf-8")), "records": records}

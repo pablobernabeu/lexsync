@@ -1,0 +1,3 @@
+group,dimension,n,mean,sd,min,median,max
+word,length,6,5.167,0.983,4,5,7
+pseudoword,length,6,5.167,0.983,4,5,7

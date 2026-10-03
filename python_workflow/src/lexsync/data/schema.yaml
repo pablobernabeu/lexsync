@@ -80,6 +80,18 @@ dimensions:
 #   subsyllabic          swap whole onset/nucleus/coda constituents (Wuggy-style; Keuleers
 #                        & Brysbaert, 2010)
 # Both preserve length and select byte-identical stimuli across the R and Python engines.
+# A pseudoword must not be a real word, and a real word is any form in the lexicon,
+# whose bundled English and Spanish forms stop at Zipf 2.95 and 3.11. A design may
+# therefore name further known word forms under items.generation.exclude:
+#
+#   items:
+#     generation:
+#       exclude: [corpora/derived/en_known_forms.txt]
+#
+# Each entry is a file with one form per line, a CSV file with a `word` column, or the
+# name of a registry corpus fetched into the cache. No pseudoword equals any of the
+# forms, and the datasheet records each list with its checksum.
+# `corpora/fetch_corpora.py --known-forms` writes wordfreq's fuller lists for this.
 
 matching:
   method: standardised_euclidean

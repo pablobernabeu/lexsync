@@ -15,6 +15,17 @@ hand-written region below will not survive the next run.
 - **Spanish, gender-tagged subset ('es_gender')**, 10185 words, Zipf 3.11-6.95. Source: wordfreq (Speer, 2022; data CC BY-SA 4.0), retrieved 2026-06-14. N and OLD20 computed by lexsync.
 - **Chinese (Mandarin) ('zh')**, 20000 words, Zipf 3.31-6.56. Source: wordfreq (Speer, 2022; data CC BY-SA 4.0), retrieved 2026-06-10. N and OLD20 computed over characters by lexsync.
 
+## Known-form lists (repository only)
+
+Each list holds every form in wordfreq's large list for a language at Zipf 1.0
+or above that the language's letters admit. `fetch_corpora.py --known-forms`
+writes them for a design's `items.generation.exclude`, so that a generated
+pseudoword cannot be a real word too rare for the lexicon. Neither package
+ships them.
+
+- **English ('en')**, 289023 forms in `en_known_forms.txt`, sha256 `31fa1bfbf347a94ca31dcdc0fe69be459b5829621b9b194469c725ab64e5e2b4`. Source: wordfreq's 'large' list at Zipf 1.0 or above (Speer, 2022; data CC BY-SA 4.0), retrieved 2026-10-03.
+- **Spanish ('es')**, 334625 forms in `es_known_forms.txt`, sha256 `281fa6c374e1fa6550e6f5700d19b9bae4ccb664cfd3fc37ca6ffc087acdd776`. Source: wordfreq's 'large' list at Zipf 1.0 or above (Speer, 2022; data CC BY-SA 4.0), retrieved 2026-10-03.
+
 <!-- hand-written: start -->
 ## How the derivatives were built
 

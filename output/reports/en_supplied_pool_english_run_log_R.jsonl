@@ -1,19 +1,19 @@
-{"time":"2026-10-03 13:12:21.373335","message":"loading supplied pool 'items/pool_en_concrete_nouns.csv'","data":null}
-{"time":"2026-10-03 13:12:23.319267","message":"supplied pool: 131 words (dimensions from 'corpora/derived/en.csv')","data":{"words":131,"lexicon":"corpora/derived/en.csv"}}
-{"time":"2026-10-03 13:12:23.39816","message":"pool after filters: 131 words","data":{"pool":131}}
-{"time":"2026-10-03 13:12:23.52195","message":"matched 40 items across 2 conditions","data":{"conditions":"higher_frequency, lower_frequency"}}
-{"time":"2026-10-03 13:12:23.587697","message":"equivalence lower_frequency vs higher_frequency on 'length': d = -0.11 [-0.64, 0.42], TOST p = 0.112 (not shown equivalent)","data":null}
-{"time":"2026-10-03 13:12:23.635321","message":"equivalence lower_frequency vs higher_frequency on 'frequency': d = 3.53 [2.68, 4.38], TOST p = 1.000 (not shown equivalent)","data":null}
-{"time":"2026-10-03 13:12:23.652954","message":"equivalence lower_frequency vs higher_frequency on 'n_density': d = 0.13 [-0.40, 0.66], TOST p = 0.124 (not shown equivalent)","data":null}
-{"time":"2026-10-03 13:12:23.767185","message":"equivalence lower_frequency vs higher_frequency on 'old20': d = -0.24 [-0.78, 0.29], TOST p = 0.209 (not shown equivalent)","data":null}
-{"time":"2026-10-03 13:12:24.668376","message":"wrote 'en_supplied_pool_english_stimuli_R.csv'","data":{"path":"output/stimuli/en_supplied_pool_english_stimuli_R.csv","rows":40,"md5":"5f9123dce72c73b1f532a5b393c0ee55"}}
-{"time":"2026-10-03 13:12:24.811161","message":"wrote 'en_supplied_pool_english_descriptives_R.csv'","data":{"path":"output/reports/en_supplied_pool_english_descriptives_R.csv","rows":8,"md5":"084478a4ea1b2982354267964701bdf0"}}
-{"time":"2026-10-03 13:12:25.321811","message":"wrote 'en_supplied_pool_english_comparisons_R.csv'","data":{"path":"output/reports/en_supplied_pool_english_comparisons_R.csv","rows":4,"md5":"35a87203c30fae56f60a96fc70db958c"}}
-{"time":"2026-10-03 13:12:27.563471","message":"wrote 'en_supplied_pool_english_psychopy.py'","data":{"path":"output/experiments/en_supplied_pool_english_psychopy.py","rows":"NA","md5":"d14f62653fbfb75213da3c387293d3c9"}}
-{"time":"2026-10-03 13:12:27.731394","message":"wrote 'en_supplied_pool_english.osexp'","data":{"path":"output/experiments/en_supplied_pool_english.osexp","rows":"NA","md5":"bcb603fe84755a2829b1b8733d10b18f"}}
-{"time":"2026-10-03 13:12:27.876289","message":"wrote 'en_supplied_pool_english.html'","data":{"path":"output/experiments/en_supplied_pool_english.html","rows":"NA","md5":"a500681bbd6539bc0365cd46f5ca49d0"}}
-{"time":"2026-10-03 13:12:28.026649","message":"wrote 'en_supplied_pool_english_psychopy.csv'","data":{"path":"output/experiments/en_supplied_pool_english_psychopy.csv","rows":"NA","md5":"4e804ea51bfa10577453bac0659361dc"}}
-{"time":"2026-10-03 13:12:28.147491","message":"wrote 'en_supplied_pool_english_opensesame.csv'","data":{"path":"output/experiments/en_supplied_pool_english_opensesame.csv","rows":"NA","md5":"49ccbbdf46789be5a80e46fa6ac4da45"}}
-{"time":"2026-10-03 13:12:28.194847","message":"wrote 'en_supplied_pool_english_opensesame_text.csv'","data":{"path":"output/experiments/en_supplied_pool_english_opensesame_text.csv","rows":"NA","md5":"15ce90562922debfdc17d77d5e448ebd"}}
-{"time":"2026-10-03 13:12:28.775084","message":"wrote 'en_supplied_pool_english_datasheet_R.json'","data":{"path":"output/reports/en_supplied_pool_english_datasheet_R.json","rows":"NA","md5":"fa9a08823e297418ca7280d3db4ac70a"}}
-{"time":"2026-10-03 13:12:28.818604","message":"wrote 'en_supplied_pool_english_datasheet_R.md'","data":{"path":"output/reports/en_supplied_pool_english_datasheet_R.md","rows":"NA","md5":"f833c93d6341a10bbb1f663e8fe1c324"}}
+{"time":"2026-10-03 14:24:49.653294","message":"loading supplied pool 'items/pool_en_concrete_nouns.csv'","data":null}
+{"time":"2026-10-03 14:24:52.57102","message":"supplied pool: 131 words (dimensions from 'corpora/derived/en.csv')","data":{"words":131,"lexicon":"corpora/derived/en.csv"}}
+{"time":"2026-10-03 14:24:52.625816","message":"pool after filters: 131 words","data":{"pool":131}}
+{"time":"2026-10-03 14:24:52.700425","message":"matched 40 items across 2 conditions","data":{"conditions":"higher_frequency, lower_frequency"}}
+{"time":"2026-10-03 14:24:52.801962","message":"equivalence lower_frequency vs higher_frequency on 'length': d = -0.11 [-0.64, 0.42], TOST p = 0.112 (not shown equivalent)","data":null}
+{"time":"2026-10-03 14:24:52.839289","message":"equivalence lower_frequency vs higher_frequency on 'frequency': d = 3.53 [2.68, 4.38], TOST p = 1.000 (not shown equivalent)","data":null}
+{"time":"2026-10-03 14:24:52.861658","message":"equivalence lower_frequency vs higher_frequency on 'n_density': d = 0.13 [-0.40, 0.66], TOST p = 0.124 (not shown equivalent)","data":null}
+{"time":"2026-10-03 14:24:52.877813","message":"equivalence lower_frequency vs higher_frequency on 'old20': d = -0.24 [-0.78, 0.29], TOST p = 0.209 (not shown equivalent)","data":null}
+{"time":"2026-10-03 14:24:53.368686","message":"wrote 'en_supplied_pool_english_stimuli_R.csv'","data":{"path":"output/stimuli/en_supplied_pool_english_stimuli_R.csv","rows":40,"md5":"5f9123dce72c73b1f532a5b393c0ee55"}}
+{"time":"2026-10-03 14:24:53.649359","message":"wrote 'en_supplied_pool_english_descriptives_R.csv'","data":{"path":"output/reports/en_supplied_pool_english_descriptives_R.csv","rows":8,"md5":"084478a4ea1b2982354267964701bdf0"}}
+{"time":"2026-10-03 14:24:53.921222","message":"wrote 'en_supplied_pool_english_comparisons_R.csv'","data":{"path":"output/reports/en_supplied_pool_english_comparisons_R.csv","rows":4,"md5":"35a87203c30fae56f60a96fc70db958c"}}
+{"time":"2026-10-03 14:24:58.461969","message":"wrote 'en_supplied_pool_english_psychopy.py'","data":{"path":"output/experiments/en_supplied_pool_english_psychopy.py","rows":"NA","md5":"d14f62653fbfb75213da3c387293d3c9"}}
+{"time":"2026-10-03 14:24:58.518272","message":"wrote 'en_supplied_pool_english.osexp'","data":{"path":"output/experiments/en_supplied_pool_english.osexp","rows":"NA","md5":"bcb603fe84755a2829b1b8733d10b18f"}}
+{"time":"2026-10-03 14:24:58.606778","message":"wrote 'en_supplied_pool_english.html'","data":{"path":"output/experiments/en_supplied_pool_english.html","rows":"NA","md5":"a500681bbd6539bc0365cd46f5ca49d0"}}
+{"time":"2026-10-03 14:24:58.683895","message":"wrote 'en_supplied_pool_english_psychopy.csv'","data":{"path":"output/experiments/en_supplied_pool_english_psychopy.csv","rows":"NA","md5":"4e804ea51bfa10577453bac0659361dc"}}
+{"time":"2026-10-03 14:24:58.750531","message":"wrote 'en_supplied_pool_english_opensesame.csv'","data":{"path":"output/experiments/en_supplied_pool_english_opensesame.csv","rows":"NA","md5":"49ccbbdf46789be5a80e46fa6ac4da45"}}
+{"time":"2026-10-03 14:24:58.850843","message":"wrote 'en_supplied_pool_english_opensesame_text.csv'","data":{"path":"output/experiments/en_supplied_pool_english_opensesame_text.csv","rows":"NA","md5":"15ce90562922debfdc17d77d5e448ebd"}}
+{"time":"2026-10-03 14:24:59.597028","message":"wrote 'en_supplied_pool_english_datasheet_R.json'","data":{"path":"output/reports/en_supplied_pool_english_datasheet_R.json","rows":"NA","md5":"4a23f3e38e20256574c91d0311edb241"}}
+{"time":"2026-10-03 14:24:59.646637","message":"wrote 'en_supplied_pool_english_datasheet_R.md'","data":{"path":"output/reports/en_supplied_pool_english_datasheet_R.md","rows":"NA","md5":"f833c93d6341a10bbb1f663e8fe1c324"}}

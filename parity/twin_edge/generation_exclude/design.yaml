@@ -1,0 +1,18 @@
+# Twin-edge case: a generated lexical decision whose pseudowords are also checked
+# against a known-form list (items.generation.exclude). Thirty Spanish words, nine of
+# them in the length band with an accent the a-z generators cannot use, so the record
+# must count the twenty a-z words as the candidates, not the twenty-nine in the band.
+# The word forms are common Spanish words. The Zipf frequencies are invented for this
+# fixture and describe no corpus.
+name: twin_edge_generation_exclude
+language: spanish
+paradigm: lexical_decision
+description: 'Six Spanish words and their pseudowords, with a known-form list.'
+items:
+  source: generate
+  lexicon: lexicon.csv
+  generation:
+    exclude: [known.txt]
+n_per_condition: 6
+pool_filters:
+  length: [4, 7]

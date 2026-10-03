@@ -4,9 +4,9 @@
 \alias{generate_pseudowords_subsyllabic}
 \title{A subsyllabic pseudoword for each base word (with letter-substitution fallback)}
 \usage{
-generate_pseudowords_subsyllabic(base_words, reference_words)
+generate_pseudowords_subsyllabic(base_words, reference_words, exclude = NULL)
 }
 \description{
-A subsyllabic pseudoword for each base word (with letter-substitution fallback)
+\code{exclude} is as for \code{\link[=generate_pseudowords]{generate_pseudowords()}}.
 }
 \keyword{internal}

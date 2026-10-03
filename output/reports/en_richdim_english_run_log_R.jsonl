@@ -1,22 +1,22 @@
-{"time":"2026-10-03 13:12:04.802006","message":"loading lexicon 'corpora/derived/en.csv'","data":null}
-{"time":"2026-10-03 13:12:06.807167","message":"lexicon loaded: 30000 words","data":{"words":30000}}
-{"time":"2026-10-03 13:12:07.094746","message":"pool after filters: 10205 words","data":{"pool":10205}}
-{"time":"2026-10-03 13:12:07.121353","message":"computing bigram frequency (phonotactic-probability proxy)","data":null}
-{"time":"2026-10-03 13:12:09.003092","message":"matched 120 items across 2 conditions","data":{"conditions":"high_frequency, low_frequency"}}
-{"time":"2026-10-03 13:12:09.100717","message":"equivalence low_frequency vs high_frequency on 'length': d = 0.01 [-0.29, 0.32], TOST p = 0.004 (equivalent)","data":null}
-{"time":"2026-10-03 13:12:09.117951","message":"equivalence low_frequency vs high_frequency on 'frequency': d = 5.57 [4.90, 6.24], TOST p = 1.000 (not shown equivalent)","data":null}
-{"time":"2026-10-03 13:12:09.138727","message":"equivalence low_frequency vs high_frequency on 'n_density': d = 0.08 [-0.23, 0.38], TOST p = 0.011 (equivalent)","data":null}
-{"time":"2026-10-03 13:12:09.14888","message":"equivalence low_frequency vs high_frequency on 'old20': d = 0.08 [-0.22, 0.38], TOST p = 0.011 (equivalent)","data":null}
-{"time":"2026-10-03 13:12:09.167891","message":"equivalence low_frequency vs high_frequency on 'n_syllables': d = 0.17 [-0.13, 0.48], TOST p = 0.038 (equivalent)","data":null}
-{"time":"2026-10-03 13:12:09.184479","message":"equivalence low_frequency vs high_frequency on 'bigram_freq': d = 0.01 [-0.29, 0.31], TOST p = 0.004 (equivalent)","data":null}
-{"time":"2026-10-03 13:12:09.592845","message":"wrote 'en_richdim_english_stimuli_R.csv'","data":{"path":"output/stimuli/en_richdim_english_stimuli_R.csv","rows":120,"md5":"9dc5f5642000f89a4ddcafe72a18ff05"}}
-{"time":"2026-10-03 13:12:09.660179","message":"wrote 'en_richdim_english_descriptives_R.csv'","data":{"path":"output/reports/en_richdim_english_descriptives_R.csv","rows":12,"md5":"3bb9bd2d9181ecb0a19a4d79b547c252"}}
-{"time":"2026-10-03 13:12:09.715611","message":"wrote 'en_richdim_english_comparisons_R.csv'","data":{"path":"output/reports/en_richdim_english_comparisons_R.csv","rows":6,"md5":"c6e0f0a19b0b176fdd5a9ad80946e658"}}
-{"time":"2026-10-03 13:12:15.565524","message":"wrote 'en_richdim_english_psychopy.py'","data":{"path":"output/experiments/en_richdim_english_psychopy.py","rows":"NA","md5":"7ef41675cf8ff87ec3ead289bbf4e0ba"}}
-{"time":"2026-10-03 13:12:15.615854","message":"wrote 'en_richdim_english.osexp'","data":{"path":"output/experiments/en_richdim_english.osexp","rows":"NA","md5":"ff4c4663416e45f9cbb882d29f4b1fc3"}}
-{"time":"2026-10-03 13:12:15.660856","message":"wrote 'en_richdim_english.html'","data":{"path":"output/experiments/en_richdim_english.html","rows":"NA","md5":"7d6bb7eca498071ab597b4db69130242"}}
-{"time":"2026-10-03 13:12:15.760144","message":"wrote 'en_richdim_english_psychopy.csv'","data":{"path":"output/experiments/en_richdim_english_psychopy.csv","rows":"NA","md5":"93a834aa073d733b6c36eff12c552218"}}
-{"time":"2026-10-03 13:12:15.839094","message":"wrote 'en_richdim_english_opensesame.csv'","data":{"path":"output/experiments/en_richdim_english_opensesame.csv","rows":"NA","md5":"688d6883920616305069d8117f36a179"}}
-{"time":"2026-10-03 13:12:15.938282","message":"wrote 'en_richdim_english_opensesame_text.csv'","data":{"path":"output/experiments/en_richdim_english_opensesame_text.csv","rows":"NA","md5":"9611480010e396d73933a022393170df"}}
-{"time":"2026-10-03 13:12:16.777646","message":"wrote 'en_richdim_english_datasheet_R.json'","data":{"path":"output/reports/en_richdim_english_datasheet_R.json","rows":"NA","md5":"d2e17a4904ef08edf767c48d7222a0dd"}}
-{"time":"2026-10-03 13:12:16.946745","message":"wrote 'en_richdim_english_datasheet_R.md'","data":{"path":"output/reports/en_richdim_english_datasheet_R.md","rows":"NA","md5":"8430adb7ec920a1085e37afd41d76ea8"}}
+{"time":"2026-10-03 14:24:25.376205","message":"loading lexicon 'corpora/derived/en.csv'","data":null}
+{"time":"2026-10-03 14:24:28.206078","message":"lexicon loaded: 30000 words","data":{"words":30000}}
+{"time":"2026-10-03 14:24:28.264156","message":"pool after filters: 10205 words","data":{"pool":10205}}
+{"time":"2026-10-03 14:24:28.277565","message":"computing bigram frequency (phonotactic-probability proxy)","data":null}
+{"time":"2026-10-03 14:24:30.994418","message":"matched 120 items across 2 conditions","data":{"conditions":"high_frequency, low_frequency"}}
+{"time":"2026-10-03 14:24:31.188792","message":"equivalence low_frequency vs high_frequency on 'length': d = 0.01 [-0.29, 0.32], TOST p = 0.004 (equivalent)","data":null}
+{"time":"2026-10-03 14:24:31.242031","message":"equivalence low_frequency vs high_frequency on 'frequency': d = 5.57 [4.90, 6.24], TOST p = 1.000 (not shown equivalent)","data":null}
+{"time":"2026-10-03 14:24:31.258652","message":"equivalence low_frequency vs high_frequency on 'n_density': d = 0.08 [-0.23, 0.38], TOST p = 0.011 (equivalent)","data":null}
+{"time":"2026-10-03 14:24:31.295115","message":"equivalence low_frequency vs high_frequency on 'old20': d = 0.08 [-0.22, 0.38], TOST p = 0.011 (equivalent)","data":null}
+{"time":"2026-10-03 14:24:31.330305","message":"equivalence low_frequency vs high_frequency on 'n_syllables': d = 0.17 [-0.13, 0.48], TOST p = 0.038 (equivalent)","data":null}
+{"time":"2026-10-03 14:24:31.383298","message":"equivalence low_frequency vs high_frequency on 'bigram_freq': d = 0.01 [-0.29, 0.31], TOST p = 0.004 (equivalent)","data":null}
+{"time":"2026-10-03 14:24:32.362721","message":"wrote 'en_richdim_english_stimuli_R.csv'","data":{"path":"output/stimuli/en_richdim_english_stimuli_R.csv","rows":120,"md5":"9dc5f5642000f89a4ddcafe72a18ff05"}}
+{"time":"2026-10-03 14:24:32.614667","message":"wrote 'en_richdim_english_descriptives_R.csv'","data":{"path":"output/reports/en_richdim_english_descriptives_R.csv","rows":12,"md5":"3bb9bd2d9181ecb0a19a4d79b547c252"}}
+{"time":"2026-10-03 14:24:32.889093","message":"wrote 'en_richdim_english_comparisons_R.csv'","data":{"path":"output/reports/en_richdim_english_comparisons_R.csv","rows":6,"md5":"c6e0f0a19b0b176fdd5a9ad80946e658"}}
+{"time":"2026-10-03 14:24:40.846241","message":"wrote 'en_richdim_english_psychopy.py'","data":{"path":"output/experiments/en_richdim_english_psychopy.py","rows":"NA","md5":"7ef41675cf8ff87ec3ead289bbf4e0ba"}}
+{"time":"2026-10-03 14:24:40.909685","message":"wrote 'en_richdim_english.osexp'","data":{"path":"output/experiments/en_richdim_english.osexp","rows":"NA","md5":"ff4c4663416e45f9cbb882d29f4b1fc3"}}
+{"time":"2026-10-03 14:24:40.997974","message":"wrote 'en_richdim_english.html'","data":{"path":"output/experiments/en_richdim_english.html","rows":"NA","md5":"7d6bb7eca498071ab597b4db69130242"}}
+{"time":"2026-10-03 14:24:41.07816","message":"wrote 'en_richdim_english_psychopy.csv'","data":{"path":"output/experiments/en_richdim_english_psychopy.csv","rows":"NA","md5":"93a834aa073d733b6c36eff12c552218"}}
+{"time":"2026-10-03 14:24:41.147651","message":"wrote 'en_richdim_english_opensesame.csv'","data":{"path":"output/experiments/en_richdim_english_opensesame.csv","rows":"NA","md5":"688d6883920616305069d8117f36a179"}}
+{"time":"2026-10-03 14:24:41.199934","message":"wrote 'en_richdim_english_opensesame_text.csv'","data":{"path":"output/experiments/en_richdim_english_opensesame_text.csv","rows":"NA","md5":"9611480010e396d73933a022393170df"}}
+{"time":"2026-10-03 14:24:42.457385","message":"wrote 'en_richdim_english_datasheet_R.json'","data":{"path":"output/reports/en_richdim_english_datasheet_R.json","rows":"NA","md5":"59565204968aebf41a293d02d5b10630"}}
+{"time":"2026-10-03 14:24:42.538937","message":"wrote 'en_richdim_english_datasheet_R.md'","data":{"path":"output/reports/en_richdim_english_datasheet_R.md","rows":"NA","md5":"8430adb7ec920a1085e37afd41d76ea8"}}

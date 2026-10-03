@@ -23,7 +23,8 @@
 .DESIGN_KEYS <- c(
   "name", "language", "language_tag", "description", "paradigm", "lexicon",
   "items", "items.source", "items.path", "items.lexicon", "items.members",
-  "items.generation", "items.generation.method", "items.anchor_condition",
+  "items.generation", "items.generation.method", "items.generation.exclude",
+  "items.anchor_condition",
   "pool_filters",
   "conditions", "conditions[].name", "conditions[].define_by",
   "match_on", "n_per_condition", "n_per_cell",

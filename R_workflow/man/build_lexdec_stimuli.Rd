@@ -8,7 +8,8 @@ build_lexdec_stimuli(
   pool,
   n,
   reference_words = NULL,
-  method = "letter_substitution"
+  method = "letter_substitution",
+  exclude = NULL
 )
 }
 \arguments{
@@ -21,6 +22,10 @@ the real word forms a pseudoword must avoid; defaults to the pool's words.}
 
 \item{method}{Pseudoword generator: \code{"letter_substitution"} (default) or
 \code{"subsyllabic"} (Wuggy-style; Keuleers & Brysbaert, 2010).}
+
+\item{exclude}{Optional character vector of further known word forms a
+pseudoword must not equal, which the reference may lack; see
+\code{\link[=generate_pseudowords]{generate_pseudowords()}}.}
 }
 \value{
 A stimulus data frame with \code{target}, \code{condition} and \code{set} columns.

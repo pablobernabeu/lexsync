@@ -1,0 +1,10 @@
+# Both engines generate the same six pseudowords, none of them a form in known.txt,
+# and count the twenty a-z words in the band as the candidates. Without the list,
+# sets 4 and 5 were given mando and plana, two Spanish words the lexicon lacks.
+outcome: artefacts
+compare: [stimuli, descriptives, comparisons]
+datasheet:
+  selection.candidate_pool.0.n_candidates: 20
+  selection.generation_exclude.0.source: known.txt
+  selection.generation_exclude.0.n_forms: 3
+  selection.generation_exclude.0.sha256: 66bb1e1e49697b2ba5b1665fee2006853533c00fb96ff0bca995593c47b12583

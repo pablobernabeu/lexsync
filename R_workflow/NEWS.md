@@ -261,6 +261,27 @@
   logs, which record the datasheets' MD5, are regenerated. No stimulus, report
   table or experiment changes.
 
+* `items.generation.exclude` lists further word forms that a generated pseudoword
+  must not equal: files with one form per line, CSV files with a `word` column, or
+  corpora fetched into the cache with `fetch_corpus()`. The forms are normalised as
+  a lexicon's words are, and the datasheet records each list with its checksum as
+  `selection$generation_exclude`, a field of datasheet format 1.2. The Methods
+  paragraph names the lists. The generators checked only the lexicon, whose
+  English and Spanish forms stop at Zipf 2.95 and 3.11, so real words such as
+  crier and pall, and in Spanish renos and esteras, passed as pseudowords.
+  `generate_pseudowords()` and `build_lexdec_stimuli()` take the list as
+  `exclude`. The repository's `corpora/fetch_corpora.py --known-forms` writes
+  wordfreq's fuller word lists for this purpose (289,023 English and 334,625
+  Spanish forms), and neither package ships them. No shipped design uses the key
+  yet, so no stimulus moves. The schema's comments describe it, so the 42
+  committed datasheets, which record the schema's SHA-256, and their run logs are
+  regenerated.
+
+* A generated lexical-decision design reports the number of words the generator
+  could use. It reported the band before the a-z filter, 8,305 words where 6,937
+  were eligible in a Spanish band of length 4-7 and Zipf 3.5-6. The English
+  demonstrations' counts do not change, since their bands hold only a-z words.
+
 # lexsync 0.1.1
 
 * `assign_triggers()` gains a `conditions` argument that fixes the order of the

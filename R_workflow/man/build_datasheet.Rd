@@ -22,7 +22,8 @@ build_datasheet(
   selection_audit = NULL,
   neighbourhood_reference = NULL,
   counterbalance_check = NULL,
-  input_normalisation = NULL
+  input_normalisation = NULL,
+  generation_exclude = NULL
 )
 }
 \arguments{
@@ -94,6 +95,11 @@ keys the run's inputs held that Unicode NFC normalisation rewrote, and how many
 duplicates the rewriting created and removed. Recorded only when given, which
 the pipeline does only when either count is above zero, because a merged
 spelling changes the candidate pool.}
+
+\item{generation_exclude}{Optional list of the known-form lists of a generated
+design's \code{items.generation.exclude}, each \code{list(source, sha256, n_forms)}. A
+pseudoword was refused for equalling any form in them, so they decide which
+pseudowords a run produces, as the lexicon does.}
 }
 \value{
 The datasheet as a nested list, ready for \code{\link[=write_datasheet]{write_datasheet()}}.

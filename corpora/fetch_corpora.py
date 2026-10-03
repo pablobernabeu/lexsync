@@ -3,12 +3,17 @@
 
 Usage:
     python corpora/fetch_corpora.py --languages en es --n-words 10000
+    python corpora/fetch_corpora.py --known-forms en es
 
 This ingestion step writes:
   corpora/derived/<lang>.csv                          full derived lexicon
   R_workflow/inst/extdata/<lang>_example.csv          bundled slice (length 3-9)
   python_workflow/src/lexsync/data/<lang>_example.csv bundled slice (length 3-9)
-and (re)writes corpora/ATTRIBUTION.md.
+and (re)writes corpora/ATTRIBUTION.md. With --known-forms it writes
+  corpora/derived/<lang>_known_forms.txt              every known form, one per line
+instead, for a design's items.generation.exclude, and builds no lexicon unless
+--languages is given too. The lists stay in the repository: neither package ships
+them.
 
 The orthographic-neighbourhood variables (Coltheart's N and OLD20) are computed
 openly here with rapidfuzz and stored in the derived files, so both the R and
@@ -29,7 +34,9 @@ from __future__ import annotations
 
 import argparse
 import datetime
+import hashlib
 import re
+import unicodedata
 from pathlib import Path
 
 import numpy as np
@@ -159,6 +166,66 @@ def write_slice(df: pd.DataFrame, lang: str, target: int = 3000) -> int:
 CHAR_BASED = {"zh"}
 
 
+# The known-form lists. The derived lexica stop at the 30,000th form, Zipf 2.95 in
+# English and 3.11 in Spanish, so a generator that checks its pseudowords against the
+# lexicon alone lets real low-frequency words through (crier, pall; renos, esteras).
+# wordfreq's 'large' list goes much lower. Zipf 1.0 is one occurrence per hundred
+# million words, near the floor of what its sources attest.
+KNOWN_WORDLIST = "large"
+KNOWN_MIN_ZIPF = 1.0
+KNOWN_SUFFIX = "_known_forms.txt"
+
+
+def known_forms(lang: str) -> list[str]:
+    """Every form in wordfreq's 'large' list for `lang` at Zipf 1.0 or above that the
+    language's WORD_RE admits, lower-cased and in Unicode NFC, without duplicates and
+    in UTF-8 byte order (289,023 forms for English with wordfreq 3.1)."""
+    if lang not in wordfreq.available_languages(KNOWN_WORDLIST):
+        raise SystemExit(f"[fetch_corpora] wordfreq has no '{KNOWN_WORDLIST}' list for '{lang}'.")
+    rx = WORD_RE.get(lang, WORD_RE["default"])
+    out: set[str] = set()
+    for w in wordfreq.iter_wordlist(lang, KNOWN_WORDLIST):
+        if wordfreq.zipf_frequency(w, lang, wordlist=KNOWN_WORDLIST) < KNOWN_MIN_ZIPF:
+            continue
+        v = unicodedata.normalize("NFC", w.lower())
+        if rx.match(v):
+            out.add(v)
+    return sorted(out, key=lambda s: s.encode("utf-8"))
+
+
+def write_known_forms(lang: str) -> Path:
+    """Write corpora/derived/<lang>_known_forms.txt: UTF-8, one form per line, LF."""
+    path = DERIVED / f"{lang}{KNOWN_SUFFIX}"
+    path.write_bytes(("\n".join(known_forms(lang)) + "\n").encode("utf-8"))
+    return path
+
+
+def known_forms_entry(lang: str, path: Path, date: str) -> str:
+    data = path.read_bytes()
+    n = data.decode("utf-8").count("\n")
+    return (
+        f"- **{LANG_NAMES.get(lang, lang)} ('{lang}')**, {n} forms in "
+        f"`{path.name}`, sha256 `{hashlib.sha256(data).hexdigest()}`. Source: "
+        f"wordfreq's '{KNOWN_WORDLIST}' list at Zipf {KNOWN_MIN_ZIPF:.1f} or above "
+        f"(Speer, 2022; data CC BY-SA 4.0), retrieved {date}."
+    )
+
+
+def recorded_dates(path: Path) -> dict[str, str]:
+    """The retrieval date ATTRIBUTION.md records for each entry, keyed by its code
+    ('en') or by its known-form file name ('en_known_forms.txt')."""
+    if not path.exists():
+        return {}
+    out: dict[str, str] = {}
+    for line in path.read_text(encoding="utf-8").splitlines():
+        m = re.match(r"- \*\*.*\('([^']+)'\)\*\*, .*retrieved (\d{4}-\d{2}-\d{2})\.", line)
+        if not m:
+            continue
+        known = re.search(r"`([^`]+" + re.escape(KNOWN_SUFFIX) + ")`", line)
+        out[known.group(1) if known else m.group(1)] = m.group(2)
+    return out
+
+
 def attribution_entry(lang: str, df: pd.DataFrame, date: str) -> str:
     zmin, zmax = df.freq_zipf.min(), df.freq_zipf.max()
     unit = "over characters " if lang in CHAR_BASED else ""
@@ -196,11 +263,12 @@ def write_attribution(fresh_dates: dict[str, str]) -> None:
 
     Scanning the derived directory (rather than only the languages built in the
     current run) keeps the attribution complete when languages are added one at a
-    time. Languages built this run carry today's date; others fall back to the
-    modification date of their derived file, which is a lower bound rather than
-    the true retrieval date: anything that rewrites the file, such as adding a
-    column, moves it forward. Rebuilding every language in one run is what keeps
-    the dates honest.
+    time. Languages built this run carry today's date, and the others keep the date
+    this file already records for them. Only an entry it does not record yet falls
+    back to the modification date of its derived file, which is a lower bound rather
+    than the true retrieval date: a fresh checkout dates every file to the checkout,
+    and anything that rewrites the file, such as adding a column, moves it forward.
+    The known-form lists are dated the same way, by file name.
 
     The citations below are not decoration. wordfreq carries the SUBTLEX lists by
     permission on the condition that work derived from it credits their authors
@@ -209,12 +277,27 @@ def write_attribution(fresh_dates: dict[str, str]) -> None:
     """
     path = ROOT / "corpora" / "ATTRIBUTION.md"
     hand = read_hand_written(path)
+    recorded = recorded_dates(path)
+
+    def date_of(key: str, file: Path) -> str:
+        return (fresh_dates.get(key) or recorded.get(key)
+                or datetime.date.fromtimestamp(file.stat().st_mtime).isoformat())
+
     entries = []
     for csv in sorted(DERIVED.glob("*.csv")):
         lang = csv.stem
         df = pd.read_csv(csv, encoding="utf-8")
-        date = fresh_dates.get(lang) or datetime.date.fromtimestamp(csv.stat().st_mtime).isoformat()
-        entries.append(attribution_entry(lang, df, date))
+        entries.append(attribution_entry(lang, df, date_of(lang, csv)))
+    known = [known_forms_entry(txt.name[:-len(KNOWN_SUFFIX)], txt, date_of(txt.name, txt))
+             for txt in sorted(DERIVED.glob(f"*{KNOWN_SUFFIX}"))]
+    known_section = "" if not known else (
+        "\n\n## Known-form lists (repository only)\n\n"
+        "Each list holds every form in wordfreq's large list for a language at Zipf 1.0\n"
+        "or above that the language's letters admit. `fetch_corpora.py --known-forms`\n"
+        "writes them for a design's `items.generation.exclude`, so that a generated\n"
+        "pseudoword cannot be a real word too rare for the lexicon. Neither package\n"
+        "ships them.\n\n"
+        + "\n".join(known))
     text = (
         "# Corpus attribution\n\n"
         "Lexical corpora used by lexsync, with their sources, licences and retrieval\n"
@@ -225,6 +308,7 @@ def write_attribution(fresh_dates: dict[str, str]) -> None:
         "hand-written region below will not survive the next run.\n\n"
         "## Demonstration corpora (bundled)\n\n"
         + "\n".join(entries)
+        + known_section
         + f"\n\n{HAND_START}\n{hand}\n{HAND_END}\n"
         + "\n## Citations\n\n"
         "- Speer, R. (2022). rspeer/wordfreq: v3.0. Zenodo. https://doi.org/10.5281/zenodo.7199437\n"
@@ -248,19 +332,32 @@ def write_attribution(fresh_dates: dict[str, str]) -> None:
         "Those are loaded directly by a user and are not the source of anything "
         "bundled here.\n"
     )
-    path.write_text(text, encoding="utf-8")
+    # LF on every platform, as .gitattributes stores it.
+    path.write_text(text, encoding="utf-8", newline="\n")
 
 
 def main() -> None:
     ap = argparse.ArgumentParser(description="Build lexsync derived lexica.")
-    ap.add_argument("--languages", nargs="+", default=["en", "es"])
+    ap.add_argument("--languages", nargs="+", default=None,
+                    help="lexica to build (default: en es, unless --known-forms is given)")
     ap.add_argument("--n-words", type=int, default=10000)
+    ap.add_argument("--known-forms", nargs="+", default=[], metavar="LANG",
+                    help="write corpora/derived/<lang>_known_forms.txt for these languages")
     args = ap.parse_args()
+    languages = args.languages
+    if languages is None:
+        languages = [] if args.known_forms else ["en", "es"]
 
     DERIVED.mkdir(parents=True, exist_ok=True)
     today = datetime.date.today().isoformat()
     fresh_dates: dict[str, str] = {}
-    for lang in args.languages:
+    for lang in args.known_forms:
+        print(f"[fetch_corpora] listing the known forms of '{lang}' ...", flush=True)
+        out = write_known_forms(lang)
+        n_forms = out.read_bytes().count(b"\n")
+        print(f"  -> {out.name}: {n_forms} forms", flush=True)
+        fresh_dates[out.name] = today
+    for lang in languages:
         print(f"[fetch_corpora] building '{lang}' (target {args.n_words} words) ...", flush=True)
         df = build(lang, args.n_words)
         out = DERIVED / f"{lang}.csv"

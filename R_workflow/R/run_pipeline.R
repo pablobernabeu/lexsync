@@ -138,6 +138,7 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
 
   report <- NULL
   pair_eligible <- NULL
+  generation_exclude <- NULL
   norms <- list()
   selection_audit <- NULL
   # What NFC normalisation did to the inputs this run read (see .nfc_count), summed
@@ -295,8 +296,23 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
     }
   } else if (source == "generate") {
     n <- .resolve_n(design, 40L)
-    gen_method <- items_cfg[["generation"]][["method"]] %||% "letter_substitution"
-    stim <- build_lexdec_stimuli(pool, n, reference_words = lex$word, method = gen_method)
+    gen_cfg <- items_cfg[["generation"]] %||% list()
+    gen_method <- gen_cfg[["method"]] %||% "letter_substitution"
+    # Further known word forms a pseudoword must not equal. The lexicon stops at its
+    # frequency floor, so on its own it lets real low-frequency words through.
+    exclude <- NULL
+    if (!is.null(gen_cfg[["exclude"]])) {
+      known <- .read_known_forms(gen_cfg[["exclude"]])
+      exclude <- known$forms
+      generation_exclude <- known$records
+      for (rec in generation_exclude) {
+        log <- log_step(log, sprintf("pseudowords checked against %d known word form(s) from '%s'",
+                                     rec$n_forms, rec$source),
+                        list(exclude = rec$source, sha256 = rec$sha256))
+      }
+    }
+    stim <- build_lexdec_stimuli(pool, n, reference_words = lex$word, method = gen_method,
+                                 exclude = exclude)
     sf <- .resolve_policy(design, schema, "shortfall", "error", c("error", "allow"))
     realised <- length(unique(stim$set))
     if (realised < n && !identical(sf, "allow")) {
@@ -487,7 +503,10 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
     candidate_pool <- lapply(design[["conditions"]], function(cnd)
       list(condition = cnd[["name"]], n_candidates = nrow(build_pool(pool, cnd[["define_by"]]))))
   } else if (identical(source, "generate")) {
-    candidate_pool <- list(list(condition = "words in band", n_candidates = nrow(pool)))
+    # The words the generator can use, which build_lexdec_stimuli() draws from: the
+    # band after the a-z filter, not before it.
+    candidate_pool <- list(list(condition = "words in band",
+                                n_candidates = nrow(.lexdec_eligible(pool))))
   }
   # The neighbourhood reference is provenance: overriding it changes n_density,
   # old20 and bigram_freq without touching any input file the datasheet hashes. It is
@@ -505,7 +524,8 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
                         design_path = design_path, schema_path = schema_path,
                         selection_audit = selection_audit,
                         neighbourhood_reference = nref, counterbalance_check = cb_check,
-                        input_normalisation = input_normalisation)
+                        input_normalisation = input_normalisation,
+                        generation_exclude = generation_exclude)
   ds_json <- file.path(outdir, "reports", paste0(base, "_datasheet_R.json"))
   ds_md <- file.path(outdir, "reports", paste0(base, "_datasheet_R.md"))
   write_datasheet(ds, ds_json, ds_md)

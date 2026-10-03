@@ -4,13 +4,18 @@
 \alias{generate_pseudowords}
 \title{A length-matched pseudoword for each base word (byte-order processing)}
 \usage{
-generate_pseudowords(base_words, reference_words)
+generate_pseudowords(base_words, reference_words, exclude = NULL)
 }
 \arguments{
 \item{base_words}{Character vector of words to derive pseudowords from.}
 
 \item{reference_words}{Character vector (typically the full lexicon) that
 supplies the bigram statistics and the real word forms to avoid.}
+
+\item{exclude}{Optional character vector of further word forms no pseudoword
+may equal, such as low-frequency words the reference lacks. They are trimmed,
+lower-cased and put in Unicode NFC, as a lexicon's words are, and play no part
+in the bigram statistics.}
 }
 \value{
 A data frame with columns \code{base_word} and \code{pseudoword}.

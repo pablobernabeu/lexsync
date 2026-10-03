@@ -739,7 +739,35 @@ stimuli. Both are also orthographic models defined for a-z words:
 `build_lexdec_stimuli()` filters the pool to those, and the subsyllabic segmenter
 returns nothing for a word with an accent, a hyphen or a digit, which sends it
 down the letter-substitution path. That is why lexical decision is demonstrated on
-the English designs and never on the Chinese one.
+the English designs and never on the Chinese one. A generated design's datasheet
+counts only these a-z words in the band as its candidates.
+
+A pseudoword is a non-word only relative to the reference words, so a real word
+too rare for the lexicon can still come out as one. The bundled English and
+Spanish lexica stop at Zipf 2.95 and 3.11, and the English demonstrations produced
+crier and pall this way. `exclude` names further known word forms that no
+pseudoword may equal. They are trimmed, lower-cased and put in NFC like the
+lexicon's words, and they take no part in the bigram statistics. In a design the
+list goes under `items.generation.exclude`, and each entry is a file with one form
+per line, a CSV file with a `word` column, or a registry corpus already fetched
+into the cache:
+
+```yaml
+items:
+  source: generate
+  lexicon: corpora/derived/en.csv
+  generation:
+    exclude: [corpora/derived/en_known_forms.txt]
+```
+
+Each file must be UTF-8 text, and no form in a one-form-per-line file may hold a
+tab, a comma or a semicolon. Such a file is a table whose rows would each be kept
+whole as a form that matches nothing, so it is refused. The datasheet records
+each list with its checksum and the number of forms it holds, and the Methods
+paragraph names it. In the lexsync repository,
+`python corpora/fetch_corpora.py --known-forms en es` writes wordfreq's fuller
+lists to `corpora/derived/` (289,023 English and 334,625 Spanish forms at Zipf 1.0
+or above). They are not shipped in the package.
 
 `generate_pseudowords()` and `make_pseudoword()` are available directly if you
 want the forms without the lexical-decision scaffolding around them.
