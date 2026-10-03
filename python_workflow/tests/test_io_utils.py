@@ -250,8 +250,8 @@ def test_read_config_refuses_a_duplicated_mapping_key(tmp_path):
 # The two key vocabularies, joined by newlines and hashed. test-io_utils.R pins the
 # same digests for .DESIGN_KEYS and .SCHEMA_KEYS, so a key added to one engine only
 # fails both suites.
-DESIGN_KEYS_SHA256 = "d4bf8e8dbb503d5c00678af367f7fc61ce45e9959de871d6a50b66077fcb044e"
-SCHEMA_KEYS_SHA256 = "b95ca3dc4e1ba437004cf45bf92514656790fb06389176642a51d95a61c55082"
+DESIGN_KEYS_SHA256 = "796398d8b83714f232db2f6229bb08d16b109fec67e05422cc8c9a7eea777faa"
+SCHEMA_KEYS_SHA256 = "a62e1a4f7cc410ef37d511e9758107b414bedec2c7ab008704c57171fc7f0e5c"
 
 
 def test_the_key_vocabularies_agree_across_engines():
@@ -311,6 +311,14 @@ def test_a_key_near_a_known_one_is_refused_and_any_other_is_noted():
         for k in ("notes", "date", "events[1].colour")] + [
         "lexsync: schema key 'comment' is not read by lexsync and is ignored; a later "
         "release will refuse it. Put annotations in `description` or a key beginning `x_`."]
+
+
+def test_the_tie_break_key_is_read_in_a_design_and_a_schema():
+    """matching.tie_break is a setting in both files, so neither run notes it as
+    ignored. Pinned identically in test-io_utils.R."""
+    from lexsync.design import validate_design
+    assert validate_design(_valid_design(matching={"tie_break": "hash"}),
+                           {"matching": {"tie_break": "bytes"}}) == []
 
 
 def test_repeated_and_blank_names_are_judged_alike_in_both_engines():

@@ -1,8 +1,8 @@
 # lexsync run log: en_richdim
 
 - Engine: Python 3.13.7
-- Started: 2026-10-03T14:28:03
-- Finished: 2026-10-03T14:28:07
+- Started: 2026-10-09T03:42:43
+- Finished: 2026-10-09T03:42:46
 
 ## Run metadata
 
@@ -15,61 +15,61 @@
 
 ## Steps
 
-- **2026-10-03T14:28:03**: loading lexicon 'corpora/derived/en.csv'
-- **2026-10-03T14:28:04**: lexicon loaded: 30000 words
+- **2026-10-09T03:42:43**: loading lexicon 'corpora/derived/en.csv'
+- **2026-10-09T03:42:44**: lexicon loaded: 30000 words
     - words: 30000
-- **2026-10-03T14:28:04**: pool after filters: 10205 words
+- **2026-10-09T03:42:44**: pool after filters: 10205 words
     - pool: 10205
-- **2026-10-03T14:28:04**: computing bigram frequency (phonotactic-probability proxy)
-- **2026-10-03T14:28:05**: matched 120 items across 2 conditions
+- **2026-10-09T03:42:44**: computing bigram frequency (phonotactic-probability proxy)
+- **2026-10-09T03:42:45**: matched 120 items across 2 conditions
     - conditions: high_frequency, low_frequency
-- **2026-10-03T14:28:05**: equivalence low_frequency vs high_frequency on 'length': d = 0.01 [-0.29, 0.32], TOST p = 0.0045 (equivalent)
-- **2026-10-03T14:28:05**: equivalence low_frequency vs high_frequency on 'frequency': d = 5.57 [4.90, 6.24], TOST p = 1.0 (not shown equivalent)
-- **2026-10-03T14:28:05**: equivalence low_frequency vs high_frequency on 'n_density': d = 0.08 [-0.23, 0.38], TOST p = 0.011 (equivalent)
-- **2026-10-03T14:28:05**: equivalence low_frequency vs high_frequency on 'old20': d = 0.08 [-0.23, 0.38], TOST p = 0.0113 (equivalent)
-- **2026-10-03T14:28:05**: equivalence low_frequency vs high_frequency on 'n_syllables': d = 0.17 [-0.13, 0.48], TOST p = 0.0383 (equivalent)
-- **2026-10-03T14:28:05**: equivalence low_frequency vs high_frequency on 'bigram_freq': d = 0.01 [-0.29, 0.31], TOST p = 0.0041 (equivalent)
-- **2026-10-03T14:28:06**: wrote 'en_richdim_english_stimuli_py.csv'
+- **2026-10-09T03:42:45**: equivalence low_frequency vs high_frequency on 'length': d = 0.01 [-0.29, 0.32], TOST p = 0.0045 (equivalent)
+- **2026-10-09T03:42:45**: equivalence low_frequency vs high_frequency on 'frequency': d = 5.57 [4.90, 6.24], TOST p = 1.0 (not shown equivalent)
+- **2026-10-09T03:42:45**: equivalence low_frequency vs high_frequency on 'n_density': d = 0.08 [-0.23, 0.38], TOST p = 0.011 (equivalent)
+- **2026-10-09T03:42:45**: equivalence low_frequency vs high_frequency on 'old20': d = 0.08 [-0.23, 0.38], TOST p = 0.0113 (equivalent)
+- **2026-10-09T03:42:45**: equivalence low_frequency vs high_frequency on 'n_syllables': d = 0.17 [-0.13, 0.48], TOST p = 0.0383 (equivalent)
+- **2026-10-09T03:42:45**: equivalence low_frequency vs high_frequency on 'bigram_freq': d = 0.01 [-0.29, 0.31], TOST p = 0.0041 (equivalent)
+- **2026-10-09T03:42:45**: wrote 'en_richdim_english_stimuli_py.csv'
     - path: output\stimuli\en_richdim_english_stimuli_py.csv
     - rows: 120
     - md5: 9dc5f5642000f89a4ddcafe72a18ff05
-- **2026-10-03T14:28:06**: wrote 'en_richdim_english_descriptives_py.csv'
+- **2026-10-09T03:42:45**: wrote 'en_richdim_english_descriptives_py.csv'
     - path: output\reports\en_richdim_english_descriptives_py.csv
     - rows: 12
     - md5: 3bb9bd2d9181ecb0a19a4d79b547c252
-- **2026-10-03T14:28:06**: wrote 'en_richdim_english_comparisons_py.csv'
+- **2026-10-09T03:42:45**: wrote 'en_richdim_english_comparisons_py.csv'
     - path: output\reports\en_richdim_english_comparisons_py.csv
     - rows: 6
     - md5: c6e0f0a19b0b176fdd5a9ad80946e658
-- **2026-10-03T14:28:06**: wrote 'en_richdim_english_psychopy.py'
+- **2026-10-09T03:42:45**: wrote 'en_richdim_english_psychopy.py'
     - path: output\experiments\en_richdim_english_psychopy.py
     - rows: None
     - md5: 7ef41675cf8ff87ec3ead289bbf4e0ba
-- **2026-10-03T14:28:06**: wrote 'en_richdim_english.osexp'
+- **2026-10-09T03:42:45**: wrote 'en_richdim_english.osexp'
     - path: output\experiments\en_richdim_english.osexp
     - rows: None
     - md5: ff4c4663416e45f9cbb882d29f4b1fc3
-- **2026-10-03T14:28:06**: wrote 'en_richdim_english.html'
+- **2026-10-09T03:42:45**: wrote 'en_richdim_english.html'
     - path: output\experiments\en_richdim_english.html
     - rows: None
     - md5: 7d6bb7eca498071ab597b4db69130242
-- **2026-10-03T14:28:07**: wrote 'en_richdim_english_psychopy.csv'
+- **2026-10-09T03:42:45**: wrote 'en_richdim_english_psychopy.csv'
     - path: output\experiments\en_richdim_english_psychopy.csv
     - rows: None
     - md5: 93a834aa073d733b6c36eff12c552218
-- **2026-10-03T14:28:07**: wrote 'en_richdim_english_opensesame.csv'
+- **2026-10-09T03:42:45**: wrote 'en_richdim_english_opensesame.csv'
     - path: output\experiments\en_richdim_english_opensesame.csv
     - rows: None
     - md5: 688d6883920616305069d8117f36a179
-- **2026-10-03T14:28:07**: wrote 'en_richdim_english_opensesame_text.csv'
+- **2026-10-09T03:42:46**: wrote 'en_richdim_english_opensesame_text.csv'
     - path: output\experiments\en_richdim_english_opensesame_text.csv
     - rows: None
     - md5: 9611480010e396d73933a022393170df
-- **2026-10-03T14:28:07**: wrote 'en_richdim_english_datasheet_py.json'
+- **2026-10-09T03:42:46**: wrote 'en_richdim_english_datasheet_py.json'
     - path: output\reports\en_richdim_english_datasheet_py.json
     - rows: None
-    - md5: d2e277eb0aa450e0b3dbb3b5ea00c40d
-- **2026-10-03T14:28:07**: wrote 'en_richdim_english_datasheet_py.md'
+    - md5: 4c919b323961f8bd8110cf9226c0500c
+- **2026-10-09T03:42:46**: wrote 'en_richdim_english_datasheet_py.md'
     - path: output\reports\en_richdim_english_datasheet_py.md
     - rows: None
-    - md5: e64b00089df3b7bef68b219811542b92
+    - md5: 3175d2d835a6a5339866b21a36a8ff31

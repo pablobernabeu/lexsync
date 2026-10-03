@@ -23,9 +23,10 @@ from .counterbalancing import counterbalance_check as _counterbalance_check
 from .design import _resolve_tolerance_k
 from .io_utils import _fmt_dp, _is_continuous, _round_dp, sha256_file
 
-# The cap the pairwise (joint, optimal) matchers apply before pairing. Imported from
-# matching so the datasheet can only ever record the value the selection used.
-from .matching import PAIRWISE_CAP
+# The cap the pairwise (joint, optimal) matchers apply before pairing, and the
+# tie-break rule and its salt. Imported from matching so the datasheet can only ever
+# record the values the selection used.
+from .matching import PAIRWISE_CAP, TIE_SALT, _resolve_tie_break
 
 # The versions come from the module that writes the experiments, so the record counts
 # the versions the participants are given.
@@ -60,6 +61,9 @@ from .scripting import presentation_versions
 #   selection["generation_exclude"]   the known-form lists a generated pseudoword was
 #                                     checked against ({source, sha256, n_forms} each),
 #                                     present only when the design names any
+#   selection.tie_break         the rule that broke exact ties between equally close
+#                               candidates ({rule, salt}, the salt only for hash),
+#                               present for a matched corpus or pool design
 DATASHEET_VERSION = "1.2"
 
 # Datasheet labels for the pseudoword generators in generation.py, keyed by the
@@ -355,6 +359,12 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
             }
         else:
             selection["tolerance_k"] = _resolve_tolerance_k(design, schema)
+        # Exact ties decide most picks when the matched dimensions are whole numbers, so
+        # the rule that broke them is part of the selection. The salt goes with the
+        # hash, which makes every tie key recomputable from the record.
+        rule = _resolve_tie_break(design, schema)
+        selection["tie_break"] = ({"rule": rule, "salt": TIE_SALT} if rule == "hash"
+                                  else {"rule": rule})
     elif source == "generate":
         gen_method = ((design.get("items") or {}).get("generation") or {}).get(
             "method", "letter_substitution")
@@ -667,8 +677,8 @@ def methods_paragraph(ds: dict) -> str:
                 f"Liben-Nowell et al., 2019).{_norms_note(ds)} Materials were counterbalanced "
                 f"into {cb['lists']} list(s) ({recipe_label}) and generated for PsychoPy, "
                 f"OpenSesame and jsPsych.{_versions_note(ds)} The selection is deterministic "
-                f"and reproducible (seed {ds['reproducibility']['seed']}; lexsync "
-                f"{ds['reproducibility']['versions']['lexsync']}).")
+                f"and reproducible (lexsync {ds['reproducibility']['versions']['lexsync']}), "
+                f"and the seed ({ds['reproducibility']['seed']}) fixes the trial order.")
     if src == "corpus":
         ctrl = ", ".join(ds["selection"]["match_on"]) or "the control dimensions"
         lead = (f"{n} items per condition were selected from the {lang} lexicon "
@@ -719,8 +729,8 @@ def methods_paragraph(ds: dict) -> str:
     tail = (resamp + f". Materials were counterbalanced into {cb['lists']} list(s) "
             f"({recipe_label}) and generated for PsychoPy, OpenSesame and "
             f"jsPsych.{_versions_note(ds)} The selection is deterministic and reproducible "
-            f"(seed {ds['reproducibility']['seed']}; lexsync "
-            f"{ds['reproducibility']['versions']['lexsync']}).")
+            f"(lexsync {ds['reproducibility']['versions']['lexsync']}), and the seed "
+            f"({ds['reproducibility']['seed']}) fixes the trial order.")
     cp = (ds.get("selection") or {}).get("candidate_pool")
     # The candidate pool counts the candidates excluded for a missing matched value,
     # which were never eligible, so they come off the count of the condition that
@@ -773,6 +783,33 @@ def prereg_template(ds: dict) -> str:
         "- Inference criteria:\n"
         "- Treatment of items (e.g. items as a random factor):\n"
     )
+
+
+def _transparency_note(ds: dict) -> str:
+    """How the selection was made, as the Markdown's transparency section states it.
+
+    Selection reads no seed, so the note names what it does depend on, and how exact
+    ties were broken when the record gives the rule. It used to call the selection
+    deterministic given the seed and free of item-selection bias, though the
+    spelling tie-break skewed tied conditions towards early-alphabet words. Mirrors
+    .transparency_note in datasheet.R.
+    """
+    rule = ((ds.get("selection") or {}).get("tie_break") or {}).get("rule")
+    if rule == "hash":
+        ties = (" Exact ties between equally close candidates are broken by a keyed hash "
+                "of each word (salt %s), so no part of the alphabet is favoured."
+                % ds["selection"]["tie_break"]["salt"])
+    elif rule == "bytes":
+        ties = (" Exact ties between equally close candidates are broken by spelling, in "
+                "byte order, as lexsync 0.1 did, so every tie goes to the spelling that "
+                "sorts first.")
+    else:
+        ties = ""
+    return ("Selection is a deterministic function of the materials source, the design "
+            "and the schema, blind to any outcome measure, and does not depend on the "
+            "seed, which fixes the trial order." + ties + " Automating the choice "
+            "removes the experimenter's discretion that Forster (2000) showed can bias "
+            "item selection.")
 
 
 def render_datasheet_md(ds: dict) -> str:
@@ -887,9 +924,7 @@ def render_datasheet_md(ds: dict) -> str:
         lines += ["## Selection transparency", "",
                   "- **Candidate pool** (items satisfying each condition's window before "
                   f"matching): {parts}.",
-                  "- Selection is deterministic given the seed and blind to any outcome "
-                  "measure, so it is reproducible and free of item-selection bias "
-                  "(Forster, 2000; Simmons et al., 2011).", ""]
+                  "- " + _transparency_note(ds), ""]
     if ds["realised_control"] and "predictor" in (ds.get("selection") or {}):
         lines += ["## Realised control (continuous predictor)", "",
                   "| Dimension | Role | r with predictor | Predictor span |",

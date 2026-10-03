@@ -34,6 +34,9 @@
 #   selection$generation_exclude   the known-form lists a generated pseudoword was
 #                                  checked against (source, sha256, n_forms each),
 #                                  present only when the design names any
+#   selection$tie_break         the rule that broke exact ties between equally close
+#                               candidates (rule, salt; the salt only for hash),
+#                               present for a matched corpus or pool design
 DATASHEET_VERSION <- "1.2"
 
 # Datasheet labels for the pseudoword generators in generation.R, keyed by the
@@ -317,6 +320,12 @@ build_datasheet <- function(design, schema, report, stimuli, source_path, artifa
     } else {
       sel$tolerance_k <- .resolve_tolerance_k(design, schema)
     }
+    # Exact ties decide most picks when the matched dimensions are whole numbers, so
+    # the rule that broke them is part of the selection. The salt goes with the hash,
+    # which makes every tie key recomputable from the record.
+    rule <- .resolve_tie_break(design, schema)
+    sel$tie_break <- if (identical(rule, "hash")) list(rule = rule, salt = .TIE_SALT)
+                     else list(rule = rule)
     sel
   } else if (identical(source, "generate")) {
     gen_method <- design[["items"]][["generation"]][["method"]] %||% "letter_substitution"
@@ -572,10 +581,10 @@ methods_paragraph <- function(ds) {
                           "than a between-condition contrast (Kuperman, 2015; Liben-Nowell et al., ",
                           "2019).%s Materials were counterbalanced into %s list(s) (%s) and generated ",
                           "for PsychoPy, OpenSesame and jsPsych.%s The selection is deterministic and ",
-                          "reproducible (seed %s; lexsync %s)."),
+                          "reproducible (lexsync %s), and the seed (%s) fixes the trial order."),
                    n, lang, unit, predictor, span_str, controls, corr_str, .norms_note(ds),
                    cb$lists, recipe_label, .versions_note(ds),
-                   ds$reproducibility$seed, ds$reproducibility$versions$lexsync))
+                   ds$reproducibility$versions$lexsync, ds$reproducibility$seed))
   }
   if (identical(src, "corpus")) {
     ctrl <- paste(unlist(ds$selection$match_on), collapse = ", ")
@@ -632,9 +641,9 @@ methods_paragraph <- function(ds) {
   recipe_label <- .recipe_label(cb)
   tail <- sprintf(paste0(resamp, ". Materials were counterbalanced into %s list(s) (%s) and generated for ",
                          "PsychoPy, OpenSesame and jsPsych.%s The selection is deterministic and ",
-                         "reproducible (seed %s; lexsync %s)."),
-                  cb$lists, recipe_label, .versions_note(ds), ds$reproducibility$seed,
-                  ds$reproducibility$versions$lexsync)
+                         "reproducible (lexsync %s), and the seed (%s) fixes the trial order."),
+                  cb$lists, recipe_label, .versions_note(ds), ds$reproducibility$versions$lexsync,
+                  ds$reproducibility$seed)
   bal <- ds$counterbalancing$optimise
   bal_note <- if (is.null(bal)) "" else sprintf(
     paste0(". Item sets were assigned to lists so as to equate the lists on %s rather ",
@@ -696,6 +705,31 @@ prereg_template <- function(ds) {
             ds$analysis$suggested_model, ds$analysis$note),
     "- Inference criteria:\n",
     "- Treatment of items (e.g. items as a random factor):\n")
+}
+
+# How the selection was made, as the Markdown's transparency section states it.
+# Selection reads no seed, so the note names what it does depend on, and how exact ties
+# were broken when the record gives the rule. It used to call the selection
+# deterministic given the seed and free of item-selection bias, though the spelling
+# tie-break skewed tied conditions towards early-alphabet words. Mirrors
+# _transparency_note in datasheet.py.
+.transparency_note <- function(ds) {
+  tb <- ds[["selection"]][["tie_break"]]
+  rule <- tb[["rule"]] %||% ""
+  ties <- if (identical(rule, "hash")) {
+    sprintf(paste0(" Exact ties between equally close candidates are broken by a keyed ",
+                   "hash of each word (salt %s), so no part of the alphabet is favoured."),
+            tb[["salt"]])
+  } else if (identical(rule, "bytes")) {
+    paste0(" Exact ties between equally close candidates are broken by spelling, in ",
+           "byte order, as lexsync 0.1 did, so every tie goes to the spelling that ",
+           "sorts first.")
+  } else ""
+  paste0("Selection is a deterministic function of the materials source, the design ",
+         "and the schema, blind to any outcome measure, and does not depend on the ",
+         "seed, which fixes the trial order.", ties, " Automating the choice removes ",
+         "the experimenter's discretion that Forster (2000) showed can bias item ",
+         "selection.")
 }
 
 #' @keywords internal
@@ -821,9 +855,7 @@ render_datasheet_md <- function(ds) {
     lines <- c(lines, "## Selection transparency", "",
                sprintf(paste0("- **Candidate pool** (items satisfying each condition's window ",
                               "before matching): %s."), parts),
-               paste0("- Selection is deterministic given the seed and blind to any outcome ",
-                      "measure, so it is reproducible and free of item-selection bias ",
-                      "(Forster, 2000; Simmons et al., 2011)."), "")
+               paste0("- ", .transparency_note(ds)), "")
   }
   if (length(ds$realised_control) && !is.null(ds$selection$predictor)) {
     lines <- c(lines, "## Realised control (continuous predictor)", "",

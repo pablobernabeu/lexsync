@@ -46,7 +46,7 @@
 
 ## Methods paragraph
 
-8 English prime-target pairs were selected to span target.frequency (a span of 1.45) continuously while holding target.length, pair.overlap near-constant, and the largest predictor-control correlation was |r| = 0.292, for analysis by regression or a mixed model rather than a between-condition contrast (Kuperman, 2015; Liben-Nowell et al., 2019). Materials were counterbalanced into 2 list(s) (a Latin-square rotation) and generated for PsychoPy, OpenSesame and jsPsych. Each participant was presented one of the 2 lists, assigned in rotation by participant number. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.1).
+8 English prime-target pairs were selected to span target.frequency (a span of 1.45) continuously while holding target.length, pair.overlap near-constant, and the largest predictor-control correlation was |r| = 0.292, for analysis by regression or a mixed model rather than a between-condition contrast (Kuperman, 2015; Liben-Nowell et al., 2019). Materials were counterbalanced into 2 list(s) (a Latin-square rotation) and generated for PsychoPy, OpenSesame and jsPsych. Each participant was presented one of the 2 lists, assigned in rotation by participant number. The selection is deterministic and reproducible (lexsync 0.1.1), and the seed (2026) fixes the trial order.
 
 ## Pre-registration template
 
@@ -66,7 +66,7 @@
 - Paradigm: priming
 
 ### Materials (from the lexsync datasheet)
-8 English prime-target pairs were selected to span target.frequency (a span of 1.45) continuously while holding target.length, pair.overlap near-constant, and the largest predictor-control correlation was |r| = 0.292, for analysis by regression or a mixed model rather than a between-condition contrast (Kuperman, 2015; Liben-Nowell et al., 2019). Materials were counterbalanced into 2 list(s) (a Latin-square rotation) and generated for PsychoPy, OpenSesame and jsPsych. Each participant was presented one of the 2 lists, assigned in rotation by participant number. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.1).
+8 English prime-target pairs were selected to span target.frequency (a span of 1.45) continuously while holding target.length, pair.overlap near-constant, and the largest predictor-control correlation was |r| = 0.292, for analysis by regression or a mixed model rather than a between-condition contrast (Kuperman, 2015; Liben-Nowell et al., 2019). Materials were counterbalanced into 2 list(s) (a Latin-square rotation) and generated for PsychoPy, OpenSesame and jsPsych. Each participant was presented one of the 2 lists, assigned in rotation by participant number. The selection is deterministic and reproducible (lexsync 0.1.1), and the seed (2026) fixes the trial order.
 
 ### Sampling plan
 - Sample size and justification:

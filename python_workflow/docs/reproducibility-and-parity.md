@@ -38,10 +38,12 @@ design, described below. A seeded generator would be reproducible within an engi
 NumPy's differ, so it would not cross the gap.
 
 Every ordering is by UTF-8 bytes. The lexicon is sorted that way at load time, item tables are
-mapped to set ids that way, pseudoword base words are processed that way, and the matcher's
-tie-break is the word's bytes and then its lexicon id. Locale-collated sorting would put a German
-laptop and an English continuous-integration runner in disagreement about which of two words comes
-first, and one flipped tie-break at the top of a pool cascades through everything after it.
+mapped to set ids that way and pseudoword base words are processed that way. Under the default
+`tie_break: bytes`, the matcher breaks a tie by the word's bytes and then its lexicon id. Under
+`tie_break: hash` it compares hexadecimal SHA-256 digests, whose digits sort the same way in both
+engines. Locale-collated sorting would put a German laptop and an English continuous-integration
+runner in disagreement about which of two words comes first, and one flipped tie-break at the top
+of a pool cascades through everything after it.
 
 Distances are rounded to nine decimal places before they are compared: in the matcher, in the
 `joint` cost matrix, in the overlap cap and in the continuous selector's Pearson correlations. Two
@@ -105,10 +107,15 @@ The same bytes come out of both engines on any platform, there is no generator s
 restore, a different seed still gives a different order, and the order remains random in the sense
 a reviewer cares about, with no systematic position effects.
 
-Some of these are visible in the design surface, and deliberately so. The tie-break order in the
-matcher is fixed at distance, then word bytes, then id, and is not configurable, because it is
-precisely what makes the two engines agree without an RNG. Making it an option would make the
-guarantee an option.
+The tie-break is the one mechanism here that a design can set. `matching.tie_break` chooses
+between two rules, and both keep the guarantee. `bytes` compares the words' UTF-8
+bytes and `hash` compares the SHA-256 of `lexsync-tie-v1|` followed by the word, and the two
+engines compute and order either key identically. `bytes` reproduces the selections of lexsync 0.1,
+and `hash` removes the early-alphabet skew that spelling gives a condition decided by ties
+([Matching and designs](matching-and-designs.md#how-matching-works)). The salt is fixed and
+independent of the seed, which keys the trial order. A tie key built on the seed would change the
+items whenever a cohort's order was re-randomised, and would let re-seeding shop among equally
+matched sets.
 
 ## The Unicode input contract
 
@@ -288,7 +295,9 @@ bias auditable ([Forster, 2000](references.md#forster-2000);
 object from a set of 80 chosen from 85. A candidate missing a matched dimension satisfies its window
 but cannot be matched. The JSON record counts such candidates per condition in
 `selection.incomplete_dropped`, and the Methods paragraph leaves them out of its count of eligible
-candidates.
+candidates. For a matched design the record also names the rule that broke exact ties, as
+`selection.tie_break`, with its salt under `hash`. The Markdown says how ties were broken and that
+the selection does not depend on the seed, which fixes the trial order.
 
 The realised control is a table, not a claim, giving each dimension its role, Cohen's *d*, the 90%
 interval, the variance ratio, the TOST *p* and the verdict. The JSON keeps each statistic as the

@@ -42,4 +42,12 @@ excludes it before selecting, and the number excluded per condition is recorded
 in the \code{"audit"} attribute's \code{incomplete_dropped} entry. The shortfall policy
 then applies to what remains, and a condition left with no complete candidate
 is refused.
+
+\code{tie_break}, read in the same way, decides between candidates at exactly the same
+rounded distance, which integer dimensions make common: \code{"bytes"}, the default,
+prefers the spelling that sorts first and reproduces lexsync 0.1, and \code{"hash"}
+prefers the smaller SHA-256 of \verb{lexsync-tie-v1|} followed by the word, which
+favours no part of the alphabet. The rule also orders the tied pairs of \code{joint} and
+\code{optimal} and the tied rows at their candidate cap. The anchor's even spread keeps
+its byte-order tie-break under both rules.
 }

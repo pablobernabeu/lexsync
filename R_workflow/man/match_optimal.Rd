@@ -11,7 +11,8 @@ match_optimal(
   center,
   scale_,
   n,
-  cap = .PAIRWISE_CAP
+  cap = .PAIRWISE_CAP,
+  tie_break = "bytes"
 )
 }
 \description{
@@ -19,6 +20,8 @@ Solves the linear-assignment problem globally rather than greedily, so it
 minimises the summed pair distance and leaves fewer poorly matched pairs (Gu and
 Rosenbaum, 1993; Hansen & Klopfer, 2006). Needs the 'clue' package. The
 solver's tie handling differs from the Python engine's, so the two agree closely
-but not byte-for-byte.
+but not byte-for-byte. Under \code{tie_break = "hash"} the capped subpools are put in
+the order of their tie keys before the solve, so the solver's preferences among
+equal costs, and the order in which pairs of equal cost are kept, follow the hash.
 }
 \keyword{internal}

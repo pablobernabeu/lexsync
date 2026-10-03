@@ -24,7 +24,7 @@
 ## Selection transparency
 
 - **Candidate pool** (items satisfying each condition's window before matching): higher_frequency: 31, lower_frequency: 95.
-- Selection is deterministic given the seed and blind to any outcome measure, so it is reproducible and free of item-selection bias (Forster, 2000; Simmons et al., 2011).
+- Selection is a deterministic function of the materials source, the design and the schema, blind to any outcome measure, and does not depend on the seed, which fixes the trial order. Exact ties between equally close candidates are broken by spelling, in byte order, as lexsync 0.1 did, so every tie goes to the spelling that sorts first. Automating the choice removes the experimenter's discretion that Forster (2000) showed can bias item selection.
 
 ## Realised control
 
@@ -42,7 +42,7 @@
 
 ## Methods paragraph
 
-20 English items per condition were selected from a supplied candidate pool and matched item by item on length, n_density, old20 using lexsync's standardised_euclidean matcher, with the matched dimensions taken from corpora/derived/en.csv. Equivalence was not confirmed on every matched dimension; the per-dimension differences are reported in the realised-control table. The smallest condition was selected from 31 eligible candidates, and the selection was deterministic and blind to any outcome measure. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.1).
+20 English items per condition were selected from a supplied candidate pool and matched item by item on length, n_density, old20 using lexsync's standardised_euclidean matcher, with the matched dimensions taken from corpora/derived/en.csv. Equivalence was not confirmed on every matched dimension; the per-dimension differences are reported in the realised-control table. The smallest condition was selected from 31 eligible candidates, and the selection was deterministic and blind to any outcome measure. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (lexsync 0.1.1), and the seed (2026) fixes the trial order.
 
 ## Pre-registration template
 
@@ -62,7 +62,7 @@
 - Paradigm: factorial
 
 ### Materials (from the lexsync datasheet)
-20 English items per condition were selected from a supplied candidate pool and matched item by item on length, n_density, old20 using lexsync's standardised_euclidean matcher, with the matched dimensions taken from corpora/derived/en.csv. Equivalence was not confirmed on every matched dimension; the per-dimension differences are reported in the realised-control table. The smallest condition was selected from 31 eligible candidates, and the selection was deterministic and blind to any outcome measure. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.1).
+20 English items per condition were selected from a supplied candidate pool and matched item by item on length, n_density, old20 using lexsync's standardised_euclidean matcher, with the matched dimensions taken from corpora/derived/en.csv. Equivalence was not confirmed on every matched dimension; the per-dimension differences are reported in the realised-control table. The smallest condition was selected from 31 eligible candidates, and the selection was deterministic and blind to any outcome measure. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (lexsync 0.1.1), and the seed (2026) fixes the trial order.
 
 ### Sampling plan
 - Sample size and justification:

@@ -699,6 +699,87 @@ test_that("a continuous design prints its span and correlations through the form
   expect_true(grepl("| length | control | -0.083 | 0.165 |", md, fixed = TRUE))
 })
 
+ds_files <- function() list(stimuli = NULL, experiments = list())
+
+test_that("the_datasheet_records_the_tie_break_rule", {
+  # A matched design records the rule that broke exact ties, with its salt under hash. A
+  # design that runs no matcher records none. Twinned with test_datasheet.py.
+  schema <- ds_schema()
+  ds <- build_datasheet(ds_design(), schema, NULL, ds_stim(), "x.csv", ds_files(), 2026)
+  expect_identical(ds$selection[["tie_break"]], list(rule = "bytes"))
+  hashed <- ds_design()
+  hashed$matching <- list(tie_break = "hash")
+  ds <- build_datasheet(hashed, schema, NULL, ds_stim(), "x.csv", ds_files(), 2026)
+  expect_identical(ds$selection[["tie_break"]], list(rule = "hash", salt = "lexsync-tie-v1"))
+  schema_hash <- schema
+  schema_hash$matching$tie_break <- "hash"
+  joint <- ds_design()
+  joint$matching <- list(method = "joint")
+  ds <- build_datasheet(joint, schema_hash, NULL, ds_stim(), "x.csv", ds_files(), 2026)
+  expect_identical(ds$selection[["tie_break"]], list(rule = "hash", salt = "lexsync-tie-v1"))
+  gen <- build_datasheet(ds_gen_design(), schema, NULL, ds_gen_stim(), "x.csv", ds_files(),
+                         2026)
+  expect_null(gen$selection[["tie_break"]])
+  cont <- build_datasheet(list(name = "c", language = "english",
+                               continuous = list(predictor = "frequency",
+                                                 controls = list("length")),
+                               n_per_condition = 4L, counterbalance = list(lists = 1)),
+                          schema, NULL, ds_stim(), "x.csv", ds_files(), 2026)
+  expect_null(cont$selection[["tie_break"]])
+})
+
+test_that("selection_transparency_says_the_seed_does_not_select", {
+  # The section said selection was deterministic given the seed, which plays no part in
+  # it, and that it was free of item-selection bias. Twinned with test_datasheet.py.
+  schema <- ds_schema()
+  cp <- list(list(condition = "hi", n_candidates = 40L),
+             list(condition = "lo", n_candidates = 30L))
+  lead <- paste("- Selection is a deterministic function of the materials source, the",
+                "design and the schema, blind to any outcome measure, and does not depend",
+                "on the seed, which fixes the trial order.")
+  tail <- paste("Automating the choice removes the experimenter's discretion that Forster",
+                "(2000) showed can bias item selection.")
+  md <- lexsync:::render_datasheet_md(build_datasheet(ds_design(), schema, NULL, ds_stim(),
+                                                      "x.csv", ds_files(), 2026,
+                                                      candidate_pool = cp))
+  expect_false(grepl("given the seed", md, fixed = TRUE))
+  expect_false(grepl("free of item-selection bias", md, fixed = TRUE))
+  expect_true(grepl(paste(lead, "Exact ties between equally close candidates are broken by",
+                          "spelling, in byte order, as lexsync 0.1 did, so every tie goes",
+                          "to the spelling that sorts first.", tail), md, fixed = TRUE))
+  hashed <- ds_design()
+  hashed$matching <- list(tie_break = "hash")
+  md <- lexsync:::render_datasheet_md(build_datasheet(hashed, schema, NULL, ds_stim(),
+                                                      "x.csv", ds_files(), 2026,
+                                                      candidate_pool = cp))
+  expect_true(grepl(paste(lead, "Exact ties between equally close candidates are broken by a",
+                          "keyed hash of each word (salt lexsync-tie-v1), so no part of the",
+                          "alphabet is favoured.", tail), md, fixed = TRUE))
+  gen <- lexsync:::render_datasheet_md(build_datasheet(
+    ds_gen_design(), schema, NULL, ds_gen_stim(), "x.csv", ds_files(), 2026,
+    candidate_pool = list(list(condition = "words in band", n_candidates = 100L))))
+  expect_true(grepl(paste(lead, tail), gen, fixed = TRUE))
+})
+
+test_that("the_methods_paragraph_says_the_seed_fixes_the_trial_order", {
+  # The seed plays no part in selection, so the Methods text no longer presents it as
+  # what makes the selection reproducible. Twinned with test_datasheet.py.
+  schema <- ds_schema()
+  ds <- build_datasheet(ds_design(), schema, NULL, ds_stim(), "x.csv", ds_files(), 2026)
+  sentence <- sprintf(paste("The selection is deterministic and reproducible (lexsync %s),",
+                            "and the seed (2026) fixes the trial order."),
+                      ds$reproducibility$versions$lexsync)
+  expect_true(grepl(sentence, methods_paragraph(ds), fixed = TRUE))
+  cont <- build_datasheet(list(name = "c", language = "english",
+                               continuous = list(predictor = "frequency",
+                                                 controls = list("length")),
+                               n_per_condition = 4L, counterbalance = list(lists = 1)),
+                          schema, NULL, ds_stim(), "x.csv", ds_files(), 2026)
+  expect_true(grepl(sentence, methods_paragraph(cont), fixed = TRUE))
+  expect_false(grepl("(seed 2026;", paste(methods_paragraph(ds), methods_paragraph(cont)),
+                     fixed = TRUE))
+})
+
 # The Methods paragraph is the part of the datasheet meant to be identical across
 # engines; the rest of the Markdown names its engine and is excluded from the
 # cross-engine diff. This engine renders the paragraph from the Python engine's

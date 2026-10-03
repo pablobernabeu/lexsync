@@ -247,10 +247,16 @@ parallel-port address and trigger timing, and the presentation fonts. A schema h
 seed and the column contract is enough, since every other block falls back to the defaults the code
 carries.
 
-Two things in it are deliberately not configurable. Equivalence is assessed by two one-sided tests,
-and only the bound and alpha are settings. The tie-break order in the matcher is fixed at
-distance, then word bytes, then id, because that byte-order tie-break is precisely what lets the two
-engines agree without an RNG. Making it an option would make the guarantee an option.
+One thing in it is deliberately not configurable. Equivalence is assessed by two one-sided tests,
+and only the bound and alpha are settings.
+
+The rule that breaks exact ties in the matcher is a setting, `matching.tie_break`, and it matters,
+because whole-number lengths and neighbourhood counts make ties decide most picks. `bytes`, the
+default, gives a tie to the spelling that sorts first, as lexsync 0.1 did, and reproduces its
+selections, but it fills a condition decided by ties with early-alphabet words. `hash` gives the tie
+to the smaller keyed SHA-256 of the word, which favours no part of the alphabet. Under either rule,
+the two default methods give the same selection in the two engines without an RNG
+([Matching and designs](matching-and-designs.md#how-matching-works)).
 
 A copy of the schema and of a small English, Spanish and Chinese lexicon is bundled inside the
 installed package, which is how the examples throughout these guides run without a clone:

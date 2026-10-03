@@ -289,9 +289,9 @@ test_that("the_key_vocabularies_agree_across_engines", {
   digest_of <- function(keys) digest::digest(paste(keys, collapse = "\n"), algo = "sha256",
                                              serialize = FALSE)
   expect_identical(digest_of(.DESIGN_KEYS),
-                   "d4bf8e8dbb503d5c00678af367f7fc61ce45e9959de871d6a50b66077fcb044e")
+                   "796398d8b83714f232db2f6229bb08d16b109fec67e05422cc8c9a7eea777faa")
   expect_identical(digest_of(.SCHEMA_KEYS),
-                   "b95ca3dc4e1ba437004cf45bf92514656790fb06389176642a51d95a61c55082")
+                   "a62e1a4f7cc410ef37d511e9758107b414bedec2c7ab008704c57171fc7f0e5c")
 })
 
 valid_design <- function(...) {
@@ -343,6 +343,14 @@ test_that("a_key_near_a_known_one_is_refused_and_any_other_is_noted", {
   expect_identical(notes, c(
     sprintf("lexsync: design key '%s' %s", c("notes", "date", "events[1].colour"), tail),
     sprintf("lexsync: schema key 'comment' %s", tail)))
+})
+
+test_that("the_tie_break_key_is_read_in_a_design_and_a_schema", {
+  # matching.tie_break is a setting in both files, so neither run notes it as ignored.
+  # Pinned identically in test_io_utils.py.
+  expect_identical(validate_design(valid_design(matching = list(tie_break = "hash")),
+                                   list(matching = list(tie_break = "bytes"))),
+                   character(0))
 })
 
 test_that("repeated_and_blank_names_are_judged_alike_in_both_engines", {

@@ -247,7 +247,7 @@ exclusions per condition.
 
 `match_stimuli` runs in two stages, and understanding the split explains most of its behaviour.
 Both need at least one dimension in `match_on`. Without one, every candidate lies at distance zero
-from every anchor and the byte-order tie-break alone would choose the words, so a design with
+from every anchor and the tie-break alone would choose the words, so a design with
 conditions and no `match_on`, or an empty one, is refused before anything is selected.
 
 First it standardises. Every matched dimension is z-scored against the whole pool's mean and sample
@@ -275,9 +275,32 @@ condition is filtered to its window, and then every anchor item is assigned its 
 candidate by standardised distance.
 
 The assignment is where determinism is bought. Distances are rounded to nine decimal places before
-they are compared, which absorbs last-bit floating-point differences between the two engines. Ties
-are broken by the word's UTF-8 bytes and then by its lexicon id. Each anchor item chooses among the
-candidates not yet used, so no word can be assigned twice.
+they are compared, which absorbs last-bit floating-point differences between the two engines. Each
+anchor item chooses among the candidates not yet used, so no word can be assigned twice. A tie in
+distance is broken by the rule that `matching.tie_break` names, and then by the lexicon id.
+
+Exact ties are common, because lengths and neighbourhood counts are whole numbers and frequencies
+carry two decimals. In `en_freqcontrast`, 71 of the 80 anchored picks had another candidate at
+exactly the chosen distance, with a median of eight tied candidates, and the tie-break chose the
+word. Under `bytes`, the default and the rule of lexsync 0.1, a tie goes to the word whose UTF-8
+bytes sort first, so a condition decided by ties fills with early-alphabet words. In the same
+design, 61% of the low-frequency words begin with a or b, against 13% of their candidates, and in
+`en_ndensity`'s dense condition every word does. A word's initial phoneme biases voice-key measures
+of naming latency ([Kessler et al., 2002](references.md#kessler-2002)), and the realised-control
+report cannot show such a skew, because it measures only the matched dimensions.
+
+Under `hash`, a tie goes to the smaller SHA-256 digest of `lexsync-tie-v1|` followed by the word.
+The salt is fixed, so the rule does not depend on the seed, and the digests favour no part of the
+alphabet. The low-frequency share falls to 12.5% and the dense share to 17.5%, against 13% and 12%
+among the candidates, while Cohen's *d* on every matched dimension of every shipped matched design
+is unchanged. Under either rule, `standardised_euclidean` and `joint` give the same selection in the
+two engines, and `bytes` reproduces the selections of lexsync 0.1. The even spreads that pick the
+anchor's items and a continuous design's items keep the byte order under both rules.
+
+```yaml
+matching:
+  tie_break: hash   # bytes (the default) or hash, in a design or in the schema
+```
 
 Two guards are worth knowing about because they turn silent corruption into an error. If a condition
 has fewer candidates inside its window than the anchor has items, the window is relaxed to the whole
@@ -310,8 +333,9 @@ first condition and then finds the best counterpart for each of its items, so a 
 drags a bad pair into the set. `joint` keeps only items that have a good counterpart, which matters
 when the manipulation is confounded with a control, neighbourhood density with word length being the
 standard case. Both conditions are first capped to the 1200 rows nearest the other condition's
-centroid, which keeps the all-pairs cost matrix tractable, and the cap itself is applied with the
-same rounded-distance and byte-rank tie-breaks as everything else.
+centroid, which keeps the all-pairs cost matrix tractable, and the cap itself is applied to rounded
+distances. Pairs of equal cost, and rows tied at the cap, are ordered by the same `tie_break` rule
+as the anchored picks.
 
 `mahalanobis` uses the inverse of the pool's correlation matrix in standardised space as its metric,
 with a small ridge to survive near-collinear dimensions, so that two dimensions measuring much the

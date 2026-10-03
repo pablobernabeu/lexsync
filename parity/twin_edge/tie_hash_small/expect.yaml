@@ -1,0 +1,7 @@
+# Both engines break the low condition's ties by the keyed hash, select the same four
+# pairs and record the rule with its salt.
+outcome: artefacts
+compare: [stimuli, descriptives, comparisons]
+datasheet:
+  selection.tie_break.rule: hash
+  selection.tie_break.salt: lexsync-tie-v1

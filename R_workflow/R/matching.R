@@ -16,6 +16,13 @@
 # Must stay identical to PAIRWISE_CAP in python_workflow/src/lexsync/matching.py.
 .PAIRWISE_CAP <- 1200L
 
+# The salt of the keyed tie-break, fixed and versioned. It is independent of the
+# schema seed, which keys the trial order. A tie key built on the seed would change the
+# items whenever a cohort's order was re-randomised, and would let re-seeding shop among
+# equally matched sets. Must stay identical to TIE_SALT in
+# python_workflow/src/lexsync/matching.py.
+.TIE_SALT <- "lexsync-tie-v1"
+
 # Resolve a matching policy key with a design-over-schema-over-default cascade and
 # a closed vocabulary, mirroring how tolerance_k is resolved. Must stay identical
 # to _resolve_policy in python_workflow/src/lexsync/matching.py.
@@ -26,6 +33,56 @@
                  key, val, paste(known, collapse = ", ")), call. = FALSE)
   }
   val
+}
+
+# The rule that breaks exact ties between equally close candidates, read like the other
+# matching policies. `bytes` gives a tie to the spelling that sorts first, as lexsync
+# 0.1 did, and `hash` to the smaller tie key (see .tie_keys). Must stay identical to
+# _resolve_tie_break in python_workflow/src/lexsync/matching.py.
+.resolve_tie_break <- function(design, schema) {
+  .resolve_policy(design, schema, "tie_break", "bytes", c("hash", "bytes"))
+}
+
+# The tie key of each word: the lower-case hex SHA-256 of the salt, a bar and the word,
+# in UTF-8. A digest favours no part of the alphabet, and radix order compares the hex
+# digits as Python compares the strings. enc2utf8 because digest(serialize = FALSE)
+# hashes the stored bytes, as in hash_unit(). Must stay identical to _tie_keys in
+# python_workflow/src/lexsync/matching.py.
+.tie_keys <- function(words) {
+  vapply(enc2utf8(paste0(.TIE_SALT, "|", words)),
+         function(k) digest::digest(k, algo = "sha256", serialize = FALSE),
+         character(1), USE.NAMES = FALSE)
+}
+
+# What orders an exact tie between candidates, one per candidate: the word itself under
+# `bytes`, which radix order compares byte by byte, and its tie key under `hash`.
+.tie_sort_keys <- function(words, tie_break) {
+  if (identical(tie_break, "hash")) .tie_keys(words) else words
+}
+
+# Keep the `cap` rows nearest the other condition's centroid. A tie in distance goes to
+# the earlier row, which in a lexicon sorted by bytes is the earlier spelling, or, when
+# `keys` holds the rows' tie keys (tie_break: hash), to the smaller key. The kept rows
+# stay in pool order and come back with their keys. Must stay identical to
+# _cap_to_overlap in python_workflow/src/lexsync/matching.py.
+.cap_to_overlap <- function(df, z, centroid, cap, keys = NULL) {
+  if (nrow(df) <= cap) return(list(df = df, z = z, keys = keys))
+  d <- .round_dp(sqrt(rowSums(sweep(z, 2, centroid, "-")^2)), 9)
+  ord <- if (is.null(keys)) order(d, seq_len(nrow(df)), method = "radix")
+         else order(d, keys, seq_len(nrow(df)), method = "radix")
+  keep <- sort(ord[seq_len(cap)])
+  list(df = df[keep, , drop = FALSE], z = z[keep, , drop = FALSE], keys = keys[keep])
+}
+
+# Put a capped subpool in the order of its tie keys under tie_break: hash. The pairwise
+# matchers break a tie in cost by row position, so after this a row's position is the
+# hash rank of its word. With no keys (tie_break: bytes) the pool order stands. Returns
+# the subpool and its z-scores. Must stay identical to _in_tie_key_order in
+# python_workflow/src/lexsync/matching.py.
+.tie_key_order <- function(df, z, keys) {
+  if (is.null(keys)) return(list(df = df, z = z))
+  perm <- order(keys, seq_along(keys), method = "radix")
+  list(df = df[perm, , drop = FALSE], z = z[perm, , drop = FALSE])
 }
 
 # The shortfall contract: a selection that returns fewer sets than the design asked
@@ -109,6 +166,14 @@
 #' then applies to what remains, and a condition left with no complete candidate
 #' is refused.
 #'
+#' `tie_break`, read in the same way, decides between candidates at exactly the same
+#' rounded distance, which integer dimensions make common: `"bytes"`, the default,
+#' prefers the spelling that sorts first and reproduces lexsync 0.1, and `"hash"`
+#' prefers the smaller SHA-256 of `lexsync-tie-v1|` followed by the word, which
+#' favours no part of the alphabet. The rule also orders the tied pairs of `joint` and
+#' `optimal` and the tied rows at their candidate cap. The anchor's even spread keeps
+#' its byte-order tie-break under both rules.
+#'
 #' @param pool A lexicon/pool with all `match_on` dimensions present (see
 #'   [add_neighbourhood()]).
 #' @param design A parsed design configuration (conditions, `match_on`,
@@ -139,6 +204,7 @@ match_stimuli <- function(pool, design, schema, verbose = FALSE) {
   shortfall <- .resolve_policy(design, schema, "shortfall", "error", c("error", "allow"))
   on_tol <- .resolve_policy(design, schema, "on_insufficient_tolerance", "relax",
                             c("relax", "error"))
+  tie_break <- .resolve_tie_break(design, schema)
 
   for (d in match_on) {
     if (!d %in% names(pool)) {
@@ -227,13 +293,15 @@ match_stimuli <- function(pool, design, schema, verbose = FALSE) {
   }
 
   if (identical(method, "joint") && length(conditions) == 2L) {
-    out <- match_joint(subpools, cond_names, match_on, center, scale_, n)
+    out <- match_joint(subpools, cond_names, match_on, center, scale_, n,
+                       tie_break = tie_break)
     .check_shortfall(length(unique(out$set)), n, shortfall)
     .assert_distinct_words(out)
     return(.attach_audit(out, list(), incomplete))
   }
   if (identical(method, "optimal") && length(conditions) == 2L) {
-    out <- match_optimal(subpools, cond_names, match_on, center, scale_, n)
+    out <- match_optimal(subpools, cond_names, match_on, center, scale_, n,
+                         tie_break = tie_break)
     .check_shortfall(length(unique(out$set)), n, shortfall)
     .assert_distinct_words(out)
     return(.attach_audit(out, list(), incomplete))
@@ -329,6 +397,8 @@ match_stimuli <- function(pool, design, schema, verbose = FALSE) {
     }
     # Stage 2: standardised nearest-neighbour assignment, greedy, no replacement.
     z_cand <- zmat(cand_f)
+    # What breaks an exact tie, computed once per candidate (see .tie_sort_keys).
+    tie_keys <- .tie_sort_keys(cand_f$word, tie_break)
     used <- rep(FALSE, nrow(cand_f))
     pick <- integer(n_take)
     for (a in seq_len(n_take)) {
@@ -349,7 +419,7 @@ match_stimuli <- function(pool, design, schema, verbose = FALSE) {
       # without a value then re-picked a used candidate. order()'s na.last default
       # still ranks a missing distance last, as the Python engine does.
       free <- which(!used)
-      best <- free[order(dvec[free], cand_f$word[free], cand_f$id[free],
+      best <- free[order(dvec[free], tie_keys[free], cand_f$id[free],
                          method = "radix")[1]]  # stable, locale-independent tie-break
       pick[a] <- best
       used[best] <- TRUE
@@ -383,10 +453,13 @@ match_stimuli <- function(pool, design, schema, verbose = FALSE) {
 #' items that have a good counterpart. This equates the control dimensions more
 #' tightly than per-anchor matching when the manipulation is confounded with them
 #' (for example neighbourhood density with word length). Deterministic and
-#' identical to the Python engine (rounded costs; byte-rank tie-breaks).
+#' identical to the Python engine (rounded costs). Pairs of equal cost are taken in
+#' row order, which under `tie_break = "hash"` is the hash rank of each word, and the
+#' same rule breaks ties at the cap.
 #'
 #' @keywords internal
-match_joint <- function(subpools, cond_names, match_on, center, scale_, n, cap = .PAIRWISE_CAP) {
+match_joint <- function(subpools, cond_names, match_on, center, scale_, n, cap = .PAIRWISE_CAP,
+                        tie_break = "bytes") {
   s0 <- subpools[[1]]
   s1 <- subpools[[2]]
   if (nrow(s0) == 0 || nrow(s1) == 0) {
@@ -396,16 +469,15 @@ match_joint <- function(subpools, cond_names, match_on, center, scale_, n, cap =
     m <- as.matrix(df[, match_on, drop = FALSE])
     sweep(sweep(m, 2, center, "-"), 2, scale_, "/")
   }
-  cap_overlap <- function(df, z, centroid) {
-    if (nrow(df) <= cap) return(list(df = df, z = z))
-    d <- .round_dp(sqrt(rowSums(sweep(z, 2, centroid, "-")^2)), 9)
-    ord <- order(d, seq_len(nrow(df)), method = "radix")[seq_len(cap)]
-    keep <- sort(ord)
-    list(df = df[keep, , drop = FALSE], z = z[keep, , drop = FALSE])
-  }
+  # Each candidate's tie key is computed once, here, and travels with its row.
+  hash <- identical(tie_break, "hash")
+  k0 <- if (hash) .tie_keys(s0[["word"]])
+  k1 <- if (hash) .tie_keys(s1[["word"]])
   z0 <- zof(s0); z1 <- zof(s1)
-  o0 <- cap_overlap(s0, z0, .exact_colmeans(z1)); s0 <- o0$df; z0 <- o0$z
-  o1 <- cap_overlap(s1, z1, .exact_colmeans(z0)); s1 <- o1$df; z1 <- o1$z
+  o0 <- .cap_to_overlap(s0, z0, .exact_colmeans(z1), cap, k0); s0 <- o0$df; z0 <- o0$z
+  o1 <- .cap_to_overlap(s1, z1, .exact_colmeans(z0), cap, k1); s1 <- o1$df; z1 <- o1$z
+  o0 <- .tie_key_order(s0, z0, o0$keys); s0 <- o0$df; z0 <- o0$z
+  o1 <- .tie_key_order(s1, z1, o1$keys); s1 <- o1$df; z1 <- o1$z
   m0 <- nrow(z0); m1 <- nrow(z1)
   cost <- matrix(0, m0, m1)
   for (d in seq_len(ncol(z0))) cost <- cost + outer(z0[, d], z1[, d], "-")^2
@@ -478,10 +550,13 @@ match_joint <- function(subpools, cond_names, match_on, center, scale_, n, cap =
 #' minimises the summed pair distance and leaves fewer poorly matched pairs (Gu and
 #' Rosenbaum, 1993; Hansen & Klopfer, 2006). Needs the 'clue' package. The
 #' solver's tie handling differs from the Python engine's, so the two agree closely
-#' but not byte-for-byte.
+#' but not byte-for-byte. Under `tie_break = "hash"` the capped subpools are put in
+#' the order of their tie keys before the solve, so the solver's preferences among
+#' equal costs, and the order in which pairs of equal cost are kept, follow the hash.
 #'
 #' @keywords internal
-match_optimal <- function(subpools, cond_names, match_on, center, scale_, n, cap = .PAIRWISE_CAP) {
+match_optimal <- function(subpools, cond_names, match_on, center, scale_, n, cap = .PAIRWISE_CAP,
+                          tie_break = "bytes") {
   if (!requireNamespace("clue", quietly = TRUE)) {
     stop("lexsync: matching method 'optimal' needs the 'clue' package (install.packages('clue')).",
          call. = FALSE)
@@ -494,16 +569,14 @@ match_optimal <- function(subpools, cond_names, match_on, center, scale_, n, cap
     m <- as.matrix(df[, match_on, drop = FALSE])
     sweep(sweep(m, 2, center, "-"), 2, scale_, "/")
   }
-  cap_overlap <- function(df, z, centroid) {
-    if (nrow(df) <= cap) return(list(df = df, z = z))
-    d <- .round_dp(sqrt(rowSums(sweep(z, 2, centroid, "-")^2)), 9)
-    ord <- order(d, seq_len(nrow(df)), method = "radix")[seq_len(cap)]
-    keep <- sort(ord)
-    list(df = df[keep, , drop = FALSE], z = z[keep, , drop = FALSE])
-  }
+  hash <- identical(tie_break, "hash")
+  k0 <- if (hash) .tie_keys(s0[["word"]])
+  k1 <- if (hash) .tie_keys(s1[["word"]])
   z0 <- zof(s0); z1 <- zof(s1)
-  o0 <- cap_overlap(s0, z0, .exact_colmeans(z1)); s0 <- o0$df; z0 <- o0$z
-  o1 <- cap_overlap(s1, z1, .exact_colmeans(z0)); s1 <- o1$df; z1 <- o1$z
+  o0 <- .cap_to_overlap(s0, z0, .exact_colmeans(z1), cap, k0); s0 <- o0$df; z0 <- o0$z
+  o1 <- .cap_to_overlap(s1, z1, .exact_colmeans(z0), cap, k1); s1 <- o1$df; z1 <- o1$z
+  o0 <- .tie_key_order(s0, z0, o0$keys); s0 <- o0$df; z0 <- o0$z
+  o1 <- .tie_key_order(s1, z1, o1$keys); s1 <- o1$df; z1 <- o1$z
   m0 <- nrow(z0); m1 <- nrow(z1)
   cost <- matrix(0, m0, m1)
   for (d in seq_len(ncol(z0))) cost <- cost + outer(z0[, d], z1[, d], "-")^2

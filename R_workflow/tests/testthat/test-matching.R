@@ -782,3 +782,190 @@ test_that("the matching module uses the shared rounder on distance paths", {
   hits <- sum(lengths(regmatches(src, gregexpr("(?<![._[:alnum:]])round\\(", src, perl = TRUE))))
   expect_identical(hits, 2L)
 })
+
+# ---- the tie-break rule ------------------------------------------------------
+# Lengths and neighbourhood counts are whole numbers and frequencies carry two
+# decimals, so exact ties decide most picks. matching.tie_break chooses how: `bytes`,
+# the default and the rule of lexsync 0.1, gives a tie to the spelling that sorts
+# first, and `hash` to the smaller keyed SHA-256 of the word. Twinned with
+# test_matching.py, which pins the same keys, words and pairs.
+
+# Computed here and not through the package, so the expectations below do not rest on
+# the function under test.
+tie_digest <- function(words) {
+  vapply(words, function(w) digest::digest(enc2utf8(paste0("lexsync-tie-v1|", w)),
+                                           algo = "sha256", serialize = FALSE),
+         character(1), USE.NAMES = FALSE)
+}
+by_digest <- function(words) words[order(tie_digest(words), method = "radix")]
+
+test_that("the_tie_key_is_identical_across_engines", {
+  # An English, a Spanish and a Chinese word, the last two written as escapes so that
+  # the source stays ASCII.
+  expect_identical(.tie_keys(c("cat", "año", "中文")),
+                   c("b9d1fe3608e2667c6c6782afccc91b43caeb9aede31bfb89e61407bb1def5df0",
+                     "a3eb8cd8d71694705bf6dee05bac085f3df1e93f9771978f55389420979d5f3c",
+                     "be465219474dd1ca446c19e4185cdc870f4e605cfd25e1f462c50aae7997bada"))
+  expect_identical(.tie_keys("cat"), tie_digest("cat"))
+})
+
+tie_pool <- function() {
+  # Four B candidates lie at x = 1 and two at x = 3, as do the anchors, so every pick is
+  # an exact tie at distance 0. The keyed hash reverses the spelling order of bat, cat,
+  # dog and eel.
+  data.frame(id = 1:9,
+             word = c("kiwi", "lime", "plum", "bat", "cat", "dog", "eel", "axe", "dot"),
+             frequency = c(6.0, 6.1, 6.2, 2.0, 2.1, 2.2, 2.3, 2.4, 2.5),
+             x = c(1, 1, 3, 1, 1, 1, 1, 3, 3), stringsAsFactors = FALSE)
+}
+
+test_that("hash_tie_break_orders_exact_ties_by_the_keyed_digest", {
+  pool <- tie_pool()
+  by_bytes <- match_stimuli(pool, x_design(3L), x_schema())
+  expect_identical(by_bytes$word[by_bytes$condition == "B"], c("bat", "cat", "axe"))
+  by_hash <- match_stimuli(pool, x_design(3L, list(tie_break = "hash")), x_schema())
+  expect_identical(by_hash$word[by_hash$condition == "A"], c("kiwi", "lime", "plum"))
+  expected <- c(by_digest(c("bat", "cat", "dog", "eel"))[1:2], by_digest(c("axe", "dot"))[1])
+  expect_identical(expected, c("eel", "dog", "dot"))
+  expect_identical(by_hash$word[by_hash$condition == "B"], expected)
+  # The schema may set the rule, and a design's own setting overrides it.
+  hashed <- x_schema()
+  hashed$matching$tie_break <- "hash"
+  expect_identical(match_stimuli(pool, x_design(3L), hashed)$word, by_hash$word)
+  expect_identical(match_stimuli(pool, x_design(3L, list(tie_break = "bytes")), hashed)$word,
+                   by_bytes$word)
+})
+
+test_that("an_unknown_tie_break_rule_is_refused", {
+  expect_error(match_stimuli(tie_pool(), x_design(3L, list(tie_break = "alphabetical")),
+                             x_schema()),
+               "lexsync: unknown tie_break policy 'alphabetical'. Known policies: hash, bytes.",
+               fixed = TRUE)
+})
+
+tie_pairs_pool <- function(a_x, b_x) {
+  # In spelling order A holds ash, beech, cedar and elm, which the keyed hash orders
+  # beech, cedar, ash, elm, and B holds bat, cat, dog and eel, which it reverses.
+  data.frame(id = 1:8,
+             word = c("ash", "beech", "cedar", "elm", "bat", "cat", "dog", "eel"),
+             frequency = c(6.0, 6.1, 6.2, 6.3, 2.0, 2.1, 2.2, 2.3),
+             x = c(a_x, b_x), stringsAsFactors = FALSE)
+}
+
+test_that("hash_tie_break_orders_joint_pairs_by_hash_rank", {
+  # Every pair costs 0, so the pair order alone decides which items are kept.
+  pool <- tie_pairs_pool(rep(1, 4), rep(1, 4))
+  by_bytes <- match_stimuli(pool, x_design(2L, list(method = "joint")), x_schema())
+  expect_identical(unname(x_pairs(by_bytes)), c("ash+bat", "beech+cat"))
+  expect_identical(by_digest(c("ash", "beech", "cedar", "elm"))[1:2], c("beech", "cedar"))
+  expect_identical(by_digest(c("bat", "cat", "dog", "eel"))[1:2], c("eel", "dog"))
+  by_hash <- match_stimuli(pool, x_design(2L, list(method = "joint", tie_break = "hash")),
+                           x_schema())
+  expect_identical(unname(x_pairs(by_hash)), c("beech+eel", "cedar+dog"))
+  expect_identical(by_hash$word[by_hash$set == 1L], c("beech", "eel"))
+})
+
+test_that("hash_tie_break_decides_the_overlap_cap", {
+  # Every row lies at the same distance from the other condition's centroid, so the
+  # tie-break alone decides which two rows of each condition survive the cap. A cap that
+  # kept the first two rows by position would keep ash, beech, bat and cat, and the hash
+  # order would then pair beech with cat.
+  pool <- tie_pairs_pool(rep(1, 4), rep(1, 4))
+  a <- pool[pool$frequency > 5, , drop = FALSE]
+  b <- pool[pool$frequency < 5, , drop = FALSE]
+  by_bytes <- match_joint(list(a, b), c("A", "B"), "x", c(x = 0), c(x = 1), 2L, cap = 2L)
+  expect_identical(unname(x_pairs(by_bytes)), c("ash+bat", "beech+cat"))
+  by_hash <- match_joint(list(a, b), c("A", "B"), "x", c(x = 0), c(x = 1), 2L, cap = 2L,
+                         tie_break = "hash")
+  expect_identical(unname(x_pairs(by_hash)), c("beech+eel", "cedar+dog"))
+})
+
+test_that("hash_tie_break_decides_which_optimal_pairs_are_kept", {
+  # Each A word has one partner at distance 0, so the assignment is unique and the two
+  # engines' solvers cannot differ on it. Every assigned pair costs 0, and the tie-break
+  # alone decides which two of the four pairs are kept.
+  skip_if_not_installed("clue")
+  pool <- tie_pairs_pool(c(1, 2, 3, 4), c(1, 2, 3, 4))
+  by_bytes <- match_stimuli(pool, x_design(2L, list(method = "optimal")), x_schema())
+  expect_identical(unname(x_pairs(by_bytes)), c("ash+bat", "beech+cat"))
+  by_hash <- match_stimuli(pool, x_design(2L, list(method = "optimal", tie_break = "hash")),
+                           x_schema())
+  expect_identical(unname(x_pairs(by_hash)), c("beech+cat", "cedar+dog"))
+  expect_identical(by_hash$word[by_hash$set == 1L], c("beech", "cat"))
+})
+
+# The shipped English designs. Repository-coupled: the full lexicon lives in corpora/,
+# not in the package, so these skip on CRAN and outside the repository. The lexicon is
+# read once for the three tests.
+en_corpus <- local({
+  cache <- NULL
+  function() {
+    if (is.null(cache)) {
+      schema <- read_config(repo_path("config", "schema.yaml"))
+      cache <<- list(schema = schema,
+                     lexicon = load_lexicon(repo_path("corpora", "derived", "en.csv"),
+                                            schema, "english"))
+    }
+    cache
+  }
+})
+
+shipped_design <- function(name, tie_break = NULL) {
+  design <- read_config(repo_path("config", paste0("design_", name, ".yaml")))
+  if (!is.null(tie_break)) {
+    design[["matching"]] <- c(design[["matching"]], list(tie_break = tie_break))
+  }
+  design
+}
+
+initial_share <- function(words) mean(substr(words, 1L, 1L) %in% c("a", "b"))
+
+test_that("hash_tie_break_returns_freqcontrast_initials_to_the_pool_rate", {
+  # Under bytes, 61% of the low-frequency words begin with a or b, against 13% of the
+  # condition's candidates. Under hash the share lies within 0.1 of the candidates',
+  # and Cohen's d on each matched dimension moves by at most 0.01.
+  en <- en_corpus()
+  design <- shipped_design("en_freqcontrast")
+  pool <- build_pool(en$lexicon, design[["pool_filters"]])
+  low <- Filter(function(cd) identical(cd[["name"]], "low_frequency"),
+                design[["conditions"]])[[1]]
+  candidates <- build_pool(pool, low[["define_by"]])
+  by_bytes <- match_stimuli(pool, design, en$schema)
+  by_hash <- match_stimuli(pool, shipped_design("en_freqcontrast", "hash"), en$schema)
+  share <- initial_share(by_hash$word[by_hash$condition == "low_frequency"])
+  expect_lte(abs(share - initial_share(candidates$word)), 0.1)
+  for (dim in unlist(design[["match_on"]])) {
+    d <- vapply(list(by_bytes, by_hash), function(s)
+      cohens_d(s[[dim]][s$condition == "high_frequency"],
+               s[[dim]][s$condition == "low_frequency"]), numeric(1))
+    expect_lte(abs(d[1] - d[2]), 0.01, label = dim)
+  }
+})
+
+test_that("hash_tie_break_spreads_the_ndensity_dense_initials", {
+  # Under bytes every dense word of the joint design began with a or b (73 b, 7 a).
+  en <- en_corpus()
+  design <- shipped_design("en_ndensity", "hash")
+  s <- match_stimuli(build_pool(en$lexicon, design[["pool_filters"]]), design, en$schema)
+  expect_lte(initial_share(s$word[s$condition == "dense_neighbourhood"]), 0.25)
+})
+
+test_that("the_default_tie_break_reproduces_the_committed_selections", {
+  # The committed stimuli of both designs are those lexsync 0.1.1 selected, and the
+  # default rule, named or not, must select them again.
+  en <- en_corpus()
+  for (name in c("en_freqcontrast", "en_ndensity")) {
+    committed <- read_csv_utf8(repo_path("output", "stimuli",
+                                         paste0(name, "_english_stimuli_R.csv")),
+                               as_character = "word")
+    want <- sort(paste(committed$word, committed$condition, as.integer(committed$set),
+                       sep = "|"), method = "radix")
+    for (rule in list(NULL, "bytes")) {
+      design <- shipped_design(name, rule)
+      s <- match_stimuli(build_pool(en$lexicon, design[["pool_filters"]]), design, en$schema)
+      expect_identical(sort(paste(s$word, s$condition, as.integer(s$set), sep = "|"),
+                            method = "radix"),
+                       want, info = paste(name, if (is.null(rule)) "default" else rule))
+    }
+  }
+})

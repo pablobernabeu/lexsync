@@ -1,8 +1,7 @@
 # Contracts for the shipped configuration files. The bundled schema copy must
 # stay byte-identical to config/schema.yaml, and the schema must not advertise
 # keys that no code reads: a key that parses but is never consulted invites
-# users to edit the one setting (the tie-break) that underpins the
-# byte-identical R<->Python parity guarantee. Repository-level checks skip
+# users to edit a setting that changes nothing. Repository-level checks skip
 # gracefully when the package is checked in isolation.
 
 bundled_schema <- function() system.file("extdata", "schema.yaml", package = "lexsync")
@@ -19,14 +18,21 @@ test_that("bundled schema is byte-identical to config/schema.yaml", {
                    readBin(bundled_schema(), "raw", file.size(bundled_schema())))
 })
 
-# Every key in the schema must be read by the code; the tie-break order, the
-# TOST choice and the trigger reset value are fixed in matching/validation/
-# scripting, so they live in comments, not as (inert) configurable keys.
+# Every key in the schema must be read by the code; the TOST choice and the
+# trigger reset value are fixed in validation/scripting, so they live in comments,
+# not as (inert) configurable keys.
 test_that("schema carries no inert keys", {
   schema <- yaml::read_yaml(bundled_schema())
-  expect_false("tie_break" %in% names(schema$matching))
   expect_false("test" %in% names(schema$equivalence))
   expect_false("reset_value" %in% names(schema$triggers))
+})
+
+# The matcher reads matching.tie_break, so the schema carries it, set to the rule of
+# lexsync 0.1, which reproduces the committed selections. Pinned identically in
+# test_config.py.
+test_that("the_schema_sets_the_tie_break_rule", {
+  schema <- yaml::read_yaml(bundled_schema())
+  expect_identical(schema$matching[["tie_break"]], "bytes")
 })
 
 # Pins the same contract as

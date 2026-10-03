@@ -121,10 +121,22 @@ matching:
   # leave the record misstating the materials.
   shortfall: error                   # what to do when fewer sets than n_per_condition can be selected: error | allow
   on_insufficient_tolerance: relax   # when a condition has too few candidates inside the tolerance window: relax | error
-  # Stage 2 ranks candidates by standardised multivariate distance; ties are
-  # broken by (distance, word bytes, id), fixed in matching.py / matching.R.
-  # That order is not configurable: the byte-order tie-break is what makes the
-  # two engines select identical stimuli without an RNG.
+  # Stage 2 ranks candidates by standardised multivariate distance, rounded to nine
+  # places. Lengths and neighbourhood counts are whole numbers and frequencies carry
+  # two decimals, so candidates often tie exactly, and tie_break decides between them:
+  #   bytes  the word whose UTF-8 bytes sort first, then the lower id. This is the rule
+  #          of lexsync 0.1 and reproduces its selections. Every tie goes to the
+  #          spelling that sorts first, so a condition decided by ties fills with words
+  #          that sort early (in English, words beginning with a or b).
+  #   hash   the smaller SHA-256 of 'lexsync-tie-v1|' followed by the word. The salt
+  #          is fixed, so the rule does not depend on the seed, and it favours no part
+  #          of the alphabet.
+  # The rule also orders tied pairs in joint and optimal matching and tied rows at the
+  # candidate cap. The even spreads that pick the anchor's items and a continuous
+  # design's items keep the byte order under both rules. Under either rule,
+  # standardised_euclidean and joint select identical stimuli in the two engines
+  # without an RNG. A design may override it under its own matching: block.
+  tie_break: bytes                   # how exact ties between candidates are broken: bytes | hash
 
 # ---- Counterbalancing list assignment --------------------------------------
 # A design's paradigm decides its counterbalancing recipe, whether or not the design

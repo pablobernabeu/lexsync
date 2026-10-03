@@ -68,6 +68,11 @@ Hedges, L. V., & Olkin, I. (1985). *Statistical methods for meta-analysis*. Acad
 <https://doi.org/10.1016/C2009-0-03396-0>
 { #hedges-1985 }
 
+Kessler, B., Treiman, R., & Mullennix, J. (2002). Phonetic biases in voice key response time
+measurements. *Journal of Memory and Language*, *47*(1), 145–171.
+<https://doi.org/10.1006/jmla.2001.2835>
+{ #kessler-2002 }
+
 Keuleers, E., & Brysbaert, M. (2010). Wuggy: A multilingual pseudoword generator. *Behavior Research
 Methods*, *42*(3), 627–633. <https://doi.org/10.3758/BRM.42.3.627>
 { #keuleers-2010 }

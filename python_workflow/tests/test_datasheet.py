@@ -681,6 +681,74 @@ def test_a_continuous_design_prints_its_span_and_correlations_through_the_format
     assert "| length | control | -0.083 | 0.165 |" in md
 
 
+def _files():
+    return {"stimuli": None, "experiments": {}}
+
+
+def test_the_datasheet_records_the_tie_break_rule(schema):
+    # A matched design records the rule that broke exact ties, with its salt under
+    # hash. A design that runs no matcher records none. Twinned with test-datasheet.R.
+    ds = build_datasheet(_design(), schema, None, _stim(), "x.csv", _files(), 2026)
+    assert ds["selection"]["tie_break"] == {"rule": "bytes"}
+    hashed = dict(_design(), matching={"tie_break": "hash"})
+    ds = build_datasheet(hashed, schema, None, _stim(), "x.csv", _files(), 2026)
+    assert ds["selection"]["tie_break"] == {"rule": "hash", "salt": "lexsync-tie-v1"}
+    schema_hash = dict(schema, matching=dict(schema["matching"], tie_break="hash"))
+    joint = dict(_design(), matching={"method": "joint"})
+    ds = build_datasheet(joint, schema_hash, None, _stim(), "x.csv", _files(), 2026)
+    assert ds["selection"]["tie_break"] == {"rule": "hash", "salt": "lexsync-tie-v1"}
+    gen = build_datasheet(_gen_design(), schema, None, _gen_stim(), "x.csv", _files(), 2026)
+    assert "tie_break" not in gen["selection"]
+    cont = build_datasheet({"name": "c", "language": "english",
+                            "continuous": {"predictor": "frequency", "controls": ["length"]},
+                            "n_per_condition": 4, "counterbalance": {"lists": 1}},
+                           schema, None, _stim(), "x.csv", _files(), 2026)
+    assert "tie_break" not in cont["selection"]
+
+
+def test_selection_transparency_says_the_seed_does_not_select(schema):
+    # The section said selection was deterministic given the seed, which plays no part
+    # in it, and that it was free of item-selection bias. Twinned with test-datasheet.R.
+    cp = [{"condition": "hi", "n_candidates": 40}, {"condition": "lo", "n_candidates": 30}]
+    lead = ("- Selection is a deterministic function of the materials source, the design "
+            "and the schema, blind to any outcome measure, and does not depend on the "
+            "seed, which fixes the trial order.")
+    tail = ("Automating the choice removes the experimenter's discretion that Forster "
+            "(2000) showed can bias item selection.")
+    md = render_datasheet_md(build_datasheet(_design(), schema, None, _stim(), "x.csv",
+                                             _files(), 2026, candidate_pool=cp))
+    assert "given the seed" not in md and "free of item-selection bias" not in md
+    assert (lead + " Exact ties between equally close candidates are broken by spelling, "
+            "in byte order, as lexsync 0.1 did, so every tie goes to the spelling that "
+            "sorts first. " + tail) in md
+    hashed = dict(_design(), matching={"tie_break": "hash"})
+    md = render_datasheet_md(build_datasheet(hashed, schema, None, _stim(), "x.csv",
+                                             _files(), 2026, candidate_pool=cp))
+    assert (lead + " Exact ties between equally close candidates are broken by a keyed "
+            "hash of each word (salt lexsync-tie-v1), so no part of the alphabet is "
+            "favoured. " + tail) in md
+    gen = render_datasheet_md(build_datasheet(
+        _gen_design(), schema, None, _gen_stim(), "x.csv", _files(), 2026,
+        candidate_pool=[{"condition": "words in band", "n_candidates": 100}]))
+    assert (lead + " " + tail) in gen
+
+
+def test_the_methods_paragraph_says_the_seed_fixes_the_trial_order(schema):
+    # The seed plays no part in selection, so the Methods text no longer presents it as
+    # what makes the selection reproducible. Twinned with test-datasheet.R.
+    ds = build_datasheet(_design(), schema, None, _stim(), "x.csv", _files(), 2026)
+    version = ds["reproducibility"]["versions"]["lexsync"]
+    sentence = ("The selection is deterministic and reproducible (lexsync %s), and the "
+                "seed (2026) fixes the trial order." % version)
+    assert sentence in methods_paragraph(ds)
+    cont = build_datasheet({"name": "c", "language": "english",
+                            "continuous": {"predictor": "frequency", "controls": ["length"]},
+                            "n_per_condition": 4, "counterbalance": {"lists": 1}},
+                           schema, None, _stim(), "x.csv", _files(), 2026)
+    assert sentence in methods_paragraph(cont)
+    assert "(seed 2026;" not in methods_paragraph(ds) + methods_paragraph(cont)
+
+
 def test_the_methods_paragraph_from_the_r_record_matches_the_r_rendering():
     # The Methods paragraph is the part of the datasheet meant to be identical across
     # engines; the rest of the Markdown names its engine and is excluded from the

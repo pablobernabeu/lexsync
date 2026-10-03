@@ -309,7 +309,7 @@ covers the whole of its region on the manipulated dimension and does not cluster
 at one end. Every later condition is then matched to the anchor item by item, and
 the `set` column records the pairing. The matching needs at least one dimension in
 `match_on`. Without one, every candidate lies at distance zero from every anchor
-and the byte-order tie-break alone would choose the words, so a design with
+and the tie-break alone would choose the words, so a design with
 conditions and no `match_on`, or an empty one, is refused before anything is
 selected.
 
@@ -443,6 +443,55 @@ different set. Each run's datasheet records which case applies, under
 your project, the two default methods are the ones that carry the guarantee. The
 reproducibility vignette sets out why the exception cannot simply be engineered
 away.
+
+### Ties between equally close candidates
+
+Lengths and neighbourhood counts are whole numbers and frequencies carry two
+decimals, so candidates often lie at exactly the same distance from an anchor. On
+the full English corpus, 71 of the 80 anchored picks of `en_freqcontrast` had
+another candidate at the chosen distance, and the tie-break chose the word.
+`matching.tie_break` sets the rule, in a design or in the schema. Under `bytes`,
+the default and the rule of lexsync 0.1, a tie goes to the word whose UTF-8 bytes
+sort first, and then to the lower id, so a condition decided by ties fills with
+early-alphabet words. In `en_freqcontrast`, 61% of the low-frequency words begin
+with a or b, against 13% of their candidates. A word's initial phoneme biases
+voice-key measures of naming latency (Kessler et al., 2002), and the
+realised-control report cannot show such a skew, because it measures only the
+matched dimensions.
+
+Under `hash`, a tie goes to the smaller SHA-256 digest of `lexsync-tie-v1|`
+followed by the word. The salt is fixed, so the rule does not depend on the seed,
+and the digests favour no part of the alphabet. The same rule orders the tied
+pairs of `joint` and `optimal` and the rows tied at their candidate cap.
+
+```{r ties}
+initial_share <- function(words) mean(substr(words, 1L, 1L) %in% c("a", "b"))
+by_rule <- lapply(c(bytes = "bytes", hash = "hash"), function(rule) {
+  d <- design
+  d$matching <- list(tie_break = rule)
+  match_stimuli(pool, d, schema)
+})
+low_candidates <- build_pool(pool, design$conditions[[2]]$define_by)
+round(c(vapply(by_rule, function(s) initial_share(s$word[s$condition == "low"]),
+               numeric(1)),
+        candidates = initial_share(low_candidates$word)), 2)
+```
+
+On this small pool, the share of a- and b-initial words in the low condition
+falls under `hash` towards that of its candidates. Only the picks that ties
+decided can change, and here the matched differences do not move.
+
+```{r ties-control}
+sapply(by_rule, function(s) {
+  cmp <- match_report(s, c("length", "n_density", "old20"), schema)$comparisons
+  stats::setNames(round(cmp$cohens_d, 3), cmp$dimension)
+})
+```
+
+Under either rule, `standardised_euclidean` and `joint` give the same selection
+in the two engines, and `bytes` reproduces the selections of lexsync 0.1. The even
+spreads that pick the anchor's items and a continuous design's items keep the
+byte order under both rules.
 
 ## Tolerance windows
 
@@ -833,6 +882,10 @@ via network flows. *Journal of Computational and Graphical Statistics*, *15*(3),
 
 Hedges, L. V., & Olkin, I. (1985). *Statistical methods for meta-analysis*.
 Academic Press. https://doi.org/10.1016/C2009-0-03396-0
+
+Kessler, B., Treiman, R., & Mullennix, J. (2002). Phonetic biases in voice key
+response time measurements. *Journal of Memory and Language*, *47*(1), 145–171.
+https://doi.org/10.1006/jmla.2001.2835
 
 Keuleers, E., & Brysbaert, M. (2010). Wuggy: A multilingual pseudoword
 generator. *Behavior Research Methods*, *42*(3), 627–633.

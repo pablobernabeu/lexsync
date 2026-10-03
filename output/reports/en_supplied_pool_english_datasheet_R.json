@@ -61,6 +61,9 @@
       "n_density": 2,
       "old20": 2
     },
+    "tie_break": {
+      "rule": "bytes"
+    },
     "candidate_pool": [
       {
         "condition": "higher_frequency",
@@ -171,7 +174,7 @@
       "os": "Windows x86-64"
     },
     "design_sha256": "919571123fbe696f3c3b7e491f26f74727eb76fe2686b7c4487253faf97973a4",
-    "schema_sha256": "484eb9ce6e3a818eb9008e9c949e1b6b98df65dec021463376a7fa058ec8d198"
+    "schema_sha256": "960331bc24fc002527fc36aca87b4fbf1c7504a75e520a1287918761c53abdb3"
   },
   "artifacts": [
     {

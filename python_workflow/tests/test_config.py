@@ -2,9 +2,8 @@
 
 The bundled schema copy must stay byte-identical to config/schema.yaml, and the
 schema must not advertise keys that no code reads: a key that parses but is
-never consulted invites users to edit the one setting (the tie-break) that
-underpins the byte-identical R<->Python parity guarantee. Repository-level
-checks skip gracefully when the package is tested in isolation.
+never consulted invites users to edit a setting that changes nothing.
+Repository-level checks skip gracefully when the package is tested in isolation.
 """
 import os
 
@@ -33,14 +32,21 @@ def test_bundled_schema_matches_repo_schema():
         assert a.read() == b.read()
 
 
-# Every key in the schema must be read by the code; the tie-break order, the
-# TOST choice and the trigger reset value are fixed in matching/validation/
-# scripting, so they live in comments, not as (inert) configurable keys.
+# Every key in the schema must be read by the code; the TOST choice and the
+# trigger reset value are fixed in validation/scripting, so they live in comments,
+# not as (inert) configurable keys.
 def test_schema_carries_no_inert_keys():
     schema = _load(BUNDLED_SCHEMA)
-    assert "tie_break" not in (schema.get("matching") or {})
     assert "test" not in (schema.get("equivalence") or {})
     assert "reset_value" not in (schema.get("triggers") or {})
+
+
+# The matcher reads matching.tie_break, so the schema carries it, set to the rule of
+# lexsync 0.1, which reproduces the committed selections. Pinned identically in
+# test-config.R.
+def test_the_schema_sets_the_tie_break_rule():
+    schema = _load(BUNDLED_SCHEMA)
+    assert schema["matching"]["tie_break"] == "bytes"
 
 
 # Pins the same contract as "the reproduction design encodes the origin study's

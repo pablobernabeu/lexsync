@@ -22,7 +22,7 @@
 ## Selection transparency
 
 - **Candidate pool** (items satisfying each condition's window before matching): continuous: 7230.
-- Selection is deterministic given the seed and blind to any outcome measure, so it is reproducible and free of item-selection bias (Forster, 2000; Simmons et al., 2011).
+- Selection is a deterministic function of the materials source, the design and the schema, blind to any outcome measure, and does not depend on the seed, which fixes the trial order. Automating the choice removes the experimenter's discretion that Forster (2000) showed can bias item selection.
 
 ## Realised control (continuous predictor)
 
@@ -40,7 +40,7 @@
 
 ## Methods paragraph
 
-80 English items were selected to span frequency (a span of 3.05) continuously while holding length, n_density, old20 near-constant, and the largest predictor-control correlation was |r| = 0.165, for analysis by regression or a mixed model rather than a between-condition contrast (Kuperman, 2015; Liben-Nowell et al., 2019). Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.1).
+80 English items were selected to span frequency (a span of 3.05) continuously while holding length, n_density, old20 near-constant, and the largest predictor-control correlation was |r| = 0.165, for analysis by regression or a mixed model rather than a between-condition contrast (Kuperman, 2015; Liben-Nowell et al., 2019). Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (lexsync 0.1.1), and the seed (2026) fixes the trial order.
 
 ## Pre-registration template
 
@@ -60,7 +60,7 @@
 - Paradigm: factorial
 
 ### Materials (from the lexsync datasheet)
-80 English items were selected to span frequency (a span of 3.05) continuously while holding length, n_density, old20 near-constant, and the largest predictor-control correlation was |r| = 0.165, for analysis by regression or a mixed model rather than a between-condition contrast (Kuperman, 2015; Liben-Nowell et al., 2019). Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.1).
+80 English items were selected to span frequency (a span of 3.05) continuously while holding length, n_density, old20 near-constant, and the largest predictor-control correlation was |r| = 0.165, for analysis by regression or a mixed model rather than a between-condition contrast (Kuperman, 2015; Liben-Nowell et al., 2019). Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (lexsync 0.1.1), and the seed (2026) fixes the trial order.
 
 ### Sampling plan
 - Sample size and justification:

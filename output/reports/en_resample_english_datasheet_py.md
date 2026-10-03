@@ -28,7 +28,7 @@
 ## Selection transparency
 
 - **Candidate pool** (items satisfying each condition's window before matching): high_frequency: 462, low_frequency: 7479.
-- Selection is deterministic given the seed and blind to any outcome measure, so it is reproducible and free of item-selection bias (Forster, 2000; Simmons et al., 2011).
+- Selection is a deterministic function of the materials source, the design and the schema, blind to any outcome measure, and does not depend on the seed, which fixes the trial order. Exact ties between equally close candidates are broken by spelling, in byte order, as lexsync 0.1 did, so every tie goes to the spelling that sorts first. Automating the choice removes the experimenter's discretion that Forster (2000) showed can bias item selection.
 
 ## Realised control
 
@@ -46,7 +46,7 @@
 
 ## Methods paragraph
 
-40 items per condition were selected from the English lexicon (wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md) and matched item by item on length, n_density, old20 using lexsync's standardised_euclidean matcher. The realised control was close. The largest standardised difference on any matched dimension was 0.04 (90% CI [-0.17, 0.26]), within the 0.5-SD equivalence bound. The smallest condition was selected from 462 eligible candidates, and the selection was deterministic and blind to any outcome measure. 3 disjoint matched item sets were drawn, so items can be treated as a random factor. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. Each participant was presented one of the 3 presentation versions (one list of one item set), assigned in rotation by participant number. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.1).
+40 items per condition were selected from the English lexicon (wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md) and matched item by item on length, n_density, old20 using lexsync's standardised_euclidean matcher. The realised control was close. The largest standardised difference on any matched dimension was 0.04 (90% CI [-0.17, 0.26]), within the 0.5-SD equivalence bound. The smallest condition was selected from 462 eligible candidates, and the selection was deterministic and blind to any outcome measure. 3 disjoint matched item sets were drawn, so items can be treated as a random factor. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. Each participant was presented one of the 3 presentation versions (one list of one item set), assigned in rotation by participant number. The selection is deterministic and reproducible (lexsync 0.1.1), and the seed (2026) fixes the trial order.
 
 ## Pre-registration template
 
@@ -66,7 +66,7 @@
 - Paradigm: factorial
 
 ### Materials (from the lexsync datasheet)
-40 items per condition were selected from the English lexicon (wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md) and matched item by item on length, n_density, old20 using lexsync's standardised_euclidean matcher. The realised control was close. The largest standardised difference on any matched dimension was 0.04 (90% CI [-0.17, 0.26]), within the 0.5-SD equivalence bound. The smallest condition was selected from 462 eligible candidates, and the selection was deterministic and blind to any outcome measure. 3 disjoint matched item sets were drawn, so items can be treated as a random factor. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. Each participant was presented one of the 3 presentation versions (one list of one item set), assigned in rotation by participant number. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.1).
+40 items per condition were selected from the English lexicon (wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md) and matched item by item on length, n_density, old20 using lexsync's standardised_euclidean matcher. The realised control was close. The largest standardised difference on any matched dimension was 0.04 (90% CI [-0.17, 0.26]), within the 0.5-SD equivalence bound. The smallest condition was selected from 462 eligible candidates, and the selection was deterministic and blind to any outcome measure. 3 disjoint matched item sets were drawn, so items can be treated as a random factor. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. Each participant was presented one of the 3 presentation versions (one list of one item set), assigned in rotation by participant number. The selection is deterministic and reproducible (lexsync 0.1.1), and the seed (2026) fixes the trial order.
 
 ### Sampling plan
 - Sample size and justification:

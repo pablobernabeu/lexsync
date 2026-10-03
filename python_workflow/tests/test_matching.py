@@ -1,7 +1,12 @@
+import hashlib
+import re
+
 import numpy as np
 import pandas as pd
 import pytest
+from helper_repo import repo_path
 
+from lexsync.io_utils import read_config, read_csv_utf8
 from lexsync.matching import (
     _maha_metric,
     match_stimuli,
@@ -796,3 +801,178 @@ def test_matching_module_uses_the_shared_rounder():
     import lexsync.matching as m
     src = open(m.__file__, encoding="utf-8").read()
     assert src.count("np.round(") == 2
+
+
+# ---- the tie-break rule -------------------------------------------------------
+# Lengths and neighbourhood counts are whole numbers and frequencies carry two
+# decimals, so exact ties decide most picks. matching.tie_break chooses how: `bytes`,
+# the default and the rule of lexsync 0.1, gives a tie to the spelling that sorts
+# first, and `hash` to the smaller keyed SHA-256 of the word. Twinned with
+# test-matching.R, which pins the same keys, words and pairs.
+
+def _digest(word):
+    # Computed here and not through the package, so the expectations below do not
+    # rest on the function under test.
+    return hashlib.sha256(("lexsync-tie-v1|" + word).encode("utf-8")).hexdigest()
+
+
+def test_the_tie_key_is_identical_across_engines():
+    from lexsync.matching import _tie_keys
+    assert _tie_keys(["cat", "año", "中文"]) == [
+        "b9d1fe3608e2667c6c6782afccc91b43caeb9aede31bfb89e61407bb1def5df0",
+        "a3eb8cd8d71694705bf6dee05bac085f3df1e93f9771978f55389420979d5f3c",
+        "be465219474dd1ca446c19e4185cdc870f4e605cfd25e1f462c50aae7997bada",
+    ]
+    assert _tie_keys(["cat"]) == [_digest("cat")]
+
+
+def _tie_pool():
+    # Four B candidates lie at x = 1 and two at x = 3, as do the anchors, so every pick
+    # is an exact tie at distance 0. The keyed hash reverses the spelling order of
+    # bat, cat, dog and eel.
+    return _x_pool([("kiwi", 6.0, 1.0), ("lime", 6.1, 1.0), ("plum", 6.2, 3.0),
+                    ("bat", 2.0, 1.0), ("cat", 2.1, 1.0), ("dog", 2.2, 1.0),
+                    ("eel", 2.3, 1.0), ("axe", 2.4, 3.0), ("dot", 2.5, 3.0)])
+
+
+def test_hash_tie_break_orders_exact_ties_by_the_keyed_digest():
+    pool = _tie_pool()
+    by_bytes = match_stimuli(pool, _x_design(3), _x_schema())
+    assert list(by_bytes.loc[by_bytes.condition == "B", "word"]) == ["bat", "cat", "axe"]
+    by_hash = match_stimuli(pool, _x_design(3, tie_break="hash"), _x_schema())
+    assert list(by_hash.loc[by_hash.condition == "A", "word"]) == ["kiwi", "lime", "plum"]
+    expected = (sorted(["bat", "cat", "dog", "eel"], key=_digest)[:2]
+                + sorted(["axe", "dot"], key=_digest)[:1])
+    assert expected == ["eel", "dog", "dot"]
+    assert list(by_hash.loc[by_hash.condition == "B", "word"]) == expected
+    # The schema may set the rule, and a design's own setting overrides it.
+    hashed = {"matching": dict(_x_schema()["matching"], tie_break="hash")}
+    assert list(match_stimuli(pool, _x_design(3), hashed)["word"]) == list(by_hash["word"])
+    assert list(match_stimuli(pool, _x_design(3, tie_break="bytes"), hashed)["word"]) == \
+        list(by_bytes["word"])
+
+
+def test_an_unknown_tie_break_rule_is_refused():
+    with pytest.raises(ValueError, match=re.escape(
+            "lexsync: unknown tie_break policy 'alphabetical'. "
+            "Known policies: hash, bytes.")):
+        match_stimuli(_tie_pool(), _x_design(3, tie_break="alphabetical"), _x_schema())
+
+
+def _tie_pairs_pool(a_x, b_x):
+    # In spelling order A holds ash, beech, cedar and elm, which the keyed hash orders
+    # beech, cedar, ash, elm, and B holds bat, cat, dog and eel, which it reverses.
+    a_words = ["ash", "beech", "cedar", "elm"]
+    b_words = ["bat", "cat", "dog", "eel"]
+    rows = [(w, 6.0 + i / 10, x) for i, (w, x) in enumerate(zip(a_words, a_x, strict=True))]
+    rows += [(w, 2.0 + i / 10, x) for i, (w, x) in enumerate(zip(b_words, b_x, strict=True))]
+    return _x_pool(rows)
+
+
+def test_hash_tie_break_orders_joint_pairs_by_hash_rank():
+    # Every pair costs 0, so the pair order alone decides which items are kept.
+    pool = _tie_pairs_pool([1.0] * 4, [1.0] * 4)
+    by_bytes = match_stimuli(pool, _x_design(2, method="joint"), _x_schema())
+    assert _pairs(by_bytes) == [("ash", "bat"), ("beech", "cat")]
+    assert sorted(["ash", "beech", "cedar", "elm"], key=_digest)[:2] == ["beech", "cedar"]
+    assert sorted(["bat", "cat", "dog", "eel"], key=_digest)[:2] == ["eel", "dog"]
+    by_hash = match_stimuli(pool, _x_design(2, method="joint", tie_break="hash"), _x_schema())
+    assert _pairs(by_hash) == [("beech", "eel"), ("cedar", "dog")]
+    assert list(by_hash.loc[by_hash.set == 1, "word"]) == ["beech", "eel"]
+
+
+def test_hash_tie_break_decides_the_overlap_cap():
+    # Every row lies at the same distance from the other condition's centroid, so the
+    # tie-break alone decides which two rows of each condition survive the cap. A cap
+    # that kept the first two rows by position would keep ash, beech, bat and cat, and
+    # the hash order would then pair beech with cat.
+    from lexsync.matching import _match_joint
+    pool = _tie_pairs_pool([1.0] * 4, [1.0] * 4)
+    a = pool[pool.frequency > 5].reset_index(drop=True)
+    b = pool[pool.frequency < 5].reset_index(drop=True)
+    centre, scale = np.array([0.0]), np.array([1.0])
+    by_bytes = _match_joint([a, b], ["A", "B"], ["x"], centre, scale, 2, cap=2)
+    assert _pairs(by_bytes) == [("ash", "bat"), ("beech", "cat")]
+    by_hash = _match_joint([a, b], ["A", "B"], ["x"], centre, scale, 2, cap=2,
+                           tie_break="hash")
+    assert _pairs(by_hash) == [("beech", "eel"), ("cedar", "dog")]
+
+
+def test_hash_tie_break_decides_which_optimal_pairs_are_kept():
+    # Each A word has one partner at distance 0, so the assignment is unique and the
+    # two engines' solvers cannot differ on it. Every assigned pair costs 0, and the
+    # tie-break alone decides which two of the four pairs are kept.
+    pytest.importorskip("scipy")
+    pool = _tie_pairs_pool([1.0, 2.0, 3.0, 4.0], [1.0, 2.0, 3.0, 4.0])
+    by_bytes = match_stimuli(pool, _x_design(2, method="optimal"), _x_schema())
+    assert _pairs(by_bytes) == [("ash", "bat"), ("beech", "cat")]
+    by_hash = match_stimuli(pool, _x_design(2, method="optimal", tie_break="hash"),
+                            _x_schema())
+    assert _pairs(by_hash) == [("beech", "cat"), ("cedar", "dog")]
+    assert list(by_hash.loc[by_hash.set == 1, "word"]) == ["beech", "cat"]
+
+
+# The shipped English designs. Repository-coupled: the full lexicon lives in corpora/,
+# not in the package, so these skip when the package is tested on its own.
+
+@pytest.fixture(scope="module")
+def en_corpus():
+    schema = read_config(str(repo_path("config", "schema.yaml")))
+    lexicon = load_lexicon(str(repo_path("corpora", "derived", "en.csv")), schema, "english")
+    return schema, lexicon
+
+
+def _shipped(name, tie_break=None):
+    design = read_config(str(repo_path("config", f"design_{name}.yaml")))
+    if tie_break is not None:
+        design["matching"] = dict(design.get("matching") or {}, tie_break=tie_break)
+    return design
+
+
+def _initial_share(words):
+    words = list(words)
+    return sum(w[:1] in ("a", "b") for w in words) / len(words)
+
+
+def test_hash_tie_break_returns_freqcontrast_initials_to_the_pool_rate(en_corpus):
+    # Under bytes, 61% of the low-frequency words begin with a or b, against 13% of the
+    # condition's candidates. Under hash the share lies within 0.1 of the candidates',
+    # and Cohen's d on each matched dimension moves by at most 0.01.
+    schema, lexicon = en_corpus
+    design = _shipped("en_freqcontrast")
+    pool = build_pool(lexicon, design["pool_filters"])
+    low = next(c for c in design["conditions"] if c["name"] == "low_frequency")
+    candidates = build_pool(pool, low["define_by"])
+    by_bytes = match_stimuli(pool, design, schema)
+    by_hash = match_stimuli(pool, _shipped("en_freqcontrast", "hash"), schema)
+    share = _initial_share(by_hash.loc[by_hash.condition == "low_frequency", "word"])
+    assert abs(share - _initial_share(candidates["word"])) <= 0.1
+    for dim in design["match_on"]:
+        d = [cohens_d(s.loc[s.condition == "high_frequency", dim],
+                      s.loc[s.condition == "low_frequency", dim]) for s in (by_bytes, by_hash)]
+        assert abs(d[0] - d[1]) <= 0.01, dim
+
+
+def test_hash_tie_break_spreads_the_ndensity_dense_initials(en_corpus):
+    # Under bytes every dense word of the joint design began with a or b (73 b, 7 a).
+    schema, lexicon = en_corpus
+    design = _shipped("en_ndensity", "hash")
+    s = match_stimuli(build_pool(lexicon, design["pool_filters"]), design, schema)
+    assert _initial_share(s.loc[s.condition == "dense_neighbourhood", "word"]) <= 0.25
+
+
+def test_the_default_tie_break_reproduces_the_committed_selections(en_corpus):
+    # The committed stimuli of both designs are those lexsync 0.1.1 selected, and the
+    # default rule, named or not, must select them again.
+    schema, lexicon = en_corpus
+    for name in ("en_freqcontrast", "en_ndensity"):
+        committed = read_csv_utf8(str(repo_path("output", "stimuli",
+                                                f"{name}_english_stimuli_R.csv")),
+                                  as_character=["word"])
+        want = sorted(zip(committed["word"], committed["condition"],
+                          committed["set"].astype(int), strict=True))
+        for rule in (None, "bytes"):
+            design = _shipped(name, rule)
+            s = match_stimuli(build_pool(lexicon, design["pool_filters"]), design, schema)
+            got = sorted(zip(s["word"], s["condition"], s["set"].astype(int), strict=True))
+            assert got == want, (name, rule)

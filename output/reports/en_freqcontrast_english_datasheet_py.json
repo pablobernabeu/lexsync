@@ -168,7 +168,7 @@
   "relational": null,
   "reproducibility": {
     "design_sha256": "c32f871683d2576c71d5d84aaa73c3ee3829da2015ae00495cab580e4dcada73",
-    "schema_sha256": "484eb9ce6e3a818eb9008e9c949e1b6b98df65dec021463376a7fa058ec8d198",
+    "schema_sha256": "960331bc24fc002527fc36aca87b4fbf1c7504a75e520a1287918761c53abdb3",
     "seed": 2026,
     "versions": {
       "engine": "python",
@@ -201,6 +201,9 @@
       "old20"
     ],
     "method": "standardised_euclidean",
+    "tie_break": {
+      "rule": "bytes"
+    },
     "tolerance_k": {
       "frequency": 1.0,
       "length": 2.0,

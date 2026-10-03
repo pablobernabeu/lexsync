@@ -30,7 +30,7 @@
 
 ## Methods paragraph
 
-16 items were drawn from an item table for a categorisation design (English). Materials were counterbalanced into 2 list(s) (a Latin-square rotation) and generated for PsychoPy, OpenSesame and jsPsych. Each participant was presented one of the 2 lists, assigned in rotation by participant number. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.1).
+16 items were drawn from an item table for a categorisation design (English). Materials were counterbalanced into 2 list(s) (a Latin-square rotation) and generated for PsychoPy, OpenSesame and jsPsych. Each participant was presented one of the 2 lists, assigned in rotation by participant number. The selection is deterministic and reproducible (lexsync 0.1.1), and the seed (2026) fixes the trial order.
 
 ## Pre-registration template
 
@@ -50,7 +50,7 @@
 - Paradigm: categorisation
 
 ### Materials (from the lexsync datasheet)
-16 items were drawn from an item table for a categorisation design (English). Materials were counterbalanced into 2 list(s) (a Latin-square rotation) and generated for PsychoPy, OpenSesame and jsPsych. Each participant was presented one of the 2 lists, assigned in rotation by participant number. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.1).
+16 items were drawn from an item table for a categorisation design (English). Materials were counterbalanced into 2 list(s) (a Latin-square rotation) and generated for PsychoPy, OpenSesame and jsPsych. Each participant was presented one of the 2 lists, assigned in rotation by participant number. The selection is deterministic and reproducible (lexsync 0.1.1), and the seed (2026) fixes the trial order.
 
 ### Sampling plan
 - Sample size and justification:

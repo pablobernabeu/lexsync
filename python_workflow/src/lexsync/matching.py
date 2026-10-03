@@ -18,6 +18,8 @@ two methods.
 """
 from __future__ import annotations
 
+import hashlib
+
 import numpy as np
 import pandas as pd
 
@@ -41,6 +43,13 @@ _KNOWN_METHODS = ("standardised_euclidean", "joint", "mahalanobis", "optimal")
 # Must stay identical to .PAIRWISE_CAP in R_workflow/R/matching.R.
 PAIRWISE_CAP = 1200
 
+# The salt of the keyed tie-break, fixed and versioned. It is independent of the
+# schema seed, which keys the trial order. A tie key built on the seed would change the
+# items whenever a cohort's order was re-randomised, and would let re-seeding shop
+# among equally matched sets. Must stay identical to .TIE_SALT in
+# R_workflow/R/matching.R.
+TIE_SALT = "lexsync-tie-v1"
+
 
 def _resolve_policy(design, schema, key, default, known):
     """Resolve a matching policy with a design-over-schema-over-default cascade.
@@ -54,6 +63,35 @@ def _resolve_policy(design, schema, key, default, known):
         raise ValueError(f"lexsync: unknown {key} policy '{val}'. "
                          f"Known policies: {', '.join(known)}.")
     return val
+
+
+def _resolve_tie_break(design, schema):
+    """The rule that breaks exact ties between equally close candidates.
+
+    Read like the other matching policies, design over schema over default. `bytes`
+    gives a tie to the spelling that sorts first, as lexsync 0.1 did, and `hash` to
+    the smaller tie key (see _tie_keys). Must stay identical to .resolve_tie_break in
+    R_workflow/R/matching.R.
+    """
+    return _resolve_policy(design, schema, "tie_break", "bytes", ("hash", "bytes"))
+
+
+def _tie_keys(words) -> list:
+    """The tie key of each word: the lower-case hex SHA-256 of the salt, a bar and the
+    word, in UTF-8.
+
+    A digest favours no part of the alphabet, and hex digits compare the same way as
+    strings in both engines. Must stay identical to .tie_keys in R_workflow/R/matching.R.
+    """
+    return [hashlib.sha256((TIE_SALT + "|" + w).encode("utf-8")).hexdigest() for w in words]
+
+
+def _tie_sort_keys(words, tie_break) -> list:
+    """What orders an exact tie between candidates: the word's UTF-8 bytes under
+    `bytes` and its tie key under `hash`, one per candidate."""
+    if tie_break == "hash":
+        return _tie_keys(words)
+    return [w.encode("utf-8") for w in words]
 
 
 def _check_shortfall(realised, n, policy, continuous=False):
@@ -134,17 +172,41 @@ def _exact_colmeans(z):
     return np.array([_exact_mean(z[:, j]) for j in range(z.shape[1])], dtype=float)
 
 
-def _cap_to_overlap(df, z, other_centroid, cap):
-    """Keep the `cap` rows nearest the other condition's centroid (byte-rank ties)."""
+def _cap_to_overlap(df, z, other_centroid, cap, keys=None):
+    """Keep the `cap` rows nearest the other condition's centroid.
+
+    A tie in distance goes to the earlier row, which in a lexicon sorted by bytes is
+    the earlier spelling, or, when `keys` holds the rows' tie keys (tie_break: hash),
+    to the smaller key. The kept rows stay in pool order and come back with their keys.
+    Must stay identical to .cap_to_overlap in R_workflow/R/matching.R.
+    """
     if len(df) <= cap:
-        return df.reset_index(drop=True), z
+        return df.reset_index(drop=True), z, keys
     d = _round_dp_vec(np.sqrt(((z - other_centroid) ** 2).sum(axis=1)), 9)
-    order = sorted(range(len(df)), key=lambda i: (d[i], i))[:cap]
+    if keys is None:
+        order = sorted(range(len(df)), key=lambda i: (d[i], i))[:cap]
+    else:
+        order = sorted(range(len(df)), key=lambda i: (d[i], keys[i], i))[:cap]
     keep = sorted(order)
-    return df.iloc[keep].reset_index(drop=True), z[keep]
+    return (df.iloc[keep].reset_index(drop=True), z[keep],
+            None if keys is None else [keys[i] for i in keep])
 
 
-def _match_joint(subpools, cond_names, match_on, center, scale, n, cap=PAIRWISE_CAP):
+def _in_tie_key_order(df, z, keys):
+    """Put a capped subpool in the order of its tie keys under tie_break: hash.
+
+    The pairwise matchers break a tie in cost by row position, so after this a row's
+    position is the hash rank of its word. With no keys (tie_break: bytes) the pool
+    order stands. Must stay identical to .tie_key_order in R_workflow/R/matching.R.
+    """
+    if keys is None:
+        return df, z
+    perm = sorted(range(len(df)), key=lambda i: (keys[i], i))
+    return df.iloc[perm].reset_index(drop=True), z[perm]
+
+
+def _match_joint(subpools, cond_names, match_on, center, scale, n, cap=PAIRWISE_CAP,
+                 tie_break="bytes"):
     """Select the `n` best-matched pairs jointly across two conditions.
 
     Rather than fixing one condition and matching the other to it, this scores
@@ -152,7 +214,9 @@ def _match_joint(subpools, cond_names, match_on, center, scale, n, cap=PAIRWISE_
     cheapest disjoint pairs. Only items with a good counterpart are kept, so the
     control dimensions are equated even when the manipulation is confounded with
     them (e.g. neighbourhood density with word length). Deterministic and
-    identical to the R engine (rounded costs; byte-rank tie-breaks).
+    identical to the R engine (rounded costs). Pairs of equal cost are taken in row
+    order, which under `tie_break` "hash" is the hash rank of each word, and the same
+    rule breaks ties at the cap.
     """
     s0 = subpools[0].reset_index(drop=True)
     s1 = subpools[1].reset_index(drop=True)
@@ -160,8 +224,13 @@ def _match_joint(subpools, cond_names, match_on, center, scale, n, cap=PAIRWISE_
         raise ValueError("lexsync: a condition has no candidates for joint matching.")
     z0 = _zmat(s0, match_on, center, scale)
     z1 = _zmat(s1, match_on, center, scale)
-    s0, z0 = _cap_to_overlap(s0, z0, _exact_colmeans(z1), cap)
-    s1, z1 = _cap_to_overlap(s1, z1, _exact_colmeans(z0), cap)
+    # Each candidate's tie key is computed once, here, and travels with its row.
+    k0 = _tie_keys(s0["word"]) if tie_break == "hash" else None
+    k1 = _tie_keys(s1["word"]) if tie_break == "hash" else None
+    s0, z0, k0 = _cap_to_overlap(s0, z0, _exact_colmeans(z1), cap, k0)
+    s1, z1, k1 = _cap_to_overlap(s1, z1, _exact_colmeans(z0), cap, k1)
+    s0, z0 = _in_tie_key_order(s0, z0, k0)
+    s1, z1 = _in_tie_key_order(s1, z1, k1)
     cost = _round_dp_vec(np.sqrt(((z0[:, None, :] - z1[None, :, :]) ** 2).sum(axis=2)), 9)
     m0, m1 = cost.shape
     rows = np.repeat(np.arange(m0), m1)
@@ -240,7 +309,8 @@ def _maha_metric(z_pool: np.ndarray, ridge: float = 1e-6) -> np.ndarray:
     return np.linalg.inv(c)
 
 
-def _match_optimal(subpools, cond_names, match_on, center, scale, n, cap=PAIRWISE_CAP):
+def _match_optimal(subpools, cond_names, match_on, center, scale, n, cap=PAIRWISE_CAP,
+                   tie_break="bytes"):
     """Optimal (minimum-total-distance) pairing for a two-condition design.
 
     Unlike the greedy ``joint`` matcher, this solves the linear-assignment problem
@@ -248,6 +318,9 @@ def _match_optimal(subpools, cond_names, match_on, center, scale, n, cap=PAIRWIS
     cheapest disjoint pair at each step; it produces fewer poorly matched pairs
     (Gu & Rosenbaum, 1993; Hansen & Klopfer, 2006). The assignment solver's tie
     handling differs between engines, so the two agree closely but not byte-for-byte.
+    Under `tie_break` "hash" the capped subpools are put in the order of their tie
+    keys before the solve, so the solver's preferences among equal costs, and the
+    order in which pairs of equal cost are kept, follow the hash.
     """
     from scipy.optimize import linear_sum_assignment
     s0 = subpools[0].reset_index(drop=True)
@@ -256,8 +329,12 @@ def _match_optimal(subpools, cond_names, match_on, center, scale, n, cap=PAIRWIS
         raise ValueError("lexsync: a condition has no candidates for optimal matching.")
     z0 = _zmat(s0, match_on, center, scale)
     z1 = _zmat(s1, match_on, center, scale)
-    s0, z0 = _cap_to_overlap(s0, z0, _exact_colmeans(z1), cap)
-    s1, z1 = _cap_to_overlap(s1, z1, _exact_colmeans(z0), cap)
+    k0 = _tie_keys(s0["word"]) if tie_break == "hash" else None
+    k1 = _tie_keys(s1["word"]) if tie_break == "hash" else None
+    s0, z0, k0 = _cap_to_overlap(s0, z0, _exact_colmeans(z1), cap, k0)
+    s1, z1, k1 = _cap_to_overlap(s1, z1, _exact_colmeans(z0), cap, k1)
+    s0, z0 = _in_tie_key_order(s0, z0, k0)
+    s1, z1 = _in_tie_key_order(s1, z1, k1)
     cost = _round_dp_vec(np.sqrt(((z0[:, None, :] - z1[None, :, :]) ** 2).sum(axis=2)), 9)
     # A word present in both subpools (overlapping condition windows) must not be
     # paired with itself. The penalty is a large FINITE constant because both
@@ -318,6 +395,14 @@ def match_stimuli(pool: pd.DataFrame, design: dict, schema: dict, verbose: bool 
     recorded in ``out.attrs["audit"]["incomplete_dropped"]``. The shortfall policy
     then applies to what remains, and a condition left with no complete candidate
     is refused.
+
+    ``tie_break``, read in the same way, decides between candidates at exactly the same
+    rounded distance, which integer dimensions make common: "bytes", the default,
+    prefers the spelling that sorts first and reproduces lexsync 0.1, and "hash"
+    prefers the smaller SHA-256 of ``TIE_SALT``, a bar and the word, which favours no
+    part of the alphabet. The rule also orders the tied pairs of ``joint`` and
+    ``optimal`` and the tied rows at their candidate cap. The anchor's even spread
+    keeps its byte-order tie-break under both rules.
     """
     conditions = design.get("conditions")
     if not conditions:
@@ -336,6 +421,7 @@ def match_stimuli(pool: pd.DataFrame, design: dict, schema: dict, verbose: bool 
     shortfall = _resolve_policy(design, schema, "shortfall", "error", ("error", "allow"))
     on_tol = _resolve_policy(design, schema, "on_insufficient_tolerance", "relax",
                              ("relax", "error"))
+    tie_break = _resolve_tie_break(design, schema)
 
     for d in match_on:
         if d not in pool.columns:
@@ -406,12 +492,14 @@ def match_stimuli(pool: pd.DataFrame, design: dict, schema: dict, verbose: bool 
         subpools[i] = sp[complete]
 
     if method == "joint" and len(conditions) == 2:
-        out = _match_joint(subpools, cond_names, match_on, center, scale, n)
+        out = _match_joint(subpools, cond_names, match_on, center, scale, n,
+                           tie_break=tie_break)
         _check_shortfall(out["set"].nunique(), n, shortfall)
         _assert_distinct_words(out)
         return _attach_audit(out, [], incomplete)
     if method == "optimal" and len(conditions) == 2:
-        out = _match_optimal(subpools, cond_names, match_on, center, scale, n)
+        out = _match_optimal(subpools, cond_names, match_on, center, scale, n,
+                             tie_break=tie_break)
         _check_shortfall(out["set"].nunique(), n, shortfall)
         _assert_distinct_words(out)
         return _attach_audit(out, [], incomplete)
@@ -495,7 +583,8 @@ def match_stimuli(pool: pd.DataFrame, design: dict, schema: dict, verbose: bool 
                              f"pool_filters/define_by or lower n_per_condition.")
         cand_f = cand_f.reset_index(drop=True)
         z_cand = _zmat(cand_f, match_on, center, scale)
-        words = cand_f["word"].to_numpy()
+        # What breaks an exact tie, computed once per candidate (see _tie_sort_keys).
+        tie_keys = _tie_sort_keys(cand_f["word"], tie_break)
         ids = cand_f["id"].to_numpy()
         used = np.zeros(len(cand_f), dtype=bool)
         pick = np.empty(n_take, dtype=int)
@@ -521,7 +610,7 @@ def match_stimuli(pool: pd.DataFrame, design: dict, schema: dict, verbose: bool 
             nan_last = np.isnan(dvec)
             best = min(free,
                        key=lambda j: (bool(nan_last[j]), 0.0 if nan_last[j] else dvec[j],
-                                      words[j].encode("utf-8"), int(ids[j])))
+                                      tie_keys[j], int(ids[j])))
             pick[a] = best
             used[best] = True
         sel = cand_f.iloc[pick].copy()

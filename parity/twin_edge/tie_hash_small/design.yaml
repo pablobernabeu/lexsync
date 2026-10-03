@@ -1,0 +1,24 @@
+# Twin-edge case: exact ties broken by the keyed hash. Length is the only matched
+# dimension and every low candidate shares its length with eight others, so the
+# tie-break chooses every low word. Under matching: tie_break: hash, each tie goes to
+# the word with the smaller SHA-256 of 'lexsync-tie-v1|' followed by the word, which
+# both engines must compute alike.
+# The word forms are English words. The Zipf frequencies are invented for this
+# fixture and describe no corpus.
+name: twin_edge_tie_hash_small
+language: english
+lexicon: lexicon.csv
+description: 'High versus low frequency from a twenty-four-word lexicon, matched on length, with exact ties broken by the keyed hash.'
+n_per_condition: 4
+conditions:
+  - name: high
+    define_by:
+      frequency: [5.0, 6.5]
+  - name: low
+    define_by:
+      frequency: [3.0, 4.0]
+match_on: [length]
+matching:
+  tie_break: hash
+counterbalance:
+  lists: 2

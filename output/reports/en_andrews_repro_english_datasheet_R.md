@@ -25,7 +25,7 @@
 ## Selection transparency
 
 - **Candidate pool** (items satisfying each condition's window before matching): HF_largeN: 251, HF_smallN: 258, LF_largeN: 1875, LF_smallN: 3462.
-- Selection is deterministic given the seed and blind to any outcome measure, so it is reproducible and free of item-selection bias (Forster, 2000; Simmons et al., 2011).
+- Selection is a deterministic function of the materials source, the design and the schema, blind to any outcome measure, and does not depend on the seed, which fixes the trial order. Exact ties between equally close candidates are broken by spelling, in byte order, as lexsync 0.1 did, so every tie goes to the spelling that sorts first. Automating the choice removes the experimenter's discretion that Forster (2000) showed can bias item selection.
 
 ## Realised control
 
@@ -51,7 +51,7 @@
 
 ## Methods paragraph
 
-18 items per condition were selected from the English lexicon (wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md) and matched item by item on length using lexsync's standardised_euclidean matcher. Equivalence was not confirmed on every matched dimension; the per-dimension differences are reported in the realised-control table. The smallest condition was selected from 251 eligible candidates, and the selection was deterministic and blind to any outcome measure. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.1).
+18 items per condition were selected from the English lexicon (wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md) and matched item by item on length using lexsync's standardised_euclidean matcher. Equivalence was not confirmed on every matched dimension; the per-dimension differences are reported in the realised-control table. The smallest condition was selected from 251 eligible candidates, and the selection was deterministic and blind to any outcome measure. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (lexsync 0.1.1), and the seed (2026) fixes the trial order.
 
 ## Pre-registration template
 
@@ -71,7 +71,7 @@
 - Paradigm: factorial
 
 ### Materials (from the lexsync datasheet)
-18 items per condition were selected from the English lexicon (wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md) and matched item by item on length using lexsync's standardised_euclidean matcher. Equivalence was not confirmed on every matched dimension; the per-dimension differences are reported in the realised-control table. The smallest condition was selected from 251 eligible candidates, and the selection was deterministic and blind to any outcome measure. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (seed 2026; lexsync 0.1.1).
+18 items per condition were selected from the English lexicon (wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md) and matched item by item on length using lexsync's standardised_euclidean matcher. Equivalence was not confirmed on every matched dimension; the per-dimension differences are reported in the realised-control table. The smallest condition was selected from 251 eligible candidates, and the selection was deterministic and blind to any outcome measure. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (lexsync 0.1.1), and the seed (2026) fixes the trial order.
 
 ### Sampling plan
 - Sample size and justification:

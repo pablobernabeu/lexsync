@@ -29,6 +29,36 @@ no function signature changes.
   regenerated. The twin-edge case `generation_exclude` pins both engines to one
   outcome.
 
+- `matching.tie_break` chooses how exact ties between equally close candidates are
+  broken. `bytes`, the default, breaks them by spelling, as lexsync 0.1 did, and
+  reproduces its selections. `hash` breaks them by a keyed SHA-256 of each word
+  (salt `lexsync-tie-v1`), which favours no part of the alphabet and does not
+  depend on the seed. Ties decide most picks because lengths and neighbourhood
+  counts are whole numbers and frequencies have two decimals. In `en_freqcontrast`,
+  71 of the 80 anchored picks had another candidate at the chosen distance, and
+  breaking them by spelling filled conditions with early-alphabet words. In its
+  low-frequency condition, 61% of the words begin with a or b, against 13% of the
+  candidates, and in `en_ndensity`'s dense condition and the `en_andrews_repro`
+  low-frequency cells every word does, an initial-letter confound the
+  realised-control report cannot see. Under `hash`, the low-frequency share falls to
+  12.5% and the dense share to 17.5%, against 13% and 12% among the candidates,
+  and Cohen's d on every matched dimension of every shipped matched design is
+  unchanged. The rule decides the anchored picks, the order of tied pairs in
+  `joint` and `optimal` matching and the rows tied at their candidate cap. The even
+  spreads that pick the anchor's items and a continuous design's items keep the
+  byte order. Under either rule, `standardised_euclidean` and `joint` select
+  identical items in the two engines. The datasheet records the rule as
+  `selection.tie_break`, a 1.2 field, with the salt under `hash`. Its Markdown no
+  longer says that selection is deterministic given the seed and free of
+  item-selection bias. Selection does not depend on the seed, which fixes the
+  trial order, and the Markdown and the Methods paragraph now say so. The Methods
+  sentence that read 'deterministic and reproducible (seed 2026; lexsync 0.1.1)'
+  now reads 'deterministic and reproducible (lexsync 0.1.1), and the seed (2026)
+  fixes the trial order'. The schema gains `tie_break: bytes`, so every committed
+  datasheet and run log is regenerated. No stimulus, report table or experiment
+  changes, and the twin-edge case `tie_hash_small` pins the `hash` rule in both
+  engines.
+
 ### Changed
 
 - The parity gate also runs both engines over small edge-case designs (padded
