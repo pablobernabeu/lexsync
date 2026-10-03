@@ -42,6 +42,9 @@ from .matching import PAIRWISE_CAP
 #   counterbalancing.complete   whether a Latin-square rotation is complete
 #   counterbalancing.issues     what leaves it incomplete
 #   counterbalancing.cells      the trials per list and condition
+#   materials_source["input_normalisation"]   what NFC normalisation did to the inputs
+#                                             ({changed, collapsed}), present only when
+#                                             it changed something
 DATASHEET_VERSION = "1.2"
 
 # Datasheet labels for the pseudoword generators in generation.py, keyed by the
@@ -223,7 +226,7 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
                     seed, engine="python", candidate_pool=None, norms=None,
                     balance=None, blocks=None, design_path=None, schema_path=None,
                     selection_audit=None, neighbourhood_reference=None,
-                    counterbalance_check=None) -> dict:
+                    counterbalance_check=None, input_normalisation=None) -> dict:
     """Assemble the datasheet dictionary from the pipeline's objects.
 
     ``candidate_pool`` (optional) is a list of ``{"condition", "n_candidates"}``
@@ -258,6 +261,12 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
     or for a table without a ``list`` column the lists counterbalance() would deal. It
     says whether a Latin-square rotation is complete and counts the trials per list
     and condition.
+
+    ``input_normalisation`` (optional) is ``{"changed", "collapsed"}``: how many text
+    keys the run's inputs held that Unicode NFC normalisation rewrote, and how many
+    duplicates the rewriting created and removed. Recorded only when given, which the
+    pipeline does only when either count is above zero, because a merged spelling
+    changes the candidate pool.
     """
     source = (design.get("items") or {}).get("source", "corpus")
     is_continuous = _is_continuous(design)
@@ -362,6 +371,10 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
     # engine, where assigning NULL to a list element removes it.
     if norms:
         materials_source["norms"] = norms
+    if input_normalisation is not None:
+        materials_source["input_normalisation"] = {
+            "changed": int(input_normalisation["changed"]),
+            "collapsed": int(input_normalisation["collapsed"])}
 
     # A corpus design draws on every schema dimension, and so does a pair-keyed
     # design: every lexicon dimension is joined onto each member. A generate or plain
@@ -674,6 +687,10 @@ def render_datasheet_md(ds: dict) -> str:
         dim_sha = (ds.get("materials_source") or {}).get("dimensions_sha256")
         lines.append("- **Dimensions from:** `%s`%s"
                      % (dim_from, "" if not dim_sha else " (sha256 `%s…`)" % dim_sha[:16]))
+    nfc = (ds.get("materials_source") or {}).get("input_normalisation")
+    if nfc:
+        lines.append("- **Input normalisation:** %d text form(s) rewritten to Unicode NFC, "
+                     "%d duplicate(s) removed" % (nfc["changed"], nfc["collapsed"]))
     lines += [
         f"- **Selection:** {ds['selection']['method']}",
         f"- **Cross-engine determinism:** {ds['selection'].get('cross_engine', 'byte-identical')}",

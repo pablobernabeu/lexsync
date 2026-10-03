@@ -61,6 +61,45 @@ validate_lexicon <- function(df, schema) {
   stringi::stri_trim_both(as.character(x), pattern = .WHITESPACE)
 }
 
+#' Normalise text keys to Unicode Normalization Form C
+#'
+#' A precomposed letter such as U+00F3 and the base letter followed by a combining
+#' accent are canonically equivalent, but they compare unequal and differ in
+#' length. Unnormalised, the two spellings of one word were two candidates, which
+#' the matcher could place in opposite conditions of one matched set, and a norm
+#' or member join missed whichever spelling the lexicon did not use. Applied after
+#' [.trim_invariant()] and [.lower_invariant()], because case mapping does not
+#' guarantee normalised output. ICU (through stringi) and Python's `unicodedata`
+#' agree on every character assigned in both engines' Unicode versions. Mirrors
+#' `_nfc` in python_workflow/src/lexsync/querying.py.
+#'
+#' @param x A character vector, or a vector coercible to one.
+#' @return A character vector in NFC; `NA` is preserved.
+#' @keywords internal
+.nfc <- function(x) {
+  stringi::stri_trans_nfc(as.character(x))
+}
+
+# Normalise text keys and say what normalising did: the NFC values, the number of
+# values it changed and the number of distinct values it merged into another, missing
+# values counting for neither. Mirrors _nfc_count in querying.py.
+.nfc_count <- function(x) {
+  x <- as.character(x)
+  y <- .nfc(x)
+  ok <- !is.na(x)
+  list(value = y,
+       changed = sum(x[ok] != y[ok]),
+       collapsed = length(unique(x[ok])) - length(unique(y[ok])))
+}
+
+# The `input_normalisation` record, or NULL when normalising changed nothing. NULL
+# keeps the record off every frame and datasheet whose input was already NFC, which
+# is every shipped one. Mirrors _nfc_record in querying.py.
+.nfc_record <- function(changed, collapsed) {
+  if (!changed && !collapsed) return(NULL)
+  list(changed = as.integer(changed), collapsed = as.integer(collapsed))
+}
+
 # Maximal runs of (possibly accented) Latin vowels approximate syllable nuclei.
 # Accented code points are built with intToUtf8 so the R source stays ASCII (CRAN).
 .VOWELS <- paste0("[aeiouy", intToUtf8(c(
@@ -107,7 +146,8 @@ count_syllables <- function(word) {
 #' Load a lexicon from a CSV file
 #'
 #' Reads a derived lexicon, validates the column contract, lower-cases the
-#' orthographic form, removes duplicates and attaches a stable integer `id` plus
+#' orthographic form and normalises it to Unicode NFC, removes duplicates (keeping
+#' the first row in file order) and attaches a stable integer `id` plus
 #' the inexpensive dimensions `length` and `frequency`. The orthographic
 #' neighbourhood dimensions are added later, on the experimental pool, by
 #' [add_neighbourhood()], because they are quadratic in the size of the
@@ -119,7 +159,9 @@ count_syllables <- function(word) {
 #' @return A data frame with at least `word`, `length`, `n_syllables`,
 #'   `frequency` and `id`, plus the frequency column the schema names (by default
 #'   `freq_zipf`) and every other column the file carried. Rows are in byte order
-#'   of `word` and `id` numbers them from 1.
+#'   of `word` and `id` numbers them from 1. When normalisation changed or merged
+#'   any word, the attribute `input_normalisation` holds `list(changed, collapsed)`:
+#'   the words it rewrote and the duplicate rows it removed.
 #' @examples
 #' # Both inputs are bundled with the package, so this runs offline and touches
 #' # nothing outside the installation.
@@ -136,6 +178,10 @@ load_lexicon <- function(path, schema, language = NULL) {
   df$word <- .lower_invariant(.trim_invariant(df$word))
   keep <- !is.na(df$word) & nzchar(df$word) & !is.na(df[[freq_col]])
   df <- df[keep, , drop = FALSE]
+  # NFC before de-duplication, so the two spellings of a word are one word and the
+  # first row in file order is the one kept.
+  nf <- .nfc_count(df$word)
+  df$word <- nf$value
   df <- df[!duplicated(df$word), , drop = FALSE]
   # Every downstream step reads at least one row, and `df$language <- language`
   # below fails first with base R's "replacement has 1 row, data has 0", which
@@ -155,6 +201,8 @@ load_lexicon <- function(path, schema, language = NULL) {
   df$frequency <- as.numeric(df[[freq_col]])
   if (!is.null(language)) df$language <- language
   rownames(df) <- NULL
+  # Read by run_pipeline() for the run log and the datasheet.
+  attr(df, "input_normalisation") <- .nfc_record(nf$changed, nf$collapsed)
   df
 }
 
@@ -231,8 +279,8 @@ add_pair_overlap <- function(df, prime = "prime", target = "target") {
       stop(sprintf("lexsync: add_pair_overlap needs column '%s'.", col), call. = FALSE)
     }
   }
-  a <- .lower_invariant(.trim_invariant(as.character(df[[prime]])))
-  b <- .lower_invariant(.trim_invariant(as.character(df[[target]])))
+  a <- .nfc(.lower_invariant(.trim_invariant(as.character(df[[prime]]))))
+  b <- .nfc(.lower_invariant(.trim_invariant(as.character(df[[target]]))))
   lev <- as.integer(stringdist::stringdist(a, b, method = "lv"))
   den <- pmax(nchar(a), nchar(b))
   df[["pair.lev"]] <- lev
@@ -272,10 +320,11 @@ add_bigram_frequency <- function(df, reference = NULL) {
 
 # The join key, normalised identically on both sides of the join and in both
 # engines: trimmed and case-folded under Python's Unicode semantics (see
-# .trim_invariant and .lower_invariant), which is also exactly what load_lexicon
-# does to `word`. A missing value stays missing, so it never joins: R's merge()
-# pairs NA with NA, whereas a pandas NaN never compares equal to itself.
-.norm_key <- function(x) .lower_invariant(.trim_invariant(x))
+# .trim_invariant and .lower_invariant), then put in NFC (.nfc), which is also
+# exactly what load_lexicon does to `word`. A missing value stays missing, so it
+# never joins: R's merge() pairs NA with NA, whereas a pandas NaN never compares
+# equal to itself.
+.norm_key <- function(x) .nfc(.lower_invariant(.trim_invariant(x)))
 
 #' Left-join a norm table (e.g. concreteness, age of acquisition, valence)
 #'
@@ -296,9 +345,9 @@ add_bigram_frequency <- function(df, reference = NULL) {
 #' freedom: the output is the input plus columns, in both engines. A colliding
 #' name is now an error instead.
 #'
-#' The key is trimmed and case-folded on *both* sides. Only the norm table's side
-#' was normalised before, so a lexicon holding `Dog` matched nothing and the design
-#' carried on with an all-`NA` dimension. Because both engines agreed on that wrong
+#' The key is trimmed, case-folded and normalised to NFC on *both* sides. Only the
+#' norm table's side was trimmed and case-folded before, so a lexicon holding `Dog`
+#' matched nothing and the design carried on with an all-`NA` dimension. Because both engines agreed on that wrong
 #' answer, no parity test could have caught it. The lexicon's own spelling is
 #' preserved rather than folded in place: `word` is the byte-order tie-break behind
 #' every selection, so the join must not rewrite it.
@@ -376,9 +425,13 @@ merge_norms <- function(lexicon, norms, on = "word", columns = NULL) {
   specs
 }
 
+# `normalisation` in the result counts the norm-table keys that NFC changed and the
+# duplicate keys it created, which the join then dropped, summed over the tables
+# (see .nfc_count). Mirrors apply_norms in querying.py.
 #' @keywords internal
 .apply_norms <- function(lex, design) {
   records <- list()
+  changed <- collapsed <- 0L
   for (spec in .norm_specs(design)) {
     path <- spec[["path"]]
     if (is.null(path))
@@ -389,14 +442,20 @@ merge_norms <- function(lexicon, norms, on = "word", columns = NULL) {
     on <- spec[["on"]] %||% "word"
     cols <- if (is.null(spec[["columns"]])) NULL else unlist(spec[["columns"]], use.names = FALSE)
     before <- names(lex)
-    lex <- merge_norms(lex, path, on = on, columns = cols)
+    table <- as.data.frame(read_csv_utf8(path), stringsAsFactors = FALSE)
+    lex <- merge_norms(lex, table, on = on, columns = cols)
+    # merge_norms() has checked that the key column exists.
+    nf <- .nfc_count(.lower_invariant(.trim_invariant(table[[on]])))
+    changed <- changed + nf$changed
+    collapsed <- collapsed + nf$collapsed
     added <- setdiff(names(lex), before)
     records[[length(records) + 1L]] <- list(
       path = path, sha256 = sha256_file(path), on = on,
       columns = lapply(added, function(cl)
         list(column = cl, n_matched = sum(!is.na(lex[[cl]])), n_total = nrow(lex))))
   }
-  list(lexicon = lex, provenance = records)
+  list(lexicon = lex, provenance = records,
+       normalisation = list(changed = changed, collapsed = collapsed))
 }
 
 #' Load a supplied candidate pool of words and give it the matcher's dimensions
@@ -425,7 +484,10 @@ merge_norms <- function(lexicon, norms, on = "word", columns = NULL) {
 #' @param language Optional language label recorded in a `language` column.
 #' @return A list with `pool` (the data frame, carrying `word`, `id`, `length`,
 #'   `n_syllables` and any joined or supplied dimensions) and `reference` (the word
-#'   vector the neighbourhood dimensions should be computed against).
+#'   vector the neighbourhood dimensions should be computed against). Words are
+#'   trimmed, lower-cased and normalised to Unicode NFC as in [load_lexicon()], and
+#'   `pool` carries the same `input_normalisation` attribute when that changed or
+#'   merged any word of the pool or the lexicon.
 #' @export
 load_pool <- function(path, schema, lexicon = NULL, language = NULL) {
   parts <- strsplit(gsub("\\\\", "/", path), "/", fixed = TRUE)[[1]]
@@ -440,6 +502,8 @@ load_pool <- function(path, schema, lexicon = NULL, language = NULL) {
   # trim it identically before anything is sorted or numbered by it.
   df$word <- .lower_invariant(.trim_invariant(df$word))
   df <- df[!is.na(df$word) & nzchar(df$word), , drop = FALSE]
+  nf <- .nfc_count(df$word)
+  df$word <- nf$value
   df <- df[!duplicated(df$word), , drop = FALSE]
   if (!nrow(df)) {
     stop(sprintf("lexsync: supplied pool '%s' has no usable rows: it is empty, or every row is missing 'word'.",
@@ -451,6 +515,11 @@ load_pool <- function(path, schema, lexicon = NULL, language = NULL) {
   reference <- df$word
   if (!is.null(lexicon)) {
     lex <- load_lexicon(lexicon, schema, language = language)
+    # The lexicon's own normalisation is reported with the pool's, since the run read
+    # both.
+    lex_record <- attr(lex, "input_normalisation")
+    nf$changed <- nf$changed + (lex_record$changed %||% 0L)
+    nf$collapsed <- nf$collapsed + (lex_record$collapsed %||% 0L)
     reference <- lex$word
     # `id` is the lexicon's own row number, meaningless once the pool is a subset.
     dims <- setdiff(names(lex), c("word", "language", "source", "id"))
@@ -479,6 +548,7 @@ load_pool <- function(path, schema, lexicon = NULL, language = NULL) {
   if (!is.null(language)) df$language <- language
   df$id <- seq_len(nrow(df))
   rownames(df) <- NULL
+  attr(df, "input_normalisation") <- .nfc_record(nf$changed, nf$collapsed)
   list(pool = df, reference = reference)
 }
 
@@ -489,6 +559,9 @@ load_pool <- function(path, schema, lexicon = NULL, language = NULL) {
 #' characters; bounded length) so a crafted item cannot corrupt the generated
 #' loop table or scripts. Items are mapped to a deterministic integer `set` id
 #' (byte order), so counterbalancing matches the corpus path and the two engines.
+#' The item id, the condition and the presented fields are normalised to Unicode
+#' NFC. When that changed any cell, the attribute `input_normalisation` holds
+#' `list(changed, collapsed)`, with `collapsed` always 0 since no row is removed.
 #'
 #' @param path Path to a UTF-8 CSV item table.
 #' @param required_fields Character vector of presented fields the paradigm needs.
@@ -520,6 +593,15 @@ load_items <- function(path, required_fields) {
                    col), call. = FALSE)
     }
   }
+  # The item id, the condition and the presented text in NFC, as every other text key
+  # is, so one item spelt two ways is one set and its text one string. A merged
+  # spelling removes no row here, so only the changed cells are counted.
+  changed <- 0L
+  for (col in unique(needed)) {
+    nf <- .nfc_count(df[[col]])
+    df[[col]] <- nf$value
+    changed <- changed + nf$changed
+  }
   item_key <- df$item
   # A repeated item-condition pair is a slip that would silently duplicate a trial
   # in every generated list; the first repeat in file order is reported. The key is
@@ -540,6 +622,7 @@ load_items <- function(path, required_fields) {
   set_map <- stats::setNames(seq_along(items), items)
   df$set <- unname(set_map[item_key])
   rownames(df) <- NULL
+  attr(df, "input_normalisation") <- .nfc_record(changed, 0L)
   df
 }
 

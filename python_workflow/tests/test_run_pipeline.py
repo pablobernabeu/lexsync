@@ -576,6 +576,75 @@ def test_run_all_refuses_designs_that_would_write_the_same_files(tmp_path):
     assert _files_under(outdir) == []
 
 
+# Pins the same contract as "the run log and datasheet record NFC normalisation" in
+# test-run-pipeline.R. Each word appears in NFC and in NFD, the second spelling in
+# the other condition. Before normalisation they were four words, and the matcher
+# could put a word in both conditions of one set.
+def test_the_run_log_and_datasheet_record_nfc_normalisation(tmp_path):
+    import glob
+    import json
+
+    import pandas as pd
+    avion, limon, cafe, papa = "avión", "limón", "café", "papá"
+    avion_d, limon_d = "avio\u0301n", "limo\u0301n"
+    cafe_d, papa_d = "cafe\u0301", "papa\u0301"
+    pool_path = os.path.join(str(tmp_path), "pool.csv")
+    with open(pool_path, "w", encoding="utf-8", newline="\n") as handle:
+        handle.write(f"word,grp\n{avion},a\n{avion_d},b\n{limon_d},b\n{limon},a\n"
+                     f"{cafe},a\n{cafe_d},b\n{papa_d},b\n{papa},a\n")
+    design = _write_design(str(tmp_path), [
+        "name: nfc_record",
+        "language: spanish",
+        "items:",
+        "  source: pool",
+        "  path: " + _yaml_path(pool_path),
+        "n_per_condition: 2",
+        "conditions:",
+        "  - {name: a, define_by: {grp: [a]}}",
+        "  - {name: b, define_by: {grp: [b]}}",
+        "match_on: [length]",
+    ])
+    res = run_pipeline(design, _pkg_data("schema.yaml"), outdir=str(tmp_path),
+                       reference_words=[avion_d, limon_d], verbose=False)
+    stim = pd.read_csv(res["stimuli"], encoding="utf-8")
+    got = sorted(zip(stim["condition"], stim["word"], strict=True))
+    assert got == sorted([("a", avion), ("a", cafe), ("b", limon), ("b", papa)])
+    # Four pool rows and both reference words changed, and four pool rows were merged.
+    with open(res["log"], encoding="utf-8") as handle:
+        assert "normalised 6 word form(s) to NFC; 4 duplicate(s) removed" in handle.read()
+    (ds_path,) = glob.glob(os.path.join(str(tmp_path), "reports", "*_datasheet_py.json"))
+    with open(ds_path, encoding="utf-8") as handle:
+        ds = json.load(handle)
+    assert ds["materials_source"]["input_normalisation"] == {"changed": 6, "collapsed": 4}
+
+    # Input already in NFC leaves no trace, so no shipped datasheet changes.
+    clean = os.path.join(str(tmp_path), "clean")
+    os.makedirs(clean)
+    _run(_corpus_design(clean), clean)
+    (ds_path,) = glob.glob(os.path.join(clean, "reports", "*_datasheet_py.json"))
+    with open(ds_path, encoding="utf-8") as handle:
+        assert "input_normalisation" not in json.load(handle)["materials_source"]
+
+
+# Pins the same contract as "a practice table's NFC normalisation is recorded" in
+# test-run-pipeline.R. A practice or filler table goes through load_items like the main
+# one, so its text is put in NFC too, and the record used to leave that out.
+def test_a_practice_tables_nfc_normalisation_is_recorded(tmp_path):
+    import glob
+    import json
+    practice = os.path.join(str(tmp_path), "practice.csv")
+    with open(practice, "w", encoding="utf-8", newline="\n") as handle:
+        handle.write("item,condition,word\n1,high,cafe\u0301\n2,low,dog\n")
+    res = _run(_corpus_design(str(tmp_path), ["practice:", "  path: " + _yaml_path(practice)]),
+               tmp_path)
+    with open(res["log"], encoding="utf-8") as handle:
+        assert "normalised 1 word form(s) to NFC; 0 duplicate(s) removed" in handle.read()
+    (ds_path,) = glob.glob(os.path.join(str(tmp_path), "reports", "*_datasheet_py.json"))
+    with open(ds_path, encoding="utf-8") as handle:
+        ds = json.load(handle)
+    assert ds["materials_source"]["input_normalisation"] == {"changed": 1, "collapsed": 0}
+
+
 def test_continuous_over_a_supplied_pool_selects_continuously(tmp_path):
     # The predicate that gates the continuous selector must treat a supplied
     # pool like a corpus; before the fix this design fell through to the

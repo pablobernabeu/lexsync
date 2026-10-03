@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import math
 import re
+import unicodedata
 
 import numpy as np
 import pandas as pd
@@ -25,6 +26,47 @@ _VOWELS = re.compile(r"[aeiouyàáâãäåèéêëìíîïòóôõöøùúûüý
 def count_syllables(word) -> int:
     """An orthographic syllable estimate: the number of maximal vowel runs."""
     return len(_VOWELS.findall(str(word).lower()))
+
+
+def _nfc(s):
+    """A text key in Unicode Normalization Form C, with None passing through.
+
+    A precomposed letter such as U+00F3 and the base letter followed by a combining
+    accent are canonically equivalent, but they compare unequal and differ in length.
+    Unnormalised, the two spellings of one word were two candidates, which the matcher
+    could place in opposite conditions of one matched set, and a norm or member join
+    missed whichever spelling the lexicon did not use. Applied after trimming and
+    case-folding, because case mapping does not guarantee normalised output. Mirrors
+    .nfc in R_workflow/R/querying.R, which calls ICU through stringi; the two agree on
+    every character assigned in both engines' Unicode versions.
+    """
+    return None if s is None else unicodedata.normalize("NFC", s)
+
+
+def _nfc_count(values) -> tuple:
+    """Normalise a sequence of text keys and say what normalising did.
+
+    Returns the normalised list, the number of values it changed and the number of
+    distinct values it merged into another, missing values counting for neither.
+    Mirrors .nfc_count in R_workflow/R/querying.R.
+    """
+    before = [None if v is None or v != v else str(v) for v in values]
+    after = [_nfc(v) for v in before]
+    present = [i for i, v in enumerate(before) if v is not None]
+    changed = sum(before[i] != after[i] for i in present)
+    collapsed = len({before[i] for i in present}) - len({after[i] for i in present})
+    return after, changed, collapsed
+
+
+def _nfc_record(changed: int, collapsed: int):
+    """The `input_normalisation` record, or None when normalising changed nothing.
+
+    None keeps the record off every frame and datasheet whose input was already NFC,
+    which is every shipped one. Mirrors .nfc_record in R_workflow/R/querying.R.
+    """
+    if not changed and not collapsed:
+        return None
+    return {"changed": int(changed), "collapsed": int(collapsed)}
 
 
 def validate_lexicon(df: pd.DataFrame, schema: dict) -> None:
@@ -59,6 +101,14 @@ def _require_numbers(col: pd.Series, name: str) -> None:
 
 
 def load_lexicon(path: str, schema: dict, language: str | None = None) -> pd.DataFrame:
+    """Load a derived lexicon and give it the inexpensive dimensions.
+
+    ``word`` is trimmed, lower-cased and normalised to Unicode NFC, and duplicates are
+    then removed, keeping the first row in file order. When normalisation changed or
+    merged any word, ``attrs["input_normalisation"]`` holds ``{"changed",
+    "collapsed"}``: the words it rewrote and the duplicate rows it removed. Mirrors
+    load_lexicon in R_workflow/R/querying.R.
+    """
     df = read_csv_utf8(path)
     validate_lexicon(df, schema)
     # `or {}` at every level: an empty `dimensions:` or `frequency:` key parses to
@@ -73,7 +123,10 @@ def load_lexicon(path: str, schema: dict, language: str | None = None) -> pd.Dat
     # desynchronise the two engines' row counts and shift every subsequent id.
     df = df[df["word"].notna() & df[freq_col].notna()].copy()
     df["word"] = df["word"].astype(str).str.strip().str.lower()
-    df = df[df["word"] != ""]
+    df = df[df["word"] != ""].copy()
+    # NFC before de-duplication, so the two spellings of a word are one word and the
+    # first row in file order is the one kept.
+    df["word"], changed, collapsed = _nfc_count(df["word"])
     df = df.drop_duplicates(subset="word")
     # An empty selection is never what the caller meant, and it fails far from
     # here: pandas would hand back a well-formed frame of nothing, while the R
@@ -94,7 +147,12 @@ def load_lexicon(path: str, schema: dict, language: str | None = None) -> pd.Dat
     df["frequency"] = df[freq_col].astype(float)
     if language is not None:
         df["language"] = language
-    return df.reset_index(drop=True)
+    df = df.reset_index(drop=True)
+    # Read by run_pipeline for the run log and the datasheet.
+    record = _nfc_record(changed, collapsed)
+    if record:
+        df.attrs["input_normalisation"] = record
+    return df
 
 
 def load_pool(path: str, schema: dict, lexicon=None, language=None) -> dict:
@@ -118,8 +176,10 @@ def load_pool(path: str, schema: dict, lexicon=None, language=None) -> dict:
     numbers that mean nothing. When a lexicon is given, the reference is the lexicon's
     words; only without one does it fall back to the pool itself.
 
-    Returns ``{"pool": DataFrame, "reference": list}``. Mirrors load_pool in
-    R_workflow/R/querying.R.
+    Returns ``{"pool": DataFrame, "reference": list}``. Words are trimmed, lower-cased
+    and normalised to Unicode NFC as in ``load_lexicon``, and the pool carries the same
+    ``attrs["input_normalisation"]`` record when that changed or merged any word of
+    the pool or the lexicon. Mirrors load_pool in R_workflow/R/querying.R.
     """
     if ".." in str(path).replace("\\", "/").split("/"):
         raise ValueError("lexsync: pool path must not contain '..'.")
@@ -132,7 +192,9 @@ def load_pool(path: str, schema: dict, lexicon=None, language=None) -> dict:
     # trim it identically before anything is sorted or numbered by it.
     df = df[df["word"].notna()].copy()
     df["word"] = df["word"].astype(str).str.strip().str.lower()
-    df = df[df["word"] != ""].drop_duplicates(subset="word")
+    df = df[df["word"] != ""].copy()
+    df["word"], changed, collapsed = _nfc_count(df["word"])
+    df = df.drop_duplicates(subset="word")
     if df.empty:
         raise ValueError(
             "lexsync: supplied pool '%s' has no usable rows: it is empty, or every row "
@@ -143,6 +205,11 @@ def load_pool(path: str, schema: dict, lexicon=None, language=None) -> dict:
     reference = df["word"].tolist()
     if lexicon:
         lex = load_lexicon(lexicon, schema, language=language)
+        # The lexicon's own normalisation is reported with the pool's, since the run
+        # read both.
+        lex_record = lex.attrs.get("input_normalisation") or {}
+        changed += lex_record.get("changed", 0)
+        collapsed += lex_record.get("collapsed", 0)
         reference = lex["word"].tolist()
         # `id` is the lexicon's own row number, meaningless once the pool is a subset.
         dims = [c for c in lex.columns if c not in ("word", "language", "source", "id")]
@@ -174,7 +241,11 @@ def load_pool(path: str, schema: dict, lexicon=None, language=None) -> dict:
     if language is not None:
         df["language"] = language
     df["id"] = np.arange(1, len(df) + 1)
-    return {"pool": df.reset_index(drop=True), "reference": reference}
+    df = df.reset_index(drop=True)
+    record = _nfc_record(changed, collapsed)
+    if record:
+        df.attrs["input_normalisation"] = record
+    return {"pool": df, "reference": reference}
 
 
 def add_bigram_frequency(df: pd.DataFrame, reference=None) -> pd.DataFrame:
@@ -208,11 +279,11 @@ def add_bigram_frequency(df: pd.DataFrame, reference=None) -> pd.DataFrame:
 def _norm_key(x) -> pd.Series:
     """The join key, normalised identically on both sides and in both engines.
 
-    Trimmed and case-folded, which is what ``load_lexicon`` does to ``word``. A
-    missing value stays missing rather than becoming the literal string ``"nan"``
-    that ``astype(str)`` would produce and then happily join on.
+    Trimmed, case-folded and normalised to NFC, which is what ``load_lexicon`` does
+    to ``word``. A missing value stays missing rather than becoming the literal
+    string ``"nan"`` that ``astype(str)`` would produce and then happily join on.
     """
-    values = [None if v is None or v != v else str(v).strip().lower() for v in x]
+    values = [None if v is None or v != v else _nfc(str(v).strip().lower()) for v in x]
     return pd.Series(values, index=getattr(x, "index", None), dtype="object")
 
 
@@ -236,10 +307,11 @@ def merge_norms(lexicon: pd.DataFrame, norms, on: str = "word", columns=None) ->
     unspecified. A positional lookup has none of those degrees of freedom. A
     colliding name is now an error instead.
 
-    The key is trimmed and case-folded on *both* sides. Only the norm table's side
-    was normalised before, so a lexicon holding ``Dog`` matched nothing and the
-    design carried on with an all-``NaN`` dimension. Because both engines agreed on
-    that wrong answer, no parity test could have caught it. The lexicon's
+    The key is trimmed, case-folded and normalised to NFC on *both* sides. Only the
+    norm table's side was trimmed and case-folded before, so a lexicon holding
+    ``Dog`` matched nothing and the design carried on with an all-``NaN`` dimension.
+    Because both engines agreed on that wrong answer, no parity test could have
+    caught it. The lexicon's
     own spelling is preserved rather than folded in place: ``word`` is the
     byte-order tie-break behind every selection, so the join must not rewrite it.
 
@@ -310,8 +382,14 @@ def _norm_specs(design: dict):
 
 
 def apply_norms(lex: pd.DataFrame, design: dict) -> dict:
-    """Join the design's norm tables onto the lexicon, returning it and its record."""
+    """Join the design's norm tables onto the lexicon, returning it and its record.
+
+    ``normalisation`` in the result counts the norm-table keys that NFC changed and
+    the duplicate keys it created, which the join then dropped, summed over the
+    tables (see ``_nfc_count``).
+    """
     records = []
+    changed = collapsed = 0
     for spec in _norm_specs(design):
         path = spec.get("path")
         if not path:
@@ -321,7 +399,13 @@ def apply_norms(lex: pd.DataFrame, design: dict) -> dict:
         on = spec.get("on") or "word"
         cols = list(spec["columns"]) if spec.get("columns") else None
         before = list(lex.columns)
-        lex = merge_norms(lex, path, on=on, columns=cols)
+        table = read_csv_utf8(path)
+        lex = merge_norms(lex, table, on=on, columns=cols)
+        # merge_norms has checked that the key column exists.
+        _, n_changed, n_collapsed = _nfc_count(
+            [None if v is None or v != v else str(v).strip().lower() for v in table[on]])
+        changed += n_changed
+        collapsed += n_collapsed
         added = [c for c in lex.columns if c not in before]
         records.append({
             "path": path,
@@ -330,7 +414,8 @@ def apply_norms(lex: pd.DataFrame, design: dict) -> dict:
             "columns": [{"column": c, "n_matched": int(lex[c].notna().sum()),
                          "n_total": int(len(lex))} for c in added],
         })
-    return {"lexicon": lex, "provenance": records}
+    return {"lexicon": lex, "provenance": records,
+            "normalisation": {"changed": changed, "collapsed": collapsed}}
 
 
 def add_neighbourhood(df: pd.DataFrame, reference=None, n_old: int = 20) -> pd.DataFrame:
@@ -383,8 +468,8 @@ def add_pair_overlap(df: pd.DataFrame, prime: str = "prime",
     for col in (prime, target):
         if col not in df.columns:
             raise ValueError("lexsync: add_pair_overlap needs column '%s'." % col)
-    a = [str(w).strip().lower() for w in df[prime]]
-    b = [str(w).strip().lower() for w in df[target]]
+    a = [_nfc(str(w).strip().lower()) for w in df[prime]]
+    b = [_nfc(str(w).strip().lower()) for w in df[target]]
     lev = [Levenshtein.distance(x, y) for x, y in zip(a, b, strict=True)]
     den = [max(len(x), len(y)) for x, y in zip(a, b, strict=True)]
     out = df.copy()
@@ -401,6 +486,9 @@ def load_items(path: str, required_fields) -> pd.DataFrame:
     characters; bounded length) so a crafted item cannot corrupt the generated
     loop table or scripts. Items are mapped to a deterministic integer ``set`` id
     (byte order) so counterbalancing matches the corpus path and the two engines.
+    The item id, the condition and the presented fields are normalised to Unicode
+    NFC. When that changed any cell, ``attrs["input_normalisation"]`` holds
+    ``{"changed", "collapsed"}``, with ``collapsed`` always 0 since no row is removed.
     """
     parts = str(path).replace("\\", "/").split("/")
     if ".." in parts:
@@ -424,6 +512,13 @@ def load_items(path: str, required_fields) -> pd.DataFrame:
                 f"lexsync: the items table has missing value(s) in column '{col}'; "
                 "every item, condition and presented field must be filled.")
     df = df.copy()
+    # The item id, the condition and the presented text in NFC, as every other text
+    # key is, so one item spelt two ways is one set and its text one string. A merged
+    # spelling removes no row here, so only the changed cells are counted.
+    changed = 0
+    for col in dict.fromkeys(needed):
+        df[col], n_changed, _ = _nfc_count(df[col].astype(str))
+        changed += n_changed
     item_key = df["item"].astype(str)
     # A repeated item-condition pair is a slip that would silently duplicate a trial
     # in every generated list; the first repeat in file order is reported.
@@ -439,7 +534,11 @@ def load_items(path: str, required_fields) -> pd.DataFrame:
     items = sorted(item_key.unique(), key=lambda s: s.encode("utf-8"))
     set_map = {it: i + 1 for i, it in enumerate(items)}
     df["set"] = item_key.map(set_map)
-    return df.reset_index(drop=True)
+    df = df.reset_index(drop=True)
+    record = _nfc_record(changed, 0)
+    if record:
+        df.attrs["input_normalisation"] = record
+    return df
 
 
 def build_pool(lexicon: pd.DataFrame, filters: dict | None = None) -> pd.DataFrame:

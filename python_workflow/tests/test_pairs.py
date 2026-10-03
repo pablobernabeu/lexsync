@@ -25,7 +25,12 @@ R_workflow/tests/testthat/test-pairs.R against the same values.
 import pandas as pd
 import pytest
 
-from lexsync.pairs import RESERVED_MEMBER_NAMES, _check_members, select_continuous_pairs
+from lexsync.pairs import (
+    RESERVED_MEMBER_NAMES,
+    _check_members,
+    join_member_norms,
+    select_continuous_pairs,
+)
 from lexsync.querying import add_pair_overlap
 
 PAIRS = pd.DataFrame({
@@ -52,6 +57,22 @@ def test_overlap_handles_non_ascii_and_the_degenerate_pair():
     # Two empty forms give 0, never 0/0: a NaN would be sorted and compared, and
     # would drop the row from one engine's control window but not the other's.
     assert list(out["pair.overlap"]) == [0.75, 0.0, 0.5]
+
+
+# Pins the same contract as "an NFD pair member resolves" in test-pairs.R. A member
+# written with a combining accent used to be reported absent from an NFC lexicon,
+# and its overlap with the NFC spelling of the same word was one edit, not none.
+def test_an_nfd_pair_member_resolves():
+    nfc, nfd = "avión", "avio\u0301n"
+    lex = pd.DataFrame({"word": [nfc, "tren"], "frequency": [4.5, 5.0]})
+    stim = pd.DataFrame({"item": ["1", "1"], "set": [1, 1],
+                         "condition": ["related", "unrelated"],
+                         "prime": [nfd, "tren"], "target": [nfc, nfc]})
+    design = {"lexicon": "unused.csv"}
+    out = join_member_norms(stim, ["prime", "target"], {}, design, {}, lex=lex)
+    assert out["prime.frequency"].tolist() == [4.5, 5.0]
+    assert out["target.frequency"].tolist() == [4.5, 4.5]
+    assert add_pair_overlap(out)["pair.lev"].tolist()[0] == 0
 
 
 def test_a_reserved_member_name_is_rejected():

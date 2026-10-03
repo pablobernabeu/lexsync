@@ -16,7 +16,7 @@ from __future__ import annotations
 import pandas as pd
 
 from .matching import select_continuous_stimuli
-from .querying import build_pool, load_lexicon
+from .querying import _nfc, build_pool, load_lexicon
 from .validation import match_report_continuous
 
 # Column names a member may not take. The engines read all of these directly, and
@@ -85,7 +85,9 @@ def join_member_norms(stim: pd.DataFrame, members, items_cfg: dict, design: dict
     # meaningless `prime.id` in the stimuli file and in the datasheet.
     dims = [c for c in lex.columns if c not in ("word", "language", "source", "id")]
 
-    keys = {m: [str(w).strip().lower() for w in stim[m]] for m in members}
+    # The lexicon's own key: trimmed, case-folded and in NFC, so a member spelt with a
+    # combining accent finds the precomposed lexicon entry.
+    keys = {m: [_nfc(str(w).strip().lower()) for w in stim[m]] for m in members}
     known = set(lex["word"])
     missing = sorted({w for m in members for w in keys[m]} - known)
     if missing:

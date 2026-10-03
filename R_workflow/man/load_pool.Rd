@@ -18,7 +18,10 @@ load_pool(path, schema, lexicon = NULL, language = NULL)
 \value{
 A list with \code{pool} (the data frame, carrying \code{word}, \code{id}, \code{length},
 \code{n_syllables} and any joined or supplied dimensions) and \code{reference} (the word
-vector the neighbourhood dimensions should be computed against).
+vector the neighbourhood dimensions should be computed against). Words are
+trimmed, lower-cased and normalised to Unicode NFC as in \code{\link[=load_lexicon]{load_lexicon()}}, and
+\code{pool} carries the same \code{input_normalisation} attribute when that changed or
+merged any word of the pool or the lexicon.
 }
 \description{
 A researcher who already has a curated word list (from a previous study, a norming

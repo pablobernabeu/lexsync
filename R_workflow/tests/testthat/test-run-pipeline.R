@@ -444,6 +444,104 @@ test_that("a continuous design over a supplied pool selects continuously", {
   expect_equal(sort(unique(stim$set)), 1:10)
 })
 
+# Pins the same contract as test_the_run_log_and_datasheet_record_nfc_normalisation in
+# tests/test_run_pipeline.py. Each word appears in NFC and in NFD, the second spelling
+# in the other condition. Before normalisation they were four words, and the matcher
+# could put a word in both conditions of one set.
+test_that("the run log and datasheet record NFC normalisation", {
+  out <- tmp_out()
+  avion <- intToUtf8(c(0x61, 0x76, 0x69, 0xF3, 0x6E))
+  limon <- intToUtf8(c(0x6C, 0x69, 0x6D, 0xF3, 0x6E))
+  cafe <- intToUtf8(c(0x63, 0x61, 0x66, 0xE9))
+  papa <- intToUtf8(c(0x70, 0x61, 0x70, 0xE1))
+  avion_d <- intToUtf8(c(0x61, 0x76, 0x69, 0x6F, 0x301, 0x6E))
+  limon_d <- intToUtf8(c(0x6C, 0x69, 0x6D, 0x6F, 0x301, 0x6E))
+  cafe_d <- intToUtf8(c(0x63, 0x61, 0x66, 0x65, 0x301))
+  papa_d <- intToUtf8(c(0x70, 0x61, 0x70, 0x61, 0x301))
+  pool_path <- file.path(out, "pool.csv")
+  con <- file(pool_path, open = "wb")
+  writeBin(charToRaw(enc2utf8(paste0(
+    "word,grp\n", avion, ",a\n", avion_d, ",b\n", limon_d, ",b\n", limon, ",a\n",
+    cafe, ",a\n", cafe_d, ",b\n", papa_d, ",b\n", papa, ",a\n"))), con)
+  close(con)
+  design <- write_design(out, c(
+    "name: nfc_record",
+    "language: spanish",
+    "items:",
+    "  source: pool",
+    paste0("  path: ", as_yaml_path(pool_path)),
+    "n_per_condition: 2",
+    "conditions:",
+    "  - {name: a, define_by: {grp: [a]}}",
+    "  - {name: b, define_by: {grp: [b]}}",
+    "match_on: [length]"
+  ))
+  res <- run_quiet(design, extdata("schema.yaml"), outdir = out,
+                   reference_words = c(avion_d, limon_d))
+  stim <- read_csv_utf8(res$stimuli)
+  got <- paste(stim$condition, stim$word)
+  expect_identical(sort(got, method = "radix"),
+                   sort(paste(c("a", "a", "b", "b"), c(avion, cafe, limon, papa)),
+                        method = "radix"))
+  # Four pool rows and both reference words changed, and four pool rows were merged.
+  log <- paste(readLines(res$log, warn = FALSE, encoding = "UTF-8"), collapse = "\n")
+  expect_true(grepl("normalised 6 word form(s) to NFC; 4 duplicate(s) removed", log,
+                    fixed = TRUE))
+  ds <- jsonlite::read_json(file.path(out, "reports", "nfc_record_spanish_datasheet_R.json"))
+  expect_identical(ds$materials_source$input_normalisation,
+                   list(changed = 6L, collapsed = 4L))
+
+  # Input already in NFC leaves no trace, so no shipped datasheet changes.
+  clean <- tmp_out()
+  design <- write_design(clean, c(
+    "name: clean_record",
+    "language: english",
+    paste0("lexicon: ", as_yaml_path(extdata("en_example.csv"))),
+    "n_per_condition: 5",
+    "pool_filters: {length: [3, 7], frequency: [3.8, 7]}",
+    "conditions:",
+    "  - {name: high, define_by: {frequency: [5.0, 7.0]}}",
+    "  - {name: low, define_by: {frequency: [3.8, 4.4]}}",
+    "match_on: [length]"
+  ))
+  run_quiet(design, extdata("schema.yaml"), outdir = clean)
+  ds <- jsonlite::read_json(file.path(clean, "reports", "clean_record_english_datasheet_R.json"))
+  expect_false("input_normalisation" %in% names(ds$materials_source))
+})
+
+# Pins the same contract as test_a_practice_tables_nfc_normalisation_is_recorded in
+# tests/test_run_pipeline.py. A practice or filler table goes through load_items() like
+# the main one, so its text is put in NFC too, and the record used to leave that out.
+test_that("a practice table's NFC normalisation is recorded", {
+  out <- tmp_out()
+  practice <- file.path(out, "practice.csv")
+  con <- file(practice, open = "wb")
+  writeBin(charToRaw(enc2utf8(paste0(
+    "item,condition,word\n1,high,", intToUtf8(c(0x63, 0x61, 0x66, 0x65, 0x301)),
+    "\n2,low,dog\n"))), con)
+  close(con)
+  design <- write_design(out, c(
+    "name: practice_record",
+    "language: english",
+    paste0("lexicon: ", as_yaml_path(extdata("en_example.csv"))),
+    "n_per_condition: 5",
+    "pool_filters: {length: [3, 7], frequency: [3.8, 7]}",
+    "conditions:",
+    "  - {name: high, define_by: {frequency: [5.0, 7.0]}}",
+    "  - {name: low, define_by: {frequency: [3.8, 4.4]}}",
+    "match_on: [length]",
+    "practice:",
+    paste0("  path: ", as_yaml_path(practice))
+  ))
+  res <- run_quiet(design, extdata("schema.yaml"), outdir = out)
+  log <- paste(readLines(res$log, warn = FALSE, encoding = "UTF-8"), collapse = "\n")
+  expect_true(grepl("normalised 1 word form(s) to NFC; 0 duplicate(s) removed", log,
+                    fixed = TRUE))
+  ds <- jsonlite::read_json(file.path(out, "reports", "practice_record_english_datasheet_R.json"))
+  expect_identical(ds$materials_source$input_normalisation,
+                   list(changed = 1L, collapsed = 0L))
+})
+
 # `$` on a list matches a name partially when no name matches exactly, so a design
 # key that only began another key's name stood in for it. These two designs carry
 # such keys, which the Python engine never read, and the pair is pinned identically

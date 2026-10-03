@@ -78,26 +78,34 @@ def _load_block(cfg: dict, design: dict, label: str, set_offset: int) -> pd.Data
     if not path:
         raise ValueError(
             "lexsync: the `%s:` block needs a `path` to an item table." % label)
-    df = load_items(path, required_fields(design)).copy()
+    items = load_items(path, required_fields(design))
+    df = items.copy()
     df["block"] = label
     df["set"] = df["set"].astype(int) + int(set_offset)
-    return df.reset_index(drop=True)
+    df = df.reset_index(drop=True)
+    # Read by add_blocks, which reports it for the run log and the datasheet.
+    record = items.attrs.get("input_normalisation")
+    if record:
+        df.attrs["input_normalisation"] = record
+    return df
 
 
 def add_blocks(stimuli: pd.DataFrame, design: dict, schema: dict) -> dict:
     """Assemble the presented trial sequence from the main, filler and practice blocks.
 
-    Returns ``{"presented": DataFrame, "report": dict | None}``: every trial the
-    experiment runs, in order, with a ``block`` column when more than one block exists;
-    and the per-block counts and item-table checksums, or None when the design declares
-    no extra block.
+    Returns ``{"presented": DataFrame, "report": dict | None, "normalisation": dict}``:
+    every trial the experiment runs, in order, with a ``block`` column when more than
+    one block exists; the per-block counts and item-table checksums, or None when the
+    design declares no extra block; and ``{"changed", "collapsed"}``, what Unicode NFC
+    normalisation did to the practice and filler tables (see ``load_items``).
     """
     practice_cfg = design.get("practice")
     filler_cfg = design.get("fillers")
     if not practice_cfg and not filler_cfg:
         # No block column at all: a design that declares none must keep the columns it
         # had, so adding this feature moves no existing artefact.
-        return {"presented": stimuli, "report": None}
+        return {"presented": stimuli, "report": None,
+                "normalisation": {"changed": 0, "collapsed": 0}}
 
     seed = schema.get("seed", 1)
     stimuli = stimuli.copy()
@@ -146,4 +154,7 @@ def add_blocks(stimuli: pd.DataFrame, design: dict, schema: dict) -> dict:
             "path": practice_cfg["path"], "sha256": sha256_file(practice_cfg["path"]),
             "placement": "before the main trials"})
     report["analysed"] = BLOCK_MAIN
-    return {"presented": out, "report": report}
+    changed = sum((b.attrs.get("input_normalisation") or {}).get("changed", 0)
+                  for b in (fillers, practice) if b is not None)
+    return {"presented": out, "report": report,
+            "normalisation": {"changed": changed, "collapsed": 0}}

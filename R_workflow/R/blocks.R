@@ -61,9 +61,12 @@
          call. = FALSE)
   }
   df <- load_items(path, required_fields(design))
+  record <- attr(df, "input_normalisation")
   df$block <- label
   df$set <- as.integer(df$set) + as.integer(set_offset)
   rownames(df) <- NULL
+  # Read by .add_blocks(), which reports it for the run log and the datasheet.
+  attr(df, "input_normalisation") <- record
   df
 }
 
@@ -73,8 +76,10 @@
 #' @param design A parsed design configuration; reads `practice` and `fillers`.
 #' @param schema The parsed global schema (provides the seed).
 #' @return A list with `presented` (every trial the experiment runs, in order, with a
-#'   `block` column when more than one block exists) and `report` (per-block counts and
-#'   the item tables' checksums, or `NULL` when the design declares no extra block).
+#'   `block` column when more than one block exists), `report` (per-block counts and
+#'   the item tables' checksums, or `NULL` when the design declares no extra block) and
+#'   `normalisation` (`list(changed, collapsed)`, what Unicode NFC normalisation did to
+#'   the practice and filler tables; see [load_items()]).
 #' @keywords internal
 .add_blocks <- function(stimuli, design, schema) {
   practice_cfg <- design[["practice"]]
@@ -82,7 +87,8 @@
   if (is.null(practice_cfg) && is.null(filler_cfg)) {
     # No block column at all: a design that declares none must keep the columns it had,
     # so adding this feature moves no existing artefact.
-    return(list(presented = stimuli, report = NULL))
+    return(list(presented = stimuli, report = NULL,
+                normalisation = list(changed = 0L, collapsed = 0L)))
   }
   seed <- schema[["seed"]] %||% 1L
   stimuli$block <- .BLOCK_MAIN
@@ -135,5 +141,10 @@
       placement = "before the main trials")
   }
   report$analysed <- .BLOCK_MAIN
-  list(presented = out, report = report)
+  changed <- 0L
+  for (b in list(fillers, practice)) {
+    if (!is.null(b)) changed <- changed + (attr(b, "input_normalisation")$changed %||% 0L)
+  }
+  list(presented = out, report = report,
+       normalisation = list(changed = changed, collapsed = 0L))
 }

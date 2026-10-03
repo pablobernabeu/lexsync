@@ -15,8 +15,10 @@
 }
 \value{
 A list with \code{presented} (every trial the experiment runs, in order, with a
-\code{block} column when more than one block exists) and \code{report} (per-block counts and
-the item tables' checksums, or \code{NULL} when the design declares no extra block).
+\code{block} column when more than one block exists), \code{report} (per-block counts and
+the item tables' checksums, or \code{NULL} when the design declares no extra block) and
+\code{normalisation} (\code{list(changed, collapsed)}, what Unicode NFC normalisation did to
+the practice and filler tables; see \code{\link[=load_items]{load_items()}}).
 }
 \description{
 Assemble the presented trial sequence from the main, filler and practice blocks

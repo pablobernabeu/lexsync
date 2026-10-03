@@ -1,0 +1,24 @@
+# Twin-edge case: a supplied pool that spells each of sixteen Spanish words twice,
+# once with a precomposed accent (NFC) and once with a combining one (NFD), the two
+# spellings in opposite groups. Two of the NFD rows are also upper-case. Both engines
+# normalise every word to NFC after trimming and case-folding and keep the first row
+# in file order, so each word is one candidate in one condition. Unnormalised, the two
+# spellings were two words of different lengths, and the matcher paired words with
+# their own twins across the conditions of a set.
+name: twin_edge_nfd_pool
+language: spanish
+description: 'Sixteen Spanish words supplied in both NFC and NFD, matched on length.'
+n_per_condition: 8
+items:
+  source: pool
+  path: pool.csv
+conditions:
+  - name: a
+    define_by:
+      grp: [a]
+  - name: b
+    define_by:
+      grp: [b]
+match_on: [length]
+counterbalance:
+  lists: 2

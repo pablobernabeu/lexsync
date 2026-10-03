@@ -1,0 +1,7 @@
+# Sixteen distinct words, eight per condition. Sixteen of the thirty-two rows were
+# NFD, and normalising them merged sixteen pairs of spellings.
+outcome: artefacts
+compare: [stimuli, descriptives, comparisons]
+datasheet:
+  materials_source.input_normalisation.changed: 16
+  materials_source.input_normalisation.collapsed: 16

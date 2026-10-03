@@ -50,6 +50,24 @@ test_that("overlap handles non-ASCII and the degenerate pair", {
   expect_equal(out[["pair.overlap"]], c(0.75, 0, 0.5))
 })
 
+# Pins the same contract as test_an_nfd_pair_member_resolves in test_pairs.py. A
+# member written with a combining accent used to be reported absent from an NFC
+# lexicon, and its overlap with the NFC spelling of the same word was one edit, not
+# none.
+test_that("an NFD pair member resolves", {
+  nfc <- intToUtf8(c(0x61, 0x76, 0x69, 0xF3, 0x6E))
+  nfd <- intToUtf8(c(0x61, 0x76, 0x69, 0x6F, 0x301, 0x6E))
+  lex <- data.frame(word = c(nfc, "tren"), frequency = c(4.5, 5.0), stringsAsFactors = FALSE)
+  stim <- data.frame(item = c("1", "1"), set = c(1L, 1L),
+                     condition = c("related", "unrelated"),
+                     prime = c(nfd, "tren"), target = c(nfc, nfc), stringsAsFactors = FALSE)
+  out <- lexsync:::.join_member_norms(stim, c("prime", "target"), list(),
+                                      list(lexicon = "unused.csv"), list(), lex = lex)
+  expect_identical(out[["prime.frequency"]], c(4.5, 5.0))
+  expect_identical(out[["target.frequency"]], c(4.5, 4.5))
+  expect_identical(add_pair_overlap(out)[["pair.lev"]][1], 0L)
+})
+
 test_that("a reserved member name is rejected", {
   for (nm in c("word", "set", "condition", "item")) {
     expect_true(nm %in% lexsync:::.RESERVED_MEMBER_NAMES)

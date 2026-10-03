@@ -20,4 +20,7 @@ paradigm's presented fields. Field values are validated (no control
 characters; bounded length) so a crafted item cannot corrupt the generated
 loop table or scripts. Items are mapped to a deterministic integer \code{set} id
 (byte order), so counterbalancing matches the corpus path and the two engines.
+The item id, the condition and the presented fields are normalised to Unicode
+NFC. When that changed any cell, the attribute \code{input_normalisation} holds
+\code{list(changed, collapsed)}, with \code{collapsed} always 0 since no row is removed.
 }

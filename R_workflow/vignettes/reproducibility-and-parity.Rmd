@@ -253,14 +253,26 @@ is read as zero, since the two engines would otherwise write it as `-0` and `0`.
 ## The Unicode input contract
 
 Word matching, deduplication and the `length` dimension operate on Unicode code
-points exactly as supplied. Beyond the pinned lower-casing described above, the
-orthographic form is never rewritten, and in particular no canonical
-normalisation is applied, neither NFC nor NFD. A precomposed character such as
-`é` and its decomposed counterpart, the base letter followed by a combining
-accent, are therefore distinct items that differ in length, and a lexicon
-mixing the two conventions carries apparent duplicates that never match one
-another. Supply NFC-normalised text, which is the form most corpora already
-distribute.
+points, and every text key is normalised to Unicode Normalization Form C (NFC).
+The words of a lexicon or a supplied pool and both sides of a norm-table or
+pair-member join are first trimmed and lower-cased as described above. The item
+id, condition and presented fields of an item table, practice and filler tables
+included, and a supplied reference list are normalised as read. A precomposed
+character such as `é` and its decomposed counterpart, the base letter followed
+by a combining accent, are therefore one character, and a lexicon that mixes
+the two conventions holds each word once, in the first row the file gives it.
+Before this, the two spellings were two words of different lengths, and the
+matcher could place them in opposite conditions of one matched set. When
+normalisation rewrites or merges anything, the run log says how many forms it
+rewrote and how many duplicates it removed, and the datasheet records the two
+counts as `materials_source$input_normalisation`. Input already in NFC, the form
+most corpora distribute, leaves no trace.
+
+Unicode's stability policy fixes the NFC form of every assigned character, so
+the two engines can disagree only on a character that one engine's Unicode
+version assigns and the other's lacks. R's stringi uses the ICU it bundles or,
+on some Linux builds, the system's ICU, which may implement another version, and
+Python's `unicodedata` follows the interpreter (Unicode 15.1 in Python 3.13).
 
 The syllable estimator and the pseudoword generators carry a narrower contract
 still. The vowel class behind `n_syllables` covers the Latin-1 vowels, and the

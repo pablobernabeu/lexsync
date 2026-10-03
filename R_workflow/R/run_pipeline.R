@@ -12,7 +12,8 @@
 #'   `stimuli`, `reports`, `experiments` are created). It must be supplied;
 #'   lexsync does not choose a default output location.
 #' @param reference_words Optional reference word list for neighbourhood
-#'   computation; defaults to the whole lexicon.
+#'   computation; defaults to the whole lexicon. Its words are normalised to
+#'   Unicode NFC before use, like every other text key the pipeline reads.
 #' @param verbose Logical; print progress.
 #' @return A named list of output paths, invisibly.
 #' @export
@@ -70,6 +71,13 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
   pair_eligible <- NULL
   norms <- list()
   selection_audit <- NULL
+  # What NFC normalisation did to the inputs this run read (see .nfc_count), summed
+  # for the run log and the datasheet.
+  nfc_total <- c(changed = 0L, collapsed = 0L)
+  tally <- function(record) {
+    if (!is.null(record))
+      nfc_total <<- nfc_total + c(record$changed %||% 0L, record$collapsed %||% 0L)
+  }
 
   # Read the matcher's audit attribute straight off the returned frame (rbind and
   # pd.concat drop attributes) and put any window relaxation on the run log; the
@@ -94,6 +102,7 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
   # the file and its checksum.
   join_norms <- function(lex, log) {
     joined <- .apply_norms(lex, design)
+    tally(joined$normalisation)
     norms <<- joined$provenance
     for (rec in joined$provenance) {
       log <- log_step(log, sprintf("joined %d norm column(s) from '%s'",
@@ -114,6 +123,7 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
       log <- log_step(log, sprintf("loading supplied pool '%s'", pool_path))
       lp <- load_pool(pool_path, schema, lexicon = lexicon, language = design[["language"]])
       lex <- lp$pool
+      tally(attr(lex, "input_normalisation"))
       ref_words <- lp$reference
       log <- log_step(log, sprintf("supplied pool: %d words%s", nrow(lex),
                                    if (is.null(lexicon)) ""
@@ -123,6 +133,7 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
       lexicon <- items_cfg[["lexicon"]] %||% design[["lexicon"]]
       log <- log_step(log, sprintf("loading lexicon '%s'", lexicon))
       lex <- load_lexicon(lexicon, schema, language = design[["language"]])
+      tally(attr(lex, "input_normalisation"))
       log <- log_step(log, sprintf("lexicon loaded: %d words", nrow(lex)), list(words = nrow(lex)))
       ref_words <- lex$word
     }
@@ -140,9 +151,18 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
     log <- log_step(log, sprintf("pool after filters: %d words", nrow(pool)), list(pool = nrow(pool)))
   }
 
+  # A supplied reference list is a set of word keys like any other, so it is put in
+  # NFC too. The datasheet's checksum below stays that of the list as supplied.
+  ref_supplied <- NULL
+  if (!is.null(reference_words)) {
+    nf <- .nfc_count(reference_words)
+    ref_supplied <- nf$value
+    tally(nf)
+  }
+
   if (source %in% c("corpus", "pool")) {
     match_on <- unlist(design[["match_on"]], use.names = FALSE)
-    ref <- reference_words %||% ref_words
+    ref <- ref_supplied %||% ref_words
     needed <- intersect(c("n_density", "old20"), match_on)
     if (length(needed) && any(!needed %in% names(pool))) {
       log <- log_step(log, "computing orthographic neighbourhood (N, OLD20)")
@@ -205,6 +225,7 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
     path <- items_cfg[["path"]]
     log <- log_step(log, sprintf("loading items '%s'", path))
     stim <- load_items(path, required_fields(design))
+    tally(attr(stim, "input_normalisation"))
     log <- log_step(log, sprintf("loaded %d items across %d conditions",
                                  length(unique(stim$set)), length(unique(stim$condition))),
                     list(conditions = paste(unique(stim$condition), collapse = ", ")))
@@ -216,6 +237,7 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
       mem_lexicon <- .member_lexicon_path(items_cfg, design)
       log <- log_step(log, sprintf("loading member lexicon '%s'", mem_lexicon))
       mem_lex <- load_lexicon(mem_lexicon, schema, language = design[["language"]])
+      tally(attr(mem_lex, "input_normalisation"))
       jn <- join_norms(mem_lex, log); mem_lex <- jn$lexicon; log <- jn$log
       stim <- .join_member_norms(stim, members, items_cfg, design, schema, lex = mem_lex)
       log <- log_step(log, sprintf("joined word-level norms onto %s", paste(members, collapse = " and ")))
@@ -304,6 +326,16 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
   # not gaining a `block` column.
   blk <- .add_blocks(stim, design, schema)
   blocks <- blk$report
+  tally(blk$normalisation)
+  # Logged here, once the practice and filler tables have been read too, and only when
+  # normalising changed something, so a run over NFC input, every shipped design
+  # included, writes the same log and datasheet as before.
+  input_normalisation <- .nfc_record(nfc_total[["changed"]], nfc_total[["collapsed"]])
+  if (!is.null(input_normalisation)) {
+    log <- log_step(log, sprintf("normalised %d word form(s) to NFC; %d duplicate(s) removed",
+                                 input_normalisation$changed, input_normalisation$collapsed),
+                    input_normalisation)
+  }
   # Realise any per-trial duration before the stimuli are written, so a jittered
   # or item-driven interval is recorded as a variable rather than living only
   # inside the generated script. Run on the presented set, so practice and filler
@@ -378,7 +410,8 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
                         norms = norms, balance = balance, blocks = blocks,
                         design_path = design_path, schema_path = schema_path,
                         selection_audit = selection_audit,
-                        neighbourhood_reference = nref, counterbalance_check = cb_check)
+                        neighbourhood_reference = nref, counterbalance_check = cb_check,
+                        input_normalisation = input_normalisation)
   ds_json <- file.path(outdir, "reports", paste0(base, "_datasheet_R.json"))
   ds_md <- file.path(outdir, "reports", paste0(base, "_datasheet_R.md"))
   write_datasheet(ds, ds_json, ds_md)

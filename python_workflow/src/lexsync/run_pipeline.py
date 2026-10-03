@@ -31,6 +31,8 @@ from .matching import _resolve_policy, match_stimuli, resample_stimuli, select_c
 from .pairs import join_member_norms, member_lexicon_path, select_continuous_pairs
 from .paradigms import required_fields
 from .querying import (
+    _nfc_count,
+    _nfc_record,
     add_bigram_frequency,
     add_neighbourhood,
     add_pair_overlap,
@@ -107,6 +109,13 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
     pair_eligible = None
     norms: list = []
     selection_audit = None
+    # What NFC normalisation did to the inputs this run read (see querying._nfc_count),
+    # summed for the run log and the datasheet.
+    nfc_total = {"changed": 0, "collapsed": 0}
+
+    def tally(record):
+        for k in nfc_total:
+            nfc_total[k] += int((record or {}).get(k, 0))
 
     # Read the matcher's audit attribute straight off the returned frame (pd.concat
     # and rbind drop attrs) and put any window relaxation on the run log; the
@@ -132,6 +141,7 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
     # the file and its checksum.
     def join_norms(lex):
         joined = apply_norms(lex, design)
+        tally(joined["normalisation"])
         norms.extend(joined["provenance"])
         for rec in joined["provenance"]:
             runlog.log_step(log, "joined %d norm column(s) from '%s'"
@@ -150,6 +160,7 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
             runlog.log_step(log, f"loading supplied pool '{pool_path}'")
             lp = load_pool(pool_path, schema, lexicon=lexicon, language=design["language"])
             lex = lp["pool"]
+            tally(lex.attrs.get("input_normalisation"))
             ref_words = lp["reference"]
             runlog.log_step(
                 log, "supplied pool: %d words%s"
@@ -160,6 +171,7 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
             lexicon = items_cfg.get("lexicon") or design.get("lexicon")
             runlog.log_step(log, f"loading lexicon '{lexicon}'")
             lex = load_lexicon(lexicon, schema, language=design["language"])
+            tally(lex.attrs.get("input_normalisation"))
             runlog.log_step(log, f"lexicon loaded: {len(lex)} words", {"words": len(lex)})
             ref_words = lex["word"].tolist()
         lex = join_norms(lex)
@@ -174,9 +186,16 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
         pool = build_pool(lex, design.get("pool_filters"))
         runlog.log_step(log, f"pool after filters: {len(pool)} words", {"pool": len(pool)})
 
+    # A supplied reference list is a set of word keys like any other, so it is put in
+    # NFC too. The datasheet's checksum below stays that of the list as supplied.
+    ref_supplied = None
+    if reference_words is not None:
+        ref_supplied, n_changed, n_collapsed = _nfc_count(list(reference_words))
+        tally({"changed": n_changed, "collapsed": n_collapsed})
+
     if source in ("corpus", "pool"):
         match_on = list(design.get("match_on") or [])
-        ref = reference_words if reference_words is not None else ref_words
+        ref = ref_supplied if ref_supplied is not None else ref_words
         needed = [d for d in ("n_density", "old20") if d in match_on]
         if needed and any(d not in pool.columns for d in needed):
             runlog.log_step(log, "computing orthographic neighbourhood (N, OLD20)")
@@ -239,6 +258,7 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
         path = items_cfg["path"]
         runlog.log_step(log, f"loading items '{path}'")
         stim = load_items(path, required_fields(design))
+        tally(stim.attrs.get("input_normalisation"))
         runlog.log_step(log, f"loaded {stim['set'].nunique()} items across "
                              f"{stim['condition'].nunique()} conditions",
                         {"conditions": ", ".join(dict.fromkeys(stim["condition"]))})
@@ -251,6 +271,7 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
             mem_lexicon = member_lexicon_path(items_cfg, design)
             runlog.log_step(log, f"loading member lexicon '{mem_lexicon}'")
             mem_lex = load_lexicon(mem_lexicon, schema, language=design["language"])
+            tally(mem_lex.attrs.get("input_normalisation"))
             mem_lex = join_norms(mem_lex)
             stim = join_member_norms(stim, members, items_cfg, design, schema, lex=mem_lex)
             runlog.log_step(log, "joined word-level norms onto %s" % " and ".join(members))
@@ -332,6 +353,16 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
     # down to not gaining a `block` column.
     blk = add_blocks(stim, design, schema)
     blocks = blk["report"]
+    tally(blk["normalisation"])
+    # Logged here, once the practice and filler tables have been read too, and only when
+    # normalising changed something, so a run over NFC input, every shipped design
+    # included, writes the same log and datasheet as before.
+    input_normalisation = _nfc_record(nfc_total["changed"], nfc_total["collapsed"])
+    if input_normalisation:
+        runlog.log_step(log, "normalised %d word form(s) to NFC; %d duplicate(s) removed"
+                             % (input_normalisation["changed"],
+                                input_normalisation["collapsed"]),
+                        dict(input_normalisation))
     # Realise any per-trial duration before the stimuli are written, so a jittered
     # or item-driven interval is recorded as a variable rather than living only
     # inside the generated script.
@@ -406,7 +437,8 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
                          norms=norms, balance=balance, blocks=blocks,
                          design_path=design_path, schema_path=schema_path,
                          selection_audit=selection_audit,
-                         neighbourhood_reference=nref, counterbalance_check=cb_check)
+                         neighbourhood_reference=nref, counterbalance_check=cb_check,
+                         input_normalisation=input_normalisation)
     ds_json = os.path.join(outdir, "reports", f"{base}_datasheet_py.json")
     ds_md = os.path.join(outdir, "reports", f"{base}_datasheet_py.md")
     write_datasheet(ds, ds_json, ds_md)

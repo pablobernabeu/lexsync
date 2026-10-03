@@ -20,6 +20,9 @@
 #   counterbalancing$complete   whether a Latin-square rotation is complete
 #   counterbalancing$issues     what leaves it incomplete
 #   counterbalancing$cells      the trials per list and condition
+#   materials_source$input_normalisation   what NFC normalisation did to the inputs
+#                                          (changed, collapsed), present only when it
+#                                          changed something
 DATASHEET_VERSION <- "1.2"
 
 # Datasheet labels for the pseudoword generators in generation.R, keyed by the
@@ -213,13 +216,19 @@ DATASHEET_VERSION <- "1.2"
 #'   without a `list` column the lists [counterbalance()] would deal. It says whether
 #'   a Latin-square rotation is complete and counts the trials per list and
 #'   condition.
+#' @param input_normalisation Optional `list(changed, collapsed)`: how many text
+#'   keys the run's inputs held that Unicode NFC normalisation rewrote, and how many
+#'   duplicates the rewriting created and removed. Recorded only when given, which
+#'   the pipeline does only when either count is above zero, because a merged
+#'   spelling changes the candidate pool.
 #' @return The datasheet as a nested list, ready for [write_datasheet()].
 #' @export
 build_datasheet <- function(design, schema, report, stimuli, source_path, artifacts,
                             seed, engine = "R", candidate_pool = NULL, norms = NULL,
                             balance = NULL, blocks = NULL, design_path = NULL,
                             schema_path = NULL, selection_audit = NULL,
-                            neighbourhood_reference = NULL, counterbalance_check = NULL) {
+                            neighbourhood_reference = NULL, counterbalance_check = NULL,
+                            input_normalisation = NULL) {
   source <- design[["items"]][["source"]] %||% "corpus"
   is_continuous <- .is_continuous(design)
   controlled <- .controlled_dims(design, source)
@@ -326,6 +335,11 @@ build_datasheet <- function(design, schema, report, stimuli, source_path, artifa
   # with no `norms:` block gets no key at all rather than a "norms": null that every
   # datasheet would then carry.
   if (length(norms)) materials_source$norms <- norms
+  if (!is.null(input_normalisation)) {
+    materials_source$input_normalisation <- list(
+      changed = as.integer(input_normalisation$changed),
+      collapsed = as.integer(input_normalisation$collapsed))
+  }
 
   # A corpus design draws on every schema dimension, and so does a pair-keyed design:
   # every lexicon dimension is joined onto each member. A generate or plain table
@@ -603,6 +617,11 @@ render_datasheet_md <- function(ds) {
               if (is.null(ds$materials_source$dimensions_sha256)) ""
               else sprintf(" (sha256 `%s...`)",
                            substring(ds$materials_source$dimensions_sha256, 1, 16)))
+    else NULL,
+    if (!is.null(ds$materials_source$input_normalisation))
+      sprintf("- **Input normalisation:** %d text form(s) rewritten to Unicode NFC, %d duplicate(s) removed",
+              as.integer(ds$materials_source$input_normalisation$changed),
+              as.integer(ds$materials_source$input_normalisation$collapsed))
     else NULL,
     sprintf("- **Selection:** %s", ds$selection$method),
     sprintf("- **Cross-engine determinism:** %s", ds$selection$cross_engine %||% "byte-identical"),

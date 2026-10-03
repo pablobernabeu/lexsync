@@ -22,7 +22,8 @@ run_pipeline(
 lexsync does not choose a default output location.}
 
 \item{reference_words}{Optional reference word list for neighbourhood
-computation; defaults to the whole lexicon.}
+computation; defaults to the whole lexicon. Its words are normalised to
+Unicode NFC before use, like every other text key the pipeline reads.}
 
 \item{verbose}{Logical; print progress.}
 }

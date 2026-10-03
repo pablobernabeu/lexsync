@@ -1,9 +1,17 @@
 import re
+import unicodedata
 
 import pandas as pd
 import pytest
 
-from lexsync.querying import add_neighbourhood, build_pool, load_items, load_lexicon, merge_norms
+from lexsync.querying import (
+    add_neighbourhood,
+    build_pool,
+    load_items,
+    load_lexicon,
+    load_pool,
+    merge_norms,
+)
 
 # Every code point Python's str.strip() removes, i.e. every one whose
 # str.isspace() is true: the Unicode White_Space property plus the C0
@@ -253,6 +261,72 @@ def test_load_items_keeps_numeric_ids_as_written(tmp_path):
     items = load_items(str(path), ["target"])
     assert items["item"].tolist() == ["01", "2"]
     assert items["set"].tolist() == [1, 2]
+
+
+# Spanish words written once with a precomposed accent (NFC) and once with the base
+# letter and a combining acute (NFD). The NFD forms are derived with unicodedata, since
+# a literal one looks exactly like its NFC twin in the source. test-querying.R builds
+# the same strings with intToUtf8().
+NFC_WORDS = ["avión", "limón", "café", "árbol"]
+NFD_WORDS = [unicodedata.normalize("NFD", w) for w in NFC_WORDS]
+
+
+# Pins the same contract as "NFC and NFD spellings are one word" in the R engine's
+# test-querying.R. The two spellings used to be two words of different lengths, so a
+# matcher could put one in each condition of a single matched set. After trimming and
+# case-folding, every word is normalised to NFC, and the first row in file order wins.
+def test_nfc_and_nfd_spellings_are_one_word(schema, tmp_path):
+    path = tmp_path / "mixed.csv"
+    rows = ["word,grp,freq_zipf"]
+    # Interleaved, so the row kept for a word is sometimes the NFD one.
+    for i, (nfc, nfd) in enumerate(zip(NFC_WORDS, NFD_WORDS, strict=True)):
+        first, second = (nfc, nfd) if i % 2 == 0 else (nfd, nfc)
+        rows += [f"{first},a,{4 + i}", f"{second.upper()},b,{4 + i}"]
+    path.write_text("\n".join(rows) + "\n", encoding="utf-8")
+
+    for frame in (load_pool(str(path), schema)["pool"], load_lexicon(str(path), schema)):
+        assert len(frame) == len(NFC_WORDS)
+        assert all(unicodedata.is_normalized("NFC", w) for w in frame["word"])
+        assert sorted(frame["word"]) == sorted(NFC_WORDS)
+        assert frame["length"].tolist() == [len(w) for w in frame["word"]]
+        # The first row in file order is kept, which is grp a for every word.
+        assert set(frame["grp"]) == {"a"}
+        # One of each word's two rows is NFD after case-folding, which keeps the
+        # accent decomposed or composed as written. So four forms changed under NFC,
+        # and eight distinct keys became four.
+        assert frame.attrs["input_normalisation"] == {"changed": 4, "collapsed": 4}
+
+
+# Clean input carries no normalisation record, so no shipped datasheet changes.
+def test_nfc_input_carries_no_normalisation_record(schema, en_lexicon_path):
+    assert "input_normalisation" not in load_lexicon(en_lexicon_path, schema).attrs
+
+
+# Pins the same contract as "an NFD norm key joins an NFC lexicon" in the R engine's
+# test-querying.R. The key used to miss, and the dimension was silently NaN.
+def test_an_nfd_norm_key_joins_an_nfc_lexicon():
+    lex = pd.DataFrame({"word": NFC_WORDS})
+    norms = pd.DataFrame({"word": NFD_WORDS, "conc": [1.0, 2.0, 3.0, 4.0]})
+    out = merge_norms(lex, norms)
+    assert out["conc"].tolist() == [1.0, 2.0, 3.0, 4.0]
+
+
+# Pins the same contract as "load_items stores its text in NFC" in the R engine's
+# test-querying.R: the item id, the condition and every presented field.
+def test_load_items_stores_its_text_in_nfc(tmp_path):
+    path = tmp_path / "items.csv"
+    path.write_text(
+        "item,condition,target\n"
+        f"{NFD_WORDS[0]},{NFD_WORDS[1]},{NFD_WORDS[2]}\n"
+        f"{NFC_WORDS[0]},x,{NFC_WORDS[3]}\n",
+        encoding="utf-8")
+    items = load_items(str(path), ["target"])
+    assert items["item"].tolist() == [NFC_WORDS[0], NFC_WORDS[0]]
+    assert items["condition"].tolist() == [NFC_WORDS[1], "x"]
+    assert items["target"].tolist() == [NFC_WORDS[2], NFC_WORDS[3]]
+    # One item in NFC and NFD is one item, so both rows share a set.
+    assert items["set"].tolist() == [1, 1]
+    assert items.attrs["input_normalisation"] == {"changed": 3, "collapsed": 0}
 
 
 # Pins the same contract as "build_pool refuses a reversed range" in the R

@@ -273,6 +273,83 @@ test_that("load_items keeps numeric ids as written", {
   expect_identical(items$set, c(1L, 2L))
 })
 
+# Spanish words written once with a precomposed accent (NFC) and once with the base
+# letter and a combining acute (NFD), as code points so the source stays ASCII.
+# test_querying.py builds the same strings.
+nfc_words <- c(intToUtf8(c(0x61, 0x76, 0x69, 0xF3, 0x6E)),          # avion, o acute
+               intToUtf8(c(0x6C, 0x69, 0x6D, 0xF3, 0x6E)),          # limon
+               intToUtf8(c(0x63, 0x61, 0x66, 0xE9)),                # cafe, e acute
+               intToUtf8(c(0xE1, 0x72, 0x62, 0x6F, 0x6C)))          # arbol, a acute
+nfd_words <- c(intToUtf8(c(0x61, 0x76, 0x69, 0x6F, 0x301, 0x6E)),
+               intToUtf8(c(0x6C, 0x69, 0x6D, 0x6F, 0x301, 0x6E)),
+               intToUtf8(c(0x63, 0x61, 0x66, 0x65, 0x301)),
+               intToUtf8(c(0x61, 0x301, 0x72, 0x62, 0x6F, 0x6C)))
+
+# Pins the same contract as test_nfc_and_nfd_spellings_are_one_word in the Python
+# engine's test_querying.py. The two spellings used to be two words of different
+# lengths, so a matcher could put one in each condition of a single matched set.
+# After trimming and case-folding, every word is normalised to NFC, and the first row
+# in file order wins.
+test_that("NFC and NFD spellings are one word", {
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  path <- tempfile(fileext = ".csv")
+  on.exit(unlink(path), add = TRUE)
+  rows <- "word,grp,freq_zipf"
+  # Interleaved, so the row kept for a word is sometimes the NFD one.
+  for (i in seq_along(nfc_words)) {
+    pair <- if (i %% 2L == 1L) c(nfc_words[i], nfd_words[i]) else c(nfd_words[i], nfc_words[i])
+    rows <- c(rows, sprintf("%s,a,%d", pair[1], 3L + i),
+              sprintf("%s,b,%d", stringi::stri_trans_toupper(pair[2], locale = "und"), 3L + i))
+  }
+  write_utf8(paste0(paste(rows, collapse = "\n"), "\n"), path)
+
+  for (frame in list(load_pool(path, schema)$pool, load_lexicon(path, schema))) {
+    expect_identical(nrow(frame), length(nfc_words))
+    expect_true(all(stringi::stri_trans_isnfc(frame$word)))
+    expect_identical(sort(frame$word, method = "radix"), sort(nfc_words, method = "radix"))
+    expect_identical(frame$length, nchar(frame$word))
+    # The first row in file order is kept, which is grp a for every word.
+    expect_identical(unique(frame$grp), "a")
+    # One of each word's two rows is NFD after case-folding, which keeps the accent
+    # decomposed or composed as written. So four forms changed under NFC, and eight
+    # distinct keys became four.
+    expect_identical(attr(frame, "input_normalisation"),
+                     list(changed = 4L, collapsed = 4L))
+  }
+})
+
+# Clean input carries no normalisation record, so no shipped datasheet changes.
+test_that("NFC input carries no normalisation record", {
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  lex <- load_lexicon(system.file("extdata", "en_example.csv", package = "lexsync"), schema)
+  expect_null(attr(lex, "input_normalisation"))
+})
+
+# Pins the same contract as test_an_nfd_norm_key_joins_an_nfc_lexicon in the Python
+# engine's test_querying.py. The key used to miss, and the dimension was silently NA.
+test_that("an NFD norm key joins an NFC lexicon", {
+  lex <- data.frame(word = nfc_words, stringsAsFactors = FALSE)
+  norms <- data.frame(word = nfd_words, conc = c(1, 2, 3, 4), stringsAsFactors = FALSE)
+  expect_identical(merge_norms(lex, norms)$conc, c(1, 2, 3, 4))
+})
+
+# Pins the same contract as test_load_items_stores_its_text_in_nfc in the Python
+# engine's test_querying.py: the item id, the condition and every presented field.
+test_that("load_items stores its text in NFC", {
+  path <- tempfile(fileext = ".csv")
+  on.exit(unlink(path), add = TRUE)
+  write_utf8(paste0("item,condition,target\n",
+                    nfd_words[1], ",", nfd_words[2], ",", nfd_words[3], "\n",
+                    nfc_words[1], ",x,", nfc_words[4], "\n"), path)
+  items <- load_items(path, "target")
+  expect_identical(items$item, rep(nfc_words[1], 2L))
+  expect_identical(items$condition, c(nfc_words[2], "x"))
+  expect_identical(items$target, c(nfc_words[3], nfc_words[4]))
+  # One item in NFC and NFD is one item, so both rows share a set.
+  expect_identical(items$set, c(1L, 1L))
+  expect_identical(attr(items, "input_normalisation"), list(changed = 3L, collapsed = 0L))
+})
+
 # Pins the same contract as test_build_pool_refuses_a_reversed_range in the
 # Python engine's test_querying.py: c(7, 3) used to empty the pool without a word.
 test_that("build_pool refuses a reversed range", {

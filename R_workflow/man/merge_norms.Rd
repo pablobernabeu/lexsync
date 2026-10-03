@@ -38,9 +38,9 @@ x's order is not carried through. A positional lookup has none of those degrees 
 freedom: the output is the input plus columns, in both engines. A colliding
 name is now an error instead.
 
-The key is trimmed and case-folded on \emph{both} sides. Only the norm table's side
-was normalised before, so a lexicon holding \code{Dog} matched nothing and the design
-carried on with an all-\code{NA} dimension. Because both engines agreed on that wrong
+The key is trimmed, case-folded and normalised to NFC on \emph{both} sides. Only the
+norm table's side was trimmed and case-folded before, so a lexicon holding \code{Dog}
+matched nothing and the design carried on with an all-\code{NA} dimension. Because both engines agreed on that wrong
 answer, no parity test could have caught it. The lexicon's own spelling is
 preserved rather than folded in place: \code{word} is the byte-order tie-break behind
 every selection, so the join must not rewrite it.

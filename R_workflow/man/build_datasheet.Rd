@@ -21,7 +21,8 @@ build_datasheet(
   schema_path = NULL,
   selection_audit = NULL,
   neighbourhood_reference = NULL,
-  counterbalance_check = NULL
+  counterbalance_check = NULL,
+  input_normalisation = NULL
 )
 }
 \arguments{
@@ -79,6 +80,12 @@ record gives the recipe that ran and the lists the table holds, or for a table
 without a \code{list} column the lists \code{\link[=counterbalance]{counterbalance()}} would deal. It says whether
 a Latin-square rotation is complete and counts the trials per list and
 condition.}
+
+\item{input_normalisation}{Optional \code{list(changed, collapsed)}: how many text
+keys the run's inputs held that Unicode NFC normalisation rewrote, and how many
+duplicates the rewriting created and removed. Recorded only when given, which
+the pipeline does only when either count is above zero, because a merged
+spelling changes the candidate pool.}
 }
 \value{
 The datasheet as a nested list, ready for \code{\link[=write_datasheet]{write_datasheet()}}.

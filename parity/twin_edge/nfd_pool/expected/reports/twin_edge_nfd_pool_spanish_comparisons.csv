@@ -1,0 +1,2 @@
+condition,reference,dimension,cohens_d,d_ci_low,d_ci_high,var_ratio,tost_p,equivalent
+b,a,length,-0.679,-1.584,0.227,1.969,0.6369,FALSE

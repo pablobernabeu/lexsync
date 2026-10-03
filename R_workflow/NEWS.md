@@ -144,6 +144,20 @@
   the datasheets' MD5, are regenerated. No stimulus, report table or experiment
   changes.
 
+* Both engines normalise text keys to Unicode NFC. Lexicon and pool words and
+  norm-table and pair-member keys are normalised after the trimming and
+  case-folding they already received. The item id, condition and presented fields
+  of an item table, practice and filler tables included, and a `reference_words`
+  list passed to `run_pipeline()` are normalised as read. The two encodings of an
+  accented letter, precomposed or with a combining accent, used to make two words
+  of one. Both could then be selected, into opposite conditions of one matched set
+  and with different lengths, and a norm or member join missed whichever spelling
+  the lexicon did not use. De-duplication keeps the first row in file order. When
+  normalisation rewrites or merges any form, the run log says how many, and the
+  datasheet records the counts as `materials_source$input_normalisation`, a field
+  of datasheet format 1.2. Every demonstration's output is unchanged, and the
+  twin-edge case `nfd_pool` pins the new outcome.
+
 # lexsync 0.1.1
 
 * `assign_triggers()` gains a `conditions` argument that fixes the order of the

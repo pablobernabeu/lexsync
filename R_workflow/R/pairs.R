@@ -73,8 +73,10 @@
   # meaningless `prime.id` in the stimuli file and in the datasheet.
   dims <- setdiff(names(lex), c("word", "language", "source", "id"))
 
-  forms <- unique(unlist(lapply(members, function(m)
-    .lower_invariant(.trim_invariant(as.character(stim[[m]])))), use.names = FALSE))
+  # The lexicon's own key: trimmed, case-folded and in NFC, so a member spelt with a
+  # combining accent finds the precomposed lexicon entry.
+  member_key <- function(m) .nfc(.lower_invariant(.trim_invariant(as.character(stim[[m]]))))
+  forms <- unique(unlist(lapply(members, member_key), use.names = FALSE))
   missing <- setdiff(forms, lex$word)
   if (length(missing)) {
     shown <- utils::head(sort(missing, method = "radix"), 5L)
@@ -85,8 +87,7 @@
          call. = FALSE)
   }
   for (m in members) {
-    key <- .lower_invariant(.trim_invariant(as.character(stim[[m]])))
-    idx <- match(key, lex$word)
+    idx <- match(member_key(m), lex$word)
     for (d in dims) stim[[paste0(m, ".", d)]] <- lex[[d]][idx]
   }
   stim
