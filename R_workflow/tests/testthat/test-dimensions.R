@@ -4,7 +4,73 @@ test_that("count_syllables counts vowel runs", {
   expect_equal(count_syllables("beautiful"), 3L)
   expect_equal(count_syllables("queue"), 1L)
   expect_equal(count_syllables("área"), 2L)   # accented vowels count (Spanish)
-  expect_equal(count_syllables("中文"), 0L) # no Latin vowels (Chinese)
+})
+
+# The cross-check of the vowel class between the engines: SYLLABLE_CASES in
+# test_dimensions.py holds the same words, in the same order, with the same counts.
+# It covers ae, oe and every Latin Extended vowel the class was missing, which
+# undercounted Polish, Czech, Hungarian, Romanian, Turkish, Danish and Norwegian
+# words. The words are escaped to keep the R sources ASCII.
+syllable_cases <- list(
+  c("b\u0119d\u0119", 2),        # Polish, e with ogonek
+  c("s\u0105", 1),               # Polish, a with ogonek
+  c("\u0142\u0105ka", 2),        # Polish, l with stroke is a consonant
+  c("k\u0131z", 1),              # Turkish, dotless i
+  c("m\u0131", 1),
+  c("d\u016fm", 1),              # Czech, u with ring
+  c("m\u011bsto", 2),            # Czech, e with caron
+  c("k\u0151", 1),               # Hungarian, o with double acute
+  c("t\u0171z", 1),              # Hungarian, u with double acute
+  c("m\u0103r", 1),              # Romanian, a with breve
+  c("b\u00e6re", 2),             # Norwegian, ae
+  c("s\u00f8ster", 2),           # Danish, o with stroke
+  c("c\u0153ur", 1),             # French, oe
+  c("m\u0101te", 2),             # Latvian, macrons
+  c("m\u0113ness", 2),
+  c("l\u012bdz", 1),
+  c("\u016bdens", 2),
+  c("g\u0117l\u0117", 2),        # Lithuanian, e with dot above
+  c("\u012fvykis", 3),           # Lithuanian, i with ogonek
+  c("rank\u0173", 2),            # Lithuanian, u with ogonek
+  c("t\u014dky\u014d", 2),       # o with macron
+  c("m\u01ce", 1),               # pinyin, vowels with caron
+  c("n\u01d0", 1),
+  c("w\u01d2", 1),
+  c("b\u01d4", 1),
+  c("m\u1ed9t", 1),              # Vietnamese, Latin Extended Additional
+  c("ng\u01b0\u1eddi", 1),       # Vietnamese, u and o with horn
+  c("\u0130stanbul", 3),         # lower-cases to i + U+0307, still Latin
+  c("cafe\u0301", 2),            # decomposed input counts as composed
+  c("don\u2019t", 1)             # a typographic apostrophe is punctuation
+)
+
+test_that("count_syllables counts the vowels of every Latin orthography", {
+  words <- vapply(syllable_cases, `[`, character(1), 1L)
+  expect_identical(count_syllables(words),
+                   as.integer(vapply(syllable_cases, `[`, character(1), 2L)))
+})
+
+# Every value 0 let a design match on n_syllables in another script and report
+# perfect balance; NA says the estimate does not apply.
+test_that("count_syllables is missing for a word in another script", {
+  words <- c("\u4e2d\u6587",                              # Chinese
+             "\u043c\u043e\u043b\u043e\u043a\u043e",      # Russian
+             "\u03bd\u03b5\u03c1\u03cc",                  # Greek
+             "caf\u00e9\u4e2d")                           # one non-Latin letter
+  expect_identical(count_syllables(words), rep(NA_integer_, 4L))
+  expect_identical(count_syllables(NA), NA_integer_)
+  expect_identical(count_syllables(""), 0L)
+})
+
+test_that("load_lexicon leaves n_syllables missing outside Latin script", {
+  extdata <- function(f) system.file("extdata", f, package = "lexsync")
+  schema <- yaml::read_yaml(extdata("schema.yaml"))
+  zh <- load_lexicon(extdata("zh_example.csv"), schema)
+  expect_true(all(is.na(zh$n_syllables)))
+  expect_type(zh$n_syllables, "integer")
+  en <- load_lexicon(extdata("en_example.csv"), schema)
+  expect_false(anyNA(en$n_syllables))
+  expect_type(en$n_syllables, "integer")
 })
 
 test_that("add_bigram_frequency is deterministic and a probability", {

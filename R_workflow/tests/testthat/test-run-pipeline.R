@@ -1203,3 +1203,67 @@ test_that("a_reference_member_column_sets_the_neighbourhood_reference", {
   expect_identical(as.integer(stim$n_density[match(c("cat", "car", "dog"), stim$word)]),
                    c(2L, 1L, 1L))
 })
+
+# ---- n_syllables outside Latin script (twinned with test_run_pipeline.py) -------
+# count_syllables() returned 0 for every Chinese, Russian or Greek word, so a design
+# could match on n_syllables and report perfect balance. It now gives NA there, and
+# a design that refers to the dimension while the pool holds such words is refused
+# before anything is written.
+
+syllables_refused <- function(n) {
+  sprintf(paste("lexsync: n_syllables is not available for %d word(s) in the pool: it",
+                "counts Latin vowel letters, so it is undefined for other scripts. Remove",
+                "it from the design or filter those words out."), n)
+}
+
+zh_lines <- function(extra) {
+  c("name: zh_syllables",
+    "language: chinese",
+    paste0("lexicon: ", as_yaml_path(extdata("zh_example.csv"))),
+    "n_per_condition: 5",
+    "conditions:",
+    "  - {name: high, define_by: {frequency: [5.0, 7.0]}}",
+    "  - {name: low, define_by: {frequency: [3.5, 4.2]}}",
+    extra)
+}
+
+test_that("a design matching on n_syllables over Chinese is refused", {
+  refused_before_writing(zh_lines("match_on: [length, n_syllables]"), syllables_refused(3000))
+})
+
+test_that("a filter on n_syllables over Chinese is refused, not emptied", {
+  # A filter drops the rows missing its column, so without the check this design
+  # went on with an empty pool and failed far from the cause.
+  refused_before_writing(zh_lines(c("pool_filters: {n_syllables: [1, 3]}",
+                                    "match_on: [length]")),
+                         syllables_refused(3000))
+})
+
+test_that("a Chinese design without n_syllables leaves the column empty", {
+  out <- tmp_out()
+  res <- run_quiet(write_design(out, zh_lines("match_on: [length]")),
+                   extdata("schema.yaml"), outdir = out)
+  stim <- read_csv_utf8(res$stimuli)
+  expect_true(all(is.na(stim$n_syllables)))
+})
+
+test_that("n_syllables is checked on the filtered pool", {
+  # A Cyrillic word that the design's other filters remove does not count against
+  # it; one they keep does.
+  for (freq in c("2.0", "5.0")) {
+    dir <- tmp_out()
+    lexicon <- file.path(dir, "lexicon.csv")
+    text <- readLines(extdata("en_example.csv"), encoding = "UTF-8")
+    row <- paste0("\u043c\u043e\u043b\u043e\u043a\u043e,", freq, ",en,test,0,1.0")
+    writeLines(enc2utf8(c(text, row)), lexicon, useBytes = TRUE)
+    lines <- sub(as_yaml_path(extdata("en_example.csv")), as_yaml_path(lexicon),
+                 corpus_lines(name = "mixed_syllables"), fixed = TRUE)
+    lines[startsWith(lines, "match_on")] <- "match_on: [length, n_syllables]"
+    if (freq == "5.0") {
+      refused_before_writing(lines, syllables_refused(1))
+    } else {
+      expect_no_error(run_quiet(write_design(dir, lines), extdata("schema.yaml"),
+                                outdir = dir))
+    }
+  }
+})

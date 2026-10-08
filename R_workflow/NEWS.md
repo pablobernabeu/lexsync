@@ -312,6 +312,19 @@
   changes, and the twin-edge case `tie_hash_small` pins the `hash` rule in both
   engines.
 
+* `count_syllables()` counts the vowels of Polish, Czech, Hungarian, Romanian,
+  Turkish, Danish, Norwegian and Vietnamese (ae, oe, the dotless i and the vowels
+  with an ogonek, caron, breve, macron, ring or double acute), and returns `NA`
+  for a word in another script, where it returned 0. It now decomposes a word and
+  sets its diacritics aside, so a vowel counts whatever its accent. Every Chinese,
+  Russian or Greek word counted 0 syllables, so a design could match on
+  `n_syllables` and report perfect balance. `run_pipeline()` refuses a design that
+  refers to `n_syllables` when a word without it passes the other filters the
+  lexicon can answer. The documentation said the vowel class covered the Latin-1
+  vowels, but it lacked ae. The `n_syllables` column of `zh_freqcontrast`'s
+  stimuli is now empty, and its datasheets and run logs change with it. No
+  selection changes.
+
 # lexsync 0.1.1
 
 * `assign_triggers()` gains a `conditions` argument that fixes the order of the

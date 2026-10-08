@@ -169,7 +169,7 @@ one dimension that always needs a separate call.
 | `frequency` | Zipf | The lexicon's `freq_zipf` column ([van Heuven et al., 2014](references.md#van-heuven-2014)). |
 | `n_density` | neighbours | `add_neighbourhood`: Coltheart's N, same-length single substitutions ([Coltheart et al., 1977](references.md#coltheart-1977)). |
 | `old20` | mean Levenshtein distance | `add_neighbourhood`: the mean distance to the 20 nearest words ([Yarkoni et al., 2008](references.md#yarkoni-2008)). |
-| `n_syllables` | syllables | Derived at load time by counting maximal vowel runs. |
+| `n_syllables` | syllables | Derived at load time by counting maximal vowel runs, and missing outside the Latin script. |
 | `bigram_freq` | mean bigram probability (type-based, non-positional) | `add_bigram_frequency`, a phonotactic-probability proxy. |
 
 `add_neighbourhood` computes both neighbourhood measures against a reference word list, which
@@ -199,6 +199,14 @@ print(
 ```
 
 `strength` returning 1 and `idea` returning 2 shows both the method and its limits in one line.
+
+A vowel counts whatever its accent, since the word is decomposed and its diacritics set aside, so
+Polish będę, Turkish kız, Czech dům and Vietnamese một count 2, 1, 1 and 1. The estimate is
+defined for Latin orthographies only: a word holding a character outside the Latin script returns
+`None`, and its `n_syllables` is NaN. `run_pipeline` refuses a design that refers to `n_syllables`
+when such a word passes the other filters the lexicon can answer. Every Chinese, Russian or Greek
+word used to count 0 syllables, and a design matched on them reported perfect balance.
+[Reproducibility and parity](reproducibility-and-parity.md) gives the exact letters and code points.
 
 The set of dimensions is not closed. `merge_norms` left-joins any word-keyed norm table, which is
 the connector for anything the corpus does not carry: concreteness, age of acquisition, valence, or

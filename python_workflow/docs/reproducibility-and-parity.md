@@ -138,11 +138,20 @@ Python's `unicodedata` follows the interpreter (Unicode 15.1 in Python 3.13), wh
 uses the ICU it bundles or, on some Linux builds, the system's ICU, which may implement another
 version.
 
-The syllable estimator and the pseudoword generators carry a narrower contract still. The vowel
-class behind `n_syllables` covers the Latin-1 vowels, and the pseudoword generators build their
-candidates from lower-case a to z, so both are orthographic approximations defined for Latin
-orthographies and unavailable for other scripts. The shipped Chinese design matches on `length`,
-`n_density` and `old20` for exactly this reason.
+The syllable estimator and the pseudoword generators carry a narrower contract still. Both are
+orthographic approximations defined for Latin orthographies. `count_syllables` decomposes a word
+(NFD), sets its combining marks aside and counts the maximal runs of the letters a, e, i, o, u, y,
+æ, ø, dotless ı and œ, so a vowel counts whatever its accent, in Polish, Czech, Hungarian,
+Romanian, Turkish and Vietnamese as in English or Spanish. Hiatus (`idea` counts 2) and the Czech
+syllabic r and l (`vlk`, `krk`) stay undercounted. A word holding a character outside the code
+points U+0001-U+024F, U+02B0-U+036F, U+1E00-U+1EFF and U+2000-U+206F gets no estimate. Its
+`n_syllables` is NA in R and NaN in Python, and `run_pipeline` refuses a design that refers to
+`n_syllables` while its pool holds such a word. The test is on code-point ranges, which keeps the two
+engines independent of their Unicode tables, and the same stability policy fixes the decompositions.
+This page said before that the class covered the Latin-1 vowels, but it lacked æ, and every
+Chinese, Russian or Greek word counted 0 syllables. The pseudoword generators build their
+candidates from lower-case a to z. The shipped Chinese design matches on `length`, `n_density` and
+`old20` for these reasons.
 
 ## File names
 

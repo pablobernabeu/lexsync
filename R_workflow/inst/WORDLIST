@@ -1,4 +1,5 @@
 Aalbersberg
+ae
 Alday
 Alonso
 Armstrong
@@ -23,6 +24,7 @@ Bouwman
 Brysbaert
 bslib
 builtin
+caron
 Casillas
 CDN
 ceil
@@ -43,9 +45,11 @@ deduplication
 DeLuca
 Dillo
 Dornic
+dotless
 DT
 Dumon
 Dumontier
+EFF
 english
 eq
 Erlbaum
@@ -103,6 +107,8 @@ NumPy
 numpy
 NumPy's
 numpy's
+oe
+ogonek
 OpenSesame
 OpenSesame's
 ORCID
@@ -156,7 +162,9 @@ tibble
 Tily
 TOST
 Treiman
+u
 und
+undercounted
 undersupplied
 Unnormalised
 Unraveling

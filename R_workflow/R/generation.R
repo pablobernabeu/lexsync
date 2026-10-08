@@ -156,10 +156,10 @@ segment_subsyllabic <- function(word) {
   # letter substitution (keeps the engines in step; avoids multi-byte edge cases).
   if (!grepl("^[a-z]+$", w, perl = TRUE)) return(list())   # perl: locale-independent ASCII a-z
   L <- nchar(w)
-  m <- gregexpr(.VOWELS, w, perl = TRUE)[[1]]
-  if (length(m) == 1L && m[1] == -1L) return(list())
-  starts <- as.integer(m)
-  ends <- starts + attr(m, "match.length") - 1L
+  loc <- stringi::stri_locate_all_regex(w, .SYLLABLE_VOWELS)[[1]]
+  if (is.na(loc[1L, 1L])) return(list())
+  starts <- as.integer(loc[, "start"])
+  ends <- as.integer(loc[, "end"])
   out <- list()
   add <- function(role, text) out[[length(out) + 1L]] <<- list(role = role, text = text)
   if (starts[1] > 1L) add("onset", substr(w, 1L, starts[1] - 1L))

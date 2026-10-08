@@ -44,3 +44,9 @@ control, or \code{counterbalance.balance_on}. When the lexicon lacks it, the pip
 computes it on the pool against the neighbourhood reference, after the filters the
 lexicon can answer and before those on the derived dimension.
 }
+\details{
+A design that refers to \code{n_syllables} in any of those places is refused when a
+word that passes the other filters the lexicon can answer has no syllable
+estimate, which is the case for every word outside the Latin script (see
+\code{\link[=count_syllables]{count_syllables()}}).
+}

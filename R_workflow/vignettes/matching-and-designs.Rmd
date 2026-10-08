@@ -102,6 +102,16 @@ overcounts `chocolate`, whose silent final `e` forms a run of its own. The
 measure is adequate for equating two conditions on gross syllabic complexity and
 it is not a substitute for a pronunciation dictionary.
 
+A vowel counts whatever its accent, since the word is decomposed and its
+diacritics set aside, so the vowels of Polish, Czech, Hungarian, Romanian,
+Turkish and Vietnamese count as those of English do. The estimate is defined for
+Latin orthographies only: a word holding a character outside the Latin script
+gets `NA`. `run_pipeline()` refuses a design that refers to `n_syllables` when
+such a word passes the other filters the lexicon can answer. Every Chinese,
+Russian or Greek word used to count 0 syllables, and a design matched on them
+reported perfect balance. The reproducibility vignette gives the exact
+letters and code points.
+
 ### Computing dimensions on a pool
 
 The bundled lexicon arrives with `n_density` and `old20` already present, but

@@ -15,18 +15,70 @@ from rapidfuzz.distance import Levenshtein
 
 from .io_utils import _NUMERIC_CELL, _round_dp, clean_field, read_csv_utf8, sha256_file
 
-# Maximal runs of (possibly accented) Latin vowels approximate syllable nuclei. The
-# R mirror builds the same 26 accented code points with intToUtf8, to keep its source
-# ASCII for CRAN, so the two lists look nothing alike and must be checked against each
-# other by hand: a character in one and not the other changes n_syllables, which a
-# design may match on. Must cover the same code points as .VOWELS in
-# R_workflow/R/querying.R.
-_VOWELS = re.compile(r"[aeiouyàáâãäåèéêëìíîïòóôõöøùúûüýÿ]+")
+# The syllable estimate counts maximal runs of Latin vowel letters. A word is first
+# decomposed (NFD) and stripped of its combining marks, so every accented vowel counts
+# as its base letter. That covers the Latin-1 vowels, those of Latin Extended-A and -B
+# (ą ę ě ő ű ă ǎ and the rest) and the Vietnamese vowels of Latin Extended Additional.
+# Four vowel letters do not decompose and are named: æ, ø, dotless ı and œ. The class
+# used to list 26 precomposed Latin-1 vowels without æ, so Polish, Czech, Hungarian,
+# Romanian, Turkish, Danish and Norwegian words were undercounted.
+#
+# The estimate is defined only for words written wholly in Latin script. That is
+# taken as four ranges of code points: U+0001-U+024F (ASCII to Latin Extended-B),
+# U+02B0-U+036F (spacing modifier letters and combining marks), U+1E00-U+1EFF (Latin
+# Extended Additional) and U+2000-U+206F (general punctuation, such as a typographic
+# apostrophe). Any other code point makes it missing. A Chinese, Russian or Greek
+# word used to count 0 syllables, and a design matching on n_syllables then reported
+# perfect balance. Testing code-point ranges keeps the result independent of the
+# engines' Unicode tables, and Unicode's stability policy fixes a character's
+# canonical decomposition once it is encoded.
+#
+# The three patterns name the same code points as .SYLLABLE_SCRIPT, .SYLLABLE_MARKS
+# and .SYLLABLE_VOWELS in R_workflow/R/querying.R, escape for escape (\uXXXX here,
+# \x{XXXX} there, which ICU reads through stringi), and SYLLABLE_CASES in
+# tests/test_dimensions.py and its R twin pin the counts. They also serve the
+# subsyllabic segmentation in generation.py.
+_SYLLABLE_SCRIPT = re.compile(r"[\u0001-\u024f\u02b0-\u036f\u1e00-\u1eff\u2000-\u206f]*")
+_SYLLABLE_MARKS = re.compile(r"[\u0300-\u036f]")
+_SYLLABLE_VOWELS = re.compile(r"[aeiouy\u00e6\u00f8\u0131\u0153]+")
 
 
-def count_syllables(word) -> int:
-    """An orthographic syllable estimate: the number of maximal vowel runs."""
-    return len(_VOWELS.findall(str(word).lower()))
+def count_syllables(word):
+    """An orthographic syllable estimate: the number of maximal vowel runs.
+
+    Counts the maximal runs of Latin vowel letters after decomposing the word and
+    setting its diacritics aside, so a vowel counts whatever its accent. The vowels
+    of Polish, Czech, Hungarian, Romanian, Turkish, Danish, Norwegian and Vietnamese
+    count as those of English, Spanish, French and German do. Hiatus (``idea``
+    counts 2) and syllabic consonants such as the Czech l in ``vlk`` and r in ``krk``
+    stay undercounted.
+
+    Returns ``None`` for a missing value and for a word holding a character outside
+    the Latin script (Chinese, Cyrillic or Greek, for example), where the estimate is
+    undefined. ``load_lexicon`` and ``load_pool`` then leave ``n_syllables`` NaN.
+    Mirrors count_syllables in R_workflow/R/querying.R.
+    """
+    # pd.isna covers None, NaN of any float width, pd.NA and NaT, which str() would
+    # otherwise turn into a word ("<NA>" counts one syllable).
+    if not isinstance(word, str) and pd.api.types.is_scalar(word) and pd.isna(word):
+        return None
+    w = unicodedata.normalize("NFD", str(word).lower())
+    if not _SYLLABLE_SCRIPT.fullmatch(w):
+        return None
+    return len(_SYLLABLE_VOWELS.findall(_SYLLABLE_MARKS.sub("", w)))
+
+
+def _syllable_column(words) -> np.ndarray:
+    """``count_syllables`` over a column: integers, or floats with NaN where missing.
+
+    A column without a missing count keeps its integer type, so the lexica and
+    selections of Latin-script languages are unchanged. The CSV writer renders whole
+    floats as integers and NaN as an empty cell, as readr writes R's integer NA.
+    """
+    counts = [count_syllables(w) for w in words]
+    if any(c is None for c in counts):
+        return np.array([np.nan if c is None else c for c in counts], dtype=float)
+    return np.array(counts, dtype=np.int64)
 
 
 def _nfc(s):
@@ -144,7 +196,7 @@ def load_lexicon(path: str, schema: dict, language: str | None = None) -> pd.Dat
             .sort_values("_k").drop(columns="_k").reset_index(drop=True))
     df["id"] = np.arange(1, len(df) + 1)
     df["length"] = df["word"].str.len()
-    df["n_syllables"] = df["word"].map(count_syllables)
+    df["n_syllables"] = _syllable_column(df["word"])
     df["frequency"] = df[freq_col].astype(float)
     if language is not None:
         df["language"] = language
@@ -264,7 +316,7 @@ def load_pool(path: str, schema: dict, lexicon=None, language=None) -> dict:
             df[d] = rows[d].to_numpy()
     # Derived after any join, so a lexicon cannot overwrite them with its own copies.
     df["length"] = df["word"].str.len()
-    df["n_syllables"] = df["word"].map(count_syllables)
+    df["n_syllables"] = _syllable_column(df["word"])
     if language is not None:
         df["language"] = language
     df["id"] = np.arange(1, len(df) + 1)

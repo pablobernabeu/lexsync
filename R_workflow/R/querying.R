@@ -100,26 +100,60 @@ validate_lexicon <- function(df, schema) {
   list(changed = as.integer(changed), collapsed = as.integer(collapsed))
 }
 
-# Maximal runs of (possibly accented) Latin vowels approximate syllable nuclei.
-# Accented code points are built with intToUtf8 so the R source stays ASCII (CRAN).
-.VOWELS <- paste0("[aeiouy", intToUtf8(c(
-  0xe0, 0xe1, 0xe2, 0xe3, 0xe4, 0xe5, 0xe8, 0xe9, 0xea, 0xeb, 0xec, 0xed, 0xee,
-  0xef, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6, 0xf8, 0xf9, 0xfa, 0xfb, 0xfc, 0xfd, 0xff)),
-  "]+")                          # y with acute/diaeresis
+# The syllable estimate counts maximal runs of Latin vowel letters. A word is first
+# decomposed (NFD) and stripped of its combining marks, so every accented vowel counts
+# as its base letter. That covers the Latin-1 vowels, those of Latin Extended-A and -B
+# and the Vietnamese vowels of Latin Extended Additional. Four vowel letters do not
+# decompose and are named: ae (U+00E6), o with stroke (U+00F8), dotless i (U+0131)
+# and oe (U+0153). The class used to list 26 precomposed Latin-1 vowels without
+# U+00E6, so Polish, Czech, Hungarian, Romanian, Turkish, Danish and Norwegian words
+# were undercounted.
+#
+# The estimate is defined only for words written wholly in Latin script. That is
+# taken as four ranges of code points: U+0001-U+024F (ASCII to Latin Extended-B),
+# U+02B0-U+036F (spacing modifier letters and combining marks), U+1E00-U+1EFF (Latin
+# Extended Additional) and U+2000-U+206F (general punctuation, such as a typographic
+# apostrophe). Any other code point makes it NA. A Chinese, Russian or Greek word
+# used to count 0 syllables, and a design matching on n_syllables then reported
+# perfect balance. Testing code-point ranges keeps the result independent of the
+# engines' Unicode tables, and Unicode's stability policy fixes a character's
+# canonical decomposition once it is encoded.
+#
+# The patterns name the same code points as _SYLLABLE_SCRIPT, _SYLLABLE_MARKS and
+# _SYLLABLE_VOWELS in python_workflow/src/lexsync/querying.py, escape for escape
+# (\x{XXXX} here, which ICU reads through stringi, \uXXXX there), and the escapes keep
+# the source ASCII for CRAN. The syllable_cases list in test-dimensions.R and its
+# Python twin pin the counts. .SYLLABLE_VOWELS also serves the subsyllabic
+# segmentation in generation.R.
+.SYLLABLE_SCRIPT <- paste0("^[\\x{0001}-\\x{024f}\\x{02b0}-\\x{036f}",
+                           "\\x{1e00}-\\x{1eff}\\x{2000}-\\x{206f}]*$")
+.SYLLABLE_MARKS <- "[\\x{0300}-\\x{036f}]"
+.SYLLABLE_VOWELS <- "[aeiouy\\x{00e6}\\x{00f8}\\x{0131}\\x{0153}]+"
 
 #' Orthographic syllable estimate: the number of maximal vowel runs
 #'
+#' Counts the maximal runs of Latin vowel letters after decomposing the word and
+#' setting its diacritics aside, so a vowel counts whatever its accent. The vowels
+#' of Polish, Czech, Hungarian, Romanian, Turkish, Danish, Norwegian and Vietnamese
+#' count as those of English, Spanish, French and German do. Hiatus (`idea` counts
+#' 2) and syllabic consonants such as the Czech l in `vlk` and r in `krk` stay
+#' undercounted.
+#'
 #' @param word Character vector of word forms.
-#' @return Integer vector: the estimated syllable count of each word.
+#' @return Integer vector: the estimated syllable count of each word, or `NA` for a
+#'   missing word and for a word holding a character outside the Latin script
+#'   (Chinese, Cyrillic or Greek, for example), where the estimate is undefined.
 #' @examples
 #' count_syllables(c("cat", "table", "beautiful"))
 #' @export
 count_syllables <- function(word) {
-  word <- .lower_invariant(word)
-  vapply(word, function(w) {
-    m <- gregexpr(.VOWELS, w, perl = TRUE)[[1]]
-    if (length(m) == 1L && m[1] == -1L) 0L else length(m)
-  }, integer(1), USE.NAMES = FALSE)
+  w <- stringi::stri_trans_nfd(.lower_invariant(word))
+  latin <- stringi::stri_detect_regex(w, .SYLLABLE_SCRIPT)
+  n <- stringi::stri_count_regex(stringi::stri_replace_all_regex(w, .SYLLABLE_MARKS, ""),
+                                 .SYLLABLE_VOWELS)
+  n <- as.integer(n)
+  n[is.na(latin) | !latin] <- NA_integer_
+  n
 }
 
 #' Refuse a lexicon column that the shared CSV rule did not read as numbers

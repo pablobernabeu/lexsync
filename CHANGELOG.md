@@ -307,6 +307,18 @@ no function signature changes.
   could use. It reported the band before the a-z filter, 8,305 words where 6,937
   were eligible in a Spanish band of length 4-7 and Zipf 3.5-6. The English
   demonstrations' counts do not change, since their bands hold only a-z words.
+- `count_syllables` counts the vowels of Polish, Czech, Hungarian, Romanian,
+  Turkish, Danish, Norwegian and Vietnamese (æ, œ and Latin Extended vowels such
+  as ą, ě, ő, ă and ı), and returns a missing value for a word in another script
+  (`None` from `count_syllables`, NaN in the `n_syllables` column), where it
+  returned 0. It now decomposes a word and sets its diacritics aside, so a vowel
+  counts whatever its accent. Every Chinese, Russian or Greek word counted 0
+  syllables, so a design could match on `n_syllables` and report perfect balance.
+  `run_pipeline` refuses a design that refers to `n_syllables` when a word
+  without it passes the other filters the lexicon can answer. The documentation
+  said the vowel class covered the Latin-1 vowels, but it lacked æ. The
+  `n_syllables` column of `zh_freqcontrast`'s stimuli is now empty, and its
+  datasheets and run logs change with it. No selection changes.
 
 ### Security
 

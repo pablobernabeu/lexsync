@@ -1,8 +1,9 @@
 """Richer lexical dimensions: syllables, bigram frequency, and the norm connector."""
 import pandas as pd
 import pytest
+from conftest import _pkg_data
 
-from lexsync.querying import add_bigram_frequency, count_syllables, merge_norms
+from lexsync.querying import add_bigram_frequency, count_syllables, load_lexicon, merge_norms
 
 
 def test_count_syllables_counts_vowel_runs():
@@ -11,7 +12,71 @@ def test_count_syllables_counts_vowel_runs():
     assert count_syllables("beautiful") == 3      # b-eau-t-i-f-u-l
     assert count_syllables("queue") == 1          # one vowel run
     assert count_syllables("área") == 2           # accented vowels count (Spanish)
-    assert count_syllables("中文") == 0           # no Latin vowels (Chinese)
+
+
+# The cross-check of the vowel class between the engines: "count_syllables counts
+# the vowels of every Latin orthography" in test-dimensions.R holds the same words, in
+# the same order, with the same counts. It covers æ, œ and every Latin Extended vowel
+# the class was missing, which undercounted Polish, Czech, Hungarian, Romanian,
+# Turkish, Danish and Norwegian words.
+SYLLABLE_CASES = [
+    ("b\u0119d\u0119", 2),        # Polish, e with ogonek
+    ("s\u0105", 1),               # Polish, a with ogonek
+    ("\u0142\u0105ka", 2),        # Polish, l with stroke is a consonant
+    ("k\u0131z", 1),              # Turkish, dotless i
+    ("m\u0131", 1),
+    ("d\u016fm", 1),              # Czech, u with ring
+    ("m\u011bsto", 2),            # Czech, e with caron
+    ("k\u0151", 1),               # Hungarian, o with double acute
+    ("t\u0171z", 1),              # Hungarian, u with double acute
+    ("m\u0103r", 1),              # Romanian, a with breve
+    ("b\u00e6re", 2),             # Norwegian, ae
+    ("s\u00f8ster", 2),           # Danish, o with stroke
+    ("c\u0153ur", 1),             # French, oe
+    ("m\u0101te", 2),             # Latvian, macrons
+    ("m\u0113ness", 2),
+    ("l\u012bdz", 1),
+    ("\u016bdens", 2),
+    ("g\u0117l\u0117", 2),        # Lithuanian, e with dot above
+    ("\u012fvykis", 3),           # Lithuanian, i with ogonek
+    ("rank\u0173", 2),            # Lithuanian, u with ogonek
+    ("t\u014dky\u014d", 2),       # o with macron
+    ("m\u01ce", 1),               # pinyin, vowels with caron
+    ("n\u01d0", 1),
+    ("w\u01d2", 1),
+    ("b\u01d4", 1),
+    ("m\u1ed9t", 1),              # Vietnamese, Latin Extended Additional
+    ("ng\u01b0\u1eddi", 1),       # Vietnamese, u and o with horn
+    ("\u0130stanbul", 3),         # lower-cases to i + U+0307, still Latin
+    ("cafe\u0301", 2),            # decomposed input counts as composed
+    ("don\u2019t", 1),            # a typographic apostrophe is punctuation
+]
+
+
+def test_count_syllables_counts_the_vowels_of_every_latin_orthography():
+    assert [count_syllables(w) for w, _ in SYLLABLE_CASES] == [n for _, n in SYLLABLE_CASES]
+
+
+# Every value 0 let a design match on n_syllables in another script and report
+# perfect balance; NA says the estimate does not apply.
+def test_count_syllables_is_missing_for_a_word_in_another_script():
+    for word in ["\u4e2d\u6587",                              # Chinese
+                 "\u043c\u043e\u043b\u043e\u043a\u043e",      # Russian
+                 "\u03bd\u03b5\u03c1\u03cc",                  # Greek
+                 "caf\u00e9\u4e2d"]:                          # one non-Latin letter
+        assert count_syllables(word) is None, word
+    assert count_syllables(None) is None
+    assert count_syllables(float("nan")) is None
+    assert count_syllables(pd.NA) is None             # as R's NA, not the word "<NA>"
+    assert count_syllables("") == 0
+
+
+def test_load_lexicon_leaves_n_syllables_missing_outside_latin_script(schema):
+    zh = load_lexicon(_pkg_data("zh_example.csv"), schema)
+    assert zh["n_syllables"].isna().all()
+    en = load_lexicon(_pkg_data("en_example.csv"), schema)
+    assert en["n_syllables"].notna().all()
+    assert en["n_syllables"].dtype.kind == "i"
 
 
 def test_bigram_frequency_is_deterministic_and_a_probability():

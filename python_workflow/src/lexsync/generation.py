@@ -27,7 +27,7 @@ import yaml
 
 from . import corpora as _corpora
 from .io_utils import read_csv_utf8, sha256_file
-from .querying import _VOWELS, _norm_key
+from .querying import _SYLLABLE_VOWELS, _norm_key
 
 _LETTERS = "abcdefghijklmnopqrstuvwxyz"
 # Order in which subsyllabic constituents are considered for substitution: codas
@@ -160,7 +160,7 @@ def segment_subsyllabic(word) -> list:
     # step and avoids multi-byte-string edge cases.
     if not (w.isascii() and w.isalpha()):
         return []
-    spans = [(m.start(), m.end()) for m in _VOWELS.finditer(w)]
+    spans = [(m.start(), m.end()) for m in _SYLLABLE_VOWELS.finditer(w)]
     if not spans:
         return []
     out = []

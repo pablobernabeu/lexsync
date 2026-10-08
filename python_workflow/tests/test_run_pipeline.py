@@ -1088,3 +1088,67 @@ def test_a_reference_member_column_sets_the_neighbourhood_reference(tmp_path):
     # Against the members cat, cot, cut, dog and dig: cat neighbours cot and cut but
     # not the non-members cap and car, and car and dog have one member neighbour each.
     assert stim.loc[["cat", "car", "dog"], "n_density"].tolist() == [2, 1, 1]
+
+
+# ---- n_syllables outside Latin script (twinned with test-run-pipeline.R) --------
+# count_syllables returned 0 for every Chinese, Russian or Greek word, so a design
+# could match on n_syllables and report perfect balance. It now gives a missing value
+# there, and a design that refers to the dimension while the pool holds such words is
+# refused before anything is written.
+
+_SYLLABLES_REFUSED = (
+    "lexsync: n_syllables is not available for %d word(s) in the pool: it counts Latin "
+    "vowel letters, so it is undefined for other scripts. Remove it from the design or "
+    "filter those words out.")
+
+
+def _zh_lines(extra):
+    return [
+        "name: zh_syllables",
+        "language: chinese",
+        "lexicon: " + _yaml_path(_pkg_data("zh_example.csv")),
+        "n_per_condition: 5",
+        "conditions:",
+        "  - {name: high, define_by: {frequency: [5.0, 7.0]}}",
+        "  - {name: low, define_by: {frequency: [3.5, 4.2]}}",
+        *extra,
+    ]
+
+
+def test_a_design_matching_on_n_syllables_over_chinese_is_refused(tmp_path):
+    _refused_before_writing(_zh_lines(["match_on: [length, n_syllables]"]), tmp_path,
+                            _SYLLABLES_REFUSED % 3000)
+
+
+def test_a_filter_on_n_syllables_over_chinese_is_refused_not_emptied(tmp_path):
+    """A filter drops the rows missing its column, so without the check this design
+    went on with an empty pool and failed far from the cause."""
+    _refused_before_writing(
+        _zh_lines(["pool_filters: {n_syllables: [1, 3]}", "match_on: [length]"]),
+        tmp_path, _SYLLABLES_REFUSED % 3000)
+
+
+def test_a_chinese_design_without_n_syllables_leaves_the_column_empty(tmp_path):
+    import pandas as pd
+    res = _run(_write_design(str(tmp_path), _zh_lines(["match_on: [length]"])), tmp_path)
+    stim = pd.read_csv(res["stimuli"])
+    assert stim["n_syllables"].isna().all()
+
+
+@pytest.mark.parametrize("freq,refused", [(2.0, False), (5.0, True)])
+def test_n_syllables_is_checked_on_the_filtered_pool(tmp_path, freq, refused):
+    """A Cyrillic word that the design's other filters remove does not count against
+    it; one they keep does."""
+    lexicon = os.path.join(str(tmp_path), "lexicon.csv")
+    with open(_pkg_data("en_example.csv"), encoding="utf-8") as handle:
+        text = handle.read()
+    with open(lexicon, "w", encoding="utf-8", newline="\n") as handle:
+        handle.write(text + "\u043c\u043e\u043b\u043e\u043a\u043e,%s,en,test,0,1.0\n" % freq)
+    lines = [ln.replace(_yaml_path(_pkg_data("en_example.csv")), _yaml_path(lexicon))
+             for ln in _corpus_lines(name="mixed_syllables")]
+    lines = [ln if not ln.startswith("match_on") else "match_on: [length, n_syllables]"
+             for ln in lines]
+    if refused:
+        _refused_before_writing(lines, tmp_path, _SYLLABLES_REFUSED % 1)
+    else:
+        _run(_write_design(str(tmp_path), lines), tmp_path)

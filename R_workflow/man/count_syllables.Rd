@@ -10,10 +10,17 @@ count_syllables(word)
 \item{word}{Character vector of word forms.}
 }
 \value{
-Integer vector: the estimated syllable count of each word.
+Integer vector: the estimated syllable count of each word, or \code{NA} for a
+missing word and for a word holding a character outside the Latin script
+(Chinese, Cyrillic or Greek, for example), where the estimate is undefined.
 }
 \description{
-Orthographic syllable estimate: the number of maximal vowel runs
+Counts the maximal runs of Latin vowel letters after decomposing the word and
+setting its diacritics aside, so a vowel counts whatever its accent. The vowels
+of Polish, Czech, Hungarian, Romanian, Turkish, Danish, Norwegian and Vietnamese
+count as those of English, Spanish, French and German do. Hiatus (\code{idea} counts
+2) and syllabic consonants such as the Czech l in \code{vlk} and r in \code{krk} stay
+undercounted.
 }
 \examples{
 count_syllables(c("cat", "table", "beautiful"))

@@ -94,6 +94,25 @@ def _derive_dims(frame, dims, reference, log, n_supplied=None):
     return frame
 
 
+def _require_syllables(pool, design: dict) -> None:
+    """Refuse a design that refers to n_syllables while a pool word lacks it.
+
+    count_syllables gives a missing value for a word outside Latin script. The
+    selectors would drop such words as incomplete candidates and a filter would drop
+    them without a word, neither saying that the dimension does not apply to the
+    script, so the run stops here and says so.
+    Mirrors .require_syllables in R_workflow/R/run_pipeline.R.
+    """
+    if "n_syllables" not in _referenced_dimensions(design) or "n_syllables" not in pool:
+        return
+    n = int(pool["n_syllables"].isna().sum())
+    if n:
+        raise ValueError(
+            "lexsync: n_syllables is not available for %d word(s) in the pool: it counts "
+            "Latin vowel letters, so it is undefined for other scripts. Remove it from the "
+            "design or filter those words out." % n)
+
+
 def _restores_verbosity(fn):
     """Keep ``verbose`` from outliving the call.
 
@@ -123,6 +142,11 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
     lexicon lacks it, the pipeline computes it on the pool against the neighbourhood
     reference, after the filters the lexicon can answer and before those on the
     derived dimension.
+
+    A design that refers to ``n_syllables`` in any of those places is refused when a
+    word that passes the other filters the lexicon can answer has no syllable
+    estimate, which is the case for every word outside the Latin script (see
+    ``count_syllables``).
 
     Args:
         design_path: Path to a design configuration (YAML).
@@ -304,7 +328,16 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
         if unknown:
             raise ValueError("lexsync: pool_filters name column(s) the lexicon does not "
                              "have: %s." % ", ".join(unknown))
-        pool = build_pool(lex, {k: v for k, v in filters.items() if k not in deferred})
+        early = {k: v for k, v in filters.items() if k not in deferred}
+        # The syllable check sees the words that the other filters on lexicon columns
+        # keep (a filter on a dimension still to be derived runs later), and its own
+        # filter runs after it: a filter drops the rows missing its column, so a
+        # filter on n_syllables over Chinese would otherwise leave an empty pool and
+        # an error far from the cause. Filters commute, so the rows are those of one
+        # pass.
+        pool = build_pool(lex, {k: v for k, v in early.items() if k != "n_syllables"})
+        _require_syllables(pool, design)
+        pool = build_pool(pool, {k: v for k, v in early.items() if k == "n_syllables"})
         pending = derived
         if deferred:
             pool = build_pool(_derive_dims(pool, derived, reference, log, n_supplied),
