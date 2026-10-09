@@ -309,20 +309,79 @@ def _maha_metric(z_pool: np.ndarray, ridge: float = 1e-6) -> np.ndarray:
     return np.linalg.inv(c)
 
 
-def _match_optimal(subpools, cond_names, match_on, center, scale, n, cap=PAIRWISE_CAP,
-                   tie_break="bytes"):
-    """Optimal (minimum-total-distance) pairing for a two-condition design.
+def _in_tie_sort_order(df, z, keys):
+    """Put a capped subpool in tie-break order: by tie key under tie_break: hash, and
+    by the UTF-8 bytes of the word under bytes.
 
-    Unlike the greedy ``joint`` matcher, this solves the linear-assignment problem
-    globally, so it minimises the summed pair distance rather than taking the
-    cheapest disjoint pair at each step; it produces fewer poorly matched pairs
-    (Gu & Rosenbaum, 1993; Hansen & Klopfer, 2006). The assignment solver's tie
-    handling differs between engines, so the two agree closely but not byte-for-byte.
-    Under `tie_break` "hash" the capped subpools are put in the order of their tie
-    keys before the solve, so the solver's preferences among equal costs, and the
-    order in which pairs of equal cost are kept, follow the hash.
+    Unlike _in_tie_key_order, this sorts under bytes as well, so the order does not
+    depend on how the rows arrived. Must stay identical to .tie_sort_order in
+    R_workflow/R/matching.R.
+    """
+    if keys is None:
+        keys = _tie_sort_keys(df["word"], "bytes")
+    perm = sorted(range(len(df)), key=lambda i: (keys[i], i))
+    return df.iloc[perm].reset_index(drop=True), z[perm]
+
+
+def _k_cardinality_pairs(cost, same, n):
+    """The real pairs of the cheapest set of `n` pairs in `cost`, as row and column
+    indices, leaving out any pair of a word with itself.
+
+    Selecting n disjoint pairs at least total cost is the k-cardinality assignment
+    problem, solved here by the padding transformation of Volgenant (2004). With
+    n_e = min(n, m0, m1), the square problem of size N = m0 + m1 - n_e has N - m0 dummy
+    rows and N - m1 dummy columns, so a solution pairs at least n_e real rows with real
+    columns. A real row may go to a dummy column at no cost, and a dummy row to a real
+    column likewise. Every dummy row paired with a dummy column costs `big`, and adding
+    one would force a further real pair, so the optimum takes exactly n_e real pairs.
+    `big` exceeds the summed cost of any n_e real pairs, so a self-pair, which costs
+    `big` too, is used only when no n_e pairs exist without one. scipy's
+    linear_sum_assignment and clue's solve_LSAP both reject Inf, so the penalty is
+    finite. Must stay identical to .k_cardinality_pairs in R_workflow/R/matching.R.
     """
     from scipy.optimize import linear_sum_assignment
+    m0, m1 = cost.shape
+    n_e = min(n, m0, m1)
+    big = n_e * float(cost.max()) + 1.0
+    size = m0 + m1 - n_e
+    padded = np.zeros((size, size))
+    padded[:m0, :m1] = np.where(same, big, cost)
+    padded[m0:, m1:] = big
+    row_ind, col_ind = linear_sum_assignment(padded)
+    real = (row_ind < m0) & (col_ind < m1)
+    row_ind, col_ind = row_ind[real], col_ind[real]
+    keep = ~same[row_ind, col_ind]
+    return row_ind[keep], col_ind[keep]
+
+
+def _match_optimal(subpools, cond_names, match_on, center, scale, n, cap=PAIRWISE_CAP,
+                   tie_break="bytes"):
+    """Optimal pairing for a two-condition design: the `n` pairs of least summed distance.
+
+    Selecting n disjoint pairs from two pools at least total cost is the k-cardinality
+    assignment problem. It is solved exactly by padding the cost matrix to a square
+    assignment problem whose optimum uses exactly n real pairs (Volgenant, 2004).
+    Greedy ``joint`` matching takes the cheapest disjoint pair at each step, so it can
+    spend a hard item's only good counterpart on an item that had alternatives. Pair
+    matching of every item in one condition is a different problem, for which optimal
+    matching was no better than greedy at balancing the controls (Gu & Rosenbaum,
+    1993).
+
+    Both capped subpools are first put in tie-break order (see _in_tie_sort_order), so
+    the solver's preferences among equal costs follow that order and not the spelling
+    or the arrival order of the rows. Which of several equally cheap sets of pairs the
+    solver returns differs between SciPy's ``linear_sum_assignment`` and
+    ``clue::solve_LSAP``, so the two engines agree on the summed distance but not
+    necessarily on the items. The pairs are numbered by cost, then by the tie-break
+    rank of each word.
+
+    When the conditions overlap, a word can sit in both subpools, and the solve may pair
+    it with itself or use one pair in both directions (x with y and y with x). Those
+    pairs are dropped, and the places left are filled by solving again over the words
+    not yet used, until n pairs are found or no further pair exists. The selection is
+    then no longer guaranteed to have the least summed distance. For disjoint
+    conditions, one solve suffices.
+    """
     s0 = subpools[0].reset_index(drop=True)
     s1 = subpools[1].reset_index(drop=True)
     if len(s0) == 0 or len(s1) == 0:
@@ -333,40 +392,50 @@ def _match_optimal(subpools, cond_names, match_on, center, scale, n, cap=PAIRWIS
     k1 = _tie_keys(s1["word"]) if tie_break == "hash" else None
     s0, z0, k0 = _cap_to_overlap(s0, z0, _exact_colmeans(z1), cap, k0)
     s1, z1, k1 = _cap_to_overlap(s1, z1, _exact_colmeans(z0), cap, k1)
-    s0, z0 = _in_tie_key_order(s0, z0, k0)
-    s1, z1 = _in_tie_key_order(s1, z1, k1)
+    s0, z0 = _in_tie_sort_order(s0, z0, k0)
+    s1, z1 = _in_tie_sort_order(s1, z1, k1)
     cost = _round_dp_vec(np.sqrt(((z0[:, None, :] - z1[None, :, :]) ** 2).sum(axis=2)), 9)
-    # A word present in both subpools (overlapping condition windows) must not be
-    # paired with itself. The penalty is a large FINITE constant because both
-    # scipy's linear_sum_assignment and clue::solve_LSAP reject Inf, and their
-    # failure modes differ across engines; 1e9 dominates any real distance, and
-    # the selection is asserted same-word-free afterwards in match_stimuli.
-    # Must stay identical to the constant in match_optimal (matching.R).
-    same = s0["word"].to_numpy()[:, None] == s1["word"].to_numpy()[None, :]
-    cost[same] = 1e9
-    row_ind, col_ind = linear_sum_assignment(cost)      # complete min-cost matching
-    pair_cost = cost[row_ind, col_ind]
-    order = sorted(range(len(row_ind)),
-                   key=lambda t: (pair_cost[t], int(row_ind[t]), int(col_ind[t])))
-    # The penalty steers the assignment away from self-pairs, but an overlapping
-    # design can still mirror a pair (x with y, then y with x), reusing both
-    # words. Greedy word-level dedup over the cost-ordered assignment keeps the
-    # selection identical for disjoint designs, where every assigned word is
-    # distinct.
+    m0, m1 = cost.shape
+    n_e = min(n, m0, m1)
     w0 = s0["word"].to_numpy()
     w1 = s1["word"].to_numpy()
+    same = w0[:, None] == w1[None, :]
+    # Each round solves over the words not yet used and keeps its pairs in order of
+    # cost, skipping any that reuse a word. For disjoint conditions, no word appears
+    # twice, so the first round keeps all n_e pairs. A round that keeps nothing ends
+    # the search, and the caller's shortfall policy decides. Must stay identical to
+    # match_optimal in R_workflow/R/matching.R.
     used_words: set = set()
     pi, pj = [], []
-    for t in order:
-        wi = w0[int(row_ind[t])]; wj = w1[int(col_ind[t])]
-        if wi == wj or wi in used_words or wj in used_words:
-            continue
-        used_words.add(wi)
-        used_words.add(wj)
-        pi.append(int(row_ind[t]))
-        pj.append(int(col_ind[t]))
-        if len(pi) >= n:
+    while len(pi) < n_e:
+        rows = np.array([i for i in range(m0) if w0[i] not in used_words], dtype=int)
+        cols = np.array([j for j in range(m1) if w1[j] not in used_words], dtype=int)
+        if len(rows) == 0 or len(cols) == 0:
             break
+        r, c = _k_cardinality_pairs(cost[np.ix_(rows, cols)], same[np.ix_(rows, cols)],
+                                    n_e - len(pi))
+        ri, ci = rows[r], cols[c]
+        pair_cost = cost[ri, ci]
+        order = sorted(range(len(ri)), key=lambda t: (pair_cost[t], int(ri[t]), int(ci[t])))
+        kept = 0
+        for t in order:
+            wi = w0[ri[t]]; wj = w1[ci[t]]
+            if wi in used_words or wj in used_words:
+                continue
+            used_words.add(wi)
+            used_words.add(wj)
+            pi.append(int(ri[t]))
+            pj.append(int(ci[t]))
+            kept += 1
+            if len(pi) >= n_e:
+                break
+        if kept == 0:
+            break
+    # A later round can find pairs cheaper than an earlier round's, so the sets are
+    # numbered over all rounds together.
+    final = sorted(range(len(pi)), key=lambda t: (cost[pi[t], pj[t]], pi[t], pj[t]))
+    pi = [pi[t] for t in final]
+    pj = [pj[t] for t in final]
     a = s0.iloc[pi].copy(); a["condition"] = cond_names[0]
     b = s1.iloc[pj].copy(); b["condition"] = cond_names[1]
     common = [c for c in a.columns if c in b.columns]

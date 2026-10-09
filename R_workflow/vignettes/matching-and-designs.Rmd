@@ -463,11 +463,20 @@ plain Euclidean metric, matching on all three counts the shared
 length-neighbourhood variance three times over and lets an independent dimension
 drift. Mahalanobis distance discounts that overlap (Rubin, 1980; Stuart, 2010).
 
-`optimal` keeps the Euclidean metric but solves the pairing globally, minimising
-the summed distance over all pairings at once (Gu & Rosenbaum, 1993; Hansen &
-Klopfer, 2006). Greedy matching can spend the one good counterpart of a hard
-item on an easy item that had alternatives. Optimal matching cannot. It requires
-exactly two conditions and the `clue` package.
+`optimal` keeps the Euclidean metric and selects the *n* disjoint pairs whose
+summed distance is smallest. Choosing *n* pairs from two pools is the
+*k*-cardinality assignment problem, which lexsync solves exactly by padding the
+cost matrix with dummy rows and columns until every optimal assignment uses
+exactly *n* real pairs (Volgenant, 2004). Greedy matching can spend the one good
+counterpart of a hard item on an easy item that had alternatives. Optimal
+matching cannot, although on the pools tested `joint` came within a few per cent
+of the optimum. Gu and Rosenbaum (1993) compared optimal and greedy pair matching
+of every treated unit, a related problem, and found optimal matching no better
+at balancing the covariates. When the conditions overlap, a word cannot be paired
+with itself or used twice. A pair lost that way is replaced by solving again over
+the unused words, and the selection is then no longer guaranteed to have the
+least summed distance. The method requires exactly two conditions and the `clue`
+package.
 
 ```{r methods}
 methods <- c("standardised_euclidean", "joint", "mahalanobis")
@@ -496,19 +505,24 @@ do.call(rbind, lapply(methods, summarise_method))
 
 The comparison rewards a careful reading, and it is a good illustration of why a
 standardised difference should not be read as an effect size on its own. The two
-globally pairing methods drive the control differences to zero, because a
-free choice over all pairs can find counterparts that match exactly on all three
-dimensions. Their standardised frequency separation is also the larger of the
-four, yet their raw separation in Zipf units is the smaller. Both facts have one
-cause: those methods take whichever pairs match best, and those pairs turn out to
-cluster, which shrinks the SD of the high condition and so shrinks the pooled SD
-that `freq_d` divides by. A narrower manipulation can raise `d`.
+pairing methods drive the control differences to zero, because a free choice
+over all pairs can find counterparts that match exactly on all three dimensions.
+The pool holds far more exact matches than the design needs, so each method's
+rule for choosing among them decides the rest. `joint` takes them in spelling
+order, and those pairs turn out to cluster in frequency: its standardised
+frequency separation is the largest of the four, yet its raw separation in Zipf
+units is the smallest. Both facts have one cause, the clustering, which shrinks
+the SD of the high condition and so shrinks the pooled SD that `freq_d` divides
+by. A narrower manipulation can raise `d`. `optimal` finds pairs just as exact,
+but its assignment solver chooses among them by its own internal order, and here
+the high condition keeps more of its spread.
 
 Whether that is a gain depends on the study. The anchor methods keep the high
 condition spread across its whole band by construction, which supports a claim
 about the band rather than about a cluster inside it, and it is variance you may
-want if the manipulation is later modelled as continuous. The globally pairing
-methods trade some of that spread for exact control of the nuisance dimensions.
+want if the manipulation is later modelled as continuous. The pairing methods
+guarantee exact control of the nuisance dimensions where the pool allows it, but
+how much of the band they keep depends on which of the exact matches they take.
 These numbers describe this pool and this design. The point is how to make the
 comparison, not which method wins.
 
@@ -993,10 +1007,6 @@ methods: Structures, distances, and algorithms. *Journal of Computational and
 Graphical Statistics*, *2*(4), 405–420.
 https://doi.org/10.1080/10618600.1993.10474623
 
-Hansen, B. B., & Klopfer, S. O. (2006). Optimal full matching and related designs
-via network flows. *Journal of Computational and Graphical Statistics*, *15*(3),
-609–627. https://doi.org/10.1198/106186006X137047
-
 Hedges, L. V., & Olkin, I. (1985). *Statistical methods for meta-analysis*.
 Academic Press. https://doi.org/10.1016/C2009-0-03396-0
 
@@ -1035,6 +1045,10 @@ van Heuven, W. J. B., Mandera, P., Keuleers, E., & Brysbaert, M. (2014).
 SUBTLEX-UK: A new and improved word frequency database for British English.
 *Quarterly Journal of Experimental Psychology*, *67*(6), 1176–1190.
 https://doi.org/10.1080/17470218.2013.850521
+
+Volgenant, A. (2004). Solving the *k*-cardinality assignment problem by
+transformation. *European Journal of Operational Research*, *157*(2), 322–331.
+https://doi.org/10.1016/S0377-2217(03)00205-4
 
 Yarkoni, T. (2022). The generalizability crisis. *Behavioral and Brain Sciences*,
 *45*, Article e1. https://doi.org/10.1017/S0140525X20001685

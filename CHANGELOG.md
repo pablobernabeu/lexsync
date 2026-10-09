@@ -415,6 +415,25 @@ no function signature changes.
   the four whose descriptions changed (`en_andrews_repro`, `en_freqcontinuous`,
   `en_priming_continuous` and `en_rastle_repro`) change with them, as do the run
   logs.
+- `optimal` matching minimises the summed distance of the n pairs it selects. It
+  solved a complete assignment over both candidate pools and kept the n cheapest
+  assigned pairs, which is not the optimum and was consistently worse than greedy
+  `joint`: 1.15 to 2.5 times the optimal summed distance in tests where `joint`
+  came within 3.4%. It now solves the cardinality-constrained problem exactly with
+  a padded assignment (Volgenant, 2004). In R a problem at the 1,200-candidate cap
+  takes about 4 s, where the complete assignment took 34 s on the same machine,
+  and in Python about 1 s. Both capped pools are put in tie-break order before
+  the solve, by spelling under `bytes` as well as by key under `hash`, so the
+  solver's choice among equally cheap pairs no longer depends on the order in
+  which the rows arrive. When the conditions overlap, a word cannot be paired
+  with itself or used twice. A pair the solve loses that way is replaced by
+  solving again over the unused words, and the selection is then no longer
+  guaranteed to have the least summed distance. Designs using `optimal` select
+  different items, which
+  the rule above counts as a breaking change. No shipped design uses it, so no
+  stimulus moves. The schema's description of the method, corrected in all three
+  copies, changes `config/schema.yaml`, so every committed datasheet records a new
+  schema digest and every run log a new datasheet checksum.
 
 ### Security
 

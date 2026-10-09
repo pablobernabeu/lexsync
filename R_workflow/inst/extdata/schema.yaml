@@ -126,7 +126,8 @@ matching:
   #   standardised_euclidean  greedy nearest-neighbour on z-scored dimensions (default)
   #   joint                   optimal-greedy pairing for a two-condition design
   #   mahalanobis             covariance-aware distance; down-weights correlated dimensions
-  #   optimal                 globally optimal (assignment) pairing for two conditions
+  #   optimal                 the n pairs of least summed distance, for two conditions
+  #                           (an exact padded assignment; Volgenant, 2004)
   # standardised_euclidean and joint are byte-identical across the R and Python
   # engines; mahalanobis and optimal use a covariance inverse / assignment solver,
   # so the two engines agree closely but not byte-for-byte.

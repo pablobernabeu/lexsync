@@ -1,8 +1,8 @@
 # lexsync run log: en_ndensity
 
 - Engine: R 4.6.1
-- Started: 2026-10-09 05:58:06.797056
-- Finished: 2026-10-09 05:58:11.060392
+- Started: 2026-10-09 06:57:39.536089
+- Finished: 2026-10-09 06:57:41.546548
 
 ## Run metadata
 
@@ -15,58 +15,58 @@
 
 ## Steps
 
-- **2026-10-09 05:58:06.803162**: loading lexicon 'corpora/derived/en.csv'
-- **2026-10-09 05:58:07.883056**: lexicon loaded: 30000 words
+- **2026-10-09 06:57:39.540543**: loading lexicon 'corpora/derived/en.csv'
+- **2026-10-09 06:57:40.126855**: lexicon loaded: 30000 words
     - words: 30000
-- **2026-10-09 05:58:07.905035**: pool after filters: 4557 words
+- **2026-10-09 06:57:40.138139**: pool after filters: 4557 words
     - pool: 4557
-- **2026-10-09 05:58:09.26422**: matched 160 items across 2 conditions
+- **2026-10-09 06:57:40.886095**: matched 160 items across 2 conditions
     - conditions: dense_neighbourhood, sparse_neighbourhood
-- **2026-10-09 05:58:09.32005**: equivalence sparse_neighbourhood vs dense_neighbourhood on 'length': d = 0.00 [-0.26, 0.26], TOST p = 0.001 (equivalent)
-- **2026-10-09 05:58:09.327948**: equivalence sparse_neighbourhood vs dense_neighbourhood on 'frequency': d = 0.00 [-0.26, 0.26], TOST p = 0.001 (equivalent)
-- **2026-10-09 05:58:09.339287**: equivalence sparse_neighbourhood vs dense_neighbourhood on 'n_density': d = 3.11 [2.72, 3.50], TOST p = 1.000 (not shown equivalent)
-- **2026-10-09 05:58:09.350423**: equivalence sparse_neighbourhood vs dense_neighbourhood on 'old20': d = -2.30 [-2.64, -1.97], TOST p = 1.000 (not shown equivalent)
-- **2026-10-09 05:58:09.491248**: wrote 'en_ndensity_english_stimuli_R.csv'
+- **2026-10-09 06:57:40.910773**: equivalence sparse_neighbourhood vs dense_neighbourhood on 'length': d = 0.00 [-0.26, 0.26], TOST p = 0.001 (equivalent)
+- **2026-10-09 06:57:40.914851**: equivalence sparse_neighbourhood vs dense_neighbourhood on 'frequency': d = 0.00 [-0.26, 0.26], TOST p = 0.001 (equivalent)
+- **2026-10-09 06:57:40.918748**: equivalence sparse_neighbourhood vs dense_neighbourhood on 'n_density': d = 3.11 [2.72, 3.50], TOST p = 1.000 (not shown equivalent)
+- **2026-10-09 06:57:40.92236**: equivalence sparse_neighbourhood vs dense_neighbourhood on 'old20': d = -2.30 [-2.64, -1.97], TOST p = 1.000 (not shown equivalent)
+- **2026-10-09 06:57:40.962335**: wrote 'en_ndensity_english_stimuli_R.csv'
     - path: output/stimuli/en_ndensity_english_stimuli_R.csv
     - rows: 160
     - md5: 2f785563afd3cc575320ac35dbea3ea5
-- **2026-10-09 05:58:09.515223**: wrote 'en_ndensity_english_descriptives_R.csv'
+- **2026-10-09 06:57:40.980311**: wrote 'en_ndensity_english_descriptives_R.csv'
     - path: output/reports/en_ndensity_english_descriptives_R.csv
     - rows: 8
     - md5: 25e02256139ad746974a981fa0ba78f1
-- **2026-10-09 05:58:09.540945**: wrote 'en_ndensity_english_comparisons_R.csv'
+- **2026-10-09 06:57:40.996968**: wrote 'en_ndensity_english_comparisons_R.csv'
     - path: output/reports/en_ndensity_english_comparisons_R.csv
     - rows: 4
     - md5: 39f420a650e8857a7f9d65c8a36e9a6c
-- **2026-10-09 05:58:10.700821**: wrote 'en_ndensity_english_psychopy.py'
+- **2026-10-09 06:57:41.33061**: wrote 'en_ndensity_english_psychopy.py'
     - path: output/experiments/en_ndensity_english_psychopy.py
     - rows: NA
     - md5: 644b7f22a01b99b7ca0d94c040cf0be5
-- **2026-10-09 05:58:10.719665**: wrote 'en_ndensity_english.osexp'
+- **2026-10-09 06:57:41.340091**: wrote 'en_ndensity_english.osexp'
     - path: output/experiments/en_ndensity_english.osexp
     - rows: NA
     - md5: a9903c46919cefb72c1a564b6407ba91
-- **2026-10-09 05:58:10.741435**: wrote 'en_ndensity_english.html'
+- **2026-10-09 06:57:41.349229**: wrote 'en_ndensity_english.html'
     - path: output/experiments/en_ndensity_english.html
     - rows: NA
     - md5: e1c3bc4d5c84b8de9ec8aa08b25c677e
-- **2026-10-09 05:58:10.763074**: wrote 'en_ndensity_english_psychopy.csv'
+- **2026-10-09 06:57:41.363426**: wrote 'en_ndensity_english_psychopy.csv'
     - path: output/experiments/en_ndensity_english_psychopy.csv
     - rows: NA
     - md5: 17bfcc53a4722c27f80242104cb4ac68
-- **2026-10-09 05:58:10.771973**: wrote 'en_ndensity_english_opensesame.csv'
+- **2026-10-09 06:57:41.370841**: wrote 'en_ndensity_english_opensesame.csv'
     - path: output/experiments/en_ndensity_english_opensesame.csv
     - rows: NA
     - md5: 10d00e0ed94b42e55bcde65c6122e822
-- **2026-10-09 05:58:10.783047**: wrote 'en_ndensity_english_opensesame_text.csv'
+- **2026-10-09 06:57:41.378101**: wrote 'en_ndensity_english_opensesame_text.csv'
     - path: output/experiments/en_ndensity_english_opensesame_text.csv
     - rows: NA
     - md5: b9335ee7989ca44e842c0d17e4735473
-- **2026-10-09 05:58:11.030549**: wrote 'en_ndensity_english_datasheet_R.json'
+- **2026-10-09 06:57:41.526912**: wrote 'en_ndensity_english_datasheet_R.json'
     - path: output/reports/en_ndensity_english_datasheet_R.json
     - rows: NA
-    - md5: 2f39102f369fe3ce504f1693a250b66a
-- **2026-10-09 05:58:11.047267**: wrote 'en_ndensity_english_datasheet_R.md'
+    - md5: ea47d341eef6093ad780ba0bc32d8f62
+- **2026-10-09 06:57:41.536856**: wrote 'en_ndensity_english_datasheet_R.md'
     - path: output/reports/en_ndensity_english_datasheet_R.md
     - rows: NA
     - md5: 9e6c3979d58e3551bf37f82c2abac9e7

@@ -880,18 +880,169 @@ test_that("hash_tie_break_decides_the_overlap_cap", {
   expect_identical(unname(x_pairs(by_hash)), c("beech+eel", "cedar+dog"))
 })
 
-test_that("hash_tie_break_decides_which_optimal_pairs_are_kept", {
-  # Each A word has one partner at distance 0, so the assignment is unique and the two
-  # engines' solvers cannot differ on it. Every assigned pair costs 0, and the tie-break
-  # alone decides which two of the four pairs are kept.
+test_that("hash_tie_break_numbers_the_optimal_pairs_by_hash_rank", {
+  # Two pairs cost 0 and every other pair costs more, so the optimum is unique and the
+  # two engines' solvers cannot differ on it. Both pairs cost the same, and the
+  # tie-break alone decides which of them is set 1. Among several equally cheap sets of
+  # pairs, which set is kept is the solver's choice, which is why this test no longer
+  # asks the tie-break to decide that.
   skip_if_not_installed("clue")
-  pool <- tie_pairs_pool(c(1, 2, 3, 4), c(1, 2, 3, 4))
+  pool <- tie_pairs_pool(c(1, 2, 10, 20), c(1, 2, 30, 40))
   by_bytes <- match_stimuli(pool, x_design(2L, list(method = "optimal")), x_schema())
   expect_identical(unname(x_pairs(by_bytes)), c("ash+bat", "beech+cat"))
+  expect_identical(by_bytes$word[by_bytes$set == 1L], c("ash", "bat"))
   by_hash <- match_stimuli(pool, x_design(2L, list(method = "optimal", tie_break = "hash")),
                            x_schema())
-  expect_identical(unname(x_pairs(by_hash)), c("beech+cat", "cedar+dog"))
+  expect_identical(unname(x_pairs(by_hash)), c("ash+bat", "beech+cat"))
   expect_identical(by_hash$word[by_hash$set == 1L], c("beech", "cat"))
+})
+
+# ---- exact optimal matching ---------------------------------------------------
+# `optimal` selects the n pairs of least summed distance, the k-cardinality assignment
+# problem, solved through a padded square assignment (Volgenant, 2004). Twinned with
+# test_matching.py, which builds the same fixtures from the same formula and pins the
+# same summed distance.
+
+# Three continuous dimensions from fixed quadratic residues, so both engines build the
+# same pool without a random number generator. Every intermediate is a whole number
+# below 2^53, so the arithmetic is exact in both. A linear formula would repeat the same
+# distance along every diagonal of the cost matrix.
+formula_pool <- function(prefix, ks, shift = 0) {
+  k <- as.numeric(ks)
+  data.frame(word = sprintf("%s%04d", prefix, as.integer(k)),
+             d1 = ((k * k * 7919 + k * 13 + 1) %% 10007) / 10007 + shift,
+             d2 = ((k * k * 104729 + k * 7 + 3) %% 10009) / 10009,
+             d3 = ((k * k * 3571 + k * 3 + 5) %% 10037) / 10037,
+             stringsAsFactors = FALSE)
+}
+
+formula_dims <- c("d1", "d2", "d3")
+
+solve_pairs <- function(method, a, b, n, ...) {
+  fn <- if (identical(method, "optimal")) match_optimal else match_joint
+  k <- length(formula_dims)
+  fn(list(a, b), c("A", "B"), formula_dims, rep(0, k), rep(1, k), n, ...)
+}
+
+summed_distance <- function(out) {
+  a <- out[out$condition == "A", , drop = FALSE]
+  b <- out[out$condition == "B", , drop = FALSE]
+  a <- as.matrix(a[order(a$set), formula_dims]); b <- as.matrix(b[order(b$set), formula_dims])
+  sum(sqrt(rowSums((a - b)^2)))
+}
+
+# Every ordered choice of n distinct items out of m, one per row.
+injections <- function(m, n) {
+  if (n == 0L) return(matrix(integer(0), 1L, 0L))
+  do.call(rbind, lapply(seq_len(m), function(first) {
+    rest <- injections(m - 1L, n - 1L)
+    others <- setdiff(seq_len(m), first)
+    cbind(first, matrix(others[rest], nrow(rest)))
+  }))
+}
+
+brute_force <- function(a, b, n) {
+  za <- as.matrix(a[, formula_dims]); zb <- as.matrix(b[, formula_dims])
+  cost <- sqrt(Reduce(`+`, lapply(seq_len(ncol(za)), function(d)
+    outer(za[, d], zb[, d], "-")^2)))
+  cols <- injections(nrow(zb), n)
+  best <- Inf
+  for (rows in asplit(utils::combn(nrow(za), n), 2L)) {
+    for (r in seq_len(nrow(cols))) {
+      best <- min(best, sum(cost[cbind(rows, cols[r, ])]))
+    }
+  }
+  best
+}
+
+test_that("optimal equals brute-force enumeration on small problems", {
+  # The complete assignment kept its n cheapest pairs, which is not the cheapest set of
+  # n pairs whenever the full assignment had to spend a good counterpart elsewhere.
+  skip_if_not_installed("clue")
+  for (p in list(c(6L, 6L, 3L), c(5L, 7L, 4L))) {
+    m0 <- p[1]; m1 <- p[2]; n <- p[3]
+    a <- formula_pool("a", seq_len(m0))
+    b <- formula_pool("b", m0 + seq_len(m1))
+    out <- solve_pairs("optimal", a, b, n)
+    expect_identical(length(unique(out$set)), n)
+    expect_lte(abs(summed_distance(out) - brute_force(a, b, n)), 1e-9)
+  }
+})
+
+# The summed distance of the optimal selection on the 300 + 300 fixture with n = 30,
+# pinned identically in test_matching.py so the two engines agree to 1e-9. An
+# independent padded solve over the unrounded costs gave the same value.
+optimal_sum_300_n30 <- 1.272647404213
+
+test_that("optimal is never worse than joint", {
+  # Greedy joint matching came within a few per cent of the optimum, and the old
+  # optimal was 1.15 to 2.5 times it.
+  skip_if_not_installed("clue")
+  a <- formula_pool("a", 1:300, shift = 0.05)
+  b <- formula_pool("b", 301:600)
+  for (n in c(30L, 150L)) {
+    opt <- summed_distance(solve_pairs("optimal", a, b, n))
+    joint <- summed_distance(solve_pairs("joint", a, b, n))
+    expect_lte(opt, joint + 1e-9)
+    if (n == 30L) expect_lte(abs(opt - optimal_sum_300_n30), 1e-9)
+  }
+})
+
+test_that("optimal solves a problem at the candidate cap within seconds", {
+  # The complete assignment over two 1,200-row subpools took about 71 s.
+  skip_on_cran()
+  skip_if_not_installed("clue")
+  a <- formula_pool("a", 1:1200, shift = 0.05)
+  b <- formula_pool("b", 1201:2400)
+  elapsed <- system.time(out <- solve_pairs("optimal", a, b, 80L))[["elapsed"]]
+  expect_identical(length(unique(out$set)), 80L)
+  expect_lt(elapsed, 10)
+})
+
+test_that("optimal does not depend on the pool order", {
+  # Every pair costs 0, so the solver's preference among equal costs decides which
+  # pairs are kept. Under bytes the subpools are put in spelling order first, so that
+  # preference follows the spelling and not the order the rows arrived in.
+  skip_if_not_installed("clue")
+  pool <- tie_pairs_pool(rep(1, 4), rep(1, 4))
+  for (rule in c("bytes", "hash")) {
+    design <- x_design(2L, list(method = "optimal", tie_break = rule))
+    forward <- match_stimuli(pool, design, x_schema())
+    backward <- match_stimuli(pool[rev(seq_len(nrow(pool))), , drop = FALSE], design,
+                              x_schema())
+    expect_identical(forward$word, backward$word, label = rule)
+  }
+})
+
+test_that("optimal fills overlapping conditions with distinct words", {
+  # Every word sits in both conditions. Three zero-cost pairs exist only by using a pair
+  # in both directions (haa with laa, laa with haa), which reuses both words. The
+  # duplicate is dropped and a second solve over the unused words fills its place, so
+  # the design gets its three sets under the default shortfall policy, as it does under
+  # the other methods.
+  skip_if_not_installed("clue")
+  design <- overlapping_design(3L, "optimal")
+  design$matching$shortfall <- "error"
+  s <- match_stimuli(small_pool(), design, tiny_schema())
+  expect_identical(length(unique(s$set)), 3L)
+  expect_false(anyDuplicated(s$word) > 0L)
+  pairs <- vapply(split(s$word, s$set), function(w) paste(sort(w), collapse = "+"),
+                  character(1))
+  # Which direction of a zero-cost pair the solver uses is a tie, so the two zero-cost
+  # pairs are sets 1 and 2 in either order.
+  expect_identical(sort(unname(pairs[1:2]), method = "radix"), c("haa+laa", "hab+lab"))
+})
+
+test_that("optimal fills n when the conditions share every word", {
+  # With the same 300 words in both conditions, every pair costs the same in both
+  # directions, and a single solve used about half of its pairs twice.
+  skip_if_not_installed("clue")
+  pool <- formula_pool("w", 1:300)
+  for (n in c(30L, 80L)) {
+    out <- solve_pairs("optimal", pool, pool, n)
+    expect_identical(length(unique(out$set)), n)
+    expect_false(anyDuplicated(out$word) > 0L)
+  }
 })
 
 # The shipped English designs. Repository-coupled: the full lexicon lives in corpora/,

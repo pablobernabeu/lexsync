@@ -2,7 +2,7 @@
 % Please edit documentation in R/matching.R
 \name{match_optimal}
 \alias{match_optimal}
-\title{Optimal (minimum-total-distance) pairing for a two-condition design}
+\title{Optimal pairing for a two-condition design: the \code{n} pairs of least summed distance}
 \usage{
 match_optimal(
   subpools,
@@ -16,12 +16,29 @@ match_optimal(
 )
 }
 \description{
-Solves the linear-assignment problem globally rather than greedily, so it
-minimises the summed pair distance and leaves fewer poorly matched pairs (Gu and
-Rosenbaum, 1993; Hansen & Klopfer, 2006). Needs the 'clue' package. The
-solver's tie handling differs from the Python engine's, so the two agree closely
-but not byte-for-byte. Under \code{tie_break = "hash"} the capped subpools are put in
-the order of their tie keys before the solve, so the solver's preferences among
-equal costs, and the order in which pairs of equal cost are kept, follow the hash.
+Selecting n disjoint pairs from two pools at least total cost is the
+k-cardinality assignment problem. It is solved exactly by padding the cost matrix
+to a square assignment problem whose optimum uses exactly n real pairs
+(Volgenant, 2004). Greedy \code{joint} matching takes the cheapest disjoint pair at
+each step, so it can spend a hard item's only good counterpart on an item that
+had alternatives. Pair matching of every item in one condition is a different
+problem, for which optimal matching was no better than greedy at balancing the
+controls (Gu & Rosenbaum, 1993). Needs the 'clue' package.
+}
+\details{
+Both capped subpools are first put in tie-break order (see \code{.tie_sort_order}), so
+the solver's preferences among equal costs follow that order and not the spelling
+or the arrival order of the rows. Which of several equally cheap sets of pairs the
+solver returns differs between \code{clue::solve_LSAP()} and SciPy's
+\code{linear_sum_assignment()}, so the two engines agree on the summed distance but not
+necessarily on the items. The pairs are numbered by cost, then by the tie-break
+rank of each word.
+
+When the conditions overlap, a word can sit in both subpools, and the solve may
+pair it with itself or use one pair in both directions (x with y and y with x).
+Those pairs are dropped, and the places left are filled by solving again over the
+words not yet used, until \code{n} pairs are found or no further pair exists. The
+selection is then no longer guaranteed to have the least summed distance. For
+disjoint conditions, one solve suffices.
 }
 \keyword{internal}

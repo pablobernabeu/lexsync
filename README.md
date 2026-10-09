@@ -222,8 +222,9 @@ Four matching methods are available, set with `matching.method` in a design: the
 default `standardised_euclidean` (greedy nearest-neighbour on z-scored
 dimensions), `joint` (optimal-greedy pairing for a two-condition design),
 `mahalanobis` (a covariance-aware distance that down-weights correlated
-dimensions; Rubin, 1980; Stuart, 2010) and `optimal` (globally optimal
-assignment for two conditions; Gu & Rosenbaum, 1993). The R and Python engines
+dimensions; Rubin, 1980; Stuart, 2010) and `optimal` (the n pairs of least
+summed distance for two conditions, solved exactly as a padded assignment
+problem; Volgenant, 2004). The R and Python engines
 select byte-identical stimuli for `standardised_euclidean` and `joint`. The
 `mahalanobis` and `optimal` methods are not guaranteed byte-identical across
 engines, because they use a covariance-matrix inverse and an assignment solver

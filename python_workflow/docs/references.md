@@ -139,6 +139,10 @@ improved word frequency database for British English. *Quarterly Journal of Expe
 Psychology*, *67*(6), 1176–1190. <https://doi.org/10.1080/17470218.2013.850521>
 { #van-heuven-2014 }
 
+Volgenant, A. (2004). Solving the *k*-cardinality assignment problem by transformation. *European
+Journal of Operational Research*, *157*(2), 322–331. <https://doi.org/10.1016/S0377-2217(03)00205-4>
+{ #volgenant-2004 }
+
 Yarkoni, T. (2022). The generalizability crisis. *Behavioral and Brain Sciences*, *45*, Article e1.
 <https://doi.org/10.1017/S0140525X20001685>
 { #yarkoni-2022 }

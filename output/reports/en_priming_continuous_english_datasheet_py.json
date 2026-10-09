@@ -197,7 +197,7 @@
   },
   "reproducibility": {
     "design_sha256": "0c0c118a2b61b6f0c26ce5f44d7f14ce0e03116cd385203a551f6394b96731d8",
-    "schema_sha256": "56920528039aab921b60693e2c422726817d65b53c57c81fcde7f718dfeb6f3e",
+    "schema_sha256": "60217cd58fd3da4a9c1deee500c9d3d56ee9bde8658644581a102a7bd1c2baa4",
     "seed": 2026,
     "versions": {
       "engine": "python",

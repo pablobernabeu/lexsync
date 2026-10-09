@@ -399,7 +399,7 @@ The method is set with `matching.method` in a design, or globally in the schema.
 | `standardised_euclidean` | Greedy nearest neighbour on z-scored dimensions, anchored on the first condition. The default. | Any number | Byte-identical |
 | `joint` | Scores every cross-condition pair and greedily takes the cheapest disjoint ones. | Exactly two | Byte-identical |
 | `mahalanobis` | Nearest neighbour under a covariance-aware distance that down-weights correlated dimensions. | Any number | Equivalent, byte-identity not guaranteed |
-| `optimal` | Solves the linear-assignment problem globally, minimising total pair distance. | Exactly two | Equivalent, byte-identity not guaranteed |
+| `optimal` | Selects the *n* pairs of least summed distance, solved exactly as an assignment problem. | Exactly two | Equivalent, byte-identity not guaranteed |
 
 `joint` differs from the default in what it is allowed to discard. The anchored matcher fixes the
 first condition and then finds the best counterpart for each of its items, so a bad anchor item
@@ -415,9 +415,17 @@ with a small ridge to survive near-collinear dimensions, so that two dimensions 
 same thing are not counted twice ([Rubin, 1980](references.md#rubin-1980);
 [Stuart, 2010](references.md#stuart-2010)). The correlations come from the pool's rows that are
 complete on every matched dimension, and with *k* matched dimensions the pool needs at least *k* + 2
-such rows. `optimal` minimises the summed pair distance over all
-pairings at once, which produces fewer badly matched pairs than taking the locally cheapest pair at
-each step ([Gu & Rosenbaum, 1993](references.md#gu-1993)).
+such rows. `optimal` selects the *n* disjoint pairs whose summed distance is smallest. Choosing *n*
+pairs from two pools is the *k*-cardinality assignment problem, and lexsync solves it exactly by
+padding the cost matrix with dummy rows and columns until every optimal assignment uses exactly *n*
+real pairs ([Volgenant, 2004](references.md#volgenant-2004)). Greedy `joint` matching can spend a
+hard item's only good counterpart on an item that had alternatives, and `optimal` cannot, although
+on the pools tested `joint` came within a few per cent of the optimum. When the conditions overlap,
+a word cannot be paired with itself or used twice. A pair lost that way is replaced by solving again
+over the unused words, and the selection is then no longer guaranteed to have the least summed
+distance. Gu and Rosenbaum ([1993](references.md#gu-1993)) compared optimal and greedy pair matching
+of every treated unit, a related problem, and found optimal matching no better at balancing the
+covariates.
 
 Both of these carry the parity caveat. A matrix inverse and an assignment solver are the two places
 where the R and Python linear-algebra backends can disagree in their last bits, and an assignment

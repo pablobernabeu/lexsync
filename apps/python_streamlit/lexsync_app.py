@@ -443,7 +443,8 @@ if paradigm == "factorial":
         method = st.radio(
             "Matching method", methods,
             index=methods.index(method_default) if method_default in methods else 0,
-            help="joint/optimal pair two conditions (optimal is globally best); "
+            help="joint/optimal pair two conditions (optimal selects the n pairs of "
+                 "least summed distance, joint takes the closest pair at each step); "
                  "mahalanobis down-weights correlated dimensions. mahalanobis and "
                  "optimal use a covariance inverse / assignment solver, so the R and "
                  "Python engines agree closely but not byte-for-byte on them.",

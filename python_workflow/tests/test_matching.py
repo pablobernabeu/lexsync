@@ -898,18 +898,140 @@ def test_hash_tie_break_decides_the_overlap_cap():
     assert _pairs(by_hash) == [("beech", "eel"), ("cedar", "dog")]
 
 
-def test_hash_tie_break_decides_which_optimal_pairs_are_kept():
-    # Each A word has one partner at distance 0, so the assignment is unique and the
-    # two engines' solvers cannot differ on it. Every assigned pair costs 0, and the
-    # tie-break alone decides which two of the four pairs are kept.
+def test_hash_tie_break_numbers_the_optimal_pairs_by_hash_rank():
+    # Two pairs cost 0 and every other pair costs more, so the optimum is unique and
+    # the two engines' solvers cannot differ on it. Both pairs cost the same, and the
+    # tie-break alone decides which of them is set 1. Among several equally cheap sets
+    # of pairs, which set is kept is the solver's choice, which is why this test no
+    # longer asks the tie-break to decide that.
     pytest.importorskip("scipy")
-    pool = _tie_pairs_pool([1.0, 2.0, 3.0, 4.0], [1.0, 2.0, 3.0, 4.0])
+    pool = _tie_pairs_pool([1.0, 2.0, 10.0, 20.0], [1.0, 2.0, 30.0, 40.0])
     by_bytes = match_stimuli(pool, _x_design(2, method="optimal"), _x_schema())
     assert _pairs(by_bytes) == [("ash", "bat"), ("beech", "cat")]
+    assert list(by_bytes.loc[by_bytes.set == 1, "word"]) == ["ash", "bat"]
     by_hash = match_stimuli(pool, _x_design(2, method="optimal", tie_break="hash"),
                             _x_schema())
-    assert _pairs(by_hash) == [("beech", "cat"), ("cedar", "dog")]
+    assert _pairs(by_hash) == [("ash", "bat"), ("beech", "cat")]
     assert list(by_hash.loc[by_hash.set == 1, "word"]) == ["beech", "cat"]
+
+
+# ---- exact optimal matching ---------------------------------------------------
+# `optimal` selects the n pairs of least summed distance, the k-cardinality assignment
+# problem, solved through a padded square assignment (Volgenant, 2004). Twinned with
+# test-matching.R, which builds the same fixtures from the same formula and pins the
+# same summed distance.
+
+def _formula_pool(prefix, ks, shift=0.0):
+    """Three continuous dimensions from fixed quadratic residues, so both engines build
+    the same pool without a random number generator. Every intermediate is a whole
+    number below 2^53, so the arithmetic is exact in both. A linear formula would repeat
+    the same distance along every diagonal of the cost matrix."""
+    k = np.asarray(ks, dtype=float)
+    return pd.DataFrame({
+        "word": [f"{prefix}{int(i):04d}" for i in k],
+        "d1": ((k * k * 7919 + k * 13 + 1) % 10007) / 10007 + shift,
+        "d2": ((k * k * 104729 + k * 7 + 3) % 10009) / 10009,
+        "d3": ((k * k * 3571 + k * 3 + 5) % 10037) / 10037,
+    })
+
+
+_DIMS = ["d1", "d2", "d3"]
+
+
+def _solve(method, a, b, n, dims=_DIMS, **kw):
+    from lexsync.matching import _match_joint, _match_optimal
+    fn = _match_optimal if method == "optimal" else _match_joint
+    z = np.zeros(len(dims)), np.ones(len(dims))
+    return fn([a, b], ["A", "B"], dims, z[0], z[1], n, **kw)
+
+
+def _summed_distance(out, dims=_DIMS):
+    a = out[out.condition == "A"].sort_values("set")[dims].to_numpy()
+    b = out[out.condition == "B"].sort_values("set")[dims].to_numpy()
+    return float(np.sqrt(((a - b) ** 2).sum(axis=1)).sum())
+
+
+def _brute_force(a, b, n, dims=_DIMS):
+    from itertools import combinations, permutations
+    za, zb = a[dims].to_numpy(), b[dims].to_numpy()
+    cost = np.sqrt(((za[:, None, :] - zb[None, :, :]) ** 2).sum(axis=2))
+    return min(sum(cost[i, j] for i, j in zip(rows, cols, strict=True))
+               for rows in combinations(range(len(a)), n)
+               for cols in permutations(range(len(b)), n))
+
+
+@pytest.mark.parametrize(("m0", "m1", "n"), [(6, 6, 3), (5, 7, 4)])
+def test_optimal_equals_brute_force_on_small_problems(m0, m1, n):
+    # The complete assignment kept its n cheapest pairs, which is not the cheapest set
+    # of n pairs whenever the full assignment had to spend a good counterpart elsewhere.
+    pytest.importorskip("scipy")
+    a = _formula_pool("a", range(1, m0 + 1))
+    b = _formula_pool("b", range(m0 + 1, m0 + m1 + 1))
+    out = _solve("optimal", a, b, n)
+    assert out["set"].nunique() == n
+    assert abs(_summed_distance(out) - _brute_force(a, b, n)) <= 1e-9
+
+
+# The summed distance of the optimal selection on the 300 + 300 fixture with n = 30,
+# pinned identically in test-matching.R so the two engines agree to 1e-9. An
+# independent padded solve over the unrounded costs gave the same value.
+_OPTIMAL_SUM_300_N30 = 1.272647404213
+
+
+@pytest.mark.parametrize("n", [30, 150])
+def test_optimal_is_never_worse_than_joint(n):
+    # Greedy joint matching came within a few per cent of the optimum, and the old
+    # optimal was 1.15 to 2.5 times it.
+    pytest.importorskip("scipy")
+    a = _formula_pool("a", range(1, 301), shift=0.05)
+    b = _formula_pool("b", range(301, 601))
+    opt = _summed_distance(_solve("optimal", a, b, n))
+    joint = _summed_distance(_solve("joint", a, b, n))
+    assert opt <= joint + 1e-9
+    if n == 30:
+        assert abs(opt - _OPTIMAL_SUM_300_N30) <= 1e-9
+
+
+def test_optimal_does_not_depend_on_the_pool_order():
+    # Every pair costs 0, so the solver's preference among equal costs decides which
+    # pairs are kept. Under bytes the subpools are put in spelling order first, so that
+    # preference follows the spelling and not the order the rows arrived in.
+    pytest.importorskip("scipy")
+    pool = _tie_pairs_pool([1.0] * 4, [1.0] * 4)
+    for rule in ("bytes", "hash"):
+        design = _x_design(2, method="optimal", tie_break=rule)
+        forward = match_stimuli(pool, design, _x_schema())
+        backward = match_stimuli(pool.iloc[::-1].reset_index(drop=True), design, _x_schema())
+        assert list(forward["word"]) == list(backward["word"]), rule
+
+
+def test_optimal_fills_overlapping_conditions_with_distinct_words():
+    # Every word sits in both conditions. Three zero-cost pairs exist only by using a
+    # pair in both directions (haa with laa, laa with haa), which reuses both words. The
+    # duplicate is dropped and a second solve over the unused words fills its place, so
+    # the design gets its three sets under the default shortfall policy, as it does
+    # under the other methods.
+    pytest.importorskip("scipy")
+    design = _overlapping_design(3, "optimal")
+    design["matching"]["shortfall"] = "error"
+    s = match_stimuli(_small_pool(), design, _tiny_schema())
+    assert s["set"].nunique() == 3
+    assert not s["word"].duplicated().any()
+    # Which direction of a zero-cost pair the solver uses is a tie, so the two zero-cost
+    # pairs are sets 1 and 2 in either order.
+    pairs = [tuple(sorted(p)) for p in _pairs(s)]
+    assert sorted(pairs[:2]) == [("haa", "laa"), ("hab", "lab")]
+
+
+def test_optimal_fills_n_when_the_conditions_share_every_word():
+    # With the same 300 words in both conditions, every pair costs the same in both
+    # directions, and a single solve used about half of its pairs twice.
+    pytest.importorskip("scipy")
+    pool = _formula_pool("w", range(1, 301))
+    for n in (30, 80):
+        out = _solve("optimal", pool, pool, n)
+        assert out["set"].nunique() == n
+        assert not out["word"].duplicated().any()
 
 
 # The shipped English designs. Repository-coupled: the full lexicon lives in corpora/,

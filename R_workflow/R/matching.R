@@ -544,15 +544,70 @@ match_joint <- function(subpools, cond_names, match_on, center, scale_, n, cap =
   solve(cmat + ridge * diag(ncol(cmat)))
 }
 
-#' Optimal (minimum-total-distance) pairing for a two-condition design
+# Put a capped subpool in tie-break order: by tie key under tie_break: hash, and by the
+# bytes of the word under bytes, which radix order compares byte by byte. Unlike
+# .tie_key_order, this sorts under bytes as well, so the order does not depend on how
+# the rows arrived. Must stay identical to _in_tie_sort_order in
+# python_workflow/src/lexsync/matching.py.
+.tie_sort_order <- function(df, z, keys) {
+  if (is.null(keys)) keys <- .tie_sort_keys(enc2utf8(df[["word"]]), "bytes")
+  perm <- order(keys, seq_along(keys), method = "radix")
+  list(df = df[perm, , drop = FALSE], z = z[perm, , drop = FALSE])
+}
+
+# The real pairs of the cheapest set of `n` pairs in `cost`, as row and column indices,
+# leaving out any pair of a word with itself. Selecting n disjoint pairs at least total
+# cost is the k-cardinality assignment problem, solved here by the padding
+# transformation of Volgenant (2004). With n_e = min(n, m0, m1), the square problem of
+# size N = m0 + m1 - n_e has N - m0 dummy rows and N - m1 dummy columns, so a solution
+# pairs at least n_e real rows with real columns. A real row may go to a dummy column at
+# no cost, and a dummy row to a real column likewise. Every dummy row paired with a
+# dummy column costs `big`, and adding one would force a further real pair, so the
+# optimum takes exactly n_e real pairs. `big` exceeds the summed cost of any n_e real
+# pairs, so a self-pair, which costs `big` too, is used only when no n_e pairs exist
+# without one. clue's solve_LSAP and scipy's linear_sum_assignment both reject Inf, so
+# the penalty is finite. The matrix is square, so no transpose is needed.
+# Must stay identical to _k_cardinality_pairs in python_workflow/src/lexsync/matching.py.
+.k_cardinality_pairs <- function(cost, same, n) {
+  m0 <- nrow(cost); m1 <- ncol(cost)
+  n_e <- min(n, m0, m1)
+  big <- n_e * max(cost) + 1
+  size <- m0 + m1 - n_e
+  padded <- matrix(0, size, size)
+  padded[seq_len(m0), seq_len(m1)] <- ifelse(same, big, cost)
+  if (size > m0 && size > m1) padded[(m0 + 1L):size, (m1 + 1L):size] <- big
+  asg <- as.integer(clue::solve_LSAP(padded))
+  ri <- seq_len(m0)[asg[seq_len(m0)] <= m1]
+  ci <- asg[ri]
+  keep <- !same[cbind(ri, ci)]
+  list(ri = ri[keep], ci = ci[keep])
+}
+
+#' Optimal pairing for a two-condition design: the `n` pairs of least summed distance
 #'
-#' Solves the linear-assignment problem globally rather than greedily, so it
-#' minimises the summed pair distance and leaves fewer poorly matched pairs (Gu and
-#' Rosenbaum, 1993; Hansen & Klopfer, 2006). Needs the 'clue' package. The
-#' solver's tie handling differs from the Python engine's, so the two agree closely
-#' but not byte-for-byte. Under `tie_break = "hash"` the capped subpools are put in
-#' the order of their tie keys before the solve, so the solver's preferences among
-#' equal costs, and the order in which pairs of equal cost are kept, follow the hash.
+#' Selecting n disjoint pairs from two pools at least total cost is the
+#' k-cardinality assignment problem. It is solved exactly by padding the cost matrix
+#' to a square assignment problem whose optimum uses exactly n real pairs
+#' (Volgenant, 2004). Greedy `joint` matching takes the cheapest disjoint pair at
+#' each step, so it can spend a hard item's only good counterpart on an item that
+#' had alternatives. Pair matching of every item in one condition is a different
+#' problem, for which optimal matching was no better than greedy at balancing the
+#' controls (Gu & Rosenbaum, 1993). Needs the 'clue' package.
+#'
+#' Both capped subpools are first put in tie-break order (see `.tie_sort_order`), so
+#' the solver's preferences among equal costs follow that order and not the spelling
+#' or the arrival order of the rows. Which of several equally cheap sets of pairs the
+#' solver returns differs between `clue::solve_LSAP()` and SciPy's
+#' `linear_sum_assignment()`, so the two engines agree on the summed distance but not
+#' necessarily on the items. The pairs are numbered by cost, then by the tie-break
+#' rank of each word.
+#'
+#' When the conditions overlap, a word can sit in both subpools, and the solve may
+#' pair it with itself or use one pair in both directions (x with y and y with x).
+#' Those pairs are dropped, and the places left are filled by solving again over the
+#' words not yet used, until `n` pairs are found or no further pair exists. The
+#' selection is then no longer guaranteed to have the least summed distance. For
+#' disjoint conditions, one solve suffices.
 #'
 #' @keywords internal
 match_optimal <- function(subpools, cond_names, match_on, center, scale_, n, cap = .PAIRWISE_CAP,
@@ -575,41 +630,44 @@ match_optimal <- function(subpools, cond_names, match_on, center, scale_, n, cap
   z0 <- zof(s0); z1 <- zof(s1)
   o0 <- .cap_to_overlap(s0, z0, .exact_colmeans(z1), cap, k0); s0 <- o0$df; z0 <- o0$z
   o1 <- .cap_to_overlap(s1, z1, .exact_colmeans(z0), cap, k1); s1 <- o1$df; z1 <- o1$z
-  o0 <- .tie_key_order(s0, z0, o0$keys); s0 <- o0$df; z0 <- o0$z
-  o1 <- .tie_key_order(s1, z1, o1$keys); s1 <- o1$df; z1 <- o1$z
+  o0 <- .tie_sort_order(s0, z0, o0$keys); s0 <- o0$df; z0 <- o0$z
+  o1 <- .tie_sort_order(s1, z1, o1$keys); s1 <- o1$df; z1 <- o1$z
   m0 <- nrow(z0); m1 <- nrow(z1)
   cost <- matrix(0, m0, m1)
   for (d in seq_len(ncol(z0))) cost <- cost + outer(z0[, d], z1[, d], "-")^2
   cost <- matrix(.round_dp(sqrt(cost), 9), m0, m1)
-  # A word present in both subpools (overlapping condition windows) must not be
-  # paired with itself. The penalty is a large FINITE constant because both
-  # solve_LSAP and scipy's linear_sum_assignment reject Inf, and their failure
-  # modes differ across engines; 1e9 dominates any real distance, and the
-  # selection is asserted same-word-free afterwards in match_stimuli.
-  # Must stay identical to the constant in _match_optimal (matching.py).
-  same <- outer(s0$word, s1$word, "==")
-  cost[same] <- 1e9
-  # clue::solve_LSAP needs nrow <= ncol; solve on the transpose otherwise.
-  if (m0 <= m1) {
-    asg <- as.integer(clue::solve_LSAP(cost)); ri <- seq_len(m0); ci <- asg
-  } else {
-    asg <- as.integer(clue::solve_LSAP(t(cost))); ci <- seq_len(m1); ri <- asg
-  }
-  pair_cost <- cost[cbind(ri, ci)]
-  ord <- order(pair_cost, ri, ci, method = "radix")
-  # The penalty steers the assignment away from self-pairs, but an overlapping
-  # design can still mirror a pair (x with y, then y with x), reusing both words.
-  # Greedy word-level dedup over the cost-ordered assignment keeps the selection
-  # identical for disjoint designs, where every assigned word is distinct.
+  n_e <- min(n, m0, m1)
+  w0 <- s0$word; w1 <- s1$word
+  same <- outer(w0, w1, "==")
+  # Each round solves over the words not yet used and keeps its pairs in order of cost,
+  # skipping any that reuse a word. For disjoint conditions, no word appears twice, so
+  # the first round keeps all n_e pairs. A round that keeps nothing ends the search, and
+  # the caller's shortfall policy decides. Must stay identical to _match_optimal in
+  # python_workflow/src/lexsync/matching.py.
   used_words <- character(0)
   pi <- integer(0); pj <- integer(0)
-  for (t in ord) {
-    wi <- s0$word[ri[t]]; wj <- s1$word[ci[t]]
-    if (wi == wj || wi %in% used_words || wj %in% used_words) next
-    used_words <- c(used_words, wi, wj)
-    pi <- c(pi, ri[t]); pj <- c(pj, ci[t])
-    if (length(pi) >= n) break
+  while (length(pi) < n_e) {
+    rows <- which(!(w0 %in% used_words)); cols <- which(!(w1 %in% used_words))
+    if (length(rows) == 0L || length(cols) == 0L) break
+    sol <- .k_cardinality_pairs(cost[rows, cols, drop = FALSE],
+                                same[rows, cols, drop = FALSE], n_e - length(pi))
+    ri <- rows[sol$ri]; ci <- cols[sol$ci]
+    pair_cost <- cost[cbind(ri, ci)]
+    kept <- 0L
+    for (t in order(pair_cost, ri, ci, method = "radix")) {
+      wi <- w0[ri[t]]; wj <- w1[ci[t]]
+      if (wi %in% used_words || wj %in% used_words) next
+      used_words <- c(used_words, wi, wj)
+      pi <- c(pi, ri[t]); pj <- c(pj, ci[t])
+      kept <- kept + 1L
+      if (length(pi) >= n_e) break
+    }
+    if (kept == 0L) break
   }
+  # A later round can find pairs cheaper than an earlier round's, so the sets are
+  # numbered over all rounds together.
+  final <- order(cost[cbind(pi, pj)], pi, pj, method = "radix")
+  pi <- pi[final]; pj <- pj[final]
   a <- s0[pi, , drop = FALSE]; a$condition <- cond_names[1]
   b <- s1[pj, , drop = FALSE]; b$condition <- cond_names[2]
   common <- intersect(names(a), names(b))

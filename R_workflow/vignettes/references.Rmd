@@ -161,6 +161,10 @@ SUBTLEX-UK: A new and improved word frequency database for British English.
 *Quarterly Journal of Experimental Psychology*, *67*(6), 1176–1190.
 https://doi.org/10.1080/17470218.2013.850521
 
+Volgenant, A. (2004). Solving the *k*-cardinality assignment problem by
+transformation. *European Journal of Operational Research*, *157*(2), 322–331.
+https://doi.org/10.1016/S0377-2217(03)00205-4
+
 Wilkinson, M. D., Dumontier, M., Aalbersberg, IJ. J., Appleton, G., Axton, M.,
 Baak, A., Blomberg, N., Boiten, J.-W., da Silva Santos, L. B., Bourne, P. E.,
 Bouwman, J., Brookes, A. J., Clark, T., Crosas, M., Dillo, I., Dumon, O.,
