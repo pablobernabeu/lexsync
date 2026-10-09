@@ -45,9 +45,11 @@
 | Dimension | Role | Cohen's d | 90% CI | Var ratio | TOST p | Equivalent |
 |---|---|---|---|---|---|---|
 | length | controlled | 0.02 | [-0.35, 0.39] | 0.90 | 0.0178 | True |
-| frequency | manipulated/free | 5.06 | [4.29, 5.82] | 0.20 | 1.0000 | False |
+| frequency | manipulated | 5.06 | [4.29, 5.82] | 0.20 | 1.0000 | False |
 | n_density | controlled | 0.05 | [-0.32, 0.42] | 0.75 | 0.0237 | True |
 | old20 | controlled | 0.05 | [-0.32, 0.43] | 0.68 | 0.0246 | True |
+| n_syllables | uncontrolled | -0.14 | [-0.51, 0.23] | 1.03 | 0.0561 | False |
+| bigram_freq | uncontrolled | 0.06 | [-0.31, 0.44] | 0.84 | 0.0270 | True |
 
 ## Suggested analysis
 

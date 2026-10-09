@@ -7,15 +7,15 @@
   "artifacts": [
     {
       "file": "output/stimuli/en_lexdec_blocks_english_stimuli_py.csv",
-      "sha256": "ca9c63f17f5bdc019e694cd56f4ee1b2c4915f7b470ee9d90ca871000318cd74"
+      "sha256": "dc2f8febd1eb20606436c7c7093593042cd381122a8d7c8cc9754105cf7715cc"
     },
     {
       "file": "output/reports/en_lexdec_blocks_english_descriptives_py.csv",
-      "sha256": "caf2c7d172f564d2012b309496c0c498dc9c121f9287264ebad968821b898249"
+      "sha256": "4f5d92ea84850ca5d595ddcc6ff89a82cd057e87c3d253f99ae3e3a41eafaff8"
     },
     {
       "file": "output/reports/en_lexdec_blocks_english_comparisons_py.csv",
-      "sha256": "5bc33a65c07f6bba8a005416b39910acf762d97b655620376a04932410ee28a7"
+      "sha256": "0bd55c4fdf81c83407a004b3337fd6928fb7577b204e4e0b8edd2c9e3a7b61c0"
     },
     {
       "file": "output/experiments/en_lexdec_blocks_english_psychopy.py",
@@ -112,7 +112,7 @@
     "n_conditions": 2,
     "n_total": 40,
     "stimuli_file": "output/stimuli/en_lexdec_blocks_english_stimuli_py.csv",
-    "stimuli_sha256": "ca9c63f17f5bdc019e694cd56f4ee1b2c4915f7b470ee9d90ca871000318cd74"
+    "stimuli_sha256": "dc2f8febd1eb20606436c7c7093593042cd381122a8d7c8cc9754105cf7715cc"
   },
   "lexsync_datasheet_version": "1.2",
   "materials_source": {
@@ -135,11 +135,53 @@
       "ci_high": 0.533,
       "ci_low": -0.533,
       "cohens_d": 0.0,
+      "condition": "pseudoword",
       "dimension": "length",
       "equivalent": false,
+      "mean_diff": 0.0,
+      "reference": "word",
       "role": "controlled",
       "tost_p": 0.0611,
       "var_ratio": 1.0
+    },
+    {
+      "ci_high": -0.88,
+      "ci_low": -2.083,
+      "cohens_d": -1.482,
+      "condition": "pseudoword",
+      "dimension": "bigram_freq",
+      "equivalent": false,
+      "mean_diff": -0.004,
+      "reference": "word",
+      "role": "uncontrolled",
+      "tost_p": 0.9982,
+      "var_ratio": 0.612
+    },
+    {
+      "ci_high": 0.06,
+      "ci_low": -1.022,
+      "cohens_d": -0.481,
+      "condition": "pseudoword",
+      "dimension": "n_density",
+      "equivalent": false,
+      "mean_diff": -2.1,
+      "reference": "word",
+      "role": "uncontrolled",
+      "tost_p": 0.4766,
+      "var_ratio": 2.687
+    },
+    {
+      "ci_high": 0.678,
+      "ci_low": -0.389,
+      "cohens_d": 0.144,
+      "condition": "pseudoword",
+      "dimension": "old20",
+      "equivalent": false,
+      "mean_diff": 0.075,
+      "reference": "word",
+      "role": "uncontrolled",
+      "tost_p": 0.1339,
+      "var_ratio": 1.001
     }
   ],
   "relational": null,

@@ -1,3 +1,7 @@
 group,dimension,n,mean,sd,min,median,max
 a,length,8,5,0.756,4,5,6
+a,n_syllables,8,2.125,0.354,2,2,3
+a,bigram_freq,8,0.036,0.016,0.014,0.036,0.055
 b,length,8,5.625,1.061,4,5.5,7
+b,n_syllables,8,2.375,0.518,2,2,3
+b,bigram_freq,8,0.031,0.012,0.014,0.029,0.043

@@ -1,4 +1,6 @@
-condition,reference,dimension,cohens_d,d_ci_low,d_ci_high,var_ratio,tost_p,equivalent
-verb,noun,length,0,-0.775,0.775,,0.1391,FALSE
-verb,noun,frequency,-0.166,-0.943,0.611,0.636,0.2323,FALSE
-verb,noun,rating,0.125,-0.651,0.901,0.654,0.2064,FALSE
+condition,reference,dimension,cohens_d,d_ci_low,d_ci_high,var_ratio,tost_p,equivalent,mean_diff,role
+verb,noun,length,0,-0.775,0.775,,0.1391,FALSE,0,controlled
+verb,noun,frequency,-0.166,-0.943,0.611,0.636,0.2323,FALSE,-0.047,uncontrolled
+verb,noun,n_syllables,-0.629,-1.423,0.166,,0.6115,FALSE,-0.3,uncontrolled
+verb,noun,bigram_freq,-0.022,-0.797,0.754,1.152,0.1495,FALSE,0,uncontrolled
+verb,noun,rating,0.125,-0.651,0.901,0.654,0.2064,FALSE,0.12,controlled

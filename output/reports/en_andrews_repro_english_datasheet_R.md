@@ -32,17 +32,41 @@
 | Dimension | Role | Cohen's d | 90% CI | Var ratio | TOST p | Equivalent |
 |---|---|---|---|---|---|---|
 | length | controlled | -0.21 | [-0.77, 0.36] | 0.57 | 0.1920 | FALSE |
-| frequency | manipulated/free | -0.11 | [-0.67, 0.46] | 1.07 | 0.1238 | FALSE |
-| n_density | manipulated/free | 3.19 | [2.34, 4.04] | 0.04 | 1.0000 | FALSE |
-| old20 | manipulated/free | -5.76 | [-7.03, -4.48] | 1.13 | 1.0000 | FALSE |
+| frequency | uncontrolled | -0.11 | [-0.67, 0.46] | 1.07 | 0.1238 | FALSE |
+| n_density | manipulated | 3.19 | [2.34, 4.04] | 0.04 | 1.0000 | FALSE |
+| old20 | uncontrolled | -5.76 | [-7.03, -4.48] | 1.13 | 1.0000 | FALSE |
+| n_syllables | uncontrolled | -0.59 | [-1.16, -0.01] | 1.45 | 0.6023 | FALSE |
+| bigram_freq | uncontrolled | 0.82 | [0.23, 1.41] | 0.98 | 0.8291 | FALSE |
 | length | controlled | 0.10 | [-0.47, 0.66] | 0.71 | 0.1186 | FALSE |
-| frequency | manipulated/free | 4.71 | [3.62, 5.81] | 0.50 | 1.0000 | FALSE |
-| n_density | manipulated/free | 0.10 | [-0.46, 0.67] | 0.64 | 0.1208 | FALSE |
-| old20 | manipulated/free | 0.10 | [-0.46, 0.67] | 1.02 | 0.1218 | FALSE |
+| frequency | manipulated | 4.71 | [3.62, 5.81] | 0.50 | 1.0000 | FALSE |
+| n_density | uncontrolled | 0.10 | [-0.46, 0.67] | 0.64 | 0.1208 | FALSE |
+| old20 | uncontrolled | 0.10 | [-0.46, 0.67] | 1.02 | 0.1218 | FALSE |
+| n_syllables | uncontrolled | -0.59 | [-1.16, -0.01] | 1.45 | 0.6023 | FALSE |
+| bigram_freq | uncontrolled | 0.43 | [-0.14, 1.00] | 1.23 | 0.4174 | FALSE |
 | length | controlled | 0.10 | [-0.47, 0.66] | 0.71 | 0.1186 | FALSE |
-| frequency | manipulated/free | 5.19 | [4.01, 6.36] | 0.39 | 1.0000 | FALSE |
-| n_density | manipulated/free | 3.29 | [2.42, 4.15] | 0.05 | 1.0000 | FALSE |
-| old20 | manipulated/free | -5.91 | [-7.22, -4.61] | 1.22 | 1.0000 | FALSE |
+| frequency | manipulated | 5.19 | [4.01, 6.36] | 0.39 | 1.0000 | FALSE |
+| n_density | manipulated | 3.29 | [2.42, 4.15] | 0.05 | 1.0000 | FALSE |
+| old20 | uncontrolled | -5.91 | [-7.22, -4.61] | 1.22 | 1.0000 | FALSE |
+| n_syllables | uncontrolled | 0.00 | [-0.56, 0.56] | 4.21 | 0.0714 | FALSE |
+| bigram_freq | uncontrolled | 1.08 | [0.48, 1.69] | 0.86 | 0.9557 | FALSE |
+| length | controlled | 0.34 | [-0.23, 0.91] | 1.23 | 0.3197 | FALSE |
+| frequency | manipulated | 4.73 | [3.63, 5.83] | 0.47 | 1.0000 | FALSE |
+| n_density | manipulated | -3.78 | [-4.72, -2.84] | 15.79 | 1.0000 | FALSE |
+| old20 | uncontrolled | 5.83 | [4.54, 7.12] | 0.91 | 1.0000 | FALSE |
+| n_syllables | uncontrolled | 0.00 | [-0.56, 0.56] | 1.00 | 0.0714 | FALSE |
+| bigram_freq | uncontrolled | -0.35 | [-0.91, 0.22] | 1.25 | 0.3228 | FALSE |
+| length | controlled | 0.34 | [-0.23, 0.91] | 1.23 | 0.3197 | FALSE |
+| frequency | manipulated | 5.18 | [4.01, 6.36] | 0.36 | 1.0000 | FALSE |
+| n_density | uncontrolled | 0.39 | [-0.18, 0.96] | 1.29 | 0.3742 | FALSE |
+| old20 | uncontrolled | -0.27 | [-0.83, 0.30] | 1.08 | 0.2445 | FALSE |
+| n_syllables | uncontrolled | 0.39 | [-0.18, 0.96] | 2.91 | 0.3672 | FALSE |
+| bigram_freq | uncontrolled | 0.24 | [-0.33, 0.80] | 0.88 | 0.2183 | FALSE |
+| length | controlled | 0.00 | [-0.56, 0.56] | 1.00 | 0.0714 | FALSE |
+| frequency | uncontrolled | 0.35 | [-0.22, 0.92] | 0.77 | 0.3253 | FALSE |
+| n_density | manipulated | 3.89 | [2.93, 4.85] | 0.08 | 1.0000 | FALSE |
+| old20 | uncontrolled | -5.98 | [-7.30, -4.66] | 1.19 | 1.0000 | FALSE |
+| n_syllables | uncontrolled | 0.39 | [-0.18, 0.96] | 2.91 | 0.3672 | FALSE |
+| bigram_freq | uncontrolled | 0.58 | [0.00, 1.15] | 0.70 | 0.5919 | FALSE |
 
 ## Suggested analysis
 

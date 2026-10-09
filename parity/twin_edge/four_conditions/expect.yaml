@@ -1,0 +1,14 @@
+# Both engines report the three anchor pairs and then the three further pairs, six
+# dimensions each, and give frequency and N their role in each pair.
+outcome: artefacts
+compare: [stimuli, descriptives, comparisons]
+datasheet:
+  realised_control.1.dimension: frequency
+  realised_control.1.role: uncontrolled
+  realised_control.2.role: manipulated
+  realised_control.7.role: manipulated
+  realised_control.8.role: uncontrolled
+  realised_control.18.condition: LF_largeN
+  realised_control.18.reference: HF_smallN
+  realised_control.31.dimension: frequency
+  realised_control.31.role: uncontrolled

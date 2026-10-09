@@ -88,6 +88,8 @@
   },
   "realised_control": [
     {
+      "condition": "lower_frequency",
+      "reference": "higher_frequency",
       "dimension": "length",
       "role": "controlled",
       "cohens_d": -0.109,
@@ -95,19 +97,25 @@
       "ci_high": 0.424,
       "var_ratio": 0.893,
       "tost_p": 0.1121,
-      "equivalent": false
+      "equivalent": false,
+      "mean_diff": -0.05
     },
     {
+      "condition": "lower_frequency",
+      "reference": "higher_frequency",
       "dimension": "frequency",
-      "role": "manipulated/free",
+      "role": "manipulated",
       "cohens_d": 3.528,
       "ci_low": 2.676,
       "ci_high": 4.38,
       "var_ratio": 0.832,
       "tost_p": 1,
-      "equivalent": false
+      "equivalent": false,
+      "mean_diff": 1.023
     },
     {
+      "condition": "lower_frequency",
+      "reference": "higher_frequency",
       "dimension": "n_density",
       "role": "controlled",
       "cohens_d": 0.13,
@@ -115,9 +123,12 @@
       "ci_high": 0.664,
       "var_ratio": 0.832,
       "tost_p": 0.1245,
-      "equivalent": false
+      "equivalent": false,
+      "mean_diff": 0.3
     },
     {
+      "condition": "lower_frequency",
+      "reference": "higher_frequency",
       "dimension": "old20",
       "role": "controlled",
       "cohens_d": -0.241,
@@ -125,7 +136,34 @@
       "ci_high": 0.294,
       "var_ratio": 0.624,
       "tost_p": 0.2093,
-      "equivalent": false
+      "equivalent": false,
+      "mean_diff": -0.058
+    },
+    {
+      "condition": "lower_frequency",
+      "reference": "higher_frequency",
+      "dimension": "n_syllables",
+      "role": "uncontrolled",
+      "cohens_d": 0.117,
+      "ci_low": -0.417,
+      "ci_high": 0.651,
+      "var_ratio": 0.738,
+      "tost_p": 0.1166,
+      "equivalent": false,
+      "mean_diff": 0.05
+    },
+    {
+      "condition": "lower_frequency",
+      "reference": "higher_frequency",
+      "dimension": "bigram_freq",
+      "role": "uncontrolled",
+      "cohens_d": 0.283,
+      "ci_low": -0.253,
+      "ci_high": 0.819,
+      "var_ratio": 0.76,
+      "tost_p": 0.2486,
+      "equivalent": false,
+      "mean_diff": 0.001
     }
   ],
   "counterbalancing": {
@@ -193,11 +231,11 @@
     },
     {
       "file": "output/reports/en_supplied_pool_english_descriptives_R.csv",
-      "sha256": "4b3d9bfb7e3e23bc9260397f78dacbdfa05f6d87a8cc061754b712d8923e7aff"
+      "sha256": "4f8798742cc1e235ed7b40d9780ef7564f00021227c3d528928480469fdec839"
     },
     {
       "file": "output/reports/en_supplied_pool_english_comparisons_R.csv",
-      "sha256": "b95d7e1d5fc4a9e1c2ea688c9a51a2f6fd826ecfad621b71fe9f77c809d73dd9"
+      "sha256": "75d07fe237a17e8125e1544a98607a7925ebefa1ed23bcb639ea184194a3eb68"
     },
     {
       "file": "output/experiments/en_supplied_pool_english_psychopy.py",

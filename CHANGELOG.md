@@ -174,6 +174,50 @@ no function signature changes.
   datasheet records the counts as `materials_source.input_normalisation`, a field
   of datasheet format 1.2. Every demonstration's output is unchanged, and the
   twin-edge case `nfd_pool` pins the new outcome.
+- The realised-control report covers every dimension lexsync knows for the items,
+  not only the standard four and `match_on`: syllables, bigram frequency, every
+  joined norm column and every `define_by` dimension, each with a role
+  (manipulated, controlled or uncontrolled), and it compares every pair of
+  conditions, the anchor rows first. Uncontrolled differences used to go
+  unreported while the Methods text called the control close: in `en_ndensity`
+  the dense words had fewer estimated syllables than the sparse ones (d = -0.83),
+  and a norm used to define the conditions did not appear in the report at all.
+  Each comparison also gives the raw mean difference in the dimension's own unit
+  (`mean_diff`). The comparisons gain rows, and two columns, `mean_diff` and
+  `role`, after the existing ones. A dimension is manipulated in a pair whose
+  `define_by` windows on it differ, so in `en_andrews_repro` frequency is
+  uncontrolled between the two high-frequency cells. `match_report` takes the
+  roles as `roles`, a function of the condition, reference and dimension that
+  `run_pipeline` derives from the design, and leaves out a dimension with no
+  numeric value, such as `n_syllables` for Chinese. Bigram frequency is computed
+  for the report on a copy of the stimuli, so no stimuli file or selection
+  changes. The datasheet's `realised_control` entries gain `condition`,
+  `reference` and `mean_diff`, fields of datasheet format 1.2, and their roles
+  replace 'manipulated/free', the label every unmatched dimension was given. Both
+  apps show each row's role and raw difference and label each bar of the chart by
+  dimension and pair. The comparisons, datasheets and run logs of the eleven
+  demonstrations that match conditions change in both engines, and so do the
+  descriptives of all of them but `en_richdim`, whose report had syllables and
+  bigram frequency already. The twin-edge cases' pinned reports are regenerated,
+  and the new case `four_conditions` pins the pairs and roles in both engines.
+- A generated lexical-decision design reports bigram frequency, N and OLD20 for
+  the words against the pseudowords, marked uncontrolled. Its stimuli give the
+  base word of each pseudoword and the edit distance from it, as the `base` and
+  `edit_distance` columns `build_lexdec_stimuli` now returns. Its pseudowords are
+  more bigram-typical than their words (d about -1.5 in `en_lexdec`), which no
+  report showed. The reports, datasheets and run logs of the three
+  lexical-decision demonstrations change and their stimuli gain the two columns,
+  while no pseudoword, trial order or experiment changes.
+- A continuous design's report gives the predictor's SD against that of as many
+  values spread evenly over its range, each control's SD against the pool's, and
+  the control windows (`sd`, `sd_ratio`, `window_low` and `window_high`). An even
+  spread has a predictor ratio of 1 whatever its size. In `en_freqcontinuous`, the
+  frequency SD is 0.60 of that of an even spread. `select_continuous_stimuli`
+  records the windows and the pool's SDs in `attrs["audit"]["control_windows"]`.
+  `match_report_continuous` reads them there, or takes them as `audit`, and the
+  datasheet's continuous entries gain the four fields, in datasheet format 1.2.
+  The comparisons, datasheets and run logs of `en_freqcontinuous` and
+  `en_priming_continuous` change.
 
 ### Fixed
 
@@ -453,6 +497,11 @@ no function signature changes.
 - The command line prints lexsync's own error messages without a Python traceback
   and exits with status 1. `lexsync --traceback` shows the traceback, and a usage
   error keeps argparse's status 2.
+- `cohens_d` and `cohens_d_ci` return None when a condition has fewer than two
+  items, where they returned 0, a perfect balance. The pipeline no longer fails
+  while formatting the missing interval: it raised a TypeError writing the run log,
+  which now prints NA, as the R engine's does. The twin-edge case `shortfall_one`
+  pins the result in both engines.
 
 ### Security
 

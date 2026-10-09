@@ -4,7 +4,7 @@
 \alias{match_report}
 \title{Build the full match-quality report}
 \usage{
-match_report(stimuli, dims, schema)
+match_report(stimuli, dims, schema, roles = NULL)
 }
 \arguments{
 \item{stimuli}{A matched-stimuli data frame (must contain \code{condition}).}
@@ -12,19 +12,29 @@ match_report(stimuli, dims, schema)
 \item{dims}{Dimensions to summarise and compare.}
 
 \item{schema}{The parsed global schema (equivalence settings).}
+
+\item{roles}{Optional function of \code{condition}, \code{reference} and \code{dimension} that
+returns the row's \code{role}: \code{"manipulated"} when the design sets the two
+conditions apart on the dimension, \code{"controlled"} when it matches them on it
+and \code{"uncontrolled"} otherwise. \code{\link[=run_pipeline]{run_pipeline()}} derives it from the design.
+Without it, \code{role} is \code{NA}.}
 }
 \value{
-A list with \code{descriptives} and \code{comparisons} data frames. Every
-comparison is against the first condition in order of appearance, so a design
-with a single condition has nothing to compare and \code{comparisons} comes back
-with its columns and no rows.
+A list with \code{descriptives} and \code{comparisons} data frames. Every pair of
+conditions is compared on every dimension. The rows against the first condition
+in order of appearance, the anchor, come first, then every further pair in
+condition order, so a design with a single condition has nothing to compare and
+\code{comparisons} comes back with its columns and no rows. A dimension with no
+numeric value among the stimuli, such as \code{n_syllables} for Chinese or a text
+label, is left out of both frames.
 
-Each row of \code{comparisons} names that first condition in \code{reference} and the
-condition compared with it in \code{condition}. The signed statistics run from the
-reference to the other condition: \code{cohens_d}, \code{d_ci_low} and \code{d_ci_high} are
-the reference mean minus the \code{condition} mean, in pooled standard deviations,
-so a positive d means the reference scores higher. \code{var_ratio} is the other
-way up, the \code{condition} variance over the reference variance.
+Each row of \code{comparisons} names the earlier condition of its pair in \code{reference}
+and the later one in \code{condition}. The signed statistics run from the reference
+to the other condition: \code{cohens_d}, \code{d_ci_low} and \code{d_ci_high} are the
+reference mean minus the \code{condition} mean, in pooled standard deviations, so a
+positive d means the reference scores higher. \code{mean_diff} is the same
+difference in the dimension's own unit, to three places. \code{var_ratio} is the
+other way up, the \code{condition} variance over the reference variance.
 }
 \description{
 Build the full match-quality report

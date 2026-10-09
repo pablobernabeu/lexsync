@@ -1,3 +1,5 @@
-condition,reference,dimension,cohens_d,d_ci_low,d_ci_high,var_ratio,tost_p,equivalent
-low_bigram,high_bigram,length,0,0,0,1,0,TRUE
-low_bigram,high_bigram,frequency,0.186,-0.993,1.364,0.23,0.3162,FALSE
+condition,reference,dimension,cohens_d,d_ci_low,d_ci_high,var_ratio,tost_p,equivalent,mean_diff,role
+low_bigram,high_bigram,length,0,0,0,1,0,TRUE,0,controlled
+low_bigram,high_bigram,frequency,0.186,-0.993,1.364,0.23,0.3162,FALSE,0.064,controlled
+low_bigram,high_bigram,n_syllables,0,-1.176,1.176,1,0.226,FALSE,0,uncontrolled
+low_bigram,high_bigram,bigram_freq,3.541,1.657,5.426,0.311,0.9993,FALSE,0.009,manipulated

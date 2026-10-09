@@ -213,7 +213,7 @@ test_that("a single-condition design completes and writes a header-only comparis
   expect_identical(
     readLines(res$comparisons, warn = FALSE),
     paste0("condition,reference,dimension,cohens_d,d_ci_low,d_ci_high,",
-           "var_ratio,tost_p,equivalent"))
+           "var_ratio,tost_p,equivalent,mean_diff,role"))
 })
 
 test_that("a continuous table without members is an error", {
@@ -1403,4 +1403,186 @@ test_that("the schema notice names the path as the record does", {
     expect_identical(.posix_path(res$path), "study/schema.yaml")
     expect_identical(notices, "lexsync: using the schema at 'study/schema.yaml'\n")
   }
+})
+
+# ---- The realised-control report (twinned with test_run_pipeline.py) -------------
+# It covered length, frequency, N, OLD20 and match_on, compared every condition with the
+# first only, and called every unmatched row "manipulated/free", so real confounds went
+# unreported while the Methods text called the control close.
+
+# A comparisons CSV as text, so an empty cell reads as "" and not NA.
+comparisons_text <- function(res) {
+  utils::read.csv(res$comparisons, colClasses = "character", na.strings = character(0),
+                  encoding = "UTF-8")
+}
+
+roles_of <- function(cmp) {
+  stats::setNames(cmp$role, paste(cmp$condition, cmp$reference, cmp$dimension))
+}
+
+test_that("one item per condition under shortfall allow leaves d empty", {
+  # One item has no spread, so d is undefined. Both engines reported d = 0, a perfect
+  # balance, for a frequency contrast of 3.01 Zipf, and the Python engine then raised
+  # a TypeError formatting the missing interval for the run log.
+  out <- tmp_out()
+  lexicon <- file.path(out, "lexicon.csv")
+  writeLines(c("word,freq_zipf", "time,6.29", "zeal,3.28"), lexicon, useBytes = TRUE)
+  res <- run_quiet(write_design(out, c(
+    "name: shortfall_one",
+    "language: english",
+    paste0("lexicon: ", as_yaml_path(lexicon)),
+    "n_per_condition: 20",
+    "conditions:",
+    "  - {name: high, define_by: {frequency: [5.0, 7.0]}}",
+    "  - {name: low, define_by: {frequency: [2.0, 4.0]}}",
+    "match_on: [length]",
+    "matching: {shortfall: allow}"
+  )), extdata("schema.yaml"), outdir = out)
+  cmp <- comparisons_text(res)
+  expect_identical(cmp$dimension, c("length", "frequency", "n_syllables", "bigram_freq"))
+  for (col in c("cohens_d", "d_ci_low", "d_ci_high", "var_ratio", "tost_p", "equivalent")) {
+    expect_identical(unique(cmp[[col]]), "", info = col)
+  }
+  expect_identical(cmp$mean_diff, c("0", "3.01", "1", "0"))
+  expect_identical(cmp$role, c("controlled", "manipulated", "uncontrolled", "uncontrolled"))
+  expect_true(grepl("on 'frequency': d = NA, TOST p = NA (not shown equivalent)",
+                    read_log(res), fixed = TRUE))
+})
+
+test_that("frequency is manipulated only between cells whose windows differ", {
+  # Every pair of a 2 x 2 design is compared, and a dimension is manipulated only in
+  # the rows whose define_by windows on it differ: two high-frequency cells share the
+  # window [5, 7].
+  out <- tmp_out()
+  res <- run_quiet(write_design(out, c(
+    "name: andrews_like",
+    "language: english",
+    paste0("lexicon: ", as_yaml_path(extdata("en_example.csv"))),
+    "n_per_condition: 5",
+    "pool_filters: {length: [3, 7]}",
+    "conditions:",
+    "  - {name: HF_largeN, define_by: {frequency: [5.0, 7.0], n_density: [9, 100]}}",
+    "  - {name: HF_smallN, define_by: {frequency: [5.0, 7.0], n_density: [0, 5]}}",
+    "  - {name: LF_largeN, define_by: {frequency: [2.5, 4.2], n_density: [9, 100]}}",
+    "  - {name: LF_smallN, define_by: {frequency: [2.5, 4.2], n_density: [0, 5]}}",
+    "match_on: [length]"
+  )), extdata("schema.yaml"), outdir = out)
+  cmp <- comparisons_text(res)
+  role <- roles_of(cmp)
+  expect_identical(role[["HF_smallN HF_largeN frequency"]], "uncontrolled")
+  expect_identical(role[["LF_largeN HF_largeN frequency"]], "manipulated")
+  expect_identical(role[["LF_smallN LF_largeN frequency"]], "uncontrolled")
+  expect_identical(role[["LF_largeN HF_smallN frequency"]], "manipulated")
+  expect_identical(role[["HF_smallN HF_largeN n_density"]], "manipulated")
+  expect_identical(role[["LF_largeN HF_largeN n_density"]], "uncontrolled")
+  expect_identical(unique(cmp$role[cmp$dimension == "length"]), "controlled")
+  expect_setequal(unique(paste(cmp$condition, cmp$reference)),
+                  c("HF_smallN HF_largeN", "LF_largeN HF_largeN", "LF_smallN HF_largeN",
+                    "LF_largeN HF_smallN", "LF_smallN HF_smallN", "LF_smallN LF_largeN"))
+})
+
+test_that("a norm named only in define_by is reported as manipulated", {
+  # A joined norm column that defines the conditions is the manipulated variable, and
+  # it was absent from the report although the stimuli carried it.
+  out <- tmp_out()
+  words <- read_csv_utf8(extdata("en_example.csv"))$word
+  norms <- file.path(out, "conc.csv")
+  # Invented ratings, describing no norm.
+  write_csv_utf8(data.frame(word = words,
+                            concreteness = 1 + (seq_along(words) - 1) %% 50 / 10,
+                            stringsAsFactors = FALSE), norms)
+  res <- run_quiet(write_design(out, c(
+    "name: norm_define",
+    "language: english",
+    paste0("lexicon: ", as_yaml_path(extdata("en_example.csv"))),
+    "norms:",
+    paste0("  - {path: ", as_yaml_path(norms), ", columns: [concreteness]}"),
+    "n_per_condition: 5",
+    "pool_filters: {length: [3, 7]}",
+    "conditions:",
+    "  - {name: concrete, define_by: {concreteness: [4.0, 6.0]}}",
+    "  - {name: abstract, define_by: {concreteness: [1.0, 2.5]}}",
+    "match_on: [length]"
+  )), extdata("schema.yaml"), outdir = out)
+  expect_identical(roles_of(comparisons_text(res))[["abstract concrete concreteness"]],
+                   "manipulated")
+  expect_true("concreteness" %in% read_csv_utf8(res$descriptives)$dimension)
+})
+
+test_that("a corpus report covers every dimension without changing the stimuli", {
+  # Syllables and bigram frequency are reported, the latter computed for the report
+  # only, so the stimuli file and the selection stay as they were.
+  out <- tmp_out()
+  res <- run_quiet(write_design(out, corpus_lines(name = "guard_test")),
+                   extdata("schema.yaml"), outdir = out)
+  cmp <- comparisons_text(res)
+  expect_identical(cmp$dimension, c("length", "frequency", "n_density", "old20",
+                                    "n_syllables", "bigram_freq"))
+  expect_identical(cmp$role, c("controlled", "manipulated", "uncontrolled",
+                               "uncontrolled", "uncontrolled", "uncontrolled"))
+  expect_false("bigram_freq" %in% names(read_csv_utf8(res$stimuli)))
+})
+
+test_that("a Chinese design reports no n_syllables row", {
+  # A dimension every item lacks has nothing to compare: the syllable estimate is
+  # undefined for Chinese.
+  out <- tmp_out()
+  res <- run_quiet(write_design(out, zh_lines("match_on: [length]")),
+                   extdata("schema.yaml"), outdir = out)
+  dims <- comparisons_text(res)$dimension
+  expect_false("n_syllables" %in% dims)
+  expect_true("bigram_freq" %in% dims)
+})
+
+test_that("a generated design reports the dimensions it does not control", {
+  # Words and pseudowords were compared on length alone, which they share by
+  # construction, so the bigram typicality the generator maximises went unreported.
+  # The stimuli give each pseudoword its base word and edit distance.
+  out <- tmp_out()
+  res <- run_quiet(write_design(out, c(
+    "name: gen_report",
+    "language: english",
+    "paradigm: lexical_decision",
+    "items:",
+    "  source: generate",
+    paste0("  lexicon: ", as_yaml_path(extdata("en_example.csv"))),
+    "n_per_condition: 5",
+    "pool_filters: {length: [4, 7], frequency: [3.5, 6.0]}"
+  )), extdata("schema.yaml"), outdir = out)
+  cmp <- comparisons_text(res)
+  expect_identical(cmp$dimension, c("length", "bigram_freq", "n_density", "old20"))
+  expect_identical(cmp$role, c("controlled", "uncontrolled", "uncontrolled", "uncontrolled"))
+  stim <- read_csv_utf8(res$stimuli)
+  expect_length(intersect(c("bigram_freq", "n_density", "old20"), names(stim)), 0L)
+  words <- stim[stim$condition == "word", ]
+  pseudo <- stim[stim$condition == "pseudoword", ]
+  words <- words[order(words$set), ]
+  pseudo <- pseudo[order(pseudo$set), ]
+  expect_identical(words$base, words$target)
+  expect_true(all(words$edit_distance == 0))
+  expect_identical(pseudo$base, words$target)
+  expect_true(all(pseudo$edit_distance >= 1 & pseudo$edit_distance <= 2))
+})
+
+golden <- function(name) read_csv_utf8(repo_path("output", "reports", name))
+
+test_that("en_ndensity reports its syllable confound", {
+  # The dense words have fewer estimated syllables than the sparse ones, an
+  # uncontrolled difference the report did not show while the Methods text called the
+  # control close.
+  cmp <- golden("en_ndensity_english_comparisons_R.csv")
+  row <- cmp[cmp$dimension == "n_syllables", ]
+  expect_identical(nrow(row), 1L)
+  expect_identical(row$role, "uncontrolled")
+  expect_false(row$equivalent)
+  expect_lt(abs(row$cohens_d - -0.828), 0.001)
+})
+
+test_that("en_freqcontinuous reports the spread of its predictor", {
+  # The selection follows the pool's skew, so its frequency SD is about 0.60 of that of
+  # 80 values spread evenly over the same range (0.54 against 0.90).
+  cmp <- golden("en_freqcontinuous_english_comparisons_R.csv")
+  expect_lt(abs(cmp$sd_ratio[cmp$dimension == "frequency"] - 0.60), 0.005)
+  expect_lt(cmp$window_low[cmp$dimension == "length"],
+            cmp$window_high[cmp$dimension == "length"])
 })

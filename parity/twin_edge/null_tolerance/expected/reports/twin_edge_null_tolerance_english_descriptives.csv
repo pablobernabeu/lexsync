@@ -1,5 +1,9 @@
 group,dimension,n,mean,sd,min,median,max
 noun,length,8,5.625,0.518,5,6,6
 noun,frequency,8,4.586,0.661,3.66,4.52,5.62
+noun,n_syllables,8,2,0,2,2,2
+noun,bigram_freq,8,0.012,0.004,0.006,0.013,0.02
 verb,length,8,5.875,0.354,5,6,6
 verb,frequency,8,4.406,0.486,3.77,4.24,5.08
+verb,n_syllables,8,2.125,0.641,1,2,3
+verb,bigram_freq,8,0.013,0.004,0.009,0.012,0.02

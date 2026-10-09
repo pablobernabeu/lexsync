@@ -317,11 +317,14 @@ candidates. For a matched design the record also names the rule that broke exact
 the selection does not depend on the seed, which fixes the trial order.
 
 The realised control is a table, not a claim, giving each dimension its role, Cohen's *d*, the 90%
-interval, the variance ratio, the TOST *p* and the verdict. The JSON keeps each statistic as the
-comparisons report rounded it, to three places and the TOST *p* to four. The Markdown and the
-Methods paragraph show them at two or three places and the TOST *p* at four. The rounding is done
-by lexsync's own formatter, half away from zero from that record, so both engines print the same
-digits. A *d* of 0.1649 is stored as 0.165 and is therefore shown as 0.17.
+interval, the variance ratio, the TOST *p* and the verdict, for every pair of conditions. The JSON
+names each row's pair in `condition` and `reference` and adds the raw difference, `mean_diff`. For
+a continuous design it gives each dimension's realised SD, its ratio to an even spread or to the
+pool, and each control's window. The JSON keeps each statistic as the comparisons report rounded
+it, to three places and the TOST *p* to four. The Markdown and the Methods paragraph show them at
+two or three places and the TOST *p* at four. The rounding is done by lexsync's own formatter, half
+away from zero from that record, so both engines print the same digits. A *d* of 0.1649 is stored
+as 0.165 and is therefore shown as 0.17.
 
 The suggested analysis is a crossed mixed-model formula,
 `response ~ condition + (1 + condition | subject) + (1 | item)`, which is there

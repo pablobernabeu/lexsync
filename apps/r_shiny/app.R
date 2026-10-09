@@ -434,22 +434,31 @@ server <- function(input, output, session) {
                  "This paradigm draws from an item table, so no corpus-matching ",
                  "control report is produced."))
     tagList(
-      h5("Effect size and equivalence per controlled dimension"),
+      h5("Realised control for every pair of conditions and every dimension"),
       DT::renderDT({
         c <- b$comparisons
         c$`90% CI` <- sprintf("[%.2f, %.2f]", c$d_ci_low, c$d_ci_high)
-        cols <- intersect(c("condition", "reference", "dimension", "cohens_d", "90% CI",
-                            "var_ratio", "tost_p", "equivalent"), names(c))
+        cols <- intersect(c("condition", "reference", "dimension", "role", "mean_diff",
+                            "cohens_d", "90% CI", "var_ratio", "tost_p", "equivalent"),
+                          names(c))
         DT::datatable(c[, cols], rownames = FALSE, options = list(dom = "t"))
       }),
       renderPlot({
-        c <- b$comparisons; v <- abs(c$cohens_d); names(v) <- c$dimension
-        op <- par(mar = c(4, 4, 1, 1)); on.exit(par(op))
-        barplot(v, ylab = "|Cohen's d|", col = ifelse(v > 1, "#d95f02", "#1b9e77"), las = 1)
+        # One bar per dimension and pair: a design with more than two conditions
+        # compares every pair, and bars sharing a dimension's label could not be told
+        # apart.
+        c <- b$comparisons; v <- abs(c$cohens_d)
+        names(v) <- sprintf("%s (%s vs %s)", c$dimension, c$condition, c$reference)
+        op <- par(mar = c(9, 4, 1, 1)); on.exit(par(op))
+        # d is NA where a condition has a single item, and when every bar is NA,
+        # barplot() cannot choose an axis and fails, so the axis is fixed for that case.
+        barplot(v, ylab = "|Cohen's d|", col = ifelse(v > 1, "#d95f02", "#1b9e77"), las = 2,
+                cex.names = 0.8, ylim = if (all(is.na(v))) c(0, 1))
         abline(h = 0.5, lty = 2, col = "grey50")
-      }, height = 240),
-      helpText("Absolute standardised mean difference by dimension. Manipulated dimensions ",
-               "stand high; matched dimensions sit near zero (below the 0.5-SD line)."),
+      }, height = 320),
+      helpText("Absolute standardised mean difference by dimension and pair. Manipulated ",
+               "dimensions stand high; matched dimensions sit near zero (below the 0.5-SD ",
+               "line), and uncontrolled ones may sit anywhere."),
       if (!is.null(b$descriptives)) tagList(h5("Per-condition descriptive statistics"),
         renderTable(b$descriptives))
     )

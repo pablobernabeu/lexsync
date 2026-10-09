@@ -47,6 +47,17 @@
 #                                  lexicon read (see .lexicon_provenance). Earlier
 #                                  records credited wordfreq for any file.
 #   reproducibility$schema_path   the schema file the run read, in POSIX form
+#   realised_control[]$condition, realised_control[]$reference
+#                               the pair a row compares. Every pair is reported, the
+#                               anchor rows first
+#   realised_control[]$mean_diff  the reference mean minus the condition mean, in the
+#                               dimension's own unit
+#   realised_control[]$role     manipulated, controlled or uncontrolled for the pair
+#                               (1.1 wrote "manipulated/free" for every unmatched row)
+#   realised_control[]$sd, $sd_ratio, $window_low, $window_high
+#                               a continuous design's realised SDs, set against an even
+#                               spread (the predictor) or the pool (a control), and each
+#                               control's window
 DATASHEET_VERSION <- "1.2"
 
 # Datasheet labels for the pseudoword generators in generation.R, keyed by the
@@ -242,6 +253,51 @@ DATASHEET_VERSION <- "1.2"
   if (source %in% c("corpus", "pool")) unlist(design[["match_on"]], use.names = FALSE)
   else if (identical(source, "generate")) "length"
   else character(0)
+}
+
+# Whether two conditions' define_by entries on one dimension select alike. Absent from
+# both is alike, and absent from one only is not. A two-number entry is a range
+# compared bound by bound, numerically, so [5, 7] and [5.0, 7.0] are alike. Any other
+# entry is a set of permitted values, compared as a set: numerically when both hold
+# only numbers, and otherwise as text. Mirrors _same_window in datasheet.py.
+.same_window <- function(a, b) {
+  if (is.null(a) || is.null(b)) return(is.null(a) && is.null(b))
+  a <- unlist(a, use.names = FALSE); b <- unlist(b, use.names = FALSE)
+  if (length(a) != length(b)) return(FALSE)
+  if (is.numeric(a) && is.numeric(b)) {
+    a <- as.numeric(a); b <- as.numeric(b)
+    if (length(a) != 2L) { a <- sort(a); b <- sort(b) }
+    return(isTRUE(all(a == b)))
+  }
+  identical(sort(as.character(a), method = "radix"), sort(as.character(b), method = "radix"))
+}
+
+# The role of a realised-control row, as a function of (condition, reference,
+# dimension). A row is "manipulated" when the two conditions' define_by entries on the
+# dimension differ, or when the dimension is a continuous design's predictor. It is
+# "controlled" when the dimension is among `controlled`, the dimensions the selection
+# matched on (match_on, or length for generated pseudowords), and "uncontrolled"
+# otherwise. In a 2 x 2 design, frequency is manipulated between a high- and a
+# low-frequency cell but not between two cells that share its window. run_pipeline()
+# passes this to match_report(), and build_datasheet() falls back on it for a report
+# without roles. Mirrors _comparison_roles in datasheet.py.
+.comparison_roles <- function(design, controlled) {
+  windows <- list()
+  for (cond in design[["conditions"]] %||% list()) {
+    if (is.list(cond) && is.list(cond[["define_by"]])) {
+      windows[[as.character(cond[["name"]])]] <- cond[["define_by"]]
+    }
+  }
+  predictor <- if (is.list(design[["continuous"]])) design[["continuous"]][["predictor"]]
+  controlled <- unlist(controlled, use.names = FALSE)
+  function(condition, reference, dimension) {
+    a <- windows[[as.character(condition)]] %||% list()
+    b <- windows[[as.character(reference)]] %||% list()
+    if (identical(dimension, predictor) || !.same_window(a[[dimension]], b[[dimension]])) {
+      return("manipulated")
+    }
+    if (dimension %in% controlled) "controlled" else "uncontrolled"
+  }
 }
 
 .r4 <- function(v) if (is.null(v) || is.na(v)) NULL else .round_dp(as.numeric(v), 4)
@@ -442,22 +498,33 @@ build_datasheet <- function(design, schema, report, stimuli, source_path, artifa
   realised <- list()
   if (!is.null(report)) {
     cmp <- report$comparisons
+    # A report the pipeline wrote carries each row's role. One from a direct call of
+    # match_report() may not, and its roles are then taken from the design.
+    role_of <- .comparison_roles(design, controlled)
     for (i in seq_len(nrow(cmp))) {
       if (is_continuous) {
         realised[[length(realised) + 1L]] <- list(
           dimension = cmp$dimension[i], role = cmp$role[i],
           pearson_r = .r4(cmp$pearson_r[i]),
-          predictor_span = .r4(cmp$predictor_span[i])
+          predictor_span = .r4(cmp$predictor_span[i]),
+          sd = .r4(cmp[["sd"]][i]), sd_ratio = .r4(cmp[["sd_ratio"]][i]),
+          window_low = .r4(cmp[["window_low"]][i]),
+          window_high = .r4(cmp[["window_high"]][i])
         )
       } else {
+        role <- cmp[["role"]][i]
+        if (is.null(role) || is.na(role)) {
+          role <- role_of(cmp$condition[i], cmp$reference[i], cmp$dimension[i])
+        }
         realised[[length(realised) + 1L]] <- list(
-          dimension = cmp$dimension[i],
-          role = if (cmp$dimension[i] %in% controlled) "controlled" else "manipulated/free",
+          condition = cmp$condition[i], reference = cmp$reference[i],
+          dimension = cmp$dimension[i], role = as.character(role),
           cohens_d = .r4(cmp$cohens_d[i]),
           ci_low = .r4(cmp$d_ci_low[i]), ci_high = .r4(cmp$d_ci_high[i]),
           var_ratio = .r4(cmp$var_ratio[i]),
           tost_p = .r4(cmp$tost_p[i]),
-          equivalent = if (is.na(cmp$equivalent[i])) NULL else isTRUE(cmp$equivalent[i])
+          equivalent = if (is.na(cmp$equivalent[i])) NULL else isTRUE(cmp$equivalent[i]),
+          mean_diff = .r4(cmp[["mean_diff"]][i])
         )
       }
     }

@@ -124,13 +124,16 @@ what it will present and how to reproduce it.
 
 'Stimuli' is the selected set as a table, the same one the run wrote to disk.
 
-'Realised control' is the part that decides whether the set is usable. It reports Cohen's *d*
-against the anchor condition for each controlled dimension, with its 90% confidence interval, the
-variance ratio and the verdict of the two one-sided tests procedure, then draws the absolute
-standardised mean difference per dimension as a bar chart. Manipulated dimensions stand high and
-matched dimensions sit near zero, so the chart shows immediately whether the matching worked. The
-per-condition descriptive statistics follow underneath. A design drawn from an item table produces
-no corpus-matching report, and the tab says as much where an empty table would otherwise sit.
+'Realised control' is the part that decides whether the set is usable. It covers every pair of
+conditions on every dimension the report includes. Each row gives the dimension's role
+(manipulated, controlled or uncontrolled), the raw difference, Cohen's *d* with its 90% confidence
+interval, the variance ratio and the verdict of the two one-sided tests procedure. The tab then
+draws the absolute standardised mean difference per dimension and pair as a bar chart. Manipulated
+dimensions stand high and matched dimensions sit near zero, so the chart shows immediately whether
+the matching worked. An uncontrolled dimension that stands high is a difference the design did not
+hold. The per-condition descriptive statistics follow underneath. A design drawn from an item table
+produces no corpus-matching report, and the tab says as much where an empty table would otherwise
+sit.
 
 'Datasheet' renders the materials datasheet for the run, carrying the provenance of the corpus, the
 checksums, the realised control and the pre-registration skeleton.

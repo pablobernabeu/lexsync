@@ -11,11 +11,11 @@
     },
     {
       "file": "output/reports/es_gender_repro_spanish_descriptives_py.csv",
-      "sha256": "7e0f2bf841b1bbe6a612cbd5030a9b688ccd337b8f0b843afc20a8a821c4619b"
+      "sha256": "f8e39974971b8cf1d887b6945e97d671a37097e532aeff9cde6d9c38390dfddb"
     },
     {
       "file": "output/reports/es_gender_repro_spanish_comparisons_py.csv",
-      "sha256": "95ebe07b46dbce329ab43a36c108e0b9d673f0c88b849484251a2aa1280ca105"
+      "sha256": "eeba8811e84e8b1f49b18b73bc77f54e9ae7b447f3bb0890b8a9683866fbe194"
     },
     {
       "file": "output/experiments/es_gender_repro_spanish_psychopy.py",
@@ -137,8 +137,11 @@
       "ci_high": 0.339,
       "ci_low": -0.339,
       "cohens_d": 0.0,
+      "condition": "masculine",
       "dimension": "length",
       "equivalent": true,
+      "mean_diff": 0.0,
+      "reference": "feminine",
       "role": "controlled",
       "tost_p": 0.0081,
       "var_ratio": 1.0
@@ -147,8 +150,11 @@
       "ci_high": 0.36,
       "ci_low": -0.319,
       "cohens_d": 0.021,
+      "condition": "masculine",
       "dimension": "frequency",
       "equivalent": true,
+      "mean_diff": 0.008,
+      "reference": "feminine",
       "role": "controlled",
       "tost_p": 0.0105,
       "var_ratio": 0.009
@@ -157,9 +163,12 @@
       "ci_high": 0.536,
       "ci_low": -0.144,
       "cohens_d": 0.196,
+      "condition": "masculine",
       "dimension": "n_density",
       "equivalent": false,
-      "role": "manipulated/free",
+      "mean_diff": 0.563,
+      "reference": "feminine",
+      "role": "uncontrolled",
       "tost_p": 0.0697,
       "var_ratio": 0.556
     },
@@ -167,11 +176,40 @@
       "ci_high": 0.257,
       "ci_low": -0.422,
       "cohens_d": -0.082,
+      "condition": "masculine",
       "dimension": "old20",
       "equivalent": true,
-      "role": "manipulated/free",
+      "mean_diff": -0.057,
+      "reference": "feminine",
+      "role": "uncontrolled",
       "tost_p": 0.0218,
       "var_ratio": 0.893
+    },
+    {
+      "ci_high": 0.441,
+      "ci_low": -0.237,
+      "cohens_d": 0.102,
+      "condition": "masculine",
+      "dimension": "n_syllables",
+      "equivalent": true,
+      "mean_diff": 0.083,
+      "reference": "feminine",
+      "role": "uncontrolled",
+      "tost_p": 0.0271,
+      "var_ratio": 1.531
+    },
+    {
+      "ci_high": 0.556,
+      "ci_low": -0.124,
+      "cohens_d": 0.216,
+      "condition": "masculine",
+      "dimension": "bigram_freq",
+      "equivalent": false,
+      "mean_diff": 0.001,
+      "reference": "feminine",
+      "role": "uncontrolled",
+      "tost_p": 0.0838,
+      "var_ratio": 1.967
     }
   ],
   "relational": null,

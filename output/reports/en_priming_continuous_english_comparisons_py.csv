@@ -1,4 +1,4 @@
-dimension,role,pearson_r,predictor_span
-target.frequency,predictor,,1.45
-target.length,control,-0.292,1.45
-pair.overlap,control,-0.227,1.45
+dimension,role,pearson_r,predictor_span,sd,sd_ratio,window_low,window_high
+target.frequency,predictor,,1.45,0.474,0.934,,
+target.length,control,-0.292,1.45,0.886,0.89,2.42,5.08
+pair.overlap,control,-0.227,1.45,0.104,0.573,-0.164,0.46

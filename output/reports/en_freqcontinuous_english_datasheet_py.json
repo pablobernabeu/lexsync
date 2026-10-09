@@ -15,7 +15,7 @@
     },
     {
       "file": "output/reports/en_freqcontinuous_english_comparisons_py.csv",
-      "sha256": "f7b643a52ba5980aa944c070e073595ea27953b62f7e10981be85c686bf4cec5"
+      "sha256": "3bfb6471d0cb6c8121ce196abdeb08609575147f2554e2b8f87b32baf4d717fb"
     },
     {
       "file": "output/experiments/en_freqcontinuous_english_psychopy.py",
@@ -131,25 +131,41 @@
       "dimension": "frequency",
       "pearson_r": null,
       "predictor_span": 3.05,
-      "role": "predictor"
+      "role": "predictor",
+      "sd": 0.54,
+      "sd_ratio": 0.602,
+      "window_high": null,
+      "window_low": null
     },
     {
       "dimension": "length",
       "pearson_r": -0.165,
       "predictor_span": 3.05,
-      "role": "control"
+      "role": "control",
+      "sd": 0.981,
+      "sd_ratio": 0.656,
+      "window_high": 7.9,
+      "window_low": 3.175
     },
     {
       "dimension": "n_density",
       "pearson_r": -0.049,
       "predictor_span": 3.05,
-      "role": "control"
+      "role": "control",
+      "sd": 2.417,
+      "sd_ratio": 0.39,
+      "window_high": 12.835,
+      "window_low": -5.21
     },
     {
       "dimension": "old20",
       "pearson_r": -0.077,
       "predictor_span": 3.05,
-      "role": "control"
+      "role": "control",
+      "sd": 0.343,
+      "sd_ratio": 0.555,
+      "window_high": 2.798,
+      "window_low": 1.144
     }
   ],
   "relational": null,

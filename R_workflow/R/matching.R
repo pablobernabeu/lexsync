@@ -135,13 +135,16 @@
 # attributes through a row subset, and rbind keeps its first part's. pandas carries
 # attrs through a row subset, and through pd.concat when every part holds the same.
 # An audit already on the pool would therefore reach the result as if this selection
-# had made it, so both engines clear it here first. Must stay identical to
-# _attach_audit in python_workflow/src/lexsync/matching.py.
-.attach_audit <- function(out, relaxations, incomplete) {
+# had made it, so both engines clear it here first. `windows` (the continuous
+# selector's) are recorded as `control_windows`, one list(dimension, low, high, pool_sd)
+# per control, for the realised-control report. Must stay identical to _attach_audit in
+# python_workflow/src/lexsync/matching.py.
+.attach_audit <- function(out, relaxations, incomplete, windows = list()) {
   attr(out, "audit") <- NULL
   audit <- list()
   if (length(relaxations)) audit[["window_relaxations"]] <- relaxations
   if (length(incomplete)) audit[["incomplete_dropped"]] <- incomplete
+  if (length(windows)) audit[["control_windows"]] <- windows
   if (length(audit)) attr(out, "audit") <- audit
   out
 }
@@ -701,6 +704,12 @@ match_optimal <- function(subpools, cond_names, match_on, center, scale_, n, cap
 #' the number excluded is recorded in the `"audit"` attribute's `incomplete_dropped`
 #' entry under the condition `continuous`. A pool with no complete row is refused.
 #'
+#' The `"audit"` attribute's `control_windows` entry records, for each control, the
+#' window the first pass set (`low`, `high`) and the SD of the complete pool
+#' (`pool_sd`), which [match_report_continuous()] sets the realised SD against. A
+#' relaxed window is recorded as computed, and the relaxation in
+#' `window_relaxations`.
+#'
 #' @param pool A candidate pool with the predictor and control dimensions present.
 #' @param design A parsed design configuration carrying a `continuous` block.
 #' @param schema The parsed global schema (tolerance windows).
@@ -801,6 +810,12 @@ select_continuous_stimuli <- function(pool, design, schema, verbose = FALSE,
     c(m - k * s, m + k * s)
   })
   names(win) <- controls
+  # The windows and the pool's spread, which the realised-control report sets the
+  # selection's spread against.
+  windows <- lapply(controls, function(d) {
+    list(dimension = d, low = win[[d]][1], high = win[[d]][2],
+         pool_sd = .exact_sd(pool[[d]][!is.na(pool[[d]])]))
+  })
   keep <- rep(TRUE, nrow(pool))
   # As in match_stimuli: an NA on a control must drop the row rather than index an
   # all-NA filler row into `filtered` and inflate the count tested just below. A
@@ -833,7 +848,7 @@ select_continuous_stimuli <- function(pool, design, schema, verbose = FALSE,
   if (!is.null(label)) sel$condition <- label
   if (isTRUE(renumber_sets)) sel$set <- seq_len(nrow(sel))
   rownames(sel) <- NULL
-  .attach_audit(sel, relaxations, incomplete)
+  .attach_audit(sel, relaxations, incomplete, windows)
 }
 
 #' Produce several disjoint matched item sets (items as a random factor)

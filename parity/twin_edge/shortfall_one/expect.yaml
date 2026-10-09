@@ -1,0 +1,11 @@
+# Both engines select time and zeal, leave every d and interval empty and report the
+# raw differences. Before the fix both wrote d = 0, and the Python engine raised a
+# TypeError on the missing interval.
+outcome: artefacts
+compare: [stimuli, descriptives, comparisons]
+datasheet:
+  realised_control.1.dimension: frequency
+  realised_control.1.role: manipulated
+  realised_control.1.cohens_d: null
+  realised_control.1.ci_low: null
+  realised_control.1.mean_diff: 3.01

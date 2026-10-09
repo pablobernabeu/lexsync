@@ -44,15 +44,27 @@ def describe_stimuli(stimuli: pd.DataFrame, dims, by: str = "condition") -> pd.D
                 median=_round_dp(_exact_median(x), 3),
                 max=_round_dp(float(x.max()), 3),
             ))
-    return pd.DataFrame(rows)
+    # The columns even without rows, as when match_report leaves out every dimension
+    # it was given, so the frame has the header the R twin's has.
+    return pd.DataFrame(rows, columns=["group", "dimension", "n", "mean", "sd", "min",
+                                       "median", "max"])
 
 
 def cohens_d(x, y):
+    """Cohen's *d*, the pooled-SD standardised mean difference of ``x`` and ``y``.
+
+    ``None`` when either sample has fewer than two values, since one value has no
+    spread and the pooled SD is then undefined, and when the pooled SD is zero but
+    the means differ. Two samples of one shared constant give 0. Mirrors cohens_d in
+    R_workflow/R/validation.R.
+    """
     x = np.asarray(x, dtype=float); y = np.asarray(y, dtype=float)
     x = x[~np.isnan(x)]; y = y[~np.isnan(y)]
     nx, ny = len(x), len(y)
     if nx < 2 or ny < 2:
-        return 0.0
+        # Undefined, not 0: a frequency contrast of 6.5 against 3.9 Zipf with one item
+        # a side was reported as a perfect balance.
+        return None
     sp = math.sqrt(((nx - 1) * _exact_var(x) + (ny - 1) * _exact_var(y)) / (nx + ny - 2))
     if sp == 0 or math.isnan(sp):
         # Two constants: an exactly-zero difference is exactly zero SDs apart, but
@@ -89,12 +101,15 @@ def cohens_d_ci(x, y, alpha: float = 0.05) -> dict:
     interval. TOST tests the raw mean difference, so the interval is slightly
     wider than the one its decision implies, and when a control's limit lies
     close to the bound, ``tost_p`` gives the verdict.
+
+    The estimate and both limits are ``None`` when either sample has fewer than two
+    values, as :func:`cohens_d` is.
     """
     x = np.asarray(x, dtype=float); y = np.asarray(y, dtype=float)
     x = x[~np.isnan(x)]; y = y[~np.isnan(y)]
     nx, ny = len(x), len(y)
     if nx < 2 or ny < 2:
-        return dict(d=0.0, ci_low=float("nan"), ci_high=float("nan"))
+        return dict(d=None, ci_low=None, ci_high=None)
     sp = math.sqrt(((nx - 1) * _exact_var(x) + (ny - 1) * _exact_var(y)) / (nx + ny - 2))
     diff = float(_exact_mean(x) - _exact_mean(y))
     if sp == 0 or math.isnan(sp):
@@ -178,36 +193,81 @@ def balance_check(stimuli: pd.DataFrame, columns) -> list:
 # no rows carries no columns either, and wrote a comparisons CSV with no header at
 # all, while the R engine's rbind() over an empty list returned NULL and killed the
 # pipeline's reporting loop with a message that named neither the design nor the
-# cause. Must list the same columns, in the same order, as .empty_comparisons in
+# cause. `mean_diff` and `role` follow the columns a 0.1 reader already knows. Must
+# list the same columns, in the same order, as .empty_comparisons in
 # R_workflow/R/validation.R.
 _COMPARISON_COLUMNS = ("condition", "reference", "dimension", "cohens_d", "d_ci_low",
-                       "d_ci_high", "var_ratio", "tost_p", "equivalent")
+                       "d_ci_high", "var_ratio", "tost_p", "equivalent", "mean_diff",
+                       "role")
 
 
-def match_report(stimuli: pd.DataFrame, dims, schema: dict) -> dict:
+def _numeric(values) -> pd.Series:
+    """A dimension's values as numbers, with a missing value or a non-number as NaN."""
+    return pd.to_numeric(values, errors="coerce")
+
+
+def _reportable(stimuli: pd.DataFrame, dims) -> list:
+    """The dimensions a report can compare, in the order given.
+
+    A dimension with no numeric value among the stimuli is left out: one every item
+    lacks, as ``n_syllables`` is for a Chinese word, or one that is not numeric, as a
+    part-of-speech label named in a condition's ``define_by`` is. A name that is not a
+    column of the stimuli is refused. Mirrors .reportable in R_workflow/R/validation.R.
+    """
+    for d in dims:
+        if d not in stimuli.columns:
+            raise ValueError(f"lexsync: dimension '{d}' is not a column of the stimuli.")
+    return [d for d in dims if _numeric(stimuli[d]).notna().any()]
+
+
+def _condition_pairs(conds) -> list:
+    """The (reference, condition) pairs a report compares, in order.
+
+    The anchor rows come first, every other condition against the first, as a 0.1
+    report gave them. Every further pair (i, j) with 1 <= i < j follows in condition
+    order, with condition i as the reference. Mirrors .condition_pairs in
+    R_workflow/R/validation.R.
+    """
+    pairs = [(conds[0], c) for c in conds[1:]]
+    pairs += [(conds[i], conds[j]) for i in range(1, len(conds))
+              for j in range(i + 1, len(conds))]
+    return pairs
+
+
+def match_report(stimuli: pd.DataFrame, dims, schema: dict, roles=None) -> dict:
     """Build the full match-quality report: descriptives and comparisons.
 
-    Every comparison is against the first condition in order of appearance, so a
-    design with a single condition has nothing to compare and ``comparisons`` comes
-    back with its columns and no rows.
+    Every pair of conditions is compared on every dimension. The rows against the
+    first condition in order of appearance, the anchor, come first, then every further
+    pair in condition order, so a design with a single condition has nothing to
+    compare and ``comparisons`` comes back with its columns and no rows. A dimension
+    with no numeric value among the stimuli, such as ``n_syllables`` for Chinese or a
+    text label, is left out of both frames.
 
-    Each row of ``comparisons`` names that first condition in ``reference`` and the
-    condition compared with it in ``condition``. The signed statistics run from the
-    reference to the other condition: ``cohens_d``, ``d_ci_low`` and ``d_ci_high``
+    Each row of ``comparisons`` names the earlier condition of its pair in
+    ``reference`` and the later one in ``condition``. The signed statistics run from
+    the reference to the other condition: ``cohens_d``, ``d_ci_low`` and ``d_ci_high``
     are the reference mean minus the ``condition`` mean, in pooled standard
-    deviations, so a positive *d* means the reference scores higher. ``var_ratio``
+    deviations, so a positive *d* means the reference scores higher. ``mean_diff`` is
+    the same difference in the dimension's own unit, to three places. ``var_ratio``
     is the other way up, the ``condition`` variance over the reference variance.
+
+    ``roles`` (optional) is a function of ``(condition, reference, dimension)`` that
+    returns the row's ``role``: ``manipulated`` when the design sets the two
+    conditions apart on the dimension, ``controlled`` when it matches them on it and
+    ``uncontrolled`` otherwise. ``run_pipeline`` derives it from the design. Without
+    it, ``role`` is missing.
     """
     conds = list(dict.fromkeys(stimuli["condition"]))
-    anchor = conds[0]
+    dims = _reportable(stimuli, dims)
     desc = describe_stimuli(stimuli, dims)
     bound = (schema.get("equivalence") or {}).get("bound_d", 0.5)
     alpha = (schema.get("equivalence") or {}).get("alpha", 0.05)
     rows = []
-    for cc in conds[1:]:
+    for ref, cc in _condition_pairs(conds):
         for dim in dims:
-            x = pd.to_numeric(stimuli.loc[stimuli["condition"] == anchor, dim], errors="coerce")
-            y = pd.to_numeric(stimuli.loc[stimuli["condition"] == cc, dim], errors="coerce")
+            x = _numeric(stimuli.loc[stimuli["condition"] == ref, dim])
+            y = _numeric(stimuli.loc[stimuli["condition"] == cc, dim])
             tt = tost_equiv(x, y, bound, alpha)
             ci = cohens_d_ci(x, y, alpha)
             vr = variance_ratio(y, x)
@@ -216,17 +276,22 @@ def match_report(stimuli: pd.DataFrame, dims, schema: dict) -> dict:
             # the CSV, null in the datasheet), exactly like the other missing stats.
             d = cohens_d(x, y)
             lo, hi = ci["ci_low"], ci["ci_high"]
+            # The raw difference needs one value a side, where d needs two.
+            xv, yv = x.dropna(), y.dropna()
+            diff = _exact_mean(xv) - _exact_mean(yv) if len(xv) and len(yv) else None
             rows.append(dict(
-                condition=cc, reference=anchor, dimension=dim,
+                condition=cc, reference=ref, dimension=dim,
                 cohens_d=_round_dp(d, 3) if d is not None else None,
                 d_ci_low=_round_dp(lo, 3) if lo is not None and lo == lo else None,
                 d_ci_high=_round_dp(hi, 3) if hi is not None and hi == hi else None,
                 var_ratio=_round_dp(vr, 3) if vr is not None else None,
                 tost_p=_round_dp(p, 4) if p == p else None,
                 equivalent=tt["equivalent"],
+                mean_diff=_round_dp(diff, 3) if diff is not None else None,
+                role=roles(cc, ref, dim) if roles is not None else None,
             ))
     return dict(descriptives=desc,
-                comparisons=pd.DataFrame(rows) if rows
+                comparisons=pd.DataFrame(rows, columns=list(_COMPARISON_COLUMNS)) if rows
                 else pd.DataFrame(columns=list(_COMPARISON_COLUMNS)))
 
 
@@ -245,7 +310,19 @@ def _pearson(x, y):
     return _round_dp(_exact_sum(dx * dy) / denom, 9)
 
 
-def match_report_continuous(stimuli, predictor, controls, schema) -> dict:
+def _round3(v):
+    """A value rounded to three places by the shared rounder, or None when missing."""
+    return None if v is None or v != v else _round_dp(float(v), 3)
+
+
+def _ratio(a, b):
+    """``a / b``, or None when either is missing or ``b`` is zero."""
+    if a is None or b is None or a != a or b != b or b == 0:
+        return None
+    return a / b
+
+
+def match_report_continuous(stimuli, predictor, controls, schema, audit=None) -> dict:
     """Realised-control report for a continuous design.
 
     Returns the same ``{descriptives, comparisons}`` shape as :func:`match_report`,
@@ -254,17 +331,46 @@ def match_report_continuous(stimuli, predictor, controls, schema) -> dict:
     realised span and, for each control, its Pearson correlation with the predictor
     (near zero when the control is held constant). The set is meant for regression /
     mixed-model analysis, not equivalence tests.
+
+    ``sd`` is each dimension's realised SD. For the predictor, ``sd_ratio`` sets it
+    against the SD of as many values spaced evenly over the same range,
+    ``(max - min) * sqrt(n * (n + 1) / 12) / (n - 1)`` with the n - 1 that ``sd``
+    uses, so an even spread has a ratio of 1 whatever its size and a selection that
+    follows a skewed pool a ratio below 1. That benchmark tends to
+    ``(max - min) / sqrt(12)``, the SD of a uniform distribution over the range, as n
+    grows. For a control, ``sd_ratio`` sets the realised SD against the SD of the pool
+    the selector drew from, and ``window_low`` and ``window_high`` give the window the
+    selector banded it to, before any relaxation. Both come from ``audit``, the
+    selector's record, which is read from ``stimuli.attrs["audit"]`` when not given.
+    Without one, a control's ratio and window are missing.
     """
+    if audit is None:
+        audit = stimuli.attrs.get("audit")
+    windows = {w["dimension"]: w for w in ((audit or {}).get("control_windows") or [])}
     desc = describe_stimuli(stimuli, [predictor] + controls)
     pv = pd.to_numeric(stimuli[predictor], errors="coerce").to_numpy(dtype=float)
     valid = pv[~np.isnan(pv)]
     # None (not NaN) when the predictor has no span, so both engines agree.
     span = _round_dp(float(valid.max() - valid.min()), 3) if len(valid) >= 2 else None
-    rows = [dict(dimension=predictor, role="predictor", pearson_r=None, predictor_span=span)]
+    # The SD of n values spaced evenly over the realised range. (max - min) / sqrt(12)
+    # alone is its limit for large n, and against it an even spread of 4 values read
+    # 1.49, as if the items crowded the ends of the range. The operations run in the
+    # order of the R twin, so both engines get the same double.
+    nv = len(valid)
+    even = (float(valid.max() - valid.min()) * math.sqrt(nv * (nv + 1) / 12) / (nv - 1)
+            if nv >= 2 else None)
+    sd = _exact_sd(valid)
+    rows = [dict(dimension=predictor, role="predictor", pearson_r=None, predictor_span=span,
+                 sd=_round3(sd), sd_ratio=_round3(_ratio(sd, even)), window_low=None,
+                 window_high=None)]
     for c in controls:
         cv = pd.to_numeric(stimuli[c], errors="coerce").to_numpy(dtype=float)
         r = _pearson(pv, cv)
+        csd = _exact_sd(cv[~np.isnan(cv)])
+        w = windows.get(c) or {}
         rows.append(dict(dimension=c, role="control",
                          pearson_r=_round_dp(r, 3) if r is not None else None,
-                         predictor_span=span))
+                         predictor_span=span, sd=_round3(csd),
+                         sd_ratio=_round3(_ratio(csd, w.get("pool_sd"))),
+                         window_low=_round3(w.get("low")), window_high=_round3(w.get("high"))))
     return dict(descriptives=desc, comparisons=pd.DataFrame(rows))

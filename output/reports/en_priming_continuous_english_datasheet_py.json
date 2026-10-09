@@ -15,7 +15,7 @@
     },
     {
       "file": "output/reports/en_priming_continuous_english_comparisons_py.csv",
-      "sha256": "6d7f5bf7bc63fe7d4c1cf21623eee70055b6f0822ae2f4c2f6dc94b657b3a9d5"
+      "sha256": "e451dcb830a1af9d032d79b561fee6eecd034f2738c8cf2cb2745f3f425c6ebc"
     },
     {
       "file": "output/experiments/en_priming_continuous_english_psychopy.py",
@@ -159,19 +159,31 @@
       "dimension": "target.frequency",
       "pearson_r": null,
       "predictor_span": 1.45,
-      "role": "predictor"
+      "role": "predictor",
+      "sd": 0.474,
+      "sd_ratio": 0.934,
+      "window_high": null,
+      "window_low": null
     },
     {
       "dimension": "target.length",
       "pearson_r": -0.292,
       "predictor_span": 1.45,
-      "role": "control"
+      "role": "control",
+      "sd": 0.886,
+      "sd_ratio": 0.89,
+      "window_high": 5.08,
+      "window_low": 2.42
     },
     {
       "dimension": "pair.overlap",
       "pearson_r": -0.227,
       "predictor_span": 1.45,
-      "role": "control"
+      "role": "control",
+      "sd": 0.104,
+      "sd_ratio": 0.573,
+      "window_high": 0.46,
+      "window_low": -0.164
     }
   ],
   "relational": {

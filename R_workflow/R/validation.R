@@ -32,7 +32,7 @@ describe_stimuli <- function(stimuli, dims, by = "condition") {
   for (g in names(groups)) {
     d <- groups[[g]]
     for (dim in dims) {
-      x <- suppressWarnings(as.numeric(d[[dim]]))
+      x <- .numeric_values(d[[dim]])
       xv <- x[!is.na(x)]
       rows[[length(rows) + 1]] <- data.frame(
         group = g, dimension = dim, n = length(xv),
@@ -49,6 +49,13 @@ describe_stimuli <- function(stimuli, dims, by = "condition") {
       )
     }
   }
+  # No dimension to describe, as when match_report() leaves out every one it was given:
+  # the columns with no rows, as the Python twin returns, in place of NULL.
+  if (!length(rows)) {
+    return(data.frame(group = character(0), dimension = character(0), n = integer(0),
+                      mean = numeric(0), sd = numeric(0), min = numeric(0),
+                      median = numeric(0), max = numeric(0), stringsAsFactors = FALSE))
+  }
   out <- do.call(rbind, rows)
   numcols <- c("mean", "sd", "min", "median", "max")
   out[numcols] <- lapply(out[numcols], function(v) .round_dp(v, 3))
@@ -58,16 +65,19 @@ describe_stimuli <- function(stimuli, dims, by = "condition") {
 #' Cohen's d (pooled-SD standardised mean difference)
 #'
 #' @param x,y Numeric vectors.
-#' @return The standardised mean difference; 0 when either sample is too small or
-#'   both share one constant, `NA` when the pooled SD is zero but the means
-#'   differ (the standardised difference is then unbounded, not zero).
+#' @return The standardised mean difference. It is 0 when both samples share one
+#'   constant, and `NA` when either sample has fewer than two values (one value has
+#'   no spread, so the pooled SD is undefined) or when the pooled SD is zero but the
+#'   means differ (the standardised difference is then unbounded, not zero).
 #' @examples
 #' cohens_d(c(5, 6, 7, 8), c(5, 6, 7, 9))
 #' @export
 cohens_d <- function(x, y) {
   x <- x[!is.na(x)]; y <- y[!is.na(y)]
   nx <- length(x); ny <- length(y)
-  if (nx < 2 || ny < 2) return(0)
+  # Undefined, not 0: a frequency contrast of 6.5 against 3.9 Zipf with one item a
+  # side was reported as a perfect balance.
+  if (nx < 2 || ny < 2) return(NA_real_)
   sp <- sqrt(((nx - 1) * .exact_var(x) + (ny - 1) * .exact_var(y)) / (nx + ny - 2))
   if (is.na(sp) || sp == 0) {
     # Two constants: an exactly-zero difference is exactly zero SDs apart, but
@@ -104,13 +114,14 @@ cohens_d <- function(x, y) {
 #'
 #' @param x,y Numeric vectors.
 #' @param alpha Significance level matching the TOST (default 0.05).
-#' @return A list with `d`, `ci_low` and `ci_high`.
+#' @return A list with `d`, `ci_low` and `ci_high`, all three `NA` when either
+#'   sample has fewer than two values, as for [cohens_d()].
 #' @importFrom stats qt
 #' @export
 cohens_d_ci <- function(x, y, alpha = 0.05) {
   x <- x[!is.na(x)]; y <- y[!is.na(y)]
   nx <- length(x); ny <- length(y)
-  if (nx < 2 || ny < 2) return(list(d = 0, ci_low = NA_real_, ci_high = NA_real_))
+  if (nx < 2 || ny < 2) return(list(d = NA_real_, ci_low = NA_real_, ci_high = NA_real_))
   sp <- sqrt(((nx - 1) * .exact_var(x) + (ny - 1) * .exact_var(y)) / (nx + ny - 2))
   diff <- .exact_mean(x) - .exact_mean(y)
   if (is.na(sp) || sp == 0) {
@@ -215,43 +226,98 @@ balance_check <- function(stimuli, columns) {
   issues
 }
 
+# A dimension's values as numbers, with a missing value or a non-number as NA. A factor
+# is read by its labels, not its codes, as pandas reads a category. Mirrors _numeric in
+# validation.py.
+.numeric_values <- function(v) {
+  if (is.factor(v)) v <- as.character(v)
+  suppressWarnings(as.numeric(v))
+}
+
+# The dimensions a report can compare, in the order given. A dimension with no numeric
+# value among the stimuli is left out: one every item lacks, as n_syllables is for a
+# Chinese word, or one that is not numeric, as a part-of-speech label named in a
+# condition's define_by is. A name that is not a column of the stimuli is refused.
+# Mirrors _reportable in validation.py.
+.reportable <- function(stimuli, dims) {
+  for (d in dims) {
+    if (!d %in% names(stimuli)) {
+      stop(sprintf("lexsync: dimension '%s' is not a column of the stimuli.", d),
+           call. = FALSE)
+    }
+  }
+  keep <- vapply(dims, function(d) any(!is.na(.numeric_values(stimuli[[d]]))), logical(1))
+  dims[keep]
+}
+
+# The (reference, condition) pairs a report compares, in order. The anchor rows come
+# first, every other condition against the first, as a 0.1 report gave them. Every
+# further pair (i, j) with 2 <= i < j follows in condition order, with condition i as
+# the reference. Mirrors _condition_pairs in validation.py.
+.condition_pairs <- function(conds) {
+  k <- length(conds)
+  pairs <- lapply(conds[-1], function(cc) c(conds[1], cc))
+  if (k > 2L) {
+    for (i in 2:(k - 1L)) {
+      for (j in (i + 1L):k) pairs[[length(pairs) + 1L]] <- c(conds[i], conds[j])
+    }
+  }
+  pairs
+}
+
 #' Build the full match-quality report
 #'
 #' @param stimuli A matched-stimuli data frame (must contain `condition`).
 #' @param dims Dimensions to summarise and compare.
 #' @param schema The parsed global schema (equivalence settings).
-#' @return A list with `descriptives` and `comparisons` data frames. Every
-#'   comparison is against the first condition in order of appearance, so a design
-#'   with a single condition has nothing to compare and `comparisons` comes back
-#'   with its columns and no rows.
+#' @param roles Optional function of `condition`, `reference` and `dimension` that
+#'   returns the row's `role`: `"manipulated"` when the design sets the two
+#'   conditions apart on the dimension, `"controlled"` when it matches them on it
+#'   and `"uncontrolled"` otherwise. [run_pipeline()] derives it from the design.
+#'   Without it, `role` is `NA`.
+#' @return A list with `descriptives` and `comparisons` data frames. Every pair of
+#'   conditions is compared on every dimension. The rows against the first condition
+#'   in order of appearance, the anchor, come first, then every further pair in
+#'   condition order, so a design with a single condition has nothing to compare and
+#'   `comparisons` comes back with its columns and no rows. A dimension with no
+#'   numeric value among the stimuli, such as `n_syllables` for Chinese or a text
+#'   label, is left out of both frames.
 #'
-#'   Each row of `comparisons` names that first condition in `reference` and the
-#'   condition compared with it in `condition`. The signed statistics run from the
-#'   reference to the other condition: `cohens_d`, `d_ci_low` and `d_ci_high` are
-#'   the reference mean minus the `condition` mean, in pooled standard deviations,
-#'   so a positive d means the reference scores higher. `var_ratio` is the other
-#'   way up, the `condition` variance over the reference variance.
+#'   Each row of `comparisons` names the earlier condition of its pair in `reference`
+#'   and the later one in `condition`. The signed statistics run from the reference
+#'   to the other condition: `cohens_d`, `d_ci_low` and `d_ci_high` are the
+#'   reference mean minus the `condition` mean, in pooled standard deviations, so a
+#'   positive d means the reference scores higher. `mean_diff` is the same
+#'   difference in the dimension's own unit, to three places. `var_ratio` is the
+#'   other way up, the `condition` variance over the reference variance.
 #' @export
-match_report <- function(stimuli, dims, schema) {
-  conds <- unique(stimuli$condition)
-  anchor <- conds[1]
+match_report <- function(stimuli, dims, schema, roles = NULL) {
+  conds <- unique(as.character(stimuli$condition))
+  dims <- .reportable(stimuli, dims)
   desc <- describe_stimuli(stimuli, dims, by = "condition")
   bound <- schema[["equivalence"]][["bound_d"]] %||% 0.5
   alpha <- schema[["equivalence"]][["alpha"]] %||% 0.05
   comp <- list()
-  for (cc in conds[-1]) {
+  for (pr in .condition_pairs(conds)) {
+    ref <- pr[[1]]; cc <- pr[[2]]
     for (dim in dims) {
-      x <- suppressWarnings(as.numeric(stimuli[stimuli$condition == anchor, dim, drop = TRUE]))
-      y <- suppressWarnings(as.numeric(stimuli[stimuli$condition == cc, dim, drop = TRUE]))
+      x <- .numeric_values(stimuli[stimuli$condition == ref, dim, drop = TRUE])
+      y <- .numeric_values(stimuli[stimuli$condition == cc, dim, drop = TRUE])
       tt <- tost_equiv(x, y, bound_d = bound, alpha = alpha)
       ci <- cohens_d_ci(x, y, alpha = alpha)
       vr <- variance_ratio(y, x)
+      # The raw difference needs one value a side, where d needs two.
+      xv <- x[!is.na(x)]; yv <- y[!is.na(y)]
+      diff <- if (length(xv) && length(yv)) .exact_mean(xv) - .exact_mean(yv) else NA_real_
+      role <- if (is.null(roles)) NULL else roles(cc, ref, dim)
       comp[[length(comp) + 1]] <- data.frame(
-        condition = cc, reference = anchor, dimension = dim,
+        condition = cc, reference = ref, dimension = dim,
         cohens_d = .round_dp(cohens_d(x, y), 3),
         d_ci_low = .round_dp(ci$ci_low, 3), d_ci_high = .round_dp(ci$ci_high, 3),
         var_ratio = if (is.na(vr)) NA_real_ else .round_dp(vr, 3),
         tost_p = .round_dp(tt$p, 4), equivalent = tt$equivalent,
+        mean_diff = .round_dp(diff, 3),
+        role = if (length(role) == 1L) as.character(role) else NA_character_,
         stringsAsFactors = FALSE
       )
     }
@@ -265,7 +331,8 @@ match_report <- function(stimuli, dims, schema) {
 # then died on with "argument must be coercible to non-negative integer", naming
 # neither the design nor the cause, while the Python engine went on and wrote a
 # comparisons CSV with no header at all. Naming the columns here gives both engines
-# the same header-only file and the same empty loop.
+# the same header-only file and the same empty loop. `mean_diff` and `role` follow the
+# columns a 0.1 reader already knows.
 # Must list the same columns, in the same order, as _COMPARISON_COLUMNS in
 # python_workflow/src/lexsync/validation.py.
 #' @keywords internal
@@ -274,7 +341,8 @@ match_report <- function(stimuli, dims, schema) {
              dimension = character(0), cohens_d = numeric(0),
              d_ci_low = numeric(0), d_ci_high = numeric(0),
              var_ratio = numeric(0), tost_p = numeric(0),
-             equivalent = logical(0), stringsAsFactors = FALSE)
+             equivalent = logical(0), mean_diff = numeric(0),
+             role = character(0), stringsAsFactors = FALSE)
 }
 
 # Pearson correlation from raw sums, rounded to 9 dp so it is byte-comparable across
@@ -288,6 +356,11 @@ match_report <- function(stimuli, dims, schema) {
   .round_dp(.exact_sum(dx * dy) / denom, 9)
 }
 
+# a / b, or NA when either is missing or b is zero. Mirrors _ratio in validation.py.
+.ratio <- function(a, b) {
+  if (is.null(a) || is.null(b) || is.na(a) || is.na(b) || b == 0) NA_real_ else a / b
+}
+
 #' Realised-control report for a continuous design
 #'
 #' Returns the same list shape as [match_report()] (`descriptives` + `comparisons`),
@@ -295,28 +368,61 @@ match_report <- function(stimuli, dims, schema) {
 #' each control, the Pearson correlation with the predictor (near zero when the
 #' control is held constant). Mirrors match_report_continuous in validation.py.
 #'
+#' `sd` is each dimension's realised SD. For the predictor, `sd_ratio` sets it
+#' against the SD of as many values spaced evenly over the same range,
+#' `(max - min) * sqrt(n * (n + 1) / 12) / (n - 1)` with the n - 1 that `sd` uses, so
+#' an even spread has a ratio of 1 whatever its size and a selection that follows a
+#' skewed pool a ratio below 1. That benchmark tends to `(max - min) / sqrt(12)`, the
+#' SD of a uniform distribution over the range, as n grows. For a control, `sd_ratio`
+#' sets the realised SD against the SD of the pool the selector drew from, and
+#' `window_low` and `window_high` give the window the selector banded it to, before
+#' any relaxation. Both come from `audit`, the selector's record.
+#'
 #' @param stimuli A stimuli data frame (a single "continuous" group).
 #' @param predictor The spanned predictor dimension.
 #' @param controls Character vector of control dimensions.
 #' @param schema The parsed global schema.
+#' @param audit The selector's audit record, by default the `"audit"` attribute
+#'   [select_continuous_stimuli()] attaches to its result. Its `control_windows`
+#'   give each control's window and pool SD. Without them, a control's `sd_ratio`
+#'   and window are `NA`.
 #' @return A list with `descriptives` and `comparisons` data frames.
 #' @export
-match_report_continuous <- function(stimuli, predictor, controls, schema) {
+match_report_continuous <- function(stimuli, predictor, controls, schema,
+                                    audit = attr(stimuli, "audit")) {
+  windows <- list()
+  for (w in audit[["control_windows"]] %||% list()) windows[[w[["dimension"]]]] <- w
   desc <- describe_stimuli(stimuli, c(predictor, controls), by = "condition")
   pv <- suppressWarnings(as.numeric(stimuli[[predictor]]))
   valid <- pv[!is.na(pv)]
   # NA (not -Inf) when the predictor has no span, so both engines agree.
   span <- if (length(valid) >= 2) .round_dp(max(valid) - min(valid), 3) else NA_real_
+  # The SD of n values spaced evenly over the realised range. (max - min) / sqrt(12)
+  # alone is its limit for large n, and against it an even spread of 4 values read
+  # 1.49, as if the items crowded the ends of the range. The operations run in the
+  # order of the Python twin, so both engines get the same double.
+  nv <- as.numeric(length(valid))
+  even <- if (nv >= 2) (max(valid) - min(valid)) * sqrt(nv * (nv + 1) / 12) / (nv - 1)
+          else NA_real_
+  sd <- .exact_sd(valid)
   rows <- list(data.frame(dimension = predictor, role = "predictor",
                           pearson_r = NA_real_, predictor_span = span,
+                          sd = .round_dp(sd, 3), sd_ratio = .round_dp(.ratio(sd, even), 3),
+                          window_low = NA_real_, window_high = NA_real_,
                           stringsAsFactors = FALSE))
   for (cc in controls) {
     cv <- suppressWarnings(as.numeric(stimuli[[cc]]))
     r <- .pearson(pv, cv)
+    csd <- .exact_sd(cv[!is.na(cv)])
+    w <- windows[[cc]]
     rows[[length(rows) + 1L]] <- data.frame(
       dimension = cc, role = "control",
       pearson_r = if (is.na(r)) NA_real_ else .round_dp(r, 3),
-      predictor_span = span, stringsAsFactors = FALSE)
+      predictor_span = span, sd = .round_dp(csd, 3),
+      sd_ratio = .round_dp(.ratio(csd, w[["pool_sd"]]), 3),
+      window_low = .round_dp(w[["low"]] %||% NA_real_, 3),
+      window_high = .round_dp(w[["high"]] %||% NA_real_, 3),
+      stringsAsFactors = FALSE)
   }
   list(descriptives = desc, comparisons = do.call(rbind, rows))
 }

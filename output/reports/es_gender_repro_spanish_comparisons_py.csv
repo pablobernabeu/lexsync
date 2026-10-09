@@ -1,5 +1,7 @@
-condition,reference,dimension,cohens_d,d_ci_low,d_ci_high,var_ratio,tost_p,equivalent
-masculine,feminine,length,0,-0.339,0.339,1,0.0081,TRUE
-masculine,feminine,frequency,0.021,-0.319,0.36,0.009,0.0105,TRUE
-masculine,feminine,n_density,0.196,-0.144,0.536,0.556,0.0697,FALSE
-masculine,feminine,old20,-0.082,-0.422,0.257,0.893,0.0218,TRUE
+condition,reference,dimension,cohens_d,d_ci_low,d_ci_high,var_ratio,tost_p,equivalent,mean_diff,role
+masculine,feminine,length,0,-0.339,0.339,1,0.0081,TRUE,0,controlled
+masculine,feminine,frequency,0.021,-0.319,0.36,0.009,0.0105,TRUE,0.008,controlled
+masculine,feminine,n_density,0.196,-0.144,0.536,0.556,0.0697,FALSE,0.563,uncontrolled
+masculine,feminine,old20,-0.082,-0.422,0.257,0.893,0.0218,TRUE,-0.057,uncontrolled
+masculine,feminine,n_syllables,0.102,-0.237,0.441,1.531,0.0271,TRUE,0.083,uncontrolled
+masculine,feminine,bigram_freq,0.216,-0.124,0.556,1.967,0.0838,FALSE,0.001,uncontrolled

@@ -83,25 +83,41 @@
       "dimension": "frequency",
       "role": "predictor",
       "pearson_r": null,
-      "predictor_span": 3.05
+      "predictor_span": 3.05,
+      "sd": 0.54,
+      "sd_ratio": 0.602,
+      "window_low": null,
+      "window_high": null
     },
     {
       "dimension": "length",
       "role": "control",
       "pearson_r": -0.165,
-      "predictor_span": 3.05
+      "predictor_span": 3.05,
+      "sd": 0.981,
+      "sd_ratio": 0.656,
+      "window_low": 3.175,
+      "window_high": 7.9
     },
     {
       "dimension": "n_density",
       "role": "control",
       "pearson_r": -0.049,
-      "predictor_span": 3.05
+      "predictor_span": 3.05,
+      "sd": 2.417,
+      "sd_ratio": 0.39,
+      "window_low": -5.21,
+      "window_high": 12.835
     },
     {
       "dimension": "old20",
       "role": "control",
       "pearson_r": -0.077,
-      "predictor_span": 3.05
+      "predictor_span": 3.05,
+      "sd": 0.343,
+      "sd_ratio": 0.555,
+      "window_low": 1.144,
+      "window_high": 2.798
     }
   ],
   "counterbalancing": {
@@ -167,7 +183,7 @@
     },
     {
       "file": "output/reports/en_freqcontinuous_english_comparisons_R.csv",
-      "sha256": "f7b643a52ba5980aa944c070e073595ea27953b62f7e10981be85c686bf4cec5"
+      "sha256": "3bfb6471d0cb6c8121ce196abdeb08609575147f2554e2b8f87b32baf4d717fb"
     },
     {
       "file": "output/experiments/en_freqcontinuous_english_psychopy.py",

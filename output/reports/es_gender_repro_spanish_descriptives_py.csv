@@ -3,7 +3,11 @@ feminine,length,48,6.583,1.808,4,6,10
 feminine,frequency,48,3.805,0.558,3.11,3.705,5.16
 feminine,n_density,48,2.646,3.258,0,1,14
 feminine,old20,48,2.215,0.714,1.2,1.925,3.9
+feminine,n_syllables,48,2.938,0.727,2,3,4
+feminine,bigram_freq,48,0.009,0.003,0.003,0.009,0.014
 masculine,length,48,6.583,1.808,4,6,10
 masculine,frequency,48,3.797,0.052,3.75,3.76,3.86
 masculine,n_density,48,2.083,2.431,0,1,8
 masculine,old20,48,2.272,0.675,1.45,1.975,4.4
+masculine,n_syllables,48,2.854,0.899,1,3,5
+masculine,bigram_freq,48,0.008,0.004,0.001,0.008,0.015

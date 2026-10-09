@@ -4,7 +4,13 @@
 \alias{match_report_continuous}
 \title{Realised-control report for a continuous design}
 \usage{
-match_report_continuous(stimuli, predictor, controls, schema)
+match_report_continuous(
+  stimuli,
+  predictor,
+  controls,
+  schema,
+  audit = attr(stimuli, "audit")
+)
 }
 \arguments{
 \item{stimuli}{A stimuli data frame (a single "continuous" group).}
@@ -14,6 +20,11 @@ match_report_continuous(stimuli, predictor, controls, schema)
 \item{controls}{Character vector of control dimensions.}
 
 \item{schema}{The parsed global schema.}
+
+\item{audit}{The selector's audit record, by default the \code{"audit"} attribute
+\code{\link[=select_continuous_stimuli]{select_continuous_stimuli()}} attaches to its result. Its \code{control_windows}
+give each control's window and pool SD. Without them, a control's \code{sd_ratio}
+and window are \code{NA}.}
 }
 \value{
 A list with \code{descriptives} and \code{comparisons} data frames.
@@ -23,4 +34,15 @@ Returns the same list shape as \code{\link[=match_report]{match_report()}} (\cod
 but the comparisons describe a continuous predictor: its realised span and, for
 each control, the Pearson correlation with the predictor (near zero when the
 control is held constant). Mirrors match_report_continuous in validation.py.
+}
+\details{
+\code{sd} is each dimension's realised SD. For the predictor, \code{sd_ratio} sets it
+against the SD of as many values spaced evenly over the same range,
+\code{(max - min) * sqrt(n * (n + 1) / 12) / (n - 1)} with the n - 1 that \code{sd} uses, so
+an even spread has a ratio of 1 whatever its size and a selection that follows a
+skewed pool a ratio below 1. That benchmark tends to \code{(max - min) / sqrt(12)}, the
+SD of a uniform distribution over the range, as n grows. For a control, \code{sd_ratio}
+sets the realised SD against the SD of the pool the selector drew from, and
+\code{window_low} and \code{window_high} give the window the selector banded it to, before
+any relaxation. Both come from \code{audit}, the selector's record.
 }

@@ -11,11 +11,11 @@
     },
     {
       "file": "output/reports/en_resample_english_descriptives_py.csv",
-      "sha256": "9a28c091dd4fd26919fab675aa8012b238efdc2d1f22a5938df616145f3b55f5"
+      "sha256": "f138a1b5ebe845600d12f7bd688014c482e3757028df9c03d463c9fa2815c7b9"
     },
     {
       "file": "output/reports/en_resample_english_comparisons_py.csv",
-      "sha256": "1d0652ce34edc9d71734f936f59206a97687fc73a1298a040e53fa2a5e798241"
+      "sha256": "47e346dab899196f6c409e04f76bbfb9f89b062de5c769de275dbc6994fc3832"
     },
     {
       "file": "output/experiments/en_resample_english_psychopy.py",
@@ -187,8 +187,11 @@
       "ci_high": 0.257,
       "ci_low": -0.169,
       "cohens_d": 0.044,
+      "condition": "low_frequency",
       "dimension": "length",
       "equivalent": true,
+      "mean_diff": 0.05,
+      "reference": "high_frequency",
       "role": "controlled",
       "tost_p": 0.0002,
       "var_ratio": 0.862
@@ -197,9 +200,12 @@
       "ci_high": 5.84,
       "ci_low": 4.924,
       "cohens_d": 5.382,
+      "condition": "low_frequency",
       "dimension": "frequency",
       "equivalent": false,
-      "role": "manipulated/free",
+      "mean_diff": 1.642,
+      "reference": "high_frequency",
+      "role": "manipulated",
       "tost_p": 1.0,
       "var_ratio": 0.585
     },
@@ -207,8 +213,11 @@
       "ci_high": 0.245,
       "ci_low": -0.182,
       "cohens_d": 0.032,
+      "condition": "low_frequency",
       "dimension": "n_density",
       "equivalent": true,
+      "mean_diff": 0.158,
+      "reference": "high_frequency",
       "role": "controlled",
       "tost_p": 0.0002,
       "var_ratio": 0.865
@@ -217,11 +226,40 @@
       "ci_high": 0.23,
       "ci_low": -0.196,
       "cohens_d": 0.017,
+      "condition": "low_frequency",
       "dimension": "old20",
       "equivalent": true,
+      "mean_diff": 0.008,
+      "reference": "high_frequency",
       "role": "controlled",
       "tost_p": 0.0001,
       "var_ratio": 0.898
+    },
+    {
+      "ci_high": -0.126,
+      "ci_low": -0.555,
+      "cohens_d": -0.341,
+      "condition": "low_frequency",
+      "dimension": "n_syllables",
+      "equivalent": false,
+      "mean_diff": -0.242,
+      "reference": "high_frequency",
+      "role": "uncontrolled",
+      "tost_p": 0.1091,
+      "var_ratio": 0.964
+    },
+    {
+      "ci_high": 0.183,
+      "ci_low": -0.243,
+      "cohens_d": -0.03,
+      "condition": "low_frequency",
+      "dimension": "bigram_freq",
+      "equivalent": true,
+      "mean_diff": 0.0,
+      "reference": "high_frequency",
+      "role": "uncontrolled",
+      "tost_p": 0.0002,
+      "var_ratio": 0.976
     }
   ],
   "relational": null,

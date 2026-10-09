@@ -65,4 +65,10 @@ in the pool, no \code{tolerance_k} may be negative, and the pool must not be emp
 A row missing the predictor or a control is excluded before the first pass, and
 the number excluded is recorded in the \code{"audit"} attribute's \code{incomplete_dropped}
 entry under the condition \code{continuous}. A pool with no complete row is refused.
+
+The \code{"audit"} attribute's \code{control_windows} entry records, for each control, the
+window the first pass set (\code{low}, \code{high}) and the SD of the complete pool
+(\code{pool_sd}), which \code{\link[=match_report_continuous]{match_report_continuous()}} sets the realised SD against. A
+relaxed window is recorded as computed, and the relaxation in
+\code{window_relaxations}.
 }

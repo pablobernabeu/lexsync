@@ -1,5 +1,9 @@
 group,dimension,n,mean,sd,min,median,max
 high,length,4,5.75,0.5,5,6,6
 high,frequency,4,5.595,0.449,5.05,5.605,6.12
+high,n_syllables,4,1.75,0.5,1,2,2
+high,bigram_freq,4,0.017,0.007,0.011,0.016,0.025
 low,length,4,5.75,0.5,5,6,6
 low,frequency,4,3.24,0.089,3.15,3.23,3.35
+low,n_syllables,4,2,0,2,2,2
+low,bigram_freq,4,0.015,0.003,0.013,0.015,0.018

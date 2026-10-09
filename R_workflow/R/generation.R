@@ -298,6 +298,9 @@ generate_pseudowords_subsyllabic <- function(base_words, reference_words, exclud
 #'   pseudoword must not equal, which the reference may lack; see
 #'   [generate_pseudowords()].
 #' @return A stimulus data frame with `target`, `condition` and `set` columns.
+#'   `base` gives the word each pseudoword was made from, a word's own form for a
+#'   word, and `edit_distance` the Levenshtein distance from `target` to `base`, 0
+#'   for a word.
 #' @export
 build_lexdec_stimuli <- function(pool, n, reference_words = NULL, method = "letter_substitution",
                                  exclude = NULL) {
@@ -317,11 +320,17 @@ build_lexdec_stimuli <- function(pool, n, reference_words = NULL, method = "lett
     stop(sprintf("lexsync: unknown pseudoword generation method '%s'.", method), call. = FALSE)
   }
   pw_map <- stats::setNames(gen$pseudoword, gen$base_word)
+  forms <- unname(pw_map[words$word])
   real <- data.frame(target = words$word, word = words$word, condition = "word",
-                     length = words$length, set = seq_len(nrow(words)), stringsAsFactors = FALSE)
-  pseudo <- data.frame(target = unname(pw_map[words$word]), word = unname(pw_map[words$word]),
+                     length = words$length, set = seq_len(nrow(words)),
+                     base = words$word, edit_distance = 0, stringsAsFactors = FALSE)
+  # stringdist's "lv" equals rapidfuzz's distance in the Python engine, the agreement
+  # add_neighbourhood() already rests OLD20 on.
+  pseudo <- data.frame(target = forms, word = forms,
                        condition = "pseudoword", length = words$length,
-                       set = seq_len(nrow(words)), stringsAsFactors = FALSE)
+                       set = seq_len(nrow(words)), base = words$word,
+                       edit_distance = stringdist::stringdist(forms, words$word, method = "lv"),
+                       stringsAsFactors = FALSE)
   out <- rbind(real, pseudo)
   rownames(out) <- NULL
   out

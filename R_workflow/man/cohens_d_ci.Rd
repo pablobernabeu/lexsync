@@ -12,7 +12,8 @@ cohens_d_ci(x, y, alpha = 0.05)
 \item{alpha}{Significance level matching the TOST (default 0.05).}
 }
 \value{
-A list with \code{d}, \code{ci_low} and \code{ci_high}.
+A list with \code{d}, \code{ci_low} and \code{ci_high}, all three \code{NA} when either
+sample has fewer than two values, as for \code{\link[=cohens_d]{cohens_d()}}.
 }
 \description{
 The interval is the \code{(1 - 2 * alpha)} confidence interval for the standardised

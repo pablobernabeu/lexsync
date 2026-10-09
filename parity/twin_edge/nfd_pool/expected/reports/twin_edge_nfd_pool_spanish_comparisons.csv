@@ -1,2 +1,4 @@
-condition,reference,dimension,cohens_d,d_ci_low,d_ci_high,var_ratio,tost_p,equivalent
-b,a,length,-0.679,-1.584,0.227,1.969,0.6369,FALSE
+condition,reference,dimension,cohens_d,d_ci_low,d_ci_high,var_ratio,tost_p,equivalent,mean_diff,role
+b,a,length,-0.679,-1.584,0.227,1.969,0.6369,FALSE,-0.625,controlled
+b,a,n_syllables,-0.564,-1.462,0.334,2.143,0.5501,FALSE,-0.25,uncontrolled
+b,a,bigram_freq,0.35,-0.537,1.237,0.529,0.3843,FALSE,0.005,uncontrolled

@@ -47,6 +47,8 @@
   },
   "realised_control": [
     {
+      "condition": "pseudoword",
+      "reference": "word",
       "dimension": "length",
       "role": "controlled",
       "cohens_d": 0,
@@ -54,7 +56,47 @@
       "ci_high": 0.303,
       "var_ratio": 1,
       "tost_p": 0.0036,
-      "equivalent": true
+      "equivalent": true,
+      "mean_diff": 0
+    },
+    {
+      "condition": "pseudoword",
+      "reference": "word",
+      "dimension": "bigram_freq",
+      "role": "uncontrolled",
+      "cohens_d": -1.595,
+      "ci_low": -1.943,
+      "ci_high": -1.248,
+      "var_ratio": 0.886,
+      "tost_p": 1,
+      "equivalent": false,
+      "mean_diff": -0.004
+    },
+    {
+      "condition": "pseudoword",
+      "reference": "word",
+      "dimension": "n_density",
+      "role": "uncontrolled",
+      "cohens_d": 0.316,
+      "ci_low": 0.012,
+      "ci_high": 0.621,
+      "var_ratio": 0.373,
+      "tost_p": 0.1583,
+      "equivalent": false,
+      "mean_diff": 1
+    },
+    {
+      "condition": "pseudoword",
+      "reference": "word",
+      "dimension": "old20",
+      "role": "uncontrolled",
+      "cohens_d": -0.341,
+      "ci_low": -0.645,
+      "ci_high": -0.036,
+      "var_ratio": 0.961,
+      "tost_p": 0.1922,
+      "equivalent": false,
+      "mean_diff": -0.169
     }
   ],
   "counterbalancing": {
@@ -95,7 +137,7 @@
       "word"
     ],
     "stimuli_file": "output/stimuli/en_lexdec_wuggy_english_stimuli_R.csv",
-    "stimuli_sha256": "bf4beb027f5f1a2894c93c987325be27a223bc9b776e3aad812b8469507f1c8e"
+    "stimuli_sha256": "f5fe1925d2905fc94010f5b141bc3be2d5df7ff0de150aadbde9694cd403a952"
   },
   "reproducibility": {
     "seed": 2026,
@@ -118,15 +160,15 @@
   "artifacts": [
     {
       "file": "output/stimuli/en_lexdec_wuggy_english_stimuli_R.csv",
-      "sha256": "bf4beb027f5f1a2894c93c987325be27a223bc9b776e3aad812b8469507f1c8e"
+      "sha256": "f5fe1925d2905fc94010f5b141bc3be2d5df7ff0de150aadbde9694cd403a952"
     },
     {
       "file": "output/reports/en_lexdec_wuggy_english_descriptives_R.csv",
-      "sha256": "d0375323da7709ae71a516e328c07c1d03e49020b58ace90bab3ea3cbdb9c913"
+      "sha256": "fb3bdf1c68cad778dde64a5961d9af051cf200bab55207004f3d6714803edb5f"
     },
     {
       "file": "output/reports/en_lexdec_wuggy_english_comparisons_R.csv",
-      "sha256": "6bcaa6b4973497028fc576c42052dd96c2a7f575c841ff400ee5df7e8d692444"
+      "sha256": "b8d710e8ed107d278dd6cae3a5f246620da35bc9644767b0a77c4df28baea4b6"
     },
     {
       "file": "output/experiments/en_lexdec_wuggy_english_psychopy.py",

@@ -735,10 +735,26 @@ k = 0.25 no item falls within the windows, so the selector relaxes them to the
 whole pool. A control that stays correlated belongs in the model as a
 covariate.
 
+Each row also gives the dimension's realised SD as `sd`. For the predictor,
+`sd_ratio` sets it against the SD of as many values spaced evenly over the same
+range. That SD is `(max - min) * sqrt(n * (n + 1) / 12) / (n - 1)`, which
+approaches `(max - min) / sqrt(12)` as n grows, so an even spread has a ratio of 1
+at any size. A ratio below 1 means the items bunch together more than an even spread
+would: `en_freqcontinuous` has 0.60, an SD of 0.54 against 0.90. A ratio above 1
+means they gather towards the ends of the range. For a control, `sd_ratio` sets
+the realised SD against the SD of the pool the selector drew from, and
+`window_low` and `window_high` give the window its first pass set. In
+`en_freqcontinuous`, length keeps 0.66 of the pool's SD, so the window trims the
+tails of a control and leaves much of its spread. The windows come from the
+`"audit"` attribute `select_continuous_stimuli()` attaches to its result, which
+`match_report_continuous()` reads unless it is given one as `audit`. A window that
+held too few items and was widened to the whole pool is recorded in the
+datasheet's `window_relaxations`.
+
 The datasheet for a continuous design reports the span, the correlations and a
 suggested regression model in which the controls enter as covariates.
 
-## Reading the validation output
+## Reading the realised control
 
 `match_report()` returns two data frames. The descriptives give per-condition n,
 mean, SD, minimum, median and maximum for each dimension, which is the table that
@@ -754,25 +770,28 @@ knitr::kable(
 )
 ```
 
-The comparisons contrast every other condition against the anchor on every
-dimension, and they carry the four statistics that answer whether the matching
-worked.
+The comparisons contrast every pair of conditions on every dimension. The rows
+against the anchor come first, and every further pair follows in condition order,
+with the earlier condition of the pair named in `reference`. A 2 x 2 design such
+as `en_andrews_repro` therefore shows the contrasts within each factor, such as
+its two low-frequency cells, beside the three against its first cell. The rows
+carry the statistics that answer whether the matching worked.
 
 ```{r report-comp}
 knitr::kable(
   report$comparisons,
   caption = paste(
     "Realised control: standardised differences with 90% intervals,",
-    "variance ratios and TOST verdicts"
+    "variance ratios, TOST verdicts and raw differences"
   )
 )
 ```
 
-`cohens_d` is the standardised mean difference against the anchor, using the
-pooled SD. It is the anchor's mean minus the mean of the condition in that row,
-so a positive d means the anchor, named in the `reference` column, scores higher.
-On the manipulated dimension it should be large and on a controlled dimension it
-should be near zero.
+`cohens_d` is the standardised mean difference, using the pooled SD. It is the
+mean of the condition named in `reference` minus the mean of the condition in that
+row, so a positive d means the reference scores higher. It should be large on the
+manipulated dimension and near zero on a controlled one. A condition with a single
+item has no spread, so d and its interval are then `NA`.
 
 `d_ci_low` and `d_ci_high` bound it with a 90% confidence interval, built from
 the large-sample standard error of d (Hedges & Olkin, 1985). That standard error
@@ -784,11 +803,37 @@ and with few items that limit can be substantial even when the point estimate is
 almost zero. Reporting the interval keeps the dependence on set size visible,
 where a bare 'no significant difference' hides it.
 
-`var_ratio` is the condition's variance over the anchor's. Two conditions can
+`var_ratio` is the condition's variance over the reference's. Two conditions can
 share a mean and still confound if one is far more spread out than the other,
 which every mean-based statistic misses, so this is the distributional check. A
 ratio near 1 is balanced and a common heuristic flags ratios outside roughly 0.5
 to 2. See `?variance_ratio` for the sources behind that heuristic.
+
+`mean_diff` is the same contrast in the dimension's own unit: the reference mean
+minus the condition mean, in letters, Zipf units, neighbours or syllables, to
+three places. It is defined whenever each condition has an item, so it remains
+when d is `NA`.
+
+`role` says what the design did with the dimension in that pair. A dimension is
+`manipulated` when the two conditions' `define_by` windows on it differ,
+`controlled` when the design matches on it, and `uncontrolled` otherwise. The
+role belongs to the pair: in `en_andrews_repro`, frequency is manipulated between
+a high- and a low-frequency cell and uncontrolled between the two high-frequency
+cells, which share the window [5, 7]. `run_pipeline()` derives the roles from the
+design and passes them to `match_report()` as `roles`, a function of the row's
+condition, reference and dimension. Called without it, as above, `match_report()`
+leaves `role` as `NA`.
+
+The pipeline reports every dimension lexsync knows for the items, whether or not
+the design matches on it. Length, frequency, N, OLD20, syllables and bigram
+frequency come first, then the matched dimensions, every `define_by` dimension and
+every joined norm column, so a norm that defines the conditions appears as the
+manipulated dimension it is. Bigram frequency is computed for the report when the stimuli
+lack it, which leaves the stimuli file and the selection as they were. A dimension
+with no numeric value among the items, such as `n_syllables` for Chinese words, is
+left out. The uncontrolled rows are where a confound shows. In `en_ndensity`, the
+dense words have fewer estimated syllables than the sparse ones (d = -0.83, 90% CI
+[-1.10, -0.56]), which a report of the matched dimensions alone could not reveal.
 
 `tost_p` and `equivalent` are the two one-sided tests. A conventional
 non-significant difference test is not evidence of equivalence, because failing
@@ -916,6 +961,16 @@ returns nothing for a word with an accent, a hyphen or a digit, which sends it
 down the letter-substitution path. That is why lexical decision is demonstrated on
 the English designs and never on the Chinese one. A generated design's datasheet
 counts only these a-z words in the band as its candidates.
+
+The stimuli give each pseudoword its `base` word and its `edit_distance` from it,
+the Levenshtein distance, and give a word its own form and 0. A generated design's
+report compares the words with their pseudowords on length, which they share by
+construction, and on bigram frequency, N and OLD20, which the generator does not
+hold. The report marks length as controlled and the other three as uncontrolled,
+and it computes those three against the lexicon on a copy of the stimuli. Since
+the most bigram-plausible candidate wins, the pseudowords tend to be more
+bigram-typical than their words: in `en_lexdec` the difference is d = -1.47 (90%
+CI [-1.82, -1.13]).
 
 A pseudoword is a non-word only relative to the reference words, so a real word
 too rare for the lexicon can still come out as one. The bundled English and

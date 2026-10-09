@@ -1,5 +1,7 @@
-condition,reference,dimension,cohens_d,d_ci_low,d_ci_high,var_ratio,tost_p,equivalent
-lower_frequency,higher_frequency,length,-0.109,-0.643,0.424,0.893,0.1121,FALSE
-lower_frequency,higher_frequency,frequency,3.528,2.676,4.38,0.832,1,FALSE
-lower_frequency,higher_frequency,n_density,0.13,-0.404,0.664,0.832,0.1245,FALSE
-lower_frequency,higher_frequency,old20,-0.241,-0.777,0.294,0.624,0.2093,FALSE
+condition,reference,dimension,cohens_d,d_ci_low,d_ci_high,var_ratio,tost_p,equivalent,mean_diff,role
+lower_frequency,higher_frequency,length,-0.109,-0.643,0.424,0.893,0.1121,FALSE,-0.05,controlled
+lower_frequency,higher_frequency,frequency,3.528,2.676,4.38,0.832,1,FALSE,1.023,manipulated
+lower_frequency,higher_frequency,n_density,0.13,-0.404,0.664,0.832,0.1245,FALSE,0.3,controlled
+lower_frequency,higher_frequency,old20,-0.241,-0.777,0.294,0.624,0.2093,FALSE,-0.058,controlled
+lower_frequency,higher_frequency,n_syllables,0.117,-0.417,0.651,0.738,0.1166,FALSE,0.05,uncontrolled
+lower_frequency,higher_frequency,bigram_freq,0.283,-0.253,0.819,0.76,0.2486,FALSE,0.001,uncontrolled

@@ -91,6 +91,11 @@ test_that("match_report carries an undefined d as a missing cell", {
   expect_equal(cmp$var_ratio, 1)
 })
 
+# The columns of the comparisons frame, in order: the two CS-23 columns follow the ones
+# a 0.1 reader already knows. Pinned identically in test_validation.py.
+comparison_header <- c("condition", "reference", "dimension", "cohens_d", "d_ci_low",
+                       "d_ci_high", "var_ratio", "tost_p", "equivalent", "mean_diff", "role")
+
 test_that("match_report gives a single-condition design an empty comparisons frame", {
   # There is nothing to compare against the anchor, so the frame comes back with its
   # columns and no rows. rbind() over an empty list used to return NULL, which
@@ -104,11 +109,188 @@ test_that("match_report gives a single-condition design an empty comparisons fra
   cmp <- match_report(stim, "length", schema)$comparisons
   expect_s3_class(cmp, "data.frame")
   expect_equal(nrow(cmp), 0L)
-  expect_identical(names(cmp),
-                   c("condition", "reference", "dimension", "cohens_d", "d_ci_low",
-                     "d_ci_high", "var_ratio", "tost_p", "equivalent"))
+  expect_identical(names(cmp), comparison_header)
   # The loop that used to die on NULL now runs zero times.
   expect_length(seq_len(nrow(cmp)), 0L)
+})
+
+test_that("cohens_d is undefined with fewer than two items a side", {
+  # One item has no spread, so the pooled SD and with it d are undefined. Both
+  # functions returned 0, a perfect balance, for a frequency contrast of 6.5 against
+  # 3.9. Pinned identically in test_validation.py.
+  expect_true(is.na(cohens_d(6.5, 3.9)))
+  expect_true(is.na(cohens_d(c(6.5, 6.0), 3.9)))
+  expect_true(is.na(cohens_d(numeric(0), c(3.9, 4.1))))
+  ci <- cohens_d_ci(6.5, 3.9)
+  expect_true(all(is.na(c(ci$d, ci$ci_low, ci$ci_high))))
+  ci <- cohens_d_ci(c(NA, 6.5), c(3.9, 4.1))
+  expect_true(all(is.na(c(ci$d, ci$ci_low, ci$ci_high))))
+})
+
+cont_stim <- function() {
+  data.frame(word = c("a", "b", "c", "d"), condition = "continuous",
+             frequency = c(2, 3, 4, 5), length = c(3, 4, 3, 4),
+             n_density = c(1, 2, 1, 2), old20 = c(1.5, 1.6, 1.5, 1.6),
+             stringsAsFactors = FALSE)
+}
+
+# Two items per condition, so every d is defined. Condition `b` sits above `a` on length
+# by half a letter, `c` and `d` a whole letter above it.
+four_conditions <- function() {
+  data.frame(word = c("a1", "a2", "b1", "b2", "c1", "c2", "d1", "d2"),
+             condition = c("a", "a", "b", "b", "c", "c", "d", "d"),
+             length = c(3, 4, 3, 5, 4, 6, 5, 5),
+             frequency = c(6.0, 6.5, 6.1, 6.3, 3.0, 3.5, 3.2, 3.1),
+             stringsAsFactors = FALSE)
+}
+
+test_that("match_report compares every pair after the anchor rows", {
+  # The anchor rows come first and unchanged, then every further pair in condition
+  # order, with the earlier condition as the reference. Only the anchor rows were
+  # reported, so a 2 x 2 design never showed its within-factor contrasts. Pinned
+  # identically in test_validation.py.
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  stim <- four_conditions()
+  cmp <- match_report(stim, c("length", "frequency"), schema)$comparisons
+  expect_identical(names(cmp), comparison_header)
+  pairs <- unique(paste(cmp$condition, cmp$reference))
+  expect_identical(pairs, c("b a", "c a", "d a", "c b", "d b", "d c"))
+  expect_identical(cmp$dimension, rep(c("length", "frequency"), 6))
+  # A further pair carries the statistics of a two-condition report on its own
+  # conditions, oriented from its reference.
+  alone <- match_report(stim[stim$condition %in% c("b", "c"), ], c("length", "frequency"),
+                        schema)$comparisons
+  row <- cmp[cmp$condition == "c" & cmp$reference == "b", ]
+  stats_cols <- c("cohens_d", "d_ci_low", "d_ci_high", "var_ratio", "tost_p",
+                  "equivalent", "mean_diff")
+  rownames(row) <- NULL
+  expect_identical(row[, stats_cols], alone[, stats_cols])
+})
+
+test_that("match_report gives the raw mean difference", {
+  # The reference mean minus the condition mean, in the dimension's own unit, to three
+  # places by the shared rounder. Pinned identically in test_validation.py.
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  cmp <- match_report(four_conditions(), "length", schema)$comparisons
+  by_pair <- stats::setNames(cmp$mean_diff, paste(cmp$condition, cmp$reference))
+  expect_identical(by_pair[["b a"]], -0.5)
+  expect_identical(by_pair[["c b"]], -1)
+  expect_identical(by_pair[["d c"]], 0)
+  thirds <- data.frame(condition = rep(c("r", "s"), each = 3),
+                       x = c(1, 1, 2, 1, 1, 1), stringsAsFactors = FALSE)
+  expect_identical(match_report(thirds, "x", schema)$comparisons$mean_diff, 0.333)
+})
+
+test_that("match_report reports a mean difference where d is undefined", {
+  # With one item a side d is undefined, but the raw difference is not: 6.5 against
+  # 3.9 Zipf is 2.6. Pinned identically in test_validation.py.
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  stim <- data.frame(condition = c("high", "low"), frequency = c(6.5, 3.9),
+                     stringsAsFactors = FALSE)
+  row <- match_report(stim, "frequency", schema)$comparisons
+  expect_true(is.na(row$cohens_d) && is.na(row$d_ci_low) && is.na(row$tost_p))
+  expect_identical(row$mean_diff, 2.6)
+})
+
+test_that("match_report skips a dimension with no numeric value", {
+  # A dimension every item lacks, such as n_syllables for Chinese, or one that is not
+  # numeric, such as a part-of-speech label named in define_by, has nothing to compare
+  # and is left out of both frames. Pinned identically in test_validation.py.
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  stim <- four_conditions()
+  stim$n_syllables <- NA_real_
+  stim$pos <- "noun"
+  rep <- match_report(stim, c("length", "n_syllables", "pos"), schema)
+  expect_identical(unique(rep$comparisons$dimension), "length")
+  expect_identical(unique(rep$descriptives$dimension), "length")
+  # With nothing left, both frames keep their columns and have no rows.
+  none <- match_report(stim, "pos", schema)
+  expect_identical(names(none$descriptives),
+                   c("group", "dimension", "n", "mean", "sd", "min", "median", "max"))
+  expect_identical(c(nrow(none$descriptives), nrow(none$comparisons)), c(0L, 0L))
+})
+
+test_that("match_report takes each row's role from roles", {
+  # `roles` gives the role of each row from its condition, reference and dimension.
+  # Without it the role is missing. Pinned identically in test_validation.py.
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  seen <- character(0)
+  roles <- function(condition, reference, dimension) {
+    seen <<- c(seen, paste(condition, reference, dimension))
+    if (identical(dimension, "length")) "controlled" else "manipulated"
+  }
+  cmp <- match_report(four_conditions(), c("length", "frequency"), schema,
+                      roles = roles)$comparisons
+  expect_identical(cmp$role, rep(c("controlled", "manipulated"), 6))
+  expect_identical(seen[1:3], c("b a length", "b a frequency", "c a length"))
+  plain <- match_report(four_conditions(), "length", schema)$comparisons
+  expect_true(all(is.na(plain$role)))
+})
+
+test_that("match_report_continuous gives the spreads and the windows", {
+  # The predictor's SD against that of as many values spaced evenly over its range,
+  # each control's SD against the pool's and the control's window, both from the
+  # selector's audit. Pinned identically in test_validation.py.
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  audit <- list(control_windows = list(
+    list(dimension = "length", low = 2.25, high = 4.75, pool_sd = 1),
+    list(dimension = "n_density", low = 0.5, high = 2.5, pool_sd = 2),
+    list(dimension = "old20", low = 1.4, high = 1.7, pool_sd = 0.1)))
+  rep <- match_report_continuous(cont_stim(), "frequency",
+                                 c("length", "n_density", "old20"), schema, audit = audit)
+  c <- rep$comparisons
+  expect_identical(names(c), c("dimension", "role", "pearson_r", "predictor_span", "sd",
+                               "sd_ratio", "window_low", "window_high"))
+  # frequency 2, 3, 4, 5 is itself an even spread, so its SD of 1.291 gives a ratio of
+  # 1. Set against 3 / sqrt(12) = 0.866, the limit for many values, it read 1.491.
+  expect_identical(c$sd[1], 1.291)
+  expect_identical(c$sd_ratio[1], 1)
+  expect_true(is.na(c$window_low[1]))
+  # length 3, 4, 3, 4: SD 0.577 against the pool's 1.
+  expect_identical(c$sd[2], 0.577)
+  expect_identical(c$sd_ratio[2], 0.577)
+  expect_identical(c(c$window_low[2], c$window_high[2]), c(2.25, 4.75))
+  expect_identical(c$sd_ratio[3], 0.289)
+  expect_identical(c$sd_ratio[4], 0.577)
+})
+
+test_that("match_report_continuous reads the windows off the selection", {
+  # Without an explicit audit the report reads the one the selector attached, and
+  # without either a control's ratio and window are missing. Pinned identically in
+  # test_validation.py.
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  stim <- cont_stim()
+  attr(stim, "audit") <- list(control_windows = list(
+    list(dimension = "length", low = 2, high = 5, pool_sd = 2)))
+  c <- match_report_continuous(stim, "frequency", "length", schema)$comparisons
+  expect_identical(c$sd_ratio[2], 0.289)
+  expect_identical(c$window_high[2], 5)
+  bare <- match_report_continuous(cont_stim(), "frequency", "length", schema)$comparisons
+  expect_true(is.na(bare$sd_ratio[2]))
+  expect_true(is.na(bare$window_low[2]))
+  # The predictor's ratio needs only the selection itself.
+  expect_identical(bare$sd_ratio[1], 1)
+})
+
+test_that("the predictor sd_ratio is 1 for an even spread of any size", {
+  # The benchmark is the SD of as many values spaced evenly over the realised range,
+  # (max - min) * sqrt(n (n + 1) / 12) / (n - 1), with the n - 1 that `sd` uses. Set
+  # against (max - min) / sqrt(12), its limit for many values, an even spread of 8
+  # items read 1.21 and one of 4 items 1.49, as if the items crowded the ends of the
+  # range. Pinned identically in test_validation.py.
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  ratio <- function(values) {
+    stim <- data.frame(condition = "continuous", frequency = values,
+                       length = rep(4, length(values)), stringsAsFactors = FALSE)
+    match_report_continuous(stim, "frequency", "length", schema)$comparisons$sd_ratio[1]
+  }
+  for (n in c(2L, 3L, 8L, 80L)) {
+    expect_identical(ratio(3 + 0.5 * (seq_len(n) - 1)), 1, info = n)
+  }
+  # Bunched in the middle of the range: SD 0.713 against 0.791.
+  expect_identical(ratio(c(1, 2, 2.1, 2.2, 3)), 0.902)
+  # Gathered at the two ends: SD 1.643 against 1.122.
+  expect_identical(ratio(c(1, 1, 1, 4, 4, 4)), 1.464)
 })
 
 test_that("variance_ratio flags unequal spread", {
@@ -121,14 +303,12 @@ test_that("variance_ratio flags unequal spread", {
 
 test_that("match_report_continuous returns predictor and control rows", {
   schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
-  stim <- data.frame(word = c("a", "b", "c", "d"), condition = "continuous",
-                     frequency = c(2, 3, 4, 5), length = c(3, 4, 3, 4),
-                     n_density = c(1, 2, 1, 2), old20 = c(1.5, 1.6, 1.5, 1.6),
-                     stringsAsFactors = FALSE)
-  rep <- match_report_continuous(stim, "frequency", c("length", "n_density", "old20"), schema)
+  rep <- match_report_continuous(cont_stim(), "frequency", c("length", "n_density", "old20"),
+                                 schema)
   expect_true(all(c("descriptives", "comparisons") %in% names(rep)))
   cmp <- rep$comparisons
-  expect_identical(names(cmp), c("dimension", "role", "pearson_r", "predictor_span"))
+  expect_identical(names(cmp), c("dimension", "role", "pearson_r", "predictor_span", "sd",
+                                 "sd_ratio", "window_low", "window_high"))
   expect_identical(cmp$role, c("predictor", "control", "control", "control"))
   expect_equal(cmp$predictor_span[1], 3)
 })

@@ -30,6 +30,9 @@
 | Dimension | Role | Cohen's d | 90% CI | Var ratio | TOST p | Equivalent |
 |---|---|---|---|---|---|---|
 | length | controlled | 0.00 | [-0.30, 0.30] | 1.00 | 0.0036 | TRUE |
+| bigram_freq | uncontrolled | -1.47 | [-1.82, -1.13] | 0.81 | 1.0000 | FALSE |
+| n_density | uncontrolled | -0.28 | [-0.59, 0.02] | 1.30 | 0.1167 | FALSE |
+| old20 | uncontrolled | 0.17 | [-0.13, 0.47] | 0.92 | 0.0372 | TRUE |
 
 ## Suggested analysis
 

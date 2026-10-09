@@ -1,0 +1,5 @@
+condition,reference,dimension,cohens_d,d_ci_low,d_ci_high,var_ratio,tost_p,equivalent,mean_diff,role
+low,high,length,,,,,,,0,controlled
+low,high,frequency,,,,,,,3.01,manipulated
+low,high,n_syllables,,,,,,,1,uncontrolled
+low,high,bigram_freq,,,,,,,0,uncontrolled

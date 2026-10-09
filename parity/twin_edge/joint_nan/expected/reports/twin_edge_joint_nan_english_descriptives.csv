@@ -1,7 +1,11 @@
 group,dimension,n,mean,sd,min,median,max
 noun,length,10,6,0,6,6,6
 noun,frequency,10,3.999,0.313,3.66,3.885,4.58
+noun,n_syllables,10,2,0,2,2,2
+noun,bigram_freq,10,0.013,0.004,0.007,0.013,0.02
 noun,rating,10,3.01,1.055,1.5,3.3,4.4
 verb,length,10,6,0.471,5,6,7
 verb,frequency,10,4.046,0.25,3.72,4.005,4.52
+verb,n_syllables,10,2.3,0.675,1,2,3
+verb,bigram_freq,10,0.013,0.004,0.009,0.012,0.023
 verb,rating,10,2.89,0.853,1.6,2.85,4.4

@@ -464,11 +464,15 @@ result. The default remains the default because it is byte-identical across engi
 past two conditions, and that is the trade lexsync makes: an algorithm is adopted as a default only
 if it can keep the guarantee.
 
-## Reading the report
+## Reading the realised control
 
 `match_report` is what turns a selection into a claim you can defend. It returns a dictionary with
 two frames. `descriptives` gives n, mean, SD, minimum, median and maximum per condition per
-dimension. `comparisons` contrasts every other condition against the first on each dimension.
+dimension. `comparisons` contrasts every pair of conditions on each dimension. The rows against the
+first condition, the anchor, come first, and every further pair follows in condition order, with
+the earlier condition of the pair named in `reference`. A 2 x 2 design such as `en_andrews_repro`
+therefore shows the contrasts within each factor, such as its two low-frequency cells, beside the
+three against its first cell.
 
 ```python exec="1" source="material-block" result="text" session="matching"
 stimuli = lexsync.match_stimuli(pool, design, schema)
@@ -478,11 +482,12 @@ report = lexsync.match_report(
 print(report["comparisons"].to_string(index=False))
 ```
 
-Four numbers per row, each answering something the others cannot.
+Each row carries the statistics below, each answering something the others cannot.
 
 `cohens_d` is the standardised mean difference, using the pooled standard deviation. It is the mean
-of the first condition, named in `reference`, minus the mean of the condition in that row, so a
-positive *d* means the reference scores higher. `d_ci_low` and `d_ci_high` bound it with the 90%
+of the condition named in `reference` minus the mean of the condition in that row, so a positive
+*d* means the reference scores higher. A condition with a single item has no spread, so *d* and its
+interval are then left empty. `d_ci_low` and `d_ci_high` bound it with the 90%
 interval that goes with a two one-sided tests decision at the .05 level
 ([Lakens, 2017](references.md#lakens-2017)), built from the large-sample standard error of *d*
 ([Hedges & Olkin, 1985](references.md#hedges-1985)). That standard error grows with *d*, so the
@@ -511,6 +516,28 @@ is about means, and two conditions can share a mean while differing in spread, w
 ([Armstrong et al., 2012](references.md#armstrong-2012);
 [Austin, 2009](references.md#austin-2009)). A ratio near 1 is balanced. A common heuristic treats
 anything outside roughly [0.5, 2] as unequal spread. It returns `None` when a variance is undefined.
+
+`mean_diff` is the same contrast in the dimension's own unit: the reference mean minus the
+condition mean, in letters, Zipf units, neighbours or syllables, to three places. It is defined
+whenever each condition has an item, so it remains when *d* is left empty.
+
+`role` says what the design did with the dimension in that pair. A dimension is `manipulated` when
+the two conditions' `define_by` windows on it differ, `controlled` when the design matches on it,
+and `uncontrolled` otherwise. The role belongs to the pair: in `en_andrews_repro`, frequency is
+manipulated between a high- and a low-frequency cell and uncontrolled between the two
+high-frequency cells, which share the window [5, 7]. `run_pipeline` derives the roles from the
+design and passes them to `match_report` as `roles`, a function of the row's condition, reference
+and dimension. Called without it, as above, `match_report` leaves `role` empty.
+
+The pipeline reports every dimension lexsync knows for the items, whether or not the design matches
+on it. Length, frequency, N, OLD20, syllables and bigram frequency come first, then the matched
+dimensions, every `define_by` dimension and every joined norm column, so a norm that defines the
+conditions appears as the manipulated dimension it is. Bigram frequency is computed for the report when the stimuli
+lack it, which leaves the stimuli file and the selection as they were. A dimension with no numeric
+value among the items, such as `n_syllables` for Chinese words, is left out. The uncontrolled rows
+are where a confound shows. In `en_ndensity`, the dense words have fewer estimated syllables than
+the sparse ones (*d* = -0.83, 90% CI [-1.10, -0.56]), which a report of the matched dimensions
+alone could not reveal.
 
 Two smaller functions round this out. `describe_stimuli` gives the descriptives alone, grouped by any
 column you like, `condition` included. `balance_check` reports columns whose value counts are
@@ -569,6 +596,19 @@ correlated belongs in the model as a covariate. Tightening *k* does not reliably
 correlations. In `en_freqcontinuous`, *k* = 1.0 gave *r* = 0.213 between frequency and `n_density`,
 against −0.049 at *k* = 1.5. At *k* = 0.25 no item falls within the windows, so the selector relaxes
 them to the whole pool.
+
+Each row also gives the dimension's realised SD as `sd`. For the predictor, `sd_ratio` sets it
+against the SD of as many values spaced evenly over the same range. That SD is
+`(max - min) * sqrt(n * (n + 1) / 12) / (n - 1)`, which approaches `(max - min) / sqrt(12)` as *n*
+grows, so an even spread has a ratio of 1 at any size. A ratio below 1 means the items bunch
+together more than an even spread would: `en_freqcontinuous` has 0.60, an SD of 0.54 against 0.90.
+A ratio above 1 means they gather towards the ends of the range. For a control, `sd_ratio` sets the
+realised SD against the SD of the pool the selector drew from, and `window_low` and `window_high`
+give the window its first pass set. In `en_freqcontinuous`, length keeps 0.66 of the pool's SD, so
+the window trims the tails of a control and leaves much of its spread. The windows come from the
+audit `select_continuous_stimuli` attaches to its result, which `match_report_continuous` reads
+unless it is given one as `audit`. A window that held too few items and was widened to the whole
+pool is recorded in the datasheet's `window_relaxations`.
 
 `match_on` must equal `continuous.controls`, the predictor must not appear among the controls, and
 there must be at least one control. All three are checked, and a design that breaks one of them
@@ -665,6 +705,14 @@ models defined for a–z words: `build_lexdec_stimuli` filters the pool to those
 down the letter-substitution path. That is why lexical decision is demonstrated on the English
 designs and never on the Chinese one. A generated design's datasheet counts only these a–z words in
 the band as its candidates.
+
+The stimuli give each pseudoword its `base` word and its `edit_distance` from it, the Levenshtein
+distance, and give a word its own form and 0. A generated design's report compares the words with
+their pseudowords on length, which they share by construction, and on bigram frequency, N and
+OLD20, which the generator does not hold. The report marks length as controlled and the other
+three as uncontrolled, and it computes those three against the lexicon on a copy of the stimuli.
+Since the most bigram-plausible candidate wins, the pseudowords tend to be more bigram-typical than
+their words: in `en_lexdec` the difference is *d* = -1.47 (90% CI [-1.82, -1.13]).
 
 A pseudoword is a non-word only relative to the reference words, so a real word too rare for the
 lexicon can still come out as one. The bundled English and Spanish lexica stop at Zipf 2.95 and

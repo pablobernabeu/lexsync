@@ -1,2 +1,5 @@
-condition,reference,dimension,cohens_d,d_ci_low,d_ci_high,var_ratio,tost_p,equivalent
-pseudoword,word,length,0,-0.303,0.303,1,0.0036,TRUE
+condition,reference,dimension,cohens_d,d_ci_low,d_ci_high,var_ratio,tost_p,equivalent,mean_diff,role
+pseudoword,word,length,0,-0.303,0.303,1,0.0036,TRUE,0,controlled
+pseudoword,word,bigram_freq,-1.473,-1.815,-1.132,0.813,1,FALSE,-0.004,uncontrolled
+pseudoword,word,n_density,-0.281,-0.586,0.023,1.297,0.1167,FALSE,-1.15,uncontrolled
+pseudoword,word,old20,0.171,-0.132,0.474,0.92,0.0372,TRUE,0.084,uncontrolled

@@ -34,6 +34,7 @@ import re
 import numpy as np
 import pandas as pd
 import yaml
+from rapidfuzz.distance import Levenshtein
 
 from . import corpora as _corpora
 from .io_utils import read_csv_utf8, sha256_file
@@ -307,7 +308,9 @@ def build_lexdec_stimuli(pool: pd.DataFrame, n: int, reference_words=None,
     it falls back to the pool when not given. ``exclude`` (optional) lists further
     known word forms a pseudoword must not equal, which the reference may lack. The
     presented string is the ``target`` column; conditions are ``word`` and
-    ``pseudoword`` and ``set`` pairs them.
+    ``pseudoword`` and ``set`` pairs them. ``base`` gives the word each pseudoword
+    was made from, a word's own form for a word, and ``edit_distance`` the
+    Levenshtein distance from ``target`` to ``base``, 0 for a word.
     """
     pool = (pool.assign(_k=pool["word"].map(lambda w: w.encode("utf-8")))
             .sort_values("_k").drop(columns="_k").reset_index(drop=True))
@@ -327,16 +330,23 @@ def build_lexdec_stimuli(pool: pd.DataFrame, n: int, reference_words=None,
     else:
         raise ValueError(f"lexsync: unknown pseudoword generation method '{method}'.")
     pw_map = dict(zip(gen["base_word"], gen["pseudoword"], strict=True))
+    base = words["word"].tolist()
+    forms = [pw_map[w] for w in base]
 
     real = pd.DataFrame({
-        "target": words["word"].tolist(), "word": words["word"].tolist(),
+        "target": base, "word": base,
         "condition": "word", "length": words["length"].tolist(),
         "set": list(range(1, len(words) + 1)),
+        "base": base, "edit_distance": 0,
     })
     pseudo = pd.DataFrame({
-        "target": [pw_map[w] for w in words["word"]], "word": [pw_map[w] for w in words["word"]],
+        "target": forms, "word": forms,
         "condition": "pseudoword", "length": words["length"].tolist(),
         "set": list(range(1, len(words) + 1)),
+        # rapidfuzz's distance equals stringdist's "lv" in the R engine, the agreement
+        # add_neighbourhood already rests OLD20 on.
+        "base": base,
+        "edit_distance": [Levenshtein.distance(p, b) for p, b in zip(forms, base, strict=True)],
     })
     out = pd.concat([real, pseudo], ignore_index=True)
     return out

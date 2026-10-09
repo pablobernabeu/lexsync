@@ -25,7 +25,13 @@ from .counterbalancing import (
     counterbalance,
     counterbalance_check,
 )
-from .datasheet import _posix, build_datasheet, write_datasheet
+from .datasheet import (
+    _comparison_roles,
+    _controlled,
+    _posix,
+    build_datasheet,
+    write_datasheet,
+)
 from .design import (
     _exclude_words,
     _referenced_dimensions,
@@ -60,6 +66,39 @@ from .validation import balance_check, match_report, match_report_continuous
 # The dimensions lexsync derives from the forms when a lexicon lacks them, in the
 # order add_neighbourhood and add_bigram_frequency add them.
 DERIVED_DIMS = ("n_density", "old20", "bigram_freq")
+
+# The dimensions a corpus or pool design's realised-control report covers whenever the
+# stimuli carry them, ahead of the ones the design names. A report of match_on alone
+# left uncontrolled confounds unreported: en_ndensity's dense words had fewer estimated
+# syllables than its sparse ones (d = -0.83).
+REPORT_DIMS = ("length", "frequency", "n_density", "old20", "n_syllables", "bigram_freq")
+
+# A generated lexical decision's report: length, which every pseudoword shares with its
+# base word, and three dimensions the generator does not hold. Its pseudowords are more
+# bigram-typical than their words (d about -1.5 in en_lexdec).
+LEXDEC_REPORT_DIMS = ("length", "bigram_freq", "n_density", "old20")
+
+
+def _report_dims(design: dict, norms) -> list:
+    """The dimensions a corpus or pool design's report covers, in first-mention order.
+
+    REPORT_DIMS, then ``match_on``, every condition's ``define_by`` keys and every
+    joined norm column. The report leaves out those the stimuli lack and those with no
+    numeric value (see ``match_report``). Mirrors .report_dims in
+    R_workflow/R/run_pipeline.R.
+    """
+    names = list(REPORT_DIMS) + [str(d) for d in (design.get("match_on") or [])]
+    for cond in design.get("conditions") or []:
+        if isinstance(cond, dict) and isinstance(cond.get("define_by"), dict):
+            names += [str(k) for k in cond["define_by"]]
+    for rec in norms or []:
+        names += [str(c["column"]) for c in rec["columns"]]
+    return list(dict.fromkeys(names))
+
+
+def _present(v) -> bool:
+    """Whether a report cell holds a value: neither None nor NaN."""
+    return v is not None and v == v
 
 
 def _dims_to_derive(design: dict, columns, override: bool) -> list:
@@ -389,7 +428,6 @@ def run_pipeline(design_path, schema_path=None, outdir="output",
         runlog.log_step(log, f"pool after filters: {len(pool)} words", {"pool": len(pool)})
 
     if source in ("corpus", "pool"):
-        match_on = list(design.get("match_on") or [])
         pool = _derive_dims(pool, pending, reference, log, n_supplied)
         if is_continuous:
             predictor = design["continuous"]["predictor"]
@@ -416,14 +454,19 @@ def run_pipeline(design_path, schema_path=None, outdir="output",
                                 f"matched {len(stim)} items across "
                                 f"{stim['condition'].nunique()} conditions",
                                 {"conditions": ", ".join(dict.fromkeys(stim["condition"]))})
-            std = ["length", "frequency", "n_density", "old20"]
-            # First-occurrence-order union with match_on, through dict.fromkeys:
-            # sorted() would give a collated order that drifts from the R engine.
-            # A custom joined norm the design matches on then reaches the
-            # descriptives, comparisons and realised-control record, and not only
-            # the stimuli file.
-            dims = [d for d in dict.fromkeys(std + match_on) if d in stim.columns]
-            report = match_report(stim, dims, schema)
+            # Bigram frequency is reported for every design, computed against the
+            # run's reference on a copy when the stimuli lack it, so the stimuli file
+            # and the selection stay as they were.
+            report_stim = (stim if "bigram_freq" in stim.columns
+                           else add_bigram_frequency(stim, reference=reference))
+            # First-occurrence order, through dict.fromkeys in _report_dims: sorted()
+            # would give a collated order that drifts from the R engine. A joined norm
+            # the design matches on or defines its conditions by then reaches the
+            # descriptives, comparisons and realised-control record, and not only the
+            # stimuli file.
+            dims = [d for d in _report_dims(design, norms) if d in report_stim.columns]
+            report = match_report(report_stim, dims, schema,
+                                  roles=_comparison_roles(design, _controlled(design, source)))
     elif source == "generate":
         n = _resolve_n(design, 40)
         gen_cfg = items_cfg.get("generation") or {}
@@ -454,7 +497,13 @@ def run_pipeline(design_path, schema_path=None, outdir="output",
                              f"smaller set.")
         runlog.log_step(log, f"generated {len(stim)} items (words + pseudowords, {gen_method})",
                         {"conditions": ", ".join(dict.fromkeys(stim["condition"]))})
-        report = match_report(stim, ["length"], schema)
+        # Words and pseudowords share their length by construction, so the report also
+        # sets them against each other on the dimensions the generator does not hold,
+        # computed against the lexicon's reference on a copy of the stimuli.
+        report_stim = add_bigram_frequency(add_neighbourhood(stim, reference=ref_words),
+                                           reference=ref_words)
+        report = match_report(report_stim, list(LEXDEC_REPORT_DIMS), schema,
+                              roles=_comparison_roles(design, _controlled(design, source)))
     elif source == "table":
         path = items_cfg["path"]
         runlog.log_step(log, f"loading items '{path}'")
@@ -507,10 +556,15 @@ def run_pipeline(design_path, schema_path=None, outdir="output",
             for _, cr in report["comparisons"].iterrows():
                 verdict = "equivalent" if cr["equivalent"] else "not shown equivalent"
                 lo, hi = cr["d_ci_low"], cr["d_ci_high"]
-                ci = f" [{lo:.2f}, {hi:.2f}]" if (lo == lo and hi == hi) else ""  # NaN-safe
+                # A missing d or p is None or NaN and prints "NA", as R's sprintf()
+                # prints it, and a missing interval is left out, as in R. Formatting
+                # None raised a TypeError when a condition had a single item.
+                ci = f" [{lo:.2f}, {hi:.2f}]" if (_present(lo) and _present(hi)) else ""
+                d = f"{cr['cohens_d']:.2f}" if _present(cr["cohens_d"]) else "NA"
+                p = cr["tost_p"] if _present(cr["tost_p"]) else "NA"
                 runlog.log_step(log, f"equivalence {cr['condition']} vs {cr['reference']} on "
-                                     f"'{cr['dimension']}': d = {cr['cohens_d']:.2f}{ci}, "
-                                     f"TOST p = {cr['tost_p']} ({verdict})")
+                                     f"'{cr['dimension']}': d = {d}{ci}, "
+                                     f"TOST p = {p} ({verdict})")
 
     # Balance-aware list assignment, when the design asks for it. Off by default,
     # because it changes which items a participant sees. The Latin-square recipe

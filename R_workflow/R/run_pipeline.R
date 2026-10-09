@@ -8,6 +8,35 @@
 # order add_neighbourhood() and add_bigram_frequency() add them.
 .DERIVED_DIMS <- c("n_density", "old20", "bigram_freq")
 
+# The dimensions a corpus or pool design's realised-control report covers whenever the
+# stimuli carry them, ahead of the ones the design names. A report of match_on alone
+# left uncontrolled confounds unreported: en_ndensity's dense words had fewer estimated
+# syllables than its sparse ones (d = -0.83).
+.REPORT_DIMS <- c("length", "frequency", "n_density", "old20", "n_syllables", "bigram_freq")
+
+# A generated lexical decision's report: length, which every pseudoword shares with its
+# base word, and three dimensions the generator does not hold. Its pseudowords are more
+# bigram-typical than their words (d about -1.5 in en_lexdec).
+.LEXDEC_REPORT_DIMS <- c("length", "bigram_freq", "n_density", "old20")
+
+# The dimensions a corpus or pool design's report covers, in first-mention order:
+# .REPORT_DIMS, then match_on, every condition's define_by keys and every joined norm
+# column. The report leaves out those the stimuli lack and those with no numeric value
+# (see match_report()). Mirrors _report_dims in run_pipeline.py.
+.report_dims <- function(design, norms) {
+  names_ <- c(.REPORT_DIMS, as.character(unlist(design[["match_on"]], use.names = FALSE)))
+  for (cond in design[["conditions"]] %||% list()) {
+    if (is.list(cond) && is.list(cond[["define_by"]])) {
+      names_ <- c(names_, names(cond[["define_by"]]))
+    }
+  }
+  for (rec in norms %||% list()) {
+    names_ <- c(names_, vapply(rec[["columns"]], function(cl) as.character(cl[["column"]]),
+                               character(1)))
+  }
+  unique(names_)
+}
+
 # The derived dimensions the run must compute, in .DERIVED_DIMS order: those the
 # design refers to and the lexicon lacks. With a supplied reference (`override`) also
 # n_density and old20, which every report shows, and bigram_freq when the lexicon
@@ -324,7 +353,6 @@ run_pipeline <- function(design_path, schema_path = NULL,
   }
 
   if (source %in% c("corpus", "pool")) {
-    match_on <- unlist(design[["match_on"]], use.names = FALSE)
     dd <- .derive_dims(pool, pending, reference, log, n_supplied)
     pool <- dd$frame; log <- dd$log
     if (is_continuous) {
@@ -351,14 +379,19 @@ run_pipeline <- function(design_path, schema_path = NULL,
                                      nrow(stim), length(unique(stim$condition))),
                         list(conditions = paste(unique(stim$condition), collapse = ", ")))
       }
-      std <- c("length", "frequency", "n_density", "old20")
-      # First-occurrence-order union with match_on: sort() would give a
-      # locale-collated order that drifts from the Python engine. A custom joined
-      # norm the design matches on then reaches the descriptives, comparisons and
-      # realised-control record, and not only the stimuli file.
-      dims <- unique(c(std, match_on))
-      dims <- dims[dims %in% names(stim)]
-      report <- match_report(stim, dims, schema)
+      # Bigram frequency is reported for every design, computed against the run's
+      # reference on a copy when the stimuli lack it, so the stimuli file and the
+      # selection stay as they were.
+      report_stim <- if ("bigram_freq" %in% names(stim)) stim
+                     else add_bigram_frequency(stim, reference = reference)
+      # First-occurrence order, through unique() in .report_dims(): sort() would give
+      # a locale-collated order that drifts from the Python engine. A joined norm the
+      # design matches on or defines its conditions by then reaches the descriptives,
+      # comparisons and realised-control record, and not only the stimuli file.
+      dims <- .report_dims(design, norms)
+      dims <- dims[dims %in% names(report_stim)]
+      report <- match_report(report_stim, dims, schema,
+                             roles = .comparison_roles(design, .controlled_dims(design, source)))
     }
   } else if (source == "generate") {
     n <- .resolve_n(design, 40L)
@@ -392,7 +425,13 @@ run_pipeline <- function(design_path, schema_path = NULL,
     }
     log <- log_step(log, sprintf("generated %d items (words + pseudowords, %s)", nrow(stim), gen_method),
                     list(conditions = paste(unique(stim$condition), collapse = ", ")))
-    report <- match_report(stim, "length", schema)
+    # Words and pseudowords share their length by construction, so the report also sets
+    # them against each other on the dimensions the generator does not hold, computed
+    # against the lexicon's reference on a copy of the stimuli.
+    report_stim <- add_bigram_frequency(add_neighbourhood(stim, reference = ref_words),
+                                        reference = ref_words)
+    report <- match_report(report_stim, .LEXDEC_REPORT_DIMS, schema,
+                           roles = .comparison_roles(design, .controlled_dims(design, source)))
   } else if (source == "table") {
     path <- items_cfg[["path"]]
     log <- log_step(log, sprintf("loading items '%s'", path))

@@ -29,6 +29,9 @@ pseudoword must not equal, which the reference may lack; see
 }
 \value{
 A stimulus data frame with \code{target}, \code{condition} and \code{set} columns.
+\code{base} gives the word each pseudoword was made from, a word's own form for a
+word, and \code{edit_distance} the Levenshtein distance from \code{target} to \code{base}, 0
+for a word.
 }
 \description{
 Real words are drawn by an even spread across the byte-ordered pool, then a

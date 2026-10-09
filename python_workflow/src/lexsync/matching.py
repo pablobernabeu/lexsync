@@ -136,7 +136,7 @@ def _assert_distinct_words(out):
                          f"conditions disjoint or lower n_per_condition.")
 
 
-def _attach_audit(out, relaxations, incomplete):
+def _attach_audit(out, relaxations, incomplete, windows=None):
     """Record the relaxed windows and the excluded candidates on the result.
 
     The pipeline reads the record immediately after the call, before any reshaping
@@ -145,6 +145,8 @@ def _attach_audit(out, relaxations, incomplete):
     every part holds the same. R keeps attributes through a row subset, and rbind
     keeps its first part's. An audit already on the pool would therefore reach the
     result as if this selection had made it, so both engines clear it here first.
+    ``windows`` (the continuous selector's) are recorded as ``control_windows``, one
+    ``{dimension, low, high, pool_sd}`` per control, for the realised-control report.
     Must stay identical to .attach_audit in R_workflow/R/matching.R.
     """
     out.attrs.pop("audit", None)
@@ -153,6 +155,8 @@ def _attach_audit(out, relaxations, incomplete):
         audit["window_relaxations"] = relaxations
     if incomplete:
         audit["incomplete_dropped"] = incomplete
+    if windows:
+        audit["control_windows"] = windows
     if audit:
         out.attrs["audit"] = audit
     return out
@@ -728,6 +732,11 @@ def select_continuous_stimuli(pool: pd.DataFrame, design: dict, schema: dict,
     the number excluded is recorded in ``attrs["audit"]["incomplete_dropped"]`` under
     the condition ``continuous``. A pool with no complete row is refused.
 
+    ``attrs["audit"]["control_windows"]`` records, for each control, the window the
+    first pass set (``low``, ``high``) and the SD of the complete pool (``pool_sd``),
+    which :func:`match_report_continuous` sets the realised SD against. A relaxed
+    window is recorded as computed, and the relaxation in ``window_relaxations``.
+
     Returns the selected stimuli. Unless ``label`` is ``None`` the ``condition``
     column is set to it, ``continuous`` by default, and unless ``renumber_sets`` is
     ``False`` the ``set`` column is renumbered ``1..n``.
@@ -806,6 +815,10 @@ def select_continuous_stimuli(pool: pd.DataFrame, design: dict, schema: dict,
         s = _exact_sd(spread[d].dropna())
         k = tol_k.get(d, 2)
         win[d] = (m - k * s, m + k * s)
+    # The windows and the pool's spread, which the realised-control report sets the
+    # selection's spread against.
+    windows = [{"dimension": d, "low": win[d][0], "high": win[d][1],
+                "pool_sd": _exact_sd(pool[d].dropna())} for d in controls]
     keep = np.ones(len(pool), dtype=bool)
     for d in controls:
         col = pool[d].to_numpy()
@@ -834,7 +847,7 @@ def select_continuous_stimuli(pool: pd.DataFrame, design: dict, schema: dict,
         sel["condition"] = label
     if renumber_sets:
         sel["set"] = list(range(1, len(sel) + 1))
-    return _attach_audit(sel, relaxations, incomplete)
+    return _attach_audit(sel, relaxations, incomplete, windows)
 
 
 def resample_stimuli(pool: pd.DataFrame, design: dict, schema: dict,

@@ -455,7 +455,28 @@ test_that("a selection does not inherit an audit from its pool", {
   cpool <- cpool[!is.na(cpool$x), , drop = FALSE]
   attr(cpool, "audit") <- stale
   sel <- select_continuous_stimuli(cpool, continuous_x_design(), tiny_schema())
-  expect_null(attr(sel, "audit"))
+  # A continuous selection always records its control windows, and nothing else here.
+  expect_identical(names(attr(sel, "audit")), "control_windows")
+})
+
+test_that("the continuous selector records its windows and the pool's spread", {
+  # The windows are mean +/- k SD of the first pass, and the pool's SD is that of the
+  # complete candidates, so the report can set each control's realised SD against it.
+  # Pinned identically in test_matching.py.
+  pool <- data.frame(word = sprintf("w%02d", 0:11), x = as.numeric(0:11),
+                     length = rep(c(3, 4, 5, 6), 3), stringsAsFactors = FALSE)
+  design <- list(name = "cw", language = "english", n_per_condition = 4L,
+                 continuous = list(predictor = "x", controls = list("length")),
+                 match_on = list("length"))
+  sel <- select_continuous_stimuli(pool, design, tiny_schema())
+  # The first pass takes x = 0, 4, 7 and 11, whose lengths 3, 3, 6 and 6 have mean 4.5
+  # and SD sqrt(3); k defaults to 2.
+  w <- attr(sel, "audit")$control_windows
+  expect_length(w, 1L)
+  expect_identical(w[[1]]$dimension, "length")
+  expect_equal(w[[1]]$low, 4.5 - 2 * sqrt(3), tolerance = 1e-12)
+  expect_equal(w[[1]]$high, 4.5 + 2 * sqrt(3), tolerance = 1e-12)
+  expect_equal(w[[1]]$pool_sd, sqrt(15 / 11), tolerance = 1e-12)
 })
 
 test_that("a resampled selection records the first replicate's exclusions", {

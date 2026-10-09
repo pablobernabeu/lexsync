@@ -1,0 +1,22 @@
+# Twin-edge case: a two-word lexicon gives one item per condition, which
+# `shortfall: allow` accepts. One item has no spread, so Cohen's d and its interval are
+# undefined and their cells stay empty, while the raw difference is reported. Both
+# engines reported d = 0, a perfect balance, for a frequency contrast of 3.01 Zipf, and
+# the Python engine then failed while writing the run log.
+# The word forms are common English words. The Zipf frequencies are invented for
+# this fixture and describe no corpus.
+name: twin_edge_shortfall_one
+language: english
+lexicon: lexicon.csv
+description: 'One high- and one low-frequency word, the most a two-word lexicon allows.'
+n_per_condition: 20
+conditions:
+  - name: high
+    define_by:
+      frequency: [5.0, 7.0]
+  - name: low
+    define_by:
+      frequency: [2.0, 4.0]
+match_on: [length]
+matching:
+  shortfall: allow

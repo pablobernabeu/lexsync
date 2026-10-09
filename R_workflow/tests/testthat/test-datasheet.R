@@ -33,7 +33,37 @@ test_that("datasheet captures structure and realised control", {
   roles <- stats::setNames(vapply(ds$realised_control, function(r) r$role, character(1)),
                            vapply(ds$realised_control, function(r) r$dimension, character(1)))
   expect_identical(unname(roles["length"]), "controlled")
-  expect_identical(unname(roles["frequency"]), "manipulated/free")
+  # The design declares no conditions, so no window sets frequency apart.
+  expect_identical(unname(roles["frequency"]), "uncontrolled")
+})
+
+test_that("realised control records the pair, the role and the raw difference", {
+  # Each entry names the two conditions it contrasts and gives the raw difference. A
+  # report without roles, as a direct call of match_report() gives, takes them from the
+  # design: a dimension whose define_by windows differ is manipulated, one in match_on
+  # controlled and any other uncontrolled. Every unmatched dimension was
+  # "manipulated/free". Pinned identically in test_datasheet.py.
+  schema <- ds_schema()
+  stim <- ds_stim()
+  design <- ds_design()
+  design$conditions <- list(list(name = "hi", define_by = list(frequency = c(5, 7))),
+                            list(name = "lo", define_by = list(frequency = c(2, 4))))
+  report <- match_report(stim, c("length", "frequency", "n_density", "old20"), schema)
+  ds <- build_datasheet(design, schema, report, stim, "x.csv",
+                        list(stimuli = NULL, experiments = list()), 2026, engine = "R")
+  rc <- stats::setNames(ds$realised_control,
+                        vapply(ds$realised_control, function(r) r$dimension, character(1)))
+  expect_identical(vapply(rc, function(r) r$role, character(1)),
+                   c(length = "controlled", frequency = "manipulated",
+                     n_density = "controlled", old20 = "controlled"))
+  expect_identical(c(rc$frequency$condition, rc$frequency$reference), c("lo", "hi"))
+  expect_identical(rc$frequency$mean_diff, 3)
+  # A role the report carries is kept.
+  report$comparisons$role <- "uncontrolled"
+  kept <- build_datasheet(design, schema, report, stim, "x.csv",
+                          list(stimuli = NULL, experiments = list()), 2026, engine = "R")
+  expect_identical(unique(vapply(kept$realised_control, function(r) r$role, character(1))),
+                   "uncontrolled")
 })
 
 test_that("methods paragraph reads naturally and prereg template is emitted", {
@@ -373,6 +403,11 @@ test_that("datasheet emits a regression model for a continuous design", {
   expect_identical(ds$analysis$suggested_model,
                    "response ~ frequency + length + n_density + old20 + (1 + frequency | subject) + (1 | item)")
   expect_identical(ds$realised_control[[1]]$role, "predictor")
+  # The realised spreads and the control windows are part of the record. Frequency
+  # 2, 3, 4, 5 is an even spread, so its ratio is 1.
+  expect_identical(ds$realised_control[[1]]$sd_ratio, 1)
+  expect_true(all(c("sd", "sd_ratio", "window_low", "window_high") %in%
+                    names(ds$realised_control[[2]])))
   expect_true("predictor" %in% names(ds$selection))
   # The control bands the matcher applied are part of the record.
   expect_equal(ds$selection$tolerance_k$length, 1.5)
@@ -727,7 +762,7 @@ tie_rows <- function() {
          equivalent = TRUE),
     list(dimension = "old20", role = "controlled", cohens_d = 0.1, ci_low = -0.2,
          ci_high = 0.3, var_ratio = 1, tost_p = 0, equivalent = TRUE),
-    list(dimension = "frequency", role = "manipulated/free", cohens_d = 5.27,
+    list(dimension = "frequency", role = "manipulated", cohens_d = 5.27,
          ci_low = 4.72, ci_high = 5.83, var_ratio = 0.21, tost_p = 1,
          equivalent = FALSE))
 }
@@ -744,7 +779,7 @@ test_that("decimal ties print the same in the Methods paragraph and the table", 
                     md, fixed = TRUE))
   expect_true(grepl("| old20 | controlled | 0.10 | [-0.20, 0.30] | 1.00 | < 0.0001 |",
                     md, fixed = TRUE))
-  expect_true(grepl("| frequency | manipulated/free | 5.27 | [4.72, 5.83] | 0.21 | 1.0000 |",
+  expect_true(grepl("| frequency | manipulated | 5.27 | [4.72, 5.83] | 0.21 | 1.0000 |",
                     md, fixed = TRUE))
 })
 

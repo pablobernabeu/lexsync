@@ -84,6 +84,17 @@ from .scripting import _refresh_hz, _response_windows, presentation_versions
 #                                     the lexicon read (see _lexicon_provenance).
 #                                     Earlier records credited wordfreq for any file.
 #   reproducibility.schema_path   the schema file the run read, in POSIX form
+#   realised_control[].condition, realised_control[].reference
+#                               the pair a row compares. Every pair is reported, the
+#                               anchor rows first
+#   realised_control[].mean_diff  the reference mean minus the condition mean, in the
+#                               dimension's own unit
+#   realised_control[].role     manipulated, controlled or uncontrolled for the pair
+#                               (1.1 wrote "manipulated/free" for every unmatched row)
+#   realised_control[].sd, .sd_ratio, .window_low, .window_high
+#                               a continuous design's realised SDs, set against an even
+#                               spread (the predictor) or the pool (a control), and each
+#                               control's window
 DATASHEET_VERSION = "1.2"
 
 # Datasheet labels for the pseudoword generators in generation.py, keyed by the
@@ -318,6 +329,63 @@ def _controlled(design: dict, source: str) -> list:
     return []
 
 
+def _is_number(v) -> bool:
+    return isinstance(v, (int, float)) and not isinstance(v, bool)
+
+
+def _same_window(a, b) -> bool:
+    """Whether two conditions' ``define_by`` entries on one dimension select alike.
+
+    Absent from both is alike, and absent from one only is not. A two-number entry is
+    a range compared bound by bound, numerically, so [5, 7] and [5.0, 7.0] are alike.
+    Any other entry is a set of permitted values, compared as a set: numerically when
+    both hold only numbers, and otherwise as text. Mirrors .same_window in
+    R_workflow/R/datasheet.R.
+    """
+    if a is None or b is None:
+        return a is None and b is None
+    a = list(a) if isinstance(a, (list, tuple)) else [a]
+    b = list(b) if isinstance(b, (list, tuple)) else [b]
+    if len(a) != len(b):
+        return False
+    if all(_is_number(v) for v in a + b):
+        a, b = [float(v) for v in a], [float(v) for v in b]
+        return a == b if len(a) == 2 else sorted(a) == sorted(b)
+    return sorted(str(v) for v in a) == sorted(str(v) for v in b)
+
+
+def _comparison_roles(design: dict, controlled):
+    """The role of a realised-control row, as a function of (condition, reference,
+    dimension).
+
+    A row is ``manipulated`` when the two conditions' ``define_by`` entries on the
+    dimension differ, or when the dimension is a continuous design's predictor. It is
+    ``controlled`` when the dimension is among ``controlled``, the dimensions the
+    selection matched on (``match_on``, or ``length`` for generated pseudowords), and
+    ``uncontrolled`` otherwise. In a 2 x 2 design, frequency is manipulated between a
+    high- and a low-frequency cell but not between two cells that share its window.
+    ``run_pipeline`` passes this to ``match_report``, and ``build_datasheet`` falls
+    back on it for a report without roles. Mirrors .comparison_roles in
+    R_workflow/R/datasheet.R.
+    """
+    windows = {}
+    for cond in design.get("conditions") or []:
+        if isinstance(cond, dict) and isinstance(cond.get("define_by"), dict):
+            windows[str(cond.get("name"))] = cond["define_by"]
+    cont = design.get("continuous")
+    predictor = cont.get("predictor") if isinstance(cont, dict) else None
+    controlled = set(controlled)
+
+    def role(condition, reference, dimension):
+        a = windows.get(str(condition)) or {}
+        b = windows.get(str(reference)) or {}
+        if dimension == predictor or not _same_window(a.get(dimension), b.get(dimension)):
+            return "manipulated"
+        return "controlled" if dimension in controlled else "uncontrolled"
+
+    return role
+
+
 def _response_text(windows: list, events: list) -> str:
     """The response the analysis models, with where its reaction time starts.
 
@@ -504,21 +572,31 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
 
     realised = []
     if report is not None:
+        # A report the pipeline wrote carries each row's role. One from a direct call
+        # of match_report may not, and its roles are then taken from the design.
+        role_of = _comparison_roles(design, controlled)
         for _, r in report["comparisons"].iterrows():
             if is_continuous:
                 realised.append({
                     "dimension": r["dimension"], "role": r["role"],
                     "pearson_r": _num(r.get("pearson_r")),
                     "predictor_span": _num(r.get("predictor_span")),
+                    "sd": _num(r.get("sd")), "sd_ratio": _num(r.get("sd_ratio")),
+                    "window_low": _num(r.get("window_low")),
+                    "window_high": _num(r.get("window_high")),
                 })
             else:
+                role = r.get("role")
+                if not isinstance(role, str):
+                    role = role_of(r["condition"], r["reference"], r["dimension"])
                 realised.append({
-                    "dimension": r["dimension"],
-                    "role": "controlled" if r["dimension"] in controlled else "manipulated/free",
+                    "condition": r["condition"], "reference": r["reference"],
+                    "dimension": r["dimension"], "role": role,
                     "cohens_d": _num(r["cohens_d"]),
                     "ci_low": _num(r.get("d_ci_low")), "ci_high": _num(r.get("d_ci_high")),
                     "var_ratio": _num(r.get("var_ratio")),
                     "tost_p": _num(r.get("tost_p")), "equivalent": _bool(r.get("equivalent")),
+                    "mean_diff": _num(r.get("mean_diff")),
                 })
 
     if is_continuous:

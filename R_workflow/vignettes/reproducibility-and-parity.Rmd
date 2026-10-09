@@ -477,7 +477,9 @@ the schema's defaults rather than the defaults a design may have replaced. The
 rule that broke exact ties is there too, as `tie_break`, with its salt under
 `hash`. What
 the selection achieved is in `realised_control`, as the effect sizes, intervals,
-variance ratios and TOST verdicts. What it could have chosen instead is in
+variance ratios and TOST verdicts for every pair of conditions, each row naming
+its pair in `condition` and `reference`, giving the raw difference as `mean_diff`
+and the dimension's role. What it could have chosen instead is in
 `candidate_pool`, which records how many items satisfied each condition before
 matching. A candidate missing a matched dimension satisfies its condition but
 cannot be matched. Such candidates are counted in `incomplete_dropped`, present

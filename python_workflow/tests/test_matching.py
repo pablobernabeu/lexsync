@@ -1,4 +1,5 @@
 import hashlib
+import math
 import re
 
 import numpy as np
@@ -486,7 +487,28 @@ def test_a_selection_does_not_inherit_an_audit_from_its_pool():
     cpool = _continuous_x_pool().dropna(subset=["x"])
     cpool.attrs["audit"] = stale
     sel = select_continuous_stimuli(cpool, _continuous_x_design(), _tiny_schema())
-    assert "audit" not in sel.attrs
+    # A continuous selection always records its control windows, and nothing else here.
+    assert list(sel.attrs["audit"]) == ["control_windows"]
+
+
+def test_the_continuous_selector_records_its_windows_and_the_pools_spread():
+    """The windows are mean +/- k SD of the first pass, and the pool's SD is that of the
+    complete candidates, so the report can set each control's realised SD against it.
+    Pinned identically in test-matching.R."""
+    pool = pd.DataFrame({"word": ["w%02d" % i for i in range(12)],
+                         "x": [float(i) for i in range(12)],
+                         "length": [3, 4, 5, 6] * 3})
+    design = {"name": "cw", "language": "english", "n_per_condition": 4,
+              "continuous": {"predictor": "x", "controls": ["length"]},
+              "match_on": ["length"]}
+    sel = select_continuous_stimuli(pool, design, _tiny_schema())
+    # The first pass takes x = 0, 4, 7 and 11, whose lengths 3, 3, 6 and 6 have mean
+    # 4.5 and SD sqrt(3); k defaults to 2.
+    [w] = sel.attrs["audit"]["control_windows"]
+    assert w["dimension"] == "length"
+    assert math.isclose(w["low"], 4.5 - 2 * math.sqrt(3), rel_tol=1e-12)
+    assert math.isclose(w["high"], 4.5 + 2 * math.sqrt(3), rel_tol=1e-12)
+    assert math.isclose(w["pool_sd"], math.sqrt(15 / 11), rel_tol=1e-12)
 
 
 def test_a_resampled_selection_records_the_first_replicates_exclusions():

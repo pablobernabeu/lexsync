@@ -11,11 +11,11 @@
     },
     {
       "file": "output/reports/en_ndensity_english_descriptives_py.csv",
-      "sha256": "9e8c1775303fa94e310bd11abe358c9931e88755c6962dbb9fc55508b1738086"
+      "sha256": "20dfb43765418155412664631dde25aa2b550733fcb423e5a0844bd0f97e3693"
     },
     {
       "file": "output/reports/en_ndensity_english_comparisons_py.csv",
-      "sha256": "3253c2a176bfd927c4be265eb3be06e2657adae2d6c70877a1cc7edc374876ff"
+      "sha256": "0dc67df7723a3e1ae0875d3ec2902ee25a37ec66915c447c26b33611015f4e75"
     },
     {
       "file": "output/experiments/en_ndensity_english_psychopy.py",
@@ -137,8 +137,11 @@
       "ci_high": 0.262,
       "ci_low": -0.262,
       "cohens_d": 0.0,
+      "condition": "sparse_neighbourhood",
       "dimension": "length",
       "equivalent": true,
+      "mean_diff": 0.0,
+      "reference": "dense_neighbourhood",
       "role": "controlled",
       "tost_p": 0.0009,
       "var_ratio": 1.0
@@ -147,8 +150,11 @@
       "ci_high": 0.262,
       "ci_low": -0.262,
       "cohens_d": 0.0,
+      "condition": "sparse_neighbourhood",
       "dimension": "frequency",
       "equivalent": true,
+      "mean_diff": 0.0,
+      "reference": "dense_neighbourhood",
       "role": "controlled",
       "tost_p": 0.0009,
       "var_ratio": 1.0
@@ -157,9 +163,12 @@
       "ci_high": 3.497,
       "ci_low": 2.72,
       "cohens_d": 3.108,
+      "condition": "sparse_neighbourhood",
       "dimension": "n_density",
       "equivalent": false,
-      "role": "manipulated/free",
+      "mean_diff": 7.838,
+      "reference": "dense_neighbourhood",
+      "role": "manipulated",
       "tost_p": 1.0,
       "var_ratio": 0.02
     },
@@ -167,11 +176,40 @@
       "ci_high": -1.966,
       "ci_low": -2.641,
       "cohens_d": -2.304,
+      "condition": "sparse_neighbourhood",
       "dimension": "old20",
       "equivalent": false,
-      "role": "manipulated/free",
+      "mean_diff": -0.523,
+      "reference": "dense_neighbourhood",
+      "role": "uncontrolled",
       "tost_p": 1.0,
       "var_ratio": 1.639
+    },
+    {
+      "ci_high": -0.555,
+      "ci_low": -1.101,
+      "cohens_d": -0.828,
+      "condition": "sparse_neighbourhood",
+      "dimension": "n_syllables",
+      "equivalent": false,
+      "mean_diff": -0.45,
+      "reference": "dense_neighbourhood",
+      "role": "uncontrolled",
+      "tost_p": 0.9802,
+      "var_ratio": 1.525
+    },
+    {
+      "ci_high": 0.391,
+      "ci_low": -0.133,
+      "cohens_d": 0.129,
+      "condition": "sparse_neighbourhood",
+      "dimension": "bigram_freq",
+      "equivalent": true,
+      "mean_diff": 0.0,
+      "reference": "dense_neighbourhood",
+      "role": "uncontrolled",
+      "tost_p": 0.0101,
+      "var_ratio": 1.436
     }
   ],
   "relational": null,

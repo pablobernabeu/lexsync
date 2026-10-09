@@ -1,5 +1,7 @@
-condition,reference,dimension,cohens_d,d_ci_low,d_ci_high,var_ratio,tost_p,equivalent
-low_frequency,high_frequency,length,0.022,-0.35,0.394,0.897,0.0178,TRUE
-low_frequency,high_frequency,frequency,5.055,4.292,5.817,0.201,1,FALSE
-low_frequency,high_frequency,n_density,0.05,-0.323,0.422,0.745,0.0237,TRUE
-low_frequency,high_frequency,old20,0.053,-0.319,0.426,0.676,0.0246,TRUE
+condition,reference,dimension,cohens_d,d_ci_low,d_ci_high,var_ratio,tost_p,equivalent,mean_diff,role
+low_frequency,high_frequency,length,0.022,-0.35,0.394,0.897,0.0178,TRUE,0.025,controlled
+low_frequency,high_frequency,frequency,5.055,4.292,5.817,0.201,1,FALSE,1.533,manipulated
+low_frequency,high_frequency,n_density,0.05,-0.323,0.422,0.745,0.0237,TRUE,0.375,controlled
+low_frequency,high_frequency,old20,0.053,-0.319,0.426,0.676,0.0246,TRUE,0.022,controlled
+low_frequency,high_frequency,n_syllables,-0.141,-0.513,0.232,1.031,0.0561,FALSE,-0.1,uncontrolled
+low_frequency,high_frequency,bigram_freq,0.062,-0.31,0.435,0.843,0.027,TRUE,0,uncontrolled

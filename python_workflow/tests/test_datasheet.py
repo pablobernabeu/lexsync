@@ -47,7 +47,34 @@ def test_datasheet_structure_and_realised_control(schema):
     assert "python" in ds["reproducibility"]["versions"]
     roles = {r["dimension"]: r["role"] for r in ds["realised_control"]}
     assert roles["length"] == "controlled"
-    assert roles["frequency"] == "manipulated/free"
+    # The design declares no conditions, so no window sets frequency apart.
+    assert roles["frequency"] == "uncontrolled"
+
+
+def test_realised_control_records_the_pair_the_role_and_the_raw_difference(schema):
+    """Each entry names the two conditions it contrasts and gives the raw difference.
+    A report without roles, as a direct call of match_report gives, takes them from the
+    design: a dimension whose define_by windows differ is manipulated, one in match_on
+    controlled and any other uncontrolled. Every unmatched dimension was
+    "manipulated/free". Pinned identically in test-datasheet.R."""
+    stim = _stim()
+    design = dict(_design(), conditions=[
+        {"name": "hi", "define_by": {"frequency": [5.0, 7.0]}},
+        {"name": "lo", "define_by": {"frequency": [2.0, 4.0]}}])
+    report = match_report(stim, ["length", "frequency", "n_density", "old20"], schema)
+    ds = build_datasheet(design, schema, report, stim, "x.csv",
+                         {"stimuli": None, "experiments": {}}, 2026)
+    rc = {r["dimension"]: r for r in ds["realised_control"]}
+    assert {d: r["role"] for d, r in rc.items()} == {
+        "length": "controlled", "frequency": "manipulated", "n_density": "controlled",
+        "old20": "controlled"}
+    assert (rc["frequency"]["condition"], rc["frequency"]["reference"]) == ("lo", "hi")
+    assert rc["frequency"]["mean_diff"] == 3.0
+    # A role the report carries is kept.
+    report["comparisons"]["role"] = "uncontrolled"
+    kept = build_datasheet(design, schema, report, stim, "x.csv",
+                           {"stimuli": None, "experiments": {}}, 2026)
+    assert {r["role"] for r in kept["realised_control"]} == {"uncontrolled"}
 
 
 def test_methods_paragraph_reads_naturally(schema):
@@ -93,6 +120,10 @@ def test_datasheet_continuous_model_and_rows(schema):
         "+ (1 + frequency | subject) + (1 | item)")
     assert ds["realised_control"][0]["role"] == "predictor"
     assert "pearson_r" in ds["realised_control"][1]
+    # The realised spreads and the control windows are part of the record. Frequency
+    # 2, 3, 4, 5 is an even spread, so its ratio is 1.
+    assert ds["realised_control"][0]["sd_ratio"] == 1.0
+    assert {"sd", "sd_ratio", "window_low", "window_high"} <= set(ds["realised_control"][1])
     assert "predictor" in ds["selection"]
     # The control bands the matcher applied are part of the record.
     assert ds["selection"]["tolerance_k"]["length"] == 1.5
@@ -696,7 +727,7 @@ def _tie_rows():
          "equivalent": True},
         {"dimension": "old20", "role": "controlled", "cohens_d": 0.1, "ci_low": -0.2,
          "ci_high": 0.3, "var_ratio": 1.0, "tost_p": 0.0, "equivalent": True},
-        {"dimension": "frequency", "role": "manipulated/free", "cohens_d": 5.27,
+        {"dimension": "frequency", "role": "manipulated", "cohens_d": 5.27,
          "ci_low": 4.72, "ci_high": 5.83, "var_ratio": 0.21, "tost_p": 1.0,
          "equivalent": False},
     ]
@@ -711,7 +742,7 @@ def test_decimal_ties_print_the_same_in_the_methods_paragraph_and_the_table(sche
     # The TOST p is printed to four places, and a stored 0 as a bound.
     assert "| length | controlled | 0.17 | [-0.13, 0.46] | 0.08 | 0.0009 |" in md
     assert "| old20 | controlled | 0.10 | [-0.20, 0.30] | 1.00 | < 0.0001 |" in md
-    assert "| frequency | manipulated/free | 5.27 | [4.72, 5.83] | 0.21 | 1.0000 |" in md
+    assert "| frequency | manipulated | 5.27 | [4.72, 5.83] | 0.21 | 1.0000 |" in md
 
 
 def test_a_continuous_design_prints_its_span_and_correlations_through_the_formatter(schema):

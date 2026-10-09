@@ -3,7 +3,11 @@ high_frequency,length,120,5.125,1.178,4,5,8
 high_frequency,frequency,120,5.543,0.343,5.2,5.435,6.85
 high_frequency,n_density,120,4.967,5.19,0,3,20
 high_frequency,old20,120,1.741,0.505,1,1.7,3.25
+high_frequency,n_syllables,120,1.658,0.716,1,2,4
+high_frequency,bigram_freq,120,0.007,0.003,0.001,0.006,0.013
 low_frequency,length,120,5.075,1.094,4,5,8
 low_frequency,frequency,120,3.901,0.262,3.5,3.9,4.4
 low_frequency,n_density,120,4.808,4.829,0,3,16
 low_frequency,old20,120,1.733,0.479,1,1.7,2.95
+low_frequency,n_syllables,120,1.9,0.703,0,2,4
+low_frequency,bigram_freq,120,0.007,0.003,0.001,0.007,0.014

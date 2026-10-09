@@ -15,7 +15,7 @@
     },
     {
       "file": "output/reports/en_richdim_english_comparisons_py.csv",
-      "sha256": "b5eca2a560edc39ceccaa7dbd10e2280cb7d107234bf27a079c9abfb30d3e523"
+      "sha256": "487e7f16af173d7612bc9c301024ce990f73a7f548b6e465e8144baa47df6a6f"
     },
     {
       "file": "output/experiments/en_richdim_english_psychopy.py",
@@ -137,8 +137,11 @@
       "ci_high": 0.318,
       "ci_low": -0.287,
       "cohens_d": 0.015,
+      "condition": "low_frequency",
       "dimension": "length",
       "equivalent": true,
+      "mean_diff": 0.017,
+      "reference": "high_frequency",
       "role": "controlled",
       "tost_p": 0.0045,
       "var_ratio": 0.935
@@ -147,9 +150,12 @@
       "ci_high": 6.241,
       "ci_low": 4.903,
       "cohens_d": 5.572,
+      "condition": "low_frequency",
       "dimension": "frequency",
       "equivalent": false,
-      "role": "manipulated/free",
+      "mean_diff": 1.676,
+      "reference": "high_frequency",
+      "role": "manipulated",
       "tost_p": 1.0,
       "var_ratio": 0.579
     },
@@ -157,9 +163,12 @@
       "ci_high": 0.379,
       "ci_low": -0.226,
       "cohens_d": 0.076,
+      "condition": "low_frequency",
       "dimension": "n_density",
       "equivalent": true,
-      "role": "manipulated/free",
+      "mean_diff": 0.333,
+      "reference": "high_frequency",
+      "role": "uncontrolled",
       "tost_p": 0.011,
       "var_ratio": 0.723
     },
@@ -167,9 +176,12 @@
       "ci_high": 0.381,
       "ci_low": -0.225,
       "cohens_d": 0.078,
+      "condition": "low_frequency",
       "dimension": "old20",
       "equivalent": true,
-      "role": "manipulated/free",
+      "mean_diff": 0.035,
+      "reference": "high_frequency",
+      "role": "uncontrolled",
       "tost_p": 0.0113,
       "var_ratio": 0.404
     },
@@ -177,8 +189,11 @@
       "ci_high": 0.477,
       "ci_low": -0.129,
       "cohens_d": 0.174,
+      "condition": "low_frequency",
       "dimension": "n_syllables",
       "equivalent": true,
+      "mean_diff": 0.1,
+      "reference": "high_frequency",
       "role": "controlled",
       "tost_p": 0.0383,
       "var_ratio": 0.585
@@ -187,8 +202,11 @@
       "ci_high": 0.312,
       "ci_low": -0.293,
       "cohens_d": 0.01,
+      "condition": "low_frequency",
       "dimension": "bigram_freq",
       "equivalent": true,
+      "mean_diff": 0.0,
+      "reference": "high_frequency",
       "role": "controlled",
       "tost_p": 0.0041,
       "var_ratio": 0.96

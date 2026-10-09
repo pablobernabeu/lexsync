@@ -563,16 +563,25 @@ if "bundle" in st.session_state:
             show = comp.copy()
             if {"d_ci_low", "d_ci_high"}.issubset(show.columns):
                 show["90% CI"] = show.apply(lambda r: f"[{r['d_ci_low']:.2f}, {r['d_ci_high']:.2f}]", axis=1)
-            cols = [c for c in ["condition", "reference", "dimension", "cohens_d", "90% CI",
-                                "var_ratio", "tost_p", "equivalent"] if c in show.columns]
-            st.markdown("**Effect size and equivalence per controlled dimension** "
-                        "(Cohen's *d* against the anchor, 90% CI, and the TOST verdict).")
+            cols = [c for c in ["condition", "reference", "dimension", "role", "mean_diff",
+                                "cohens_d", "90% CI", "var_ratio", "tost_p", "equivalent"]
+                    if c in show.columns]
+            st.markdown("**Realised control for every pair of conditions and every dimension** "
+                        "(its role, the raw difference, Cohen's *d* with its 90% CI, and the "
+                        "TOST verdict).")
             st.dataframe(show[cols], use_container_width=True)
             try:
-                chart = comp.assign(abs_d=comp["cohens_d"].abs())[["dimension", "abs_d"]]
-                st.bar_chart(chart, x="dimension", y="abs_d", height=240)
-                st.caption("Absolute standardised mean difference by dimension. Manipulated "
-                           "dimensions stand high; matched dimensions sit near zero.")
+                # One bar per dimension and pair: a design with more than two conditions
+                # compares every pair, and bars sharing a dimension's label would merge.
+                chart = pd.DataFrame({
+                    "comparison": [f"{d} ({c} vs {r})" for d, c, r in
+                                   zip(comp["dimension"], comp["condition"], comp["reference"],
+                                       strict=True)],
+                    "abs_d": comp["cohens_d"].abs()})
+                st.bar_chart(chart, x="comparison", y="abs_d", height=240)
+                st.caption("Absolute standardised mean difference by dimension and pair. "
+                           "Manipulated dimensions stand high; matched dimensions sit near "
+                           "zero, and uncontrolled ones may sit anywhere.")
             except Exception:
                 pass
         if bundle["descriptives"] is not None:

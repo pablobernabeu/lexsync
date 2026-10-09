@@ -98,7 +98,7 @@ def test_a_single_condition_design_writes_a_header_only_comparisons_file(tmp_pat
     with open(res["comparisons"], encoding="utf-8") as handle:
         assert handle.read().splitlines() == [
             "condition,reference,dimension,cohens_d,d_ci_low,d_ci_high,"
-            "var_ratio,tost_p,equivalent"]
+            "var_ratio,tost_p,equivalent,mean_diff,role"]
 
 
 def test_continuous_table_without_members_is_an_error(tmp_path):
@@ -1262,3 +1262,183 @@ def test_the_schema_notice_names_the_path_as_the_record_does(
     assert origin == "config_dir"
     assert _posix(path) == "study/schema.yaml"
     assert capsys.readouterr().err == "lexsync: using the schema at 'study/schema.yaml'\n"
+
+
+# ---- The realised-control report (twinned with test-run-pipeline.R) -------------
+# It covered length, frequency, N, OLD20 and match_on, compared every condition with
+# the first only, and called every unmatched row "manipulated/free", so real confounds
+# went unreported while the Methods text called the control close.
+
+def _comparisons(res):
+    """A comparisons CSV as text, so an empty cell reads as '' and not NaN."""
+    import pandas as pd
+    return pd.read_csv(res["comparisons"], dtype=str, keep_default_na=False)
+
+
+def _roles(cmp):
+    return {(c, r, d): x for c, r, d, x in zip(cmp["condition"], cmp["reference"],
+                                               cmp["dimension"], cmp["role"], strict=True)}
+
+
+def test_one_item_per_condition_under_shortfall_allow_leaves_d_empty(tmp_path):
+    """One item has no spread, so d is undefined. Both engines reported d = 0, a perfect
+    balance, for a frequency contrast of 3.01 Zipf, and this engine then raised a
+    TypeError formatting the missing interval for the run log."""
+    lexicon = os.path.join(str(tmp_path), "lexicon.csv")
+    with open(lexicon, "w", encoding="utf-8", newline="\n") as handle:
+        handle.write("word,freq_zipf\ntime,6.29\nzeal,3.28\n")
+    res = _run(_write_design(str(tmp_path), [
+        "name: shortfall_one",
+        "language: english",
+        "lexicon: " + _yaml_path(lexicon),
+        "n_per_condition: 20",
+        "conditions:",
+        "  - {name: high, define_by: {frequency: [5.0, 7.0]}}",
+        "  - {name: low, define_by: {frequency: [2.0, 4.0]}}",
+        "match_on: [length]",
+        "matching: {shortfall: allow}",
+    ]), tmp_path)
+    cmp = _comparisons(res)
+    assert list(cmp["dimension"]) == ["length", "frequency", "n_syllables", "bigram_freq"]
+    for col in ("cohens_d", "d_ci_low", "d_ci_high", "var_ratio", "tost_p", "equivalent"):
+        assert set(cmp[col]) == {""}, col
+    assert list(cmp["mean_diff"]) == ["0", "3.01", "1", "0"]
+    assert list(cmp["role"]) == ["controlled", "manipulated", "uncontrolled", "uncontrolled"]
+    with open(res["log"], encoding="utf-8") as handle:
+        assert "on 'frequency': d = NA, TOST p = NA (not shown equivalent)" in handle.read()
+
+
+def test_frequency_is_manipulated_only_between_cells_whose_windows_differ(tmp_path):
+    """Every pair of a 2 x 2 design is compared, and a dimension is manipulated only in
+    the rows whose define_by windows on it differ: two high-frequency cells share the
+    window [5, 7]."""
+    res = _run(_write_design(str(tmp_path), [
+        "name: andrews_like",
+        "language: english",
+        "lexicon: " + _yaml_path(_pkg_data("en_example.csv")),
+        "n_per_condition: 5",
+        "pool_filters: {length: [3, 7]}",
+        "conditions:",
+        "  - {name: HF_largeN, define_by: {frequency: [5.0, 7.0], n_density: [9, 100]}}",
+        "  - {name: HF_smallN, define_by: {frequency: [5.0, 7.0], n_density: [0, 5]}}",
+        "  - {name: LF_largeN, define_by: {frequency: [2.5, 4.2], n_density: [9, 100]}}",
+        "  - {name: LF_smallN, define_by: {frequency: [2.5, 4.2], n_density: [0, 5]}}",
+        "match_on: [length]",
+    ]), tmp_path)
+    role = _roles(_comparisons(res))
+    assert role[("HF_smallN", "HF_largeN", "frequency")] == "uncontrolled"
+    assert role[("LF_largeN", "HF_largeN", "frequency")] == "manipulated"
+    assert role[("LF_smallN", "LF_largeN", "frequency")] == "uncontrolled"
+    assert role[("LF_largeN", "HF_smallN", "frequency")] == "manipulated"
+    assert role[("HF_smallN", "HF_largeN", "n_density")] == "manipulated"
+    assert role[("LF_largeN", "HF_largeN", "n_density")] == "uncontrolled"
+    assert {r for k, r in role.items() if k[2] == "length"} == {"controlled"}
+    assert {(k[0], k[1]) for k in role} == {
+        ("HF_smallN", "HF_largeN"), ("LF_largeN", "HF_largeN"), ("LF_smallN", "HF_largeN"),
+        ("LF_largeN", "HF_smallN"), ("LF_smallN", "HF_smallN"), ("LF_smallN", "LF_largeN")}
+
+
+def test_a_norm_named_only_in_define_by_is_reported_as_manipulated(tmp_path):
+    """A joined norm column that defines the conditions is the manipulated variable, and
+    it was absent from the report although the stimuli carried it."""
+    import pandas as pd
+    words = pd.read_csv(_pkg_data("en_example.csv"), keep_default_na=False)["word"]
+    norms = os.path.join(str(tmp_path), "conc.csv")
+    # Invented ratings, describing no norm.
+    pd.DataFrame({"word": words,
+                  "concreteness": [1 + (i % 50) / 10 for i in range(len(words))]}).to_csv(
+        norms, index=False, lineterminator="\n")
+    res = _run(_write_design(str(tmp_path), [
+        "name: norm_define",
+        "language: english",
+        "lexicon: " + _yaml_path(_pkg_data("en_example.csv")),
+        "norms:",
+        "  - {path: " + _yaml_path(norms) + ", columns: [concreteness]}",
+        "n_per_condition: 5",
+        "pool_filters: {length: [3, 7]}",
+        "conditions:",
+        "  - {name: concrete, define_by: {concreteness: [4.0, 6.0]}}",
+        "  - {name: abstract, define_by: {concreteness: [1.0, 2.5]}}",
+        "match_on: [length]",
+    ]), tmp_path)
+    cmp = _comparisons(res)
+    assert _roles(cmp)[("abstract", "concrete", "concreteness")] == "manipulated"
+    desc = pd.read_csv(res["descriptives"])
+    assert "concreteness" in set(desc["dimension"])
+
+
+def test_a_corpus_report_covers_every_dimension_without_changing_the_stimuli(tmp_path):
+    """Syllables and bigram frequency are reported, the latter computed for the report
+    only, so the stimuli file and the selection stay as they were."""
+    import pandas as pd
+    res = _run(_corpus_design(str(tmp_path)), tmp_path)
+    cmp = _comparisons(res)
+    assert list(cmp["dimension"]) == ["length", "frequency", "n_density", "old20",
+                                      "n_syllables", "bigram_freq"]
+    assert list(cmp["role"]) == ["controlled", "manipulated", "uncontrolled",
+                                 "uncontrolled", "uncontrolled", "uncontrolled"]
+    assert "bigram_freq" not in pd.read_csv(res["stimuli"]).columns
+
+
+def test_a_chinese_design_reports_no_n_syllables_row(tmp_path):
+    """A dimension every item lacks has nothing to compare: the syllable estimate is
+    undefined for Chinese."""
+    res = _run(_write_design(str(tmp_path), _zh_lines(["match_on: [length]"])), tmp_path)
+    dims = list(_comparisons(res)["dimension"])
+    assert "n_syllables" not in dims
+    assert "bigram_freq" in dims
+
+
+def test_a_generated_design_reports_the_dimensions_it_does_not_control(tmp_path):
+    """Words and pseudowords were compared on length alone, which they share by
+    construction, so the bigram typicality the generator maximises went unreported.
+    The stimuli give each pseudoword its base word and edit distance."""
+    import pandas as pd
+    res = _run(_write_design(str(tmp_path), [
+        "name: gen_report",
+        "language: english",
+        "paradigm: lexical_decision",
+        "items:",
+        "  source: generate",
+        "  lexicon: " + _yaml_path(_pkg_data("en_example.csv")),
+        "n_per_condition: 5",
+        "pool_filters: {length: [4, 7], frequency: [3.5, 6.0]}",
+    ]), tmp_path)
+    cmp = _comparisons(res)
+    assert list(cmp["dimension"]) == ["length", "bigram_freq", "n_density", "old20"]
+    assert list(cmp["role"]) == ["controlled", "uncontrolled", "uncontrolled",
+                                 "uncontrolled"]
+    stim = pd.read_csv(res["stimuli"])
+    assert not {"bigram_freq", "n_density", "old20"} & set(stim.columns)
+    words = stim[stim["condition"] == "word"].set_index("set")
+    pseudo = stim[stim["condition"] == "pseudoword"].set_index("set")
+    assert (words["base"] == words["target"]).all()
+    assert (words["edit_distance"] == 0).all()
+    assert (pseudo["base"] == words.loc[pseudo.index, "target"]).all()
+    assert pseudo["edit_distance"].between(1, 2).all()
+
+
+def _golden(name):
+    import pandas as pd
+    from helper_repo import repo_path
+    path = repo_path("output", "reports", name)
+    return pd.read_csv(path)
+
+
+def test_en_ndensity_reports_its_syllable_confound():
+    """The dense words have fewer estimated syllables than the sparse ones, an
+    uncontrolled difference the report did not show while the Methods text called the
+    control close."""
+    cmp = _golden("en_ndensity_english_comparisons_py.csv")
+    row = cmp[cmp["dimension"] == "n_syllables"].iloc[0]
+    assert row["role"] == "uncontrolled"
+    assert not row["equivalent"]
+    assert abs(row["cohens_d"] - -0.828) < 0.001
+
+
+def test_en_freqcontinuous_reports_the_spread_of_its_predictor():
+    """The selection follows the pool's skew, so its frequency SD is about 0.60 of that
+    of 80 values spread evenly over the same range (0.54 against 0.90)."""
+    cmp = _golden("en_freqcontinuous_english_comparisons_py.csv").set_index("dimension")
+    assert abs(cmp.loc["frequency", "sd_ratio"] - 0.60) < 0.005
+    assert cmp.loc["length", "window_low"] < cmp.loc["length", "window_high"]

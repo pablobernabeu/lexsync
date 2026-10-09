@@ -1,0 +1,31 @@
+# Twin-edge case: a 2 x 2 frequency by neighbourhood design, after Andrews (1989), that
+# selects three words in each cell from five candidates. The report compares every pair
+# of cells, the anchor pairs first, and gives each row a role: frequency is manipulated
+# between a high- and a low-frequency cell and uncontrolled between two cells that share
+# its window, and the same holds for N. Only the three anchor pairs were reported, so
+# the within-factor contrasts never appeared.
+# The word forms are common English words. The Zipf frequencies, neighbourhood counts
+# and OLD20 values are invented for this fixture and describe no corpus.
+name: twin_edge_four_conditions
+language: english
+lexicon: lexicon.csv
+description: 'Three words in each cell of a frequency by neighbourhood design.'
+n_per_condition: 3
+conditions:
+  - name: HF_largeN
+    define_by:
+      frequency: [5.0, 7.0]
+      n_density: [6, 30]
+  - name: HF_smallN
+    define_by:
+      frequency: [5.0, 7.0]
+      n_density: [0, 3]
+  - name: LF_largeN
+    define_by:
+      frequency: [2.5, 4.0]
+      n_density: [6, 30]
+  - name: LF_smallN
+    define_by:
+      frequency: [2.5, 4.0]
+      n_density: [0, 3]
+match_on: [length]

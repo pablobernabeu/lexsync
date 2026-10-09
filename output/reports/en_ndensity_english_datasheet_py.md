@@ -31,8 +31,10 @@
 |---|---|---|---|---|---|---|
 | length | controlled | 0.00 | [-0.26, 0.26] | 1.00 | 0.0009 | True |
 | frequency | controlled | 0.00 | [-0.26, 0.26] | 1.00 | 0.0009 | True |
-| n_density | manipulated/free | 3.11 | [2.72, 3.50] | 0.02 | 1.0000 | False |
-| old20 | manipulated/free | -2.30 | [-2.64, -1.97] | 1.64 | 1.0000 | False |
+| n_density | manipulated | 3.11 | [2.72, 3.50] | 0.02 | 1.0000 | False |
+| old20 | uncontrolled | -2.30 | [-2.64, -1.97] | 1.64 | 1.0000 | False |
+| n_syllables | uncontrolled | -0.83 | [-1.10, -0.56] | 1.53 | 0.9802 | False |
+| bigram_freq | uncontrolled | 0.13 | [-0.13, 0.39] | 1.44 | 0.0101 | True |
 
 ## Suggested analysis
 
