@@ -589,9 +589,10 @@ def presentation_versions(stimuli: pd.DataFrame) -> list:
     Raises:
         ValueError: If a ``list`` or ``replicate`` value is not a whole number.
 
-    >>> stim = pd.DataFrame({"list": [2, 1, 2], "set": [1, 1, 2]})
-    >>> [(v["version"], v["list"], v["n_trials"]) for v in presentation_versions(stim)]
-    [(1, 1, 1), (2, 2, 2)]
+    Examples:
+        >>> stim = pd.DataFrame({"list": [2, 1, 2], "set": [1, 1, 2]})
+        >>> [(v["version"], v["list"], v["n_trials"]) for v in presentation_versions(stim)]
+        [(1, 1, 1), (2, 2, 2)]
     """
     keys = _version_keys(stimuli)
     return [{"version": k, "replicate": rep, "list": lst,
@@ -656,7 +657,8 @@ def _write_text(text: str, path: str) -> str:
     return path
 
 
-def export_psychopy(stimuli, design, schema, outdir, base=None) -> str:
+def export_psychopy(stimuli: pd.DataFrame, design: dict, schema: dict, outdir: str,
+                    base: str | None = None) -> str:
     """Write a runnable PsychoPy script and the conditions file it reads.
 
     The conditions file, ``<base>_psychopy.csv``, holds every presentation version

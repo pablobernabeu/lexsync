@@ -181,8 +181,8 @@ def _restores_verbosity(fn):
 
 
 @_restores_verbosity
-def run_pipeline(design_path, schema_path=None, outdir="output",
-                 reference_words=None, verbose=True) -> dict:
+def run_pipeline(design_path: str, schema_path: str | None = None, outdir: str = "output",
+                 reference_words: list | str | None = None, verbose: bool = True) -> dict:
     """Run the lexsync pipeline for one design.
 
     A design may refer to a derived dimension (``n_density``, ``old20``,
