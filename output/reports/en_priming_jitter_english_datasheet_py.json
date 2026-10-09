@@ -1,7 +1,7 @@
 {
   "analysis": {
     "note": "Crossed random effects for subjects and items guard against the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). Begin with this maximal structure (Barr et al., 2013) and reduce it if the model does not converge (Matuschek et al., 2017). The formula is lme4 syntax, for lme4 in R or pymer4 in Python; statsmodels MixedLM cannot take it directly and needs the random effects restated in its own arguments. The equivalence tests in the realised control are post-selection diagnostics on deterministically selected items, not inferential tests over a sample.",
-    "response": "the trial outcome (e.g. reaction time or accuracy)",
+    "response": "reaction time from the onset of `{target}`; responses collected for 2800 ms; a response ends the trial",
     "suggested_model": "response ~ condition + (1 + condition | subject) + (1 + condition | item)"
   },
   "artifacts": [
@@ -11,19 +11,19 @@
     },
     {
       "file": "output/experiments/en_priming_jitter_english_psychopy.py",
-      "sha256": "a7b03620c41969b118d77b0af81d97b4c307eb1b8116c28985f75f9a72c2d9b3"
+      "sha256": "53d14514ee72c9e67c216d9cc0544b1714ae8c18ea5887c0be36072a36cfbe41"
     },
     {
       "file": "output/experiments/en_priming_jitter_english_list1.osexp",
-      "sha256": "63f5a30b46a04669b37c391d9d48290785f4bab3b479fd16b6d82cbd94c40cc5"
+      "sha256": "e5d642968d456c8a41ad08e1a3da73ef0bcd274956e0163d4559f5576b0a577f"
     },
     {
       "file": "output/experiments/en_priming_jitter_english_list2.osexp",
-      "sha256": "85882283fd3c356489d07517cba363f214d6a11407fed2c2e736246449438dd8"
+      "sha256": "92a527d9895a36889a4f30454857b667814ade5323dacca62e19eff1a4fdd0d3"
     },
     {
       "file": "output/experiments/en_priming_jitter_english.html",
-      "sha256": "ba6373531e634710f1b9d1e26e3f2d425db6b7a441ed1175b293c5df1c0bee98"
+      "sha256": "3e414809c4cdba45fcb1203a38dfc4bf6b427a568f76a088a599f844711774e6"
     },
     {
       "file": "output/experiments/en_priming_jitter_english_psychopy.csv",
@@ -106,11 +106,20 @@
     "sha256": "9994855aa658ec5e824ad3fbb4a9cf8a0471d4afd7ae8a9850926da957a55bb9",
     "type": "table"
   },
+  "presentation": {
+    "response_windows": [
+      {
+        "event": 5,
+        "from": "onset",
+        "window_ms": 2800
+      }
+    ]
+  },
   "realised_control": [],
   "relational": null,
   "reproducibility": {
     "design_sha256": "d3e01a766c834148f6f16b192c892a3c04edb74e71d0b68955e1f5ae8c99fd90",
-    "schema_sha256": "960331bc24fc002527fc36aca87b4fbf1c7504a75e520a1287918761c53abdb3",
+    "schema_sha256": "22c5b2140a199af60f71aa1d00de88b3f487147668393fc752be85538d44d979",
     "seed": 2026,
     "versions": {
       "engine": "python",

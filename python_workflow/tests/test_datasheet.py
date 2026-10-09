@@ -222,8 +222,8 @@ def test_the_datasheet_records_the_presentation_versions(schema):
     assert ds["counterbalancing"]["assignment"] == (
         "version = ((participant - 1) mod 2) + 1 unless a version is given at launch")
     assert ("generated for PsychoPy, OpenSesame and jsPsych. Each participant was presented "
-            "one of the 2 lists, assigned in rotation by participant number. The selection"
-            in methods_paragraph(ds))
+            "one of the 2 lists, assigned in rotation by participant number. Responses were "
+            "collected" in methods_paragraph(ds))
     assert ("- **Presentation versions:** 2, assigned as version = ((participant - 1) mod "
             "2) + 1 unless a version is given at launch") in render_datasheet_md(ds)
     # One version: nothing to assign, and nothing said about it.
@@ -246,6 +246,59 @@ def test_the_datasheet_records_the_presentation_versions(schema):
     unlisted = build_datasheet(resampled, schema, None, reps, "items/p.csv",
                                {"stimuli": None, "experiments": {}}, 2026)
     assert unlisted["counterbalancing"]["versions"] == 6
+
+
+def test_the_datasheet_names_where_the_reaction_time_is_timed_from(schema):
+    # The record called the outcome "reaction time or accuracy" without saying where a
+    # reaction time starts, and the Methods text said nothing of the response window.
+    # test-datasheet.R pins the same record and text.
+    files = {"stimuli": None, "experiments": {}}
+    ds = build_datasheet(_design(), schema, None, _stim(), "x.csv", files, 2026)
+    assert ds["presentation"] == {"response_windows": [
+        {"event": 3, "from": "onset", "window_ms": 2800}]}
+    assert ds["analysis"]["response"] == (
+        "reaction time from the onset of `{word}`; responses collected for 2800 ms; a "
+        "response ends the trial")
+    assert ("generated for PsychoPy, OpenSesame and jsPsych. Responses were collected from "
+            "target onset until 2800 ms after it, and a response ended the trial. The "
+            "selection" in methods_paragraph(ds))
+    # A window that opens after the stimulus, for a design that delays the response.
+    delayed = dict(_design(), events=[
+        {"type": "text", "content": "{word}", "duration_ms": 800},
+        {"type": "blank", "duration_ms": 200},
+        {"type": "response", "keys": ["f", "j"], "timeout_ms": 1500}])
+    ds = build_datasheet(delayed, schema, None, _stim(), "x.csv", files, 2026)
+    assert ds["presentation"]["response_windows"] == [
+        {"event": 3, "from": "offset", "window_ms": 1500}]
+    assert ds["analysis"]["response"] == (
+        "reaction time from the opening of a response window after the stimulus; "
+        "responses collected for 1500 ms; a response ends the trial")
+    assert (" Responses were collected in a 1500 ms window that opened after the stimulus, "
+            "and a response ended the trial." in methods_paragraph(ds))
+    # A target whose duration varies by trial ends its window a fixed time after it goes.
+    varying = dict(_design(), events=[
+        {"type": "text", "content": "{word}", "duration": {"from_column": "word_ms"}},
+        {"type": "response", "keys": ["f", "j"], "timeout_ms": 2000}])
+    ds = build_datasheet(varying, schema, None, _stim().assign(word_ms=[300, 400, 300, 400]),
+                         "x.csv", files, 2026)
+    assert ds["presentation"]["response_windows"] == [
+        {"event": 2, "from": "onset", "window_ms": None, "duration_column": "word_ms",
+         "timeout_ms": 2000}]
+    assert ds["analysis"]["response"] == (
+        "reaction time from the onset of `{word}`; responses collected until 2000 ms after "
+        "its offset; a response ends the trial")
+    assert (" Responses were collected from target onset until 2000 ms after its offset, "
+            "and a response ended the trial." in methods_paragraph(ds))
+    # Without a response event, as in self-paced reading, nothing is said, and a record
+    # written before the field existed renders as it did.
+    spr = _table_design(paradigm="self_paced_reading")
+    ds = build_datasheet(spr, schema, None, _priming_table(), "items/p.csv", files, 2026)
+    assert ds["presentation"] == {"response_windows": []}
+    assert ds["analysis"]["response"] == "the trial outcome (e.g. reaction time or accuracy)"
+    assert "Responses were collected" not in methods_paragraph(ds)
+    old = {k: v for k, v in build_datasheet(_design(), schema, None, _stim(), "x.csv", files,
+                                            2026).items() if k != "presentation"}
+    assert "Responses were collected" not in methods_paragraph(old)
 
 
 def test_an_incomplete_rotation_is_described_as_incomplete(schema):

@@ -195,8 +195,9 @@ def test_a_scalar_keys_or_blocks_is_not_exploded_into_characters(schema):
          "duration_ms": 100},
     ])
     rendered = render_events(resolve_events(design), {}, 60.0)
-    assert rendered[1]["keys"] == ["space"]
-    assert rendered[2]["blocks"] == ["practice"]
+    # The response is collected from the text's onset, so its keys travel with the text.
+    assert rendered[0]["respond"]["keys"] == ["space"]
+    assert rendered[1]["blocks"] == ["practice"]
 
 
 def test_the_html_escape_covers_the_javascript_line_separators():

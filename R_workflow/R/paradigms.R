@@ -10,8 +10,10 @@
 #' Each event is a list with `type` (fixation | text | mask | blank |
 #' region_by_region | response | question | feedback), `content` (a literal or a
 #' `{field}` reference), an optional `trigger` (an integer EEG code or the token
-#' "condition"/"item"), `onset_locked`, response `keys`/`timeout_ms`, and an
-#' optional `blocks` restricting the event to named blocks.
+#' "condition"/"item"), `onset_locked`, response `keys`/`timeout_ms`, a response's
+#' `from` (where its window opens: "onset", with the text event before it, which is
+#' the default after a text event, or "offset", once that has gone), and an optional
+#' `blocks` restricting the event to named blocks.
 #'
 #' @format A named list with one entry per paradigm (`factorial`,
 #'   `lexical_decision`, `priming`, `categorisation`, `self_paced_reading`), each
@@ -71,8 +73,9 @@ PARADIGMS <- list(
   #
   # `answer` holds the KEY that is correct for the trial, not a label, so scoring is a
   # string comparison against the recorded response with nothing to look up. It is a
-  # field of the item table like any other; the paradigm requires it so that a design
-  # cannot generate an unscoreable categorisation experiment.
+  # field of the item table like any other, and the paradigm requires it. The PsychoPy
+  # and OpenSesame targets score each response against it, and the jsPsych data rows
+  # carry it beside the response.
   categorisation = list(
     stimulus_fields = c("target", "category", "answer"),
     # latin_square_target, not factorial. Each item carries both cues, so the factorial

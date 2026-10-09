@@ -184,8 +184,9 @@ test_that("a scalar keys or blocks is kept whole", {
     )
   )
   rendered <- render_events(resolve_events(design), list(), 60)
-  expect_equal(rendered[[2]]$keys, "space")
-  expect_equal(unlist(rendered[[3]]$blocks), "practice")
+  # The response is collected from the text's onset, so its keys travel with the text.
+  expect_equal(unlist(rendered[[1]]$respond$keys), "space")
+  expect_equal(unlist(rendered[[2]]$blocks), "practice")
 })
 
 test_that("the html escape covers the JavaScript line separators", {

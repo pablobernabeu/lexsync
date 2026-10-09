@@ -76,7 +76,7 @@
   },
   "relational": null,
   "analysis": {
-    "response": "the trial outcome (e.g. reaction time or accuracy)",
+    "response": "reaction time from the onset of `{word}`; responses collected for 2500 ms; a response ends the trial",
     "suggested_model": "response ~ condition + (1 + condition | subject) + (1 | item)",
     "note": "Crossed random effects for subjects and items guard against the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). Begin with this maximal structure (Barr et al., 2013) and reduce it if the model does not converge (Matuschek et al., 2017). The formula is lme4 syntax, for lme4 in R or pymer4 in Python; statsmodels MixedLM cannot take it directly and needs the random effects restated in its own arguments. The equivalence tests in the realised control are post-selection diagnostics on deterministically selected items, not inferential tests over a sample."
   },
@@ -166,6 +166,15 @@
     "versions": 1,
     "assignment": "version = ((participant - 1) mod 1) + 1 unless a version is given at launch"
   },
+  "presentation": {
+    "response_windows": [
+      {
+        "event": 3,
+        "from": "onset",
+        "window_ms": 2500
+      }
+    ]
+  },
   "resampling": null,
   "items": {
     "n_total": 120,
@@ -192,7 +201,7 @@
       "os": "Windows x86-64"
     },
     "design_sha256": "a5480aec8dfc8d4a32606bfa3ede768a6ef276748471a4de2c70f7c947596de4",
-    "schema_sha256": "960331bc24fc002527fc36aca87b4fbf1c7504a75e520a1287918761c53abdb3"
+    "schema_sha256": "22c5b2140a199af60f71aa1d00de88b3f487147668393fc752be85538d44d979"
   },
   "artifacts": [
     {
@@ -209,15 +218,15 @@
     },
     {
       "file": "output/experiments/en_richdim_english_psychopy.py",
-      "sha256": "afa2ea89735affac2ff0d05fa5415468fe85ad5693dc5e16b615bf3104a8e215"
+      "sha256": "61de3ca302304984c9273edf317c546ccce32d47454684ac8ac6dd360d7077e1"
     },
     {
       "file": "output/experiments/en_richdim_english.osexp",
-      "sha256": "6ff56a8ddc314f1714ae62cd0fcfb4e3633a84e9d5c9be8169d4658552e2e6f0"
+      "sha256": "f2d15df8999abffb063fc6e03e1a35144ad61ac8f9581b35fe35b49577894427"
     },
     {
       "file": "output/experiments/en_richdim_english.html",
-      "sha256": "3d6e0d4d262dea0041286526269197712727554c12aa15c3ffb22baf01fd41c9"
+      "sha256": "8fb13f65dda4d5d47b2f7b67929242c080febf8b4ba36d2814481a09fbad166c"
     },
     {
       "file": "output/experiments/en_richdim_english_psychopy.csv",

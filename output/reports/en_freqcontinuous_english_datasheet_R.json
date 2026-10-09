@@ -70,7 +70,7 @@
   },
   "relational": null,
   "analysis": {
-    "response": "the trial outcome (e.g. reaction time or accuracy)",
+    "response": "reaction time from the onset of `{word}`; responses collected for 2800 ms; a response ends the trial",
     "suggested_model": "response ~ frequency + length + n_density + old20 + (1 + frequency | subject) + (1 | item)",
     "note": "The predictor is kept continuous and analysed by regression or a mixed model rather than dichotomised (Kuperman, 2015; Liben-Nowell et al., 2019); the controls enter as covariates. Crossed random effects for subjects and items guard the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008); reduce the structure if it does not converge (Matuschek et al., 2017)."
   },
@@ -119,6 +119,15 @@
     "versions": 1,
     "assignment": "version = ((participant - 1) mod 1) + 1 unless a version is given at launch"
   },
+  "presentation": {
+    "response_windows": [
+      {
+        "event": 3,
+        "from": "onset",
+        "window_ms": 2800
+      }
+    ]
+  },
   "resampling": null,
   "items": {
     "n_total": 80,
@@ -144,7 +153,7 @@
       "os": "Windows x86-64"
     },
     "design_sha256": "e63493a09f6744207e21768586f88ac0a27970654bb2182ac26a82f1e6604353",
-    "schema_sha256": "960331bc24fc002527fc36aca87b4fbf1c7504a75e520a1287918761c53abdb3"
+    "schema_sha256": "22c5b2140a199af60f71aa1d00de88b3f487147668393fc752be85538d44d979"
   },
   "artifacts": [
     {
@@ -161,15 +170,15 @@
     },
     {
       "file": "output/experiments/en_freqcontinuous_english_psychopy.py",
-      "sha256": "6f286f1227cbbf197fd2e6ce421ca2b1b928887c9a8b0d1fb0b8cf015a9863ec"
+      "sha256": "af8dd017f82a789fb21a0894423d75a56fd5f5d24e7d1fd6df9de80f925d3812"
     },
     {
       "file": "output/experiments/en_freqcontinuous_english.osexp",
-      "sha256": "77b8d68fb6d80e972eaa19693a52e0969c4a1c83095616811dd762fe3499ae21"
+      "sha256": "cef671a9d42a87d2f727fe64dbf87cbfb0a7107baf1cc71c35b02309df3c148f"
     },
     {
       "file": "output/experiments/en_freqcontinuous_english.html",
-      "sha256": "ae64f947207106692a114bcae1937f3daf82a13567cbadee0b1e33203bf4fe66"
+      "sha256": "d3812b10fcb84fd64d49a61b5afddd1add5ea8fa707432c05c480b7aaab3640e"
     },
     {
       "file": "output/experiments/en_freqcontinuous_english_psychopy.csv",

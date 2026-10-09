@@ -44,6 +44,20 @@ subject number OpenSesame asks for at start-up with its own version. When that
 participant would normally run another, it says so and waits for a key. Space
 goes on with this file, and escape stops the session.
 
+A response after a text event is collected by that event's own script, from
+the stimulus's onset. The keyboard is flushed as the stimulus appears and polled
+through it and then through a blank screen, for the stimulus's duration and the
+timeout together. The script sets `response`, `response_time` (from the onset),
+`timed_out` and `correct` (the response scored against the trial's `answer`). A
+response that a design keeps after the stimulus with `from: offset` is a
+`keyboard_response` after a blank screen, and a script after it sets `timed_out`
+and `correct`. Self-paced reading sets `lexsync_region_rts`, each region's
+reading time joined by `|`, and a question sets `question_response` and
+`question_rt`. Each trial starts by clearing these, copies its `condition`,
+`block` and `answer` into `lexsync_condition`, `lexsync_block` and
+`lexsync_answer`, and ends with a logger item, `lexsync_logger`, which writes
+every variable to OpenSesame's log file.
+
 Timing: the word is drawn and shown from inside an `inline_script`, and the
 trigger is sent immediately after `canvas.show()` returns. Because `show()`
 blocks until the display refresh (with the `psycho`/`xpyriment` backends), the

@@ -272,9 +272,9 @@ paths = lexsync.run_pipeline("config/design_en_freqcontrast.yaml")
 ```
 
 The JSON carries `design`, `materials_source`, `selection`, `dimensions`, `items`,
-`counterbalancing`, `realised_control`, `equivalence`, `relational`, `resampling`, `analysis`,
-`artifacts` and `reproducibility`, plus a `lexsync_datasheet_version` marker so a reader knows
-which format it is looking at. The
+`counterbalancing`, `presentation`, `realised_control`, `equivalence`, `relational`, `resampling`,
+`analysis`, `artifacts` and `reproducibility`, plus a `lexsync_datasheet_version` marker so a reader
+knows which format it is looking at. The
 Markdown renders the same content as prose and tables. From the committed datasheet for the English
 frequency contrast:
 

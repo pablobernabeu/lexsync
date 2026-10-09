@@ -251,3 +251,15 @@ presentation:
   # sharing a value. Either form writes the realised milliseconds into the
   # stimuli table, so timing that varies is available to the analysis as a
   # regressor instead of being undocumented noise. See design_en_priming_jitter.
+  #
+  # A response event after a text event collects its key from that stimulus's
+  # onset. A key pressed while the stimulus is on screen counts, the reaction time
+  # runs from its onset and a key ends the trial. The window lasts the stimulus's
+  # duration and the response's timeout_ms together. A response event may say so,
+  # or keep a window that opens when the stimulus has gone, which is the default
+  # after any other event:
+  #
+  #   - type: response
+  #     keys: [f, j]
+  #     timeout_ms: 2000
+  #     from: offset      # onset (the default after a text event) | offset

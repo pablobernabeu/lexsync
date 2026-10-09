@@ -21,7 +21,7 @@
   },
   "relational": null,
   "analysis": {
-    "response": "the trial outcome (e.g. reaction time or accuracy)",
+    "response": "reaction time from the onset of `{target}`; responses collected for 2800 ms; a response ends the trial",
     "suggested_model": "response ~ condition + (1 + condition | subject) + (1 + condition | item)",
     "note": "Crossed random effects for subjects and items guard against the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). Begin with this maximal structure (Barr et al., 2013) and reduce it if the model does not converge (Matuschek et al., 2017). The formula is lme4 syntax, for lme4 in R or pymer4 in Python; statsmodels MixedLM cannot take it directly and needs the random effects restated in its own arguments. The equivalence tests in the realised control are post-selection diagnostics on deterministically selected items, not inferential tests over a sample."
   },
@@ -60,6 +60,15 @@
     "versions": 2,
     "assignment": "version = ((participant - 1) mod 2) + 1 unless a version is given at launch"
   },
+  "presentation": {
+    "response_windows": [
+      {
+        "event": 5,
+        "from": "onset",
+        "window_ms": 2800
+      }
+    ]
+  },
   "resampling": null,
   "items": {
     "n_total": 24,
@@ -86,7 +95,7 @@
       "os": "Windows x86-64"
     },
     "design_sha256": "5ca7a41429f438521850e8d58319d4f7daddc0b0c754c20611c0e1f58ee90158",
-    "schema_sha256": "960331bc24fc002527fc36aca87b4fbf1c7504a75e520a1287918761c53abdb3"
+    "schema_sha256": "22c5b2140a199af60f71aa1d00de88b3f487147668393fc752be85538d44d979"
   },
   "artifacts": [
     {
@@ -95,19 +104,19 @@
     },
     {
       "file": "output/experiments/en_priming_english_psychopy.py",
-      "sha256": "8c4fd56beed7ac03f0621bd72d38ba1fd36a1bb35a6e571c35b96bdb1e320e24"
+      "sha256": "658c22c804932f36d90552699f2fcf5ed78ff3dbe4a657fd06fcce8195b07b8c"
     },
     {
       "file": "output/experiments/en_priming_english_list1.osexp",
-      "sha256": "7e7ccc986e32c12ceed3afcdea5e8fcc1d1753a8a28cb2db8a35d0f1d804be7c"
+      "sha256": "68147133d9b48ac9e6b221f588d98131cc75488a6ba665209a500b078d7cd821"
     },
     {
       "file": "output/experiments/en_priming_english_list2.osexp",
-      "sha256": "94143a13ea530e6ef3ccb3fb2bb7e04e2c4abe5db56756fe57eb132ea21da4b6"
+      "sha256": "9e03771554e8b507775fb3bd85783c130478e41722657462fe36fba1bbc8e140"
     },
     {
       "file": "output/experiments/en_priming_english.html",
-      "sha256": "1feca0c0b4cae595edb3aec62cf7f9c110f5e5a97cb57f472df75694a6973495"
+      "sha256": "17ee5270b029117a1293865637d39148c6f228c4fb7e538ac6c6eb55c891ba8c"
     },
     {
       "file": "output/experiments/en_priming_english_psychopy.csv",

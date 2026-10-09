@@ -121,12 +121,13 @@ def test_the_jspsych_export_carries_the_cue_and_the_answer(design, schema, tmp_p
 def test_the_rendered_events_use_milliseconds(schema):
     d = {"paradigm": "categorisation", "name": "c", "language": "english"}
     rendered = render_events(resolve_events(d), {}, 60)
-    assert [r["type"] for r in rendered] == ["fixation", "text", "text", "response", "blank"]
+    # The response is collected from the target's onset, so it renders with the target.
+    assert [r["type"] for r in rendered] == ["fixation", "text", "text", "blank"]
     assert rendered[0]["ms"] == 500
     assert rendered[1]["ms"] == 750 and rendered[1]["field"] == "category"
     assert rendered[2]["ms"] == 800 and rendered[2]["field"] == "target"
-    assert rendered[3]["timeout"] == 2.5
-    assert rendered[4]["ms"] == 250
+    assert rendered[2]["respond"]["timeout"] == 2.5
+    assert rendered[3]["ms"] == 250
 
 
 def test_readr_style_logical_inference_is_neutralised(tmp_path):

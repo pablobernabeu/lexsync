@@ -8,13 +8,16 @@ matter of configuration.
 
 An *event* is a small dictionary::
 
-    {type, content, duration_frames|duration_ms, trigger, onset_locked, keys, timeout_ms}
+    {type, content, duration_frames|duration_ms, trigger, onset_locked, keys, timeout_ms,
+     from}
 
 ``type``     one of fixation | text | mask | blank | region_by_region | response |
              question | feedback
 ``content``  a literal ("+", "#####") or a field reference ("{target}", "{sentence}")
 ``trigger``  an integer EEG code, or the token "condition" / "item"
 ``onset_locked``  write the trigger on the event's verified onset flip
+``from``     where a response's window opens: "onset", with the text event before it
+             (the default after a text event), or "offset", once that has gone
 ``blocks``   restrict the event to the named blocks (see blocks.add_blocks)
 
 This module is pure data and small helpers, identical in the R and Python
@@ -82,8 +85,9 @@ PARADIGMS = {
     #
     # `answer` holds the KEY that is correct for the trial, not a label, so scoring is a
     # string comparison against the recorded response with nothing to look up. It is a
-    # field of the item table like any other; the paradigm requires it so that a design
-    # cannot generate an unscoreable categorisation experiment.
+    # field of the item table like any other, and the paradigm requires it. The PsychoPy
+    # and OpenSesame targets score each response against it, and the jsPsych data rows
+    # carry it beside the response.
     "categorisation": {
         "stimulus_fields": ["target", "category", "answer"],
         # latin_square_target, not factorial. Each item carries both cues, so the

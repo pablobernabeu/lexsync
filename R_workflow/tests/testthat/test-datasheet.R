@@ -187,7 +187,7 @@ test_that("the datasheet records the presentation versions", {
                    "version = ((participant - 1) mod 2) + 1 unless a version is given at launch")
   expect_true(grepl(paste("generated for PsychoPy, OpenSesame and jsPsych. Each participant",
                           "was presented one of the 2 lists, assigned in rotation by",
-                          "participant number. The selection"),
+                          "participant number. Responses were collected"),
                     methods_paragraph(ds), fixed = TRUE))
   expect_true(grepl(paste("- **Presentation versions:** 2, assigned as version =",
                           "((participant - 1) mod 2) + 1 unless a version is given at launch"),
@@ -213,6 +213,75 @@ test_that("the datasheet records the presentation versions", {
   unlisted <- build_datasheet(resampled, schema, NULL, reps, "items/p.csv",
                               list(stimuli = NULL, experiments = list()), 2026, engine = "R")
   expect_identical(unlisted$counterbalancing$versions, 6L)
+})
+
+test_that("the datasheet names where the reaction time is timed from", {
+  # The record called the outcome "reaction time or accuracy" without saying where a
+  # reaction time starts, and the Methods text said nothing of the response window.
+  # test_datasheet.py pins the same record and text.
+  schema <- ds_schema()
+  files <- list(stimuli = NULL, experiments = list())
+  ds <- build_datasheet(ds_design(), schema, NULL, ds_stim(), "x.csv", files, 2026,
+                        engine = "R")
+  expect_identical(ds$presentation, list(response_windows = list(
+    list(event = 3L, from = "onset", window_ms = 2800L))))
+  expect_identical(ds$analysis$response, paste(
+    "reaction time from the onset of `{word}`; responses collected for 2800 ms; a",
+    "response ends the trial"))
+  expect_true(grepl(paste("generated for PsychoPy, OpenSesame and jsPsych. Responses were",
+                          "collected from target onset until 2800 ms after it, and a",
+                          "response ended the trial. The selection"),
+                    methods_paragraph(ds), fixed = TRUE))
+  # A window that opens after the stimulus, for a design that delays the response.
+  delayed <- utils::modifyList(ds_design(), list(events = list(
+    list(type = "text", content = "{word}", duration_ms = 800L),
+    list(type = "blank", duration_ms = 200L),
+    list(type = "response", keys = c("f", "j"), timeout_ms = 1500L))))
+  ds <- build_datasheet(delayed, schema, NULL, ds_stim(), "x.csv", files, 2026, engine = "R")
+  expect_identical(ds$presentation$response_windows,
+                   list(list(event = 3L, from = "offset", window_ms = 1500L)))
+  expect_identical(ds$analysis$response, paste(
+    "reaction time from the opening of a response window after the stimulus;",
+    "responses collected for 1500 ms; a response ends the trial"))
+  expect_true(grepl(paste(" Responses were collected in a 1500 ms window that opened after",
+                          "the stimulus, and a response ended the trial."),
+                    methods_paragraph(ds), fixed = TRUE))
+  # A target whose duration varies by trial ends its window a fixed time after it goes.
+  varying <- utils::modifyList(ds_design(), list(events = list(
+    list(type = "text", content = "{word}", duration = list(from_column = "word_ms")),
+    list(type = "response", keys = c("f", "j"), timeout_ms = 2000L))))
+  stim <- ds_stim()
+  stim$word_ms <- c(300L, 400L, 300L, 400L)
+  ds <- build_datasheet(varying, schema, NULL, stim, "x.csv", files, 2026, engine = "R")
+  expect_identical(ds$presentation$response_windows, list(
+    list(event = 2L, from = "onset", window_ms = NA_integer_, duration_column = "word_ms",
+         timeout_ms = 2000L)))
+  expect_identical(ds$analysis$response, paste(
+    "reaction time from the onset of `{word}`; responses collected until 2000 ms after",
+    "its offset; a response ends the trial"))
+  expect_true(grepl(paste(" Responses were collected from target onset until 2000 ms after",
+                          "its offset, and a response ended the trial."),
+                    methods_paragraph(ds), fixed = TRUE))
+  # The JSON record writes the varying window as null, as the Python engine does, and the
+  # paragraph reads the same from the record read back.
+  out <- tempfile("ds"); dir.create(out)
+  paths <- write_datasheet(ds, file.path(out, "d.json"), file.path(out, "d.md"))
+  json <- paste(readLines(paths[1], warn = FALSE), collapse = "\n")
+  expect_true(grepl('"window_ms": null', json, fixed = TRUE))
+  back <- jsonlite::fromJSON(paths[1], simplifyVector = FALSE)
+  expect_identical(methods_paragraph(back), methods_paragraph(ds))
+  # Without a response event, as in self-paced reading, nothing is said, and a record
+  # written before the field existed renders as it did.
+  spr <- ds_table_design(paradigm = "self_paced_reading")
+  ds <- build_datasheet(spr, schema, NULL, ds_priming_table(), "items/p.csv", files, 2026,
+                        engine = "R")
+  expect_identical(ds$presentation, list(response_windows = list()))
+  expect_identical(ds$analysis$response, "the trial outcome (e.g. reaction time or accuracy)")
+  expect_false(grepl("Responses were collected", methods_paragraph(ds), fixed = TRUE))
+  old <- build_datasheet(ds_design(), schema, NULL, ds_stim(), "x.csv", files, 2026,
+                         engine = "R")
+  old$presentation <- NULL
+  expect_false(grepl("Responses were collected", methods_paragraph(old), fixed = TRUE))
 })
 
 test_that("an incomplete rotation is described as incomplete", {

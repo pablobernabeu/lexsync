@@ -37,6 +37,10 @@
 #   selection$tie_break         the rule that broke exact ties between equally close
 #                               candidates (rule, salt; the salt only for hash),
 #                               present for a matched corpus or pool design
+#   presentation$response_windows  each response event's window, (event, from,
+#                               window_ms); window_ms is null, with duration_column and
+#                               timeout_ms, when the stimulus's duration varies by trial
+#                               (analysis$response now says where a reaction time starts)
 DATASHEET_VERSION <- "1.2"
 
 # Datasheet labels for the pseudoword generators in generation.R, keyed by the
@@ -139,11 +143,53 @@ DATASHEET_VERSION <- "1.2"
   if (identical(s, "0.0000")) "< 0.0001" else s
 }
 
+# The response the analysis models, with where its reaction time starts, from the first
+# response window: a reaction time from the onset of the stimulus the response answers,
+# or from the opening of a window after it. A design without a response event keeps the
+# generic outcome. Mirrors _response_text in datasheet.py.
+.response_text <- function(windows, events) {
+  if (!length(windows)) return("the trial outcome (e.g. reaction time or accuracy)")
+  w <- windows[[1]]
+  if (identical(w[["from"]], "offset")) {
+    return(sprintf(paste("reaction time from the opening of a response window after the",
+                         "stimulus; responses collected for %d ms; a response ends the",
+                         "trial"), as.integer(w[["window_ms"]])))
+  }
+  target <- as.character(events[[w[["event"]] - 1L]][["content"]] %||% "")
+  span <- if (!is.na(w[["window_ms"]])) sprintf("for %d ms", as.integer(w[["window_ms"]])) else
+    sprintf("until %d ms after its offset", as.integer(w[["timeout_ms"]]))
+  sprintf(paste("reaction time from the onset of `%s`; responses collected %s; a response",
+                "ends the trial"), target, span)
+}
+
+# The response window, for the Methods text, from the first response window the record
+# holds. Empty without one, and for a record written before the field existed. A record
+# read back from JSON gives a varying window as NULL, one built here as NA. Mirrors
+# _response_note in datasheet.py.
+.response_note <- function(ds) {
+  windows <- ds[["presentation"]][["response_windows"]]
+  if (is.null(windows) || !length(windows)) return("")
+  w <- windows[[1]]
+  window_ms <- w[["window_ms"]]
+  if (identical(w[["from"]], "offset")) {
+    return(sprintf(paste(" Responses were collected in a %d ms window that opened after the",
+                         "stimulus, and a response ended the trial."), as.integer(window_ms)))
+  }
+  if (is.null(window_ms) || is.na(window_ms)) {
+    return(sprintf(paste(" Responses were collected from target onset until %d ms after its",
+                         "offset, and a response ended the trial."),
+                   as.integer(w[["timeout_ms"]])))
+  }
+  sprintf(paste(" Responses were collected from target onset until %d ms after it, and a",
+                "response ended the trial."), as.integer(window_ms))
+}
+
 # A suggested crossed mixed-model formula for the design. Handing the user an
 # items-crossed model guards against the language-as-fixed-effect fallacy
 # (Clark, 1973; Baayen et al., 2008): items are a random sample of the language,
 # so an analysis that treats them as fixed over-generalises. Mirrors datasheet.py.
-.analysis_R <- function(design, source) {
+.analysis_R <- function(design, source,
+                        response = "the trial outcome (e.g. reaction time or accuracy)") {
   cont <- design[["continuous"]]
   if (!is.null(cont)) {
     predictor <- cont[["predictor"]]
@@ -161,7 +207,7 @@ DATASHEET_VERSION <- "1.2"
       note <- paste0(note, " Dotted dimension names are valid in R formulas but must ",
                      "be quoted as Q(\"...\") in Patsy-style Python interfaces.")
     return(list(
-      response = "the trial outcome (e.g. reaction time or accuracy)",
+      response = response,
       suggested_model = sprintf("response ~ %s + (1 + %s | subject) + (1 | item)", fixed, predictor),
       note = note
     ))
@@ -175,7 +221,7 @@ DATASHEET_VERSION <- "1.2"
     factor <- "condition"; item_re <- "(1 | item)"
   }
   list(
-    response = "the trial outcome (e.g. reaction time or accuracy)",
+    response = response,
     suggested_model = sprintf("response ~ %s + (1 + %s | subject) + %s", factor, factor, item_re),
     note = paste0("Crossed random effects for subjects and items guard against the ",
                   "language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). ",
@@ -260,6 +306,10 @@ build_datasheet <- function(design, schema, report, stimuli, source_path, artifa
   controlled <- .controlled_dims(design, source)
   relational <- .relational_record(design, stimuli)
   conditions <- unique(as.character(stimuli$condition))
+  # The response windows the generated experiments open, and with them where a reaction
+  # time starts, which the analysis has to know.
+  events <- resolve_events(design)
+  windows <- .response_windows(events, design[["timing"]] %||% list(), .refresh_hz(schema))
   incomplete <- selection_audit[["incomplete_dropped"]] %||% list()
   dropped <- stats::setNames(
     vapply(incomplete, function(d) as.integer(d[["n"]]), integer(1)),
@@ -449,10 +499,11 @@ build_datasheet <- function(design, schema, report, stimuli, source_path, artifa
     dimensions = schema[["dimensions"]][keep_dims],
     selection = selection,
     relational = relational,
-    analysis = .analysis_R(design, source),
+    analysis = .analysis_R(design, source, .response_text(windows, events)),
     equivalence = equivalence,
     realised_control = realised,
     counterbalancing = counterbalancing,
+    presentation = list(response_windows = windows),
     resampling = if (!is.null(design[["resample"]]))
       list(n_sets = design[["resample"]][["n_sets"]], disjoint = TRUE) else NULL,
     items = list(n_total = nrow(stimuli), n_conditions = length(conditions),
@@ -580,10 +631,10 @@ methods_paragraph <- function(ds) {
                           "%s near-constant%s, for analysis by regression or a mixed model rather ",
                           "than a between-condition contrast (Kuperman, 2015; Liben-Nowell et al., ",
                           "2019).%s Materials were counterbalanced into %s list(s) (%s) and generated ",
-                          "for PsychoPy, OpenSesame and jsPsych.%s The selection is deterministic and ",
-                          "reproducible (lexsync %s), and the seed (%s) fixes the trial order."),
+                          "for PsychoPy, OpenSesame and jsPsych.%s%s The selection is deterministic ",
+                          "and reproducible (lexsync %s), and the seed (%s) fixes the trial order."),
                    n, lang, unit, predictor, span_str, controls, corr_str, .norms_note(ds),
-                   cb$lists, recipe_label, .versions_note(ds),
+                   cb$lists, recipe_label, .versions_note(ds), .response_note(ds),
                    ds$reproducibility$versions$lexsync, ds$reproducibility$seed))
   }
   if (identical(src, "corpus")) {
@@ -640,10 +691,10 @@ methods_paragraph <- function(ds) {
   cb <- ds$counterbalancing
   recipe_label <- .recipe_label(cb)
   tail <- sprintf(paste0(resamp, ". Materials were counterbalanced into %s list(s) (%s) and generated for ",
-                         "PsychoPy, OpenSesame and jsPsych.%s The selection is deterministic and ",
+                         "PsychoPy, OpenSesame and jsPsych.%s%s The selection is deterministic and ",
                          "reproducible (lexsync %s), and the seed (%s) fixes the trial order."),
-                  cb$lists, recipe_label, .versions_note(ds), ds$reproducibility$versions$lexsync,
-                  ds$reproducibility$seed)
+                  cb$lists, recipe_label, .versions_note(ds), .response_note(ds),
+                  ds$reproducibility$versions$lexsync, ds$reproducibility$seed)
   bal <- ds$counterbalancing$optimise
   bal_note <- if (is.null(bal)) "" else sprintf(
     paste0(". Item sets were assigned to lists so as to equate the lists on %s rather ",

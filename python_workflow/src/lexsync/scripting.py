@@ -18,7 +18,7 @@ import re
 
 import pandas as pd
 
-from .design import design_stem
+from .design import _shown, design_stem
 from .io_utils import (
     _key_part,
     _readr_cell,
@@ -286,7 +286,103 @@ def render_events(events: list, timing: dict, hz: float = 60) -> list:
     consumes: OpenSesame and jsPsych schedule it directly, and the PsychoPy script
     converts it back into whole flips against the refresh rate it measures at
     start-up.
+
+    A response collected from the onset of the text event before it (see
+    ``_response_from``) is rendered with that event, as its ``respond`` entry
+    (``{"keys", "timeout"}``). The text keeps ``ms`` as its longest display time, and
+    the window runs from its onset for ``ms`` plus the timeout, so the total window is
+    the one the two events had. A response collected from the offset stays an event of
+    its own.
     """
+    rendered = _render_each(events, timing, hz)
+    out = []
+    for i, r in enumerate(rendered, start=1):
+        if r["type"] == "response" and _response_from(events, i) == "onset":
+            text = out[-1]
+            # The merged event runs where the text runs, so a response restricted to
+            # other blocks than its stimulus has no window to open.
+            if r.get("blocks") != text.get("blocks"):
+                raise ValueError(
+                    "lexsync: event %d collects its response from the onset of event %d, "
+                    "so the two must run in the same blocks; give them the same `blocks`, "
+                    "or use from: offset." % (i, i - 1))
+            text["respond"] = {"keys": r["keys"], "timeout": r["timeout"]}
+            continue
+        out.append(r)
+    return out
+
+
+def _response_from(events: list, i: int) -> str:
+    """Where response event ``i``, counted from 1, opens its window: "onset" or "offset".
+
+    From "onset", the window opens with the text event just before the response, so a
+    key pressed while that stimulus is on screen counts and the reaction time runs from
+    its onset. From "offset", it opens when the stimulus has gone, for a design that
+    asks the participant to wait. A design says which with ``from:``, and without it a
+    response after a text event is collected from the onset and any other from the
+    offset, so a response after a blank keeps the window it had. Must match
+    .response_from in scripting.R.
+    """
+    ev = events[i - 1]
+    prev = events[i - 2] if i > 1 else None
+    after_text = prev is not None and prev.get("type") == "text"
+    given = ev.get("from")
+    if given is None:
+        return "onset" if after_text else "offset"
+    if not isinstance(given, str) or given not in ("onset", "offset"):
+        raise ValueError("lexsync: event %d gives `from: %s`, but a response event takes "
+                         "from: onset or from: offset." % (i, _shown(given)))
+    if given == "onset" and not after_text:
+        what = ("no event precedes it" if prev is None
+                else "event %d is a %s" % (i - 1, _shown(prev.get("type"))))
+        raise ValueError("lexsync: event %d collects its response from the onset of the "
+                         "preceding stimulus, but %s; use from: offset." % (i, what))
+    return given
+
+
+def _whole_ms(seconds) -> int:
+    """A rendered timeout, in seconds, as the whole milliseconds the design declared.
+
+    Rounded through _round_dp. int() truncated 1.001 * 1000, which is
+    1000.9999999999999 in binary floating point, so a declared 1,001 ms was written as
+    1,000, and 95 of the whole-millisecond values from 1 to 10,000 came out one short.
+    Must match .whole_ms in scripting.R.
+    """
+    return int(_round_dp(float(seconds) * 1000, 0))
+
+
+def _response_windows(events: list, timing: dict, hz: float) -> list:
+    """Each response event's window, as the datasheet records it.
+
+    One ``{"event", "from", "window_ms"}`` per response event, where ``event`` counts
+    the design's events from 1. A window from the onset runs for the stimulus's
+    duration and the timeout, and one from the offset for the timeout. When the
+    stimulus's duration varies by trial, ``window_ms`` is None and the entry adds the
+    ``duration_column`` and the ``timeout_ms`` that make it up. Whole milliseconds, as
+    every target writes them. Mirrors .response_windows in scripting.R.
+    """
+    rendered = _render_each(events, timing, hz)
+    out = []
+    for i, r in enumerate(rendered, start=1):
+        if r["type"] != "response":
+            continue
+        start = _response_from(events, i)
+        timeout_ms = _whole_ms(r["timeout"])
+        entry = {"event": i, "from": start}
+        stimulus = rendered[i - 2] if start == "onset" else None
+        if stimulus is None:
+            entry["window_ms"] = timeout_ms
+        elif "ms_column" in stimulus:
+            entry.update(window_ms=None, duration_column=stimulus["ms_column"],
+                         timeout_ms=timeout_ms)
+        else:
+            entry["window_ms"] = int(stimulus["ms"]) + timeout_ms
+        out.append(entry)
+    return out
+
+
+def _render_each(events: list, timing: dict, hz: float) -> list:
+    """Each event rendered on its own, before a response joins its stimulus."""
     timing = timing or {}
     # A design's timing block was previously read key by key, so a typo such as
     # `fixation_frame` was silently ignored and the event kept a default duration.
@@ -570,6 +666,15 @@ def export_psychopy(stimuli, design, schema, outdir, base=None) -> str:
     ``--participant``, else what a start-up dialogue asks for. A version the script does
     not have stops the run with a message.
 
+    Each run writes ``data/<base>_p<participant>_v<version>_<date>-<time>.csv`` beside
+    the script, without the ``_p`` part when no participant number is given, one row
+    per trial, each written as its trial ends. A row holds the run, the trial's fields
+    and trigger codes, the response and its reaction time from the onset of the
+    stimulus it answers, whether the window closed without one, whether the key was
+    the trial's ``answer``, the self-paced reading times, the question's response and
+    reaction time, the measured refresh rate, and each event's realised flips and
+    onset.
+
     Args:
         stimuli: Stimuli with trigger columns (see :func:`assign_triggers`).
         design: A parsed design configuration.
@@ -602,6 +707,8 @@ def _psychopy_files(stimuli, design, schema, outdir, base=None) -> list:
         "DESIGN": clean_meta(design["name"], "the design's `name`"),
         "LANGUAGE": clean_meta(design["language"], "the design's `language`"),
         "CONDITIONS_FILE": csv_name,
+        # The data files are named after the experiment, as data/<base>_p<n>_v<k>_...
+        "BASE": base,
         "TRIGGER_ADDRESS": clean_port(triggers.get("parallel_address", "0x0378")),
         "TRIGGER_HOLD_MS": "%.17g" % _trigger_hold_ms(schema),
         # Through %.17g like its neighbours, never default stringification: str()
@@ -694,8 +801,28 @@ def _osexp_block_guard(body: list, blocks) -> list:
             + ["    " + line for line in body])
 
 
-def _osexp_event_block(name: str, ev: dict) -> tuple:
-    """Return (block_lines, run_names) for one rendered event."""
+def _osexp_correct(key: str) -> list:
+    """Lines that score the key held in `key` against the trial's `answer`.
+
+    ``var.correct`` becomes 1 or 0, or stays empty when the trial names no answer. It is
+    computed here, not by OpenSesame's ``correct_response``, whose variable syntax
+    differs between 3.3 ([answer]) and 4.x ({answer}), and whose answer would have to
+    come from the variable store, which evaluates text.
+    """
+    return ["_want = str(_lexsync_row().get(u'answer', u'')).strip()",
+            "_got = u'' if %s is None else str(%s).strip()" % (key, key),
+            "var.correct = (1 if _got == _want else 0) if _want else u''"]
+
+
+def _osexp_event_block(name: str, ev: dict, scores: bool = True,
+                       feedback_scores: str = "response") -> tuple:
+    """Return (block_lines, run_names) for one rendered event.
+
+    ``scores`` says whether a response or question this event collects is the one
+    ``var.correct`` scores: the design's response events, or its questions when it has
+    no response event. ``feedback_scores`` names the variable a feedback event reads,
+    ``response`` or ``question_response``, after whichever collected a key last.
+    """
     t = ev["type"]
     blocks = ev.get("blocks")
     if blocks and t == "response":
@@ -710,6 +837,33 @@ def _osexp_event_block(name: str, ev: dict) -> tuple:
     sleep_arg = ("int(float(var.get(%s, _eval=False)))"
                  % _pyq(clean_column(ev["ms_column"], "a jittered duration's `as`"))
                  if ev.get("ms_column") else str(int(ev.get("ms", 0))))
+    if t == "text" and ev.get("respond"):
+        # The stimulus collects its own response, from its onset. The keyboard is
+        # flushed once the trigger is out, so nothing pressed before the stimulus counts,
+        # and polled while the stimulus is shown. Without a key by its end, the screen
+        # blanks and the keyboard is polled for the timeout, so the window is the one the
+        # stimulus and a separate response event had. A key ends the event either way.
+        respond = ev["respond"]
+        keylist = ", ".join(_pyq(k) for k in respond["keys"])
+        body = ["c = Canvas()", f"c.text({_content_expr(ev)})", "_t0 = c.show()",
+                "var.onset_time = _t0"]
+        trig = _trigger_expr(ev.get("trigger"))
+        if trig is not None:
+            body.append(f"send_trigger({trig})")
+        body += [f"_kb = Keyboard(keylist=[{keylist}])",
+                 "_kb.flush()",
+                 f"_key, _t = _kb.get_key(timeout={sleep_arg})",
+                 "if _key is None:",
+                 "    c = Canvas()",
+                 "    c.show()",
+                 f"    _key, _t = _kb.get_key(timeout={_whole_ms(respond['timeout'])})",
+                 "var.response = _key",
+                 "var.response_time = u'' if _key is None else _t - _t0",
+                 "var.timed_out = 1 if _key is None else 0"]
+        if scores:
+            body += _osexp_correct("_key")
+        return (_inline_block(name, "Show the stimulus and collect the response from its "
+                              "onset", _osexp_block_guard(body, blocks), run=True), [name])
     if t in ("fixation", "text", "mask", "blank"):
         body = ["c = Canvas()"]
         if t != "blank":
@@ -724,39 +878,51 @@ def _osexp_event_block(name: str, ev: dict) -> tuple:
                 [name])
     if t == "region":
         trig = _trigger_expr(ev.get("crit_trigger"))
+        # Each region is timed from its own onset, and the keyboard is flushed as it
+        # appears, so a key pressed before it cannot advance it.
         body = [
             f"_regions = [r for r in {_text_expr(ev['field'])}.split({_pyq(ev.get('sep', '|'))})"
             " if r != u'']",
             # An empty cell, a sentence with no critical region, reads as 0: no trigger.
             "_crit = int(var.get(u'critical_region', 0, _eval=False) or 0)",
             f"_kb = Keyboard(keylist=[{_pyq(ev.get('key', 'space'))}], timeout=None)",
+            "_rts = []",
             "for _i, _region in enumerate(_regions, start=1):",
-            "    c = Canvas(); c.text(_region); c.show()",
+            "    c = Canvas(); c.text(_region); _t0 = c.show()",
         ]
         if trig is not None:
             body.append(f"    if _i == _crit: send_trigger({trig})")
-        body.append("    _kb.get_key()")
+        body += ["    _kb.flush()",
+                 "    _key, _t = _kb.get_key()",
+                 "    _rts.append(u'%.1f' % (_t - _t0))",
+                 "var.lexsync_region_rts = u'|'.join(_rts)"]
         return (_inline_block(name, "Self-paced reading region by region",
                               _osexp_block_guard(body, blocks), run=True), [name])
     if t == "question":
         body = [
-            f"c = Canvas(); c.text({_text_expr(ev['field'])}); c.show()",
+            f"c = Canvas(); c.text({_text_expr(ev['field'])}); _t0 = c.show()",
             f"_kb = Keyboard(keylist=[{', '.join(_pyq(k) for k in ev.get('keys', ['f', 'j']))}], "
-            f"timeout={int(ev.get('timeout', 5) * 1000)})",
-            "var.response, var.response_time = _kb.get_key()",
+            f"timeout={_whole_ms(ev.get('timeout', 5))})",
+            "_kb.flush()",
+            "_key, _t = _kb.get_key()",
+            "var.question_response = _key",
+            "var.question_rt = u'' if _key is None else _t - _t0",
         ]
+        if scores:
+            body += _osexp_correct("_key")
         return (_inline_block(name, "Comprehension question",
                               _osexp_block_guard(body, blocks), run=True), [name])
     if t == "feedback":
-        # `var.response` is set by the keyboard_response above. The answer column (or
-        # whichever column the event names) holds the KEY that is correct, so scoring is
-        # a string comparison. A timeout is reported separately, because on a timed task
-        # it means something different from a wrong key. OpenSesame 4.x stores it as
-        # None and 3.3 as the string 'None', so both count as no response.
+        # The key comes from whichever response or question collected one last. The
+        # answer column (or whichever column the event names) holds the KEY that is
+        # correct, so scoring is a string comparison. A timeout is reported separately,
+        # because on a timed task it means something different from a wrong key.
+        # OpenSesame 4.x stores it as None and 3.3 as the string 'None', so both count
+        # as no response.
         body = [
             "_want = str(_lexsync_row().get(u'%s', u'')).strip()"
             % clean_column(ev.get("answer", "answer"), "a feedback event's `answer`"),
-            "_got = var.get(u'response', u'', _eval=False)",
+            "_got = var.get(u'%s', u'', _eval=False)" % feedback_scores,
             "_got = u'' if _got is None else str(_got).strip()",
             "if _got in (u'', u'None'): _msg = %s" % _pyq(ev.get("no_response", "Too slow")),
             "elif _got == _want: _msg = %s" % _pyq(ev.get("correct", "Correct")),
@@ -775,13 +941,56 @@ def _osexp_event_block(name: str, ev: dict) -> tuple:
                               ["c = Canvas()", "c.show()"], run=True)
         block += [
             f"define keyboard_response {name}",
-            "\tset timeout " + str(int(ev.get("timeout", 2) * 1000)),
+            "\tset timeout " + str(_whole_ms(ev.get("timeout", 2))),
             "\tset flush yes", "\tset duration keypress",
             '\tset description "Collect a response"',
             f'\tset allowed_responses "{keys}"', "",
         ]
-        return (block, [f"{name}_blank", name])
+        # The keyboard_response records the key and its time from the window's onset.
+        # Whether it timed out, and whether the key was the trial's answer, are
+        # recorded here, as the onset-locked script records them.
+        score = ["_key = var.get(u'response', u'', _eval=False)",
+                 "_timed_out = _key is None or str(_key).strip() in (u'', u'None')",
+                 "var.timed_out = 1 if _timed_out else 0",
+                 "if _timed_out:",
+                 "    _key = None",
+                 "    var.response_time = u''"]
+        if scores:
+            score += _osexp_correct("_key")
+        block += _inline_block(f"{name}_score", "Record the timeout and the accuracy",
+                               score, run=True)
+        return (block, [f"{name}_blank", name, f"{name}_score"])
     raise ValueError(f"lexsync: unknown event type '{t}'.")
+
+
+def _osexp_trial_start() -> list:
+    """The inline script that opens every trial by clearing what the last one recorded.
+
+    OpenSesame keeps a variable from one trial to the next, so a response event that
+    does not run in a block would otherwise leave the previous trial's key in the log
+    and for the feedback. Must match .osexp_trial_start in scripting.R.
+    """
+    body = ["var.%s = u''" % v for v in ("response", "response_time", "timed_out",
+                                          "correct", "question_response", "question_rt",
+                                          "lexsync_region_rts")]
+    return _inline_block("lexsync_trial_start", "Clear the previous trial's responses",
+                         body, run=True)
+
+
+def _osexp_record() -> list:
+    """The inline script that copies the trial's labels into the variables the logger
+    writes.
+
+    The labels stay out of the loop table, which OpenSesame evaluates, so the logger
+    would not see them. Nothing reads these variables back, and both versions' loggers
+    read without evaluation. Must match .osexp_record in scripting.R.
+    """
+    body = ["_row = _lexsync_row()",
+            "var.lexsync_condition = _row.get(u'condition', u'')",
+            "var.lexsync_block = _row.get(u'block', u'')",
+            "var.lexsync_answer = _row.get(u'answer', u'')"]
+    return _inline_block("lexsync_record", "Copy the trial's labels for the logger", body,
+                         run=True)
 
 
 def _inline_block(name: str, desc: str, body: list, run: bool) -> list:
@@ -839,7 +1048,9 @@ def build_osexp(design: dict, conditions_file: str, schema: dict, rendered: list
     experiment's own folder. ``version`` and ``n_versions`` mark the experiment as
     version ``version`` of ``n_versions``. With more than one version, the experiment
     checks OpenSesame's subject number against its own before the loop and warns when
-    the participant would normally run another. Must match build_osexp in scripting.R.
+    the participant would normally run another. Each trial starts by clearing the last
+    trial's responses and ends with a logger item. Must match build_osexp in
+    scripting.R.
     """
     addr = clean_port((schema.get("triggers") or {}).get("parallel_address", "0x378"))
     design_name = clean_meta(design["name"], "the design's `name`")
@@ -897,11 +1108,27 @@ def build_osexp(design: dict, conditions_file: str, schema: dict, rendered: list
         "send_trigger(0)",
     ]
 
-    event_blocks, run_names = [], []
+    # var.correct scores the response, or the question in a design with no response
+    # event, as the PsychoPy data file does.
+    has_response = any(ev["type"] == "response" or ev.get("respond") for ev in rendered)
+    event_blocks, run_names = _osexp_trial_start(), ["lexsync_trial_start"]
+    last = "response"
     for i, ev in enumerate(rendered):
-        block, names = _osexp_event_block(f"lexsync_e{i}", ev)
+        collects = "response" if (ev["type"] == "response" or ev.get("respond")) else (
+            "question" if ev["type"] == "question" else None)
+        block, names = _osexp_event_block(
+            f"lexsync_e{i}", ev,
+            scores=collects == ("response" if has_response else "question"),
+            feedback_scores="question_response" if last == "question" else "response")
         event_blocks.extend(block)
         run_names.extend(names)
+        last = collects or last
+    # OpenSesame logs nothing without a logger item. This one runs last in every trial
+    # and writes every variable, the labels copied in just before it included.
+    event_blocks += _osexp_record() + [
+        "define logger lexsync_logger", '\tset description "Log the trial"',
+        "\tset auto_log yes", ""]
+    run_names += ["lexsync_record", "lexsync_logger"]
 
     header = [
         "---", "API: 2.1", "OpenSesame: 3.3.14", "Platform: nt", "---",
@@ -954,6 +1181,15 @@ def export_opensesame(stimuli, design, schema, outdir, base=None) -> str:
     in ``<base>_opensesame_text.csv``, which the inline scripts read with Python's
     ``csv`` module, so OpenSesame never evaluates them. Copy both tables with the
     experiment.
+
+    Every trial is logged. A response after a text event is collected by that event's
+    script from the stimulus's onset, which sets ``response``, ``response_time``,
+    ``timed_out`` and ``correct``. A response kept after the stimulus with
+    ``from: offset`` is a keyboard_response, and a script after it sets ``timed_out``
+    and ``correct``. Self-paced reading sets ``lexsync_region_rts`` and a question
+    ``question_response`` and ``question_rt``. A script clears these as each trial
+    starts, another copies the trial's labels into ``lexsync_condition``,
+    ``lexsync_block`` and ``lexsync_answer``, and a logger item ends the trial.
 
     A design with more than one presentation version (see
     :func:`presentation_versions`) gets one experiment per version instead, each with
@@ -1080,6 +1316,9 @@ def _map_keys_for_jspsych(rendered: list) -> list:
             e["keys"] = [_JSPSYCH_KEYS.get(k, k) for k in e["keys"]]
         if "key" in e:
             e["key"] = _JSPSYCH_KEYS.get(e["key"], e["key"])
+        if "respond" in e:
+            e["respond"] = dict(e["respond"],
+                                keys=[_JSPSYCH_KEYS.get(k, k) for k in e["respond"]["keys"]])
         out.append(e)
     return out
 
@@ -1127,6 +1366,9 @@ def export_jspsych(stimuli, design, schema, outdir, base=None) -> str:
     are saved locally, so no server is required either to run it or to collect them.
     Onset triggers are recorded in each trial's data (a browser cannot drive a
     parallel port); online EEG synchronisation needs WebSerial/LSL or a photodiode.
+    A stimulus that collects its response is one trial, recorded as ``target``: it
+    accepts the keys from its onset, shows the stimulus for its duration and stays
+    open for the timeout after it, a key ends it, and ``rt`` runs from the onset.
 
     The page embeds every presentation version (see :func:`presentation_versions`) and
     runs one, named in its address: ``?version=K``, ``?list=K`` when there are no

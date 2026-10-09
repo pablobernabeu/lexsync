@@ -94,6 +94,19 @@ define inline_script lexsync_version_check
 	        raise RuntimeError(u'lexsync: stopped at the version check, because participant %d would normally run version %d.' % (_p, _expected))
 	__end__
 
+define inline_script lexsync_trial_start
+	set description "Clear the previous trial's responses"
+	set _prepare ""
+	___run__
+	var.response = u''
+	var.response_time = u''
+	var.timed_out = u''
+	var.correct = u''
+	var.question_response = u''
+	var.question_rt = u''
+	var.lexsync_region_rts = u''
+	__end__
+
 define inline_script lexsync_e0
 	set description "Show stimulus and send onset-aligned trigger"
 	set _prepare ""
@@ -126,32 +139,30 @@ define inline_script lexsync_e2
 	__end__
 
 define inline_script lexsync_e3
-	set description "Show stimulus and send onset-aligned trigger"
+	set description "Show the stimulus and collect the response from its onset"
 	set _prepare ""
 	___run__
 	c = Canvas()
 	c.text(_lexsync_row()[u'target'])
-	var.onset_time = c.show()
+	_t0 = c.show()
+	var.onset_time = _t0
 	send_trigger(int(var.get(u'condition_trigger', _eval=False)))
-	clock.sleep(800)
+	_kb = Keyboard(keylist=[u'left', u'right'])
+	_kb.flush()
+	_key, _t = _kb.get_key(timeout=800)
+	if _key is None:
+	    c = Canvas()
+	    c.show()
+	    _key, _t = _kb.get_key(timeout=2000)
+	var.response = _key
+	var.response_time = u'' if _key is None else _t - _t0
+	var.timed_out = 1 if _key is None else 0
+	_want = str(_lexsync_row().get(u'answer', u'')).strip()
+	_got = u'' if _key is None else str(_key).strip()
+	var.correct = (1 if _got == _want else 0) if _want else u''
 	__end__
 
-define inline_script lexsync_e4_blank
-	set description "Clear the screen for the response window"
-	set _prepare ""
-	___run__
-	c = Canvas()
-	c.show()
-	__end__
-
-define keyboard_response lexsync_e4
-	set timeout 2000
-	set flush yes
-	set duration keypress
-	set description "Collect a response"
-	set allowed_responses "left;right"
-
-define inline_script lexsync_e5
+define inline_script lexsync_e4
 	set description "Show stimulus and send onset-aligned trigger"
 	set _prepare ""
 	___run__
@@ -160,16 +171,31 @@ define inline_script lexsync_e5
 	clock.sleep(250)
 	__end__
 
+define inline_script lexsync_record
+	set description "Copy the trial's labels for the logger"
+	set _prepare ""
+	___run__
+	_row = _lexsync_row()
+	var.lexsync_condition = _row.get(u'condition', u'')
+	var.lexsync_block = _row.get(u'block', u'')
+	var.lexsync_answer = _row.get(u'answer', u'')
+	__end__
+
+define logger lexsync_logger
+	set description "Log the trial"
+	set auto_log yes
+
 define sequence lexsync_trial
 	set flush_keyboard yes
 	set description "One trial: the paradigm event sequence"
+	run lexsync_trial_start always
 	run lexsync_e0 always
 	run lexsync_e1 always
 	run lexsync_e2 always
 	run lexsync_e3 always
-	run lexsync_e4_blank always
 	run lexsync_e4 always
-	run lexsync_e5 always
+	run lexsync_record always
+	run lexsync_logger always
 
 define loop lexsync_loop
 	set source_file "en_rastle_repro_english_list1_opensesame.csv"

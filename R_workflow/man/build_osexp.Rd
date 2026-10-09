@@ -35,7 +35,8 @@ the loop and warns when the participant would normally run another. \code{NULL} 
 default) marks a design with one version, which needs no check.}
 }
 \value{
-The experiment's text, one string.
+The experiment's text, one string. Each trial starts by clearing the last
+trial's responses and ends with a logger item.
 }
 \description{
 The loop table and its companion text table are both looked up through OpenSesame's

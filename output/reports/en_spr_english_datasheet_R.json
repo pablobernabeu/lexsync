@@ -60,6 +60,9 @@
     "versions": 2,
     "assignment": "version = ((participant - 1) mod 2) + 1 unless a version is given at launch"
   },
+  "presentation": {
+    "response_windows": []
+  },
   "resampling": null,
   "items": {
     "n_total": 20,
@@ -86,7 +89,7 @@
       "os": "Windows x86-64"
     },
     "design_sha256": "f1af82c75f9910c2cdf16f883a188ca1842f83a7ec995e051f7a0238ef613d95",
-    "schema_sha256": "960331bc24fc002527fc36aca87b4fbf1c7504a75e520a1287918761c53abdb3"
+    "schema_sha256": "22c5b2140a199af60f71aa1d00de88b3f487147668393fc752be85538d44d979"
   },
   "artifacts": [
     {
@@ -95,19 +98,19 @@
     },
     {
       "file": "output/experiments/en_spr_english_psychopy.py",
-      "sha256": "18482a8a872af41e3de5745363031ba40f159ebd6cab019f56e77b117fc5087d"
+      "sha256": "a8144c9a27b6897d705a96a7900b8eedd7cf902c95e9b439f99887209f862beb"
     },
     {
       "file": "output/experiments/en_spr_english_list1.osexp",
-      "sha256": "28d0a98f23371210740ec4ac97ebb3c22605a7fbcbf173b153e776ae867850e9"
+      "sha256": "caea1cc00c94f00f0b54340c19feb998199e56f0ad53145cdfe994b4c86985b3"
     },
     {
       "file": "output/experiments/en_spr_english_list2.osexp",
-      "sha256": "9b8b7b764f2094690858d3e6943e0c785421f392ed8c47a8cdcef35ecdeb2bb5"
+      "sha256": "858e8c5711766bb4714c90b17267315ef8eb515087c67178cb1b2a5e17b294ef"
     },
     {
       "file": "output/experiments/en_spr_english.html",
-      "sha256": "08de885e81524298e48697a6a6622890f634e7f9a6c3d6a1c47dc041fef2a7a0"
+      "sha256": "8cf6ece953ac380ae3d973111c55da0d5219d5f1595de691d38d3949d202cd86"
     },
     {
       "file": "output/experiments/en_spr_english_psychopy.csv",

@@ -250,7 +250,7 @@ def test_read_config_refuses_a_duplicated_mapping_key(tmp_path):
 # The two key vocabularies, joined by newlines and hashed. test-io_utils.R pins the
 # same digests for .DESIGN_KEYS and .SCHEMA_KEYS, so a key added to one engine only
 # fails both suites.
-DESIGN_KEYS_SHA256 = "796398d8b83714f232db2f6229bb08d16b109fec67e05422cc8c9a7eea777faa"
+DESIGN_KEYS_SHA256 = "f6c22a0dce12a78c551304cc05df665ebcbeda7cec6120d24a2b3f85ca854245"
 SCHEMA_KEYS_SHA256 = "a62e1a4f7cc410ef37d511e9758107b414bedec2c7ab008704c57171fc7f0e5c"
 
 
@@ -319,6 +319,21 @@ def test_the_tie_break_key_is_read_in_a_design_and_a_schema():
     from lexsync.design import validate_design
     assert validate_design(_valid_design(matching={"tie_break": "hash"}),
                            {"matching": {"tie_break": "bytes"}}) == []
+
+
+def test_a_response_events_from_is_a_key_lexsync_reads():
+    """`from` on a response event says where its window opens, so it is neither refused
+    nor noted, and a value other than onset or offset is refused before anything is
+    written. Pinned identically in test-io_utils.R."""
+    from lexsync.design import validate_design
+    events = [{"type": "text", "content": "{word}", "duration_ms": 800},
+              {"type": "response", "keys": ["f", "j"], "from": "offset"}]
+    assert validate_design(_valid_design(events=events), {}) == []
+    with pytest.raises(ValueError, match=re.escape(
+            "lexsync: event 2 gives `from: later`, but a response event takes from: onset "
+            "or from: offset.")):
+        validate_design(_valid_design(events=[events[0], dict(events[1], **{"from": "later"})]),
+                        {})
 
 
 def test_repeated_and_blank_names_are_judged_alike_in_both_engines():

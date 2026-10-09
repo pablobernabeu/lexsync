@@ -28,3 +28,12 @@ the participant's by the rule \verb{((participant - 1) mod V) + 1} from
 \code{--participant}, else what a start-up dialogue asks for. A version the script does
 not have stops the run with a message.
 }
+\details{
+Each run writes \verb{data/<base>_p<participant>_v<version>_<date>-<time>.csv} beside
+the script, without the \verb{_p} part when no participant number is given, one row per
+trial, each written as its trial ends. A row holds the run, the trial's fields and
+trigger codes, the response and its reaction time from the onset of the stimulus it
+answers, whether the window closed without one, whether the key was the trial's
+\code{answer}, the self-paced reading times, the question's response and reaction time,
+the measured refresh rate, and each event's realised flips and onset.
+}

@@ -206,8 +206,12 @@ test_that("the OpenSesame emitter guards a restricted event and refuses an impos
   # and RAISES; only a non-None sentinel yields a value.
   expect_false(grepl("var.get(u'response', None)", txt, fixed = TRUE))
   # A keyboard_response is not an inline script, so the guard cannot reach it; saying so
-  # beats emitting an experiment that ignores the restriction.
-  resp <- ev[[2]]; resp$blocks <- list("practice")
+  # beats emitting an experiment that ignores the restriction. Only a response kept after
+  # the stimulus with `from: offset` is one, since a response from the stimulus's onset
+  # runs in the stimulus's own script, which the guard does reach.
+  delayed <- blk_feedback_events()[1:2]
+  delayed[[2]]$from <- "offset"
+  resp <- lexsync:::render_events(delayed, list(), 60)[[2]]; resp$blocks <- list("practice")
   expect_error(lexsync:::.osexp_event_block("ev_r", resp), "cannot be restricted to blocks")
 })
 
@@ -248,8 +252,10 @@ test_that("a feedback event with nothing to score is refused", {
   ev <- list(list(type = "text", content = "{target}", duration_ms = 800L),
              list(type = "feedback", answer = "answer", duration_ms = 600L))
   expect_error(lexsync:::render_events(ev, list(), 60), "no response or question event")
-  # With one, it renders.
+  # With one, it renders. The response is collected from the text's onset, so the two
+  # are one rendered event.
   ok <- append(ev, list(list(type = "response", keys = c("f", "j"), timeout_ms = 2000L)),
                after = 1L)
-  expect_length(lexsync:::render_events(ok, list(), 60), 3L)
+  expect_identical(vapply(lexsync:::render_events(ok, list(), 60), function(r) r$type,
+                          character(1)), c("text", "feedback"))
 })

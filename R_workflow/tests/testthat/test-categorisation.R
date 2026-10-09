@@ -98,15 +98,16 @@ test_that("the jsPsych export carries the cue and the answer", {
 test_that("the rendered events use milliseconds", {
   d <- list(paradigm = "categorisation", name = "c", language = "english")
   rendered <- lexsync:::render_events(resolve_events(d), list(), 60)
+  # The response is collected from the target's onset, so it renders with the target.
   expect_identical(vapply(rendered, function(r) r$type, character(1)),
-                   c("fixation", "text", "text", "response", "blank"))
+                   c("fixation", "text", "text", "blank"))
   expect_identical(rendered[[1]]$ms, 500L)
   expect_identical(rendered[[2]]$ms, 750L)
   expect_identical(rendered[[2]]$field, "category")
   expect_identical(rendered[[3]]$ms, 800L)
   expect_identical(rendered[[3]]$field, "target")
-  expect_equal(rendered[[4]]$timeout, 2.5)
-  expect_identical(rendered[[5]]$ms, 250L)
+  expect_equal(rendered[[3]]$respond$timeout, 2.5)
+  expect_identical(rendered[[4]]$ms, 250L)
 })
 
 test_that("readr's logical inference is neutralised", {

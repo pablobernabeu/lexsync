@@ -232,8 +232,105 @@ resolve_trial_timing <- function(stimuli, design, schema) {
 #' consumes: OpenSesame and jsPsych schedule it directly, and the PsychoPy script
 #' converts it back into whole flips against the refresh rate it measures at
 #' start-up.
+#'
+#' A response collected from the onset of the text event before it (see
+#' `.response_from()`) is rendered with that event, as its `respond` entry (`keys`
+#' and `timeout`). The text keeps `ms` as its longest display time, and the window
+#' runs from its onset for `ms` plus the timeout, so the total window is the one the
+#' two events had. A response collected from the offset stays an event of its own.
+#' Keys are rendered as lists, which jsonlite writes as arrays even for one key.
 #' @keywords internal
 render_events <- function(events, timing, hz = 60) {
+  rendered <- .render_each(events, timing, hz)
+  out <- list()
+  for (i in seq_along(events)) {
+    r <- rendered[[i]]
+    if (identical(r[["type"]], "response") && identical(.response_from(events, i), "onset")) {
+      text <- out[[length(out)]]
+      # The merged event runs where the text runs, so a response restricted to other
+      # blocks than its stimulus has no window to open.
+      if (!identical(unlist(r[["blocks"]]), unlist(text[["blocks"]]))) {
+        stop(sprintf(paste("lexsync: event %d collects its response from the onset of event",
+                           "%d, so the two must run in the same blocks; give them the same",
+                           "`blocks`, or use from: offset."), i, i - 1L), call. = FALSE)
+      }
+      text$respond <- list(keys = r[["keys"]], timeout = r[["timeout"]])
+      out[[length(out)]] <- text
+      next
+    }
+    out[[length(out) + 1L]] <- r
+  }
+  out
+}
+
+# Where response event `i`, counted from 1, opens its window: "onset" or "offset".
+# From "onset", the window opens with the text event just before the response, so a
+# key pressed while that stimulus is on screen counts and the reaction time runs from
+# its onset. From "offset", it opens when the stimulus has gone, for a design that asks
+# the participant to wait. A design says which with `from:`, and without it a response
+# after a text event is collected from the onset and any other from the offset, so a
+# response after a blank keeps the window it had. Must match _response_from in
+# scripting.py.
+.response_from <- function(events, i) {
+  ev <- events[[i]]
+  prev <- if (i > 1L) events[[i - 1L]] else NULL
+  after_text <- !is.null(prev) && identical(prev[["type"]], "text")
+  given <- ev[["from"]]
+  if (is.null(given)) return(if (after_text) "onset" else "offset")
+  if (!is.character(given) || length(given) != 1L || !(given %in% c("onset", "offset"))) {
+    stop(sprintf(paste("lexsync: event %d gives `from: %s`, but a response event takes",
+                       "from: onset or from: offset."), i, .shown(given)), call. = FALSE)
+  }
+  if (identical(given, "onset") && !after_text) {
+    what <- if (is.null(prev)) "no event precedes it" else
+      sprintf("event %d is a %s", i - 1L, .shown(prev[["type"]]))
+    stop(sprintf(paste("lexsync: event %d collects its response from the onset of the",
+                       "preceding stimulus, but %s; use from: offset."), i, what),
+         call. = FALSE)
+  }
+  given
+}
+
+# A rendered timeout, in seconds, as the whole milliseconds the design declared.
+# Rounded through .round_dp. as.integer() truncated 1.001 * 1000, which is
+# 1000.9999999999999 in binary floating point, so a declared 1,001 ms was written as
+# 1,000, and 95 of the whole-millisecond values from 1 to 10,000 came out one short.
+# Must match _whole_ms in scripting.py.
+.whole_ms <- function(seconds) as.integer(.round_dp(as.numeric(seconds) * 1000, 0))
+
+# Each response event's window, as the datasheet records it: one list(event, from,
+# window_ms) per response event, where `event` counts the design's events from 1. A
+# window from the onset runs for the stimulus's duration and the timeout, and one from
+# the offset for the timeout. When the stimulus's duration varies by trial, window_ms is
+# NA (null in the JSON record) and the entry adds the duration_column and the timeout_ms
+# that make it up. Whole milliseconds, as every target writes them. Mirrors
+# _response_windows in scripting.py.
+.response_windows <- function(events, timing, hz) {
+  rendered <- .render_each(events, timing, hz)
+  out <- list()
+  for (i in seq_along(rendered)) {
+    r <- rendered[[i]]
+    if (!identical(r[["type"]], "response")) next
+    start <- .response_from(events, i)
+    timeout_ms <- .whole_ms(r[["timeout"]])
+    entry <- list(event = i, from = start)
+    stimulus <- if (identical(start, "onset")) rendered[[i - 1L]] else NULL
+    if (is.null(stimulus)) {
+      entry$window_ms <- timeout_ms
+    } else if (!is.null(stimulus[["ms_column"]])) {
+      entry <- c(entry, list(window_ms = NA_integer_,
+                             duration_column = stimulus[["ms_column"]],
+                             timeout_ms = timeout_ms))
+    } else {
+      entry$window_ms <- as.integer(stimulus[["ms"]]) + timeout_ms
+    }
+    out[[length(out) + 1L]] <- entry
+  }
+  out
+}
+
+# Each event rendered on its own, before a response joins its stimulus.
+.render_each <- function(events, timing, hz) {
   timing <- timing %||% list()
   # A design's timing block was previously read key by key, so a typo such as
   # `fixation_frame` was silently ignored and the event kept a default duration.
@@ -300,14 +397,17 @@ render_events <- function(events, timing, hz = 60) {
       spec <- trigger_spec(ev[["critical_region_trigger"]])
       if (!is.null(spec)) r$crit_trigger <- spec
     } else if (t == "response") {
-      r$keys <- .keys_of(ev, c("left", "right"))
+      # A list, which jsonlite writes as an array even for one key, as the Python
+      # engine writes it. A character vector of one became a bare string, and the
+      # PsychoPy runner then split "space" into five one-letter keys.
+      r$keys <- as.list(.keys_of(ev, c("left", "right")))
       # .round_dp, not round(): the timeout is written into experiment files both
       # engines emit as the same bytes, and the two languages' own rounders
       # disagree on 3-dp halfway cases (see .round_dp in io_utils.R).
       r$timeout <- .round_dp((ev[["timeout_ms"]] %||% 2000) / 1000, 3)
     } else if (t == "question") {
       r$field <- content_field(ev[["content"]])
-      r$keys <- .keys_of(ev, c("f", "j"))
+      r$keys <- as.list(.keys_of(ev, c("f", "j")))
       r$timeout <- .round_dp((ev[["timeout_ms"]] %||% 5000) / 1000, 3)
     } else if (t == "feedback") {
       # Feedback compares the key the participant pressed against the key the item says
@@ -516,6 +616,14 @@ loop_table <- function(stimuli, events = NULL) {
 #' `--participant`, else what a start-up dialogue asks for. A version the script does
 #' not have stops the run with a message.
 #'
+#' Each run writes `data/<base>_p<participant>_v<version>_<date>-<time>.csv` beside
+#' the script, without the `_p` part when no participant number is given, one row per
+#' trial, each written as its trial ends. A row holds the run, the trial's fields and
+#' trigger codes, the response and its reaction time from the onset of the stimulus it
+#' answers, whether the window closed without one, whether the key was the trial's
+#' `answer`, the self-paced reading times, the question's response and reaction time,
+#' the measured refresh rate, and each event's realised flips and onset.
+#'
 #' @param stimuli Stimuli with trigger columns (see [assign_triggers()]).
 #' @param design A parsed design configuration.
 #' @param schema The parsed global schema (trigger and presentation settings).
@@ -544,6 +652,8 @@ export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
     DESIGN = clean_meta(design[["name"]], "the design's `name`"),
     LANGUAGE = clean_meta(design[["language"]], "the design's `language`"),
     CONDITIONS_FILE = csv_name,
+    # The data files are named after the experiment, as data/<base>_p<n>_v<k>_...
+    BASE = base,
     TRIGGER_ADDRESS = clean_port(triggers[["parallel_address"]] %||% "0x0378"),
     TRIGGER_HOLD_MS = sprintf("%.17g", .trigger_hold_ms(schema)),
     # Through %.17g like its neighbours, never default stringification: R's
@@ -639,7 +749,23 @@ export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
     paste0("    ", body))
 }
 
-.osexp_event_block <- function(name, ev) {
+# Lines that score the key held in `key` against the trial's `answer`: var.correct
+# becomes 1 or 0, or stays empty when the trial names no answer. Computed here, not by
+# OpenSesame's correct_response, whose variable syntax differs between 3.3 ([answer])
+# and 4.x ({answer}), and whose answer would have to come from the variable store,
+# which evaluates text. Must match _osexp_correct in scripting.py.
+.osexp_correct <- function(key) {
+  c("_want = str(_lexsync_row().get(u'answer', u'')).strip()",
+    sprintf("_got = u'' if %s is None else str(%s).strip()", key, key),
+    "var.correct = (1 if _got == _want else 0) if _want else u''")
+}
+
+# One rendered event's lines and run names. `scores` says whether a response or
+# question this event collects is the one var.correct scores: the design's response
+# events, or its questions when it has no response event. `feedback_scores` names the
+# variable a feedback event reads, "response" or "question_response", after whichever
+# collected a key last. Must match _osexp_event_block in scripting.py.
+.osexp_event_block <- function(name, ev, scores = TRUE, feedback_scores = "response") {
   t <- ev[["type"]]
   blocks <- ev[["blocks"]]
   if (!is.null(blocks) && length(blocks) && t == "response") {
@@ -658,6 +784,35 @@ export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
     sprintf("int(float(var.get(%s, _eval=False)))",
             .pyq(clean_column(ev[["ms_column"]], "a jittered duration's `as`"))) else
     sprintf("%d", as.integer(ev[["ms"]] %||% 0L))
+  if (identical(t, "text") && !is.null(ev[["respond"]])) {
+    # The stimulus collects its own response, from its onset. The keyboard is flushed
+    # once the trigger is out, so nothing pressed before the stimulus counts, and polled
+    # while the stimulus is shown. Without a key by its end, the screen blanks and the
+    # keyboard is polled for the timeout, so the window is the one the stimulus and a
+    # separate response event had. A key ends the event either way.
+    respond <- ev[["respond"]]
+    keylist <- paste(vapply(unlist(respond[["keys"]]), .pyq, character(1)), collapse = ", ")
+    body <- c("c = Canvas()", sprintf("c.text(%s)", .content_expr(ev)), "_t0 = c.show()",
+              "var.onset_time = _t0")
+    trig <- .trigger_expr(ev[["trigger"]])
+    if (!is.null(trig)) body <- c(body, sprintf("send_trigger(%s)", trig))
+    body <- c(body,
+              sprintf("_kb = Keyboard(keylist=[%s])", keylist),
+              "_kb.flush()",
+              sprintf("_key, _t = _kb.get_key(timeout=%s)", sleep_arg),
+              "if _key is None:",
+              "    c = Canvas()",
+              "    c.show()",
+              sprintf("    _key, _t = _kb.get_key(timeout=%d)", .whole_ms(respond[["timeout"]])),
+              "var.response = _key",
+              "var.response_time = u'' if _key is None else _t - _t0",
+              "var.timed_out = 1 if _key is None else 0")
+    if (isTRUE(scores)) body <- c(body, .osexp_correct("_key"))
+    return(list(block = .inline_block(name, paste("Show the stimulus and collect the",
+                                                  "response from its onset"),
+                                      .osexp_block_guard(body, blocks)),
+                run = name))
+  }
   if (t %in% c("fixation", "text", "mask", "blank")) {
     body <- "c = Canvas()"
     if (t != "blank") body <- c(body, sprintf("c.text(%s)", .content_expr(ev)))
@@ -671,39 +826,49 @@ export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
   }
   if (t == "region") {
     trig <- .trigger_expr(ev[["crit_trigger"]])
+    # Each region is timed from its own onset, and the keyboard is flushed as it
+    # appears, so a key pressed before it cannot advance it.
     body <- c(
       sprintf("_regions = [r for r in %s.split(%s) if r != u'']", .text_expr(ev[["field"]]),
               .pyq(ev[["sep"]] %||% "|")),
       # An empty cell, a sentence with no critical region, reads as 0: no trigger.
       "_crit = int(var.get(u'critical_region', 0, _eval=False) or 0)",
       sprintf("_kb = Keyboard(keylist=[%s], timeout=None)", .pyq(ev[["key"]] %||% "space")),
+      "_rts = []",
       "for _i, _region in enumerate(_regions, start=1):",
-      "    c = Canvas(); c.text(_region); c.show()")
+      "    c = Canvas(); c.text(_region); _t0 = c.show()")
     if (!is.null(trig)) body <- c(body, sprintf("    if _i == _crit: send_trigger(%s)", trig))
-    body <- c(body, "    _kb.get_key()")
+    body <- c(body, "    _kb.flush()", "    _key, _t = _kb.get_key()",
+              "    _rts.append(u'%.1f' % (_t - _t0))",
+              "var.lexsync_region_rts = u'|'.join(_rts)")
     return(list(block = .inline_block(name, "Self-paced reading region by region",
                                       .osexp_block_guard(body, blocks)), run = name))
   }
   if (t == "question") {
-    keys_list <- paste(vapply(ev[["keys"]] %||% c("f", "j"), .pyq, character(1)), collapse = ", ")
+    keys_list <- paste(vapply(unlist(ev[["keys"]] %||% c("f", "j")), .pyq, character(1)),
+                       collapse = ", ")
     body <- c(
-      sprintf("c = Canvas(); c.text(%s); c.show()", .text_expr(ev[["field"]])),
+      sprintf("c = Canvas(); c.text(%s); _t0 = c.show()", .text_expr(ev[["field"]])),
       sprintf("_kb = Keyboard(keylist=[%s], timeout=%d)", keys_list,
-              as.integer((ev[["timeout"]] %||% 5) * 1000)),
-      "var.response, var.response_time = _kb.get_key()")
+              .whole_ms(ev[["timeout"]] %||% 5)),
+      "_kb.flush()",
+      "_key, _t = _kb.get_key()",
+      "var.question_response = _key",
+      "var.question_rt = u'' if _key is None else _t - _t0")
+    if (isTRUE(scores)) body <- c(body, .osexp_correct("_key"))
     return(list(block = .inline_block(name, "Comprehension question",
                                       .osexp_block_guard(body, blocks)), run = name))
   }
   if (t == "feedback") {
-    # `var.response` is set by the keyboard_response above. The answer column (or
-    # whichever column the event names) holds the KEY that is correct, so scoring is a
-    # string comparison. A timeout is reported separately, because on a timed task it
-    # means something different from a wrong key. OpenSesame 4.x stores it as None and
-    # 3.3 as the string 'None', so both count as no response.
+    # The key comes from whichever response or question collected one last. The answer
+    # column (or whichever column the event names) holds the KEY that is correct, so
+    # scoring is a string comparison. A timeout is reported separately, because on a
+    # timed task it means something different from a wrong key. OpenSesame 4.x stores it
+    # as None and 3.3 as the string 'None', so both count as no response.
     body <- c(
       sprintf("_want = str(_lexsync_row().get(u'%s', u'')).strip()",
               clean_column(ev[["answer"]] %||% "answer", "a feedback event's `answer`")),
-      "_got = var.get(u'response', u'', _eval=False)",
+      sprintf("_got = var.get(u'%s', u'', _eval=False)", feedback_scores),
       "_got = u'' if _got is None else str(_got).strip()",
       sprintf("if _got in (u'', u'None'): _msg = %s", .pyq(ev[["no_response"]] %||% "Too slow")),
       sprintf("elif _got == _want: _msg = %s", .pyq(ev[["correct"]] %||% "Correct")),
@@ -714,7 +879,7 @@ export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
                                       .osexp_block_guard(body, blocks)), run = name))
   }
   if (t == "response") {
-    keys <- paste(ev[["keys"]] %||% c("left", "right"), collapse = ";")
+    keys <- paste(unlist(ev[["keys"]] %||% c("left", "right")), collapse = ";")
     # A keyboard_response draws nothing, so the preceding canvas would stay up for
     # the whole response window. Blank it first, so the stimulus offsets at its own
     # duration as it does in the PsychoPy and jsPsych targets.
@@ -722,13 +887,49 @@ export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
       .inline_block(sprintf("%s_blank", name), "Clear the screen for the response window",
                     c("c = Canvas()", "c.show()")),
       sprintf("define keyboard_response %s", name),
-      paste0("\tset timeout ", as.integer((ev[["timeout"]] %||% 2) * 1000)),
+      paste0("\tset timeout ", .whole_ms(ev[["timeout"]] %||% 2)),
       "\tset flush yes", "\tset duration keypress",
       '\tset description "Collect a response"',
       sprintf('\tset allowed_responses "%s"', keys), "")
-    return(list(block = block, run = c(sprintf("%s_blank", name), name)))
+    # The keyboard_response records the key and its time from the window's onset.
+    # Whether it timed out, and whether the key was the trial's answer, are recorded
+    # here, as the onset-locked script records them.
+    score <- c("_key = var.get(u'response', u'', _eval=False)",
+               "_timed_out = _key is None or str(_key).strip() in (u'', u'None')",
+               "var.timed_out = 1 if _timed_out else 0",
+               "if _timed_out:",
+               "    _key = None",
+               "    var.response_time = u''")
+    if (isTRUE(scores)) score <- c(score, .osexp_correct("_key"))
+    block <- c(block, .inline_block(sprintf("%s_score", name),
+                                    "Record the timeout and the accuracy", score))
+    return(list(block = block, run = c(sprintf("%s_blank", name), name,
+                                       sprintf("%s_score", name))))
   }
   stop(sprintf("lexsync: unknown event type '%s'.", t), call. = FALSE)
+}
+
+# The inline script that opens every trial by clearing what the last one recorded.
+# OpenSesame keeps a variable from one trial to the next, so a response event that does
+# not run in a block would otherwise leave the previous trial's key in the log and for
+# the feedback. Must match _osexp_trial_start in scripting.py.
+.osexp_trial_start <- function() {
+  vars <- c("response", "response_time", "timed_out", "correct", "question_response",
+            "question_rt", "lexsync_region_rts")
+  .inline_block("lexsync_trial_start", "Clear the previous trial's responses",
+                sprintf("var.%s = u''", vars))
+}
+
+# The inline script that copies the trial's labels into the variables the logger
+# writes. The labels stay out of the loop table, which OpenSesame evaluates, so the
+# logger would not see them. Nothing reads these variables back, and both versions'
+# loggers read without evaluation. Must match _osexp_record in scripting.py.
+.osexp_record <- function() {
+  .inline_block("lexsync_record", "Copy the trial's labels for the logger",
+                c("_row = _lexsync_row()",
+                  "var.lexsync_condition = _row.get(u'condition', u'')",
+                  "var.lexsync_block = _row.get(u'block', u'')",
+                  "var.lexsync_answer = _row.get(u'answer', u'')"))
 }
 
 # The inline script that checks the subject number against this file's version. A
@@ -779,7 +980,8 @@ export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
 #'   more than one version, it checks OpenSesame's subject number against its own before
 #'   the loop and warns when the participant would normally run another. `NULL` (the
 #'   default) marks a design with one version, which needs no check.
-#' @return The experiment's text, one string.
+#' @return The experiment's text, one string. Each trial starts by clearing the last
+#'   trial's responses and ends with a logger item.
 #' @keywords internal
 build_osexp <- function(design, conditions_file, schema, rendered, font = "mono",
                         text_file = NULL, version = NULL, n_versions = NULL) {
@@ -837,12 +1039,31 @@ build_osexp <- function(design, conditions_file, schema, rendered, font = "mono"
     "send_trigger(0)"
   )
 
-  event_blocks <- character(0); run_names <- character(0)
+  # var.correct scores the response, or the question in a design with no response
+  # event, as the PsychoPy data file does.
+  collects <- function(ev) {
+    if (identical(ev[["type"]], "response") || !is.null(ev[["respond"]])) "response"
+    else if (identical(ev[["type"]], "question")) "question" else NA_character_
+  }
+  has_response <- any(vapply(rendered, collects, character(1)) %in% "response")
+  event_blocks <- .osexp_trial_start(); run_names <- "lexsync_trial_start"
+  last <- "response"
   for (i in seq_along(rendered)) {
-    eb <- .osexp_event_block(sprintf("lexsync_e%d", i - 1L), rendered[[i]])
+    kind <- collects(rendered[[i]])
+    eb <- .osexp_event_block(
+      sprintf("lexsync_e%d", i - 1L), rendered[[i]],
+      scores = identical(kind, if (has_response) "response" else "question"),
+      feedback_scores = if (identical(last, "question")) "question_response" else "response")
     event_blocks <- c(event_blocks, eb$block)
     run_names <- c(run_names, eb$run)
+    if (!is.na(kind)) last <- kind
   }
+  # OpenSesame logs nothing without a logger item. This one runs last in every trial
+  # and writes every variable, the labels copied in just before it included.
+  event_blocks <- c(event_blocks, .osexp_record(),
+                    "define logger lexsync_logger", '\tset description "Log the trial"',
+                    "\tset auto_log yes", "")
+  run_names <- c(run_names, "lexsync_record", "lexsync_logger")
 
   header <- c(
     "---", "API: 2.1", "OpenSesame: 3.3.14", "Platform: nt", "---",
@@ -894,6 +1115,15 @@ build_osexp <- function(design, conditions_file, schema, rendered, font = "mono"
 #' text, `condition`, `block` and `answer` are in `<base>_opensesame_text.csv`, which
 #' the inline scripts read with Python's `csv` module, so OpenSesame never evaluates
 #' them. Copy both tables with the experiment.
+#'
+#' Every trial is logged. A response after a text event is collected by that event's
+#' script from the stimulus's onset, which sets `response`, `response_time`,
+#' `timed_out` and `correct`. A response kept after the stimulus with `from: offset` is
+#' a keyboard_response, and a script after it sets `timed_out` and `correct`.
+#' Self-paced reading sets `lexsync_region_rts` and a question `question_response` and
+#' `question_rt`. A script clears these as each trial starts, another copies the
+#' trial's labels into `lexsync_condition`, `lexsync_block` and `lexsync_answer`, and a
+#' logger item ends the trial.
 #'
 #' A design with more than one presentation version, one per (replicate, list) pair
 #' of the trials, gets one experiment per version instead, each with its own two
@@ -992,12 +1222,19 @@ export_opensesame <- function(stimuli, design, schema, outdir, base = NULL) {
                    down = "arrowdown", space = " ", "return" = "enter")
 
 .map_keys_jspsych <- function(rendered) {
-  mapk <- function(k) { m <- .JSPSYCH_KEYS[k]; unname(ifelse(is.na(m), k, m)) }
+  # Keys given as a list stay a list, which jsonlite writes as an array even for one.
+  mapk <- function(k) {
+    v <- unlist(k, use.names = FALSE)
+    m <- .JSPSYCH_KEYS[v]
+    out <- unname(ifelse(is.na(m), v, m))
+    if (is.list(k)) as.list(out) else out
+  }
   lapply(rendered, function(e) {
     # [[ ]], not $: `$` partial-matches on a list, so `e$key` returns the value of
     # `keys` and the assignment then adds a `key` the Python engine never emits.
     if (!is.null(e[["keys"]])) e[["keys"]] <- mapk(e[["keys"]])
     if (!is.null(e[["key"]])) e[["key"]] <- mapk(e[["key"]])
+    if (!is.null(e[["respond"]])) e[["respond"]][["keys"]] <- mapk(e[["respond"]][["keys"]])
     e
   })
 }
@@ -1024,7 +1261,9 @@ export_opensesame <- function(stimuli, design, schema, outdir, base = NULL) {
 #' internet connection; the trial data are embedded and the responses are saved
 #' locally, so no server is required either to run it or to collect them. Onset
 #' triggers are recorded in each trial's data (a browser cannot drive a parallel
-#' port).
+#' port). A stimulus that collects its response is one trial, recorded as `target`:
+#' it accepts the keys from its onset, shows the stimulus for its duration and stays
+#' open for the timeout after it, a key ends it, and `rt` runs from the onset.
 #'
 #' The page embeds every presentation version of the design, one per (replicate,
 #' list) pair, and runs one, named in its address: `?version=K`, `?list=K` when there

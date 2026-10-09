@@ -289,7 +289,7 @@ test_that("the_key_vocabularies_agree_across_engines", {
   digest_of <- function(keys) digest::digest(paste(keys, collapse = "\n"), algo = "sha256",
                                              serialize = FALSE)
   expect_identical(digest_of(.DESIGN_KEYS),
-                   "796398d8b83714f232db2f6229bb08d16b109fec67e05422cc8c9a7eea777faa")
+                   "f6c22a0dce12a78c551304cc05df665ebcbeda7cec6120d24a2b3f85ca854245")
   expect_identical(digest_of(.SCHEMA_KEYS),
                    "a62e1a4f7cc410ef37d511e9758107b414bedec2c7ab008704c57171fc7f0e5c")
 })
@@ -300,6 +300,20 @@ valid_design <- function(...) {
                            list(name = "low", define_by = list(frequency = c(1, 3)))),
          match_on = list("length")), list(...))
 }
+
+test_that("a_response_events_from_is_a_key_lexsync_reads", {
+  # `from` on a response event says where its window opens, so it is neither refused
+  # nor noted, and a value other than onset or offset is refused before anything is
+  # written. Pinned identically in test_io_utils.py.
+  text <- list(type = "text", content = "{word}", duration_ms = 800L)
+  response <- list(type = "response", keys = c("f", "j"), from = "offset")
+  expect_identical(validate_design(valid_design(events = list(text, response)), list()),
+                   character(0))
+  response$from <- "later"
+  expect_error(validate_design(valid_design(events = list(text, response)), list()),
+               paste("lexsync: event 2 gives `from: later`, but a response event takes",
+                     "from: onset or from: offset."), fixed = TRUE)
+})
 
 test_that("a_key_near_a_known_one_is_refused_and_any_other_is_noted", {
   # One edit is a typo for a key of up to five characters and two for a longer one;

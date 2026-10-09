@@ -41,12 +41,12 @@
 
 ## Suggested analysis
 
-- **Model:** `response ~ target.frequency + target.length + pair.overlap + (1 + target.frequency | subject) + (1 | item)` -- where the response is the trial outcome (e.g. reaction time or accuracy).
+- **Model:** `response ~ target.frequency + target.length + pair.overlap + (1 + target.frequency | subject) + (1 | item)` -- where the response is reaction time from the onset of `{target}`; responses collected for 2800 ms; a response ends the trial.
 - The predictor is kept continuous and analysed by regression or a mixed model rather than dichotomised (Kuperman, 2015; Liben-Nowell et al., 2019); the controls enter as covariates. Crossed random effects for subjects and items guard the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008); reduce the structure if it does not converge (Matuschek et al., 2017). Dotted dimension names are valid in R formulas but must be quoted as Q("...") in Patsy-style Python interfaces.
 
 ## Methods paragraph
 
-8 English prime-target pairs were selected to span target.frequency (a span of 1.45) continuously while holding target.length, pair.overlap near-constant, and the largest predictor-control correlation was |r| = 0.292, for analysis by regression or a mixed model rather than a between-condition contrast (Kuperman, 2015; Liben-Nowell et al., 2019). Materials were counterbalanced into 2 list(s) (a Latin-square rotation) and generated for PsychoPy, OpenSesame and jsPsych. Each participant was presented one of the 2 lists, assigned in rotation by participant number. The selection is deterministic and reproducible (lexsync 0.1.1), and the seed (2026) fixes the trial order.
+8 English prime-target pairs were selected to span target.frequency (a span of 1.45) continuously while holding target.length, pair.overlap near-constant, and the largest predictor-control correlation was |r| = 0.292, for analysis by regression or a mixed model rather than a between-condition contrast (Kuperman, 2015; Liben-Nowell et al., 2019). Materials were counterbalanced into 2 list(s) (a Latin-square rotation) and generated for PsychoPy, OpenSesame and jsPsych. Each participant was presented one of the 2 lists, assigned in rotation by participant number. Responses were collected from target onset until 2800 ms after it, and a response ended the trial. The selection is deterministic and reproducible (lexsync 0.1.1), and the seed (2026) fixes the trial order.
 
 ## Pre-registration template
 
@@ -66,7 +66,7 @@
 - Paradigm: priming
 
 ### Materials (from the lexsync datasheet)
-8 English prime-target pairs were selected to span target.frequency (a span of 1.45) continuously while holding target.length, pair.overlap near-constant, and the largest predictor-control correlation was |r| = 0.292, for analysis by regression or a mixed model rather than a between-condition contrast (Kuperman, 2015; Liben-Nowell et al., 2019). Materials were counterbalanced into 2 list(s) (a Latin-square rotation) and generated for PsychoPy, OpenSesame and jsPsych. Each participant was presented one of the 2 lists, assigned in rotation by participant number. The selection is deterministic and reproducible (lexsync 0.1.1), and the seed (2026) fixes the trial order.
+8 English prime-target pairs were selected to span target.frequency (a span of 1.45) continuously while holding target.length, pair.overlap near-constant, and the largest predictor-control correlation was |r| = 0.292, for analysis by regression or a mixed model rather than a between-condition contrast (Kuperman, 2015; Liben-Nowell et al., 2019). Materials were counterbalanced into 2 list(s) (a Latin-square rotation) and generated for PsychoPy, OpenSesame and jsPsych. Each participant was presented one of the 2 lists, assigned in rotation by participant number. Responses were collected from target onset until 2800 ms after it, and a response ended the trial. The selection is deterministic and reproducible (lexsync 0.1.1), and the seed (2026) fixes the trial order.
 
 ### Sampling plan
 - Sample size and justification:

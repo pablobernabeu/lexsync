@@ -76,7 +76,7 @@
   },
   "relational": null,
   "analysis": {
-    "response": "the trial outcome (e.g. reaction time or accuracy)",
+    "response": "reaction time from the onset of `{word}`; responses collected for 2500 ms; a response ends the trial",
     "suggested_model": "response ~ condition + (1 + condition | subject) + (1 | item)",
     "note": "Crossed random effects for subjects and items guard against the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). Begin with this maximal structure (Barr et al., 2013) and reduce it if the model does not converge (Matuschek et al., 2017). The formula is lme4 syntax, for lme4 in R or pymer4 in Python; statsmodels MixedLM cannot take it directly and needs the random effects restated in its own arguments. The equivalence tests in the realised control are post-selection diagnostics on deterministically selected items, not inferential tests over a sample."
   },
@@ -146,6 +146,15 @@
     "versions": 1,
     "assignment": "version = ((participant - 1) mod 1) + 1 unless a version is given at launch"
   },
+  "presentation": {
+    "response_windows": [
+      {
+        "event": 3,
+        "from": "onset",
+        "window_ms": 2500
+      }
+    ]
+  },
   "resampling": null,
   "items": {
     "n_total": 160,
@@ -172,7 +181,7 @@
       "os": "Windows x86-64"
     },
     "design_sha256": "cdd464cf93a8462ab1b600c9d85d29e43028f7f7a08e9091ef01bd4b4c3c03a2",
-    "schema_sha256": "960331bc24fc002527fc36aca87b4fbf1c7504a75e520a1287918761c53abdb3"
+    "schema_sha256": "22c5b2140a199af60f71aa1d00de88b3f487147668393fc752be85538d44d979"
   },
   "artifacts": [
     {
@@ -189,15 +198,15 @@
     },
     {
       "file": "output/experiments/en_ndensity_english_psychopy.py",
-      "sha256": "0309b9c909b771fe30aa880d91317143cff14a1671def39331a5615489f37230"
+      "sha256": "b1f633eb9e2f620d7ea64cc719667d21726a868fad2ef2b41318491cfeb31a0c"
     },
     {
       "file": "output/experiments/en_ndensity_english.osexp",
-      "sha256": "4a7b4caffa67ceb7646776266ac98e33fc1c59de881f06805d390ceb3fc60cb6"
+      "sha256": "1d2b941ec6a6c7dabdd31812e5b0013c869560b2f4b560bc9e3d9f4056348008"
     },
     {
       "file": "output/experiments/en_ndensity_english.html",
-      "sha256": "4a46f5ce5e624edcbc368d05c00078287440061b837d00d524e737611afeffd1"
+      "sha256": "4594a11aa313997e47b3cf8a96c8968e64dc5a9102a1be54596373e99fa9cd15"
     },
     {
       "file": "output/experiments/en_ndensity_english_psychopy.csv",

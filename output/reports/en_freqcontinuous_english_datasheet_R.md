@@ -35,12 +35,12 @@
 
 ## Suggested analysis
 
-- **Model:** `response ~ frequency + length + n_density + old20 + (1 + frequency | subject) + (1 | item)` -- where the response is the trial outcome (e.g. reaction time or accuracy).
+- **Model:** `response ~ frequency + length + n_density + old20 + (1 + frequency | subject) + (1 | item)` -- where the response is reaction time from the onset of `{word}`; responses collected for 2800 ms; a response ends the trial.
 - The predictor is kept continuous and analysed by regression or a mixed model rather than dichotomised (Kuperman, 2015; Liben-Nowell et al., 2019); the controls enter as covariates. Crossed random effects for subjects and items guard the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008); reduce the structure if it does not converge (Matuschek et al., 2017).
 
 ## Methods paragraph
 
-80 English items were selected to span frequency (a span of 3.05) continuously while holding length, n_density, old20 near-constant, and the largest predictor-control correlation was |r| = 0.165, for analysis by regression or a mixed model rather than a between-condition contrast (Kuperman, 2015; Liben-Nowell et al., 2019). Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (lexsync 0.1.1), and the seed (2026) fixes the trial order.
+80 English items were selected to span frequency (a span of 3.05) continuously while holding length, n_density, old20 near-constant, and the largest predictor-control correlation was |r| = 0.165, for analysis by regression or a mixed model rather than a between-condition contrast (Kuperman, 2015; Liben-Nowell et al., 2019). Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. Responses were collected from target onset until 2800 ms after it, and a response ended the trial. The selection is deterministic and reproducible (lexsync 0.1.1), and the seed (2026) fixes the trial order.
 
 ## Pre-registration template
 
@@ -60,7 +60,7 @@
 - Paradigm: factorial
 
 ### Materials (from the lexsync datasheet)
-80 English items were selected to span frequency (a span of 3.05) continuously while holding length, n_density, old20 near-constant, and the largest predictor-control correlation was |r| = 0.165, for analysis by regression or a mixed model rather than a between-condition contrast (Kuperman, 2015; Liben-Nowell et al., 2019). Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. The selection is deterministic and reproducible (lexsync 0.1.1), and the seed (2026) fixes the trial order.
+80 English items were selected to span frequency (a span of 3.05) continuously while holding length, n_density, old20 near-constant, and the largest predictor-control correlation was |r| = 0.165, for analysis by regression or a mixed model rather than a between-condition contrast (Kuperman, 2015; Liben-Nowell et al., 2019). Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. Responses were collected from target onset until 2800 ms after it, and a response ended the trial. The selection is deterministic and reproducible (lexsync 0.1.1), and the seed (2026) fixes the trial order.
 
 ### Sampling plan
 - Sample size and justification:

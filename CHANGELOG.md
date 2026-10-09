@@ -319,6 +319,38 @@ no function signature changes.
   said the vowel class covered the Latin-1 vowels, but it lacked æ. The
   `n_syllables` column of `zh_freqcontrast`'s stimuli is now empty, and its
   datasheets and run logs change with it. No selection changes.
+- Responses are collected from the onset of the stimulus they answer, and every
+  target records them. The response window used to open only when the target had
+  gone, 800 ms after its onset in lexical decision, and each target discarded a key
+  pressed while the target was on screen: jsPsych showed the target with no keys
+  allowed, PsychoPy's `waitKeys()` cleared earlier presses and OpenSesame's keyboard
+  item flushed them. jsPsych timed the reaction from the blank response screen, and
+  the PsychoPy and OpenSesame targets recorded no response at all, so no accuracy,
+  reaction time or reading time reached a data file. The 0.1.0 notes said that a
+  categorisation design's data were scoreable. That held for jsPsych only. A
+  response event after a text event now opens its window at that stimulus's onset,
+  for the same total window, and a response ends the trial. `from: offset` on a
+  response event keeps the delayed window, which is also the default after any other
+  event, and `from: onset` after such an event is refused. A response collected from
+  the onset runs where its stimulus runs, so a design that gives the two different
+  `blocks` is refused. The PsychoPy script writes
+  `data/<base>_p<participant>_v<version>_<date>-<time>.csv`, one row per trial,
+  written as it goes, with the response, its reaction time from the stimulus's onset,
+  timeouts, accuracy when the item names its answer, self-paced reading times, the
+  question's response, and each event's realised flips and onset. The OpenSesame
+  experiment collects the response in the stimulus's own script, clears the response
+  variables as each trial starts and logs every trial with a logger item. The jsPsych
+  page saves its CSV as before, and its target is now one trial whose `rt` runs from
+  the onset. The datasheet records each response window as
+  `presentation.response_windows`, says in `analysis.response` where a reaction time
+  starts, and its Methods text says when responses were collected. Every
+  demonstration's experiments, datasheets and run logs change. The twin-edge case
+  `os_hostile_text` gains a response that keeps the delayed window. No stimulus
+  moves.
+- OpenSesame response and question timeouts are written in whole milliseconds as
+  declared. A timeout of 1,001 ms was written as 1,000, because the value went
+  through seconds and back, and 95 of the whole-millisecond values from 1 to 10,000
+  came out a millisecond short. The demonstrations' timeouts were not affected.
 
 ### Security
 

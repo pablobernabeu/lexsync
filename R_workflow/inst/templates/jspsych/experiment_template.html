@@ -23,7 +23,10 @@
     fields (condition, item id, counterbalancing list and so on) alongside the
     onset marker (the 'marker' field), and the participant, version, list and
     replicate of the run, so responses can be scored without re-joining to the
-    stimulus table.
+    stimulus table. A stimulus that collects its own response is one trial, recorded
+    with lexsync_event 'target': it accepts the keys from its onset, shows the
+    stimulus for its duration and stays open for the timeout after it, a key ends
+    it, and its rt is timed from the onset.
     When the run finishes the data are offered as a CSV download (jsPsych
     localSave), so no server is required to collect them. A browser cannot drive a
     parallel port, so for online EEG synchronisation route the marker through
@@ -141,6 +144,7 @@
     const add = k => { if (!(k in seen)) { seen[k] = 1; keys.push(k); } };
     for (const ev of EVENTS) {
       if (ev.type === "response" || ev.type === "question") (ev.keys || []).forEach(add);
+      if (ev.respond) (ev.respond.keys || []).forEach(add);
       if (ev.type === "region") add(ev.key || " ");
     }
     return keys;
@@ -243,6 +247,23 @@
             return stim(text);
           },
           data: Object.assign({}, trial, { lexsync_event: "feedback" })
+        });
+      } else if (ev.respond) {
+        // The stimulus collects its own response, from its onset: it is shown for its
+        // duration at most, the trial runs on for the timeout after it, and a key ends
+        // the trial. jsPsych times rt from the onset. lexsync_scored lets a feedback
+        // screen find this row, as it found the separate response row.
+        const ms = ev.ms_column ? Number(trial[ev.ms_column]) : (ev.ms || 0);
+        timeline.push({
+          type: jsPsychHtmlKeyboardResponse,
+          stimulus: stim(content(ev, trial)),
+          choices: ev.respond.keys,
+          stimulus_duration: ms,
+          trial_duration: ms + Math.round(ev.respond.timeout * 1000),
+          response_ends_trial: true,
+          data: Object.assign({}, trial, { lexsync_event: "target",
+                                           marker: resolveTrigger(ev.trigger, trial),
+                                           lexsync_scored: trialUid })
         });
       } else if (ev.type === "fixation" || ev.type === "text" || ev.type === "mask") {
         timeline.push({

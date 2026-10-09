@@ -5,7 +5,10 @@
 # loop table must hold numbers only, the companion text table must hold every string
 # verbatim, and both engines must write the same bytes. The practice rows carry no
 # critical region, so the loop table also holds empty cells, which OpenSesame leaves
-# alone. Every event type the OpenSesame emitter writes is used once.
+# alone. Every event type the OpenSesame emitter writes is used once: the word collects
+# its response from its onset, and a second response after the question keeps a window
+# of its own. That response's timeout and the question's, 1001 and 1003 ms, are values
+# that a round trip through seconds once wrote a millisecond short.
 name: twin_edge_os_hostile_text
 language: english
 description: 'Presented text that OpenSesame would evaluate in a loop cell, on every event type.'
@@ -36,7 +39,11 @@ events:
   - type: question
     content: '{question}'
     keys: [f, j]
-    timeout_ms: 4000
+    timeout_ms: 1003
+  - type: response
+    keys: [f, j]
+    timeout_ms: 1001
+    from: offset
   - type: blank
     duration: {jitter: [400, 800], as: iti_ms}
 counterbalance:

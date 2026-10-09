@@ -51,8 +51,15 @@ def test_jspsych_maps_keys_to_browser_names(schema, tmp_path):
     design = {"name": "t", "language": "english", "timing": {}}
     events, _ = validate_jspsych(
         open(export_jspsych(_stim(), design, schema, str(tmp_path)), encoding="utf-8").read())
-    response = [e for e in events if e["type"] == "response"][0]
-    assert response["keys"] == ["arrowleft", "arrowright"]  # 'left'/'right' -> browser keys
+    respond = [e["respond"] for e in events if "respond" in e][0]
+    assert respond["keys"] == ["arrowleft", "arrowright"]  # 'left'/'right' -> browser keys
+    # A delayed response event is mapped too.
+    delayed = dict(design, events=[
+        {"type": "text", "content": "{word}", "duration_ms": 800},
+        {"type": "response", "keys": ["left", "space"], "from": "offset"}])
+    events, _ = validate_jspsych(
+        open(export_jspsych(_stim(), delayed, schema, str(tmp_path)), encoding="utf-8").read())
+    assert events[1]["keys"] == ["arrowleft", " "]
 
 
 def test_jspsych_escapes_html_in_data(schema, tmp_path):
@@ -136,6 +143,12 @@ process.stdout.write(JSON.stringify({
   properties: out.properties,
   data: out.timeline.map((t) => t.data || {}),
   stimuli: out.timeline.map((t) => (typeof t.stimulus === "string" ? t.stimulus : "")),
+  trials: out.timeline.map((t) => ({
+    choices: t.choices === undefined ? null : t.choices,
+    stimulus_duration: t.stimulus_duration === undefined ? null : t.stimulus_duration,
+    trial_duration: t.trial_duration === undefined ? null : t.trial_duration,
+    response_ends_trial: t.response_ends_trial === undefined ? null : t.response_ends_trial,
+  })),
 }));
 """
 
@@ -206,3 +219,39 @@ def test_a_single_version_page_runs_without_parameters(schema, tmp_path):
     run = _run_page(path, "", tmp_path)
     assert len([d for d in run["data"] if d.get("lexsync_event") == "fixation"]) == 4
     assert run["properties"] == {"version": 1, "replicate": 1, "list": 1}
+
+
+def test_the_target_carries_its_response_window(schema, tmp_path):
+    # The rendered target names its response keys and timeout, mapped to browser key
+    # names; there is no separate response event. test-jspsych.R pins the same EVENTS.
+    events, _ = validate_jspsych(open(export_jspsych(
+        _stim(), {"name": "t", "language": "english", "timing": {}}, schema, str(tmp_path)),
+        encoding="utf-8").read())
+    assert [e["type"] for e in events] == ["fixation", "text", "blank"]
+    assert events[1]["ms"] == 800
+    assert events[1]["respond"] == {"keys": ["arrowleft", "arrowright"], "timeout": 2}
+
+
+@pytest.mark.skipif(NODE is None, reason="node is not installed")
+def test_the_target_trial_collects_the_response_from_its_onset(schema, tmp_path):
+    # The target was shown with no keys allowed, and a separate blank trial timed the
+    # response from the target's offset, so a press while the target was up was lost.
+    # The target is now one trial that accepts the keys from its onset, shows the word
+    # for its 800 ms and runs for the whole 2,800 ms window unless a key ends it.
+    path = export_jspsych(_stim(), {"name": "t", "language": "english", "timing": {}},
+                          schema, str(tmp_path))
+    run = _run_page(path, "", tmp_path)
+    events = [d.get("lexsync_event") for d in run["data"]]
+    assert "response" not in events
+    targets = [i for i, e in enumerate(events) if e == "target"]
+    assert len(targets) == 4
+    for uid, i in enumerate(targets, start=1):
+        assert run["trials"][i] == {"choices": ["arrowleft", "arrowright"],
+                                    "stimulus_duration": 800, "trial_duration": 2800,
+                                    "response_ends_trial": True}
+        data = run["data"][i]
+        assert data["marker"] == int(data["condition_trigger"])
+        # The row feedback scores, as the response row was.
+        assert data["lexsync_scored"] == uid
+    # The welcome screen still names the response keys.
+    assert "<b>left</b> and <b>right</b> keys" in run["stimuli"][0]

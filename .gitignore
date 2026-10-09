@@ -49,6 +49,12 @@ R_workflow/docs/
 python_workflow/site/
 /site/
 
+# --- Participant data -------------------------------------------------------
+# A generated PsychoPy script writes each run's data beside itself, under data/,
+# so a demonstration run in output/experiments/ would otherwise leave participant
+# data where a commit could pick it up.
+output/experiments/data/
+
 # --- session build/check temporaries ---------------------------------------
 /.rcheck_tmp/
 /.regen_R.log

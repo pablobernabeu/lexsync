@@ -12,4 +12,12 @@ consumes: OpenSesame and jsPsych schedule it directly, and the PsychoPy script
 converts it back into whole flips against the refresh rate it measures at
 start-up.
 }
+\details{
+A response collected from the onset of the text event before it (see
+\code{.response_from()}) is rendered with that event, as its \code{respond} entry (\code{keys}
+and \code{timeout}). The text keeps \code{ms} as its longest display time, and the window
+runs from its onset for \code{ms} plus the timeout, so the total window is the one the
+two events had. A response collected from the offset stays an event of its own.
+Keys are rendered as lists, which jsonlite writes as arrays even for one key.
+}
 \keyword{internal}

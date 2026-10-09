@@ -1,7 +1,7 @@
 {
   "analysis": {
     "note": "Crossed random effects for subjects and items guard against the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). Begin with this maximal structure (Barr et al., 2013) and reduce it if the model does not converge (Matuschek et al., 2017). The formula is lme4 syntax, for lme4 in R or pymer4 in Python; statsmodels MixedLM cannot take it directly and needs the random effects restated in its own arguments. The equivalence tests in the realised control are post-selection diagnostics on deterministically selected items, not inferential tests over a sample.",
-    "response": "the trial outcome (e.g. reaction time or accuracy)",
+    "response": "reaction time from the onset of `{word}`; responses collected for 2800 ms; a response ends the trial",
     "suggested_model": "response ~ condition + (1 + condition | subject) + (1 | item)"
   },
   "artifacts": [
@@ -19,15 +19,15 @@
     },
     {
       "file": "output/experiments/es_gender_repro_spanish_psychopy.py",
-      "sha256": "7e9d8ff236e424484689028c2caa770565059e1ea7f6b28920692e0d1c99b8ce"
+      "sha256": "8906c5c211e6561021d14fb466209b5a6816a8db08b9e29577a8470f74c11d8a"
     },
     {
       "file": "output/experiments/es_gender_repro_spanish.osexp",
-      "sha256": "74dd36190f9dfbaaa8b907677f38a3ac432e2955cd4ef69a4f44e77af88ebd39"
+      "sha256": "1afb7a03e085c28217f38afc4376a80b743beedfd05fcff79f3a9122716b53d0"
     },
     {
       "file": "output/experiments/es_gender_repro_spanish.html",
-      "sha256": "9a6f38a1ed439bb3b9270a49a2132ea253189b6dc0b5886f11a0740057824bb5"
+      "sha256": "0749226bab6c245d451bf4b8a2e4d0c53c26208dea3efe58bd934a106ae6e056"
     },
     {
       "file": "output/experiments/es_gender_repro_spanish_psychopy.csv",
@@ -123,6 +123,15 @@
     "sha256": "0f77aec3fe307ed38f1e69e69f7c80ee93e38ffb8c0622b817fd2c26d15114d5",
     "type": "corpus"
   },
+  "presentation": {
+    "response_windows": [
+      {
+        "event": 3,
+        "from": "onset",
+        "window_ms": 2800
+      }
+    ]
+  },
   "realised_control": [
     {
       "ci_high": 0.339,
@@ -168,7 +177,7 @@
   "relational": null,
   "reproducibility": {
     "design_sha256": "d30dc7616299d6fc538066bf435a44c2739dd24d0136d4843b214f0630a198c1",
-    "schema_sha256": "960331bc24fc002527fc36aca87b4fbf1c7504a75e520a1287918761c53abdb3",
+    "schema_sha256": "22c5b2140a199af60f71aa1d00de88b3f487147668393fc752be85538d44d979",
     "seed": 2026,
     "versions": {
       "engine": "python",

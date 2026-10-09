@@ -100,6 +100,32 @@ means the rate the count was written for, whatever rate the experiment then runs
 at. The `timeout_ms` of a response window has always been in milliseconds,
 because a response deadline is not tied to the refresh.
 
+### When a response is collected
+
+A response event after a text event collects its key from that stimulus's onset.
+The stimulus stays on screen for its duration at most and a blank follows it. The
+window closes once the stimulus's duration and the response's `timeout_ms` have
+both passed, so the factorial design here collects for 2,800 ms from the word's
+onset. A key pressed while the word is still visible counts, the first key ends the
+trial, and every target times the reaction from the word's onset.
+
+A design that asks the participant to wait, as a delayed-response EEG design does,
+keeps a window that opens once the stimulus has gone:
+
+```yaml
+- type: response
+  keys: [f, j]
+  timeout_ms: 2000
+  from: offset
+```
+
+A response after any other event gets the same window by default, so one that
+follows a blank keeps the window it had, timed from the window's own onset.
+`from: onset` after such an event is refused, since a window from the onset opens
+with a text event and none comes right before it. The datasheet records each
+response window as `presentation$response_windows`, and its Methods text says when
+responses were collected.
+
 ### Content and field references
 
 An event's `content` is either a literal or a reference to a column of the trial
@@ -250,8 +276,9 @@ separates a property of the word from the demands of the task. A robin is a bird
 quickly and an animal slowly, and only the question changed. Its `answer` field
 holds the key that is correct on the trial, so scoring is a string comparison
 against the recorded response with nothing to look up in whatever language the
-analysis is written in. The paradigm requires the field, which means an
-unscoreable categorisation experiment cannot be generated.
+analysis is written in. Because the paradigm requires the field, the PsychoPy and
+OpenSesame targets can score each response against it, and the jsPsych data rows
+carry it beside the response.
 
 The `counterbalance` entry is the part that is easy to overlook and important to
 get right. The factorial recipe shows every matched item and splits the matched
@@ -426,6 +453,28 @@ carries the event list as embedded JSON and interprets it, and it writes onset
 triggers to the parallel port locked to the flip. It is the target to use for
 EEG.
 
+The script reads keys from PsychoPy's `keyboard` module. A response window opens on
+a flip, where the keyboard's clock is reset and its queue cleared, so a reaction
+time runs from that flip and a key pressed before it does not count. Each run
+writes a data file under `data/` beside the script, named
+`<base>_p<participant>_v<version>_<date>-<time>.csv`, without the `_p` part when no
+participant number is given. It holds one row per trial, written as the trial ends,
+so a run stopped with escape leaves a valid file of the trials it completed. A row
+gives the participant, the version, the replicate and the list, then the trial's
+own fields and trigger codes, then what the trial recorded. `response`, `rt_ms` and
+`timed_out` hold the key, its reaction time in milliseconds and whether the window
+closed without one. The reaction time runs from the onset of the stimulus the key
+answers, or from the opening of a window kept with `from: offset`. `correct` says
+whether the key was the trial's `answer`. It is 0 after a timeout and empty when the
+trial names no answer. In a design without a response event, the question's key is
+the one scored. `region_rts_ms` holds each self-paced reading region's time, joined
+by `|`, and `question_response` and `question_rt_ms` the question's key and
+reaction time. The row ends with the measured `refresh_hz`, then `event_flips` and
+`event_onsets_ms`: the flips each event took and the time of its first flip from the
+trial's first, joined by `|` in event order. A stimulus that collects its response
+counts the blank after it as well, up to the key or the close of the window. The
+realised durations can be checked against the declared ones there.
+
 OpenSesame (Mathôt et al., 2012) is generated as a complete plain-text `.osexp`,
 block by block, with each event becoming an inline script. It gets its trigger by
 a different route, discussed below, and it opens the trigger device with a
@@ -461,12 +510,31 @@ names(read.csv(opensesame_csv))
 names(read.csv(sub("\\.csv$", "_text.csv", opensesame_csv)))
 ```
 
+OpenSesame writes nothing to its log file without a logger item, so every trial
+ends with one, `lexsync_logger`, which writes every variable. The word and its
+response window are one inline script. It shows the word, sends the trigger, then
+flushes the keyboard and polls it while the word is shown and over a blank screen
+after it. It sets `response`, `response_time` (from the word's onset), `timed_out`
+and `correct`, the last scored against the trial's `answer` by the script itself.
+OpenSesame's own `correct_response` is not used, since its variable syntax differs
+between 3.3 and 4.x. A response kept after the stimulus with `from: offset` is a
+`keyboard_response`, followed by a script that sets `timed_out` and `correct`.
+Self-paced reading sets `lexsync_region_rts` and a question `question_response` and
+`question_rt`. Each trial starts by clearing these, and before the logger a script
+copies the trial's `condition`, `block` and `answer` from the text table into
+`lexsync_condition`, `lexsync_block` and `lexsync_answer`. Both versions' loggers
+write a variable without evaluating it.
+
 jsPsych is the browser target. A browser cannot address a parallel port, so the
 trigger codes go into each trial's data and no marker leaves the machine. That
 makes it suitable for behavioural work, for piloting and for sharing a procedure,
 though never for EEG. The generated HTML embeds the events and the trials and
 saves responses locally, so no server is needed. The jsPsych library itself loads
-from a CDN, so the first run needs an internet connection.
+from a CDN, so the first run needs an internet connection. The word and its
+response window are one jsPsych trial, recorded with `lexsync_event` set to
+`target`. It accepts the response keys from the word's onset, shows the word for
+its duration and runs on for the timeout. The first key ends it, so its `rt` is
+timed from the word's onset.
 
 Two smaller differences are worth knowing. The OpenSesame loop is written as
 `sequential` on purpose, because its default is random, which would discard the

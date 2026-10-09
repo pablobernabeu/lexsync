@@ -1,14 +1,14 @@
-{"time":"2026-10-09 03:41:14.350334","message":"loading items 'items/priming_pairs_en.csv'","data":null}
-{"time":"2026-10-09 03:41:14.393124","message":"loaded 12 items across 2 conditions","data":{"conditions":"related, unrelated"}}
-{"time":"2026-10-09 03:41:14.501","message":"wrote 'en_priming_english_stimuli_R.csv'","data":{"path":"output/stimuli/en_priming_english_stimuli_R.csv","rows":24,"md5":"b3a0f1575da65f040ed2a2c3e7e25353"}}
-{"time":"2026-10-09 03:41:14.880691","message":"wrote 'en_priming_english_psychopy.py'","data":{"path":"output/experiments/en_priming_english_psychopy.py","rows":"NA","md5":"938fa975093cb01e85131e8790704c15"}}
-{"time":"2026-10-09 03:41:14.900588","message":"wrote 'en_priming_english_list1.osexp'","data":{"path":"output/experiments/en_priming_english_list1.osexp","rows":"NA","md5":"e61b54a7b12040baf69b8f7739cc158c"}}
-{"time":"2026-10-09 03:41:14.920981","message":"wrote 'en_priming_english_list2.osexp'","data":{"path":"output/experiments/en_priming_english_list2.osexp","rows":"NA","md5":"a53fd638f2899b55b037f617eee1f031"}}
-{"time":"2026-10-09 03:41:14.943774","message":"wrote 'en_priming_english.html'","data":{"path":"output/experiments/en_priming_english.html","rows":"NA","md5":"7f138a9c93f62aae8d231e2daa15ced1"}}
-{"time":"2026-10-09 03:41:14.973978","message":"wrote 'en_priming_english_psychopy.csv'","data":{"path":"output/experiments/en_priming_english_psychopy.csv","rows":"NA","md5":"8d937171690cabcc72a29489ef15c7cb"}}
-{"time":"2026-10-09 03:41:14.99403","message":"wrote 'en_priming_english_list1_opensesame.csv'","data":{"path":"output/experiments/en_priming_english_list1_opensesame.csv","rows":"NA","md5":"0e2b073e248ca34d8dd60b5879e8394c"}}
-{"time":"2026-10-09 03:41:15.008725","message":"wrote 'en_priming_english_list1_opensesame_text.csv'","data":{"path":"output/experiments/en_priming_english_list1_opensesame_text.csv","rows":"NA","md5":"309938eafed1eaeaa495f8ea232031f3"}}
-{"time":"2026-10-09 03:41:15.0315","message":"wrote 'en_priming_english_list2_opensesame.csv'","data":{"path":"output/experiments/en_priming_english_list2_opensesame.csv","rows":"NA","md5":"f658e984956caa1ae12417a10473fcd9"}}
-{"time":"2026-10-09 03:41:15.056799","message":"wrote 'en_priming_english_list2_opensesame_text.csv'","data":{"path":"output/experiments/en_priming_english_list2_opensesame_text.csv","rows":"NA","md5":"68c47c52e0391f25ce8c8ef8199984fc"}}
-{"time":"2026-10-09 03:41:15.341944","message":"wrote 'en_priming_english_datasheet_R.json'","data":{"path":"output/reports/en_priming_english_datasheet_R.json","rows":"NA","md5":"7014778ddd32de4894921562dd3b1ccc"}}
-{"time":"2026-10-09 03:41:15.359696","message":"wrote 'en_priming_english_datasheet_R.md'","data":{"path":"output/reports/en_priming_english_datasheet_R.md","rows":"NA","md5":"e6045379483036a6359ceac58b620177"}}
+{"time":"2026-10-09 04:43:44.780286","message":"loading items 'items/priming_pairs_en.csv'","data":null}
+{"time":"2026-10-09 04:43:44.877348","message":"loaded 12 items across 2 conditions","data":{"conditions":"related, unrelated"}}
+{"time":"2026-10-09 04:43:45.060161","message":"wrote 'en_priming_english_stimuli_R.csv'","data":{"path":"output/stimuli/en_priming_english_stimuli_R.csv","rows":24,"md5":"b3a0f1575da65f040ed2a2c3e7e25353"}}
+{"time":"2026-10-09 04:43:45.797767","message":"wrote 'en_priming_english_psychopy.py'","data":{"path":"output/experiments/en_priming_english_psychopy.py","rows":"NA","md5":"aff5ccf9911f1b45fb6e1d992e39622a"}}
+{"time":"2026-10-09 04:43:45.828588","message":"wrote 'en_priming_english_list1.osexp'","data":{"path":"output/experiments/en_priming_english_list1.osexp","rows":"NA","md5":"ad8fcf6fbe54068fbaee4a25533231ac"}}
+{"time":"2026-10-09 04:43:45.852117","message":"wrote 'en_priming_english_list2.osexp'","data":{"path":"output/experiments/en_priming_english_list2.osexp","rows":"NA","md5":"5669d9c0dc2f0dfb8e7e1d005191c508"}}
+{"time":"2026-10-09 04:43:45.873923","message":"wrote 'en_priming_english.html'","data":{"path":"output/experiments/en_priming_english.html","rows":"NA","md5":"d2ac96791156080face69e698bbb0b27"}}
+{"time":"2026-10-09 04:43:45.905886","message":"wrote 'en_priming_english_psychopy.csv'","data":{"path":"output/experiments/en_priming_english_psychopy.csv","rows":"NA","md5":"8d937171690cabcc72a29489ef15c7cb"}}
+{"time":"2026-10-09 04:43:45.924786","message":"wrote 'en_priming_english_list1_opensesame.csv'","data":{"path":"output/experiments/en_priming_english_list1_opensesame.csv","rows":"NA","md5":"0e2b073e248ca34d8dd60b5879e8394c"}}
+{"time":"2026-10-09 04:43:45.945725","message":"wrote 'en_priming_english_list1_opensesame_text.csv'","data":{"path":"output/experiments/en_priming_english_list1_opensesame_text.csv","rows":"NA","md5":"309938eafed1eaeaa495f8ea232031f3"}}
+{"time":"2026-10-09 04:43:45.969096","message":"wrote 'en_priming_english_list2_opensesame.csv'","data":{"path":"output/experiments/en_priming_english_list2_opensesame.csv","rows":"NA","md5":"f658e984956caa1ae12417a10473fcd9"}}
+{"time":"2026-10-09 04:43:45.987593","message":"wrote 'en_priming_english_list2_opensesame_text.csv'","data":{"path":"output/experiments/en_priming_english_list2_opensesame_text.csv","rows":"NA","md5":"68c47c52e0391f25ce8c8ef8199984fc"}}
+{"time":"2026-10-09 04:43:46.308217","message":"wrote 'en_priming_english_datasheet_R.json'","data":{"path":"output/reports/en_priming_english_datasheet_R.json","rows":"NA","md5":"62ad219951051b64c878301b9e7323ad"}}
+{"time":"2026-10-09 04:43:46.347466","message":"wrote 'en_priming_english_datasheet_R.md'","data":{"path":"output/reports/en_priming_english_datasheet_R.md","rows":"NA","md5":"e8e10fccbd932b20d4486ffeba8abd97"}}

@@ -21,8 +21,34 @@ test_that("jsPsych export is structurally valid and maps keys to browser names",
   trials <- jsonlite::fromJSON(tr, simplifyDataFrame = FALSE)
   expect_gt(length(events), 0)
   expect_equal(length(trials), 4)
-  resp <- Filter(function(e) e$type == "response", events)[[1]]
-  expect_identical(unlist(resp$keys), c("arrowleft", "arrowright"))
+  respond <- Filter(Negate(is.null), lapply(events, function(e) e$respond))[[1]]
+  expect_identical(unlist(respond$keys), c("arrowleft", "arrowright"))
+})
+
+test_that("the target carries its response window", {
+  # The rendered target names its response keys and timeout, mapped to browser key
+  # names, and there is no separate response event. The page then runs the target as one
+  # trial that accepts the keys from its onset, which test_jspsych_export.py checks by
+  # running the page. A delayed response keeps its own event, its keys mapped too.
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  out <- tempfile("lx"); dir.create(out)
+  page_events <- function(design) {
+    html <- paste(readLines(export_jspsych(jspsych_stim(), design, schema, out), warn = FALSE),
+                  collapse = "\n")
+    ev <- regmatches(html, regexec("const EVENTS = (.*?);\\n", html))[[1]][2]
+    jsonlite::fromJSON(ev, simplifyDataFrame = FALSE)
+  }
+  events <- page_events(list(name = "t", language = "english", timing = list()))
+  expect_identical(vapply(events, function(e) e$type, character(1)),
+                   c("fixation", "text", "blank"))
+  expect_identical(events[[2]]$ms, 800L)
+  # fromJSON reads a JSON array of strings back as a character vector.
+  expect_identical(events[[2]]$respond, list(keys = c("arrowleft", "arrowright"),
+                                             timeout = 2L))
+  delayed <- page_events(list(name = "t", language = "english", events = list(
+    list(type = "text", content = "{word}", duration_ms = 800L),
+    list(type = "response", keys = c("left", "space"), from = "offset"))))
+  expect_identical(delayed[[2]]$keys, c("arrowleft", " "))
 })
 
 test_that("the jsPsych lang attribute is a valid BCP 47 tag", {
@@ -66,6 +92,12 @@ test_that("key mapping does not invent a 'key' element on a response event", {
   mapped <- lexsync:::.map_keys_jspsych(ev)[[1]]
   expect_identical(names(mapped), c("type", "keys", "timeout"))
   expect_identical(mapped$keys, c("arrowleft", "arrowright"))
+  # Keys rendered as a list stay a list, and a target's response keys are mapped too.
+  ev <- list(list(type = "text", field = "w", ms = 800L,
+                  respond = list(keys = list("left", "f"), timeout = 2)))
+  mapped <- lexsync:::.map_keys_jspsych(ev)[[1]]
+  expect_identical(names(mapped), c("type", "field", "ms", "respond"))
+  expect_identical(mapped$respond$keys, list("arrowleft", "f"))
   # A region event does carry a real `key`, which must still be mapped.
   reg <- list(list(type = "region", field = "sentence", sep = "|", key = "space"))
   expect_identical(lexsync:::.map_keys_jspsych(reg)[[1]][["key"]], " ")

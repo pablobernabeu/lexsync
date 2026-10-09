@@ -31,6 +31,15 @@ the inline scripts read with Python's \code{csv} module, so OpenSesame never eva
 them. Copy both tables with the experiment.
 }
 \details{
+Every trial is logged. A response after a text event is collected by that event's
+script from the stimulus's onset, which sets \code{response}, \code{response_time},
+\code{timed_out} and \code{correct}. A response kept after the stimulus with \code{from: offset} is
+a keyboard_response, and a script after it sets \code{timed_out} and \code{correct}.
+Self-paced reading sets \code{lexsync_region_rts} and a question \code{question_response} and
+\code{question_rt}. A script clears these as each trial starts, another copies the
+trial's labels into \code{lexsync_condition}, \code{lexsync_block} and \code{lexsync_answer}, and a
+logger item ends the trial.
+
 A design with more than one presentation version, one per (replicate, list) pair
 of the trials, gets one experiment per version instead, each with its own two
 tables holding only that version's trials: \verb{<base>_list<k>.osexp}, or

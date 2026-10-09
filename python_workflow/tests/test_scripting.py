@@ -1,3 +1,4 @@
+import json
 import os
 import re
 
@@ -6,8 +7,10 @@ import pytest
 
 from lexsync.counterbalancing import counterbalance
 from lexsync.io_utils import _round_dp
+from lexsync.paradigms import resolve_events
 from lexsync.scripting import (
     _design_condition_names,
+    _json_r,
     _language_tag,
     assign_triggers,
     export_experiments,
@@ -154,22 +157,90 @@ def test_opensesame_loop_follows_the_computed_trial_order(schema, tmp_path):
     assert "\tset order random" not in lines
 
 
-def test_all_targets_offset_the_stimulus_before_the_response_window(schema, tmp_path):
-    # The stimulus offsets at its own duration, not at the participant's keypress:
-    # PsychoPy flips an empty window and OpenSesame shows an empty canvas, both
-    # before the response is collected, matching jsPsych's empty `response` stimulus.
-    design = {"name": "t", "language": "english", "timing": {}}
-    py = open(export_psychopy(_stim(), design, schema, str(tmp_path)), encoding="utf-8").read()
-    assert "        win.flip()\n        keys = event.waitKeys(" in py
+_FIX = {"type": "fixation", "content": "+", "duration_ms": 500}
+_TEXT = {"type": "text", "content": "{target}", "duration_ms": 800, "trigger": "condition"}
+_BLANK = {"type": "blank", "duration_ms": 200}
+_RESP = {"type": "response", "keys": ["f", "j"], "timeout_ms": 2000}
 
+
+def test_a_response_after_a_text_event_is_collected_from_its_onset():
+    # The window used to open only when the target had gone. After a text event a
+    # response is now collected from the text's onset, as one rendered event: the text
+    # stays up for its 800 ms at most, and the window runs 2,800 ms, the total it had.
+    # test-scripting.R pins the same rules and messages.
+    assert render_events([_FIX, _TEXT, _RESP], {}, 60) == [
+        {"type": "fixation", "text": "+", "ms": 500},
+        {"type": "text", "field": "target", "ms": 800, "trigger": "@condition_trigger",
+         "respond": {"keys": ["f", "j"], "timeout": 2.0}}]
+    assert [r["type"] for r in render_events(resolve_events({"paradigm": "factorial"}),
+                                             {}, 60)] == ["fixation", "text", "blank"]
+    # After anything else, and with from: offset, the window opens after the stimulus,
+    # as it did, for designs that delay the response.
+    for events in ([_TEXT, _BLANK, _RESP], [_TEXT, dict(_RESP, **{"from": "offset"})],
+                   [_TEXT, _BLANK, dict(_RESP, **{"from": "offset"})]):
+        rendered = render_events(events, {}, 60)
+        assert rendered[-1] == {"type": "response", "keys": ["f", "j"], "timeout": 2.0}
+        assert "respond" not in rendered[0]
+    # from: onset needs a text event before the response.
+    with pytest.raises(ValueError, match=re.escape(
+            "lexsync: event 3 collects its response from the onset of the preceding "
+            "stimulus, but event 2 is a blank; use from: offset.")):
+        render_events([_TEXT, _BLANK, dict(_RESP, **{"from": "onset"})], {}, 60)
+    with pytest.raises(ValueError, match=re.escape(
+            "lexsync: event 1 collects its response from the onset of the preceding "
+            "stimulus, but no event precedes it; use from: offset.")):
+        render_events([dict(_RESP, **{"from": "onset"})], {}, 60)
+    with pytest.raises(ValueError, match=re.escape(
+            "lexsync: event 2 gives `from: start`, but a response event takes "
+            "from: onset or from: offset.")):
+        render_events([_TEXT, dict(_RESP, **{"from": "start"})], {}, 60)
+    with pytest.raises(ValueError, match=re.escape(
+            "lexsync: event 2 gives `from: true`, but a response event takes "
+            "from: onset or from: offset.")):
+        render_events([_TEXT, dict(_RESP, **{"from": True})], {}, 60)
+    # The merged event runs where the text runs, so the two must name the same blocks.
+    practice = dict(_TEXT, blocks=["practice"])
+    assert render_events([practice, dict(_RESP, blocks="practice")], {}, 60)[0] == dict(
+        render_events([practice], {}, 60)[0], respond={"keys": ["f", "j"], "timeout": 2.0})
+    with pytest.raises(ValueError, match=re.escape(
+            "lexsync: event 2 collects its response from the onset of event 1, so the two "
+            "must run in the same blocks; give them the same `blocks`, or use from: offset.")):
+        render_events([practice, _RESP], {}, 60)
+
+
+def test_a_single_response_key_is_written_as_a_list(schema, tmp_path):
+    # One key is still a list of keys in every generated experiment, as the runners
+    # read it. test-scripting.R holds the R engine to the same EVENTS.
+    events = [_TEXT, dict(_RESP, keys="space"), _BLANK, dict(_RESP, keys=["space"]),
+              {"type": "question", "content": "{target}", "keys": "f"}]
+    assert _json_r(render_events(events, {}, 60)) == (
+        '[{"type":"text","field":"target","ms":800,"trigger":"@condition_trigger",'
+        '"respond":{"keys":["space"],"timeout":2}},{"type":"blank","ms":200},'
+        '{"type":"response","keys":["space"],"timeout":2},'
+        '{"type":"question","field":"target","keys":["f"],"timeout":5}]')
+
+
+def test_a_delayed_response_still_opens_after_the_stimulus(schema, tmp_path):
+    # from: offset keeps the window that opens when the stimulus has gone. PsychoPy runs
+    # it as its own event, and OpenSesame blanks the screen, collects the key with a
+    # keyboard_response and then scores it.
+    design = {"name": "t", "language": "english", "timing": {}, "events": [
+        {"type": "fixation", "content": "+", "duration_frames": 30},
+        {"type": "text", "content": "{word}", "duration_frames": 48, "trigger": "condition"},
+        {"type": "response", "keys": ["left", "right"], "timeout_ms": 2000, "from": "offset"},
+        {"type": "blank", "duration_frames": 15}]}
+    py = open(export_psychopy(_stim(), design, schema, str(tmp_path)), encoding="utf-8").read()
+    events = json.loads(re.search(r'EVENTS = json\.loads\(r"""(.*)"""\)', py).group(1))
+    assert [e["type"] for e in events] == ["fixation", "text", "response", "blank"]
     lines = open(export_opensesame(_stim(), design, schema, str(tmp_path)),
                  encoding="utf-8").read().splitlines()
     assert "define inline_script lexsync_e2_blank" in lines
     assert "define keyboard_response lexsync_e2" in lines
+    assert "define inline_script lexsync_e2_score" in lines
     runs = [l for l in lines if l.startswith("\trun lexsync_e")]
     assert runs == ["\trun lexsync_e0 always", "\trun lexsync_e1 always",
                     "\trun lexsync_e2_blank always", "\trun lexsync_e2 always",
-                    "\trun lexsync_e3 always"]
+                    "\trun lexsync_e2_score always", "\trun lexsync_e3 always"]
 
 
 def test_jspsych_lang_attribute_is_a_valid_bcp47_tag(schema, tmp_path):

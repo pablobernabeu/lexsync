@@ -152,25 +152,180 @@ test_that("the OpenSesame loop follows the computed trial order", {
   expect_false("\tset order random" %in% os)
 })
 
-test_that("all targets offset the stimulus before the response window", {
-  # The stimulus offsets at its own duration, not at the participant's keypress:
-  # PsychoPy flips an empty window and OpenSesame shows an empty canvas, both
-  # before the response is collected, matching jsPsych's empty `response` stimulus.
-  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
-  design <- list(name = "t", language = "english", timing = list())
-  out <- tempfile("lexsync"); dir.create(out)
+FIX <- list(type = "fixation", content = "+", duration_ms = 500L)
+TEXT <- list(type = "text", content = "{target}", duration_ms = 800L, trigger = "condition")
+BLANK <- list(type = "blank", duration_ms = 200L)
+RESP <- list(type = "response", keys = c("f", "j"), timeout_ms = 2000L)
 
+test_that("a response after a text event is collected from its onset", {
+  # The window used to open only when the target had gone. After a text event a
+  # response is now collected from the text's onset, as one rendered event: the text
+  # stays up for its 800 ms at most, and the window runs 2,800 ms, the total it had.
+  # test_scripting.py pins the same rules and messages.
+  r <- render_events(list(FIX, TEXT, RESP), list(), 60)
+  expect_identical(r, list(
+    list(type = "fixation", text = "+", ms = 500L),
+    list(type = "text", field = "target", ms = 800L, trigger = "@condition_trigger",
+         respond = list(keys = list("f", "j"), timeout = 2))))
+  expect_identical(vapply(render_events(resolve_events(list(paradigm = "factorial")),
+                                        list(), 60), function(e) e$type, character(1)),
+                   c("fixation", "text", "blank"))
+  # After anything else, and with from: offset, the window opens after the stimulus,
+  # as it did, for designs that delay the response.
+  offset <- utils::modifyList(RESP, list(from = "offset"))
+  for (events in list(list(TEXT, BLANK, RESP), list(TEXT, offset), list(TEXT, BLANK, offset))) {
+    rendered <- render_events(events, list(), 60)
+    expect_identical(rendered[[length(rendered)]],
+                     list(type = "response", keys = list("f", "j"), timeout = 2))
+    expect_null(rendered[[1]][["respond"]])
+  }
+  # from: onset needs a text event before the response.
+  onset <- utils::modifyList(RESP, list(from = "onset"))
+  expect_error(render_events(list(TEXT, BLANK, onset), list(), 60),
+               paste("lexsync: event 3 collects its response from the onset of the preceding",
+                     "stimulus, but event 2 is a blank; use from: offset."), fixed = TRUE)
+  expect_error(render_events(list(onset), list(), 60),
+               paste("lexsync: event 1 collects its response from the onset of the preceding",
+                     "stimulus, but no event precedes it; use from: offset."), fixed = TRUE)
+  expect_error(render_events(list(TEXT, utils::modifyList(RESP, list(from = "start"))),
+                             list(), 60),
+               paste("lexsync: event 2 gives `from: start`, but a response event takes",
+                     "from: onset or from: offset."), fixed = TRUE)
+  expect_error(render_events(list(TEXT, utils::modifyList(RESP, list(from = TRUE))),
+                             list(), 60),
+               paste("lexsync: event 2 gives `from: true`, but a response event takes",
+                     "from: onset or from: offset."), fixed = TRUE)
+  # The merged event runs where the text runs, so the two must name the same blocks.
+  practice <- utils::modifyList(TEXT, list(blocks = list("practice")))
+  merged <- render_events(list(practice, utils::modifyList(RESP, list(blocks = "practice"))),
+                          list(), 60)[[1]]
+  expect_identical(merged, c(render_events(list(practice), list(), 60)[[1]],
+                             list(respond = list(keys = list("f", "j"), timeout = 2))))
+  expect_error(render_events(list(practice, RESP), list(), 60),
+               paste("lexsync: event 2 collects its response from the onset of event 1, so the",
+                     "two must run in the same blocks; give them the same `blocks`, or use",
+                     "from: offset."), fixed = TRUE)
+})
+
+test_that("a single response key is written as a list", {
+  # One key is still a list of keys in every generated experiment, as the runners read
+  # it. jsonlite wrote a lone key as a bare string where the Python engine wrote a list,
+  # so the two engines' EVENTS differed and the PsychoPy runner split "space" into five
+  # one-letter keys. test_scripting.py pins the same JSON.
+  events <- list(TEXT, utils::modifyList(RESP, list(keys = "space")), BLANK,
+                 utils::modifyList(RESP, list(keys = list("space"))),
+                 list(type = "question", content = "{target}", keys = "f"))
+  expect_identical(
+    as.character(jsonlite::toJSON(render_events(events, list(), 60), auto_unbox = TRUE)),
+    paste0('[{"type":"text","field":"target","ms":800,"trigger":"@condition_trigger",',
+           '"respond":{"keys":["space"],"timeout":2}},{"type":"blank","ms":200},',
+           '{"type":"response","keys":["space"],"timeout":2},',
+           '{"type":"question","field":"target","keys":["f"],"timeout":5}]'))
+})
+
+test_that("a delayed response still opens after the stimulus", {
+  # from: offset keeps the window that opens when the stimulus has gone. PsychoPy runs
+  # it as its own event, and OpenSesame blanks the screen, collects the key with a
+  # keyboard_response and then scores it.
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  design <- list(name = "t", language = "english", timing = list(), events = list(
+    list(type = "fixation", content = "+", duration_frames = 30L),
+    list(type = "text", content = "{word}", duration_frames = 48L, trigger = "condition"),
+    list(type = "response", keys = c("left", "right"), timeout_ms = 2000L, from = "offset"),
+    list(type = "blank", duration_frames = 15L)))
+  out <- tempfile("lexsync"); dir.create(out)
   pytxt <- paste(readLines(export_psychopy(make_stim(), design, schema, out), warn = FALSE),
                  collapse = "\n")
-  expect_true(grepl("        win.flip()\n        keys = event.waitKeys(", pytxt, fixed = TRUE))
-
+  json <- regmatches(pytxt, regexec('EVENTS = json\\.loads\\(r"""(.*?)"""\\)', pytxt))[[1]][2]
+  events <- jsonlite::fromJSON(json, simplifyDataFrame = FALSE)
+  expect_identical(vapply(events, function(e) e$type, character(1)),
+                   c("fixation", "text", "response", "blank"))
   os <- readLines(export_opensesame(make_stim(), design, schema, out), warn = FALSE)
   expect_true("define inline_script lexsync_e2_blank" %in% os)
   expect_true("define keyboard_response lexsync_e2" %in% os)
+  expect_true("define inline_script lexsync_e2_score" %in% os)
   expect_identical(grep("^\trun lexsync_e", os, value = TRUE),
                    c("\trun lexsync_e0 always", "\trun lexsync_e1 always",
                      "\trun lexsync_e2_blank always", "\trun lexsync_e2 always",
-                     "\trun lexsync_e3 always"))
+                     "\trun lexsync_e2_score always", "\trun lexsync_e3 always"))
+})
+
+# The items the trial sequence runs, in order.
+trial_runs <- function(lines) {
+  at <- match("define sequence lexsync_trial", lines)
+  rest <- lines[(at + 1L):length(lines)]
+  rest <- rest[seq_len(match("", rest) - 1L)]
+  sub("^\trun (\\S+).*$", "\\1", grep("^\trun ", rest, value = TRUE))
+}
+
+# One inline script's run phase, without the leading tab.
+run_phase <- function(lines, name) {
+  at <- match(sprintf("define inline_script %s", name), lines)
+  rest <- lines[(at + 1L):length(lines)]
+  start <- match("\t___run__", rest)
+  end <- match("\t__end__", rest)
+  substring(rest[(start + 1L):(end - 1L)], 2L)
+}
+
+test_that("an onset-locked response runs in its stimulus script", {
+  # The target and its response window are one inline script, which shows the target,
+  # sends its trigger and polls the keyboard through it and then a blank. A
+  # keyboard_response flushed every key pressed while the target was on screen and
+  # timed the response from the blank that followed it. test_osexp_validator.py pins
+  # the same lines and runs them under both variable stores.
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  stim <- make_stim()
+  names(stim)[names(stim) == "word"] <- "target"
+  out <- tempfile("lexsync"); dir.create(out)
+  os <- readLines(export_opensesame(stim, list(name = "t", language = "english",
+                                               paradigm = "lexical_decision"),
+                                    schema, out), warn = FALSE)
+  expect_false(any(startsWith(os, "define keyboard_response")))
+  expect_identical(trial_runs(os), c("lexsync_trial_start", "lexsync_e0", "lexsync_e1",
+                                     "lexsync_e2", "lexsync_record", "lexsync_logger"))
+  expect_identical(run_phase(os, "lexsync_e1"), c(
+    "c = Canvas()",
+    "c.text(_lexsync_row()[u'target'])",
+    "_t0 = c.show()",
+    "var.onset_time = _t0",
+    "send_trigger(int(var.get(u'condition_trigger', _eval=False)))",
+    "_kb = Keyboard(keylist=[u'left', u'right'])",
+    "_kb.flush()",
+    "_key, _t = _kb.get_key(timeout=800)",
+    "if _key is None:",
+    "    c = Canvas()",
+    "    c.show()",
+    "    _key, _t = _kb.get_key(timeout=2000)",
+    "var.response = _key",
+    "var.response_time = u'' if _key is None else _t - _t0",
+    "var.timed_out = 1 if _key is None else 0",
+    "_want = str(_lexsync_row().get(u'answer', u'')).strip()",
+    "_got = u'' if _key is None else str(_key).strip()",
+    "var.correct = (1 if _got == _want else 0) if _want else u''"))
+  # The logger runs last in every trial, after the labels are copied in for it.
+  at <- match("define logger lexsync_logger", os)
+  expect_identical(os[at + 1:2], c('\tset description "Log the trial"', "\tset auto_log yes"))
+})
+
+test_that("OpenSesame timeouts are written in whole milliseconds as declared", {
+  # 1.001 s times 1000 is 1000.9999999999999 in binary floating point, so as.integer()
+  # wrote a declared 1,001 ms as 1,000: 95 of the whole-millisecond timeouts from 1 to
+  # 10,000 came out one short. test_osexp_validator.py pins the same lines.
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  out <- tempfile("lexsync"); dir.create(out)
+  delayed <- list(name = "d", language = "english", events = list(
+    list(type = "text", content = "{word}", duration_ms = 300L),
+    list(type = "blank", duration_ms = 100L),
+    list(type = "response", keys = c("f", "j"), timeout_ms = 1001L),
+    list(type = "question", content = "{word}", keys = c("f", "j"), timeout_ms = 1003L)))
+  os <- readLines(export_opensesame(make_stim(), delayed, schema, out), warn = FALSE)
+  expect_true("\tset timeout 1001" %in% os)
+  expect_true("\t_kb = Keyboard(keylist=[u'f', u'j'], timeout=1003)" %in% os)
+  onset <- list(name = "o", language = "english", events = list(
+    list(type = "text", content = "{word}", duration_ms = 300L),
+    list(type = "response", keys = c("f", "j"), timeout_ms = 1001L)))
+  os <- readLines(export_opensesame(make_stim(), onset, schema, out), warn = FALSE)
+  expect_true("\t    _key, _t = _kb.get_key(timeout=1001)" %in% os)
 })
 
 test_that("a per-design font overrides the Latin default for logographic scripts", {

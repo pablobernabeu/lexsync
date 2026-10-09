@@ -76,7 +76,7 @@
   },
   "relational": null,
   "analysis": {
-    "response": "the trial outcome (e.g. reaction time or accuracy)",
+    "response": "reaction time from the onset of `{word}`; responses collected for 2500 ms; a response ends the trial",
     "suggested_model": "response ~ condition + (1 + condition | subject) + (1 | item)",
     "note": "Crossed random effects for subjects and items guard against the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). Begin with this maximal structure (Barr et al., 2013) and reduce it if the model does not converge (Matuschek et al., 2017). The formula is lme4 syntax, for lme4 in R or pymer4 in Python; statsmodels MixedLM cannot take it directly and needs the random effects restated in its own arguments. The equivalence tests in the realised control are post-selection diagnostics on deterministically selected items, not inferential tests over a sample."
   },
@@ -189,6 +189,15 @@
       "cost_unit": "summed absolute deviation of each list's dimension total from its fair share, in milli-units of the dimension's mean, scaled by the number of item sets"
     }
   },
+  "presentation": {
+    "response_windows": [
+      {
+        "event": 3,
+        "from": "onset",
+        "window_ms": 2500
+      }
+    ]
+  },
   "resampling": null,
   "items": {
     "n_total": 80,
@@ -215,7 +224,7 @@
       "os": "Windows x86-64"
     },
     "design_sha256": "3b871bdbff36cccc407b9a0feef29bddd5db66fdc30f9061475337a17a4c5aa7",
-    "schema_sha256": "960331bc24fc002527fc36aca87b4fbf1c7504a75e520a1287918761c53abdb3"
+    "schema_sha256": "22c5b2140a199af60f71aa1d00de88b3f487147668393fc752be85538d44d979"
   },
   "artifacts": [
     {
@@ -232,27 +241,27 @@
     },
     {
       "file": "output/experiments/en_balanced_lists_english_psychopy.py",
-      "sha256": "b73bb0252592f0640da903515e0cac17836cf5adecc5ad050a5f68c34f0c0f26"
+      "sha256": "15f77bbf05f1684a36c2bf18b1b2abaccb1acf33bb32abb459110b3a057cb9c3"
     },
     {
       "file": "output/experiments/en_balanced_lists_english_list1.osexp",
-      "sha256": "ae0a0d72a135a0b00be650d2175ea63c0c286785ee2e7760dff7eb3a76344cf4"
+      "sha256": "631c3b2ffc574950106e39e082dcfa8572294a9bd25bd51595ee786c7c606937"
     },
     {
       "file": "output/experiments/en_balanced_lists_english_list2.osexp",
-      "sha256": "f87319f989be4a6bd0b4a81c564e861d17fef71fc00bb54c615d55bbf6a3d485"
+      "sha256": "3ab5211f9bd13a91e032912a1a65ae201faa548b1024a33feec4be61751cbf59"
     },
     {
       "file": "output/experiments/en_balanced_lists_english_list3.osexp",
-      "sha256": "fbf8eee8156a2481500ea074589e1009d0d62fc50b940d498f0a69963f342fcd"
+      "sha256": "6cca3f3b1e12bbd95f8f8bd32e2f0284fa38f7384d0d6dd403578b0df7a68229"
     },
     {
       "file": "output/experiments/en_balanced_lists_english_list4.osexp",
-      "sha256": "768e5883ab390769355e1c9dbb9bad4c8d4a02f38212002547f8f9b47bad0874"
+      "sha256": "e63a13bd0a08cce57b6d3820db355922b61a6c8093dd1ef160cab667deffec8c"
     },
     {
       "file": "output/experiments/en_balanced_lists_english.html",
-      "sha256": "a8713911a50d8626fe11a1b40abc801c5aadca39777b7e668798cde4810d86a9"
+      "sha256": "ff3cd0c6d88b3ca01bf97650d9d4959d8309c7abb8c90c0d715a57138fd9e559"
     },
     {
       "file": "output/experiments/en_balanced_lists_english_psychopy.csv",

@@ -78,7 +78,7 @@
   },
   "relational": null,
   "analysis": {
-    "response": "the trial outcome (e.g. reaction time or accuracy)",
+    "response": "reaction time from the onset of `{word}`; responses collected for 2500 ms; a response ends the trial",
     "suggested_model": "response ~ condition + (1 + condition | subject) + (1 | item)",
     "note": "Crossed random effects for subjects and items guard against the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). Begin with this maximal structure (Barr et al., 2013) and reduce it if the model does not converge (Matuschek et al., 2017). The formula is lme4 syntax, for lme4 in R or pymer4 in Python; statsmodels MixedLM cannot take it directly and needs the random effects restated in its own arguments. The equivalence tests in the realised control are post-selection diagnostics on deterministically selected items, not inferential tests over a sample."
   },
@@ -148,6 +148,15 @@
     "versions": 1,
     "assignment": "version = ((participant - 1) mod 1) + 1 unless a version is given at launch"
   },
+  "presentation": {
+    "response_windows": [
+      {
+        "event": 3,
+        "from": "onset",
+        "window_ms": 2500
+      }
+    ]
+  },
   "resampling": null,
   "items": {
     "n_total": 40,
@@ -174,7 +183,7 @@
       "os": "Windows x86-64"
     },
     "design_sha256": "919571123fbe696f3c3b7e491f26f74727eb76fe2686b7c4487253faf97973a4",
-    "schema_sha256": "960331bc24fc002527fc36aca87b4fbf1c7504a75e520a1287918761c53abdb3"
+    "schema_sha256": "22c5b2140a199af60f71aa1d00de88b3f487147668393fc752be85538d44d979"
   },
   "artifacts": [
     {
@@ -191,15 +200,15 @@
     },
     {
       "file": "output/experiments/en_supplied_pool_english_psychopy.py",
-      "sha256": "70655749e92420238482a9c554220bf2aabe33f189bc4f269abd8d186096bfb3"
+      "sha256": "ae9f3fc6a423a65cfa2f89612fac7d3d4dd43cacb9dd8743681dd388f5c37307"
     },
     {
       "file": "output/experiments/en_supplied_pool_english.osexp",
-      "sha256": "a697226a37cc19a2b7503f5a506cd8f7dc706bc8d51b6ebd90446a53ac34aef6"
+      "sha256": "79fd5aa2273469bce0ddc62507f15b79fd85934b78a2102c7fc9e5617770754c"
     },
     {
       "file": "output/experiments/en_supplied_pool_english.html",
-      "sha256": "fce491f47b06c59ac412380ef444495c0e589e1ef2a63998845b16a06520aec2"
+      "sha256": "e8796409a957e0cb6b1701b8d0bc295795ff6f7327ae7e12539cbe542e994d34"
     },
     {
       "file": "output/experiments/en_supplied_pool_english_psychopy.csv",

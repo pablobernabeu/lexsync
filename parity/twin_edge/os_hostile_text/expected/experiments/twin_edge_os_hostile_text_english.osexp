@@ -74,6 +74,19 @@ define inline_script lexsync_trigger_setup
 	send_trigger(0)
 	__end__
 
+define inline_script lexsync_trial_start
+	set description "Clear the previous trial's responses"
+	set _prepare ""
+	___run__
+	var.response = u''
+	var.response_time = u''
+	var.timed_out = u''
+	var.correct = u''
+	var.question_response = u''
+	var.question_rt = u''
+	var.lexsync_region_rts = u''
+	__end__
+
 define inline_script lexsync_e0
 	set description "Show stimulus and send onset-aligned trigger"
 	set _prepare ""
@@ -85,32 +98,30 @@ define inline_script lexsync_e0
 	__end__
 
 define inline_script lexsync_e1
-	set description "Show stimulus and send onset-aligned trigger"
+	set description "Show the stimulus and collect the response from its onset"
 	set _prepare ""
 	___run__
 	c = Canvas()
 	c.text(_lexsync_row()[u'word'])
-	var.onset_time = c.show()
+	_t0 = c.show()
+	var.onset_time = _t0
 	send_trigger(int(var.get(u'condition_trigger', _eval=False)))
-	clock.sleep(int(float(var.get(u'word_ms', _eval=False))))
+	_kb = Keyboard(keylist=[u'f', u'j'])
+	_kb.flush()
+	_key, _t = _kb.get_key(timeout=int(float(var.get(u'word_ms', _eval=False))))
+	if _key is None:
+	    c = Canvas()
+	    c.show()
+	    _key, _t = _kb.get_key(timeout=2000)
+	var.response = _key
+	var.response_time = u'' if _key is None else _t - _t0
+	var.timed_out = 1 if _key is None else 0
+	_want = str(_lexsync_row().get(u'answer', u'')).strip()
+	_got = u'' if _key is None else str(_key).strip()
+	var.correct = (1 if _got == _want else 0) if _want else u''
 	__end__
 
-define inline_script lexsync_e2_blank
-	set description "Clear the screen for the response window"
-	set _prepare ""
-	___run__
-	c = Canvas()
-	c.show()
-	__end__
-
-define keyboard_response lexsync_e2
-	set timeout 2000
-	set flush yes
-	set duration keypress
-	set description "Collect a response"
-	set allowed_responses "f;j"
-
-define inline_script lexsync_e3
+define inline_script lexsync_e2
 	set description "Practice feedback"
 	set _prepare ""
 	___run__
@@ -125,26 +136,63 @@ define inline_script lexsync_e3
 	    clock.sleep(600)
 	__end__
 
-define inline_script lexsync_e4
+define inline_script lexsync_e3
 	set description "Self-paced reading region by region"
 	set _prepare ""
 	___run__
 	_regions = [r for r in _lexsync_row()[u'sentence'].split(u'|') if r != u'']
 	_crit = int(var.get(u'critical_region', 0, _eval=False) or 0)
 	_kb = Keyboard(keylist=[u'space'], timeout=None)
+	_rts = []
 	for _i, _region in enumerate(_regions, start=1):
-	    c = Canvas(); c.text(_region); c.show()
+	    c = Canvas(); c.text(_region); _t0 = c.show()
 	    if _i == _crit: send_trigger(int(var.get(u'item_trigger', _eval=False)))
-	    _kb.get_key()
+	    _kb.flush()
+	    _key, _t = _kb.get_key()
+	    _rts.append(u'%.1f' % (_t - _t0))
+	var.lexsync_region_rts = u'|'.join(_rts)
 	__end__
 
-define inline_script lexsync_e5
+define inline_script lexsync_e4
 	set description "Comprehension question"
 	set _prepare ""
 	___run__
-	c = Canvas(); c.text(_lexsync_row()[u'question']); c.show()
-	_kb = Keyboard(keylist=[u'f', u'j'], timeout=4000)
-	var.response, var.response_time = _kb.get_key()
+	c = Canvas(); c.text(_lexsync_row()[u'question']); _t0 = c.show()
+	_kb = Keyboard(keylist=[u'f', u'j'], timeout=1003)
+	_kb.flush()
+	_key, _t = _kb.get_key()
+	var.question_response = _key
+	var.question_rt = u'' if _key is None else _t - _t0
+	__end__
+
+define inline_script lexsync_e5_blank
+	set description "Clear the screen for the response window"
+	set _prepare ""
+	___run__
+	c = Canvas()
+	c.show()
+	__end__
+
+define keyboard_response lexsync_e5
+	set timeout 1001
+	set flush yes
+	set duration keypress
+	set description "Collect a response"
+	set allowed_responses "f;j"
+
+define inline_script lexsync_e5_score
+	set description "Record the timeout and the accuracy"
+	set _prepare ""
+	___run__
+	_key = var.get(u'response', u'', _eval=False)
+	_timed_out = _key is None or str(_key).strip() in (u'', u'None')
+	var.timed_out = 1 if _timed_out else 0
+	if _timed_out:
+	    _key = None
+	    var.response_time = u''
+	_want = str(_lexsync_row().get(u'answer', u'')).strip()
+	_got = u'' if _key is None else str(_key).strip()
+	var.correct = (1 if _got == _want else 0) if _want else u''
 	__end__
 
 define inline_script lexsync_e6
@@ -156,17 +204,35 @@ define inline_script lexsync_e6
 	clock.sleep(int(float(var.get(u'iti_ms', _eval=False))))
 	__end__
 
+define inline_script lexsync_record
+	set description "Copy the trial's labels for the logger"
+	set _prepare ""
+	___run__
+	_row = _lexsync_row()
+	var.lexsync_condition = _row.get(u'condition', u'')
+	var.lexsync_block = _row.get(u'block', u'')
+	var.lexsync_answer = _row.get(u'answer', u'')
+	__end__
+
+define logger lexsync_logger
+	set description "Log the trial"
+	set auto_log yes
+
 define sequence lexsync_trial
 	set flush_keyboard yes
 	set description "One trial: the paradigm event sequence"
+	run lexsync_trial_start always
 	run lexsync_e0 always
 	run lexsync_e1 always
-	run lexsync_e2_blank always
 	run lexsync_e2 always
 	run lexsync_e3 always
 	run lexsync_e4 always
+	run lexsync_e5_blank always
 	run lexsync_e5 always
+	run lexsync_e5_score always
 	run lexsync_e6 always
+	run lexsync_record always
+	run lexsync_logger always
 
 define loop lexsync_loop
 	set source_file "twin_edge_os_hostile_text_english_opensesame.csv"

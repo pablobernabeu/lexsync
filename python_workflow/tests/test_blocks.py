@@ -263,4 +263,6 @@ def test_a_feedback_event_with_nothing_to_score_is_refused():
     with pytest.raises(ValueError, match="no response or question event"):
         render_events(ev, {}, 60)
     ok = [ev[0], {"type": "response", "keys": ["f", "j"], "timeout_ms": 2000}, ev[1]]
-    assert len(render_events(ok, {}, 60)) == 3
+    # With one, it renders. The response is collected from the text's onset, so the two
+    # are one rendered event.
+    assert [r["type"] for r in render_events(ok, {}, 60)] == ["text", "feedback"]

@@ -34,6 +34,30 @@ on the event's onset flip.
 of the paradigm it names, defaulting to `factorial`. Supplying `events` explicitly is how you build
 a trial the registry does not have.
 
+## When a response is collected
+
+A response event after a text event collects its key from that stimulus's onset. The stimulus stays
+on screen for its duration at most and a blank follows it. The window closes once the stimulus's
+duration and the response's `timeout_ms` have both passed, so the default lexical decision collects
+for 2,800 ms from the target's onset. A key pressed while the target is still visible counts, the
+first key ends the trial, and every target times the reaction from the target's onset.
+
+A design that asks the participant to wait, as a delayed-response EEG design does, keeps a window
+that opens once the stimulus has gone:
+
+```yaml
+- type: response
+  keys: [f, j]
+  timeout_ms: 2000
+  from: offset
+```
+
+A response after any other event gets the same window by default, so one that follows a blank keeps
+the window it had, timed from the window's own onset. `from: onset` after such an event is refused,
+since a window from the onset opens with a text event and none comes right before it. The datasheet
+records each response window as `presentation.response_windows`, and its Methods text says when
+responses were collected.
+
 
 ## Timing that varies from trial to trial
 
@@ -88,10 +112,11 @@ quickly and an animal slowly, and only the question changed.
 
 Its `answer` field holds the key that is correct on the trial, so scoring is a string comparison
 against the recorded response with nothing to look up in whatever language the analysis is
-written in. The paradigm requires the field, which means an unscoreable categorisation experiment
-cannot be generated. Its recipe is `latin_square_target` for the same reason a priming design uses
-one: each item carries both cues, and a factorial deal would show a participant the same target
-twice, turning the second presentation into a repetition-priming trial.
+written in. Because the paradigm requires the field, the PsychoPy and OpenSesame targets can score
+each response against it, and the jsPsych data rows carry it beside the response. Its recipe is
+`latin_square_target` for the same reason a priming design uses one: each item carries both cues,
+and a factorial deal would show a participant the same target twice, turning the second
+presentation into a repetition-priming trial.
 `config/design_en_categorisation.yaml` is a worked example.
 
 `required_fields` tells you what a design's items must carry: the paradigm's own fields, plus any
@@ -394,10 +419,12 @@ The trigger is written on the exact buffer flip on which the stimulus first appe
 
 ```python
 # illustrative: an excerpt of the generated script, needing a PsychoPy window and port
-def show_frames(win, stim, frames, port, trigger):
+def show_frames(win, stim, frames, port, trigger, shown, keys=None):
     """Draw ``stim`` for ``frames`` flips; if a trigger is given, lock it to onset."""
     if trigger is not None:
         win.callOnFlip(port.setData, trigger)
+    if keys:
+        open_window(win)
     # callOnFlip runs its callback on the NEXT flip, so queueing the reset on this
     # index clears the code one flip later and holds it for exactly
     # TRIGGER_HOLD_FRAMES flip intervals.
@@ -405,11 +432,17 @@ def show_frames(win, stim, frames, port, trigger):
     for f in range(frames):
         if stim is not None:
             stim.draw()
-        win.flip()
+        flip(win, shown)
         if trigger is not None and f == reset_at:
             win.callOnFlip(port.setData, 0)
+        key = first_key(keys) if keys else None
+        if key is not None:
+            if trigger is not None and f < reset_at:
+                port.setData(0)
+            return key
     if trigger is not None and frames <= reset_at:
         port.setData(0)
+    return None
 ```
 
 `win.callOnFlip` queues the port write against the next flip, so the code goes out with the photons
@@ -421,11 +454,36 @@ hold. `TRIGGER_HOLD_FRAMES` is computed at start-up from `TRIGGER_HOLD_MS` and t
 rate, floored at one flip and at the recorder minimum, which is what keeps a declared hold meaning
 the same interval on a 60 Hz and a 144 Hz display.
 
+Keys come from PsychoPy's `keyboard` module. A stimulus that collects its response passes its keys,
+and `open_window` queues the reset of the keyboard's clock and the clearing of its queue on the same
+onset flip as the trigger. The keyboard is polled after every flip, the first key ends the stimulus,
+and its `rt` runs from the onset. A window kept with `from: offset`, each self-paced reading region
+and each question open on their own first flip in the same way.
+
+Each run writes a data file under `data/` beside the script, named
+`<base>_p<participant>_v<version>_<date>-<time>.csv`, without the `_p` part when no participant
+number is given. It holds one row per trial, written as the trial ends, so a run stopped with escape
+leaves a valid file of the trials it completed. A row gives the participant, the version, the
+replicate and the list, then the trial's own fields and trigger codes, then what the trial
+recorded. `response`, `rt_ms` and `timed_out` hold the key, its reaction time in milliseconds and
+whether the window closed without one. The reaction time runs from the onset of the stimulus the key
+answers, or from the opening of a window kept with `from: offset`. `correct` says whether the key
+was the trial's `answer`. It is 0 after a timeout and empty when the trial names no answer. In a
+design without a response event, the question's key is the one scored. `region_rts_ms` holds each
+self-paced reading region's time, joined by `|`, and `question_response` and `question_rt_ms` the
+question's key and reaction time. The row ends with the measured `refresh_hz`, then `event_flips`
+and `event_onsets_ms`: the flips each event took and the time of its first flip from the trial's
+first, joined by `|` in event order. A stimulus that collects its response counts the blank after
+it as well, up to the key or the close of the window. The realised durations can be checked against
+the declared ones there.
+
 Stimulus text is never interpolated into the script, only read from the CSV at run time, so nothing
 in a stimulus can become code. When no parallel-port driver is present, on a development laptop, on
 macOS, or in continuous integration, a mock port prints the codes and the script still runs. The
 test suite exercises exactly that: a mock-PsychoPy harness runs the generated script and asserts
-that the onset trigger is flip-locked.
+that the onset trigger is flip-locked. It also checks that a key pressed while the target is shown
+is recorded with its reaction time from the onset, and that every committed script writes one data
+row per trial.
 
 ### OpenSesame
 
@@ -435,20 +493,37 @@ script, one inline script per event, a sequence and a loop.
 
 ```text
 define inline_script lexsync_e1
-	set description "Show stimulus and send onset-aligned trigger"
+	set description "Show the stimulus and collect the response from its onset"
 	set _prepare ""
 	___run__
 	c = Canvas()
 	c.text(_lexsync_row()[u'word'])
-	var.onset_time = c.show()
+	_t0 = c.show()
+	var.onset_time = _t0
 	send_trigger(int(var.get(u'condition_trigger', _eval=False)))
-	clock.sleep(500)
+	_kb = Keyboard(keylist=[u'left', u'right'])
+	_kb.flush()
+	_key, _t = _kb.get_key(timeout=500)
+	if _key is None:
+	    c = Canvas()
+	    c.show()
+	    _key, _t = _kb.get_key(timeout=2000)
+	var.response = _key
+	var.response_time = u'' if _key is None else _t - _t0
+	var.timed_out = 1 if _key is None else 0
+	_want = str(_lexsync_row().get(u'answer', u'')).strip()
+	_got = u'' if _key is None else str(_key).strip()
+	var.correct = (1 if _got == _want else 0) if _want else u''
 ```
 
 `Canvas.show()` blocks until the flip and returns its timestamp, so the trigger goes out
-immediately after the onset it marks. The setup block opens a parallel or serial device and falls
-back to a printing stub when neither is available, so the experiment opens and runs on a machine
-with no trigger hardware.
+immediately after the onset it marks. The word and its response window are one script. The keyboard
+is flushed once the trigger is out and polled while the word is shown, then over a blank screen
+until the window closes. The response time is taken from the word's onset. The script computes
+`correct` from the trial's `answer` itself. OpenSesame's own `correct_response` is not used, since
+its variable syntax differs between 3.3 and 4.x. The setup block opens a parallel or serial device
+and falls back to a printing stub when neither is available, so the experiment opens and runs on a
+machine with no trigger hardware.
 
 The word in that script does not come from OpenSesame's variable store, because OpenSesame
 evaluates what a loop table puts there. In both versions, a cell holding `[=...]` runs as Python,
@@ -470,12 +545,21 @@ versions. These rules were checked against the sources of OpenSesame 3.3.14 and 
 
 Two details in the generated file are deliberate. The loop is set to `sequential`, because
 OpenSesame's default is random, which would discard the seeded trial order the CSV is sorted by and
-put this target out of step with the other two. A `response` event is preceded by a blank canvas,
-because a `keyboard_response` draws nothing and the preceding stimulus would otherwise stay on
-screen for the whole response window instead of offsetting at its stated duration. A structural
-validator in the test suite checks the generated file's blocks and references. A second test runs
-its scripts under an emulation of each version's variable store, on item text that OpenSesame would
-otherwise evaluate.
+put this target out of step with the other two. A response kept after the stimulus with
+`from: offset` is a `keyboard_response` preceded by a blank canvas. A `keyboard_response` draws
+nothing, so the preceding stimulus would otherwise stay on screen for the whole response window
+instead of offsetting at its stated duration. A script after it records `timed_out` and `correct`.
+A structural validator in the test suite checks the generated file's blocks and references. A second
+test runs its scripts under an emulation of each version's variable store, on item text that
+OpenSesame would otherwise evaluate.
+
+OpenSesame writes nothing to its log file without a logger item, so every trial ends with one,
+`lexsync_logger`, which writes every variable. Self-paced reading sets `lexsync_region_rts`, each
+region's reading time joined by `|`, and a question sets `question_response` and `question_rt`. Each
+trial starts by clearing the response variables, so a block that skips a response event cannot log
+the previous trial's key. Before the logger, a script copies the trial's `condition`, `block` and
+`answer` from the text table into `lexsync_condition`, `lexsync_block` and `lexsync_answer`. Both
+versions' loggers write a variable without evaluating it.
 
 ### jsPsych
 
@@ -483,7 +567,10 @@ The browser export is a single HTML file carrying the same rendered events and t
 inline. It opens with instructions, attaches each item's design fields to every recorded row, and
 ends by saving the collected data as a CSV download, so a generated experiment gathers usable data
 with no server behind it. The jsPsych library and its stylesheet load from a content delivery
-network, so the first run needs an internet connection.
+network, so the first run needs an internet connection. A target and its response window are one
+jsPsych trial, recorded with `lexsync_event` set to `target`. It accepts the response keys from the
+target's onset, shows the target for its duration and runs on for the timeout. The first key ends
+it, so its `rt` is timed from the target's onset.
 
 Two things are handled on the way out. Event-model key names are mapped to browser key names, so
 `left` becomes `arrowleft` and `space` becomes a literal space. The design's free-text `language`

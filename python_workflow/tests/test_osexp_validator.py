@@ -256,17 +256,26 @@ def _items(osexp):
 
 def _run(osexp_path, version, responses):
     """Run a generated experiment's scripts against stand-ins for OpenSesame's runtime,
-    with `version`'s variable store, and return what each item showed and sent.
+    with `version`'s variable store, and return what each item showed, sent, slept and
+    logged.
 
     OpenSesame 4 runs inline scripts in the variable store itself, so every loop column
-    is also a global there; 3.3 keeps a separate workspace. `responses` gives the key
-    pressed (None for a timeout) at each keyboard_response and question, in order."""
+    is also a global there; 3.3 keeps a separate workspace. A clock in milliseconds
+    advances with each sleep and each wait for a key, and a canvas's show() returns it.
+    `responses` gives the participant's press in each response window, in order: a
+    (key, ms) pair, the key pressed that many milliseconds after the window opened, or
+    None for no press. A window opens when a script flushes its keyboard or first asks
+    it for a key, and at each keyboard_response. The self-paced reading regions take no
+    entry: each is advanced with the space bar 300 ms after it appears. Each logger
+    run adds a copy of the variable store to `logged`, read as the CSV logger reads it,
+    without evaluation."""
     folder = os.path.dirname(osexp_path)
     with open(osexp_path, encoding="utf-8") as handle:
         items = _items(handle.read())
-    store, shown, sent, slept = {}, [], [], []
+    store, shown, sent, slept, logged = {}, [], [], [], []
     responses = iter(responses)
     current = [None]
+    now = [0.0]
 
     class Var:
         def __getattr__(self, name):
@@ -289,18 +298,34 @@ def _run(osexp_path, version, responses):
             shown.append((current[0], text))
 
         def show(self):
-            return 0.0
+            return now[0]
 
     class Keyboard:
         def __init__(self, keylist=None, timeout=None):
-            self.keylist = keylist
+            self.keylist, self.timeout, self.opened = keylist, timeout, None
 
-        def get_key(self, **kwargs):
-            return ("space" if self.keylist == ["space"] else next(responses)), 0.0
+        def flush(self):
+            # A response window opens, with the participant's press in it, if any.
+            self.press = (("space", 300.0) if self.keylist == ["space"]
+                          else next(responses))
+            self.opened = now[0]
+
+        def get_key(self, timeout=None, **kwargs):
+            if self.opened is None:
+                self.flush()
+            timeout = self.timeout if timeout is None else timeout
+            limit = float("inf") if timeout is None else now[0] + timeout
+            if self.press is not None and self.opened + self.press[1] <= limit:
+                now[0] = max(now[0], self.opened + self.press[1])
+                key, self.press = self.press[0], None
+                return key, now[0]
+            now[0] = limit
+            return None, now[0]
 
     class Clock:
         def sleep(self, ms):
             slept.append((current[0], ms))
+            now[0] += float(ms)
 
     workspace = store if version == "4.x" else {}
     workspace.update(var=Var(), pool={f: os.path.join(folder, f) for f in os.listdir(folder)},
@@ -318,14 +343,21 @@ def _run(osexp_path, version, responses):
             current[0] = name
             if items[name]["type"] == "inline_script":
                 exec("\n".join(items[name]["___run__"]), workspace)
+            elif items[name]["type"] == "logger":
+                assert "set auto_log yes" in items[name]["lines"]
+                logged.append({k: read_value(version, v, False) for k, v in store.items()})
             else:
                 # keyboard_response: response_store.add stores syntax.sanitize(key),
                 # which 4.x then auto-types, so a timeout is None there and 'None' in 3.3.
-                key = next(responses)
+                # The item times its response from its own onset.
+                assert items[name]["type"] == "keyboard_response"
+                press = next(responses)
+                key = None if press is None else press[0]
                 raw = "None" if key is None else key
                 store["response"] = (_auto_type(raw, allow_bool=True, allow_none=True)
                                      if version == "4.x" else raw)
-    return shown, sent, slept
+                store["response_time"] = 2000.0 if press is None else press[1]
+    return shown, sent, slept, logged
 
 
 @pytest.mark.parametrize("version", ["3.3", "4.x"])
@@ -338,22 +370,154 @@ def test_the_scripts_present_the_text_verbatim_and_score_a_timeout(version, sche
     path = export_opensesame(stim, _hostile_design(), schema, str(tmp_path))
     _assert_inert(tmp_path / "hostile_english_opensesame.csv")
     n = len(stim)
-    # Per trial: the keyboard_response, then the question. Trial 1 times out, trial 2
-    # presses the wrong key and the rest press the right one.
+    # Per trial: the response window, opened by the word, then the question. Trial 1
+    # times out, trial 2 presses the wrong key and the rest press the right one, each
+    # 600 ms after the word appears, which is while the 300 ms word is shown or after.
     pressed = [None, "f"] + list(stim["answer"])[2:]
-    responses = [k for key in pressed for k in (key, "f")]
-    shown, sent, slept = _run(path, version, responses)
+    responses = [w for key in pressed for w in (None if key is None else (key, 600.0),
+                                                  ("f", 400.0))]
+    shown, sent, slept, logged = _run(path, version, responses)
 
     def by(item):
         return [text for name, text in shown if name == item]
 
+    # The word and its response window are one item, so the events after it moved up.
     assert by("lexsync_e1") == HOSTILE
-    assert by("lexsync_e4") == [r for s in stim["sentence"] for r in s.split("|") if r]
-    assert by("lexsync_e5") == list(stim["question"])
-    assert by("lexsync_e3") == ["Too slow", "Incorrect"] + ["Correct"] * (n - 2)
+    assert by("lexsync_e3") == [r for s in stim["sentence"] for r in s.split("|") if r]
+    assert by("lexsync_e4") == list(stim["question"])
+    assert by("lexsync_e2") == ["Too slow", "Incorrect"] + ["Correct"] * (n - 2)
     codes = [code for _, code in sent]
     assert codes and all(type(code) is int for code in codes)
-    assert [ms for name, ms in slept if name == "lexsync_e6"] == list(stim["iti_ms"])
+    assert [ms for name, ms in slept if name == "lexsync_e5"] == list(stim["iti_ms"])
+    # The logger wrote a row per trial: the response, timed from the word's onset, with
+    # the timeout and the accuracy, each region's reading time and the question.
+    assert len(logged) == n
+    assert [row["response"] for row in logged] == pressed
+    assert [row["response_time"] for row in logged] == [""] + [600.0] * (n - 1)
+    assert [row["timed_out"] for row in logged] == [1] + [0] * (n - 1)
+    assert [row["correct"] for row in logged] == [0, 0] + [1] * (n - 2)
+    assert [row["lexsync_region_rts"] for row in logged] == [
+        "|".join("300.0" for r in s.split("|") if r) for s in stim["sentence"]]
+    assert {(row["question_response"], row["question_rt"]) for row in logged} == {("f", 400.0)}
+    # The labels the text table holds are copied in for the logger.
+    assert [row["lexsync_condition"] for row in logged] == list(stim["condition"])
+    assert [row["lexsync_answer"] for row in logged] == list(stim["answer"])
+    assert {row["lexsync_block"] for row in logged} == {""}
+
+
+def _delayed_design():
+    return {"name": "delayed", "language": "english", "events": [
+        {"type": "fixation", "content": "+", "duration_ms": 500},
+        {"type": "text", "content": "{word}", "duration_ms": 300, "trigger": "condition"},
+        {"type": "blank", "duration_ms": 200},
+        {"type": "response", "keys": ["f", "j"], "timeout_ms": 2000},
+        {"type": "feedback", "answer": "answer", "duration_ms": 600},
+        {"type": "blank", "duration_ms": 250}]}
+
+
+@pytest.mark.parametrize("version", ["3.3", "4.x"])
+def test_a_delayed_response_is_scored_and_logged(version, schema, tmp_path, monkeypatch):
+    # A response after a blank keeps its own window, opened when the stimulus has gone,
+    # and a keyboard_response collects it. The script after it records the timeout and
+    # the accuracy, which a keyboard_response cannot compute from an answer column.
+    monkeypatch.setattr(ctypes, "windll", None, raising=False)
+    stim = _hostile_stim()
+    path = export_opensesame(stim, _delayed_design(), schema, str(tmp_path))
+    n = len(stim)
+    pressed = [None, "f"] + list(stim["answer"])[2:]
+    shown, _, _, logged = _run(path, version,
+                               [None if key is None else (key, 300.0) for key in pressed])
+    assert ([text for name, text in shown if name == "lexsync_e4"]
+            == ["Too slow", "Incorrect"] + ["Correct"] * (n - 2))
+    assert [row["timed_out"] for row in logged] == [1] + [0] * (n - 1)
+    assert [row["correct"] for row in logged] == [0, 0] + [1] * (n - 2)
+    assert [row["response_time"] for row in logged] == [""] + [300.0] * (n - 1)
+
+
+def _trial_runs(lines):
+    """The items the trial sequence runs, in order."""
+    at = lines.index("define sequence lexsync_trial")
+    runs = []
+    for line in lines[at + 1:]:
+        if not line:
+            break
+        if line.startswith("\trun "):
+            runs.append(line.split()[1])
+    return runs
+
+
+def test_an_onset_locked_response_runs_in_its_stimulus_script(schema, tmp_path):
+    # The target and its response window are one inline script, which shows the
+    # target, sends its trigger and polls the keyboard through it and then a blank. A
+    # keyboard_response flushed every key pressed while the target was on screen and
+    # timed the response from the blank that followed it.
+    design = {"name": "t", "language": "english", "paradigm": "lexical_decision"}
+    lines = open(export_opensesame(_stim().rename(columns={"word": "target"}), design,
+                                   schema, str(tmp_path)), encoding="utf-8").read().splitlines()
+    assert not any(line.startswith("define keyboard_response") for line in lines)
+    assert _trial_runs(lines) == ["lexsync_trial_start", "lexsync_e0", "lexsync_e1",
+                                  "lexsync_e2", "lexsync_record", "lexsync_logger"]
+    script = _items("\n".join(lines))["lexsync_e1"]["___run__"]
+    assert script == [
+        "c = Canvas()",
+        "c.text(_lexsync_row()[u'target'])",
+        "_t0 = c.show()",
+        "var.onset_time = _t0",
+        "send_trigger(int(var.get(u'condition_trigger', _eval=False)))",
+        "_kb = Keyboard(keylist=[u'left', u'right'])",
+        "_kb.flush()",
+        "_key, _t = _kb.get_key(timeout=800)",
+        "if _key is None:",
+        "    c = Canvas()",
+        "    c.show()",
+        "    _key, _t = _kb.get_key(timeout=2000)",
+        "var.response = _key",
+        "var.response_time = u'' if _key is None else _t - _t0",
+        "var.timed_out = 1 if _key is None else 0",
+        "_want = str(_lexsync_row().get(u'answer', u'')).strip()",
+        "_got = u'' if _key is None else str(_key).strip()",
+        "var.correct = (1 if _got == _want else 0) if _want else u''",
+    ]
+
+
+def test_opensesame_timeouts_are_written_in_whole_milliseconds_as_declared(schema, tmp_path):
+    # 1.001 s times 1000 is 1000.9999999999999 in binary floating point, so int() wrote
+    # a declared 1,001 ms as 1,000: 95 of the whole-millisecond timeouts from 1 to 10,000
+    # came out one short. test-scripting.R pins the same lines.
+    delayed = {"name": "d", "language": "english", "events": [
+        {"type": "text", "content": "{word}", "duration_ms": 300},
+        {"type": "blank", "duration_ms": 100},
+        {"type": "response", "keys": ["f", "j"], "timeout_ms": 1001},
+        {"type": "question", "content": "{word}", "keys": ["f", "j"], "timeout_ms": 1003}]}
+    lines = open(export_opensesame(_stim(), delayed, schema, str(tmp_path)),
+                 encoding="utf-8").read().splitlines()
+    assert "\tset timeout 1001" in lines
+    assert "\t_kb = Keyboard(keylist=[u'f', u'j'], timeout=1003)" in lines
+    onset = {"name": "o", "language": "english", "events": [
+        {"type": "text", "content": "{word}", "duration_ms": 300},
+        {"type": "response", "keys": ["f", "j"], "timeout_ms": 1001}]}
+    lines = open(export_opensesame(_stim(), onset, schema, str(tmp_path)),
+                 encoding="utf-8").read().splitlines()
+    assert "\t    _key, _t = _kb.get_key(timeout=1001)" in lines
+
+
+def test_every_shipped_experiment_logs_each_trial():
+    # OpenSesame logs nothing without a logger item, and no generated experiment had one.
+    folder = repo_path("output", "experiments")
+    paths = sorted(glob.glob(os.path.join(folder, "*.osexp")))
+    assert paths, f"no OpenSesame experiments under {folder}"
+    for path in paths:
+        with open(path, encoding="utf-8") as handle:
+            text = handle.read()
+        items = _items(text)
+        assert items["lexsync_logger"]["type"] == "logger", path
+        assert "set auto_log yes" in items["lexsync_logger"]["lines"], path
+        runs = _trial_runs(text.splitlines())
+        assert runs[0] == "lexsync_trial_start", path
+        assert runs[-2:] == ["lexsync_record", "lexsync_logger"], path
+        # Every shipped response follows its target, so none waits for the target to go.
+        assert not [name for name, item in items.items()
+                    if item["type"] == "keyboard_response"], path
 
 
 # ---- One experiment per counterbalancing version ---------------------------------------

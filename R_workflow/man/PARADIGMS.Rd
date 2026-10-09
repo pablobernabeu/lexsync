@@ -25,6 +25,8 @@ inherited by a design that names that paradigm.
 Each event is a list with \code{type} (fixation | text | mask | blank |
 region_by_region | response | question | feedback), \code{content} (a literal or a
 \code{{field}} reference), an optional \code{trigger} (an integer EEG code or the token
-"condition"/"item"), \code{onset_locked}, response \code{keys}/\code{timeout_ms}, and an
-optional \code{blocks} restricting the event to named blocks.
+"condition"/"item"), \code{onset_locked}, response \code{keys}/\code{timeout_ms}, a response's
+\code{from} (where its window opens: "onset", with the text event before it, which is
+the default after a text event, or "offset", once that has gone), and an optional
+\code{blocks} restricting the event to named blocks.
 }

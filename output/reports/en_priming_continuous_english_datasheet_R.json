@@ -85,7 +85,7 @@
     ]
   },
   "analysis": {
-    "response": "the trial outcome (e.g. reaction time or accuracy)",
+    "response": "reaction time from the onset of `{target}`; responses collected for 2800 ms; a response ends the trial",
     "suggested_model": "response ~ target.frequency + target.length + pair.overlap + (1 + target.frequency | subject) + (1 | item)",
     "note": "The predictor is kept continuous and analysed by regression or a mixed model rather than dichotomised (Kuperman, 2015; Liben-Nowell et al., 2019); the controls enter as covariates. Crossed random effects for subjects and items guard the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008); reduce the structure if it does not converge (Matuschek et al., 2017). Dotted dimension names are valid in R formulas but must be quoted as Q(\"...\") in Patsy-style Python interfaces."
   },
@@ -143,6 +143,15 @@
     "versions": 2,
     "assignment": "version = ((participant - 1) mod 2) + 1 unless a version is given at launch"
   },
+  "presentation": {
+    "response_windows": [
+      {
+        "event": 5,
+        "from": "onset",
+        "window_ms": 2800
+      }
+    ]
+  },
   "resampling": null,
   "items": {
     "n_total": 16,
@@ -169,7 +178,7 @@
       "os": "Windows x86-64"
     },
     "design_sha256": "ccfdfb44d3a32c3642b8dec85fe32f9cce173b90185d10bb1d8016379576cd6f",
-    "schema_sha256": "960331bc24fc002527fc36aca87b4fbf1c7504a75e520a1287918761c53abdb3"
+    "schema_sha256": "22c5b2140a199af60f71aa1d00de88b3f487147668393fc752be85538d44d979"
   },
   "artifacts": [
     {
@@ -186,19 +195,19 @@
     },
     {
       "file": "output/experiments/en_priming_continuous_english_psychopy.py",
-      "sha256": "e20da72be71b67add3643e86aee4118fb9626b1eb0628b500cd079cb4914efb4"
+      "sha256": "0f2d44683cc926aa9d4684ca7868c9e12aed02941a9ded26c77ce41c445d9271"
     },
     {
       "file": "output/experiments/en_priming_continuous_english_list1.osexp",
-      "sha256": "683de674d0d0bb0f5acbaf8c9789f45f52821cf44395a80070d51f75cf2df7a7"
+      "sha256": "eaeafeeaf3385fb1bb1ec7a81a391db01ac73dd8139f7f29bf95e6a19508dc4b"
     },
     {
       "file": "output/experiments/en_priming_continuous_english_list2.osexp",
-      "sha256": "69cd608b578ec44aca2c993c1b7ceb184cd2216128fc0cc2a8ac3079843d20dc"
+      "sha256": "db091376a92754ecc10587642ba506148c5caf1e99fa0ccb3c218994024d2767"
     },
     {
       "file": "output/experiments/en_priming_continuous_english.html",
-      "sha256": "6f6a8f258b7bb2ebee4df89072e6ae465f1f939258df2f67dc6c8484d8a6f297"
+      "sha256": "8dede897a8623b464dbbab87ebdec4b49c57bea94589fbc5c12dce182c321173"
     },
     {
       "file": "output/experiments/en_priming_continuous_english_psychopy.csv",
