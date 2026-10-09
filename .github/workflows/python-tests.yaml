@@ -101,8 +101,10 @@ jobs:
       # Everything above runs from the checkout, where a datum missing from the
       # wheel is masked by the repository copy sitting next to it. Prove the wheel
       # alone suffices: install it into a bare venv, leave the checkout, and run a
-      # real design offline (the design, the corpus it references and the schema
-      # are copied in first). One leg is enough; the wheel is pure Python.
+      # real design offline. The design, the schema and the two files the design
+      # names, its lexicon and its exclusion list, are copied in first, so a design
+      # that comes to name another file needs it added here. One leg is enough;
+      # the wheel is pure Python.
       - name: Smoke-test the built wheel outside the checkout
         if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
         run: |
@@ -111,7 +113,8 @@ jobs:
           mkdir -p "$RUNNER_TEMP/config" "$RUNNER_TEMP/corpora/derived"
           cp "$GITHUB_WORKSPACE/config/design_en_freqcontrast.yaml" "$RUNNER_TEMP/config/"
           cp "$GITHUB_WORKSPACE/config/schema.yaml" "$RUNNER_TEMP/config/"
-          cp "$GITHUB_WORKSPACE/corpora/derived/en.csv" "$RUNNER_TEMP/corpora/derived/"
+          cp "$GITHUB_WORKSPACE/config/exclude_en_demo.txt" "$RUNNER_TEMP/config/"
+          cp "$GITHUB_WORKSPACE/corpora/derived/en_v2.csv" "$RUNNER_TEMP/corpora/derived/"
           cd "$RUNNER_TEMP"
           "$RUNNER_TEMP/wheel-venv/bin/python" - <<'EOF'
           from importlib.resources import files
