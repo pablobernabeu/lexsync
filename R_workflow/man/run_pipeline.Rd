@@ -49,4 +49,10 @@ A design that refers to \code{n_syllables} in any of those places is refused whe
 word that passes the other filters the lexicon can answer has no syllable
 estimate, which is the case for every word outside the Latin script (see
 \code{\link[=count_syllables]{count_syllables()}}).
+
+A corpus, pool or generate design may list words to leave out under
+\code{exclude_words}, or name a file of them with \code{exclude_words: {path: ...}}. They are
+removed from the candidates after any \verb{norms:} join and before the pool filters, and
+the datasheet records the list with its checksum. The neighbourhood reference, and
+the words a generated pseudoword must not equal, keep them.
 }

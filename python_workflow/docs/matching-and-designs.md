@@ -60,6 +60,65 @@ design's `pool_filters`. It matches over whatever frame you hand it. A script th
 the selection will look plausible while answering a different question. The package's own test suite
 pins this, checking that the README's example calls `build_pool` before matching.
 
+## Choosing and screening a lexicon
+
+The lexica in the repository's `corpora/derived/` hold the most frequent forms wordfreq gives for a
+language, and wordfreq lists names, acronyms and internet forms beside words. Such forms enter a
+selection unevenly across conditions: in the `en_andrews_repro` demonstration they make up 24 of the
+36 low-frequency items and none of the 36 high-frequency ones. N and OLD20 count them as neighbours
+too, so that `cat` has 32 neighbours in `en.csv`, among them `caa`, `cbt` and `cdt`.
+
+`corpora/derived/en_v2.csv` screens the English lexicon against SUBTLEX-US
+([Brysbaert & New, 2009](references.md#brysbaert-2009)). It holds the 30,000 forms and frequencies
+of `en.csv` and adds four columns. `in_subtlex_us` is 1 when SUBTLEX-US lists the form, and
+`lowercase_share` is the share of its SUBTLEX-US uses that begin with a lower-case letter, empty
+for a form SUBTLEX-US lacks. `nonstandard` is 1 for a form SUBTLEX-US lacks or whose share is below
+0.10, which marks 6,565 forms, mostly names and acronyms, and `reference_member` is 1 for the other
+23,435. The file's `n_density` and `old20` count neighbours among those only, so `cat` has 21, and
+`n_density_raw` and `old20_raw` keep the values of `en.csv`. To select among the unmarked forms,
+filter on the flag.
+
+```yaml
+lexicon: corpora/derived/en_v2.csv
+pool_filters:
+  nonstandard: [0, 0]
+```
+
+The threshold is low on purpose. A capital at the start of a sentence pulls ordinary words down, so
+even `what`, `how`, `why`, `maybe`, `okay` and `yes` begin with a lower-case letter in under half
+their uses. A filter such as `lowercase_share: [0.5, 1]` would drop them all. Even at 0.10 the flag
+marks the days of the week, the months other than `march` and `may`, most nationality words, `god`,
+`ok` and `tv`. It also marks every form the 2009 corpus lacks, such as `selfie`, `emoji` and
+`covid`. A design that needs some of those can leave the flag unfiltered and remove what it does
+not want by name. A range filter on `lowercase_share` would also drop every form SUBTLEX-US lacks,
+whose share is empty.
+
+`exclude_words` removes words by name. It lists them in the design, or names a UTF-8 file with one
+word per line, in which blank lines and lines beginning `#` are skipped.
+
+```yaml
+exclude_words: [adams, dubai, espn]
+# or, from a file: exclude_words: {path: config/exclude_en.txt}
+```
+
+The words are trimmed, lower-cased and put in NFC, as a lexicon's words are. They leave the
+candidates of a corpus, pool or generated design after any `norms:` join and before the pool
+filters. The neighbourhood reference still counts them, and a generated pseudoword still may not
+equal one, because an excluded word is still a word of the language. A design with an item table
+refuses the key, since its items are already a selection of your own. The datasheet records the
+list as `materials_source.exclusions`, with its checksum, the number of words it lists and the
+number of candidates it removed, and the Methods paragraph reports the removal.
+
+`en.csv` keeps its bytes, so a design written for lexsync 0.1 selects what it selected, and the
+English demonstrations still read it. Spanish and Chinese have no screened lexicon, because no source
+of letter case or known words with a verified licence exists for them. Read a selection in either
+language before a study runs, and leave out what you find with `exclude_words`.
+
+The datasheet credits the lexicon a corpus or generated design read. A lexicon lexsync ships is
+credited to wordfreq, and `en_v2.csv` to wordfreq screened against SUBTLEX-US, with the rule. A
+corpus that `fetch_corpus` put in the cache is credited by the registry's citation, and any other
+file by its name and the first twelve digits of its checksum.
+
 ## Supplied item pools
 
 Narrowing a whole lexicon is the right way round when any word of the language will do. It is the

@@ -26,6 +26,7 @@
   "items.generation", "items.generation.method", "items.generation.exclude",
   "items.anchor_condition",
   "pool_filters",
+  "exclude_words", "exclude_words.path",
   "conditions", "conditions[].name", "conditions[].define_by",
   "match_on", "n_per_condition", "n_per_cell",
   "matching", "matching.method", "matching.tolerance_k", "matching.shortfall",
@@ -282,6 +283,43 @@ design_stem <- function(design) {
   stem
 }
 
+.EXCLUDE_WORDS_MESSAGE <- paste("lexsync: exclude_words must be a list of words, or a mapping",
+                                "whose `path` names a file of words.")
+
+# The design's `exclude_words`, checked: NULL, a character vector of words, or
+# list(path = path). A list holds the words themselves, and the YAML reader gives `[dog]`
+# and `dog` alike, so a lone word is a list of one. A mapping names a UTF-8 file with
+# one word per line, which .read_exclude_words() reads later, so a mapping without a
+# `path` is refused. The YAML reader gives `{}` as a named empty list, a mapping, and
+# `[]` as an empty list of words. A path containing '..' is refused, as for the design's
+# other inputs, and so is the key for an item table, whose items are the researcher's
+# own and are not filtered. Must stay identical to _exclude_words in design.py.
+.exclude_words <- function(design) {
+  value <- design[["exclude_words"]]
+  if (is.null(value)) return(NULL)
+  if (identical(design[["items"]][["source"]] %||% "corpus", "table")) {
+    stop(paste("lexsync: exclude_words has no effect for items.source 'table'; leave the",
+               "words out of the item table instead."), call. = FALSE)
+  }
+  if (.is_mapping(value)) {
+    path <- value[["path"]]
+    if (!is.character(path) || length(path) != 1L || is.na(path) || !nzchar(trimws(path))) {
+      stop(.EXCLUDE_WORDS_MESSAGE, call. = FALSE)
+    }
+    parts <- strsplit(gsub("\\\\", "/", path), "/", fixed = TRUE)[[1]]
+    if (".." %in% parts) stop("lexsync: exclude_words path must not contain '..'.", call. = FALSE)
+    return(list(path = path))
+  }
+  if (is.list(value)) {
+    text <- vapply(value, function(v) is.character(v) && length(v) == 1L && !is.na(v),
+                   logical(1))
+    if (!all(text)) stop(.EXCLUDE_WORDS_MESSAGE, call. = FALSE)
+    value <- as.character(unlist(value, use.names = FALSE))
+  }
+  if (!is.character(value) || anyNA(value)) stop(.EXCLUDE_WORDS_MESSAGE, call. = FALSE)
+  value
+}
+
 .check_conditions <- function(design) {
   conds <- design[["conditions"]]
   if (is.null(conds)) return(invisible(NULL))
@@ -320,7 +358,8 @@ design_stem <- function(design) {
 #' unknown timing key or a bad response key. Last, it refuses a condition without a
 #' name, with a name that is not text or with a repeated name, a corpus or pool
 #' design with conditions but no `match_on`, and a name and language that leave no
-#' file stem.
+#' file stem. It also refuses an `exclude_words` that is neither a list of words nor a
+#' mapping whose `path` names a file, and one that a design with an item table names.
 #'
 #' Any other key lexsync does not read is not refused yet. It is returned as a note,
 #' which [run_pipeline()] writes into the run log, and a later release will refuse
@@ -359,6 +398,7 @@ validate_design <- function(design, schema) {
   render_events(resolve_events(design), design[["timing"]] %||% list(), .refresh_hz(schema))
 
   .check_conditions(design)
+  .exclude_words(design)
   source <- design[["items"]][["source"]] %||% "corpus"
   if (source %in% c("corpus", "pool") && is.null(design[["continuous"]]) &&
       length(design[["conditions"]])) {

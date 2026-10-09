@@ -31,6 +31,15 @@ authors (see 'corpora/ATTRIBUTION.md'), (b) indicate if changes were made
 (lexsync standardises columns and computes derived variables) and (c)
 distribute any adaptations under the same licence.
 
+One derived file has a second direct source. 'corpora/derived/en_v2.csv' keeps
+the rows of 'en.csv' and adds columns computed from SUBTLEX-US (Brysbaert &
+New, 2009), as openlexicon distributes it under CC BY-SA 4.0. They record
+whether SUBTLEX-US lists each form and what share of its uses begin with a
+lower-case letter, with flags derived from the two. Its 'source' column still
+names wordfreq, whose frequencies it carries. It also owes SUBTLEX-US a direct
+credit. 'corpora/ATTRIBUTION.md' gives the citation, the file it was read from
+and that file's checksum.
+
 Two further notices belong with the derived files, because CC BY-SA 4.0 asks
 that they be kept with the material. The copyright notice carried by wordfreq's
 own licence file is 'Copyright 2022 Robyn Speer', and it is retained here. As
@@ -54,7 +63,7 @@ Those citations are in 'corpora/ATTRIBUTION.md'. Note that SUBTLEX contributes
 to the blend rather than constituting it: no lexsync corpus is a copy of a
 SUBTLEX list, and the SUBTLEX resources listed in 'corpora/registry.yaml' are
 separate corpora a user may load directly, not the source of anything bundled
-here.
+here apart from the screening columns of 'en_v2.csv' described above.
 
 For Mandarin Chinese, wordfreq also imports a wordlist shipped with the Jieba
 segmenter whose provenance its own documentation describes as unknown. Anyone

@@ -34,13 +34,18 @@
 #   selection$generation_exclude   the known-form lists a generated pseudoword was
 #                                  checked against (source, sha256, n_forms each),
 #                                  present only when the design names any
-#   selection$tie_break         the rule that broke exact ties between equally close
+#   selection$tie_break        the rule that broke exact ties between equally close
 #                               candidates (rule, salt; the salt only for hash),
 #                               present for a matched corpus or pool design
 #   presentation$response_windows  each response event's window, (event, from,
 #                               window_ms); window_ms is null, with duration_column and
 #                               timeout_ms, when the stimulus's duration varies by trial
 #                               (analysis$response now says where a reaction time starts)
+#   materials_source$exclusions   the design's exclude_words (path, sha256, n_listed,
+#                                  n_removed), present only when the design has the key
+#   materials_source$provenance    for a corpus or generated design, the credit of the
+#                                  lexicon read (see .lexicon_provenance). Earlier
+#                                  records credited wordfreq for any file.
 DATASHEET_VERSION <- "1.2"
 
 # Datasheet labels for the pseudoword generators in generation.R, keyed by the
@@ -50,6 +55,112 @@ DATASHEET_VERSION <- "1.2"
   letter_substitution = "constrained letter substitution (deterministic pseudowords)",
   subsyllabic = "subsyllabic constituent swap (Wuggy-style, deterministic pseudowords)"
 )
+
+# The credit the datasheet and the Methods paragraph give a lexicon lexsync ships. Kept
+# character-for-character identical to the strings in datasheet.py.
+.PROVENANCE_WORDFREQ <- paste0(
+  "wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at ",
+  "https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md")
+.PROVENANCE_SCREENED <- paste0(
+  "wordfreq (Speer, 2022) screened against SUBTLEX-US (Brysbaert & New, 2009), data ",
+  "CC BY-SA 4.0; forms absent from SUBTLEX-US or beginning with a lower-case letter in ",
+  "under 10% of their uses are marked nonstandard, and N and OLD20 count only the ",
+  "unmarked forms; full corpus licence and citation at ",
+  "https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md")
+
+# The lexica lexsync ships, the repository's derived lexica and the example slices both
+# packages bundle. Each is keyed by the SHA-256 of its bytes with CRLF line ends read as
+# LF (see .lf_sha256) and maps to its file and its credit. A rebuilt file needs its new
+# key here and in _BUNDLED_LEXICA in datasheet.py, and the tests in
+# test-lexicon-provenance.R fail until it has one.
+.BUNDLED_LEXICA <- list(
+  "575833489e04d6a4001fda56a56e3daa383811dece1f819c44060ee79ca56976" =
+    list(file = "corpora/derived/en.csv", provenance = .PROVENANCE_WORDFREQ),
+  "46815cd56ac036cb841460a2ea6205ac374eddb6ca26275bb1a2fbafc7c5d626" =
+    list(file = "corpora/derived/en_v2.csv", provenance = .PROVENANCE_SCREENED),
+  "e9f93013c16ec9745c0d02f82c697f2488c328365b95b57c5f04ac2565c123ea" =
+    list(file = "corpora/derived/es.csv", provenance = .PROVENANCE_WORDFREQ),
+  "0f77aec3fe307ed38f1e69e69f7c80ee93e38ffb8c0622b817fd2c26d15114d5" =
+    list(file = "corpora/derived/es_gender.csv", provenance = .PROVENANCE_WORDFREQ),
+  "74666b257c1ad7bce4694a4b172796fbdc08c1414183bea5f28faa5ed3ab2fc4" =
+    list(file = "corpora/derived/zh.csv", provenance = .PROVENANCE_WORDFREQ),
+  "939ee46015bc03cdb3fa12e2598f763b818c941118a8170bb408386277945e01" =
+    list(file = "en_example.csv", provenance = .PROVENANCE_WORDFREQ),
+  "7afbdd7db2d84e3f252a40baafe1e53fa4fde1e4ae5256497cb1ac79f28947ec" =
+    list(file = "es_example.csv", provenance = .PROVENANCE_WORDFREQ),
+  "d42f5afdc16d0f23ec5fc12dd58afbd1e639e9191f2c4611d9262eabbb982aca" =
+    list(file = "zh_example.csv", provenance = .PROVENANCE_WORDFREQ)
+)
+
+# The SHA-256 of a file's bytes with every CRLF read as LF. Git stores the lexica with LF
+# line ends. A checkout that converts them to CRLF, as one OneDrive copy of this
+# repository did, holds the same lexicon under another checksum of its raw bytes.
+# Mirrors _lf_sha256 in datasheet.py.
+.lf_sha256 <- function(path) {
+  bytes <- readBin(path, "raw", file.info(path)$size)
+  n <- length(bytes)
+  if (n > 1L) {
+    cr <- which(bytes[-n] == as.raw(13L) & bytes[-1L] == as.raw(10L))
+    if (length(cr)) bytes <- bytes[-cr]
+  }
+  if (!length(bytes)) return(digest::digest("", algo = "sha256", serialize = FALSE))
+  digest::digest(bytes, algo = "sha256", serialize = FALSE)
+}
+
+.file_name <- function(path) basename(gsub("\\", "/", path, fixed = TRUE))
+
+# The registry's citation for a lexicon fetch_corpus() put in the cache, or NULL. The
+# file must lie in lexsync's cache, and its name less `.csv` must name a corpus in the
+# registry, or be `<language>_wordfreq` for a language the wordfreq connector lists.
+# Those are the names fetch_corpus() gives what it fetches, the second in the Python
+# engine only. Mirrors _registry_citation in datasheet.py.
+.registry_citation <- function(path) {
+  name <- .file_name(path)
+  if (!endsWith(name, ".csv")) return(NULL)
+  where <- function(p) {
+    p <- normalizePath(p, winslash = "/", mustWork = FALSE)
+    if (identical(.Platform$OS.type, "windows")) tolower(p) else p
+  }
+  if (!identical(where(dirname(path)), where(path.expand(lexsync_cache_dir())))) return(NULL)
+  reg <- tryCatch(yaml::read_yaml(default_registry_path()), error = function(e) NULL)
+  if (!.is_mapping(reg)) return(NULL)
+  stem <- sub("\\.csv$", "", name)
+  is_text <- function(x) is.character(x) && length(x) == 1L && !is.na(x)
+  corpora <- reg[["corpora"]]
+  entry <- if (.is_mapping(corpora)) corpora[[stem]] else NULL
+  if (.is_mapping(entry) && is_text(entry[["citation"]])) return(entry[["citation"]])
+  connector <- reg[["wordfreq_connector"]]
+  if (.is_mapping(connector) && is_text(connector[["citation"]]) &&
+      endsWith(stem, "_wordfreq") &&
+      sub("_wordfreq$", "", stem) %in% unlist(connector[["languages"]], use.names = FALSE)) {
+    return(connector[["citation"]])
+  }
+  NULL
+}
+
+# The credit for the lexicon a corpus or generated design read. A lexicon lexsync ships
+# is recognised by the checksum .lf_sha256() gives, and is credited to wordfreq, or for
+# en_v2.csv to wordfreq screened against SUBTLEX-US with the screening rule stated. A
+# corpus fetch_corpus() put in the cache is credited by the registry's citation. Any
+# other file is the user's own and is named by its file name and the first twelve
+# hexadecimal digits of its SHA-256, which materials_source$sha256 holds in full. Every
+# lexicon used to be credited to wordfreq, so a study selecting from SUBTLEX-US, or from
+# a lexicon of its own, would have cited the wrong corpus. Mirrors _lexicon_provenance in
+# datasheet.py.
+.lexicon_provenance <- function(path) {
+  if (is.null(path) || length(path) != 1L || is.na(path) || !nzchar(path)) {
+    return("a user-supplied lexicon")
+  }
+  name <- .file_name(path)
+  if (!file.exists(path) || dir.exists(path)) {
+    return(sprintf("a user-supplied lexicon (%s)", name))
+  }
+  bundled <- .BUNDLED_LEXICA[[.lf_sha256(path)]]
+  if (!is.null(bundled)) return(bundled$provenance)
+  cited <- .registry_citation(path)
+  if (!is.null(cited)) return(cited)
+  sprintf("a user-supplied lexicon (%s, sha256 %s)", name, substr(sha256_file(path), 1L, 12L))
+}
 
 .versions_R <- function(engine) {
   v <- list(engine = engine,
@@ -293,6 +404,16 @@ DATASHEET_VERSION <- "1.2"
 #'   design's `items.generation.exclude`, each `list(source, sha256, n_forms)`. A
 #'   pseudoword was refused for equalling any form in them, so they decide which
 #'   pseudowords a run produces, as the lexicon does.
+#' @param exclusions Optional record of a corpus, pool or generated design's
+#'   `exclude_words`, as `list(path, sha256, n_listed, n_removed)`. It gives the file,
+#'   or `"inline"` for a list in the design, its checksum, the number of distinct words
+#'   it lists and the number of candidates it removed. Recorded as
+#'   `materials_source$exclusions`, because the words decide which candidates the
+#'   selection could draw.
+#' @details For a corpus or generated design, `materials_source$provenance` credits the
+#'   lexicon that `source_path` names. A lexicon lexsync ships is credited by its
+#'   source, a corpus fetched into the cache by the registry's citation, and any other
+#'   file by its file name and checksum.
 #' @return The datasheet as a nested list, ready for [write_datasheet()].
 #' @export
 build_datasheet <- function(design, schema, report, stimuli, source_path, artifacts,
@@ -300,7 +421,8 @@ build_datasheet <- function(design, schema, report, stimuli, source_path, artifa
                             balance = NULL, blocks = NULL, design_path = NULL,
                             schema_path = NULL, selection_audit = NULL,
                             neighbourhood_reference = NULL, counterbalance_check = NULL,
-                            input_normalisation = NULL, generation_exclude = NULL) {
+                            input_normalisation = NULL, generation_exclude = NULL,
+                            exclusions = NULL) {
   source <- design[["items"]][["source"]] %||% "corpus"
   is_continuous <- .is_continuous(design)
   controlled <- .controlled_dims(design, source)
@@ -417,9 +539,7 @@ build_datasheet <- function(design, schema, report, stimuli, source_path, artifa
   materials_source <- list(
     type = source, path = source_path, sha256 = sha256_file(source_path),
     provenance = if (source %in% c("corpus", "generate"))
-      paste0("wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and ",
-             "citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/",
-             "ATTRIBUTION.md")
+      .lexicon_provenance(source_path)
     else if (identical(source, "pool"))
       "user-supplied word pool, matched by lexsync"
     else "user-supplied item table")
@@ -436,6 +556,14 @@ build_datasheet <- function(design, schema, report, stimuli, source_path, artifa
   # with no `norms:` block gets no key at all rather than a "norms": null that every
   # datasheet would then carry.
   if (length(norms)) materials_source$norms <- norms
+  # The words the design took out of the candidates, after the norms and before the pool
+  # filters. Integers as integers, so both engines write the same JSON.
+  if (!is.null(exclusions) && source %in% c("corpus", "pool", "generate")) {
+    materials_source$exclusions <- list(
+      path = exclusions$path, sha256 = exclusions$sha256,
+      n_listed = as.integer(exclusions$n_listed),
+      n_removed = as.integer(exclusions$n_removed))
+  }
   if (!is.null(input_normalisation)) {
     materials_source$input_normalisation <- list(
       changed = as.integer(input_normalisation$changed),
@@ -575,6 +703,30 @@ build_datasheet <- function(design, schema, report, stimuli, source_path, artifa
   paste0(". Besides the lexicon, pseudowords were checked against ", listed)
 }
 
+# The design's exclusion list, for the Methods prose: how many candidates it removed, and
+# its file by name like the norm tables. A sentence without its final full stop, or empty
+# without a list. Mirrors _exclusions_note in datasheet.py.
+.exclusions_note <- function(ds) {
+  ex <- ds$materials_source$exclusions
+  if (is.null(ex)) return("")
+  n <- as.integer(ex$n_removed)
+  where <- if (identical(ex$path, "inline")) "in the design"
+           else sprintf("(%s)", .file_name(ex$path))
+  sprintf("An exclusion list %s removed %d word%s from the candidates before selection",
+          where, n, if (n == 1L) "" else "s")
+}
+
+# The Markdown datasheet's line for the exclusion list, or NULL without one. Mirrors the
+# 'Excluded words' line of render_datasheet_md in datasheet.py.
+.excluded_words_line <- function(ex) {
+  if (is.null(ex)) return(NULL)
+  n_listed <- as.integer(ex$n_listed)
+  sprintf("- **Excluded words:** %s (%d word%s, %d removed, sha256 `%s...`)",
+          if (identical(ex$path, "inline")) "the design's list" else sprintf("`%s`", ex$path),
+          n_listed, if (n_listed == 1L) "" else "s", as.integer(ex$n_removed),
+          substring(ex$sha256 %||% "", 1, 16))
+}
+
 # The counterbalancing recipe as the Methods text names it. A Latin square the check
 # found incomplete is called incomplete, since the bare label would claim a rotation
 # the lists or the item sets did not complete. A record without the check, written
@@ -627,14 +779,17 @@ methods_paragraph <- function(ds) {
              .fmt_dp(max(rs), 3)) else ""
     cb <- ds$counterbalancing
     recipe_label <- .recipe_label(cb)
+    excluded <- .exclusions_note(ds)
+    if (nzchar(excluded)) excluded <- paste0(" ", excluded, ".")
     return(sprintf(paste0("%s %s %s were selected to span %s%s continuously while holding ",
                           "%s near-constant%s, for analysis by regression or a mixed model rather ",
                           "than a between-condition contrast (Kuperman, 2015; Liben-Nowell et al., ",
-                          "2019).%s Materials were counterbalanced into %s list(s) (%s) and generated ",
-                          "for PsychoPy, OpenSesame and jsPsych.%s%s The selection is deterministic ",
-                          "and reproducible (lexsync %s), and the seed (%s) fixes the trial order."),
+                          "2019).%s%s Materials were counterbalanced into %s list(s) (%s) and ",
+                          "generated for PsychoPy, OpenSesame and jsPsych.%s%s The selection is ",
+                          "deterministic and reproducible (lexsync %s), and the seed (%s) fixes ",
+                          "the trial order."),
                    n, lang, unit, predictor, span_str, controls, corr_str, .norms_note(ds),
-                   cb$lists, recipe_label, .versions_note(ds), .response_note(ds),
+                   excluded, cb$lists, recipe_label, .versions_note(ds), .response_note(ds),
                    ds$reproducibility$versions$lexsync, ds$reproducibility$seed))
   }
   if (identical(src, "corpus")) {
@@ -737,7 +892,11 @@ methods_paragraph <- function(ds) {
     paste0(". This design's matching method uses a covariance inverse or an assignment ",
            "solver, so the R and Python engines select equivalent but not byte-identical ",
            "materials") else ""
-  paste0(lead, control, pool_note, cap_note, ce_note, bal_note, tail, .norms_note(ds))
+  # Placed before the pool size, which it shrank.
+  excluded <- .exclusions_note(ds)
+  if (nzchar(excluded)) excluded <- paste0(". ", excluded)
+  paste0(lead, control, excluded, pool_note, cap_note, ce_note, bal_note, tail,
+         .norms_note(ds))
 }
 
 #' @keywords internal
@@ -806,6 +965,8 @@ render_datasheet_md <- function(ds) {
               else sprintf(" (sha256 `%s...`)",
                            substring(ds$materials_source$dimensions_sha256, 1, 16)))
     else NULL,
+    # The design's exclusion list, which decided what the selection could draw on.
+    .excluded_words_line(ds$materials_source$exclusions),
     if (!is.null(ds$materials_source$input_normalisation))
       sprintf("- **Input normalisation:** %d text form(s) rewritten to Unicode NFC, %d duplicate(s) removed",
               as.integer(ds$materials_source$input_normalisation$changed),

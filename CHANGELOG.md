@@ -28,6 +28,30 @@ no function signature changes.
   datasheets, which record the schema's SHA-256, and their run logs are
   regenerated. The twin-edge case `generation_exclude` pins both engines to one
   outcome.
+- A screened English lexicon, `corpora/derived/en_v2.csv`, holds the same 30,000
+  wordfreq forms as `en.csv` with columns from SUBTLEX-US (Brysbaert & New,
+  2009): `in_subtlex_us`, `lowercase_share` and `nonstandard`, which marks forms
+  absent from SUBTLEX-US or beginning with a lower-case letter in under a tenth of
+  their uses (names, acronyms and many internet forms, 6,565 in all). Its N and
+  OLD20 are computed against the 23,435 unmarked forms only, so the marked forms
+  no longer count as neighbours (`cat` has 21 where `en.csv` gives 32), and
+  `n_density_raw` and `old20_raw` keep the old values. Filter with
+  `pool_filters: {nonstandard: [0, 0]}`.
+  `en.csv` is unchanged, so designs that must reproduce earlier selections keep
+  working. `corpora/fetch_corpora.py --screen-en` rebuilds the file byte for byte
+  from a SUBTLEX-US copy whose checksum it verifies, and `corpora/ATTRIBUTION.md`
+  and `LICENSE-DATA` credit SUBTLEX-US as its direct source. This is repository
+  data, and the package example slices follow later.
+- A design can exclude words with `exclude_words`, a list or a file with one word
+  per line, applied before the pool filters and recorded in the datasheet with
+  its checksum. The words are keyed as a lexicon's are and leave the candidates
+  of a corpus, pool or generated design after the norms join. The neighbourhood
+  reference, and the words a generated pseudoword must not equal, keep them. The
+  datasheet records the list as `materials_source.exclusions` (its path or
+  `inline`, checksum, words listed and candidates removed), a field of datasheet
+  format 1.2, the run log notes the removal, and the Methods paragraph reports
+  it. A design with an item table refuses the key. The twin-edge case
+  `exclude_words_inline` pins both engines to one outcome.
 
 - `matching.tie_break` chooses how exact ties between equally close candidates are
   broken. `bytes`, the default, breaks them by spelling, as lexsync 0.1 did, and
@@ -351,6 +375,17 @@ no function signature changes.
   declared. A timeout of 1,001 ms was written as 1,000, because the value went
   through seconds and back, and 95 of the whole-millisecond values from 1 to 10,000
   came out a millisecond short. The demonstrations' timeouts were not affected.
+- The datasheet and the Methods text credit wordfreq only for the lexica lexsync
+  ships. A user's own lexicon was described as wordfreq data, so a study selecting
+  from SUBTLEX would have cited the wrong corpus. It is now named by its file name
+  and checksum, and a corpus fetched into the cache by the registry's citation. A
+  shipped lexicon is recognised by its checksum with CRLF line endings read as
+  LF, and the credit for `en_v2.csv` states its screening rule. The shipped
+  designs' credits do not change, and the twin-edge case
+  `user_lexicon_provenance` pins both engines. The schema's comments describe the
+  new key and columns, so the 42 committed datasheets, which record the schema's
+  SHA-256, and their run logs are regenerated. No stimulus, report table or
+  experiment changes.
 
 ### Security
 

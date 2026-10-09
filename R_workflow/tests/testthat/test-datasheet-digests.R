@@ -32,6 +32,11 @@ recorded_digests <- function(ds) {
                 list(ds$relational$member_lexicon, ds$relational$member_lexicon_sha256),
                 list(ds$items$stimuli_file, ds$items$stimuli_sha256))
   for (table in ms$norms) pairs <- c(pairs, list(list(table$path, table$sha256)))
+  # An exclusion list written in the design has no file, and its digest is the list's.
+  excluded <- ms$exclusions
+  if (!is.null(excluded) && !identical(excluded$path, "inline")) {
+    pairs <- c(pairs, list(list(excluded$path, excluded$sha256)))
+  }
   for (art in ds$artifacts) pairs <- c(pairs, list(list(art$file, art$sha256)))
   Filter(function(p) !is.null(p[[1]]) && !is.null(p[[2]]), pairs)
 }

@@ -39,6 +39,7 @@ DESIGN_KEYS = (
     "items.generation", "items.generation.method", "items.generation.exclude",
     "items.anchor_condition",
     "pool_filters",
+    "exclude_words", "exclude_words.path",
     "conditions", "conditions[].name", "conditions[].define_by",
     "match_on", "n_per_condition", "n_per_cell",
     "matching", "matching.method", "matching.tolerance_k", "matching.shortfall",
@@ -344,6 +345,41 @@ def design_stem(design: dict) -> str:
     return stem
 
 
+_EXCLUDE_WORDS_MESSAGE = ("lexsync: exclude_words must be a list of words, or a mapping "
+                          "whose `path` names a file of words.")
+
+
+def _exclude_words(design: dict):
+    """The design's `exclude_words`, checked: None, a list of words or {"path": path}.
+
+    A list holds the words themselves, and a lone word is a list of one, as R's YAML
+    reader gives `[dog]` and `dog` alike. A mapping names a UTF-8 file with one word
+    per line, so a mapping without a `path`, `{}` among them, is refused: R reads `{}`
+    as a mapping and `[]` as an empty list, as this engine does. The file is read
+    later, by querying._read_exclude_words. A path containing '..' is refused, as for
+    the design's other inputs, and so is the key for an item table, whose items are
+    the researcher's own and are not filtered. Must stay identical to .exclude_words
+    in R_workflow/R/design.R.
+    """
+    value = design.get("exclude_words")
+    if value is None:
+        return None
+    if (design.get("items") or {}).get("source", "corpus") == "table":
+        raise ValueError("lexsync: exclude_words has no effect for items.source 'table'; "
+                         "leave the words out of the item table instead.")
+    if isinstance(value, dict):
+        path = value.get("path")
+        if not isinstance(path, str) or not path.strip(" \t\r\n"):
+            raise ValueError(_EXCLUDE_WORDS_MESSAGE)
+        if ".." in path.replace("\\", "/").split("/"):
+            raise ValueError("lexsync: exclude_words path must not contain '..'.")
+        return {"path": path}
+    words = [value] if isinstance(value, str) else value
+    if not isinstance(words, list) or not all(isinstance(w, str) for w in words):
+        raise ValueError(_EXCLUDE_WORDS_MESSAGE)
+    return list(words)
+
+
 def _check_conditions(design: dict) -> None:
     conds = design.get("conditions")
     if conds is None:
@@ -384,7 +420,9 @@ def validate_design(design: dict, schema: dict) -> list:
     as one with an unknown timing key or a bad response key. Last, it refuses a
     condition without a name, with a name that is not text or with a repeated name,
     a corpus or pool design with conditions but no ``match_on``, and a name and
-    language that leave no file stem.
+    language that leave no file stem. It also refuses an ``exclude_words`` that is
+    neither a list of words nor a mapping whose ``path`` names a file, and one that a
+    design with an item table names.
 
     Any other key lexsync does not read is not refused yet. It is returned as a note,
     which ``run_pipeline`` writes into the run log, and a later release will refuse
@@ -431,6 +469,7 @@ def validate_design(design: dict, schema: dict) -> list:
     render_events(resolve_events(design), design.get("timing") or {}, _refresh_hz(schema))
 
     _check_conditions(design)
+    _exclude_words(design)
     source = (design.get("items") or {}).get("source", "corpus")
     if (source in ("corpus", "pool") and not design.get("continuous")
             and design.get("conditions")):

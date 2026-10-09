@@ -492,6 +492,91 @@ merge_norms <- function(lexicon, norms, on = "word", columns = NULL) {
        normalisation = list(changed = changed, collapsed = collapsed))
 }
 
+# ---- The design's `exclude_words` -------------------------------------------
+# Words the researcher has decided against, names and offensive words among them. No
+# filter on the lexicon's columns can remove them, since a range filter on a norm table
+# would also drop every word the table does not cover. A design lists them, or names a
+# UTF-8 file with one per line:
+#
+#   exclude_words: [adams, dubai, espn]
+#   exclude_words: {path: config/exclude_en.txt}
+#
+# run_pipeline() removes them from the candidates after the norms join and before
+# pool_filters. Only from the candidates: the neighbourhood reference, and a generated
+# design's list of real words, keep them, since an excluded word is still a word of the
+# language. The datasheet records the list with its checksum.
+#
+# Mirrors _read_exclude_words / _apply_exclude_words in querying.py.
+
+# A line holding one of these is a table row, which would be kept whole as one word and
+# match nothing, so the list would exclude nothing while the datasheet counted it.
+.EXCLUDE_SEPARATORS <- "[\t,;]"
+
+# The words of a design's `exclude_words`, as .exclude_words() returns it. That is a
+# character vector of words, or list(path = path) naming a UTF-8 file with one word per
+# line, in which blank lines and lines beginning '#' are skipped. A file that cannot be
+# read, that is not UTF-8 text, or that holds a tab, comma or semicolon in a word is
+# refused. A NUL byte counts as not UTF-8 text: it marks a binary file or UTF-16 text
+# saved without a byte-order mark, which rawToChar() cannot read and whose words would
+# match nothing. Every word is trimmed, lower-cased and put in NFC, as a lexicon's
+# words are.
+#
+# Returns list(words, record): the distinct words in UTF-8 byte order, and the record
+# the datasheet keeps, list(path, sha256, n_listed). `path` is the file's path with '/'
+# separators, or "inline" for a list in the design, and `sha256` is the file's
+# checksum, or that of the distinct words joined by line feeds. Read as bytes, so the
+# session's locale plays no part. Mirrors _read_exclude_words in querying.py.
+#' @keywords internal
+.read_exclude_words <- function(spec) {
+  if (.is_mapping(spec)) {
+    path <- spec[["path"]]
+    if (!file.exists(path) || dir.exists(path)) {
+      stop(sprintf("lexsync: exclude_words names '%s', which is not a readable file.", path),
+           call. = FALSE)
+    }
+    bytes <- readBin(path, "raw", file.info(path)$size)
+    bom <- as.raw(c(0xEF, 0xBB, 0xBF))
+    if (length(bytes) >= 3L && identical(bytes[1:3], bom)) bytes <- bytes[-(1:3)]
+    text <- if (any(bytes == as.raw(0L))) NA_character_ else rawToChar(bytes)
+    if (is.na(text) || !validUTF8(text)) {
+      stop(sprintf("lexsync: the exclude_words file '%s' is not UTF-8 text.", path),
+           call. = FALSE)
+    }
+    Encoding(text) <- "UTF-8"
+    v <- .norm_key(strsplit(text, "\n", fixed = TRUE)[[1]])
+    keep <- !is.na(v) & nzchar(v) & !startsWith(v, "#")
+    bad <- which(keep & grepl(.EXCLUDE_SEPARATORS, v, perl = TRUE))
+    if (length(bad)) {
+      stop(sprintf(paste0("lexsync: line %d of the exclude_words file '%s' holds a tab, ",
+                          "comma or semicolon, so the file is a table. List one word per ",
+                          "line."), bad[1], path), call. = FALSE)
+    }
+    words <- v[keep]
+    record <- list(path = gsub("\\", "/", path, fixed = TRUE), sha256 = sha256_file(path))
+  } else {
+    v <- .norm_key(unlist(spec, use.names = FALSE))
+    words <- v[!is.na(v) & nzchar(v)]
+    record <- list(path = "inline")
+  }
+  words <- sort(unique(as.character(words)), method = "radix")
+  if (is.null(record$sha256)) {
+    record$sha256 <- digest::digest(enc2utf8(paste(words, collapse = "\n")), algo = "sha256",
+                                    serialize = FALSE)
+  }
+  record$n_listed <- length(words)
+  list(words = words, record = record)
+}
+
+# `frame` without the rows whose word is one of `words`, keyed as `word` is. The rows
+# keep their order and their ids, as build_pool()'s filters leave them. Mirrors
+# _apply_exclude_words in querying.py.
+#' @keywords internal
+.apply_exclude_words <- function(frame, words) {
+  out <- frame[!(frame$word %in% words), , drop = FALSE]
+  rownames(out) <- NULL
+  out
+}
+
 # The words a lexicon offers as the reference for the derived dimensions: every word,
 # unless the lexicon carries a `reference_member` column, in which case the rows
 # marked 1. A lexicon that keeps proper names or acronyms for selection can so leave

@@ -1,0 +1,23 @@
+# Twin-edge case: exclude_words written in the design, as a user might write it. The
+# list pads one word, writes another in capitals, repeats a third and names a fourth
+# the lexicon lacks. Both engines must key it as they key the lexicon, remove three
+# words before anything is selected and record four distinct words with the list's
+# checksum. The lexicon is baseline_small's forty words.
+# The word forms are common English words. The Zipf frequencies are invented for this
+# fixture and describe no corpus.
+name: twin_edge_exclude_words_inline
+language: english
+lexicon: lexicon.csv
+description: 'Nouns versus verbs from a forty-word lexicon, three of them excluded.'
+n_per_condition: 8
+exclude_words: ['  Garden ', LISTEN, river, river, zebra]
+conditions:
+  - name: noun
+    define_by:
+      pos: [noun]
+  - name: verb
+    define_by:
+      pos: [verb]
+match_on: [length, frequency]
+counterbalance:
+  lists: 2

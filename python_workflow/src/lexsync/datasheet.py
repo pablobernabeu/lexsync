@@ -10,8 +10,15 @@ skeleton. Mirrors R_workflow/R/datasheet.R.
 """
 from __future__ import annotations
 
+import hashlib
 import json
+import os
 import platform
+
+import yaml
+
+# The cache and the registry, for crediting a lexicon fetch_corpus fetched.
+from . import corpora as _corpora
 
 # The recipe and the rotation check come from the module that counterbalances, so
 # the record describes the counterbalancing that ran.
@@ -63,13 +70,19 @@ from .scripting import _refresh_hz, _response_windows, presentation_versions
 #   selection["generation_exclude"]   the known-form lists a generated pseudoword was
 #                                     checked against ({source, sha256, n_forms} each),
 #                                     present only when the design names any
-#   selection.tie_break         the rule that broke exact ties between equally close
+#   selection.tie_break        the rule that broke exact ties between equally close
 #                               candidates ({rule, salt}, the salt only for hash),
 #                               present for a matched corpus or pool design
 #   presentation.response_windows  each response event's window, {event, from,
 #                               window_ms}; window_ms is null, with duration_column and
 #                               timeout_ms, when the stimulus's duration varies by trial
 #                               (analysis.response now says where a reaction time starts)
+#   materials_source["exclusions"]    the design's exclude_words ({path, sha256,
+#                                     n_listed, n_removed}), present only when the
+#                                     design has the key
+#   materials_source["provenance"]    for a corpus or generated design, the credit of
+#                                     the lexicon read (see _lexicon_provenance).
+#                                     Earlier records credited wordfreq for any file.
 DATASHEET_VERSION = "1.2"
 
 # Datasheet labels for the pseudoword generators in generation.py, keyed by the
@@ -79,6 +92,118 @@ _GENERATION_LABELS = {
     "letter_substitution": "constrained letter substitution (deterministic pseudowords)",
     "subsyllabic": "subsyllabic constituent swap (Wuggy-style, deterministic pseudowords)",
 }
+
+# The credit the datasheet and the Methods paragraph give a lexicon lexsync ships.
+# Kept character-for-character identical to the strings in datasheet.R.
+_PROVENANCE_WORDFREQ = (
+    "wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at "
+    "https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md")
+_PROVENANCE_SCREENED = (
+    "wordfreq (Speer, 2022) screened against SUBTLEX-US (Brysbaert & New, 2009), data "
+    "CC BY-SA 4.0; forms absent from SUBTLEX-US or beginning with a lower-case letter in "
+    "under 10% of their uses are marked nonstandard, and N and OLD20 count only the "
+    "unmarked forms; full corpus licence and citation at "
+    "https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md")
+
+# The lexica lexsync ships, the repository's derived lexica and the example slices both
+# packages bundle. Each is keyed by the SHA-256 of its bytes with CRLF line ends read as
+# LF (see _lf_sha256) and maps to its file and its credit. A rebuilt file needs its new
+# key here and in .BUNDLED_LEXICA in datasheet.R, and the tests in
+# test_lexicon_provenance.py fail until it has one.
+_BUNDLED_LEXICA = {
+    "575833489e04d6a4001fda56a56e3daa383811dece1f819c44060ee79ca56976":
+        ("corpora/derived/en.csv", _PROVENANCE_WORDFREQ),
+    "46815cd56ac036cb841460a2ea6205ac374eddb6ca26275bb1a2fbafc7c5d626":
+        ("corpora/derived/en_v2.csv", _PROVENANCE_SCREENED),
+    "e9f93013c16ec9745c0d02f82c697f2488c328365b95b57c5f04ac2565c123ea":
+        ("corpora/derived/es.csv", _PROVENANCE_WORDFREQ),
+    "0f77aec3fe307ed38f1e69e69f7c80ee93e38ffb8c0622b817fd2c26d15114d5":
+        ("corpora/derived/es_gender.csv", _PROVENANCE_WORDFREQ),
+    "74666b257c1ad7bce4694a4b172796fbdc08c1414183bea5f28faa5ed3ab2fc4":
+        ("corpora/derived/zh.csv", _PROVENANCE_WORDFREQ),
+    "939ee46015bc03cdb3fa12e2598f763b818c941118a8170bb408386277945e01":
+        ("en_example.csv", _PROVENANCE_WORDFREQ),
+    "7afbdd7db2d84e3f252a40baafe1e53fa4fde1e4ae5256497cb1ac79f28947ec":
+        ("es_example.csv", _PROVENANCE_WORDFREQ),
+    "d42f5afdc16d0f23ec5fc12dd58afbd1e639e9191f2c4611d9262eabbb982aca":
+        ("zh_example.csv", _PROVENANCE_WORDFREQ),
+}
+
+
+def _lf_sha256(path) -> str:
+    """The SHA-256 of a file's bytes with every CRLF read as LF.
+
+    Git stores the lexica with LF line ends. A checkout that converts them to CRLF, as
+    one OneDrive copy of this repository did, holds the same lexicon under another
+    checksum of its raw bytes. Mirrors .lf_sha256 in datasheet.R.
+    """
+    with open(path, "rb") as handle:
+        return hashlib.sha256(handle.read().replace(b"\r\n", b"\n")).hexdigest()
+
+
+def _file_name(path) -> str:
+    return str(path).replace("\\", "/").rsplit("/", 1)[-1]
+
+
+def _registry_citation(path):
+    """The registry's citation for a lexicon fetch_corpus put in the cache, or None.
+
+    The file must lie in lexsync's cache, and its name less `.csv` must name a corpus
+    in the registry, or be ``<language>_wordfreq`` for a language the wordfreq
+    connector lists. Those are the names fetch_corpus gives what it fetches. Mirrors
+    .registry_citation in datasheet.R.
+    """
+    name = _file_name(path)
+    if not name.endswith(".csv"):
+        return None
+    try:
+        here = os.path.normcase(os.path.realpath(os.path.dirname(os.path.abspath(path))))
+        cache = os.path.normcase(os.path.realpath(_corpora.cache_dir()))
+        if here != cache:
+            return None
+        with open(_corpora._registry_path(None), encoding="utf-8") as handle:
+            reg = yaml.safe_load(handle)
+    except (OSError, ValueError, yaml.YAMLError):
+        return None
+    if not isinstance(reg, dict):
+        return None
+    stem = name[:-len(".csv")]
+    corpora = reg.get("corpora")
+    entry = corpora.get(stem) if isinstance(corpora, dict) else None
+    if isinstance(entry, dict) and isinstance(entry.get("citation"), str):
+        return entry["citation"]
+    connector = reg.get("wordfreq_connector")
+    if (isinstance(connector, dict) and isinstance(connector.get("citation"), str)
+            and stem.endswith("_wordfreq")
+            and stem[:-len("_wordfreq")] in (connector.get("languages") or [])):
+        return connector["citation"]
+    return None
+
+
+def _lexicon_provenance(path) -> str:
+    """The credit for the lexicon a corpus or generated design read.
+
+    A lexicon lexsync ships is recognised by the checksum _lf_sha256 gives, and is
+    credited to wordfreq, or for en_v2.csv to wordfreq screened against SUBTLEX-US with
+    the screening rule stated. A corpus fetch_corpus put in the cache is credited by
+    the registry's citation. Any other file is the user's own and is named by its file
+    name and the first twelve hexadecimal digits of its SHA-256, which
+    ``materials_source["sha256"]`` holds in full. Every lexicon used to be credited to
+    wordfreq, so a study selecting from SUBTLEX-US, or from a lexicon of its own, would
+    have cited the wrong corpus. Mirrors .lexicon_provenance in datasheet.R.
+    """
+    if not path:
+        return "a user-supplied lexicon"
+    name = _file_name(path)
+    if not os.path.isfile(path):
+        return f"a user-supplied lexicon ({name})"
+    bundled = _BUNDLED_LEXICA.get(_lf_sha256(path))
+    if bundled is not None:
+        return bundled[1]
+    cited = _registry_citation(path)
+    if cited is not None:
+        return cited
+    return f"a user-supplied lexicon ({name}, sha256 {sha256_file(path)[:12]})"
 
 
 def _lexsync_version() -> str:
@@ -293,8 +418,13 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
                     balance=None, blocks=None, design_path=None, schema_path=None,
                     selection_audit=None, neighbourhood_reference=None,
                     counterbalance_check=None, input_normalisation=None,
-                    generation_exclude=None) -> dict:
+                    generation_exclude=None, exclusions=None) -> dict:
     """Assemble the datasheet dictionary from the pipeline's objects.
+
+    For a corpus or generated design, ``materials_source["provenance"]`` credits the
+    lexicon that ``source_path`` names. A lexicon lexsync ships is credited by its
+    source, a corpus fetched into the cache by the registry's citation, and any other
+    file by its file name and checksum (see ``_lexicon_provenance``).
 
     ``candidate_pool`` (optional) is a list of ``{"condition", "n_candidates"}``
     recording how many items satisfied each condition's window before matching,
@@ -349,6 +479,13 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
     of ``items.generation.exclude`` as ``{"source", "sha256", "n_forms"}`` records.
     A pseudoword was refused for equalling any form in them, so they decide which
     pseudowords a run produces, as the lexicon does.
+
+    ``exclusions`` (optional, corpus, pool and generated designs) records the design's
+    ``exclude_words`` as ``{"path", "sha256", "n_listed", "n_removed"}``. It gives the
+    file, or "inline" for a list in the design, its checksum, the number of distinct
+    words it lists and the number of candidates it removed. Recorded as
+    ``materials_source["exclusions"]``, because the words decide which candidates the
+    selection could draw.
     """
     source = (design.get("items") or {}).get("source", "corpus")
     is_continuous = _is_continuous(design)
@@ -452,9 +589,7 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
             for r in generation_exclude]
 
     if source in ("corpus", "generate"):
-        provenance = ("wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence "
-                      "and citation at https://github.com/pablobernabeu/lexsync/blob/"
-                      "main/corpora/ATTRIBUTION.md")
+        provenance = _lexicon_provenance(source_path)
     elif source == "pool":
         provenance = "user-supplied word pool, matched by lexsync"
     else:
@@ -477,6 +612,13 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
     # engine, where assigning NULL to a list element removes it.
     if norms:
         materials_source["norms"] = norms
+    # The words the design took out of the candidates, after the norms and before the
+    # pool filters. Integers as integers, so both engines write the same JSON.
+    if exclusions is not None and source in ("corpus", "pool", "generate"):
+        materials_source["exclusions"] = {
+            "path": exclusions["path"], "sha256": exclusions["sha256"],
+            "n_listed": int(exclusions["n_listed"]),
+            "n_removed": int(exclusions["n_removed"])}
     if input_normalisation is not None:
         materials_source["input_normalisation"] = {
             "changed": int(input_normalisation["changed"]),
@@ -675,6 +817,21 @@ def _known_forms_note(ds: dict) -> str:
     return ". Besides the lexicon, pseudowords were checked against " + listed
 
 
+def _exclusions_note(ds: dict) -> str:
+    """The design's exclusion list, for the Methods prose: how many candidates it
+    removed, and its file by name like the norm tables. A sentence without its final
+    full stop, or empty without a list. Mirrors .exclusions_note in datasheet.R.
+    """
+    ex = (ds.get("materials_source") or {}).get("exclusions")
+    if not ex:
+        return ""
+    n = int(ex["n_removed"])
+    where = ("in the design" if ex["path"] == "inline"
+             else "(%s)" % _file_name(ex["path"]))
+    return ("An exclusion list %s removed %d word%s from the candidates before selection"
+            % (where, n, "" if n == 1 else "s"))
+
+
 def _recipe_label(cb: dict) -> str:
     """The counterbalancing recipe as the Methods text names it.
 
@@ -723,13 +880,15 @@ def methods_paragraph(ds: dict) -> str:
                     + _fmt_dp(max(rs), 3) if rs else "")
         cb = ds["counterbalancing"]
         recipe_label = _recipe_label(cb)
+        excluded = _exclusions_note(ds)
+        excluded = " " + excluded + "." if excluded else ""
         return (f"{n} {lang} {unit} were selected to span {predictor}{span_str} continuously "
                 f"while holding {controls} near-constant{corr_str}, for analysis by regression "
                 f"or a mixed model rather than a between-condition contrast (Kuperman, 2015; "
-                f"Liben-Nowell et al., 2019).{_norms_note(ds)} Materials were counterbalanced "
-                f"into {cb['lists']} list(s) ({recipe_label}) and generated for PsychoPy, "
-                f"OpenSesame and jsPsych.{_versions_note(ds)}{_response_note(ds)} The "
-                f"selection is deterministic and reproducible (lexsync "
+                f"Liben-Nowell et al., 2019).{_norms_note(ds)}{excluded} Materials were "
+                f"counterbalanced into {cb['lists']} list(s) ({recipe_label}) and generated "
+                f"for PsychoPy, OpenSesame and jsPsych.{_versions_note(ds)}{_response_note(ds)} "
+                f"The selection is deterministic and reproducible (lexsync "
                 f"{ds['reproducibility']['versions']['lexsync']}), and the seed "
                 f"({ds['reproducibility']['seed']}) fixes the trial order.")
     if src == "corpus":
@@ -818,7 +977,11 @@ def methods_paragraph(ds: dict) -> str:
         "reduced from %d to %d)"
         % (", ".join(bal["dimensions"]), bal["n_swaps"],
            bal["cost_before"], bal["cost_after"]))
-    return lead + control + pool_note + cap_note + ce_note + bal_note + tail + _norms_note(ds)
+    # Placed before the pool size, which it shrank.
+    excluded = _exclusions_note(ds)
+    excluded = ". " + excluded if excluded else ""
+    return (lead + control + excluded + pool_note + cap_note + ce_note + bal_note + tail
+            + _norms_note(ds))
 
 
 def prereg_template(ds: dict) -> str:
@@ -885,6 +1048,14 @@ def render_datasheet_md(ds: dict) -> str:
         dim_sha = (ds.get("materials_source") or {}).get("dimensions_sha256")
         lines.append("- **Dimensions from:** `%s`%s"
                      % (dim_from, "" if not dim_sha else " (sha256 `%s…`)" % dim_sha[:16]))
+    # The design's exclusion list, which decided what the selection could draw on.
+    ex = (ds.get("materials_source") or {}).get("exclusions")
+    if ex:
+        n_listed = int(ex["n_listed"])
+        lines.append("- **Excluded words:** %s (%d word%s, %d removed, sha256 `%s…`)"
+                     % ("the design's list" if ex["path"] == "inline" else "`%s`" % ex["path"],
+                        n_listed, "" if n_listed == 1 else "s", int(ex["n_removed"]),
+                        (ex.get("sha256") or "")[:16]))
     nfc = (ds.get("materials_source") or {}).get("input_normalisation")
     if nfc:
         lines.append("- **Input normalisation:** %d text form(s) rewritten to Unicode NFC, "

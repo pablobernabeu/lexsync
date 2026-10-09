@@ -50,7 +50,9 @@ need different things.
 ### A factorial word contrast
 
 'Lexicon' lists the derived corpora the clone holds under `corpora/derived/`, which are English,
-Spanish, a Spanish lexicon carrying grammatical gender, and Mandarin Chinese, and the first rows of
+English screened against SUBTLEX-US (`en_v2`, described in
+[Matching and designs](matching-and-designs.md#choosing-and-screening-a-lexicon)), Spanish, a
+Spanish lexicon carrying grammatical gender, and Mandarin Chinese, and the first rows of
 whichever one you pick are shown beside the selector so you can see what you are working with. The
 last entry in the list uploads a lexicon of your own instead, which needs at least a `word` and a
 `freq_zipf` column. Two sliders then narrow the lexicon

@@ -90,11 +90,12 @@ prepared item table need different things.
 ### A factorial word contrast
 
 'Lexicon' lists the derived corpora the clone holds under `corpora/derived/`,
-which are English, Spanish, a Spanish lexicon carrying grammatical gender, and
-Mandarin Chinese. Two sliders then narrow the lexicon to the candidate pool the
-design will consider at all, one for length in letters or characters and one for
-frequency in Zipf. They are the design's `pool_filters`, and they are a step that
-matters, because matching never re-reads them.
+which are English, English screened against SUBTLEX-US (`en_v2`, described in
+`vignette("matching-and-designs")`), Spanish, a Spanish lexicon carrying
+grammatical gender, and Mandarin Chinese. Two sliders then narrow the lexicon to
+the candidate pool the design will consider at all, one for length in letters or
+characters and one for frequency in Zipf. They are the design's `pool_filters`,
+and they are a step that matters, because matching never re-reads them.
 
 The conditions are an editable table. Each row names a condition and carves it
 out of the pool, either by a numeric window through the `dimension`, `lower` and

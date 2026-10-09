@@ -27,6 +27,16 @@ lexicon_schema:
     - source          # corpus identifier (matches corpora/registry.yaml)
     - reference_member # 1 for a word in the neighbourhood reference, 0 otherwise.
                        # Without the column, every word is in it.
+    # The screened English lexicon, corpora/derived/en_v2.csv, also has these. Its
+    # neighbourhood reference is its unmarked forms, and the pool filter
+    # `nonstandard: [0, 0]` keeps only those among the candidates.
+    - in_subtlex_us    # 1 when SUBTLEX-US (Brysbaert & New, 2009) lists the form
+    - lowercase_share  # share of its SUBTLEX-US uses that begin with a lower-case
+                       # letter, to three places, and empty when SUBTLEX-US lacks it
+    - nonstandard      # 1 for a form SUBTLEX-US lacks, or that begins with a
+                       # lower-case letter in under a tenth of its uses
+    - n_density_raw    # N and OLD20 as en.csv gives them, counted among every form
+    - old20_raw
 
 # ---- Lexical dimensions ----------------------------------------------------
 # 'column' dimensions are read straight from the lexicon; 'derived' dimensions
@@ -72,6 +82,19 @@ dimensions:
 # column drops it, and matching excludes every candidate missing a matched
 # dimension, or in a continuous design the predictor or a control, before anything
 # is selected. The run log and the datasheet count the exclusions per condition.
+
+# ---- Words a design leaves out ---------------------------------------------
+# A filter keeps or drops words by a column's values. A design may also name words to
+# leave out whatever their values, such as names or offensive words:
+#
+#   exclude_words: [adams, dubai, espn]
+#   exclude_words: {path: config/exclude_en.txt}   # one word per line, '#' comments
+#
+# The words are keyed as a lexicon's are (trimmed, lower-case, NFC) and leave the
+# candidates of a corpus, pool or generate design after the norms join and before
+# pool_filters. They stay in the neighbourhood reference and among the words a
+# generated pseudoword must not equal. A design with an item table refuses the key.
+# The datasheet records the list with its checksum.
 
 # ---- Default matching configuration ---------------------------------------
 # Pseudoword generation (the lexical_decision paradigm) is chosen per design under

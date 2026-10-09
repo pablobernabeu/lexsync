@@ -250,7 +250,7 @@ def test_read_config_refuses_a_duplicated_mapping_key(tmp_path):
 # The two key vocabularies, joined by newlines and hashed. test-io_utils.R pins the
 # same digests for .DESIGN_KEYS and .SCHEMA_KEYS, so a key added to one engine only
 # fails both suites.
-DESIGN_KEYS_SHA256 = "f6c22a0dce12a78c551304cc05df665ebcbeda7cec6120d24a2b3f85ca854245"
+DESIGN_KEYS_SHA256 = "85bb0bc2e376483bf5c818469cbc9e9446f952d5095d64c69e9e19086c5ee357"
 SCHEMA_KEYS_SHA256 = "a62e1a4f7cc410ef37d511e9758107b414bedec2c7ab008704c57171fc7f0e5c"
 
 

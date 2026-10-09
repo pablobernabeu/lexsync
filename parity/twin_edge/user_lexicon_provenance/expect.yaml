@@ -1,0 +1,7 @@
+# Both engines credit the lexicon by its file name and the first twelve hexadecimal
+# digits of its SHA-256, which the datasheet records in full beside it.
+outcome: artefacts
+compare: [stimuli, descriptives, comparisons]
+datasheet:
+  materials_source.provenance: "a user-supplied lexicon (lexicon.csv, sha256 a8af9b5e92d5)"
+  materials_source.sha256: a8af9b5e92d5379a4bff81222764d09859c1bd1b0adef8b36cc43968b77cb15d

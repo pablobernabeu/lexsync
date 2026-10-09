@@ -48,6 +48,10 @@ def _recorded_digests(ds):
              (rel.get("member_lexicon"), rel.get("member_lexicon_sha256")),
              (items.get("stimuli_file"), items.get("stimuli_sha256"))]
     pairs += [(t.get("path"), t.get("sha256")) for t in ms.get("norms") or []]
+    # An exclusion list written in the design has no file, and its digest is the list's.
+    excluded = ms.get("exclusions") or {}
+    if excluded.get("path") != "inline":
+        pairs.append((excluded.get("path"), excluded.get("sha256")))
     pairs += [(a.get("file"), a.get("sha256")) for a in ds.get("artifacts") or []]
     return [(p, s) for p, s in pairs if p is not None and s is not None]
 

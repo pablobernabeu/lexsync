@@ -28,7 +28,8 @@ is not an address, and an event list the renderer refuses, such as one with an
 unknown timing key or a bad response key. Last, it refuses a condition without a
 name, with a name that is not text or with a repeated name, a corpus or pool
 design with conditions but no \code{match_on}, and a name and language that leave no
-file stem.
+file stem. It also refuses an \code{exclude_words} that is neither a list of words nor a
+mapping whose \code{path} names a file, and one that a design with an item table names.
 }
 \details{
 Any other key lexsync does not read is not refused yet. It is returned as a note,

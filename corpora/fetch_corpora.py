@@ -4,6 +4,7 @@
 Usage:
     python corpora/fetch_corpora.py --languages en es --n-words 10000
     python corpora/fetch_corpora.py --known-forms en es
+    python corpora/fetch_corpora.py --screen-en [--subtlex-us PATH]
 
 This ingestion step writes:
   corpora/derived/<lang>.csv                          full derived lexicon
@@ -11,9 +12,10 @@ This ingestion step writes:
   python_workflow/src/lexsync/data/<lang>_example.csv bundled slice (length 3-9)
 and (re)writes corpora/ATTRIBUTION.md. With --known-forms it writes
   corpora/derived/<lang>_known_forms.txt              every known form, one per line
-instead, for a design's items.generation.exclude, and builds no lexicon unless
---languages is given too. The lists stay in the repository: neither package ships
-them.
+instead, for a design's items.generation.exclude, and with --screen-en
+  corpora/derived/en_v2.csv                           en.csv screened against SUBTLEX-US
+Either builds no lexicon unless --languages is given too. These files stay in the
+repository: neither package ships them.
 
 The orthographic-neighbourhood variables (Coltheart's N and OLD20) are computed
 openly here with rapidfuzz and stored in the derived files, so both the R and
@@ -28,7 +30,8 @@ licence on everything this script writes; see LICENSE-DATA for the reasoning and
 for the SUBTLEX credit that wordfreq's terms require. corpora/registry.yaml
 lists the curated, individually citable SUBTLEX/openlexicon corpora that lexsync
 also supports, which are separate resources a user loads directly rather than
-the source of anything bundled here.
+the source of anything bundled here, apart from the screening columns that
+--screen-en takes from SUBTLEX-US.
 """
 from __future__ import annotations
 
@@ -36,7 +39,9 @@ import argparse
 import datetime
 import hashlib
 import re
+import textwrap
 import unicodedata
+import urllib.request
 from pathlib import Path
 
 import numpy as np
@@ -59,6 +64,8 @@ LANG_NAMES = {
     # committed. It is named here so the generated attribution reads sensibly;
     # the hand-written region explains how it was derived.
     "es_gender": "Spanish, gender-tagged subset",
+    # A derivative of 'en' that --screen-en builds (see screen_en below).
+    "en_v2": "English, screened against SUBTLEX-US",
 }
 # Letters admitted per language (lower case, accents where relevant). For Chinese
 # (a logographic script) the admitted forms are runs of CJK unified ideographs,
@@ -93,23 +100,27 @@ def clean_words(lang: str, n_words: int, min_len: int = 2, max_len: int = 15) ->
     return out
 
 
-def neighbourhood(words: list[str], n_old: int = 20, chunk: int = 1000):
-    """Coltheart's N (same-length, single substitution) and OLD20 for `words`."""
-    lengths = np.array([len(w) for w in words])
+def neighbourhood(words: list[str], n_old: int = 20, chunk: int = 1000,
+                  reference: list[str] | None = None):
+    """Coltheart's N (same-length, single substitution) and OLD20 for `words`, measured
+    against `reference`, by default the words themselves. Distances of 0 are skipped,
+    so a word is never its own neighbour, whether or not the reference holds it."""
+    ref = words if reference is None else reference
+    ref_lengths = np.array([len(w) for w in ref])
     m = len(words)
     n_density = np.zeros(m, dtype=int)
     old = np.full(m, np.nan)
     for start in range(0, m, chunk):
         stop = min(start + chunk, m)
         block = process.cdist(
-            words[start:stop], words,
+            words[start:stop], ref,
             scorer=Levenshtein.distance, dtype=np.uint16, workers=-1,
         )
         for r in range(stop - start):
             i = start + r
             row = block[r]
             # Same length + Levenshtein 1 implies a single substitution (Hamming 1).
-            n_density[i] = int(np.sum((row == 1) & (lengths == lengths[i])))
+            n_density[i] = int(np.sum((row == 1) & (ref_lengths == len(words[i]))))
             nz = row[row > 0]
             if nz.size:
                 k = min(n_old, nz.size)
@@ -211,6 +222,134 @@ def known_forms_entry(lang: str, path: Path, date: str) -> str:
     )
 
 
+# ---- The screened English lexicon (en_v2) ---------------------------------------
+# en.csv keeps every wordfreq form that matches ^[a-z]+$ after lower-casing, so names,
+# acronyms and internet forms are among its words and among each other's neighbours.
+# cat has N = 32, counting caa, cbt, cdt and crt. Rebuilding en.csv would move every
+# selection made from it, so the screen is a second file. en_v2.csv keeps en.csv's
+# rows and adds columns from SUBTLEX-US (Brysbaert & New, 2009), which counts the uses
+# of each word (FREQcount) and those that begin with a lower-case letter (FREQlow).
+# openlexicon serves it under CC BY-SA 4.0. https://www.lexique.org fails the TLS
+# hostname check, and the bare domain serves the same bytes.
+SUBTLEX_US_URL = "https://lexique.org/databases/SUBTLEX-US/SUBTLEXus74286wordstextversion.tsv"
+SUBTLEX_US_FILE = "SUBTLEXus74286wordstextversion.tsv"
+SUBTLEX_US_SHA256 = "c5f86f065fc5d057fbf366433b8c5ca550aa7c24e128362dea4394f2b29c86e4"
+RAW = ROOT / "corpora" / "raw"
+# A form is marked nonstandard when SUBTLEX-US lacks it or when under a tenth of its
+# uses begin with a lower-case letter, as with names and acronyms. A threshold of 0.5
+# would mark words that often open a sentence: what, how, why, maybe, okay and yes
+# all fall below it. This one marks the days, the months other than march and may,
+# most nationality words, god, ok and tv too, and every form the 2009 corpus lacks,
+# such as selfie, emoji and covid.
+SCREEN_MAX_SHARE = 0.10
+# Forms kept in the reference whatever the rule says. Each would be justified in the
+# hand-written region of ATTRIBUTION.md, and there are none.
+SCREEN_ALLOW: frozenset[str] = frozenset()
+
+
+def subtlex_us(path: Path | None = None) -> Path:
+    """The SUBTLEX-US word list, checked against its SHA-256.
+
+    `path` names a copy already saved. Without it the copy in corpora/raw/ is used, and
+    is downloaded there first when absent. corpora/raw/ is not committed. A file with
+    other bytes is refused, because en_v2.csv could not then be reproduced from it.
+    """
+    target = RAW / SUBTLEX_US_FILE if path is None else Path(path)
+    if path is None and not target.exists():
+        RAW.mkdir(parents=True, exist_ok=True)
+        part = target.with_name(target.name + ".part")
+        print(f"[fetch_corpora] downloading {SUBTLEX_US_URL} ...", flush=True)
+        with urllib.request.urlopen(SUBTLEX_US_URL, timeout=120) as response:
+            part.write_bytes(response.read())
+        if hashlib.sha256(part.read_bytes()).hexdigest() != SUBTLEX_US_SHA256:
+            part.unlink()
+            raise SystemExit("[fetch_corpora] the SUBTLEX-US download does not have the "
+                             f"SHA-256 {SUBTLEX_US_SHA256}; it was not kept.")
+        part.replace(target)
+    if not target.is_file():
+        raise SystemExit(f"[fetch_corpora] no SUBTLEX-US file at {target}.")
+    digest = hashlib.sha256(target.read_bytes()).hexdigest()
+    if digest != SUBTLEX_US_SHA256:
+        raise SystemExit(f"[fetch_corpora] {target} has the SHA-256 {digest}, where "
+                         f"SUBTLEX-US has {SUBTLEX_US_SHA256}.")
+    return target
+
+
+def read_subtlex_us(path: Path) -> dict[str, tuple[int, int]]:
+    """FREQcount and FREQlow of every SUBTLEX-US entry, keyed by its lower-cased Word.
+
+    The Word column spells an entry as it is mostly written ('What', 'I'), and its
+    counts cover every spelling, so lower-casing gives each word one key.
+    """
+    lines = path.read_bytes().decode("utf-8").splitlines()
+    header = lines[0].split("\t")
+    word, count, low = (header.index(name) for name in ("Word", "FREQcount", "FREQlow"))
+    out: dict[str, tuple[int, int]] = {}
+    for line in lines[1:]:
+        if not line:
+            continue
+        cells = line.split("\t")
+        key = cells[word].lower()
+        if key in out:
+            raise SystemExit(f"[fetch_corpora] SUBTLEX-US lists '{key}' twice.")
+        out[key] = (int(cells[count]), int(cells[low]))
+    return out
+
+
+def screen_en(tsv: Path, en: Path = DERIVED / "en.csv") -> bytes:
+    """The bytes of en_v2.csv: the rows of en.csv screened against SUBTLEX-US.
+
+    en.csv is read as text and its cells are copied unchanged, so the forms, the
+    frequencies and the earlier N and OLD20 (as n_density_raw and old20_raw) are
+    en.csv's to the byte. in_subtlex_us is 1 when SUBTLEX-US lists the form.
+    lowercase_share is FREQlow / FREQcount to three places, and is empty for a form
+    SUBTLEX-US lacks. nonstandard is 1 for a form SUBTLEX-US lacks or whose share is
+    below SCREEN_MAX_SHARE, unless SCREEN_ALLOW lists it, and reference_member is
+    1 - nonstandard. n_density and old20 are measured against the reference members
+    only. The rule reads the share as written, so the flag and the column agree.
+    """
+    df = pd.read_csv(en, dtype=str, keep_default_na=False, encoding="utf-8")
+    counts = read_subtlex_us(tsv)
+    words = df["word"].tolist()
+    share = np.round([counts[w][1] / counts[w][0] if w in counts else np.nan
+                      for w in words], 3)
+    marked = [int(w not in SCREEN_ALLOW and (w not in counts or s < SCREEN_MAX_SHARE))
+              for w, s in zip(words, share, strict=True)]
+    members = [w for w, m in zip(words, marked, strict=True) if not m]
+    n_density, old = neighbourhood(words, reference=members)
+    out = pd.DataFrame({
+        "word": df["word"], "freq_zipf": df["freq_zipf"],
+        "language": df["language"], "source": df["source"],
+        "n_density": n_density, "old20": np.round(old, 3),
+        "in_subtlex_us": [int(w in counts) for w in words],
+        "lowercase_share": share,
+        "nonstandard": marked,
+        "reference_member": [1 - m for m in marked],
+        "n_density_raw": df["n_density"], "old20_raw": df["old20"],
+    })
+    # LF on every platform: pandas otherwise ends lines with os.linesep.
+    return out.to_csv(index=False, lineterminator="\n").encode("utf-8")
+
+
+def write_screened_en(tsv: Path) -> Path:
+    """Write corpora/derived/en_v2.csv, and print every marked form of up to three
+    letters for review, since short forms are where names and acronyms crowd."""
+    path = DERIVED / "en_v2.csv"
+    path.write_bytes(screen_en(tsv))
+    v2 = pd.read_csv(path, dtype=str, keep_default_na=False, encoding="utf-8")
+    marked = v2["nonstandard"] == "1"
+    absent = int((marked & (v2["in_subtlex_us"] == "0")).sum())
+    print(f"  -> {path.name}: {len(v2)} forms, {int(marked.sum())} marked nonstandard "
+          f"({absent} absent from SUBTLEX-US, {int(marked.sum()) - absent} rarely lower-case); "
+          f"{int((~marked).sum())} in the neighbourhood reference", flush=True)
+    short = sorted((w for w in v2.loc[marked, "word"] if len(w) <= 3),
+                   key=lambda s: s.encode("utf-8"))
+    print(f"  marked forms of three letters or fewer ({len(short)}):", flush=True)
+    for line in textwrap.wrap(" ".join(short), 88):
+        print("    " + line, flush=True)
+    return path
+
+
 def recorded_dates(path: Path) -> dict[str, str]:
     """The retrieval date ATTRIBUTION.md records for each entry, keyed by its code
     ('en') or by its known-form file name ('en_known_forms.txt')."""
@@ -226,14 +365,29 @@ def recorded_dates(path: Path) -> dict[str, str]:
     return out
 
 
+# A lexicon that a newer file replaces for new designs. It keeps its bytes, so designs
+# written for it still select what they did.
+SUPERSEDED = {"en": "en_v2"}
+
+
 def attribution_entry(lang: str, df: pd.DataFrame, date: str) -> str:
     zmin, zmax = df.freq_zipf.min(), df.freq_zipf.max()
     unit = "over characters " if lang in CHAR_BASED else ""
-    return (
-        f"- **{LANG_NAMES.get(lang, lang)} ('{lang}')**, {len(df)} words, "
-        f"Zipf {zmin:.2f}-{zmax:.2f}. Source: wordfreq (Speer, 2022; data "
-        f"CC BY-SA 4.0), retrieved {date}. N and OLD20 computed {unit}by lexsync."
-    )
+    head = (f"- **{LANG_NAMES.get(lang, lang)} ('{lang}')**, {len(df)} words, "
+            f"Zipf {zmin:.2f}-{zmax:.2f}. ")
+    if "nonstandard" in df.columns:
+        n_marked = int((df.nonstandard == 1).sum())
+        return head + (
+            f"Source: wordfreq (Speer, 2022; data CC BY-SA 4.0) screened against "
+            f"SUBTLEX-US (Brysbaert & New, 2009; data CC BY-SA 4.0), retrieved {date}. "
+            f"{n_marked} forms marked `nonstandard`, and N and OLD20 computed by lexsync "
+            f"against the other {len(df) - n_marked}.")
+    entry = head + (f"Source: wordfreq (Speer, 2022; data CC BY-SA 4.0), retrieved {date}. "
+                    f"N and OLD20 computed {unit}by lexsync.")
+    if lang in SUPERSEDED:
+        entry += (f" Superseded by `{SUPERSEDED[lang]}.csv` for new designs, and kept "
+                  f"unchanged so that earlier designs select what they selected.")
+    return entry
 
 
 HAND_START = "<!-- hand-written: start -->"
@@ -284,10 +438,35 @@ def write_attribution(fresh_dates: dict[str, str]) -> None:
                 or datetime.date.fromtimestamp(file.stat().st_mtime).isoformat())
 
     entries = []
+    # The lexica screened against SUBTLEX-US, which is then a direct source too.
+    screened = []
     for csv in sorted(DERIVED.glob("*.csv")):
         lang = csv.stem
         df = pd.read_csv(csv, encoding="utf-8")
+        if "nonstandard" in df.columns:
+            screened.append(f"`{csv.name}`")
         entries.append(attribution_entry(lang, df, date_of(lang, csv)))
+    screened_files = " and ".join(screened)
+    if screened:
+        licence = textwrap.fill(
+            "Lexical corpora used by lexsync, with their sources, licences and retrieval "
+            "dates. The bundled derivatives come from wordfreq, whose data files are "
+            "redistributable under CC BY-SA 4.0, and the screening columns of "
+            f"{screened_files} from SUBTLEX-US, which openlexicon distributes under the "
+            "same licence, so the derivatives carry that licence too. See LICENSE-DATA "
+            "for the full reasoning.", width=80) + "\n\n"
+        registry_note = (
+            "Those are loaded directly by a user, and none of them is the source of "
+            "anything bundled here except SUBTLEX-US, which supplies the screening "
+            f"columns of {screened_files}.\n")
+    else:
+        licence = (
+            "Lexical corpora used by lexsync, with their sources, licences and retrieval\n"
+            "dates. The bundled derivatives come from wordfreq, whose data files are\n"
+            "redistributable under CC BY-SA 4.0, so they carry that licence too. See\n"
+            "LICENSE-DATA for the full reasoning.\n\n")
+        registry_note = ("Those are loaded directly by a user and are not the source of "
+                         "anything bundled here.\n")
     known = [known_forms_entry(txt.name[:-len(KNOWN_SUFFIX)], txt, date_of(txt.name, txt))
              for txt in sorted(DERIVED.glob(f"*{KNOWN_SUFFIX}"))]
     known_section = "" if not known else (
@@ -300,10 +479,7 @@ def write_attribution(fresh_dates: dict[str, str]) -> None:
         + "\n".join(known))
     text = (
         "# Corpus attribution\n\n"
-        "Lexical corpora used by lexsync, with their sources, licences and retrieval\n"
-        "dates. The bundled derivatives come from wordfreq, whose data files are\n"
-        "redistributable under CC BY-SA 4.0, so they carry that licence too. See\n"
-        "LICENSE-DATA for the full reasoning.\n\n"
+        + licence +
         "This file is regenerated by corpora/fetch_corpora.py. Edits outside the\n"
         "hand-written region below will not survive the next run.\n\n"
         "## Demonstration corpora (bundled)\n\n"
@@ -329,8 +505,7 @@ def write_attribution(fresh_dates: dict[str, str]) -> None:
         "Research Methods, 42(3), 643-650. https://doi.org/10.3758/BRM.42.3.643\n"
         "\n- See corpora/registry.yaml for the curated, individually citable "
         "SUBTLEX/openlexicon corpora that lexsync supports as separate resources. "
-        "Those are loaded directly by a user and are not the source of anything "
-        "bundled here.\n"
+        + registry_note
     )
     # LF on every platform, as .gitattributes stores it.
     path.write_text(text, encoding="utf-8", newline="\n")
@@ -343,10 +518,17 @@ def main() -> None:
     ap.add_argument("--n-words", type=int, default=10000)
     ap.add_argument("--known-forms", nargs="+", default=[], metavar="LANG",
                     help="write corpora/derived/<lang>_known_forms.txt for these languages")
+    ap.add_argument("--screen-en", action="store_true",
+                    help="write corpora/derived/en_v2.csv, en.csv screened against SUBTLEX-US")
+    ap.add_argument("--subtlex-us", type=Path, default=None, metavar="PATH",
+                    help="a copy of SUBTLEX-US's TSV for --screen-en (default: corpora/raw/, "
+                         "downloaded when absent)")
     args = ap.parse_args()
+    if args.subtlex_us is not None and not args.screen_en:
+        ap.error("--subtlex-us is read only with --screen-en")
     languages = args.languages
     if languages is None:
-        languages = [] if args.known_forms else ["en", "es"]
+        languages = [] if (args.known_forms or args.screen_en) else ["en", "es"]
 
     DERIVED.mkdir(parents=True, exist_ok=True)
     today = datetime.date.today().isoformat()
@@ -366,6 +548,11 @@ def main() -> None:
         zmin, zmax = df.freq_zipf.min(), df.freq_zipf.max()
         print(f"  -> {out.name}: {len(df)} words (Zipf {zmin:.2f}-{zmax:.2f}); slice {n_slice}", flush=True)
         fresh_dates[lang] = today
+    # After any rebuild of en.csv, which the screen reads.
+    if args.screen_en:
+        print("[fetch_corpora] screening 'en' against SUBTLEX-US ...", flush=True)
+        write_screened_en(subtlex_us(args.subtlex_us))
+        fresh_dates["en_v2"] = today
     # Regenerate the attribution from all derived lexica, so adding one language
     # never drops the others.
     write_attribution(fresh_dates)

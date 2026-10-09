@@ -78,6 +78,12 @@
 #' estimate, which is the case for every word outside the Latin script (see
 #' [count_syllables()]).
 #'
+#' A corpus, pool or generate design may list words to leave out under
+#' `exclude_words`, or name a file of them with `exclude_words: {path: ...}`. They are
+#' removed from the candidates after any `norms:` join and before the pool filters, and
+#' the datasheet records the list with its checksum. The neighbourhood reference, and
+#' the words a generated pseudoword must not equal, keep them.
+#'
 #' @param design_path Path to a design configuration (YAML).
 #' @param schema_path Path to the global schema (YAML).
 #' @param outdir Output directory supplied by the caller (subdirectories
@@ -144,6 +150,10 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
     stop("lexsync: reference_words must hold at least one word and no missing value.",
          call. = FALSE)
   }
+  # The words the design takes out of its candidates, read now, so that a list that
+  # cannot be read is refused before any lexicon is loaded or file written.
+  exclude <- .exclude_words(design)
+  excluded <- if (is.null(exclude)) NULL else .read_exclude_words(exclude)
 
   log <- new_run_log(design[["name"]], meta = list(
     design = design[["name"]], language = design[["language"]],
@@ -162,6 +172,7 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
   report <- NULL
   pair_eligible <- NULL
   generation_exclude <- NULL
+  exclusions <- NULL
   norms <- list()
   selection_audit <- NULL
   # What NFC normalisation did to the inputs this run read (see .nfc_count), summed
@@ -252,6 +263,20 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
       ref_words <- .neighbourhood_reference(lex)
     }
     jn <- join_norms(lex, log); lex <- jn$lexicon; log <- jn$log
+    # The design's exclude_words leave the candidates here, after the norms join and
+    # before the pool filters. `lex` keeps them, because an excluded word is still a word
+    # of the language: the neighbourhood reference came from it above, and a generated
+    # design's pseudowords are checked against it below.
+    candidates <- lex
+    if (!is.null(excluded)) {
+      candidates <- .apply_exclude_words(lex, excluded$words)
+      exclusions <- c(excluded$record, list(n_removed = nrow(lex) - nrow(candidates)))
+      log <- log_step(log, sprintf(paste("exclude_words: removed %d of the %d listed word(s)",
+                                         "from the candidates (%s)"),
+                                   exclusions$n_removed, exclusions$n_listed, exclusions$path),
+                      list(exclude_words = exclusions$path, sha256 = exclusions$sha256,
+                           n_removed = exclusions$n_removed))
+    }
     filters <- design[["pool_filters"]] %||% list()
     derived <- .dims_to_derive(design, names(lex), override)
     reference <- if (override) ref_supplied else ref_words
@@ -276,7 +301,7 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
     # filter runs after it: a filter drops the rows missing its column, so a filter on
     # n_syllables over Chinese would otherwise leave an empty pool and an error far
     # from the cause. Filters commute, so the rows are those of one pass.
-    pool <- build_pool(lex, filters[setdiff(early, "n_syllables")])
+    pool <- build_pool(candidates, filters[setdiff(early, "n_syllables")])
     .require_syllables(pool, design)
     pool <- build_pool(pool, filters[intersect(early, "n_syllables")])
     pending <- derived
@@ -556,7 +581,7 @@ run_pipeline <- function(design_path, schema_path = "config/schema.yaml",
                         selection_audit = selection_audit,
                         neighbourhood_reference = nref, counterbalance_check = cb_check,
                         input_normalisation = input_normalisation,
-                        generation_exclude = generation_exclude)
+                        generation_exclude = generation_exclude, exclusions = exclusions)
   ds_json <- file.path(outdir, "reports", paste0(base, "_datasheet_R.json"))
   ds_md <- file.path(outdir, "reports", paste0(base, "_datasheet_R.md"))
   write_datasheet(ds, ds_json, ds_md)

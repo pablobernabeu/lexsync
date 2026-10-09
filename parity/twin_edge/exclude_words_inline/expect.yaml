@@ -1,0 +1,12 @@
+# Both engines select, report and deal the same eight noun-verb sets from 18 nouns and
+# 19 verbs, garden, river and listen having been removed, and record the list as
+# garden, listen, river and zebra.
+outcome: artefacts
+compare: [stimuli, descriptives, comparisons]
+datasheet:
+  materials_source.exclusions.path: inline
+  materials_source.exclusions.n_listed: 4
+  materials_source.exclusions.n_removed: 3
+  materials_source.exclusions.sha256: 9f487b18778314ce97ea5230c4032211e160574945f61d7c45fe72eeb61abf18
+  selection.candidate_pool.0.n_candidates: 18
+  selection.candidate_pool.1.n_candidates: 19

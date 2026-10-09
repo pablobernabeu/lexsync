@@ -4,7 +4,9 @@ Mirrors R_workflow/R/querying.R.
 """
 from __future__ import annotations
 
+import hashlib
 import math
+import os
 import re
 import unicodedata
 
@@ -495,6 +497,92 @@ def apply_norms(lex: pd.DataFrame, design: dict) -> dict:
         })
     return {"lexicon": lex, "provenance": records,
             "normalisation": {"changed": changed, "collapsed": collapsed}}
+
+
+# ---- The design's `exclude_words` -------------------------------------------
+# Words the researcher has decided against, names and offensive words among them. No
+# filter on the lexicon's columns can remove them, since a range filter on a norm table
+# would also drop every word the table does not cover. A design lists them, or names a
+# UTF-8 file with one per line:
+#
+#   exclude_words: [adams, dubai, espn]
+#   exclude_words: {path: config/exclude_en.txt}
+#
+# run_pipeline removes them from the candidates after the norms join and before
+# pool_filters. Only from the candidates: the neighbourhood reference, and a generated
+# design's list of real words, keep them, since an excluded word is still a word of the
+# language. The datasheet records the list with its checksum.
+#
+# Mirrors .read_exclude_words / .apply_exclude_words in R_workflow/R/querying.R.
+
+# A line holding one of these is a table row, which would be kept whole as one word and
+# match nothing, so the list would exclude nothing while the datasheet counted it.
+_EXCLUDE_SEPARATORS = ("\t", ",", ";")
+
+
+def _read_exclude_words(spec) -> dict:
+    """The words of a design's `exclude_words`, as ``design._exclude_words`` returns it.
+
+    ``spec`` is a list of words (a lone string is one word) or ``{"path": path}``,
+    naming a UTF-8 file with one word per line, in which blank lines and lines
+    beginning '#' are skipped. A file that cannot be read, that is not UTF-8 text, or
+    that holds a tab, comma or semicolon in a word is refused. A NUL byte counts as
+    not UTF-8 text: it marks a binary file or UTF-16 text saved without a byte-order
+    mark, whose words would match nothing here and which R cannot hold in a string.
+    Every word is trimmed, lower-cased and put in NFC, as a lexicon's words are.
+
+    Returns ``{"words": [...], "record": {...}}``: the distinct words in UTF-8 byte
+    order, and the record the datasheet keeps, ``{"path", "sha256", "n_listed"}``.
+    ``path`` is the file's path with '/' separators, or "inline" for a list in the
+    design, and ``sha256`` is the file's checksum, or that of the distinct words
+    joined by line feeds. Mirrors .read_exclude_words in R_workflow/R/querying.R.
+    """
+    if isinstance(spec, dict):
+        path = spec["path"]
+        if not os.path.isfile(path):
+            raise ValueError(f"lexsync: exclude_words names '{path}', which is not a "
+                             f"readable file.")
+        with open(path, "rb") as handle:
+            data = handle.read()
+        try:
+            text = None if b"\x00" in data else data.decode("utf-8")
+        except UnicodeDecodeError:
+            text = None
+        if text is None:
+            raise ValueError(f"lexsync: the exclude_words file '{path}' is not UTF-8 "
+                             f"text.")
+        if text.startswith("\ufeff"):
+            text = text[1:]
+        words = []
+        lines = pd.Series(text.split("\n"), dtype=object)
+        for i, v in enumerate(_norm_key(lines), start=1):
+            if not v or v.startswith("#"):
+                continue
+            if any(sep in v for sep in _EXCLUDE_SEPARATORS):
+                raise ValueError(
+                    f"lexsync: line {i} of the exclude_words file '{path}' holds a tab, "
+                    f"comma or semicolon, so the file is a table. List one word per line.")
+            words.append(v)
+        record = {"path": path.replace("\\", "/"), "sha256": sha256_file(path)}
+    else:
+        listed = pd.Series([spec] if isinstance(spec, str) else list(spec), dtype=object)
+        words = [v for v in _norm_key(listed) if v]
+        record = {"path": "inline"}
+    distinct = sorted(set(words), key=lambda w: w.encode("utf-8"))
+    if "sha256" not in record:
+        record["sha256"] = hashlib.sha256("\n".join(distinct).encode("utf-8")).hexdigest()
+    record["n_listed"] = len(distinct)
+    return {"words": distinct, "record": record}
+
+
+def _apply_exclude_words(frame: pd.DataFrame, words) -> pd.DataFrame:
+    """`frame` without the rows whose word is one of `words`, keyed as ``word`` is.
+
+    The rows keep their order and their ids, as build_pool's filters leave them.
+    Mirrors .apply_exclude_words in R_workflow/R/querying.R.
+    """
+    keep = ~frame["word"].isin(set(words))
+    return frame[keep.to_numpy()].reset_index(drop=True)
 
 
 # Rows of the distance matrix computed at a time: 1,000 rows against a 30,000-word

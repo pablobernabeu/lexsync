@@ -26,16 +26,24 @@ from .counterbalancing import (
     counterbalance_check,
 )
 from .datasheet import build_datasheet, write_datasheet
-from .design import _referenced_dimensions, _resolve_n, design_stem, validate_design
+from .design import (
+    _exclude_words,
+    _referenced_dimensions,
+    _resolve_n,
+    design_stem,
+    validate_design,
+)
 from .generation import _lexdec_eligible, _read_known_forms, build_lexdec_stimuli
 from .io_utils import _is_continuous, read_config, write_csv_utf8
 from .matching import _resolve_policy, match_stimuli, resample_stimuli, select_continuous_stimuli
 from .pairs import join_member_norms, member_lexicon_path, select_continuous_pairs
 from .paradigms import required_fields
 from .querying import (
+    _apply_exclude_words,
     _neighbourhood_reference,
     _nfc_count,
     _nfc_record,
+    _read_exclude_words,
     add_bigram_frequency,
     add_neighbourhood,
     add_pair_overlap,
@@ -148,6 +156,12 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
     estimate, which is the case for every word outside the Latin script (see
     ``count_syllables``).
 
+    A corpus, pool or generate design may list words to leave out under
+    ``exclude_words``, or name a file of them with ``exclude_words: {path: ...}``.
+    They are removed from the candidates after any ``norms:`` join and before the pool
+    filters, and the datasheet records the list with its checksum. The neighbourhood
+    reference, and the words a generated pseudoword must not equal, keep them.
+
     Args:
         design_path: Path to a design configuration (YAML).
         schema_path: Path to the global schema (YAML).
@@ -208,6 +222,10 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
         if not reference_words or any(pd.isna(w) for w in reference_words):
             raise ValueError("lexsync: reference_words must hold at least one word and no "
                              "missing value.")
+    # The words the design takes out of its candidates, read now, so that a list that
+    # cannot be read is refused before any lexicon is loaded or file written.
+    exclude = _exclude_words(design)
+    excluded = None if exclude is None else _read_exclude_words(exclude)
 
     log = runlog.new_run_log(design["name"], meta={
         "design": design["name"], "language": design["language"],
@@ -226,6 +244,7 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
     report = None
     pair_eligible = None
     generation_exclude = None
+    exclusions = None
     norms: list = []
     selection_audit = None
     # What NFC normalisation did to the inputs this run read (see querying._nfc_count),
@@ -311,6 +330,20 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
             runlog.log_step(log, f"lexicon loaded: {len(lex)} words", {"words": len(lex)})
             ref_words = _neighbourhood_reference(lex)
         lex = join_norms(lex)
+        # The design's exclude_words leave the candidates here, after the norms join and
+        # before the pool filters. `lex` keeps them, because an excluded word is still a
+        # word of the language: the neighbourhood reference came from it above, and a
+        # generated design's pseudowords are checked against it below.
+        candidates = lex
+        if excluded is not None:
+            candidates = _apply_exclude_words(lex, excluded["words"])
+            exclusions = dict(excluded["record"], n_removed=len(lex) - len(candidates))
+            runlog.log_step(
+                log, "exclude_words: removed %d of the %d listed word(s) from the "
+                     "candidates (%s)" % (exclusions["n_removed"], exclusions["n_listed"],
+                                          exclusions["path"]),
+                {"exclude_words": exclusions["path"], "sha256": exclusions["sha256"],
+                 "n_removed": exclusions["n_removed"]})
         filters = dict(design.get("pool_filters") or {})
         derived = _dims_to_derive(design, lex.columns, override)
         reference = ref_supplied if override else ref_words
@@ -335,7 +368,7 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
         # filter on n_syllables over Chinese would otherwise leave an empty pool and
         # an error far from the cause. Filters commute, so the rows are those of one
         # pass.
-        pool = build_pool(lex, {k: v for k, v in early.items() if k != "n_syllables"})
+        pool = build_pool(candidates, {k: v for k, v in early.items() if k != "n_syllables"})
         _require_syllables(pool, design)
         pool = build_pool(pool, {k: v for k, v in early.items() if k == "n_syllables"})
         pending = derived
@@ -604,7 +637,7 @@ def run_pipeline(design_path, schema_path="config/schema.yaml", outdir="output",
                          selection_audit=selection_audit,
                          neighbourhood_reference=nref, counterbalance_check=cb_check,
                          input_normalisation=input_normalisation,
-                         generation_exclude=generation_exclude)
+                         generation_exclude=generation_exclude, exclusions=exclusions)
     ds_json = os.path.join(outdir, "reports", f"{base}_datasheet_py.json")
     ds_md = os.path.join(outdir, "reports", f"{base}_datasheet_py.md")
     write_datasheet(ds, ds_json, ds_md)

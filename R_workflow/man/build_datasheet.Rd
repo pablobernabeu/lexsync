@@ -23,7 +23,8 @@ build_datasheet(
   neighbourhood_reference = NULL,
   counterbalance_check = NULL,
   input_normalisation = NULL,
-  generation_exclude = NULL
+  generation_exclude = NULL,
+  exclusions = NULL
 )
 }
 \arguments{
@@ -100,10 +101,23 @@ spelling changes the candidate pool.}
 design's \code{items.generation.exclude}, each \code{list(source, sha256, n_forms)}. A
 pseudoword was refused for equalling any form in them, so they decide which
 pseudowords a run produces, as the lexicon does.}
+
+\item{exclusions}{Optional record of a corpus, pool or generated design's
+\code{exclude_words}, as \code{list(path, sha256, n_listed, n_removed)}. It gives the file,
+or \code{"inline"} for a list in the design, its checksum, the number of distinct words
+it lists and the number of candidates it removed. Recorded as
+\code{materials_source$exclusions}, because the words decide which candidates the
+selection could draw.}
 }
 \value{
 The datasheet as a nested list, ready for \code{\link[=write_datasheet]{write_datasheet()}}.
 }
 \description{
 Assemble the materials datasheet for one design
+}
+\details{
+For a corpus or generated design, \code{materials_source$provenance} credits the
+lexicon that \code{source_path} names. A lexicon lexsync ships is credited by its
+source, a corpus fetched into the cache by the registry's citation, and any other
+file by its file name and checksum.
 }

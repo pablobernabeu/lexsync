@@ -41,6 +41,11 @@ Borenstein, M., Hedges, L. V., Higgins, J. P. T., & Rothstein, H. R. (2009). *In
 meta-analysis*. Wiley. <https://doi.org/10.1002/9780470743386>
 { #borenstein-2009 }
 
+Brysbaert, M., & New, B. (2009). Moving beyond Kučera and Francis: A critical evaluation of current
+word frequency norms and the introduction of a new and improved word frequency measure for American
+English. *Behavior Research Methods*, *41*(4), 977–990. <https://doi.org/10.3758/BRM.41.4.977>
+{ #brysbaert-2009 }
+
 Clark, H. H. (1973). The language-as-fixed-effect fallacy: A critique of language statistics in
 psychological research. *Journal of Verbal Learning and Verbal Behavior*, *12*(4), 335–359.
 <https://doi.org/10.1016/S0022-5371(73)80014-3>
