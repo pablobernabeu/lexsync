@@ -86,8 +86,8 @@
   },
   "analysis": {
     "response": "reaction time from the onset of `{target}`; responses collected for 2800 ms; a response ends the trial",
-    "suggested_model": "response ~ target.frequency + target.length + pair.overlap + (1 + target.frequency | subject) + (1 | item)",
-    "note": "The predictor is kept continuous and analysed by regression or a mixed model rather than dichotomised (Kuperman, 2015; Liben-Nowell et al., 2019); the controls enter as covariates. Crossed random effects for subjects and items guard the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008); reduce the structure if it does not converge (Matuschek et al., 2017). Dotted dimension names are valid in R formulas but must be quoted as Q(\"...\") in Patsy-style Python interfaces."
+    "suggested_model": "response ~ condition * target.frequency + target.length + pair.overlap + (1 + condition * target.frequency | subject) + (1 + condition | item)",
+    "note": "The predictor is kept continuous and analysed by regression or a mixed model rather than dichotomised (Kuperman, 2015; Liben-Nowell et al., 2019); the controls enter as covariates. Crossed random effects for subjects and items guard against the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). Begin with random slopes for condition, target.frequency and their interaction by subject and for condition by item (Barr et al., 2013); the controls enter as fixed effects only. Centre target.frequency and sum-code condition, so that each main effect is estimated at the average of the other. If the model is singular or fails to converge, simplify it as Matuschek et al. (2017) describe. Dotted dimension names are valid in R formulas but must be quoted as Q(\"...\") in Patsy-style Python interfaces."
   },
   "equivalence": {
     "bound_d": 0.5,
@@ -172,6 +172,16 @@
       "related",
       "unrelated"
     ],
+    "n_per_condition_realised": [
+      {
+        "condition": "related",
+        "n": 8
+      },
+      {
+        "condition": "unrelated",
+        "n": 8
+      }
+    ],
     "stimuli_file": "output/stimuli/en_priming_continuous_english_stimuli_R.csv",
     "stimuli_sha256": "05fc40acad57d8de585d854e592e7f21288e9952d5add2e8d81032bd222dec24"
   },
@@ -191,7 +201,7 @@
     },
     "design_sha256": "0c0c118a2b61b6f0c26ce5f44d7f14ce0e03116cd385203a551f6394b96731d8",
     "schema_path": "config/schema.yaml",
-    "schema_sha256": "60217cd58fd3da4a9c1deee500c9d3d56ee9bde8658644581a102a7bd1c2baa4"
+    "schema_sha256": "3335f4e31a7f5dece6375dd0247600547ad86290492c7aead2836a9ec8af9dcb"
   },
   "artifacts": [
     {

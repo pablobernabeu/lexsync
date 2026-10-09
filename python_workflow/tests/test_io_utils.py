@@ -78,6 +78,19 @@ def test_fmt_dp_rounds_half_away_from_zero_without_a_printf():
     assert [_fmt_dp(v, 2) for v in (float("inf"), float("-inf"))] == ["Inf", "-Inf"]
 
 
+# A setting such as an alpha, a bound or a tolerance k, and the confidence level an
+# alpha gives, are printed with %g once the shared rounder has taken them to six
+# places, so 1 - 2 * 0.05 prints as 90 and a bound read as 1.0 or 1 prints as 1 in
+# both engines. test-io_utils.R pins the same strings for .fmt_g.
+def test_fmt_g_prints_a_setting_without_trailing_digits():
+    from lexsync.io_utils import _fmt_g
+    assert _fmt_g((1 - 2 * 0.05) * 100) == "90"
+    assert _fmt_g((1 - 2 * 0.005) * 100) == "99"
+    assert _fmt_g((1 - 2 * 0.001) * 100) == "99.8"
+    assert [_fmt_g(v) for v in (0.05, 0.5, 1.0, 1, 1.5, 2.0)] == [
+        "0.05", "0.5", "1", "1", "1.5", "2"]
+
+
 
 def _csv_fixture():
     """The CSV-reading fixture, built row by row exactly as test-io_utils.R builds it.

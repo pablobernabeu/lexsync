@@ -1,6 +1,6 @@
 {
   "analysis": {
-    "note": "Crossed random effects for subjects and items guard against the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). Begin with this maximal structure (Barr et al., 2013) and reduce it if the model does not converge (Matuschek et al., 2017). The formula is lme4 syntax, for lme4 in R or pymer4 in Python; statsmodels MixedLM cannot take it directly and needs the random effects restated in its own arguments. The equivalence tests in the realised control are post-selection diagnostics on deterministically selected items, not inferential tests over a sample.",
+    "note": "Crossed random effects for subjects and items guard against the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). Begin with this maximal structure (Barr et al., 2013). If the model is singular or fails to converge, simplify it as Matuschek et al. (2017) describe. The formula is lme4 syntax, for lme4 in R or pymer4 in Python; statsmodels MixedLM cannot take it directly and needs the random effects restated in its own arguments. The equivalence tests in the realised control are post-selection diagnostics on deterministically selected items, not inferential tests over a sample.",
     "response": "reaction time from the onset of `{target}`; responses collected for 2800 ms; a response ends the trial",
     "suggested_model": "response ~ condition + (1 + condition | subject) + (1 + condition | item)"
   },
@@ -95,6 +95,16 @@
       "unrelated"
     ],
     "n_conditions": 2,
+    "n_per_condition_realised": [
+      {
+        "condition": "related",
+        "n": 12
+      },
+      {
+        "condition": "unrelated",
+        "n": 12
+      }
+    ],
     "n_total": 24,
     "stimuli_file": "output/stimuli/en_priming_english_stimuli_py.csv",
     "stimuli_sha256": "b55d8efbca8eb1f2a50c7f1fdb6832f59b83823c0dc8c939161004666c94a271"
@@ -120,7 +130,7 @@
   "reproducibility": {
     "design_sha256": "5ca7a41429f438521850e8d58319d4f7daddc0b0c754c20611c0e1f58ee90158",
     "schema_path": "config/schema.yaml",
-    "schema_sha256": "60217cd58fd3da4a9c1deee500c9d3d56ee9bde8658644581a102a7bd1c2baa4",
+    "schema_sha256": "3335f4e31a7f5dece6375dd0247600547ad86290492c7aead2836a9ec8af9dcb",
     "seed": 2026,
     "versions": {
       "engine": "python",

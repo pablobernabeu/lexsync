@@ -1,8 +1,8 @@
 # lexsync run log: en_priming_continuous
 
 - Engine: R 4.6.1
-- Started: 2026-10-09 07:50:53.554172
-- Finished: 2026-10-09 07:50:54.734642
+- Started: 2026-10-09 09:53:03.432089
+- Finished: 2026-10-09 09:53:04.780641
 
 ## Run metadata
 
@@ -16,70 +16,70 @@
 
 ## Steps
 
-- **2026-10-09 07:50:53.558869**: loading items 'items/priming_pairs_en.csv'
-- **2026-10-09 07:50:53.575466**: loaded 12 items across 2 conditions
+- **2026-10-09 09:53:03.437675**: loading items 'items/priming_pairs_en.csv'
+- **2026-10-09 09:53:03.456756**: loaded 12 items across 2 conditions
     - conditions: related, unrelated
-- **2026-10-09 07:50:53.579946**: loading member lexicon 'corpora/derived/en.csv'
-- **2026-10-09 07:50:54.143452**: joined word-level norms onto prime and target
-- **2026-10-09 07:50:54.148557**: computed relational dimensions (pair.lev, pair.overlap)
-- **2026-10-09 07:50:54.28239**: selected 8 pairs spanning 'target.frequency' (12 eligible)
+- **2026-10-09 09:53:03.462271**: loading member lexicon 'corpora/derived/en.csv'
+- **2026-10-09 09:53:04.15865**: joined word-level norms onto prime and target
+- **2026-10-09 09:53:04.165162**: computed relational dimensions (pair.lev, pair.overlap)
+- **2026-10-09 09:53:04.310146**: selected 8 pairs spanning 'target.frequency' (12 eligible)
     - sets: 8
     - eligible: 12
-- **2026-10-09 07:50:54.287105**: continuous: 'target.length' correlation with the predictor r = -0.292
-- **2026-10-09 07:50:54.291083**: continuous: 'pair.overlap' correlation with the predictor r = -0.227
-- **2026-10-09 07:50:54.320314**: wrote 'en_priming_continuous_english_stimuli_R.csv'
+- **2026-10-09 09:53:04.315276**: continuous: 'target.length' correlation with the predictor r = -0.292
+- **2026-10-09 09:53:04.319577**: continuous: 'pair.overlap' correlation with the predictor r = -0.227
+- **2026-10-09 09:53:04.350385**: wrote 'en_priming_continuous_english_stimuli_R.csv'
     - path: output/stimuli/en_priming_continuous_english_stimuli_R.csv
     - rows: 16
     - md5: 8a2bb9907edffd68183a1ed5f6c23030
-- **2026-10-09 07:50:54.337817**: wrote 'en_priming_continuous_english_descriptives_R.csv'
+- **2026-10-09 09:53:04.365606**: wrote 'en_priming_continuous_english_descriptives_R.csv'
     - path: output/reports/en_priming_continuous_english_descriptives_R.csv
     - rows: 3
     - md5: 1cae97ee35a1cce758b47ec9cf803b60
-- **2026-10-09 07:50:54.352444**: wrote 'en_priming_continuous_english_comparisons_R.csv'
+- **2026-10-09 09:53:04.380728**: wrote 'en_priming_continuous_english_comparisons_R.csv'
     - path: output/reports/en_priming_continuous_english_comparisons_R.csv
     - rows: 3
     - md5: 2337e1a2887f5f003bdff5f87aae74ec
-- **2026-10-09 07:50:54.497604**: wrote 'en_priming_continuous_english_psychopy.py'
+- **2026-10-09 09:53:04.528707**: wrote 'en_priming_continuous_english_psychopy.py'
     - path: output/experiments/en_priming_continuous_english_psychopy.py
     - rows: NA
     - md5: 803627675eafbd66a0edd4068c8dd003
-- **2026-10-09 07:50:54.507176**: wrote 'en_priming_continuous_english_list1.osexp'
+- **2026-10-09 09:53:04.539931**: wrote 'en_priming_continuous_english_list1.osexp'
     - path: output/experiments/en_priming_continuous_english_list1.osexp
     - rows: NA
     - md5: 207c400fce5b9c2f667a1a85146083b2
-- **2026-10-09 07:50:54.515908**: wrote 'en_priming_continuous_english_list2.osexp'
+- **2026-10-09 09:53:04.550337**: wrote 'en_priming_continuous_english_list2.osexp'
     - path: output/experiments/en_priming_continuous_english_list2.osexp
     - rows: NA
     - md5: f642fd871e15c529ca57d838b3b3517f
-- **2026-10-09 07:50:54.523108**: wrote 'en_priming_continuous_english.html'
+- **2026-10-09 09:53:04.561151**: wrote 'en_priming_continuous_english.html'
     - path: output/experiments/en_priming_continuous_english.html
     - rows: NA
     - md5: 19e541b8c570a735f8b036b3973f72ea
-- **2026-10-09 07:50:54.534787**: wrote 'en_priming_continuous_english_psychopy.csv'
+- **2026-10-09 09:53:04.57399**: wrote 'en_priming_continuous_english_psychopy.csv'
     - path: output/experiments/en_priming_continuous_english_psychopy.csv
     - rows: NA
     - md5: 37075ba5ba8ac423190a777b28ab42e4
-- **2026-10-09 07:50:54.542848**: wrote 'en_priming_continuous_english_list1_opensesame.csv'
+- **2026-10-09 09:53:04.582933**: wrote 'en_priming_continuous_english_list1_opensesame.csv'
     - path: output/experiments/en_priming_continuous_english_list1_opensesame.csv
     - rows: NA
     - md5: f6665c70442c2cfc7db2939ba69f12e0
-- **2026-10-09 07:50:54.550714**: wrote 'en_priming_continuous_english_list1_opensesame_text.csv'
+- **2026-10-09 09:53:04.591051**: wrote 'en_priming_continuous_english_list1_opensesame_text.csv'
     - path: output/experiments/en_priming_continuous_english_list1_opensesame_text.csv
     - rows: NA
     - md5: 65933b101150b42c6bf3136068585ecd
-- **2026-10-09 07:50:54.558075**: wrote 'en_priming_continuous_english_list2_opensesame.csv'
+- **2026-10-09 09:53:04.599555**: wrote 'en_priming_continuous_english_list2_opensesame.csv'
     - path: output/experiments/en_priming_continuous_english_list2_opensesame.csv
     - rows: NA
     - md5: 5e5b668c988e0e22b58e9e0af03a80a8
-- **2026-10-09 07:50:54.565131**: wrote 'en_priming_continuous_english_list2_opensesame_text.csv'
+- **2026-10-09 09:53:04.607171**: wrote 'en_priming_continuous_english_list2_opensesame_text.csv'
     - path: output/experiments/en_priming_continuous_english_list2_opensesame_text.csv
     - rows: NA
     - md5: 54a1e29418d4dbbf64d89aa8251bbb9b
-- **2026-10-09 07:50:54.711556**: wrote 'en_priming_continuous_english_datasheet_R.json'
+- **2026-10-09 09:53:04.755278**: wrote 'en_priming_continuous_english_datasheet_R.json'
     - path: output/reports/en_priming_continuous_english_datasheet_R.json
     - rows: NA
-    - md5: 1277398bebae527e1f5f535d8fe94263
-- **2026-10-09 07:50:54.723862**: wrote 'en_priming_continuous_english_datasheet_R.md'
+    - md5: 081031b58d993188d5b7f17eda82d7f4
+- **2026-10-09 09:53:04.767425**: wrote 'en_priming_continuous_english_datasheet_R.md'
     - path: output/reports/en_priming_continuous_english_datasheet_R.md
     - rows: NA
-    - md5: f294c48a4510f028536a7faaa0093344
+    - md5: 6807bdc5e8b415658278b9ec16050449

@@ -84,7 +84,8 @@ def test_methods_paragraph_reads_naturally(schema):
                          {"stimuli": None, "experiments": {}}, 2026)
     m = methods_paragraph(ds)
     assert "matched item by item" in m
-    assert "0.5-SD equivalence bound" in m
+    assert ("Two one-sided tests at a bound of 0.5 SD (alpha 0.05) supported equivalence "
+            "on 3 of 3 matched comparisons") in m
     assert "deterministic and reproducible" in m
 
 
@@ -518,10 +519,10 @@ def test_methods_prose_states_the_schemas_bound_not_a_literal(schema):
     ds = build_datasheet(_design(), schema, report, stim, "x.csv",
                          {"stimuli": None, "experiments": {}}, 2026)
     assert ds["equivalence"]["bound_d"] == 0.4
-    assert "within the 0.4-SD equivalence bound" in methods_paragraph(ds)
+    assert "at a bound of 0.4 SD (alpha 0.05)" in methods_paragraph(ds)
 
 
-def test_an_undefined_d_forces_the_non_affirmative_methods_sentence(schema):
+def test_an_undefined_d_is_reported_as_undefined(schema):
     # A controlled dimension constant at a different value in each condition has an
     # undefined d: the worst possible failure of the matching, not an excludable row.
     stim = _stim()
@@ -530,26 +531,28 @@ def test_an_undefined_d_forces_the_non_affirmative_methods_sentence(schema):
     ds = build_datasheet(_design(), schema, report, stim, "x.csv",
                          {"stimuli": None, "experiments": {}}, 2026)
     m = methods_paragraph(ds)
-    assert "Equivalence was not confirmed on every matched dimension" in m
-    assert "realised-control table" in m
-    assert "equivalence bound" not in m
+    assert ("Cohen's d is undefined for every matched comparison, and the realised-control "
+            "table gives their raw differences") in m
+    assert "supported equivalence on 0 of 1 matched comparisons" in m
+    assert "The largest difference" not in m
     # The undefined cells render as the ASCII placeholder, matching the R engine.
     md = render_datasheet_md(ds)
-    assert "| length | controlled | -- | -- |" in md
+    assert "| lo | hi | length | controlled | -1.000 | -- | -- |" in md
 
 
-def test_a_failed_tost_on_a_controlled_dimension_blocks_the_affirmative_sentence(schema):
+def test_a_failed_tost_is_counted_and_explained(schema):
     stim = _stim()
     stim["length"] = [3, 9, 3, 4]  # defined d, but far too few items to pass a TOST
     report = match_report(stim, ["length", "frequency"], schema)
     ds = build_datasheet(_design(), schema, report, stim, "x.csv",
                          {"stimuli": None, "experiments": {}}, 2026)
     m = methods_paragraph(ds)
-    assert "Equivalence was not confirmed on every matched dimension" in m
+    assert ("supported equivalence on 0 of 1 matched comparisons; with 2 items per condition "
+            "no dimension that varies can pass this test, however well matched.") in m
     assert "The realised control was close" not in m
 
 
-def test_affirmative_sentence_prints_the_signed_d_beside_its_signed_ci(schema):
+def test_the_largest_difference_prints_the_signed_d_beside_its_signed_ci(schema):
     stim = pd.DataFrame({
         "word": [f"w{i}" for i in range(120)],
         "condition": ["hi"] * 60 + ["lo"] * 60,
@@ -563,8 +566,8 @@ def test_affirmative_sentence_prints_the_signed_d_beside_its_signed_ci(schema):
     m = methods_paragraph(ds)
     # The anchor's mean is below the comparison's, so the worst d is negative and
     # must be printed with its sign: |d| beside a signed CI misstated the direction.
-    assert "was -0.12 (90% CI [" in m
-    assert "within the 0.5-SD equivalence bound" in m
+    assert "was -0.100 characters in length (hi against lo; d = -0.12, 90% CI [" in m
+    assert "supported equivalence on 1 of 1 matched comparisons." in m
 
 
 def test_pairwise_method_records_the_candidate_cap_instead_of_tolerance_windows(schema):
@@ -721,15 +724,15 @@ def test_a_dotted_model_term_earns_the_patsy_quoting_note(schema):
 # zero by the package's own arithmetic. test-datasheet.R pins the same strings.
 
 def _tie_rows():
+    pair = {"condition": "lo", "reference": "hi"}
     return [
-        {"dimension": "length", "role": "controlled", "cohens_d": 0.165,
-         "ci_low": -0.125, "ci_high": 0.455, "var_ratio": 0.0825, "tost_p": 0.0009,
-         "equivalent": True},
-        {"dimension": "old20", "role": "controlled", "cohens_d": 0.1, "ci_low": -0.2,
-         "ci_high": 0.3, "var_ratio": 1.0, "tost_p": 0.0, "equivalent": True},
-        {"dimension": "frequency", "role": "manipulated", "cohens_d": 5.27,
-         "ci_low": 4.72, "ci_high": 5.83, "var_ratio": 0.21, "tost_p": 1.0,
-         "equivalent": False},
+        dict(pair, dimension="length", role="controlled", cohens_d=0.165, ci_low=-0.125,
+             ci_high=0.455, var_ratio=0.0825, tost_p=0.0009, equivalent=True,
+             mean_diff=0.04),
+        dict(pair, dimension="old20", role="controlled", cohens_d=0.1, ci_low=-0.2,
+             ci_high=0.3, var_ratio=1.0, tost_p=0.0, equivalent=True, mean_diff=0.01),
+        dict(pair, dimension="frequency", role="manipulated", cohens_d=5.27, ci_low=4.72,
+             ci_high=5.83, var_ratio=0.21, tost_p=1.0, equivalent=False, mean_diff=1.5),
     ]
 
 
@@ -737,12 +740,13 @@ def test_decimal_ties_print_the_same_in_the_methods_paragraph_and_the_table(sche
     ds = build_datasheet(_design(), schema, None, _stim(), "x.csv",
                          {"stimuli": None, "experiments": {}}, 2026)
     ds["realised_control"] = _tie_rows()
-    assert "was 0.17 (90% CI [-0.13, 0.46]), within" in methods_paragraph(ds)
+    assert ("was 0.040 characters in length (hi against lo; d = 0.17, 90% CI "
+            "[-0.13, 0.46])") in methods_paragraph(ds)
     md = render_datasheet_md(ds)
     # The TOST p is printed to four places, and a stored 0 as a bound.
-    assert "| length | controlled | 0.17 | [-0.13, 0.46] | 0.08 | 0.0009 |" in md
-    assert "| old20 | controlled | 0.10 | [-0.20, 0.30] | 1.00 | < 0.0001 |" in md
-    assert "| frequency | manipulated | 5.27 | [4.72, 5.83] | 0.21 | 1.0000 |" in md
+    assert "| lo | hi | length | controlled | 0.040 | 0.17 | [-0.13, 0.46] | 0.08 | 0.0009 |" in md
+    assert "| lo | hi | old20 | controlled | 0.010 | 0.10 | [-0.20, 0.30] | 1.00 | < 0.0001 |" in md
+    assert "| lo | hi | frequency | manipulated | 1.500 | 5.27 | [4.72, 5.83] | 0.21 | 1.0000 |" in md
 
 
 def test_a_continuous_design_prints_its_span_and_correlations_through_the_formatter(schema):
@@ -758,8 +762,8 @@ def test_a_continuous_design_prints_its_span_and_correlations_through_the_format
          "predictor_span": 0.165},
     ]
     m = methods_paragraph(ds)
-    assert "span frequency (a span of 0.17) continuously" in m
-    assert "correlation was |r| = 0.083," in m
+    assert "to span frequency (a span of 0.17), for analysis" in m
+    assert "The largest predictor-control correlation was |r| = 0.083." in m
     md = render_datasheet_md(ds)
     assert "| frequency | predictor | -- | 0.165 |" in md
     assert "| length | control | -0.083 | 0.165 |" in md
@@ -849,3 +853,309 @@ def test_the_methods_paragraph_from_the_r_record_matches_the_r_rendering():
         md = fh.read().split("\n")
     at = md.index("## Methods paragraph")
     assert methods_paragraph(ds) == md[at + 2]
+
+
+# ---- Realised control described before it is tested; a model that says what it is --
+# The Methods text called the control close on the strength of equivalence tests that
+# fewer than 23 items per condition can never pass, named no uncontrolled confound,
+# stated the requested number of items and labelled every interval 90%. The suggested
+# model left out the matched covariates, gave the Latin-square categorisation design no
+# by-item slope and called its structure maximal whatever its slopes. The committed
+# records below are read back as a reader would read them. test-datasheet.R pins the
+# same strings.
+
+def _committed_record(name):
+    from helper_repo import repo_path
+    base = repo_path("output", "reports", name, reason="committed reports not available")
+    with open(str(base) + ".json", encoding="utf-8") as handle:
+        return json.load(handle)
+
+
+def _matched_stim(n):
+    # Identical lengths in both conditions, so only the number of items decides the TOST.
+    lengths = [4.0 + (i % 3) for i in range(n)]
+    return pd.DataFrame({"word": ["w%d" % i for i in range(2 * n)],
+                         "condition": ["hi"] * n + ["lo"] * n,
+                         "set": list(range(1, n + 1)) * 2, "length": lengths * 2,
+                         "frequency": [6.0 + (i % 2) / 10 for i in range(n)]
+                         + [3.0 + (i % 2) / 10 for i in range(n)]})
+
+
+def _frequency_conditions(design):
+    return dict(design, conditions=[{"name": "hi", "define_by": {"frequency": [5.0, 7.0]}},
+                                    {"name": "lo", "define_by": {"frequency": [2.0, 4.0]}}])
+
+
+def test_the_methods_text_describes_the_realised_control_before_testing_it():
+    m = methods_paragraph(_committed_record("en_freqcontrast_english_datasheet_py"))
+    assert ("The largest difference on a matched dimension was 0.300 neighbours in "
+            "n_density (high_frequency against low_frequency; d = 0.04, 90% CI "
+            "[-0.22, 0.30]). Two one-sided tests at a bound of 0.5 SD (alpha 0.05) "
+            "supported equivalence on 3 of 3 matched comparisons. No uncontrolled "
+            "dimension differed by more than 0.5 SD.") in m
+    assert "The realised control was close" not in m
+    assert "equivalence bound" not in m
+
+
+def test_with_too_few_items_the_methods_text_says_no_dimension_can_pass(schema):
+    from lexsync.datasheet import _tost_min_n
+    assert [_tost_min_n(0.5, 0.05), _tost_min_n(0.3, 0.05), _tost_min_n(0.5, 0.005)] == [
+        23, 62, 56]
+
+    def paragraph(n):
+        stim = _matched_stim(n)
+        report = match_report(stim, ["length", "frequency"], schema)
+        design = _frequency_conditions(dict(_design(), n_per_condition=n))
+        return methods_paragraph(build_datasheet(design, schema, report, stim, "x.csv",
+                                                 _files(), 2026))
+
+    assert ("supported equivalence on 0 of 1 matched comparisons; with 15 items per "
+            "condition no dimension that varies can pass this test, however well "
+            "matched.") in paragraph(15)
+    m = paragraph(24)
+    assert "supported equivalence on 1 of 1 matched comparisons." in m
+    assert "no dimension that varies can pass" not in m
+
+
+def test_a_bound_too_small_for_any_request_still_gets_the_caveat(schema):
+    # Below a bound of about 5e-5 SD, no n_per_condition either engine accepts can pass.
+    # R's search returned NA there, with a warning, and its Methods text then stopped
+    # with an error, while this engine searched on. At smaller bounds R's search never
+    # ended. Both now stop at the largest request and return infinity.
+    from lexsync.datasheet import _tost_min_n
+    assert _tost_min_n(1e-4, 0.05) == 541108692
+    assert _tost_min_n(1e-5, 0.05) == float("inf")
+    tiny = dict(schema, equivalence={"bound_d": 1e-5, "alpha": 0.05})
+    stim = _matched_stim(30)
+    report = match_report(stim, ["length", "frequency"], tiny)
+    ds = build_datasheet(_frequency_conditions(_design()), tiny, report, stim, "x.csv",
+                         _files(), 2026)
+    assert ("Two one-sided tests at a bound of 1e-05 SD (alpha 0.05) supported equivalence "
+            "on 0 of 1 matched comparisons; with 30 items per condition no dimension that "
+            "varies can pass this test, however well matched.") in methods_paragraph(ds)
+
+
+def test_the_methods_text_names_the_uncontrolled_dimensions_that_differ():
+    m = methods_paragraph(_committed_record("en_ndensity_english_datasheet_py"))
+    assert ("Dimensions the design did not control differed: old20 (dense_neighbourhood "
+            "against sparse_neighbourhood: -0.523 mean Levenshtein distance; d = -2.30, "
+            "90% CI [-2.64, -1.97]) and n_syllables (dense_neighbourhood against "
+            "sparse_neighbourhood: -0.450 syllables; d = -0.83, 90% CI "
+            "[-1.10, -0.56]).") in m
+
+
+def test_a_lexical_decision_reports_what_its_pseudowords_were_not_matched_on():
+    m = methods_paragraph(_committed_record("en_lexdec_english_datasheet_py"))
+    assert ("Words and pseudowords were matched on length only, and the words differed "
+            "from the pseudowords in bigram frequency (d = -1.47, 90% CI [-1.82, -1.13]), "
+            "N (d = -0.28, 90% CI [-0.59, 0.02]) and OLD20 (d = 0.17, 90% CI "
+            "[-0.13, 0.47]). Two one-sided tests at a bound of 0.5 SD (alpha 0.05) "
+            "supported equivalence on 1 of 1 matched comparisons.") in m
+
+
+def test_the_interval_is_labelled_by_the_configured_alpha(schema):
+    strict = dict(schema, equivalence={"bound_d": 0.5, "alpha": 0.005})
+    stim = _matched_stim(30)
+    report = match_report(stim, ["length", "frequency"], strict)
+    ds = build_datasheet(_frequency_conditions(_design()), strict, report, stim, "x.csv",
+                         _files(), 2026)
+    m = methods_paragraph(ds)
+    assert "(hi against lo; d = 0.00, 99% CI [" in m
+    assert "at a bound of 0.5 SD (alpha 0.005)" in m
+    assert "90%" not in m
+    md = render_datasheet_md(ds)
+    assert "| Cohen's d | 99% CI | Var ratio |" in md
+    assert "90% CI" not in md
+
+
+def test_a_shortfall_states_the_items_selected_and_the_request(schema):
+    # One item per condition under shortfall: allow. The text stated the 20 requested.
+    stim = pd.DataFrame({"word": ["cat", "dog"], "condition": ["hi", "lo"], "set": [1, 1],
+                         "length": [3, 3], "frequency": [6.0, 3.0]})
+    design = dict(_frequency_conditions(_design()), n_per_condition=20,
+                  matching={"shortfall": "allow"})
+    report = match_report(stim, ["length", "frequency"], schema)
+    ds = build_datasheet(design, schema, report, stim, "x.csv", _files(), 2026)
+    assert ds["design"]["n_per_condition"] == 20
+    assert ds["items"]["n_per_condition_realised"] == [{"condition": "hi", "n": 1},
+                                                        {"condition": "lo", "n": 1}]
+    m = methods_paragraph(ds)
+    assert m.startswith("1 item per condition (of 20 requested) was selected from the "
+                        "English lexicon")
+    assert ("Cohen's d is undefined for every matched comparison, and the realised-control "
+            "table gives their raw differences") in m
+    assert "with 1 item per condition no dimension that varies can pass this test" in m
+    # A single item has no TOST verdict either. The table printed Python's None there,
+    # where the R renderer prints its placeholder.
+    md = render_datasheet_md(ds)
+    assert "| lo | hi | length | controlled | 0.000 | -- | -- | -- | -- | -- |" in md
+    assert "None" not in md
+    # A design that leaves n_per_condition to the matcher records the matcher's 20, and
+    # that is the request the two items here fall short of.
+    unset = {k: v for k, v in _design().items() if k != "n_per_condition"}
+    plain = build_datasheet(unset, schema, None, _stim(), "x.csv", _files(), 2026)
+    assert plain["design"]["n_per_condition"] == 20
+    assert methods_paragraph(plain).startswith(
+        "2 items per condition (of 20 requested) were selected")
+
+
+def test_the_realised_counts_are_per_replicate_when_the_design_resamples(schema):
+    reps = pd.concat([_stim().assign(replicate=r) for r in (2, 1)], ignore_index=True)
+    ds = build_datasheet(dict(_design(), resample={"n_sets": 2}), schema, None, reps,
+                         "x.csv", _files(), 2026)
+    assert ds["items"]["n_per_condition_realised"] == [
+        {"replicate": 1, "condition": "hi", "n": 2}, {"replicate": 1, "condition": "lo", "n": 2},
+        {"replicate": 2, "condition": "hi", "n": 2}, {"replicate": 2, "condition": "lo", "n": 2}]
+    assert methods_paragraph(ds).startswith("2 items per condition were selected")
+
+
+def test_a_continuous_methods_text_gives_the_spreads_and_the_windows():
+    m = methods_paragraph(_committed_record("en_freqcontinuous_english_datasheet_py"))
+    assert ("80 English items were selected to span frequency (a span of 3.05 and an SD of "
+            "0.54, 0.60 times that of an even spread over the span), for analysis by "
+            "regression or a mixed model rather than a between-condition contrast (Kuperman, "
+            "2015; Liben-Nowell et al., 2019). The controls were banded within windows of "
+            "the mean \u00b1 1.5 SD of an initial selection spread over the ranks of "
+            "frequency (length 3.18 to 7.90, n_density -5.21 to 12.84 and old20 1.14 to "
+            "2.80), and their realised SDs were 0.66, 0.39 and 0.56 of the pool's. The "
+            "largest predictor-control correlation was |r| = 0.165.") in m
+    assert "near-constant" not in m
+    # The first pass spreads over the predictor's ranks and follows the pool's skew, so
+    # calling it an even spread contradicted the SD ratio given a sentence earlier.
+    assert "initial even spread" not in m
+
+
+def test_a_relaxed_continuous_selection_says_its_windows_were_widened(schema):
+    design = {"name": "c", "language": "english", "n_per_condition": 4,
+              "continuous": {"predictor": "frequency", "controls": ["length"]},
+              "match_on": ["length"], "counterbalance": {"lists": 1}}
+    stim = pd.DataFrame({"word": ["a", "b", "c", "d"], "condition": "continuous",
+                         "frequency": [2.0, 3.0, 4.0, 5.0], "length": [3, 4, 3, 4]})
+    audit = {"control_windows": [{"dimension": "length", "low": 3.2, "high": 3.8,
+                                  "pool_sd": 1.0}]}
+    report = match_report_continuous(stim, "frequency", ["length"], schema, audit=audit)
+    banded = methods_paragraph(build_datasheet(design, schema, report, stim, "x.csv",
+                                               _files(), 2026))
+    assert (" The control was banded within a window of the mean \u00b1 2 SD of an initial "
+            "selection spread over the ranks of frequency (length 3.20 to 3.80), and its "
+            "realised SD was 0.58 of the pool's.") in banded
+    relaxed = {"window_relaxations": [{"condition": "continuous", "n_within_tolerance": 0,
+                                       "n_needed": 4}]}
+    m = methods_paragraph(build_datasheet(design, schema, report, stim, "x.csv", _files(),
+                                          2026, selection_audit=relaxed))
+    assert (" The control window, the mean \u00b1 2 SD of an initial selection spread over "
+            "the ranks of frequency (length 3.20 to 3.80), held too few items and was "
+            "widened to the whole pool, and its realised SD was 0.58 of the pool's.") in m
+
+
+def test_the_realised_control_table_names_the_pair_and_the_raw_difference(schema):
+    stim = _stim()
+    report = match_report(stim, ["length", "frequency"], schema)
+    md = render_datasheet_md(build_datasheet(_design(), schema, report, stim, "x.csv",
+                                             _files(), 2026))
+    assert ("| Condition | Reference | Dimension | Role | Raw difference | Cohen's d | "
+            "90% CI | Var ratio | TOST p | Equivalent |") in md
+    assert ("The raw difference and Cohen's d are the reference mean minus the condition "
+            "mean") in md
+    assert "| lo | hi | length | controlled | 0.000 | 0.00 | [0.00, 0.00] | 1.00 | < 0.0001 |" in md
+    assert "| lo | hi | frequency | uncontrolled | 3.000 | -- | -- | 1.00 | 1.0000 |" in md
+
+
+def test_a_matched_design_adds_its_matched_dimensions_as_centred_covariates(schema):
+    # Length is the same for every item here, so it is left out of the model.
+    stim = _stim().assign(n_density=[1, 2, 3, 4], old20=[1.5, 1.6, 1.7, 1.8])
+    a = build_datasheet(_design(), schema, None, stim, "x.csv", _files(), 2026)["analysis"]
+    assert a["suggested_model"] == (
+        "response ~ condition + scale(n_density, scale = FALSE) + scale(old20, scale = FALSE)"
+        " + (1 + condition | subject) + (1 | item)")
+    assert "(Sassenhagen & Alday, 2016)" in a["note"]
+    assert ("The matched dimension length is constant among the selected items, so it is "
+            "left out.") in a["note"]
+    # The covariates take no random slopes, so the structure is described, not called
+    # maximal.
+    assert "maximal" not in a["note"]
+    assert ("Begin with random slopes for condition, the manipulated factor, by subject and, "
+            "where it varies within items, by item (Barr et al., 2013); the matched "
+            "covariates enter as fixed effects only.") in a["note"]
+    assert ("If the model is singular or fails to converge, simplify it as Matuschek et al. "
+            "(2017) describe.") in a["note"]
+
+
+def test_a_lexical_decision_models_the_condition_column(schema):
+    a = build_datasheet(_gen_design(), schema, None, _gen_stim(), "x.csv", _files(),
+                        2026)["analysis"]
+    assert a["suggested_model"] == ("response ~ condition + (1 + condition | subject) + "
+                                    "(1 | item)")
+    assert "The condition column codes lexicality, word or pseudoword." in a["note"]
+    assert "Begin with this maximal structure (Barr et al., 2013)." in a["note"]
+
+
+def test_a_latin_square_gives_items_a_slope_for_condition(schema):
+    categorisation = _table_design(paradigm="categorisation")
+    a = build_datasheet(categorisation, schema, None, _priming_table(("narrow", "broad")),
+                        "items/p.csv", _files(), 2026)["analysis"]
+    assert a["suggested_model"] == ("response ~ condition + (1 + condition | subject) + "
+                                    "(1 + condition | item)")
+    assert "Begin with this maximal structure (Barr et al., 2013)." in a["note"]
+    # The recipe that ran decides, not the item source: a factorial item table keeps the
+    # intercept alone.
+    factorial = _table_design(paradigm="factorial", counterbalance={"lists": 2})
+    table = pd.DataFrame({"item": [1, 2, 3, 4], "set": [1, 1, 2, 2],
+                          "condition": ["word", "pseudoword"] * 2,
+                          "target": ["cat", "cag", "dog", "dop"]})
+    a = build_datasheet(factorial, schema, None, table, "items/p.csv", _files(),
+                        2026)["analysis"]
+    assert a["suggested_model"] == ("response ~ condition + (1 + condition | subject) + "
+                                    "(1 | item)")
+
+
+def test_a_continuous_pair_design_models_the_condition_and_its_interaction(schema):
+    a = build_datasheet(_pair_design(), schema, None, _pair_stim(), "items/p.csv", _files(),
+                        2026)["analysis"]
+    assert a["suggested_model"] == (
+        "response ~ condition * target.frequency + target.length + pair.overlap + "
+        "(1 + condition * target.frequency | subject) + (1 + condition | item)")
+    # The controls take no random slopes, so the structure is described, not called
+    # maximal.
+    assert "maximal" not in a["note"]
+    assert ("Begin with random slopes for condition, target.frequency and their interaction "
+            "by subject and for condition by item (Barr et al., 2013); the controls enter "
+            "as fixed effects only.") in a["note"]
+    # A pair design with one condition has no condition term.
+    related = _pair_stim()[lambda f: f["condition"] == "related"]
+    a = build_datasheet(_pair_design(), schema, None, related, "items/p.csv", _files(),
+                        2026)["analysis"]
+    assert a["suggested_model"] == ("response ~ target.frequency + target.length + "
+                                    "pair.overlap + (1 + target.frequency | subject) + "
+                                    "(1 | item)")
+    assert ("Begin with a random slope for target.frequency by subject (Barr et al., 2013); "
+            "the controls enter as fixed effects only.") in a["note"]
+
+
+def test_the_committed_records_suggest_the_models_their_designs_need():
+    # The categorisation design rotates its cues over its targets by a Latin square, the
+    # continuous priming design crosses its condition with target frequency, and the
+    # frequency contrast adds its matched covariates, so only the first is maximal.
+    categorisation = _committed_record("en_categorisation_english_datasheet_py")["analysis"]
+    assert categorisation["suggested_model"].endswith("+ (1 + condition | item)")
+    assert "Begin with this maximal structure" in categorisation["note"]
+    priming = _committed_record("en_priming_continuous_english_datasheet_py")["analysis"]
+    assert "(1 + condition * target.frequency | subject)" in priming["suggested_model"]
+    assert priming["suggested_model"].endswith("+ (1 + condition | item)")
+    contrast = _committed_record("en_freqcontrast_english_datasheet_py")["analysis"]
+    assert "scale(n_density, scale = FALSE)" in contrast["suggested_model"]
+    assert "maximal" not in contrast["note"] and "maximal" not in priming["note"]
+
+
+def test_a_design_with_more_than_two_conditions_is_told_how_to_recode(schema):
+    four = pd.DataFrame({"word": list("abcdefgh"),
+                         "condition": ["HF_l", "HF_l", "HF_s", "HF_s",
+                                       "LF_l", "LF_l", "LF_s", "LF_s"],
+                         "set": [1, 2] * 4, "length": [3, 4] * 4,
+                         "n_density": [1, 2] * 4, "old20": [1.5, 1.6] * 4})
+    note = build_datasheet(_design(), schema, None, four, "x.csv", _files(),
+                           2026)["analysis"]["note"]
+    assert ("If the conditions cross two or more factors, recode condition into those "
+            "factors (for example frequency * neighbourhood) with sum coding.") in note
+    two = build_datasheet(_design(), schema, None, _stim(), "x.csv", _files(), 2026)
+    assert "recode condition" not in two["analysis"]["note"]

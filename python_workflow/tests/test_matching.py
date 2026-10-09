@@ -599,8 +599,8 @@ def _small_design(n, **matching):
 
 
 def test_shortfall_errors_by_default():
-    # Three anchor candidates cannot honour n = 5; a silent shrink would leave
-    # the datasheet stating the requested n over a smaller realised set.
+    # Three anchor candidates cannot honour n = 5; a silent shrink would change the
+    # design that was planned without the design's consent.
     with pytest.raises(ValueError, match="5 sets per condition were requested but only 3"):
         match_stimuli(_small_pool(), _small_design(5), _tiny_schema())
 

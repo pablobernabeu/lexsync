@@ -33,6 +33,7 @@ from .datasheet import (
     write_datasheet,
 )
 from .design import (
+    N_DEFAULT_GENERATED,
     _exclude_words,
     _referenced_dimensions,
     _resolve_n,
@@ -468,7 +469,7 @@ def run_pipeline(design_path, schema_path=None, outdir="output",
             report = match_report(report_stim, dims, schema,
                                   roles=_comparison_roles(design, _controlled(design, source)))
     elif source == "generate":
-        n = _resolve_n(design, 40)
+        n = _resolve_n(design, N_DEFAULT_GENERATED)
         gen_cfg = items_cfg.get("generation") or {}
         gen_method = gen_cfg.get("method", "letter_substitution")
         # Further known word forms a pseudoword must not equal. The lexicon stops at

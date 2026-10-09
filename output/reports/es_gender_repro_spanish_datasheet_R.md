@@ -27,23 +27,25 @@
 
 ## Realised control
 
-| Dimension | Role | Cohen's d | 90% CI | Var ratio | TOST p | Equivalent |
-|---|---|---|---|---|---|---|
-| length | controlled | 0.00 | [-0.34, 0.34] | 1.00 | 0.0081 | TRUE |
-| frequency | controlled | 0.02 | [-0.32, 0.36] | 0.01 | 0.0105 | TRUE |
-| n_density | uncontrolled | 0.20 | [-0.14, 0.54] | 0.56 | 0.0697 | FALSE |
-| old20 | uncontrolled | -0.08 | [-0.42, 0.26] | 0.89 | 0.0218 | TRUE |
-| n_syllables | uncontrolled | 0.10 | [-0.24, 0.44] | 1.53 | 0.0271 | TRUE |
-| bigram_freq | uncontrolled | 0.22 | [-0.12, 0.56] | 1.97 | 0.0838 | FALSE |
+Each row compares a condition with its reference. The raw difference and Cohen's d are the reference mean minus the condition mean, and the variance ratio is the condition's variance over the reference's.
+
+| Condition | Reference | Dimension | Role | Raw difference | Cohen's d | 90% CI | Var ratio | TOST p | Equivalent |
+|---|---|---|---|---|---|---|---|---|---|
+| masculine | feminine | length | controlled | 0.000 | 0.00 | [-0.34, 0.34] | 1.00 | 0.0081 | TRUE |
+| masculine | feminine | frequency | controlled | 0.008 | 0.02 | [-0.32, 0.36] | 0.01 | 0.0105 | TRUE |
+| masculine | feminine | n_density | uncontrolled | 0.563 | 0.20 | [-0.14, 0.54] | 0.56 | 0.0697 | FALSE |
+| masculine | feminine | old20 | uncontrolled | -0.057 | -0.08 | [-0.42, 0.26] | 0.89 | 0.0218 | TRUE |
+| masculine | feminine | n_syllables | uncontrolled | 0.083 | 0.10 | [-0.24, 0.44] | 1.53 | 0.0271 | TRUE |
+| masculine | feminine | bigram_freq | uncontrolled | 0.001 | 0.22 | [-0.12, 0.56] | 1.97 | 0.0838 | FALSE |
 
 ## Suggested analysis
 
-- **Model:** `response ~ condition + (1 + condition | subject) + (1 | item)` -- where the response is reaction time from the onset of `{word}`; responses collected for 2800 ms; a response ends the trial.
-- Crossed random effects for subjects and items guard against the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). Begin with this maximal structure (Barr et al., 2013) and reduce it if the model does not converge (Matuschek et al., 2017). The formula is lme4 syntax, for lme4 in R or pymer4 in Python; statsmodels MixedLM cannot take it directly and needs the random effects restated in its own arguments. The equivalence tests in the realised control are post-selection diagnostics on deterministically selected items, not inferential tests over a sample.
+- **Model:** `response ~ condition + scale(frequency, scale = FALSE) + scale(length, scale = FALSE) + (1 + condition | subject) + (1 | item)` -- where the response is reaction time from the onset of `{word}`; responses collected for 2800 ms; a response ends the trial.
+- Crossed random effects for subjects and items guard against the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). The matched dimensions enter as centred covariates, computed from the stimuli file's own columns, because matching leaves residual differences that the analysis can adjust for (Sassenhagen & Alday, 2016). Begin with random slopes for condition, the manipulated factor, by subject and, where it varies within items, by item (Barr et al., 2013); the matched covariates enter as fixed effects only. If the model is singular or fails to converge, simplify it as Matuschek et al. (2017) describe. The formula is lme4 syntax, for lme4 in R or pymer4 in Python; statsmodels MixedLM cannot take it directly and needs the random effects restated in its own arguments. The equivalence tests in the realised control are post-selection diagnostics on deterministically selected items, not inferential tests over a sample.
 
 ## Methods paragraph
 
-48 items per condition were selected from the Spanish lexicon (wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md) and matched item by item on frequency, length using lexsync's standardised_euclidean matcher. The realised control was close. The largest standardised difference on any matched dimension was 0.02 (90% CI [-0.32, 0.36]), within the 0.5-SD equivalence bound. The smallest condition was selected from 4164 eligible candidates, and the selection was deterministic and blind to any outcome measure. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. Responses were collected from target onset until 2800 ms after it, and a response ended the trial. The selection is deterministic and reproducible (lexsync 0.1.1), and the seed (2026) fixes the trial order.
+48 items per condition were selected from the Spanish lexicon (wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md) and matched item by item on frequency, length using lexsync's standardised_euclidean matcher. The largest difference on a matched dimension was 0.008 Zipf in frequency (feminine against masculine; d = 0.02, 90% CI [-0.32, 0.36]). Two one-sided tests at a bound of 0.5 SD (alpha 0.05) supported equivalence on 2 of 2 matched comparisons. No uncontrolled dimension differed by more than 0.5 SD. The smallest condition was selected from 4164 eligible candidates, and the selection was deterministic and blind to any outcome measure. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. Responses were collected from target onset until 2800 ms after it, and a response ended the trial. The selection is deterministic and reproducible (lexsync 0.1.1), and the seed (2026) fixes the trial order.
 
 ## Pre-registration template
 
@@ -63,15 +65,15 @@
 - Paradigm: factorial
 
 ### Materials (from the lexsync datasheet)
-48 items per condition were selected from the Spanish lexicon (wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md) and matched item by item on frequency, length using lexsync's standardised_euclidean matcher. The realised control was close. The largest standardised difference on any matched dimension was 0.02 (90% CI [-0.32, 0.36]), within the 0.5-SD equivalence bound. The smallest condition was selected from 4164 eligible candidates, and the selection was deterministic and blind to any outcome measure. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. Responses were collected from target onset until 2800 ms after it, and a response ended the trial. The selection is deterministic and reproducible (lexsync 0.1.1), and the seed (2026) fixes the trial order.
+48 items per condition were selected from the Spanish lexicon (wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md) and matched item by item on frequency, length using lexsync's standardised_euclidean matcher. The largest difference on a matched dimension was 0.008 Zipf in frequency (feminine against masculine; d = 0.02, 90% CI [-0.32, 0.36]). Two one-sided tests at a bound of 0.5 SD (alpha 0.05) supported equivalence on 2 of 2 matched comparisons. No uncontrolled dimension differed by more than 0.5 SD. The smallest condition was selected from 4164 eligible candidates, and the selection was deterministic and blind to any outcome measure. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. Responses were collected from target onset until 2800 ms after it, and a response ended the trial. The selection is deterministic and reproducible (lexsync 0.1.1), and the seed (2026) fixes the trial order.
 
 ### Sampling plan
 - Sample size and justification:
 - Stopping rule:
 
 ### Analysis plan
-- Statistical model: response ~ condition + (1 + condition | subject) + (1 | item)
-  (Crossed random effects for subjects and items guard against the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). Begin with this maximal structure (Barr et al., 2013) and reduce it if the model does not converge (Matuschek et al., 2017). The formula is lme4 syntax, for lme4 in R or pymer4 in Python; statsmodels MixedLM cannot take it directly and needs the random effects restated in its own arguments. The equivalence tests in the realised control are post-selection diagnostics on deterministically selected items, not inferential tests over a sample.)
+- Statistical model: response ~ condition + scale(frequency, scale = FALSE) + scale(length, scale = FALSE) + (1 + condition | subject) + (1 | item)
+  (Crossed random effects for subjects and items guard against the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). The matched dimensions enter as centred covariates, computed from the stimuli file's own columns, because matching leaves residual differences that the analysis can adjust for (Sassenhagen & Alday, 2016). Begin with random slopes for condition, the manipulated factor, by subject and, where it varies within items, by item (Barr et al., 2013); the matched covariates enter as fixed effects only. If the model is singular or fails to converge, simplify it as Matuschek et al. (2017) describe. The formula is lme4 syntax, for lme4 in R or pymer4 in Python; statsmodels MixedLM cannot take it directly and needs the random effects restated in its own arguments. The equivalence tests in the realised control are post-selection diagnostics on deterministically selected items, not inferential tests over a sample.)
 - Inference criteria:
 - Treatment of items (e.g. items as a random factor):
 

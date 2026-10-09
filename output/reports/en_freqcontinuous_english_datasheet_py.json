@@ -1,6 +1,6 @@
 {
   "analysis": {
-    "note": "The predictor is kept continuous and analysed by regression or a mixed model rather than dichotomised (Kuperman, 2015; Liben-Nowell et al., 2019); the controls enter as covariates. Crossed random effects for subjects and items guard the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008); reduce the structure if it does not converge (Matuschek et al., 2017).",
+    "note": "The predictor is kept continuous and analysed by regression or a mixed model rather than dichotomised (Kuperman, 2015; Liben-Nowell et al., 2019); the controls enter as covariates. Crossed random effects for subjects and items guard against the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). Begin with a random slope for frequency by subject (Barr et al., 2013); the controls enter as fixed effects only. If the model is singular or fails to converge, simplify it as Matuschek et al. (2017) describe.",
     "response": "reaction time from the onset of `{word}`; responses collected for 2800 ms; a response ends the trial",
     "suggested_model": "response ~ frequency + length + n_density + old20 + (1 + frequency | subject) + (1 | item)"
   },
@@ -106,6 +106,12 @@
       "continuous"
     ],
     "n_conditions": 1,
+    "n_per_condition_realised": [
+      {
+        "condition": "continuous",
+        "n": 80
+      }
+    ],
     "n_total": 80,
     "stimuli_file": "output/stimuli/en_freqcontinuous_english_stimuli_py.csv",
     "stimuli_sha256": "8151a0787d989557463f4d2ac5e1c11f5bb943283774da0ed66748724f54da2a"
@@ -172,7 +178,7 @@
   "reproducibility": {
     "design_sha256": "37d98d331dcd43c9638f18197b5529d98ab15bfc287d0bafbd73df61fccf01bc",
     "schema_path": "config/schema.yaml",
-    "schema_sha256": "60217cd58fd3da4a9c1deee500c9d3d56ee9bde8658644581a102a7bd1c2baa4",
+    "schema_sha256": "3335f4e31a7f5dece6375dd0247600547ad86290492c7aead2836a9ec8af9dcb",
     "seed": 2026,
     "versions": {
       "engine": "python",

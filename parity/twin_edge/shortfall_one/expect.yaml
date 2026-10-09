@@ -1,6 +1,8 @@
 # Both engines select time and zeal, leave every d and interval empty and report the
 # raw differences. Before the fix both wrote d = 0, and the Python engine raised a
-# TypeError on the missing interval.
+# TypeError on the missing interval. The datasheet records the request and the one item
+# each condition holds, in the order of items.conditions, where it recorded the request
+# alone.
 outcome: artefacts
 compare: [stimuli, descriptives, comparisons]
 datasheet:
@@ -9,3 +11,7 @@ datasheet:
   realised_control.1.cohens_d: null
   realised_control.1.ci_low: null
   realised_control.1.mean_diff: 3.01
+  design.n_per_condition: 20
+  items.n_per_condition_realised.0.condition: low
+  items.n_per_condition_realised.0.n: 1
+  items.n_per_condition_realised.1.n: 1

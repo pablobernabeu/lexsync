@@ -246,6 +246,19 @@ test_that(".fmt_dp rounds half away from zero without the platform printf", {
   expect_identical(fmt(c(Inf, -Inf), 2), c("Inf", "-Inf"))
 })
 
+# A setting such as an alpha, a bound or a tolerance k, and the confidence level an
+# alpha gives, are printed with %g once the shared rounder has taken them to six
+# places, so 1 - 2 * 0.05 prints as 90 and a bound read as 1.0 or 1 prints as 1 in both
+# engines. test_io_utils.py pins the same strings for _fmt_g.
+test_that(".fmt_g prints a setting without trailing digits", {
+  fmt <- lexsync:::.fmt_g
+  expect_identical(fmt((1 - 2 * 0.05) * 100), "90")
+  expect_identical(fmt((1 - 2 * 0.005) * 100), "99")
+  expect_identical(fmt((1 - 2 * 0.001) * 100), "99.8")
+  expect_identical(vapply(list(0.05, 0.5, 1.0, 1L, 1.5, 2.0), fmt, character(1)),
+                   c("0.05", "0.5", "1", "1", "1.5", "2"))
+})
+
 test_that("clean_field rejects control characters but allows commas and quotes", {
   expect_error(clean_field("cat\ndog", "word"), "control characters")
   expect_identical(clean_field('the "big" cat, asleep', "word"), 'the "big" cat, asleep')

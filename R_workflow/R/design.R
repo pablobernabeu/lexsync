@@ -192,6 +192,14 @@
   as.integer(n)
 }
 
+# The items per condition each selector takes when a design gives no n_per_condition:
+# the matcher (resampled sets included), the continuous selector and the pseudoword
+# generator. The datasheet records the request from here too, so the record names the n
+# the selector applied. Must stay identical to the N_DEFAULT_* values in design.py.
+.N_DEFAULT_MATCHED <- 20L
+.N_DEFAULT_CONTINUOUS <- 60L
+.N_DEFAULT_GENERATED <- 40L
+
 # The tolerance windows, k per dimension, as modifyList() resolves them. The schema's
 # map is the base and the design's overrides it per dimension. A null in the schema's
 # map is dropped, and a null in the design's deletes that dimension from the merged

@@ -81,6 +81,15 @@ _N_MESSAGE = "lexsync: n_per_condition must be a positive whole number."
 # R's as.integer() gives NA beyond this, so both engines refuse a larger request.
 _INT_MAX = 2147483647
 
+# The items per condition each selector takes when a design gives no n_per_condition:
+# the matcher (resampled sets included), the continuous selector and the pseudoword
+# generator. The datasheet records the request from here too, so the record names the
+# n the selector applied. Must stay identical to the .N_DEFAULT_* values in
+# R_workflow/R/design.R.
+N_DEFAULT_MATCHED = 20
+N_DEFAULT_CONTINUOUS = 60
+N_DEFAULT_GENERATED = 40
+
 
 def _key_name(key) -> str:
     """A mapping key as text, spelt as R's YAML reader names it.

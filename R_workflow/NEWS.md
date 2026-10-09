@@ -513,6 +513,39 @@
   fails while formatting the missing interval. The twin-edge case `shortfall_one`
   pins the result in both engines.
 
+* The Methods text reports the realised control descriptively: the largest
+  difference on a matched dimension, in its own unit and with its pair, d and
+  interval, and then the equivalence tests as a secondary check that says when the
+  number of items is too small for them ever to pass (fewer than 23 per condition
+  at the default bound). It called the control close, or not confirmed, on the
+  tests alone. It names, largest first, up to five comparisons of an uncontrolled
+  dimension that differ by more than the bound, and a generated lexical decision
+  says how its words and pseudowords differ in bigram frequency, N and OLD20. It
+  states the number of items each condition holds, with the request beside it when a
+  `shortfall: allow` run fell short, where it stated the request. It
+  labels the interval by the configured alpha, where it always said 90%, and for a
+  continuous design it reports the realised spreads, the control windows and any
+  widened window in place of 'near-constant'. The Markdown table of the realised
+  control gains the pair and the raw difference of each row. The datasheet records
+  the items each condition holds as `items$n_per_condition_realised`, a field of
+  datasheet format 1.2, and `design$n_per_condition` gives the request the selector
+  applied, its default when the design gives none, where it was null. The
+  datasheets and run logs of every demonstration change, and no stimulus, report
+  table or experiment does. The twin-edge case `shortfall_one` pins the new fields.
+
+* The suggested model uses the stimuli's `condition` column, where a lexical
+  decision named a `lexicality` column the stimuli do not have. It adds a matched
+  design's matched dimensions as centred covariates on the stimuli file's own
+  columns (Sassenhagen & Alday, 2016), leaving out one that does not vary among the
+  items. It gives items a random slope for condition whenever the counterbalancing
+  recipe rotates the conditions over the items by a Latin square (the
+  categorisation design had none), crosses the condition with the predictor in a
+  continuous pair design, with by-subject slopes for both and their interaction,
+  and says how to recode a crossed design into its factors. Its note calls the
+  random-effects structure maximal (Barr et al., 2013) only when it is, and
+  describes the slopes of a design whose covariates or controls enter as fixed
+  effects only.
+
 # lexsync 0.1.1
 
 * `assign_triggers()` gains a `conditions` argument that fixes the order of the

@@ -1,8 +1,8 @@
 {
   "analysis": {
-    "note": "Crossed random effects for subjects and items guard against the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). Begin with this maximal structure (Barr et al., 2013) and reduce it if the model does not converge (Matuschek et al., 2017). The formula is lme4 syntax, for lme4 in R or pymer4 in Python; statsmodels MixedLM cannot take it directly and needs the random effects restated in its own arguments. The equivalence tests in the realised control are post-selection diagnostics on deterministically selected items, not inferential tests over a sample.",
+    "note": "Crossed random effects for subjects and items guard against the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). The condition column codes lexicality, word or pseudoword. Begin with this maximal structure (Barr et al., 2013). If the model is singular or fails to converge, simplify it as Matuschek et al. (2017) describe. The formula is lme4 syntax, for lme4 in R or pymer4 in Python; statsmodels MixedLM cannot take it directly and needs the random effects restated in its own arguments. The equivalence tests in the realised control are post-selection diagnostics on deterministically selected items, not inferential tests over a sample.",
     "response": "reaction time from the onset of `{target}`; responses collected for 2800 ms; a response ends the trial",
-    "suggested_model": "response ~ lexicality + (1 + lexicality | subject) + (1 | item)"
+    "suggested_model": "response ~ condition + (1 + condition | subject) + (1 | item)"
   },
   "artifacts": [
     {
@@ -87,6 +87,16 @@
       "word"
     ],
     "n_conditions": 2,
+    "n_per_condition_realised": [
+      {
+        "condition": "pseudoword",
+        "n": 60
+      },
+      {
+        "condition": "word",
+        "n": 60
+      }
+    ],
     "n_total": 120,
     "stimuli_file": "output/stimuli/en_lexdec_english_stimuli_py.csv",
     "stimuli_sha256": "251b54a87f6dab9dbb34d7fc0f244058e7a0cc0dec2205eba7e9b3f84d9b2fcf"
@@ -165,7 +175,7 @@
   "reproducibility": {
     "design_sha256": "d7e1d9d4a5a39c7871ec3d78262e92ff6b59a0b90e92f48aaf78f25eebc596ed",
     "schema_path": "config/schema.yaml",
-    "schema_sha256": "60217cd58fd3da4a9c1deee500c9d3d56ee9bde8658644581a102a7bd1c2baa4",
+    "schema_sha256": "3335f4e31a7f5dece6375dd0247600547ad86290492c7aead2836a9ec8af9dcb",
     "seed": 2026,
     "versions": {
       "engine": "python",

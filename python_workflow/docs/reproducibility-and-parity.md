@@ -316,23 +316,37 @@ candidates. For a matched design the record also names the rule that broke exact
 `selection.tie_break`, with its salt under `hash`. The Markdown says how ties were broken and that
 the selection does not depend on the seed, which fixes the trial order.
 
-The realised control is a table, not a claim, giving each dimension its role, Cohen's *d*, the 90%
-interval, the variance ratio, the TOST *p* and the verdict, for every pair of conditions. The JSON
-names each row's pair in `condition` and `reference` and adds the raw difference, `mean_diff`. For
-a continuous design it gives each dimension's realised SD, its ratio to an even spread or to the
-pool, and each control's window. The JSON keeps each statistic as the comparisons report rounded
+The realised control is a table, not a claim. Each row names a pair of conditions and the
+dimension's role. It gives the raw difference in the dimension's unit, Cohen's *d* with its
+interval, the variance ratio, the TOST *p* and the verdict. The interval is the (1 - 2 x alpha)
+interval and is labelled by the schema's alpha, 90% at the default of .05. The JSON holds the raw
+difference as `mean_diff`. For a continuous design it gives each dimension's realised SD, its ratio
+to an even spread or to the pool, and each control's window. The record also counts the items each
+condition holds, per replicate for resampled sets, as `items.n_per_condition_realised`, and gives
+the request the selector applied as `design.n_per_condition`, the selector's default when the
+design gives none. The JSON keeps each statistic as the comparisons report rounded
 it, to three places and the TOST *p* to four. The Markdown and the Methods paragraph show them at
 two or three places and the TOST *p* at four. The rounding is done by lexsync's own formatter, half
 away from zero from that record, so both engines print the same digits. A *d* of 0.1649 is stored
 as 0.165 and is therefore shown as 0.17.
 
-The suggested analysis is a crossed mixed-model formula,
-`response ~ condition + (1 + condition | subject) + (1 | item)`, which is there
-to guard against the language-as-fixed-effect fallacy ([Clark, 1973](references.md#clark-1973);
-[Baayen et al., 2008](references.md#baayen-2008)): items are a sample of the language, and an
-analysis that treats them as fixed over-generalises. The maximal structure is suggested
-([Barr et al., 2013](references.md#barr-2013)) with the advice to reduce it if it does not converge
-([Matuschek et al., 2017](references.md#matuschek-2017)).
+The suggested analysis is a crossed mixed-model formula on the stimuli file's own columns. For this
+design it is
+`response ~ condition + scale(length, scale = FALSE) + scale(n_density, scale = FALSE) + scale(old20, scale = FALSE) + (1 + condition | subject) + (1 | item)`.
+Crossing subjects and items guards against the language-as-fixed-effect fallacy
+([Clark, 1973](references.md#clark-1973); [Baayen et al., 2008](references.md#baayen-2008)): items
+are a sample of the language, and an analysis that treats them as fixed over-generalises. The
+matched dimensions enter centred, as covariates, because matching leaves residual differences and
+[Sassenhagen and Alday (2016)](references.md#sassenhagen-2016) recommend adjusting for potential
+confounds. A matched dimension that does not vary among the items is left out. Items take a random
+slope for condition when the counterbalancing recipe rotates the conditions over them by a Latin
+square, as the priming, self-paced reading and categorisation paradigms do. A continuous pair
+design with more than one condition crosses the condition with its predictor. The note calls the
+structure maximal ([Barr et al., 2013](references.md#barr-2013)) only when every fixed effect that
+varies within subjects or items has a random slope there. A design with covariates is described by
+its slopes. The note advises simplifying a model that is singular or fails to converge
+([Matuschek et al., 2017](references.md#matuschek-2017)). It tells a design with more than two
+conditions to recode `condition` into the factors it crosses, with sum coding.
 
 The `counterbalancing` record says how the items were dealt to lists. It gives the recipe that ran,
 the number of lists in the stimuli table and the trials each list gives each condition. It also says
@@ -348,10 +362,21 @@ datasheet dictionary yourself with `lexsync.methods_paragraph(ds)`. For this des
 > 80 items per condition were selected from the English lexicon (wordfreq (Speer, 2022), data
 > CC BY-SA 4.0; full corpus licence and citation at
 > https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md) and matched item by
-> item on length, n_density, old20 using lexsync's standardised_euclidean matcher. The realised
-> control was close. The largest standardised difference on any matched dimension was 0.04 (90% CI
-> [-0.22, 0.30]), within the 0.5-SD equivalence bound. The smallest condition was selected from 544
-> eligible candidates, and the selection was deterministic and blind to any outcome measure. […]
+> item on length, n_density, old20 using lexsync's standardised_euclidean matcher. The largest
+> difference on a matched dimension was 0.300 neighbours in n_density (high_frequency against
+> low_frequency; d = 0.04, 90% CI [-0.22, 0.30]). Two one-sided tests at a bound of 0.5 SD (alpha
+> 0.05) supported equivalence on 3 of 3 matched comparisons. No uncontrolled dimension differed by
+> more than 0.5 SD. The smallest condition was selected from 544 eligible candidates, and the
+> selection was deterministic and blind to any outcome measure. […]
+
+The paragraph describes the realised control before it tests it, since tests on a selected set
+concern a closed population ([Sassenhagen & Alday, 2016](references.md#sassenhagen-2016)). The
+number of items it states is the number each condition holds, with the request beside it when a
+`shortfall: allow` run fell short. With fewer than 23 items per condition at the default bound and
+alpha, no dimension that varies can pass the equivalence tests, however well matched, and the
+paragraph says so. It names, largest first, up to five comparisons of a dimension the design did not
+control whose |*d*| exceeds the bound. A generated lexical decision says instead how its words and
+pseudowords differ on the dimensions the generator does not hold.
 
 The Markdown datasheet also carries a pre-registration skeleton with its Materials section already
 filled from the run and its analysis plan filled with the suggested model. The remaining sections

@@ -74,7 +74,8 @@ test_that("methods paragraph reads naturally and prereg template is emitted", {
                         list(stimuli = NULL, experiments = list()), 2026, engine = "R")
   m <- methods_paragraph(ds)
   expect_true(grepl("matched item by item", m, fixed = TRUE))
-  expect_true(grepl("0.5-SD equivalence bound", m, fixed = TRUE))
+  expect_true(grepl(paste("Two one-sided tests at a bound of 0.5 SD (alpha 0.05) supported",
+                          "equivalence on 1 of 1 matched comparisons"), m, fixed = TRUE))
   out <- tempfile("ds"); dir.create(out)
   paths <- write_datasheet(ds, file.path(out, "d.json"), file.path(out, "d.md"))
   loaded <- jsonlite::fromJSON(paths[1], simplifyVector = FALSE)
@@ -545,10 +546,10 @@ test_that("the methods prose states the schema's bound, not a literal 0.5", {
   ds <- build_datasheet(ds_design(), schema, report, stim, "x.csv",
                         list(stimuli = NULL, experiments = list()), 2026, engine = "R")
   expect_equal(ds$equivalence$bound_d, 0.4)
-  expect_true(grepl("within the 0.4-SD equivalence bound", methods_paragraph(ds), fixed = TRUE))
+  expect_true(grepl("at a bound of 0.4 SD (alpha 0.05)", methods_paragraph(ds), fixed = TRUE))
 })
 
-test_that("an undefined d forces the non-affirmative methods sentence", {
+test_that("an undefined d is reported as undefined", {
   # A controlled dimension constant at a different value in each condition has an
   # undefined d: the worst possible failure of the matching, not an excludable row.
   schema <- ds_schema()
@@ -558,15 +559,16 @@ test_that("an undefined d forces the non-affirmative methods sentence", {
   ds <- build_datasheet(ds_design(), schema, report, stim, "x.csv",
                         list(stimuli = NULL, experiments = list()), 2026, engine = "R")
   m <- methods_paragraph(ds)
-  expect_true(grepl("Equivalence was not confirmed on every matched dimension", m, fixed = TRUE))
-  expect_true(grepl("realised-control table", m, fixed = TRUE))
-  expect_false(grepl("equivalence bound", m, fixed = TRUE))
+  expect_true(grepl(paste("Cohen's d is undefined for every matched comparison, and the",
+                          "realised-control table gives their raw differences"), m, fixed = TRUE))
+  expect_true(grepl("supported equivalence on 0 of 1 matched comparisons", m, fixed = TRUE))
+  expect_false(grepl("The largest difference", m, fixed = TRUE))
   # The undefined cells render as the ASCII placeholder, matching the Python engine.
   md <- lexsync:::render_datasheet_md(ds)
-  expect_true(grepl("| length | controlled | -- | -- |", md, fixed = TRUE))
+  expect_true(grepl("| lo | hi | length | controlled | -1.000 | -- | -- |", md, fixed = TRUE))
 })
 
-test_that("a failed TOST on a controlled dimension blocks the affirmative sentence", {
+test_that("a failed TOST is counted and explained", {
   schema <- ds_schema()
   stim <- ds_stim()
   stim$length <- c(3, 9, 3, 4)  # defined d, but far too few items to pass a TOST
@@ -574,11 +576,13 @@ test_that("a failed TOST on a controlled dimension blocks the affirmative senten
   ds <- build_datasheet(ds_design(), schema, report, stim, "x.csv",
                         list(stimuli = NULL, experiments = list()), 2026, engine = "R")
   m <- methods_paragraph(ds)
-  expect_true(grepl("Equivalence was not confirmed on every matched dimension", m, fixed = TRUE))
+  expect_true(grepl(paste("supported equivalence on 0 of 1 matched comparisons; with 2 items per",
+                          "condition no dimension that varies can pass this test, however well",
+                          "matched."), m, fixed = TRUE))
   expect_false(grepl("The realised control was close", m, fixed = TRUE))
 })
 
-test_that("the affirmative sentence prints the signed d beside its signed CI", {
+test_that("the largest difference prints the signed d beside its signed CI", {
   schema <- ds_schema()
   stim <- data.frame(word = paste0("w", 1:120),
                      condition = rep(c("hi", "lo"), each = 60),
@@ -591,8 +595,9 @@ test_that("the affirmative sentence prints the signed d beside its signed CI", {
   m <- methods_paragraph(ds)
   # The anchor's mean is below the comparison's, so the worst d is negative and
   # must be printed with its sign: |d| beside a signed CI misstated the direction.
-  expect_true(grepl("was -0.12 (90% CI [", m, fixed = TRUE))
-  expect_true(grepl("within the 0.5-SD equivalence bound", m, fixed = TRUE))
+  expect_true(grepl("was -0.100 characters in length (hi against lo; d = -0.12, 90% CI [", m,
+                    fixed = TRUE))
+  expect_true(grepl("supported equivalence on 1 of 1 matched comparisons.", m, fixed = TRUE))
 })
 
 test_that("a pairwise method records the candidate cap instead of tolerance windows", {
@@ -757,29 +762,30 @@ test_that("a dotted model term earns the Patsy quoting note", {
 
 tie_rows <- function() {
   list(
-    list(dimension = "length", role = "controlled", cohens_d = 0.165,
-         ci_low = -0.125, ci_high = 0.455, var_ratio = 0.0825, tost_p = 9e-04,
-         equivalent = TRUE),
-    list(dimension = "old20", role = "controlled", cohens_d = 0.1, ci_low = -0.2,
-         ci_high = 0.3, var_ratio = 1, tost_p = 0, equivalent = TRUE),
-    list(dimension = "frequency", role = "manipulated", cohens_d = 5.27,
-         ci_low = 4.72, ci_high = 5.83, var_ratio = 0.21, tost_p = 1,
-         equivalent = FALSE))
+    list(condition = "lo", reference = "hi", dimension = "length", role = "controlled",
+         cohens_d = 0.165, ci_low = -0.125, ci_high = 0.455, var_ratio = 0.0825,
+         tost_p = 9e-04, equivalent = TRUE, mean_diff = 0.04),
+    list(condition = "lo", reference = "hi", dimension = "old20", role = "controlled",
+         cohens_d = 0.1, ci_low = -0.2, ci_high = 0.3, var_ratio = 1, tost_p = 0,
+         equivalent = TRUE, mean_diff = 0.01),
+    list(condition = "lo", reference = "hi", dimension = "frequency", role = "manipulated",
+         cohens_d = 5.27, ci_low = 4.72, ci_high = 5.83, var_ratio = 0.21, tost_p = 1,
+         equivalent = FALSE, mean_diff = 1.5))
 }
 
 test_that("decimal ties print the same in the Methods paragraph and the table", {
   ds <- build_datasheet(ds_design(), ds_schema(), NULL, ds_stim(), "x.csv",
                         list(stimuli = NULL, experiments = list()), 2026, engine = "R")
   ds$realised_control <- tie_rows()
-  expect_true(grepl("was 0.17 (90% CI [-0.13, 0.46]), within", methods_paragraph(ds),
-                    fixed = TRUE))
+  expect_true(grepl("was 0.040 characters in length (hi against lo; d = 0.17, 90% CI [-0.13, 0.46])",
+                    methods_paragraph(ds), fixed = TRUE))
   md <- lexsync:::render_datasheet_md(ds)
   # The TOST p is printed to four places, and a stored 0 as a bound.
-  expect_true(grepl("| length | controlled | 0.17 | [-0.13, 0.46] | 0.08 | 0.0009 |",
+  expect_true(grepl("| lo | hi | length | controlled | 0.040 | 0.17 | [-0.13, 0.46] | 0.08 | 0.0009 |",
                     md, fixed = TRUE))
-  expect_true(grepl("| old20 | controlled | 0.10 | [-0.20, 0.30] | 1.00 | < 0.0001 |",
+  expect_true(grepl("| lo | hi | old20 | controlled | 0.010 | 0.10 | [-0.20, 0.30] | 1.00 | < 0.0001 |",
                     md, fixed = TRUE))
-  expect_true(grepl("| frequency | manipulated | 5.27 | [4.72, 5.83] | 0.21 | 1.0000 |",
+  expect_true(grepl("| lo | hi | frequency | manipulated | 1.500 | 5.27 | [4.72, 5.83] | 0.21 | 1.0000 |",
                     md, fixed = TRUE))
 })
 
@@ -796,8 +802,9 @@ test_that("a continuous design prints its span and correlations through the form
     list(dimension = "length", role = "control", pearson_r = -0.0825,
          predictor_span = 0.165))
   m <- methods_paragraph(ds)
-  expect_true(grepl("span frequency (a span of 0.17) continuously", m, fixed = TRUE))
-  expect_true(grepl("correlation was |r| = 0.083,", m, fixed = TRUE))
+  expect_true(grepl("to span frequency (a span of 0.17), for analysis", m, fixed = TRUE))
+  expect_true(grepl("The largest predictor-control correlation was |r| = 0.083.", m,
+                    fixed = TRUE))
   md <- lexsync:::render_datasheet_md(ds)
   expect_true(grepl("| frequency | predictor | -- | 0.165 |", md, fixed = TRUE))
   expect_true(grepl("| length | control | -0.083 | 0.165 |", md, fixed = TRUE))
@@ -898,4 +905,340 @@ test_that("the Methods paragraph from the Python record matches the Python rende
   at <- match("## Methods paragraph", md)
   expect_false(is.na(at))
   expect_identical(methods_paragraph(ds), md[[at + 2L]])
+})
+
+# ---- Realised control described before it is tested; a model that says what it is --
+# The Methods text called the control close on the strength of equivalence tests that
+# fewer than 23 items per condition can never pass, named no uncontrolled confound,
+# stated the requested number of items and labelled every interval 90%. The suggested
+# model left out the matched covariates, gave the Latin-square categorisation design no
+# by-item slope and called its structure maximal whatever its slopes. The committed
+# records below are read back as a reader would read them. test_datasheet.py pins the
+# same strings.
+
+ds_committed_record <- function(name) {
+  base <- repo_path("output", "reports", name, message = "committed reports not available")
+  jsonlite::fromJSON(paste0(base, ".json"), simplifyVector = FALSE)
+}
+
+# Identical lengths in both conditions, so only the number of items decides the TOST.
+ds_matched_stim <- function(n) {
+  i <- seq_len(n) - 1L
+  data.frame(word = paste0("w", seq_len(2L * n) - 1L), condition = rep(c("hi", "lo"), each = n),
+             set = rep(seq_len(n), 2L), length = rep(4 + i %% 3, 2L),
+             frequency = c(6 + (i %% 2) / 10, 3 + (i %% 2) / 10), stringsAsFactors = FALSE)
+}
+
+ds_frequency_conditions <- function(design) {
+  design$conditions <- list(list(name = "hi", define_by = list(frequency = c(5, 7))),
+                            list(name = "lo", define_by = list(frequency = c(2, 4))))
+  design
+}
+
+test_that("the methods text describes the realised control before testing it", {
+  m <- methods_paragraph(ds_committed_record("en_freqcontrast_english_datasheet_R"))
+  expect_true(grepl(paste0(
+    "The largest difference on a matched dimension was 0.300 neighbours in ",
+    "n_density (high_frequency against low_frequency; d = 0.04, 90% CI ",
+    "[-0.22, 0.30]). Two one-sided tests at a bound of 0.5 SD (alpha 0.05) ",
+    "supported equivalence on 3 of 3 matched comparisons. No uncontrolled ",
+    "dimension differed by more than 0.5 SD."), m, fixed = TRUE))
+  expect_false(grepl("The realised control was close", m, fixed = TRUE))
+  expect_false(grepl("equivalence bound", m, fixed = TRUE))
+})
+
+test_that("with too few items the methods text says no dimension can pass", {
+  nmin <- lexsync:::.tost_min_n
+  expect_identical(c(nmin(0.5, 0.05), nmin(0.3, 0.05), nmin(0.5, 0.005)), c(23L, 62L, 56L))
+  schema <- ds_schema()
+  paragraph <- function(n) {
+    stim <- ds_matched_stim(n)
+    report <- match_report(stim, c("length", "frequency"), schema)
+    design <- ds_frequency_conditions(utils::modifyList(ds_design(), list(n_per_condition = n)))
+    methods_paragraph(build_datasheet(design, schema, report, stim, "x.csv", ds_files(), 2026))
+  }
+  expect_true(grepl(paste0(
+    "supported equivalence on 0 of 1 matched comparisons; with 15 items per ",
+    "condition no dimension that varies can pass this test, however well ",
+    "matched."), paragraph(15L), fixed = TRUE))
+  m <- paragraph(24L)
+  expect_true(grepl("supported equivalence on 1 of 1 matched comparisons.", m, fixed = TRUE))
+  expect_false(grepl("no dimension that varies can pass", m, fixed = TRUE))
+})
+
+test_that("a bound too small for any request still gets the caveat", {
+  # Below a bound of about 5e-5 SD, no n_per_condition either engine accepts can pass.
+  # This search returned NA there, with a warning, and the Methods text then stopped
+  # with an error, while the Python engine searched on. At smaller bounds the search
+  # never ended. Both now stop at the largest request and return infinity.
+  nmin <- lexsync:::.tost_min_n
+  expect_identical(nmin(1e-4, 0.05), 541108692L)
+  expect_identical(nmin(1e-5, 0.05), Inf)
+  tiny <- ds_schema()
+  tiny$equivalence <- list(bound_d = 1e-5, alpha = 0.05)
+  stim <- ds_matched_stim(30L)
+  report <- match_report(stim, c("length", "frequency"), tiny)
+  ds <- build_datasheet(ds_frequency_conditions(ds_design()), tiny, report, stim, "x.csv",
+                        ds_files(), 2026)
+  expect_true(grepl(paste0(
+    "Two one-sided tests at a bound of 1e-05 SD (alpha 0.05) supported equivalence ",
+    "on 0 of 1 matched comparisons; with 30 items per condition no dimension that ",
+    "varies can pass this test, however well matched."), methods_paragraph(ds),
+    fixed = TRUE))
+})
+
+test_that("the methods text names the uncontrolled dimensions that differ", {
+  m <- methods_paragraph(ds_committed_record("en_ndensity_english_datasheet_R"))
+  expect_true(grepl(paste0(
+    "Dimensions the design did not control differed: old20 (dense_neighbourhood ",
+    "against sparse_neighbourhood: -0.523 mean Levenshtein distance; d = -2.30, ",
+    "90% CI [-2.64, -1.97]) and n_syllables (dense_neighbourhood against ",
+    "sparse_neighbourhood: -0.450 syllables; d = -0.83, 90% CI ",
+    "[-1.10, -0.56])."), m, fixed = TRUE))
+})
+
+test_that("a lexical decision reports what its pseudowords were not matched on", {
+  m <- methods_paragraph(ds_committed_record("en_lexdec_english_datasheet_R"))
+  expect_true(grepl(paste0(
+    "Words and pseudowords were matched on length only, and the words differed ",
+    "from the pseudowords in bigram frequency (d = -1.47, 90% CI [-1.82, -1.13]), ",
+    "N (d = -0.28, 90% CI [-0.59, 0.02]) and OLD20 (d = 0.17, 90% CI ",
+    "[-0.13, 0.47]). Two one-sided tests at a bound of 0.5 SD (alpha 0.05) ",
+    "supported equivalence on 1 of 1 matched comparisons."), m, fixed = TRUE))
+})
+
+test_that("the interval is labelled by the configured alpha", {
+  strict <- ds_schema()
+  strict$equivalence <- list(bound_d = 0.5, alpha = 0.005)
+  stim <- ds_matched_stim(30L)
+  report <- match_report(stim, c("length", "frequency"), strict)
+  ds <- build_datasheet(ds_frequency_conditions(ds_design()), strict, report, stim, "x.csv",
+                        ds_files(), 2026)
+  m <- methods_paragraph(ds)
+  expect_true(grepl("(hi against lo; d = 0.00, 99% CI [", m, fixed = TRUE))
+  expect_true(grepl("at a bound of 0.5 SD (alpha 0.005)", m, fixed = TRUE))
+  expect_false(grepl("90%", m, fixed = TRUE))
+  md <- lexsync:::render_datasheet_md(ds)
+  expect_true(grepl("| Cohen's d | 99% CI | Var ratio |", md, fixed = TRUE))
+  expect_false(grepl("90% CI", md, fixed = TRUE))
+})
+
+test_that("a shortfall states the items selected and the request", {
+  # One item per condition under shortfall: allow. The text stated the 20 requested.
+  schema <- ds_schema()
+  stim <- data.frame(word = c("cat", "dog"), condition = c("hi", "lo"), set = c(1, 1),
+                     length = c(3, 3), frequency = c(6, 3), stringsAsFactors = FALSE)
+  design <- ds_frequency_conditions(utils::modifyList(ds_design(), list(
+    n_per_condition = 20L, matching = list(shortfall = "allow"))))
+  report <- match_report(stim, c("length", "frequency"), schema)
+  ds <- build_datasheet(design, schema, report, stim, "x.csv", ds_files(), 2026)
+  expect_identical(ds[["design"]][["n_per_condition"]], 20L)
+  expect_identical(ds[["items"]][["n_per_condition_realised"]],
+                   list(list(condition = "hi", n = 1L), list(condition = "lo", n = 1L)))
+  m <- methods_paragraph(ds)
+  expect_true(startsWith(m, paste0("1 item per condition (of 20 requested) was selected from ",
+                                   "the English lexicon")))
+  expect_true(grepl(paste0("Cohen's d is undefined for every matched comparison, and the ",
+                           "realised-control table gives their raw differences"), m,
+                    fixed = TRUE))
+  expect_true(grepl("with 1 item per condition no dimension that varies can pass this test", m,
+                    fixed = TRUE))
+  # A single item has no TOST verdict either. The Python table printed None there, where
+  # this renderer prints its placeholder.
+  md <- lexsync:::render_datasheet_md(ds)
+  expect_true(grepl("| lo | hi | length | controlled | 0.000 | -- | -- | -- | -- | -- |", md,
+                    fixed = TRUE))
+  expect_false(grepl("None", md, fixed = TRUE))
+  # A design that leaves n_per_condition to the matcher records the matcher's 20, and
+  # that is the request the two items here fall short of.
+  unset <- ds_design()
+  unset$n_per_condition <- NULL
+  plain <- build_datasheet(unset, schema, NULL, ds_stim(), "x.csv", ds_files(), 2026)
+  expect_identical(plain[["design"]][["n_per_condition"]], 20L)
+  expect_true(startsWith(methods_paragraph(plain),
+                         "2 items per condition (of 20 requested) were selected"))
+})
+
+test_that("the realised counts are per replicate when the design resamples", {
+  reps <- do.call(rbind, lapply(c(2L, 1L), function(r) cbind(ds_stim(), replicate = r)))
+  ds <- build_datasheet(utils::modifyList(ds_design(), list(resample = list(n_sets = 2L))),
+                        ds_schema(), NULL, reps, "x.csv", ds_files(), 2026)
+  expect_identical(ds[["items"]][["n_per_condition_realised"]], list(
+    list(replicate = 1L, condition = "hi", n = 2L), list(replicate = 1L, condition = "lo", n = 2L),
+    list(replicate = 2L, condition = "hi", n = 2L), list(replicate = 2L, condition = "lo", n = 2L)))
+  expect_true(startsWith(methods_paragraph(ds), "2 items per condition were selected"))
+})
+
+test_that("a continuous methods text gives the spreads and the windows", {
+  m <- methods_paragraph(ds_committed_record("en_freqcontinuous_english_datasheet_R"))
+  expect_true(grepl(paste0(
+    "80 English items were selected to span frequency (a span of 3.05 and an SD of ",
+    "0.54, 0.60 times that of an even spread over the span), for analysis by ",
+    "regression or a mixed model rather than a between-condition contrast (Kuperman, ",
+    "2015; Liben-Nowell et al., 2019). The controls were banded within windows of ",
+    "the mean \u00b1 1.5 SD of an initial selection spread over the ranks of ",
+    "frequency (length 3.18 to 7.90, n_density -5.21 to 12.84 and old20 1.14 to ",
+    "2.80), and their realised SDs were 0.66, 0.39 and 0.56 of the pool's. The ",
+    "largest predictor-control correlation was |r| = 0.165."), m, fixed = TRUE))
+  expect_false(grepl("near-constant", m, fixed = TRUE))
+  # The first pass spreads over the predictor's ranks and follows the pool's skew, so
+  # calling it an even spread contradicted the SD ratio given a sentence earlier.
+  expect_false(grepl("initial even spread", m, fixed = TRUE))
+})
+
+test_that("a relaxed continuous selection says its windows were widened", {
+  schema <- ds_schema()
+  design <- list(name = "c", language = "english", n_per_condition = 4L,
+                 continuous = list(predictor = "frequency", controls = list("length")),
+                 match_on = list("length"), counterbalance = list(lists = 1))
+  stim <- data.frame(word = c("a", "b", "c", "d"), condition = "continuous",
+                     frequency = c(2, 3, 4, 5), length = c(3, 4, 3, 4), stringsAsFactors = FALSE)
+  audit <- list(control_windows = list(list(dimension = "length", low = 3.2, high = 3.8,
+                                            pool_sd = 1)))
+  report <- match_report_continuous(stim, "frequency", "length", schema, audit = audit)
+  banded <- methods_paragraph(build_datasheet(design, schema, report, stim, "x.csv",
+                                              ds_files(), 2026))
+  expect_true(grepl(paste0(
+    " The control was banded within a window of the mean \u00b1 2 SD of an initial ",
+    "selection spread over the ranks of frequency (length 3.20 to 3.80), and its ",
+    "realised SD was 0.58 of the pool's."), banded, fixed = TRUE))
+  relaxed <- list(window_relaxations = list(list(condition = "continuous",
+                                                 n_within_tolerance = 0L, n_needed = 4L)))
+  m <- methods_paragraph(build_datasheet(design, schema, report, stim, "x.csv", ds_files(),
+                                         2026, selection_audit = relaxed))
+  expect_true(grepl(paste0(
+    " The control window, the mean \u00b1 2 SD of an initial selection spread over ",
+    "the ranks of frequency (length 3.20 to 3.80), held too few items and was ",
+    "widened to the whole pool, and its realised SD was 0.58 of the pool's."), m,
+    fixed = TRUE))
+})
+
+test_that("the realised control table names the pair and the raw difference", {
+  schema <- ds_schema()
+  stim <- ds_stim()
+  report <- match_report(stim, c("length", "frequency"), schema)
+  md <- lexsync:::render_datasheet_md(build_datasheet(ds_design(), schema, report, stim,
+                                                      "x.csv", ds_files(), 2026))
+  expect_true(grepl(paste0("| Condition | Reference | Dimension | Role | Raw difference | ",
+                           "Cohen's d | 90% CI | Var ratio | TOST p | Equivalent |"), md,
+                    fixed = TRUE))
+  expect_true(grepl(paste0("The raw difference and Cohen's d are the reference mean minus ",
+                           "the condition mean"), md, fixed = TRUE))
+  expect_true(grepl("| lo | hi | length | controlled | 0.000 | 0.00 | [0.00, 0.00] | 1.00 | < 0.0001 |",
+                    md, fixed = TRUE))
+  expect_true(grepl("| lo | hi | frequency | uncontrolled | 3.000 | -- | -- | 1.00 | 1.0000 |",
+                    md, fixed = TRUE))
+})
+
+test_that("a matched design adds its matched dimensions as centred covariates", {
+  # Length is the same for every item here, so it is left out of the model.
+  stim <- ds_stim()
+  stim$n_density <- c(1L, 2L, 3L, 4L)
+  stim$old20 <- c(1.5, 1.6, 1.7, 1.8)
+  a <- build_datasheet(ds_design(), ds_schema(), NULL, stim, "x.csv", ds_files(),
+                       2026)[["analysis"]]
+  expect_identical(a[["suggested_model"]], paste0(
+    "response ~ condition + scale(n_density, scale = FALSE) + scale(old20, scale = FALSE)",
+    " + (1 + condition | subject) + (1 | item)"))
+  expect_true(grepl("(Sassenhagen & Alday, 2016)", a[["note"]], fixed = TRUE))
+  expect_true(grepl(paste("The matched dimension length is constant among the selected items,",
+                          "so it is left out."), a[["note"]], fixed = TRUE))
+  # The covariates take no random slopes, so the structure is described, not called
+  # maximal.
+  expect_false(grepl("maximal", a[["note"]], fixed = TRUE))
+  expect_true(grepl(paste0(
+    "Begin with random slopes for condition, the manipulated factor, by subject and, ",
+    "where it varies within items, by item (Barr et al., 2013); the matched ",
+    "covariates enter as fixed effects only."), a[["note"]], fixed = TRUE))
+  expect_true(grepl(paste0("If the model is singular or fails to converge, simplify it as ",
+                           "Matuschek et al. (2017) describe."), a[["note"]], fixed = TRUE))
+})
+
+test_that("a lexical decision models the condition column", {
+  a <- build_datasheet(ds_gen_design(), ds_schema(), NULL, ds_gen_stim(), "x.csv", ds_files(),
+                       2026)[["analysis"]]
+  expect_identical(a[["suggested_model"]],
+                   "response ~ condition + (1 + condition | subject) + (1 | item)")
+  expect_true(grepl("The condition column codes lexicality, word or pseudoword.", a[["note"]],
+                    fixed = TRUE))
+  expect_true(grepl("Begin with this maximal structure (Barr et al., 2013).", a[["note"]],
+                    fixed = TRUE))
+})
+
+test_that("a Latin square gives items a slope for condition", {
+  a <- build_datasheet(ds_table_design(paradigm = "categorisation"), ds_schema(), NULL,
+                       ds_priming_table(c("narrow", "broad")), "items/p.csv", ds_files(),
+                       2026)[["analysis"]]
+  expect_identical(a[["suggested_model"]],
+                   "response ~ condition + (1 + condition | subject) + (1 + condition | item)")
+  expect_true(grepl("Begin with this maximal structure (Barr et al., 2013).", a[["note"]],
+                    fixed = TRUE))
+  # The recipe that ran decides, not the item source: a factorial item table keeps the
+  # intercept alone.
+  table <- data.frame(item = 1:4, set = c(1L, 1L, 2L, 2L),
+                      condition = rep(c("word", "pseudoword"), 2L),
+                      target = c("cat", "cag", "dog", "dop"), stringsAsFactors = FALSE)
+  a <- build_datasheet(ds_table_design(paradigm = "factorial", counterbalance = list(lists = 2L)),
+                       ds_schema(), NULL, table, "items/p.csv", ds_files(), 2026)[["analysis"]]
+  expect_identical(a[["suggested_model"]],
+                   "response ~ condition + (1 + condition | subject) + (1 | item)")
+})
+
+test_that("a continuous pair design models the condition and its interaction", {
+  a <- build_datasheet(ds_pair_design(), ds_schema(), NULL, ds_pair_stim(), "items/p.csv",
+                       ds_files(), 2026)[["analysis"]]
+  expect_identical(a[["suggested_model"]], paste0(
+    "response ~ condition * target.frequency + target.length + pair.overlap + ",
+    "(1 + condition * target.frequency | subject) + (1 + condition | item)"))
+  # The controls take no random slopes, so the structure is described, not called
+  # maximal.
+  expect_false(grepl("maximal", a[["note"]], fixed = TRUE))
+  expect_true(grepl(paste0(
+    "Begin with random slopes for condition, target.frequency and their interaction ",
+    "by subject and for condition by item (Barr et al., 2013); the controls enter ",
+    "as fixed effects only."), a[["note"]], fixed = TRUE))
+  # A pair design with one condition has no condition term.
+  stim <- ds_pair_stim()
+  related <- stim[stim$condition == "related", , drop = FALSE]
+  a <- build_datasheet(ds_pair_design(), ds_schema(), NULL, related, "items/p.csv",
+                       ds_files(), 2026)[["analysis"]]
+  expect_identical(a[["suggested_model"]], paste0(
+    "response ~ target.frequency + target.length + pair.overlap + ",
+    "(1 + target.frequency | subject) + (1 | item)"))
+  expect_true(grepl(paste0("Begin with a random slope for target.frequency by subject ",
+                           "(Barr et al., 2013); the controls enter as fixed effects only."),
+                    a[["note"]], fixed = TRUE))
+})
+
+test_that("the committed records suggest the models their designs need", {
+  # The categorisation design rotates its cues over its targets by a Latin square, the
+  # continuous priming design crosses its condition with target frequency, and the
+  # frequency contrast adds its matched covariates, so only the first is maximal.
+  categorisation <- ds_committed_record("en_categorisation_english_datasheet_R")[["analysis"]]
+  expect_true(endsWith(categorisation[["suggested_model"]], "+ (1 + condition | item)"))
+  expect_true(grepl("Begin with this maximal structure", categorisation[["note"]], fixed = TRUE))
+  priming <- ds_committed_record("en_priming_continuous_english_datasheet_R")[["analysis"]]
+  expect_true(grepl("(1 + condition * target.frequency | subject)",
+                    priming[["suggested_model"]], fixed = TRUE))
+  expect_true(endsWith(priming[["suggested_model"]], "+ (1 + condition | item)"))
+  contrast <- ds_committed_record("en_freqcontrast_english_datasheet_R")[["analysis"]]
+  expect_true(grepl("scale(n_density, scale = FALSE)", contrast[["suggested_model"]],
+                    fixed = TRUE))
+  expect_false(grepl("maximal", contrast[["note"]], fixed = TRUE))
+  expect_false(grepl("maximal", priming[["note"]], fixed = TRUE))
+})
+
+test_that("a design with more than two conditions is told how to recode", {
+  four <- data.frame(word = letters[1:8],
+                     condition = c("HF_l", "HF_l", "HF_s", "HF_s", "LF_l", "LF_l", "LF_s", "LF_s"),
+                     set = rep(1:2, 4L), length = rep(c(3, 4), 4L),
+                     n_density = rep(c(1, 2), 4L), old20 = rep(c(1.5, 1.6), 4L),
+                     stringsAsFactors = FALSE)
+  note <- build_datasheet(ds_design(), ds_schema(), NULL, four, "x.csv", ds_files(),
+                          2026)[["analysis"]][["note"]]
+  expect_true(grepl(paste0("If the conditions cross two or more factors, recode condition ",
+                           "into those factors (for example frequency * neighbourhood) with ",
+                           "sum coding."), note, fixed = TRUE))
+  two <- build_datasheet(ds_design(), ds_schema(), NULL, ds_stim(), "x.csv", ds_files(), 2026)
+  expect_false(grepl("recode condition", two[["analysis"]][["note"]], fixed = TRUE))
 })

@@ -1,21 +1,21 @@
-{"time": "2026-10-09T07:51:43", "message": "loading supplied pool 'items/pool_en_concrete_nouns.csv'", "data": null}
-{"time": "2026-10-09T07:51:43", "message": "supplied pool: 131 words (dimensions from 'corpora/derived/en.csv')", "data": {"words": 131, "lexicon": "corpora/derived/en.csv"}}
-{"time": "2026-10-09T07:51:43", "message": "pool after filters: 131 words", "data": {"pool": 131}}
-{"time": "2026-10-09T07:51:43", "message": "matched 40 items across 2 conditions", "data": {"conditions": "higher_frequency, lower_frequency"}}
-{"time": "2026-10-09T07:51:43", "message": "equivalence lower_frequency vs higher_frequency on 'length': d = -0.11 [-0.64, 0.42], TOST p = 0.1121 (not shown equivalent)", "data": null}
-{"time": "2026-10-09T07:51:43", "message": "equivalence lower_frequency vs higher_frequency on 'frequency': d = 3.53 [2.68, 4.38], TOST p = 1.0 (not shown equivalent)", "data": null}
-{"time": "2026-10-09T07:51:43", "message": "equivalence lower_frequency vs higher_frequency on 'n_density': d = 0.13 [-0.40, 0.66], TOST p = 0.1245 (not shown equivalent)", "data": null}
-{"time": "2026-10-09T07:51:43", "message": "equivalence lower_frequency vs higher_frequency on 'old20': d = -0.24 [-0.78, 0.29], TOST p = 0.2093 (not shown equivalent)", "data": null}
-{"time": "2026-10-09T07:51:43", "message": "equivalence lower_frequency vs higher_frequency on 'n_syllables': d = 0.12 [-0.42, 0.65], TOST p = 0.1166 (not shown equivalent)", "data": null}
-{"time": "2026-10-09T07:51:43", "message": "equivalence lower_frequency vs higher_frequency on 'bigram_freq': d = 0.28 [-0.25, 0.82], TOST p = 0.2486 (not shown equivalent)", "data": null}
-{"time": "2026-10-09T07:51:43", "message": "wrote 'en_supplied_pool_english_stimuli_py.csv'", "data": {"path": "output\\stimuli\\en_supplied_pool_english_stimuli_py.csv", "rows": 40, "md5": "5f9123dce72c73b1f532a5b393c0ee55"}}
-{"time": "2026-10-09T07:51:43", "message": "wrote 'en_supplied_pool_english_descriptives_py.csv'", "data": {"path": "output\\reports\\en_supplied_pool_english_descriptives_py.csv", "rows": 12, "md5": "80d68fb20b74bbf30aa1b5582453a92d"}}
-{"time": "2026-10-09T07:51:43", "message": "wrote 'en_supplied_pool_english_comparisons_py.csv'", "data": {"path": "output\\reports\\en_supplied_pool_english_comparisons_py.csv", "rows": 6, "md5": "2d37214222aa3a4e3fe7ede093a61ed9"}}
-{"time": "2026-10-09T07:51:43", "message": "wrote 'en_supplied_pool_english_psychopy.py'", "data": {"path": "output\\experiments\\en_supplied_pool_english_psychopy.py", "rows": null, "md5": "8eb017607397783d6ae7ed6f45e83e33"}}
-{"time": "2026-10-09T07:51:43", "message": "wrote 'en_supplied_pool_english.osexp'", "data": {"path": "output\\experiments\\en_supplied_pool_english.osexp", "rows": null, "md5": "dac639bc44a52d293ab225465556b048"}}
-{"time": "2026-10-09T07:51:43", "message": "wrote 'en_supplied_pool_english.html'", "data": {"path": "output\\experiments\\en_supplied_pool_english.html", "rows": null, "md5": "42ed2455ca5c3f9284c4ee01ba60f83f"}}
-{"time": "2026-10-09T07:51:43", "message": "wrote 'en_supplied_pool_english_psychopy.csv'", "data": {"path": "output\\experiments\\en_supplied_pool_english_psychopy.csv", "rows": null, "md5": "4e804ea51bfa10577453bac0659361dc"}}
-{"time": "2026-10-09T07:51:43", "message": "wrote 'en_supplied_pool_english_opensesame.csv'", "data": {"path": "output\\experiments\\en_supplied_pool_english_opensesame.csv", "rows": null, "md5": "49ccbbdf46789be5a80e46fa6ac4da45"}}
-{"time": "2026-10-09T07:51:43", "message": "wrote 'en_supplied_pool_english_opensesame_text.csv'", "data": {"path": "output\\experiments\\en_supplied_pool_english_opensesame_text.csv", "rows": null, "md5": "15ce90562922debfdc17d77d5e448ebd"}}
-{"time": "2026-10-09T07:51:44", "message": "wrote 'en_supplied_pool_english_datasheet_py.json'", "data": {"path": "output\\reports\\en_supplied_pool_english_datasheet_py.json", "rows": null, "md5": "65c9f97f7d1e1afec5345c6096ecd2ac"}}
-{"time": "2026-10-09T07:51:44", "message": "wrote 'en_supplied_pool_english_datasheet_py.md'", "data": {"path": "output\\reports\\en_supplied_pool_english_datasheet_py.md", "rows": null, "md5": "f8c9f547a6f5924371f56718015d94ba"}}
+{"time": "2026-10-09T09:53:44", "message": "loading supplied pool 'items/pool_en_concrete_nouns.csv'", "data": null}
+{"time": "2026-10-09T09:53:44", "message": "supplied pool: 131 words (dimensions from 'corpora/derived/en.csv')", "data": {"words": 131, "lexicon": "corpora/derived/en.csv"}}
+{"time": "2026-10-09T09:53:44", "message": "pool after filters: 131 words", "data": {"pool": 131}}
+{"time": "2026-10-09T09:53:44", "message": "matched 40 items across 2 conditions", "data": {"conditions": "higher_frequency, lower_frequency"}}
+{"time": "2026-10-09T09:53:44", "message": "equivalence lower_frequency vs higher_frequency on 'length': d = -0.11 [-0.64, 0.42], TOST p = 0.1121 (not shown equivalent)", "data": null}
+{"time": "2026-10-09T09:53:44", "message": "equivalence lower_frequency vs higher_frequency on 'frequency': d = 3.53 [2.68, 4.38], TOST p = 1.0 (not shown equivalent)", "data": null}
+{"time": "2026-10-09T09:53:44", "message": "equivalence lower_frequency vs higher_frequency on 'n_density': d = 0.13 [-0.40, 0.66], TOST p = 0.1245 (not shown equivalent)", "data": null}
+{"time": "2026-10-09T09:53:44", "message": "equivalence lower_frequency vs higher_frequency on 'old20': d = -0.24 [-0.78, 0.29], TOST p = 0.2093 (not shown equivalent)", "data": null}
+{"time": "2026-10-09T09:53:44", "message": "equivalence lower_frequency vs higher_frequency on 'n_syllables': d = 0.12 [-0.42, 0.65], TOST p = 0.1166 (not shown equivalent)", "data": null}
+{"time": "2026-10-09T09:53:44", "message": "equivalence lower_frequency vs higher_frequency on 'bigram_freq': d = 0.28 [-0.25, 0.82], TOST p = 0.2486 (not shown equivalent)", "data": null}
+{"time": "2026-10-09T09:53:44", "message": "wrote 'en_supplied_pool_english_stimuli_py.csv'", "data": {"path": "output\\stimuli\\en_supplied_pool_english_stimuli_py.csv", "rows": 40, "md5": "5f9123dce72c73b1f532a5b393c0ee55"}}
+{"time": "2026-10-09T09:53:44", "message": "wrote 'en_supplied_pool_english_descriptives_py.csv'", "data": {"path": "output\\reports\\en_supplied_pool_english_descriptives_py.csv", "rows": 12, "md5": "80d68fb20b74bbf30aa1b5582453a92d"}}
+{"time": "2026-10-09T09:53:44", "message": "wrote 'en_supplied_pool_english_comparisons_py.csv'", "data": {"path": "output\\reports\\en_supplied_pool_english_comparisons_py.csv", "rows": 6, "md5": "2d37214222aa3a4e3fe7ede093a61ed9"}}
+{"time": "2026-10-09T09:53:44", "message": "wrote 'en_supplied_pool_english_psychopy.py'", "data": {"path": "output\\experiments\\en_supplied_pool_english_psychopy.py", "rows": null, "md5": "8eb017607397783d6ae7ed6f45e83e33"}}
+{"time": "2026-10-09T09:53:44", "message": "wrote 'en_supplied_pool_english.osexp'", "data": {"path": "output\\experiments\\en_supplied_pool_english.osexp", "rows": null, "md5": "dac639bc44a52d293ab225465556b048"}}
+{"time": "2026-10-09T09:53:44", "message": "wrote 'en_supplied_pool_english.html'", "data": {"path": "output\\experiments\\en_supplied_pool_english.html", "rows": null, "md5": "42ed2455ca5c3f9284c4ee01ba60f83f"}}
+{"time": "2026-10-09T09:53:44", "message": "wrote 'en_supplied_pool_english_psychopy.csv'", "data": {"path": "output\\experiments\\en_supplied_pool_english_psychopy.csv", "rows": null, "md5": "4e804ea51bfa10577453bac0659361dc"}}
+{"time": "2026-10-09T09:53:44", "message": "wrote 'en_supplied_pool_english_opensesame.csv'", "data": {"path": "output\\experiments\\en_supplied_pool_english_opensesame.csv", "rows": null, "md5": "49ccbbdf46789be5a80e46fa6ac4da45"}}
+{"time": "2026-10-09T09:53:44", "message": "wrote 'en_supplied_pool_english_opensesame_text.csv'", "data": {"path": "output\\experiments\\en_supplied_pool_english_opensesame_text.csv", "rows": null, "md5": "15ce90562922debfdc17d77d5e448ebd"}}
+{"time": "2026-10-09T09:53:44", "message": "wrote 'en_supplied_pool_english_datasheet_py.json'", "data": {"path": "output\\reports\\en_supplied_pool_english_datasheet_py.json", "rows": null, "md5": "ae4937d3624c2c96debbe8891d410f05"}}
+{"time": "2026-10-09T09:53:44", "message": "wrote 'en_supplied_pool_english_datasheet_py.md'", "data": {"path": "output\\reports\\en_supplied_pool_english_datasheet_py.md", "rows": null, "md5": "3d676ea8c0dda471006be50b2d0c9230"}}

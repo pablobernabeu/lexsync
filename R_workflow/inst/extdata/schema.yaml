@@ -144,9 +144,9 @@ matching:
     n_density: 2.0
     old20: 2.0
   # Selection-size policies; a design may override either under its own matching:
-  # block. shortfall errors by default because the datasheet and the generated
-  # methods paragraph state the requested n, so a silently smaller set would
-  # leave the record misstating the materials.
+  # block. shortfall errors by default, because a smaller set changes the design
+  # that was planned. Under allow, the datasheet records the items each condition
+  # holds, and the methods paragraph states them beside the request.
   shortfall: error                   # what to do when fewer sets than n_per_condition can be selected: error | allow
   on_insufficient_tolerance: relax   # when a condition has too few candidates inside the tolerance window: relax | error
   # Stage 2 ranks candidates by standardised multivariate distance, rounded to nine

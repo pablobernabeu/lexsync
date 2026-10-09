@@ -450,6 +450,20 @@ def _fmt_dp(x, dp: int, na: str = "--") -> str:
     return ("-" if t < 0 else "") + digits
 
 
+def _fmt_g(x) -> str:
+    """A setting as the datasheet prints it: an alpha, a bound, a tolerance k, or the
+    confidence level an alpha gives.
+
+    The shared rounder takes the value to six places first, so the floating-point error
+    in 1 - 2 * 0.05 cannot reach the text, and %g then drops the trailing zeros: 90, 0.05,
+    1.5. A setting needs no fixed number of places, and a bound that YAML reads as 1.0 in
+    Python and 1 in R prints as 1 in both. Six significant digits leave %g nothing to
+    round in a setting written by hand. Must stay identical to .fmt_g in
+    R_workflow/R/io_utils.R.
+    """
+    return "%g" % _round_dp(float(x), 6)
+
+
 def _round_dp_vec(x, dp: int):
     """The shared rounder over a whole numpy array at once.
 

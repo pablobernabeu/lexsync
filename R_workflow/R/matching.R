@@ -86,9 +86,10 @@
 }
 
 # The shortfall contract: a selection that returns fewer sets than the design asked
-# for silently invalidates the datasheet and the generated Methods text, which state
-# the requested n. Under the default policy that is an error; a design may opt into
-# the shrink with matching: shortfall: allow.
+# for changes the design that was planned. Under the default policy that is an error;
+# a design may opt into the shrink with matching: shortfall: allow. The datasheet then
+# records the items each condition holds, and the Methods text states them beside the
+# request.
 # Must stay identical to _check_shortfall in python_workflow/src/lexsync/matching.py.
 .check_shortfall <- function(realised, n, policy, continuous = FALSE) {
   if (realised >= n || identical(policy, "allow")) return(invisible(NULL))
@@ -199,7 +200,7 @@ match_stimuli <- function(pool, design, schema, verbose = FALSE) {
   # Refused here as well as in validate_design(), for a direct call: without a
   # dimension every distance is zero and the tie-break alone would pick the words.
   match_on <- .require_match_on(design)
-  n <- .resolve_n(design, 20L)
+  n <- .resolve_n(design, .N_DEFAULT_MATCHED)
   # Tolerance window k per dimension (window = anchor mean +/- k * SD). A design
   # may override the schema defaults per dimension, e.g. to reproduce a published
   # study's exact windows (Gonzalez Alonso et al. used SD/9 for frequency).
@@ -753,7 +754,7 @@ select_continuous_stimuli <- function(pool, design, schema, verbose = FALSE,
       stop(sprintf("lexsync: dimension '%s' is absent from the pool.", d), call. = FALSE)
     }
   }
-  n <- .resolve_n(design, 60L)
+  n <- .resolve_n(design, .N_DEFAULT_CONTINUOUS)
   tol_k <- .resolve_tolerance_k(design, schema)
   shortfall <- .resolve_policy(design, schema, "shortfall", "error", c("error", "allow"))
   on_tol <- .resolve_policy(design, schema, "on_insufficient_tolerance", "relax",

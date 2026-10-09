@@ -12,10 +12,14 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import os
 import platform
+import re
 
+import pandas as pd
 import yaml
+from scipy import stats
 
 # The cache and the registry, for crediting a lexicon fetch_corpus fetched.
 from . import corpora as _corpora
@@ -25,10 +29,17 @@ from . import corpora as _corpora
 from .counterbalancing import _recipe
 from .counterbalancing import counterbalance_check as _counterbalance_check
 
-# The tolerance windows as match_stimuli resolves them: one resolver, so the record
-# cannot drift from the selection.
-from .design import _resolve_tolerance_k
-from .io_utils import _fmt_dp, _is_continuous, _round_dp, sha256_file
+# The tolerance windows and the number of items as the selectors resolve them: one
+# resolver each, so the record cannot drift from the selection.
+from .design import (
+    _INT_MAX,
+    N_DEFAULT_CONTINUOUS,
+    N_DEFAULT_GENERATED,
+    N_DEFAULT_MATCHED,
+    _resolve_n,
+    _resolve_tolerance_k,
+)
+from .io_utils import _fmt_dp, _fmt_g, _is_continuous, _round_dp, sha256_file
 
 # The cap the pairwise (joint, optimal) matchers apply before pairing, and the
 # tie-break rule and its salt. Imported from matching so the datasheet can only ever
@@ -95,6 +106,10 @@ from .scripting import _refresh_hz, _response_windows, presentation_versions
 #                               a continuous design's realised SDs, set against an even
 #                               spread (the predictor) or the pool (a control), and each
 #                               control's window
+#   items.n_per_condition_realised  the items each condition holds, as {condition, n},
+#                               or {replicate, condition, n} for resampled sets
+#   design.n_per_condition      the request the selector applied, its default when the
+#                               design gives none (1.1 copied the design's key, or null)
 DATASHEET_VERSION = "1.2"
 
 # Datasheet labels for the pseudoword generators in generation.py, keyed by the
@@ -426,60 +441,172 @@ def _response_note(ds: dict) -> str:
             "response ended the trial." % int(w["window_ms"]))
 
 
+def _and_join(parts) -> str:
+    """Words or phrases joined as a list in prose: "a", "a and b", "a, b and c"."""
+    parts = [str(p) for p in parts]
+    if len(parts) < 2:
+        return "".join(parts)
+    return ", ".join(parts[:-1]) + " and " + parts[-1]
+
+
+def _requested_n(design: dict, source: str, is_continuous: bool):
+    """The items per condition the selector was asked for: the design's
+    ``n_per_condition``, else the default of the selector that ran, the matcher's,
+    the continuous selector's or the generator's. An item table without a continuous
+    block selects nothing, so it has a request only when the design states one. The
+    record used to copy the design's key, and gave null when a design left the number
+    to the matcher. Mirrors .requested_n in datasheet.R.
+    """
+    if is_continuous:
+        default = N_DEFAULT_CONTINUOUS
+    elif source in ("corpus", "pool"):
+        default = N_DEFAULT_MATCHED
+    elif source == "generate":
+        default = N_DEFAULT_GENERATED
+    else:
+        default = None
+    return _resolve_n(design, default)
+
+
+def _realised_counts(stimuli, conditions) -> list:
+    """The items each condition holds in the stimuli, as ``{condition, n}`` records in
+    the order of ``items.conditions``. Resampled stimuli are counted per replicate, as
+    ``{replicate, condition, n}``, replicates in ascending order, since each replicate
+    is a set of its own. A pair design holds one row per pair in each condition, so it
+    counts pairs. Mirrors .realised_counts in datasheet.R.
+    """
+    labels = stimuli["condition"].astype(str).to_numpy()
+    if "replicate" not in stimuli.columns:
+        return [{"condition": str(c), "n": int((labels == str(c)).sum())} for c in conditions]
+    out = []
+    reps = stimuli["replicate"].to_numpy()
+    for rep in sorted(set(stimuli["replicate"])):
+        for c in conditions:
+            n = int(((reps == rep) & (labels == str(c))).sum())
+            if n:
+                out.append({"replicate": int(rep), "condition": str(c), "n": n})
+    return out
+
+
+def _covariates(design: dict, source: str, stimuli) -> tuple:
+    """The matched dimensions the suggested model adjusts for, and those it leaves out.
+
+    A corpus or pool design's ``match_on`` dimensions enter, in their order, when they
+    vary among the selected items. One that is the same for every item, as length is
+    among two-character Chinese words, would give the model a column of zeros, so it
+    is left out, as is one the stimuli do not hold. Any other design has none. Mirrors
+    .covariates in datasheet.R.
+    """
+    if source not in ("corpus", "pool"):
+        return [], []
+    kept, left_out = [], []
+    for dim in design.get("match_on") or []:
+        values = (set(pd.to_numeric(stimuli[dim], errors="coerce").dropna())
+                  if dim in stimuli.columns else set())
+        (kept if len(values) > 1 else left_out).append(dim)
+    return kept, left_out
+
+
+# The sentences the notes of the suggested models share. Kept character-for-character
+# identical to the strings in .analysis_R in datasheet.R.
+_NOTE_CROSSED = ("Crossed random effects for subjects and items guard against the "
+                 "language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008).")
+_NOTE_SIMPLIFY = ("If the model is singular or fails to converge, simplify it as "
+                  "Matuschek et al. (2017) describe.")
+_NOTE_SYNTAX = ("The formula is lme4 syntax, for lme4 in R or pymer4 in Python; "
+                "statsmodels MixedLM cannot take it directly and needs the random effects "
+                "restated in its own arguments.")
+_NOTE_DIAGNOSTICS = ("The equivalence tests in the realised control are post-selection "
+                     "diagnostics on deterministically selected items, not inferential "
+                     "tests over a sample.")
+
+
 def _analysis(design: dict, source: str,
-              response: str = "the trial outcome (e.g. reaction time or accuracy)") -> dict:
-    """A suggested crossed mixed-model formula for the design.
+              response: str = "the trial outcome (e.g. reaction time or accuracy)",
+              recipe: str = "factorial", n_conditions: int = 2, covariates=(),
+              left_out=()) -> dict:
+    """A suggested crossed mixed-model formula for the design, and a note on it.
 
     Handing the user an items-crossed model guards against the
     language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008): items are
     a random sample of the language, so an analysis that treats them as fixed
-    over-generalises. The manipulated factor is within subjects (each participant
-    sees every condition) and, for corpus/lexical-decision designs, between items
-    (each item belongs to one condition), so items take a random intercept; in the
-    counterbalanced table paradigms the factor is within items too, so items also
-    take a random slope.
+    over-generalises. The factor is the stimuli's ``condition`` column, which in a
+    lexical decision codes lexicality. Every participant sees every condition, so
+    subjects take a random slope for it. Items take one too when the counterbalancing
+    recipe that ran rotates the conditions over the items by a Latin square, which
+    shows each item in more than one condition across the lists. ``covariates`` are a matched
+    design's matched dimensions that vary among its items, entered centred on the
+    stimuli file's own columns, since matching leaves residual differences and
+    Sassenhagen and Alday (2016) recommend adjusting for potential confounds;
+    ``left_out`` are those that do not vary. A design with more than two conditions is
+    told how to recode crossed factors.
+
+    A continuous design regresses on its predictor and controls. A pair design with
+    more than one condition crosses the condition with the predictor, and its items,
+    which carry every condition, take the condition slope. The predictor is a property
+    of the item, so they take no slope for it.
+
+    The note calls the structure maximal (Barr et al., 2013) only when every fixed
+    effect that varies within subjects or items has a random slope there. A covariate
+    or a control varies within subjects and enters as a fixed effect only, so a design
+    with one is described by its slopes. Mirrors .analysis_R in datasheet.R.
     """
     cont = design.get("continuous")
     if cont:
         predictor = cont["predictor"]
         controls = list(cont.get("controls") or [])
-        fixed = " + ".join([predictor] + controls)
-        note = ("The predictor is kept continuous and analysed by regression or a "
-                "mixed model rather than dichotomised (Kuperman, 2015; Liben-Nowell "
-                "et al., 2019); the controls enter as covariates. Crossed random "
-                "effects for subjects and items guard the language-as-fixed-effect "
-                "fallacy (Clark, 1973; Baayen et al., 2008); reduce the structure if "
-                "it does not converge (Matuschek et al., 2017).")
+        tail = "".join(" + " + c for c in controls)
+        if (design.get("items") or {}).get("members") and n_conditions > 1:
+            model = (f"response ~ condition * {predictor}{tail} + "
+                     f"(1 + condition * {predictor} | subject) + (1 + condition | item)")
+            slopes = (f"Begin with random slopes for condition, {predictor} and their "
+                      "interaction by subject and for condition by item (Barr et al., "
+                      "2013); the controls enter as fixed effects only. Centre "
+                      f"{predictor} and sum-code condition, so that each main effect is "
+                      "estimated at the average of the other.")
+        else:
+            model = f"response ~ {predictor}{tail} + (1 + {predictor} | subject) + (1 | item)"
+            slopes = (f"Begin with a random slope for {predictor} by subject (Barr et al., "
+                      "2013); the controls enter as fixed effects only.")
+        note = ("The predictor is kept continuous and analysed by regression or a mixed "
+                "model rather than dichotomised (Kuperman, 2015; Liben-Nowell et al., "
+                "2019); the controls enter as covariates. " + _NOTE_CROSSED + " " + slopes
+                + " " + _NOTE_SIMPLIFY)
         # A pair design's member-prefixed terms carry a dot, which R formulas accept
         # but Patsy reads as syntax, so the Python analyst needs the quoting stated.
         if any("." in t for t in [predictor] + controls):
             note += (" Dotted dimension names are valid in R formulas but must be "
                      "quoted as Q(\"...\") in Patsy-style Python interfaces.")
-        return {
-            "response": response,
-            "suggested_model": f"response ~ {fixed} + (1 + {predictor} | subject) + (1 | item)",
-            "note": note,
-        }
-    paradigm = design.get("paradigm", "factorial")
-    if source == "generate" or paradigm == "lexical_decision":
-        factor, item_re = "lexicality", "(1 | item)"
-    elif paradigm in ("priming", "self_paced_reading"):
-        factor, item_re = "condition", "(1 + condition | item)"
+        return {"response": response, "suggested_model": model, "note": note}
+    fixed = "condition" + "".join(" + scale(%s, scale = FALSE)" % d for d in covariates)
+    item_re = "(1 + condition | item)" if recipe == "latin_square_target" else "(1 | item)"
+    note = [_NOTE_CROSSED]
+    if source == "generate" or design.get("paradigm") == "lexical_decision":
+        note.append("The condition column codes lexicality, word or pseudoword.")
+    if covariates:
+        note.append("The matched dimensions enter as centred covariates, computed from the "
+                    "stimuli file's own columns, because matching leaves residual "
+                    "differences that the analysis can adjust for (Sassenhagen & Alday, "
+                    "2016).")
+    if left_out:
+        one = len(left_out) == 1
+        note.append("The matched %s %s %s constant among the selected items, so %s left out."
+                    % ("dimension" if one else "dimensions", _and_join(left_out),
+                       "is" if one else "are", "it is" if one else "they are"))
+    if covariates:
+        note.append("Begin with random slopes for condition, the manipulated factor, by "
+                    "subject and, where it varies within items, by item (Barr et al., "
+                    "2013); the matched covariates enter as fixed effects only.")
     else:
-        factor, item_re = "condition", "(1 | item)"
-    return {
-        "response": response,
-        "suggested_model": f"response ~ {factor} + (1 + {factor} | subject) + {item_re}",
-        "note": ("Crossed random effects for subjects and items guard against the "
-                 "language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). "
-                 "Begin with this maximal structure (Barr et al., 2013) and reduce it "
-                 "if the model does not converge (Matuschek et al., 2017). The formula "
-                 "is lme4 syntax, for lme4 in R or pymer4 in Python; statsmodels "
-                 "MixedLM cannot take it directly and needs the random effects "
-                 "restated in its own arguments. The equivalence tests in the realised "
-                 "control are post-selection diagnostics on deterministically selected "
-                 "items, not inferential tests over a sample."),
-    }
+        note.append("Begin with this maximal structure (Barr et al., 2013).")
+    note.append(_NOTE_SIMPLIFY)
+    if n_conditions > 2:
+        note.append("If the conditions cross two or more factors, recode condition into "
+                    "those factors (for example frequency * neighbourhood) with sum coding.")
+    note += [_NOTE_SYNTAX, _NOTE_DIAGNOSTICS]
+    return {"response": response,
+            "suggested_model": f"response ~ {fixed} + (1 + condition | subject) + {item_re}",
+            "note": " ".join(note)}
 
 
 def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
@@ -557,12 +684,21 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
     words it lists and the number of candidates it removed. Recorded as
     ``materials_source["exclusions"]``, because the words decide which candidates the
     selection could draw.
+
+    ``design["n_per_condition"]`` is the request the selector applied, the selector's
+    default when the design gives none, and ``items["n_per_condition_realised"]``
+    counts the items each condition holds in ``stimuli``, per replicate for resampled
+    sets, so a selection that fell short of the request under ``shortfall: allow``
+    shows it. The suggested analysis keys its by-item slope on the recipe that ran and
+    adds a matched design's matched dimensions that vary among its items as covariates.
     """
     source = (design.get("items") or {}).get("source", "corpus")
     is_continuous = _is_continuous(design)
     controlled = _controlled(design, source)
     relational = _relational_record(design, stimuli)
     conditions = list(dict.fromkeys(stimuli["condition"]))
+    covariates, left_out = (([], []) if is_continuous
+                            else _covariates(design, source, stimuli))
     # The response windows the generated experiments open, and with them where a
     # reaction time starts, which the analysis has to know.
     events = resolve_events(design)
@@ -769,13 +905,15 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
             "name": design["name"], "language": design["language"],
             "paradigm": design.get("paradigm", "factorial"), "source": source,
             "description": design.get("description"),
-            "n_per_condition": design.get("n_per_condition") or design.get("n_per_cell"),
+            "n_per_condition": _requested_n(design, source, is_continuous),
         },
         "materials_source": materials_source,
         "dimensions": dims,
         "selection": selection,
         "relational": relational,
-        "analysis": _analysis(design, source, _response_text(windows, events)),
+        "analysis": _analysis(design, source, _response_text(windows, events), recipe=recipe,
+                              n_conditions=len(conditions), covariates=covariates,
+                              left_out=left_out),
         "equivalence": equivalence,
         "realised_control": realised,
         "counterbalancing": counterbalancing,
@@ -785,6 +923,7 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
         "items": {
             "n_total": int(len(stimuli)), "n_conditions": len(conditions),
             "conditions": conditions,
+            "n_per_condition_realised": _realised_counts(stimuli, conditions),
             "stimuli_file": _posix(artifacts.get("stimuli")),
             "stimuli_sha256": sha256_file(artifacts.get("stimuli")),
         },
@@ -930,54 +1069,354 @@ def _recipe_label(cb: dict) -> str:
     return {"factorial": "a factorial split"}.get(cb["recipe"], cb["recipe"])
 
 
+def _ci_pct(alpha) -> str:
+    """The confidence level of the interval beside a TOST at ``alpha``, 1 - 2 * alpha,
+    as a percentage: "90" at .05 and "99" at .005. The text and the table said 90%
+    whatever the schema's alpha. Mirrors .ci_pct in datasheet.R."""
+    return _fmt_g((1 - 2 * float(alpha)) * 100)
+
+
+def _tost_min_n(bound_d, alpha):
+    """The fewest items per condition with which two one-sided tests at ``bound_d`` and
+    ``alpha`` can support equivalence, infinity when no request either engine accepts
+    would do, or None for a bound or an alpha that admits none.
+
+    Two conditions of n items with equal means give the test its best case, a t of
+    bound_d / sqrt(2 / n) on 2n - 2 degrees of freedom, which passes when it exceeds
+    t(1 - alpha, 2n - 2). The fewest items with which a dimension that varies can pass
+    is therefore the smallest n with t(1 - alpha, 2n - 2) * sqrt(2 / n) < bound_d: 23 at
+    a bound of 0.5 and an alpha of .05. The left side falls as n grows, so the search
+    doubles n until the test can pass and then bisects, ``lo`` never passing and ``hi``
+    always passing. It stops at the largest n_per_condition the engines accept, where
+    R's integers end. Without that stop, a bound below about 5e-5 SD gave R an NA, which
+    stopped its Methods text, and a smaller one a bisection that never ended, because
+    doubles that large cannot hold the midpoint. Mirrors .tost_min_n in datasheet.R.
+    """
+    try:
+        bound, a = float(bound_d), float(alpha)
+    except (TypeError, ValueError):
+        return None
+    if not (bound > 0 and 0 < a < 0.5):
+        return None
+
+    def passes(n):
+        return stats.t.ppf(1 - a, 2 * n - 2) * math.sqrt(2 / n) < bound
+
+    # One item leaves the test no degrees of freedom, so 1 is the first n that fails.
+    lo, hi = 1, 2
+    while not passes(hi):
+        if hi >= _INT_MAX:
+            return math.inf
+        lo, hi = hi, min(2 * hi, _INT_MAX)
+    while hi - lo > 1:
+        mid = (lo + hi) // 2
+        if passes(mid):
+            hi = mid
+        else:
+            lo = mid
+    return hi
+
+
+def _int_text(v) -> str:
+    """A count as the Methods text prints it, or "NA" when there is none. Mirrors
+    .int_text in datasheet.R."""
+    return "NA" if v is None or v != v else "%d" % int(v)
+
+
+def _realised_range(ds) -> tuple:
+    """The fewest and the most items a condition holds, from
+    ``items.n_per_condition_realised``, or the request twice for a record written before
+    that field existed. Mirrors .realised_range in datasheet.R."""
+    recs = (ds.get("items") or {}).get("n_per_condition_realised")
+    if recs:
+        ns = [int(r["n"]) for r in recs]
+        return min(ns), max(ns)
+    n = (ds.get("design") or {}).get("n_per_condition")
+    return n, n
+
+
+def _pooled_counts(ds) -> list:
+    """The items each condition holds over every replicate, the samples its equivalence
+    tests compared, or the request for a record without the realised counts. Mirrors
+    .pooled_counts in datasheet.R."""
+    recs = (ds.get("items") or {}).get("n_per_condition_realised")
+    if recs:
+        totals = {}
+        for r in recs:
+            totals[str(r["condition"])] = totals.get(str(r["condition"]), 0) + int(r["n"])
+        return list(totals.values())
+    n = (ds.get("design") or {}).get("n_per_condition")
+    return [n] if isinstance(n, (int, float)) and not isinstance(n, bool) else []
+
+
+def _count_text(lo, hi, noun) -> str:
+    """A count, or a range when the conditions differ, with its noun: "1 item",
+    "15 items", "18 to 20 items". Mirrors .count_text in datasheet.R."""
+    count = (_int_text(lo) + " to " + _int_text(hi)) if lo != hi else _int_text(lo)
+    return count + " " + noun + ("" if hi == 1 else "s")
+
+
+def _requested_note(ds, lo) -> str:
+    """The request, as " (of 20 requested)", when the conditions hold fewer items than
+    the design asked for, which only ``shortfall: allow`` lets a run do. Empty
+    otherwise. Mirrors .requested_note in datasheet.R."""
+    req = (ds.get("design") or {}).get("n_per_condition")
+    if (not (ds.get("items") or {}).get("n_per_condition_realised") or lo is None
+            or not isinstance(req, (int, float)) or isinstance(req, bool) or lo >= req):
+        return ""
+    return " (of %d requested)" % int(req)
+
+
+def _unit(ds, dim) -> str:
+    """A dimension's unit as the Methods text gives it: the schema's unit, which the
+    record's ``dimensions`` carry, less a closing parenthesis such as "(orthographic
+    estimate)". Empty for a dimension the record gives no unit, such as a joined norm.
+    Mirrors .unit in datasheet.R."""
+    unit = (((ds.get("dimensions") or {}).get(dim)) or {}).get("unit")
+    if not isinstance(unit, str):
+        return ""
+    return re.sub(r" *\([^()]*\)$", "", unit)
+
+
+def _defined(row) -> bool:
+    d = row.get("cohens_d")
+    return d is not None and d == d
+
+
+def _raw_text(ds, row) -> str:
+    """A row's raw difference in its unit, or empty when the row has none.
+
+    The comparisons store the difference to three places, so a bigram probability,
+    whose differences lie in the fourth, can be stored as 0 beside a d that is not. That
+    zero is a rounding residue and is given as "under 0.001". Mirrors .raw_text in
+    datasheet.R.
+    """
+    v = row.get("mean_diff")
+    if v is None or v != v:
+        return ""
+    text = _fmt_dp(v, 3)
+    if text == "0.000" and _defined(row) and row["cohens_d"] != 0:
+        text = "under 0.001"
+    unit = _unit(ds, row["dimension"])
+    return text + (" " + unit if unit else "")
+
+
+def _pair_text(row) -> str:
+    """The pair a row compares, the reference first, since d and the raw difference are
+    the reference mean minus the condition mean. Empty for a record without the pair."""
+    ref, cond = row.get("reference"), row.get("condition")
+    return "" if ref is None or cond is None else "%s against %s" % (ref, cond)
+
+
+def _d_text(row, pct) -> str:
+    return "d = %s, %s%% CI [%s, %s]" % (_fmt_dp(row["cohens_d"], 2), pct,
+                                         _fmt_dp(row.get("ci_low"), 2),
+                                         _fmt_dp(row.get("ci_high"), 2))
+
+
+# The names a lexical decision's Methods sentence gives the dimensions its report sets
+# words against pseudowords on. Kept identical to .LEXDEC_NAMES in datasheet.R.
+_LEXDEC_NAMES = {"bigram_freq": "bigram frequency", "n_density": "N", "old20": "OLD20"}
+
+
+def _control_note(ds) -> str:
+    """What the Methods text says about the realised control of a matched or generated
+    design, as sentences each beginning with ". ".
+
+    The description comes first. A matched design gives the largest difference on a
+    matched dimension, in that dimension's unit, with its pair, d and interval. Raw
+    differences in different units cannot be ranked against each other, so the largest
+    is the one with the largest |d|. A generated lexical decision says that its words
+    and pseudowords were matched on length only, and how they differ on the dimensions
+    the generator does not hold. Comparisons whose d is undefined are counted. The two
+    one-sided tests follow as a secondary check, with the number they passed, and say
+    so when every condition holds fewer items than any test at the bound can pass with.
+    A matched design then names, largest first, up to five comparisons of a dimension it
+    did not control whose |d| exceeds the bound, or says that none does. Tests on a
+    selected set describe a closed population, so the stimuli are described first
+    (Sassenhagen & Alday, 2016). Mirrors .control_note in datasheet.R.
+    """
+    rows = ds.get("realised_control") or []
+    eq = ds.get("equivalence") or {}
+    bound, alpha = eq.get("bound_d", 0.5), eq.get("alpha", 0.05)
+    pct = _ci_pct(alpha)
+    ctrl = [r for r in rows if r.get("role") == "controlled"]
+    unc = [r for r in rows if r.get("role") == "uncontrolled"]
+    generated = (ds.get("materials_source") or {}).get("type") == "generate"
+    out = ""
+    if generated:
+        parts = ["%s (%s)" % (_LEXDEC_NAMES.get(r["dimension"], r["dimension"]),
+                              _d_text(r, pct) if _defined(r) else "d undefined")
+                 for r in unc]
+        out += ". Words and pseudowords were matched on length only"
+        if parts:
+            out += ", and the words differed from the pseudowords in " + _and_join(parts)
+    else:
+        known = [r for r in ctrl if _defined(r)]
+        if known:
+            # max() keeps the first of equal |d|, as R's which.max() does.
+            worst = max(known, key=lambda r: abs(r["cohens_d"]))
+            raw = _raw_text(ds, worst)
+            inner = "; ".join(x for x in (_pair_text(worst), _d_text(worst, pct)) if x)
+            out += ". The largest difference on a matched dimension was %s%s (%s)" % (
+                raw + " in " if raw else "in ", worst["dimension"], inner)
+    undefined = [r for r in ctrl if not _defined(r)]
+    if undefined:
+        share = ("every matched comparison" if len(undefined) == len(ctrl)
+                 else "%d of the %d matched comparisons" % (len(undefined), len(ctrl)))
+        out += (". Cohen's d is undefined for %s, and the realised-control table gives "
+                "their raw differences" % share)
+    if ctrl:
+        passed = sum(1 for r in ctrl if r.get("equivalent") is True)
+        out += (". Two one-sided tests at a bound of %s SD (alpha %s) supported equivalence "
+                "on %d of %d matched comparisons" % (_fmt_g(bound), _fmt_g(alpha), passed,
+                                                    len(ctrl)))
+        counts = _pooled_counts(ds)
+        n_min = _tost_min_n(bound, alpha)
+        if counts and n_min is not None and max(counts) < n_min:
+            out += ("; with %s per condition no dimension that varies can pass this test, "
+                    "however well matched" % _count_text(min(counts), max(counts), "item"))
+    if not generated and unc:
+        # A stable sort, so comparisons of equal |d| keep the record's order.
+        big = sorted((r for r in unc if _defined(r) and abs(r["cohens_d"]) > bound),
+                     key=lambda r: -abs(r["cohens_d"]))
+        if big:
+            parts = []
+            for r in big[:5]:
+                head = ": ".join(x for x in (_pair_text(r), _raw_text(ds, r)) if x)
+                inner = "; ".join(x for x in (head, _d_text(r, pct)) if x)
+                parts.append("%s (%s)" % (r["dimension"], inner))
+            out += ". Dimensions the design did not control differed: " + _and_join(parts)
+            if len(big) > 5:
+                out += ", and %d more in the realised-control table" % (len(big) - 5)
+        elif all(_defined(r) for r in unc):
+            out += ". No uncontrolled dimension differed by more than %s SD" % _fmt_g(bound)
+    return out
+
+
+def _spread_note(rows) -> str:
+    """The predictor's realised span and SD, the SD set against an even spread over the
+    span, in parentheses, or empty for a record without them. Mirrors .spread_note in
+    datasheet.R."""
+    span = next((r.get("predictor_span") for r in rows
+                 if r.get("predictor_span") is not None), None)
+    pred = next((r for r in rows if r.get("role") == "predictor"), {})
+    parts = []
+    if span is not None:
+        parts.append("a span of " + _fmt_dp(span, 2))
+    if pred.get("sd") is not None:
+        sd = "an SD of " + _fmt_dp(pred["sd"], 2)
+        if pred.get("sd_ratio") is not None:
+            sd += ", %s times that of an even spread over the span" % _fmt_dp(pred["sd_ratio"], 2)
+        parts.append(sd)
+    return " (%s)" % " and ".join(parts) if parts else ""
+
+
+def _bands_note(ds, rows) -> str:
+    """A continuous design's control windows, the rule that set them and the realised
+    SDs, as a sentence, or how the windows were widened when they held too few items.
+
+    The windows are the mean +/- k SD of the controls in a first selection spread over
+    the predictor's ranks, k from the resolved tolerance_k with the matcher's default of
+    2, and each realised SD is set against the pool's. That first selection follows the
+    pool's distribution of the predictor, so it is not called an even spread, the phrase
+    the text keeps for values spaced evenly over the span. The text used to call the
+    controls near-constant, though the windows only trim their tails and a relaxation
+    drops them. Mirrors .bands_note in datasheet.R.
+    """
+    sel = ds.get("selection") or {}
+    controls = list(sel.get("controls") or [])
+    if not controls:
+        return ""
+    tol = sel.get("tolerance_k") or {}
+    ks = [tol.get(c, 2) for c in controls]
+    same_k = all(k == ks[0] for k in ks)
+    by = {r.get("dimension"): r for r in rows if r.get("role") == "control"}
+    windows = []
+    for c, k in zip(controls, ks, strict=True):
+        r = by.get(c) or {}
+        if r.get("window_low") is None or r.get("window_high") is None:
+            continue
+        windows.append("%s %s to %s%s" % (c, _fmt_dp(r["window_low"], 2),
+                                          _fmt_dp(r["window_high"], 2),
+                                          "" if same_k else " at k = " + _fmt_g(k)))
+    ratios = [(by.get(c) or {}).get("sd_ratio") for c in controls]
+    many = len(controls) > 1
+    rule = "the mean \u00b1 %s SD of an initial selection spread over the ranks of %s" % (
+        _fmt_g(ks[0]) if same_k else "k", sel.get("predictor"))
+    win = " (%s)" % _and_join(windows) if windows else ""
+    sds = ""
+    if all(x is not None for x in ratios):
+        sds = ", and %s %s of the pool's" % (
+            "their realised SDs were" if many else "its realised SD was",
+            _and_join(_fmt_dp(x, 2) for x in ratios))
+    if sel.get("window_relaxations"):
+        return " The control %s, %s%s, held too few items and %s widened to the whole pool%s." % (
+            "windows" if many else "window", rule, win, "were" if many else "was", sds)
+    return " The %s banded within %s of %s%s%s." % (
+        "controls were" if many else "control was", "windows" if many else "a window", rule,
+        win, sds)
+
+
 def methods_paragraph(ds: dict) -> str:
     """A ready-to-adapt Methods paragraph rendered from a datasheet.
 
     Every number in the paragraph is printed by lexsync's own formatter, rounded
     half away from zero from the value the datasheet stores, so the R and Python
     engines write the same text from the same record, a record read back from its
-    JSON included. Mirrors methods_paragraph in datasheet.R.
+    JSON included.
+
+    It states the items each condition holds, and the request beside them when they
+    fell short of it. The realised control is described before it is tested: the
+    largest difference on a matched dimension in that dimension's unit, with d and its
+    interval, then the equivalence tests, then, largest first, up to five comparisons of
+    an uncontrolled dimension whose |d| exceeds the bound (see _control_note). Every
+    interval is labelled by the schema's alpha. A continuous design gives the predictor's
+    spread and the control windows (see _bands_note). Mirrors methods_paragraph in
+    datasheet.R.
     """
     d = ds["design"]
     src = ds["materials_source"]["type"]
-    n = d["n_per_condition"]
     lang = d["language"].capitalize()
     sel = ds.get("selection") or {}
+    lo, hi = _realised_range(ds)
+    n = (_int_text(lo) + " to " + _int_text(hi)) if lo != hi else _int_text(lo)
+    one = hi == 1
+    were = "was" if one else "were"
+    req = _requested_note(ds, lo)
     # What was selected. A pair design's unit is the pair, and its `n_per_condition`
     # counts pairs, so calling them "items" would misreport the size of the materials
     # by a factor of the number of conditions.
     rel = ds.get("relational")
-    unit = "items" if not rel else "-".join(rel["members"]) + " pairs"
+    unit = ("item" if not rel else "-".join(rel["members"]) + " pair") + ("" if one else "s")
     if "predictor" in sel:
         predictor = sel["predictor"]
-        controls = ", ".join(sel.get("controls") or []) or "the control dimensions"
         rc = ds.get("realised_control") or []
-        span = next((r.get("predictor_span") for r in rc if r.get("predictor_span") is not None), None)
         rs = [abs(r["pearson_r"]) for r in rc
               if r.get("pearson_r") is not None and r["pearson_r"] == r["pearson_r"]]
-        span_str = f" (a span of {_fmt_dp(span, 2)})" if span is not None else ""
         # |r| is printed at three places, the precision of the comparisons report it
         # comes from (the record keeps up to four, see _num), so the record holds the
         # digit shown. _fmt_dp prints it, as every number here, because R's sprintf()
         # rounds a tie such as 0.0825 to 0.082 on Windows where this engine gives 0.083.
-        corr_str = (", and the largest predictor-control correlation was |r| = "
-                    + _fmt_dp(max(rs), 3) if rs else "")
+        corr_str = (" The largest predictor-control correlation was |r| = "
+                    + _fmt_dp(max(rs), 3) + "." if rs else "")
         cb = ds["counterbalancing"]
         recipe_label = _recipe_label(cb)
         excluded = _exclusions_note(ds)
         excluded = " " + excluded + "." if excluded else ""
-        return (f"{n} {lang} {unit} were selected to span {predictor}{span_str} continuously "
-                f"while holding {controls} near-constant{corr_str}, for analysis by regression "
-                f"or a mixed model rather than a between-condition contrast (Kuperman, 2015; "
-                f"Liben-Nowell et al., 2019).{_norms_note(ds)}{excluded} Materials were "
+        return (f"{n} {lang} {unit}{req} {were} selected to span {predictor}{_spread_note(rc)}, "
+                f"for analysis by regression or a mixed model rather than a between-condition "
+                f"contrast (Kuperman, 2015; Liben-Nowell et al., 2019)."
+                f"{_bands_note(ds, rc)}{corr_str}{_norms_note(ds)}{excluded} Materials were "
                 f"counterbalanced into {cb['lists']} list(s) ({recipe_label}) and generated "
                 f"for PsychoPy, OpenSesame and jsPsych.{_versions_note(ds)}{_response_note(ds)} "
                 f"The selection is deterministic and reproducible (lexsync "
                 f"{ds['reproducibility']['versions']['lexsync']}), and the seed "
                 f"({ds['reproducibility']['seed']}) fixes the trial order.")
+    items = "item" if one else "items"
     if src == "corpus":
         ctrl = ", ".join(ds["selection"]["match_on"]) or "the control dimensions"
-        lead = (f"{n} items per condition were selected from the {lang} lexicon "
+        lead = (f"{n} {items} per condition{req} {were} selected from the {lang} lexicon "
                 f"({ds['materials_source']['provenance']}) and matched item by item on "
                 f"{ctrl} using lexsync's {ds['selection']['method']} matcher")
     elif src == "pool":
@@ -985,38 +1424,24 @@ def methods_paragraph(ds: dict) -> str:
         # Methods section has to say, is that the candidate words were chosen by the
         # researcher rather than drawn from the whole lexicon.
         ctrl = ", ".join(ds["selection"]["match_on"]) or "the control dimensions"
-        lead = (f"{n} {lang} items per condition were selected from a supplied candidate "
-                f"pool and matched item by item on {ctrl} using lexsync's "
+        lead = (f"{n} {lang} {items} per condition{req} {were} selected from a supplied "
+                f"candidate pool and matched item by item on {ctrl} using lexsync's "
                 f"{ds['selection']['method']} matcher, with the matched dimensions taken "
                 f"from {ds['materials_source']['dimensions_from']}")
     elif src == "generate":
-        lead = (f"{n} real {lang} words and {n} length-matched pseudowords "
-                f"(generated by {ds['selection']['method']}) were assembled for a "
-                f"lexical-decision contrast{_known_forms_note(ds)}")
+        lead = (f"{n} real {lang} {'word' if one else 'words'}{req} and {n} length-matched "
+                f"{'pseudoword' if one else 'pseudowords'} (generated by "
+                f"{ds['selection']['method']}) were assembled for a lexical-decision "
+                f"contrast{_known_forms_note(ds)}")
     else:
-        lead = (f"{ds['items']['n_total'] // max(1, ds['items']['n_conditions'])} items "
-                f"were drawn from an item table for a {d['paradigm']} design ({lang})")
-    ctrl_rows = [r for r in ds["realised_control"] if r["role"] == "controlled"]
-    defined = [r for r in ctrl_rows if r["cohens_d"] is not None]
-    control = ""
-    if ctrl_rows:
-        # Affirmative only when the stored verdicts support it: every controlled row
-        # has a defined d and every one of them passed the TOST. An undefined d
-        # (constant dimensions at different constants) is the worst possible failure
-        # of the matching, not an excludable row.
-        all_equivalent = (len(defined) == len(ctrl_rows)
-                          and all(r.get("equivalent") is True for r in defined))
-        if all_equivalent and defined:
-            worst = max(defined, key=lambda r: abs(r["cohens_d"]))
-            control = (f". The realised control was close. The largest standardised difference on "
-                       f"any matched dimension was {_fmt_dp(worst['cohens_d'], 2)} "
-                       f"(90% CI [{_fmt_dp(worst['ci_low'], 2)}, "
-                       f"{_fmt_dp(worst['ci_high'], 2)}]), within the "
-                       f"{ds['equivalence']['bound_d']}-SD equivalence bound")
-        else:
-            control = (". Equivalence was not confirmed on every matched dimension; "
-                       "the per-dimension differences are reported in the "
-                       "realised-control table")
+        # An item table selects nothing, so it has the items it holds and no request. A
+        # record written before the realised counts existed divides its rows.
+        if not (ds.get("items") or {}).get("n_per_condition_realised"):
+            lo = hi = ds["items"]["n_total"] // max(1, ds["items"]["n_conditions"])
+        lead = ("%s drawn from an item table for a %s design (%s)"
+                % (_count_text(lo, hi, "item") + (" was" if hi == 1 else " were"),
+                   d["paradigm"], lang))
+    control = _control_note(ds)
     rs = ds.get("resampling")
     resamp = (f". {rs['n_sets']} disjoint matched item sets were drawn, so items can be "
               f"treated as a random factor" if rs else "")
@@ -1246,17 +1671,29 @@ def render_datasheet_md(ds: dict) -> str:
                          f"{_fmt_dp(r.get('predictor_span'), 3)} |")
         lines.append("")
     elif ds["realised_control"]:
+        # Each row names its pair and gives the raw difference, and the interval is
+        # labelled by the schema's alpha: the table said 90% whatever alpha was.
+        pct = _ci_pct((ds.get("equivalence") or {}).get("alpha", 0.05))
         lines += ["## Realised control", "",
-                  "| Dimension | Role | Cohen's d | 90% CI | Var ratio | TOST p | Equivalent |",
-                  "|---|---|---|---|---|---|---|"]
+                  "Each row compares a condition with its reference. The raw difference and "
+                  "Cohen's d are the reference mean minus the condition mean, and the "
+                  "variance ratio is the condition's variance over the reference's.", "",
+                  "| Condition | Reference | Dimension | Role | Raw difference | Cohen's d | "
+                  f"{pct}% CI | Var ratio | TOST p | Equivalent |",
+                  "|---|---|---|---|---|---|---|---|---|---|"]
         for r in ds["realised_control"]:
             # "--", not an em dash: the R renderer's placeholder, kept identical.
-            # An undefined d (unequal constants) reaches every one of these cells.
+            # An undefined d (unequal constants) reaches every one of these cells, and a
+            # record written before the pair was recorded reaches the first two. A
+            # condition with one item has no TOST verdict either, which printed as None.
             ci = (f"[{_fmt_dp(r['ci_low'], 2)}, {_fmt_dp(r['ci_high'], 2)}]"
-                  if r["ci_low"] is not None else "--")
-            lines.append(f"| {r['dimension']} | {r['role']} | {_fmt_dp(r['cohens_d'], 2)} | "
+                  if r.get("ci_low") is not None else "--")
+            pair = [("--" if r.get(k) is None else r[k]) for k in ("condition", "reference")]
+            verdict = "--" if r.get("equivalent") is None else r["equivalent"]
+            lines.append(f"| {pair[0]} | {pair[1]} | {r['dimension']} | {r['role']} | "
+                         f"{_fmt_dp(r.get('mean_diff'), 3)} | {_fmt_dp(r['cohens_d'], 2)} | "
                          f"{ci} | {_fmt_dp(r.get('var_ratio'), 2)} | "
-                         f"{_fmt_tost_p(r['tost_p'])} | {r['equivalent']} |")
+                         f"{_fmt_tost_p(r['tost_p'])} | {verdict} |")
         lines.append("")
     a = ds.get("analysis")
     if a:

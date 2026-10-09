@@ -433,6 +433,16 @@ write_lines_lf <- function(x, path) {
   out
 }
 
+# A setting as the datasheet prints it: an alpha, a bound, a tolerance k, or the
+# confidence level an alpha gives. The shared rounder takes the value to six places
+# first, so the floating-point error in 1 - 2 * 0.05 cannot reach the text, and %g then
+# drops the trailing zeros: 90, 0.05, 1.5. A setting needs no fixed number of places,
+# and a bound that YAML reads as 1.0 in Python and 1 in R prints as 1 in both. Six
+# significant digits leave %g nothing to round in a setting written by hand. Must stay
+# identical to _fmt_g in python_workflow/src/lexsync/io_utils.py.
+#' @keywords internal
+.fmt_g <- function(x) sprintf("%g", .round_dp(as.numeric(x), 6))
+
 #' MD5 digest of a file, for provenance logging
 #'
 #' MD5 (from base \pkg{tools}) is used as a lightweight content fingerprint; it

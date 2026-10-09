@@ -385,10 +385,10 @@ Both behaviours are policies, and the schema's `matching` block names them.
 just described, while `error` makes the matcher refuse and say so, which is the honest setting when
 the window is itself the criterion, as it is when reproducing a published study's stated windows.
 `shortfall` governs what happens when fewer sets than `n_per_condition` can be selected at all, and
-it defaults to `error` deliberately: the datasheet and the generated methods paragraph state the
-requested n, so a set that silently shrank would leave the record misstating the materials. A
-design that can live with fewer sets says so with `shortfall: allow`, and either key may be
-overridden under the design's own `matching:` block, exactly as `tolerance_k` may be.
+it defaults to `error` deliberately, because a smaller set changes the design that was planned. A
+design that can live with fewer sets says so with `shortfall: allow`. The datasheet then records
+the items each condition holds, and the methods paragraph states them beside the request. Either
+key may be overridden under the design's own `matching:` block, exactly as `tolerance_k` may be.
 
 ### The four methods
 
@@ -511,6 +511,17 @@ Both statistics treat the selected items as a sample from a larger population, w
 concerns a closed population (the items you chose). They recommend describing the stimuli, which the
 descriptives do, and entering potential confounds in the analysis as covariates.
 
+The datasheet's Methods paragraph follows that advice. It describes the realised control first: the
+largest difference on a matched dimension, in that dimension's unit, with *d* and its interval. The
+interval is labelled by the schema's alpha, 90% at .05 and 99% at .005. Raw differences in different
+units cannot be ranked against each other, so the largest is the one with the largest |*d*|. The two
+one-sided tests come second, as a check, with the number of matched comparisons they supported. When
+every condition holds fewer items than the bound needs, the paragraph says that no dimension that
+varies can pass, however well matched. It then names, largest first, up to five comparisons of a
+dimension the design did not control whose |*d*| exceeds the bound, such as the syllable difference
+in `en_ndensity`, or says that none does. The suggested model enters the matched dimensions as
+centred covariates.
+
 `var_ratio` is the condition's variance over the reference's. It is there because everything above
 is about means, and two conditions can share a mean while differing in spread, which still confounds
 ([Armstrong et al., 2012](references.md#armstrong-2012);
@@ -608,7 +619,9 @@ give the window its first pass set. In `en_freqcontinuous`, length keeps 0.66 of
 the window trims the tails of a control and leaves much of its spread. The windows come from the
 audit `select_continuous_stimuli` attaches to its result, which `match_report_continuous` reads
 unless it is given one as `audit`. A window that held too few items and was widened to the whole
-pool is recorded in the datasheet's `window_relaxations`.
+pool is recorded in the datasheet's `window_relaxations`. The datasheet's Methods paragraph sets the
+predictor's SD against that of an even spread, gives each control's window and its realised SD
+against the pool's, and says when the windows were widened.
 
 `match_on` must equal `continuous.controls`, the predictor must not appear among the controls, and
 there must be at least one control. All three are checked, and a design that breaks one of them

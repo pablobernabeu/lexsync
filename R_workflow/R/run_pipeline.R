@@ -394,7 +394,7 @@ run_pipeline <- function(design_path, schema_path = NULL,
                              roles = .comparison_roles(design, .controlled_dims(design, source)))
     }
   } else if (source == "generate") {
-    n <- .resolve_n(design, 40L)
+    n <- .resolve_n(design, .N_DEFAULT_GENERATED)
     gen_cfg <- items_cfg[["generation"]] %||% list()
     gen_method <- gen_cfg[["method"]] %||% "letter_substitution"
     # Further known word forms a pseudoword must not equal. The lexicon stops at its

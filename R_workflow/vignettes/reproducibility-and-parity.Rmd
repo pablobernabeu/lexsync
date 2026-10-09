@@ -487,7 +487,10 @@ only when a condition lost any, and the methods paragraph leaves them out of its
 count of eligible candidates. How the items were dealt to lists is in
 `counterbalancing`. It gives the recipe that ran, the lists the stimuli table
 holds and the trials each list gives each condition, and it says whether a
-Latin-square rotation is complete.
+Latin-square rotation is complete. How many items there are is in `items`, whose
+`n_per_condition_realised` counts the items each condition holds, per replicate
+for resampled sets. The request the selector applied is `design$n_per_condition`,
+its default when the design gives none.
 
 The record keeps each statistic as the comparisons report rounded it, to three
 places and the TOST *p* to four. The Markdown rendering and the methods paragraph
@@ -535,21 +538,25 @@ cat(strwrap(methods_paragraph(ds), width = 76), sep = "\n")
 ```
 
 The paragraph is generated from the record, so it cannot disagree with the
-stimuli. It states the candidate-pool size, and it adds the cross-engine caveat
-when the design's method warrants it. On the realised control it takes one of two
-branches. Where every controlled dimension passes its equivalence test, it names
-the largest standardised difference on any matched dimension with its interval,
-rather than a selective best case, and says that this sits within the equivalence
-bound. Where one does not, it declines to summarise and sends the reader to the
-realised-control table instead, which is the branch this run takes.
+stimuli. It states the items each condition holds and the candidate-pool size, and
+it adds the cross-engine caveat when the design's method warrants it. It describes
+the realised control before it tests it, since tests on a selected set concern a
+closed population (Sassenhagen & Alday, 2016). It gives the largest difference on
+any matched dimension, in that dimension's unit, with d and its interval, and only
+then the two one-sided tests, with the number of matched comparisons they
+supported. It then names, largest first, up to five comparisons of a dimension the
+design did not control whose |d| exceeds the equivalence bound. The report here
+covers only the matched dimensions and frequency, which defines the conditions, so
+there is none to name.
 
-That is worth seeing, because the paragraph is a draft to adapt rather than one to
-paste unread. What fails here is not the matching but the width of the interval,
-and the interval is wide because this demonstration matches only 15 items per
-condition, which is precisely the dependence on set size that the matching
-vignette warns against reading past. A real study would either match enough items
-to narrow the interval or say plainly that the control is established at the point
-estimate and not at the bound.
+This run shows why the order matters, and why the paragraph is a draft to adapt
+rather than one to paste unread. The demonstration matches only 15 items per
+condition. At a bound of 0.5 SD and an alpha of .05, no dimension that varies can
+pass the tests with fewer than 23 items per condition, however well it is matched.
+The paragraph says so, and a failed test is then not mistaken for a failed match.
+That is the dependence on set size that the matching vignette warns against
+reading past. A real study would either match enough items or report the control
+by the differences it describes.
 
 `write_datasheet()` writes both forms, and the Markdown rendering carries a
 pre-registration skeleton with its materials section already filled in.
@@ -573,9 +580,14 @@ ds$analysis$suggested_model
 The model crosses random effects for subjects and items because items are a sample
 of the language rather than the population of interest, and an analysis treating
 them as fixed generalises only to the words that were used (Clark, 1973; Yarkoni,
-2022). The accompanying note recommends beginning with the maximal structure and
-reducing it if it does not converge. It is a starting point for a design of this
-shape.
+2022). The matched dimensions enter as centred covariates, computed from the
+stimuli file's own columns, because matching leaves residual differences and
+Sassenhagen and Alday (2016) recommend adjusting for potential confounds. A
+structure is maximal only when every effect that varies within subjects or items
+has a random slope there (Barr et al., 2013). These covariates have none, so the
+accompanying note describes the slopes the model has. It also advises simplifying
+a model that is singular or fails to converge (Matuschek et al., 2017). It is a
+starting point for a design of this shape.
 
 ## The run log
 
@@ -634,6 +646,11 @@ says what to check in a selection.
 
 ## References
 
+Barr, D. J., Levy, R., Scheepers, C., & Tily, H. J. (2013). Random effects
+structure for confirmatory hypothesis testing: Keep it maximal. *Journal of
+Memory and Language*, *68*(3), 255–278.
+https://doi.org/10.1016/j.jml.2012.11.001
+
 Bochynska, A., Keeble, L., Halfacre, C., Casillas, J. V., Champagne, I.-A., Chen,
 K., Röthlisberger, M., Buchanan, E. M., & Roettger, T. B. (2023). Reproducible
 research practices and transparency across linguistics. *Glossa
@@ -643,9 +660,17 @@ Clark, H. H. (1973). The language-as-fixed-effect fallacy: A critique of languag
 statistics in psychological research. *Journal of Verbal Learning and Verbal
 Behavior*, *12*(4), 335–359. https://doi.org/10.1016/S0022-5371(73)80014-3
 
+Matuschek, H., Kliegl, R., Vasishth, S., Baayen, H., & Bates, D. (2017).
+Balancing Type I error and power in linear mixed models. *Journal of Memory and
+Language*, *94*, 305–315. https://doi.org/10.1016/j.jml.2017.01.001
+
 Roettger, T. B. (2019). Researcher degrees of freedom in phonetic research.
 *Laboratory Phonology*, *10*(1), Article 1.
 https://doi.org/10.5334/labphon.147
+
+Sassenhagen, J., & Alday, P. M. (2016). A common misapplication of statistical
+inference: Nuisance control with null-hypothesis significance tests. *Brain and
+Language*, *162*, 42–45. https://doi.org/10.1016/j.bandl.2016.08.001
 
 Wilkinson, M. D., Dumontier, M., Aalbersberg, IJ. J., Appleton, G., Axton, M.,
 Baak, A., Blomberg, N., Boiten, J.-W., da Silva Santos, L. B., Bourne, P. E.,

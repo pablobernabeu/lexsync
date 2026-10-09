@@ -563,8 +563,8 @@ small_design <- function(n, matching = NULL) {
 }
 
 test_that("a shortfall is an error by default", {
-  # Three anchor candidates cannot honour n = 5; a silent shrink would leave
-  # the datasheet stating the requested n over a smaller realised set.
+  # Three anchor candidates cannot honour n = 5; a silent shrink would change the
+  # design that was planned without the design's consent.
   expect_error(match_stimuli(small_pool(), small_design(5L), tiny_schema()),
                "5 sets per condition were requested but only 3")
 })

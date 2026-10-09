@@ -83,8 +83,8 @@
   "relational": null,
   "analysis": {
     "response": "reaction time from the onset of `{word}`; responses collected for 2500 ms; a response ends the trial",
-    "suggested_model": "response ~ condition + (1 + condition | subject) + (1 | item)",
-    "note": "Crossed random effects for subjects and items guard against the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). Begin with this maximal structure (Barr et al., 2013) and reduce it if the model does not converge (Matuschek et al., 2017). The formula is lme4 syntax, for lme4 in R or pymer4 in Python; statsmodels MixedLM cannot take it directly and needs the random effects restated in its own arguments. The equivalence tests in the realised control are post-selection diagnostics on deterministically selected items, not inferential tests over a sample."
+    "suggested_model": "response ~ condition + scale(length, scale = FALSE) + (1 + condition | subject) + (1 | item)",
+    "note": "Crossed random effects for subjects and items guard against the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). The matched dimensions enter as centred covariates, computed from the stimuli file's own columns, because matching leaves residual differences that the analysis can adjust for (Sassenhagen & Alday, 2016). Begin with random slopes for condition, the manipulated factor, by subject and, where it varies within items, by item (Barr et al., 2013); the matched covariates enter as fixed effects only. If the model is singular or fails to converge, simplify it as Matuschek et al. (2017) describe. If the conditions cross two or more factors, recode condition into those factors (for example frequency * neighbourhood) with sum coding. The formula is lme4 syntax, for lme4 in R or pymer4 in Python; statsmodels MixedLM cannot take it directly and needs the random effects restated in its own arguments. The equivalence tests in the realised control are post-selection diagnostics on deterministically selected items, not inferential tests over a sample."
   },
   "equivalence": {
     "bound_d": 0.5,
@@ -609,6 +609,24 @@
       "LF_largeN",
       "LF_smallN"
     ],
+    "n_per_condition_realised": [
+      {
+        "condition": "HF_smallN",
+        "n": 18
+      },
+      {
+        "condition": "HF_largeN",
+        "n": 18
+      },
+      {
+        "condition": "LF_largeN",
+        "n": 18
+      },
+      {
+        "condition": "LF_smallN",
+        "n": 18
+      }
+    ],
     "stimuli_file": "output/stimuli/en_andrews_repro_english_stimuli_R.csv",
     "stimuli_sha256": "8eb4efce71ba544a64d2113a66f34b43f0d12239551351eac6a9416ce30e2f2d"
   },
@@ -628,7 +646,7 @@
     },
     "design_sha256": "57bff715517846459364d0cc4923754066851c24348bee7533de31c29ea2ee64",
     "schema_path": "config/schema.yaml",
-    "schema_sha256": "60217cd58fd3da4a9c1deee500c9d3d56ee9bde8658644581a102a7bd1c2baa4"
+    "schema_sha256": "3335f4e31a7f5dece6375dd0247600547ad86290492c7aead2836a9ec8af9dcb"
   },
   "artifacts": [
     {

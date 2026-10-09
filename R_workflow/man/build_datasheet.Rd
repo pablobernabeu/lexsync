@@ -121,4 +121,11 @@ For a corpus or generated design, \code{materials_source$provenance} credits the
 lexicon that \code{source_path} names. A lexicon lexsync ships is credited by its
 source, a corpus fetched into the cache by the registry's citation, and any other
 file by its file name and checksum.
+
+\code{design$n_per_condition} is the request the selector applied, the selector's
+default when the design gives none, and \code{items$n_per_condition_realised} counts
+the items each condition holds in \code{stimuli}, per replicate for resampled sets, so
+a selection that fell short of the request under \code{shortfall: allow} shows it. The
+suggested analysis keys its by-item slope on the recipe that ran and adds a matched
+design's matched dimensions that vary among its items as covariates.
 }

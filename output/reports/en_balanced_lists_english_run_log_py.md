@@ -1,8 +1,8 @@
 # lexsync run log: en_balanced_lists
 
 - Engine: Python 3.13.7
-- Started: 2026-10-09T07:51:29
-- Finished: 2026-10-09T07:51:30
+- Started: 2026-10-09T09:53:33
+- Finished: 2026-10-09T09:53:34
 
 ## Run metadata
 
@@ -16,100 +16,100 @@
 
 ## Steps
 
-- **2026-10-09T07:51:29**: loading lexicon 'corpora/derived/en.csv'
-- **2026-10-09T07:51:29**: lexicon loaded: 30000 words
+- **2026-10-09T09:53:33**: loading lexicon 'corpora/derived/en.csv'
+- **2026-10-09T09:53:33**: lexicon loaded: 30000 words
     - words: 30000
-- **2026-10-09T07:51:29**: pool after filters: 7230 words
+- **2026-10-09T09:53:33**: pool after filters: 7230 words
     - pool: 7230
-- **2026-10-09T07:51:30**: matched 80 items across 2 conditions
+- **2026-10-09T09:53:33**: matched 80 items across 2 conditions
     - conditions: high_frequency, low_frequency
-- **2026-10-09T07:51:30**: equivalence low_frequency vs high_frequency on 'length': d = 0.02 [-0.35, 0.39], TOST p = 0.0178 (equivalent)
-- **2026-10-09T07:51:30**: equivalence low_frequency vs high_frequency on 'frequency': d = 5.05 [4.29, 5.82], TOST p = 1.0 (not shown equivalent)
-- **2026-10-09T07:51:30**: equivalence low_frequency vs high_frequency on 'n_density': d = 0.05 [-0.32, 0.42], TOST p = 0.0237 (equivalent)
-- **2026-10-09T07:51:30**: equivalence low_frequency vs high_frequency on 'old20': d = 0.05 [-0.32, 0.43], TOST p = 0.0246 (equivalent)
-- **2026-10-09T07:51:30**: equivalence low_frequency vs high_frequency on 'n_syllables': d = -0.14 [-0.51, 0.23], TOST p = 0.0561 (not shown equivalent)
-- **2026-10-09T07:51:30**: equivalence low_frequency vs high_frequency on 'bigram_freq': d = 0.06 [-0.31, 0.43], TOST p = 0.027 (equivalent)
-- **2026-10-09T07:51:30**: balanced 40 item sets across 4 lists on length, n_density, old20, frequency: cost 1121480 -> 53820 in 10 swap(s)
+- **2026-10-09T09:53:33**: equivalence low_frequency vs high_frequency on 'length': d = 0.02 [-0.35, 0.39], TOST p = 0.0178 (equivalent)
+- **2026-10-09T09:53:33**: equivalence low_frequency vs high_frequency on 'frequency': d = 5.05 [4.29, 5.82], TOST p = 1.0 (not shown equivalent)
+- **2026-10-09T09:53:33**: equivalence low_frequency vs high_frequency on 'n_density': d = 0.05 [-0.32, 0.42], TOST p = 0.0237 (equivalent)
+- **2026-10-09T09:53:33**: equivalence low_frequency vs high_frequency on 'old20': d = 0.05 [-0.32, 0.43], TOST p = 0.0246 (equivalent)
+- **2026-10-09T09:53:33**: equivalence low_frequency vs high_frequency on 'n_syllables': d = -0.14 [-0.51, 0.23], TOST p = 0.0561 (not shown equivalent)
+- **2026-10-09T09:53:33**: equivalence low_frequency vs high_frequency on 'bigram_freq': d = 0.06 [-0.31, 0.43], TOST p = 0.027 (equivalent)
+- **2026-10-09T09:53:33**: balanced 40 item sets across 4 lists on length, n_density, old20, frequency: cost 1121480 -> 53820 in 10 swap(s)
     - cost_before: 1121480
     - cost_after: 53820
     - swaps: 10
-- **2026-10-09T07:51:30**: wrote 'en_balanced_lists_english_stimuli_py.csv'
+- **2026-10-09T09:53:33**: wrote 'en_balanced_lists_english_stimuli_py.csv'
     - path: output\stimuli\en_balanced_lists_english_stimuli_py.csv
     - rows: 80
     - md5: ea6027af81e16cad2979e4e8c1afe7a2
-- **2026-10-09T07:51:30**: wrote 'en_balanced_lists_english_descriptives_py.csv'
+- **2026-10-09T09:53:33**: wrote 'en_balanced_lists_english_descriptives_py.csv'
     - path: output\reports\en_balanced_lists_english_descriptives_py.csv
     - rows: 12
     - md5: 14fc84ee25e510842007dd391c8e5928
-- **2026-10-09T07:51:30**: wrote 'en_balanced_lists_english_comparisons_py.csv'
+- **2026-10-09T09:53:33**: wrote 'en_balanced_lists_english_comparisons_py.csv'
     - path: output\reports\en_balanced_lists_english_comparisons_py.csv
     - rows: 6
     - md5: c43b1381f5a32c0538e5a81e8aa24978
-- **2026-10-09T07:51:30**: wrote 'en_balanced_lists_english_psychopy.py'
+- **2026-10-09T09:53:34**: wrote 'en_balanced_lists_english_psychopy.py'
     - path: output\experiments\en_balanced_lists_english_psychopy.py
     - rows: None
     - md5: 268915b611f9eaddbe7059902783d9ec
-- **2026-10-09T07:51:30**: wrote 'en_balanced_lists_english_list1.osexp'
+- **2026-10-09T09:53:34**: wrote 'en_balanced_lists_english_list1.osexp'
     - path: output\experiments\en_balanced_lists_english_list1.osexp
     - rows: None
     - md5: 14a392810f63dd767f2c9a8092f5ecbc
-- **2026-10-09T07:51:30**: wrote 'en_balanced_lists_english_list2.osexp'
+- **2026-10-09T09:53:34**: wrote 'en_balanced_lists_english_list2.osexp'
     - path: output\experiments\en_balanced_lists_english_list2.osexp
     - rows: None
     - md5: 6b7e9e29ed4d6ee842ad8de560b150d3
-- **2026-10-09T07:51:30**: wrote 'en_balanced_lists_english_list3.osexp'
+- **2026-10-09T09:53:34**: wrote 'en_balanced_lists_english_list3.osexp'
     - path: output\experiments\en_balanced_lists_english_list3.osexp
     - rows: None
     - md5: dc6333b0f43a66915040df160bcdd7fa
-- **2026-10-09T07:51:30**: wrote 'en_balanced_lists_english_list4.osexp'
+- **2026-10-09T09:53:34**: wrote 'en_balanced_lists_english_list4.osexp'
     - path: output\experiments\en_balanced_lists_english_list4.osexp
     - rows: None
     - md5: 71ff86f5df81587ad73d8c9fca181746
-- **2026-10-09T07:51:30**: wrote 'en_balanced_lists_english.html'
+- **2026-10-09T09:53:34**: wrote 'en_balanced_lists_english.html'
     - path: output\experiments\en_balanced_lists_english.html
     - rows: None
     - md5: fbfc4d30f335b8877735c48fdb14ddfc
-- **2026-10-09T07:51:30**: wrote 'en_balanced_lists_english_psychopy.csv'
+- **2026-10-09T09:53:34**: wrote 'en_balanced_lists_english_psychopy.csv'
     - path: output\experiments\en_balanced_lists_english_psychopy.csv
     - rows: None
     - md5: 9a735110d5568875dfc928b432ca195f
-- **2026-10-09T07:51:30**: wrote 'en_balanced_lists_english_list1_opensesame.csv'
+- **2026-10-09T09:53:34**: wrote 'en_balanced_lists_english_list1_opensesame.csv'
     - path: output\experiments\en_balanced_lists_english_list1_opensesame.csv
     - rows: None
     - md5: f9530d6419ffd5249c16ca40f1253307
-- **2026-10-09T07:51:30**: wrote 'en_balanced_lists_english_list1_opensesame_text.csv'
+- **2026-10-09T09:53:34**: wrote 'en_balanced_lists_english_list1_opensesame_text.csv'
     - path: output\experiments\en_balanced_lists_english_list1_opensesame_text.csv
     - rows: None
     - md5: 20a93d185eefb3f7e108c61756663f93
-- **2026-10-09T07:51:30**: wrote 'en_balanced_lists_english_list2_opensesame.csv'
+- **2026-10-09T09:53:34**: wrote 'en_balanced_lists_english_list2_opensesame.csv'
     - path: output\experiments\en_balanced_lists_english_list2_opensesame.csv
     - rows: None
     - md5: d35299863936fe33edbac0f4bc288b68
-- **2026-10-09T07:51:30**: wrote 'en_balanced_lists_english_list2_opensesame_text.csv'
+- **2026-10-09T09:53:34**: wrote 'en_balanced_lists_english_list2_opensesame_text.csv'
     - path: output\experiments\en_balanced_lists_english_list2_opensesame_text.csv
     - rows: None
     - md5: c7f3f2ea568ed0e6ea2a625bb7b33702
-- **2026-10-09T07:51:30**: wrote 'en_balanced_lists_english_list3_opensesame.csv'
+- **2026-10-09T09:53:34**: wrote 'en_balanced_lists_english_list3_opensesame.csv'
     - path: output\experiments\en_balanced_lists_english_list3_opensesame.csv
     - rows: None
     - md5: 454ae2ae1a11d57529f17023ad4cf4f1
-- **2026-10-09T07:51:30**: wrote 'en_balanced_lists_english_list3_opensesame_text.csv'
+- **2026-10-09T09:53:34**: wrote 'en_balanced_lists_english_list3_opensesame_text.csv'
     - path: output\experiments\en_balanced_lists_english_list3_opensesame_text.csv
     - rows: None
     - md5: b44dc5afddfaa5b0a23ff0d67d0b2614
-- **2026-10-09T07:51:30**: wrote 'en_balanced_lists_english_list4_opensesame.csv'
+- **2026-10-09T09:53:34**: wrote 'en_balanced_lists_english_list4_opensesame.csv'
     - path: output\experiments\en_balanced_lists_english_list4_opensesame.csv
     - rows: None
     - md5: 432abf43f3e1008ba12a4a32de45ca6a
-- **2026-10-09T07:51:30**: wrote 'en_balanced_lists_english_list4_opensesame_text.csv'
+- **2026-10-09T09:53:34**: wrote 'en_balanced_lists_english_list4_opensesame_text.csv'
     - path: output\experiments\en_balanced_lists_english_list4_opensesame_text.csv
     - rows: None
     - md5: b6c02048c9b07d49295887c8325f42a8
-- **2026-10-09T07:51:30**: wrote 'en_balanced_lists_english_datasheet_py.json'
+- **2026-10-09T09:53:34**: wrote 'en_balanced_lists_english_datasheet_py.json'
     - path: output\reports\en_balanced_lists_english_datasheet_py.json
     - rows: None
-    - md5: af151b5ba700e4fea4203bae8db8b748
-- **2026-10-09T07:51:30**: wrote 'en_balanced_lists_english_datasheet_py.md'
+    - md5: 36eec3697f34e558711fb0cbfd7ff840
+- **2026-10-09T09:53:34**: wrote 'en_balanced_lists_english_datasheet_py.md'
     - path: output\reports\en_balanced_lists_english_datasheet_py.md
     - rows: None
-    - md5: 4288e42060b1beb835d15a8dbadc28e8
+    - md5: 2505f69cbb2ddaa26af00adf9fd81fca

@@ -58,6 +58,10 @@
 #                               a continuous design's realised SDs, set against an even
 #                               spread (the predictor) or the pool (a control), and each
 #                               control's window
+#   items$n_per_condition_realised  the items each condition holds, as (condition, n),
+#                               or (replicate, condition, n) for resampled sets
+#   design$n_per_condition      the request the selector applied, its default when the
+#                               design gives none (1.1 copied the design's key, or null)
 DATASHEET_VERSION <- "1.2"
 
 # Datasheet labels for the pseudoword generators in generation.R, keyed by the
@@ -352,55 +356,175 @@ DATASHEET_VERSION <- "1.2"
                 "response ended the trial."), as.integer(window_ms))
 }
 
-# A suggested crossed mixed-model formula for the design. Handing the user an
-# items-crossed model guards against the language-as-fixed-effect fallacy
-# (Clark, 1973; Baayen et al., 2008): items are a random sample of the language,
-# so an analysis that treats them as fixed over-generalises. Mirrors datasheet.py.
+# Words or phrases joined as a list in prose: "a", "a and b", "a, b and c". Mirrors
+# _and_join in datasheet.py.
+.and_join <- function(parts) {
+  parts <- as.character(unlist(parts, use.names = FALSE))
+  n <- length(parts)
+  if (n < 2L) return(paste(parts, collapse = ""))
+  paste0(paste(parts[-n], collapse = ", "), " and ", parts[n])
+}
+
+# The items per condition the selector was asked for: the design's n_per_condition, else
+# the default of the selector that ran, the matcher's, the continuous selector's or the
+# generator's. An item table without a continuous block selects nothing, so it has a
+# request only when the design states one. The record used to copy the design's key, and
+# gave null when a design left the number to the matcher. Mirrors _requested_n in
+# datasheet.py.
+.requested_n <- function(design, source, is_continuous) {
+  default <- if (isTRUE(is_continuous)) .N_DEFAULT_CONTINUOUS
+             else if (source %in% c("corpus", "pool")) .N_DEFAULT_MATCHED
+             else if (identical(source, "generate")) .N_DEFAULT_GENERATED
+             else NULL
+  .resolve_n(design, default)
+}
+
+# The items each condition holds in the stimuli, as (condition, n) records in the order
+# of items$conditions. Resampled stimuli are counted per replicate, as (replicate,
+# condition, n), replicates in ascending order, since each replicate is a set of its own.
+# A pair design holds one row per pair in each condition, so it counts pairs. Mirrors
+# _realised_counts in datasheet.py.
+.realised_counts <- function(stimuli, conditions) {
+  labels <- as.character(stimuli[["condition"]])
+  if (!"replicate" %in% names(stimuli)) {
+    return(lapply(conditions, function(cn) list(condition = cn, n = sum(labels == cn))))
+  }
+  out <- list()
+  reps <- stimuli[["replicate"]]
+  for (rep in sort(unique(reps))) {
+    for (cn in conditions) {
+      n <- sum(reps == rep & labels == cn, na.rm = TRUE)
+      if (n > 0L) {
+        out[[length(out) + 1L]] <- list(replicate = as.integer(rep), condition = cn, n = n)
+      }
+    }
+  }
+  out
+}
+
+# The matched dimensions the suggested model adjusts for, and those it leaves out. A
+# corpus or pool design's match_on dimensions enter, in their order, when they vary among
+# the selected items. One that is the same for every item, as length is among
+# two-character Chinese words, would give the model a column of zeros, so it is left
+# out, as is one the stimuli do not hold. Any other design has none. Mirrors _covariates
+# in datasheet.py.
+.covariates <- function(design, source, stimuli) {
+  kept <- character(0)
+  left_out <- character(0)
+  if (!source %in% c("corpus", "pool")) return(list(kept = kept, left_out = left_out))
+  for (dim in unlist(design[["match_on"]], use.names = FALSE)) {
+    values <- if (dim %in% names(stimuli))
+      unique(stats::na.omit(.numeric_values(stimuli[[dim]]))) else numeric(0)
+    if (length(values) > 1L) kept <- c(kept, dim) else left_out <- c(left_out, dim)
+  }
+  list(kept = kept, left_out = left_out)
+}
+
+# The sentences the notes of the suggested models share. Kept character-for-character
+# identical to the strings in _analysis in datasheet.py.
+.NOTE_CROSSED <- paste0("Crossed random effects for subjects and items guard against the ",
+                        "language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008).")
+.NOTE_SIMPLIFY <- paste0("If the model is singular or fails to converge, simplify it as ",
+                         "Matuschek et al. (2017) describe.")
+.NOTE_SYNTAX <- paste0("The formula is lme4 syntax, for lme4 in R or pymer4 in Python; ",
+                       "statsmodels MixedLM cannot take it directly and needs the random ",
+                       "effects restated in its own arguments.")
+.NOTE_DIAGNOSTICS <- paste0("The equivalence tests in the realised control are ",
+                            "post-selection diagnostics on deterministically selected items, ",
+                            "not inferential tests over a sample.")
+
+# A suggested crossed mixed-model formula for the design, and a note on it. Handing the
+# user an items-crossed model guards against the language-as-fixed-effect fallacy
+# (Clark, 1973; Baayen et al., 2008): items are a random sample of the language, so an
+# analysis that treats them as fixed over-generalises. The factor is the stimuli's
+# `condition` column, which in a lexical decision codes lexicality. Every participant
+# sees every condition, so subjects take a random slope for it. Items take one too when
+# the counterbalancing recipe that ran rotates the conditions over the items by a Latin
+# square, which shows each item in more than one condition across the lists. `covariates`
+# are a matched design's matched dimensions that vary among its items, entered centred on
+# the stimuli file's own columns, since matching leaves residual differences and
+# Sassenhagen and Alday (2016) recommend adjusting for potential confounds; `left_out`
+# are those that do not vary. A design with more than two conditions is told how to
+# recode crossed factors.
+#
+# A continuous design regresses on its predictor and controls. A pair design with more
+# than one condition crosses the condition with the predictor, and its items, which
+# carry every condition, take the condition slope. The predictor is a property of the
+# item, so they take no slope for it.
+#
+# The note calls the structure maximal (Barr et al., 2013) only when every fixed effect
+# that varies within subjects or items has a random slope there. A covariate or a
+# control varies within subjects and enters as a fixed effect only, so a design with one
+# is described by its slopes. Mirrors _analysis in datasheet.py.
 .analysis_R <- function(design, source,
-                        response = "the trial outcome (e.g. reaction time or accuracy)") {
+                        response = "the trial outcome (e.g. reaction time or accuracy)",
+                        recipe = "factorial", n_conditions = 2L, covariates = character(0),
+                        left_out = character(0)) {
   cont <- design[["continuous"]]
   if (!is.null(cont)) {
     predictor <- cont[["predictor"]]
     controls <- unlist(cont[["controls"]], use.names = FALSE)
-    fixed <- paste(c(predictor, controls), collapse = " + ")
-    note <- paste0("The predictor is kept continuous and analysed by regression or a ",
-                   "mixed model rather than dichotomised (Kuperman, 2015; Liben-Nowell ",
-                   "et al., 2019); the controls enter as covariates. Crossed random ",
-                   "effects for subjects and items guard the language-as-fixed-effect ",
-                   "fallacy (Clark, 1973; Baayen et al., 2008); reduce the structure if ",
-                   "it does not converge (Matuschek et al., 2017).")
+    tail <- paste0(vapply(controls, function(cc) paste0(" + ", cc), character(1)),
+                   collapse = "")
+    if (length(design[["items"]][["members"]]) && n_conditions > 1L) {
+      model <- sprintf(paste0("response ~ condition * %s%s + (1 + condition * %s | subject)",
+                              " + (1 + condition | item)"), predictor, tail, predictor)
+      slopes <- paste0("Begin with random slopes for condition, ", predictor, " and their ",
+                       "interaction by subject and for condition by item (Barr et al., ",
+                       "2013); the controls enter as fixed effects only. Centre ",
+                       predictor, " and sum-code condition, so that each main effect is ",
+                       "estimated at the average of the other.")
+    } else {
+      model <- sprintf("response ~ %s%s + (1 + %s | subject) + (1 | item)", predictor, tail,
+                       predictor)
+      slopes <- paste0("Begin with a random slope for ", predictor, " by subject (Barr et al., ",
+                       "2013); the controls enter as fixed effects only.")
+    }
+    note <- paste0("The predictor is kept continuous and analysed by regression or a mixed ",
+                   "model rather than dichotomised (Kuperman, 2015; Liben-Nowell et al., ",
+                   "2019); the controls enter as covariates. ", .NOTE_CROSSED, " ", slopes,
+                   " ", .NOTE_SIMPLIFY)
     # A pair design's member-prefixed terms carry a dot, which R formulas accept
     # but Patsy reads as syntax, so the Python analyst needs the quoting stated.
     if (any(grepl(".", c(predictor, controls), fixed = TRUE)))
       note <- paste0(note, " Dotted dimension names are valid in R formulas but must ",
                      "be quoted as Q(\"...\") in Patsy-style Python interfaces.")
-    return(list(
-      response = response,
-      suggested_model = sprintf("response ~ %s + (1 + %s | subject) + (1 | item)", fixed, predictor),
-      note = note
-    ))
+    return(list(response = response, suggested_model = model, note = note))
   }
-  paradigm <- design[["paradigm"]] %||% "factorial"
-  if (identical(source, "generate") || identical(paradigm, "lexical_decision")) {
-    factor <- "lexicality"; item_re <- "(1 | item)"
-  } else if (paradigm %in% c("priming", "self_paced_reading")) {
-    factor <- "condition"; item_re <- "(1 + condition | item)"
-  } else {
-    factor <- "condition"; item_re <- "(1 | item)"
+  fixed <- paste0("condition", paste0(vapply(covariates, function(d)
+    sprintf(" + scale(%s, scale = FALSE)", d), character(1)), collapse = ""))
+  item_re <- if (identical(recipe, "latin_square_target")) "(1 + condition | item)"
+             else "(1 | item)"
+  note <- .NOTE_CROSSED
+  if (identical(source, "generate") || identical(design[["paradigm"]], "lexical_decision"))
+    note <- c(note, "The condition column codes lexicality, word or pseudoword.")
+  if (length(covariates))
+    note <- c(note, paste0("The matched dimensions enter as centred covariates, computed ",
+                           "from the stimuli file's own columns, because matching leaves ",
+                           "residual differences that the analysis can adjust for ",
+                           "(Sassenhagen & Alday, 2016)."))
+  if (length(left_out)) {
+    one <- length(left_out) == 1L
+    note <- c(note, sprintf(paste("The matched %s %s %s constant among the selected items,",
+                                  "so %s left out."),
+                            if (one) "dimension" else "dimensions", .and_join(left_out),
+                            if (one) "is" else "are", if (one) "it is" else "they are"))
   }
-  list(
-    response = response,
-    suggested_model = sprintf("response ~ %s + (1 + %s | subject) + %s", factor, factor, item_re),
-    note = paste0("Crossed random effects for subjects and items guard against the ",
-                  "language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). ",
-                  "Begin with this maximal structure (Barr et al., 2013) and reduce it ",
-                  "if the model does not converge (Matuschek et al., 2017). The formula ",
-                  "is lme4 syntax, for lme4 in R or pymer4 in Python; statsmodels ",
-                  "MixedLM cannot take it directly and needs the random effects ",
-                  "restated in its own arguments. The equivalence tests in the realised ",
-                  "control are post-selection diagnostics on deterministically selected ",
-                  "items, not inferential tests over a sample.")
-  )
+  note <- c(note, if (length(covariates))
+    paste0("Begin with random slopes for condition, the manipulated factor, by subject ",
+           "and, where it varies within items, by item (Barr et al., 2013); the matched ",
+           "covariates enter as fixed effects only.")
+    else "Begin with this maximal structure (Barr et al., 2013).")
+  note <- c(note, .NOTE_SIMPLIFY)
+  if (n_conditions > 2L)
+    note <- c(note, paste0("If the conditions cross two or more factors, recode condition ",
+                           "into those factors (for example frequency * neighbourhood) with ",
+                           "sum coding."))
+  note <- c(note, .NOTE_SYNTAX, .NOTE_DIAGNOSTICS)
+  list(response = response,
+       suggested_model = sprintf("response ~ %s + (1 + condition | subject) + %s", fixed,
+                                 item_re),
+       note = paste(note, collapse = " "))
 }
 
 #' Assemble the materials datasheet for one design
@@ -472,6 +596,13 @@ DATASHEET_VERSION <- "1.2"
 #'   lexicon that `source_path` names. A lexicon lexsync ships is credited by its
 #'   source, a corpus fetched into the cache by the registry's citation, and any other
 #'   file by its file name and checksum.
+#'
+#'   `design$n_per_condition` is the request the selector applied, the selector's
+#'   default when the design gives none, and `items$n_per_condition_realised` counts
+#'   the items each condition holds in `stimuli`, per replicate for resampled sets, so
+#'   a selection that fell short of the request under `shortfall: allow` shows it. The
+#'   suggested analysis keys its by-item slope on the recipe that ran and adds a matched
+#'   design's matched dimensions that vary among its items as covariates.
 #' @return The datasheet as a nested list, ready for [write_datasheet()].
 #' @export
 build_datasheet <- function(design, schema, report, stimuli, source_path, artifacts,
@@ -486,6 +617,8 @@ build_datasheet <- function(design, schema, report, stimuli, source_path, artifa
   controlled <- .controlled_dims(design, source)
   relational <- .relational_record(design, stimuli)
   conditions <- unique(as.character(stimuli$condition))
+  covariates <- if (is_continuous) list(kept = character(0), left_out = character(0))
+                else .covariates(design, source, stimuli)
   # The response windows the generated experiments open, and with them where a reaction
   # time starts, which the analysis has to know.
   events <- resolve_events(design)
@@ -696,12 +829,15 @@ build_datasheet <- function(design, schema, report, stimuli, source_path, artifa
     design = list(name = design[["name"]], language = design[["language"]],
                   paradigm = design[["paradigm"]] %||% "factorial", source = source,
                   description = design[["description"]],
-                  n_per_condition = design[["n_per_condition"]] %||% design[["n_per_cell"]]),
+                  n_per_condition = .requested_n(design, source, is_continuous)),
     materials_source = materials_source,
     dimensions = schema[["dimensions"]][keep_dims],
     selection = selection,
     relational = relational,
-    analysis = .analysis_R(design, source, .response_text(windows, events)),
+    analysis = .analysis_R(design, source, .response_text(windows, events), recipe = recipe,
+                           n_conditions = length(conditions),
+                           covariates = covariates[["kept"]],
+                           left_out = covariates[["left_out"]]),
     equivalence = equivalence,
     realised_control = realised,
     counterbalancing = counterbalancing,
@@ -710,6 +846,7 @@ build_datasheet <- function(design, schema, report, stimuli, source_path, artifa
       list(n_sets = design[["resample"]][["n_sets"]], disjoint = TRUE) else NULL,
     items = list(n_total = nrow(stimuli), n_conditions = length(conditions),
                  conditions = as.list(conditions),
+                 n_per_condition_realised = .realised_counts(stimuli, conditions),
                  stimuli_file = artifacts$stimuli, stimuli_sha256 = sha256_file(artifacts$stimuli)),
     reproducibility = reproducibility,
     artifacts = lapply(Filter(Negate(is.null), .artifact_paths(artifacts)),
@@ -813,6 +950,302 @@ build_datasheet <- function(design, schema, report, stimuli, source_path, artifa
   switch(cb$recipe, factorial = "a factorial split", cb$recipe)
 }
 
+# The confidence level of the interval beside a TOST at `alpha`, 1 - 2 * alpha, as a
+# percentage: "90" at .05 and "99" at .005. The text and the table said 90% whatever the
+# schema's alpha. Mirrors _ci_pct in datasheet.py.
+.ci_pct <- function(alpha) .fmt_g((1 - 2 * as.numeric(alpha)) * 100)
+
+# The fewest items per condition with which two one-sided tests at `bound_d` and `alpha`
+# can support equivalence, Inf when no request the engines accept would do, or NULL for
+# a bound or an alpha that admits none. Two conditions of n items with equal means give
+# the test its best case, a t of bound_d / sqrt(2 / n) on 2n - 2 degrees of freedom,
+# which passes when it exceeds t(1 - alpha, 2n - 2). The fewest items with which a
+# dimension that varies can pass is therefore the smallest n with
+# t(1 - alpha, 2n - 2) * sqrt(2 / n) < bound_d: 23 at a bound of 0.5 and an alpha of .05.
+# The left side falls as n grows, so the search doubles n until the test can pass and
+# then bisects, `lo` never passing and `hi` always passing. It stops at the largest
+# n_per_condition the engines accept, where R's integers end. Without that stop, a
+# bound below about 5e-5 SD gave as.integer() an NA, which stopped the Methods text, and
+# a smaller one a bisection that never ended, because doubles that large cannot hold
+# the midpoint. Mirrors _tost_min_n in datasheet.py.
+.tost_min_n <- function(bound_d, alpha) {
+  b <- suppressWarnings(as.numeric(bound_d))
+  a <- suppressWarnings(as.numeric(alpha))
+  if (length(b) != 1L || length(a) != 1L || is.na(b) || is.na(a) || !(b > 0) ||
+      !(a > 0 && a < 0.5)) return(NULL)
+  passes <- function(n) stats::qt(1 - a, 2 * n - 2) * sqrt(2 / n) < b
+  cap <- .Machine$integer.max
+  # One item leaves the test no degrees of freedom, so 1 is the first n that fails.
+  lo <- 1
+  hi <- 2
+  while (!passes(hi)) {
+    if (hi >= cap) return(Inf)
+    lo <- hi
+    hi <- min(2 * hi, cap)
+  }
+  while (hi - lo > 1) {
+    mid <- (lo + hi) %/% 2
+    if (passes(mid)) hi <- mid else lo <- mid
+  }
+  as.integer(hi)
+}
+
+# A count as the Methods text prints it, or "NA" when there is none.
+.int_text <- function(v) {
+  if (is.null(v) || length(v) != 1L || is.na(v)) "NA" else sprintf("%d", as.integer(v))
+}
+
+# The fewest and the most items a condition holds, from items$n_per_condition_realised,
+# or the request twice for a record written before that field existed. Mirrors
+# _realised_range in datasheet.py.
+.realised_range <- function(ds) {
+  recs <- ds[["items"]][["n_per_condition_realised"]]
+  if (length(recs)) {
+    ns <- vapply(recs, function(r) as.numeric(r[["n"]]), numeric(1))
+    return(list(lo = min(ns), hi = max(ns)))
+  }
+  n <- ds[["design"]][["n_per_condition"]]
+  list(lo = n, hi = n)
+}
+
+# The items each condition holds over every replicate, the samples its equivalence tests
+# compared, or the request for a record without the realised counts. Mirrors
+# _pooled_counts in datasheet.py.
+.pooled_counts <- function(ds) {
+  recs <- ds[["items"]][["n_per_condition_realised"]]
+  if (length(recs)) {
+    conds <- vapply(recs, function(r) as.character(r[["condition"]]), character(1))
+    ns <- vapply(recs, function(r) as.numeric(r[["n"]]), numeric(1))
+    return(vapply(unique(conds), function(cn) sum(ns[conds == cn]), numeric(1),
+                  USE.NAMES = FALSE))
+  }
+  n <- ds[["design"]][["n_per_condition"]]
+  if (is.numeric(n) && length(n) == 1L && !is.na(n)) as.numeric(n) else numeric(0)
+}
+
+# A count, or a range when the conditions differ, with its noun: "1 item", "15 items",
+# "18 to 20 items". Mirrors _count_text in datasheet.py.
+.count_text <- function(lo, hi, noun) {
+  paste0(if (isTRUE(lo != hi)) paste(.int_text(lo), "to", .int_text(hi)) else .int_text(lo),
+         " ", noun, if (isTRUE(hi == 1)) "" else "s")
+}
+
+# The request, as " (of 20 requested)", when the conditions hold fewer items than the
+# design asked for, which only shortfall: allow lets a run do. Empty otherwise. Mirrors
+# _requested_note in datasheet.py.
+.requested_note <- function(ds, lo) {
+  req <- ds[["design"]][["n_per_condition"]]
+  if (!length(ds[["items"]][["n_per_condition_realised"]]) || is.null(lo) ||
+      length(lo) != 1L || is.na(lo) || !is.numeric(req) || length(req) != 1L ||
+      is.na(req) || lo >= req) return("")
+  sprintf(" (of %d requested)", as.integer(req))
+}
+
+# A dimension's unit as the Methods text gives it: the schema's unit, which the record's
+# dimensions carry, less a closing parenthesis such as "(orthographic estimate)". Empty
+# for a dimension the record gives no unit, such as a joined norm. Mirrors _unit in
+# datasheet.py.
+.unit <- function(ds, dim) {
+  unit <- ds[["dimensions"]][[dim]][["unit"]]
+  if (!is.character(unit) || length(unit) != 1L || is.na(unit)) return("")
+  sub(" *\\([^()]*\\)$", "", unit)
+}
+
+.defined <- function(row) {
+  d <- row[["cohens_d"]]
+  !is.null(d) && length(d) == 1L && !is.na(d)
+}
+
+# A row's raw difference in its unit, or empty when the row has none. The comparisons
+# store the difference to three places, so a bigram probability, whose differences lie
+# in the fourth, can be stored as 0 beside a d that is not. That zero is a rounding
+# residue and is given as "under 0.001". Mirrors _raw_text in datasheet.py.
+.raw_text <- function(ds, row) {
+  v <- row[["mean_diff"]]
+  if (is.null(v) || length(v) != 1L || is.na(v)) return("")
+  text <- .fmt_dp(v, 3)
+  if (identical(text, "0.000") && .defined(row) && row[["cohens_d"]] != 0) {
+    text <- "under 0.001"
+  }
+  unit <- .unit(ds, row[["dimension"]])
+  if (nzchar(unit)) paste(text, unit) else text
+}
+
+# The pair a row compares, the reference first, since d and the raw difference are the
+# reference mean minus the condition mean. Empty for a record without the pair. Mirrors
+# _pair_text in datasheet.py.
+.pair_text <- function(row) {
+  ref <- row[["reference"]]
+  cond <- row[["condition"]]
+  if (is.null(ref) || is.null(cond)) "" else paste(ref, "against", cond)
+}
+
+.d_text <- function(row, pct) {
+  sprintf("d = %s, %s%% CI [%s, %s]", .fmt_dp(row[["cohens_d"]], 2), pct,
+          .fmt_dp(row[["ci_low"]], 2), .fmt_dp(row[["ci_high"]], 2))
+}
+
+# The names a lexical decision's Methods sentence gives the dimensions its report sets
+# words against pseudowords on. Kept identical to _LEXDEC_NAMES in datasheet.py.
+.LEXDEC_NAMES <- c(bigram_freq = "bigram frequency", n_density = "N", old20 = "OLD20")
+
+# What the Methods text says about the realised control of a matched or generated
+# design, as sentences each beginning with ". ". The description comes first. A matched
+# design gives the largest difference on a matched dimension, in that dimension's unit,
+# with its pair, d and interval. Raw differences in different units cannot be ranked
+# against each other, so the largest is the one with the largest |d|. A generated
+# lexical decision says that its words and pseudowords were matched on length only, and
+# how they differ on the dimensions the generator does not hold. Comparisons whose d is
+# undefined are counted. The two one-sided tests follow as a secondary check, with the
+# number they passed, and say so when every condition holds fewer items than any test at
+# the bound can pass with. A matched design then names, largest first, up to five
+# comparisons of a dimension it did not control whose |d| exceeds the bound, or says that
+# none does. Tests on a selected set describe a closed population, so the stimuli are
+# described first (Sassenhagen & Alday, 2016). Mirrors _control_note in datasheet.py.
+.control_note <- function(ds) {
+  rows <- ds[["realised_control"]] %||% list()
+  bound <- ds[["equivalence"]][["bound_d"]] %||% 0.5
+  alpha <- ds[["equivalence"]][["alpha"]] %||% 0.05
+  pct <- .ci_pct(alpha)
+  ctrl <- Filter(function(r) identical(r[["role"]], "controlled"), rows)
+  unc <- Filter(function(r) identical(r[["role"]], "uncontrolled"), rows)
+  generated <- identical(ds[["materials_source"]][["type"]], "generate")
+  out <- ""
+  if (generated) {
+    parts <- vapply(unc, function(r) {
+      dim <- r[["dimension"]]
+      name <- if (dim %in% names(.LEXDEC_NAMES)) .LEXDEC_NAMES[[dim]] else dim
+      sprintf("%s (%s)", name, if (.defined(r)) .d_text(r, pct) else "d undefined")
+    }, character(1))
+    out <- paste0(out, ". Words and pseudowords were matched on length only")
+    if (length(parts)) {
+      out <- paste0(out, ", and the words differed from the pseudowords in ", .and_join(parts))
+    }
+  } else {
+    known <- Filter(.defined, ctrl)
+    if (length(known)) {
+      # which.max() keeps the first of equal |d|, as Python's max() does.
+      worst <- known[[which.max(vapply(known, function(r) abs(r[["cohens_d"]]), numeric(1)))]]
+      raw <- .raw_text(ds, worst)
+      inner <- paste(Filter(nzchar, c(.pair_text(worst), .d_text(worst, pct))), collapse = "; ")
+      out <- paste0(out, sprintf(". The largest difference on a matched dimension was %s%s (%s)",
+                                 if (nzchar(raw)) paste0(raw, " in ") else "in ",
+                                 worst[["dimension"]], inner))
+    }
+  }
+  undefined <- Filter(Negate(.defined), ctrl)
+  if (length(undefined)) {
+    share <- if (length(undefined) == length(ctrl)) "every matched comparison"
+             else sprintf("%d of the %d matched comparisons", length(undefined), length(ctrl))
+    out <- paste0(out, sprintf(paste0(". Cohen's d is undefined for %s, and the realised-control ",
+                                      "table gives their raw differences"), share))
+  }
+  if (length(ctrl)) {
+    passed <- sum(vapply(ctrl, function(r) isTRUE(r[["equivalent"]]), logical(1)))
+    out <- paste0(out, sprintf(paste0(". Two one-sided tests at a bound of %s SD (alpha %s) ",
+                                      "supported equivalence on %d of %d matched comparisons"),
+                               .fmt_g(bound), .fmt_g(alpha), passed, length(ctrl)))
+    counts <- .pooled_counts(ds)
+    n_min <- .tost_min_n(bound, alpha)
+    if (length(counts) && !is.null(n_min) && max(counts) < n_min) {
+      out <- paste0(out, sprintf(paste0("; with %s per condition no dimension that varies can ",
+                                        "pass this test, however well matched"),
+                                 .count_text(min(counts), max(counts), "item")))
+    }
+  }
+  if (!generated && length(unc)) {
+    big <- Filter(function(r) .defined(r) && abs(r[["cohens_d"]]) > bound, unc)
+    if (length(big)) {
+      # order() is stable, so comparisons of equal |d| keep the record's order.
+      big <- big[order(-vapply(big, function(r) abs(r[["cohens_d"]]), numeric(1)))]
+      parts <- vapply(utils::head(big, 5L), function(r) {
+        head_text <- paste(Filter(nzchar, c(.pair_text(r), .raw_text(ds, r))), collapse = ": ")
+        inner <- paste(Filter(nzchar, c(head_text, .d_text(r, pct))), collapse = "; ")
+        sprintf("%s (%s)", r[["dimension"]], inner)
+      }, character(1))
+      out <- paste0(out, ". Dimensions the design did not control differed: ", .and_join(parts))
+      if (length(big) > 5L) {
+        out <- paste0(out, sprintf(", and %d more in the realised-control table",
+                                   length(big) - 5L))
+      }
+    } else if (all(vapply(unc, .defined, logical(1)))) {
+      out <- paste0(out, sprintf(". No uncontrolled dimension differed by more than %s SD",
+                                 .fmt_g(bound)))
+    }
+  }
+  out
+}
+
+# The predictor's realised span and SD, the SD set against an even spread over the span,
+# in parentheses, or empty for a record without them. Mirrors _spread_note in
+# datasheet.py.
+.spread_note <- function(rows) {
+  span <- NULL
+  pred <- NULL
+  for (r in rows) {
+    if (is.null(span) && !is.null(r[["predictor_span"]])) span <- r[["predictor_span"]]
+    if (is.null(pred) && identical(r[["role"]], "predictor")) pred <- r
+  }
+  parts <- character(0)
+  if (!is.null(span)) parts <- c(parts, paste0("a span of ", .fmt_dp(span, 2)))
+  if (!is.null(pred[["sd"]])) {
+    sd <- paste0("an SD of ", .fmt_dp(pred[["sd"]], 2))
+    if (!is.null(pred[["sd_ratio"]])) {
+      sd <- paste0(sd, ", ", .fmt_dp(pred[["sd_ratio"]], 2),
+                   " times that of an even spread over the span")
+    }
+    parts <- c(parts, sd)
+  }
+  if (length(parts)) sprintf(" (%s)", paste(parts, collapse = " and ")) else ""
+}
+
+# A continuous design's control windows, the rule that set them and the realised SDs, as
+# a sentence, or how the windows were widened when they held too few items. The windows
+# are the mean +/- k SD of the controls in a first selection spread over the predictor's
+# ranks, k from the resolved tolerance_k with the matcher's default of 2, and each
+# realised SD is set against the pool's. That first selection follows the pool's
+# distribution of the predictor, so it is not called an even spread, the phrase the text
+# keeps for values spaced evenly over the span. The text used to call the controls
+# near-constant, though the windows only trim their tails and a relaxation drops them.
+# Mirrors _bands_note in datasheet.py.
+.bands_note <- function(ds, rows) {
+  sel <- ds[["selection"]]
+  controls <- unlist(sel[["controls"]], use.names = FALSE)
+  if (!length(controls)) return("")
+  tol <- sel[["tolerance_k"]]
+  ks <- vapply(controls, function(cc) as.numeric(tol[[cc]] %||% 2), numeric(1),
+               USE.NAMES = FALSE)
+  same_k <- all(ks == ks[1L])
+  by <- list()
+  for (r in rows) if (identical(r[["role"]], "control")) by[[r[["dimension"]]]] <- r
+  windows <- character(0)
+  for (i in seq_along(controls)) {
+    r <- by[[controls[i]]]
+    if (is.null(r[["window_low"]]) || is.null(r[["window_high"]])) next
+    windows <- c(windows, sprintf("%s %s to %s%s", controls[i], .fmt_dp(r[["window_low"]], 2),
+                                  .fmt_dp(r[["window_high"]], 2),
+                                  if (same_k) "" else paste0(" at k = ", .fmt_g(ks[i]))))
+  }
+  ratios <- lapply(controls, function(cc) by[[cc]][["sd_ratio"]])
+  many <- length(controls) > 1L
+  rule <- sprintf("the mean \u00b1 %s SD of an initial selection spread over the ranks of %s",
+                  if (same_k) .fmt_g(ks[1L]) else "k", sel[["predictor"]])
+  win <- if (length(windows)) sprintf(" (%s)", .and_join(windows)) else ""
+  sds <- ""
+  if (all(vapply(ratios, Negate(is.null), logical(1)))) {
+    sds <- sprintf(", and %s %s of the pool's",
+                   if (many) "their realised SDs were" else "its realised SD was",
+                   .and_join(vapply(ratios, function(x) .fmt_dp(x, 2), character(1))))
+  }
+  if (length(sel[["window_relaxations"]])) {
+    return(sprintf(" The control %s, %s%s, held too few items and %s widened to the whole pool%s.",
+                   if (many) "windows" else "window", rule, win, if (many) "were" else "was",
+                   sds))
+  }
+  sprintf(" The %s banded within %s of %s%s%s.", if (many) "controls were" else "control was",
+          if (many) "windows" else "a window", rule, win, sds)
+}
+
 #' A ready-to-adapt methods paragraph rendered from a datasheet
 #'
 #' Every number in the paragraph is printed by lexsync's own formatter, rounded
@@ -820,100 +1253,99 @@ build_datasheet <- function(design, schema, report, stimuli, source_path, artifa
 #' engines write the same text from the same record, a record read back from its
 #' JSON included.
 #'
+#' The paragraph states the items each condition holds, and the request beside them
+#' when they fell short of it. It describes the realised control before testing it:
+#' the largest difference on a matched dimension in that dimension's unit, with
+#' Cohen's d and its interval, then the two one-sided tests, which it says cannot pass
+#' when every condition holds fewer items than the bound needs, then, largest first,
+#' up to five comparisons of an uncontrolled dimension whose |d| exceeds the bound.
+#' Every interval is labelled by the schema's alpha. A continuous design's paragraph
+#' gives the predictor's spread, the control windows and the controls' realised
+#' spread.
+#'
 #' @param ds A datasheet list, from [build_datasheet()].
 #' @return A single character string describing the materials procedure.
 #' @export
 methods_paragraph <- function(ds) {
-  d <- ds$design
-  src <- ds$materials_source$type
-  n <- d$n_per_condition
-  lang <- paste0(toupper(substring(d$language, 1, 1)), substring(d$language, 2))
-  sel <- ds$selection
+  d <- ds[["design"]]
+  src <- ds[["materials_source"]][["type"]]
+  lang <- paste0(toupper(substring(d[["language"]], 1, 1)), substring(d[["language"]], 2))
+  sel <- ds[["selection"]]
+  range <- .realised_range(ds)
+  lo <- range[["lo"]]
+  hi <- range[["hi"]]
+  n <- if (isTRUE(lo != hi)) paste(.int_text(lo), "to", .int_text(hi)) else .int_text(lo)
+  one <- isTRUE(hi == 1)
+  were <- if (one) "was" else "were"
+  req <- .requested_note(ds, lo)
   # What was selected. A pair design's unit is the pair, and its `n_per_condition`
   # counts pairs, so calling them "items" would misreport the size of the materials
   # by a factor of the number of conditions.
-  unit <- if (is.null(ds$relational)) "items"
-  else paste0(paste(unlist(ds$relational$members), collapse = "-"), " pairs")
-  if (!is.null(sel$predictor)) {
-    predictor <- sel$predictor
-    controls <- paste(unlist(sel$controls), collapse = ", ")
-    rc <- ds$realised_control
-    span <- NULL; rs <- numeric(0)
+  rel <- ds[["relational"]]
+  unit <- paste0(if (is.null(rel)) "item"
+                 else paste0(paste(unlist(rel[["members"]]), collapse = "-"), " pair"),
+                 if (one) "" else "s")
+  if (!is.null(sel[["predictor"]])) {
+    predictor <- sel[["predictor"]]
+    rc <- ds[["realised_control"]] %||% list()
+    rs <- numeric(0)
     for (r in rc) {
-      if (!is.null(r$predictor_span) && is.null(span)) span <- r$predictor_span
-      if (!is.null(r$pearson_r)) rs <- c(rs, abs(r$pearson_r))
+      if (!is.null(r[["pearson_r"]]) && !is.na(r[["pearson_r"]])) rs <- c(rs, abs(r[["pearson_r"]]))
     }
-    span_str <- if (!is.null(span)) sprintf(" (a span of %s)", .fmt_dp(span, 2)) else ""
     # |r| is printed at three places, the precision of the comparisons report it
     # comes from (the record keeps up to four, see .r4), so the record holds the
     # digit shown. .fmt_dp prints it, as every number here, because sprintf() would
     # round a tie such as 0.0825 to 0.082 on Windows where Python gives 0.083.
     corr_str <- if (length(rs))
-      paste0(", and the largest predictor-control correlation was |r| = ",
-             .fmt_dp(max(rs), 3)) else ""
-    cb <- ds$counterbalancing
+      paste0(" The largest predictor-control correlation was |r| = ", .fmt_dp(max(rs), 3),
+             ".") else ""
+    cb <- ds[["counterbalancing"]]
     recipe_label <- .recipe_label(cb)
     excluded <- .exclusions_note(ds)
     if (nzchar(excluded)) excluded <- paste0(" ", excluded, ".")
-    return(sprintf(paste0("%s %s %s were selected to span %s%s continuously while holding ",
-                          "%s near-constant%s, for analysis by regression or a mixed model rather ",
-                          "than a between-condition contrast (Kuperman, 2015; Liben-Nowell et al., ",
-                          "2019).%s%s Materials were counterbalanced into %s list(s) (%s) and ",
-                          "generated for PsychoPy, OpenSesame and jsPsych.%s%s The selection is ",
-                          "deterministic and reproducible (lexsync %s), and the seed (%s) fixes ",
-                          "the trial order."),
-                   n, lang, unit, predictor, span_str, controls, corr_str, .norms_note(ds),
-                   excluded, cb$lists, recipe_label, .versions_note(ds), .response_note(ds),
-                   ds$reproducibility$versions$lexsync, ds$reproducibility$seed))
+    return(paste0(n, " ", lang, " ", unit, req, " ", were, " selected to span ", predictor,
+                  .spread_note(rc), ", for analysis by regression or a mixed model rather ",
+                  "than a between-condition contrast (Kuperman, 2015; Liben-Nowell et al., ",
+                  "2019).", .bands_note(ds, rc), corr_str, .norms_note(ds), excluded,
+                  " Materials were counterbalanced into ", cb[["lists"]], " list(s) (",
+                  recipe_label, ") and generated for PsychoPy, OpenSesame and jsPsych.",
+                  .versions_note(ds), .response_note(ds), " The selection is deterministic ",
+                  "and reproducible (lexsync ", ds[["reproducibility"]][["versions"]][["lexsync"]],
+                  "), and the seed (", ds[["reproducibility"]][["seed"]],
+                  ") fixes the trial order."))
   }
+  items <- if (one) "item" else "items"
   if (identical(src, "corpus")) {
-    ctrl <- paste(unlist(ds$selection$match_on), collapse = ", ")
-    lead <- sprintf(paste0("%s items per condition were selected from the %s lexicon (%s) and ",
-                           "matched item by item on %s using lexsync's %s matcher"),
-                    n, lang, ds$materials_source$provenance, ctrl, ds$selection$method)
+    ctrl <- paste(unlist(sel[["match_on"]]), collapse = ", ")
+    lead <- paste0(n, " ", items, " per condition", req, " ", were, " selected from the ",
+                   lang, " lexicon (", ds[["materials_source"]][["provenance"]],
+                   ") and matched item by item on ", ctrl, " using lexsync's ",
+                   sel[["method"]], " matcher")
   } else if (identical(src, "pool")) {
     # A supplied pool is matched exactly as a corpus is; what differs, and what the
     # Methods section has to say, is that the candidate words were chosen by the
     # researcher rather than drawn from the whole lexicon.
-    ctrl <- paste(unlist(ds$selection$match_on), collapse = ", ")
-    lead <- sprintf(paste0("%s %s items per condition were selected from a supplied ",
-                           "candidate pool and matched item by item on %s using ",
-                           "lexsync's %s matcher, with the matched dimensions taken ",
-                           "from %s"),
-                    n, lang, ctrl, ds$selection$method,
-                    ds$materials_source$dimensions_from)
+    ctrl <- paste(unlist(sel[["match_on"]]), collapse = ", ")
+    lead <- paste0(n, " ", lang, " ", items, " per condition", req, " ", were,
+                   " selected from a supplied candidate pool and matched item by item on ",
+                   ctrl, " using lexsync's ", sel[["method"]], " matcher, with the matched ",
+                   "dimensions taken from ", ds[["materials_source"]][["dimensions_from"]])
   } else if (identical(src, "generate")) {
-    lead <- sprintf(paste0("%s real %s words and %s length-matched pseudowords (generated by %s) ",
-                           "were assembled for a lexical-decision contrast%s"),
-                    n, lang, n, ds$selection$method, .known_forms_note(ds))
+    lead <- paste0(n, " real ", lang, " ", if (one) "word" else "words", req, " and ", n,
+                   " length-matched ", if (one) "pseudoword" else "pseudowords",
+                   " (generated by ", sel[["method"]], ") were assembled for a ",
+                   "lexical-decision contrast", .known_forms_note(ds))
   } else {
-    per <- ds$items$n_total %/% max(1L, ds$items$n_conditions)
-    lead <- sprintf("%s items were drawn from an item table for a %s design (%s)",
-                    per, d$paradigm, lang)
-  }
-  ctrl_rows <- Filter(function(r) identical(r$role, "controlled"), ds$realised_control)
-  defined <- Filter(function(r) !is.null(r$cohens_d), ctrl_rows)
-  control <- ""
-  if (length(ctrl_rows)) {
-    # Affirmative only when the stored verdicts support it: every controlled row
-    # has a defined d and every one of them passed the TOST. An undefined d
-    # (constant dimensions at different constants) is the worst possible failure
-    # of the matching, not an excludable row.
-    all_equivalent <- length(defined) == length(ctrl_rows) &&
-      all(vapply(defined, function(r) isTRUE(r$equivalent), logical(1)))
-    if (all_equivalent && length(defined)) {
-      worst <- defined[[which.max(vapply(defined, function(r) abs(r$cohens_d), numeric(1)))]]
-      control <- sprintf(paste0(". The realised control was close. The largest standardised difference ",
-                                "on any matched dimension was %s (90%% CI [%s, %s]), within the ",
-                                "%s-SD equivalence bound"),
-                         .fmt_dp(worst$cohens_d, 2), .fmt_dp(worst$ci_low, 2),
-                         .fmt_dp(worst$ci_high, 2), ds$equivalence$bound_d)
-    } else {
-      control <- paste0(". Equivalence was not confirmed on every matched dimension; ",
-                        "the per-dimension differences are reported in the ",
-                        "realised-control table")
+    # An item table selects nothing, so it has the items it holds and no request. A
+    # record written before the realised counts existed divides its rows.
+    if (!length(ds[["items"]][["n_per_condition_realised"]])) {
+      lo <- hi <- ds[["items"]][["n_total"]] %/% max(1L, ds[["items"]][["n_conditions"]])
     }
+    lead <- sprintf("%s %s drawn from an item table for a %s design (%s)",
+                    .count_text(lo, hi, "item"), if (isTRUE(hi == 1)) "was" else "were",
+                    d[["paradigm"]], lang)
   }
+  control <- .control_note(ds)
   resamp <- if (!is.null(ds$resampling))
     sprintf(". %s disjoint matched item sets were drawn, so items can be treated as a random factor",
             ds$resampling$n_sets) else ""
@@ -1153,15 +1585,25 @@ render_datasheet_md <- function(ds) {
     }
     lines <- c(lines, "")
   } else if (length(ds$realised_control)) {
+    # Each row names its pair and gives the raw difference, and the interval is labelled
+    # by the schema's alpha: the table said 90% whatever alpha was.
+    pct <- .ci_pct(ds[["equivalence"]][["alpha"]] %||% 0.05)
     lines <- c(lines, "## Realised control", "",
-               "| Dimension | Role | Cohen's d | 90% CI | Var ratio | TOST p | Equivalent |",
-               "|---|---|---|---|---|---|---|")
+               paste0("Each row compares a condition with its reference. The raw difference ",
+                      "and Cohen's d are the reference mean minus the condition mean, and the ",
+                      "variance ratio is the condition's variance over the reference's."), "",
+               paste0("| Condition | Reference | Dimension | Role | Raw difference | ",
+                      "Cohen's d | ", pct, "% CI | Var ratio | TOST p | Equivalent |"),
+               "|---|---|---|---|---|---|---|---|---|---|")
     for (r in ds$realised_control) {
-      ci <- if (!is.null(r$ci_low))
-        sprintf("[%s, %s]", .fmt_dp(r$ci_low, 2), .fmt_dp(r$ci_high, 2)) else "--"
-      lines <- c(lines, sprintf("| %s | %s | %s | %s | %s | %s | %s |", r$dimension, r$role,
-                                .fmt_dp(r$cohens_d, 2), ci, .fmt_dp(r$var_ratio, 2),
-                                .fmt_tost_p(r$tost_p), r$equivalent %||% "--"))
+      # A record written before the pair was recorded reaches the first two cells.
+      ci <- if (!is.null(r[["ci_low"]]))
+        sprintf("[%s, %s]", .fmt_dp(r[["ci_low"]], 2), .fmt_dp(r[["ci_high"]], 2)) else "--"
+      lines <- c(lines, sprintf("| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |",
+                                r[["condition"]] %||% "--", r[["reference"]] %||% "--",
+                                r[["dimension"]], r[["role"]], .fmt_dp(r[["mean_diff"]], 3),
+                                .fmt_dp(r[["cohens_d"]], 2), ci, .fmt_dp(r[["var_ratio"]], 2),
+                                .fmt_tost_p(r[["tost_p"]]), r[["equivalent"]] %||% "--"))
     }
     lines <- c(lines, "")
   }

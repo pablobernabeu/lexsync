@@ -30,7 +30,13 @@ import pandas as pd
 # distances are rounded to nine places on top of that. That argument is weaker than
 # identity by construction, which is what the package claims, and switching these was
 # verified to change no design's selection.
-from .design import _require_match_on, _resolve_n, _resolve_tolerance_k
+from .design import (
+    N_DEFAULT_CONTINUOUS,
+    N_DEFAULT_MATCHED,
+    _require_match_on,
+    _resolve_n,
+    _resolve_tolerance_k,
+)
 from .io_utils import _exact_mean, _exact_sd, _round_dp_vec
 from .querying import build_pool
 
@@ -97,9 +103,10 @@ def _tie_sort_keys(words, tie_break) -> list:
 def _check_shortfall(realised, n, policy, continuous=False):
     """Refuse a selection smaller than the design requested, unless allowed.
 
-    A shortfall silently invalidates the datasheet and the generated Methods
-    text, which state the requested n. Must stay identical to .check_shortfall
-    in R_workflow/R/matching.R.
+    A smaller set changes the design that was planned, so it needs the design's
+    consent. Under ``shortfall: allow``, the datasheet records the items each condition
+    holds, and the Methods text states them beside the request. Must stay identical to
+    .check_shortfall in R_workflow/R/matching.R.
     """
     if realised >= n or policy == "allow":
         return
@@ -486,7 +493,7 @@ def match_stimuli(pool: pd.DataFrame, design: dict, schema: dict, verbose: bool 
     # Refused here as well as in validate_design, for a direct call: without a
     # dimension every distance is zero and the tie-break alone would pick the words.
     match_on = _require_match_on(design)
-    n = _resolve_n(design, 20)
+    n = _resolve_n(design, N_DEFAULT_MATCHED)
     # Tolerance window k per dimension (window = anchor mean +/- k * SD). A design
     # may override the schema defaults per dimension, e.g. to reproduce a published
     # study's exact windows (Gonzalez Alonso et al. used SD/9 for frequency).
@@ -760,7 +767,7 @@ def select_continuous_stimuli(pool: pd.DataFrame, design: dict, schema: dict,
     if key not in pool.columns:
         raise ValueError(
             "lexsync: the continuous tie-break column '%s' is absent from the pool." % key)
-    n = _resolve_n(design, 60)
+    n = _resolve_n(design, N_DEFAULT_CONTINUOUS)
     tol_k = _resolve_tolerance_k(design, schema)
     shortfall = _resolve_policy(design, schema, "shortfall", "error", ("error", "allow"))
     on_tol = _resolve_policy(design, schema, "on_insufficient_tolerance", "relax",

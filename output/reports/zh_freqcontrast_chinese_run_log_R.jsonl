@@ -1,20 +1,20 @@
-{"time":"2026-10-09 07:51:10.234945","message":"loading lexicon 'corpora/derived/zh.csv'","data":null}
-{"time":"2026-10-09 07:51:10.589034","message":"lexicon loaded: 20000 words","data":{"words":20000}}
-{"time":"2026-10-09 07:51:10.600557","message":"pool after filters: 13613 words","data":{"pool":13613}}
-{"time":"2026-10-09 07:51:11.098443","message":"matched 160 items across 2 conditions","data":{"conditions":"high_frequency, low_frequency"}}
-{"time":"2026-10-09 07:51:11.458957","message":"equivalence low_frequency vs high_frequency on 'length': d = 0.00 [0.00, 0.00], TOST p = 0.000 (equivalent)","data":null}
-{"time":"2026-10-09 07:51:11.464655","message":"equivalence low_frequency vs high_frequency on 'frequency': d = 6.00 [5.39, 6.62], TOST p = 1.000 (not shown equivalent)","data":null}
-{"time":"2026-10-09 07:51:11.469268","message":"equivalence low_frequency vs high_frequency on 'n_density': d = 0.07 [-0.19, 0.33], TOST p = 0.004 (equivalent)","data":null}
-{"time":"2026-10-09 07:51:11.473419","message":"equivalence low_frequency vs high_frequency on 'old20': d = 0.11 [-0.16, 0.37], TOST p = 0.007 (equivalent)","data":null}
-{"time":"2026-10-09 07:51:11.477414","message":"equivalence low_frequency vs high_frequency on 'bigram_freq': d = 0.77 [0.50, 1.04], TOST p = 0.956 (not shown equivalent)","data":null}
-{"time":"2026-10-09 07:51:11.522665","message":"wrote 'zh_freqcontrast_chinese_stimuli_R.csv'","data":{"path":"output/stimuli/zh_freqcontrast_chinese_stimuli_R.csv","rows":160,"md5":"49c657a97d85cb1a62290b4e17832dc3"}}
-{"time":"2026-10-09 07:51:11.538406","message":"wrote 'zh_freqcontrast_chinese_descriptives_R.csv'","data":{"path":"output/reports/zh_freqcontrast_chinese_descriptives_R.csv","rows":10,"md5":"43d9d4593c5a75d46f6b9219adcb9bec"}}
-{"time":"2026-10-09 07:51:11.552152","message":"wrote 'zh_freqcontrast_chinese_comparisons_R.csv'","data":{"path":"output/reports/zh_freqcontrast_chinese_comparisons_R.csv","rows":5,"md5":"e4bf90986a8e3baea3634feb339d8829"}}
-{"time":"2026-10-09 07:51:11.886747","message":"wrote 'zh_freqcontrast_chinese_psychopy.py'","data":{"path":"output/experiments/zh_freqcontrast_chinese_psychopy.py","rows":"NA","md5":"4f665f037c7d88a372192388610f272b"}}
-{"time":"2026-10-09 07:51:11.897308","message":"wrote 'zh_freqcontrast_chinese.osexp'","data":{"path":"output/experiments/zh_freqcontrast_chinese.osexp","rows":"NA","md5":"7e70d048990eff3922d9143958556f7d"}}
-{"time":"2026-10-09 07:51:11.908647","message":"wrote 'zh_freqcontrast_chinese.html'","data":{"path":"output/experiments/zh_freqcontrast_chinese.html","rows":"NA","md5":"06b83f235c74aa4cf7d427e0610a37ce"}}
-{"time":"2026-10-09 07:51:11.92358","message":"wrote 'zh_freqcontrast_chinese_psychopy.csv'","data":{"path":"output/experiments/zh_freqcontrast_chinese_psychopy.csv","rows":"NA","md5":"9cd7729198f7d3ad0f8c0c1f06721b41"}}
-{"time":"2026-10-09 07:51:11.931645","message":"wrote 'zh_freqcontrast_chinese_opensesame.csv'","data":{"path":"output/experiments/zh_freqcontrast_chinese_opensesame.csv","rows":"NA","md5":"92e29c7a204d46f2df23de8018ad235a"}}
-{"time":"2026-10-09 07:51:11.938618","message":"wrote 'zh_freqcontrast_chinese_opensesame_text.csv'","data":{"path":"output/experiments/zh_freqcontrast_chinese_opensesame_text.csv","rows":"NA","md5":"aff6c7fdc794765e18681f29e25b1fa3"}}
-{"time":"2026-10-09 07:51:12.099771","message":"wrote 'zh_freqcontrast_chinese_datasheet_R.json'","data":{"path":"output/reports/zh_freqcontrast_chinese_datasheet_R.json","rows":"NA","md5":"36073ab0e35212d81a371af0b240f075"}}
-{"time":"2026-10-09 07:51:12.109245","message":"wrote 'zh_freqcontrast_chinese_datasheet_R.md'","data":{"path":"output/reports/zh_freqcontrast_chinese_datasheet_R.md","rows":"NA","md5":"e746155c3c88b8ab20656a37182eb27f"}}
+{"time":"2026-10-09 09:53:19.033317","message":"loading lexicon 'corpora/derived/zh.csv'","data":null}
+{"time":"2026-10-09 09:53:19.475856","message":"lexicon loaded: 20000 words","data":{"words":20000}}
+{"time":"2026-10-09 09:53:19.488696","message":"pool after filters: 13613 words","data":{"pool":13613}}
+{"time":"2026-10-09 09:53:20.09621","message":"matched 160 items across 2 conditions","data":{"conditions":"high_frequency, low_frequency"}}
+{"time":"2026-10-09 09:53:20.475317","message":"equivalence low_frequency vs high_frequency on 'length': d = 0.00 [0.00, 0.00], TOST p = 0.000 (equivalent)","data":null}
+{"time":"2026-10-09 09:53:20.47977","message":"equivalence low_frequency vs high_frequency on 'frequency': d = 6.00 [5.39, 6.62], TOST p = 1.000 (not shown equivalent)","data":null}
+{"time":"2026-10-09 09:53:20.483415","message":"equivalence low_frequency vs high_frequency on 'n_density': d = 0.07 [-0.19, 0.33], TOST p = 0.004 (equivalent)","data":null}
+{"time":"2026-10-09 09:53:20.486428","message":"equivalence low_frequency vs high_frequency on 'old20': d = 0.11 [-0.16, 0.37], TOST p = 0.007 (equivalent)","data":null}
+{"time":"2026-10-09 09:53:20.489916","message":"equivalence low_frequency vs high_frequency on 'bigram_freq': d = 0.77 [0.50, 1.04], TOST p = 0.956 (not shown equivalent)","data":null}
+{"time":"2026-10-09 09:53:20.531388","message":"wrote 'zh_freqcontrast_chinese_stimuli_R.csv'","data":{"path":"output/stimuli/zh_freqcontrast_chinese_stimuli_R.csv","rows":160,"md5":"49c657a97d85cb1a62290b4e17832dc3"}}
+{"time":"2026-10-09 09:53:20.547678","message":"wrote 'zh_freqcontrast_chinese_descriptives_R.csv'","data":{"path":"output/reports/zh_freqcontrast_chinese_descriptives_R.csv","rows":10,"md5":"43d9d4593c5a75d46f6b9219adcb9bec"}}
+{"time":"2026-10-09 09:53:20.562007","message":"wrote 'zh_freqcontrast_chinese_comparisons_R.csv'","data":{"path":"output/reports/zh_freqcontrast_chinese_comparisons_R.csv","rows":5,"md5":"e4bf90986a8e3baea3634feb339d8829"}}
+{"time":"2026-10-09 09:53:20.873833","message":"wrote 'zh_freqcontrast_chinese_psychopy.py'","data":{"path":"output/experiments/zh_freqcontrast_chinese_psychopy.py","rows":"NA","md5":"4f665f037c7d88a372192388610f272b"}}
+{"time":"2026-10-09 09:53:20.883997","message":"wrote 'zh_freqcontrast_chinese.osexp'","data":{"path":"output/experiments/zh_freqcontrast_chinese.osexp","rows":"NA","md5":"7e70d048990eff3922d9143958556f7d"}}
+{"time":"2026-10-09 09:53:20.893899","message":"wrote 'zh_freqcontrast_chinese.html'","data":{"path":"output/experiments/zh_freqcontrast_chinese.html","rows":"NA","md5":"06b83f235c74aa4cf7d427e0610a37ce"}}
+{"time":"2026-10-09 09:53:20.90607","message":"wrote 'zh_freqcontrast_chinese_psychopy.csv'","data":{"path":"output/experiments/zh_freqcontrast_chinese_psychopy.csv","rows":"NA","md5":"9cd7729198f7d3ad0f8c0c1f06721b41"}}
+{"time":"2026-10-09 09:53:20.914509","message":"wrote 'zh_freqcontrast_chinese_opensesame.csv'","data":{"path":"output/experiments/zh_freqcontrast_chinese_opensesame.csv","rows":"NA","md5":"92e29c7a204d46f2df23de8018ad235a"}}
+{"time":"2026-10-09 09:53:20.922266","message":"wrote 'zh_freqcontrast_chinese_opensesame_text.csv'","data":{"path":"output/experiments/zh_freqcontrast_chinese_opensesame_text.csv","rows":"NA","md5":"aff6c7fdc794765e18681f29e25b1fa3"}}
+{"time":"2026-10-09 09:53:21.055794","message":"wrote 'zh_freqcontrast_chinese_datasheet_R.json'","data":{"path":"output/reports/zh_freqcontrast_chinese_datasheet_R.json","rows":"NA","md5":"9540e88accf3cc539f684da9bba72701"}}
+{"time":"2026-10-09 09:53:21.068266","message":"wrote 'zh_freqcontrast_chinese_datasheet_R.md'","data":{"path":"output/reports/zh_freqcontrast_chinese_datasheet_R.md","rows":"NA","md5":"605eb7e54f149e2c1c4d5fea9e905ec4"}}
