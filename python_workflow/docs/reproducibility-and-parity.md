@@ -71,13 +71,16 @@ parses a number with `float()`, which returns the nearest double. readr's parser
 `as.numeric()` can each miss that double by one unit in the last place. For a number of up to 15
 significant digits, with a power of ten within 10^22, R therefore multiplies or divides one exact
 integer by one exact power of ten. That single operation is correctly rounded and gives Python's
-double. Any other number goes through `as.numeric()`. It misses far less often than readr's
-parser, but the engines may then differ in its last bit. A negative zero is read as zero, since the
-two engines would otherwise write it as `-0` and `0`.
+double. Any other number R rounds in exact integer arithmetic, which gives Python's double on every
+platform. `as.numeric()` is not used there, because it accumulates the digits in `long double`.
+Where that type is no wider than a double, as on Apple Silicon, an emulation of R's parser missed on
+about one in ten of the values `repr()` writes for computed doubles. A negative zero is read as
+zero, since the two engines would otherwise write it as `-0` and `0`. Text columns keep the object
+dtype they had before pandas 3 made `str` its default string dtype.
 
-`load_lexicon` drops missing words before coercing types: `astype(str)` renders a missing word as
-the literal string `"nan"`, which survives every guard downstream, while R's `as.character(NA)`
-stays `NA` and drops the row. One extra row shifts every id after it.
+`load_lexicon` drops missing words before coercing types: `str()` renders a missing word as the
+literal string `"nan"`, which survives every guard downstream, while R's `as.character(NA)` stays
+`NA` and drops the row. One extra row shifts every id after it.
 
 Text is written the same way too. pandas defaults its line terminator to `os.linesep`, so the same
 selection would carry a different SHA-256 on Windows than on Linux. The datasheet advertises those
@@ -121,7 +124,11 @@ matched sets.
 
 Word matching, deduplication and the `length` dimension operate on Unicode code points, and every
 text key is normalised to Unicode Normalization Form C (NFC). The words of a lexicon or a supplied
-pool and both sides of a norm-table or pair-member join are first trimmed and lower-cased. The item
+pool and both sides of a norm-table or pair-member join are first trimmed and lower-cased, by
+Python's own `str.strip()` and `str.lower()`, and in R through ICU at the root locale, which applies
+the same full Unicode case mapping. pandas' `.str.lower()` is avoided because under pandas 3 with
+pyarrow it applies Arrow's simple mapping, which turns a final capital sigma into σ where
+`str.lower()` gives ς, and İ into a bare i where `str.lower()` keeps the dot as U+0307. The item
 id, condition and presented fields of an item table, practice and filler tables included, and a
 supplied reference list are normalised as read. A precomposed character such as é and its
 decomposed counterpart, the base letter followed by a combining accent, are therefore one

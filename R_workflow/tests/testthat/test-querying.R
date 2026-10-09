@@ -99,6 +99,27 @@ test_that("load_lexicon keeps zero-width characters", {
   expect_identical(lex$length, 5L)
 })
 
+# Pins the same contract as
+# test_load_lexicon_and_load_pool_lower_case_by_the_full_unicode_mapping in the
+# Python engine's test_querying.py: a final capital sigma becomes U+03C2 and U+0130
+# becomes i + U+0307. Under pandas 3 with pyarrow, the Python engine's pandas case
+# fold gave U+03C3 and a bare i, and only a fixture read by both engines shows it.
+test_that("load_lexicon and load_pool lower-case by the full Unicode mapping", {
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  path <- tempfile(fileext = ".csv")
+  on.exit(unlink(path), add = TRUE)
+  upper <- c(intToUtf8(c(0x39F, 0x394, 0x39F, 0x3A3)), paste0(intToUtf8(0x130), "stanbul"),
+             intToUtf8(c(0xC1, 0x52, 0x42, 0x4F, 0x4C)))
+  lower <- c(paste0(intToUtf8(c(0x69, 0x307)), "stanbul"),
+             intToUtf8(c(0xE1, 0x72, 0x62, 0x6F, 0x6C)),
+             intToUtf8(c(0x3BF, 0x3B4, 0x3BF, 0x3C2)))
+  write_utf8(paste0("word,freq_zipf\n", paste0(upper, ",4.0\n", collapse = "")), path)
+  lex <- load_lexicon(path, schema)
+  expect_identical(lex$word, lower)
+  expect_identical(lex$length, c(9L, 5L, 4L))
+  expect_identical(load_pool(path, schema)$pool$word, lower)
+})
+
 # Pins the same contract as test_merge_norms_trims_the_join_key in the Python
 # engine's test_querying.py: the join key gets the lexicon's own trim and
 # case-fold, so a padded norm table still joins in both engines.

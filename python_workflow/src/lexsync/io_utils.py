@@ -73,13 +73,13 @@ def _type_column(cells) -> pd.Series:
     Numeric when every non-missing value is a plain decimal number. It is int64 when
     every value is an integer literal and none is missing, and float64 otherwise,
     through float(), which is correctly rounded. R's double and this int64 both write
-    "3". The R engine reaches the same double by exact arithmetic for every value of
-    up to 15 significant digits with a power of ten within 10^22 (.parse_decimal in
-    io_utils.R). Beyond that it falls back to as.numeric(), which can differ in the
-    last bit. A negative zero is read as zero, because the two engines' writers print
-    it as "0" and "-0". Logical when every non-missing value is TRUE, FALSE, true,
-    false, True or False. Text otherwise. A column with no values at all is numeric,
-    all missing. Dates are never parsed.
+    "3". The R engine reaches the same double for every such value, by one exact
+    operation for up to 15 significant digits with a power of ten within 10^22 and by
+    exact integer arithmetic otherwise (.parse_decimal and .decimal_to_double in
+    io_utils.R). A negative zero is read as zero, because the two engines' writers
+    print it as "0" and "-0". Logical when every non-missing value is TRUE, FALSE,
+    true, false, True or False. Text otherwise, in the object dtype. A column with no
+    values at all is numeric, all missing. Dates are never parsed.
     """
     present = [v for v in cells if v is not None]
     if all(_NUMERIC_CELL.fullmatch(v) for v in present):
@@ -110,6 +110,11 @@ def read_csv_utf8(path: str, as_character=None) -> pd.DataFrame:
     not named in ``as_character`` then takes its type from all of its values (see
     _type_column), and a column named there stays text. A name in ``as_character`` that
     the header does not carry is ignored. A UTF-8 byte-order mark is ignored.
+
+    Text columns have the object dtype under every pandas version. pandas 3 would give
+    them its "str" dtype, which pyarrow backs when it is installed, and the .str
+    methods of that dtype then run Arrow's string functions (see _fold_words in
+    querying.py).
 
     The header row is read as data, so that this function sees the names before
     pandas renames a duplicate and can refuse it, as the R engine does.

@@ -267,8 +267,11 @@ engine therefore computes every number of up to 15 significant digits, with a
 power of ten within 10^22, as one exact integer multiplied or divided by one
 exact power of ten. IEEE-754 rounds that single operation correctly, so the
 result is Python's double. Every value in the shipped lexica is of that kind.
-Any other number goes through `as.numeric()`. It misses far less often than
-readr's parser, but the engines may then differ in its last bit. A negative zero
+Any other number is rounded in exact integer arithmetic, which gives Python's
+double on every platform. `as.numeric()` is not used there, because it
+accumulates the digits in `long double`. Where that type is no wider than a
+double, as on Apple Silicon, an emulation of R's parser missed on about one in
+ten of the values Python's `repr()` writes for computed doubles. A negative zero
 is read as zero, since the two engines would otherwise write it as `-0` and `0`.
 
 ## The Unicode input contract

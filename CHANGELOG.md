@@ -101,14 +101,16 @@ no function signature changes.
   `FALSE` by the other. A header that names a column twice is now refused, an
   empty header cell is named by its position (`...3`), and `load_lexicon`
   refuses a frequency column that is not numeric, naming the first value that is
-  not a plain number. The R engine parses every number of up to 15 significant
-  digits, with a power of ten within 10^22, to the nearest double, as Python's
-  `float()` does, because readr's parser could miss it by one unit in the last
-  place (`50.768212762897100`, for instance). Any other number goes through R's
-  `as.numeric()`. R wrote a negative zero as `-0` and Python as `0`, so both
-  engines now read it as zero. Every demonstration's stimuli and reports are
-  unchanged. Three twin-edge cases pin the outcome: `padded_pos`, `padded_header`
-  and `tf_column`.
+  not a plain number. The R engine parses every plain decimal number to the
+  nearest double, as Python's `float()` does, because readr's parser could miss
+  it by one unit in the last place (`50.768212762897100`, for instance). A number
+  of up to 15 significant digits, with a power of ten within 10^22, takes one
+  exact operation, and any other is rounded in exact integer arithmetic, because
+  R's `as.numeric()` misses as well, now and then on x86-64 and far more often on
+  Apple Silicon, where R CMD check read `0.12345678901234567` one unit away.
+  R wrote a negative zero as `-0` and Python as `0`, so both engines now read it
+  as zero. Every demonstration's stimuli and reports are unchanged. Three
+  twin-edge cases pin the outcome: `padded_pos`, `padded_header` and `tf_column`.
 - Changes list assignment: a paradigm's Latin-square recipe now applies when a
   design lists its own `events`. Any `events:` list made `counterbalance()` deal
   the items factorially, so a priming, categorisation or self-paced reading design
@@ -302,6 +304,18 @@ no function signature changes.
 
 ### Fixed
 
+- Under pandas 3 with pyarrow installed, the Python engine lower-cased the words
+  of a lexicon or a supplied pool by Unicode's simple case mapping, because pandas
+  then hands `.str.lower()` to Arrow. A final capital sigma became σ where
+  Python's `str.lower()` and the R engine give ς, and İ became a bare i where they
+  give i followed by U+0307, so the two engines keyed, sorted and measured such
+  words differently. The words are now folded by `str.strip()` and `str.lower()`
+  themselves. pandas 2, and pandas 3 without pyarrow, folded them correctly
+  already, and no shipped design holds such a word. The twin-edge case
+  `casefold_pool` pins both engines to one outcome. The suite also passes under
+  pandas 3, which pip installs on Python 3.11 and later: one test compared a
+  frame read from CSV, whose text columns are object, with one that pandas 3
+  built with its `str` dtype.
 - 28 of the committed datasheets recorded the SHA-256 of a copy of
   `corpora/derived/en.csv` or `es.csv` whose line endings one machine had
   converted to CRLF, so the digest could not be reproduced from a checkout and

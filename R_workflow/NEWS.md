@@ -74,13 +74,15 @@
   `FALSE` by the other. A header that names a column twice is now refused, an
   empty header cell is named by its position (`...3`), and `load_lexicon()`
   refuses a frequency column that is not numeric, naming the first value that is
-  not a plain number. The R engine parses every number of up to 15 significant
-  digits, with a power of ten within 10^22, to the nearest double, as Python's
-  `float()` does, because readr's parser could miss it by one unit in the last
-  place (`50.768212762897100`, for instance). Any other number goes through
-  `as.numeric()`. R wrote a negative zero as `-0` and Python as `0`, so both
-  engines now read it as zero. Every demonstration's stimuli and reports are
-  unchanged.
+  not a plain number. The R engine parses every plain decimal number to the
+  nearest double, as Python's `float()` does, because readr's parser could miss
+  it by one unit in the last place (`50.768212762897100`, for instance). A number
+  of up to 15 significant digits, with a power of ten within 10^22, takes one
+  exact operation, and any other is rounded in exact integer arithmetic, because
+  `as.numeric()` misses as well, now and then on x86-64 and far more often on
+  Apple Silicon, where R CMD check read `0.12345678901234567` one unit away.
+  R wrote a negative zero as `-0` and Python as `0`, so both engines now read it
+  as zero. Every demonstration's stimuli and reports are unchanged.
 
 * Changes list assignment: a paradigm's Latin-square recipe now applies when a
   design lists its own `events`. Any `events:` list made `counterbalance()` deal

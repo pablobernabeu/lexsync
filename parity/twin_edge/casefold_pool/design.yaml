@@ -1,0 +1,26 @@
+# Twin-edge case: a supplied pool of Greek words written in capitals, with four Turkish
+# place names among them, whose lower case needs the full Unicode case mapping. Each
+# Greek word ends in a capital sigma, which becomes the final form U+03C2, and KOSMOS
+# also holds one inside, which stays U+03C3. Each Turkish name begins with the dotted
+# capital I (U+0130), which becomes i and a combining dot above (U+0307), one character
+# longer than a bare i. Python's str.lower() and the R engine's ICU fold at the root
+# locale both apply that mapping. Under pandas 3 with pyarrow, pandas' .str.lower()
+# applied the simple one, so the Python engine wrote U+03C3 and a bare i, and matched
+# words of other lengths than the R engine did.
+name: twin_edge_casefold_pool
+language: greek
+description: 'Greek words and Turkish place names supplied in capitals, matched on length.'
+n_per_condition: 4
+items:
+  source: pool
+  path: pool.csv
+conditions:
+  - name: a
+    define_by:
+      grp: [a]
+  - name: b
+    define_by:
+      grp: [b]
+match_on: [length]
+counterbalance:
+  lists: 2

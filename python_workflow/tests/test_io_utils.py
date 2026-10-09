@@ -37,8 +37,11 @@ def test_write_csv_utf8_digest_is_platform_independent(tmp_path):
 
 
 def test_write_csv_utf8_round_trips(tmp_path):
+    # read_csv_utf8 gives text columns the object dtype under every pandas, so the
+    # frame read back is compared with object columns. pandas 3 builds _frame() with
+    # its own "str" dtype, and DataFrame.equals compares dtypes as well as values.
     path = write_csv_utf8(_frame(), str(tmp_path / "nested" / "s.csv"))
-    assert read_csv_utf8(path).equals(_frame())
+    assert read_csv_utf8(path).equals(_frame().astype(object))
 
 
 def test_read_csv_utf8_keeps_words_that_look_like_missing_values(tmp_path):
@@ -192,9 +195,14 @@ def test_read_csv_utf8_reads_an_empty_file_as_no_columns(tmp_path):
 
 
 # Pins the same bits as "read_csv_utf8 parses a number to the double both engines
-# reach" in test-io_utils.R. Each value takes a path where one of R's parsers misses
-# the nearest double: as.numeric() on the first and third, readr on the second,
-# fourth and fifth. A negative zero is read as zero, which both writers print as "0".
+# reach" in test-io_utils.R. R's own parsers miss the nearest double on the first five:
+# as.numeric() on the first and third, readr on the second, fourth and fifth. The
+# eighth to twelfth defeated the as.numeric() fallback the R engine once used beyond 15
+# significant digits, on x86-64, and the fourth defeated it on Apple Silicon, where
+# long double is no wider than double. The last three are a decimal just above the
+# largest double, which rounds down to it, the next 17-digit decimal, which rounds to
+# inf, and a decimal just above half the smallest subnormal, which rounds up to that
+# subnormal. A negative zero is read as zero, which both writers print as "0".
 NUMBER_BITS = [
     ("0.586135918132", "3fe2c1a01cec6975"),
     ("50.768212762897100", "40496254cbba81a5"),
@@ -203,6 +211,13 @@ NUMBER_BITS = [
     ("1e-400", "0000000000000000"),
     ("-0", "0000000000000000"),
     ("-0.00", "0000000000000000"),
+    ("4720.053418320736", "40b2700dacd2b491"),
+    ("10e125", "5a17a2ecc414a03f"),
+    ("5332246559989354200684", "447210fc94adb741"),
+    ("7.3230939350514581251e+14", "4304d0408a1fdbcf"),
+    ("1.7976931348623158e308", "7fefffffffffffff"),
+    ("1.7976931348623159e308", "7ff0000000000000"),
+    ("2.4703282292062328e-324", "0000000000000001"),
 ]
 
 

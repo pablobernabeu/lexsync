@@ -127,17 +127,27 @@ test_that("read_csv_utf8 reads an empty file as no columns", {
   expect_identical(nrow(out), 0L)
 })
 
-# Pins the same bits as NUMBER_BITS in test_io_utils.py. Each value takes a path where
-# one of R's parsers misses the nearest double: as.numeric() on the first and third,
-# readr on the second, fourth and fifth. A negative zero is read as zero, which both
-# writers print as "0". The bits are compared as hexadecimal text, since a double
+# Pins the same bits as NUMBER_BITS in test_io_utils.py. R's own parsers miss the
+# nearest double on the first five: as.numeric() on the first and third, readr on the
+# second, fourth and fifth. The eighth to twelfth defeated the as.numeric() fallback
+# this engine once used beyond 15 significant digits, on x86-64, and the fourth
+# defeated it on Apple Silicon, where long double is no wider than double. The last
+# three are a decimal just above the largest double, which rounds down to it, the next
+# 17-digit decimal, which rounds to Inf, and a decimal just above half the smallest
+# subnormal, which rounds up to that subnormal. A negative zero is read as zero, which
+# both writers print as "0". The bits are compared as hexadecimal text, since a double
 # literal in this file would itself go through R's parser.
 test_that("read_csv_utf8 parses a number to the double both engines reach", {
   cells <- c("0.586135918132", "50.768212762897100", "2.91e-11",
-             "0.12345678901234567", "1e-400", "-0", "-0.00")
+             "0.12345678901234567", "1e-400", "-0", "-0.00", "4720.053418320736",
+             "10e125", "5332246559989354200684", "7.3230939350514581251e+14",
+             "1.7976931348623158e308", "1.7976931348623159e308",
+             "2.4703282292062328e-324")
   bits <- c("3fe2c1a01cec6975", "40496254cbba81a5", "3dbffeebfc8b81b5",
             "3fbf9add3746f65e", "0000000000000000", "0000000000000000",
-            "0000000000000000")
+            "0000000000000000", "40b2700dacd2b491", "5a17a2ecc414a03f",
+            "447210fc94adb741", "4304d0408a1fdbcf", "7fefffffffffffff",
+            "7ff0000000000000", "0000000000000001")
   hex <- function(x) vapply(x, function(v) paste(rev(as.character(
     writeBin(v, raw(), endian = "little"))), collapse = ""), "", USE.NAMES = FALSE)
   out <- read_csv_utf8(write_fixture(charToRaw(paste0(

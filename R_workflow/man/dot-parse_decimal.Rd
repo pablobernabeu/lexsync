@@ -20,11 +20,16 @@ on 35, among them \code{0.586135918132} and \code{2.91e-11}. A value with at mos
 significant digits and a power of ten within 10^22 is therefore computed as one
 exact integer times or divided by one exact power of ten. That is a single IEEE-754
 operation, which is correctly rounded, so both engines reach the same double. Every
-value in the shipped lexica is of that kind. Any other value falls back to
-\code{as.numeric()}, and the engines may then differ in its last bit. readr's parser is
-not used there: over 60,008 random values of that kind it missed the nearest double on 21,644 and
-\code{as.numeric()} on 25, and it read \code{1e400} as 1e307 and \code{1e-400} as 1e-307, where
-\code{as.numeric()} and \code{float()} give \code{Inf} and 0. A negative zero is read as zero,
-because the two engines' writers would print it as \code{-0} and \code{0}.
+value in the shipped lexica is of that kind. Any other value is rounded by exact
+integer arithmetic (\code{.decimal_to_double()}). \code{as.numeric()} is not used there,
+because it accumulates the digits in \verb{long double}. Where that type is wider than a
+double, as on x86-64, it missed the nearest double on 25 of 60,008 such values.
+Where it is no wider, as on Apple Silicon, it misses far more often. R CMD check on
+macOS read \code{0.12345678901234567} one unit away, and an emulation of the parser in
+double precision missed on about one in ten of the values Python's \code{repr()} writes
+for computed doubles. readr's parser missed on 21,644 of the 60,008, and it read
+\code{1e400} as 1e307 and \code{1e-400} as 1e-307, where \code{float()} gives \code{Inf} and 0. A
+negative zero is read as zero, because the two engines' writers would print it as
+\code{-0} and \code{0}.
 }
 \keyword{internal}

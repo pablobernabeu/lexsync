@@ -97,6 +97,25 @@ def test_load_lexicon_keeps_zero_width_characters(schema, tmp_path):
     assert lex["length"].tolist() == [5]
 
 
+# Pins the same contract as "load_lexicon and load_pool lower-case by the full Unicode
+# mapping" in test-querying.R. A final capital sigma becomes U+03C2 and U+0130 becomes
+# i + U+0307, as str.lower() and the R engine's .lower_invariant() give them. Under
+# pandas 3 with pyarrow, the pandas .str.lower() this engine used gave U+03C3 and a
+# bare i, so the two engines keyed, sorted and measured these words differently.
+def test_load_lexicon_and_load_pool_lower_case_by_the_full_unicode_mapping(schema, tmp_path):
+    def text(*cps):
+        return "".join(map(chr, cps))
+    upper = [text(0x39F, 0x394, 0x39F, 0x3A3), text(0x130) + "stanbul", text(0xC1) + "RBOL"]
+    lower = [text(0x69, 0x307) + "stanbul", text(0xE1) + "rbol", text(0x3BF, 0x3B4, 0x3BF, 0x3C2)]
+    path = tmp_path / "cased.csv"
+    path.write_text("word,freq_zipf\n" + "".join(f"{w},4.0\n" for w in upper),
+                    encoding="utf-8")
+    lex = load_lexicon(str(path), schema)
+    assert lex["word"].tolist() == lower
+    assert lex["length"].tolist() == [9, 5, 4]
+    assert load_pool(str(path), schema)["pool"]["word"].tolist() == lower
+
+
 # Pins the same contract as "merge_norms preserves the lexicon's row order" in
 # the R engine's test-dimensions.R.
 def test_merge_norms_preserves_lexicon_order():

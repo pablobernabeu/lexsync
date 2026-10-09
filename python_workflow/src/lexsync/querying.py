@@ -83,6 +83,21 @@ def _syllable_column(words) -> np.ndarray:
     return np.array(counts, dtype=np.int64)
 
 
+def _fold_words(words) -> list:
+    """Words trimmed and lower-cased by Python's own str.strip() and str.lower().
+
+    pandas' .str.lower() is avoided because under pandas 3 with pyarrow installed it is
+    Arrow's, and Arrow applies Unicode's simple case mapping. A final capital sigma
+    became U+03C3 where str.lower() gives U+03C2, and U+0130 a bare i where str.lower()
+    gives i + U+0307. The R engine pins .lower_invariant to the full mapping that
+    str.lower() applies. Measured over every code point, strip() and len() agree with
+    their Arrow counterparts, and lower() differs on 57. The caller has already dropped
+    missing words. Mirrors .lower_invariant(.trim_invariant()) in
+    R_workflow/R/querying.R.
+    """
+    return [str(w).strip().lower() for w in words]
+
+
 def _nfc(s):
     """A text key in Unicode Normalization Form C, with None passing through.
 
@@ -172,12 +187,12 @@ def load_lexicon(path: str, schema: dict, language: str | None = None) -> pd.Dat
     # same schema with a column name and an AttributeError.
     freq_col = ((schema.get("dimensions") or {}).get("frequency") or {}).get("column") or "freq_zipf"
     _require_numbers(df[freq_col], freq_col)
-    # Filter before coercing: astype(str) renders a missing word as the literal
+    # Filter before coercing: str() renders a missing word as the literal
     # string "nan", which survives both guards below, whereas the R engine (where
     # as.character(NA) stays NA) drops the row. Coercing first would therefore
     # desynchronise the two engines' row counts and shift every subsequent id.
     df = df[df["word"].notna() & df[freq_col].notna()].copy()
-    df["word"] = df["word"].astype(str).str.strip().str.lower()
+    df["word"] = _fold_words(df["word"])
     df = df[df["word"] != ""].copy()
     # NFC before de-duplication, so the two spellings of a word are one word and the
     # first row in file order is the one kept.
@@ -272,7 +287,7 @@ def load_pool(path: str, schema: dict, lexicon=None, language=None) -> dict:
     # canonical key behind every byte-order tie-break, so the two engines must fold and
     # trim it identically before anything is sorted or numbered by it.
     df = df[df["word"].notna()].copy()
-    df["word"] = df["word"].astype(str).str.strip().str.lower()
+    df["word"] = _fold_words(df["word"])
     df = df[df["word"] != ""].copy()
     df["word"], changed, collapsed = _nfc_count(df["word"])
     df = df.drop_duplicates(subset="word")

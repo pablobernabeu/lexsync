@@ -1,0 +1,4 @@
+# Eight words, four per condition, folded by the full Unicode case mapping: each Greek
+# word ends in U+03C2, and each Turkish name begins with i and U+0307.
+outcome: artefacts
+compare: [stimuli, descriptives, comparisons]

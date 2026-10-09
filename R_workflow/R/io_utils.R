@@ -68,12 +68,17 @@
 #' significant digits and a power of ten within 10^22 is therefore computed as one
 #' exact integer times or divided by one exact power of ten. That is a single IEEE-754
 #' operation, which is correctly rounded, so both engines reach the same double. Every
-#' value in the shipped lexica is of that kind. Any other value falls back to
-#' `as.numeric()`, and the engines may then differ in its last bit. readr's parser is
-#' not used there: over 60,008 random values of that kind it missed the nearest double on 21,644 and
-#' `as.numeric()` on 25, and it read `1e400` as 1e307 and `1e-400` as 1e-307, where
-#' `as.numeric()` and `float()` give `Inf` and 0. A negative zero is read as zero,
-#' because the two engines' writers would print it as `-0` and `0`.
+#' value in the shipped lexica is of that kind. Any other value is rounded by exact
+#' integer arithmetic (`.decimal_to_double()`). `as.numeric()` is not used there,
+#' because it accumulates the digits in `long double`. Where that type is wider than a
+#' double, as on x86-64, it missed the nearest double on 25 of 60,008 such values.
+#' Where it is no wider, as on Apple Silicon, it misses far more often. R CMD check on
+#' macOS read `0.12345678901234567` one unit away, and an emulation of the parser in
+#' double precision missed on about one in ten of the values Python's `repr()` writes
+#' for computed doubles. readr's parser missed on 21,644 of the 60,008, and it read
+#' `1e400` as 1e307 and `1e-400` as 1e-307, where `float()` gives `Inf` and 0. A
+#' negative zero is read as zero, because the two engines' writers would print it as
+#' `-0` and `0`.
 #'
 #' @param x A character vector whose non-missing values match `.NUMERIC_CELL`.
 #' @return A double vector.
@@ -95,19 +100,147 @@
   # Trailing zeros move into the exponent, so 1.50000000000000000 is 15 times 10^-1.
   kept <- sub("0+$", "", digits)
   e10 <- ex - nchar(frac) + (nchar(digits) - nchar(kept))
-  m <- ifelse(nzchar(kept), as.numeric(ifelse(nzchar(kept), kept, "0")), 0)
-  fast <- nchar(kept) <= 15L & abs(e10) <= 22
-  v <- rep(NA_real_, length(s))
-  up <- fast & e10 >= 0
-  down <- fast & e10 < 0
-  v[up] <- m[up] * .POW10[e10[up] + 1]
-  v[down] <- m[down] / .POW10[-e10[down] + 1]
-  v[fast & !nzchar(kept)] <- 0
-  v[fast & neg] <- -v[fast & neg]
-  if (any(!fast)) v[!fast] <- as.numeric(s[!fast])
+  fast <- nzchar(kept) & nchar(kept) <= 15L & abs(e10) <= 22
+  slow <- nzchar(kept) & !fast
+  v <- numeric(length(s))
+  m <- as.numeric(kept[fast])
+  p <- e10[fast]
+  v[fast] <- ifelse(p >= 0, m * .POW10[pmax(p, 0) + 1], m / .POW10[pmax(-p, 0) + 1])
+  if (any(slow)) v[slow] <- .decimal_to_double(kept[slow], e10[slow])
+  v[neg] <- -v[neg]
   v[which(v == 0)] <- 0
   out[ok] <- v
   out
+}
+
+# The limbs .decimal_to_double() works in: base 2^24, least significant first, one row
+# per value. A limb times a multiplier or divisor below 2^24, plus a carry, stays below
+# 2^49, so every intermediate is an integer that a double holds exactly, on any
+# platform and whatever the width of its long double.
+.LIMB <- 16777216
+# The multipliers and divisors within that bound, 2^0 to 2^23 and 5^0 to 5^10, and
+# every power of two a double holds, 2^-1074 to 2^1023 at index k + 1075. Each is built
+# by exact multiplication or halving, as .POW10 is, because R's `^` hands any power
+# but a square to the C library's pow().
+.POW2_LIMB <- cumprod(c(1, rep(2, 23)))
+.POW5_LIMB <- cumprod(c(1, rep(5, 10)))
+.POW2 <- c(rev(Reduce(function(p, i) p / 2, seq_len(1074L), accumulate = TRUE, 1)),
+           Reduce(function(p, i) p * 2, seq_len(1023L), accumulate = TRUE, 1)[-1L])
+
+# Each row of N times its m, plus its add. The caller sizes N so that nothing carries
+# out of the top limb. The carry is a quotient by a power of two, so floor() is exact.
+.limbs_mul <- function(N, m, add = 0) {
+  carry <- add
+  for (j in seq_len(ncol(N))) {
+    t <- N[, j] * m + carry
+    carry <- floor(t / .LIMB)
+    N[, j] <- t - carry * .LIMB
+  }
+  N
+}
+
+# Each row of N divided by its d, from the top limb down: the floor, and the remainder,
+# which is non-zero where the division discarded something.
+.limbs_div <- function(N, d) {
+  r <- numeric(nrow(N))
+  for (j in rev(seq_len(ncol(N)))) {
+    t <- r * .LIMB + N[, j]
+    q <- t %/% d
+    r <- t - q * d
+    N[, j] <- q
+  }
+  list(N = N, rest = r)
+}
+
+# Each row of N times, or divided by, base^k for its own k, at most 2^23 or 5^10 a step
+# so that every factor stays below 2^24. A division also reports, per row, whether
+# anything was discarded.
+.limbs_pow <- function(N, k, base, divide = FALSE) {
+  most <- if (base == 2) 23 else 10
+  pow <- if (base == 2) .POW2_LIMB else .POW5_LIMB
+  rest <- logical(nrow(N))
+  while (any(k > 0)) {
+    s <- pmin(k, most)
+    if (divide) {
+      r <- .limbs_div(N, pow[s + 1])
+      N <- r$N
+      rest <- rest | r$rest != 0
+    } else {
+      N <- .limbs_mul(N, pow[s + 1])
+    }
+    k <- k - s
+  }
+  list(N = N, rest = rest)
+}
+
+# The double nearest each value digits * 10^e10, ties to even, as Python's float()
+# rounds. `digits` holds a value's significant digits, the first and the last of them
+# non-zero. This is the path .parse_decimal() takes for more than 15 digits or a power
+# of ten beyond 10^22. Each value is scaled by a power of two, 2^-q, chosen to leave
+# between 2^55 and 2^58, and the integer part is found exactly, with a note of whether
+# a fraction was dropped. 53 bits of it are kept, fewer below 2^-1022, and the bits
+# dropped decide the rounding. q comes from log2(), whose last bit can differ by
+# platform, and a q one or two away from the estimate gives the same double, since it
+# moves only where the bits are cut.
+.decimal_to_double <- function(digits, e10) {
+  n <- nchar(digits)
+  # The value lies in [10^(top - 1), 10^top). From 1e309 it is past the largest double
+  # by more than half a spacing, and below 1e-324 it is under half of 2^-1074.
+  top <- e10 + n
+  out <- numeric(length(digits))
+  out[top > 309] <- Inf
+  live <- which(top > -324 & top <= 309)
+  if (!length(live)) return(out)
+  d <- digits[live]
+  e <- e10[live]
+  n <- n[live]
+  lead <- as.numeric(substr(d, 1L, 15L))
+  q <- floor(log2(lead) + (e + n - pmin(n, 15L)) * log2(10)) - 56
+  # Limbs enough for the largest intermediate, digits * 5^e * 2^(e - q). Rows are taken
+  # in groups of one width, so a single long or extreme value does not widen them all.
+  w <- pmax(ceiling((n * log2(10) + pmax(e, 0) * log2(5) + pmax(e - q, 0)) / 24) + 1, 3)
+  v <- numeric(length(d))
+  for (g in split(seq_along(d), w)) v[g] <- .decimal_rows(d[g], e[g], q[g], w[g][1L])
+  out[live] <- v
+  out
+}
+
+# .decimal_to_double() for rows whose intermediates fit in w limbs.
+.decimal_rows <- function(d, e, q, w) {
+  n <- nchar(d)
+  N <- matrix(0, length(d), w)
+  # The digits seven at a time, the strings padded on the left to one length.
+  len <- 7L * ceiling(max(n) / 7)
+  padded <- paste0(strrep("0", len - n), d)
+  for (s in seq(1L, len, by = 7L)) {
+    N <- .limbs_mul(N, 1e7, as.numeric(substr(padded, s, s + 6L)))
+  }
+  # Every multiplication before any division, which leaves floor(value / 2^q) exactly:
+  # floor(floor(x / a) / b) is floor(x / (a * b)).
+  N <- .limbs_pow(N, pmax(e, 0), 5)$N
+  N <- .limbs_pow(N, pmax(e - q, 0), 2)$N
+  by5 <- .limbs_pow(N, pmax(-e, 0), 5, divide = TRUE)
+  by2 <- .limbs_pow(by5$N, pmax(q - e, 0), 2, divide = TRUE)
+  N <- by2$N
+  # At least 2^53, so 54 bits are there to cut, and below 2^72, three limbs.
+  if (any(N[, 3L] < 32) || (w > 3L && any(N[, -(1:3)] != 0))) {
+    stop("lexsync: internal error: a decimal was scaled outside [2^53, 2^72).",
+         call. = FALSE)
+  }
+  # The bit length: the 48 bits of the two lower limbs and those of the third.
+  bits <- 48 + findInterval(N[, 3L], .POW2_LIMB)
+  # The power of two of the last bit kept: 53 bits, or fewer where the double is
+  # subnormal. The bits below it are dropped, and the highest of them, the guard bit,
+  # goes last, since it decides the rounding.
+  unit <- pmax(q + bits - 53, -1074)
+  cut <- .limbs_pow(N, unit - q - 1, 2, divide = TRUE)
+  guard <- cut$N[, 1L] %% 2
+  N <- .limbs_div(cut$N, 2)$N
+  t <- N[, 1L] + N[, 2L] * .LIMB + N[, 3L] * .LIMB * .LIMB
+  # Half to even: up past the half, and at exactly the half when the kept bits are odd.
+  inexact <- by5$rest | by2$rest | cut$rest
+  t <- t + (guard == 1 & (inexact | t %% 2 == 1))
+  t * .POW2[unit + 1075]
 }
 
 #' Type one column by the rule both engines share
