@@ -197,10 +197,10 @@ def test_a_pair_designs_window_relaxation_reaches_the_datasheet(tmp_path):
     items = os.path.join(str(tmp_path), "pairs.csv")
     with open(items, "w", encoding="utf-8", newline="\n") as handle:
         handle.write("item,condition,prime,target\n"
-                     "1,related,aaa,flat\n1,unrelated,abba,flat\n"
-                     "2,related,acne,glass\n2,unrelated,aaron,glass\n"
-                     "3,related,alarm,across\n3,unrelated,abrams,across\n"
-                     "4,related,aha,house\n4,unrelated,abdel,house\n")
+                     "1,related,aback,boat\n1,unrelated,abandon,boat\n"
+                     "2,related,abdomen,apple\n2,unrelated,ability,apple\n"
+                     "3,related,abnormal,bridge\n3,unrelated,abode,bridge\n"
+                     "4,related,absurd,hotel\n4,unrelated,academy,hotel\n")
     design = _write_design(str(tmp_path), [
         "name: guard_pair_relax",
         "language: english",
@@ -301,19 +301,19 @@ def test_a_continuous_designs_exclusion_reaches_the_record(tmp_path):
 
 def test_a_pair_designs_exclusion_reaches_the_record(tmp_path):
     # The pair path selects over one row per set and copies the selector's audit onto
-    # the re-expanded table. 'across' has no rating, so its set is excluded and the
+    # the re-expanded table. 'bridge' has no rating, so its set is excluded and the
     # count reaches the run log and the datasheet. Twinned with test-run-pipeline.R.
     import json
     items = os.path.join(str(tmp_path), "pairs.csv")
     with open(items, "w", encoding="utf-8", newline="\n") as handle:
         handle.write("item,condition,prime,target\n"
-                     "1,related,aaa,flat\n1,unrelated,abba,flat\n"
-                     "2,related,acne,glass\n2,unrelated,aaron,glass\n"
-                     "3,related,alarm,across\n3,unrelated,abrams,across\n"
-                     "4,related,aha,house\n4,unrelated,abdel,house\n")
+                     "1,related,aback,boat\n1,unrelated,abandon,boat\n"
+                     "2,related,abdomen,apple\n2,unrelated,ability,apple\n"
+                     "3,related,abnormal,bridge\n3,unrelated,abode,bridge\n"
+                     "4,related,absurd,hotel\n4,unrelated,academy,hotel\n")
     ratings = os.path.join(str(tmp_path), "ratings.csv")
     with open(ratings, "w", encoding="utf-8", newline="\n") as handle:
-        handle.write("word,rating\nflat,2.5\nglass,3.1\nhouse,4.0\n")
+        handle.write("word,rating\nboat,2.5\napple,3.1\nhotel,4.0\n")
     design = _write_design(str(tmp_path), [
         "name: guard_pair_incomplete",
         "language: english",
@@ -342,7 +342,7 @@ def test_a_pair_designs_exclusion_reaches_the_record(tmp_path):
         log = handle.read()
     assert "dropped 1 candidate(s) missing the predictor or a control" in log
     with open(res["stimuli"], encoding="utf-8") as handle:
-        assert "across" not in handle.read()
+        assert "bridge" not in handle.read()
 
 
 def test_a_resampled_designs_exclusion_reaches_the_record(tmp_path):
@@ -1433,12 +1433,12 @@ def test_en_ndensity_reports_its_syllable_confound():
     row = cmp[cmp["dimension"] == "n_syllables"].iloc[0]
     assert row["role"] == "uncontrolled"
     assert not row["equivalent"]
-    assert abs(row["cohens_d"] - -0.828) < 0.001
+    assert abs(row["cohens_d"] - -0.528) < 0.001
 
 
 def test_en_freqcontinuous_reports_the_spread_of_its_predictor():
-    """The selection follows the pool's skew, so its frequency SD is about 0.60 of that
-    of 80 values spread evenly over the same range (0.54 against 0.90)."""
+    """The selection follows the pool's skew, so its frequency SD is about 0.59 of that
+    of 80 values spread evenly over the same range (0.53 against 0.90)."""
     cmp = _golden("en_freqcontinuous_english_comparisons_py.csv").set_index("dimension")
-    assert abs(cmp.loc["frequency", "sd_ratio"] - 0.60) < 0.005
+    assert abs(cmp.loc["frequency", "sd_ratio"] - 0.59) < 0.005
     assert cmp.loc["length", "window_low"] < cmp.loc["length", "window_high"]

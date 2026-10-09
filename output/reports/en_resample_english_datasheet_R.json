@@ -10,9 +10,15 @@
   },
   "materials_source": {
     "type": "corpus",
-    "path": "corpora/derived/en.csv",
-    "sha256": "575833489e04d6a4001fda56a56e3daa383811dece1f819c44060ee79ca56976",
-    "provenance": "wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md"
+    "path": "corpora/derived/en_v2.csv",
+    "sha256": "46815cd56ac036cb841460a2ea6205ac374eddb6ca26275bb1a2fbafc7c5d626",
+    "provenance": "wordfreq (Speer, 2022) screened against SUBTLEX-US (Brysbaert & New, 2009), data CC BY-SA 4.0; forms absent from SUBTLEX-US or beginning with a lower-case letter in under 10% of their uses are marked nonstandard, and N and OLD20 count only the unmarked forms; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md",
+    "exclusions": {
+      "path": "config/exclude_en_demo.txt",
+      "sha256": "cac9f88fb86fa6d0e6dbabc287c9ebb782100d071eeded13eb812584b9d41e9f",
+      "n_listed": 53,
+      "n_removed": 53
+    }
   },
   "dimensions": {
     "length": {
@@ -60,16 +66,17 @@
       "old20": 2
     },
     "tie_break": {
-      "rule": "bytes"
+      "rule": "hash",
+      "salt": "lexsync-tie-v1"
     },
     "candidate_pool": [
       {
         "condition": "high_frequency",
-        "n_candidates": 462
+        "n_candidates": 453
       },
       {
         "condition": "low_frequency",
-        "n_candidates": 7479
+        "n_candidates": 6051
       }
     ],
     "cross_engine": "byte-identical"
@@ -90,76 +97,76 @@
       "reference": "high_frequency",
       "dimension": "length",
       "role": "controlled",
-      "cohens_d": 0.044,
-      "ci_low": -0.169,
-      "ci_high": 0.257,
-      "var_ratio": 0.862,
-      "tost_p": 0.0002,
+      "cohens_d": 0.059,
+      "ci_low": -0.154,
+      "ci_high": 0.272,
+      "var_ratio": 0.789,
+      "tost_p": 0.0004,
       "equivalent": true,
-      "mean_diff": 0.05
+      "mean_diff": 0.067
     },
     {
       "condition": "low_frequency",
       "reference": "high_frequency",
       "dimension": "frequency",
       "role": "manipulated",
-      "cohens_d": 5.382,
-      "ci_low": 4.924,
-      "ci_high": 5.84,
-      "var_ratio": 0.585,
+      "cohens_d": 5.439,
+      "ci_low": 4.977,
+      "ci_high": 5.901,
+      "var_ratio": 0.6,
       "tost_p": 1,
       "equivalent": false,
-      "mean_diff": 1.642
+      "mean_diff": 1.678
     },
     {
       "condition": "low_frequency",
       "reference": "high_frequency",
       "dimension": "n_density",
       "role": "controlled",
-      "cohens_d": 0.032,
-      "ci_low": -0.182,
-      "ci_high": 0.245,
-      "var_ratio": 0.865,
+      "cohens_d": 0.034,
+      "ci_low": -0.179,
+      "ci_high": 0.247,
+      "var_ratio": 0.836,
       "tost_p": 0.0002,
       "equivalent": true,
-      "mean_diff": 0.158
+      "mean_diff": 0.15
     },
     {
       "condition": "low_frequency",
       "reference": "high_frequency",
       "dimension": "old20",
       "role": "controlled",
-      "cohens_d": 0.017,
-      "ci_low": -0.196,
-      "ci_high": 0.23,
-      "var_ratio": 0.898,
-      "tost_p": 0.0001,
+      "cohens_d": 0.041,
+      "ci_low": -0.172,
+      "ci_high": 0.255,
+      "var_ratio": 0.79,
+      "tost_p": 0.0002,
       "equivalent": true,
-      "mean_diff": 0.008
+      "mean_diff": 0.02
     },
     {
       "condition": "low_frequency",
       "reference": "high_frequency",
       "dimension": "n_syllables",
       "role": "uncontrolled",
-      "cohens_d": -0.341,
-      "ci_low": -0.555,
-      "ci_high": -0.126,
-      "var_ratio": 0.964,
-      "tost_p": 0.1091,
-      "equivalent": false,
-      "mean_diff": -0.242
+      "cohens_d": 0.078,
+      "ci_low": -0.135,
+      "ci_high": 0.291,
+      "var_ratio": 0.944,
+      "tost_p": 0.0006,
+      "equivalent": true,
+      "mean_diff": 0.05
     },
     {
       "condition": "low_frequency",
       "reference": "high_frequency",
       "dimension": "bigram_freq",
       "role": "uncontrolled",
-      "cohens_d": -0.03,
-      "ci_low": -0.243,
-      "ci_high": 0.183,
-      "var_ratio": 0.976,
-      "tost_p": 0.0002,
+      "cohens_d": 0.103,
+      "ci_low": -0.11,
+      "ci_high": 0.316,
+      "var_ratio": 1.391,
+      "tost_p": 0.0012,
       "equivalent": true,
       "mean_diff": 0
     }
@@ -263,7 +270,7 @@
       }
     ],
     "stimuli_file": "output/stimuli/en_resample_english_stimuli_R.csv",
-    "stimuli_sha256": "b51397019b42e5efbd18154a45a5ce5db62296403ecfc8d1ecb7d75f3581b79b"
+    "stimuli_sha256": "b38e33337b312dfe71bae27addd90646841ec3c90f2959303f4fa449d21330ab"
   },
   "reproducibility": {
     "seed": 2026,
@@ -279,22 +286,22 @@
       "stringi": "1.8.7",
       "os": "Windows x86-64"
     },
-    "design_sha256": "8c72dcaf1297f3940782caf8fa1cf04edd9b19e9592f30564929372c5e19f66f",
+    "design_sha256": "c81f94cf439dc0fcc0ad0fec6c111de2476402c9524a96a5121e2b91283fd9fe",
     "schema_path": "config/schema.yaml",
-    "schema_sha256": "3335f4e31a7f5dece6375dd0247600547ad86290492c7aead2836a9ec8af9dcb"
+    "schema_sha256": "5366c0b44af48b5bbc25c142ec14865db2f4a377efb35a5e99d937770b2e1483"
   },
   "artifacts": [
     {
       "file": "output/stimuli/en_resample_english_stimuli_R.csv",
-      "sha256": "b51397019b42e5efbd18154a45a5ce5db62296403ecfc8d1ecb7d75f3581b79b"
+      "sha256": "b38e33337b312dfe71bae27addd90646841ec3c90f2959303f4fa449d21330ab"
     },
     {
       "file": "output/reports/en_resample_english_descriptives_R.csv",
-      "sha256": "f138a1b5ebe845600d12f7bd688014c482e3757028df9c03d463c9fa2815c7b9"
+      "sha256": "b1955823d529b4e9090732a6d78b63d514f83dcdf10f26277edde6f8763c0108"
     },
     {
       "file": "output/reports/en_resample_english_comparisons_R.csv",
-      "sha256": "47e346dab899196f6c409e04f76bbfb9f89b062de5c769de275dbc6994fc3832"
+      "sha256": "8d2d985396808293af82a352c7713cf162920a22ba890ba58a0b890f6980e1da"
     },
     {
       "file": "output/experiments/en_resample_english_psychopy.py",
@@ -314,11 +321,11 @@
     },
     {
       "file": "output/experiments/en_resample_english.html",
-      "sha256": "a8ad565329c610b219f4f1d7da4f617c2fae847ae28f6dd6a3f32a2c7d9d5830"
+      "sha256": "048d9eb1bb12e3b3bc01fdec4e7c9ca44915fd469cf50412f925f076747cf3f7"
     },
     {
       "file": "output/experiments/en_resample_english_psychopy.csv",
-      "sha256": "783229e3ad9e3eb85b1709495eef6b8a28df2e94b713a214002693479fe2f20b"
+      "sha256": "3a0057be3ec757d5ab46842e67d1ed1c824b5d9345b960b05fcd11df603c2965"
     },
     {
       "file": "output/experiments/en_resample_english_rep1_list1_opensesame.csv",
@@ -326,7 +333,7 @@
     },
     {
       "file": "output/experiments/en_resample_english_rep1_list1_opensesame_text.csv",
-      "sha256": "8dfb1da39248a66d7ba50689733afa1699fd5b1a53fff9949eeca485f9cea369"
+      "sha256": "88230663af01eab60e8592f23a6b1e2c92bf5ee00de23c2d7d17a2e2228631d0"
     },
     {
       "file": "output/experiments/en_resample_english_rep2_list1_opensesame.csv",
@@ -334,7 +341,7 @@
     },
     {
       "file": "output/experiments/en_resample_english_rep2_list1_opensesame_text.csv",
-      "sha256": "2b0a716ebf557ca6c0d8a156aefbcabf531c628db04fef11f5ecf7a93c780b11"
+      "sha256": "9bbdefb8d16befad82cc0658345c970e268ea5388af756d3843790ef518e659c"
     },
     {
       "file": "output/experiments/en_resample_english_rep3_list1_opensesame.csv",
@@ -342,7 +349,7 @@
     },
     {
       "file": "output/experiments/en_resample_english_rep3_list1_opensesame_text.csv",
-      "sha256": "e2dbeefd6ddf8de914cca16ff2fc80a58e95e377fabf676ac1af64f69cdfa9ec"
+      "sha256": "2a76753e06ad33712a338d02168a59867d31c8c8c7200dd3715571dec6813b3a"
     }
   ]
 }

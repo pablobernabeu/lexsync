@@ -100,7 +100,7 @@ print(report["comparisons"].to_string(index=False))
 ```
 
 The report is the point of the exercise, because it measures what the matching
-achieved. Frequency, the manipulation, separates the conditions by nearly six
+achieved. Frequency, the manipulation, separates the conditions by nearly five
 standard deviations, while each control dimension passes a two one-sided tests
 procedure against a bound of *d* = 0.5, so it is shown to be equivalent and not
 merely to have escaped a significance test. The [Matching and designs
@@ -124,9 +124,13 @@ cd lexsync
 import yaml, lexsync
 
 schema = yaml.safe_load(open("config/schema.yaml"))
-lex = lexsync.load_lexicon("corpora/derived/en.csv", schema, "english")
-
 design = yaml.safe_load(open("config/design_en_freqcontrast.yaml"))
+lex = lexsync.load_lexicon(design["lexicon"], schema, "english")   # en_v2.csv
+
+# The design leaves out the words its exclude_words file lists, as `lexsync run` does.
+with open(design["exclude_words"]["path"], encoding="utf-8") as handle:
+    excluded = {w.strip() for w in handle if w.strip() and not w.startswith("#")}
+lex = lex[~lex["word"].isin(excluded)]
 pool = lexsync.build_pool(lex, design["pool_filters"])
 stim = lexsync.match_stimuli(pool, design, schema)
 # Not optional: this assigns the counterbalancing lists and draws the trial
@@ -177,7 +181,8 @@ their own terms, and each is credited, with its licence and retrieval date, in
 MIT for the code. The bundled corpus derivatives are not covered by it. The
 three example lexica, installed as `lexsync/data/en_example.csv`,
 `lexsync/data/es_example.csv` and `lexsync/data/zh_example.csv`, are derived from
-'wordfreq' and are released under CC BY-SA 4.0, which asks anyone who
+'wordfreq', the English one screened against SUBTLEX-US, and are released under
+CC BY-SA 4.0, which asks anyone who
 redistributes them to credit the corpus authors, say that changes were made and
 keep the same terms on any adaptation. `LICENSE.note` states this inside the
 distribution itself, alongside `LICENSE`, so the terms travel with the installed

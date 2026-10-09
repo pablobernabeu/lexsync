@@ -813,21 +813,22 @@ test_that("a continuous design prints its span and correlations through the form
 ds_files <- function() list(stimuli = NULL, experiments = list())
 
 test_that("the_datasheet_records_the_tie_break_rule", {
-  # A matched design records the rule that broke exact ties, with its salt under hash. A
-  # design that runs no matcher records none. Twinned with test_datasheet.py.
+  # A matched design records the rule that broke exact ties, with its salt under hash,
+  # the default. A design that runs no matcher records none. Twinned with
+  # test_datasheet.py.
   schema <- ds_schema()
   ds <- build_datasheet(ds_design(), schema, NULL, ds_stim(), "x.csv", ds_files(), 2026)
-  expect_identical(ds$selection[["tie_break"]], list(rule = "bytes"))
-  hashed <- ds_design()
-  hashed$matching <- list(tie_break = "hash")
-  ds <- build_datasheet(hashed, schema, NULL, ds_stim(), "x.csv", ds_files(), 2026)
   expect_identical(ds$selection[["tie_break"]], list(rule = "hash", salt = "lexsync-tie-v1"))
-  schema_hash <- schema
-  schema_hash$matching$tie_break <- "hash"
+  as_0_1 <- ds_design()
+  as_0_1$matching <- list(tie_break = "bytes")
+  ds <- build_datasheet(as_0_1, schema, NULL, ds_stim(), "x.csv", ds_files(), 2026)
+  expect_identical(ds$selection[["tie_break"]], list(rule = "bytes"))
+  schema_bytes <- schema
+  schema_bytes$matching$tie_break <- "bytes"
   joint <- ds_design()
   joint$matching <- list(method = "joint")
-  ds <- build_datasheet(joint, schema_hash, NULL, ds_stim(), "x.csv", ds_files(), 2026)
-  expect_identical(ds$selection[["tie_break"]], list(rule = "hash", salt = "lexsync-tie-v1"))
+  ds <- build_datasheet(joint, schema_bytes, NULL, ds_stim(), "x.csv", ds_files(), 2026)
+  expect_identical(ds$selection[["tie_break"]], list(rule = "bytes"))
   gen <- build_datasheet(ds_gen_design(), schema, NULL, ds_gen_stim(), "x.csv", ds_files(),
                          2026)
   expect_null(gen$selection[["tie_break"]])
@@ -855,17 +856,17 @@ test_that("selection_transparency_says_the_seed_does_not_select", {
                                                       candidate_pool = cp))
   expect_false(grepl("given the seed", md, fixed = TRUE))
   expect_false(grepl("free of item-selection bias", md, fixed = TRUE))
-  expect_true(grepl(paste(lead, "Exact ties between equally close candidates are broken by",
-                          "spelling, in byte order, as lexsync 0.1 did, so every tie goes",
-                          "to the spelling that sorts first.", tail), md, fixed = TRUE))
-  hashed <- ds_design()
-  hashed$matching <- list(tie_break = "hash")
-  md <- lexsync:::render_datasheet_md(build_datasheet(hashed, schema, NULL, ds_stim(),
-                                                      "x.csv", ds_files(), 2026,
-                                                      candidate_pool = cp))
   expect_true(grepl(paste(lead, "Exact ties between equally close candidates are broken by a",
                           "keyed hash of each word (salt lexsync-tie-v1), so no part of the",
                           "alphabet is favoured.", tail), md, fixed = TRUE))
+  as_0_1 <- ds_design()
+  as_0_1$matching <- list(tie_break = "bytes")
+  md <- lexsync:::render_datasheet_md(build_datasheet(as_0_1, schema, NULL, ds_stim(),
+                                                      "x.csv", ds_files(), 2026,
+                                                      candidate_pool = cp))
+  expect_true(grepl(paste(lead, "Exact ties between equally close candidates are broken by",
+                          "spelling, in byte order, as lexsync 0.1 did, so every tie goes",
+                          "to the spelling that sorts first.", tail), md, fixed = TRUE))
   gen <- lexsync:::render_datasheet_md(build_datasheet(
     ds_gen_design(), schema, NULL, ds_gen_stim(), "x.csv", ds_files(), 2026,
     candidate_pool = list(list(condition = "words in band", n_candidates = 100L))))
@@ -938,9 +939,9 @@ ds_frequency_conditions <- function(design) {
 test_that("the methods text describes the realised control before testing it", {
   m <- methods_paragraph(ds_committed_record("en_freqcontrast_english_datasheet_R"))
   expect_true(grepl(paste0(
-    "The largest difference on a matched dimension was 0.300 neighbours in ",
-    "n_density (high_frequency against low_frequency; d = 0.04, 90% CI ",
-    "[-0.22, 0.30]). Two one-sided tests at a bound of 0.5 SD (alpha 0.05) ",
+    "The largest difference on a matched dimension was 0.325 neighbours in ",
+    "n_density (high_frequency against low_frequency; d = 0.06, 90% CI ",
+    "[-0.21, 0.32]). Two one-sided tests at a bound of 0.5 SD (alpha 0.05) ",
     "supported equivalence on 3 of 3 matched comparisons. No uncontrolled ",
     "dimension differed by more than 0.5 SD."), m, fixed = TRUE))
   expect_false(grepl("The realised control was close", m, fixed = TRUE))
@@ -991,19 +992,19 @@ test_that("the methods text names the uncontrolled dimensions that differ", {
   m <- methods_paragraph(ds_committed_record("en_ndensity_english_datasheet_R"))
   expect_true(grepl(paste0(
     "Dimensions the design did not control differed: old20 (dense_neighbourhood ",
-    "against sparse_neighbourhood: -0.523 mean Levenshtein distance; d = -2.30, ",
-    "90% CI [-2.64, -1.97]) and n_syllables (dense_neighbourhood against ",
-    "sparse_neighbourhood: -0.450 syllables; d = -0.83, 90% CI ",
-    "[-1.10, -0.56])."), m, fixed = TRUE))
+    "against sparse_neighbourhood: -0.536 mean Levenshtein distance; d = -2.39, ",
+    "90% CI [-2.73, -2.04]) and n_syllables (dense_neighbourhood against ",
+    "sparse_neighbourhood: -0.288 syllables; d = -0.53, 90% CI ",
+    "[-0.79, -0.26])."), m, fixed = TRUE))
 })
 
 test_that("a lexical decision reports what its pseudowords were not matched on", {
   m <- methods_paragraph(ds_committed_record("en_lexdec_english_datasheet_R"))
   expect_true(grepl(paste0(
     "Words and pseudowords were matched on length only, and the words differed ",
-    "from the pseudowords in bigram frequency (d = -1.47, 90% CI [-1.82, -1.13]), ",
-    "N (d = -0.28, 90% CI [-0.59, 0.02]) and OLD20 (d = 0.17, 90% CI ",
-    "[-0.13, 0.47]). Two one-sided tests at a bound of 0.5 SD (alpha 0.05) ",
+    "from the pseudowords in bigram frequency (d = -0.97, 90% CI [-1.29, -0.65]), ",
+    "N (d = 0.01, 90% CI [-0.30, 0.31]) and OLD20 (d = -0.04, 90% CI ",
+    "[-0.34, 0.27]). Two one-sided tests at a bound of 0.5 SD (alpha 0.05) ",
     "supported equivalence on 1 of 1 matched comparisons."), m, fixed = TRUE))
 })
 
@@ -1073,13 +1074,13 @@ test_that("a continuous methods text gives the spreads and the windows", {
   m <- methods_paragraph(ds_committed_record("en_freqcontinuous_english_datasheet_R"))
   expect_true(grepl(paste0(
     "80 English items were selected to span frequency (a span of 3.05 and an SD of ",
-    "0.54, 0.60 times that of an even spread over the span), for analysis by ",
+    "0.53, 0.59 times that of an even spread over the span), for analysis by ",
     "regression or a mixed model rather than a between-condition contrast (Kuperman, ",
     "2015; Liben-Nowell et al., 2019). The controls were banded within windows of ",
     "the mean \u00b1 1.5 SD of an initial selection spread over the ranks of ",
-    "frequency (length 3.18 to 7.90, n_density -5.21 to 12.84 and old20 1.14 to ",
-    "2.80), and their realised SDs were 0.66, 0.39 and 0.56 of the pool's. The ",
-    "largest predictor-control correlation was |r| = 0.165."), m, fixed = TRUE))
+    "frequency (length 3.99 to 8.13, n_density -2.52 to 7.54 and old20 1.29 to ",
+    "2.91), and their realised SDs were 0.76, 0.41 and 0.68 of the pool's. The ",
+    "largest predictor-control correlation was |r| = 0.301."), m, fixed = TRUE))
   expect_false(grepl("near-constant", m, fixed = TRUE))
   # The first pass spreads over the predictor's ranks and follows the pool's skew, so
   # calling it an even spread contradicted the SD ratio given a sentence earlier.

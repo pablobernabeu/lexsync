@@ -6,7 +6,8 @@
 
 - **Paradigm:** factorial  |  **Item source:** corpus
 - **Description:** Reproducing the item selection of Andrews (1989): frequency x orthographic neighbourhood size (Coltheart's N), a 2x2 of words with every cell matched on length; no nonwords or response mapping, so not a lexical-decision task.
-- **Materials source:** `corpora/derived/en.csv` (sha256 `575833489e04d6a4…`)
+- **Materials source:** `corpora/derived/en_v2.csv` (sha256 `46815cd56ac036cb…`)
+- **Excluded words:** `config/exclude_en_demo.txt` (53 words, 53 removed, sha256 `cac9f88fb86fa6d0…`)
 - **Selection:** standardised_euclidean
 - **Cross-engine determinism:** byte-identical
 - **Counterbalancing:** factorial, 1 list(s)
@@ -24,8 +25,8 @@
 
 ## Selection transparency
 
-- **Candidate pool** (items satisfying each condition's window before matching): HF_largeN: 251, HF_smallN: 258, LF_largeN: 1875, LF_smallN: 3462.
-- Selection is a deterministic function of the materials source, the design and the schema, blind to any outcome measure, and does not depend on the seed, which fixes the trial order. Exact ties between equally close candidates are broken by spelling, in byte order, as lexsync 0.1 did, so every tie goes to the spelling that sorts first. Automating the choice removes the experimenter's discretion that Forster (2000) showed can bias item selection.
+- **Candidate pool** (items satisfying each condition's window before matching): HF_largeN: 201, HF_smallN: 280, LF_largeN: 794, LF_smallN: 2231.
+- Selection is a deterministic function of the materials source, the design and the schema, blind to any outcome measure, and does not depend on the seed, which fixes the trial order. Exact ties between equally close candidates are broken by a keyed hash of each word (salt lexsync-tie-v1), so no part of the alphabet is favoured. Automating the choice removes the experimenter's discretion that Forster (2000) showed can bias item selection.
 
 ## Realised control
 
@@ -33,42 +34,42 @@ Each row compares a condition with its reference. The raw difference and Cohen's
 
 | Condition | Reference | Dimension | Role | Raw difference | Cohen's d | 90% CI | Var ratio | TOST p | Equivalent |
 |---|---|---|---|---|---|---|---|---|---|
-| HF_smallN | HF_largeN | length | controlled | -0.111 | -0.21 | [-0.77, 0.36] | 0.57 | 0.1920 | False |
-| HF_smallN | HF_largeN | frequency | uncontrolled | -0.054 | -0.11 | [-0.67, 0.46] | 1.07 | 0.1238 | False |
-| HF_smallN | HF_largeN | n_density | manipulated | 15.111 | 3.19 | [2.34, 4.04] | 0.04 | 1.0000 | False |
-| HF_smallN | HF_largeN | old20 | uncontrolled | -0.628 | -5.76 | [-7.03, -4.48] | 1.13 | 1.0000 | False |
-| HF_smallN | HF_largeN | n_syllables | uncontrolled | -0.278 | -0.59 | [-1.16, -0.01] | 1.45 | 0.6023 | False |
-| HF_smallN | HF_largeN | bigram_freq | uncontrolled | 0.003 | 0.82 | [0.23, 1.41] | 0.98 | 0.8291 | False |
-| LF_largeN | HF_largeN | length | controlled | 0.056 | 0.10 | [-0.47, 0.66] | 0.71 | 0.1186 | False |
-| LF_largeN | HF_largeN | frequency | manipulated | 2.026 | 4.71 | [3.62, 5.81] | 0.50 | 1.0000 | False |
-| LF_largeN | HF_largeN | n_density | uncontrolled | 0.611 | 0.10 | [-0.46, 0.67] | 0.64 | 0.1208 | False |
-| LF_largeN | HF_largeN | old20 | uncontrolled | 0.011 | 0.10 | [-0.46, 0.67] | 1.02 | 0.1218 | False |
-| LF_largeN | HF_largeN | n_syllables | uncontrolled | -0.278 | -0.59 | [-1.16, -0.01] | 1.45 | 0.6023 | False |
-| LF_largeN | HF_largeN | bigram_freq | uncontrolled | 0.002 | 0.43 | [-0.14, 1.00] | 1.23 | 0.4174 | False |
-| LF_smallN | HF_largeN | length | controlled | 0.056 | 0.10 | [-0.47, 0.66] | 0.71 | 0.1186 | False |
-| LF_smallN | HF_largeN | frequency | manipulated | 2.141 | 5.19 | [4.01, 6.36] | 0.39 | 1.0000 | False |
-| LF_smallN | HF_largeN | n_density | manipulated | 15.667 | 3.29 | [2.42, 4.15] | 0.05 | 1.0000 | False |
-| LF_smallN | HF_largeN | old20 | uncontrolled | -0.658 | -5.91 | [-7.22, -4.61] | 1.22 | 1.0000 | False |
-| LF_smallN | HF_largeN | n_syllables | uncontrolled | 0.000 | 0.00 | [-0.56, 0.56] | 4.21 | 0.0714 | False |
-| LF_smallN | HF_largeN | bigram_freq | uncontrolled | 0.004 | 1.08 | [0.48, 1.69] | 0.86 | 0.9557 | False |
-| LF_largeN | HF_smallN | length | controlled | 0.167 | 0.34 | [-0.23, 0.91] | 1.23 | 0.3197 | False |
-| LF_largeN | HF_smallN | frequency | manipulated | 2.080 | 4.73 | [3.63, 5.83] | 0.47 | 1.0000 | False |
-| LF_largeN | HF_smallN | n_density | manipulated | -14.500 | -3.78 | [-4.72, -2.84] | 15.79 | 1.0000 | False |
-| LF_largeN | HF_smallN | old20 | uncontrolled | 0.639 | 5.83 | [4.54, 7.12] | 0.91 | 1.0000 | False |
-| LF_largeN | HF_smallN | n_syllables | uncontrolled | 0.000 | 0.00 | [-0.56, 0.56] | 1.00 | 0.0714 | False |
-| LF_largeN | HF_smallN | bigram_freq | uncontrolled | -0.001 | -0.35 | [-0.91, 0.22] | 1.25 | 0.3228 | False |
-| LF_smallN | HF_smallN | length | controlled | 0.167 | 0.34 | [-0.23, 0.91] | 1.23 | 0.3197 | False |
-| LF_smallN | HF_smallN | frequency | manipulated | 2.195 | 5.18 | [4.01, 6.36] | 0.36 | 1.0000 | False |
-| LF_smallN | HF_smallN | n_density | uncontrolled | 0.556 | 0.39 | [-0.18, 0.96] | 1.29 | 0.3742 | False |
-| LF_smallN | HF_smallN | old20 | uncontrolled | -0.031 | -0.27 | [-0.83, 0.30] | 1.08 | 0.2445 | False |
-| LF_smallN | HF_smallN | n_syllables | uncontrolled | 0.278 | 0.39 | [-0.18, 0.96] | 2.91 | 0.3672 | False |
-| LF_smallN | HF_smallN | bigram_freq | uncontrolled | 0.001 | 0.24 | [-0.33, 0.80] | 0.88 | 0.2183 | False |
+| HF_smallN | HF_largeN | length | controlled | 0.111 | 0.18 | [-0.38, 0.75] | 0.50 | 0.1728 | False |
+| HF_smallN | HF_largeN | frequency | uncontrolled | -0.233 | -0.45 | [-1.02, 0.12] | 1.24 | 0.4417 | False |
+| HF_smallN | HF_largeN | n_density | manipulated | 13.056 | 3.20 | [2.35, 4.05] | 0.09 | 1.0000 | False |
+| HF_smallN | HF_largeN | old20 | uncontrolled | -0.503 | -2.50 | [-3.25, -1.75] | 2.44 | 1.0000 | False |
+| HF_smallN | HF_largeN | n_syllables | uncontrolled | -0.167 | -0.38 | [-0.95, 0.19] | 1.60 | 0.3619 | False |
+| HF_smallN | HF_largeN | bigram_freq | uncontrolled | 0.002 | 0.51 | [-0.06, 1.08] | 1.15 | 0.5115 | False |
+| LF_largeN | HF_largeN | length | controlled | 0.111 | 0.18 | [-0.38, 0.75] | 0.50 | 0.1728 | False |
+| LF_largeN | HF_largeN | frequency | manipulated | 1.964 | 4.63 | [3.55, 5.71] | 0.51 | 1.0000 | False |
+| LF_largeN | HF_largeN | n_density | uncontrolled | 2.278 | 0.46 | [-0.12, 1.03] | 0.63 | 0.4479 | False |
+| LF_largeN | HF_largeN | old20 | uncontrolled | -0.111 | -0.71 | [-1.29, -0.13] | 1.08 | 0.7341 | False |
+| LF_largeN | HF_largeN | n_syllables | uncontrolled | 0.111 | 0.35 | [-0.22, 0.92] | 0.38 | 0.3268 | False |
+| LF_largeN | HF_largeN | bigram_freq | uncontrolled | 0.000 | -0.02 | [-0.58, 0.54] | 2.28 | 0.0795 | False |
+| LF_smallN | HF_largeN | length | controlled | 0.111 | 0.18 | [-0.38, 0.75] | 0.50 | 0.1728 | False |
+| LF_smallN | HF_largeN | frequency | manipulated | 1.989 | 4.54 | [3.48, 5.61] | 0.61 | 1.0000 | False |
+| LF_smallN | HF_largeN | n_density | manipulated | 12.389 | 3.05 | [2.22, 3.88] | 0.08 | 1.0000 | False |
+| LF_smallN | HF_largeN | old20 | uncontrolled | -0.542 | -3.46 | [-4.35, -2.57] | 1.08 | 1.0000 | False |
+| LF_smallN | HF_largeN | n_syllables | uncontrolled | 0.111 | 0.28 | [-0.29, 0.84] | 1.18 | 0.2546 | False |
+| LF_smallN | HF_largeN | bigram_freq | uncontrolled | 0.002 | 0.71 | [0.13, 1.29] | 0.87 | 0.7329 | False |
+| LF_largeN | HF_smallN | length | controlled | 0.000 | 0.00 | [-0.56, 0.56] | 1.00 | 0.0714 | False |
+| LF_largeN | HF_smallN | frequency | manipulated | 2.197 | 4.81 | [3.70, 5.92] | 0.41 | 1.0000 | False |
+| LF_largeN | HF_smallN | n_density | manipulated | -10.778 | -3.26 | [-4.12, -2.40] | 7.27 | 1.0000 | False |
+| LF_largeN | HF_smallN | old20 | uncontrolled | 0.392 | 1.93 | [1.24, 2.61] | 0.44 | 0.9999 | False |
+| LF_largeN | HF_smallN | n_syllables | uncontrolled | 0.278 | 0.73 | [0.15, 1.31] | 0.24 | 0.7511 | False |
+| LF_largeN | HF_smallN | bigram_freq | uncontrolled | -0.002 | -0.42 | [-0.99, 0.15] | 1.98 | 0.4095 | False |
+| LF_smallN | HF_smallN | length | controlled | 0.000 | 0.00 | [-0.56, 0.56] | 1.00 | 0.0714 | False |
+| LF_smallN | HF_smallN | frequency | manipulated | 2.222 | 4.73 | [3.63, 5.83] | 0.49 | 1.0000 | False |
+| LF_smallN | HF_smallN | n_density | uncontrolled | -0.667 | -0.42 | [-0.99, 0.15] | 0.88 | 0.4091 | False |
+| LF_smallN | HF_smallN | old20 | uncontrolled | -0.039 | -0.19 | [-0.76, 0.37] | 0.44 | 0.1803 | False |
+| LF_smallN | HF_smallN | n_syllables | uncontrolled | 0.278 | 0.62 | [0.04, 1.19] | 0.74 | 0.6335 | False |
+| LF_smallN | HF_smallN | bigram_freq | uncontrolled | 0.000 | 0.16 | [-0.41, 0.72] | 0.76 | 0.1550 | False |
 | LF_smallN | LF_largeN | length | controlled | 0.000 | 0.00 | [-0.56, 0.56] | 1.00 | 0.0714 | False |
-| LF_smallN | LF_largeN | frequency | uncontrolled | 0.115 | 0.35 | [-0.22, 0.92] | 0.77 | 0.3253 | False |
-| LF_smallN | LF_largeN | n_density | manipulated | 15.056 | 3.89 | [2.93, 4.85] | 0.08 | 1.0000 | False |
-| LF_smallN | LF_largeN | old20 | uncontrolled | -0.669 | -5.98 | [-7.30, -4.66] | 1.19 | 1.0000 | False |
-| LF_smallN | LF_largeN | n_syllables | uncontrolled | 0.278 | 0.39 | [-0.18, 0.96] | 2.91 | 0.3672 | False |
-| LF_smallN | LF_largeN | bigram_freq | uncontrolled | 0.002 | 0.58 | [0.00, 1.15] | 0.70 | 0.5919 | False |
+| LF_smallN | LF_largeN | frequency | uncontrolled | 0.024 | 0.07 | [-0.50, 0.63] | 1.19 | 0.1013 | False |
+| LF_smallN | LF_largeN | n_density | manipulated | 10.111 | 3.08 | [2.25, 3.92] | 0.12 | 1.0000 | False |
+| LF_smallN | LF_largeN | old20 | uncontrolled | -0.431 | -2.70 | [-3.48, -1.92] | 1.00 | 1.0000 | False |
+| LF_smallN | LF_largeN | n_syllables | uncontrolled | 0.000 | 0.00 | [-0.56, 0.56] | 3.12 | 0.0714 | False |
+| LF_smallN | LF_largeN | bigram_freq | uncontrolled | 0.002 | 0.57 | [-0.01, 1.14] | 0.38 | 0.5791 | False |
 
 ## Suggested analysis
 
@@ -77,7 +78,7 @@ Each row compares a condition with its reference. The raw difference and Cohen's
 
 ## Methods paragraph
 
-18 items per condition were selected from the English lexicon (wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md) and matched item by item on length using lexsync's standardised_euclidean matcher. The largest difference on a matched dimension was 0.167 characters in length (HF_smallN against LF_largeN; d = 0.34, 90% CI [-0.23, 0.91]). Two one-sided tests at a bound of 0.5 SD (alpha 0.05) supported equivalence on 0 of 6 matched comparisons; with 18 items per condition no dimension that varies can pass this test, however well matched. Dimensions the design did not control differed: old20 (LF_largeN against LF_smallN: -0.669 mean Levenshtein distance; d = -5.98, 90% CI [-7.30, -4.66]), old20 (HF_largeN against LF_smallN: -0.658 mean Levenshtein distance; d = -5.91, 90% CI [-7.22, -4.61]), old20 (HF_smallN against LF_largeN: 0.639 mean Levenshtein distance; d = 5.83, 90% CI [4.54, 7.12]), old20 (HF_largeN against HF_smallN: -0.628 mean Levenshtein distance; d = -5.76, 90% CI [-7.03, -4.48]) and bigram_freq (HF_largeN against LF_smallN: 0.004 mean bigram probability; d = 1.08, 90% CI [0.48, 1.69]), and 4 more in the realised-control table. The smallest condition was selected from 251 eligible candidates, and the selection was deterministic and blind to any outcome measure. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. Responses were collected from target onset until 2500 ms after it, and a response ended the trial. The selection is deterministic and reproducible (lexsync 0.1.1), and the seed (2026) fixes the trial order.
+18 items per condition were selected from the English lexicon (wordfreq (Speer, 2022) screened against SUBTLEX-US (Brysbaert & New, 2009), data CC BY-SA 4.0; forms absent from SUBTLEX-US or beginning with a lower-case letter in under 10% of their uses are marked nonstandard, and N and OLD20 count only the unmarked forms; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md) and matched item by item on length using lexsync's standardised_euclidean matcher. The largest difference on a matched dimension was 0.111 characters in length (HF_largeN against HF_smallN; d = 0.18, 90% CI [-0.38, 0.75]). Two one-sided tests at a bound of 0.5 SD (alpha 0.05) supported equivalence on 0 of 6 matched comparisons; with 18 items per condition no dimension that varies can pass this test, however well matched. Dimensions the design did not control differed: old20 (HF_largeN against LF_smallN: -0.542 mean Levenshtein distance; d = -3.46, 90% CI [-4.35, -2.57]), old20 (LF_largeN against LF_smallN: -0.431 mean Levenshtein distance; d = -2.70, 90% CI [-3.48, -1.92]), old20 (HF_largeN against HF_smallN: -0.503 mean Levenshtein distance; d = -2.50, 90% CI [-3.25, -1.75]), old20 (HF_smallN against LF_largeN: 0.392 mean Levenshtein distance; d = 1.93, 90% CI [1.24, 2.61]) and n_syllables (HF_smallN against LF_largeN: 0.278 syllables; d = 0.73, 90% CI [0.15, 1.31]), and 5 more in the realised-control table. An exclusion list (exclude_en_demo.txt) removed 53 words from the candidates before selection. The smallest condition was selected from 201 eligible candidates, and the selection was deterministic and blind to any outcome measure. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. Responses were collected from target onset until 2500 ms after it, and a response ended the trial. The selection is deterministic and reproducible (lexsync 0.1.1), and the seed (2026) fixes the trial order.
 
 ## Pre-registration template
 
@@ -97,7 +98,7 @@ Each row compares a condition with its reference. The raw difference and Cohen's
 - Paradigm: factorial
 
 ### Materials (from the lexsync datasheet)
-18 items per condition were selected from the English lexicon (wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md) and matched item by item on length using lexsync's standardised_euclidean matcher. The largest difference on a matched dimension was 0.167 characters in length (HF_smallN against LF_largeN; d = 0.34, 90% CI [-0.23, 0.91]). Two one-sided tests at a bound of 0.5 SD (alpha 0.05) supported equivalence on 0 of 6 matched comparisons; with 18 items per condition no dimension that varies can pass this test, however well matched. Dimensions the design did not control differed: old20 (LF_largeN against LF_smallN: -0.669 mean Levenshtein distance; d = -5.98, 90% CI [-7.30, -4.66]), old20 (HF_largeN against LF_smallN: -0.658 mean Levenshtein distance; d = -5.91, 90% CI [-7.22, -4.61]), old20 (HF_smallN against LF_largeN: 0.639 mean Levenshtein distance; d = 5.83, 90% CI [4.54, 7.12]), old20 (HF_largeN against HF_smallN: -0.628 mean Levenshtein distance; d = -5.76, 90% CI [-7.03, -4.48]) and bigram_freq (HF_largeN against LF_smallN: 0.004 mean bigram probability; d = 1.08, 90% CI [0.48, 1.69]), and 4 more in the realised-control table. The smallest condition was selected from 251 eligible candidates, and the selection was deterministic and blind to any outcome measure. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. Responses were collected from target onset until 2500 ms after it, and a response ended the trial. The selection is deterministic and reproducible (lexsync 0.1.1), and the seed (2026) fixes the trial order.
+18 items per condition were selected from the English lexicon (wordfreq (Speer, 2022) screened against SUBTLEX-US (Brysbaert & New, 2009), data CC BY-SA 4.0; forms absent from SUBTLEX-US or beginning with a lower-case letter in under 10% of their uses are marked nonstandard, and N and OLD20 count only the unmarked forms; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md) and matched item by item on length using lexsync's standardised_euclidean matcher. The largest difference on a matched dimension was 0.111 characters in length (HF_largeN against HF_smallN; d = 0.18, 90% CI [-0.38, 0.75]). Two one-sided tests at a bound of 0.5 SD (alpha 0.05) supported equivalence on 0 of 6 matched comparisons; with 18 items per condition no dimension that varies can pass this test, however well matched. Dimensions the design did not control differed: old20 (HF_largeN against LF_smallN: -0.542 mean Levenshtein distance; d = -3.46, 90% CI [-4.35, -2.57]), old20 (LF_largeN against LF_smallN: -0.431 mean Levenshtein distance; d = -2.70, 90% CI [-3.48, -1.92]), old20 (HF_largeN against HF_smallN: -0.503 mean Levenshtein distance; d = -2.50, 90% CI [-3.25, -1.75]), old20 (HF_smallN against LF_largeN: 0.392 mean Levenshtein distance; d = 1.93, 90% CI [1.24, 2.61]) and n_syllables (HF_smallN against LF_largeN: 0.278 syllables; d = 0.73, 90% CI [0.15, 1.31]), and 5 more in the realised-control table. An exclusion list (exclude_en_demo.txt) removed 53 words from the candidates before selection. The smallest condition was selected from 201 eligible candidates, and the selection was deterministic and blind to any outcome measure. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. Responses were collected from target onset until 2500 ms after it, and a response ended the trial. The selection is deterministic and reproducible (lexsync 0.1.1), and the seed (2026) fixes the trial order.
 
 ### Sampling plan
 - Sample size and justification:

@@ -775,16 +775,17 @@ def _files():
 
 def test_the_datasheet_records_the_tie_break_rule(schema):
     # A matched design records the rule that broke exact ties, with its salt under
-    # hash. A design that runs no matcher records none. Twinned with test-datasheet.R.
+    # hash, the default. A design that runs no matcher records none. Twinned with
+    # test-datasheet.R.
     ds = build_datasheet(_design(), schema, None, _stim(), "x.csv", _files(), 2026)
+    assert ds["selection"]["tie_break"] == {"rule": "hash", "salt": "lexsync-tie-v1"}
+    as_0_1 = dict(_design(), matching={"tie_break": "bytes"})
+    ds = build_datasheet(as_0_1, schema, None, _stim(), "x.csv", _files(), 2026)
     assert ds["selection"]["tie_break"] == {"rule": "bytes"}
-    hashed = dict(_design(), matching={"tie_break": "hash"})
-    ds = build_datasheet(hashed, schema, None, _stim(), "x.csv", _files(), 2026)
-    assert ds["selection"]["tie_break"] == {"rule": "hash", "salt": "lexsync-tie-v1"}
-    schema_hash = dict(schema, matching=dict(schema["matching"], tie_break="hash"))
+    schema_bytes = dict(schema, matching=dict(schema["matching"], tie_break="bytes"))
     joint = dict(_design(), matching={"method": "joint"})
-    ds = build_datasheet(joint, schema_hash, None, _stim(), "x.csv", _files(), 2026)
-    assert ds["selection"]["tie_break"] == {"rule": "hash", "salt": "lexsync-tie-v1"}
+    ds = build_datasheet(joint, schema_bytes, None, _stim(), "x.csv", _files(), 2026)
+    assert ds["selection"]["tie_break"] == {"rule": "bytes"}
     gen = build_datasheet(_gen_design(), schema, None, _gen_stim(), "x.csv", _files(), 2026)
     assert "tie_break" not in gen["selection"]
     cont = build_datasheet({"name": "c", "language": "english",
@@ -806,15 +807,15 @@ def test_selection_transparency_says_the_seed_does_not_select(schema):
     md = render_datasheet_md(build_datasheet(_design(), schema, None, _stim(), "x.csv",
                                              _files(), 2026, candidate_pool=cp))
     assert "given the seed" not in md and "free of item-selection bias" not in md
-    assert (lead + " Exact ties between equally close candidates are broken by spelling, "
-            "in byte order, as lexsync 0.1 did, so every tie goes to the spelling that "
-            "sorts first. " + tail) in md
-    hashed = dict(_design(), matching={"tie_break": "hash"})
-    md = render_datasheet_md(build_datasheet(hashed, schema, None, _stim(), "x.csv",
-                                             _files(), 2026, candidate_pool=cp))
     assert (lead + " Exact ties between equally close candidates are broken by a keyed "
             "hash of each word (salt lexsync-tie-v1), so no part of the alphabet is "
             "favoured. " + tail) in md
+    as_0_1 = dict(_design(), matching={"tie_break": "bytes"})
+    md = render_datasheet_md(build_datasheet(as_0_1, schema, None, _stim(), "x.csv",
+                                             _files(), 2026, candidate_pool=cp))
+    assert (lead + " Exact ties between equally close candidates are broken by spelling, "
+            "in byte order, as lexsync 0.1 did, so every tie goes to the spelling that "
+            "sorts first. " + tail) in md
     gen = render_datasheet_md(build_datasheet(
         _gen_design(), schema, None, _gen_stim(), "x.csv", _files(), 2026,
         candidate_pool=[{"condition": "words in band", "n_candidates": 100}]))
@@ -888,9 +889,9 @@ def _frequency_conditions(design):
 
 def test_the_methods_text_describes_the_realised_control_before_testing_it():
     m = methods_paragraph(_committed_record("en_freqcontrast_english_datasheet_py"))
-    assert ("The largest difference on a matched dimension was 0.300 neighbours in "
-            "n_density (high_frequency against low_frequency; d = 0.04, 90% CI "
-            "[-0.22, 0.30]). Two one-sided tests at a bound of 0.5 SD (alpha 0.05) "
+    assert ("The largest difference on a matched dimension was 0.325 neighbours in "
+            "n_density (high_frequency against low_frequency; d = 0.06, 90% CI "
+            "[-0.21, 0.32]). Two one-sided tests at a bound of 0.5 SD (alpha 0.05) "
             "supported equivalence on 3 of 3 matched comparisons. No uncontrolled "
             "dimension differed by more than 0.5 SD.") in m
     assert "The realised control was close" not in m
@@ -938,18 +939,18 @@ def test_a_bound_too_small_for_any_request_still_gets_the_caveat(schema):
 def test_the_methods_text_names_the_uncontrolled_dimensions_that_differ():
     m = methods_paragraph(_committed_record("en_ndensity_english_datasheet_py"))
     assert ("Dimensions the design did not control differed: old20 (dense_neighbourhood "
-            "against sparse_neighbourhood: -0.523 mean Levenshtein distance; d = -2.30, "
-            "90% CI [-2.64, -1.97]) and n_syllables (dense_neighbourhood against "
-            "sparse_neighbourhood: -0.450 syllables; d = -0.83, 90% CI "
-            "[-1.10, -0.56]).") in m
+            "against sparse_neighbourhood: -0.536 mean Levenshtein distance; d = -2.39, "
+            "90% CI [-2.73, -2.04]) and n_syllables (dense_neighbourhood against "
+            "sparse_neighbourhood: -0.288 syllables; d = -0.53, 90% CI "
+            "[-0.79, -0.26]).") in m
 
 
 def test_a_lexical_decision_reports_what_its_pseudowords_were_not_matched_on():
     m = methods_paragraph(_committed_record("en_lexdec_english_datasheet_py"))
     assert ("Words and pseudowords were matched on length only, and the words differed "
-            "from the pseudowords in bigram frequency (d = -1.47, 90% CI [-1.82, -1.13]), "
-            "N (d = -0.28, 90% CI [-0.59, 0.02]) and OLD20 (d = 0.17, 90% CI "
-            "[-0.13, 0.47]). Two one-sided tests at a bound of 0.5 SD (alpha 0.05) "
+            "from the pseudowords in bigram frequency (d = -0.97, 90% CI [-1.29, -0.65]), "
+            "N (d = 0.01, 90% CI [-0.30, 0.31]) and OLD20 (d = -0.04, 90% CI "
+            "[-0.34, 0.27]). Two one-sided tests at a bound of 0.5 SD (alpha 0.05) "
             "supported equivalence on 1 of 1 matched comparisons.") in m
 
 
@@ -1012,13 +1013,13 @@ def test_the_realised_counts_are_per_replicate_when_the_design_resamples(schema)
 def test_a_continuous_methods_text_gives_the_spreads_and_the_windows():
     m = methods_paragraph(_committed_record("en_freqcontinuous_english_datasheet_py"))
     assert ("80 English items were selected to span frequency (a span of 3.05 and an SD of "
-            "0.54, 0.60 times that of an even spread over the span), for analysis by "
+            "0.53, 0.59 times that of an even spread over the span), for analysis by "
             "regression or a mixed model rather than a between-condition contrast (Kuperman, "
             "2015; Liben-Nowell et al., 2019). The controls were banded within windows of "
             "the mean \u00b1 1.5 SD of an initial selection spread over the ranks of "
-            "frequency (length 3.18 to 7.90, n_density -5.21 to 12.84 and old20 1.14 to "
-            "2.80), and their realised SDs were 0.66, 0.39 and 0.56 of the pool's. The "
-            "largest predictor-control correlation was |r| = 0.165.") in m
+            "frequency (length 3.99 to 8.13, n_density -2.52 to 7.54 and old20 1.29 to "
+            "2.91), and their realised SDs were 0.76, 0.41 and 0.68 of the pool's. The "
+            "largest predictor-control correlation was |r| = 0.301.") in m
     assert "near-constant" not in m
     # The first pass spreads over the predictor's ranks and follows the pool's skew, so
     # calling it an even spread contradicted the SD ratio given a sentence earlier.

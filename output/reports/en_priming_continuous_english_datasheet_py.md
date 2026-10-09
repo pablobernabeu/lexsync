@@ -26,8 +26,8 @@
 ## Pair-keyed items
 
 - **Members:** prime, target  |  **Pairs:** 8
-- **Member lexicon:** `corpora/derived/en.csv` (sha256 `575833489e04d6a4…`)
-- **Member-level dimensions** (one word): freq_zipf, frequency, length, n_density, n_syllables, old20
+- **Member lexicon:** `corpora/derived/en_v2.csv` (sha256 `46815cd56ac036cb…`)
+- **Member-level dimensions** (one word): freq_zipf, frequency, in_subtlex_us, length, lowercase_share, n_density, n_density_raw, n_syllables, nonstandard, old20, old20_raw, reference_member
 - **Relational dimensions** (the pair): pair.lev, pair.overlap
 - Selection ran on one row per pair and the result was re-expanded, so every condition row of every chosen pair is present.
 

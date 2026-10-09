@@ -23,7 +23,7 @@
 ## Selection transparency
 
 - **Candidate pool** (items satisfying each condition's window before matching): feminine: 5130, masculine: 4164.
-- Selection is a deterministic function of the materials source, the design and the schema, blind to any outcome measure, and does not depend on the seed, which fixes the trial order. Exact ties between equally close candidates are broken by spelling, in byte order, as lexsync 0.1 did, so every tie goes to the spelling that sorts first. Automating the choice removes the experimenter's discretion that Forster (2000) showed can bias item selection.
+- Selection is a deterministic function of the materials source, the design and the schema, blind to any outcome measure, and does not depend on the seed, which fixes the trial order. Exact ties between equally close candidates are broken by a keyed hash of each word (salt lexsync-tie-v1), so no part of the alphabet is favoured. Automating the choice removes the experimenter's discretion that Forster (2000) showed can bias item selection.
 
 ## Realised control
 
@@ -33,10 +33,10 @@ Each row compares a condition with its reference. The raw difference and Cohen's
 |---|---|---|---|---|---|---|---|---|---|
 | masculine | feminine | length | controlled | 0.000 | 0.00 | [-0.34, 0.34] | 1.00 | 0.0081 | True |
 | masculine | feminine | frequency | controlled | 0.008 | 0.02 | [-0.32, 0.36] | 0.01 | 0.0105 | True |
-| masculine | feminine | n_density | uncontrolled | 0.563 | 0.20 | [-0.14, 0.54] | 0.56 | 0.0697 | False |
-| masculine | feminine | old20 | uncontrolled | -0.057 | -0.08 | [-0.42, 0.26] | 0.89 | 0.0218 | True |
-| masculine | feminine | n_syllables | uncontrolled | 0.083 | 0.10 | [-0.24, 0.44] | 1.53 | 0.0271 | True |
-| masculine | feminine | bigram_freq | uncontrolled | 0.001 | 0.22 | [-0.12, 0.56] | 1.97 | 0.0838 | False |
+| masculine | feminine | n_density | uncontrolled | 0.417 | 0.15 | [-0.19, 0.49] | 0.52 | 0.0433 | True |
+| masculine | feminine | old20 | uncontrolled | -0.010 | -0.02 | [-0.35, 0.32] | 0.82 | 0.0098 | True |
+| masculine | feminine | n_syllables | uncontrolled | 0.104 | 0.13 | [-0.21, 0.47] | 1.48 | 0.0361 | True |
+| masculine | feminine | bigram_freq | uncontrolled | 0.001 | 0.24 | [-0.11, 0.57] | 1.50 | 0.0987 | False |
 
 ## Suggested analysis
 

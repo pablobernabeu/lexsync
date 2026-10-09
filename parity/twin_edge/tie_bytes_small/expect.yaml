@@ -1,0 +1,6 @@
+# Both engines break the low condition's ties by spelling, select the same four pairs
+# as lexsync 0.1 did and record the rule, which needs no salt.
+outcome: artefacts
+compare: [stimuli, descriptives, comparisons]
+datasheet:
+  selection.tie_break.rule: bytes

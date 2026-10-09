@@ -313,10 +313,10 @@ test_that("a pair design's window relaxation reaches the datasheet", {
   out <- tmp_out()
   items <- file.path(out, "pairs.csv")
   writeLines(c("item,condition,prime,target",
-               "1,related,aaa,flat", "1,unrelated,abba,flat",
-               "2,related,acne,glass", "2,unrelated,aaron,glass",
-               "3,related,alarm,across", "3,unrelated,abrams,across",
-               "4,related,aha,house", "4,unrelated,abdel,house"),
+               "1,related,aback,boat", "1,unrelated,abandon,boat",
+               "2,related,abdomen,apple", "2,unrelated,ability,apple",
+               "3,related,abnormal,bridge", "3,unrelated,abode,bridge",
+               "4,related,absurd,hotel", "4,unrelated,academy,hotel"),
              items, useBytes = TRUE)
   design <- write_design(out, c(
     "name: guard_pair_relax",
@@ -413,18 +413,18 @@ test_that("a continuous design's exclusion reaches the record", {
 
 test_that("a pair design's exclusion reaches the record", {
   # The pair path selects over one row per set and copies the selector's audit onto
-  # the re-expanded table. 'across' has no rating, so its set is excluded and the
+  # the re-expanded table. 'bridge' has no rating, so its set is excluded and the
   # count reaches the run log and the datasheet. Twinned with test_run_pipeline.py.
   out <- tmp_out()
   items <- file.path(out, "pairs.csv")
   writeLines(c("item,condition,prime,target",
-               "1,related,aaa,flat", "1,unrelated,abba,flat",
-               "2,related,acne,glass", "2,unrelated,aaron,glass",
-               "3,related,alarm,across", "3,unrelated,abrams,across",
-               "4,related,aha,house", "4,unrelated,abdel,house"),
+               "1,related,aback,boat", "1,unrelated,abandon,boat",
+               "2,related,abdomen,apple", "2,unrelated,ability,apple",
+               "3,related,abnormal,bridge", "3,unrelated,abode,bridge",
+               "4,related,absurd,hotel", "4,unrelated,academy,hotel"),
              items, useBytes = TRUE)
   ratings <- file.path(out, "ratings.csv")
-  writeLines(c("word,rating", "flat,2.5", "glass,3.1", "house,4.0"), ratings,
+  writeLines(c("word,rating", "boat,2.5", "apple,3.1", "hotel,4.0"), ratings,
              useBytes = TRUE)
   design <- write_design(out, c(
     "name: guard_pair_incomplete",
@@ -453,7 +453,7 @@ test_that("a pair design's exclusion reaches the record", {
   log <- paste(readLines(res$log, warn = FALSE), collapse = "\n")
   expect_true(grepl("dropped 1 candidate(s) missing the predictor or a control", log,
                     fixed = TRUE))
-  expect_false(any(grepl("across", readLines(res$stimuli, warn = FALSE), fixed = TRUE)))
+  expect_false(any(grepl("bridge", readLines(res$stimuli, warn = FALSE), fixed = TRUE)))
 })
 
 test_that("a resampled design's exclusion reaches the record", {
@@ -1575,14 +1575,14 @@ test_that("en_ndensity reports its syllable confound", {
   expect_identical(nrow(row), 1L)
   expect_identical(row$role, "uncontrolled")
   expect_false(row$equivalent)
-  expect_lt(abs(row$cohens_d - -0.828), 0.001)
+  expect_lt(abs(row$cohens_d - -0.528), 0.001)
 })
 
 test_that("en_freqcontinuous reports the spread of its predictor", {
-  # The selection follows the pool's skew, so its frequency SD is about 0.60 of that of
-  # 80 values spread evenly over the same range (0.54 against 0.90).
+  # The selection follows the pool's skew, so its frequency SD is about 0.59 of that of
+  # 80 values spread evenly over the same range (0.53 against 0.90).
   cmp <- golden("en_freqcontinuous_english_comparisons_R.csv")
-  expect_lt(abs(cmp$sd_ratio[cmp$dimension == "frequency"] - 0.60), 0.005)
+  expect_lt(abs(cmp$sd_ratio[cmp$dimension == "frequency"] - 0.59), 0.005)
   expect_lt(cmp$window_low[cmp$dimension == "length"],
             cmp$window_high[cmp$dimension == "length"])
 })

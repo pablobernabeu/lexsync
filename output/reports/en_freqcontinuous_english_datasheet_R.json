@@ -10,9 +10,15 @@
   },
   "materials_source": {
     "type": "corpus",
-    "path": "corpora/derived/en.csv",
-    "sha256": "575833489e04d6a4001fda56a56e3daa383811dece1f819c44060ee79ca56976",
-    "provenance": "wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md"
+    "path": "corpora/derived/en_v2.csv",
+    "sha256": "46815cd56ac036cb841460a2ea6205ac374eddb6ca26275bb1a2fbafc7c5d626",
+    "provenance": "wordfreq (Speer, 2022) screened against SUBTLEX-US (Brysbaert & New, 2009), data CC BY-SA 4.0; forms absent from SUBTLEX-US or beginning with a lower-case letter in under 10% of their uses are marked nonstandard, and N and OLD20 count only the unmarked forms; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md",
+    "exclusions": {
+      "path": "config/exclude_en_demo.txt",
+      "sha256": "cac9f88fb86fa6d0e6dbabc287c9ebb782100d071eeded13eb812584b9d41e9f",
+      "n_listed": 53,
+      "n_removed": 53
+    }
   },
   "dimensions": {
     "length": {
@@ -63,7 +69,7 @@
     "candidate_pool": [
       {
         "condition": "continuous",
-        "n_candidates": 7230
+        "n_candidates": 6308
       }
     ],
     "cross_engine": "byte-identical"
@@ -84,40 +90,40 @@
       "role": "predictor",
       "pearson_r": null,
       "predictor_span": 3.05,
-      "sd": 0.54,
-      "sd_ratio": 0.602,
+      "sd": 0.531,
+      "sd_ratio": 0.592,
       "window_low": null,
       "window_high": null
     },
     {
       "dimension": "length",
       "role": "control",
-      "pearson_r": -0.165,
+      "pearson_r": -0.226,
       "predictor_span": 3.05,
-      "sd": 0.981,
-      "sd_ratio": 0.656,
-      "window_low": 3.175,
-      "window_high": 7.9
+      "sd": 1.116,
+      "sd_ratio": 0.755,
+      "window_low": 3.991,
+      "window_high": 8.134
     },
     {
       "dimension": "n_density",
       "role": "control",
-      "pearson_r": -0.049,
+      "pearson_r": 0.301,
       "predictor_span": 3.05,
-      "sd": 2.417,
-      "sd_ratio": 0.39,
-      "window_low": -5.21,
-      "window_high": 12.835
+      "sd": 1.844,
+      "sd_ratio": 0.409,
+      "window_low": -2.516,
+      "window_high": 7.541
     },
     {
       "dimension": "old20",
       "role": "control",
-      "pearson_r": -0.077,
+      "pearson_r": -0.295,
       "predictor_span": 3.05,
-      "sd": 0.343,
-      "sd_ratio": 0.555,
-      "window_low": 1.144,
-      "window_high": 2.798
+      "sd": 0.407,
+      "sd_ratio": 0.68,
+      "window_low": 1.29,
+      "window_high": 2.913
     }
   ],
   "counterbalancing": {
@@ -158,7 +164,7 @@
       }
     ],
     "stimuli_file": "output/stimuli/en_freqcontinuous_english_stimuli_R.csv",
-    "stimuli_sha256": "8151a0787d989557463f4d2ac5e1c11f5bb943283774da0ed66748724f54da2a"
+    "stimuli_sha256": "83c8b3b4f1989b55bb332e654fccbec9298045f94dc7e01acb3f82942ffb2178"
   },
   "reproducibility": {
     "seed": 2026,
@@ -174,22 +180,22 @@
       "stringi": "1.8.7",
       "os": "Windows x86-64"
     },
-    "design_sha256": "37d98d331dcd43c9638f18197b5529d98ab15bfc287d0bafbd73df61fccf01bc",
+    "design_sha256": "4600d42c9086cdd30fc1dd40e6237694a14d9e86cd28e831827dd3227e211f3b",
     "schema_path": "config/schema.yaml",
-    "schema_sha256": "3335f4e31a7f5dece6375dd0247600547ad86290492c7aead2836a9ec8af9dcb"
+    "schema_sha256": "5366c0b44af48b5bbc25c142ec14865db2f4a377efb35a5e99d937770b2e1483"
   },
   "artifacts": [
     {
       "file": "output/stimuli/en_freqcontinuous_english_stimuli_R.csv",
-      "sha256": "8151a0787d989557463f4d2ac5e1c11f5bb943283774da0ed66748724f54da2a"
+      "sha256": "83c8b3b4f1989b55bb332e654fccbec9298045f94dc7e01acb3f82942ffb2178"
     },
     {
       "file": "output/reports/en_freqcontinuous_english_descriptives_R.csv",
-      "sha256": "92a987779a35c135481770525defa6aefccd6c2c9be6571a057ef609f8d4b8ad"
+      "sha256": "94809c26bac2d48d3879ae29d3c8ec2001363b7e712a2137d1ca619ef1e24979"
     },
     {
       "file": "output/reports/en_freqcontinuous_english_comparisons_R.csv",
-      "sha256": "3bfb6471d0cb6c8121ce196abdeb08609575147f2554e2b8f87b32baf4d717fb"
+      "sha256": "6dabb6e1fe0f3846d179e01e6d6cda72e3022da4d4f2a9fd9bcda1f1684ee460"
     },
     {
       "file": "output/experiments/en_freqcontinuous_english_psychopy.py",
@@ -201,11 +207,11 @@
     },
     {
       "file": "output/experiments/en_freqcontinuous_english.html",
-      "sha256": "d3812b10fcb84fd64d49a61b5afddd1add5ea8fa707432c05c480b7aaab3640e"
+      "sha256": "3937b9f00d44ba941fcc942f9d4d44c994d0d48e38b5b647aabbac19111d72d3"
     },
     {
       "file": "output/experiments/en_freqcontinuous_english_psychopy.csv",
-      "sha256": "7fa112b312eb6ec1862cfed32d827800d3d1c60a14b01ebba684948c9d47e580"
+      "sha256": "dfaaa4bfe6c63c3806b0ee9a5fc8643ca20be71bd1c7c21916bd625781271bad"
     },
     {
       "file": "output/experiments/en_freqcontinuous_english_opensesame.csv",
@@ -213,7 +219,7 @@
     },
     {
       "file": "output/experiments/en_freqcontinuous_english_opensesame_text.csv",
-      "sha256": "86215bb3a79b03090836e4f0e375a9a0b8b85bff7a199fc6feb5688b283a55a2"
+      "sha256": "2dda5340f662562be252e0896f0eaa39a77ca10d903e72fa4d7c76224ba124fd"
     }
   ]
 }

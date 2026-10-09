@@ -1,24 +1,32 @@
 # Demonstration paradigm: English lexical decision.
 # Real words (a frequency band) are contrasted with length-matched, orthographically
 # legal pseudowords generated deterministically by constrained letter substitution.
-# Lexicality is checked against the reference lexicon only, since the design names
-# no items.generation.exclude list, so a form missing from it may still be a word.
-# The most bigram-typical candidate wins, so the pseudowords are more bigram-typical
-# than their words (d about -1.5, words minus pseudowords). The presented string is
-# the 'target'; conditions are 'word' and 'pseudoword'; each word is paired with its
-# pseudoword by 'set'. Trial events: fixation -> target (onset-locked condition
-# marker) -> response -> blank.
+# Lexicality is checked against the lexicon and against wordfreq's fuller list of
+# English forms, which items.generation.exclude names, so a form missing from both
+# may still be a word. The most bigram-typical candidate wins, so the pseudowords are
+# more bigram-typical than their words (d about -1.0, words minus pseudowords). The
+# presented string is the 'target'; conditions are 'word' and 'pseudoword'; each word
+# is paired with its pseudoword by 'set'. Trial events: fixation -> target
+# (onset-locked condition marker) -> response -> blank.
 name: en_lexdec
 language: english
 paradigm: lexical_decision
 description: 'Lexical decision: real words versus length-matched, orthographically legal pseudowords (deterministically generated).'
 items:
   source: generate
-  lexicon: corpora/derived/en.csv
+  lexicon: corpora/derived/en_v2.csv
+  generation:
+    # Every English form wordfreq lists at Zipf 1 or above, so that no pseudoword is a
+    # real word too rare for the lexicon.
+    exclude: [corpora/derived/en_known_forms.txt]
 n_per_condition: 60
 pool_filters:
   length: [4, 7]
   frequency: [3.5, 6.0]
+  # Keeps only the forms the SUBTLEX-US screen leaves unmarked (see corpora/ATTRIBUTION.md).
+  nonstandard: [0, 0]
+# Leaves out the unsuitable forms the screen lets through (see the file's header).
+exclude_words: {path: config/exclude_en_demo.txt}
 counterbalance:
   lists: 1
 timing:

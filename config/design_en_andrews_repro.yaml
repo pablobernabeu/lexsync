@@ -9,16 +9,21 @@
 # (wordfreq; Speer 2022) instead of the Kucera-Francis counts of the original. The
 # realised bands therefore differ, while the factorial structure and the length
 # control are reproduced. The design has no nonwords and no response mapping, so it
-# is not a lexical-decision task. Its low-frequency cells also hold many names and
-# acronyms from the unscreened lexicon (see corpora/ATTRIBUTION.md).
+# is not a lexical-decision task. On the unscreened lexicon its low-frequency cells
+# held mostly names and acronyms, so it selects from the screened one (see
+# corpora/ATTRIBUTION.md).
 name: en_andrews_repro
 language: english
-lexicon: corpora/derived/en.csv
+lexicon: corpora/derived/en_v2.csv
 description: 'Reproducing the item selection of Andrews (1989): frequency x orthographic neighbourhood size (Coltheart''s N), a 2x2 of words with every cell matched on length; no nonwords or response mapping, so not a lexical-decision task.'
 n_per_condition: 18
 pool_filters:
   length: [3, 5]
   frequency: [2.0, 7.0]
+  # Keeps only the forms the SUBTLEX-US screen leaves unmarked (see corpora/ATTRIBUTION.md).
+  nonstandard: [0, 0]
+# Leaves out the unsuitable forms the screen lets through (see the file's header).
+exclude_words: {path: config/exclude_en_demo.txt}
 conditions:
   - name: HF_largeN
     define_by:

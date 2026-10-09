@@ -94,12 +94,16 @@ engine. Here is the English frequency contrast in full, from
 ```yaml
 name: en_freqcontrast
 language: english
-lexicon: corpora/derived/en.csv
+lexicon: corpora/derived/en_v2.csv
 description: 'High versus low frequency English words, matched on length, neighbourhood density and OLD20.'
 n_per_condition: 80
 pool_filters:
   length: [3, 8]
   frequency: [3.8, 7.0]
+  # Keeps only the forms the SUBTLEX-US screen leaves unmarked (see corpora/ATTRIBUTION.md).
+  nonstandard: [0, 0]
+# Leaves out the unsuitable forms the screen lets through (see the file's header).
+exclude_words: {path: config/exclude_en_demo.txt}
 conditions:
   - name: high_frequency
     define_by:
@@ -147,7 +151,9 @@ all. Each key is a column and each value an inclusive `[min, max]` range for a
 numeric column, or a set of permitted values otherwise. This is a real step and
 not a formality: `match_stimuli()` never reads `pool_filters` itself, so a script
 that skips `build_pool()` matches over the whole lexicon and quietly ignores the
-design's bands.
+design's bands. Here `nonstandard: [0, 0]` keeps the forms the screened lexicon
+leaves unmarked, and `exclude_words` leaves out the words a file lists, as
+*Matching, dimensions and designs* explains.
 
 `conditions` is a list, each entry with a `name` and a `define_by` block that
 carves the condition out of the pool by the same filter syntax. Two conditions

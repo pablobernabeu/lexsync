@@ -7,7 +7,7 @@ import pandas as pd
 import pytest
 from helper_repo import repo_path
 
-from lexsync.io_utils import read_config, read_csv_utf8
+from lexsync.io_utils import read_config
 from lexsync.matching import (
     _maha_metric,
     match_stimuli,
@@ -827,10 +827,10 @@ def test_matching_module_uses_the_shared_rounder():
 
 # ---- the tie-break rule -------------------------------------------------------
 # Lengths and neighbourhood counts are whole numbers and frequencies carry two
-# decimals, so exact ties decide most picks. matching.tie_break chooses how: `bytes`,
-# the default and the rule of lexsync 0.1, gives a tie to the spelling that sorts
-# first, and `hash` to the smaller keyed SHA-256 of the word. Twinned with
-# test-matching.R, which pins the same keys, words and pairs.
+# decimals, so exact ties decide most picks. matching.tie_break chooses how: `hash`, the
+# default, gives a tie to the smaller keyed SHA-256 of the word, and `bytes`, the rule of
+# lexsync 0.1, to the spelling that sorts first. Twinned with test-matching.R, which
+# pins the same keys, words and pairs.
 
 def _digest(word):
     # Computed here and not through the package, so the expectations below do not
@@ -859,7 +859,7 @@ def _tie_pool():
 
 def test_hash_tie_break_orders_exact_ties_by_the_keyed_digest():
     pool = _tie_pool()
-    by_bytes = match_stimuli(pool, _x_design(3), _x_schema())
+    by_bytes = match_stimuli(pool, _x_design(3, tie_break="bytes"), _x_schema())
     assert list(by_bytes.loc[by_bytes.condition == "B", "word"]) == ["bat", "cat", "axe"]
     by_hash = match_stimuli(pool, _x_design(3, tie_break="hash"), _x_schema())
     assert list(by_hash.loc[by_hash.condition == "A", "word"]) == ["kiwi", "lime", "plum"]
@@ -868,10 +868,22 @@ def test_hash_tie_break_orders_exact_ties_by_the_keyed_digest():
     assert expected == ["eel", "dog", "dot"]
     assert list(by_hash.loc[by_hash.condition == "B", "word"]) == expected
     # The schema may set the rule, and a design's own setting overrides it.
-    hashed = {"matching": dict(_x_schema()["matching"], tie_break="hash")}
-    assert list(match_stimuli(pool, _x_design(3), hashed)["word"]) == list(by_hash["word"])
-    assert list(match_stimuli(pool, _x_design(3, tie_break="bytes"), hashed)["word"]) == \
-        list(by_bytes["word"])
+    as_0_1 = {"matching": dict(_x_schema()["matching"], tie_break="bytes")}
+    assert list(match_stimuli(pool, _x_design(3), as_0_1)["word"]) == list(by_bytes["word"])
+    assert list(match_stimuli(pool, _x_design(3, tie_break="hash"), as_0_1)["word"]) == \
+        list(by_hash["word"])
+
+
+def test_the_tie_break_defaults_to_hash():
+    # With no rule in the design or the schema, the keyed hash breaks exact ties. The
+    # default was `bytes` until the demonstrations moved to the hash.
+    from lexsync.matching import _resolve_tie_break
+    assert _resolve_tie_break({}, {}) == "hash"
+    pool = _tie_pool()
+    by_default = match_stimuli(pool, _x_design(3), _x_schema())
+    assert list(by_default["word"]) == list(
+        match_stimuli(pool, _x_design(3, tie_break="hash"), _x_schema())["word"])
+    assert list(by_default.loc[by_default.condition == "B", "word"]) == ["eel", "dog", "dot"]
 
 
 def test_an_unknown_tie_break_rule_is_refused():
@@ -894,7 +906,7 @@ def _tie_pairs_pool(a_x, b_x):
 def test_hash_tie_break_orders_joint_pairs_by_hash_rank():
     # Every pair costs 0, so the pair order alone decides which items are kept.
     pool = _tie_pairs_pool([1.0] * 4, [1.0] * 4)
-    by_bytes = match_stimuli(pool, _x_design(2, method="joint"), _x_schema())
+    by_bytes = match_stimuli(pool, _x_design(2, method="joint", tie_break="bytes"), _x_schema())
     assert _pairs(by_bytes) == [("ash", "bat"), ("beech", "cat")]
     assert sorted(["ash", "beech", "cedar", "elm"], key=_digest)[:2] == ["beech", "cedar"]
     assert sorted(["bat", "cat", "dog", "eel"], key=_digest)[:2] == ["eel", "dog"]
@@ -928,7 +940,8 @@ def test_hash_tie_break_numbers_the_optimal_pairs_by_hash_rank():
     # longer asks the tie-break to decide that.
     pytest.importorskip("scipy")
     pool = _tie_pairs_pool([1.0, 2.0, 10.0, 20.0], [1.0, 2.0, 30.0, 40.0])
-    by_bytes = match_stimuli(pool, _x_design(2, method="optimal"), _x_schema())
+    by_bytes = match_stimuli(pool, _x_design(2, method="optimal", tie_break="bytes"),
+                             _x_schema())
     assert _pairs(by_bytes) == [("ash", "bat"), ("beech", "cat")]
     assert list(by_bytes.loc[by_bytes.set == 1, "word"]) == ["ash", "bat"]
     by_hash = match_stimuli(pool, _x_design(2, method="optimal", tie_break="hash"),
@@ -1056,8 +1069,9 @@ def test_optimal_fills_n_when_the_conditions_share_every_word():
         assert not out["word"].duplicated().any()
 
 
-# The shipped English designs. Repository-coupled: the full lexicon lives in corpora/,
-# not in the package, so these skip when the package is tested on its own.
+# The shipped English designs as lexsync 0.1 ran them, on en.csv. Repository-coupled:
+# the full lexicon lives in corpora/, not in the package, so these skip when the package
+# is tested on its own.
 
 @pytest.fixture(scope="module")
 def en_corpus():
@@ -1066,8 +1080,15 @@ def en_corpus():
     return schema, lexicon
 
 
-def _shipped(name, tie_break=None):
+def _as_in_0_1(name, tie_break=None):
+    """A shipped design as lexsync 0.1 ran it. The demonstrations now read en_v2.csv,
+    filter on its `nonstandard` column and leave out the words of an exclusion list.
+    en.csv has no such column, and match_stimuli does not read exclude_words, so both
+    are dropped here and the design runs on the en_corpus fixture's en.csv."""
     design = read_config(str(repo_path("config", f"design_{name}.yaml")))
+    design["pool_filters"] = {k: v for k, v in design["pool_filters"].items()
+                              if k != "nonstandard"}
+    design.pop("exclude_words", None)
     if tie_break is not None:
         design["matching"] = dict(design.get("matching") or {}, tie_break=tie_break)
     return design
@@ -1083,12 +1104,12 @@ def test_hash_tie_break_returns_freqcontrast_initials_to_the_pool_rate(en_corpus
     # condition's candidates. Under hash the share lies within 0.1 of the candidates',
     # and Cohen's d on each matched dimension moves by at most 0.01.
     schema, lexicon = en_corpus
-    design = _shipped("en_freqcontrast")
+    design = _as_in_0_1("en_freqcontrast", "bytes")
     pool = build_pool(lexicon, design["pool_filters"])
     low = next(c for c in design["conditions"] if c["name"] == "low_frequency")
     candidates = build_pool(pool, low["define_by"])
     by_bytes = match_stimuli(pool, design, schema)
-    by_hash = match_stimuli(pool, _shipped("en_freqcontrast", "hash"), schema)
+    by_hash = match_stimuli(pool, _as_in_0_1("en_freqcontrast", "hash"), schema)
     share = _initial_share(by_hash.loc[by_hash.condition == "low_frequency", "word"])
     assert abs(share - _initial_share(candidates["word"])) <= 0.1
     for dim in design["match_on"]:
@@ -1100,23 +1121,33 @@ def test_hash_tie_break_returns_freqcontrast_initials_to_the_pool_rate(en_corpus
 def test_hash_tie_break_spreads_the_ndensity_dense_initials(en_corpus):
     # Under bytes every dense word of the joint design began with a or b (73 b, 7 a).
     schema, lexicon = en_corpus
-    design = _shipped("en_ndensity", "hash")
+    design = _as_in_0_1("en_ndensity", "hash")
     s = match_stimuli(build_pool(lexicon, design["pool_filters"]), design, schema)
     assert _initial_share(s.loc[s.condition == "dense_neighbourhood", "word"]) <= 0.25
 
 
-def test_the_default_tie_break_reproduces_the_committed_selections(en_corpus):
-    # The committed stimuli of both designs are those lexsync 0.1.1 selected, and the
-    # default rule, named or not, must select them again.
+# The selections lexsync 0.1.1 committed for the two designs, both engines alike, as the
+# SHA-256 of their word|condition|set lines in byte order. The committed stimuli now come
+# from the screened lexicon, so the old ones are pinned here. Pinned identically in
+# test-matching.R.
+_SELECTIONS_0_1_1 = {
+    "en_freqcontrast": "f5a58e0486182d23309c921106c41fde9dd9533b1c990ef4c77b2a971b588595",
+    "en_ndensity": "f266d1b7611890cfba586b61efa04066616acbb89a3134a42dba09a9e4490a8b",
+}
+
+
+def _selection_digest(s):
+    lines = sorted(f"{w}|{c}|{int(k)}"
+                   for w, c, k in zip(s["word"], s["condition"], s["set"], strict=True))
+    return hashlib.sha256("\n".join(lines).encode("utf-8")).hexdigest()
+
+
+def test_bytes_tie_break_reproduces_the_0_1_selections(en_corpus):
+    # `bytes` must select again what lexsync 0.1.1 selected from en.csv, and the
+    # default, now the keyed hash, must not.
     schema, lexicon = en_corpus
-    for name in ("en_freqcontrast", "en_ndensity"):
-        committed = read_csv_utf8(str(repo_path("output", "stimuli",
-                                                f"{name}_english_stimuli_R.csv")),
-                                  as_character=["word"])
-        want = sorted(zip(committed["word"], committed["condition"],
-                          committed["set"].astype(int), strict=True))
-        for rule in (None, "bytes"):
-            design = _shipped(name, rule)
+    for name, want in _SELECTIONS_0_1_1.items():
+        for rule, reproduces in (("bytes", True), (None, False)):
+            design = _as_in_0_1(name, rule)
             s = match_stimuli(build_pool(lexicon, design["pool_filters"]), design, schema)
-            got = sorted(zip(s["word"], s["condition"], s["set"].astype(int), strict=True))
-            assert got == want, (name, rule)
+            assert (_selection_digest(s) == want) is reproduces, (name, rule)

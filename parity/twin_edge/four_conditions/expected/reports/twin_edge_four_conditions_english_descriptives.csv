@@ -6,10 +6,10 @@ HF_largeN,old20,3,1.2,0.2,1,1.2,1.4
 HF_largeN,n_syllables,3,1.333,0.577,1,1,2
 HF_largeN,bigram_freq,3,0.036,0.007,0.028,0.038,0.042
 HF_smallN,length,3,5.333,0.577,5,5,6
-HF_smallN,frequency,3,5.5,0.4,5.1,5.5,5.9
-HF_smallN,n_density,3,1.333,0.577,1,1,2
-HF_smallN,old20,3,2.017,0.202,1.8,2.05,2.2
-HF_smallN,n_syllables,3,2.333,0.577,2,2,3
+HF_smallN,frequency,3,5.667,0.493,5.1,5.9,6
+HF_smallN,n_density,3,1,1,0,1,2
+HF_smallN,old20,3,2.05,0.25,1.8,2.05,2.3
+HF_smallN,n_syllables,3,2,0,2,2,2
 HF_smallN,bigram_freq,3,0.024,0.004,0.02,0.025,0.028
 LF_largeN,length,3,3.667,0.577,3,4,4
 LF_largeN,frequency,3,3.1,0.361,2.8,3,3.5

@@ -6,7 +6,8 @@
 
 - **Paradigm:** factorial  |  **Item source:** corpus
 - **Description:** English words spread over the ranks of frequency in the pool, with the tails of length, neighbourhood density and OLD20 trimmed by tolerance windows, for regression / mixed-model analysis.
-- **Materials source:** `corpora/derived/en.csv` (sha256 `575833489e04d6a4...`)
+- **Materials source:** `corpora/derived/en_v2.csv` (sha256 `46815cd56ac036cb...`)
+- **Excluded words:** `config/exclude_en_demo.txt` (53 words, 53 removed, sha256 `cac9f88fb86fa6d0...`)
 - **Selection:** continuous even-spread (predictor spanned, controls banded)
 - **Cross-engine determinism:** byte-identical
 - **Counterbalancing:** factorial, 1 list(s)
@@ -21,7 +22,7 @@
 
 ## Selection transparency
 
-- **Candidate pool** (items satisfying each condition's window before matching): continuous: 7230.
+- **Candidate pool** (items satisfying each condition's window before matching): continuous: 6308.
 - Selection is a deterministic function of the materials source, the design and the schema, blind to any outcome measure, and does not depend on the seed, which fixes the trial order. Automating the choice removes the experimenter's discretion that Forster (2000) showed can bias item selection.
 
 ## Realised control (continuous predictor)
@@ -29,9 +30,9 @@
 | Dimension | Role | r with predictor | Predictor span |
 |---|---|---|---|
 | frequency | predictor | -- | 3.050 |
-| length | control | -0.165 | 3.050 |
-| n_density | control | -0.049 | 3.050 |
-| old20 | control | -0.077 | 3.050 |
+| length | control | -0.226 | 3.050 |
+| n_density | control | 0.301 | 3.050 |
+| old20 | control | -0.295 | 3.050 |
 
 ## Suggested analysis
 
@@ -40,7 +41,7 @@
 
 ## Methods paragraph
 
-80 English items were selected to span frequency (a span of 3.05 and an SD of 0.54, 0.60 times that of an even spread over the span), for analysis by regression or a mixed model rather than a between-condition contrast (Kuperman, 2015; Liben-Nowell et al., 2019). The controls were banded within windows of the mean ± 1.5 SD of an initial selection spread over the ranks of frequency (length 3.18 to 7.90, n_density -5.21 to 12.84 and old20 1.14 to 2.80), and their realised SDs were 0.66, 0.39 and 0.56 of the pool's. The largest predictor-control correlation was |r| = 0.165. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. Responses were collected from target onset until 2800 ms after it, and a response ended the trial. The selection is deterministic and reproducible (lexsync 0.1.1), and the seed (2026) fixes the trial order.
+80 English items were selected to span frequency (a span of 3.05 and an SD of 0.53, 0.59 times that of an even spread over the span), for analysis by regression or a mixed model rather than a between-condition contrast (Kuperman, 2015; Liben-Nowell et al., 2019). The controls were banded within windows of the mean ± 1.5 SD of an initial selection spread over the ranks of frequency (length 3.99 to 8.13, n_density -2.52 to 7.54 and old20 1.29 to 2.91), and their realised SDs were 0.76, 0.41 and 0.68 of the pool's. The largest predictor-control correlation was |r| = 0.301. An exclusion list (exclude_en_demo.txt) removed 53 words from the candidates before selection. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. Responses were collected from target onset until 2800 ms after it, and a response ended the trial. The selection is deterministic and reproducible (lexsync 0.1.1), and the seed (2026) fixes the trial order.
 
 ## Pre-registration template
 
@@ -60,7 +61,7 @@
 - Paradigm: factorial
 
 ### Materials (from the lexsync datasheet)
-80 English items were selected to span frequency (a span of 3.05 and an SD of 0.54, 0.60 times that of an even spread over the span), for analysis by regression or a mixed model rather than a between-condition contrast (Kuperman, 2015; Liben-Nowell et al., 2019). The controls were banded within windows of the mean ± 1.5 SD of an initial selection spread over the ranks of frequency (length 3.18 to 7.90, n_density -5.21 to 12.84 and old20 1.14 to 2.80), and their realised SDs were 0.66, 0.39 and 0.56 of the pool's. The largest predictor-control correlation was |r| = 0.165. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. Responses were collected from target onset until 2800 ms after it, and a response ended the trial. The selection is deterministic and reproducible (lexsync 0.1.1), and the seed (2026) fixes the trial order.
+80 English items were selected to span frequency (a span of 3.05 and an SD of 0.53, 0.59 times that of an even spread over the span), for analysis by regression or a mixed model rather than a between-condition contrast (Kuperman, 2015; Liben-Nowell et al., 2019). The controls were banded within windows of the mean ± 1.5 SD of an initial selection spread over the ranks of frequency (length 3.99 to 8.13, n_density -2.52 to 7.54 and old20 1.29 to 2.91), and their realised SDs were 0.76, 0.41 and 0.68 of the pool's. The largest predictor-control correlation was |r| = 0.301. An exclusion list (exclude_en_demo.txt) removed 53 words from the candidates before selection. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. Responses were collected from target onset until 2800 ms after it, and a response ended the trial. The selection is deterministic and reproducible (lexsync 0.1.1), and the seed (2026) fixes the trial order.
 
 ### Sampling plan
 - Sample size and justification:

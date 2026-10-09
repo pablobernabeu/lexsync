@@ -19,7 +19,17 @@ lp_screened <- paste0("wordfreq (Speer, 2022) screened against SUBTLEX-US (Brysb
                       "nonstandard, and N and OLD20 count only the unmarked forms; full corpus ",
                       "licence and citation at ",
                       "https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md")
-lp_slices <- c("en_example.csv", "es_example.csv", "zh_example.csv")
+# The English example slice holds only forms the screen keeps, so it marks none.
+lp_screened_slice <- paste0("wordfreq (Speer, 2022) screened against SUBTLEX-US (Brysbaert ",
+                            "& New, 2009), data CC BY-SA 4.0; forms absent from SUBTLEX-US ",
+                            "or beginning with a lower-case letter in under 10% of their ",
+                            "uses are left out, and N and OLD20 count neighbours only among ",
+                            "the forms the screen keeps; full corpus licence and citation at ",
+                            "https://github.com/pablobernabeu/lexsync/blob/main/corpora/",
+                            "ATTRIBUTION.md")
+lp_slice_credit <- c(en_example.csv = lp_screened_slice, es_example.csv = lp_wordfreq,
+                     zh_example.csv = lp_wordfreq)
+lp_slices <- names(lp_slice_credit)
 lp_derived <- c(en.csv = lp_wordfreq, en_v2.csv = lp_screened, es.csv = lp_wordfreq,
                 es_gender.csv = lp_wordfreq, zh.csv = lp_wordfreq)
 
@@ -71,9 +81,10 @@ test_that("a_bundled_lexicon_is_recognised_whatever_its_line_endings", {
     writeBin(lp_crlf(data), crlf)
     renamed <- file.path(dir, paste0("renamed_", name))
     writeBin(data, renamed)
-    expect_identical(.lexicon_provenance(lp_data(name)), lp_wordfreq, info = name)
-    expect_identical(.lexicon_provenance(crlf), lp_wordfreq, info = name)
-    expect_identical(.lexicon_provenance(renamed), lp_wordfreq, info = name)
+    credit <- lp_slice_credit[[name]]
+    expect_identical(.lexicon_provenance(lp_data(name)), credit, info = name)
+    expect_identical(.lexicon_provenance(crlf), credit, info = name)
+    expect_identical(.lexicon_provenance(renamed), credit, info = name)
   }
   # One byte more and the file is the user's own.
   changed <- file.path(dir, "changed.csv")
@@ -109,6 +120,25 @@ test_that("every_bundled_lexicon_is_in_the_provenance_table", {
     expect_identical(names(named)[named == paste0("corpora/derived/", name)],
                      lp_lf_sha256(data), info = name)
   }
+})
+
+test_that("the_english_example_slice_holds_unmarked_rows_of_en_v2", {
+  # The slice both packages bundle is 3,000 of the forms the screened lexicon keeps, each
+  # with the cells en_v2.csv gives it, N and OLD20 among them. It used to be a slice of
+  # en.csv, a quarter of it names, acronyms and other marked forms.
+  as_text <- function(path) {
+    utils::read.csv(path, colClasses = "character", na.strings = character(0),
+                    encoding = "UTF-8")
+  }
+  v2 <- as_text(repo_path("corpora", "derived", "en_v2.csv"))
+  sl <- as_text(lp_data("en_example.csv"))
+  expect_identical(names(sl), c("word", "freq_zipf", "language", "source", "n_density",
+                                "old20"))
+  expect_identical(nrow(sl), 3000L)
+  expect_false(anyDuplicated(sl$word) > 0L)
+  rows <- v2[match(sl$word, v2$word), , drop = FALSE]
+  expect_true(all(rows$nonstandard == "0"))
+  for (col in names(sl)[-1L]) expect_identical(rows[[col]], sl[[col]], info = col)
 })
 
 test_that("a_registry_corpus_in_the_cache_is_credited_by_its_citation", {

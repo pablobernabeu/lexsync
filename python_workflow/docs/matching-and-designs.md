@@ -44,11 +44,13 @@ Three columns are derived on the way in: `length` in characters, `n_syllables` f
 print(lexicon.head(3).to_string(index=False))
 ```
 
-`load_lexicon` takes the lexicon as given and screens nothing for lexical status. About a quarter
-(24%) of the bundled English slice loaded here is absent from SUBTLEX-US or is written there with a
-capital in more than 90% of its uses, as proper names and acronyms are. N and OLD20 count such forms
-as neighbours. [Choosing and screening a lexicon](#choosing-and-screening-a-lexicon) below says
-what that does to a selection and how to screen the forms out.
+`load_lexicon` takes the lexicon as given and screens nothing for lexical status. The bundled
+English slice loaded here is cut from the screened English lexicon. The screen leaves out the forms
+SUBTLEX-US lacks or writes with a capital in more than 90% of their uses, such as proper names and
+acronyms. The slice's N and OLD20 count only the forms it keeps. Taboo words and some
+abbreviations pass the screen, and a lexicon of your own is loaded as it stands.
+[Choosing and screening a lexicon](#choosing-and-screening-a-lexicon) below says what such forms do
+to a selection and how to screen them out.
 
 `build_pool` narrows that lexicon to the candidates a design will consider. A two-element numeric
 range is read as an inclusive `[min, max]` band, and anything else is read as a set of allowed
@@ -70,9 +72,10 @@ pins this, checking that the README's example calls `build_pool` before matching
 
 The lexica in the repository's `corpora/derived/` hold the most frequent forms wordfreq gives for a
 language, and wordfreq lists names, acronyms and internet forms beside words. Such forms enter a
-selection unevenly across conditions: in the `en_andrews_repro` demonstration they make up 24 of the
-36 low-frequency items and none of the 36 high-frequency ones. N and OLD20 count them as neighbours
-too, so that `cat` has 32 neighbours in `en.csv`, among them `caa`, `cbt` and `cdt`.
+selection unevenly across conditions: when the `en_andrews_repro` demonstration read `en.csv`, they
+made up 24 of its 36 low-frequency items and none of its 36 high-frequency ones. N and OLD20 count
+them as neighbours too, so that `cat` has 32 neighbours in `en.csv`, among them `caa`, `cbt` and
+`cdt`.
 
 `corpora/derived/en_v2.csv` screens the English lexicon against SUBTLEX-US
 ([Brysbaert & New, 2009](references.md#brysbaert-2009)). It holds the 30,000 forms and frequencies
@@ -115,15 +118,20 @@ refuses the key, since its items are already a selection of your own. The datash
 list as `materials_source.exclusions`, with its checksum, the number of words it lists and the
 number of candidates it removed, and the Methods paragraph reports the removal.
 
-`en.csv` keeps its bytes, so a design written for lexsync 0.1 selects what it selected, and the
-English demonstrations still read it. Spanish and Chinese have no screened lexicon, because no source
-of letter case or known words with a verified licence exists for them. Read a selection in either
-language before a study runs, and leave out what you find with `exclude_words`.
+`en.csv` keeps its bytes, so a design written for lexsync 0.1 selects what it selected. The English
+demonstrations read `en_v2.csv` with the filter above. Their `exclude_words` file,
+`config/exclude_en_demo.txt`, leaves out the taboo words and the forms that pass the screen without
+being standard English words, such as abbreviations that subtitles write in lower case (`mph`,
+`msg`). Its header states the criteria, and the list was made by reading what the demonstrations
+selected. Spanish and Chinese have no screened lexicon, because no source of letter case or known
+words with a verified licence exists for them. Read a selection in either language before a study
+runs, and leave out what you find with `exclude_words`.
 
 The datasheet credits the lexicon a corpus or generated design read. A lexicon lexsync ships is
-credited to wordfreq, and `en_v2.csv` to wordfreq screened against SUBTLEX-US, with the rule. A
-corpus that `fetch_corpus` put in the cache is credited by the registry's citation, and any other
-file by its name and the first twelve digits of its checksum.
+credited to wordfreq, and `en_v2.csv` and the English example slice drawn from it to wordfreq
+screened against SUBTLEX-US, with the rule. A corpus that `fetch_corpus` put in the cache is
+credited by the registry's citation, and any other file by its name and the first twelve digits of
+its checksum.
 
 ## Supplied item pools
 
@@ -139,7 +147,7 @@ it, or else skip matching entirely by going in as `items.source: table`.
 items:
   source: pool
   path: items/pool_en_concrete_nouns.csv
-  lexicon: corpora/derived/en.csv
+  lexicon: corpora/derived/en_v2.csv
 ```
 
 The list needs only a `word` column. Length and the syllable estimate are derived from the form, and
@@ -171,9 +179,9 @@ but not both, so a relational design had to be assembled by hand.
 items:
   source: table
   path: items/priming_pairs_en.csv
-  members: [prime, target]          # the two word fields
-  lexicon: corpora/derived/en.csv   # where each member's norms are looked up
-  anchor_condition: related         # whose row represents the pair during selection
+  members: [prime, target]             # the two word fields
+  lexicon: corpora/derived/en_v2.csv   # where each member's norms are looked up
+  anchor_condition: related            # whose row represents the pair during selection
 ```
 
 Each member's word-level norms are joined from the lexicon and prefixed, giving `prime.frequency`,
@@ -353,26 +361,27 @@ anchor item chooses among the candidates not yet used, so no word can be assigne
 distance is broken by the rule that `matching.tie_break` names, and then by the lexicon id.
 
 Exact ties are common, because lengths and neighbourhood counts are whole numbers and frequencies
-carry two decimals. In `en_freqcontrast`, 71 of the 80 anchored picks had another candidate at
-exactly the chosen distance, with a median of eight tied candidates, and the tie-break chose the
-word. Under `bytes`, the default and the rule of lexsync 0.1, a tie goes to the word whose UTF-8
-bytes sort first, so a condition decided by ties fills with early-alphabet words. In the same
-design, 61% of the low-frequency words begin with a or b, against 13% of their candidates, and in
-`en_ndensity`'s dense condition every word does. A word's initial phoneme biases voice-key measures
-of naming latency ([Kessler et al., 2002](references.md#kessler-2002)), and the realised-control
-report cannot show such a skew, because it measures only the matched dimensions.
+carry two decimals. When `en_freqcontrast` read `en.csv`, 71 of its 80 anchored picks had another
+candidate at exactly the chosen distance, with a median of eight tied candidates, and the tie-break
+chose the word. Under `bytes`, the rule of lexsync 0.1, a tie goes to the word whose UTF-8 bytes
+sort first, so a condition decided by ties fills with early-alphabet words. In that design, 61% of
+the low-frequency words began with a or b, against 13% of their candidates, and in `en_ndensity`'s
+dense condition every word did. A word's initial phoneme biases voice-key measures of naming
+latency ([Kessler et al., 2002](references.md#kessler-2002)), and the realised-control report cannot
+show such a skew, because it measures only the matched dimensions.
 
-Under `hash`, a tie goes to the smaller SHA-256 digest of `lexsync-tie-v1|` followed by the word.
-The salt is fixed, so the rule does not depend on the seed, and the digests favour no part of the
-alphabet. The low-frequency share falls to 12.5% and the dense share to 17.5%, against 13% and 12%
-among the candidates, while Cohen's *d* on every matched dimension of every shipped matched design
-is unchanged. Under either rule, `standardised_euclidean` and `joint` give the same selection in the
-two engines, and `bytes` reproduces the selections of lexsync 0.1. The even spreads that pick the
-anchor's items and a continuous design's items keep the byte order under both rules.
+Under `hash`, the default, a tie goes to the smaller SHA-256 digest of `lexsync-tie-v1|` followed by
+the word. The salt is fixed, so the rule does not depend on the seed, and the digests favour no part
+of the alphabet. On `en.csv`, the low-frequency share fell to 12.5% and the dense share to 17.5%,
+against 13% and 12% among the candidates, while Cohen's *d* on every matched dimension of every
+shipped matched design was unchanged. Under either rule, `standardised_euclidean` and `joint` give
+the same selection in the two engines, and `bytes` reproduces the selections of lexsync 0.1. The
+even spreads that pick the anchor's items and a continuous design's items keep the byte order under
+both rules.
 
 ```yaml
 matching:
-  tie_break: hash   # bytes (the default) or hash, in a design or in the schema
+  tie_break: bytes   # hash (the default) or bytes, in a design or in the schema
 ```
 
 Two guards are worth knowing about because they turn silent corruption into an error. If a condition
@@ -547,7 +556,7 @@ conditions appears as the manipulated dimension it is. Bigram frequency is compu
 lack it, which leaves the stimuli file and the selection as they were. A dimension with no numeric
 value among the items, such as `n_syllables` for Chinese words, is left out. The uncontrolled rows
 are where a confound shows. In `en_ndensity`, the dense words have fewer estimated syllables than
-the sparse ones (*d* = -0.83, 90% CI [-1.10, -0.56]), which a report of the matched dimensions
+the sparse ones (*d* = -0.53, 90% CI [-0.79, -0.26]), which a report of the matched dimensions
 alone could not reveal.
 
 Two smaller functions round this out. `describe_stimuli` gives the descriptives alone, grouped by any
@@ -594,28 +603,29 @@ both passes reuse the matcher's even-spread primitive, the two engines select by
 here as well.
 
 Because the spread is over ranks and not values, the selection follows the pool's distribution of
-the predictor. In the `en_freqcontinuous` demonstration its quantiles lie within 0.03 of the pool's,
-and 94% of the items fall in the lower half of the frequency range, since frequent words are rare in
+the predictor. In the `en_freqcontinuous` demonstration its quantiles lie within 0.06 of the pool's,
+and 95% of the items fall in the lower half of the frequency range, since frequent words are rare in
 any lexicon. The windows trim the controls' tails without holding the controls constant.
 
 `match_report_continuous` returns the same `{descriptives, comparisons}` shape as `match_report`, so
 the pipeline and the datasheet stay uniform, but the comparisons describe a predictor. Its realised
 span replaces the effect size, and each control's Pearson
 correlation with the predictor replaces the equivalence verdict. Those correlations are what you
-report: at *k* = 1.5 the three controls sit between −0.195 and 0.100, and a control that stays
+report: at *k* = 1.5 the three controls sit between −0.248 and 0.069, and a control that stays
 correlated belongs in the model as a covariate. Tightening *k* does not reliably lower the
-correlations. In `en_freqcontinuous`, *k* = 1.0 gave *r* = 0.213 between frequency and `n_density`,
-against −0.049 at *k* = 1.5. At *k* = 0.25 no item falls within the windows, so the selector relaxes
-them to the whole pool.
+correlations. In `en_freqcontinuous`, *k* = 1.0 gives *r* = 0.070 between frequency and
+`n_density`, against 0.301 at *k* = 1.5, but on the unscreened `en.csv` it gave 0.213 against
+−0.049. At *k* = 0.25 only 30 items fall within the windows, fewer than the 80 the design needs, so
+the selector relaxes them to the whole pool.
 
 Each row also gives the dimension's realised SD as `sd`. For the predictor, `sd_ratio` sets it
 against the SD of as many values spaced evenly over the same range. That SD is
 `(max - min) * sqrt(n * (n + 1) / 12) / (n - 1)`, which approaches `(max - min) / sqrt(12)` as *n*
 grows, so an even spread has a ratio of 1 at any size. A ratio below 1 means the items bunch
-together more than an even spread would: `en_freqcontinuous` has 0.60, an SD of 0.54 against 0.90.
+together more than an even spread would: `en_freqcontinuous` has 0.59, an SD of 0.53 against 0.90.
 A ratio above 1 means they gather towards the ends of the range. For a control, `sd_ratio` sets the
 realised SD against the SD of the pool the selector drew from, and `window_low` and `window_high`
-give the window its first pass set. In `en_freqcontinuous`, length keeps 0.66 of the pool's SD, so
+give the window its first pass set. In `en_freqcontinuous`, length keeps 0.76 of the pool's SD, so
 the window trims the tails of a control and leaves much of its spread. The windows come from the
 audit `select_continuous_stimuli` attaches to its result, which `match_report_continuous` reads
 unless it is given one as `audit`. A window that held too few items and was widened to the whole
@@ -708,7 +718,7 @@ subsyllabic = lexsync.build_lexdec_stimuli(
 
 In both methods, the scoring picks the most bigram-typical candidate and does not match the base word,
 so the pseudowords come out more bigram-typical than their words. The difference in mean bigram
-probability is about *d* = −1.5, words minus pseudowords, in `en_lexdec` and `en_lexdec_wuggy` alike.
+probability is about *d* = −1.0, words minus pseudowords, in `en_lexdec` and `en_lexdec_wuggy` alike.
 Read the generated forms before a study runs.
 
 Both generators process base words in byte order, so the set of already-used pseudowords evolves
@@ -725,20 +735,21 @@ their pseudowords on length, which they share by construction, and on bigram fre
 OLD20, which the generator does not hold. The report marks length as controlled and the other
 three as uncontrolled, and it computes those three against the lexicon on a copy of the stimuli.
 Since the most bigram-plausible candidate wins, the pseudowords tend to be more bigram-typical than
-their words: in `en_lexdec` the difference is *d* = -1.47 (90% CI [-1.82, -1.13]).
+their words: in `en_lexdec` the difference is *d* = -0.97 (90% CI [-1.29, -0.65]).
 
 A pseudoword is a non-word only relative to the reference words, so a real word too rare for the
 lexicon can still come out as one. The bundled English and Spanish lexica stop at Zipf 2.95 and
-3.11, and the English demonstrations produced crier and pall this way. `exclude` names further known
-word forms that no pseudoword may equal. They are trimmed, lower-cased and put in NFC like the
-lexicon's words, and they take no part in the bigram statistics. In a design the list goes under
-`items.generation.exclude`, and each entry is a file with one form per line, a CSV file with a
-`word` column, or a registry corpus already fetched into the cache:
+3.11, and the English demonstrations produced crier and pall this way until they named the list
+below. `exclude` names further known word forms that no pseudoword may equal. They are trimmed,
+lower-cased and put in NFC like the lexicon's words, and they take no part in the bigram
+statistics. In a design the list goes under `items.generation.exclude`, and each entry is a file
+with one form per line, a CSV file with a `word` column, or a registry corpus already fetched into
+the cache:
 
 ```yaml
 items:
   source: generate
-  lexicon: corpora/derived/en.csv
+  lexicon: corpora/derived/en_v2.csv
   generation:
     exclude: [corpora/derived/en_known_forms.txt]
 ```
@@ -749,6 +760,13 @@ so it is refused. The datasheet records each list with its checksum and the numb
 holds, and the Methods paragraph names it. In the repository, `python corpora/fetch_corpora.py --known-forms en es` writes
 wordfreq's fuller lists to `corpora/derived/` (289,023 English and 334,625 Spanish forms at Zipf 1.0
 or above). They are not shipped in the package.
+
+A long list costs the pseudowords some of their form. The generators' only check on form is that
+each letter pair occurs somewhere in the lexicon, so with fewer candidates left the most
+bigram-typical one can be ill-formed. In the English demonstrations, 13 of the 140 pseudowords are
+ill-formed, among them fdes, gngs and ntena. Each lacks a vowel or opens or closes on a letter pair
+that opens or closes no screened English word of three letters or more with a vowel. Without the
+list, the same designs give 5 such pseudowords. Read the generated forms before a study runs.
 
 `generate_pseudowords` and `make_pseudoword` are available directly if you want the forms without the
 lexical-decision scaffolding around them.

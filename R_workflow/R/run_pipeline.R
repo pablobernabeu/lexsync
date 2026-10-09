@@ -16,7 +16,7 @@
 
 # A generated lexical decision's report: length, which every pseudoword shares with its
 # base word, and three dimensions the generator does not hold. Its pseudowords are more
-# bigram-typical than their words (d about -1.5 in en_lexdec).
+# bigram-typical than their words (d about -1.0 in en_lexdec).
 .LEXDEC_REPORT_DIMS <- c("length", "bigram_freq", "n_density", "old20")
 
 # The dimensions a corpus or pool design's report covers, in first-mention order:

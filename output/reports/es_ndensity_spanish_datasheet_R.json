@@ -60,7 +60,8 @@
       }
     },
     "tie_break": {
-      "rule": "bytes"
+      "rule": "hash",
+      "salt": "lexsync-tie-v1"
     },
     "candidate_pool": [
       {
@@ -116,52 +117,52 @@
       "reference": "dense_neighbourhood",
       "dimension": "n_density",
       "role": "manipulated",
-      "cohens_d": 2.128,
-      "ci_low": 1.8,
-      "ci_high": 2.455,
-      "var_ratio": 0.01,
+      "cohens_d": 3.059,
+      "ci_low": 2.674,
+      "ci_high": 3.444,
+      "var_ratio": 0.022,
       "tost_p": 1,
       "equivalent": false,
-      "mean_diff": 7.45
+      "mean_diff": 7.413
     },
     {
       "condition": "sparse_neighbourhood",
       "reference": "dense_neighbourhood",
       "dimension": "old20",
       "role": "uncontrolled",
-      "cohens_d": -2.421,
-      "ci_low": -2.765,
-      "ci_high": -2.077,
-      "var_ratio": 0.739,
+      "cohens_d": -2.569,
+      "ci_low": -2.922,
+      "ci_high": -2.215,
+      "var_ratio": 1.115,
       "tost_p": 1,
       "equivalent": false,
-      "mean_diff": -0.503
+      "mean_diff": -0.519
     },
     {
       "condition": "sparse_neighbourhood",
       "reference": "dense_neighbourhood",
       "dimension": "n_syllables",
       "role": "uncontrolled",
-      "cohens_d": 0.289,
-      "ci_low": 0.026,
-      "ci_high": 0.552,
-      "var_ratio": 2.047,
-      "tost_p": 0.092,
-      "equivalent": false,
-      "mean_diff": 0.162
+      "cohens_d": 0.05,
+      "ci_low": -0.211,
+      "ci_high": 0.312,
+      "var_ratio": 3.498,
+      "tost_p": 0.0025,
+      "equivalent": true,
+      "mean_diff": 0.025
     },
     {
       "condition": "sparse_neighbourhood",
       "reference": "dense_neighbourhood",
       "dimension": "bigram_freq",
       "role": "uncontrolled",
-      "cohens_d": 1.007,
-      "ci_low": 0.729,
-      "ci_high": 1.284,
-      "var_ratio": 0.898,
-      "tost_p": 0.9992,
+      "cohens_d": 0.942,
+      "ci_low": 0.666,
+      "ci_high": 1.217,
+      "var_ratio": 1.183,
+      "tost_p": 0.9971,
       "equivalent": false,
-      "mean_diff": 0.004
+      "mean_diff": 0.003
     }
   ],
   "counterbalancing": {
@@ -212,7 +213,7 @@
       }
     ],
     "stimuli_file": "output/stimuli/es_ndensity_spanish_stimuli_R.csv",
-    "stimuli_sha256": "51eb4661a6c45d9bdff5235100a57531fb25a499bf376b7969cb0aec7a977a39"
+    "stimuli_sha256": "dc03f6827d1bbedcfe1d3037a810a522abd6e7f75aac9335223fa92c57d1e4d7"
   },
   "reproducibility": {
     "seed": 2026,
@@ -230,20 +231,20 @@
     },
     "design_sha256": "d72b9e8c0e26a2faba2f39023b4f00d44cfe6a922d136d7b07d110025b69c608",
     "schema_path": "config/schema.yaml",
-    "schema_sha256": "3335f4e31a7f5dece6375dd0247600547ad86290492c7aead2836a9ec8af9dcb"
+    "schema_sha256": "5366c0b44af48b5bbc25c142ec14865db2f4a377efb35a5e99d937770b2e1483"
   },
   "artifacts": [
     {
       "file": "output/stimuli/es_ndensity_spanish_stimuli_R.csv",
-      "sha256": "51eb4661a6c45d9bdff5235100a57531fb25a499bf376b7969cb0aec7a977a39"
+      "sha256": "dc03f6827d1bbedcfe1d3037a810a522abd6e7f75aac9335223fa92c57d1e4d7"
     },
     {
       "file": "output/reports/es_ndensity_spanish_descriptives_R.csv",
-      "sha256": "909a752d8cca21be9a155a215282c1fea33243f62622cad97e25e4a884167cc0"
+      "sha256": "a2facdcaaff5962b172ad54d79164feb35d85d9baca3232ea349238fb4d47f56"
     },
     {
       "file": "output/reports/es_ndensity_spanish_comparisons_R.csv",
-      "sha256": "7eff7d889070d6b8e36964db7d4a5326682b59a80000f39517af6cfe65bd4b9e"
+      "sha256": "57658bfb2bc52a6d31ec02be3008be01dedc9404e8f81c5f401b224ecb6ca848"
     },
     {
       "file": "output/experiments/es_ndensity_spanish_psychopy.py",
@@ -255,11 +256,11 @@
     },
     {
       "file": "output/experiments/es_ndensity_spanish.html",
-      "sha256": "ddae3ee9a5df506c0fbe232dc277fea8fcce671ceba386e8351975fca7be7388"
+      "sha256": "aa477310eb162324da79cfcb6a4c482f72142b69ee9d848307776766976179a9"
     },
     {
       "file": "output/experiments/es_ndensity_spanish_psychopy.csv",
-      "sha256": "7c52fb25afb5c14d087fe3b33d2b6673a7141fff4668c4f623c11a9a019b3295"
+      "sha256": "354d460d4d46b00fcb3f198a9716cf513d26c60c9c194392c09ab480d5dcfb0b"
     },
     {
       "file": "output/experiments/es_ndensity_spanish_opensesame.csv",
@@ -267,7 +268,7 @@
     },
     {
       "file": "output/experiments/es_ndensity_spanish_opensesame_text.csv",
-      "sha256": "7f7df44a36ec240440013c0072949e4903aeeb87f0efd5356acaa1ca5945919e"
+      "sha256": "2a2f409b60d511275ad33cbdb269d193b5285e8a5db298fd300c46c8ead46f13"
     }
   ]
 }

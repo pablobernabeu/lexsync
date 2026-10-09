@@ -69,15 +69,21 @@
       "target"
     ],
     "n_pairs": 8,
-    "member_lexicon": "corpora/derived/en.csv",
-    "member_lexicon_sha256": "575833489e04d6a4001fda56a56e3daa383811dece1f819c44060ee79ca56976",
+    "member_lexicon": "corpora/derived/en_v2.csv",
+    "member_lexicon_sha256": "46815cd56ac036cb841460a2ea6205ac374eddb6ca26275bb1a2fbafc7c5d626",
     "member_dimensions": [
       "freq_zipf",
       "frequency",
+      "in_subtlex_us",
       "length",
+      "lowercase_share",
       "n_density",
+      "n_density_raw",
       "n_syllables",
-      "old20"
+      "nonstandard",
+      "old20",
+      "old20_raw",
+      "reference_member"
     ],
     "relational_dimensions": [
       "pair.lev",
@@ -183,7 +189,7 @@
       }
     ],
     "stimuli_file": "output/stimuli/en_priming_continuous_english_stimuli_R.csv",
-    "stimuli_sha256": "05fc40acad57d8de585d854e592e7f21288e9952d5add2e8d81032bd222dec24"
+    "stimuli_sha256": "6654f29cc27867c63afce3c6bcf30b7bf3bde7a3f19ea0d254ae5088d0f9e9b8"
   },
   "reproducibility": {
     "seed": 2026,
@@ -199,14 +205,14 @@
       "stringi": "1.8.7",
       "os": "Windows x86-64"
     },
-    "design_sha256": "0c0c118a2b61b6f0c26ce5f44d7f14ce0e03116cd385203a551f6394b96731d8",
+    "design_sha256": "dc211a70b9c1ba03dd207dcdf117be3096514e37f328fe09a76f0fd83e98285e",
     "schema_path": "config/schema.yaml",
-    "schema_sha256": "3335f4e31a7f5dece6375dd0247600547ad86290492c7aead2836a9ec8af9dcb"
+    "schema_sha256": "5366c0b44af48b5bbc25c142ec14865db2f4a377efb35a5e99d937770b2e1483"
   },
   "artifacts": [
     {
       "file": "output/stimuli/en_priming_continuous_english_stimuli_R.csv",
-      "sha256": "05fc40acad57d8de585d854e592e7f21288e9952d5add2e8d81032bd222dec24"
+      "sha256": "6654f29cc27867c63afce3c6bcf30b7bf3bde7a3f19ea0d254ae5088d0f9e9b8"
     },
     {
       "file": "output/reports/en_priming_continuous_english_descriptives_R.csv",

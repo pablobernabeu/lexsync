@@ -16,7 +16,7 @@ design's ``items.generation.exclude``. Lexicality is checked against those forms
 only, so a form missing from all of them may still be a word: crier, pall and
 titer have come through with the English lexicon and no exclusion list. Because
 the scoring picks the most typical candidate and does not match the base word,
-pseudowords are more bigram-typical than their base words (d about -1.5, words
+pseudowords are more bigram-typical than their base words (d about -1.0, words
 minus pseudowords, in en_lexdec).
 
 The subsyllabic method is an orthographic approximation of Wuggy (Keuleers &

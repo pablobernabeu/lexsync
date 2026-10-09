@@ -32,15 +32,23 @@ description: 'English lexical decision with a feedback-bearing practice block an
 
 items:
   source: generate
-  lexicon: corpora/derived/en.csv
+  lexicon: corpora/derived/en_v2.csv
   generation:
     method: letter_substitution
+    # Every English form wordfreq lists at Zipf 1 or above, so that no pseudoword is a
+    # real word too rare for the lexicon.
+    exclude: [corpora/derived/en_known_forms.txt]
 
 n_per_condition: 20
 
 pool_filters:
   length: [4, 7]
   frequency: [3.5, 6.0]
+  # Keeps only the forms the SUBTLEX-US screen leaves unmarked (see corpora/ATTRIBUTION.md).
+  nonstandard: [0, 0]
+
+# Leaves out the unsuitable forms the screen lets through (see the file's header).
+exclude_words: {path: config/exclude_en_demo.txt}
 
 practice:
   path: items/practice_en_lexdec.csv

@@ -29,6 +29,15 @@ must give appropriate credit to the corpus authors, indicate that changes were
 made, and place any adaptation under the same licence. Everything else in the
 package, including the other files under inst/extdata, is MIT.
 
+One of the three has a second direct source. en_example.csv holds 3,000 of the
+forms of the repository's screened English lexicon, corpora/derived/en_v2.csv.
+That lexicon keeps a form only when SUBTLEX-US (Brysbaert & New, 2009) lists it
+and at least a tenth of its uses there begin with a lower-case letter. SUBTLEX-US,
+which openlexicon distributes under the same licence, CC BY-SA 4.0, thus chose the
+file's rows, and the file's N and OLD20 count neighbours among the forms it keeps.
+SUBTLEX-US is therefore a direct source of en_example.csv as well as one of the
+lists wordfreq blends.
+
 
 What lexsync changed
 --------------------
@@ -39,7 +48,8 @@ package reads, and two orthographic-neighbourhood variables computed here from
 the word list itself: Coltheart's N, the count of same-length neighbours
 reachable by a single letter substitution, and OLD20, the mean Levenshtein
 distance to the twenty nearest words. Each row names its origin in the 'source'
-column.
+column. For en_example.csv, both variables count neighbours among the forms the
+SUBTLEX-US screen keeps, as described above.
 
 
 Credit for SUBTLEX
@@ -71,9 +81,10 @@ lists are freely available, and their authors are credited as follows.
   Methods, 42(3), 643-650. https://doi.org/10.3758/BRM.42.3.643
 
 SUBTLEX contributes to the blend rather than constituting it. No file bundled
-here is a copy of a SUBTLEX list, and the SUBTLEX resources the corpus registry
-offers are separate corpora a user may fetch directly, not the source of
-anything shipped in this package.
+here is a copy of a SUBTLEX list. As described above, SUBTLEX-US screened the rows
+of en_example.csv. Otherwise, the SUBTLEX resources the corpus registry offers are
+separate corpora a user may fetch directly, not the source of anything shipped in
+this package.
 
 
 Corpora fetched at run time

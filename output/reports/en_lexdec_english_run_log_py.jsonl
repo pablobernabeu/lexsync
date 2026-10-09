@@ -1,19 +1,21 @@
-{"time": "2026-10-09T09:53:35", "message": "loading lexicon 'corpora/derived/en.csv'", "data": null}
-{"time": "2026-10-09T09:53:36", "message": "lexicon loaded: 30000 words", "data": {"words": 30000}}
-{"time": "2026-10-09T09:53:36", "message": "pool after filters: 8177 words", "data": {"pool": 8177}}
-{"time": "2026-10-09T09:53:36", "message": "generated 120 items (words + pseudowords, letter_substitution)", "data": {"conditions": "word, pseudoword"}}
-{"time": "2026-10-09T09:53:36", "message": "equivalence pseudoword vs word on 'length': d = 0.00 [-0.30, 0.30], TOST p = 0.0036 (equivalent)", "data": null}
-{"time": "2026-10-09T09:53:36", "message": "equivalence pseudoword vs word on 'bigram_freq': d = -1.47 [-1.81, -1.13], TOST p = 1.0 (not shown equivalent)", "data": null}
-{"time": "2026-10-09T09:53:36", "message": "equivalence pseudoword vs word on 'n_density': d = -0.28 [-0.59, 0.02], TOST p = 0.1167 (not shown equivalent)", "data": null}
-{"time": "2026-10-09T09:53:36", "message": "equivalence pseudoword vs word on 'old20': d = 0.17 [-0.13, 0.47], TOST p = 0.0372 (equivalent)", "data": null}
-{"time": "2026-10-09T09:53:36", "message": "wrote 'en_lexdec_english_stimuli_py.csv'", "data": {"path": "output\\stimuli\\en_lexdec_english_stimuli_py.csv", "rows": 120, "md5": "bc7c16452b7fd7cbabe8fafc8bb28287"}}
-{"time": "2026-10-09T09:53:36", "message": "wrote 'en_lexdec_english_descriptives_py.csv'", "data": {"path": "output\\reports\\en_lexdec_english_descriptives_py.csv", "rows": 8, "md5": "bee90fb07b347d3fe262803a6f342ade"}}
-{"time": "2026-10-09T09:53:36", "message": "wrote 'en_lexdec_english_comparisons_py.csv'", "data": {"path": "output\\reports\\en_lexdec_english_comparisons_py.csv", "rows": 4, "md5": "9464b3452793472e9abce17609e3d369"}}
-{"time": "2026-10-09T09:53:36", "message": "wrote 'en_lexdec_english_psychopy.py'", "data": {"path": "output\\experiments\\en_lexdec_english_psychopy.py", "rows": null, "md5": "a9c90173d7b34b6b6c1a914fa5132f57"}}
-{"time": "2026-10-09T09:53:36", "message": "wrote 'en_lexdec_english.osexp'", "data": {"path": "output\\experiments\\en_lexdec_english.osexp", "rows": null, "md5": "694c11f70ca325181628b5da1922e729"}}
-{"time": "2026-10-09T09:53:36", "message": "wrote 'en_lexdec_english.html'", "data": {"path": "output\\experiments\\en_lexdec_english.html", "rows": null, "md5": "3307ed89b9e2aaa71ac5dfcff505306d"}}
-{"time": "2026-10-09T09:53:36", "message": "wrote 'en_lexdec_english_psychopy.csv'", "data": {"path": "output\\experiments\\en_lexdec_english_psychopy.csv", "rows": null, "md5": "1fe32d4aaed880e77a845f82eb6df4a6"}}
-{"time": "2026-10-09T09:53:36", "message": "wrote 'en_lexdec_english_opensesame.csv'", "data": {"path": "output\\experiments\\en_lexdec_english_opensesame.csv", "rows": null, "md5": "d0ffb15c8bb700fa775f65d16d8ae164"}}
-{"time": "2026-10-09T09:53:36", "message": "wrote 'en_lexdec_english_opensesame_text.csv'", "data": {"path": "output\\experiments\\en_lexdec_english_opensesame_text.csv", "rows": null, "md5": "706132481e716f2a1ada15a83b56c292"}}
-{"time": "2026-10-09T09:53:36", "message": "wrote 'en_lexdec_english_datasheet_py.json'", "data": {"path": "output\\reports\\en_lexdec_english_datasheet_py.json", "rows": null, "md5": "601c636328aab9c41d4771729169e821"}}
-{"time": "2026-10-09T09:53:36", "message": "wrote 'en_lexdec_english_datasheet_py.md'", "data": {"path": "output\\reports\\en_lexdec_english_datasheet_py.md", "rows": null, "md5": "ea3f34367b1d6da4d5cbfef9be9599ca"}}
+{"time": "2026-10-09T11:51:02", "message": "loading lexicon 'corpora/derived/en_v2.csv'", "data": null}
+{"time": "2026-10-09T11:51:03", "message": "lexicon loaded: 30000 words", "data": {"words": 30000}}
+{"time": "2026-10-09T11:51:03", "message": "exclude_words: removed 53 of the 53 listed word(s) from the candidates (config/exclude_en_demo.txt)", "data": {"exclude_words": "config/exclude_en_demo.txt", "sha256": "cac9f88fb86fa6d0e6dbabc287c9ebb782100d071eeded13eb812584b9d41e9f", "n_removed": 53}}
+{"time": "2026-10-09T11:51:03", "message": "pool after filters: 6767 words", "data": {"pool": 6767}}
+{"time": "2026-10-09T11:51:04", "message": "pseudowords checked against 289023 known word form(s) from 'corpora/derived/en_known_forms.txt'", "data": {"exclude": "corpora/derived/en_known_forms.txt", "sha256": "31fa1bfbf347a94ca31dcdc0fe69be459b5829621b9b194469c725ab64e5e2b4"}}
+{"time": "2026-10-09T11:51:05", "message": "generated 120 items (words + pseudowords, letter_substitution)", "data": {"conditions": "word, pseudoword"}}
+{"time": "2026-10-09T11:51:05", "message": "equivalence pseudoword vs word on 'length': d = 0.00 [-0.30, 0.30], TOST p = 0.0036 (equivalent)", "data": null}
+{"time": "2026-10-09T11:51:05", "message": "equivalence pseudoword vs word on 'bigram_freq': d = -0.97 [-1.29, -0.65], TOST p = 0.9941 (not shown equivalent)", "data": null}
+{"time": "2026-10-09T11:51:05", "message": "equivalence pseudoword vs word on 'n_density': d = 0.01 [-0.30, 0.31], TOST p = 0.0039 (equivalent)", "data": null}
+{"time": "2026-10-09T11:51:05", "message": "equivalence pseudoword vs word on 'old20': d = -0.04 [-0.34, 0.27], TOST p = 0.0063 (equivalent)", "data": null}
+{"time": "2026-10-09T11:51:05", "message": "wrote 'en_lexdec_english_stimuli_py.csv'", "data": {"path": "output\\stimuli\\en_lexdec_english_stimuli_py.csv", "rows": 120, "md5": "904a03751c491ba9979823cf6ad1aca4"}}
+{"time": "2026-10-09T11:51:05", "message": "wrote 'en_lexdec_english_descriptives_py.csv'", "data": {"path": "output\\reports\\en_lexdec_english_descriptives_py.csv", "rows": 8, "md5": "f703a5d9fc95ab14d7c8b7b81238ee62"}}
+{"time": "2026-10-09T11:51:05", "message": "wrote 'en_lexdec_english_comparisons_py.csv'", "data": {"path": "output\\reports\\en_lexdec_english_comparisons_py.csv", "rows": 4, "md5": "1351a5c0c730e41e247d8ee90369ac23"}}
+{"time": "2026-10-09T11:51:05", "message": "wrote 'en_lexdec_english_psychopy.py'", "data": {"path": "output\\experiments\\en_lexdec_english_psychopy.py", "rows": null, "md5": "a9c90173d7b34b6b6c1a914fa5132f57"}}
+{"time": "2026-10-09T11:51:05", "message": "wrote 'en_lexdec_english.osexp'", "data": {"path": "output\\experiments\\en_lexdec_english.osexp", "rows": null, "md5": "694c11f70ca325181628b5da1922e729"}}
+{"time": "2026-10-09T11:51:05", "message": "wrote 'en_lexdec_english.html'", "data": {"path": "output\\experiments\\en_lexdec_english.html", "rows": null, "md5": "70134e5b9b45c4bc328a61bd5c6dd9a3"}}
+{"time": "2026-10-09T11:51:05", "message": "wrote 'en_lexdec_english_psychopy.csv'", "data": {"path": "output\\experiments\\en_lexdec_english_psychopy.csv", "rows": null, "md5": "aad3bb5683f8fb1e73bf40f5953e9d01"}}
+{"time": "2026-10-09T11:51:05", "message": "wrote 'en_lexdec_english_opensesame.csv'", "data": {"path": "output\\experiments\\en_lexdec_english_opensesame.csv", "rows": null, "md5": "d0ffb15c8bb700fa775f65d16d8ae164"}}
+{"time": "2026-10-09T11:51:05", "message": "wrote 'en_lexdec_english_opensesame_text.csv'", "data": {"path": "output\\experiments\\en_lexdec_english_opensesame_text.csv", "rows": null, "md5": "8863142b1722e0e7c3971220bad528c6"}}
+{"time": "2026-10-09T11:51:05", "message": "wrote 'en_lexdec_english_datasheet_py.json'", "data": {"path": "output\\reports\\en_lexdec_english_datasheet_py.json", "rows": null, "md5": "fa00a0d3f38003a4dc1454739e35584d"}}
+{"time": "2026-10-09T11:51:05", "message": "wrote 'en_lexdec_english_datasheet_py.md'", "data": {"path": "output\\reports\\en_lexdec_english_datasheet_py.md", "rows": null, "md5": "2f06fa7eb217bf0c4c4e7eadfe92c21a"}}

@@ -23,7 +23,7 @@
 ## Selection transparency
 
 - **Candidate pool** (items satisfying each condition's window before matching): high_frequency: 466, low_frequency: 4689.
-- Selection is a deterministic function of the materials source, the design and the schema, blind to any outcome measure, and does not depend on the seed, which fixes the trial order. Exact ties between equally close candidates are broken by spelling, in byte order, as lexsync 0.1 did, so every tie goes to the spelling that sorts first. Automating the choice removes the experimenter's discretion that Forster (2000) showed can bias item selection.
+- Selection is a deterministic function of the materials source, the design and the schema, blind to any outcome measure, and does not depend on the seed, which fixes the trial order. Exact ties between equally close candidates are broken by a keyed hash of each word (salt lexsync-tie-v1), so no part of the alphabet is favoured. Automating the choice removes the experimenter's discretion that Forster (2000) showed can bias item selection.
 
 ## Realised control
 
@@ -32,11 +32,11 @@ Each row compares a condition with its reference. The raw difference and Cohen's
 | Condition | Reference | Dimension | Role | Raw difference | Cohen's d | 90% CI | Var ratio | TOST p | Equivalent |
 |---|---|---|---|---|---|---|---|---|---|
 | low_frequency | high_frequency | length | controlled | 0.063 | 0.05 | [-0.21, 0.31] | 0.83 | 0.0024 | True |
-| low_frequency | high_frequency | frequency | manipulated | 1.510 | 5.55 | [4.97, 6.12] | 0.30 | 1.0000 | False |
+| low_frequency | high_frequency | frequency | manipulated | 1.468 | 5.39 | [4.83, 5.95] | 0.30 | 1.0000 | False |
 | low_frequency | high_frequency | n_density | controlled | 0.500 | 0.08 | [-0.19, 0.34] | 0.61 | 0.0041 | True |
 | low_frequency | high_frequency | old20 | controlled | 0.002 | 0.01 | [-0.26, 0.27] | 0.96 | 0.0011 | True |
-| low_frequency | high_frequency | n_syllables | uncontrolled | -0.112 | -0.16 | [-0.42, 0.10] | 2.17 | 0.0165 | True |
-| low_frequency | high_frequency | bigram_freq | uncontrolled | 0.000 | 0.08 | [-0.18, 0.35] | 0.91 | 0.0046 | True |
+| low_frequency | high_frequency | n_syllables | uncontrolled | 0.013 | 0.02 | [-0.24, 0.28] | 1.21 | 0.0014 | True |
+| low_frequency | high_frequency | bigram_freq | uncontrolled | 0.001 | 0.35 | [0.09, 0.61] | 0.72 | 0.1692 | False |
 
 ## Suggested analysis
 

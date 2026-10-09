@@ -74,12 +74,12 @@ def _resolve_policy(design, schema, key, default, known):
 def _resolve_tie_break(design, schema):
     """The rule that breaks exact ties between equally close candidates.
 
-    Read like the other matching policies, design over schema over default. `bytes`
-    gives a tie to the spelling that sorts first, as lexsync 0.1 did, and `hash` to
-    the smaller tie key (see _tie_keys). Must stay identical to .resolve_tie_break in
-    R_workflow/R/matching.R.
+    Read like the other matching policies, design over schema over default. `hash`,
+    the default, gives a tie to the smaller tie key (see _tie_keys), and `bytes` to the
+    spelling that sorts first, as lexsync 0.1 did, which reproduces its selections.
+    Must stay identical to .resolve_tie_break in R_workflow/R/matching.R.
     """
-    return _resolve_policy(design, schema, "tie_break", "bytes", ("hash", "bytes"))
+    return _resolve_policy(design, schema, "tie_break", "hash", ("hash", "bytes"))
 
 
 def _tie_keys(words) -> list:
@@ -477,10 +477,10 @@ def match_stimuli(pool: pd.DataFrame, design: dict, schema: dict, verbose: bool 
     is refused.
 
     ``tie_break``, read in the same way, decides between candidates at exactly the same
-    rounded distance, which integer dimensions make common: "bytes", the default,
-    prefers the spelling that sorts first and reproduces lexsync 0.1, and "hash"
+    rounded distance, which integer dimensions make common: "hash", the default,
     prefers the smaller SHA-256 of ``TIE_SALT``, a bar and the word, which favours no
-    part of the alphabet. The rule also orders the tied pairs of ``joint`` and
+    part of the alphabet, and "bytes" prefers the spelling that sorts first and
+    reproduces lexsync 0.1. The rule also orders the tied pairs of ``joint`` and
     ``optimal`` and the tied rows at their candidate cap. The anchor's even spread
     keeps its byte-order tie-break under both rules.
     """

@@ -148,12 +148,16 @@ packages, which is what lets a design travel. Here is the English frequency cont
 ```yaml
 name: en_freqcontrast
 language: english
-lexicon: corpora/derived/en.csv
+lexicon: corpora/derived/en_v2.csv
 description: 'High versus low frequency English words, matched on length, neighbourhood density and OLD20.'
 n_per_condition: 80
 pool_filters:
   length: [3, 8]
   frequency: [3.8, 7.0]
+  # Keeps only the forms the SUBTLEX-US screen leaves unmarked (see corpora/ATTRIBUTION.md).
+  nonstandard: [0, 0]
+# Leaves out the unsuitable forms the screen lets through (see the file's header).
+exclude_words: {path: config/exclude_en_demo.txt}
 conditions:
   - name: high_frequency
     define_by:
@@ -197,7 +201,9 @@ form the lexical-decision designs use, since they also need to say where the ite
 column and each value a `[min, max]` range for a numeric column, or a set of allowed values for a
 categorical one. This is a step that matters. The matcher never reads `pool_filters` itself, so a
 script that omits `build_pool` matches over the entire lexicon and quietly ignores the design's
-bands.
+bands. Here `nonstandard: [0, 0]` keeps the forms the screened lexicon leaves unmarked, and
+`exclude_words` leaves out the words a file lists, as
+[Matching and designs](matching-and-designs.md#choosing-and-screening-a-lexicon) explains.
 
 `conditions` is a list, each with a `name` and a `define_by` block that carves the condition out of
 the pool by the same filter syntax. Two conditions make a contrast. Four make the 2 × 2 that
@@ -264,11 +270,11 @@ One thing in it is deliberately not configurable. Equivalence is assessed by two
 and only the bound and alpha are settings.
 
 The rule that breaks exact ties in the matcher is a setting, `matching.tie_break`, and it matters,
-because whole-number lengths and neighbourhood counts make ties decide most picks. `bytes`, the
-default, gives a tie to the spelling that sorts first, as lexsync 0.1 did, and reproduces its
-selections, but it fills a condition decided by ties with early-alphabet words. `hash` gives the tie
-to the smaller keyed SHA-256 of the word, which favours no part of the alphabet. Under either rule,
-the two default methods give the same selection in the two engines without an RNG
+because whole-number lengths and neighbourhood counts make ties decide most picks. `hash`, the
+default, gives a tie to the smaller keyed SHA-256 of the word, which favours no part of the
+alphabet. `bytes` gives it to the spelling that sorts first, as lexsync 0.1 did, and reproduces that
+version's selections, but it fills a condition decided by ties with early-alphabet words. Under
+either rule, the two default methods give the same selection in the two engines without an RNG
 ([Matching and designs](matching-and-designs.md#how-matching-works)).
 
 A copy of the schema and of a small English, Spanish and Chinese lexicon is bundled inside the

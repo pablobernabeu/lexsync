@@ -1,7 +1,7 @@
 condition,reference,dimension,cohens_d,d_ci_low,d_ci_high,var_ratio,tost_p,equivalent,mean_diff,role
 masculine,feminine,length,0,-0.339,0.339,1,0.0081,TRUE,0,controlled
 masculine,feminine,frequency,0.021,-0.319,0.36,0.009,0.0105,TRUE,0.008,controlled
-masculine,feminine,n_density,0.196,-0.144,0.536,0.556,0.0697,FALSE,0.563,uncontrolled
-masculine,feminine,old20,-0.082,-0.422,0.257,0.893,0.0218,TRUE,-0.057,uncontrolled
-masculine,feminine,n_syllables,0.102,-0.237,0.441,1.531,0.0271,TRUE,0.083,uncontrolled
-masculine,feminine,bigram_freq,0.216,-0.124,0.556,1.967,0.0838,FALSE,0.001,uncontrolled
+masculine,feminine,n_density,0.147,-0.193,0.486,0.522,0.0433,TRUE,0.417,uncontrolled
+masculine,feminine,old20,-0.015,-0.354,0.324,0.821,0.0098,TRUE,-0.01,uncontrolled
+masculine,feminine,n_syllables,0.129,-0.211,0.468,1.478,0.0361,TRUE,0.104,uncontrolled
+masculine,feminine,bigram_freq,0.235,-0.105,0.575,1.497,0.0987,FALSE,0.001,uncontrolled

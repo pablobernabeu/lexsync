@@ -7,7 +7,7 @@
 - **Paradigm:** factorial  |  **Item source:** pool
 - **Description:** Concrete nouns from a supplied candidate pool, split by frequency and matched item by item on length, neighbourhood density and OLD20.
 - **Materials source:** `items/pool_en_concrete_nouns.csv` (sha256 `09d0706a853b4bb3…`)
-- **Dimensions from:** `corpora/derived/en.csv` (sha256 `575833489e04d6a4…`)
+- **Dimensions from:** `corpora/derived/en_v2.csv` (sha256 `46815cd56ac036cb…`)
 - **Selection:** standardised_euclidean
 - **Cross-engine determinism:** byte-identical
 - **Counterbalancing:** factorial, 1 list(s)
@@ -24,7 +24,7 @@
 ## Selection transparency
 
 - **Candidate pool** (items satisfying each condition's window before matching): higher_frequency: 31, lower_frequency: 95.
-- Selection is a deterministic function of the materials source, the design and the schema, blind to any outcome measure, and does not depend on the seed, which fixes the trial order. Exact ties between equally close candidates are broken by spelling, in byte order, as lexsync 0.1 did, so every tie goes to the spelling that sorts first. Automating the choice removes the experimenter's discretion that Forster (2000) showed can bias item selection.
+- Selection is a deterministic function of the materials source, the design and the schema, blind to any outcome measure, and does not depend on the seed, which fixes the trial order. Exact ties between equally close candidates are broken by a keyed hash of each word (salt lexsync-tie-v1), so no part of the alphabet is favoured. Automating the choice removes the experimenter's discretion that Forster (2000) showed can bias item selection.
 
 ## Realised control
 
@@ -32,12 +32,12 @@ Each row compares a condition with its reference. The raw difference and Cohen's
 
 | Condition | Reference | Dimension | Role | Raw difference | Cohen's d | 90% CI | Var ratio | TOST p | Equivalent |
 |---|---|---|---|---|---|---|---|---|---|
-| lower_frequency | higher_frequency | length | controlled | -0.050 | -0.11 | [-0.64, 0.42] | 0.89 | 0.1121 | False |
-| lower_frequency | higher_frequency | frequency | manipulated | 1.023 | 3.53 | [2.68, 4.38] | 0.83 | 1.0000 | False |
-| lower_frequency | higher_frequency | n_density | controlled | 0.300 | 0.13 | [-0.40, 0.66] | 0.83 | 0.1245 | False |
-| lower_frequency | higher_frequency | old20 | controlled | -0.058 | -0.24 | [-0.78, 0.29] | 0.62 | 0.2093 | False |
-| lower_frequency | higher_frequency | n_syllables | uncontrolled | 0.050 | 0.12 | [-0.42, 0.65] | 0.74 | 0.1166 | False |
-| lower_frequency | higher_frequency | bigram_freq | uncontrolled | 0.001 | 0.28 | [-0.25, 0.82] | 0.76 | 0.2486 | False |
+| lower_frequency | higher_frequency | length | controlled | 0.000 | 0.00 | [-0.53, 0.53] | 1.00 | 0.0611 | False |
+| lower_frequency | higher_frequency | frequency | manipulated | 1.018 | 3.51 | [2.66, 4.36] | 0.83 | 1.0000 | False |
+| lower_frequency | higher_frequency | n_density | controlled | 0.350 | 0.18 | [-0.36, 0.71] | 0.64 | 0.1572 | False |
+| lower_frequency | higher_frequency | old20 | controlled | -0.040 | -0.14 | [-0.67, 0.39] | 0.60 | 0.1309 | False |
+| lower_frequency | higher_frequency | n_syllables | uncontrolled | 0.050 | 0.14 | [-0.40, 0.67] | 0.24 | 0.1301 | False |
+| lower_frequency | higher_frequency | bigram_freq | uncontrolled | 0.001 | 0.62 | [0.08, 1.17] | 0.43 | 0.6510 | False |
 
 ## Suggested analysis
 
@@ -46,7 +46,7 @@ Each row compares a condition with its reference. The raw difference and Cohen's
 
 ## Methods paragraph
 
-20 English items per condition were selected from a supplied candidate pool and matched item by item on length, n_density, old20 using lexsync's standardised_euclidean matcher, with the matched dimensions taken from corpora/derived/en.csv. The largest difference on a matched dimension was -0.058 mean Levenshtein distance in old20 (higher_frequency against lower_frequency; d = -0.24, 90% CI [-0.78, 0.29]). Two one-sided tests at a bound of 0.5 SD (alpha 0.05) supported equivalence on 0 of 3 matched comparisons; with 20 items per condition no dimension that varies can pass this test, however well matched. No uncontrolled dimension differed by more than 0.5 SD. The smallest condition was selected from 31 eligible candidates, and the selection was deterministic and blind to any outcome measure. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. Responses were collected from target onset until 2500 ms after it, and a response ended the trial. The selection is deterministic and reproducible (lexsync 0.1.1), and the seed (2026) fixes the trial order.
+20 English items per condition were selected from a supplied candidate pool and matched item by item on length, n_density, old20 using lexsync's standardised_euclidean matcher, with the matched dimensions taken from corpora/derived/en_v2.csv. The largest difference on a matched dimension was 0.350 neighbours in n_density (higher_frequency against lower_frequency; d = 0.18, 90% CI [-0.36, 0.71]). Two one-sided tests at a bound of 0.5 SD (alpha 0.05) supported equivalence on 0 of 3 matched comparisons; with 20 items per condition no dimension that varies can pass this test, however well matched. Dimensions the design did not control differed: bigram_freq (higher_frequency against lower_frequency: 0.001 mean bigram probability; d = 0.62, 90% CI [0.08, 1.17]). The smallest condition was selected from 31 eligible candidates, and the selection was deterministic and blind to any outcome measure. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. Responses were collected from target onset until 2500 ms after it, and a response ended the trial. The selection is deterministic and reproducible (lexsync 0.1.1), and the seed (2026) fixes the trial order.
 
 ## Pre-registration template
 
@@ -66,7 +66,7 @@ Each row compares a condition with its reference. The raw difference and Cohen's
 - Paradigm: factorial
 
 ### Materials (from the lexsync datasheet)
-20 English items per condition were selected from a supplied candidate pool and matched item by item on length, n_density, old20 using lexsync's standardised_euclidean matcher, with the matched dimensions taken from corpora/derived/en.csv. The largest difference on a matched dimension was -0.058 mean Levenshtein distance in old20 (higher_frequency against lower_frequency; d = -0.24, 90% CI [-0.78, 0.29]). Two one-sided tests at a bound of 0.5 SD (alpha 0.05) supported equivalence on 0 of 3 matched comparisons; with 20 items per condition no dimension that varies can pass this test, however well matched. No uncontrolled dimension differed by more than 0.5 SD. The smallest condition was selected from 31 eligible candidates, and the selection was deterministic and blind to any outcome measure. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. Responses were collected from target onset until 2500 ms after it, and a response ended the trial. The selection is deterministic and reproducible (lexsync 0.1.1), and the seed (2026) fixes the trial order.
+20 English items per condition were selected from a supplied candidate pool and matched item by item on length, n_density, old20 using lexsync's standardised_euclidean matcher, with the matched dimensions taken from corpora/derived/en_v2.csv. The largest difference on a matched dimension was 0.350 neighbours in n_density (higher_frequency against lower_frequency; d = 0.18, 90% CI [-0.36, 0.71]). Two one-sided tests at a bound of 0.5 SD (alpha 0.05) supported equivalence on 0 of 3 matched comparisons; with 20 items per condition no dimension that varies can pass this test, however well matched. Dimensions the design did not control differed: bigram_freq (higher_frequency against lower_frequency: 0.001 mean bigram probability; d = 0.62, 90% CI [0.08, 1.17]). The smallest condition was selected from 31 eligible candidates, and the selection was deterministic and blind to any outcome measure. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. Responses were collected from target onset until 2500 ms after it, and a response ended the trial. The selection is deterministic and reproducible (lexsync 0.1.1), and the seed (2026) fixes the trial order.
 
 ### Sampling plan
 - Sample size and justification:

@@ -4,4 +4,4 @@ compare: [stimuli, descriptives, comparisons]
 datasheet:
   counterbalancing.lists: 2
   selection.method: standardised_euclidean
-  selection.tie_break.rule: bytes
+  selection.tie_break.rule: hash

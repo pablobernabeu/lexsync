@@ -6,7 +6,8 @@
 
 - **Paradigm:** factorial  |  **Item source:** corpus
 - **Description:** Dense versus sparse orthographic neighbourhoods (Coltheart's N) in English, matched on length and frequency.
-- **Materials source:** `corpora/derived/en.csv` (sha256 `575833489e04d6a4...`)
+- **Materials source:** `corpora/derived/en_v2.csv` (sha256 `46815cd56ac036cb...`)
+- **Excluded words:** `config/exclude_en_demo.txt` (53 words, 53 removed, sha256 `cac9f88fb86fa6d0...`)
 - **Selection:** joint
 - **Cross-engine determinism:** byte-identical
 - **Counterbalancing:** factorial, 1 list(s)
@@ -22,8 +23,8 @@
 
 ## Selection transparency
 
-- **Candidate pool** (items satisfying each condition's window before matching): dense_neighbourhood: 1821, sparse_neighbourhood: 1528.
-- Selection is a deterministic function of the materials source, the design and the schema, blind to any outcome measure, and does not depend on the seed, which fixes the trial order. Exact ties between equally close candidates are broken by spelling, in byte order, as lexsync 0.1 did, so every tie goes to the spelling that sorts first. Automating the choice removes the experimenter's discretion that Forster (2000) showed can bias item selection.
+- **Candidate pool** (items satisfying each condition's window before matching): dense_neighbourhood: 1398, sparse_neighbourhood: 1418.
+- Selection is a deterministic function of the materials source, the design and the schema, blind to any outcome measure, and does not depend on the seed, which fixes the trial order. Exact ties between equally close candidates are broken by a keyed hash of each word (salt lexsync-tie-v1), so no part of the alphabet is favoured. Automating the choice removes the experimenter's discretion that Forster (2000) showed can bias item selection.
 
 ## Realised control
 
@@ -33,10 +34,10 @@ Each row compares a condition with its reference. The raw difference and Cohen's
 |---|---|---|---|---|---|---|---|---|---|
 | sparse_neighbourhood | dense_neighbourhood | length | controlled | 0.000 | 0.00 | [-0.26, 0.26] | 1.00 | 0.0009 | TRUE |
 | sparse_neighbourhood | dense_neighbourhood | frequency | controlled | 0.000 | 0.00 | [-0.26, 0.26] | 1.00 | 0.0009 | TRUE |
-| sparse_neighbourhood | dense_neighbourhood | n_density | manipulated | 7.838 | 3.11 | [2.72, 3.50] | 0.02 | 1.0000 | FALSE |
-| sparse_neighbourhood | dense_neighbourhood | old20 | uncontrolled | -0.523 | -2.30 | [-2.64, -1.97] | 1.64 | 1.0000 | FALSE |
-| sparse_neighbourhood | dense_neighbourhood | n_syllables | uncontrolled | -0.450 | -0.83 | [-1.10, -0.56] | 1.53 | 0.9802 | FALSE |
-| sparse_neighbourhood | dense_neighbourhood | bigram_freq | uncontrolled | 0.000 | 0.13 | [-0.13, 0.39] | 1.44 | 0.0101 | TRUE |
+| sparse_neighbourhood | dense_neighbourhood | n_density | manipulated | 7.050 | 3.49 | [3.07, 3.90] | 0.03 | 1.0000 | FALSE |
+| sparse_neighbourhood | dense_neighbourhood | old20 | uncontrolled | -0.536 | -2.39 | [-2.73, -2.04] | 2.19 | 1.0000 | FALSE |
+| sparse_neighbourhood | dense_neighbourhood | n_syllables | uncontrolled | -0.288 | -0.53 | [-0.79, -0.26] | 1.36 | 0.5696 | FALSE |
+| sparse_neighbourhood | dense_neighbourhood | bigram_freq | uncontrolled | 0.002 | 0.45 | [0.19, 0.72] | 0.62 | 0.3838 | FALSE |
 
 ## Suggested analysis
 
@@ -45,7 +46,7 @@ Each row compares a condition with its reference. The raw difference and Cohen's
 
 ## Methods paragraph
 
-80 items per condition were selected from the English lexicon (wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md) and matched item by item on length, frequency using lexsync's joint matcher. The largest difference on a matched dimension was 0.000 characters in length (dense_neighbourhood against sparse_neighbourhood; d = 0.00, 90% CI [-0.26, 0.26]). Two one-sided tests at a bound of 0.5 SD (alpha 0.05) supported equivalence on 2 of 2 matched comparisons. Dimensions the design did not control differed: old20 (dense_neighbourhood against sparse_neighbourhood: -0.523 mean Levenshtein distance; d = -2.30, 90% CI [-2.64, -1.97]) and n_syllables (dense_neighbourhood against sparse_neighbourhood: -0.450 syllables; d = -0.83, 90% CI [-1.10, -0.56]). The smallest condition was selected from 1528 eligible candidates, and the selection was deterministic and blind to any outcome measure. Each candidate pool exceeding the pairwise cap was reduced to the 1200 candidates nearest the other condition's centroid before pairing. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. Responses were collected from target onset until 2500 ms after it, and a response ended the trial. The selection is deterministic and reproducible (lexsync 0.1.1), and the seed (2026) fixes the trial order.
+80 items per condition were selected from the English lexicon (wordfreq (Speer, 2022) screened against SUBTLEX-US (Brysbaert & New, 2009), data CC BY-SA 4.0; forms absent from SUBTLEX-US or beginning with a lower-case letter in under 10% of their uses are marked nonstandard, and N and OLD20 count only the unmarked forms; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md) and matched item by item on length, frequency using lexsync's joint matcher. The largest difference on a matched dimension was 0.000 characters in length (dense_neighbourhood against sparse_neighbourhood; d = 0.00, 90% CI [-0.26, 0.26]). Two one-sided tests at a bound of 0.5 SD (alpha 0.05) supported equivalence on 2 of 2 matched comparisons. Dimensions the design did not control differed: old20 (dense_neighbourhood against sparse_neighbourhood: -0.536 mean Levenshtein distance; d = -2.39, 90% CI [-2.73, -2.04]) and n_syllables (dense_neighbourhood against sparse_neighbourhood: -0.288 syllables; d = -0.53, 90% CI [-0.79, -0.26]). An exclusion list (exclude_en_demo.txt) removed 53 words from the candidates before selection. The smallest condition was selected from 1398 eligible candidates, and the selection was deterministic and blind to any outcome measure. Each candidate pool exceeding the pairwise cap was reduced to the 1200 candidates nearest the other condition's centroid before pairing. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. Responses were collected from target onset until 2500 ms after it, and a response ended the trial. The selection is deterministic and reproducible (lexsync 0.1.1), and the seed (2026) fixes the trial order.
 
 ## Pre-registration template
 
@@ -65,7 +66,7 @@ Each row compares a condition with its reference. The raw difference and Cohen's
 - Paradigm: factorial
 
 ### Materials (from the lexsync datasheet)
-80 items per condition were selected from the English lexicon (wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md) and matched item by item on length, frequency using lexsync's joint matcher. The largest difference on a matched dimension was 0.000 characters in length (dense_neighbourhood against sparse_neighbourhood; d = 0.00, 90% CI [-0.26, 0.26]). Two one-sided tests at a bound of 0.5 SD (alpha 0.05) supported equivalence on 2 of 2 matched comparisons. Dimensions the design did not control differed: old20 (dense_neighbourhood against sparse_neighbourhood: -0.523 mean Levenshtein distance; d = -2.30, 90% CI [-2.64, -1.97]) and n_syllables (dense_neighbourhood against sparse_neighbourhood: -0.450 syllables; d = -0.83, 90% CI [-1.10, -0.56]). The smallest condition was selected from 1528 eligible candidates, and the selection was deterministic and blind to any outcome measure. Each candidate pool exceeding the pairwise cap was reduced to the 1200 candidates nearest the other condition's centroid before pairing. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. Responses were collected from target onset until 2500 ms after it, and a response ended the trial. The selection is deterministic and reproducible (lexsync 0.1.1), and the seed (2026) fixes the trial order.
+80 items per condition were selected from the English lexicon (wordfreq (Speer, 2022) screened against SUBTLEX-US (Brysbaert & New, 2009), data CC BY-SA 4.0; forms absent from SUBTLEX-US or beginning with a lower-case letter in under 10% of their uses are marked nonstandard, and N and OLD20 count only the unmarked forms; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md) and matched item by item on length, frequency using lexsync's joint matcher. The largest difference on a matched dimension was 0.000 characters in length (dense_neighbourhood against sparse_neighbourhood; d = 0.00, 90% CI [-0.26, 0.26]). Two one-sided tests at a bound of 0.5 SD (alpha 0.05) supported equivalence on 2 of 2 matched comparisons. Dimensions the design did not control differed: old20 (dense_neighbourhood against sparse_neighbourhood: -0.536 mean Levenshtein distance; d = -2.39, 90% CI [-2.73, -2.04]) and n_syllables (dense_neighbourhood against sparse_neighbourhood: -0.288 syllables; d = -0.53, 90% CI [-0.79, -0.26]). An exclusion list (exclude_en_demo.txt) removed 53 words from the candidates before selection. The smallest condition was selected from 1398 eligible candidates, and the selection was deterministic and blind to any outcome measure. Each candidate pool exceeding the pairwise cap was reduced to the 1200 candidates nearest the other condition's centroid before pairing. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. Responses were collected from target onset until 2500 ms after it, and a response ended the trial. The selection is deterministic and reproducible (lexsync 0.1.1), and the seed (2026) fixes the trial order.
 
 ### Sampling plan
 - Sample size and justification:

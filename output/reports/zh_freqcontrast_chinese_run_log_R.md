@@ -1,8 +1,8 @@
 # lexsync run log: zh_freqcontrast
 
 - Engine: R 4.6.1
-- Started: 2026-10-09 09:53:19.029421
-- Finished: 2026-10-09 09:53:21.077751
+- Started: 2026-10-09 11:50:33.560462
+- Finished: 2026-10-09 11:50:37.804904
 
 ## Run metadata
 
@@ -16,59 +16,59 @@
 
 ## Steps
 
-- **2026-10-09 09:53:19.033317**: loading lexicon 'corpora/derived/zh.csv'
-- **2026-10-09 09:53:19.475856**: lexicon loaded: 20000 words
+- **2026-10-09 11:50:33.567428**: loading lexicon 'corpora/derived/zh.csv'
+- **2026-10-09 11:50:34.549942**: lexicon loaded: 20000 words
     - words: 20000
-- **2026-10-09 09:53:19.488696**: pool after filters: 13613 words
+- **2026-10-09 11:50:34.58835**: pool after filters: 13613 words
     - pool: 13613
-- **2026-10-09 09:53:20.09621**: matched 160 items across 2 conditions
+- **2026-10-09 11:50:36.175931**: matched 160 items across 2 conditions
     - conditions: high_frequency, low_frequency
-- **2026-10-09 09:53:20.475317**: equivalence low_frequency vs high_frequency on 'length': d = 0.00 [0.00, 0.00], TOST p = 0.000 (equivalent)
-- **2026-10-09 09:53:20.47977**: equivalence low_frequency vs high_frequency on 'frequency': d = 6.00 [5.39, 6.62], TOST p = 1.000 (not shown equivalent)
-- **2026-10-09 09:53:20.483415**: equivalence low_frequency vs high_frequency on 'n_density': d = 0.07 [-0.19, 0.33], TOST p = 0.004 (equivalent)
-- **2026-10-09 09:53:20.486428**: equivalence low_frequency vs high_frequency on 'old20': d = 0.11 [-0.16, 0.37], TOST p = 0.007 (equivalent)
-- **2026-10-09 09:53:20.489916**: equivalence low_frequency vs high_frequency on 'bigram_freq': d = 0.77 [0.50, 1.04], TOST p = 0.956 (not shown equivalent)
-- **2026-10-09 09:53:20.531388**: wrote 'zh_freqcontrast_chinese_stimuli_R.csv'
+- **2026-10-09 11:50:36.844286**: equivalence low_frequency vs high_frequency on 'length': d = 0.00 [0.00, 0.00], TOST p = 0.000 (equivalent)
+- **2026-10-09 11:50:36.850236**: equivalence low_frequency vs high_frequency on 'frequency': d = 6.11 [5.49, 6.73], TOST p = 1.000 (not shown equivalent)
+- **2026-10-09 11:50:36.856493**: equivalence low_frequency vs high_frequency on 'n_density': d = 0.07 [-0.19, 0.33], TOST p = 0.004 (equivalent)
+- **2026-10-09 11:50:36.862378**: equivalence low_frequency vs high_frequency on 'old20': d = 0.11 [-0.16, 0.37], TOST p = 0.007 (equivalent)
+- **2026-10-09 11:50:36.868962**: equivalence low_frequency vs high_frequency on 'bigram_freq': d = 0.61 [0.34, 0.88], TOST p = 0.758 (not shown equivalent)
+- **2026-10-09 11:50:36.931653**: wrote 'zh_freqcontrast_chinese_stimuli_R.csv'
     - path: output/stimuli/zh_freqcontrast_chinese_stimuli_R.csv
     - rows: 160
-    - md5: 49c657a97d85cb1a62290b4e17832dc3
-- **2026-10-09 09:53:20.547678**: wrote 'zh_freqcontrast_chinese_descriptives_R.csv'
+    - md5: 4a1365f005dca09f61342d15f42c1d24
+- **2026-10-09 11:50:36.953231**: wrote 'zh_freqcontrast_chinese_descriptives_R.csv'
     - path: output/reports/zh_freqcontrast_chinese_descriptives_R.csv
     - rows: 10
-    - md5: 43d9d4593c5a75d46f6b9219adcb9bec
-- **2026-10-09 09:53:20.562007**: wrote 'zh_freqcontrast_chinese_comparisons_R.csv'
+    - md5: f3a421f38ccaaf0fed543e9ccff884fb
+- **2026-10-09 11:50:36.972725**: wrote 'zh_freqcontrast_chinese_comparisons_R.csv'
     - path: output/reports/zh_freqcontrast_chinese_comparisons_R.csv
     - rows: 5
-    - md5: e4bf90986a8e3baea3634feb339d8829
-- **2026-10-09 09:53:20.873833**: wrote 'zh_freqcontrast_chinese_psychopy.py'
+    - md5: 3f255a12031364bf20836d42096d6b12
+- **2026-10-09 11:50:37.478115**: wrote 'zh_freqcontrast_chinese_psychopy.py'
     - path: output/experiments/zh_freqcontrast_chinese_psychopy.py
     - rows: NA
     - md5: 4f665f037c7d88a372192388610f272b
-- **2026-10-09 09:53:20.883997**: wrote 'zh_freqcontrast_chinese.osexp'
+- **2026-10-09 11:50:37.489164**: wrote 'zh_freqcontrast_chinese.osexp'
     - path: output/experiments/zh_freqcontrast_chinese.osexp
     - rows: NA
     - md5: 7e70d048990eff3922d9143958556f7d
-- **2026-10-09 09:53:20.893899**: wrote 'zh_freqcontrast_chinese.html'
+- **2026-10-09 11:50:37.500409**: wrote 'zh_freqcontrast_chinese.html'
     - path: output/experiments/zh_freqcontrast_chinese.html
     - rows: NA
-    - md5: 06b83f235c74aa4cf7d427e0610a37ce
-- **2026-10-09 09:53:20.90607**: wrote 'zh_freqcontrast_chinese_psychopy.csv'
+    - md5: c31f067f3ccd055c462d7b0a8f7a4801
+- **2026-10-09 11:50:37.519141**: wrote 'zh_freqcontrast_chinese_psychopy.csv'
     - path: output/experiments/zh_freqcontrast_chinese_psychopy.csv
     - rows: NA
-    - md5: 9cd7729198f7d3ad0f8c0c1f06721b41
-- **2026-10-09 09:53:20.914509**: wrote 'zh_freqcontrast_chinese_opensesame.csv'
+    - md5: 0bdeeed7b653a0a854572711cb3daef9
+- **2026-10-09 11:50:37.531037**: wrote 'zh_freqcontrast_chinese_opensesame.csv'
     - path: output/experiments/zh_freqcontrast_chinese_opensesame.csv
     - rows: NA
     - md5: 92e29c7a204d46f2df23de8018ad235a
-- **2026-10-09 09:53:20.922266**: wrote 'zh_freqcontrast_chinese_opensesame_text.csv'
+- **2026-10-09 11:50:37.550678**: wrote 'zh_freqcontrast_chinese_opensesame_text.csv'
     - path: output/experiments/zh_freqcontrast_chinese_opensesame_text.csv
     - rows: NA
-    - md5: aff6c7fdc794765e18681f29e25b1fa3
-- **2026-10-09 09:53:21.055794**: wrote 'zh_freqcontrast_chinese_datasheet_R.json'
+    - md5: cb48f54cc0bad839e8a2503b476e528a
+- **2026-10-09 11:50:37.774411**: wrote 'zh_freqcontrast_chinese_datasheet_R.json'
     - path: output/reports/zh_freqcontrast_chinese_datasheet_R.json
     - rows: NA
-    - md5: 9540e88accf3cc539f684da9bba72701
-- **2026-10-09 09:53:21.068266**: wrote 'zh_freqcontrast_chinese_datasheet_R.md'
+    - md5: f3a62ebec244a35509f42d0ab372947c
+- **2026-10-09 11:50:37.791552**: wrote 'zh_freqcontrast_chinese_datasheet_R.md'
     - path: output/reports/zh_freqcontrast_chinese_datasheet_R.md
     - rows: NA
-    - md5: 605eb7e54f149e2c1c4d5fea9e905ec4
+    - md5: f4f20e8c45b9aafcd6a2e2194abc8cac

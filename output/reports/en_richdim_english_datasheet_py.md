@@ -6,7 +6,8 @@
 
 - **Paradigm:** factorial  |  **Item source:** corpus
 - **Description:** High versus low frequency English words, matched on length, syllable count and bigram frequency (a phonotactic-probability proxy).
-- **Materials source:** `corpora/derived/en.csv` (sha256 `575833489e04d6a4…`)
+- **Materials source:** `corpora/derived/en_v2.csv` (sha256 `46815cd56ac036cb…`)
+- **Excluded words:** `config/exclude_en_demo.txt` (53 words, 53 removed, sha256 `cac9f88fb86fa6d0…`)
 - **Selection:** standardised_euclidean
 - **Cross-engine determinism:** byte-identical
 - **Counterbalancing:** factorial, 1 list(s)
@@ -22,8 +23,8 @@
 
 ## Selection transparency
 
-- **Candidate pool** (items satisfying each condition's window before matching): high_frequency: 462, low_frequency: 7479.
-- Selection is a deterministic function of the materials source, the design and the schema, blind to any outcome measure, and does not depend on the seed, which fixes the trial order. Exact ties between equally close candidates are broken by spelling, in byte order, as lexsync 0.1 did, so every tie goes to the spelling that sorts first. Automating the choice removes the experimenter's discretion that Forster (2000) showed can bias item selection.
+- **Candidate pool** (items satisfying each condition's window before matching): high_frequency: 453, low_frequency: 6051.
+- Selection is a deterministic function of the materials source, the design and the schema, blind to any outcome measure, and does not depend on the seed, which fixes the trial order. Exact ties between equally close candidates are broken by a keyed hash of each word (salt lexsync-tie-v1), so no part of the alphabet is favoured. Automating the choice removes the experimenter's discretion that Forster (2000) showed can bias item selection.
 
 ## Realised control
 
@@ -31,12 +32,12 @@ Each row compares a condition with its reference. The raw difference and Cohen's
 
 | Condition | Reference | Dimension | Role | Raw difference | Cohen's d | 90% CI | Var ratio | TOST p | Equivalent |
 |---|---|---|---|---|---|---|---|---|---|
-| low_frequency | high_frequency | length | controlled | 0.017 | 0.02 | [-0.29, 0.32] | 0.94 | 0.0045 | True |
-| low_frequency | high_frequency | frequency | manipulated | 1.676 | 5.57 | [4.90, 6.24] | 0.58 | 1.0000 | False |
-| low_frequency | high_frequency | n_density | uncontrolled | 0.333 | 0.08 | [-0.23, 0.38] | 0.72 | 0.0110 | True |
-| low_frequency | high_frequency | old20 | uncontrolled | 0.035 | 0.08 | [-0.23, 0.38] | 0.40 | 0.0113 | True |
-| low_frequency | high_frequency | n_syllables | controlled | 0.100 | 0.17 | [-0.13, 0.48] | 0.59 | 0.0383 | True |
-| low_frequency | high_frequency | bigram_freq | controlled | 0.000 | 0.01 | [-0.29, 0.31] | 0.96 | 0.0041 | True |
+| low_frequency | high_frequency | length | controlled | 0.000 | 0.00 | [-0.30, 0.30] | 1.00 | 0.0036 | True |
+| low_frequency | high_frequency | frequency | manipulated | 1.681 | 5.56 | [4.89, 6.22] | 0.59 | 1.0000 | False |
+| low_frequency | high_frequency | n_density | uncontrolled | -0.567 | -0.13 | [-0.43, 0.17] | 1.74 | 0.0221 | True |
+| low_frequency | high_frequency | old20 | uncontrolled | -0.042 | -0.07 | [-0.37, 0.23] | 1.24 | 0.0101 | True |
+| low_frequency | high_frequency | n_syllables | controlled | 0.017 | 0.02 | [-0.28, 0.32] | 0.91 | 0.0050 | True |
+| low_frequency | high_frequency | bigram_freq | controlled | 0.000 | 0.02 | [-0.28, 0.33] | 0.90 | 0.0052 | True |
 
 ## Suggested analysis
 
@@ -45,7 +46,7 @@ Each row compares a condition with its reference. The raw difference and Cohen's
 
 ## Methods paragraph
 
-60 items per condition were selected from the English lexicon (wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md) and matched item by item on length, n_syllables, bigram_freq using lexsync's standardised_euclidean matcher. The largest difference on a matched dimension was 0.100 syllables in n_syllables (high_frequency against low_frequency; d = 0.17, 90% CI [-0.13, 0.48]). Two one-sided tests at a bound of 0.5 SD (alpha 0.05) supported equivalence on 3 of 3 matched comparisons. No uncontrolled dimension differed by more than 0.5 SD. The smallest condition was selected from 462 eligible candidates, and the selection was deterministic and blind to any outcome measure. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. Responses were collected from target onset until 2500 ms after it, and a response ended the trial. The selection is deterministic and reproducible (lexsync 0.1.1), and the seed (2026) fixes the trial order.
+60 items per condition were selected from the English lexicon (wordfreq (Speer, 2022) screened against SUBTLEX-US (Brysbaert & New, 2009), data CC BY-SA 4.0; forms absent from SUBTLEX-US or beginning with a lower-case letter in under 10% of their uses are marked nonstandard, and N and OLD20 count only the unmarked forms; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md) and matched item by item on length, n_syllables, bigram_freq using lexsync's standardised_euclidean matcher. The largest difference on a matched dimension was under 0.001 mean bigram probability in bigram_freq (high_frequency against low_frequency; d = 0.02, 90% CI [-0.28, 0.33]). Two one-sided tests at a bound of 0.5 SD (alpha 0.05) supported equivalence on 3 of 3 matched comparisons. No uncontrolled dimension differed by more than 0.5 SD. An exclusion list (exclude_en_demo.txt) removed 53 words from the candidates before selection. The smallest condition was selected from 453 eligible candidates, and the selection was deterministic and blind to any outcome measure. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. Responses were collected from target onset until 2500 ms after it, and a response ended the trial. The selection is deterministic and reproducible (lexsync 0.1.1), and the seed (2026) fixes the trial order.
 
 ## Pre-registration template
 
@@ -65,7 +66,7 @@ Each row compares a condition with its reference. The raw difference and Cohen's
 - Paradigm: factorial
 
 ### Materials (from the lexsync datasheet)
-60 items per condition were selected from the English lexicon (wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md) and matched item by item on length, n_syllables, bigram_freq using lexsync's standardised_euclidean matcher. The largest difference on a matched dimension was 0.100 syllables in n_syllables (high_frequency against low_frequency; d = 0.17, 90% CI [-0.13, 0.48]). Two one-sided tests at a bound of 0.5 SD (alpha 0.05) supported equivalence on 3 of 3 matched comparisons. No uncontrolled dimension differed by more than 0.5 SD. The smallest condition was selected from 462 eligible candidates, and the selection was deterministic and blind to any outcome measure. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. Responses were collected from target onset until 2500 ms after it, and a response ended the trial. The selection is deterministic and reproducible (lexsync 0.1.1), and the seed (2026) fixes the trial order.
+60 items per condition were selected from the English lexicon (wordfreq (Speer, 2022) screened against SUBTLEX-US (Brysbaert & New, 2009), data CC BY-SA 4.0; forms absent from SUBTLEX-US or beginning with a lower-case letter in under 10% of their uses are marked nonstandard, and N and OLD20 count only the unmarked forms; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md) and matched item by item on length, n_syllables, bigram_freq using lexsync's standardised_euclidean matcher. The largest difference on a matched dimension was under 0.001 mean bigram probability in bigram_freq (high_frequency against low_frequency; d = 0.02, 90% CI [-0.28, 0.33]). Two one-sided tests at a bound of 0.5 SD (alpha 0.05) supported equivalence on 3 of 3 matched comparisons. No uncontrolled dimension differed by more than 0.5 SD. An exclusion list (exclude_en_demo.txt) removed 53 words from the candidates before selection. The smallest condition was selected from 453 eligible candidates, and the selection was deterministic and blind to any outcome measure. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. Responses were collected from target onset until 2500 ms after it, and a response ended the trial. The selection is deterministic and reproducible (lexsync 0.1.1), and the seed (2026) fixes the trial order.
 
 ### Sampling plan
 - Sample size and justification:

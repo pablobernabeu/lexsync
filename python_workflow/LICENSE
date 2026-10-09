@@ -24,7 +24,8 @@ SOFTWARE.
 The MIT License above covers the lexsync source code. The lexical corpora that
 the package bundles or fetches are NOT covered by it. Three of the data files
 shipped inside the package, lexsync/data/en_example.csv, es_example.csv and
-zh_example.csv, are wordfreq derivatives distributed under CC BY-SA 4.0. Their
+zh_example.csv, are wordfreq derivatives distributed under CC BY-SA 4.0, the
+first of them screened against SUBTLEX-US, which is under the same licence. Their
 terms are set out in full in LICENSE.note, which ships beside this file. The
 repository keeps the fuller record, with the retrieval date and checksum of
 every derived file, at

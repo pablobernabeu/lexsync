@@ -27,12 +27,12 @@ test_that("schema carries no inert keys", {
   expect_false("reset_value" %in% names(schema$triggers))
 })
 
-# The matcher reads matching.tie_break, so the schema carries it, set to the rule of
-# lexsync 0.1, which reproduces the committed selections. Pinned identically in
-# test_config.py.
+# The matcher reads matching.tie_break, so the schema carries it, set to the keyed hash,
+# which favours no part of the alphabet. `bytes`, the rule of lexsync 0.1, reproduces
+# that version's selections. Pinned identically in test_config.py.
 test_that("the_schema_sets_the_tie_break_rule", {
   schema <- yaml::read_yaml(bundled_schema())
-  expect_identical(schema$matching[["tie_break"]], "bytes")
+  expect_identical(schema$matching[["tie_break"]], "hash")
 })
 
 # Pins the same contract as

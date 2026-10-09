@@ -5,6 +5,7 @@ Usage:
     python corpora/fetch_corpora.py --languages en es --n-words 10000
     python corpora/fetch_corpora.py --known-forms en es
     python corpora/fetch_corpora.py --screen-en [--subtlex-us PATH]
+    python corpora/fetch_corpora.py --slice-en
 
 This ingestion step writes:
   corpora/derived/<lang>.csv                          full derived lexicon
@@ -15,7 +16,9 @@ and (re)writes corpora/ATTRIBUTION.md. With --known-forms it writes
 instead, for a design's items.generation.exclude, and with --screen-en
   corpora/derived/en_v2.csv                           en.csv screened against SUBTLEX-US
 Either builds no lexicon unless --languages is given too. These files stay in the
-repository: neither package ships them.
+repository: neither package ships them. The English slices are the exception to the
+first list: they are drawn from the forms en_v2.csv keeps, by --screen-en or by
+--slice-en, which reads the committed en_v2.csv and needs no SUBTLEX-US.
 
 The orthographic-neighbourhood variables (Coltheart's N and OLD20) are computed
 openly here with rapidfuzz and stored in the derived files, so both the R and
@@ -168,7 +171,10 @@ def write_slice(df: pd.DataFrame, lang: str, target: int = 3000) -> int:
     sl = sl.sort_values("word").reset_index(drop=True)
     for d in PACKAGE_DATA_DIRS:
         d.mkdir(parents=True, exist_ok=True)
-        sl.to_csv(d / f"{lang}_example.csv", index=False, encoding="utf-8")
+        # LF on every platform, as git stores the slices: pandas otherwise ends lines
+        # with os.linesep, and a rebuild on Windows would differ from the committed bytes.
+        sl.to_csv(d / f"{lang}_example.csv", index=False, encoding="utf-8",
+                  lineterminator="\n")
     return len(sl)
 
 
@@ -350,6 +356,31 @@ def write_screened_en(tsv: Path) -> Path:
     return path
 
 
+# The English example slices both packages bundle. A slice of en.csv was a quarter names,
+# acronyms and other forms the screen marks, and the examples and tests that read it
+# selected them. The slices are now drawn from the forms en_v2.csv keeps, whose N and
+# OLD20 count neighbours among those forms only.
+SLICE_COLUMNS = ["word", "freq_zipf", "language", "source", "n_density", "old20"]
+
+
+def screened_slice_rows(path: Path = DERIVED / "en_v2.csv") -> pd.DataFrame:
+    """The rows of en_v2.csv that the screen keeps (nonstandard 0), in a slice's columns.
+
+    The cells are read as text, so they are written back as en_v2.csv holds them. The
+    frequency is the exception, since write_slice bins on it, and a Zipf value of three
+    decimals reads back to the text it was read from.
+    """
+    v2 = pd.read_csv(path, dtype=str, keep_default_na=False, encoding="utf-8")
+    kept = v2.loc[v2["nonstandard"] == "0", SLICE_COLUMNS].copy()
+    kept["freq_zipf"] = kept["freq_zipf"].astype(float)
+    return kept.reset_index(drop=True)
+
+
+def write_screened_slice() -> int:
+    """Write both packages' en_example.csv from the forms en_v2.csv keeps."""
+    return write_slice(screened_slice_rows(), "en")
+
+
 def recorded_dates(path: Path) -> dict[str, str]:
     """The retrieval date ATTRIBUTION.md records for each entry, keyed by its code
     ('en') or by its known-form file name ('en_known_forms.txt')."""
@@ -448,17 +479,21 @@ def write_attribution(fresh_dates: dict[str, str]) -> None:
         entries.append(attribution_entry(lang, df, date_of(lang, csv)))
     screened_files = " and ".join(screened)
     if screened:
+        # The English slices are drawn from en_v2.csv (see write_screened_slice), so
+        # SUBTLEX-US chose their rows as well.
         licence = textwrap.fill(
             "Lexical corpora used by lexsync, with their sources, licences and retrieval "
             "dates. The bundled derivatives come from wordfreq, whose data files are "
             "redistributable under CC BY-SA 4.0, and the screening columns of "
             f"{screened_files} from SUBTLEX-US, which openlexicon distributes under the "
-            "same licence, so the derivatives carry that licence too. See LICENSE-DATA "
-            "for the full reasoning.", width=80) + "\n\n"
+            "same licence and which also chose the rows of the packages' English example "
+            "slices, so the derivatives carry that licence too. See LICENSE-DATA for the "
+            "full reasoning.", width=80) + "\n\n"
         registry_note = (
             "Those are loaded directly by a user, and none of them is the source of "
             "anything bundled here except SUBTLEX-US, which supplies the screening "
-            f"columns of {screened_files}.\n")
+            f"columns of {screened_files} and chose the rows of the packages' English "
+            "example slices.\n")
     else:
         licence = (
             "Lexical corpora used by lexsync, with their sources, licences and retrieval\n"
@@ -523,12 +558,16 @@ def main() -> None:
     ap.add_argument("--subtlex-us", type=Path, default=None, metavar="PATH",
                     help="a copy of SUBTLEX-US's TSV for --screen-en (default: corpora/raw/, "
                          "downloaded when absent)")
+    ap.add_argument("--slice-en", action="store_true",
+                    help="write the packages' en_example.csv from the forms en_v2.csv keeps "
+                         "(--screen-en does so too)")
     args = ap.parse_args()
     if args.subtlex_us is not None and not args.screen_en:
         ap.error("--subtlex-us is read only with --screen-en")
     languages = args.languages
     if languages is None:
-        languages = [] if (args.known_forms or args.screen_en) else ["en", "es"]
+        languages = ([] if (args.known_forms or args.screen_en or args.slice_en)
+                     else ["en", "es"])
 
     DERIVED.mkdir(parents=True, exist_ok=True)
     today = datetime.date.today().isoformat()
@@ -544,15 +583,24 @@ def main() -> None:
         df = build(lang, args.n_words)
         out = DERIVED / f"{lang}.csv"
         df.to_csv(out, index=False, encoding="utf-8")
-        n_slice = write_slice(df, lang)
         zmin, zmax = df.freq_zipf.min(), df.freq_zipf.max()
-        print(f"  -> {out.name}: {len(df)} words (Zipf {zmin:.2f}-{zmax:.2f}); slice {n_slice}", flush=True)
+        # A superseded lexicon no longer supplies the slices: the English ones come from
+        # en_v2.csv, which --screen-en rebuilds from this file.
+        if lang in SUPERSEDED:
+            slice_note = f"slice drawn from {SUPERSEDED[lang]}.csv by --screen-en or --slice-en"
+        else:
+            slice_note = f"slice {write_slice(df, lang)}"
+        print(f"  -> {out.name}: {len(df)} words (Zipf {zmin:.2f}-{zmax:.2f}); {slice_note}",
+              flush=True)
         fresh_dates[lang] = today
     # After any rebuild of en.csv, which the screen reads.
     if args.screen_en:
         print("[fetch_corpora] screening 'en' against SUBTLEX-US ...", flush=True)
         write_screened_en(subtlex_us(args.subtlex_us))
         fresh_dates["en_v2"] = today
+    if args.screen_en or args.slice_en:
+        n_slice = write_screened_slice()
+        print(f"  -> en_example.csv: {n_slice} of the forms en_v2.csv keeps", flush=True)
     # Regenerate the attribution from all derived lexica, so adding one language
     # never drops the others.
     write_attribution(fresh_dates)

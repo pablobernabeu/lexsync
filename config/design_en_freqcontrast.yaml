@@ -3,12 +3,16 @@
 # length, orthographic neighbourhood density (Coltheart's N) and OLD20.
 name: en_freqcontrast
 language: english
-lexicon: corpora/derived/en.csv
+lexicon: corpora/derived/en_v2.csv
 description: 'High versus low frequency English words, matched on length, neighbourhood density and OLD20.'
 n_per_condition: 80
 pool_filters:
   length: [3, 8]
   frequency: [3.8, 7.0]
+  # Keeps only the forms the SUBTLEX-US screen leaves unmarked (see corpora/ATTRIBUTION.md).
+  nonstandard: [0, 0]
+# Leaves out the unsuitable forms the screen lets through (see the file's header).
+exclude_words: {path: config/exclude_en_demo.txt}
 conditions:
   - name: high_frequency
     define_by:

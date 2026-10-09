@@ -161,10 +161,10 @@ places before ranking, which puts both engines on the same side of every
 comparison that matters.
 
 Rounding creates ties rather than removing them, so the ties in turn need a rule
-that both engines can apply identically, and that rule is a total order. Under the
-default `tie_break: bytes`, candidates are ordered by distance, then by the word's
-bytes, then by its integer `id`. That is the comparison the matcher makes, and it
-is reproduced here on three imaginary candidates.
+that both engines can apply identically, and that rule is a total order. Under
+`tie_break: bytes`, the rule of lexsync 0.1, candidates are ordered by distance,
+then by the word's bytes, then by its integer `id`. That is the comparison the
+matcher makes, and it is reproduced here on three imaginary candidates.
 
 ```{r tie-break}
 distance <- c(0.5, 0.5, 0.2)
@@ -178,10 +178,10 @@ decimal, and the word's bytes settle it, identically in both engines. Since `wor
 is unique within a lexicon the order is total, so there is always exactly one
 winner and never a coin to flip.
 
-Under `tie_break: hash` the word's bytes give way to its tie key, the hexadecimal
-SHA-256 of `lexsync-tie-v1|` followed by the word, which both engines compute from
-the same UTF-8 bytes and sort the same way. Here are four candidates tied on
-distance, in the order each rule gives them.
+Under `tie_break: hash`, the default, the word's bytes give way to its tie key,
+the hexadecimal SHA-256 of `lexsync-tie-v1|` followed by the word. Both engines
+compute the key from the same UTF-8 bytes and sort it the same way. Here are four
+candidates tied on distance, in the order each rule gives them.
 
 ```{r tie-break-hash}
 tied <- c("bat", "cat", "dog", "eel")
@@ -193,12 +193,12 @@ data.frame(bytes = tied[order(tied, method = "radix")],
 
 Either rule is a total order that the two engines compute identically, so either
 keeps the guarantee, and the choice between them is a setting,
-`matching.tie_break`. `bytes` reproduces the selections of lexsync 0.1. `hash`
-stops a condition decided by ties from filling with early-alphabet words, which
-the matching vignette measures. Its salt is fixed and independent of the seed,
-which keys the trial order. A tie key built on the seed would change the items
-whenever a cohort's order was re-randomised, and would let re-seeding shop among
-equally matched sets.
+`matching.tie_break`. `bytes` reproduces the selections of lexsync 0.1. `hash`,
+the default, stops a condition decided by ties from filling with early-alphabet
+words, which the matching vignette measures. Its salt is fixed and independent of
+the seed, which keys the trial order. A tie key built on the seed would change the
+items whenever a cohort's order was re-randomised, and would let re-seeding shop
+among equally matched sets.
 
 The even-spread rounding is shared as well. `unique(round(seq(...)))` is used
 identically in both engines, including the `unique()`, which matters when the
@@ -506,13 +506,13 @@ do.call(rbind, lapply(ds$selection$candidate_pool, as.data.frame))
 ```
 
 The candidate-pool counts do a job that is easy to miss. Here the high condition
-was drawn from a few dozen eligible words and the low condition from several
-hundred, which are different epistemic situations: choosing 15 items from a large
-candidate set invites the concern that a selection could be steered towards almost
-any result, whereas a condition with barely more candidates than items had little
-freedom to be steered. Recording the counts, alongside the fact that the selection
-is deterministic and blind to any outcome measure, lets a reader judge that rather
-than take it on trust.
+was drawn from fewer than a hundred eligible words and the low condition from
+several hundred, which are different epistemic situations: choosing 15 items from
+a large candidate set invites the concern that a selection could be steered
+towards almost any result, whereas a condition with barely more candidates than
+items had little freedom to be steered. Recording the counts, alongside the fact
+that the selection is deterministic and blind to any outcome measure, lets a
+reader judge that rather than take it on trust.
 
 Note that the resolved windows include a `frequency` entry even though this design
 matches on the three orthographic dimensions only. The record reports the windows

@@ -1,0 +1,84 @@
+# Words the English demonstrations leave out of their candidates.
+#
+# Every English corpus and generated design in config/ names this file under
+# exclude_words. Those designs also select only the forms corpora/derived/en_v2.csv
+# keeps, which SUBTLEX-US lists and writes in lower case in at least a tenth of their
+# uses. Some unsuitable forms pass that screen, and this list leaves them out. A form
+# is listed when a demonstration selected it and, in its dominant use, it is
+#
+#   1. offensive, taboo or distressing: an obscenity, profanity, sexual slang or a
+#      word for sexual violence; or
+#   2. not a standard English word: an abbreviation, a word of another language, a
+#      proper name, a form that is no word at all (foo, goto), or a spelling that
+#      drops its apostrophe or letters.
+#
+# Words with a current common sense stay, even where a name shares the spelling
+# (chi, java, lance), and so do informal words and interjections (admin, hmm, okay).
+# The list holds the taboo forms the lexsync 0.1 demonstrations selected from en.csv
+# (bitch, boobs, fuck and others) and every form meeting the criteria that the
+# demonstrations selected afterwards, reviewed until a run selected none of them.
+# Each exclusion moves the selections, so a change that moves them needs the same
+# review. One word per line. Blank lines and lines beginning '#' are skipped.
+
+# Offensive, taboo or distressing
+ass
+asses
+bitch
+boobs
+crap
+cum
+cunt
+damn
+fuck
+hell
+pussy
+raping
+shit
+xxx
+
+# Abbreviations
+cts
+dept
+etc
+ext
+fps
+govt
+mpg
+mph
+msg
+yrs
+
+# Words of other languages and forms that are not words
+ala
+ars
+casa
+dar
+des
+deus
+est
+foo
+goto
+ich
+ist
+moi
+nos
+qui
+sem
+una
+
+# Proper names
+beck
+bel
+dell
+goa
+ike
+luna
+ottawa
+surrey
+
+# Spellings without their apostrophe or letters
+isnt
+mans
+theres
+wha
+wont

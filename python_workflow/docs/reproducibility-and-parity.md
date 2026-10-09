@@ -38,12 +38,12 @@ design, described below. A seeded generator would be reproducible within an engi
 NumPy's differ, so it would not cross the gap.
 
 Every ordering is by UTF-8 bytes. The lexicon is sorted that way at load time, item tables are
-mapped to set ids that way and pseudoword base words are processed that way. Under the default
-`tie_break: bytes`, the matcher breaks a tie by the word's bytes and then its lexicon id. Under
-`tie_break: hash` it compares hexadecimal SHA-256 digests, whose digits sort the same way in both
-engines. Locale-collated sorting would put a German laptop and an English continuous-integration
-runner in disagreement about which of two words comes first, and one flipped tie-break at the top
-of a pool cascades through everything after it.
+mapped to set ids that way and pseudoword base words are processed that way. Under
+`tie_break: bytes`, the matcher breaks a tie by the word's bytes and then its lexicon id. Under the
+default, `tie_break: hash`, it compares hexadecimal SHA-256 digests, whose digits sort the same way
+in both engines. Locale-collated sorting would put a German laptop and an English
+continuous-integration runner in disagreement about which of two words comes first, and one flipped
+tie-break at the top of a pool cascades through everything after it.
 
 Distances are rounded to nine decimal places before they are compared: in the matcher, in the
 `joint` cost matrix, in the overlap cap and in the continuous selector's Pearson correlations. Two
@@ -111,8 +111,8 @@ The tie-break is the one mechanism here that a design can set. `matching.tie_bre
 between two rules, and both keep the guarantee. `bytes` compares the words' UTF-8
 bytes and `hash` compares the SHA-256 of `lexsync-tie-v1|` followed by the word, and the two
 engines compute and order either key identically. `bytes` reproduces the selections of lexsync 0.1,
-and `hash` removes the early-alphabet skew that spelling gives a condition decided by ties
-([Matching and designs](matching-and-designs.md#how-matching-works)). The salt is fixed and
+and `hash`, the default, removes the early-alphabet skew that spelling gives a condition decided by
+ties ([Matching and designs](matching-and-designs.md#how-matching-works)). The salt is fixed and
 independent of the seed, which keys the trial order. A tie key built on the seed would change the
 items whenever a cohort's order was re-randomised, and would let re-seeding shop among equally
 matched sets.
@@ -290,7 +290,8 @@ frequency contrast:
 ## Provenance
 
 - **Paradigm:** factorial  |  **Item source:** corpus
-- **Materials source:** `corpora/derived/en.csv` (sha256 `575833489e04d6a4…`)
+- **Materials source:** `corpora/derived/en_v2.csv` (sha256 `46815cd56ac036cb…`)
+- **Excluded words:** `config/exclude_en_demo.txt` (53 words, 53 removed, sha256 `cac9f88fb86fa6d0…`)
 - **Selection:** standardised_euclidean
 - **Cross-engine determinism:** byte-identical
 - **Counterbalancing:** factorial, 1 list(s)
@@ -305,10 +306,10 @@ that uses `mahalanobis` or `optimal` says so here, so whoever receives the mater
 the materials.
 
 Selection transparency records how many items satisfied each condition's window before matching. For
-this design the answer is 544 high-frequency candidates and 4295 low-frequency ones. That number is
+this design the answer is 534 high-frequency candidates and 3583 low-frequency ones. That number is
 the size of the discretionary pool the selection drew from, and reporting it makes item-selection
 bias auditable ([Forster, 2000](references.md#forster-2000);
-[Simmons et al., 2011](references.md#simmons-2011)). A set of 80 chosen from 544 is a different
+[Simmons et al., 2011](references.md#simmons-2011)). A set of 80 chosen from 534 is a different
 object from a set of 80 chosen from 85. A candidate missing a matched dimension satisfies its window
 but cannot be matched. The JSON record counts such candidates per condition in
 `selection.incomplete_dropped`, and the Methods paragraph leaves them out of its count of eligible
@@ -359,14 +360,17 @@ text calls an incomplete rotation incomplete
 the numbers above. The pipeline writes it into the Markdown datasheet, and you can call it on a
 datasheet dictionary yourself with `lexsync.methods_paragraph(ds)`. For this design it reads:
 
-> 80 items per condition were selected from the English lexicon (wordfreq (Speer, 2022), data
-> CC BY-SA 4.0; full corpus licence and citation at
+> 80 items per condition were selected from the English lexicon (wordfreq (Speer, 2022) screened
+> against SUBTLEX-US (Brysbaert & New, 2009), data CC BY-SA 4.0; forms absent from SUBTLEX-US or
+> beginning with a lower-case letter in under 10% of their uses are marked nonstandard, and N and
+> OLD20 count only the unmarked forms; full corpus licence and citation at
 > https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md) and matched item by
 > item on length, n_density, old20 using lexsync's standardised_euclidean matcher. The largest
-> difference on a matched dimension was 0.300 neighbours in n_density (high_frequency against
-> low_frequency; d = 0.04, 90% CI [-0.22, 0.30]). Two one-sided tests at a bound of 0.5 SD (alpha
+> difference on a matched dimension was 0.325 neighbours in n_density (high_frequency against
+> low_frequency; d = 0.06, 90% CI [-0.21, 0.32]). Two one-sided tests at a bound of 0.5 SD (alpha
 > 0.05) supported equivalence on 3 of 3 matched comparisons. No uncontrolled dimension differed by
-> more than 0.5 SD. The smallest condition was selected from 544 eligible candidates, and the
+> more than 0.5 SD. An exclusion list (exclude_en_demo.txt) removed 53 words from the candidates
+> before selection. The smallest condition was selected from 534 eligible candidates, and the
 > selection was deterministic and blind to any outcome measure. […]
 
 The paragraph describes the realised control before it tests it, since tests on a selected set

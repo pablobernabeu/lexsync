@@ -7,15 +7,15 @@
   "artifacts": [
     {
       "file": "output/stimuli/en_supplied_pool_english_stimuli_py.csv",
-      "sha256": "13f355dbfa4669d3352ec765364c4ced12f067b510abe6ec44df9e49fc909263"
+      "sha256": "e8fdf3e32d5d5f8a35776cac98ebfbf44774470deb7f99a1c4a2314f223a9536"
     },
     {
       "file": "output/reports/en_supplied_pool_english_descriptives_py.csv",
-      "sha256": "4f8798742cc1e235ed7b40d9780ef7564f00021227c3d528928480469fdec839"
+      "sha256": "5a6eeb35956f3dbaa9151fd549625c0ea8179101c5f613d1af58ce8e356b757e"
     },
     {
       "file": "output/reports/en_supplied_pool_english_comparisons_py.csv",
-      "sha256": "75d07fe237a17e8125e1544a98607a7925ebefa1ed23bcb639ea184194a3eb68"
+      "sha256": "f8e9459b7f39044688fd639fd26e57305ba079afcd26fb00e14f0ca0033c5fab"
     },
     {
       "file": "output/experiments/en_supplied_pool_english_psychopy.py",
@@ -27,11 +27,11 @@
     },
     {
       "file": "output/experiments/en_supplied_pool_english.html",
-      "sha256": "e8796409a957e0cb6b1701b8d0bc295795ff6f7327ae7e12539cbe542e994d34"
+      "sha256": "962b8ad3336cc37345ac7dfbbcbfd6e099bd1b45c201a860d959cecaaa4994bd"
     },
     {
       "file": "output/experiments/en_supplied_pool_english_psychopy.csv",
-      "sha256": "80cfc3e6696b2053e51d1d1740aaa69674e20d618059d15f55fc7eb0abd03ab7"
+      "sha256": "631efd66970e8538771e51855519af34c4201c313be0349677213996f6a5ef9c"
     },
     {
       "file": "output/experiments/en_supplied_pool_english_opensesame.csv",
@@ -39,7 +39,7 @@
     },
     {
       "file": "output/experiments/en_supplied_pool_english_opensesame_text.csv",
-      "sha256": "0a6de67bc167611b346876b08301bbf3701a0606fbe50853534883df05d0f007"
+      "sha256": "627428092f345d5355976e25cd60e8dfa4df38730387d24b487fc96222a5f0cd"
     }
   ],
   "counterbalancing": {
@@ -124,12 +124,12 @@
     ],
     "n_total": 40,
     "stimuli_file": "output/stimuli/en_supplied_pool_english_stimuli_py.csv",
-    "stimuli_sha256": "13f355dbfa4669d3352ec765364c4ced12f067b510abe6ec44df9e49fc909263"
+    "stimuli_sha256": "e8fdf3e32d5d5f8a35776cac98ebfbf44774470deb7f99a1c4a2314f223a9536"
   },
   "lexsync_datasheet_version": "1.2",
   "materials_source": {
-    "dimensions_from": "corpora/derived/en.csv",
-    "dimensions_sha256": "575833489e04d6a4001fda56a56e3daa383811dece1f819c44060ee79ca56976",
+    "dimensions_from": "corpora/derived/en_v2.csv",
+    "dimensions_sha256": "46815cd56ac036cb841460a2ea6205ac374eddb6ca26275bb1a2fbafc7c5d626",
     "path": "items/pool_en_concrete_nouns.csv",
     "provenance": "user-supplied word pool, matched by lexsync",
     "sha256": "09d0706a853b4bb30580e892a64061835db0f460ee7595b674a2fc8f56d5775f",
@@ -146,89 +146,89 @@
   },
   "realised_control": [
     {
-      "ci_high": 0.424,
-      "ci_low": -0.643,
-      "cohens_d": -0.109,
+      "ci_high": 0.533,
+      "ci_low": -0.533,
+      "cohens_d": 0.0,
       "condition": "lower_frequency",
       "dimension": "length",
       "equivalent": false,
-      "mean_diff": -0.05,
+      "mean_diff": 0.0,
       "reference": "higher_frequency",
       "role": "controlled",
-      "tost_p": 0.1121,
-      "var_ratio": 0.893
+      "tost_p": 0.0611,
+      "var_ratio": 1.0
     },
     {
-      "ci_high": 4.38,
-      "ci_low": 2.676,
-      "cohens_d": 3.528,
+      "ci_high": 4.362,
+      "ci_low": 2.662,
+      "cohens_d": 3.512,
       "condition": "lower_frequency",
       "dimension": "frequency",
       "equivalent": false,
-      "mean_diff": 1.023,
+      "mean_diff": 1.018,
       "reference": "higher_frequency",
       "role": "manipulated",
       "tost_p": 1.0,
-      "var_ratio": 0.832
+      "var_ratio": 0.831
     },
     {
-      "ci_high": 0.664,
-      "ci_low": -0.404,
-      "cohens_d": 0.13,
+      "ci_high": 0.712,
+      "ci_low": -0.357,
+      "cohens_d": 0.178,
       "condition": "lower_frequency",
       "dimension": "n_density",
       "equivalent": false,
-      "mean_diff": 0.3,
+      "mean_diff": 0.35,
       "reference": "higher_frequency",
       "role": "controlled",
-      "tost_p": 0.1245,
-      "var_ratio": 0.832
+      "tost_p": 0.1572,
+      "var_ratio": 0.644
     },
     {
-      "ci_high": 0.294,
-      "ci_low": -0.777,
-      "cohens_d": -0.241,
+      "ci_high": 0.394,
+      "ci_low": -0.674,
+      "cohens_d": -0.14,
       "condition": "lower_frequency",
       "dimension": "old20",
       "equivalent": false,
-      "mean_diff": -0.058,
+      "mean_diff": -0.04,
       "reference": "higher_frequency",
       "role": "controlled",
-      "tost_p": 0.2093,
-      "var_ratio": 0.624
+      "tost_p": 0.1309,
+      "var_ratio": 0.604
     },
     {
-      "ci_high": 0.651,
-      "ci_low": -0.417,
-      "cohens_d": 0.117,
+      "ci_high": 0.672,
+      "ci_low": -0.395,
+      "cohens_d": 0.139,
       "condition": "lower_frequency",
       "dimension": "n_syllables",
       "equivalent": false,
       "mean_diff": 0.05,
       "reference": "higher_frequency",
       "role": "uncontrolled",
-      "tost_p": 0.1166,
-      "var_ratio": 0.738
+      "tost_p": 0.1301,
+      "var_ratio": 0.238
     },
     {
-      "ci_high": 0.819,
-      "ci_low": -0.253,
-      "cohens_d": 0.283,
+      "ci_high": 1.17,
+      "ci_low": 0.078,
+      "cohens_d": 0.624,
       "condition": "lower_frequency",
       "dimension": "bigram_freq",
       "equivalent": false,
       "mean_diff": 0.001,
       "reference": "higher_frequency",
       "role": "uncontrolled",
-      "tost_p": 0.2486,
-      "var_ratio": 0.76
+      "tost_p": 0.651,
+      "var_ratio": 0.426
     }
   ],
   "relational": null,
   "reproducibility": {
-    "design_sha256": "919571123fbe696f3c3b7e491f26f74727eb76fe2686b7c4487253faf97973a4",
+    "design_sha256": "96e3f168d678f74002536a44ebe9d2577155affe83c7fd6751bf73e3ff057af7",
     "schema_path": "config/schema.yaml",
-    "schema_sha256": "3335f4e31a7f5dece6375dd0247600547ad86290492c7aead2836a9ec8af9dcb",
+    "schema_sha256": "5366c0b44af48b5bbc25c142ec14865db2f4a377efb35a5e99d937770b2e1483",
     "seed": 2026,
     "versions": {
       "engine": "python",
@@ -262,7 +262,8 @@
     ],
     "method": "standardised_euclidean",
     "tie_break": {
-      "rule": "bytes"
+      "rule": "hash",
+      "salt": "lexsync-tie-v1"
     },
     "tolerance_k": {
       "frequency": 1.0,

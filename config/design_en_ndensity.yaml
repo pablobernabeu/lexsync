@@ -4,12 +4,16 @@
 # vary with the manipulation rather than being matched.)
 name: en_ndensity
 language: english
-lexicon: corpora/derived/en.csv
+lexicon: corpora/derived/en_v2.csv
 description: 'Dense versus sparse orthographic neighbourhoods (Coltheart''s N) in English, matched on length and frequency.'
 n_per_condition: 80
 pool_filters:
   length: [3, 6]
   frequency: [3.8, 7.0]
+  # Keeps only the forms the SUBTLEX-US screen leaves unmarked (see corpora/ATTRIBUTION.md).
+  nonstandard: [0, 0]
+# Leaves out the unsuitable forms the screen lets through (see the file's header).
+exclude_words: {path: config/exclude_en_demo.txt}
 conditions:
   - name: dense_neighbourhood
     define_by:

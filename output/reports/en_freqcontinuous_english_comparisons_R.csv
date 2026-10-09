@@ -1,5 +1,5 @@
 dimension,role,pearson_r,predictor_span,sd,sd_ratio,window_low,window_high
-frequency,predictor,,3.05,0.54,0.602,,
-length,control,-0.165,3.05,0.981,0.656,3.175,7.9
-n_density,control,-0.049,3.05,2.417,0.39,-5.21,12.835
-old20,control,-0.077,3.05,0.343,0.555,1.144,2.798
+frequency,predictor,,3.05,0.531,0.592,,
+length,control,-0.226,3.05,1.116,0.755,3.991,8.134
+n_density,control,0.301,3.05,1.844,0.409,-2.516,7.541
+old20,control,-0.295,3.05,0.407,0.68,1.29,2.913

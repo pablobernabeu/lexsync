@@ -4,6 +4,6 @@ noun,frequency,6,4.293,0.852,3.41,4.06,5.62
 noun,n_syllables,6,2,0,2,2,2
 noun,bigram_freq,6,0.012,0.004,0.006,0.013,0.019
 verb,length,6,6,0,6,6,6
-verb,frequency,6,4.447,0.467,3.95,4.395,5.08
-verb,n_syllables,6,2.667,0.516,2,3,3
-verb,bigram_freq,6,0.015,0.003,0.011,0.015,0.02
+verb,frequency,6,4.267,0.408,3.77,4.225,4.91
+verb,n_syllables,6,2.333,0.516,2,2,3
+verb,bigram_freq,6,0.013,0.003,0.009,0.012,0.017

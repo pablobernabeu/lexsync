@@ -89,4 +89,8 @@ test_that("the data terms ship with the package and the LICENSE stub is untouche
   for (f in c("en_example.csv", "es_example.csv", "zh_example.csv")) {
     expect_match(text, f, fixed = TRUE)
   }
+  # The English slice keeps only forms SUBTLEX-US lists in lower case often enough, so
+  # the list is a direct source of it.
+  expect_match(gsub("\\s+", " ", text), "is therefore a direct source of en_example.csv",
+               fixed = TRUE)
 })

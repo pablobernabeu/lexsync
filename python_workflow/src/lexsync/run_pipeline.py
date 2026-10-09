@@ -76,7 +76,7 @@ REPORT_DIMS = ("length", "frequency", "n_density", "old20", "n_syllables", "bigr
 
 # A generated lexical decision's report: length, which every pseudoword shares with its
 # base word, and three dimensions the generator does not hold. Its pseudowords are more
-# bigram-typical than their words (d about -1.5 in en_lexdec).
+# bigram-typical than their words (d about -1.0 in en_lexdec).
 LEXDEC_REPORT_DIMS = ("length", "bigram_freq", "n_density", "old20")
 
 

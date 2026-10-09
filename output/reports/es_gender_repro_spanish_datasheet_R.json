@@ -59,7 +59,8 @@
       "old20": 2
     },
     "tie_break": {
-      "rule": "bytes"
+      "rule": "hash",
+      "salt": "lexsync-tie-v1"
     },
     "candidate_pool": [
       {
@@ -115,50 +116,50 @@
       "reference": "feminine",
       "dimension": "n_density",
       "role": "uncontrolled",
-      "cohens_d": 0.196,
-      "ci_low": -0.144,
-      "ci_high": 0.536,
-      "var_ratio": 0.556,
-      "tost_p": 0.0697,
-      "equivalent": false,
-      "mean_diff": 0.563
+      "cohens_d": 0.147,
+      "ci_low": -0.193,
+      "ci_high": 0.486,
+      "var_ratio": 0.522,
+      "tost_p": 0.0433,
+      "equivalent": true,
+      "mean_diff": 0.417
     },
     {
       "condition": "masculine",
       "reference": "feminine",
       "dimension": "old20",
       "role": "uncontrolled",
-      "cohens_d": -0.082,
-      "ci_low": -0.422,
-      "ci_high": 0.257,
-      "var_ratio": 0.893,
-      "tost_p": 0.0218,
+      "cohens_d": -0.015,
+      "ci_low": -0.354,
+      "ci_high": 0.324,
+      "var_ratio": 0.821,
+      "tost_p": 0.0098,
       "equivalent": true,
-      "mean_diff": -0.057
+      "mean_diff": -0.01
     },
     {
       "condition": "masculine",
       "reference": "feminine",
       "dimension": "n_syllables",
       "role": "uncontrolled",
-      "cohens_d": 0.102,
-      "ci_low": -0.237,
-      "ci_high": 0.441,
-      "var_ratio": 1.531,
-      "tost_p": 0.0271,
+      "cohens_d": 0.129,
+      "ci_low": -0.211,
+      "ci_high": 0.468,
+      "var_ratio": 1.478,
+      "tost_p": 0.0361,
       "equivalent": true,
-      "mean_diff": 0.083
+      "mean_diff": 0.104
     },
     {
       "condition": "masculine",
       "reference": "feminine",
       "dimension": "bigram_freq",
       "role": "uncontrolled",
-      "cohens_d": 0.216,
-      "ci_low": -0.124,
-      "ci_high": 0.556,
-      "var_ratio": 1.967,
-      "tost_p": 0.0838,
+      "cohens_d": 0.235,
+      "ci_low": -0.105,
+      "ci_high": 0.575,
+      "var_ratio": 1.497,
+      "tost_p": 0.0987,
       "equivalent": false,
       "mean_diff": 0.001
     }
@@ -211,7 +212,7 @@
       }
     ],
     "stimuli_file": "output/stimuli/es_gender_repro_spanish_stimuli_R.csv",
-    "stimuli_sha256": "eb7d3011aaa498cc50263f2636e20ec4be0b7950194d29ea8c2832ef70c837be"
+    "stimuli_sha256": "ffd50635e93d6e6cd5904efbf53bdada3b05170674ad1d938342df315e21d3a4"
   },
   "reproducibility": {
     "seed": 2026,
@@ -229,20 +230,20 @@
     },
     "design_sha256": "d30dc7616299d6fc538066bf435a44c2739dd24d0136d4843b214f0630a198c1",
     "schema_path": "config/schema.yaml",
-    "schema_sha256": "3335f4e31a7f5dece6375dd0247600547ad86290492c7aead2836a9ec8af9dcb"
+    "schema_sha256": "5366c0b44af48b5bbc25c142ec14865db2f4a377efb35a5e99d937770b2e1483"
   },
   "artifacts": [
     {
       "file": "output/stimuli/es_gender_repro_spanish_stimuli_R.csv",
-      "sha256": "eb7d3011aaa498cc50263f2636e20ec4be0b7950194d29ea8c2832ef70c837be"
+      "sha256": "ffd50635e93d6e6cd5904efbf53bdada3b05170674ad1d938342df315e21d3a4"
     },
     {
       "file": "output/reports/es_gender_repro_spanish_descriptives_R.csv",
-      "sha256": "f8e39974971b8cf1d887b6945e97d671a37097e532aeff9cde6d9c38390dfddb"
+      "sha256": "23f24cab51e6526b5982eacb9eb13259c54d65a371a964e89b47f935a63be933"
     },
     {
       "file": "output/reports/es_gender_repro_spanish_comparisons_R.csv",
-      "sha256": "eeba8811e84e8b1f49b18b73bc77f54e9ae7b447f3bb0890b8a9683866fbe194"
+      "sha256": "9d8d48502b960092babf5275e33a227252324fdf2cd16194400993bcd21b378a"
     },
     {
       "file": "output/experiments/es_gender_repro_spanish_psychopy.py",
@@ -254,11 +255,11 @@
     },
     {
       "file": "output/experiments/es_gender_repro_spanish.html",
-      "sha256": "0749226bab6c245d451bf4b8a2e4d0c53c26208dea3efe58bd934a106ae6e056"
+      "sha256": "9fb83e6728fc7dc19aaba63750370f0c5f2921349448e107462a0d7b9af92709"
     },
     {
       "file": "output/experiments/es_gender_repro_spanish_psychopy.csv",
-      "sha256": "ea3cef6b6bfb6110a2e6fd879bf24adcda1d24fd554a4c8374c0083f2a6f41f7"
+      "sha256": "c93dbeec0b1d9eda0e0068878cb4dff734e0fe65db7e3200ec26341b8b13e26a"
     },
     {
       "file": "output/experiments/es_gender_repro_spanish_opensesame.csv",
@@ -266,7 +267,7 @@
     },
     {
       "file": "output/experiments/es_gender_repro_spanish_opensesame_text.csv",
-      "sha256": "8065191d5446910d6e55d0a9a2dc1a8b156c6210ad983c59b46f4ea0e02f5bf2"
+      "sha256": "8e1b4b0c63ccea51292b43a41a6c403d1ebeab5976d1e9a7e95419a9ee7c691c"
     }
   ]
 }

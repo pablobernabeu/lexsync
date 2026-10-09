@@ -6,12 +6,16 @@
 # Yarkoni, 2022). The output carries a 'replicate' column.
 name: en_resample
 language: english
-lexicon: corpora/derived/en.csv
+lexicon: corpora/derived/en_v2.csv
 description: 'High versus low frequency English words in three disjoint matched item sets (items as a random factor).'
 n_per_condition: 40
 pool_filters:
   length: [4, 8]
   frequency: [3.5, 7.0]
+  # Keeps only the forms the SUBTLEX-US screen leaves unmarked (see corpora/ATTRIBUTION.md).
+  nonstandard: [0, 0]
+# Leaves out the unsuitable forms the screen lets through (see the file's header).
+exclude_words: {path: config/exclude_en_demo.txt}
 conditions:
   - name: high_frequency
     define_by:

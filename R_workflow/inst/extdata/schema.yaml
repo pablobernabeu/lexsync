@@ -152,19 +152,19 @@ matching:
   # Stage 2 ranks candidates by standardised multivariate distance, rounded to nine
   # places. Lengths and neighbourhood counts are whole numbers and frequencies carry
   # two decimals, so candidates often tie exactly, and tie_break decides between them:
+  #   hash   the smaller SHA-256 of 'lexsync-tie-v1|' followed by the word, the default.
+  #          The salt is fixed, so the rule does not depend on the seed, and it favours
+  #          no part of the alphabet.
   #   bytes  the word whose UTF-8 bytes sort first, then the lower id. This is the rule
   #          of lexsync 0.1 and reproduces its selections. Every tie goes to the
   #          spelling that sorts first, so a condition decided by ties fills with words
   #          that sort early (in English, words beginning with a or b).
-  #   hash   the smaller SHA-256 of 'lexsync-tie-v1|' followed by the word. The salt
-  #          is fixed, so the rule does not depend on the seed, and it favours no part
-  #          of the alphabet.
   # The rule also orders tied pairs in joint and optimal matching and tied rows at the
   # candidate cap. The even spreads that pick the anchor's items and a continuous
   # design's items keep the byte order under both rules. Under either rule,
   # standardised_euclidean and joint select identical stimuli in the two engines
   # without an RNG. A design may override it under its own matching: block.
-  tie_break: bytes                   # how exact ties between candidates are broken: bytes | hash
+  tie_break: hash                    # how exact ties between candidates are broken: hash | bytes
 
 # ---- Counterbalancing list assignment --------------------------------------
 # A design's paradigm decides its counterbalancing recipe, whether or not the design

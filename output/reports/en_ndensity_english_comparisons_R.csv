@@ -1,7 +1,7 @@
 condition,reference,dimension,cohens_d,d_ci_low,d_ci_high,var_ratio,tost_p,equivalent,mean_diff,role
 sparse_neighbourhood,dense_neighbourhood,length,0,-0.262,0.262,1,9e-4,TRUE,0,controlled
 sparse_neighbourhood,dense_neighbourhood,frequency,0,-0.262,0.262,1,9e-4,TRUE,0,controlled
-sparse_neighbourhood,dense_neighbourhood,n_density,3.108,2.72,3.497,0.02,1,FALSE,7.838,manipulated
-sparse_neighbourhood,dense_neighbourhood,old20,-2.304,-2.641,-1.966,1.639,1,FALSE,-0.523,uncontrolled
-sparse_neighbourhood,dense_neighbourhood,n_syllables,-0.828,-1.101,-0.555,1.525,0.9802,FALSE,-0.45,uncontrolled
-sparse_neighbourhood,dense_neighbourhood,bigram_freq,0.129,-0.133,0.391,1.436,0.0101,TRUE,0,uncontrolled
+sparse_neighbourhood,dense_neighbourhood,n_density,3.487,3.072,3.902,0.032,1,FALSE,7.05,manipulated
+sparse_neighbourhood,dense_neighbourhood,old20,-2.386,-2.728,-2.044,2.187,1,FALSE,-0.536,uncontrolled
+sparse_neighbourhood,dense_neighbourhood,n_syllables,-0.528,-0.794,-0.262,1.358,0.5696,FALSE,-0.288,uncontrolled
+sparse_neighbourhood,dense_neighbourhood,bigram_freq,0.453,0.188,0.718,0.624,0.3838,FALSE,0.002,uncontrolled

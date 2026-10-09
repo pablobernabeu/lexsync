@@ -7,15 +7,15 @@
   "artifacts": [
     {
       "file": "output/stimuli/en_lexdec_blocks_english_stimuli_py.csv",
-      "sha256": "dc2f8febd1eb20606436c7c7093593042cd381122a8d7c8cc9754105cf7715cc"
+      "sha256": "8091dafcd114463a9286b7d50d613f2049632d1ae0ec4d9386e97fc2bce8e2a4"
     },
     {
       "file": "output/reports/en_lexdec_blocks_english_descriptives_py.csv",
-      "sha256": "4f5d92ea84850ca5d595ddcc6ff89a82cd057e87c3d253f99ae3e3a41eafaff8"
+      "sha256": "0a19e6b6e07c8bc5d446d0d725534202a69bd15d77d5b831bf2894b8b57d4bcf"
     },
     {
       "file": "output/reports/en_lexdec_blocks_english_comparisons_py.csv",
-      "sha256": "0bd55c4fdf81c83407a004b3337fd6928fb7577b204e4e0b8edd2c9e3a7b61c0"
+      "sha256": "222b1ce15d528a3ddc09fe5502813041cc02354a7faea54c0ee9d044ab09f9b5"
     },
     {
       "file": "output/experiments/en_lexdec_blocks_english_psychopy.py",
@@ -27,11 +27,11 @@
     },
     {
       "file": "output/experiments/en_lexdec_blocks_english.html",
-      "sha256": "faa8c5d3cdee78283758f6bd241086847dfb57e48d44e9c468e20d6b4e120615"
+      "sha256": "ce71745ba807ce69035b1554bffceee6bcdd5673024de0fa88d2ecb3ea0e71e5"
     },
     {
       "file": "output/experiments/en_lexdec_blocks_english_psychopy.csv",
-      "sha256": "26f757898861da6f818df881621ff6e99ae6241e8e7564fdae56d9e7d7eab0ef"
+      "sha256": "8af5918aeda207ce2c402f98e3d52c88f3483255030580fee30aaa067c311775"
     },
     {
       "file": "output/experiments/en_lexdec_blocks_english_opensesame.csv",
@@ -39,7 +39,7 @@
     },
     {
       "file": "output/experiments/en_lexdec_blocks_english_opensesame_text.csv",
-      "sha256": "3a2a225b4be030f0d4058f7d1727a2cb9bb00f43e0b11a730b31bf08a2578259"
+      "sha256": "b0b6b65b6e56a6f5d0d836b7498d345d59505f37f71ea5df43caf3bd0bc5e8d0"
     }
   ],
   "counterbalancing": {
@@ -122,13 +122,19 @@
     ],
     "n_total": 40,
     "stimuli_file": "output/stimuli/en_lexdec_blocks_english_stimuli_py.csv",
-    "stimuli_sha256": "dc2f8febd1eb20606436c7c7093593042cd381122a8d7c8cc9754105cf7715cc"
+    "stimuli_sha256": "8091dafcd114463a9286b7d50d613f2049632d1ae0ec4d9386e97fc2bce8e2a4"
   },
   "lexsync_datasheet_version": "1.2",
   "materials_source": {
-    "path": "corpora/derived/en.csv",
-    "provenance": "wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md",
-    "sha256": "575833489e04d6a4001fda56a56e3daa383811dece1f819c44060ee79ca56976",
+    "exclusions": {
+      "n_listed": 53,
+      "n_removed": 53,
+      "path": "config/exclude_en_demo.txt",
+      "sha256": "cac9f88fb86fa6d0e6dbabc287c9ebb782100d071eeded13eb812584b9d41e9f"
+    },
+    "path": "corpora/derived/en_v2.csv",
+    "provenance": "wordfreq (Speer, 2022) screened against SUBTLEX-US (Brysbaert & New, 2009), data CC BY-SA 4.0; forms absent from SUBTLEX-US or beginning with a lower-case letter in under 10% of their uses are marked nonstandard, and N and OLD20 count only the unmarked forms; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md",
+    "sha256": "46815cd56ac036cb841460a2ea6205ac374eddb6ca26275bb1a2fbafc7c5d626",
     "type": "generate"
   },
   "presentation": {
@@ -155,50 +161,50 @@
       "var_ratio": 1.0
     },
     {
-      "ci_high": -0.88,
-      "ci_low": -2.083,
-      "cohens_d": -1.482,
+      "ci_high": -0.498,
+      "ci_low": -1.638,
+      "cohens_d": -1.068,
       "condition": "pseudoword",
       "dimension": "bigram_freq",
       "equivalent": false,
-      "mean_diff": -0.004,
+      "mean_diff": -0.003,
       "reference": "word",
       "role": "uncontrolled",
-      "tost_p": 0.9982,
-      "var_ratio": 0.612
+      "tost_p": 0.9598,
+      "var_ratio": 0.866
     },
     {
-      "ci_high": 0.06,
-      "ci_low": -1.022,
-      "cohens_d": -0.481,
+      "ci_high": 1.132,
+      "ci_low": 0.043,
+      "cohens_d": 0.587,
       "condition": "pseudoword",
       "dimension": "n_density",
       "equivalent": false,
-      "mean_diff": -2.1,
+      "mean_diff": 1.5,
       "reference": "word",
       "role": "uncontrolled",
-      "tost_p": 0.4766,
-      "var_ratio": 2.687
+      "tost_p": 0.608,
+      "var_ratio": 0.122
     },
     {
-      "ci_high": 0.678,
-      "ci_low": -0.389,
-      "cohens_d": 0.144,
+      "ci_high": 0.193,
+      "ci_low": -0.882,
+      "cohens_d": -0.345,
       "condition": "pseudoword",
       "dimension": "old20",
       "equivalent": false,
-      "mean_diff": 0.075,
+      "mean_diff": -0.17,
       "reference": "word",
       "role": "uncontrolled",
-      "tost_p": 0.1339,
-      "var_ratio": 1.001
+      "tost_p": 0.3129,
+      "var_ratio": 0.632
     }
   ],
   "relational": null,
   "reproducibility": {
-    "design_sha256": "c356ede15b8587796968b9e45f4f1db651fee0d9dac6da8934890f85bf3ed626",
+    "design_sha256": "0a213e43f99cabb2727d0ca80a253128656fc19621867d2bd932b69456e4c461",
     "schema_path": "config/schema.yaml",
-    "schema_sha256": "3335f4e31a7f5dece6375dd0247600547ad86290492c7aead2836a9ec8af9dcb",
+    "schema_sha256": "5366c0b44af48b5bbc25c142ec14865db2f4a377efb35a5e99d937770b2e1483",
     "seed": 2026,
     "versions": {
       "engine": "python",
@@ -217,10 +223,17 @@
     "candidate_pool": [
       {
         "condition": "words in band",
-        "n_candidates": 8177
+        "n_candidates": 6767
       }
     ],
     "cross_engine": "byte-identical",
+    "generation_exclude": [
+      {
+        "n_forms": 289023,
+        "sha256": "31fa1bfbf347a94ca31dcdc0fe69be459b5829621b9b194469c725ab64e5e2b4",
+        "source": "corpora/derived/en_known_forms.txt"
+      }
+    ],
     "generation_method": "letter_substitution",
     "matched_on": [
       "length"

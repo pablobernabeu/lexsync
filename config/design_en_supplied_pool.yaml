@@ -29,7 +29,7 @@ items:
   path: items/pool_en_concrete_nouns.csv
   # Where the dimensions come from, and the reference set for the neighbourhood
   # measures. Without it the pool would have to carry every matched dimension itself.
-  lexicon: corpora/derived/en.csv
+  lexicon: corpora/derived/en_v2.csv
 
 n_per_condition: 20
 

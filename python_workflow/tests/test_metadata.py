@@ -168,6 +168,9 @@ def test_the_bundled_data_terms_ship_with_both_packages():
         assert "SUBTLEX" in text
         for name in ("en_example.csv", "es_example.csv", "zh_example.csv"):
             assert name in text
+        # The English slice keeps only forms SUBTLEX-US lists in lower case often enough,
+        # so the list is a direct source of it.
+        assert "is therefore a direct source of en_example.csv" in " ".join(text.split())
 
 
 def test_no_dead_analysis_extra():

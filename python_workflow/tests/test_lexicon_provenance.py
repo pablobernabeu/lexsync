@@ -13,6 +13,7 @@ import json
 import os
 from pathlib import Path
 
+import pandas as pd
 import yaml
 from helper_repo import repo_path
 
@@ -29,7 +30,15 @@ SCREENED = ("wordfreq (Speer, 2022) screened against SUBTLEX-US (Brysbaert & New
             "letter in under 10% of their uses are marked nonstandard, and N and OLD20 "
             "count only the unmarked forms; full corpus licence and citation at "
             "https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md")
-SLICES = ("en_example.csv", "es_example.csv", "zh_example.csv")
+# The English example slice holds only forms the screen keeps, so it marks none.
+SCREENED_SLICE = ("wordfreq (Speer, 2022) screened against SUBTLEX-US (Brysbaert & New, "
+                  "2009), data CC BY-SA 4.0; forms absent from SUBTLEX-US or beginning with "
+                  "a lower-case letter in under 10% of their uses are left out, and N and "
+                  "OLD20 count neighbours only among the forms the screen keeps; full corpus "
+                  "licence and citation at "
+                  "https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md")
+SLICES = {"en_example.csv": SCREENED_SLICE, "es_example.csv": WORDFREQ,
+          "zh_example.csv": WORDFREQ}
 DERIVED = {"en.csv": WORDFREQ, "en_v2.csv": SCREENED, "es.csv": WORDFREQ,
            "es_gender.csv": WORDFREQ, "zh.csv": WORDFREQ}
 
@@ -76,16 +85,16 @@ def test_a_user_lexicon_is_named_by_file_and_checksum(tmp_path):
 
 
 def test_a_bundled_lexicon_is_recognised_whatever_its_line_endings(tmp_path):
-    for name in SLICES:
+    for name, provenance in SLICES.items():
         data = Path(_data(name)).read_bytes()
         assert b"\r" not in data
         crlf = tmp_path / ("crlf_" + name)
         crlf.write_bytes(data.replace(b"\n", b"\r\n"))
         renamed = tmp_path / ("renamed_" + name)
         renamed.write_bytes(data)
-        assert _lexicon_provenance(_data(name)) == WORDFREQ
-        assert _lexicon_provenance(str(crlf)) == WORDFREQ
-        assert _lexicon_provenance(str(renamed)) == WORDFREQ
+        assert _lexicon_provenance(_data(name)) == provenance, name
+        assert _lexicon_provenance(str(crlf)) == provenance, name
+        assert _lexicon_provenance(str(renamed)) == provenance, name
     # One byte more and the file is the user's own.
     changed = tmp_path / "changed.csv"
     changed.write_bytes(Path(_data("en_example.csv")).read_bytes() + b"zzzz,1.0,en,mine,0,1.0\n")
@@ -114,6 +123,23 @@ def test_every_bundled_lexicon_is_in_the_provenance_table():
     for name in DERIVED:
         data = repo_path("corpora", "derived", name).read_bytes()
         assert named["corpora/derived/" + name] == _lf_sha256(data), name
+
+
+def test_the_english_example_slice_holds_unmarked_rows_of_en_v2():
+    # The slice both packages bundle is 3,000 of the forms the screened lexicon keeps,
+    # each with the cells en_v2.csv gives it, N and OLD20 among them. It used to be a
+    # slice of en.csv, a quarter of it names, acronyms and other marked forms.
+    v2 = pd.read_csv(repo_path("corpora", "derived", "en_v2.csv"), dtype=str,
+                     keep_default_na=False, encoding="utf-8").set_index("word")
+    sl = pd.read_csv(_data("en_example.csv"), dtype=str, keep_default_na=False,
+                     encoding="utf-8")
+    assert list(sl.columns) == ["word", "freq_zipf", "language", "source", "n_density",
+                                "old20"]
+    assert len(sl) == 3000 and sl["word"].is_unique
+    rows = v2.loc[sl["word"]]
+    assert (rows["nonstandard"] == "0").all()
+    for col in sl.columns[1:]:
+        assert rows[col].tolist() == sl[col].tolist(), col
 
 
 def test_a_registry_corpus_in_the_cache_is_credited_by_its_citation(tmp_path, monkeypatch):

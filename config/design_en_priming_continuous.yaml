@@ -38,7 +38,7 @@ items:
   # The two word fields. Norms are joined onto each.
   members: [prime, target]
   # Where the member norms come from.
-  lexicon: corpora/derived/en.csv
+  lexicon: corpora/derived/en_v2.csv
   # The condition whose row represents the pair during selection. Defaults to the
   # byte-first condition, which is 'related' here; stated explicitly because it
   # decides which row's values the predictor is read from.

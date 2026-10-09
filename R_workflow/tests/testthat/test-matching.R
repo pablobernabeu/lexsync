@@ -806,10 +806,10 @@ test_that("the matching module uses the shared rounder on distance paths", {
 
 # ---- the tie-break rule ------------------------------------------------------
 # Lengths and neighbourhood counts are whole numbers and frequencies carry two
-# decimals, so exact ties decide most picks. matching.tie_break chooses how: `bytes`,
-# the default and the rule of lexsync 0.1, gives a tie to the spelling that sorts
-# first, and `hash` to the smaller keyed SHA-256 of the word. Twinned with
-# test_matching.py, which pins the same keys, words and pairs.
+# decimals, so exact ties decide most picks. matching.tie_break chooses how: `hash`, the
+# default, gives a tie to the smaller keyed SHA-256 of the word, and `bytes`, the rule of
+# lexsync 0.1, to the spelling that sorts first. Twinned with test_matching.py, which
+# pins the same keys, words and pairs.
 
 # Computed here and not through the package, so the expectations below do not rest on
 # the function under test.
@@ -842,7 +842,7 @@ tie_pool <- function() {
 
 test_that("hash_tie_break_orders_exact_ties_by_the_keyed_digest", {
   pool <- tie_pool()
-  by_bytes <- match_stimuli(pool, x_design(3L), x_schema())
+  by_bytes <- match_stimuli(pool, x_design(3L, list(tie_break = "bytes")), x_schema())
   expect_identical(by_bytes$word[by_bytes$condition == "B"], c("bat", "cat", "axe"))
   by_hash <- match_stimuli(pool, x_design(3L, list(tie_break = "hash")), x_schema())
   expect_identical(by_hash$word[by_hash$condition == "A"], c("kiwi", "lime", "plum"))
@@ -850,11 +850,22 @@ test_that("hash_tie_break_orders_exact_ties_by_the_keyed_digest", {
   expect_identical(expected, c("eel", "dog", "dot"))
   expect_identical(by_hash$word[by_hash$condition == "B"], expected)
   # The schema may set the rule, and a design's own setting overrides it.
-  hashed <- x_schema()
-  hashed$matching$tie_break <- "hash"
-  expect_identical(match_stimuli(pool, x_design(3L), hashed)$word, by_hash$word)
-  expect_identical(match_stimuli(pool, x_design(3L, list(tie_break = "bytes")), hashed)$word,
-                   by_bytes$word)
+  as_0_1 <- x_schema()
+  as_0_1$matching$tie_break <- "bytes"
+  expect_identical(match_stimuli(pool, x_design(3L), as_0_1)$word, by_bytes$word)
+  expect_identical(match_stimuli(pool, x_design(3L, list(tie_break = "hash")), as_0_1)$word,
+                   by_hash$word)
+})
+
+test_that("the_tie_break_defaults_to_hash", {
+  # With no rule in the design or the schema, the keyed hash breaks exact ties. The
+  # default was `bytes` until the demonstrations moved to the hash.
+  expect_identical(.resolve_tie_break(list(), list()), "hash")
+  pool <- tie_pool()
+  by_default <- match_stimuli(pool, x_design(3L), x_schema())
+  expect_identical(by_default$word,
+                   match_stimuli(pool, x_design(3L, list(tie_break = "hash")), x_schema())$word)
+  expect_identical(by_default$word[by_default$condition == "B"], c("eel", "dog", "dot"))
 })
 
 test_that("an_unknown_tie_break_rule_is_refused", {
@@ -876,7 +887,8 @@ tie_pairs_pool <- function(a_x, b_x) {
 test_that("hash_tie_break_orders_joint_pairs_by_hash_rank", {
   # Every pair costs 0, so the pair order alone decides which items are kept.
   pool <- tie_pairs_pool(rep(1, 4), rep(1, 4))
-  by_bytes <- match_stimuli(pool, x_design(2L, list(method = "joint")), x_schema())
+  by_bytes <- match_stimuli(pool, x_design(2L, list(method = "joint", tie_break = "bytes")),
+                            x_schema())
   expect_identical(unname(x_pairs(by_bytes)), c("ash+bat", "beech+cat"))
   expect_identical(by_digest(c("ash", "beech", "cedar", "elm"))[1:2], c("beech", "cedar"))
   expect_identical(by_digest(c("bat", "cat", "dog", "eel"))[1:2], c("eel", "dog"))
@@ -909,7 +921,8 @@ test_that("hash_tie_break_numbers_the_optimal_pairs_by_hash_rank", {
   # asks the tie-break to decide that.
   skip_if_not_installed("clue")
   pool <- tie_pairs_pool(c(1, 2, 10, 20), c(1, 2, 30, 40))
-  by_bytes <- match_stimuli(pool, x_design(2L, list(method = "optimal")), x_schema())
+  by_bytes <- match_stimuli(pool, x_design(2L, list(method = "optimal", tie_break = "bytes")),
+                            x_schema())
   expect_identical(unname(x_pairs(by_bytes)), c("ash+bat", "beech+cat"))
   expect_identical(by_bytes$word[by_bytes$set == 1L], c("ash", "bat"))
   by_hash <- match_stimuli(pool, x_design(2L, list(method = "optimal", tie_break = "hash")),
@@ -1066,9 +1079,9 @@ test_that("optimal fills n when the conditions share every word", {
   }
 })
 
-# The shipped English designs. Repository-coupled: the full lexicon lives in corpora/,
-# not in the package, so these skip on CRAN and outside the repository. The lexicon is
-# read once for the three tests.
+# The shipped English designs as lexsync 0.1 ran them, on en.csv. Repository-coupled: the
+# full lexicon lives in corpora/, not in the package, so these skip on CRAN and outside
+# the repository. The lexicon is read once for the three tests.
 en_corpus <- local({
   cache <- NULL
   function() {
@@ -1082,8 +1095,15 @@ en_corpus <- local({
   }
 })
 
-shipped_design <- function(name, tie_break = NULL) {
+# A shipped design as lexsync 0.1 ran it. The demonstrations now read en_v2.csv, filter
+# on its `nonstandard` column and leave out the words of an exclusion list. en.csv has no
+# such column, and match_stimuli() does not read exclude_words, so both are dropped here
+# and the design runs on en_corpus()'s en.csv.
+as_in_0_1 <- function(name, tie_break = NULL) {
   design <- read_config(repo_path("config", paste0("design_", name, ".yaml")))
+  filters <- design[["pool_filters"]]
+  design[["pool_filters"]] <- filters[names(filters) != "nonstandard"]
+  design[["exclude_words"]] <- NULL
   if (!is.null(tie_break)) {
     design[["matching"]] <- c(design[["matching"]], list(tie_break = tie_break))
   }
@@ -1097,13 +1117,13 @@ test_that("hash_tie_break_returns_freqcontrast_initials_to_the_pool_rate", {
   # condition's candidates. Under hash the share lies within 0.1 of the candidates',
   # and Cohen's d on each matched dimension moves by at most 0.01.
   en <- en_corpus()
-  design <- shipped_design("en_freqcontrast")
+  design <- as_in_0_1("en_freqcontrast", "bytes")
   pool <- build_pool(en$lexicon, design[["pool_filters"]])
   low <- Filter(function(cd) identical(cd[["name"]], "low_frequency"),
                 design[["conditions"]])[[1]]
   candidates <- build_pool(pool, low[["define_by"]])
   by_bytes <- match_stimuli(pool, design, en$schema)
-  by_hash <- match_stimuli(pool, shipped_design("en_freqcontrast", "hash"), en$schema)
+  by_hash <- match_stimuli(pool, as_in_0_1("en_freqcontrast", "hash"), en$schema)
   share <- initial_share(by_hash$word[by_hash$condition == "low_frequency"])
   expect_lte(abs(share - initial_share(candidates$word)), 0.1)
   for (dim in unlist(design[["match_on"]])) {
@@ -1117,27 +1137,35 @@ test_that("hash_tie_break_returns_freqcontrast_initials_to_the_pool_rate", {
 test_that("hash_tie_break_spreads_the_ndensity_dense_initials", {
   # Under bytes every dense word of the joint design began with a or b (73 b, 7 a).
   en <- en_corpus()
-  design <- shipped_design("en_ndensity", "hash")
+  design <- as_in_0_1("en_ndensity", "hash")
   s <- match_stimuli(build_pool(en$lexicon, design[["pool_filters"]]), design, en$schema)
   expect_lte(initial_share(s$word[s$condition == "dense_neighbourhood"]), 0.25)
 })
 
-test_that("the_default_tie_break_reproduces_the_committed_selections", {
-  # The committed stimuli of both designs are those lexsync 0.1.1 selected, and the
-  # default rule, named or not, must select them again.
+# The selections lexsync 0.1.1 committed for the two designs, both engines alike, as the
+# SHA-256 of their word|condition|set lines in byte order. The committed stimuli now come
+# from the screened lexicon, so the old ones are pinned here. Pinned identically in
+# test_matching.py.
+selections_0_1_1 <- c(
+  en_freqcontrast = "f5a58e0486182d23309c921106c41fde9dd9533b1c990ef4c77b2a971b588595",
+  en_ndensity = "f266d1b7611890cfba586b61efa04066616acbb89a3134a42dba09a9e4490a8b"
+)
+
+selection_digest <- function(s) {
+  lines <- sort(paste(s$word, s$condition, as.integer(s$set), sep = "|"), method = "radix")
+  digest::digest(enc2utf8(paste(lines, collapse = "\n")), algo = "sha256", serialize = FALSE)
+}
+
+test_that("bytes_tie_break_reproduces_the_0_1_selections", {
+  # `bytes` must select again what lexsync 0.1.1 selected from en.csv, and the default,
+  # now the keyed hash, must not.
   en <- en_corpus()
-  for (name in c("en_freqcontrast", "en_ndensity")) {
-    committed <- read_csv_utf8(repo_path("output", "stimuli",
-                                         paste0(name, "_english_stimuli_R.csv")),
-                               as_character = "word")
-    want <- sort(paste(committed$word, committed$condition, as.integer(committed$set),
-                       sep = "|"), method = "radix")
-    for (rule in list(NULL, "bytes")) {
-      design <- shipped_design(name, rule)
+  for (name in names(selections_0_1_1)) {
+    for (rule in list("bytes", NULL)) {
+      design <- as_in_0_1(name, rule)
       s <- match_stimuli(build_pool(en$lexicon, design[["pool_filters"]]), design, en$schema)
-      expect_identical(sort(paste(s$word, s$condition, as.integer(s$set), sep = "|"),
-                            method = "radix"),
-                       want, info = paste(name, if (is.null(rule)) "default" else rule))
+      expect_identical(selection_digest(s) == selections_0_1_1[[name]], !is.null(rule),
+                       info = paste(name, if (is.null(rule)) "default" else rule))
     }
   }
 })

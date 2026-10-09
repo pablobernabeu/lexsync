@@ -36,11 +36,12 @@
 }
 
 # The rule that breaks exact ties between equally close candidates, read like the other
-# matching policies. `bytes` gives a tie to the spelling that sorts first, as lexsync
-# 0.1 did, and `hash` to the smaller tie key (see .tie_keys). Must stay identical to
-# _resolve_tie_break in python_workflow/src/lexsync/matching.py.
+# matching policies. `hash`, the default, gives a tie to the smaller tie key (see
+# .tie_keys), and `bytes` to the spelling that sorts first, as lexsync 0.1 did, which
+# reproduces its selections. Must stay identical to _resolve_tie_break in
+# python_workflow/src/lexsync/matching.py.
 .resolve_tie_break <- function(design, schema) {
-  .resolve_policy(design, schema, "tie_break", "bytes", c("hash", "bytes"))
+  .resolve_policy(design, schema, "tie_break", "hash", c("hash", "bytes"))
 }
 
 # The tie key of each word: the lower-case hex SHA-256 of the salt, a bar and the word,
@@ -171,10 +172,10 @@
 #' is refused.
 #'
 #' `tie_break`, read in the same way, decides between candidates at exactly the same
-#' rounded distance, which integer dimensions make common: `"bytes"`, the default,
-#' prefers the spelling that sorts first and reproduces lexsync 0.1, and `"hash"`
+#' rounded distance, which integer dimensions make common: `"hash"`, the default,
 #' prefers the smaller SHA-256 of `lexsync-tie-v1|` followed by the word, which
-#' favours no part of the alphabet. The rule also orders the tied pairs of `joint` and
+#' favours no part of the alphabet, and `"bytes"` prefers the spelling that sorts first
+#' and reproduces lexsync 0.1. The rule also orders the tied pairs of `joint` and
 #' `optimal` and the tied rows at their candidate cap. The anchor's even spread keeps
 #' its byte-order tie-break under both rules.
 #'

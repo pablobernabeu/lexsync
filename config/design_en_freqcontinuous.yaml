@@ -1,7 +1,7 @@
 # Continuous (non-dichotomised) frequency design. Instead of splitting frequency
 # into high and low conditions and matching, items are spread over the ranks of
 # frequency in the pool, so the selection follows the pool's distribution: its
-# quantiles lie within 0.03 of the pool's, and 94% of the items fall in the lower
+# quantiles lie within 0.06 of the pool's, and 95% of the items fall in the lower
 # half of the frequency range. Tolerance windows trim the tails of length,
 # neighbourhood density and OLD20 without holding them constant, so read each
 # control's correlation with frequency in the report. The set is analysed by
@@ -12,7 +12,7 @@
 # so the dichotomised and continuous approaches are directly comparable.
 name: en_freqcontinuous
 language: english
-lexicon: corpora/derived/en.csv
+lexicon: corpora/derived/en_v2.csv
 description: 'English words spread over the ranks of frequency in the pool, with the tails of length, neighbourhood density and OLD20 trimmed by tolerance windows, for regression / mixed-model analysis.'
 
 # Total number of items (reuses the n_per_condition key; there is one implicit group).
@@ -21,6 +21,10 @@ n_per_condition: 80
 pool_filters:
   length: [3, 8]
   frequency: [3.8, 7.0]
+  # Keeps only the forms the SUBTLEX-US screen leaves unmarked (see corpora/ATTRIBUTION.md).
+  nonstandard: [0, 0]
+# Leaves out the unsuitable forms the screen lets through (see the file's header).
+exclude_words: {path: config/exclude_en_demo.txt}
 
 # Declares the continuous mode (mutually exclusive with `conditions`).
 #   predictor: the dimension whose ranks the selection spreads over (the experimental regressor).
@@ -32,9 +36,10 @@ continuous:
 match_on: [length, n_density, old20]
 
 # Per-control window half-width (mean +/- k * SD of the even-spread set). A tighter
-# k does not reliably lower the predictor-control correlations: k = 1.0 gave
-# r(frequency, n_density) = 0.213 against -0.049 at k = 1.5, and at k = 0.25 no
-# item falls within the windows, so the selector relaxes them to the whole pool.
+# k does not reliably lower the predictor-control correlations. Here k = 1.0 gives
+# r(frequency, n_density) = 0.070 against 0.301 at k = 1.5, but on the unscreened
+# en.csv it gave 0.213 against -0.049. At k = 0.25 only 30 items fall within the
+# windows, fewer than the 80 needed, so the selector relaxes them to the whole pool.
 matching:
   tolerance_k:
     length: 1.5

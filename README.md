@@ -167,7 +167,9 @@ three come from 'wordfreq', not from the openlexicon connector, and carry its
 CC BY-SA 4.0 data terms. They are not screened for lexical status, so they hold
 proper names, acronyms and other forms that are not words of the language, and
 `corpora/ATTRIBUTION.md` measures the extent. The repository's
-`corpora/derived/en_v2.csv` marks those forms in the English lexicon.
+`corpora/derived/en_v2.csv` marks those forms in the English lexicon, and the
+English demonstrations and the packages' English example slices draw only on the
+forms it leaves unmarked.
 
 `fetch_corpus()` can download only an entry that registers a delimited file, and
 no registry entry does yet. A SUBTLEX-family file is therefore loaded by hand.

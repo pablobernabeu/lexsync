@@ -109,7 +109,7 @@ print(report["comparisons"].to_string(index=False))
 
 The report is the point of the exercise, because it measures what the matching
 achieved. Frequency, the manipulation,
-separates the conditions by nearly six standard deviations. Each control dimension
+separates the conditions by nearly five standard deviations. Each control dimension
 passes a two one-sided tests procedure against a bound of *d* = 0.5, so it is
 shown to be equivalent rather than merely failing to differ significantly.
 [Matching and designs](matching-and-designs.md) reads the report column by

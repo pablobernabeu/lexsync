@@ -134,6 +134,20 @@ def test_en_v2_rebuilds_byte_for_byte_from_the_cached_subtlex_us():
         "rebuild with python corpora/fetch_corpora.py --screen-en")
 
 
+def test_the_english_example_slices_rebuild_byte_for_byte(tmp_path, monkeypatch):
+    # Both packages bundle the slice that `fetch_corpora.py --slice-en` writes from the
+    # forms en_v2.csv keeps, with LF line ends on every platform.
+    builder = _builder()
+    monkeypatch.setattr(builder, "PACKAGE_DATA_DIRS", (tmp_path,))
+    assert builder.write_screened_slice() == 3000
+    rebuilt = (tmp_path / "en_example.csv").read_bytes()
+    assert b"\r" not in rebuilt
+    for package in (REPO / "R_workflow" / "inst" / "extdata",
+                    REPO / "python_workflow" / "src" / "lexsync" / "data"):
+        assert (package / "en_example.csv").read_bytes() == rebuilt, (
+            f"{package}: rebuild with python corpora/fetch_corpora.py --slice-en")
+
+
 def test_a_subtlex_us_copy_with_other_bytes_is_refused(tmp_path):
     builder = _builder()
     other = tmp_path / builder.SUBTLEX_US_FILE

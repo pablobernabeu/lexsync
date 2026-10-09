@@ -7,15 +7,15 @@
   "artifacts": [
     {
       "file": "output/stimuli/en_richdim_english_stimuli_py.csv",
-      "sha256": "36329804d813e465700b7a1777cf2da35d689ce6f4624857615b67515340f373"
+      "sha256": "cdc88a4b367db52599a3ffb92c277c0140d824d761c3ea1f6b88140f4c6f8f32"
     },
     {
       "file": "output/reports/en_richdim_english_descriptives_py.csv",
-      "sha256": "7e1ea164dd9aab9ec8f08163437ec21a4fc70fe280a09a77c9d0e3d23ed4f354"
+      "sha256": "3e3d223aab72a19bf5be14726192b3056e8724d583ed27c6acf75bdac6998d34"
     },
     {
       "file": "output/reports/en_richdim_english_comparisons_py.csv",
-      "sha256": "487e7f16af173d7612bc9c301024ce990f73a7f548b6e465e8144baa47df6a6f"
+      "sha256": "c09a235c313473b99fb4e6e44935d0994eea9fedc02be30a3942914990d11961"
     },
     {
       "file": "output/experiments/en_richdim_english_psychopy.py",
@@ -27,11 +27,11 @@
     },
     {
       "file": "output/experiments/en_richdim_english.html",
-      "sha256": "8fb13f65dda4d5d47b2f7b67929242c080febf8b4ba36d2814481a09fbad166c"
+      "sha256": "c48249ef89e15c345c21c6ca71031a1c6240eb775b6211a169a4609b940dc3aa"
     },
     {
       "file": "output/experiments/en_richdim_english_psychopy.csv",
-      "sha256": "125ee07d9892cddaa3a99fb85bf74cbe15cd866bd69f0b386e78ac2e44194b4d"
+      "sha256": "6686894a4a6f3b5968a9b14127f566fb67b1142b23023c89c23f885c0475568e"
     },
     {
       "file": "output/experiments/en_richdim_english_opensesame.csv",
@@ -39,7 +39,7 @@
     },
     {
       "file": "output/experiments/en_richdim_english_opensesame_text.csv",
-      "sha256": "9d7bdb7d49b30d63660e1832fb33e32f6556de8ca6d0eaa7565f223feff9c8b5"
+      "sha256": "192f13ed14f6d6e850eb1ff61092af45c1bff351d3038738af85250bb252950d"
     }
   ],
   "counterbalancing": {
@@ -124,13 +124,19 @@
     ],
     "n_total": 120,
     "stimuli_file": "output/stimuli/en_richdim_english_stimuli_py.csv",
-    "stimuli_sha256": "36329804d813e465700b7a1777cf2da35d689ce6f4624857615b67515340f373"
+    "stimuli_sha256": "cdc88a4b367db52599a3ffb92c277c0140d824d761c3ea1f6b88140f4c6f8f32"
   },
   "lexsync_datasheet_version": "1.2",
   "materials_source": {
-    "path": "corpora/derived/en.csv",
-    "provenance": "wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md",
-    "sha256": "575833489e04d6a4001fda56a56e3daa383811dece1f819c44060ee79ca56976",
+    "exclusions": {
+      "n_listed": 53,
+      "n_removed": 53,
+      "path": "config/exclude_en_demo.txt",
+      "sha256": "cac9f88fb86fa6d0e6dbabc287c9ebb782100d071eeded13eb812584b9d41e9f"
+    },
+    "path": "corpora/derived/en_v2.csv",
+    "provenance": "wordfreq (Speer, 2022) screened against SUBTLEX-US (Brysbaert & New, 2009), data CC BY-SA 4.0; forms absent from SUBTLEX-US or beginning with a lower-case letter in under 10% of their uses are marked nonstandard, and N and OLD20 count only the unmarked forms; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md",
+    "sha256": "46815cd56ac036cb841460a2ea6205ac374eddb6ca26275bb1a2fbafc7c5d626",
     "type": "corpus"
   },
   "presentation": {
@@ -144,89 +150,89 @@
   },
   "realised_control": [
     {
-      "ci_high": 0.318,
-      "ci_low": -0.287,
-      "cohens_d": 0.015,
+      "ci_high": 0.303,
+      "ci_low": -0.303,
+      "cohens_d": 0.0,
       "condition": "low_frequency",
       "dimension": "length",
+      "equivalent": true,
+      "mean_diff": 0.0,
+      "reference": "high_frequency",
+      "role": "controlled",
+      "tost_p": 0.0036,
+      "var_ratio": 1.0
+    },
+    {
+      "ci_high": 6.223,
+      "ci_low": 4.889,
+      "cohens_d": 5.556,
+      "condition": "low_frequency",
+      "dimension": "frequency",
+      "equivalent": false,
+      "mean_diff": 1.681,
+      "reference": "high_frequency",
+      "role": "manipulated",
+      "tost_p": 1.0,
+      "var_ratio": 0.588
+    },
+    {
+      "ci_high": 0.174,
+      "ci_low": -0.432,
+      "cohens_d": -0.129,
+      "condition": "low_frequency",
+      "dimension": "n_density",
+      "equivalent": true,
+      "mean_diff": -0.567,
+      "reference": "high_frequency",
+      "role": "uncontrolled",
+      "tost_p": 0.0221,
+      "var_ratio": 1.742
+    },
+    {
+      "ci_high": 0.233,
+      "ci_low": -0.373,
+      "cohens_d": -0.07,
+      "condition": "low_frequency",
+      "dimension": "old20",
+      "equivalent": true,
+      "mean_diff": -0.042,
+      "reference": "high_frequency",
+      "role": "uncontrolled",
+      "tost_p": 0.0101,
+      "var_ratio": 1.238
+    },
+    {
+      "ci_high": 0.324,
+      "ci_low": -0.281,
+      "cohens_d": 0.021,
+      "condition": "low_frequency",
+      "dimension": "n_syllables",
       "equivalent": true,
       "mean_diff": 0.017,
       "reference": "high_frequency",
       "role": "controlled",
-      "tost_p": 0.0045,
-      "var_ratio": 0.935
+      "tost_p": 0.005,
+      "var_ratio": 0.909
     },
     {
-      "ci_high": 6.241,
-      "ci_low": 4.903,
-      "cohens_d": 5.572,
-      "condition": "low_frequency",
-      "dimension": "frequency",
-      "equivalent": false,
-      "mean_diff": 1.676,
-      "reference": "high_frequency",
-      "role": "manipulated",
-      "tost_p": 1.0,
-      "var_ratio": 0.579
-    },
-    {
-      "ci_high": 0.379,
-      "ci_low": -0.226,
-      "cohens_d": 0.076,
-      "condition": "low_frequency",
-      "dimension": "n_density",
-      "equivalent": true,
-      "mean_diff": 0.333,
-      "reference": "high_frequency",
-      "role": "uncontrolled",
-      "tost_p": 0.011,
-      "var_ratio": 0.723
-    },
-    {
-      "ci_high": 0.381,
-      "ci_low": -0.225,
-      "cohens_d": 0.078,
-      "condition": "low_frequency",
-      "dimension": "old20",
-      "equivalent": true,
-      "mean_diff": 0.035,
-      "reference": "high_frequency",
-      "role": "uncontrolled",
-      "tost_p": 0.0113,
-      "var_ratio": 0.404
-    },
-    {
-      "ci_high": 0.477,
-      "ci_low": -0.129,
-      "cohens_d": 0.174,
-      "condition": "low_frequency",
-      "dimension": "n_syllables",
-      "equivalent": true,
-      "mean_diff": 0.1,
-      "reference": "high_frequency",
-      "role": "controlled",
-      "tost_p": 0.0383,
-      "var_ratio": 0.585
-    },
-    {
-      "ci_high": 0.312,
-      "ci_low": -0.293,
-      "cohens_d": 0.01,
+      "ci_high": 0.327,
+      "ci_low": -0.279,
+      "cohens_d": 0.024,
       "condition": "low_frequency",
       "dimension": "bigram_freq",
       "equivalent": true,
       "mean_diff": 0.0,
       "reference": "high_frequency",
       "role": "controlled",
-      "tost_p": 0.0041,
-      "var_ratio": 0.96
+      "tost_p": 0.0052,
+      "var_ratio": 0.903
     }
   ],
   "relational": null,
   "reproducibility": {
-    "design_sha256": "a5480aec8dfc8d4a32606bfa3ede768a6ef276748471a4de2c70f7c947596de4",
+    "design_sha256": "a46f5222c481512959ff91e40e2360a67d1a33f60b477b0518727e22bf6b5489",
     "schema_path": "config/schema.yaml",
-    "schema_sha256": "3335f4e31a7f5dece6375dd0247600547ad86290492c7aead2836a9ec8af9dcb",
+    "schema_sha256": "5366c0b44af48b5bbc25c142ec14865db2f4a377efb35a5e99d937770b2e1483",
     "seed": 2026,
     "versions": {
       "engine": "python",
@@ -245,11 +251,11 @@
     "candidate_pool": [
       {
         "condition": "high_frequency",
-        "n_candidates": 462
+        "n_candidates": 453
       },
       {
         "condition": "low_frequency",
-        "n_candidates": 7479
+        "n_candidates": 6051
       }
     ],
     "cross_engine": "byte-identical",
@@ -260,7 +266,8 @@
     ],
     "method": "standardised_euclidean",
     "tie_break": {
-      "rule": "bytes"
+      "rule": "hash",
+      "salt": "lexsync-tie-v1"
     },
     "tolerance_k": {
       "frequency": 1.0,

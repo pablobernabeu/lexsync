@@ -10,9 +10,15 @@
   },
   "materials_source": {
     "type": "corpus",
-    "path": "corpora/derived/en.csv",
-    "sha256": "575833489e04d6a4001fda56a56e3daa383811dece1f819c44060ee79ca56976",
-    "provenance": "wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md"
+    "path": "corpora/derived/en_v2.csv",
+    "sha256": "46815cd56ac036cb841460a2ea6205ac374eddb6ca26275bb1a2fbafc7c5d626",
+    "provenance": "wordfreq (Speer, 2022) screened against SUBTLEX-US (Brysbaert & New, 2009), data CC BY-SA 4.0; forms absent from SUBTLEX-US or beginning with a lower-case letter in under 10% of their uses are marked nonstandard, and N and OLD20 count only the unmarked forms; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md",
+    "exclusions": {
+      "path": "config/exclude_en_demo.txt",
+      "sha256": "cac9f88fb86fa6d0e6dbabc287c9ebb782100d071eeded13eb812584b9d41e9f",
+      "n_listed": 53,
+      "n_removed": 53
+    }
   },
   "dimensions": {
     "length": {
@@ -58,24 +64,25 @@
       "old20": 2
     },
     "tie_break": {
-      "rule": "bytes"
+      "rule": "hash",
+      "salt": "lexsync-tie-v1"
     },
     "candidate_pool": [
       {
         "condition": "HF_largeN",
-        "n_candidates": 251
+        "n_candidates": 201
       },
       {
         "condition": "HF_smallN",
-        "n_candidates": 258
+        "n_candidates": 280
       },
       {
         "condition": "LF_largeN",
-        "n_candidates": 1875
+        "n_candidates": 794
       },
       {
         "condition": "LF_smallN",
-        "n_candidates": 3462
+        "n_candidates": 2231
       }
     ],
     "cross_engine": "byte-identical"
@@ -96,292 +103,240 @@
       "reference": "HF_largeN",
       "dimension": "length",
       "role": "controlled",
-      "cohens_d": -0.206,
-      "ci_low": -0.771,
-      "ci_high": 0.359,
-      "var_ratio": 0.575,
-      "tost_p": 0.192,
-      "equivalent": false,
-      "mean_diff": -0.111
-    },
-    {
-      "condition": "HF_smallN",
-      "reference": "HF_largeN",
-      "dimension": "frequency",
-      "role": "uncontrolled",
-      "cohens_d": -0.108,
-      "ci_low": -0.672,
-      "ci_high": 0.456,
-      "var_ratio": 1.072,
-      "tost_p": 0.1238,
-      "equivalent": false,
-      "mean_diff": -0.054
-    },
-    {
-      "condition": "HF_smallN",
-      "reference": "HF_largeN",
-      "dimension": "n_density",
-      "role": "manipulated",
-      "cohens_d": 3.19,
-      "ci_low": 2.341,
-      "ci_high": 4.04,
-      "var_ratio": 0.041,
-      "tost_p": 1,
-      "equivalent": false,
-      "mean_diff": 15.111
-    },
-    {
-      "condition": "HF_smallN",
-      "reference": "HF_largeN",
-      "dimension": "old20",
-      "role": "uncontrolled",
-      "cohens_d": -5.756,
-      "ci_low": -7.034,
-      "ci_high": -4.478,
-      "var_ratio": 1.129,
-      "tost_p": 1,
-      "equivalent": false,
-      "mean_diff": -0.628
-    },
-    {
-      "condition": "HF_smallN",
-      "reference": "HF_largeN",
-      "dimension": "n_syllables",
-      "role": "uncontrolled",
-      "cohens_d": -0.587,
-      "ci_low": -1.163,
-      "ci_high": -0.011,
-      "var_ratio": 1.446,
-      "tost_p": 0.6023,
-      "equivalent": false,
-      "mean_diff": -0.278
-    },
-    {
-      "condition": "HF_smallN",
-      "reference": "HF_largeN",
-      "dimension": "bigram_freq",
-      "role": "uncontrolled",
-      "cohens_d": 0.821,
-      "ci_low": 0.234,
-      "ci_high": 1.408,
-      "var_ratio": 0.984,
-      "tost_p": 0.8291,
-      "equivalent": false,
-      "mean_diff": 0.003
-    },
-    {
-      "condition": "LF_largeN",
-      "reference": "HF_largeN",
-      "dimension": "length",
-      "role": "controlled",
-      "cohens_d": 0.099,
-      "ci_low": -0.465,
-      "ci_high": 0.663,
-      "var_ratio": 0.708,
-      "tost_p": 0.1186,
-      "equivalent": false,
-      "mean_diff": 0.056
-    },
-    {
-      "condition": "LF_largeN",
-      "reference": "HF_largeN",
-      "dimension": "frequency",
-      "role": "manipulated",
-      "cohens_d": 4.713,
-      "ci_low": 3.618,
-      "ci_high": 5.809,
+      "cohens_d": 0.181,
+      "ci_low": -0.384,
+      "ci_high": 0.746,
       "var_ratio": 0.503,
-      "tost_p": 1,
+      "tost_p": 0.1728,
       "equivalent": false,
-      "mean_diff": 2.026
+      "mean_diff": 0.111
     },
     {
-      "condition": "LF_largeN",
+      "condition": "HF_smallN",
+      "reference": "HF_largeN",
+      "dimension": "frequency",
+      "role": "uncontrolled",
+      "cohens_d": -0.451,
+      "ci_low": -1.021,
+      "ci_high": 0.12,
+      "var_ratio": 1.242,
+      "tost_p": 0.4417,
+      "equivalent": false,
+      "mean_diff": -0.233
+    },
+    {
+      "condition": "HF_smallN",
       "reference": "HF_largeN",
       "dimension": "n_density",
-      "role": "uncontrolled",
-      "cohens_d": 0.103,
-      "ci_low": -0.461,
-      "ci_high": 0.667,
-      "var_ratio": 0.641,
-      "tost_p": 0.1208,
+      "role": "manipulated",
+      "cohens_d": 3.198,
+      "ci_low": 2.347,
+      "ci_high": 4.049,
+      "var_ratio": 0.086,
+      "tost_p": 1,
       "equivalent": false,
-      "mean_diff": 0.611
+      "mean_diff": 13.056
     },
     {
-      "condition": "LF_largeN",
+      "condition": "HF_smallN",
       "reference": "HF_largeN",
       "dimension": "old20",
       "role": "uncontrolled",
-      "cohens_d": 0.104,
-      "ci_low": -0.46,
-      "ci_high": 0.669,
-      "var_ratio": 1.023,
-      "tost_p": 0.1218,
+      "cohens_d": -2.498,
+      "ci_low": -3.251,
+      "ci_high": -1.746,
+      "var_ratio": 2.436,
+      "tost_p": 1,
       "equivalent": false,
-      "mean_diff": 0.011
+      "mean_diff": -0.503
     },
     {
-      "condition": "LF_largeN",
+      "condition": "HF_smallN",
       "reference": "HF_largeN",
       "dimension": "n_syllables",
       "role": "uncontrolled",
-      "cohens_d": -0.587,
-      "ci_low": -1.163,
-      "ci_high": -0.011,
-      "var_ratio": 1.446,
-      "tost_p": 0.6023,
+      "cohens_d": -0.381,
+      "ci_low": -0.95,
+      "ci_high": 0.188,
+      "var_ratio": 1.6,
+      "tost_p": 0.3619,
       "equivalent": false,
-      "mean_diff": -0.278
+      "mean_diff": -0.167
     },
     {
-      "condition": "LF_largeN",
+      "condition": "HF_smallN",
       "reference": "HF_largeN",
       "dimension": "bigram_freq",
       "role": "uncontrolled",
-      "cohens_d": 0.43,
-      "ci_low": -0.14,
-      "ci_high": 1,
-      "var_ratio": 1.234,
-      "tost_p": 0.4174,
+      "cohens_d": 0.51,
+      "ci_low": -0.063,
+      "ci_high": 1.082,
+      "var_ratio": 1.154,
+      "tost_p": 0.5115,
       "equivalent": false,
       "mean_diff": 0.002
     },
     {
-      "condition": "LF_smallN",
+      "condition": "LF_largeN",
       "reference": "HF_largeN",
       "dimension": "length",
       "role": "controlled",
-      "cohens_d": 0.099,
-      "ci_low": -0.465,
-      "ci_high": 0.663,
-      "var_ratio": 0.708,
-      "tost_p": 0.1186,
+      "cohens_d": 0.181,
+      "ci_low": -0.384,
+      "ci_high": 0.746,
+      "var_ratio": 0.503,
+      "tost_p": 0.1728,
       "equivalent": false,
-      "mean_diff": 0.056
+      "mean_diff": 0.111
     },
     {
-      "condition": "LF_smallN",
+      "condition": "LF_largeN",
       "reference": "HF_largeN",
       "dimension": "frequency",
       "role": "manipulated",
-      "cohens_d": 5.185,
-      "ci_low": 4.008,
-      "ci_high": 6.362,
-      "var_ratio": 0.387,
+      "cohens_d": 4.629,
+      "ci_low": 3.548,
+      "ci_high": 5.71,
+      "var_ratio": 0.514,
       "tost_p": 1,
       "equivalent": false,
-      "mean_diff": 2.141
+      "mean_diff": 1.964
     },
     {
-      "condition": "LF_smallN",
+      "condition": "LF_largeN",
       "reference": "HF_largeN",
       "dimension": "n_density",
-      "role": "manipulated",
-      "cohens_d": 3.289,
-      "ci_low": 2.424,
-      "ci_high": 4.153,
-      "var_ratio": 0.052,
-      "tost_p": 1,
+      "role": "uncontrolled",
+      "cohens_d": 0.456,
+      "ci_low": -0.115,
+      "ci_high": 1.027,
+      "var_ratio": 0.626,
+      "tost_p": 0.4479,
       "equivalent": false,
-      "mean_diff": 15.667
+      "mean_diff": 2.278
     },
     {
-      "condition": "LF_smallN",
+      "condition": "LF_largeN",
       "reference": "HF_largeN",
       "dimension": "old20",
       "role": "uncontrolled",
-      "cohens_d": -5.914,
-      "ci_low": -7.221,
-      "ci_high": -4.608,
-      "var_ratio": 1.217,
-      "tost_p": 1,
+      "cohens_d": -0.711,
+      "ci_low": -1.292,
+      "ci_high": -0.129,
+      "var_ratio": 1.075,
+      "tost_p": 0.7341,
       "equivalent": false,
-      "mean_diff": -0.658
+      "mean_diff": -0.111
     },
     {
-      "condition": "LF_smallN",
+      "condition": "LF_largeN",
       "reference": "HF_largeN",
       "dimension": "n_syllables",
       "role": "uncontrolled",
-      "cohens_d": 0,
-      "ci_low": -0.564,
-      "ci_high": 0.564,
-      "var_ratio": 4.214,
-      "tost_p": 0.0714,
+      "cohens_d": 0.349,
+      "ci_low": -0.219,
+      "ci_high": 0.917,
+      "var_ratio": 0.378,
+      "tost_p": 0.3268,
+      "equivalent": false,
+      "mean_diff": 0.111
+    },
+    {
+      "condition": "LF_largeN",
+      "reference": "HF_largeN",
+      "dimension": "bigram_freq",
+      "role": "uncontrolled",
+      "cohens_d": -0.02,
+      "ci_low": -0.584,
+      "ci_high": 0.544,
+      "var_ratio": 2.281,
+      "tost_p": 0.0795,
       "equivalent": false,
       "mean_diff": 0
     },
     {
       "condition": "LF_smallN",
       "reference": "HF_largeN",
+      "dimension": "length",
+      "role": "controlled",
+      "cohens_d": 0.181,
+      "ci_low": -0.384,
+      "ci_high": 0.746,
+      "var_ratio": 0.503,
+      "tost_p": 0.1728,
+      "equivalent": false,
+      "mean_diff": 0.111
+    },
+    {
+      "condition": "LF_smallN",
+      "reference": "HF_largeN",
+      "dimension": "frequency",
+      "role": "manipulated",
+      "cohens_d": 4.543,
+      "ci_low": 3.477,
+      "ci_high": 5.61,
+      "var_ratio": 0.611,
+      "tost_p": 1,
+      "equivalent": false,
+      "mean_diff": 1.989
+    },
+    {
+      "condition": "LF_smallN",
+      "reference": "HF_largeN",
+      "dimension": "n_density",
+      "role": "manipulated",
+      "cohens_d": 3.049,
+      "ci_low": 2.22,
+      "ci_high": 3.878,
+      "var_ratio": 0.076,
+      "tost_p": 1,
+      "equivalent": false,
+      "mean_diff": 12.389
+    },
+    {
+      "condition": "LF_smallN",
+      "reference": "HF_largeN",
+      "dimension": "old20",
+      "role": "uncontrolled",
+      "cohens_d": -3.46,
+      "ci_low": -4.35,
+      "ci_high": -2.569,
+      "var_ratio": 1.08,
+      "tost_p": 1,
+      "equivalent": false,
+      "mean_diff": -0.542
+    },
+    {
+      "condition": "LF_smallN",
+      "reference": "HF_largeN",
+      "dimension": "n_syllables",
+      "role": "uncontrolled",
+      "cohens_d": 0.278,
+      "ci_low": -0.289,
+      "ci_high": 0.844,
+      "var_ratio": 1.178,
+      "tost_p": 0.2546,
+      "equivalent": false,
+      "mean_diff": 0.111
+    },
+    {
+      "condition": "LF_smallN",
+      "reference": "HF_largeN",
       "dimension": "bigram_freq",
       "role": "uncontrolled",
-      "cohens_d": 1.084,
-      "ci_low": 0.481,
-      "ci_high": 1.688,
-      "var_ratio": 0.862,
-      "tost_p": 0.9557,
+      "cohens_d": 0.709,
+      "ci_low": 0.128,
+      "ci_high": 1.29,
+      "var_ratio": 0.873,
+      "tost_p": 0.7329,
       "equivalent": false,
-      "mean_diff": 0.004
+      "mean_diff": 0.002
     },
     {
       "condition": "LF_largeN",
       "reference": "HF_smallN",
       "dimension": "length",
       "role": "controlled",
-      "cohens_d": 0.342,
-      "ci_low": -0.225,
-      "ci_high": 0.91,
-      "var_ratio": 1.231,
-      "tost_p": 0.3197,
-      "equivalent": false,
-      "mean_diff": 0.167
-    },
-    {
-      "condition": "LF_largeN",
-      "reference": "HF_smallN",
-      "dimension": "frequency",
-      "role": "manipulated",
-      "cohens_d": 4.729,
-      "ci_low": 3.631,
-      "ci_high": 5.827,
-      "var_ratio": 0.469,
-      "tost_p": 1,
-      "equivalent": false,
-      "mean_diff": 2.08
-    },
-    {
-      "condition": "LF_largeN",
-      "reference": "HF_smallN",
-      "dimension": "n_density",
-      "role": "manipulated",
-      "cohens_d": -3.781,
-      "ci_low": -4.722,
-      "ci_high": -2.84,
-      "var_ratio": 15.793,
-      "tost_p": 1,
-      "equivalent": false,
-      "mean_diff": -14.5
-    },
-    {
-      "condition": "LF_largeN",
-      "reference": "HF_smallN",
-      "dimension": "old20",
-      "role": "uncontrolled",
-      "cohens_d": 5.826,
-      "ci_low": 4.535,
-      "ci_high": 7.116,
-      "var_ratio": 0.907,
-      "tost_p": 1,
-      "equivalent": false,
-      "mean_diff": 0.639
-    },
-    {
-      "condition": "LF_largeN",
-      "reference": "HF_smallN",
-      "dimension": "n_syllables",
-      "role": "uncontrolled",
       "cohens_d": 0,
       "ci_low": -0.564,
       "ci_high": 0.564,
@@ -393,78 +348,130 @@
     {
       "condition": "LF_largeN",
       "reference": "HF_smallN",
+      "dimension": "frequency",
+      "role": "manipulated",
+      "cohens_d": 4.808,
+      "ci_low": 3.696,
+      "ci_high": 5.919,
+      "var_ratio": 0.414,
+      "tost_p": 1,
+      "equivalent": false,
+      "mean_diff": 2.197
+    },
+    {
+      "condition": "LF_largeN",
+      "reference": "HF_smallN",
+      "dimension": "n_density",
+      "role": "manipulated",
+      "cohens_d": -3.261,
+      "ci_low": -4.121,
+      "ci_high": -2.401,
+      "var_ratio": 7.265,
+      "tost_p": 1,
+      "equivalent": false,
+      "mean_diff": -10.778
+    },
+    {
+      "condition": "LF_largeN",
+      "reference": "HF_smallN",
+      "dimension": "old20",
+      "role": "uncontrolled",
+      "cohens_d": 1.925,
+      "ci_low": 1.244,
+      "ci_high": 2.607,
+      "var_ratio": 0.441,
+      "tost_p": 0.9999,
+      "equivalent": false,
+      "mean_diff": 0.392
+    },
+    {
+      "condition": "LF_largeN",
+      "reference": "HF_smallN",
+      "dimension": "n_syllables",
+      "role": "uncontrolled",
+      "cohens_d": 0.728,
+      "ci_low": 0.146,
+      "ci_high": 1.31,
+      "var_ratio": 0.236,
+      "tost_p": 0.7511,
+      "equivalent": false,
+      "mean_diff": 0.278
+    },
+    {
+      "condition": "LF_largeN",
+      "reference": "HF_smallN",
       "dimension": "bigram_freq",
       "role": "uncontrolled",
-      "cohens_d": -0.345,
-      "ci_low": -0.913,
-      "ci_high": 0.223,
-      "var_ratio": 1.254,
-      "tost_p": 0.3228,
+      "cohens_d": -0.423,
+      "ci_low": -0.993,
+      "ci_high": 0.147,
+      "var_ratio": 1.977,
+      "tost_p": 0.4095,
       "equivalent": false,
-      "mean_diff": -0.001
+      "mean_diff": -0.002
     },
     {
       "condition": "LF_smallN",
       "reference": "HF_smallN",
       "dimension": "length",
       "role": "controlled",
-      "cohens_d": 0.342,
-      "ci_low": -0.225,
-      "ci_high": 0.91,
-      "var_ratio": 1.231,
-      "tost_p": 0.3197,
+      "cohens_d": 0,
+      "ci_low": -0.564,
+      "ci_high": 0.564,
+      "var_ratio": 1,
+      "tost_p": 0.0714,
       "equivalent": false,
-      "mean_diff": 0.167
+      "mean_diff": 0
     },
     {
       "condition": "LF_smallN",
       "reference": "HF_smallN",
       "dimension": "frequency",
       "role": "manipulated",
-      "cohens_d": 5.184,
-      "ci_low": 4.007,
-      "ci_high": 6.361,
-      "var_ratio": 0.361,
+      "cohens_d": 4.732,
+      "ci_low": 3.633,
+      "ci_high": 5.831,
+      "var_ratio": 0.492,
       "tost_p": 1,
       "equivalent": false,
-      "mean_diff": 2.195
+      "mean_diff": 2.222
     },
     {
       "condition": "LF_smallN",
       "reference": "HF_smallN",
       "dimension": "n_density",
       "role": "uncontrolled",
-      "cohens_d": 0.392,
-      "ci_low": -0.177,
-      "ci_high": 0.961,
-      "var_ratio": 1.291,
-      "tost_p": 0.3742,
+      "cohens_d": -0.423,
+      "ci_low": -0.993,
+      "ci_high": 0.147,
+      "var_ratio": 0.881,
+      "tost_p": 0.4091,
       "equivalent": false,
-      "mean_diff": 0.556
+      "mean_diff": -0.667
     },
     {
       "condition": "LF_smallN",
       "reference": "HF_smallN",
       "dimension": "old20",
       "role": "uncontrolled",
-      "cohens_d": -0.267,
-      "ci_low": -0.833,
-      "ci_high": 0.299,
-      "var_ratio": 1.078,
-      "tost_p": 0.2445,
+      "cohens_d": -0.191,
+      "ci_low": -0.756,
+      "ci_high": 0.374,
+      "var_ratio": 0.443,
+      "tost_p": 0.1803,
       "equivalent": false,
-      "mean_diff": -0.031
+      "mean_diff": -0.039
     },
     {
       "condition": "LF_smallN",
       "reference": "HF_smallN",
       "dimension": "n_syllables",
       "role": "uncontrolled",
-      "cohens_d": 0.386,
-      "ci_low": -0.183,
-      "ci_high": 0.955,
-      "var_ratio": 2.914,
-      "tost_p": 0.3672,
+      "cohens_d": 0.615,
+      "ci_low": 0.038,
+      "ci_high": 1.191,
+      "var_ratio": 0.736,
+      "tost_p": 0.6335,
       "equivalent": false,
       "mean_diff": 0.278
     },
@@ -473,13 +480,13 @@
       "reference": "HF_smallN",
       "dimension": "bigram_freq",
       "role": "uncontrolled",
-      "cohens_d": 0.238,
-      "ci_low": -0.328,
-      "ci_high": 0.803,
-      "var_ratio": 0.877,
-      "tost_p": 0.2183,
+      "cohens_d": 0.157,
+      "ci_low": -0.408,
+      "ci_high": 0.721,
+      "var_ratio": 0.757,
+      "tost_p": 0.155,
       "equivalent": false,
-      "mean_diff": 0.001
+      "mean_diff": 0
     },
     {
       "condition": "LF_smallN",
@@ -499,63 +506,63 @@
       "reference": "LF_largeN",
       "dimension": "frequency",
       "role": "uncontrolled",
-      "cohens_d": 0.348,
-      "ci_low": -0.22,
-      "ci_high": 0.916,
-      "var_ratio": 0.77,
-      "tost_p": 0.3253,
-      "equivalent": false,
-      "mean_diff": 0.115
-    },
-    {
-      "condition": "LF_smallN",
-      "reference": "LF_largeN",
-      "dimension": "n_density",
-      "role": "manipulated",
-      "cohens_d": 3.892,
-      "ci_low": 2.933,
-      "ci_high": 4.851,
-      "var_ratio": 0.082,
-      "tost_p": 1,
-      "equivalent": false,
-      "mean_diff": 15.056
-    },
-    {
-      "condition": "LF_smallN",
-      "reference": "LF_largeN",
-      "dimension": "old20",
-      "role": "uncontrolled",
-      "cohens_d": -5.983,
-      "ci_low": -7.302,
-      "ci_high": -4.664,
+      "cohens_d": 0.067,
+      "ci_low": -0.497,
+      "ci_high": 0.631,
       "var_ratio": 1.189,
+      "tost_p": 0.1013,
+      "equivalent": false,
+      "mean_diff": 0.024
+    },
+    {
+      "condition": "LF_smallN",
+      "reference": "LF_largeN",
+      "dimension": "n_density",
+      "role": "manipulated",
+      "cohens_d": 3.081,
+      "ci_low": 2.248,
+      "ci_high": 3.915,
+      "var_ratio": 0.121,
       "tost_p": 1,
       "equivalent": false,
-      "mean_diff": -0.669
+      "mean_diff": 10.111
+    },
+    {
+      "condition": "LF_smallN",
+      "reference": "LF_largeN",
+      "dimension": "old20",
+      "role": "uncontrolled",
+      "cohens_d": -2.702,
+      "ci_low": -3.481,
+      "ci_high": -1.922,
+      "var_ratio": 1.005,
+      "tost_p": 1,
+      "equivalent": false,
+      "mean_diff": -0.431
     },
     {
       "condition": "LF_smallN",
       "reference": "LF_largeN",
       "dimension": "n_syllables",
       "role": "uncontrolled",
-      "cohens_d": 0.386,
-      "ci_low": -0.183,
-      "ci_high": 0.955,
-      "var_ratio": 2.914,
-      "tost_p": 0.3672,
+      "cohens_d": 0,
+      "ci_low": -0.564,
+      "ci_high": 0.564,
+      "var_ratio": 3.118,
+      "tost_p": 0.0714,
       "equivalent": false,
-      "mean_diff": 0.278
+      "mean_diff": 0
     },
     {
       "condition": "LF_smallN",
       "reference": "LF_largeN",
       "dimension": "bigram_freq",
       "role": "uncontrolled",
-      "cohens_d": 0.578,
-      "ci_low": 0.003,
-      "ci_high": 1.153,
-      "var_ratio": 0.699,
-      "tost_p": 0.5919,
+      "cohens_d": 0.567,
+      "ci_low": -0.008,
+      "ci_high": 1.142,
+      "var_ratio": 0.383,
+      "tost_p": 0.5791,
       "equivalent": false,
       "mean_diff": 0.002
     }
@@ -628,7 +635,7 @@
       }
     ],
     "stimuli_file": "output/stimuli/en_andrews_repro_english_stimuli_R.csv",
-    "stimuli_sha256": "8eb4efce71ba544a64d2113a66f34b43f0d12239551351eac6a9416ce30e2f2d"
+    "stimuli_sha256": "581a6613edbf3a5817df4de9a86cc7c8e4b2fb30af0009695c7c110134e652a9"
   },
   "reproducibility": {
     "seed": 2026,
@@ -644,22 +651,22 @@
       "stringi": "1.8.7",
       "os": "Windows x86-64"
     },
-    "design_sha256": "57bff715517846459364d0cc4923754066851c24348bee7533de31c29ea2ee64",
+    "design_sha256": "55511ae043dcee3d17a63d80bccd165609766e165585e21ec9b97d3a325225c6",
     "schema_path": "config/schema.yaml",
-    "schema_sha256": "3335f4e31a7f5dece6375dd0247600547ad86290492c7aead2836a9ec8af9dcb"
+    "schema_sha256": "5366c0b44af48b5bbc25c142ec14865db2f4a377efb35a5e99d937770b2e1483"
   },
   "artifacts": [
     {
       "file": "output/stimuli/en_andrews_repro_english_stimuli_R.csv",
-      "sha256": "8eb4efce71ba544a64d2113a66f34b43f0d12239551351eac6a9416ce30e2f2d"
+      "sha256": "581a6613edbf3a5817df4de9a86cc7c8e4b2fb30af0009695c7c110134e652a9"
     },
     {
       "file": "output/reports/en_andrews_repro_english_descriptives_R.csv",
-      "sha256": "93f3a23567ecb91d288906fc8cc835be19397b47574b15ec8eeeea7ad0265a9e"
+      "sha256": "b4a1781ec4cb3deb68df31f6354a3f59ac93e4aafcdce14b841bacb90d62fc19"
     },
     {
       "file": "output/reports/en_andrews_repro_english_comparisons_R.csv",
-      "sha256": "4da2fd94f748bc39d4ef73bf5e621a0d9191d79698f152c843a10b3c7c6bf2be"
+      "sha256": "2874458f7a1a3b86038696d4a508397f2a7d45bc9d389443e5dd3e4100c65806"
     },
     {
       "file": "output/experiments/en_andrews_repro_english_psychopy.py",
@@ -671,11 +678,11 @@
     },
     {
       "file": "output/experiments/en_andrews_repro_english.html",
-      "sha256": "dbcb5163cc9aabdc9632089d07814c3c7a90ddc7ddcc8572207757544dfd897d"
+      "sha256": "e9a9edff1d005dbebdffc4588ff99ad383e41e7a7c0c54480cbb7f0cbf1b6c32"
     },
     {
       "file": "output/experiments/en_andrews_repro_english_psychopy.csv",
-      "sha256": "6c406be5a0efecf2fefe9892a7b0dd9d4afb6f5ce86dbf4163095a8c9edaa5c2"
+      "sha256": "2f1b163ba4aea0a38d96146c96315705fa0fb57ad7cdf4ad164e6268858a48da"
     },
     {
       "file": "output/experiments/en_andrews_repro_english_opensesame.csv",
@@ -683,7 +690,7 @@
     },
     {
       "file": "output/experiments/en_andrews_repro_english_opensesame_text.csv",
-      "sha256": "ae3b94189dbe2e8c9060b005efa64ee65dee8639f57da6550f98998fc3429f9c"
+      "sha256": "c6aefde9e5f859158c4d45f02ce1651ff6f8f965735710a07b75f1953665bdea"
     }
   ]
 }

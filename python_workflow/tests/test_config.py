@@ -41,12 +41,12 @@ def test_schema_carries_no_inert_keys():
     assert "reset_value" not in (schema.get("triggers") or {})
 
 
-# The matcher reads matching.tie_break, so the schema carries it, set to the rule of
-# lexsync 0.1, which reproduces the committed selections. Pinned identically in
-# test-config.R.
+# The matcher reads matching.tie_break, so the schema carries it, set to the keyed hash,
+# which favours no part of the alphabet. `bytes`, the rule of lexsync 0.1, reproduces
+# that version's selections. Pinned identically in test-config.R.
 def test_the_schema_sets_the_tie_break_rule():
     schema = _load(BUNDLED_SCHEMA)
-    assert schema["matching"]["tie_break"] == "bytes"
+    assert schema["matching"]["tie_break"] == "hash"
 
 
 # Pins the same contract as "the reproduction design encodes the origin study's

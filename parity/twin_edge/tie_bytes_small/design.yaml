@@ -1,0 +1,24 @@
+# Twin-edge case: exact ties broken by spelling, the rule of lexsync 0.1. The lexicon
+# and the design are those of tie_hash_small, so the tie-break chooses every low word.
+# Under matching: tie_break: bytes, each tie goes to the word whose UTF-8 bytes sort
+# first, which is how both engines must still reproduce the selections of lexsync 0.1
+# now that the keyed hash is the default.
+# The word forms are English words. The Zipf frequencies are invented for this
+# fixture and describe no corpus.
+name: twin_edge_tie_bytes_small
+language: english
+lexicon: lexicon.csv
+description: 'High versus low frequency from a twenty-four-word lexicon, matched on length, with exact ties broken by spelling as in lexsync 0.1.'
+n_per_condition: 4
+conditions:
+  - name: high
+    define_by:
+      frequency: [5.0, 6.5]
+  - name: low
+    define_by:
+      frequency: [3.0, 4.0]
+match_on: [length]
+matching:
+  tie_break: bytes
+counterbalance:
+  lists: 2

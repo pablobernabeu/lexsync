@@ -54,19 +54,19 @@ no function signature changes.
   `exclude_words_inline` pins both engines to one outcome.
 
 - `matching.tie_break` chooses how exact ties between equally close candidates are
-  broken. `bytes`, the default, breaks them by spelling, as lexsync 0.1 did, and
-  reproduces its selections. `hash` breaks them by a keyed SHA-256 of each word
+  broken. `bytes` breaks them by spelling, as lexsync 0.1 did, and reproduces its
+  selections. `hash` breaks them by a keyed SHA-256 of each word
   (salt `lexsync-tie-v1`), which favours no part of the alphabet and does not
   depend on the seed. Ties decide most picks because lengths and neighbourhood
   counts are whole numbers and frequencies have two decimals. In `en_freqcontrast`,
   71 of the 80 anchored picks had another candidate at the chosen distance, and
   breaking them by spelling filled conditions with early-alphabet words. In its
-  low-frequency condition, 61% of the words begin with a or b, against 13% of the
+  low-frequency condition, 61% of the words began with a or b, against 13% of the
   candidates, and in `en_ndensity`'s dense condition and the `en_andrews_repro`
-  low-frequency cells every word does, an initial-letter confound the
-  realised-control report cannot see. Under `hash`, the low-frequency share falls to
+  low-frequency cells every word did, an initial-letter confound the
+  realised-control report cannot see. Under `hash`, the low-frequency share fell to
   12.5% and the dense share to 17.5%, against 13% and 12% among the candidates,
-  and Cohen's d on every matched dimension of every shipped matched design is
+  and Cohen's d on every matched dimension of every shipped matched design was
   unchanged. The rule decides the anchored picks, the order of tied pairs in
   `joint` and `optimal` matching and the rows tied at their candidate cap. The even
   spreads that pick the anchor's items and a continuous design's items keep the
@@ -78,10 +78,8 @@ no function signature changes.
   trial order, and the Markdown and the Methods paragraph now say so. The Methods
   sentence that read 'deterministic and reproducible (seed 2026; lexsync 0.1.1)'
   now reads 'deterministic and reproducible (lexsync 0.1.1), and the seed (2026)
-  fixes the trial order'. The schema gains `tie_break: bytes`, so every committed
-  datasheet and run log is regenerated. No stimulus, report table or experiment
-  changes, and the twin-edge case `tie_hash_small` pins the `hash` rule in both
-  engines.
+  fixes the trial order'. The schema gains `tie_break`, and the twin-edge case
+  `tie_hash_small` pins the `hash` rule in both engines.
 
 ### Changed
 
@@ -203,7 +201,7 @@ no function signature changes.
 - A generated lexical-decision design reports bigram frequency, N and OLD20 for
   the words against the pseudowords, marked uncontrolled. Its stimuli give the
   base word of each pseudoword and the edit distance from it, as the `base` and
-  `edit_distance` columns `build_lexdec_stimuli` now returns. Its pseudowords are
+  `edit_distance` columns `build_lexdec_stimuli` now returns. Its pseudowords were
   more bigram-typical than their words (d about -1.5 in `en_lexdec`), which no
   report showed. The reports, datasheets and run logs of the three
   lexical-decision demonstrations change and their stimuli gain the two columns,
@@ -249,6 +247,58 @@ no function signature changes.
   random-effects structure maximal (Barr et al., 2013) only when it is, and
   describes the slopes of a design whose covariates or controls enter as fixed
   effects only.
+- Exact ties between equally close candidates are broken by the keyed hash by
+  default (`matching.tie_break: hash`), and `tie_break: bytes` reproduces the
+  selections of lexsync 0.1. Every design whose matched dimensions tie selects
+  different items, which the rule above counts as a breaking change, and a design
+  or schema that names `bytes` selects what it did. The schema sets
+  `tie_break: hash` in all three copies. Of the shipped designs, the Spanish and
+  Chinese ones (`es_freqcontrast`, `es_ndensity`, `es_gender_repro` and
+  `zh_freqcontrast`) change their stimuli, reports, experiments and datasheets for
+  this reason alone, and the English ones for the change below as well. Four
+  twin-edge cases whose picks ties decided are pinned anew (`four_conditions`,
+  `joint_nan`, `nfd_pool` and `user_lexicon_provenance`), `baseline_small` pins
+  the hash rule in its datasheet, and the new case `tie_bytes_small` holds both
+  engines to the rule of lexsync 0.1.
+- The English demonstrations select from the screened lexicon,
+  `corpora/derived/en_v2.csv`, with `pool_filters: {nonstandard: [0, 0]}`, leave
+  out the words of `config/exclude_en_demo.txt` through `exclude_words`, and check
+  their generated pseudowords against wordfreq's fuller English list,
+  `corpora/derived/en_known_forms.txt`. Every English demonstration that draws its
+  items from a lexicon or a supplied pool selects different items, a breaking
+  change. The selections no longer hold a form the screen marks. The
+  `en_andrews_repro` low-frequency cells held 24 such forms among their 36 items
+  (aclu, adhd, bbq and bmx among them), where its high-frequency cells held none.
+  The screen lets through taboo words and some forms that are not standard English
+  words, such as abbreviations that subtitles write in lower case (mph, msg, yrs),
+  and the exclusion list leaves them out. Its 53 forms were found by reading the
+  demonstrations' selections until a run selected none of them, and its header
+  states the criteria. They include the
+  taboo forms the 0.1 demonstrations selected: bitch and boobs in `en_ndensity`,
+  fuck in `en_freqcontrast`, ass, damn and hell in `en_andrews_repro`, and asses
+  and shit in `en_resample`. The maintainer signs off the list's content. No
+  generated pseudoword is a known English word now. The check leaves the
+  generators fewer candidates, so more pseudowords are ill-formed at an edge or
+  lack a vowel, as fdes, gngs and ntena do. The matching guides count 13 of the
+  140, against 5 when the same designs skip the check. `en_supplied_pool`
+  and `en_priming_continuous` read their norms from `en_v2.csv`, whose N and OLD20
+  count only the unmarked forms, so `en_supplied_pool` selects different words and
+  `en_priming_continuous` keeps its pairs while its stimuli gain the members'
+  screening columns. The documentation quotes the new figures. In `en_ndensity`, the
+  dense words have fewer estimated syllables than the sparse ones by d = -0.53,
+  where the unscreened selection gave -0.83, and in `en_lexdec` the pseudowords
+  are more bigram-typical than their words by d = -0.97, where they were by -1.47.
+- The English example lexicon bundled with both packages, `en_example.csv`, holds
+  3,000 of the forms `en_v2.csv` keeps, with its frequencies, N and OLD20. It was a
+  slice of `en.csv`, a quarter of it forms the screen marks, mostly names and
+  acronyms. Examples and tests that use it give different numbers: in the quick
+  start, frequency separates the conditions by d = 4.84, where it gave 5.92. The
+  datasheet credits the slice as screened against SUBTLEX-US, and both
+  `LICENSE.note` files and `LICENSE-DATA` credit SUBTLEX-US as a direct source of
+  it. The repository's `corpora/fetch_corpora.py --slice-en` rebuilds it from the
+  committed `en_v2.csv`, as `--screen-en` now does too. The script writes the
+  slices with LF line ends on every platform, and rebuilding `en.csv` no longer
+  overwrites the English slice.
 
 ### Fixed
 

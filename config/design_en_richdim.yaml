@@ -4,12 +4,16 @@
 # showing that the matcher equates any computable lexical dimension.
 name: en_richdim
 language: english
-lexicon: corpora/derived/en.csv
+lexicon: corpora/derived/en_v2.csv
 description: 'High versus low frequency English words, matched on length, syllable count and bigram frequency (a phonotactic-probability proxy).'
 n_per_condition: 60
 pool_filters:
   length: [4, 8]
   frequency: [3.5, 7.0]
+  # Keeps only the forms the SUBTLEX-US screen leaves unmarked (see corpora/ATTRIBUTION.md).
+  nonstandard: [0, 0]
+# Leaves out the unsuitable forms the screen lets through (see the file's header).
+exclude_words: {path: config/exclude_en_demo.txt}
 conditions:
   - name: high_frequency
     define_by:

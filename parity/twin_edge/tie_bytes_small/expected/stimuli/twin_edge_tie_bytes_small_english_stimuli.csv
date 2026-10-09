@@ -1,0 +1,9 @@
+word,freq_zipf,id,length,n_syllables,frequency,language,condition,set,list,trial
+badger,3.31,2,6,2,3.31,english,low,1,1,1
+school,5.73,22,6,1,5.73,english,high,3,1,2
+beaver,3.58,3,6,2,3.58,english,low,3,1,3
+market,5.05,19,6,2,5.05,english,high,1,1,4
+people,6.12,21,6,2,6.12,english,high,4,2,1
+condor,3.15,6,6,2,3.15,english,low,4,2,2
+anvil,3.12,1,5,2,3.12,english,low,2,2,3
+water,5.48,24,5,2,5.48,english,high,2,2,4

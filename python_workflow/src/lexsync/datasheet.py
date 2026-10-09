@@ -131,6 +131,13 @@ _PROVENANCE_SCREENED = (
     "under 10% of their uses are marked nonstandard, and N and OLD20 count only the "
     "unmarked forms; full corpus licence and citation at "
     "https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md")
+# The English example slice holds only forms that en_v2.csv keeps, so it marks none.
+_PROVENANCE_SCREENED_SLICE = (
+    "wordfreq (Speer, 2022) screened against SUBTLEX-US (Brysbaert & New, 2009), data "
+    "CC BY-SA 4.0; forms absent from SUBTLEX-US or beginning with a lower-case letter in "
+    "under 10% of their uses are left out, and N and OLD20 count neighbours only among "
+    "the forms the screen keeps; full corpus licence and citation at "
+    "https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md")
 
 # The lexica lexsync ships, the repository's derived lexica and the example slices both
 # packages bundle. Each is keyed by the SHA-256 of its bytes with CRLF line ends read as
@@ -148,8 +155,8 @@ _BUNDLED_LEXICA = {
         ("corpora/derived/es_gender.csv", _PROVENANCE_WORDFREQ),
     "74666b257c1ad7bce4694a4b172796fbdc08c1414183bea5f28faa5ed3ab2fc4":
         ("corpora/derived/zh.csv", _PROVENANCE_WORDFREQ),
-    "939ee46015bc03cdb3fa12e2598f763b818c941118a8170bb408386277945e01":
-        ("en_example.csv", _PROVENANCE_WORDFREQ),
+    "34a3c81cb559a42918864f5ecd2bcea93647cc4b0058dd03132ffe8723f4c310":
+        ("en_example.csv", _PROVENANCE_SCREENED_SLICE),
     "7afbdd7db2d84e3f252a40baafe1e53fa4fde1e4ae5256497cb1ac79f28947ec":
         ("es_example.csv", _PROVENANCE_WORDFREQ),
     "d42f5afdc16d0f23ec5fc12dd58afbd1e639e9191f2c4611d9262eabbb982aca":
@@ -211,8 +218,9 @@ def _lexicon_provenance(path) -> str:
     """The credit for the lexicon a corpus or generated design read.
 
     A lexicon lexsync ships is recognised by the checksum _lf_sha256 gives, and is
-    credited to wordfreq, or for en_v2.csv to wordfreq screened against SUBTLEX-US with
-    the screening rule stated. A corpus fetch_corpus put in the cache is credited by
+    credited to wordfreq, or for en_v2.csv and the English example slice drawn from it
+    to wordfreq screened against SUBTLEX-US with the screening rule stated. A corpus
+    fetch_corpus put in the cache is credited by
     the registry's citation. Any other file is the user's own and is named by its file
     name and the first twelve hexadecimal digits of its SHA-256, which
     ``materials_source["sha256"]`` holds in full. Every lexicon used to be credited to

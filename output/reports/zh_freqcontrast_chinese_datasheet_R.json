@@ -60,7 +60,8 @@
       "old20": 2
     },
     "tie_break": {
-      "rule": "bytes"
+      "rule": "hash",
+      "salt": "lexsync-tie-v1"
     },
     "candidate_pool": [
       {
@@ -103,13 +104,13 @@
       "reference": "high_frequency",
       "dimension": "frequency",
       "role": "manipulated",
-      "cohens_d": 6.004,
-      "ci_low": 5.391,
-      "ci_high": 6.618,
-      "var_ratio": 0.468,
+      "cohens_d": 6.109,
+      "ci_low": 5.487,
+      "ci_high": 6.732,
+      "var_ratio": 0.447,
       "tost_p": 1,
       "equivalent": false,
-      "mean_diff": 1.514
+      "mean_diff": 1.53
     },
     {
       "condition": "low_frequency",
@@ -142,11 +143,11 @@
       "reference": "high_frequency",
       "dimension": "bigram_freq",
       "role": "uncontrolled",
-      "cohens_d": 0.772,
-      "ci_low": 0.501,
-      "ci_high": 1.043,
-      "var_ratio": 0.074,
-      "tost_p": 0.9563,
+      "cohens_d": 0.611,
+      "ci_low": 0.344,
+      "ci_high": 0.879,
+      "var_ratio": 0.182,
+      "tost_p": 0.7585,
       "equivalent": false,
       "mean_diff": 0
     }
@@ -199,7 +200,7 @@
       }
     ],
     "stimuli_file": "output/stimuli/zh_freqcontrast_chinese_stimuli_R.csv",
-    "stimuli_sha256": "fe3b47ca8c0e84fb0f8155c4d36078557bd644de183409e0b71b30a3c4be5fc6"
+    "stimuli_sha256": "4287ec12354f8a7b90718666d500bad585fde7596bd5754dd2a7c097fb965b27"
   },
   "reproducibility": {
     "seed": 2026,
@@ -217,20 +218,20 @@
     },
     "design_sha256": "bf1f073989dc3aac339617a7a9cbb157f5039c5a057d747506988933a8bbd663",
     "schema_path": "config/schema.yaml",
-    "schema_sha256": "3335f4e31a7f5dece6375dd0247600547ad86290492c7aead2836a9ec8af9dcb"
+    "schema_sha256": "5366c0b44af48b5bbc25c142ec14865db2f4a377efb35a5e99d937770b2e1483"
   },
   "artifacts": [
     {
       "file": "output/stimuli/zh_freqcontrast_chinese_stimuli_R.csv",
-      "sha256": "fe3b47ca8c0e84fb0f8155c4d36078557bd644de183409e0b71b30a3c4be5fc6"
+      "sha256": "4287ec12354f8a7b90718666d500bad585fde7596bd5754dd2a7c097fb965b27"
     },
     {
       "file": "output/reports/zh_freqcontrast_chinese_descriptives_R.csv",
-      "sha256": "2b28f223c92d48b3cb9a18616bf4795e15c9c3f945bcb892f6eac9ef7a0b04f1"
+      "sha256": "7f118b5b9f2dca3642c8fd4554e3716934e6cbc588e45fb48569406b78dca335"
     },
     {
       "file": "output/reports/zh_freqcontrast_chinese_comparisons_R.csv",
-      "sha256": "5942f67f30eddc79f097dfc3c2735fcca957b80814084cd7e8e575ecb3a74618"
+      "sha256": "26b6e2ef5cb1c75a0f251f1d55b6d45c60f07577ce596e1351caa511dc74a966"
     },
     {
       "file": "output/experiments/zh_freqcontrast_chinese_psychopy.py",
@@ -242,11 +243,11 @@
     },
     {
       "file": "output/experiments/zh_freqcontrast_chinese.html",
-      "sha256": "37ac0bcecfa7a26161f31b2cf8f631a876d8d526c88228a7da3f321a02d9726b"
+      "sha256": "3ae31d2d8963e8f8f24329bffa36e5e5ae51f3de991202999fcb0d1b8656f732"
     },
     {
       "file": "output/experiments/zh_freqcontrast_chinese_psychopy.csv",
-      "sha256": "ce8759c4b14bbcc181c95bc0094508a1e0ebbfb5f54d7d1c3d8618f4e8e3a968"
+      "sha256": "156d55ffe2e1913013dc7ef3ab122bcff87fda2b0526c0474bd38d4e60cfb106"
     },
     {
       "file": "output/experiments/zh_freqcontrast_chinese_opensesame.csv",
@@ -254,7 +255,7 @@
     },
     {
       "file": "output/experiments/zh_freqcontrast_chinese_opensesame_text.csv",
-      "sha256": "fdd9e7fac63e395633374eab4392d0ccb2409001ceee3d39e0cce51e3e942e7a"
+      "sha256": "4a68ce7e8820a971eb6f8e03aba0068b094c1468f14e8a81ce2e597345b75c02"
     }
   ]
 }
