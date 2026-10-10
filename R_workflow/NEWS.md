@@ -1,5 +1,11 @@
 # lexsync (development version)
 
+* `CITATION.cff` and `codemeta.json`, which describe the repository and so both
+  packages, give the Zenodo concept DOI, which archives every GitHub release of
+  both, in place of the DOI that CRAN assigned to the R package. They list each
+  package's identifiers, marked with the package they name. `citation("lexsync")`
+  is unchanged and gives the CRAN DOI.
+
 * 28 of the committed datasheets recorded the SHA-256 of a copy of
   `corpora/derived/en.csv` or `es.csv` whose line endings one machine had
   converted to CRLF, so the digest could not be reproduced from a checkout and

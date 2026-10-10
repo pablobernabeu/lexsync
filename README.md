@@ -281,8 +281,10 @@ If you use `lexsync`, please cite the software. The authoritative record is
 reference. The one for the R package gives the DOI that CRAN assigned on publication,
 [10.32614/CRAN.package.lexsync](https://doi.org/10.32614/CRAN.package.lexsync). The one
 for the Python package gives the concept DOI of the Zenodo archive, which holds every
-GitHub release of both packages, [10.5281/zenodo.22906962](https://doi.org/10.5281/zenodo.22906962). `CITATION.cff`
-records both. A manuscript describing lexsync is in preparation.
+GitHub release of both packages, [10.5281/zenodo.22906962](https://doi.org/10.5281/zenodo.22906962), since PyPI
+assigns no DOI. `CITATION.cff` describes both packages, so it gives the Zenodo DOI, which
+favours neither, and lists each package's identifiers. A manuscript describing lexsync is in
+preparation.
 
 Cite the corpus as well as the software. The corpora are third-party work with their
 own terms, and each is credited, with its licence and retrieval date, in

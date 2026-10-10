@@ -99,11 +99,12 @@ function lexsyncCopyBibtex(btn) {
 A manuscript describing lexsync is in preparation, under the title *lexsync: A cross-platform
 pipeline for multidimensional lexical optimisation and hardware-timed experiment generation*. It is
 unpublished and has no venue as yet. Once it is accepted, `CITATION.cff` will name it as the
-preferred citation, and until then the software reference above is the one to use. The DOI that
-`CITATION.cff` gives first, [10.32614/CRAN.package.lexsync](https://doi.org/10.32614/CRAN.package.lexsync),
-is the one CRAN assigned to the R package, and it resolves to that package's page. The reference
-above gives the Zenodo concept DOI instead, which archives every release of the repository and so
-covers the Python package too.
+preferred citation, and until then the software reference above is the one to use. It gives the
+Zenodo concept DOI, which archives every release of the repository and so covers the Python
+package, since PyPI assigns no DOI. The R package's reference gives the DOI that CRAN assigned to
+it, [10.32614/CRAN.package.lexsync](https://doi.org/10.32614/CRAN.package.lexsync), which resolves
+to that package's page. `CITATION.cff` describes both packages, so it gives the Zenodo DOI and
+lists each package's identifiers.
 
 Cite the corpus as well. The software citation covers the tool, not the data it drew your items
 from, and the corpora are third-party work with their own terms. Every one is cited, with its

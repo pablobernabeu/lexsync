@@ -83,6 +83,17 @@ no function signature changes.
 
 ### Changed
 
+- `CITATION.cff` and `codemeta.json`, which describe the repository and so both
+  packages, give the Zenodo concept DOI,
+  [10.5281/zenodo.22906962](https://doi.org/10.5281/zenodo.22906962), which
+  archives every GitHub release of both. They gave the DOI that CRAN assigned to
+  the R package as the DOI of the whole of lexsync. `CITATION.cff` now lists each
+  package's identifiers, marked with the package they name: the CRAN DOI and the
+  CRAN page for the R package and the PyPI page for the Python package. Its
+  single `repository-artifact`, which named CRAN alone, is gone.
+  `codemeta.json` gives both packages' references, each with its own DOI. Each
+  package's own citation is unchanged: the R package's gives the CRAN DOI, and
+  the Python package's gives the Zenodo DOI, since PyPI assigns no DOI.
 - The parity gate also runs both engines over small edge-case designs (padded
   fields, missing values, unusual YAML) and compares each with a pinned expected
   result, so a defect the two engines share can no longer pass because they

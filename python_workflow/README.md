@@ -168,9 +168,10 @@ at the root of the repository, which GitHub renders into several formats through
 its 'Cite this repository' button. The [About
 page](https://pablobernabeu.github.io/lexsync/python/about/) carries a formatted
 reference for this package, which gives its version and the concept DOI of the
-Zenodo archive, [10.5281/zenodo.22906962](https://doi.org/10.5281/zenodo.22906962). The first DOI in
-`CITATION.cff` is the one CRAN assigned to the R package, so it does not
-identify the Python package. A manuscript describing lexsync is in preparation.
+Zenodo archive, [10.5281/zenodo.22906962](https://doi.org/10.5281/zenodo.22906962),
+since PyPI assigns no DOI. `CITATION.cff` describes both packages, so it gives
+the same DOI and lists each package's identifiers, among them the DOI that CRAN
+assigned to the R package. A manuscript describing lexsync is in preparation.
 
 Cite the corpus as well as the software. The corpora are third-party work with
 their own terms, and each is credited, with its licence and retrieval date, in

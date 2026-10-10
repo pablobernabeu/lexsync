@@ -18,23 +18,31 @@ authors:
     given-names: Pablo
     orcid: 'https://orcid.org/0000-0003-1083-2460'
 version: 0.1.1
-# The DOI CRAN assigned to the R package on publication. It identifies the
-# package across all its versions, so the version above pins the release.
-doi: 10.32614/CRAN.package.lexsync
-# CRAN distributes the built package, which is what CFF's repository-artifact
-# field is for. The sources are on GitHub, in repository-code below.
-repository-artifact: 'https://CRAN.R-project.org/package=lexsync'
-# The date CRAN published 0.1.1.
+# This file describes the repository, which holds both packages, so its DOI is
+# Zenodo's concept DOI, which archives every GitHub release of both and favours
+# neither. Each package's own citation gives that package's identifier: the R
+# package's gives the DOI CRAN assigned to it, and the Python package's gives
+# this one, since PyPI assigns no DOI.
+doi: 10.5281/zenodo.22906962
+# The packages are released in lockstep. This is the day 0.1.1 first became
+# public, on CRAN. PyPI published it on 2026-09-26.
 date-released: '2026-09-25'
-# Both DOIs, since doi holds one. Zenodo's concept DOI resolves to the latest
-# archived GitHub release, which carries the Python package as well as the R one.
+# Each identifier, marked with the package it names. CFF's repository-artifact
+# holds a single address, which would favour one distribution, so CRAN and PyPI
+# are both listed here instead.
 identifiers:
   - type: doi
-    value: 10.32614/CRAN.package.lexsync
-    description: The R package on CRAN, across all its versions.
-  - type: doi
     value: 10.5281/zenodo.22906962
-    description: Every GitHub release of the repository, archived on Zenodo.
+    description: "Both packages: every GitHub release of the repository, archived on Zenodo. The Python package's citation gives this DOI."
+  - type: doi
+    value: 10.32614/CRAN.package.lexsync
+    description: "The R package: the DOI CRAN assigned to it, across all its versions. The R package's citation gives this DOI."
+  - type: url
+    value: 'https://CRAN.R-project.org/package=lexsync'
+    description: The R package on CRAN.
+  - type: url
+    value: 'https://pypi.org/project/lexsync/'
+    description: The Python package on PyPI.
 # Two licences, because the release ships both: MIT for the code, CC BY-SA 4.0 for
 # the wordfreq-derived example lexica inside each package.
 license:

@@ -1,15 +1,15 @@
 {
   "@context": "https://doi.org/10.5063/schema/codemeta-2.0",
   "@type": "SoftwareSourceCode",
-  "identifier": "https://doi.org/10.32614/CRAN.package.lexsync",
+  "identifier": "https://doi.org/10.5281/zenodo.22906962",
   "name": "lexsync: Lexical optimisation and hardware-timed experiment generation",
   "description": "A cross-platform, dual-language (R and Python) toolkit that unifies lexical-corpus access (bundled English, Spanish and Mandarin lexica and a registry of citable corpora), parallel multidimensional stimulus matching, counterbalancing, item resampling, deterministic pseudoword generation and the automated generation of hardware-timed PsychoPy, OpenSesame and jsPsych experiment scripts. Under the deterministic matching methods, which include the default, the R and Python engines select byte-identical stimuli, and every run ships a machine- and human-readable materials datasheet (provenance, checksums, realised control). The MIT licence covers the source code only; the example lexica bundled in both packages are derived from wordfreq (Speer, 2022) and are distributed under CC BY-SA 4.0, whose terms and required attribution are recorded in LICENSE-DATA and corpora/ATTRIBUTION.md.",
   "applicationCategory": "Psycholinguistics",
   "codeRepository": "https://github.com/pablobernabeu/lexsync",
   "relatedLink": [
     "https://CRAN.R-project.org/package=lexsync",
+    "https://doi.org/10.32614/CRAN.package.lexsync",
     "https://pypi.org/project/lexsync/",
-    "https://doi.org/10.5281/zenodo.22906962",
     "https://pablobernabeu.github.io/lexsync/"
   ],
   "programmingLanguage": [
@@ -60,7 +60,10 @@
       "@id": "https://orcid.org/0000-0003-1083-2460"
     }
   ],
-  "citation": "Bernabeu, P. (2026). lexsync: Lexical optimisation and hardware-timed experiment generation. R package version 0.1.1. https://doi.org/10.32614/CRAN.package.lexsync",
+  "citation": [
+    "Bernabeu, P. (2026). lexsync: Lexical optimisation and hardware-timed experiment generation. R package version 0.1.1. https://doi.org/10.32614/CRAN.package.lexsync",
+    "Bernabeu, P. (2026). lexsync: Lexical optimisation and hardware-timed experiment generation. Python package version 0.1.1. https://doi.org/10.5281/zenodo.22906962"
+  ],
   "readme": "https://github.com/pablobernabeu/lexsync/blob/main/README.md",
   "issueTracker": "https://github.com/pablobernabeu/lexsync/issues",
   "copyrightHolder": {

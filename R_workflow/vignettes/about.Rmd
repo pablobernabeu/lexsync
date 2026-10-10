@@ -87,7 +87,9 @@ built before the DOI existed and prints the GitHub address, while 0.1.1 and
 later print the DOI. The repository carries a machine-readable
 [`CITATION.cff`](https://github.com/pablobernabeu/lexsync/blob/main/CITATION.cff)
 as well, which GitHub turns into a ready-made citation through its 'Cite this
-repository' button and which reference managers can import.
+repository' button and which reference managers can import. It describes both
+packages, so it gives the Zenodo concept DOI, which archives every GitHub
+release of both, and lists each package's identifiers, the DOI above among them.
 
 A manuscript describing lexsync is in preparation, under the title *lexsync: A
 cross-platform pipeline for multidimensional lexical optimisation and

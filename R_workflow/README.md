@@ -127,8 +127,10 @@ The development version and later releases print the DOI.
 
 The repository also ships a
 [`CITATION.cff`](https://github.com/pablobernabeu/lexsync/blob/main/CITATION.cff),
-which drives GitHub's 'Cite this repository' button. A manuscript describing
-lexsync is in preparation.
+which drives GitHub's 'Cite this repository' button. It describes both packages,
+so it gives the Zenodo concept DOI, which archives every GitHub release of both,
+and lists each package's identifiers, the DOI above among them. A manuscript
+describing lexsync is in preparation.
 
 Cite the corpus as well as the software. The corpora are third-party work with
 their own terms, and each is credited, with its licence and retrieval date, in
