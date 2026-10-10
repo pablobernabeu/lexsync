@@ -33,6 +33,15 @@ def _names(payload):
         return sorted(z.namelist())
 
 
+def _contents(payload):
+    """Each entry's bytes, by name. Two archives of the same files are not equal as
+    bytes: make_zip() stamps the design it writes from memory with the current time,
+    and a zip counts time in two-second steps, so archives made either side of a step
+    differ in their headers."""
+    with zipfile.ZipFile(io.BytesIO(payload)) as z:
+        return {name: z.read(name) for name in z.namelist()}
+
+
 def test_positive_tolerances_keeps_only_the_dimensions_given_a_positive_k(app):
     """A k of zero means "use the schema default", not "match to a zero-width
     window", so it must not reach the design. Pinned identically in test-apps.R."""
@@ -106,8 +115,8 @@ def test_make_zip_without_uploads_is_unchanged(app, tmp_path):
     (out / "my_design_stimuli_py.csv").write_text("word\ncat\n", encoding="utf-8")
     design = {"name": "my_design", "lexicon": "corpora/derived/en_example.csv"}
 
-    assert (app.make_zip(design, "my_design.yaml", {"outdir": str(out)}, None)
-            == app.make_zip(design, "my_design.yaml", {"outdir": str(out)}, {}))
+    assert (_contents(app.make_zip(design, "my_design.yaml", {"outdir": str(out)}, None))
+            == _contents(app.make_zip(design, "my_design.yaml", {"outdir": str(out)}, {})))
     assert _names(app.make_zip(design, "my_design.yaml", {"outdir": str(out)})) == [
         "config/schema.yaml", "my_design.yaml", "my_design_stimuli_py.csv",
     ]
