@@ -5,6 +5,7 @@
 [![R-CMD-check](https://github.com/pablobernabeu/lexsync/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/pablobernabeu/lexsync/actions/workflows/R-CMD-check.yaml)
 [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/license/MIT)
+[![DOI 10.32614/CRAN.package.lexsync](https://img.shields.io/badge/DOI-10.32614%2FCRAN.package.lexsync-blue.svg)](https://doi.org/10.32614/CRAN.package.lexsync)
 <!-- badges: end -->
 
 lexsync builds psycholinguistic stimulus sets and the experiments that present
@@ -120,8 +121,8 @@ citation("lexsync")
 ```
 
 The DOI that CRAN assigned to the package is
-[10.32614/CRAN.package.lexsync](https://doi.org/10.32614/CRAN.package.lexsync),
-and it covers every version. The 0.1.0 release on CRAN was built before the DOI
+<https://doi.org/10.32614/CRAN.package.lexsync>, and it covers every version.
+The 0.1.0 release on CRAN was built before the DOI
 existed, so the reference it prints gives the repository's address and no DOI.
 The development version and later releases print the DOI.
 

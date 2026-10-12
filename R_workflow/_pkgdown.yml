@@ -88,16 +88,20 @@ home:
       # the "View on CRAN" entry under Links by itself, with no configuration
       # here, when it finds the package on CRAN at build time. The entry links
       # the cloud.r-project.org mirror, the one CRAN address on the site not in
-      # the CRAN.R-project.org form used everywhere else. The <wbr> lets the DOI
-      # break after its slash. Unbroken, the DOI was wider than the sidebar
-      # between the md and lg breakpoints, where body's overflow-x: hidden
-      # clipped its end.
+      # the CRAN.R-project.org form used everywhere else. The DOI is the full
+      # https://doi.org/ link that Crossref's display guidelines ask for, with no
+      # "DOI" label. Unbroken, it is wider than the sidebar between the md and lg
+      # breakpoints, where body's overflow-x: hidden would clip its end. Each
+      # <wbr> therefore marks a break before a slash or before the last full
+      # stop, so no line ends in a full stop. pkgdown/extra.scss sizes the link
+      # and balances its lines, and it hides the README's DOI badge, which
+      # pkgdown copies into Dev status, so the sidebar shows the DOI once.
       cite:
         title: Citation
         text: |
           [How to cite lexsync](articles/about.html)
 
-          DOI [10.32614/<wbr>CRAN.package.lexsync](https://doi.org/10.32614/CRAN.package.lexsync)
+          [https://doi.org<wbr>/10.32614<wbr>/CRAN.package<wbr>.lexsync](https://doi.org/10.32614/CRAN.package.lexsync)
 
 navbar:
   structure:

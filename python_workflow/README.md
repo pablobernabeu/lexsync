@@ -2,11 +2,11 @@
 
 <!-- badges: start -->
 [![PyPI](https://img.shields.io/pypi/v/lexsync)](https://pypi.org/project/lexsync/)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22906962.svg)](https://doi.org/10.5281/zenodo.22906962)
 [![python-tests](https://github.com/pablobernabeu/lexsync/actions/workflows/python-tests.yaml/badge.svg)](https://github.com/pablobernabeu/lexsync/actions/workflows/python-tests.yaml)
 [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
 [![Code: MIT](https://img.shields.io/badge/code-MIT-blue.svg)](https://opensource.org/license/MIT)
 [![Data: CC BY-SA 4.0](https://img.shields.io/badge/data-CC_BY--SA_4.0-blue.svg)](https://creativecommons.org/licenses/by-sa/4.0/)
+[![DOI 10.5281/zenodo.22906962](https://zenodo.org/badge/DOI/10.5281/zenodo.22906962.svg)](https://doi.org/10.5281/zenodo.22906962)
 <!-- badges: end -->
 
 Lexical optimisation and hardware-timed experiment generation.
@@ -168,7 +168,7 @@ at the root of the repository, which GitHub renders into several formats through
 its 'Cite this repository' button. The [About
 page](https://pablobernabeu.github.io/lexsync/python/about/) carries a formatted
 reference for this package, which gives its version and the concept DOI of the
-Zenodo archive, [10.5281/zenodo.22906962](https://doi.org/10.5281/zenodo.22906962),
+Zenodo archive, <https://doi.org/10.5281/zenodo.22906962>,
 since PyPI assigns no DOI. `CITATION.cff` describes both packages, so it gives
 the same DOI and lists each package's identifiers, among them the DOI that CRAN
 assigned to the R package. A manuscript describing lexsync is in preparation.

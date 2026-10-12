@@ -32,7 +32,7 @@ assigned to the package.
 
 > Bernabeu, P. (2026). lexsync: Lexical optimisation and hardware-timed
 > experiment generation. R package version
-> `r packageVersion("lexsync")`. https://doi.org/10.32614/CRAN.package.lexsync
+> `r packageVersion("lexsync")`. <https://doi.org/10.32614/CRAN.package.lexsync>
 
 ```{r bibtex, echo = FALSE, results = "asis"}
 # Build the BibTeX entry from the installed version so it never drifts, then
@@ -150,10 +150,10 @@ what changed in each of them.
 
 The R package is on [CRAN](https://CRAN.R-project.org/package=lexsync), which
 keeps the source of every version it publishes. A single DOI,
-[10.32614/CRAN.package.lexsync](https://doi.org/10.32614/CRAN.package.lexsync),
+<https://doi.org/10.32614/CRAN.package.lexsync>,
 covers all of those versions, so the reference above names the version as well.
 Zenodo also archives every GitHub release, which carries both packages, under
-the concept DOI [10.5281/zenodo.22906962](https://doi.org/10.5281/zenodo.22906962). That is the
+the concept DOI <https://doi.org/10.5281/zenodo.22906962>. That is the
 identifier the Python package cites, since the CRAN DOI names the R package
 alone.
 

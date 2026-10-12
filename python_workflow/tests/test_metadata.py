@@ -36,7 +36,7 @@ PYPI_URL = "https://pypi.org/project/lexsync/"
 ZENODO_DOI = "10.5281/zenodo.22906962"
 ZENODO_FILES = ("CITATION.cff", "codemeta.json", "README.md", "CHANGELOG.md",
                 "R_workflow/vignettes/about.Rmd", "python_workflow/README.md",
-                "python_workflow/mkdocs.yml", "python_workflow/docs/about.md")
+                "python_workflow/docs/index.md", "python_workflow/docs/about.md")
 
 # The hand-maintained files that cite the DOI, and so must all carry it.
 DOI_FILES = ("CITATION.cff", "codemeta.json", "README.md",
@@ -104,13 +104,14 @@ def test_every_copy_of_the_cran_doi_is_the_same():
     # The DOI is typed by hand into each file that cites it, and a slip in any
     # one of them sends a reader to a dead link. R CMD check --as-cran reaches
     # only the copies inside the R package, and nothing else checks the rest.
-    # Most files hold the DOI twice, as link text and in the link, so every DOI
-    # that starts 10.32614/CRAN or names lexsync is collected. A slip in either
-    # half of one copy then shows up beside a correct one. The bare 10.32614
-    # prefix would also collect The R Journal's DOIs, which the R Foundation
-    # issues under it. The pattern ends before a full stop, which belongs to the
-    # sentence. The <wbr> that lets the pkgdown sidebar break the DOI is markup,
-    # so it is removed before matching.
+    # A file can hold the DOI more than once: in a link and in a badge's alt
+    # text, or in two places. An autolink (<https://doi.org/...>) is one copy,
+    # serving as both text and link. Every DOI that starts 10.32614/CRAN or
+    # names lexsync is collected, so a slip in any one copy shows up beside a
+    # correct one. The bare 10.32614 prefix would also collect The R Journal's
+    # DOIs, which the R Foundation issues under it. The pattern ends before a
+    # full stop, which belongs to the sentence. The <wbr> tags that break the
+    # DOI link in the pkgdown sidebar are markup, so they are removed first.
     doi = re.compile(r"10\.\d{4,9}/[\w./-]*[\w/-]")
     for rel in DOI_FILES:
         text = (REPO / rel).read_text(encoding="utf-8").replace("<wbr>", "")

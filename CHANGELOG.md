@@ -85,7 +85,7 @@ no function signature changes.
 
 - `CITATION.cff` and `codemeta.json`, which describe the repository and so both
   packages, give the Zenodo concept DOI,
-  [10.5281/zenodo.22906962](https://doi.org/10.5281/zenodo.22906962), which
+  <https://doi.org/10.5281/zenodo.22906962>, which
   archives every GitHub release of both. They gave the DOI that CRAN assigned to
   the R package as the DOI of the whole of lexsync. `CITATION.cff` now lists each
   package's identifiers, marked with the package they name: the CRAN DOI and the
@@ -94,6 +94,13 @@ no function signature changes.
   `codemeta.json` gives both packages' references, each with its own DOI. Each
   package's own citation is unchanged: the R package's gives the CRAN DOI, and
   the Python package's gives the Zenodo DOI, since PyPI assigns no DOI.
+- The CRAN DOI and the Zenodo DOI are shown as full links in the READMEs, on both
+  sites and in this file. The Python home page ends with the Zenodo concept DOI,
+  <https://doi.org/10.5281/zenodo.22906962>, and the footer of every page no
+  longer carries the Zenodo badge. The R package's README gains a badge for the
+  DOI CRAN assigned, which the R home page leaves out of its sidebar, where the
+  DOI is already given under Citation. Each README's badge row ends with its DOI
+  badge.
 - The parity gate also runs both engines over small edge-case designs (padded
   fields, missing values, unusual YAML) and compares each with a pinned expected
   result, so a defect the two engines share can no longer pass because they
@@ -736,8 +743,9 @@ the first version of the Python package on PyPI.
 ## [0.1.0] - 2026-09-22
 
 lexsync 0.1.0 is the first public release. CRAN published the R package on
-2026-09-22 and assigned it the DOI 10.32614/CRAN.package.lexsync. Zenodo
-archives the release tagged v0.1.0 under the concept DOI 10.5281/zenodo.22906962.
+2026-09-22 and assigned it the DOI <https://doi.org/10.32614/CRAN.package.lexsync>.
+Zenodo archives the release tagged v0.1.0 under the concept DOI
+<https://doi.org/10.5281/zenodo.22906962>.
 The Python package's upload to PyPI from that release did not go through, so its
 first version on PyPI is 0.1.1. The CRAN build predates the CRAN DOI, so its
 `citation("lexsync")` gives the repository's address.

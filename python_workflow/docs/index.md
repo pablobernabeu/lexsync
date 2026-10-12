@@ -168,3 +168,7 @@ covers the same ground without any code.
 Every public name is documented in the [API reference](api.md), grouped as the R
 package's reference index is, and the works cited throughout are listed under
 [References](references.md).
+
+If lexsync contributes to published work, please [cite it](about.md#how-to-cite).
+Its citation gives the concept DOI <https://doi.org/10.5281/zenodo.22906962>, which
+resolves to the latest release archived on Zenodo.

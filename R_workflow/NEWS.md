@@ -6,6 +6,11 @@
   package's identifiers, marked with the package they name. `citation("lexsync")`
   is unchanged and gives the CRAN DOI.
 
+* The CRAN DOI and the Zenodo DOI are shown as full links on the website and in
+  the README. The README gains a badge for the DOI CRAN assigned, for GitHub and
+  CRAN, which the home page leaves out of its sidebar, where the DOI is already
+  given under Citation.
+
 * 28 of the committed datasheets recorded the SHA-256 of a copy of
   `corpora/derived/en.csv` or `es.csv` whose line endings one machine had
   converted to CRLF, so the digest could not be reproduced from a checkout and
@@ -646,7 +651,8 @@
   may belong to a download still running in another session, so it is left
   alone. A `dest` of the caller's choosing behaves as before.
 * `citation("lexsync")` gives the DOI that CRAN assigned to the package,
-  10.32614/CRAN.package.lexsync, with the CRAN page as its URL. The 0.1.0 build
+  <https://doi.org/10.32614/CRAN.package.lexsync>, with the CRAN page as its
+  URL. The 0.1.0 build
   on CRAN predates the DOI and gives the repository's address. The entry names
   CRAN as its publisher, and its text version is the APA reference for software:
   author, year, title, version, "[Computer software]", CRAN and the DOI.
