@@ -133,14 +133,122 @@ test_that("inter_trigger_ms is accepted and no longer used", {
   expect_identical(validate_design(design, schema), character(0))
 })
 
-test_that("the OpenSesame export carries both trigger backends and a test-mode fallback", {
+test_that("the OpenSesame export opens the parallel port with a test-mode fallback", {
   schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
   os <- paste(readLines(export_opensesame(make_stim(),
                                           list(name = "t", language = "english"),
                                           schema, tempdir()), warn = FALSE), collapse = "\n")
   expect_true(grepl("dlportio", os, fixed = TRUE))     # parallel-port backend
-  expect_true(grepl("serial.Serial", os, fixed = TRUE)) # serial backend
   expect_true(grepl("test_mode", os, fixed = TRUE))     # no-hardware fallback
+  # The serial branch is written only for a schema that names a serial device.
+  expect_false(grepl("import serial", os, fixed = TRUE))
+  expect_false(grepl("serial.Serial", os, fixed = TRUE))
+})
+
+# The PsychoPy script always opened a 1280 x 1024 window, and the OpenSesame experiment
+# drew its text at 32 px where the other two targets used 48. The OpenSesame setup set its
+# trigger backend to parallel on the line before the branch that would have opened a
+# serial device, and that branch took the first serial port it found. Neither laboratory
+# target said when its port could not be opened. The schema now sets all of this, and a
+# value the experiments cannot use is refused before anything is written.
+# test_scripting.py and test_osexp_validator.py pin the same lines and messages, and
+# test_psychopy_export.py and test_osexp_validator.py run them.
+
+with_settings <- function(schema, section, ...) {
+  schema[[section]] <- utils::modifyList(schema[[section]] %||% list(), list(...))
+  schema
+}
+
+three_targets <- function(schema) {
+  out <- tempfile("lexsync"); dir.create(out)
+  design <- list(name = "t", language = "english")
+  list(py = readLines(export_psychopy(make_stim(), design, schema, out), warn = FALSE),
+       os = readLines(export_opensesame(make_stim(), design, schema, out), warn = FALSE),
+       html = paste(readLines(export_jspsych(make_stim(), design, schema, out), warn = FALSE,
+                              encoding = "UTF-8"), collapse = "\n"))
+}
+
+test_that("the schema sets the window, the text height and the trigger device", {
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  t <- three_targets(schema)
+  for (line in c("FULLSCREEN = True", "TEXT_HEIGHT_PX = 48", 'TRIGGER_MODE = "auto"',
+                 'TRIGGER_BACKEND = "parallel"', "TRIGGER_ADDRESS = 0x0378",
+                 'SERIAL_PORT = ""', "SERIAL_BAUDRATE = 115200",
+                 'TRIGGER_DEVICE = "the parallel port at 0x0378"')) {
+    expect_true(line %in% t$py, info = line)
+  }
+  expect_true("set font_size 48" %in% t$os)
+  expect_true(grepl(paste('.lexsync-stim { font-family: "Courier New", monospace;',
+                          "font-size: 48px; color: #fff; }"), t$html, fixed = TRUE))
+  # jsPsych and its stylesheet are checked against their hashes.
+  sri <- gregexpr('integrity="sha384-[A-Za-z0-9+/]{64}"\\s+crossorigin="anonymous"', t$html,
+                  perl = TRUE)
+  expect_identical(lengths(regmatches(t$html, sri)), 3L)
+  custom <- with_settings(with_settings(schema, "presentation", fullscreen = FALSE,
+                                        text_height_px = 36L),
+                          "triggers", mode = "hardware", backend = "serial",
+                          serial_port = "/dev/ttyUSB0", baudrate = 9600L)
+  t <- three_targets(custom)
+  for (line in c("FULLSCREEN = False", "TEXT_HEIGHT_PX = 36", 'TRIGGER_MODE = "hardware"',
+                 'TRIGGER_BACKEND = "serial"', 'SERIAL_PORT = "/dev/ttyUSB0"',
+                 "SERIAL_BAUDRATE = 9600", 'TRIGGER_DEVICE = "the serial port /dev/ttyUSB0"')) {
+    expect_true(line %in% t$py, info = line)
+  }
+  expect_true("set font_size 36" %in% t$os)
+  expect_true(grepl("font-size: 36px; color: #fff; }", t$html, fixed = TRUE))
+})
+
+test_that("presentation and trigger settings are checked before anything is written", {
+  design <- list(name = "t", language = "english")
+  refusal <- function(schema) {
+    tryCatch({
+      validate_design(design, schema)
+      NA_character_
+    }, error = conditionMessage)
+  }
+  height <- paste("lexsync: presentation.text_height_px must be a whole number of pixels",
+                  "from 8 to 400.")
+  baud <- paste("lexsync: triggers.baudrate must be a whole number of bits per second,",
+                "such as 115200.")
+  port_shape <- paste("lexsync: triggers.serial_port must name a serial device such as COM3",
+                      "or /dev/ttyUSB0, not '%s'. Only letters, digits and . _ - : / are",
+                      "allowed, since the name is written into the generated experiments.")
+  refusals <- list(
+    list(list(presentation = list(fullscreen = "yes")),
+         "lexsync: presentation.fullscreen must be true or false."),
+    list(list(presentation = list(text_height_px = 7L)), height),
+    list(list(presentation = list(text_height_px = 401L)), height),
+    list(list(presentation = list(text_height_px = 48.5)), height),
+    list(list(presentation = list(text_height_px = "48")), height),
+    list(list(presentation = list(text_height_px = TRUE)), height),
+    list(list(triggers = list(mode = "on")),
+         "lexsync: triggers.mode must be auto, hardware or mock, not 'on'."),
+    list(list(triggers = list(mode = TRUE)),
+         "lexsync: triggers.mode must be auto, hardware or mock, not 'true'."),
+    list(list(triggers = list(backend = "usb")),
+         "lexsync: triggers.backend must be parallel or serial, not 'usb'."),
+    list(list(triggers = list(backend = "serial")),
+         paste("lexsync: triggers.backend is serial, so triggers.serial_port must name the",
+               "serial device, such as COM3 or /dev/ttyUSB0.")),
+    list(list(triggers = list(backend = "serial", serial_port = 3L)),
+         paste("lexsync: triggers.serial_port must be text naming a serial device such as",
+               "COM3 or /dev/ttyUSB0.")),
+    list(list(triggers = list(backend = "serial", serial_port = "COM3'; import os")),
+         sprintf(port_shape, "COM3'; import os")),
+    # Checked whatever the backend, since the script carries it either way.
+    list(list(triggers = list(serial_port = "COM3\n")), sprintf(port_shape, "COM3\n")),
+    list(list(triggers = list(baudrate = 0L)), baud),
+    list(list(triggers = list(baudrate = 9600.5)), baud),
+    list(list(triggers = list(baudrate = "fast")), baud),
+    list(list(triggers = list(baudrate = TRUE)), baud))
+  for (r in refusals) expect_identical(refusal(r[[1]]), r[[2]])
+  # A full set of valid settings passes, a whole number written as 36.0 included, and
+  # none of the keys is noted as unknown.
+  expect_identical(validate_design(design, list(
+    presentation = list(fullscreen = FALSE, text_height_px = 36),
+    triggers = list(mode = "hardware", backend = "serial", baudrate = 115200L,
+                    serial_port = "/dev/serial/by-path/pci-0000:00:14.0-usb-0:1:1.0-port0"))),
+    character(0))
 })
 
 test_that("the OpenSesame loop follows the computed trial order", {
@@ -515,6 +623,58 @@ test_that("a key window resets a code whose hold ends with it", {
                     "(t is None or _lexsync_due[0] <= t):") %in% setup)
 })
 
+test_that("the OpenSesame setup opens the device the schema names", {
+  # test_osexp_validator.py runs these lines with and without a port, in each mode.
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  out <- tempfile("lexsync"); dir.create(out)
+  on.exit(unlink(out, recursive = TRUE), add = TRUE)
+  setup_of <- function(sch) {
+    script_phase(readLines(export_opensesame(make_stim(), list(name = "t", language = "english"),
+                                             sch, out), warn = FALSE),
+                 "lexsync_trigger_setup", "prepare")
+  }
+  setup <- setup_of(schema)
+  for (line in c("var.trigger_backend = u'parallel'", "var.parallel_port_address = 0x0378",
+                 "_lexsync_mode = u'auto'", "_lexsync_device = u'the parallel port at 0x0378'",
+                 "        _io = windll.dlportio",
+                 paste("var.lexsync_trigger_mode = u'hardware' if _lexsync_no_codes is None",
+                       "else u'mock'"))) {
+    expect_true(line %in% setup, info = line)
+  }
+  expect_false(any(grepl("serial|comports", setup)))
+  serial <- setup_of(with_settings(schema, "triggers", mode = "hardware", backend = "serial",
+                                   serial_port = "COM7", baudrate = 57600L))
+  # The named port, never the first one found, and no parallel-port code.
+  for (line in c("var.trigger_backend = u'serial'", "_lexsync_mode = u'hardware'",
+                 "_lexsync_device = u'the serial port COM7'",
+                 "        _sp = serial.Serial(u'COM7', 57600)")) {
+    expect_true(line %in% serial, info = line)
+  }
+  expect_false(any(grepl("comports|dlportio|parallel_port_address", serial)))
+})
+
+test_that("the experimenter is told when no codes will be sent", {
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  out <- tempfile("lexsync"); dir.create(out)
+  on.exit(unlink(out, recursive = TRUE), add = TRUE)
+  os <- readLines(export_opensesame(make_stim(), list(name = "t", language = "english"),
+                                    schema, out), warn = FALSE)
+  # Right after the setup, before any screen the participant sees.
+  expect_identical(trial_runs(os, "lexsync_experiment")[1:2],
+                   c("lexsync_trigger_setup", "lexsync_trigger_notice"))
+  expect_identical(run_phase(os, "lexsync_trigger_notice"), c(
+    "if _lexsync_no_codes is not None:",
+    "    c = Canvas()",
+    paste0("    c.text(u'No trigger codes will be sent, because %s. Each code is printed in ",
+           "the console instead.<br /><br />Press C to continue without triggers, or ",
+           "escape to stop.' % _lexsync_no_codes)"),
+    "    c.show()",
+    "    _key, _t = Keyboard(keylist=[u'c', u'escape'], timeout=None).get_key()",
+    "    if _key == u'escape':",
+    paste0("        raise RuntimeError(u'lexsync: stopped at the trigger notice, because no ",
+           "trigger codes would be sent.')")))
+})
+
 test_that("the PsychoPy script holds every code for the hold, the markers included", {
   # The 254 and 255 markers were cleared by the statement after their flip, a code on an
   # event shorter than the hold was cleared as soon as the event's last flip returned,
@@ -639,8 +799,9 @@ test_that("one OpenSesame experiment per version", {
     expect_true(sprintf("\t_version = %d", k) %in% lines)
     expect_true("\t_versions = 2" %in% lines)
     runs <- grep("^\trun ", lines, value = TRUE)
-    expect_identical(utils::tail(runs, 6),
+    expect_identical(utils::tail(runs, 7),
                      c("\trun lexsync_trigger_setup always",
+                       "\trun lexsync_trigger_notice always",
                        "\trun lexsync_version_check always",
                        "\trun lexsync_instructions always",
                        "\trun lexsync_session_start always", "\trun lexsync_loop always",

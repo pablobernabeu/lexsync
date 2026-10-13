@@ -303,7 +303,8 @@ test_that("the_instructions_reach_all_three_targets", {
     "\t__end__",
     ""))
   runs <- grep("^\trun lexsync_", lines, value = TRUE)
-  expect_identical(utils::tail(runs, 5L), c("\trun lexsync_trigger_setup always",
+  expect_identical(utils::tail(runs, 6L), c("\trun lexsync_trigger_setup always",
+                                            "\trun lexsync_trigger_notice always",
                                             "\trun lexsync_instructions always",
                                             "\trun lexsync_session_start always",
                                             "\trun lexsync_loop always",

@@ -144,7 +144,111 @@ def test_opensesame_export_is_consistent(schema, tmp_path):
     lines = open(path, encoding="utf-8").read().splitlines()
     assert any("set start lexsync_experiment" in line for line in lines)
     assert any("dlportio" in line for line in lines)       # parallel backend
-    assert any("serial.Serial" in line for line in lines)  # serial backend
+    # The serial branch is written only for a schema that names a serial device.
+    assert not any("import serial" in line or "serial.Serial" in line for line in lines)
+
+
+# ---- Presentation and trigger settings ------------------------------------------------
+#
+# The PsychoPy script always opened a 1280 x 1024 window, and the OpenSesame experiment
+# drew its text at 32 px where the other two targets used 48. The OpenSesame setup set
+# its trigger backend to parallel on the line before the branch that would have opened a
+# serial device, and that branch took the first serial port it found. Neither laboratory
+# target said when its port could not be opened. The schema now sets all of this, and a
+# value the experiments cannot use is refused before anything is written.
+# test-scripting.R pins the same lines and messages.
+
+def _with(schema, section, **settings):
+    """The schema with `settings` added to its `section`."""
+    return dict(schema, **{section: dict(schema.get(section) or {}, **settings)})
+
+
+def _three_targets(schema, tmp_path):
+    """The PsychoPy script's lines, the .osexp's lines and the page's text."""
+    design = {"name": "t", "language": "english"}
+
+    def read(path):
+        with open(path, encoding="utf-8") as handle:
+            return handle.read()
+    return (read(export_psychopy(_stim(), design, schema, str(tmp_path))).splitlines(),
+            read(export_opensesame(_stim(), design, schema, str(tmp_path))).splitlines(),
+            read(export_jspsych(_stim(), design, schema, str(tmp_path))))
+
+
+def test_the_schema_sets_the_window_the_text_height_and_the_trigger_device(schema, tmp_path):
+    py, osexp, html = _three_targets(schema, tmp_path)
+    for line in ("FULLSCREEN = True", "TEXT_HEIGHT_PX = 48", 'TRIGGER_MODE = "auto"',
+                 'TRIGGER_BACKEND = "parallel"', "TRIGGER_ADDRESS = 0x0378", 'SERIAL_PORT = ""',
+                 "SERIAL_BAUDRATE = 115200",
+                 'TRIGGER_DEVICE = "the parallel port at 0x0378"'):
+        assert line in py, line
+    assert "set font_size 48" in osexp
+    assert ('.lexsync-stim { font-family: "Courier New", monospace; font-size: 48px; '
+            'color: #fff; }') in html
+    # jsPsych and its stylesheet are checked against their hashes.
+    assert len(re.findall(r'integrity="sha384-[A-Za-z0-9+/]{64}"\s+crossorigin="anonymous"',
+                          html)) == 3
+    custom = _with(_with(schema, "presentation", fullscreen=False, text_height_px=36),
+                   "triggers", mode="hardware", backend="serial",
+                   serial_port="/dev/ttyUSB0", baudrate=9600)
+    py, osexp, html = _three_targets(custom, tmp_path)
+    for line in ("FULLSCREEN = False", "TEXT_HEIGHT_PX = 36", 'TRIGGER_MODE = "hardware"',
+                 'TRIGGER_BACKEND = "serial"', 'SERIAL_PORT = "/dev/ttyUSB0"',
+                 "SERIAL_BAUDRATE = 9600", 'TRIGGER_DEVICE = "the serial port /dev/ttyUSB0"'):
+        assert line in py, line
+    assert "set font_size 36" in osexp
+    assert "font-size: 36px; color: #fff; }" in html
+
+
+_HEIGHT = "lexsync: presentation.text_height_px must be a whole number of pixels from 8 to 400."
+_BAUD = "lexsync: triggers.baudrate must be a whole number of bits per second, such as 115200."
+_PORT_SHAPE = ("lexsync: triggers.serial_port must name a serial device such as COM3 or "
+               "/dev/ttyUSB0, not '%s'. Only letters, digits and . _ - : / are allowed, "
+               "since the name is written into the generated experiments.")
+
+
+def test_presentation_and_trigger_settings_are_checked_before_anything_is_written():
+    design = {"name": "t", "language": "english"}
+    refusals = [
+        ({"presentation": {"fullscreen": "yes"}},
+         "lexsync: presentation.fullscreen must be true or false."),
+        ({"presentation": {"text_height_px": 7}}, _HEIGHT),
+        ({"presentation": {"text_height_px": 401}}, _HEIGHT),
+        ({"presentation": {"text_height_px": 48.5}}, _HEIGHT),
+        ({"presentation": {"text_height_px": "48"}}, _HEIGHT),
+        ({"presentation": {"text_height_px": True}}, _HEIGHT),
+        ({"triggers": {"mode": "on"}},
+         "lexsync: triggers.mode must be auto, hardware or mock, not 'on'."),
+        ({"triggers": {"mode": True}},
+         "lexsync: triggers.mode must be auto, hardware or mock, not 'true'."),
+        ({"triggers": {"backend": "usb"}},
+         "lexsync: triggers.backend must be parallel or serial, not 'usb'."),
+        ({"triggers": {"backend": "serial"}},
+         "lexsync: triggers.backend is serial, so triggers.serial_port must name the serial "
+         "device, such as COM3 or /dev/ttyUSB0."),
+        ({"triggers": {"backend": "serial", "serial_port": 3}},
+         "lexsync: triggers.serial_port must be text naming a serial device such as COM3 "
+         "or /dev/ttyUSB0."),
+        ({"triggers": {"backend": "serial", "serial_port": "COM3'; import os"}},
+         _PORT_SHAPE % "COM3'; import os"),
+        # Checked whatever the backend, since the script carries it either way.
+        ({"triggers": {"serial_port": "COM3\n"}}, _PORT_SHAPE % "COM3\n"),
+        ({"triggers": {"baudrate": 0}}, _BAUD),
+        ({"triggers": {"baudrate": 9600.5}}, _BAUD),
+        ({"triggers": {"baudrate": "fast"}}, _BAUD),
+        ({"triggers": {"baudrate": True}}, _BAUD),
+    ]
+    for schema, message in refusals:
+        with pytest.raises(ValueError) as err:
+            validate_design(design, schema)
+        assert str(err.value) == message, schema
+    # A full set of valid settings passes, a whole number written as 36.0 included, and
+    # none of the keys is noted as unknown.
+    assert validate_design(design, {
+        "presentation": {"fullscreen": False, "text_height_px": 36.0},
+        "triggers": {"mode": "hardware", "backend": "serial", "baudrate": 115200,
+                     "serial_port": "/dev/serial/by-path/pci-0000:00:14.0-usb-0:1:1.0-port0"},
+    }) == []
 
 
 def test_opensesame_loop_follows_the_computed_trial_order(schema, tmp_path):
@@ -372,11 +476,12 @@ def test_one_opensesame_experiment_per_version(schema, tmp_path):
         # Each experiment checks the subject number against its own version before
         # the loop, then shows its instructions, and no run line carries a condition.
         # The session markers come after the instructions, just before and after the
-        # loop.
+        # loop. The notice for missing trigger codes comes first, for the experimenter.
         assert "define inline_script lexsync_version_check" in lines
         assert f"\t_version = {k}" in lines and "\t_versions = 2" in lines
         runs = [line for line in lines if line.startswith("\trun ")]
-        assert runs[-6:] == ["\trun lexsync_trigger_setup always",
+        assert runs[-7:] == ["\trun lexsync_trigger_setup always",
+                             "\trun lexsync_trigger_notice always",
                              "\trun lexsync_version_check always",
                              "\trun lexsync_instructions always",
                              "\trun lexsync_session_start always",

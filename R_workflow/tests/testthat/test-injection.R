@@ -69,6 +69,31 @@ test_that("the parallel-port address must be an address", {
   }
 })
 
+test_that("the serial port must name a device", {
+  # It is written unescaped into `SERIAL_PORT = "{{...}}"` in the PsychoPy script and
+  # into the serial.Serial() call of the OpenSesame setup. A quote or a line break there
+  # would end the string it lands in.
+  schema <- schema_for_injection()
+  out <- tempfile(); dir.create(out)
+  design <- list(name = "inj", language = "english", timing = list())
+  for (payload in c('COM3"; __import__("os").system("calc"); "',
+                    "COM3', 9600); __import__('os').system('calc'); ('", "COM3\nimport os")) {
+    bad <- schema
+    bad$triggers$backend <- "serial"
+    bad$triggers$serial_port <- payload
+    expect_error(export_psychopy(stim_for_injection(), design, bad, out),
+                 "must name a serial device")
+    expect_error(export_opensesame(stim_for_injection(), design, bad, out),
+                 "must name a serial device")
+  }
+  for (good in c("COM3", "/dev/ttyUSB0", "/dev/cu.usbserial-A50285BI")) {
+    ok <- schema
+    ok$triggers$backend <- "serial"
+    ok$triggers$serial_port <- good
+    expect_silent(export_psychopy(stim_for_injection(), design, ok, out))
+  }
+})
+
 test_that("event column names must be identifiers", {
   # `as:` on a jittered duration and `answer:` on a feedback event both become a
   # variable reference in the emitted OpenSesame Python.

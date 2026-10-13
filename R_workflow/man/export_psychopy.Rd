@@ -40,11 +40,23 @@ trial, each written as its trial ends. A row holds the run, the trial's fields a
 trigger codes, the response and its reaction time from the onset of the stimulus it
 answers, whether the window closed without one, whether the key was the trial's
 \code{answer}, the self-paced reading times, the question's response and reaction time,
-the measured refresh rate, and each event's realised flips and onset.
+the measured refresh rate, the trigger mode the run used, and each event's realised
+flips and onset.
 
 Each trigger code goes out on its stimulus's first flip and is held for
 \code{triggers.trigger_hold_ms}, in whole flips at the measured refresh and never under
 10 ms, through the events after it when its own is shorter, unless the next onset's
 code replaces it first. The session markers, 254 before the first trial and 255 after
 the last, are held the same way.
+
+The script runs full screen unless \code{presentation.fullscreen} is false, when it opens
+a 1280 x 1024 window, and draws its stimuli \code{presentation.text_height_px} pixels
+high, 48 by default. It writes the codes to the parallel port at
+\code{triggers.parallel_address} or, with \code{triggers.backend: serial}, as single bytes to
+\code{triggers.serial_port} at \code{triggers.baudrate}. \code{triggers.mode} decides what happens
+when that device cannot be opened. Under \code{auto}, the script prints the codes instead
+and, before the instructions, shows a notice that the experimenter dismisses with the
+C key. Under \code{hardware}, it stops before its window opens, and under \code{mock} it prints
+the codes without trying the device. The data file's \code{trigger_mode} column records
+\code{hardware} or \code{mock}.
 }

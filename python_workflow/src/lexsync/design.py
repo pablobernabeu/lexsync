@@ -73,8 +73,10 @@ SCHEMA_KEYS = (
     "equivalence", "equivalence.bound_d", "equivalence.alpha",
     "triggers", "triggers.parallel_address", "triggers.trigger_hold_ms",
     "triggers.reset_after_frames", "triggers.inter_trigger_ms", "triggers.allow_code_overlap",
+    "triggers.mode", "triggers.backend", "triggers.serial_port", "triggers.baudrate",
     "presentation", "presentation.font", "presentation.opensesame_font",
-    "presentation.assumed_refresh_hz",
+    "presentation.assumed_refresh_hz", "presentation.fullscreen",
+    "presentation.text_height_px",
     "counterbalance", "counterbalance.incomplete",
 )
 
@@ -456,7 +458,13 @@ def validate_design(design: dict, schema: dict) -> list:
     language or font that cannot be written into the generated experiments, a
     trigger port that is not an address, and an event list the renderer refuses, such
     as one with an unknown timing key, a bad response key or a response key that
-    YAML reads as a boolean (an unquoted ``yes``, ``no``, ``on`` or ``off``). Last, it
+    YAML reads as a boolean (an unquoted ``yes``, ``no``, ``on`` or ``off``). It
+    refuses a ``presentation.fullscreen`` that is not true or false and a
+    ``presentation.text_height_px`` that is not a whole number from 8 to 400. It
+    refuses a ``triggers.mode`` other than ``auto``, ``hardware`` or ``mock``, a
+    ``triggers.backend`` other than ``parallel`` or ``serial``, and a
+    ``triggers.baudrate`` that is not a positive whole number. A serial backend needs a
+    ``triggers.serial_port``, with a name the experiments can carry. Last, it
     refuses a condition without a name, with a name that is not text or with a
     repeated name, a corpus or pool design with conditions but no ``match_on``, and a
     name and language that leave no file stem. It also refuses an ``exclude_words``
@@ -491,7 +499,14 @@ def validate_design(design: dict, schema: dict) -> list:
     """
     # Imported here: scripting names its files through design_stem, so a module-level
     # import would be circular.
-    from .scripting import _check_instructions_and_mapping, _refresh_hz, render_events
+    from .scripting import (
+        _check_instructions_and_mapping,
+        _fullscreen,
+        _refresh_hz,
+        _text_height_px,
+        _trigger_settings,
+        render_events,
+    )
 
     schema = schema or {}
     if not isinstance(design, dict):
@@ -524,6 +539,9 @@ def validate_design(design: dict, schema: dict) -> list:
     clean_meta(font or presentation.get("font") or "Courier New", "the font")
     clean_meta(font or presentation.get("opensesame_font") or "mono", "the font")
     clean_port((schema.get("triggers") or {}).get("parallel_address", "0x0378"))
+    _fullscreen(schema)
+    _text_height_px(schema)
+    _trigger_settings(schema)
     render_events(resolve_events(design), design.get("timing") or {}, _refresh_hz(schema))
     _check_instructions_and_mapping(design)
 

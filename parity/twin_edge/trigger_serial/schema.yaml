@@ -1,0 +1,15 @@
+# The schema of the twin-edge case trigger_serial: the codes go to a serial line named
+# by its stable alias, at a rate other than the default, and a run without the device
+# stops. The PsychoPy experiment opens a window, and every target draws 36 px text.
+seed: 2026
+lexicon_schema:
+  required: [word, freq_zipf]
+triggers:
+  trigger_hold_ms: 50
+  backend: serial
+  serial_port: /dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A50285BI-if00-port0
+  baudrate: 57600
+  mode: hardware
+presentation:
+  fullscreen: false
+  text_height_px: 36

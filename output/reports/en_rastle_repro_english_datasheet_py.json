@@ -11,19 +11,19 @@
     },
     {
       "file": "output/experiments/en_rastle_repro_english_psychopy.py",
-      "sha256": "707581ccb6fcda68b8a0a836666a1e1c0b50f10ec454309a567e3dabad98f28b"
+      "sha256": "61295986a7ff8080bab57001e7ad989d17ff5e618ad60dec5fff8590f790975c"
     },
     {
       "file": "output/experiments/en_rastle_repro_english_list1.osexp",
-      "sha256": "6a25f06b879675ecc8652c6cbc60bb1bcfba3be8cfdee7adabbe874b2db453d8"
+      "sha256": "f8c47b1e83ca094f70a2e2736963cbc1bd00296f83abaa9e332749a0304106a6"
     },
     {
       "file": "output/experiments/en_rastle_repro_english_list2.osexp",
-      "sha256": "c7d429173158571be9d807f2cadaa343201f1cfcb05a2ad1acb09697d5c3f503"
+      "sha256": "f000923a2aa835222bd8fc21bb335fe958bb92923a93c41e9d6e49b03d071e8d"
     },
     {
       "file": "output/experiments/en_rastle_repro_english.html",
-      "sha256": "05a1413a6ce19f7d9bf66baeed214d102681da1543fc608e8b99611688585aef"
+      "sha256": "41b5aa3fc5dc8b47d8fcf92352b5a213c79db32308fc1538d9cf8bf616da1397"
     },
     {
       "file": "output/experiments/en_rastle_repro_english_psychopy.csv",
@@ -130,7 +130,7 @@
   "reproducibility": {
     "design_sha256": "3d060b7a7653715ce8f6785b20f2be9f062fa0da5f157d6c88423af290332d29",
     "schema_path": "config/schema.yaml",
-    "schema_sha256": "f2c268f23e8a5e374f920f8cb8a0a89392ab207acc0c1809f2f409a2aa844120",
+    "schema_sha256": "363d42ebb6d2076d91b9e1ecedc10cdd1133b6e662cea5123146c9bb4e69fb73",
     "seed": 2026,
     "versions": {
       "engine": "python",

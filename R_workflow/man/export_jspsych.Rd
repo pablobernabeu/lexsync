@@ -25,7 +25,10 @@ The rendered events and the trial data are embedded in one HTML file, so anyone
 can reproduce the procedure online from the same materials. The jsPsych library
 and stylesheet are loaded from a CDN, so the machine running the file needs an
 internet connection; the trial data are embedded and the responses are saved
-locally, so no server is required either to run it or to collect them. Onset
+locally, so no server is required either to run it or to collect them. Each of the
+three files carries its SHA-384 as Subresource Integrity, so a browser refuses a copy
+that differs from the published release. Stimuli are drawn
+\code{presentation.text_height_px} pixels high, 48 by default. Onset
 triggers are recorded in each trial's data (a browser cannot drive a parallel
 port). A stimulus that collects its response is one trial, recorded as \code{target}:
 it accepts the keys from its onset, shows the stimulus for its duration and stays

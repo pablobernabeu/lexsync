@@ -708,6 +708,10 @@ _COLUMN_RE = re.compile(r"\A[A-Za-z_][A-Za-z0-9_]*\Z")
 # A response key is written into OpenSesame's `set allowed_responses "a;b"`, into a
 # PsychoPy key list and into a jsPsych `choices` array. Key names are short tokens.
 _KEY_RE = re.compile(r"\A[A-Za-z0-9_ +]{1,20}\Z")
+# A serial device name is written into a string literal in the PsychoPy script and the
+# OpenSesame setup. COM3, /dev/ttyUSB0, /dev/cu.usbserial-A50285BI and the stable
+# aliases under /dev/serial/by-id and by-path need nothing beyond these characters.
+_SERIAL_PORT_RE = re.compile(r"\A[A-Za-z0-9_./:-]{1,200}\Z")
 
 
 def clean_meta(value, field: str = "value", max_len: int = 200) -> str:
@@ -753,6 +757,24 @@ def clean_port(value, field: str = "triggers.parallel_address") -> str:
             "lexsync: %s must be a port address such as 0x0378 or 888, not %r. It is "
             "written into the generated experiment as a bare number." % (field, s))
     return s
+
+
+def clean_serial_port(value, field: str = "triggers.serial_port") -> str:
+    """Validate a serial device name, which is written into the experiments as text.
+
+    The name is not escaped on its way into the generated code, so a quote or a line
+    break in it would end the string it lands in. Must stay identical to
+    clean_serial_port in R_workflow/R/io_utils.R.
+    """
+    if not isinstance(value, str):
+        raise ValueError("lexsync: %s must be text naming a serial device such as COM3 or "
+                         "/dev/ttyUSB0." % field)
+    if not _SERIAL_PORT_RE.match(value):
+        raise ValueError(
+            "lexsync: %s must name a serial device such as COM3 or /dev/ttyUSB0, not '%s'. "
+            "Only letters, digits and . _ - : / are allowed, since the name is written into "
+            "the generated experiments." % (field, value))
+    return value
 
 
 def clean_key(value, field: str = "an event's `keys`") -> str:

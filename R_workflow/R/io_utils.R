@@ -799,6 +799,10 @@ clean_field <- function(value, field = "field", max_len = 1000L) {
 # A response key is written into OpenSesame's `set allowed_responses "a;b"`, into a
 # PsychoPy key list and into a jsPsych `choices` array. Key names are short tokens.
 .KEY_SHAPE <- "^[A-Za-z0-9_ +]{1,20}\\z"
+# A serial device name is written into a string literal in the PsychoPy script and the
+# OpenSesame setup. COM3, /dev/ttyUSB0, /dev/cu.usbserial-A50285BI and the stable
+# aliases under /dev/serial/by-id and by-path need nothing beyond these characters.
+.SERIAL_PORT_SHAPE <- "^[A-Za-z0-9_./:-]{1,200}\\z"
 
 #' Validate a metadata value interpolated into generated code or markup
 #'
@@ -854,6 +858,30 @@ clean_port <- function(value, field = "triggers.parallel_address") {
                        "number."), field, s), call. = FALSE)
   }
   s
+}
+
+#' Validate a serial device name, which is written into the experiments as text
+#'
+#' The name is not escaped on its way into the generated code, so a quote or a line
+#' break in it would end the string it lands in. Mirrors the Python
+#' `clean_serial_port`.
+#'
+#' @param value The device name, such as `"COM3"` or `"/dev/ttyUSB0"`.
+#' @param field Field name, for error messages.
+#' @return The value as a plain string.
+#' @keywords internal
+clean_serial_port <- function(value, field = "triggers.serial_port") {
+  if (!is.character(value) || length(value) != 1L || is.na(value)) {
+    stop(sprintf(paste("lexsync: %s must be text naming a serial device such as COM3 or",
+                       "/dev/ttyUSB0."), field), call. = FALSE)
+  }
+  if (!grepl(.SERIAL_PORT_SHAPE, value, perl = TRUE)) {
+    stop(sprintf(paste("lexsync: %s must name a serial device such as COM3 or /dev/ttyUSB0,",
+                       "not '%s'. Only letters, digits and . _ - : / are allowed, since the",
+                       "name is written into the generated experiments."), field, value),
+         call. = FALSE)
+  }
+  value
 }
 
 #' Validate one response key, which is written into the generated experiments

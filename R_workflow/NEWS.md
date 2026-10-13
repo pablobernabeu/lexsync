@@ -776,6 +776,45 @@
   The 21 committed PsychoPy scripts change, and the datasheets and run logs are
   regenerated. No stimulus moves.
 
+* The generated PsychoPy experiment runs full screen (`presentation.fullscreen`,
+  true by default), as PsychoPy advises for frame timing. It always ran in a
+  1280 x 1024 window, which `fullscreen: false` keeps. Text is 48 pixels high in all
+  three targets (`presentation.text_height_px`, a whole number from 8 to 400), where
+  the OpenSesame experiment used 32. In OpenSesame, the setting is the experiment's
+  `font_size`, so its instructions grow with it. OpenSesame takes full screen from
+  the mode it is launched in, as the experiments vignette now says. Every committed
+  experiment changes, and so do the datasheets and run logs, which record the
+  checksums of the experiments and the schema. No stimulus moves.
+
+* `triggers.mode` (`auto`, `hardware` or `mock`) decides what the PsychoPy and
+  OpenSesame experiments do when the trigger device cannot be opened. `hardware`
+  refuses to start: the PsychoPy script stops before its window opens, and the
+  OpenSesame experiment stops in its setup. `auto`, the default, falls back to
+  printing the codes as before, but now says so on screen before the first trial,
+  where the experimenter presses C to go on, and records the mode with every
+  trial, as `trigger_mode` in the PsychoPy data file and as `lexsync_trigger_mode`
+  in the OpenSesame log. Both experiments used to run on without triggers and with
+  no notice on screen, and only the OpenSesame log said so, in its `test_mode`
+  column. `mock` prints the codes without trying the device, after the same notice.
+  `triggers.backend: serial`, with `triggers.serial_port` and `triggers.baudrate`
+  (115200 by default), sends each code as one byte over a serial port in both
+  experiments. The OpenSesame setup had a serial branch that ran only once the
+  script was edited by hand, and it then opened the first serial port it found. The
+  OpenSesame snippet `inline_trigger_setup.py` took the first serial port too, and
+  now opens the one named at its top. `validate_design()` refuses a serial backend
+  without a port, a port name that cannot be written into the experiments,
+  a mode or backend lexsync does not know, and a baud rate, text height or
+  full-screen setting of the wrong kind, before anything is written. The
+  experiments vignette describes the delay a USB-serial adapter adds. The twin-edge
+  case `trigger_serial` pins both engines to one outcome.
+
+* The jsPsych page loads jsPsych, its keyboard plugin and its stylesheet from unpkg
+  with Subresource Integrity, each file's SHA-384 and `crossorigin="anonymous"`, so
+  a browser refuses a modified copy. The page loaded them with no integrity check,
+  and the first two from bare package addresses that the CDN answers with a
+  redirect. The page's comment says how to run it offline, since a page opened from
+  a `file://` address cannot check the hash of a local copy.
+
 # lexsync 0.1.1
 
 * `assign_triggers()` gains a `conditions` argument that fixes the order of the

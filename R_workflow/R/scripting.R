@@ -307,6 +307,96 @@ frames_to_ms <- function(frames, hz) {
   ms
 }
 
+# Whether a setting is a whole number from `low` to `high`, written as 48 or 48.0. A
+# logical value is not one, and neither is text. Must match _whole_number in
+# scripting.py.
+.whole_number <- function(value, low, high) {
+  is.numeric(value) && length(value) == 1L && !is.na(value) && is.finite(value) &&
+    value == trunc(value) && value >= low && value <= high
+}
+
+# Whether the PsychoPy script runs full screen, presentation.fullscreen. TRUE by
+# default, as PsychoPy advises for frame timing. OpenSesame takes full screen from the
+# mode it is launched in. Must match _fullscreen in scripting.py.
+.fullscreen <- function(schema) {
+  value <- (schema[["presentation"]] %||% list())[["fullscreen"]]
+  if (is.null(value)) return(TRUE)
+  .require_bool(value, "presentation.fullscreen")
+  isTRUE(value)
+}
+
+# The height of the stimulus text in pixels, presentation.text_height_px. 48 by default,
+# the PsychoPy and jsPsych size, and the size of every text the OpenSesame experiment
+# shows, since it sets OpenSesame's font_size. Must match _text_height_px in
+# scripting.py.
+.text_height_px <- function(schema) {
+  value <- (schema[["presentation"]] %||% list())[["text_height_px"]]
+  if (is.null(value)) return(48L)
+  if (!.whole_number(value, 8, 400)) {
+    stop(paste("lexsync: presentation.text_height_px must be a whole number of pixels",
+               "from 8 to 400."), call. = FALSE)
+  }
+  as.integer(value)
+}
+
+# The values triggers.mode and triggers.backend take, the default first. Must match
+# _TRIGGER_MODES and _TRIGGER_BACKENDS in scripting.py.
+.TRIGGER_MODES <- c("auto", "hardware", "mock")
+.TRIGGER_BACKENDS <- c("parallel", "serial")
+
+# A setting that names one of `choices`, the first when it is absent.
+.one_of <- function(value, key, choices) {
+  if (is.null(value)) return(choices[1])
+  if (!is.character(value) || length(value) != 1L || is.na(value) || !(value %in% choices)) {
+    n <- length(choices)
+    allowed <- paste0(paste(choices[-n], collapse = ", "), " or ", choices[n])
+    stop(sprintf("lexsync: %s must be %s, not '%s'.", key, allowed, .shown(value)),
+         call. = FALSE)
+  }
+  value
+}
+
+# The trigger device the laboratory targets write to, and what they do without it.
+# `mode` is triggers.mode: "auto" prints the codes when the device cannot be opened and
+# says so before the first trial, "hardware" stops instead, and "mock" prints them
+# without trying the device. `backend` is triggers.backend: the parallel port at
+# triggers.parallel_address, or "serial", which writes each code as one byte to
+# triggers.serial_port at triggers.baudrate (115200 by default). A serial backend must
+# name its port. Taking the first port found could send the codes to another device.
+# The port is checked whatever the backend, since the PsychoPy script carries it either
+# way. Must match _trigger_settings in scripting.py.
+.trigger_settings <- function(schema) {
+  triggers <- schema[["triggers"]] %||% list()
+  mode <- .one_of(triggers[["mode"]], "triggers.mode", .TRIGGER_MODES)
+  backend <- .one_of(triggers[["backend"]], "triggers.backend", .TRIGGER_BACKENDS)
+  port <- triggers[["serial_port"]]
+  if (!is.null(port)) {
+    port <- clean_serial_port(port)
+  } else if (identical(backend, "serial")) {
+    stop(paste("lexsync: triggers.backend is serial, so triggers.serial_port must name the",
+               "serial device, such as COM3 or /dev/ttyUSB0."), call. = FALSE)
+  }
+  baudrate <- triggers[["baudrate"]]
+  if (is.null(baudrate)) {
+    baudrate <- 115200L
+  } else if (!.whole_number(baudrate, 1, .Machine$integer.max)) {
+    stop(paste("lexsync: triggers.baudrate must be a whole number of bits per second,",
+               "such as 115200."), call. = FALSE)
+  }
+  list(mode = mode, backend = backend, serial_port = port %||% "",
+       baudrate = as.integer(baudrate))
+}
+
+# The trigger device as the experiments' messages name it. Must match _trigger_device
+# in scripting.py.
+.trigger_device <- function(settings, address) {
+  if (identical(settings$backend, "serial")) {
+    paste0("the serial port ", settings$serial_port)
+  } else {
+    paste0("the parallel port at ", address)
+  }
+}
+
 # A duration as a number, or NA when the value is not one. A number is taken as it is,
 # and so is text that is a plain decimal number, as a design that quotes a duration
 # carries it and as a column holding some text is read. A logical value is not a
@@ -918,13 +1008,25 @@ loop_table <- function(stimuli, events = NULL) {
 #' trigger codes, the response and its reaction time from the onset of the stimulus it
 #' answers, whether the window closed without one, whether the key was the trial's
 #' `answer`, the self-paced reading times, the question's response and reaction time,
-#' the measured refresh rate, and each event's realised flips and onset.
+#' the measured refresh rate, the trigger mode the run used, and each event's realised
+#' flips and onset.
 #'
 #' Each trigger code goes out on its stimulus's first flip and is held for
 #' `triggers.trigger_hold_ms`, in whole flips at the measured refresh and never under
 #' 10 ms, through the events after it when its own is shorter, unless the next onset's
 #' code replaces it first. The session markers, 254 before the first trial and 255 after
 #' the last, are held the same way.
+#'
+#' The script runs full screen unless `presentation.fullscreen` is false, when it opens
+#' a 1280 x 1024 window, and draws its stimuli `presentation.text_height_px` pixels
+#' high, 48 by default. It writes the codes to the parallel port at
+#' `triggers.parallel_address` or, with `triggers.backend: serial`, as single bytes to
+#' `triggers.serial_port` at `triggers.baudrate`. `triggers.mode` decides what happens
+#' when that device cannot be opened. Under `auto`, the script prints the codes instead
+#' and, before the instructions, shows a notice that the experimenter dismisses with the
+#' C key. Under `hardware`, it stops before its window opens, and under `mock` it prints
+#' the codes without trying the device. The data file's `trigger_mode` column records
+#' `hardware` or `mock`.
 #'
 #' @param stimuli Stimuli with trigger columns (see [assign_triggers()]).
 #' @param design A parsed design configuration.
@@ -950,17 +1052,25 @@ export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
                 collapse = "\n")
   triggers <- schema[["triggers"]] %||% list()
   presentation <- schema[["presentation"]] %||% list()
+  address <- clean_port(triggers[["parallel_address"]] %||% "0x0378")
+  device <- .trigger_settings(schema)
   subs <- list(
     DESIGN = clean_meta(design[["name"]], "the design's `name`"),
     LANGUAGE = clean_meta(design[["language"]], "the design's `language`"),
     CONDITIONS_FILE = csv_name,
     # The data files are named after the experiment, as data/<base>_p<n>_v<k>_...
     BASE = base,
-    TRIGGER_ADDRESS = clean_port(triggers[["parallel_address"]] %||% "0x0378"),
+    TRIGGER_ADDRESS = address,
+    TRIGGER_BACKEND = device$backend,
+    SERIAL_PORT = device$serial_port,
+    SERIAL_BAUDRATE = as.character(device$baudrate),
+    TRIGGER_DEVICE = .trigger_device(device, address),
+    TRIGGER_MODE = device$mode,
     TRIGGER_HOLD_MS = sprintf("%.17g", .trigger_hold_ms(schema)),
     WORD_FONT = clean_meta(design[["font"]] %||% presentation[["font"]] %||% "Courier New",
                            "the font"),
-    FULLSCREEN = "False",
+    FULLSCREEN = if (.fullscreen(schema)) "True" else "False",
+    TEXT_HEIGHT_PX = as.character(.text_height_px(schema)),
     # The fallback used only when the script cannot measure the display.
     ASSUMED_REFRESH_HZ = sprintf("%.17g", .refresh_hz(schema)),
     EVENTS_JSON = as.character(jsonlite::toJSON(rendered, auto_unbox = TRUE)),
@@ -1354,6 +1464,84 @@ export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
     "    _lexsync_end_hold()")
 }
 
+# The setup's lines that open the trigger device, as triggers.mode and triggers.backend
+# ask (see .trigger_settings). Only the configured backend's branch is written, and a
+# serial device is opened by the name the schema gives. The setup used to set the backend
+# to parallel on the line before a serial branch that took the first serial port it
+# found. When the device cannot be opened, "hardware" stops the experiment before
+# anything is shown, and "auto" falls back to printing the codes. `_lexsync_no_codes` is
+# left holding the reason no codes will be sent, or None when they go to the device, for
+# the notice (.osexp_trigger_notice). `lexsync_trigger_mode`, which the logger writes
+# with every trial, says "hardware" or "mock", and `test_mode` says "yes" with the mock,
+# as it did. Must match _osexp_trigger_device in scripting.py.
+.osexp_trigger_device <- function(settings, address) {
+  if (identical(settings$backend, "serial")) {
+    record <- "var.trigger_backend = u'serial'"
+    opening <- c("        import serial",
+                 sprintf("        _sp = serial.Serial(%s, %d)", .pyq(settings$serial_port),
+                         settings$baudrate),
+                 "        def send_trigger(code):",
+                 "            _sp.write(int(code).to_bytes(1, 'big'))")
+  } else {
+    record <- c("var.trigger_backend = u'parallel'",
+                sprintf("var.parallel_port_address = %s", address))
+    opening <- c("        from ctypes import windll",
+                 "        _io = windll.dlportio",
+                 "        _addr = int(var.parallel_port_address)",
+                 "        def send_trigger(code):",
+                 "            _io.DlPortWritePortUchar(_addr, int(code))")
+  }
+  c(record,
+    "var.test_mode = u'no'",
+    "def _printer(code):",
+    "    print(u'[lexsync test trigger] %d' % int(code))",
+    "send_trigger = _printer",
+    sprintf("_lexsync_mode = %s", .pyq(settings$mode)),
+    sprintf("_lexsync_device = %s", .pyq(.trigger_device(settings, address))),
+    "_lexsync_no_codes = None",
+    "if _lexsync_mode == u'mock':",
+    "    _lexsync_no_codes = u'triggers.mode is mock'",
+    "else:",
+    "    try:",
+    opening,
+    "        send_trigger(0)",
+    "    except Exception as _exc:",
+    "        if _lexsync_mode == u'hardware':",
+    paste0("            raise RuntimeError(u'lexsync: %s could not be opened (%s: %s). ",
+           "triggers.mode is hardware, so the experiment does not run without it.' % ",
+           "(_lexsync_device, type(_exc).__name__, _exc))"),
+    paste0("        print(u'lexsync: %s could not be opened (%s: %s).' % ",
+           "(_lexsync_device, type(_exc).__name__, _exc))"),
+    "        send_trigger = _printer",
+    "        _lexsync_no_codes = u'%s could not be opened' % _lexsync_device",
+    "var.lexsync_trigger_mode = u'hardware' if _lexsync_no_codes is None else u'mock'",
+    "if _lexsync_no_codes is not None:",
+    "    var.test_mode = u'yes'",
+    paste0("    print(u'lexsync: no trigger codes will be sent, because %s. Each code is ",
+           "printed here instead.' % _lexsync_no_codes)"))
+}
+
+# The inline script that tells the experimenter that no trigger codes will be sent. It
+# runs just after the setup, before any screen the participant sees, shows the reason
+# the setup found and waits for C. Escape stops the session. When the codes go to the
+# device, it shows nothing. The reason is a device name the schema's check allows or the
+# mode, so it holds nothing OpenSesame's canvas would read as markup. Must match
+# _osexp_trigger_notice in scripting.py.
+.osexp_trigger_notice <- function() {
+  body <- c(
+    "if _lexsync_no_codes is not None:",
+    "    c = Canvas()",
+    paste0("    c.text(u'No trigger codes will be sent, because %s. Each code is printed in ",
+           "the console instead.<br /><br />Press C to continue without triggers, or escape ",
+           "to stop.' % _lexsync_no_codes)"),
+    "    c.show()",
+    "    _key, _t = Keyboard(keylist=[u'c', u'escape'], timeout=None).get_key()",
+    "    if _key == u'escape':",
+    paste0("        raise RuntimeError(u'lexsync: stopped at the trigger notice, because no ",
+           "trigger codes would be sent.')"))
+  .inline_block("lexsync_trigger_notice", "Say when no trigger codes will be sent", body)
+}
+
 # The two inline scripts that send the session markers, 254 just before the loop and
 # 255 just after it, each held for the hold, as the PsychoPy script sends them. Must
 # match _osexp_markers in scripting.py.
@@ -1443,9 +1631,11 @@ export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
 #'   space bar. `NULL` (the default) takes list 1's, the design's own `instructions` or
 #'   lexsync's for its task.
 #' @return The experiment's text, one string. Each trial starts by clearing the last
-#'   trial's responses and ends with a logger item. The setup script measures the frame
-#'   period and defines the helpers that time the events and hold their codes, and the
-#'   session markers 254 and 255 are sent just before and after the loop.
+#'   trial's responses and ends with a logger item. The setup script opens the trigger
+#'   device the schema names, measures the frame period and defines the helpers that
+#'   time the events and hold their codes. A notice follows it when no codes will be
+#'   sent, and the session markers 254 and 255 are sent just before and after the loop.
+#'   Every text is drawn at `presentation.text_height_px`.
 #' @keywords internal
 build_osexp <- function(design, conditions_file, schema, rendered, font = "mono",
                         text_file = NULL, version = NULL, n_versions = NULL,
@@ -1469,36 +1659,10 @@ build_osexp <- function(design, conditions_file, schema, rendered, font = "mono"
     "    _LEXSYNC_ROWS = {int(_r[u'lexsync_row']): _r for _r in _csv.DictReader(_f)}",
     "def _lexsync_row():",
     "    return _LEXSYNC_ROWS[int(var.get(u'lexsync_row', _eval=False))]",
-    "var.trigger_backend = u'parallel'",
-    sprintf("var.parallel_port_address = %s", addr),
-    "var.test_mode = u'no'",
     # The device writes a code and returns. The scripts reset it when its hold is up
     # (see .osexp_timing). It used to sleep 10 ms and reset the code itself, so every
     # triggered event overran by those 10 ms and the schema's hold was ignored.
-    "def _printer(code):",
-    "    print(u'[lexsync test trigger] %d' % int(code))",
-    "send_trigger = _printer",
-    "try:",
-    "    if var.trigger_backend == u'serial':",
-    "        import serial",
-    "        import serial.tools.list_ports",
-    "        _ports = serial.tools.list_ports.comports()",
-    "        if _ports:",
-    "            _sp = serial.Serial(_ports[0].device)",
-    "            def send_trigger(code):",
-    "                _sp.write(int(code).to_bytes(1, 'big'))",
-    "        else:",
-    "            var.test_mode = u'yes'",
-    "    else:",
-    "        from ctypes import windll",
-    "        _io = windll.dlportio",
-    "        _addr = int(var.parallel_port_address)",
-    "        def send_trigger(code):",
-    "            _io.DlPortWritePortUchar(_addr, int(code))",
-    "except Exception as _exc:",
-    "    var.test_mode = u'yes'",
-    "    print(u'lexsync: trigger device unavailable; test mode.')",
-    "send_trigger(0)",
+    .osexp_trigger_device(.trigger_settings(schema), addr),
     .osexp_timing(schema)
   )
 
@@ -1536,13 +1700,15 @@ build_osexp <- function(design, conditions_file, schema, rendered, font = "mono"
     "set sound_sample_size -16", "set sound_freq 48000", "set sound_channels 2",
     "set sound_buf_size 1024", "set sampler_backend legacy", "set round_decimals 2",
     "set mouse_backend legacy", "set keyboard_backend legacy", "set height 768",
-    "set fullscreen no", "set foreground white", "set font_size 32",
+    # OpenSesame takes full screen from the mode it is launched in, whatever this line
+    # says. font_size is the size of every text the experiment shows.
+    "set fullscreen no", "set foreground white",
+    sprintf("set font_size %d", .text_height_px(schema)),
     sprintf("set font_family %s", font), 'set description "Generated by lexsync"',
     "set coordinates uniform", "set compensation 0", "set color_backend legacy",
     "set clock_backend legacy", "set canvas_backend xpyriment", "set background black", "",
     "define inline_script lexsync_trigger_setup",
-    paste('\tset description "Load the trial texts and open the trigger device with a',
-          'test-mode fallback"'),
+    '\tset description "Load the trial texts and open the trigger device"',
     '\tset _run ""', "\t___prepare__", paste0("\t", setup), "\t__end__", ""
   )
   checked <- !is.null(version) && !is.null(n_versions) && as.integer(n_versions) > 1L
@@ -1563,14 +1729,15 @@ build_osexp <- function(design, conditions_file, schema, rendered, font = "mono"
     "\tset flush_keyboard yes",
     '\tset description "Top-level experiment sequence"',
     "\trun lexsync_trigger_setup always",
+    "\trun lexsync_trigger_notice always",
     if (checked) "\trun lexsync_version_check always",
     "\trun lexsync_instructions always",
     "\trun lexsync_session_start always",
     "\trun lexsync_loop always",
     "\trun lexsync_session_end always", ""
   )
-  paste(c(header, check, .osexp_instructions(instructions), .osexp_markers(),
-          event_blocks, trial), collapse = "\n")
+  paste(c(header, .osexp_trigger_notice(), check, .osexp_instructions(instructions),
+          .osexp_markers(), event_blocks, trial), collapse = "\n")
 }
 
 #' Export a complete plain-text OpenSesame experiment
@@ -1603,6 +1770,16 @@ build_osexp <- function(design, conditions_file, schema, rendered, font = "mono"
 #' 10 ms, through the events after it when its own is shorter, unless the next onset's
 #' code replaces it first. The session markers, 254 and 255, are sent just before the
 #' first trial and just after the last, held the same way.
+#'
+#' The setup writes the codes to the parallel port at `triggers.parallel_address` or,
+#' with `triggers.backend: serial`, as single bytes to `triggers.serial_port` at
+#' `triggers.baudrate`. When that device cannot be opened, `triggers.mode: auto` prints
+#' the codes instead. An inline script, `lexsync_trigger_notice`, then says so before
+#' any other screen and waits for the C key. `hardware` stops the experiment there, and
+#' `mock` prints the codes without trying the device. Every trial logs
+#' `lexsync_trigger_mode`, `hardware` or `mock`. Text is drawn
+#' `presentation.text_height_px` pixels high, OpenSesame's `font_size`, and OpenSesame
+#' takes full screen from the mode it is launched in.
 #'
 #' A design with more than one presentation version, one per (replicate, list) pair
 #' of the trials, gets one experiment per version instead, each with its own two
@@ -1759,7 +1936,10 @@ export_opensesame <- function(stimuli, design, schema, outdir, base = NULL) {
 #' can reproduce the procedure online from the same materials. The jsPsych library
 #' and stylesheet are loaded from a CDN, so the machine running the file needs an
 #' internet connection; the trial data are embedded and the responses are saved
-#' locally, so no server is required either to run it or to collect them. Onset
+#' locally, so no server is required either to run it or to collect them. Each of the
+#' three files carries its SHA-384 as Subresource Integrity, so a browser refuses a copy
+#' that differs from the published release. Stimuli are drawn
+#' `presentation.text_height_px` pixels high, 48 by default. Onset
 #' triggers are recorded in each trial's data (a browser cannot drive a parallel
 #' port). A stimulus that collects its response is one trial, recorded as `target`:
 #' it accepts the keys from its onset, shows the stimulus for its duration and stays
@@ -1795,6 +1975,7 @@ export_jspsych <- function(stimuli, design, schema, outdir, base = NULL) {
     DESIGN = clean_meta(design[["name"]], "the design's `name`"),
     LANGUAGE = clean_meta(design[["language"]], "the design's `language`"),
     LANGUAGE_TAG = .language_tag(design), WORD_FONT = clean_meta(font, "the font"),
+    TEXT_HEIGHT_PX = as.character(.text_height_px(schema)),
     EVENTS_JSON = .json_html(jsonlite::toJSON(rendered, auto_unbox = TRUE)),
     # Each double to 15 significant digits, the digits the Python engine writes
     # (_fifteen_digits in scripting.py). The default of four decimal places wrote

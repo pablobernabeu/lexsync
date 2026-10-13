@@ -46,12 +46,17 @@ class FakeTime:
 # The text of every TextStim drawn, in order, so a test can see what was on screen when
 # the script waited for a key. Cleared by _install_fake_psychopy.
 DRAWN = []
+# The keyword arguments of every window opened and every TextStim created, in order.
+# Cleared by _install_fake_psychopy.
+WINDOWS = []
+TEXT_STIMS = []
 
 
 class FakeWin:
     def __init__(self, *args, **kwargs):
         self.flip_count = 0
         self._queue = []
+        WINDOWS.append(kwargs)
 
     def callOnFlip(self, fn, *args, **kwargs):
         self._queue.append((fn, args, kwargs))
@@ -95,9 +100,10 @@ class FakeKeyboard:
     (counted from 1) and the seconds after the window opened at which it is pressed,
     or None for no press. A window opens at each reset of the keyboard clock."""
 
-    def __init__(self, press, gate="space"):
+    def __init__(self, press, gate="space", notice="c"):
         self.press = press
         self.gate = gate
+        self.notice = notice
         self.window = 0
         self.planned = None
         self.reset_at = 0.0
@@ -134,10 +140,15 @@ class FakeKeyboard:
         return [FakeKey(name, at)]
 
     def waitKeys(self, keyList=None, **kwargs):
-        # The start gate, where the participant presses `gate`, and the pauses between
-        # blocks, where the participant goes on at once.
+        # The notice that no trigger codes will be sent, the one wait that takes C, where
+        # the experimenter presses `notice`. Then the start gate, where the participant
+        # presses `gate`, and the pauses between blocks, where the participant goes on
+        # at once.
         self.waits.append((list(keyList), DRAWN[-1] if DRAWN else None, self.window))
-        return [FakeKey(self.gate if len(self.waits) == 1 else "space", 0.0)]
+        if "c" in keyList:
+            return [FakeKey(self.notice, 0.0)]
+        others = [keys for keys, _, _ in self.waits if "c" not in keys]
+        return [FakeKey(self.gate if len(others) == 1 else "space", 0.0)]
 
 
 class FakePort:
@@ -152,18 +163,20 @@ class FakePort:
 
 
 def _install_fake_psychopy(dialog=None, press=None, gate="space", hz=60.0,
-                           port_writes=None):
+                           port_writes=None, notice="c"):
     """Install the fake package and return its keyboard. ``dialog`` holds what the
     start-up dialog returns when OK is pressed; None stands for Cancel. ``press`` is
     the keyboard's schedule, by default the first key 600 ms into each window, and
     ``gate`` the key pressed at the instructions. The display refreshes at ``hz``.
     Without ``port_writes`` no parallel port opens, so the script falls back to its
-    mock; with a list, a port opens and each write to it is appended there as
-    (seconds, code)."""
+    mock, and ``notice`` is the key pressed at the notice that says so. With a list, a
+    port opens and each write to it is appended there as (seconds, code)."""
     FakeTime.now = 0.0
     FakeTime.hz = float(hz)
     DRAWN.clear()
-    kb = FakeKeyboard(press or press_first_key_after(0.6), gate)
+    WINDOWS.clear()
+    TEXT_STIMS.clear()
+    kb = FakeKeyboard(press or press_first_key_after(0.6), gate, notice)
     psychopy = types.ModuleType("psychopy")
     visual = types.ModuleType("psychopy.visual")
     core = types.ModuleType("psychopy.core")
@@ -178,6 +191,8 @@ def _install_fake_psychopy(dialog=None, press=None, gate="space", hz=60.0,
     class TextStim:
         def __init__(self, *a, text="", **k):
             self.text = text
+            self.height = k.get("height")
+            TEXT_STIMS.append(self)
 
         def draw(self):
             DRAWN.append(self.text)
@@ -220,6 +235,27 @@ def _install_fake_psychopy(dialog=None, press=None, gate="space", hz=60.0,
                          ("psychopy.hardware.keyboard", keyboard)]:
         sys.modules[name] = module
     return kb
+
+
+def _install_fake_serial(monkeypatch, opened, writes, fails=False):
+    """Install a fake pyserial for the test. Each serial line opened is appended to
+    ``opened`` as (device, baud rate), and each write to it to ``writes`` as (seconds,
+    bytes). With ``fails``, opening a line raises, as pyserial does for a device that
+    is not there."""
+    serial = types.ModuleType("serial")
+
+    class Serial:
+        def __init__(self, port=None, baudrate=9600, **kwargs):
+            if fails:
+                raise OSError("could not open port %s" % port)
+            opened.append((port, baudrate))
+
+        def write(self, data):
+            writes.append((FakeTime.now, bytes(data)))
+            return len(data)
+
+    serial.Serial = Serial
+    monkeypatch.setitem(sys.modules, "serial", serial)
 
 
 def _load_generated(path):
@@ -325,8 +361,9 @@ def test_mock_port_fallback_runs(schema, tmp_path):
     }))
     path = export_psychopy(stim, {"name": "t", "language": "english", "timing": {}}, schema, str(tmp_path))
     module = _load_generated(path)
-    port = module.open_port(0x0378)          # ParallelPort raises -> MockPort
+    port, why = module.open_port()           # ParallelPort raises -> MockPort
     assert type(port).__name__ == "MockPort"
+    assert why == "the parallel port at 0x0378 could not be opened"
 
 
 # ---- What a run records ----------------------------------------------------------------
@@ -340,8 +377,8 @@ def test_mock_port_fallback_runs(schema, tmp_path):
 RUN_COLUMNS = ["participant", "version", "replicate", "list", "block", "trial", "set",
                "condition"]
 MEASURES = ["response", "rt_ms", "timed_out", "correct", "region_rts_ms",
-            "question_response", "question_rt_ms", "refresh_hz", "event_flips",
-            "event_onsets_ms"]
+            "question_response", "question_rt_ms", "refresh_hz", "trigger_mode",
+            "event_flips", "event_onsets_ms"]
 
 
 def _lexdec():
@@ -508,8 +545,9 @@ def test_the_runner_shows_the_instructions_and_waits_for_space(schema, tmp_path,
                                                                 monkeypatch):
     # The script started the trials at once, so nothing told the participant which key
     # meant what. It now shows the instructions and waits for the space bar, which also
-    # lets the experimenter start the run, before the first trial.
-    kb = _install_fake_psychopy()
+    # lets the experimenter start the run, before the first trial. A port opens, so no
+    # notice about missing trigger codes comes first.
+    kb = _install_fake_psychopy(port_writes=[])
     stim, design = _lexdec()
     module = _load_generated(export_psychopy(stim, design, schema, str(tmp_path)))
     text = LEXDEC_TEXT % ("the left arrow key", "the right arrow key")
@@ -520,7 +558,7 @@ def test_the_runner_shows_the_instructions_and_waits_for_space(schema, tmp_path,
     assert len(presented) == 4
     assert len(_read_data(_data_files(tmp_path / "data")[0])[1]) == 4
     # A mapping rotated across lists gives each version its own keys.
-    kb = _install_fake_psychopy()
+    kb = _install_fake_psychopy(port_writes=[])
     rotated = dict(design, rotate_mapping_by_list=True)
     two = pd.concat([stim, stim.assign(list=2)], ignore_index=True)
     module = _load_generated(export_psychopy(two, rotated, schema, str(tmp_path)))
@@ -549,7 +587,7 @@ def test_fillers_run_with_the_main_trials_and_only_the_practice_ends_in_a_pause(
     # main trials, so a pause came before and after every filler, set it apart and, after
     # each one, said that the practice trials had ended. Fillers now run with the main
     # trials, and the one pause comes where the practice trials end.
-    kb = _install_fake_psychopy()
+    kb = _install_fake_psychopy(port_writes=[])
     stim, design = _practice_and_fillers()
     module = _load_generated(export_psychopy(stim, design, schema, str(tmp_path)))
     presented = _run_main(module, ["--participant", "1"], monkeypatch, tmp_path / "data")
@@ -714,6 +752,155 @@ def test_a_code_outlasts_an_event_shorter_than_the_hold(schema, tmp_path):
     assert [(code, round(width * 1000, 1), truncated)
             for code, _, width, truncated in _pulses(writes)] == [
         (20, 16.7, True), (101, 50.0, False)]
+
+
+# ---- The window, the text and the trigger device --------------------------------------
+#
+# The script always opened a 1280 x 1024 window, though PsychoPy's advice for reducing
+# dropped frames is to run full screen. It drew its text at 48 px, where the OpenSesame
+# experiment used 32. When the parallel port could not be opened, it fell back to
+# printing the codes and said nothing more, so a session could run to its end without a
+# single code reaching the amplifier. It had no way to send codes over a serial line.
+# test-scripting.R checks the constants the R engine writes into the same script.
+
+NOTICE = ("No trigger codes will be sent, because %s. Each code is printed in the console "
+          "instead.\n\nPress C to continue without triggers, or escape to stop.")
+
+
+def _with(schema, section, **settings):
+    """The schema with `settings` added to its `section`."""
+    return dict(schema, **{section: dict(schema.get(section) or {}, **settings)})
+
+
+def test_the_window_is_full_screen_unless_the_schema_says_otherwise(schema, tmp_path,
+                                                                     monkeypatch):
+    _install_fake_psychopy(port_writes=[])
+    stim, design = _lexdec()
+    module = _load_generated(export_psychopy(stim, design, schema, str(tmp_path)))
+    assert module.FULLSCREEN is True
+    _run_main(module, ["--participant", "1"], monkeypatch, tmp_path / "data")
+    assert WINDOWS[-1]["fullscr"] is True
+    windowed = _with(schema, "presentation", fullscreen=False)
+    module = _load_generated(export_psychopy(stim, design, windowed, str(tmp_path)))
+    assert module.FULLSCREEN is False
+    _run_main(module, ["--participant", "1"], monkeypatch, tmp_path / "data")
+    assert (WINDOWS[-1]["fullscr"], WINDOWS[-1]["size"]) == (False, (1280, 1024))
+
+
+def test_the_text_height_reaches_the_stimulus(schema, tmp_path, monkeypatch):
+    for settings, height in (({}, 48), ({"text_height_px": 60}, 60)):
+        _install_fake_psychopy(port_writes=[])
+        stim, design = _lexdec()
+        module = _load_generated(export_psychopy(
+            stim, design, _with(schema, "presentation", **settings), str(tmp_path)))
+        assert module.TEXT_HEIGHT_PX == height
+        _run_main(module, ["--participant", "1"], monkeypatch, tmp_path / "data")
+        # The stimulus that showed the targets. The instructions keep their own size.
+        assert [s.height for s in TEXT_STIMS if s.text == "dop"] == [height]
+
+
+def test_without_a_port_the_experimenter_is_told_before_the_first_trial(
+        schema, tmp_path, monkeypatch, capsys):
+    kb = _install_fake_psychopy()
+    stim, design = _lexdec()
+    module = _load_generated(export_psychopy(stim, design, schema, str(tmp_path)))
+    assert module.TRIGGER_MODE == "auto"
+    _run_main(module, ["--participant", "1"], monkeypatch, tmp_path / "data")
+    # A notice the experimenter dismisses with C comes before the instructions, and the
+    # console says the same.
+    why = "the parallel port at 0x0378 could not be opened"
+    assert kb.waits[0] == (["c", "escape"], NOTICE % why, 0)
+    assert kb.waits[1][0] == ["space", "escape"]
+    out = capsys.readouterr().out
+    assert f"[lexsync] {why} (NotImplementedError)." in out
+    assert f"[lexsync] NO TRIGGER CODES WILL BE SENT, because {why}." in out
+    # Every row of the data file says the codes were printed, not sent.
+    _, rows = _read_data(_data_files(tmp_path / "data")[0])
+    assert [r["trigger_mode"] for r in rows] == ["mock"] * 4
+    # With the port, no notice comes before the instructions, and the rows say so.
+    kb = _install_fake_psychopy(port_writes=[])
+    module = _load_generated(module.__file__)
+    _run_main(module, ["--participant", "1"], monkeypatch, tmp_path / "hardware")
+    assert kb.waits[0][0] == ["space", "escape"]
+    _, rows = _read_data(_data_files(tmp_path / "hardware")[0])
+    assert {r["trigger_mode"] for r in rows} == {"hardware"}
+
+
+def test_hardware_mode_stops_before_any_window_without_the_port(schema, tmp_path,
+                                                                 monkeypatch):
+    _install_fake_psychopy()
+    stim, design = _lexdec()
+    module = _load_generated(export_psychopy(
+        stim, design, _with(schema, "triggers", mode="hardware"), str(tmp_path)))
+    with pytest.raises(SystemExit) as stop:
+        _run_main(module, ["--participant", "1"], monkeypatch, tmp_path / "data")
+    assert stop.value.code == (
+        "lexsync: the parallel port at 0x0378 could not be opened (NotImplementedError). "
+        "triggers.mode is hardware, so the experiment does not run without it.")
+    assert WINDOWS == []
+    assert _data_files(tmp_path / "data") == []
+    # With the port, the run goes ahead.
+    writes = []
+    _install_fake_psychopy(port_writes=writes)
+    module = _load_generated(module.__file__)
+    _run_main(module, ["--participant", "1"], monkeypatch, tmp_path / "data")
+    assert 254 in [code for _, code in writes]
+    _, rows = _read_data(_data_files(tmp_path / "data")[0])
+    assert {r["trigger_mode"] for r in rows} == {"hardware"}
+
+
+def test_mock_mode_prints_the_codes_without_trying_the_port(schema, tmp_path, monkeypatch,
+                                                            capsys):
+    writes = []
+    kb = _install_fake_psychopy(port_writes=writes)
+    stim, design = _lexdec()
+    module = _load_generated(export_psychopy(
+        stim, design, _with(schema, "triggers", mode="mock"), str(tmp_path)))
+    _run_main(module, ["--participant", "1"], monkeypatch, tmp_path / "data")
+    # The port was there, and the script never wrote to it.
+    assert writes == []
+    assert kb.waits[0] == (["c", "escape"], NOTICE % "triggers.mode is mock", 0)
+    assert "[lexsync mock trigger] 254" in capsys.readouterr().out
+    _, rows = _read_data(_data_files(tmp_path / "data")[0])
+    assert {r["trigger_mode"] for r in rows} == {"mock"}
+
+
+def test_escape_at_the_trigger_notice_stops_before_any_trial(schema, tmp_path, monkeypatch):
+    _install_fake_psychopy(notice="escape")
+    stim, design = _lexdec()
+    module = _load_generated(export_psychopy(stim, design, schema, str(tmp_path)))
+    assert _run_main(module, ["--participant", "1"], monkeypatch, tmp_path / "data") == []
+    assert _data_files(tmp_path / "data") == []
+
+
+def test_a_serial_backend_writes_each_code_as_one_byte(schema, tmp_path, monkeypatch):
+    # The codes go to the serial line the schema names, never to the first port found,
+    # and each is one byte, held and reset as on a parallel port.
+    _install_fake_psychopy()
+    opened, writes = [], []
+    _install_fake_serial(monkeypatch, opened, writes)
+    stim, design = _lexdec()
+    serial = _with(schema, "triggers", backend="serial", serial_port="COM7", baudrate=57600)
+    module = _load_generated(export_psychopy(stim, design, serial, str(tmp_path)))
+    assert (module.TRIGGER_BACKEND, module.SERIAL_PORT, module.SERIAL_BAUDRATE) == (
+        "serial", "COM7", 57600)
+    _run_main(module, ["--participant", "1"], monkeypatch, tmp_path / "data")
+    assert opened == [("COM7", 57600)]
+    assert {len(data) for _, data in writes} == {1}
+    codes = [(t, data[0]) for t, data in writes]
+    assert codes[0][1] == 0 and codes[-1][1] == 0
+    pulses = _pulses(codes)
+    assert pulses[0][0] == 254 and pulses[-1][0] == 255
+    for code, onset, width, truncated in pulses:
+        assert truncated or abs(width - 0.050) <= 0.5 / 60 + 1e-9, (code, onset, width)
+    _, rows = _read_data(_data_files(tmp_path / "data")[0])
+    assert {r["trigger_mode"] for r in rows} == {"hardware"}
+    # A serial device that is not there is handled as a missing parallel port is.
+    kb = _install_fake_psychopy()
+    _install_fake_serial(monkeypatch, [], [], fails=True)
+    module = _load_generated(module.__file__)
+    _run_main(module, ["--participant", "1"], monkeypatch, tmp_path / "missing")
+    assert kb.waits[0][1] == NOTICE % "the serial port COM7 could not be opened"
 
 
 # ---- One counterbalancing version per participant ------------------------------------

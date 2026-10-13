@@ -6,17 +6,25 @@ Design: en_priming_jitter    Language: english
 Conditions file: en_priming_jitter_english_psychopy.csv
 
 Each trial is rendered from a declarative list of events (``EVENTS``), so one
-interpreter serves every paradigm. Onset triggers are written to the parallel
-port on the exact flip on which their stimulus first appears, using
+interpreter serves every paradigm. Onset triggers are written to the trigger
+device on the exact flip on which their stimulus first appears, using
 ``win.callOnFlip``, the frame-locking that motivates lexsync. Each code is held
 for ``TRIGGER_HOLD_MS``, in whole flips at the measured refresh and never less
 than 10 ms, and reset on the flip that ends the hold, in a later event when its
 own is shorter, unless the next onset's code replaces it first. The session
 markers, 254 before the first trial and 255 after the last, are held the same
 way. Stimulus text is read as data from the conditions file at run time (never
-interpolated into this code). When no parallel-port driver is present (a
-development machine, macOS or continuous integration), a mock port prints the
-codes so the script still runs end to end with no hardware.
+interpolated into this code).
+
+The device is the parallel port at ``TRIGGER_ADDRESS``, or the serial line
+``SERIAL_PORT``, which takes each code as one byte. ``TRIGGER_MODE`` decides what
+happens when the device cannot be opened, as on a development machine, on macOS
+or in continuous integration. Under "auto", a mock port prints the codes, so the
+script still runs end to end, and a notice says so before the instructions, where
+the experimenter presses C to go on. Under "hardware", the script stops before its
+window opens, and under "mock" it prints the codes without trying the device, after
+the same notice. The window fills the screen unless ``FULLSCREEN`` is False, and the
+stimulus text is ``TEXT_HEIGHT_PX`` pixels high.
 
 Keys are read from psychopy.hardware.keyboard. A stimulus that collects its own
 response (an event with ``respond``) resets the keyboard clock and clears the
@@ -32,10 +40,10 @@ beside this script, without the _p part when no participant number is given. Eac
 row holds the run, the trial's fields and trigger codes, the response, its reaction
 time in milliseconds, whether the window closed without one and whether the key was
 the trial's `answer`, each region's reading time, the question's response and
-reaction time, the measured refresh rate, and the flips each event took and the
-time of its first, from the trial's first flip. The header is written first and
-each row as its trial ends, so a run stopped with escape leaves a valid file of the
-trials it completed.
+reaction time, the measured refresh rate, the trigger mode the run used ("hardware"
+or "mock"), and the flips each event took and the time of its first, from the
+trial's first flip. The header is written first and each row as its trial ends, so
+a run stopped with escape leaves a valid file of the trials it completed.
 
 The conditions file holds every presentation version of the design, one per
 (replicate, list) pair, and a run presents one of them (``VERSIONS`` lists them).
@@ -74,13 +82,26 @@ CONDITIONS_FILE = os.path.join(HERE, "en_priming_jitter_english_psychopy.csv")
 DATA_DIR = os.path.join(HERE, "data")
 DATA_STEM = "en_priming_jitter_english"
 TRIGGER_ADDRESS = 0x0378
+# The trigger device: "parallel" writes each code to the port at TRIGGER_ADDRESS, and
+# "serial" writes it as one byte to SERIAL_PORT at SERIAL_BAUDRATE.
+TRIGGER_BACKEND = "parallel"
+SERIAL_PORT = ""
+SERIAL_BAUDRATE = 115200
+# The device as the messages name it.
+TRIGGER_DEVICE = "the parallel port at 0x0378"
+# What happens when the device cannot be opened: "auto" prints the codes instead and
+# says so before the first trial, "hardware" stops the run, and "mock" prints them
+# without trying the device.
+TRIGGER_MODE = "auto"
 TRIGGER_HOLD_MS = 50
 # A pulse shorter than this may not register on the amplifier at all, so a fast
 # display must not be allowed to shorten the hold below it.
 MIN_TRIGGER_HOLD_MS = 10
 # Whole flips the onset code is held for; set from the measured refresh in main().
 TRIGGER_HOLD_FRAMES = 3
-FULLSCREEN = False
+FULLSCREEN = True
+# The height of the stimulus text in pixels.
+TEXT_HEIGHT_PX = 48
 WORD_FONT = "Courier New"
 # Used only if the display's refresh cannot be measured at start-up.
 ASSUMED_REFRESH_HZ = 60
@@ -94,6 +115,9 @@ KEYBOARD = None
 # The code on the port: the port it was written to, and the flips still to come until
 # it is reset, the flip that resets it included. No flips means the port holds 0.
 PULSE = {"port": None, "flips": 0}
+# "hardware" when the codes reach the device and "mock" when they are printed, as every
+# row of the data file records. Set in main().
+TRIGGER_MODE_IN_USE = None
 
 # The trial event sequence (declarative data, written by lexsync).
 EVENTS = json.loads(r"""[{"type":"fixation","text":"+","ms":500},{"type":"text","field":"prime","ms_column":"prime_ms","trigger":20},{"type":"mask","text":"#####","ms":33},{"type":"text","field":"target","ms":800,"trigger":"@condition_trigger","respond":{"keys":["left","right"],"timeout":2}},{"type":"blank","ms_column":"iti_ms"}]""")
@@ -111,26 +135,71 @@ LEADING_COLUMNS = ["participant", "version", "replicate", "list", "block", "tria
                    "condition"]
 CODE_COLUMNS = ["condition_trigger", "item_trigger", "answer"]
 MEASURE_COLUMNS = ["response", "rt_ms", "timed_out", "correct", "region_rts_ms",
-                   "question_response", "question_rt_ms", "refresh_hz", "event_flips",
-                   "event_onsets_ms"]
+                   "question_response", "question_rt_ms", "refresh_hz", "trigger_mode",
+                   "event_flips", "event_onsets_ms"]
 # `correct` scores the response, or in a design without a response event, the question.
 SCORES_RESPONSE = any(ev["type"] == "response" or "respond" in ev for ev in EVENTS)
 
 
 class MockPort:
-    """Stand-in used when no parallel-port driver is available."""
+    """Stand-in used when no codes are sent: it prints each code instead."""
 
     def setData(self, data):
         print("[lexsync mock trigger] %d" % int(data))
 
 
-def open_port(address):
+class SerialPort:
+    """A trigger device on a serial line. Each code is written as one byte, which the
+    device holds on its outputs as a parallel port holds a code, and 0 resets it."""
+
+    def __init__(self, device, baudrate):
+        # Imported here, so an experiment on a parallel port needs no pyserial.
+        import serial
+        self.line = serial.Serial(device, baudrate=baudrate)
+
+    def setData(self, data):
+        self.line.write(bytes([int(data)]))
+
+
+def describe(err):
+    """An exception as a message quotes it: its type, and its text when it has one."""
+    text = str(err)
+    return type(err).__name__ + (": " + text if text else "")
+
+
+def open_port():
+    """The trigger device, opened and set to 0, and the reason no codes will be sent,
+    or None when they will.
+
+    TRIGGER_MODE decides what happens without the device. Under "auto", the codes go to
+    a MockPort, which prints them, and under "hardware" the run stops. Under "mock",
+    they go to a MockPort without the device being tried."""
+    if TRIGGER_MODE == "mock":
+        return MockPort(), "triggers.mode is mock"
     try:
-        port = parallel.ParallelPort(address=address)
+        if TRIGGER_BACKEND == "serial":
+            port = SerialPort(SERIAL_PORT, SERIAL_BAUDRATE)
+        else:
+            port = parallel.ParallelPort(address=TRIGGER_ADDRESS)
         port.setData(0)  # the dummy backend raises NotImplementedError here
-        return port
-    except Exception:
-        return MockPort()
+        return port, None
+    except Exception as err:
+        if TRIGGER_MODE == "hardware":
+            sys.exit("lexsync: %s could not be opened (%s). triggers.mode is hardware, "
+                     "so the experiment does not run without it."
+                     % (TRIGGER_DEVICE, describe(err)))
+        print("[lexsync] %s could not be opened (%s)." % (TRIGGER_DEVICE, describe(err)))
+        return MockPort(), "%s could not be opened" % TRIGGER_DEVICE
+
+
+def mock_banner(why):
+    """Say in the console, where the codes are printed, that none will be sent."""
+    rule = "[lexsync] " + "=" * 70
+    print(rule)
+    print("[lexsync] NO TRIGGER CODES WILL BE SENT, because %s." % why)
+    print("[lexsync] Each code is printed here instead, and the data file records")
+    print("[lexsync] trigger_mode as mock.")
+    print(rule)
 
 
 def load_trials(path):
@@ -494,6 +563,22 @@ def block_break(win, text_stim, upcoming):
     return "escape" if keys and any(k.name == "escape" for k in keys) else None
 
 
+def trigger_notice(win, why):
+    """Say on screen that no trigger codes will be sent, and wait for C.
+
+    It comes before the instructions, so the experimenter sees it before the
+    participant does, and it takes a key the participant has no reason to press.
+    Escape stops the run before any trial."""
+    stim = visual.TextStim(win, text="No trigger codes will be sent, because %s. Each code "
+                           "is printed in the console instead.\n\nPress C to continue "
+                           "without triggers, or escape to stop." % why, height=28,
+                           wrapWidth=1000, color="white")
+    stim.draw()
+    win.flip()
+    keys = KEYBOARD.waitKeys(keyList=["c", "escape"], waitRelease=False)
+    return "escape" if keys and any(k.name == "escape" for k in keys) else None
+
+
 def start_gate(win, text):
     """Show the instructions and wait for the space bar before the first trial.
 
@@ -641,6 +726,7 @@ def trial_row(trial, version, participant, records):
         row["correct"] = 1 if str(scored["key"] or "").strip() == answer else 0
     row["region_rts_ms"] = "|".join(ms_text(rt) for rt in rts)
     row["refresh_hz"] = "%.2f" % REFRESH_HZ
+    row["trigger_mode"] = TRIGGER_MODE_IN_USE or ""
     row["event_flips"] = "|".join("" if s is None else str(s["flips"]) for s in records)
     onsets = [s["onset"] for s in records if s is not None and s["onset"] is not None]
     row["event_onsets_ms"] = "|".join(
@@ -663,7 +749,7 @@ def open_data_file(participant, version):
 
 
 def main():
-    global REFRESH_HZ, TRIGGER_HOLD_FRAMES, KEYBOARD
+    global REFRESH_HZ, TRIGGER_HOLD_FRAMES, KEYBOARD, TRIGGER_MODE_IN_USE
     given = launch_arguments(sys.argv[1:])
     if not given:
         given = ask_launch()
@@ -680,6 +766,12 @@ def main():
         if usual["version"] != version["version"]:
             print("[lexsync] participant %d would normally run version %d, and runs "
                   "version %d as asked." % (participant, usual["version"], version["version"]))
+    # The trigger device opens before the window, so a run that stops without it, under
+    # triggers.mode hardware, leaves no window behind.
+    port, why = open_port()
+    TRIGGER_MODE_IN_USE = "hardware" if why is None else "mock"
+    if why is not None:
+        mock_banner(why)
     win = visual.Window(size=(1280, 1024), color="black", units="pix", fullscr=FULLSCREEN)
     REFRESH_HZ = measure_refresh_hz(win)
     TRIGGER_HOLD_FRAMES = trigger_hold_frames(REFRESH_HZ)
@@ -688,8 +780,14 @@ def main():
           % (REFRESH_HZ, 1000.0 / REFRESH_HZ, TRIGGER_HOLD_FRAMES,
              TRIGGER_HOLD_FRAMES * 1000.0 / REFRESH_HZ))
     KEYBOARD = keyboard.Keyboard()
-    port = open_port(TRIGGER_ADDRESS)
-    text_stim = visual.TextStim(win, text="", height=48, color="white", font=WORD_FONT)
+    text_stim = visual.TextStim(win, text="", height=TEXT_HEIGHT_PX, color="white",
+                                font=WORD_FONT)
+    # Without the device, the experimenter is told on screen before anything else.
+    if why is not None and trigger_notice(win, why) == "escape":
+        print("[lexsync] stopped at the trigger notice, and no data file was written.")
+        win.close()
+        core.quit()
+        return
     # The instructions, and the start gate: nothing is recorded until the space bar is
     # pressed, and escape here leaves no data file behind.
     if start_gate(win, INSTRUCTIONS[version["version"] - 1]) == "escape":

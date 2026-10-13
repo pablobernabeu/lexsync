@@ -9,6 +9,9 @@
 
 var.trigger_backend = u'parallel'      # 'parallel' | 'serial'
 var.parallel_port_address = 0x378
+# The serial device is named, because the first port found could be another device.
+var.serial_port = u'COM3'              # /dev/ttyUSB0 on Linux
+var.serial_baudrate = 115200           # the rate the device's manual gives
 var.test_mode = u'no'
 var.word_duration_ms = 500             # how long the target word stays on screen
 
@@ -26,17 +29,12 @@ send_trigger = _printer   # default; replaced below when a device is found
 try:
     if var.trigger_backend == u'serial':
         import serial
-        import serial.tools.list_ports
-        _ports = serial.tools.list_ports.comports()
-        if _ports:
-            _sp = serial.Serial(_ports[0].device)
+        _sp = serial.Serial(var.serial_port, int(var.serial_baudrate))
 
-            def send_trigger(code):
-                _sp.write(int(code).to_bytes(1, 'big'))
-                time.sleep(0.01)   # 10 ms separation (BrainVision Recorder manual)
-                _sp.write((0).to_bytes(1, 'big'))
-        else:
-            var.test_mode = u'yes'
+        def send_trigger(code):
+            _sp.write(int(code).to_bytes(1, 'big'))
+            time.sleep(0.01)   # 10 ms separation (BrainVision Recorder manual)
+            _sp.write((0).to_bytes(1, 'big'))
     else:
         from ctypes import windll
         _io = windll.dlportio

@@ -1,0 +1,4 @@
+# Both engines write the serial device, the mode, the window and the text height into
+# every target in the same bytes.
+outcome: artefacts
+compare: [experiments]

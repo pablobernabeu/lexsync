@@ -235,10 +235,11 @@ equivalence:
   bound_d: 0.5
   alpha: 0.05
 
-# ---- Hardware triggers (defaults; overridable per design) -----------------
+# ---- Hardware triggers (for every design run with this schema) ------------
 # Each code is written at its stimulus's onset and reset to 0 once it has been held
 # for trigger_hold_ms. The PsychoPy and OpenSesame experiments also send 254 just
-# before the first trial and 255 just after the last, held the same way.
+# before the first trial and 255 just after the last, held the same way. These keys
+# describe the machine that runs the experiments, so a design does not set them.
 triggers:
   parallel_address: '0x0378'   # typical LPT1 base address
   # How long the onset code is held before it is reset to 0, in milliseconds.
@@ -268,14 +269,41 @@ triggers:
   # codes. A design with more item sets than free codes is then refused. Setting
   # this to true lets the item codes wrap and repeat within the free codes instead.
   allow_code_overlap: false
+  # The device the PsychoPy and OpenSesame experiments write the codes to: parallel,
+  # the port at parallel_address, or serial, which writes each code as one byte to
+  # serial_port at baudrate, 115200 unless set. A serial device must be named, since
+  # the first port found could be another device:
+  #
+  #   backend: serial
+  #   serial_port: COM3     # /dev/ttyUSB0 on Linux, /dev/cu.usbserial-... on macOS
+  #   baudrate: 115200      # the rate the device's manual gives
+  #
+  # A USB-serial adapter delays each code by the USB transfer that carries it. The
+  # photodiode check in the experiments guide measures that delay.
+  backend: parallel
+  # What the two laboratory experiments do when the device cannot be opened:
+  #   auto      print each code instead, say so on screen before the first trial,
+  #             and record the mode with every trial: trigger_mode in the PsychoPy
+  #             data file, lexsync_trigger_mode in the OpenSesame log (default)
+  #   hardware  refuse to start
+  #   mock      print each code without trying the device, with the same notice
+  mode: auto
 
-# ---- Presentation defaults (overridable per design) -----------------------
+# ---- Presentation defaults (a design may set its own font) ----------------
 # The word font used by the generated PsychoPy and OpenSesame experiments. The
 # default is a fixed-width Latin font; set a glyph-complete font per design for
 # non-Latin scripts (for example 'SimHei' for Chinese; see design_zh_*.yaml).
 presentation:
   font: 'Courier New'
   opensesame_font: 'mono'      # OpenSesame font_family token (space-free)
+  # The height of the stimulus text in pixels, a whole number from 8 to 400, in all
+  # three targets. In OpenSesame, it is the experiment's font_size, which every
+  # screen uses, the instructions included.
+  text_height_px: 48
+  # Whether the PsychoPy experiment runs full screen, as PsychoPy advises for frame
+  # timing. With false, it opens a 1280 x 1024 window. OpenSesame takes full screen
+  # from the mode it is launched in.
+  fullscreen: true
   # Event durations are canonically MILLISECONDS. A design may still declare a
   # duration in frames (`duration_frames`, and `fixation_frames` / `word_frames` /
   # `isi_frames` in a design's `timing:` block), which is converted to

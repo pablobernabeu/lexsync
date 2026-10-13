@@ -19,15 +19,15 @@
     },
     {
       "file": "output/experiments/en_ndensity_english_psychopy.py",
-      "sha256": "db0720c462a0b34363f9ad90764325bad319159c1b116f63e691905bf7ca86f5"
+      "sha256": "38342edf7bf98df26fa3f15d7947b3e8440443456b943819f65c145bb269b06b"
     },
     {
       "file": "output/experiments/en_ndensity_english.osexp",
-      "sha256": "78678a2547a8a3249eb3a5a9c3e2ba9a57812aa170df75a9b29d99a361366ebe"
+      "sha256": "bae5d90871c799d806146515a4f5211fd701822c90961824da5d06184d6c6448"
     },
     {
       "file": "output/experiments/en_ndensity_english.html",
-      "sha256": "f5d5925e98a9c1cef9ff1e498429f777aa9205a4387ec7028c130ab8343accb1"
+      "sha256": "ec650bf07767af1702dbca98aca367a1ec21db012d6ad31ebe84ac8b412d3928"
     },
     {
       "file": "output/experiments/en_ndensity_english_psychopy.csv",
@@ -232,7 +232,7 @@
   "reproducibility": {
     "design_sha256": "3bc9b0d7c5bd082140bc65c666f4ea8ebcad3bf684a83048cef5677fa0953218",
     "schema_path": "config/schema.yaml",
-    "schema_sha256": "f2c268f23e8a5e374f920f8cb8a0a89392ab207acc0c1809f2f409a2aa844120",
+    "schema_sha256": "363d42ebb6d2076d91b9e1ecedc10cdd1133b6e662cea5123146c9bb4e69fb73",
     "seed": 2026,
     "versions": {
       "engine": "python",

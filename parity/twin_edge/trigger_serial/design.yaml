@@ -1,0 +1,27 @@
+# Twin-edge case: the presentation and trigger settings a laboratory changes, taken
+# from the case's own schema. The codes go to a serial device named by a stable Linux
+# alias, the run refuses to start without it, the PsychoPy window does not fill the
+# screen and the text is 36 px high. Both engines must write these settings into every
+# target in the same bytes. The word forms are common English words.
+name: twin_edge_trigger_serial
+language: english
+description: 'A serial trigger device, hardware mode, a window and 36 px text.'
+items:
+  source: table
+  path: items.csv
+events:
+  - type: fixation
+    content: '+'
+    duration_ms: 500
+  - type: text
+    content: '{word}'
+    duration_ms: 800
+    trigger: condition
+    onset_locked: true
+  - type: response
+    keys: [f, j]
+    timeout_ms: 2000
+  - type: blank
+    duration_ms: 250
+counterbalance:
+  lists: 1

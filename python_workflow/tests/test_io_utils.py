@@ -293,7 +293,7 @@ def test_read_config_reads_an_unquoted_y_and_n_as_text(tmp_path):
 # same digests for .DESIGN_KEYS and .SCHEMA_KEYS, so a key added to one engine only
 # fails both suites.
 DESIGN_KEYS_SHA256 = "46cb25ea6f0ad0a7973200fa362673a2df818c1121361c58d9d32794fb6ee241"
-SCHEMA_KEYS_SHA256 = "3da6fe93e219c8b2d112c3d10c84538cbb67c8271b01d5751c3e5388de938529"
+SCHEMA_KEYS_SHA256 = "6fe50b7e1f4cd526cb9a555bf649686c8859b62ec8783d24c6ba073ad1927aa3"
 
 
 def test_the_key_vocabularies_agree_across_engines():

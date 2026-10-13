@@ -484,7 +484,8 @@ one within the range of the item codes it sends.
 
 The schema sets the hardware defaults: `triggers.parallel_address` (`0x0378`, a typical LPT1 base
 address) and `triggers.trigger_hold_ms` (50, comfortably above the 10 ms minimum recorders need to
-see). A design can override them. The older `triggers.reset_after_frames` is still accepted and
+see). They describe the machine that runs the experiments, so a design does not set them, and
+neither do the device settings below. The older `triggers.reset_after_frames` is still accepted and
 converted. `triggers.inter_trigger_ms` held the self-paced reading critical-region code for 10 ms.
 That code is now held like every other, so the key is no longer used, and the run log says so when
 a schema sets it. `triggers.allow_code_overlap` is false, so a design whose item codes cannot all
@@ -502,6 +503,42 @@ pulse as an 800 ms target, and a key that ends a stimulus early does not cut its
 the next onset's code ends a code before its hold is up, with a 0 written just before the new
 code. Both laboratory targets send 254 just before the first trial and 255 just after the last,
 held the same way.
+
+### The trigger device
+
+`triggers.backend` names the device both laboratory targets write the codes to. `parallel`, the
+default, is the port at `triggers.parallel_address`. `serial` writes each code as one byte to the
+device `triggers.serial_port` names, at `triggers.baudrate` bits per second, 115200 unless set:
+
+```yaml
+triggers:
+  backend: serial
+  serial_port: COM3      # /dev/ttyUSB0 on Linux, /dev/cu.usbserial-... on macOS
+  baudrate: 115200       # the rate the device's manual gives
+```
+
+The port has to be named, and a serial backend without one is refused. The OpenSesame setup used
+to open the first serial port it found, which could be another device, and it reached that code
+only once the script had been edited by hand. A code is held and reset on a serial device as on a
+parallel port, with a 0 written when its hold is up. A serial line delays each code by an amount
+that varies from code to code, and a parallel port does not. A USB-serial adapter carries each
+byte in a USB transfer, scheduled in frames of a millisecond on a full-speed connection, and its
+driver adds a delay of its own. Adapters built on FTDI chips also hold data on its way to the
+computer until their latency timer runs out, 16 ms by default. That matters for a device that
+answers and for a response box on the same adapter. Measure the delay with a photodiode, as
+[checking the timing](#checking-the-timing) describes, before a study relies on serial codes for
+its timing.
+
+`triggers.mode` decides what happens when the device cannot be opened, as on a laptop with no
+parallel port. Under `auto`, the default, both targets print each code in the console, and a
+screen before any other tells the experimenter that no codes will be sent. Pressing C goes on
+without them, and escape stops the run. Every trial records the mode the run used, `hardware` or
+`mock`, as `trigger_mode` in the PsychoPy data file and as `lexsync_trigger_mode` in the OpenSesame
+log. Both targets used to print the codes and run on with no notice on screen, and only the
+OpenSesame log recorded that no code had reached the amplifier, in its `test_mode` column.
+`hardware` refuses to start without the device. The PsychoPy script stops before its window
+opens, and the OpenSesame experiment stops in its setup. `mock` prints the codes without trying
+the device, after the same notice.
 
 ## The three targets
 
@@ -523,6 +560,14 @@ paths = lexsync.export_experiments(
 
 Generation imports neither PsychoPy nor pyserial. It writes text. That is what lets the whole
 demonstration, and the test suite, reproduce on a machine with no laboratory hardware attached.
+
+Two schema settings shape the display. `presentation.text_height_px`, a whole number from 8 to 400
+and 48 by default, is the height of the stimulus text in pixels in all three targets. The
+OpenSesame experiment drew its text 32 pixels high, where the other two used 48. In OpenSesame,
+the setting is the experiment's `font_size`, which every screen uses, the instructions included.
+`presentation.fullscreen`, true by default, runs the PsychoPy script full screen, as PsychoPy's
+advice on reducing dropped frames recommends. With false, the script opens a 1280 × 1024 window,
+the window it always opened before. OpenSesame takes full screen from the mode it is launched in.
 
 ### PsychoPy
 
@@ -584,21 +629,25 @@ answers, or from the opening of a window kept with `from: offset`. `correct` say
 was the trial's `answer`. It is 0 after a timeout and empty when the trial names no answer. In a
 design without a response event, the question's key is the one scored. `region_rts_ms` holds each
 self-paced reading region's time, joined by `|`, and `question_response` and `question_rt_ms` the
-question's key and reaction time. The row ends with the measured `refresh_hz`, then `event_flips`
-and `event_onsets_ms`: the flips each event took and the time of its first flip from the trial's
-first, joined by `|` in event order. A stimulus that collects its response counts the blank after
-it as well, up to the key or the close of the window. The realised durations can be checked against
-the declared ones there.
+question's key and reaction time. Near its end, the row gives the measured `refresh_hz` and
+`trigger_mode`, which is `hardware` when the codes went to the device and `mock` when they were
+printed. It ends with `event_flips` and `event_onsets_ms`: the flips each event took and the time
+of its first flip from the trial's first, joined by `|` in event order. A stimulus that collects
+its response counts the blank after it as well, up to the key or the close of the window. The
+realised durations can be checked against the declared ones there.
 
 Stimulus text is never interpolated into the script, only read from the CSV at run time, so nothing
-in a stimulus can become code. When no parallel-port driver is present, on a development laptop, on
-macOS, or in continuous integration, a mock port prints the codes and the script still runs. The
-test suite exercises exactly that: a mock-PsychoPy harness runs the generated script and asserts
-that the onset trigger is flip-locked. It also checks that a key pressed while the target is shown
-is recorded with its reaction time from the onset, and that every committed script writes one data
-row per trial. With the display simulated at 60, 144 and 240 Hz, it also checks every code each
-committed script sends, the session markers included. Each must last at least 10 ms and lie within
-half a flip of the hold, unless the next onset ends it.
+in a stimulus can become code. When the trigger device cannot be opened, on a development laptop,
+on macOS or in continuous integration, the script follows `triggers.mode`, as
+[the trigger device](#the-trigger-device) describes. By default, a mock port prints the codes and
+the script still runs, after a notice that says so. The test suite exercises exactly that: a
+mock-PsychoPy harness runs the generated script and asserts that the onset trigger is flip-locked.
+It also checks that a key pressed while the target is shown is recorded with its reaction time from
+the onset, and that every committed script writes one data row per trial. It runs each trigger
+mode with and without a port, and a serial device that receives each code as one byte. With the
+display simulated at 60, 144 and 240 Hz, it also checks every code each committed script sends,
+the session markers included. Each must last at least 10 ms and lie within half a flip of the
+hold, unless the next onset ends it.
 
 ### OpenSesame
 
@@ -660,11 +709,15 @@ suite runs the generated scripts with the display simulated at 60, 120 and 144 H
 the priming experiment's prime and mask last the flips the PsychoPy script gives them, and that
 every code lasts the hold.
 
-The setup block opens the parallel port and falls back to a printing stub when it is not available,
-so the experiment opens and runs on a machine with no trigger hardware. The setup's code has a
-serial branch, but nothing in the design selects it, so a serial device needs the setup script
-edited by hand. OpenSesame takes full screen or a window from the mode it is launched in, while the
-PsychoPy script runs in a 1280 × 1024 window.
+The setup block opens the device `triggers.backend` names, the parallel port or the serial port
+`triggers.serial_port`, and follows `triggers.mode` when it cannot. Under `auto`, it falls back to
+a printing stub, so the experiment opens and runs on a machine with no trigger hardware. An inline
+script after it, `lexsync_trigger_notice`, then says so before any other screen and waits for C.
+Under `hardware`, the setup stops the experiment. The setup used to set the backend to parallel on
+the line before its serial branch, so a serial device needed the script edited by hand. That
+branch then took the first serial port it found. Every trial logs `lexsync_trigger_mode`, and
+`test_mode` is still `yes` when the codes are printed. OpenSesame takes full screen or a window
+from the mode it is launched in, whatever the generated file's `fullscreen` line says.
 
 The word in that script does not come from OpenSesame's variable store, because OpenSesame
 evaluates what a loop table puts there. In both versions, a cell holding `[=...]` runs as Python,
@@ -715,7 +768,13 @@ inline. It opens with a welcome screen that shows the instructions and waits for
 It attaches each item's design fields to every recorded row and ends by saving the collected data
 as a CSV download, so a generated experiment gathers usable data with no server behind it. The
 jsPsych library and its stylesheet load from a content delivery
-network, so the first run needs an internet connection. A target and its response window are one
+network, so the first run needs an internet connection. Each of the three files is loaded with
+Subresource Integrity, its SHA-384 and `crossorigin="anonymous"`, so the browser refuses a copy
+that differs from the published release. A page that collects participants' responses therefore
+runs only the code it was written with. To run offline, point the tags at downloaded copies and
+serve the folder over http, or remove each tag's `integrity` and `crossorigin` attributes. A
+browser refuses the CORS request that a page opened from a `file://` address would make for a
+local copy, so it could not check the hash. A target and its response window are one
 jsPsych trial, recorded with `lexsync_event` set to `target`. It accepts the response keys from the
 target's onset, shows the target for its duration and runs on for the timeout. The first key ends
 it, so its `rt` is timed from the target's onset.
@@ -748,7 +807,9 @@ measures the display and the triggers on one clock.
    background drives most diodes. A small stimulus, such as a fixation cross, may need a white
    patch drawn with it for the pilot.
 2. Run a pilot session on the laboratory machine, at the refresh rate and in the screen mode of
-   the study, and record the diode and the trigger channel together.
+   the study, and record the diode and the trigger channel together. With
+   `triggers.mode: hardware`, neither the pilot nor the study can start without the trigger
+   device.
 3. For each trial, measure the time from the trigger's onset to the diode's rise. It should be
    nearly constant. Its mean is the display's lag, which includes the time the screen takes to
    draw down to the diode and, on an LCD, an input lag that can exceed 10 ms. The analysis can

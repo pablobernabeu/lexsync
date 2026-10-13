@@ -87,6 +87,25 @@ def test_the_parallel_port_address_must_be_an_address(schema, tmp_path):
         export_psychopy(_stim(), _design(), ok, str(tmp_path))
 
 
+def test_the_serial_port_must_name_a_device(schema, tmp_path):
+    # It is written unescaped into `SERIAL_PORT = "{{...}}"` in the PsychoPy script and
+    # into the serial.Serial() call of the OpenSesame setup. A quote or a line break
+    # there would end the string it lands in.
+    for payload in ('COM3"; __import__("os").system("calc"); "',
+                    "COM3', 9600); __import__('os').system('calc'); ('", "COM3\nimport os"):
+        bad = dict(schema)
+        bad["triggers"] = dict(schema.get("triggers") or {}, backend="serial",
+                               serial_port=payload)
+        for export in (export_psychopy, export_opensesame):
+            with pytest.raises(ValueError, match="must name a serial device"):
+                export(_stim(), _design(), bad, str(tmp_path))
+    for good in ("COM3", "/dev/ttyUSB0", "/dev/cu.usbserial-A50285BI"):
+        ok = dict(schema)
+        ok["triggers"] = dict(schema.get("triggers") or {}, backend="serial",
+                              serial_port=good)
+        export_psychopy(_stim(), _design(), ok, str(tmp_path))
+
+
 def test_event_column_names_must_be_identifiers(schema, tmp_path):
     # `as:` on a jittered duration and `answer:` on a feedback event both become a
     # variable reference in the emitted OpenSesame Python.

@@ -292,7 +292,8 @@ def test_the_instructions_reach_all_three_targets(schema, tmp_path):
         "\t__end__",
         ""]
     runs = [line for line in lines if line.startswith("\trun lexsync_")]
-    assert runs[-5:] == ["\trun lexsync_trigger_setup always",
+    assert runs[-6:] == ["\trun lexsync_trigger_setup always",
+                         "\trun lexsync_trigger_notice always",
                          "\trun lexsync_instructions always",
                          "\trun lexsync_session_start always", "\trun lexsync_loop always",
                          "\trun lexsync_session_end always"]

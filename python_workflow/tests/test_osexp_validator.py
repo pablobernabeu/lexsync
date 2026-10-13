@@ -8,6 +8,8 @@ import itertools
 import math
 import os
 import re
+import sys
+import types
 from unittest import mock
 
 import pandas as pd
@@ -639,7 +641,8 @@ def test_the_instructions_wait_for_the_space_bar_before_the_loop(schema, tmp_pat
     text = open(path, encoding="utf-8").read()
     assert validate_osexp(text)
     runs = [line for line in text.splitlines() if line.startswith("\trun lexsync_")]
-    assert runs[-5:] == ["\trun lexsync_trigger_setup always",
+    assert runs[-6:] == ["\trun lexsync_trigger_setup always",
+                         "\trun lexsync_trigger_notice always",
                          "\trun lexsync_instructions always",
                          "\trun lexsync_session_start always", "\trun lexsync_loop always",
                          "\trun lexsync_session_end always"]
@@ -909,6 +912,157 @@ def test_a_key_window_resets_a_code_whose_hold_ends_with_it(schema, tmp_path, mo
         int(row["condition_trigger"]) for row in logged]
     for item, code, _, width, truncated in trial_codes:
         assert not truncated and abs(width - 50.0) <= 1.0, (item, code, width)
+
+
+# ---- The trigger device, and what happens without it ----------------------------------
+#
+# The setup set var.trigger_backend to parallel on the line before the branch that would
+# have opened a serial device, so that branch ran only once the script was edited by
+# hand. It then took the first serial port it found. When the port could not be
+# opened, the experiment printed one line and ran on without a single code. The schema's
+# triggers.mode now decides, the trial log records the outcome as lexsync_trigger_mode,
+# and a notice tells the experimenter before the trials. test-scripting.R pins the same
+# lines.
+
+def _with(schema, section, **settings):
+    """The schema with `settings` added to its `section`."""
+    return dict(schema, **{section: dict(schema.get(section) or {}, **settings)})
+
+
+def _driver(monkeypatch):
+    """A stand-in for the dlportio driver, which records each write as (address, code)."""
+    writes = []
+    port = types.SimpleNamespace(
+        DlPortWritePortUchar=lambda address, code: writes.append((address, code)))
+    monkeypatch.setattr(ctypes, "windll", types.SimpleNamespace(dlportio=port),
+                        raising=False)
+    return writes
+
+
+def _setup(path):
+    with open(path, encoding="utf-8") as handle:
+        return _items(handle.read())["lexsync_trigger_setup"]["___prepare__"]
+
+
+@pytest.mark.parametrize("version", ["3.3", "4.x"])
+def test_the_trigger_mode_is_logged_with_every_trial(version, schema, tmp_path, monkeypatch):
+    # Without the driver, the default mode, auto, prints the codes instead, and every row
+    # of the log says so.
+    monkeypatch.setattr(ctypes, "windll", None, raising=False)
+    path = export_opensesame(_stim(), {"name": "t", "language": "english"}, schema,
+                             str(tmp_path))
+    _, sent, _, logged = _run(path, version, [None, None])
+    assert sent
+    assert [(row["lexsync_trigger_mode"], row["test_mode"]) for row in logged] == [
+        ("mock", "yes")] * 2
+    # With the driver, the codes go to the port at the schema's address, which opens
+    # with a 0.
+    writes = _driver(monkeypatch)
+    _, sent, _, logged = _run(path, version, [None, None])
+    assert [(row["lexsync_trigger_mode"], row["test_mode"]) for row in logged] == [
+        ("hardware", "no")] * 2
+    assert writes[0] == (0x0378, 0)
+    assert writes[1:] == [(0x0378, code) for _, code, _ in sent]
+
+
+def test_hardware_mode_stops_at_the_setup_without_the_port(schema, tmp_path, monkeypatch):
+    monkeypatch.setattr(ctypes, "windll", None, raising=False)
+    path = export_opensesame(_stim(), {"name": "t", "language": "english"},
+                             _with(schema, "triggers", mode="hardware"), str(tmp_path))
+    with pytest.raises(RuntimeError) as stop:
+        _run(path, "4.x", [None, None])
+    message = str(stop.value)
+    assert message.startswith("lexsync: the parallel port at 0x0378 could not be opened "
+                              "(AttributeError: ")
+    assert message.endswith("). triggers.mode is hardware, so the experiment does not run "
+                            "without it.")
+    writes = _driver(monkeypatch)
+    _, _, _, logged = _run(path, "4.x", [None, None])
+    assert writes and {row["lexsync_trigger_mode"] for row in logged} == {"hardware"}
+
+
+def test_mock_mode_never_touches_the_port(schema, tmp_path, monkeypatch):
+    writes = _driver(monkeypatch)
+    path = export_opensesame(_stim(), {"name": "t", "language": "english"},
+                             _with(schema, "triggers", mode="mock"), str(tmp_path))
+    _, sent, _, logged = _run(path, "4.x", [None, None])
+    assert sent and writes == []
+    assert {row["lexsync_trigger_mode"] for row in logged} == {"mock"}
+
+
+def test_a_serial_backend_opens_the_port_the_schema_names(schema, tmp_path, monkeypatch):
+    opened, writes = [], []
+    serial = types.ModuleType("serial")
+
+    class Serial:
+        def __init__(self, port=None, baudrate=9600, **kwargs):
+            opened.append((port, baudrate))
+
+        def write(self, data):
+            writes.append(bytes(data))
+
+    serial.Serial = Serial
+    monkeypatch.setitem(sys.modules, "serial", serial)
+    path = export_opensesame(_stim(), {"name": "t", "language": "english"},
+                             _with(schema, "triggers", backend="serial", serial_port="COM7",
+                                   baudrate=57600), str(tmp_path))
+    setup = _setup(path)
+    # The named port, never the first one found, and no parallel-port code.
+    assert "        _sp = serial.Serial(u'COM7', 57600)" in setup
+    assert not any("comports" in line or "dlportio" in line for line in setup)
+    _, sent, _, logged = _run(path, "4.x", [None, None])
+    assert opened == [("COM7", 57600)]
+    assert writes == [b"\x00"] + [bytes([code]) for _, code, _ in sent]
+    assert {(row["lexsync_trigger_mode"], row["trigger_backend"]) for row in logged} == {
+        ("hardware", "serial")}
+
+
+def _run_notice(osexp_path, no_codes, key):
+    """Run an experiment's trigger notice after a setup that found `no_codes`, the reason
+    no codes will be sent or None, with `key` pressed, and return the texts it showed and
+    the (keylist, timeout) of each keyboard it opened."""
+    with open(osexp_path, encoding="utf-8") as handle:
+        items = _items(handle.read())
+    shown, keyboards = [], []
+
+    class Canvas:
+        def text(self, text, *args, **kwargs):
+            shown.append(text)
+
+        def show(self):
+            return 0.0
+
+    class Keyboard:
+        def __init__(self, keylist=None, timeout=None):
+            keyboards.append((keylist, timeout))
+
+        def get_key(self, **kwargs):
+            return key, 0.0
+
+    exec("\n".join(items["lexsync_trigger_notice"]["___run__"]),
+         {"Canvas": Canvas, "Keyboard": Keyboard, "_lexsync_no_codes": no_codes})
+    return shown, keyboards
+
+
+def test_the_experimenter_is_told_when_no_codes_will_be_sent(schema, tmp_path):
+    path = export_opensesame(_stim(), {"name": "t", "language": "english"}, schema,
+                             str(tmp_path))
+    with open(path, encoding="utf-8") as handle:
+        text = handle.read()
+    assert validate_osexp(text)
+    # Right after the setup, before any screen the participant sees.
+    assert _sequence(_items(text), "lexsync_experiment")[:2] == [
+        "lexsync_trigger_setup", "lexsync_trigger_notice"]
+    why = "the parallel port at 0x0378 could not be opened"
+    shown, keyboards = _run_notice(path, why, "c")
+    assert shown == [f"No trigger codes will be sent, because {why}. Each code is printed in "
+                     "the console instead.<br /><br />Press C to continue without triggers, "
+                     "or escape to stop."]
+    assert keyboards == [(["c", "escape"], None)]
+    with pytest.raises(RuntimeError, match="lexsync: stopped at the trigger notice"):
+        _run_notice(path, why, "escape")
+    # Nothing is shown when the codes go to the port.
+    assert _run_notice(path, None, "c") == ([], [])
 
 
 # ---- One experiment per counterbalancing version ---------------------------------------

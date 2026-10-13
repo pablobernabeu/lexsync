@@ -21,6 +21,10 @@ side, says why a directory named templates/ is not enough to go on.
 """
 
 import os
+import re
+import sys
+import types
+from html.parser import HTMLParser
 
 import pytest
 from helper_repo import REPO
@@ -69,6 +73,91 @@ def test_find_template_resolves_to_the_packaged_copy():
         resolved = find_template(relpath)
         assert os.path.exists(resolved)
         assert _read(resolved) == _read(os.path.join(CANONICAL, relpath))
+
+
+class _Fetched(HTMLParser):
+    """Every script and stylesheet a page loads over http or https, as (tag, address,
+    attributes)."""
+
+    def __init__(self):
+        super().__init__()
+        self.found = []
+
+    def handle_starttag(self, tag, attrs):
+        attrs = dict(attrs)
+        address = attrs.get("src") if tag == "script" else (
+            attrs.get("href") if tag == "link" and attrs.get("rel") == "stylesheet" else None)
+        if address and address.startswith(("http://", "https://")):
+            self.found.append((tag, address, attrs))
+
+
+def test_every_script_and_stylesheet_from_a_cdn_carries_its_integrity():
+    """The jsPsych page loaded jsPsych, its keyboard plugin and its stylesheet from unpkg
+    with no integrity attribute, so a copy altered on the CDN would run in the page that
+    collects the participants' responses. Each tag now names its file in full and
+    carries the file's SHA-384 and crossorigin="anonymous", without which a browser
+    cannot check the hash of a file from another origin. Twinned with
+    test-templates.R."""
+    path = os.path.join(CANONICAL, "jspsych", "experiment_template.html")
+    page = _Fetched()
+    with open(path, encoding="utf-8") as handle:
+        page.feed(handle.read())
+    assert [(tag, address.rsplit(".", 1)[1]) for tag, address, _ in page.found] == [
+        ("script", "js"), ("script", "js"), ("link", "css")]
+    for _tag, address, attrs in page.found:
+        assert re.fullmatch(r"sha384-[A-Za-z0-9+/]{64}", attrs.get("integrity") or ""), address
+        assert attrs.get("crossorigin") == "anonymous", address
+        # The file itself: a bare package address is answered with a redirect.
+        assert re.search(r"@[0-9.]+/(dist|css)/[a-z.]+\.(js|css)\Z", address), address
+    # The SHA-384 of each published file, which the files unpkg serves and the npm
+    # registry's tarballs of these releases both give. A wrong hash would stop the page
+    # from loading jsPsych at all.
+    assert {address: attrs["integrity"] for _tag, address, attrs in page.found} == {
+        "https://unpkg.com/jspsych@7.3.4/dist/index.browser.min.js":
+            "sha384-XAUySaEe2MZZhTzbstOfwmVuzWlsblgOwTje2VO+r73k+MzUbgzn/AwQlxq7OdCi",
+        "https://unpkg.com/@jspsych/plugin-html-keyboard-response@1.1.3/dist/"
+        "index.browser.min.js":
+            "sha384-dY7LWgOfoIq6dkJslZMW+KMzvwcrQwzIbqPqWm/vQdrc+2o69tyPWHsIZQUQ1NYi",
+        "https://unpkg.com/jspsych@7.3.4/css/jspsych.css":
+            "sha384-F1pvd1ZCaxuJalclhLrJj8A5LWkFVuFinaHeIgOZXnnCGt7HAbSPzTw7fO3qeJ8F",
+    }
+
+
+def test_the_opensesame_snippet_opens_the_serial_port_it_names(monkeypatch):
+    """The snippet's serial branch opened the first port pyserial listed, at pyserial's
+    default rate, and that port could be another device. It now opens the port named at
+    its top, at the rate named there, as the generated setup opens the one the schema
+    names. It is run here with its backend set to serial, in a stand-in for the inline
+    script's namespace, with a fake pyserial that lists another port first. Twinned
+    with test-templates.R."""
+    opened = []
+
+    class Serial:
+        def __init__(self, port=None, baudrate=9600, **kwargs):
+            opened.append((port, baudrate))
+
+        def write(self, data):
+            return len(data)
+
+    serial = types.ModuleType("serial")
+    tools = types.ModuleType("serial.tools")
+    list_ports = types.ModuleType("serial.tools.list_ports")
+    list_ports.comports = lambda: [types.SimpleNamespace(device="COM1"),
+                                   types.SimpleNamespace(device="COM3")]
+    serial.Serial, serial.tools, tools.list_ports = Serial, tools, list_ports
+    for name, module in (("serial", serial), ("serial.tools", tools),
+                         ("serial.tools.list_ports", list_ports)):
+        monkeypatch.setitem(sys.modules, name, module)
+    path = os.path.join(CANONICAL, "opensesame", "inline_trigger_setup.py")
+    with open(path, encoding="utf-8") as handle:
+        code = handle.read()
+    serial_code = code.replace("var.trigger_backend = u'parallel'",
+                               "var.trigger_backend = u'serial'")
+    assert serial_code != code
+    var = types.SimpleNamespace()
+    exec(serial_code, {"var": var})
+    assert opened == [("COM3", 115200)]
+    assert (var.serial_port, var.serial_baudrate, var.test_mode) == ("COM3", 115200, "no")
 
 
 def test_the_opensesame_snippet_sends_only_the_condition_code_at_onset():

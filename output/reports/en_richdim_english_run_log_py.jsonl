@@ -1,24 +1,24 @@
-{"time": "2026-10-13T22:50:04", "message": "lexsync: the design gives no `instructions`, and lexsync cannot tell what the response keys of a factorial design mean, so the experiments only name the keys; give `instructions` that say what each key means.", "data": null}
-{"time": "2026-10-13T22:50:04", "message": "loading lexicon 'corpora/derived/en_v2.csv'", "data": null}
-{"time": "2026-10-13T22:50:06", "message": "lexicon loaded: 30000 words", "data": {"words": 30000}}
-{"time": "2026-10-13T22:50:06", "message": "exclude_words: removed 53 of the 53 listed word(s) from the candidates (config/exclude_en_demo.txt)", "data": {"exclude_words": "config/exclude_en_demo.txt", "sha256": "cac9f88fb86fa6d0e6dbabc287c9ebb782100d071eeded13eb812584b9d41e9f", "n_removed": 53}}
-{"time": "2026-10-13T22:50:06", "message": "pool after filters: 8597 words", "data": {"pool": 8597}}
-{"time": "2026-10-13T22:50:06", "message": "computing bigram frequency (phonotactic-probability proxy)", "data": null}
-{"time": "2026-10-13T22:50:07", "message": "matched 120 items across 2 conditions", "data": {"conditions": "high_frequency, low_frequency"}}
-{"time": "2026-10-13T22:50:07", "message": "equivalence low_frequency vs high_frequency on 'length': d = 0.00 [-0.30, 0.30], TOST p = 0.0036 (equivalent)", "data": null}
-{"time": "2026-10-13T22:50:07", "message": "equivalence low_frequency vs high_frequency on 'frequency': d = 5.56 [4.89, 6.22], TOST p = 1.0 (not shown equivalent)", "data": null}
-{"time": "2026-10-13T22:50:07", "message": "equivalence low_frequency vs high_frequency on 'n_density': d = -0.13 [-0.43, 0.17], TOST p = 0.0221 (equivalent)", "data": null}
-{"time": "2026-10-13T22:50:07", "message": "equivalence low_frequency vs high_frequency on 'old20': d = -0.07 [-0.37, 0.23], TOST p = 0.0101 (equivalent)", "data": null}
-{"time": "2026-10-13T22:50:07", "message": "equivalence low_frequency vs high_frequency on 'n_syllables': d = 0.02 [-0.28, 0.32], TOST p = 0.005 (equivalent)", "data": null}
-{"time": "2026-10-13T22:50:07", "message": "equivalence low_frequency vs high_frequency on 'bigram_freq': d = 0.02 [-0.28, 0.33], TOST p = 0.0052 (equivalent)", "data": null}
-{"time": "2026-10-13T22:50:07", "message": "wrote 'en_richdim_english_stimuli_py.csv'", "data": {"path": "output\\stimuli\\en_richdim_english_stimuli_py.csv", "rows": 120, "md5": "c91057197226d449b407d11cbad842ec"}}
-{"time": "2026-10-13T22:50:07", "message": "wrote 'en_richdim_english_descriptives_py.csv'", "data": {"path": "output\\reports\\en_richdim_english_descriptives_py.csv", "rows": 12, "md5": "43550dcba20992170506aa9212065cf5"}}
-{"time": "2026-10-13T22:50:07", "message": "wrote 'en_richdim_english_comparisons_py.csv'", "data": {"path": "output\\reports\\en_richdim_english_comparisons_py.csv", "rows": 6, "md5": "7f75c26160216125137214f43601aa2b"}}
-{"time": "2026-10-13T22:50:07", "message": "wrote 'en_richdim_english_psychopy.py'", "data": {"path": "output\\experiments\\en_richdim_english_psychopy.py", "rows": null, "md5": "db6f7d0e68e645f9dbbe342bc617695e"}}
-{"time": "2026-10-13T22:50:07", "message": "wrote 'en_richdim_english.osexp'", "data": {"path": "output\\experiments\\en_richdim_english.osexp", "rows": null, "md5": "21883732a5eff7fbd9db62fee7367e21"}}
-{"time": "2026-10-13T22:50:07", "message": "wrote 'en_richdim_english.html'", "data": {"path": "output\\experiments\\en_richdim_english.html", "rows": null, "md5": "4e5ca208cd1b4f3d2ee791680959ff7f"}}
-{"time": "2026-10-13T22:50:07", "message": "wrote 'en_richdim_english_psychopy.csv'", "data": {"path": "output\\experiments\\en_richdim_english_psychopy.csv", "rows": null, "md5": "15c3ec229ea2f235ea71993ff5884d51"}}
-{"time": "2026-10-13T22:50:08", "message": "wrote 'en_richdim_english_opensesame.csv'", "data": {"path": "output\\experiments\\en_richdim_english_opensesame.csv", "rows": null, "md5": "688d6883920616305069d8117f36a179"}}
-{"time": "2026-10-13T22:50:08", "message": "wrote 'en_richdim_english_opensesame_text.csv'", "data": {"path": "output\\experiments\\en_richdim_english_opensesame_text.csv", "rows": null, "md5": "cb591bc0fa64c110771aa5242b43bc7b"}}
-{"time": "2026-10-13T22:50:08", "message": "wrote 'en_richdim_english_datasheet_py.json'", "data": {"path": "output\\reports\\en_richdim_english_datasheet_py.json", "rows": null, "md5": "a0b140b72a4240b79cdc25960226e814"}}
-{"time": "2026-10-13T22:50:08", "message": "wrote 'en_richdim_english_datasheet_py.md'", "data": {"path": "output\\reports\\en_richdim_english_datasheet_py.md", "rows": null, "md5": "8c4354c5b6a86855858429841468118a"}}
+{"time": "2026-10-14T01:26:20", "message": "lexsync: the design gives no `instructions`, and lexsync cannot tell what the response keys of a factorial design mean, so the experiments only name the keys; give `instructions` that say what each key means.", "data": null}
+{"time": "2026-10-14T01:26:20", "message": "loading lexicon 'corpora/derived/en_v2.csv'", "data": null}
+{"time": "2026-10-14T01:26:21", "message": "lexicon loaded: 30000 words", "data": {"words": 30000}}
+{"time": "2026-10-14T01:26:21", "message": "exclude_words: removed 53 of the 53 listed word(s) from the candidates (config/exclude_en_demo.txt)", "data": {"exclude_words": "config/exclude_en_demo.txt", "sha256": "cac9f88fb86fa6d0e6dbabc287c9ebb782100d071eeded13eb812584b9d41e9f", "n_removed": 53}}
+{"time": "2026-10-14T01:26:21", "message": "pool after filters: 8597 words", "data": {"pool": 8597}}
+{"time": "2026-10-14T01:26:21", "message": "computing bigram frequency (phonotactic-probability proxy)", "data": null}
+{"time": "2026-10-14T01:26:22", "message": "matched 120 items across 2 conditions", "data": {"conditions": "high_frequency, low_frequency"}}
+{"time": "2026-10-14T01:26:22", "message": "equivalence low_frequency vs high_frequency on 'length': d = 0.00 [-0.30, 0.30], TOST p = 0.0036 (equivalent)", "data": null}
+{"time": "2026-10-14T01:26:22", "message": "equivalence low_frequency vs high_frequency on 'frequency': d = 5.56 [4.89, 6.22], TOST p = 1.0 (not shown equivalent)", "data": null}
+{"time": "2026-10-14T01:26:22", "message": "equivalence low_frequency vs high_frequency on 'n_density': d = -0.13 [-0.43, 0.17], TOST p = 0.0221 (equivalent)", "data": null}
+{"time": "2026-10-14T01:26:22", "message": "equivalence low_frequency vs high_frequency on 'old20': d = -0.07 [-0.37, 0.23], TOST p = 0.0101 (equivalent)", "data": null}
+{"time": "2026-10-14T01:26:22", "message": "equivalence low_frequency vs high_frequency on 'n_syllables': d = 0.02 [-0.28, 0.32], TOST p = 0.005 (equivalent)", "data": null}
+{"time": "2026-10-14T01:26:22", "message": "equivalence low_frequency vs high_frequency on 'bigram_freq': d = 0.02 [-0.28, 0.33], TOST p = 0.0052 (equivalent)", "data": null}
+{"time": "2026-10-14T01:26:22", "message": "wrote 'en_richdim_english_stimuli_py.csv'", "data": {"path": "output\\stimuli\\en_richdim_english_stimuli_py.csv", "rows": 120, "md5": "c91057197226d449b407d11cbad842ec"}}
+{"time": "2026-10-14T01:26:22", "message": "wrote 'en_richdim_english_descriptives_py.csv'", "data": {"path": "output\\reports\\en_richdim_english_descriptives_py.csv", "rows": 12, "md5": "43550dcba20992170506aa9212065cf5"}}
+{"time": "2026-10-14T01:26:22", "message": "wrote 'en_richdim_english_comparisons_py.csv'", "data": {"path": "output\\reports\\en_richdim_english_comparisons_py.csv", "rows": 6, "md5": "7f75c26160216125137214f43601aa2b"}}
+{"time": "2026-10-14T01:26:22", "message": "wrote 'en_richdim_english_psychopy.py'", "data": {"path": "output\\experiments\\en_richdim_english_psychopy.py", "rows": null, "md5": "6dcf25f51da2a73413f206c165901eaa"}}
+{"time": "2026-10-14T01:26:22", "message": "wrote 'en_richdim_english.osexp'", "data": {"path": "output\\experiments\\en_richdim_english.osexp", "rows": null, "md5": "113ca1a9575cbd027b18605f65577212"}}
+{"time": "2026-10-14T01:26:22", "message": "wrote 'en_richdim_english.html'", "data": {"path": "output\\experiments\\en_richdim_english.html", "rows": null, "md5": "975bdf8ad47738d8264a06a3274479db"}}
+{"time": "2026-10-14T01:26:22", "message": "wrote 'en_richdim_english_psychopy.csv'", "data": {"path": "output\\experiments\\en_richdim_english_psychopy.csv", "rows": null, "md5": "15c3ec229ea2f235ea71993ff5884d51"}}
+{"time": "2026-10-14T01:26:22", "message": "wrote 'en_richdim_english_opensesame.csv'", "data": {"path": "output\\experiments\\en_richdim_english_opensesame.csv", "rows": null, "md5": "688d6883920616305069d8117f36a179"}}
+{"time": "2026-10-14T01:26:22", "message": "wrote 'en_richdim_english_opensesame_text.csv'", "data": {"path": "output\\experiments\\en_richdim_english_opensesame_text.csv", "rows": null, "md5": "cb591bc0fa64c110771aa5242b43bc7b"}}
+{"time": "2026-10-14T01:26:22", "message": "wrote 'en_richdim_english_datasheet_py.json'", "data": {"path": "output\\reports\\en_richdim_english_datasheet_py.json", "rows": null, "md5": "8925dfdfc3a69bd07cd2a67fbe1e329e"}}
+{"time": "2026-10-14T01:26:22", "message": "wrote 'en_richdim_english_datasheet_py.md'", "data": {"path": "output\\reports\\en_richdim_english_datasheet_py.md", "rows": null, "md5": "8c4354c5b6a86855858429841468118a"}}

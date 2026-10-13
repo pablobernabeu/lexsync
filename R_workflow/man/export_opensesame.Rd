@@ -52,6 +52,16 @@ measurement fails. Each trigger code is held for \code{triggers.trigger_hold_ms}
 code replaces it first. The session markers, 254 and 255, are sent just before the
 first trial and just after the last, held the same way.
 
+The setup writes the codes to the parallel port at \code{triggers.parallel_address} or,
+with \code{triggers.backend: serial}, as single bytes to \code{triggers.serial_port} at
+\code{triggers.baudrate}. When that device cannot be opened, \code{triggers.mode: auto} prints
+the codes instead. An inline script, \code{lexsync_trigger_notice}, then says so before
+any other screen and waits for the C key. \code{hardware} stops the experiment there, and
+\code{mock} prints the codes without trying the device. Every trial logs
+\code{lexsync_trigger_mode}, \code{hardware} or \code{mock}. Text is drawn
+\code{presentation.text_height_px} pixels high, OpenSesame's \code{font_size}, and OpenSesame
+takes full screen from the mode it is launched in.
+
 A design with more than one presentation version, one per (replicate, list) pair
 of the trials, gets one experiment per version instead, each with its own two
 tables holding only that version's trials: \verb{<base>_list<k>.osexp}, or

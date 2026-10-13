@@ -27,7 +27,13 @@ missing, empty or non-text \code{name} or \code{language}, an \code{n_per_condit
 or font that cannot be written into the generated experiments, a trigger port that
 is not an address, and an event list the renderer refuses, such as one with an
 unknown timing key, a bad response key or a response key that YAML reads as a
-boolean (an unquoted \code{yes}, \code{no}, \code{on} or \code{off}). Last, it refuses a condition
+boolean (an unquoted \code{yes}, \code{no}, \code{on} or \code{off}). It refuses a
+\code{presentation.fullscreen} that is not true or false and a
+\code{presentation.text_height_px} that is not a whole number from 8 to 400. It refuses a
+\code{triggers.mode} other than \code{auto}, \code{hardware} or \code{mock}, a \code{triggers.backend} other
+than \code{parallel} or \code{serial}, and a \code{triggers.baudrate} that is not a positive whole
+number. A serial backend needs a \code{triggers.serial_port}, with a name the experiments
+can carry. Last, it refuses a condition
 without a name, with a name that is not text or with a repeated name, a corpus or
 pool design with conditions but no \code{match_on}, and a name and language that leave
 no file stem. It also refuses an \code{exclude_words} that is neither a list of words

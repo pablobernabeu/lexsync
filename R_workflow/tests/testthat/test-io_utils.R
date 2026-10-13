@@ -328,7 +328,7 @@ test_that("the_key_vocabularies_agree_across_engines", {
   expect_identical(digest_of(.DESIGN_KEYS),
                    "46cb25ea6f0ad0a7973200fa362673a2df818c1121361c58d9d32794fb6ee241")
   expect_identical(digest_of(.SCHEMA_KEYS),
-                   "3da6fe93e219c8b2d112c3d10c84538cbb67c8271b01d5751c3e5388de938529")
+                   "6fe50b7e1f4cd526cb9a555bf649686c8859b62ec8783d24c6ba073ad1927aa3")
 })
 
 valid_design <- function(...) {

@@ -12,11 +12,11 @@ you can paste them into an existing OpenSesame experiment if you prefer to wire
 triggers into your own design:
 
 - `inline_trigger_setup.py` goes into an `inline_script` **Prepare** tab at the
-  start of the experiment. It opens the parallel port (default) or a serial
-  port, with a test-mode fallback that prints codes when no device is present,
-  and defines `send_trigger(code)` and `var.word_duration_ms`. The generated
-  file defines no `var.word_duration_ms`, because each of its events carries
-  its own duration.
+  start of the experiment. It opens the parallel port (default) or the serial
+  port named at its top, never the first one found. It has a test-mode fallback
+  that prints codes when no device is present, and it defines
+  `send_trigger(code)` and `var.word_duration_ms`. The generated file defines no
+  `var.word_duration_ms`, because each of its events carries its own duration.
 - `inline_send_triggers.py` goes into an `inline_script` **Run** tab. It draws
   and shows the target word and sends the onset marker immediately after
   `show()` returns.
@@ -53,7 +53,11 @@ Before the loop, an inline script, `lexsync_instructions`, shows the design's
 the space bar. The participant reads them at their own pace, and escape there
 stops the session. The text is written into the script with `&`, `<` and `>`
 escaped and each line break as `<br />`, because OpenSesame's canvas reads a
-subset of HTML.
+subset of HTML. The generated setup opens the trigger device the schema names,
+the parallel port or a named serial port. When it cannot, an inline script
+before the instructions, `lexsync_trigger_notice`, says that no trigger codes
+will be sent and waits for C, unless `triggers.mode: hardware` has stopped the
+experiment, and every trial logs `lexsync_trigger_mode`.
 
 A response after a text event is collected by that event's own script, from
 the stimulus's onset. The keyboard is flushed as the stimulus appears and polled

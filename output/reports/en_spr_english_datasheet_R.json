@@ -100,7 +100,7 @@
     },
     "design_sha256": "f1af82c75f9910c2cdf16f883a188ca1842f83a7ec995e051f7a0238ef613d95",
     "schema_path": "config/schema.yaml",
-    "schema_sha256": "f2c268f23e8a5e374f920f8cb8a0a89392ab207acc0c1809f2f409a2aa844120"
+    "schema_sha256": "363d42ebb6d2076d91b9e1ecedc10cdd1133b6e662cea5123146c9bb4e69fb73"
   },
   "artifacts": [
     {
@@ -109,19 +109,19 @@
     },
     {
       "file": "output/experiments/en_spr_english_psychopy.py",
-      "sha256": "880a265fef9a4cb6397d2efb51dbdf181a33fa3294e5ff665a3055878e25b8d5"
+      "sha256": "3fdbdd67b4f39d79541a99391d46bb590ad53ddff4d81af6704af11436cd4278"
     },
     {
       "file": "output/experiments/en_spr_english_list1.osexp",
-      "sha256": "e7bd1ea1791a4a3a45e73a3e997e0125bcdb49ec8180313c1c4bbc3915f9fd26"
+      "sha256": "7bc07c27a2e31976c499678272156b43e6ede6c94076f2dc18ef6e55ded771a0"
     },
     {
       "file": "output/experiments/en_spr_english_list2.osexp",
-      "sha256": "b75a9acb179df11feda1df9441bd8eba97786c9c07c54ff41dc33ee0aa67fcdd"
+      "sha256": "04c3607f32fe8ff7b96740f049c5e8320a12de510ed0abde25d39b70ec93d5f1"
     },
     {
       "file": "output/experiments/en_spr_english.html",
-      "sha256": "64641fc327abddbe6eca21a07b26250faa28ffbd68163ec0e11298cd7b13d822"
+      "sha256": "5e8a1169a135d59e545e163f976282d1a1429dfe42508d5a76d6bdbcf499f86e"
     },
     {
       "file": "output/experiments/en_spr_english_psychopy.csv",

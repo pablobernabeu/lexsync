@@ -60,8 +60,10 @@
   "equivalence", "equivalence.bound_d", "equivalence.alpha",
   "triggers", "triggers.parallel_address", "triggers.trigger_hold_ms",
   "triggers.reset_after_frames", "triggers.inter_trigger_ms", "triggers.allow_code_overlap",
+  "triggers.mode", "triggers.backend", "triggers.serial_port", "triggers.baudrate",
   "presentation", "presentation.font", "presentation.opensesame_font",
-  "presentation.assumed_refresh_hz",
+  "presentation.assumed_refresh_hz", "presentation.fullscreen",
+  "presentation.text_height_px",
   "counterbalance", "counterbalance.incomplete"
 )
 
@@ -391,7 +393,13 @@ design_stem <- function(design) {
 #' or font that cannot be written into the generated experiments, a trigger port that
 #' is not an address, and an event list the renderer refuses, such as one with an
 #' unknown timing key, a bad response key or a response key that YAML reads as a
-#' boolean (an unquoted `yes`, `no`, `on` or `off`). Last, it refuses a condition
+#' boolean (an unquoted `yes`, `no`, `on` or `off`). It refuses a
+#' `presentation.fullscreen` that is not true or false and a
+#' `presentation.text_height_px` that is not a whole number from 8 to 400. It refuses a
+#' `triggers.mode` other than `auto`, `hardware` or `mock`, a `triggers.backend` other
+#' than `parallel` or `serial`, and a `triggers.baudrate` that is not a positive whole
+#' number. A serial backend needs a `triggers.serial_port`, with a name the experiments
+#' can carry. Last, it refuses a condition
 #' without a name, with a name that is not text or with a repeated name, a corpus or
 #' pool design with conditions but no `match_on`, and a name and language that leave
 #' no file stem. It also refuses an `exclude_words` that is neither a list of words
@@ -454,6 +462,9 @@ validate_design <- function(design, schema) {
   clean_meta(font %||% presentation[["font"]] %||% "Courier New", "the font")
   clean_meta(font %||% presentation[["opensesame_font"]] %||% "mono", "the font")
   clean_port(schema[["triggers"]][["parallel_address"]] %||% "0x0378")
+  .fullscreen(schema)
+  .text_height_px(schema)
+  .trigger_settings(schema)
   render_events(resolve_events(design), design[["timing"]] %||% list(), .refresh_hz(schema))
   .check_instructions_and_mapping(design)
 
