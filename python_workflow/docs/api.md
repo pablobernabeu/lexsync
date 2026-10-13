@@ -21,6 +21,8 @@ again, and read a derived lexicon or a prepared item table into the frame everyt
 
 ::: lexsync.fetch_corpus
 
+::: lexsync.corpora.build_wordfreq_lexicon
+
 ::: lexsync.corpora.cache_dir
 
 ::: lexsync.corpora.cache_clear

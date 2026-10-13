@@ -627,6 +627,31 @@ no function signature changes.
   design, `gender` in `es_gender_repro`, compares text, so no stimulus moves. The
   twin-edge cases `animacy_norm`, `float_categorical` and `bool_filter` pin both
   engines to one outcome, and the R engine is unchanged.
+- (Python) The wordfreq connector keeps the words a language spells with
+  combining vowel signs and viramas, a zero-width non-joiner or joiner, or an
+  apostrophe or middle dot inside the word. Its filter admitted only Python's
+  word characters, a class without combining marks or the zero-width characters.
+  Asked for 10,000 forms, `lexsync fetch hi` therefore returned 3,207, of which
+  2,287 held Latin letters ('and', 'bjp') and none was है or में, and the
+  Bengali lexicon held 1,591 forms, 871 of them Latin. Persian lexica held no
+  form spelt with a zero-width non-joiner, Ukrainian ones no form with an
+  apostrophe, such as п'ять, and Catalan ones none with l·l, such as
+  pel·lícula. The Hindi and Bengali lexica now reach 10,000 forms, 525 and 137
+  of them with Latin letters, and the Persian, Ukrainian and Catalan ones hold
+  340, 103 and 61 such forms among their 10,000. Every form is put in NFC, so
+  six Greek forms that wordfreq gives decomposed, such as μαΐου, are kept as
+  well. An apostrophe passes only between two letters of a Ukrainian or
+  Belarusian word, and a middle dot only between two l's of a Catalan one, so
+  English contractions and French elisions stay out, as do digits and every
+  other punctuation mark. A 10,000-form lexicon for any of the other 24
+  registered languages is unchanged byte for byte, while one fetched earlier for
+  the six languages above differs from one fetched now. A build left with fewer
+  forms than requested says so on standard output. `fetch_corpus` and
+  `lexsync.corpora.build_wordfreq_lexicon` gain `strict`, to make such a
+  shortfall an error, and `exclude_latin`, to drop every form holding a Latin
+  letter. The guide's fetch section says that length, N and OLD20 count code
+  points in both packages, so a vowel sign, a virama or a zero-width non-joiner
+  is a character of its own.
 
 ### Security
 

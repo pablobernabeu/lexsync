@@ -138,6 +138,22 @@ one, so an R laboratory reaches the wider language set through lexica derived he
 corpora fetched from R go to a separate cache under `tools::R_user_dir("lexsync", "cache")`, which
 `lexsync_cache_clear()` empties.
 
+A wordfreq lexicon holds the language's most frequent forms that are spelt with letters, 10,000 of
+them unless `fetch_corpus` is given another `n_words`. Each form is lower-cased and put in Unicode
+NFC. Combining marks are part of the spelling, so the vowel signs and viramas of Hindi and Bengali
+are kept, and so is the zero-width non-joiner that Persian spells many words with. A Ukrainian
+word may also hold an apostrophe between two letters, as п'ять does, and a Catalan word a middle dot
+between two l's, as pel·lícula does. No other punctuation mark and no digit is part of a spelling,
+so English contractions and French elisions stay out. When fewer forms pass than were requested, a
+line on standard output says so. `fetch_corpus(..., strict=True)` raises an error at
+such a shortfall, and `exclude_latin=True` drops every form holding a Latin letter, such as the
+English tokens of a Hindi list.
+
+Length, N and OLD20 count code points in both packages. A vowel sign, a virama or a zero-width
+non-joiner is therefore a character of its own, which adds one to the word's length and takes one
+edit to change. `n_syllables` is missing for every word outside the Latin script, and `run_pipeline`
+refuses a design that refers to it when such a word passes the design's other filters.
+
 ## Anatomy of a design
 
 A design is a YAML file. `config/schema.yaml` holds everything global and every numeric default,

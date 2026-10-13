@@ -1,6 +1,9 @@
 import hashlib
 import os
+import sys
 import time
+import types
+import unicodedata
 import urllib.error
 import urllib.request
 
@@ -351,7 +354,7 @@ def test_a_refused_fetch_leaves_the_cache_uncreated(tmp_path, monkeypatch):
 def test_a_wordfreq_fetch_without_the_extra_leaves_the_cache_uncreated(tmp_path, monkeypatch):
     cache = _absent_cache(tmp_path, monkeypatch)
 
-    def missing(language, n_words):
+    def missing(language, n_words, **options):
         raise ModuleNotFoundError("lexsync: ... needs the wordfreq connector")
 
     monkeypatch.setattr(corpora, "build_wordfreq_lexicon", missing)
@@ -400,7 +403,8 @@ def test_a_wordfreq_fetch_creates_the_cache_and_sweeps_stale_sidecars(tmp_path, 
     cache = _absent_cache(tmp_path, monkeypatch)
     lexicon = pd.DataFrame({"word": ["dog"], "freq_zipf": [4.5],
                             "language": ["xx"], "source": ["wordfreq"]})
-    monkeypatch.setattr(corpora, "build_wordfreq_lexicon", lambda language, n_words: lexicon)
+    monkeypatch.setattr(corpora, "build_wordfreq_lexicon",
+                        lambda language, n_words, **options: lexicon)
     registry_path = _wordfreq_registry(tmp_path)
     assert fetch_corpus("xx", registry_path=registry_path) == str(cache / "xx_wordfreq.csv")
 
@@ -514,3 +518,151 @@ def test_cache_clear_names_a_file_it_could_not_remove(tmp_path, monkeypatch):
     monkeypatch.setattr(corpora.shutil, "rmtree", lambda path, ignore_errors=False: None)
     with pytest.raises(OSError, match="lexsync: could not remove"):
         corpora.cache_clear()
+
+
+# The wordfreq connector's letter filter has no R twin, since the R engine reads what
+# the connector builds as an ordinary lexicon. wordfreq ships in the optional [corpora]
+# extra, which CI's dev install leaves out. A real word list would also tie the
+# expected words to one wordfreq release, so these tests serve fixed tokens from a
+# stand-in.
+def _fake_wordfreq(monkeypatch, tokens, zipf=None):
+    """Install a stand-in for wordfreq whose top list is `tokens`, most frequent first.
+
+    top_n_list returns the first n tokens, as wordfreq's does, and zipf_frequency gives
+    every word 4.0 unless `zipf` maps it to another value.
+    """
+    fake = types.ModuleType("wordfreq")
+    fake.top_n_list = lambda language, n: list(tokens[:n])
+    fake.zipf_frequency = lambda word, language: (zipf or {}).get(word, 4.0)
+    monkeypatch.setitem(sys.modules, "wordfreq", fake)
+
+
+def _wordfreq_words(monkeypatch, language, tokens, **options):
+    """The words build_wordfreq_lexicon keeps from `tokens`, every token examined."""
+    _fake_wordfreq(monkeypatch, tokens)
+    lexicon = corpora.build_wordfreq_lexicon(language, n_words=len(tokens), **options)
+    return lexicon["word"].tolist()
+
+
+# Hindi and Bengali write most vowels, the virama and the nasal signs as combining
+# marks, which Python's word class excludes. The filter built on that class kept 137 of
+# the 500 Hindi forms requested, beginning 'aap', 'and' and 'at', without है or में,
+# and 90 of 500 Bengali ones.
+@pytest.mark.parametrize("language,tokens", [
+    ("hi", ["के", "है", "में", "की", "से", "को", "क्या"]),
+    ("bn", ["না", "করে", "এবং", "আমি", "প্রথম"]),
+])
+def test_wordfreq_keeps_words_written_with_combining_marks(monkeypatch, language, tokens):
+    assert _wordfreq_words(monkeypatch, language, tokens) == sorted(tokens)
+
+
+# Persian spells many words with a zero-width non-joiner (U+200C), and Devanagari
+# can force a half form with a zero-width joiner (U+200D). Both are format characters
+# that Python's word class excludes, so every Persian form spelt with a non-joiner was
+# dropped. A token that opens with either is still refused.
+@pytest.mark.parametrize("language,tokens,kept", [
+    ("fa", ["می\u200cشود", "آن\u200cها", "\u200cها", "است"],
+     ["می\u200cشود", "آن\u200cها", "است"]),
+    ("hi", ["क्\u200dष", "\u200dक", "है"], ["क्\u200dष", "है"]),
+])
+def test_wordfreq_keeps_words_spelt_with_zero_width_joiners(monkeypatch, language, tokens,
+                                                           kept):
+    assert _wordfreq_words(monkeypatch, language, tokens) == sorted(kept)
+
+
+# Ukrainian spells words such as п'ять and ім'я with an apostrophe between two letters,
+# written U+0027, U+2019 or U+02BC, and Belarusian likewise. Catalan writes its
+# geminate l as l·l (pel·lícula). The filter dropped all of them. Each joiner is
+# allowed only between two letters, the middle dot only between two l's, and only in
+# the languages that spell words with it. U+02BC is a modifier letter, so it counts as
+# an apostrophe here and never as a letter.
+@pytest.mark.parametrize("language,tokens,kept", [
+    ("uk", ["п'ять", "п\u2019ять", "п\u02bcять", "ім'я", "'ять", "п'", "п''ять", "так"],
+     ["п'ять", "п\u2019ять", "п\u02bcять", "ім'я", "так"]),
+    ("be", ["сям'я", "\u02bcя", "так"], ["сям'я", "так"]),
+    ("ca", ["pel·lícula", "col·lecció", "l·a", "a·l", "l·", "·l", "per"],
+     ["pel·lícula", "col·lecció", "per"]),
+    ("ru", ["п'ять", "п\u02bcять", "так"], ["так"]),
+    ("es", ["pel·lícula", "por"], ["por"]),
+])
+def test_wordfreq_admits_word_internal_joiners_where_the_language_uses_them(
+        monkeypatch, language, tokens, kept):
+    assert _wordfreq_words(monkeypatch, language, tokens) == sorted(kept)
+
+
+# Anywhere else an apostrophe joins a contraction, an elision or a clitic, two words in
+# one token. Digits spell no word, and nor do underscores or other punctuation marks,
+# so all of these stay out. A token that opens with a combining mark stays out as well.
+@pytest.mark.parametrize("language,tokens,kept", [
+    ("en", ["don't", "it\u2019s", "don\u02bct", "a1", "2nd", "e_mail", "u.s", "co-op",
+            "\u0301a", "cat"], ["cat"]),
+    ("fr", ["aujourd'hui", "l'homme", "chat"], ["chat"]),
+    ("ca", ["se'n", "l'home", "gat"], ["gat"]),
+    ("uk", ["5'ять", "п'5", "п_ять", "кіт"], ["кіт"]),
+])
+def test_wordfreq_still_excludes_contractions_digits_and_punctuation(
+        monkeypatch, language, tokens, kept):
+    assert _wordfreq_words(monkeypatch, language, tokens) == kept
+
+
+# wordfreq gives some Greek forms decomposed (μαΐου as ι, U+0308 and U+0301), which
+# the filter dropped for their combining marks. Each form is kept in NFC, the form the
+# lexicon readers give every word, and a form two tokens share is kept once.
+def test_wordfreq_keeps_each_form_once_in_nfc(monkeypatch):
+    nfc = "\u03bc\u03b1\u0390\u03bf\u03c5"
+    nfd = unicodedata.normalize("NFD", nfc)
+    assert nfd != nfc
+    assert _wordfreq_words(monkeypatch, "el", [nfd, "και"]) == ["και", nfc]
+    assert _wordfreq_words(monkeypatch, "el", [nfd, nfc, "και", "να"]) == ["και", nfc, "να"]
+
+
+# A fetch that yields fewer forms than requested says so, since a short lexicon
+# changes every frequency band a design draws on. The count is of the forms the
+# lexicon holds, after any that wordfreq gives no frequency are dropped.
+def test_wordfreq_reports_a_shortfall(monkeypatch, capsys):
+    _fake_wordfreq(monkeypatch, ["है", "में", "a1", "don't", "की", "से"], zipf={"से": 0.0})
+    lexicon = corpora.build_wordfreq_lexicon("hi", n_words=6)
+    assert lexicon["word"].tolist() == ["की", "में", "है"]
+    assert capsys.readouterr().out == (
+        "lexsync: wordfreq supplied only 3 forms for 'hi' that pass the letter filter "
+        "(n_words was 6).\n")
+
+    _fake_wordfreq(monkeypatch, ["है", "में", "a1"])
+    assert len(corpora.build_wordfreq_lexicon("hi", n_words=2)) == 2
+    assert capsys.readouterr().out == ""
+
+
+def test_wordfreq_strict_refuses_a_shortfall(monkeypatch):
+    _fake_wordfreq(monkeypatch, ["है", "में", "a1"])
+    with pytest.raises(ValueError, match=r"^lexsync: wordfreq supplied only 2 forms for 'hi' "
+                                         r"that pass the letter filter \(n_words was 3\)\.$"):
+        corpora.build_wordfreq_lexicon("hi", n_words=3, strict=True)
+    assert len(corpora.build_wordfreq_lexicon("hi", n_words=2, strict=True)) == 2
+
+
+# exclude_latin drops every form holding a Latin letter, such as the English tokens of
+# the Hindi list ('and', 'bjp'), fullwidth ones included. The option is off by default
+# and is not a one-script rule, so a Japanese lexicon keeps its kana and kanji together.
+@pytest.mark.parametrize("language,tokens,kept", [
+    ("hi", ["है", "and", "abcनमस्ते", "में", "bjp", "café", "नमस्ते"], ["है", "में", "नमस्ते"]),
+    ("ja", ["コーヒー", "twitter", "人々", "\uff54\uff56", "tシャツ"], ["コーヒー", "人々"]),
+])
+def test_wordfreq_exclude_latin_drops_forms_with_latin_letters(monkeypatch, language, tokens,
+                                                               kept):
+    assert _wordfreq_words(monkeypatch, language, tokens, exclude_latin=True) == sorted(kept)
+    assert _wordfreq_words(monkeypatch, language, tokens) == sorted(tokens)
+
+
+# fetch_corpus passes both options to the connector, and a shortfall refused under
+# strict=True writes nothing, as every other refusal does.
+def test_fetch_corpus_passes_the_filter_options_to_the_wordfreq_connector(tmp_path,
+                                                                         monkeypatch):
+    cache = _absent_cache(tmp_path, monkeypatch)
+    _fake_wordfreq(monkeypatch, ["है", "and", "में"])
+    registry_path = _wordfreq_registry(tmp_path)
+    with pytest.raises(ValueError, match="supplied only 2 forms for 'xx'"):
+        fetch_corpus("xx", registry_path=registry_path, n_words=3, strict=True,
+                     exclude_latin=True)
+    assert not cache.exists()
+    dest = fetch_corpus("xx", registry_path=registry_path, n_words=2, exclude_latin=True)
+    assert pd.read_csv(dest, encoding="utf-8")["word"].tolist() == ["में", "है"]

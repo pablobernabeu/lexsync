@@ -613,6 +613,14 @@
   line ends on every platform, and rebuilding `en.csv` no longer overwrites the
   English slice.
 
+* Lexica that the Python package's wordfreq connector builds for Hindi, Bengali,
+  Persian, Ukrainian and Catalan now hold the words those languages spell with
+  combining marks, a zero-width non-joiner, an apostrophe or a middle dot. The
+  connector dropped them, so a Hindi lexicon of 10,000 forms came back with 3,207,
+  most of them Latin-script tokens such as 'and'. The R package reads the new
+  lexica as before and, like the Python package, counts their length, N and OLD20
+  in code points.
+
 # lexsync 0.1.1
 
 * `assign_triggers()` gains a `conditions` argument that fixes the order of the

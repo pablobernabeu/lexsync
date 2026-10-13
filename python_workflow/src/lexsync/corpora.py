@@ -12,6 +12,7 @@ import os
 import re
 import shutil
 import time
+import unicodedata
 
 import numpy as np
 import pandas as pd
@@ -159,9 +160,96 @@ def _prepare_cache() -> str:
 _STALE_PART_SECONDS = 24 * 60 * 60
 
 
+# The characters other than letters and marks that may join two letters inside a word,
+# by language, with the letter they must join on both sides where only one will do.
+# Ukrainian and Belarusian spell words such as п'ять and ім'я with an apostrophe, written
+# U+0027 by wordfreq and U+2019 or U+02BC by other sources, and Catalan writes its
+# geminate l as l·l (pel·lícula). Elsewhere, an apostrophe joins a contraction, an
+# elision or a clitic (don't, aujourd'hui, se'n), two words in one token, and the
+# middle dot spells no word, so neither is admitted. wordfreq 3 has no Belarusian list
+# and answers 'be' with its Russian one, in which the entry finds nothing to admit.
+_APOSTROPHES = frozenset("'\N{RIGHT SINGLE QUOTATION MARK}\N{MODIFIER LETTER APOSTROPHE}")
+_WORD_JOINERS = {
+    "uk": (_APOSTROPHES, None),
+    "be": (_APOSTROPHES, None),
+    "ca": (frozenset("\N{MIDDLE DOT}"), "l"),
+}
+# Persian spells many words with the zero-width non-joiner, and Indic scripts choose a
+# half form with the zero-width joiner. Unicode classes both as format characters, so
+# the test for combining marks does not cover them.
+_ZERO_WIDTH = frozenset("\N{ZERO WIDTH NON-JOINER}\N{ZERO WIDTH JOINER}")
+
+
+def _is_letter(ch: str) -> bool:
+    # U+02BC is a modifier letter by category, but it is written as an apostrophe and
+    # treated as one, a joiner where the language admits one and a letter nowhere.
+    return unicodedata.category(ch).startswith("L") and ch not in _APOSTROPHES
+
+
+def _spelt_with_letters(word: str, language: str) -> bool:
+    """Does `word`, lower-cased and in NFC, pass the connector's letter filter?
+
+    The word must open with a letter. Every later character must be a letter, a
+    combining mark or a zero-width (non-)joiner, or one of the language's
+    word-internal joiners with a letter on each side (an l, for the Catalan middle
+    dot). Python's word class, which the filter used, excludes combining marks and
+    the zero-width characters, so it dropped most Hindi and Bengali words and every
+    Persian form spelt with a non-joiner.
+    """
+    joiners, between = _WORD_JOINERS.get(language, (frozenset(), None))
+    if not word or not _is_letter(word[0]):
+        return False
+    for i, ch in enumerate(word):
+        if (_is_letter(ch) or ch in _ZERO_WIDTH
+                or unicodedata.category(ch).startswith("M")):
+            continue
+        if ch in joiners and 0 < i < len(word) - 1:
+            before, after = word[i - 1], word[i + 1]
+            if between is None:
+                if _is_letter(before) and _is_letter(after):
+                    continue
+            elif before == after == between:
+                continue
+        return False
+    return True
+
+
+def _has_latin_letter(word: str) -> bool:
+    # The standard library has no script property, and the regex module that has one is
+    # a dependency of wordfreq, which the tests' stand-in does without. A Latin letter
+    # is taken to be a letter whose Unicode name has the word LATIN. That covers the
+    # plain, accented, extended, small-capital and fullwidth forms. It misses the
+    # superscript modifier letters, the ordinal indicators and a few letterlike symbols,
+    # none of which spells a word.
+    return any(unicodedata.category(ch).startswith("L")
+               and "LATIN" in unicodedata.name(ch, "").split() for ch in word)
+
+
 def build_wordfreq_lexicon(language: str, n_words: int = 10000,
-                           min_len: int = 2, max_len: int = 15) -> pd.DataFrame:
+                           min_len: int = 2, max_len: int = 15, *,
+                           strict: bool = False,
+                           exclude_latin: bool = False) -> pd.DataFrame:
     """Build a (word, freq_zipf) lexicon for any wordfreq language.
+
+    Takes wordfreq's most frequent forms for `language`, lower-cased and in Unicode
+    NFC, until `n_words` of them pass the letter filter and are `min_len` to
+    `max_len` characters long. It looks no further than the first 3 * `n_words`
+    forms. A form passes when it opens with a letter and every other character is a
+    letter, a combining mark or a zero-width non-joiner or joiner. Hindi है and
+    Bengali না, spelt with combining vowel signs, therefore pass, as do the many
+    Persian forms spelt with a non-joiner. A Ukrainian or Belarusian form may also
+    hold an apostrophe between two letters (п'ять), and a Catalan one a middle dot
+    between two l's (pel·lícula). Digits never pass, and nor do underscores or any
+    punctuation mark besides those joiners, so English contractions and French
+    elisions stay out. Length counts code points, as the lexicon readers count it,
+    so vowel signs, viramas and zero-width characters count. A form that wordfreq
+    gives no frequency is dropped.
+
+    When the lexicon holds fewer than `n_words` forms, a line on standard output says
+    so, and with `strict` the shortfall raises ValueError. `exclude_latin` drops every
+    form holding a Latin letter, such as the English tokens in the Hindi list. It is
+    not a one-script rule, so a Japanese lexicon keeps its kana and kanji together,
+    and it leaves nothing of a language written in the Latin alphabet.
 
     Raises ModuleNotFoundError if the optional [corpora] extra is not installed.
     """
@@ -182,18 +270,34 @@ def build_wordfreq_lexicon(language: str, n_words: int = 10000,
             'it with: pip install "wordfreq>=3.0,<4".'
         ) from exc
 
-    rx = re.compile(r"^[^\W\d_]+$", re.UNICODE)
-    words = []
-    for w in wordfreq.top_n_list(language, n_words * 3):
-        w = w.lower()
-        if rx.match(w) and min_len <= len(w) <= max_len:
-            words.append(w)
+    words: list[str] = []
+    seen: set[str] = set()
+    for token in wordfreq.top_n_list(language, n_words * 3):
+        # NFC after lower-casing, the order in which load_lexicon normalises a word. A
+        # form that wordfreq gives decomposed, as it gives some Greek ones, then keeps
+        # its marks, is stored as the readers will key it and is kept only once.
+        w = unicodedata.normalize("NFC", token.lower())
+        if (w in seen or not min_len <= len(w) <= max_len
+                or not _spelt_with_letters(w, language)
+                or (exclude_latin and _has_latin_letter(w))):
+            continue
+        seen.add(w)
+        words.append(w)
         if len(words) >= n_words:
             break
     zipf = [wordfreq.zipf_frequency(w, language) for w in words]
     df = pd.DataFrame({"word": words, "freq_zipf": np.round(zipf, 3),
                        "language": language, "source": "wordfreq"})
-    return df[df.freq_zipf > 0].sort_values("word").reset_index(drop=True)
+    df = df[df.freq_zipf > 0].sort_values("word").reset_index(drop=True)
+    if len(df) < n_words:
+        # A short lexicon thins every frequency band a design draws on, and a Hindi one
+        # used to come back with 3,207 of the 10,000 forms asked for, and nothing said so.
+        message = (f"lexsync: wordfreq supplied only {len(df)} forms for '{language}' "
+                   f"that pass the letter filter (n_words was {n_words}).")
+        if strict:
+            raise ValueError(message)
+        print(message)
+    return df
 
 
 _BOM = b"\xef\xbb\xbf"
@@ -225,14 +329,24 @@ def _max_download_bytes() -> int:
     return 200 * 1024 * 1024
 
 
-def fetch_corpus(name: str, registry_path: str | None = None, n_words: int = 10000) -> str:
+def fetch_corpus(name: str, registry_path: str | None = None, n_words: int = 10000, *,
+                 strict: bool = False, exclude_latin: bool = False) -> str:
     """Fetch a registered corpus into the cache.
 
     If `name` is a language code supported by the wordfreq connector, a lexicon
-    is built with wordfreq. Otherwise the corpus's registered URL is downloaded,
-    once its scheme has been checked; the transfer lands in a sidecar file that
-    is renamed into the cache only after the size cap, the markup sniff and any
-    registered sha256 have all passed.
+    is built with wordfreq from up to `n_words` of its most frequent forms that
+    are spelt with letters. A form may hold combining marks, such as the vowel
+    signs of Hindi and Bengali, and the zero-width non-joiner of Persian. It may
+    also hold an apostrophe inside a Ukrainian word or a middle dot between two
+    l's in a Catalan one, but no digit and no other punctuation mark. A lexicon
+    left with fewer forms is reported on standard output, or refused with
+    `strict`, and `exclude_latin` drops every form holding a Latin letter. These
+    three arguments apply to the wordfreq connector only, and
+    ``lexsync.corpora.build_wordfreq_lexicon`` gives the rule in full. Otherwise
+    the corpus's registered URL is downloaded, once its scheme has been checked;
+    the transfer lands in a sidecar file that is renamed into the cache only
+    after the size cap, the markup sniff and any registered sha256 have all
+    passed.
 
     The file lands in :func:`cache_dir`. The cache directory is created only once
     the registry entry and its URL have been accepted, or the wordfreq lexicon
@@ -247,7 +361,7 @@ def fetch_corpus(name: str, registry_path: str | None = None, n_words: int = 100
         reg = yaml.safe_load(handle)
     wf = reg.get("wordfreq_connector") or {}
     if name in (wf.get("languages") or []):
-        df = build_wordfreq_lexicon(name, n_words)
+        df = build_wordfreq_lexicon(name, n_words, strict=strict, exclude_latin=exclude_latin)
         dest = os.path.join(_prepare_cache(), f"{name}_wordfreq.csv")
         # LF explicitly: pandas otherwise follows os.linesep, and the cached
         # lexicon's bytes (and any checksum of them) must not depend on the OS.
