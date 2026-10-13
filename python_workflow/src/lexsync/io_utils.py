@@ -631,6 +631,13 @@ def slugify(*parts) -> str:
 
 
 def read_config(path: str) -> dict:
+    """Read a YAML configuration file.
+
+    PyYAML reads an unquoted ``y``, ``Y``, ``n`` or ``N`` as text, though YAML 1.1
+    lists them among its booleans, and the R engine's read_config passes
+    yaml::read_yaml() handlers that do the same. The other boolean spellings
+    (``yes``, ``no``, ``true``, ``false``, ``on`` and ``off``) are booleans in both.
+    """
     if not os.path.exists(path):
         raise FileNotFoundError(f"lexsync: configuration not found: '{path}'")
 

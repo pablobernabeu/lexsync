@@ -1,0 +1,7 @@
+# Both engines join the norm table on lemma, so every form carries its lemma's rating,
+# select the same four sets per condition and record the join key as lemma.
+outcome: artefacts
+compare: [stimuli, descriptives, comparisons]
+datasheet:
+  materials_source.norms.0.on: lemma
+  materials_source.norms.0.columns.0.n_matched: 40

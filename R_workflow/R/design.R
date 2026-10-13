@@ -179,6 +179,18 @@
   value
 }
 
+# Refuses a value other than true or false for a design key that takes one. NULL
+# passes, since the key may be left out. The engines would read any other value
+# differently, this one with isTRUE() and the Python engine by truthiness, so
+# `optimise: n` or `1` balanced the lists in Python only. Must stay identical to
+# _require_bool in design.py.
+.require_bool <- function(value, key) {
+  if (!is.null(value) && !(is.logical(value) && length(value) == 1L && !is.na(value))) {
+    stop(sprintf("lexsync: %s must be true or false.", key), call. = FALSE)
+  }
+  invisible(value)
+}
+
 .name_and_language <- function(design) {
   if (!.is_mapping(design)) {
     stop("lexsync: a design must be a mapping of keys to values.", call. = FALSE)
@@ -372,15 +384,18 @@ design_stem <- function(design) {
 #' both engines. It first refuses a key within one or two edits of a key lexsync
 #' reads at that level, naming the key it was probably meant to be (one edit for a
 #' known key of up to five characters, two for a longer one). It then refuses a
-#' missing, empty or non-text `name` or `language`, and an `n_per_condition` or
-#' `n_per_cell` that is not a whole number of at least 1. It refuses a name, language
+#' missing, empty or non-text `name` or `language`, an `n_per_condition` or
+#' `n_per_cell` that is not a whole number of at least 1, and a
+#' `counterbalance.optimise` that is not true or false. It refuses a name, language
 #' or font that cannot be written into the generated experiments, a trigger port that
 #' is not an address, and an event list the renderer refuses, such as one with an
-#' unknown timing key or a bad response key. Last, it refuses a condition without a
-#' name, with a name that is not text or with a repeated name, a corpus or pool
-#' design with conditions but no `match_on`, and a name and language that leave no
-#' file stem. It also refuses an `exclude_words` that is neither a list of words nor a
-#' mapping whose `path` names a file, and one that a design with an item table names.
+#' unknown timing key, a bad response key or a response key that YAML reads as a
+#' boolean (an unquoted `yes`, `no`, `on` or `off`). Last, it refuses a condition
+#' without a name, with a name that is not text or with a repeated name, a corpus or
+#' pool design with conditions but no `match_on`, and a name and language that leave
+#' no file stem. It also refuses an `exclude_words` that is neither a list of words
+#' nor a mapping whose `path` names a file, and one that a design with an item table
+#' names.
 #'
 #' Any other key lexsync does not read is not refused yet. It is returned as a note,
 #' which [run_pipeline()] writes into the run log, and a later release will refuse
@@ -402,6 +417,10 @@ validate_design <- function(design, schema) {
              .check_keys(schema, .SCHEMA_KEYS, "schema"))
   .name_and_language(design)
   .resolve_n(design, NULL)
+  counterbalance <- design[["counterbalance"]]
+  if (.is_mapping(counterbalance)) {
+    .require_bool(counterbalance[["optimise"]], "counterbalance.optimise")
+  }
 
   clean_meta(design[["name"]], "the design's `name`")
   clean_meta(design[["language"]], "the design's `language`")

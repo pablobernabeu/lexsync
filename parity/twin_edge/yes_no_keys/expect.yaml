@@ -1,0 +1,2 @@
+outcome: refusal
+refusal: "lexsync: response key TRUE is a YAML boolean; quote it ('yes') or choose another key."

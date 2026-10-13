@@ -181,7 +181,7 @@
   "reproducibility": {
     "design_sha256": "d60354a52b459d477cf3422535ad3288835f369111eb157e143c203c615ad912",
     "schema_path": "config/schema.yaml",
-    "schema_sha256": "3ce7555f29af0058335bf3164cc54ece5d369758a84cd85b3d8e3d676b9aff51",
+    "schema_sha256": "522d6852eddbefadcabf6973c491abbe35ad2d4eafcca2160c3b48f03a551693",
     "seed": 2026,
     "versions": {
       "engine": "python",

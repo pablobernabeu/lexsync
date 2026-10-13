@@ -257,6 +257,9 @@ run_pipeline <- function(design_path, schema_path = NULL,
     joined <- .apply_norms(lex, design)
     tally(joined$normalisation)
     norms <<- joined$provenance
+    # A bare `on:` that was read as the join key, which the design should spell
+    # `join_on:`.
+    for (note in joined$notes) log <- log_step(log, note)
     for (rec in joined$provenance) {
       log <- log_step(log, sprintf("joined %d norm column(s) from '%s'",
                                    length(rec$columns), rec$path),

@@ -724,7 +724,22 @@ slugify <- function(...) {
   .lower_invariant(gsub("^_|_$", "", s))
 }
 
+# YAML 1.1 lists y, Y, n and N among its booleans. yaml::read_yaml() follows it, while
+# PyYAML, the Python engine's reader, keeps the four as text. `keys: [y, n]` therefore
+# gave this engine the keys TRUE and FALSE and the Python engine y and n, and a mapping
+# key `n:` became the name "FALSE". These handlers keep the four as text. The other
+# spellings yaml resolves to a boolean, such as yes, off and True, stay booleans to
+# both readers. Mirrors read_config in io_utils.py.
+.YAML_BOOL_HANDLERS <- list(
+  "bool#yes" = function(x) if (x %in% c("y", "Y")) x else TRUE,
+  "bool#no" = function(x) if (x %in% c("n", "N")) x else FALSE
+)
+
 #' Read a YAML configuration file
+#'
+#' An unquoted `y`, `Y`, `n` or `N` is read as text, as the Python engine reads it,
+#' though YAML 1.1 lists them among its booleans. The other boolean spellings (`yes`,
+#' `no`, `true`, `false`, `on` and `off`) are booleans in both engines.
 #'
 #' @param path Path to a YAML file.
 #' @return A named list.
@@ -734,7 +749,7 @@ read_config <- function(path) {
   if (!file.exists(path)) {
     stop(sprintf("lexsync: configuration not found: '%s'", path), call. = FALSE)
   }
-  yaml::read_yaml(path)
+  yaml::read_yaml(path, handlers = .YAML_BOOL_HANDLERS)
 }
 
 #' Validate a single stimulus value for safe inclusion in generated files

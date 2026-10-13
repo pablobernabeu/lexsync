@@ -275,6 +275,20 @@ def test_read_config_refuses_a_duplicated_mapping_key(tmp_path):
     assert read_config(str(path)) == {"name": "a", "items": {"source": "pool"}}
 
 
+def test_read_config_reads_an_unquoted_y_and_n_as_text(tmp_path):
+    """YAML 1.1 lists y, Y, n and N among its booleans. PyYAML keeps them as text, and
+    the R engine's yaml::read_yaml() read them as TRUE and FALSE, so `keys: [y, n]`
+    gave R experiments waiting for keys named TRUE and FALSE. Both engines now read
+    them as text, a mapping key `n:` included, and the other boolean spellings stay
+    booleans in both. Pinned identically in test-io_utils.R."""
+    path = tmp_path / "bools.yaml"
+    path.write_text("keys: [y, n]\nupper: [Y, N]\nn: 1\ny: 2\n"
+                    "long: [yes, no, on, off, true, false]\n", encoding="utf-8")
+    assert read_config(str(path)) == {
+        "keys": ["y", "n"], "upper": ["Y", "N"], "n": 1, "y": 2,
+        "long": [True, False, True, False, True, False]}
+
+
 # The two key vocabularies, joined by newlines and hashed. test-io_utils.R pins the
 # same digests for .DESIGN_KEYS and .SCHEMA_KEYS, so a key added to one engine only
 # fails both suites.
@@ -347,6 +361,24 @@ def test_the_tie_break_key_is_read_in_a_design_and_a_schema():
     from lexsync.design import validate_design
     assert validate_design(_valid_design(matching={"tie_break": "hash"}),
                            {"matching": {"tie_break": "bytes"}}) == []
+
+
+def test_counterbalance_optimise_must_be_true_or_false(tmp_path):
+    """The R engine read the key with isTRUE() and this one by truthiness, so
+    `optimise: n` or `1` balanced the lists here only. Once R read y as text,
+    `optimise: y` would have split them in the same way. The values come through
+    read_config, as a design file gives them. Pinned identically in test-io_utils.R."""
+    from lexsync.design import validate_design
+    message = "lexsync: counterbalance.optimise must be true or false."
+    path = tmp_path / "cb.yaml"
+    for text in ("y", "n", "1", "0", "'true'"):
+        path.write_text("counterbalance: {lists: 2, optimise: %s}\n" % text, encoding="utf-8")
+        design = _valid_design(counterbalance=read_config(str(path))["counterbalance"])
+        with pytest.raises(ValueError, match=re.escape(message)):
+            validate_design(design, {})
+    for value in (True, False, None):
+        assert validate_design(_valid_design(counterbalance={"lists": 2, "optimise": value}),
+                               {}) == []
 
 
 def test_a_response_events_from_is_a_key_lexsync_reads():

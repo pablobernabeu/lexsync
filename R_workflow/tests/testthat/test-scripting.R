@@ -223,6 +223,43 @@ test_that("a single response key is written as a list", {
            '{"type":"question","field":"target","keys":["f"],"timeout":5}]'))
 })
 
+# The events of a design whose response keys are written `keys` in YAML, read as
+# run_pipeline() reads them, so the test covers the YAML reader as well.
+events_from_yaml <- function(keys) {
+  path <- tempfile(fileext = ".yaml")
+  writeLines(c("events:",
+               "  - {type: text, content: '{target}', duration_ms: 800}",
+               sprintf("  - {type: response, keys: %s}", keys)), path)
+  read_config(path)$events
+}
+
+test_that("unquoted_y_and_n_are_response_keys_y_and_n", {
+  # This engine's YAML reader took an unquoted y and n for TRUE and FALSE, so
+  # `keys: [y, n]` gave it experiments waiting for keys named TRUE and FALSE, which no
+  # participant can press. Pinned identically in test_scripting.py.
+  expect_identical(render_events(events_from_yaml("[y, n]"), list(), 60)[[1]]$respond$keys,
+                   list("y", "n"))
+  expect_identical(render_events(events_from_yaml("[Y, N]"), list(), 60)[[1]]$respond$keys,
+                   list("Y", "N"))
+})
+
+test_that("a_yaml_boolean_response_key_is_refused", {
+  # YAML 1.1 reads an unquoted yes, no, on, off, true or false as a boolean in both
+  # engines. This engine rendered it as the key TRUE and the Python engine as True, two
+  # different experiments that no participant could answer. Pinned identically in
+  # test_scripting.py.
+  refusal <- "lexsync: response key %s is a YAML boolean; quote it ('%s') or choose another key."
+  expect_error(render_events(events_from_yaml("[yes, no]"), list(), 60),
+               sprintf(refusal, "TRUE", "yes"), fixed = TRUE)
+  expect_error(render_events(events_from_yaml("[f, off]"), list(), 60),
+               sprintf(refusal, "FALSE", "no"), fixed = TRUE)
+  expect_error(render_events(events_from_yaml("on"), list(), 60),
+               sprintf(refusal, "TRUE", "yes"), fixed = TRUE)
+  question <- list(type = "question", content = "{target}", keys = list(FALSE, "j"))
+  expect_error(render_events(list(question), list(), 60),
+               sprintf(refusal, "FALSE", "no"), fixed = TRUE)
+})
+
 test_that("a delayed response still opens after the stimulus", {
   # from: offset keeps the window that opens when the stimulus has gone. PsychoPy runs
   # it as its own event, and OpenSesame blanks the screen, collects the key with a

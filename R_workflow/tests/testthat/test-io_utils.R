@@ -210,6 +210,20 @@ test_that("read_config refuses a duplicated mapping key", {
   expect_identical(read_config(path), list(name = "a", items = list(source = "pool")))
 })
 
+test_that("read_config_reads_an_unquoted_y_and_n_as_text", {
+  # YAML 1.1 lists y, Y, n and N among its booleans. yaml::read_yaml() read them as
+  # TRUE and FALSE, and PyYAML keeps them as text, so `keys: [y, n]` gave this engine
+  # experiments waiting for keys named TRUE and FALSE. Both engines now read them as
+  # text, a mapping key `n:` included, and the other boolean spellings stay booleans
+  # in both. Pinned identically in test_io_utils.py.
+  path <- file.path(tempdir(), "bools.yaml")
+  writeLines(c("keys: [y, n]", "upper: [Y, N]", "n: 1", "y: 2",
+               "long: [yes, no, on, off, true, false]"), path)
+  expect_identical(read_config(path),
+                   list(keys = c("y", "n"), upper = c("Y", "N"), n = 1L, y = 2L,
+                        long = c(TRUE, FALSE, TRUE, FALSE, TRUE, FALSE)))
+})
+
 test_that("a continuous design over a supplied pool takes the continuous path", {
   # The predicate allowed corpus and table only, so a 'continuous' block over
   # items.source 'pool' fell through to the conditions matcher and failed with a
@@ -388,6 +402,24 @@ test_that("the_tie_break_key_is_read_in_a_design_and_a_schema", {
   expect_identical(validate_design(valid_design(matching = list(tie_break = "hash")),
                                    list(matching = list(tie_break = "bytes"))),
                    character(0))
+})
+
+test_that("counterbalance_optimise_must_be_true_or_false", {
+  # This engine read the key with isTRUE() and the Python engine by truthiness, so
+  # `optimise: n` or `1` balanced the lists in Python only. Once this engine read y as
+  # text, `optimise: y` would have split them in the same way. The values come through
+  # read_config(), as a design file gives them. Pinned identically in test_io_utils.py.
+  message <- "lexsync: counterbalance.optimise must be true or false."
+  path <- file.path(tempdir(), "cb.yaml")
+  for (text in c("y", "n", "1", "0", "'true'")) {
+    writeLines(sprintf("counterbalance: {lists: 2, optimise: %s}", text), path)
+    design <- valid_design(counterbalance = read_config(path)$counterbalance)
+    expect_error(validate_design(design, list()), message, fixed = TRUE, info = text)
+  }
+  for (value in list(TRUE, FALSE, NULL)) {
+    design <- valid_design(counterbalance = list(lists = 2L, optimise = value))
+    expect_identical(validate_design(design, list()), character(0))
+  }
 })
 
 test_that("repeated_and_blank_names_are_judged_alike_in_both_engines", {

@@ -1,0 +1,20 @@
+# Twin-edge case: counterbalance.optimise written as n. The R engine read the key with
+# isTRUE() and the Python engine by truthiness, so `optimise: n` balanced the lists in
+# Python only. The key must now be true or false.
+# The word forms are common English words. The Zipf frequencies are invented for
+# this fixture and describe no corpus.
+name: twin_edge_optimise_n
+language: english
+lexicon: lexicon.csv
+n_per_condition: 3
+conditions:
+  - name: noun
+    define_by:
+      pos: [noun]
+  - name: verb
+    define_by:
+      pos: [verb]
+match_on: [length, frequency]
+counterbalance:
+  lists: 2
+  optimise: n

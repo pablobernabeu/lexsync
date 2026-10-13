@@ -13,6 +13,8 @@ read_config(path)
 A named list.
 }
 \description{
-Read a YAML configuration file
+An unquoted \code{y}, \code{Y}, \code{n} or \code{N} is read as text, as the Python engine reads it,
+though YAML 1.1 lists them among its booleans. The other boolean spellings (\code{yes},
+\code{no}, \code{true}, \code{false}, \code{on} and \code{off}) are booleans in both engines.
 }
 \keyword{internal}

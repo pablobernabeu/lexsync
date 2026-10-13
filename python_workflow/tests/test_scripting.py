@@ -220,6 +220,41 @@ def test_a_single_response_key_is_written_as_a_list(schema, tmp_path):
         '{"type":"question","field":"target","keys":["f"],"timeout":5}]')
 
 
+def _events_from_yaml(tmp_path, keys):
+    """The events of a design whose response keys are written `keys` in YAML, read as
+    run_pipeline reads them, so the test covers the YAML reader as well."""
+    from lexsync.io_utils import read_config
+    path = tmp_path / "keys.yaml"
+    path.write_text("events:\n"
+                    "  - {type: text, content: '{target}', duration_ms: 800}\n"
+                    "  - {type: response, keys: %s}\n" % keys, encoding="utf-8")
+    return read_config(str(path))["events"]
+
+
+def test_unquoted_y_and_n_are_response_keys_y_and_n(tmp_path):
+    """The R engine's YAML reader took an unquoted y and n for TRUE and FALSE, so
+    `keys: [y, n]` gave it experiments waiting for keys named TRUE and FALSE, which no
+    participant can press. Pinned identically in test-scripting.R."""
+    for keys, want in (("[y, n]", ["y", "n"]), ("[Y, N]", ["Y", "N"])):
+        rendered = render_events(_events_from_yaml(tmp_path, keys), {}, 60)
+        assert rendered[0]["respond"]["keys"] == want
+
+
+def test_a_yaml_boolean_response_key_is_refused(tmp_path):
+    """YAML 1.1 reads an unquoted yes, no, on, off, true or false as a boolean in both
+    engines. The R engine rendered it as the key TRUE and this engine as True, two
+    different experiments that no participant could answer. Pinned identically in
+    test-scripting.R."""
+    refusal = "lexsync: response key %s is a YAML boolean; quote it ('%s') or choose another key."
+    for keys, shown in (("[yes, no]", ("TRUE", "yes")), ("[f, off]", ("FALSE", "no")),
+                        ("on", ("TRUE", "yes"))):
+        with pytest.raises(ValueError, match=re.escape(refusal % shown)):
+            render_events(_events_from_yaml(tmp_path, keys), {}, 60)
+    question = {"type": "question", "content": "{target}", "keys": [False, "j"]}
+    with pytest.raises(ValueError, match=re.escape(refusal % ("FALSE", "no"))):
+        render_events([question], {}, 60)
+
+
 def test_a_delayed_response_still_opens_after_the_stimulus(schema, tmp_path):
     # from: offset keeps the window that opens when the stimulus has gone. PsychoPy runs
     # it as its own event, and OpenSesame blanks the screen, collects the key with a

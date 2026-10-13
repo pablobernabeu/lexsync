@@ -1,8 +1,8 @@
 # lexsync run log: en_rastle_repro
 
 - Engine: R 4.6.1
-- Started: 2026-10-13 11:11:51.160483
-- Finished: 2026-10-13 11:11:53.174079
+- Started: 2026-10-13 14:28:05.67287
+- Finished: 2026-10-13 14:28:10.800727
 
 ## Run metadata
 
@@ -16,54 +16,54 @@
 
 ## Steps
 
-- **2026-10-13 11:11:51.188401**: loading items 'items/rastle_priming_en.csv'
-- **2026-10-13 11:11:51.366324**: loaded 12 items across 2 conditions
+- **2026-10-13 14:28:05.707828**: loading items 'items/rastle_priming_en.csv'
+- **2026-10-13 14:28:05.903528**: loaded 12 items across 2 conditions
     - conditions: related, unrelated
-- **2026-10-13 11:11:51.608771**: wrote 'en_rastle_repro_english_stimuli_R.csv'
+- **2026-10-13 14:28:06.355633**: wrote 'en_rastle_repro_english_stimuli_R.csv'
     - path: output/stimuli/en_rastle_repro_english_stimuli_R.csv
     - rows: 24
     - md5: 3f0b27cc792db7c4971b4627b5e24899
-- **2026-10-13 11:11:52.509681**: wrote 'en_rastle_repro_english_psychopy.py'
+- **2026-10-13 14:28:09.071965**: wrote 'en_rastle_repro_english_psychopy.py'
     - path: output/experiments/en_rastle_repro_english_psychopy.py
     - rows: NA
     - md5: 92c43bd726137ac53e648f58129ecc99
-- **2026-10-13 11:11:52.541181**: wrote 'en_rastle_repro_english_list1.osexp'
+- **2026-10-13 14:28:09.211351**: wrote 'en_rastle_repro_english_list1.osexp'
     - path: output/experiments/en_rastle_repro_english_list1.osexp
     - rows: NA
     - md5: 4753e97ef29574c4ed7ee9c3d884eecf
-- **2026-10-13 11:11:52.575478**: wrote 'en_rastle_repro_english_list2.osexp'
+- **2026-10-13 14:28:09.289016**: wrote 'en_rastle_repro_english_list2.osexp'
     - path: output/experiments/en_rastle_repro_english_list2.osexp
     - rows: NA
     - md5: 2a8586c9e1ef6289ff472ed059085f4b
-- **2026-10-13 11:11:52.612978**: wrote 'en_rastle_repro_english.html'
+- **2026-10-13 14:28:09.403303**: wrote 'en_rastle_repro_english.html'
     - path: output/experiments/en_rastle_repro_english.html
     - rows: NA
     - md5: 31c45ef0469ec1fb3df0cd476caf0f56
-- **2026-10-13 11:11:52.658095**: wrote 'en_rastle_repro_english_psychopy.csv'
+- **2026-10-13 14:28:09.50898**: wrote 'en_rastle_repro_english_psychopy.csv'
     - path: output/experiments/en_rastle_repro_english_psychopy.csv
     - rows: NA
     - md5: b7902b6776be552b86ffdb4a06c7e287
-- **2026-10-13 11:11:52.689996**: wrote 'en_rastle_repro_english_list1_opensesame.csv'
+- **2026-10-13 14:28:09.568327**: wrote 'en_rastle_repro_english_list1_opensesame.csv'
     - path: output/experiments/en_rastle_repro_english_list1_opensesame.csv
     - rows: NA
     - md5: 0e2b073e248ca34d8dd60b5879e8394c
-- **2026-10-13 11:11:52.719151**: wrote 'en_rastle_repro_english_list1_opensesame_text.csv'
+- **2026-10-13 14:28:09.623149**: wrote 'en_rastle_repro_english_list1_opensesame_text.csv'
     - path: output/experiments/en_rastle_repro_english_list1_opensesame_text.csv
     - rows: NA
     - md5: 05cb85e9f11b9631528489c20d32d4d6
-- **2026-10-13 11:11:52.76523**: wrote 'en_rastle_repro_english_list2_opensesame.csv'
+- **2026-10-13 14:28:09.67065**: wrote 'en_rastle_repro_english_list2_opensesame.csv'
     - path: output/experiments/en_rastle_repro_english_list2_opensesame.csv
     - rows: NA
     - md5: f658e984956caa1ae12417a10473fcd9
-- **2026-10-13 11:11:52.787223**: wrote 'en_rastle_repro_english_list2_opensesame_text.csv'
+- **2026-10-13 14:28:09.71849**: wrote 'en_rastle_repro_english_list2_opensesame_text.csv'
     - path: output/experiments/en_rastle_repro_english_list2_opensesame_text.csv
     - rows: NA
     - md5: b9537ca63466a33dbc9b01f590bac9de
-- **2026-10-13 11:11:53.131738**: wrote 'en_rastle_repro_english_datasheet_R.json'
+- **2026-10-13 14:28:10.616854**: wrote 'en_rastle_repro_english_datasheet_R.json'
     - path: output/reports/en_rastle_repro_english_datasheet_R.json
     - rows: NA
-    - md5: 19c1c5d8dc216c140e2a18f50cf4f291
-- **2026-10-13 11:11:53.152821**: wrote 'en_rastle_repro_english_datasheet_R.md'
+    - md5: d9969c1204d53d55da81b317db15be71
+- **2026-10-13 14:28:10.686082**: wrote 'en_rastle_repro_english_datasheet_R.md'
     - path: output/reports/en_rastle_repro_english_datasheet_R.md
     - rows: NA
     - md5: 61e9c61d772c784db6f73decaed853d6

@@ -1,0 +1,9 @@
+group,dimension,n,mean,sd,min,median,max
+word,length,4,6,0,6,6,6
+word,bigram_freq,4,0.014,0.003,0.011,0.014,0.017
+word,n_density,4,0,0,0,0,0
+word,old20,4,4.75,0.168,4.65,4.675,5
+pseudoword,length,4,6,0,6,6,6
+pseudoword,bigram_freq,4,0.017,0.002,0.015,0.016,0.019
+pseudoword,n_density,4,1,0,1,1,1
+pseudoword,old20,4,4.425,0.065,4.35,4.425,4.5

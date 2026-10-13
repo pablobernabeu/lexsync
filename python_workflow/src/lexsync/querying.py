@@ -15,6 +15,7 @@ import pandas as pd
 from rapidfuzz import process
 from rapidfuzz.distance import Levenshtein
 
+from .design import _key_name
 from .io_utils import _NUMERIC_CELL, _round_dp, clean_field, read_csv_utf8, sha256_file
 
 # The syllable estimate counts maximal runs of Latin vowel letters. A word is first
@@ -455,7 +456,7 @@ def merge_norms(lexicon: pd.DataFrame, norms, on: str = "word", columns=None) ->
 #
 #   norms:
 #     - path: norms/en_concreteness.csv
-#       on: word                  # optional join key, default 'word'
+#       join_on: word             # optional join key, default 'word'
 #       columns: [concreteness]   # optional; default every column but the key
 #
 # The join itself is merge_norms(). What this adds is provenance, and that is not a
@@ -477,22 +478,65 @@ def _norm_specs(design: dict):
     return [specs] if isinstance(specs, dict) else list(specs)
 
 
+# The keys a norms entry may hold, as R names them. `on` is the join key's earlier
+# name, still read when it is quoted, and TRUE is the name R gives the key True that
+# YAML 1.1 makes of a bare `on`. Must list the same names as .NORMS_KEYS in
+# R_workflow/R/querying.R.
+_NORMS_KEYS = ("path", "join_on", "on", "TRUE", "columns")
+
+_NORMS_ON_NOTE = ("lexsync: read `on:` in a norms entry as the join key; YAML reads a "
+                  "bare `on` as true, so write `join_on:`.")
+
+
+def _norm_join_key(spec: dict) -> tuple:
+    """The join key of one norms entry, once the entry's keys are checked.
+
+    YAML 1.1 reads a bare `on` as the boolean true in both engines, so the documented
+    `on: lemma` reached the join as a key True, and every join silently used `word`.
+    The keys are compared as R names them, True as "TRUE", so both engines judge one
+    entry alike. `join_on` is read first, then a quoted 'on', then the key True, which
+    comes back with a note for the run log. Any other key is refused, since a misspelt
+    `join_on` would fall back to `word` just as silently. Returns (on, note), the note
+    None unless the bare `on` gave the key. Must stay identical to .norm_join_key in
+    R_workflow/R/querying.R.
+    """
+    names = {_key_name(k): v for k, v in spec.items()}
+    unknown = [k for k in names if k not in _NORMS_KEYS]
+    if unknown:
+        raise ValueError("lexsync: unknown key '%s' in a norms entry; known keys: path, "
+                         "join_on, columns." % unknown[0])
+    for key in ("join_on", "on"):
+        if names.get(key) is not None:
+            return names[key], None
+    if names.get("TRUE") is not None:
+        return names["TRUE"], _NORMS_ON_NOTE
+    return "word", None
+
+
 def apply_norms(lex: pd.DataFrame, design: dict) -> dict:
     """Join the design's norm tables onto the lexicon, returning it and its record.
 
     ``normalisation`` in the result counts the norm-table keys that NFC changed and
     the duplicate keys it created, which the join then dropped, summed over the
-    tables (see ``_nfc_count``).
+    tables (see ``_nfc_count``). ``notes`` holds a note for each entry whose join key
+    was a bare ``on``, for the run log.
     """
     records = []
+    notes = []
     changed = collapsed = 0
     for spec in _norm_specs(design):
+        # A bare word or a list here would make the key check and the reads below fail
+        # with Python's own error, far from the cause.
+        if not isinstance(spec, dict):
+            raise ValueError("lexsync: every entry under `norms:` needs a `path`.")
+        on, note = _norm_join_key(spec)
         path = spec.get("path")
         if not path:
             raise ValueError("lexsync: every entry under `norms:` needs a `path`.")
         if ".." in str(path).replace("\\", "/").split("/"):
             raise ValueError("lexsync: norms path must not contain '..'.")
-        on = spec.get("on") or "word"
+        if note:
+            notes.append(note)
         cols = list(spec["columns"]) if spec.get("columns") else None
         before = list(lex.columns)
         table = read_csv_utf8(path)
@@ -511,7 +555,7 @@ def apply_norms(lex: pd.DataFrame, design: dict) -> dict:
                          "n_total": int(len(lex))} for c in added],
         })
     return {"lexicon": lex, "provenance": records,
-            "normalisation": {"changed": changed, "collapsed": collapsed}}
+            "normalisation": {"changed": changed, "collapsed": collapsed}, "notes": notes}
 
 
 # ---- The design's `exclude_words` -------------------------------------------

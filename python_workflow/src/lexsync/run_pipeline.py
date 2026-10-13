@@ -344,6 +344,10 @@ def run_pipeline(design_path: str, schema_path: str | None = None, outdir: str =
         joined = apply_norms(lex, design)
         tally(joined["normalisation"])
         norms.extend(joined["provenance"])
+        # A bare `on:` that was read as the join key, which the design should spell
+        # `join_on:`.
+        for note in joined["notes"]:
+            runlog.log_step(log, note)
         for rec in joined["provenance"]:
             runlog.log_step(log, "joined %d norm column(s) from '%s'"
                                  % (len(rec["columns"]), rec["path"]),

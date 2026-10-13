@@ -1,0 +1,9 @@
+word,freq_zipf,pos,lemma,id,length,n_syllables,frequency,language,concreteness,condition,set,list,trial
+ladders,3.12,noun,ladder,24,7,2,3.12,english,4.79,low,1,1,1
+follow,5.08,verb,follow,13,6,2,5.08,english,2.88,high,4,1,2
+borrow,3.95,verb,borrow,1,6,2,3.95,english,2.93,low,4,1,3
+mirrors,3.64,noun,mirror,28,7,2,3.64,english,4.68,low,2,1,4
+bottle,4.58,noun,bottle,3,6,2,4.58,english,4.86,high,3,1,5
+candle,3.79,noun,candle,7,6,2,3.79,english,4.82,low,3,1,6
+islands,4.31,noun,island,22,7,2,4.31,english,4.27,high,2,1,7
+windows,4.62,noun,window,40,7,2,4.62,english,4.64,high,1,1,8

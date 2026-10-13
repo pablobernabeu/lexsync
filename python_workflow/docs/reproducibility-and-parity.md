@@ -120,6 +120,24 @@ independent of the seed, which keys the trial order. A tie key built on the seed
 items whenever a cohort's order was re-randomised, and would let re-seeding shop among equally
 matched sets.
 
+## The YAML input contract
+
+A design and the schema are read as YAML 1.1, by PyYAML here and by `yaml::read_yaml()` in R, and
+the two readers resolve a few unquoted values differently. YAML 1.1 lists `y`, `Y`, `n` and `N`
+among its booleans, and PyYAML keeps them as text. lexsync reads them as text in both engines, so
+`keys: [y, n]` gives the response keys y and n. Booleans are written `true` and `false`. An unquoted
+`yes`, `no`, `on` or `off` is a boolean to both readers as well. A response key that YAML reads as a
+boolean is therefore refused with a hint to quote it. A norms entry names its join key `join_on`,
+since a bare `on` is read as true. `counterbalance.optimise` must be `true` or `false`, and any other
+value, such as `n` or `1`, is refused.
+
+Some differences remain, and they are known. PyYAML reads `1:30` as the base-60 number 90, `1_000`
+as 1000, `0b101` as 5 and `2026-10-13` as a date, and R reads all four as text. No shipped design or
+schema holds such a value. Quote one, or write the number plainly, where a design must read alike in
+both engines. R also reads a sequence of one value, such as `[true]`, as that value, while PyYAML
+keeps a list. `optimise: [true]` or `name: [demo]` therefore passes in R and is refused here, so
+write a single value without brackets.
+
 ## The Unicode input contract
 
 Word matching, deduplication and the `length` dimension operate on Unicode code points, and every

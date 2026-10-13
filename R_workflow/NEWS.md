@@ -138,6 +138,30 @@
   engine, and without `match_on` this engine paired the alphabetically first
   words.
 
+* The R engine reads an unquoted `y` or `n` in a design as text, as the Python
+  engine does. It read them as TRUE and FALSE, so `keys: [y, n]` generated
+  experiments that waited for keys named TRUE and FALSE, which no participant can
+  press. A YAML boolean given as a response key (an unquoted `yes`, `no`, `on` or
+  `off`) is refused with a hint to quote it, and `validate_design()` refuses a
+  `counterbalance.optimise` that is not `true` or `false`, since `optimise: n` or
+  `1` balanced the lists in the Python engine only. The twin-edge cases `yn_keys`,
+  `yes_no_keys`, `optimise_n` and `language_no` pin both engines to these
+  outcomes.
+
+* A norms entry's join key is written `join_on:`. Both engines' YAML readers took
+  the documented `on:` for the boolean true, so every join silently used `word`. A
+  bare `on:` is now read as the join key, with a note in the run log, and any other
+  key in a norms entry is refused, so a misspelt `join_on` no longer falls back to
+  `word`. An entry that is not a mapping, such as a bare file name, is refused as
+  needing a `path`, where it used to stop the run with R's own error. This engine
+  also joined each entry of a `norms:` block written as a mapping of named entries,
+  such as `conc: {path: norms.csv}`, which the Python engine refused. Both engines
+  now refuse it and name `conc` as an unknown key. The datasheet still records the
+  key as `on`. The schema's comment now shows `join_on:`. The 42 committed
+  datasheets record the schema's SHA-256 and the run logs record each datasheet's
+  MD5, so both are regenerated. No stimulus, report table or experiment changes.
+  The twin-edge case `norms_on_bare` pins the join on `lemma`.
+
 * `n_per_condition` is resolved by one rule everywhere. A whole number written as
   `4.0` is accepted, and 0 is refused by `match_stimuli()` and
   `select_continuous_stimuli()`, which failed here with an obscure error and

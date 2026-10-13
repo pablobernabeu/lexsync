@@ -1,0 +1,30 @@
+# Twin-edge case: a norms entry whose join key is a bare `on:`, as the documentation
+# used to write it. YAML 1.1 reads a bare `on` as the boolean true, so both engines
+# took the key for true and joined on `word`. The norm table rates lemmas and lists
+# each one's citation form under `word`, so that join silently covered only the forms
+# that are their own lemma, and the pool filter dropped every inflected form. The key
+# is now read as the join key, with a note in the run log, and the datasheet records
+# the join on lemma with all forty forms covered.
+# The word forms are common English words. The Zipf frequencies and the concreteness
+# ratings are invented for this fixture and describe no corpus or norm study.
+name: twin_edge_norms_on_bare
+language: english
+lexicon: lexicon.csv
+description: 'High against low frequency, matched on length and on a lemma-level norm.'
+n_per_condition: 4
+norms:
+  - path: norms.csv
+    on: lemma
+    columns: [concreteness]
+pool_filters:
+  concreteness: [2.0, 5.0]
+conditions:
+  - name: low
+    define_by:
+      frequency: [3.0, 3.95]
+  - name: high
+    define_by:
+      frequency: [4.25, 5.5]
+match_on: [length, concreteness]
+counterbalance:
+  lists: 1

@@ -372,12 +372,20 @@ def _keys_of(ev: dict, default: list) -> list:
 
     A YAML scalar (`keys: space`) arrives as a str, and `list("space")` is five
     one-character keys, while R keeps the scalar whole -- so one design produced two
-    different allowed-response lists. Each key is then validated because OpenSesame
+    different allowed-response lists. A YAML boolean is refused. Both engines read an
+    unquoted yes, no, true, false, on or off as a boolean. str() then made the key True
+    here, and R wrote TRUE, so neither experiment could register a response. The
+    message names the boolean as R does. Each key is then validated because OpenSesame
     writes them into `set allowed_responses "a;b"`, one line of a line-oriented format.
+    Must match .keys_of in R_workflow/R/scripting.R.
     """
     keys = ev.get("keys", default)
-    if isinstance(keys, str):
+    if isinstance(keys, (str, bool)):
         keys = [keys]
+    for key in keys:
+        if isinstance(key, bool):
+            raise ValueError("lexsync: response key %s is a YAML boolean; quote it ('%s') or "
+                             "choose another key." % (("TRUE", "yes") if key else ("FALSE", "no")))
     return [clean_key(k) for k in keys]
 
 

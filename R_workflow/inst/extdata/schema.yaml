@@ -64,8 +64,12 @@ dimensions:
 #
 #   norms:
 #     - path: norms/en_concreteness.csv
-#       on: word                  # optional join key, default 'word'
+#       join_on: word             # optional join key, default 'word'
 #       columns: [concreteness]   # optional; default every column but the key
+#
+# YAML reads a bare `on` as the boolean true, so the join key is written `join_on`. A
+# bare `on:` is still read as the join key, with a note in the run log, and any other
+# key in an entry is refused.
 #
 # The tables are joined onto the lexicon before the candidate pool is built, so
 # `pool_filters`, `match_on` and a continuous `predictor` may all name a norm column.

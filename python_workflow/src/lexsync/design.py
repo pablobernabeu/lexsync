@@ -223,6 +223,19 @@ def _text(design: dict, key: str, hint: str) -> str:
     return value
 
 
+def _require_bool(value, key: str):
+    """Refuse a value other than true or false for a design key that takes one.
+
+    None passes, since the key may be left out. The engines would read any other value
+    differently, R with isTRUE() and this engine by truthiness, so `optimise: n` or `1`
+    balanced the lists here only. Must stay identical to .require_bool in
+    R_workflow/R/design.R.
+    """
+    if value is not None and not isinstance(value, bool):
+        raise ValueError(f"lexsync: {key} must be true or false.")
+    return value
+
+
 def _name_and_language(design) -> tuple:
     if not isinstance(design, dict):
         raise ValueError("lexsync: a design must be a mapping of keys to values.")
@@ -436,16 +449,18 @@ def validate_design(design: dict, schema: dict) -> list:
     both engines. It first refuses a key within one or two edits of a key lexsync
     reads at that level, naming the key it was probably meant to be (one edit for a
     known key of up to five characters, two for a longer one). It then refuses a
-    missing, empty or non-text ``name`` or ``language``, and an ``n_per_condition`` or
-    ``n_per_cell`` that is not a whole number of at least 1. It refuses a name,
+    missing, empty or non-text ``name`` or ``language``, an ``n_per_condition`` or
+    ``n_per_cell`` that is not a whole number of at least 1, and a
+    ``counterbalance.optimise`` that is not true or false. It refuses a name,
     language or font that cannot be written into the generated experiments, a
     trigger port that is not an address, and an event list the renderer refuses, such
-    as one with an unknown timing key or a bad response key. Last, it refuses a
-    condition without a name, with a name that is not text or with a repeated name,
-    a corpus or pool design with conditions but no ``match_on``, and a name and
-    language that leave no file stem. It also refuses an ``exclude_words`` that is
-    neither a list of words nor a mapping whose ``path`` names a file, and one that a
-    design with an item table names.
+    as one with an unknown timing key, a bad response key or a response key that
+    YAML reads as a boolean (an unquoted ``yes``, ``no``, ``on`` or ``off``). Last, it
+    refuses a condition without a name, with a name that is not text or with a
+    repeated name, a corpus or pool design with conditions but no ``match_on``, and a
+    name and language that leave no file stem. It also refuses an ``exclude_words``
+    that is neither a list of words nor a mapping whose ``path`` names a file, and one
+    that a design with an item table names.
 
     Any other key lexsync does not read is not refused yet. It is returned as a note,
     which ``run_pipeline`` writes into the run log, and a later release will refuse
@@ -476,6 +491,9 @@ def validate_design(design: dict, schema: dict) -> list:
              + _check_keys(schema, SCHEMA_KEYS, "schema"))
     _name_and_language(design)
     _resolve_n(design, None)
+    counterbalance = design.get("counterbalance")
+    if isinstance(counterbalance, dict):
+        _require_bool(counterbalance.get("optimise"), "counterbalance.optimise")
 
     clean_meta(design["name"], "the design's `name`")
     clean_meta(design["language"], "the design's `language`")

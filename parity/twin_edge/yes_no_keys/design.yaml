@@ -1,0 +1,33 @@
+# Twin-edge case: response keys written as an unquoted yes and no. YAML 1.1 reads both
+# as booleans in either engine, and the R experiments then waited for keys named TRUE
+# and FALSE and the Python ones for True and False, which no participant can press.
+# Both engines now refuse a boolean key before anything is written.
+# The word forms are common English words. The Zipf frequencies are invented for
+# this fixture and describe no corpus.
+name: twin_edge_yes_no_keys
+language: english
+paradigm: lexical_decision
+description: 'Lexical decision on a forty-word lexicon with unquoted yes and no response keys.'
+items:
+  source: generate
+  lexicon: lexicon.csv
+n_per_condition: 4
+pool_filters:
+  length: [5, 6]
+  frequency: [4.0, 5.0]
+events:
+  - type: fixation
+    content: '+'
+    duration_ms: 500
+  - type: text
+    content: '{target}'
+    duration_ms: 800
+    trigger: condition
+    onset_locked: true
+  - type: response
+    keys: [yes, no]
+    timeout_ms: 2000
+  - type: blank
+    duration_ms: 250
+counterbalance:
+  lists: 1

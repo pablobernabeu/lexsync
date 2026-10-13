@@ -237,7 +237,7 @@
     },
     "design_sha256": "3bc9b0d7c5bd082140bc65c666f4ea8ebcad3bf684a83048cef5677fa0953218",
     "schema_path": "config/schema.yaml",
-    "schema_sha256": "3ce7555f29af0058335bf3164cc54ece5d369758a84cd85b3d8e3d676b9aff51"
+    "schema_sha256": "522d6852eddbefadcabf6973c491abbe35ad2d4eafcca2160c3b48f03a551693"
   },
   "artifacts": [
     {

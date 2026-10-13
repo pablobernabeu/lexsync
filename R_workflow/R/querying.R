@@ -434,7 +434,7 @@ merge_norms <- function(lexicon, norms, on = "word", columns = NULL) {
 #
 #   norms:
 #     - path: norms/en_concreteness.csv
-#       on: word                  # optional join key, default 'word'
+#       join_on: word             # optional join key, default 'word'
 #       columns: [concreteness]   # optional; default every column but the key
 #
 # The join itself is merge_norms(). What this adds is provenance, and that is not a
@@ -449,31 +449,70 @@ merge_norms <- function(lexicon, norms, on = "word", columns = NULL) {
 
 # YAML gives a sequence of mappings as an unnamed list of named lists, and a single
 # bare mapping as one named list. Writing one entry as a bare mapping is the obvious
-# thing to do, so accept both shapes. `names()` of an unnamed list is NULL and
-# `"path" %in% NULL` is FALSE, which distinguishes them without indexing an unnamed
-# list by name (an error, not NULL).
+# thing to do, so accept both shapes. Any named list is one entry, as any dict is in
+# _norm_specs in querying.py. Testing for a `path` key instead split a bare mapping
+# without one into its values, so a misspelt key went unreported here while the Python
+# engine named it, and a mapping of named entries was joined here and refused there.
 #' @keywords internal
 .norm_specs <- function(design) {
   specs <- design[["norms"]] %||% list()
-  if (length(specs) && "path" %in% names(specs)) specs <- list(specs)
+  # The length test keeps `norms: {}`, an empty named list, as no entries at all.
+  if (length(specs) && .is_mapping(specs)) specs <- list(specs)
   specs
+}
+
+# The keys a norms entry may hold. `on` is the join key's earlier name, still read when
+# it is quoted, and TRUE is the name YAML 1.1 gives a bare `on`. Must list the same
+# names as _NORMS_KEYS in querying.py.
+.NORMS_KEYS <- c("path", "join_on", "on", "TRUE", "columns")
+
+.NORMS_ON_NOTE <- paste("lexsync: read `on:` in a norms entry as the join key; YAML reads a",
+                        "bare `on` as true, so write `join_on:`.")
+
+# The join key of one norms entry, once the entry's keys are checked. YAML 1.1 reads a
+# bare `on` as the boolean true in both engines, so the documented `on: lemma` reached
+# the join as a key named TRUE, and every join silently used `word`. `join_on` is read
+# first, then a quoted 'on', then a key named TRUE, which comes back with a note for
+# the run log. Any other key is refused, since a misspelt `join_on` would fall back to
+# `word` just as silently. Returns list(on, note), the note NULL unless the bare `on`
+# gave the key. Must stay identical to _norm_join_key in querying.py.
+#' @keywords internal
+.norm_join_key <- function(spec) {
+  unknown <- setdiff(names(spec), .NORMS_KEYS)
+  if (length(unknown)) {
+    stop(sprintf(paste("lexsync: unknown key '%s' in a norms entry; known keys: path,",
+                       "join_on, columns."), unknown[1]), call. = FALSE)
+  }
+  for (key in c("join_on", "on")) {
+    if (!is.null(spec[[key]])) return(list(on = spec[[key]], note = NULL))
+  }
+  if (!is.null(spec[["TRUE"]])) return(list(on = spec[["TRUE"]], note = .NORMS_ON_NOTE))
+  list(on = "word", note = NULL)
 }
 
 # `normalisation` in the result counts the norm-table keys that NFC changed and the
 # duplicate keys it created, which the join then dropped, summed over the tables
-# (see .nfc_count). Mirrors apply_norms in querying.py.
+# (see .nfc_count). `notes` holds a note for each entry whose join key was a bare
+# `on`, for the run log. Mirrors apply_norms in querying.py.
 #' @keywords internal
 .apply_norms <- function(lex, design) {
   records <- list()
+  notes <- character(0)
   changed <- collapsed <- 0L
   for (spec in .norm_specs(design)) {
+    # A bare word or a list here would make the key check and the reads below fail
+    # with R's own error, far from the cause.
+    if (!.is_mapping(spec))
+      stop("lexsync: every entry under `norms:` needs a `path`.", call. = FALSE)
+    key <- .norm_join_key(spec)
     path <- spec[["path"]]
     if (is.null(path))
       stop("lexsync: every entry under `norms:` needs a `path`.", call. = FALSE)
     parts <- strsplit(gsub("\\\\", "/", path), "/", fixed = TRUE)[[1]]
     if (".." %in% parts)
       stop("lexsync: norms path must not contain '..'.", call. = FALSE)
-    on <- spec[["on"]] %||% "word"
+    on <- key$on
+    notes <- c(notes, key$note)
     cols <- if (is.null(spec[["columns"]])) NULL else unlist(spec[["columns"]], use.names = FALSE)
     before <- names(lex)
     table <- as.data.frame(read_csv_utf8(path), stringsAsFactors = FALSE)
@@ -489,7 +528,7 @@ merge_norms <- function(lexicon, norms, on = "word", columns = NULL) {
         list(column = cl, n_matched = sum(!is.na(lex[[cl]])), n_total = nrow(lex))))
   }
   list(lexicon = lex, provenance = records,
-       normalisation = list(changed = changed, collapsed = collapsed))
+       normalisation = list(changed = changed, collapsed = collapsed), notes = notes)
 }
 
 # ---- The design's `exclude_words` -------------------------------------------

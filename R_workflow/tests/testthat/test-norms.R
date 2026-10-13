@@ -116,6 +116,156 @@ test_that(".apply_norms folds the lexicon key", {
   expect_false(any(is.na(out$lexicon$concreteness)))
 })
 
+# ---- The join key of a norms entry --------------------------------------------
+# YAML 1.1 reads a bare `on` as the boolean true in both engines, so the documented
+# `on: lemma` reached the join as a key named TRUE (True in Python) and every join
+# silently used `word`. The key is now written `join_on`. These tests write their
+# entries as YAML and read them with read_config(), as run_pipeline() does, because the
+# defect lived in the reading.
+
+ON_NOTE <- paste("lexsync: read `on:` in a norms entry as the join key; YAML reads a bare",
+                 "`on` as true, so write `join_on:`.")
+FORMS <- c("cat", "cats", "dog", "dogs", "mice", "mouse")
+LEMMAS <- c("cat", "cat", "dog", "dog", "mouse", "mouse")
+BY_LEMMA <- c(4.9, 4.9, 4.8, 4.8, 4.7, 4.7)
+
+# Word forms with their lemmas, in byte order, so the lexicon keeps this order.
+lemma_lexicon <- function(dir) {
+  path <- file.path(dir, "lemma_lex.csv")
+  lexsync:::write_csv_utf8(
+    data.frame(word = FORMS, freq_zipf = 4.0 + 0.1 * (seq_along(FORMS) - 1L), lemma = LEMMAS,
+               stringsAsFactors = FALSE), path)
+  path
+}
+
+# A lemma-level norm table. With `with_word`, it also lists each lemma's citation form
+# under `word`. A join on `word` then matches only the forms that are their own lemma,
+# so the key a join used can be read off its coverage.
+lemma_norms <- function(dir, with_word = TRUE) {
+  path <- file.path(dir, "lemma_norms.csv")
+  table <- data.frame(lemma = c("cat", "dog", "mouse"), concreteness = c(4.9, 4.8, 4.7),
+                      stringsAsFactors = FALSE)
+  if (with_word) table <- cbind(data.frame(word = table$lemma, stringsAsFactors = FALSE), table)
+  lexsync:::write_csv_utf8(table, path)
+  path
+}
+
+# A design whose single norms entry is the YAML mapping `{path: ..., <entry>}`.
+norms_entry <- function(dir, entry, norms_path) {
+  path <- file.path(dir, "norms_entry.yaml")
+  writeLines(c("norms:", sprintf("  - {path: %s, %s}", gsub("\\\\", "/", norms_path), entry)),
+             path)
+  read_config(path)
+}
+
+test_that("a_bare_on_key_is_read_as_the_join_key", {
+  # Pinned identically in test_norms.py.
+  dir <- tempfile("norms"); dir.create(dir)
+  lex <- load_lexicon(lemma_lexicon(dir), norm_schema())
+  design <- norms_entry(dir, "on: lemma, columns: [concreteness]", lemma_norms(dir))
+  out <- lexsync:::.apply_norms(lex, design)
+  expect_equal(out$lexicon$concreteness, BY_LEMMA)
+  expect_identical(out$provenance[[1]]$on, "lemma")
+  expect_identical(out$notes, ON_NOTE)
+})
+
+test_that("join_on_names_the_join_key_and_wins_over_on", {
+  # `join_on` joins with no note, and so does a quoted 'on'. Given both, `join_on` wins.
+  # Without either, the join uses `word`, which covers only the forms that are their
+  # own lemma. Pinned identically in test_norms.py.
+  dir <- tempfile("norms"); dir.create(dir)
+  lex <- load_lexicon(lemma_lexicon(dir), norm_schema())
+  norms_path <- lemma_norms(dir)
+  for (entry in c("join_on: lemma", "'on': lemma", "join_on: lemma, on: word",
+                  "join_on: lemma, 'on': word")) {
+    out <- lexsync:::.apply_norms(
+      lex, norms_entry(dir, paste0(entry, ", columns: [concreteness]"), norms_path))
+    expect_equal(out$lexicon$concreteness, BY_LEMMA, info = entry)
+    expect_identical(out$provenance[[1]]$on, "lemma", info = entry)
+    expect_identical(out$notes, character(0), info = entry)
+  }
+  out <- lexsync:::.apply_norms(lex, norms_entry(dir, "columns: [concreteness]", norms_path))
+  expect_equal(out$lexicon$concreteness, c(4.9, NA, 4.8, NA, NA, 4.7))
+  expect_identical(out$provenance[[1]]$on, "word")
+})
+
+test_that("an_unknown_key_in_a_norms_entry_is_refused", {
+  # A misspelt `join_on` fell back to `word` as silently as the bare `on` did. A key
+  # YAML reads as false is named as this engine names it. Pinned identically in
+  # test_norms.py.
+  dir <- tempfile("norms"); dir.create(dir)
+  lex <- load_lexicon(lemma_lexicon(dir), norm_schema())
+  norms_path <- lemma_norms(dir)
+  for (case in list(c("joinon: lemma", "joinon"), c("off: lemma", "FALSE"))) {
+    expect_error(lexsync:::.apply_norms(lex, norms_entry(dir, case[1], norms_path)),
+                 sprintf(paste("lexsync: unknown key '%s' in a norms entry; known keys:",
+                               "path, join_on, columns."), case[2]), fixed = TRUE)
+  }
+  # A single entry written as a bare mapping is checked in the same way. This engine
+  # took a bare mapping without `path` for a list of entries, so it reported the
+  # missing path where the Python engine named the misspelt key.
+  bare <- file.path(dir, "bare_entry.yaml")
+  writeLines("norms: {joinon: lemma, columns: [concreteness]}", bare)
+  expect_error(lexsync:::.apply_norms(lex, read_config(bare)),
+               paste("lexsync: unknown key 'joinon' in a norms entry; known keys: path,",
+                     "join_on, columns."), fixed = TRUE)
+  # A mapping of named entries is checked as one entry whose keys are the names. This
+  # engine joined each entry, and the Python engine refused the block.
+  writeLines(c("norms:", sprintf("  conc: {path: %s}", gsub("\\\\", "/", norms_path))), bare)
+  expect_error(lexsync:::.apply_norms(lex, read_config(bare)),
+               paste("lexsync: unknown key 'conc' in a norms entry; known keys: path,",
+                     "join_on, columns."), fixed = TRUE)
+  # An empty mapping holds no entry at all, in both engines.
+  writeLines("norms: {}", bare)
+  expect_identical(lexsync:::.apply_norms(lex, read_config(bare))$provenance, list())
+  # An entry that is not a mapping has no path to read.
+  expect_error(lexsync:::.apply_norms(lex, list(norms = list(norms_path))),
+               "lexsync: every entry under `norms:` needs a `path`.", fixed = TRUE)
+})
+
+test_that("the_pipeline_joins_on_a_bare_on_and_notes_it", {
+  # End to end, from a hand-written design: the table has no `word` column, so the join
+  # on `word` that the bare `on` used to give stopped the run. Pinned identically in
+  # test_norms.py.
+  dir <- tempfile("norms"); dir.create(dir)
+  lexicon <- file.path(dir, "lex_lemma.csv")
+  lexsync:::write_csv_utf8(
+    data.frame(word = NORM_WORDS, freq_zipf = 3.0 + 0.2 * (seq_along(NORM_WORDS) - 1L),
+               lemma = NORM_WORDS, stringsAsFactors = FALSE), lexicon)
+  norms_path <- file.path(dir, "conc_lemma.csv")
+  lexsync:::write_csv_utf8(
+    data.frame(lemma = NORM_WORDS, concreteness = 2.0 + ((seq_along(NORM_WORDS) - 1L) %% 4L),
+               stringsAsFactors = FALSE), norms_path)
+  design_path <- file.path(dir, "design_lemmatest.yaml")
+  writeLines(c(
+    "name: lemmatest",
+    "language: english",
+    paste0("lexicon: ", gsub("\\\\", "/", lexicon)),
+    "n_per_condition: 3",
+    "norms:",
+    paste0("  - path: ", gsub("\\\\", "/", norms_path)),
+    "    on: lemma",
+    "    columns: [concreteness]",
+    "conditions:",
+    "  - {name: high, define_by: {frequency: [4.2, 7.0]}}",
+    "  - {name: low, define_by: {frequency: [3.0, 3.8]}}",
+    "match_on: [length, concreteness]"), design_path)
+  outdir <- file.path(dir, "out")
+  run_pipeline(design_path, system.file("extdata", "schema.yaml", package = "lexsync"),
+               outdir, verbose = FALSE)
+  stim <- as.data.frame(lexsync:::read_csv_utf8(
+    file.path(outdir, "stimuli", "lemmatest_english_stimuli_R.csv")))
+  expect_false(any(is.na(stim$concreteness)))
+  ds <- jsonlite::fromJSON(file.path(outdir, "reports", "lemmatest_english_datasheet_R.json"),
+                           simplifyVector = FALSE)
+  expect_identical(ds$materials_source$norms[[1]]$on, "lemma")
+  log <- readLines(file.path(outdir, "reports", "lemmatest_english_run_log_R.jsonl"),
+                   encoding = "UTF-8", warn = FALSE)
+  messages <- vapply(log, function(line) jsonlite::fromJSON(line)$message, character(1),
+                     USE.NAMES = FALSE)
+  expect_true(ON_NOTE %in% messages)
+})
+
 # End to end: the block is applied before the pool, so a norm column is matchable.
 # This is what the wiring buys. Before it, merge_norms existed but nothing called it,
 # so a semantic dimension could not reach `match_on` at all.

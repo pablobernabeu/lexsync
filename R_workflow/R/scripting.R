@@ -385,9 +385,21 @@ frames_to_ms <- function(frames, hz) {
 # `set allowed_responses "a;b"`, one line of a line-oriented format, so a key holding a
 # quote closed the string and a newline ended the line -- and the rest became new
 # top-level items in the experiment, including an inline_script whose body runs.
+# A YAML boolean is refused before that. Both engines read an unquoted yes, no, true,
+# false, on or off as a boolean. as.character() then made the key TRUE here, and the
+# Python engine wrote True, so neither experiment could register a response. Each key
+# is tested on its own, since unlist() would turn TRUE beside a text key into "TRUE".
+# Must match _keys_of in scripting.py.
 #' @keywords internal
 .keys_of <- function(ev, default) {
   keys <- ev[["keys"]] %||% default
+  for (key in as.list(keys)) {
+    if (is.logical(key) && length(key) == 1L && !is.na(key)) {
+      stop(sprintf(paste("lexsync: response key %s is a YAML boolean; quote it ('%s') or",
+                         "choose another key."),
+                   if (key) "TRUE" else "FALSE", if (key) "yes" else "no"), call. = FALSE)
+    }
+  }
   vapply(as.character(unlist(keys)), clean_key, character(1), USE.NAMES = FALSE)
 }
 

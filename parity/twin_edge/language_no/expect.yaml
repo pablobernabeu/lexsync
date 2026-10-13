@@ -1,0 +1,2 @@
+outcome: refusal
+refusal: "lexsync: the design's `language` must be text; quote it if it is a code such as 'no'."

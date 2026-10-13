@@ -169,13 +169,18 @@ on, matched on or spanned like any other dimension.
 ```yaml
 norms:
   - path: norms/en_concreteness.csv
-    on: word                  # optional join key, default 'word'
+    join_on: word             # optional join key, default 'word'
     columns: [concreteness]   # optional; default every column but the key
 
 pool_filters:
   concreteness: [2.0, 5.0]
 match_on: [length, concreteness]
 ```
+
+The join key is written `join_on`. This vignette used to write it `on:`, which YAML
+reads as the boolean true, so the join used `word` whatever the entry named. A bare
+`on:` is now read as the join key, with a note in the run log, and any other key in
+an entry is refused.
 
 lexsync ships no norm data: licences vary, and the citation is yours to honour.
 What it does do is record what you joined. Every table appears in the materials
