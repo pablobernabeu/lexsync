@@ -397,6 +397,69 @@ test_that("build_pool keeps a degenerate range", {
   expect_identical(build_pool(df, list(frequency = c(2, 2)))$word, "b")
 })
 
+# The lexicon of the four tests below, which test_querying.py writes row for row. Four
+# words lack `animate` and one lacks `n_morph`, so the Python reader holds both columns
+# as floats. `is_noun` is logical, and `is_noun01` holds the same codes as 0 and 1.
+coded_lexicon <- function() {
+  i <- 0:39
+  noun <- i %% 3L != 0L
+  rows <- sprintf("w%02d,%d,%s,%s,%s,%d", i, 3L + i %% 4L,
+                  ifelse(i %% 10L == 9L, "", as.character(i %% 2L)),
+                  ifelse(i == 0L, "", as.character(1L + i %% 3L)),
+                  ifelse(noun, "TRUE", "FALSE"), as.integer(noun))
+  path <- tempfile(fileext = ".csv")
+  on.exit(unlink(path), add = TRUE)
+  writeLines(c("word,freq_zipf,animate,n_morph,is_noun,is_noun01", rows), path)
+  load_lexicon(path, yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync")))
+}
+
+# The rows build_pool() keeps under a filter written as a design writes it.
+n_selected <- function(lex, text) nrow(build_pool(lex, yaml::yaml.load(text)))
+
+# Pins the same contract as test_a_zero_one_norm_with_blanks_filters_categorically in
+# the Python engine's test_querying.py. One missing value made that engine hold the
+# column as floats and compare '1.0' with '1', so it selected nothing where this
+# engine selected.
+test_that("a 0/1 norm with blanks filters categorically", {
+  lex <- coded_lexicon()
+  expect_identical(sum(is.na(lex$animate)), 4L)
+  expect_identical(n_selected(lex, "{animate: 1}"), 16L)
+  expect_identical(n_selected(lex, "{animate: 0}"), 20L)
+  expect_identical(n_selected(lex, "{animate: [1]}"), 16L)
+  # A quoted code is text, compared with the cell as as.character() writes it: '1'.
+  expect_identical(n_selected(lex, "{animate: '1'}"), 16L)
+})
+
+# Pins the same contract as test_a_float_column_filters_on_whole_values in the Python
+# engine's test_querying.py.
+test_that("a float column filters on whole values", {
+  lex <- coded_lexicon()
+  expect_identical(n_selected(lex, "{n_morph: [1, 2, 3]}"), 39L)
+  expect_identical(n_selected(lex, "{n_morph: [1.0, 2.0, 3.0]}"), 39L)
+  # Beside text, a number is text too, written as as.character() writes it.
+  expect_identical(n_selected(lex, "{n_morph: [1, a]}"), 13L)
+})
+
+# Pins the same contract as test_a_boolean_filter_on_a_logical_column in the Python
+# engine's test_querying.py, which took [true, false] for a reversed numeric range.
+test_that("a boolean filter on a logical column", {
+  lex <- coded_lexicon()
+  expect_identical(n_selected(lex, "{is_noun: [true, false]}"), 40L)
+  expect_identical(n_selected(lex, "{is_noun: [false, true]}"), 40L)
+  expect_identical(n_selected(lex, "{is_noun: [true]}"), 26L)
+  expect_identical(n_selected(lex, "{is_noun: ['TRUE']}"), 26L)
+})
+
+# Pins the same contract as test_a_boolean_filter_on_a_zero_one_column_selects_nothing
+# in the Python engine's test_querying.py. A logical is not numeric, and as text it is
+# TRUE or FALSE, which no 0/1 cell is.
+test_that("a boolean filter on a 0/1 column selects nothing", {
+  lex <- coded_lexicon()
+  expect_identical(n_selected(lex, "{is_noun01: [true, false]}"), 0L)
+  expect_identical(n_selected(lex, "{is_noun01: true}"), 0L)
+  expect_identical(n_selected(lex, "{is_noun01: 1}"), 26L)
+})
+
 test_that("load_pool keeps only reference members in the reference", {
   schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
   dir <- tempfile("lexsync-")

@@ -615,6 +615,18 @@ no function signature changes.
   while formatting the missing interval: it raised a TypeError writing the run log,
   which now prints NA, as the R engine's does. The twin-edge case `shortfall_one`
   pins the result in both engines.
+- The Python engine's `build_pool` compares a categorical filter as the R engine
+  does. A 0/1 column with a missing value is held as floats, and the filter
+  compared '1.0' with '1'. A condition defined on a norm that leaves some words
+  uncovered therefore selected nothing in Python, while the R engine selected. A
+  YAML boolean filter such as `[true, false]` was taken for a numeric range and
+  refused as reversed. A list of numbers is now compared with a numeric column as
+  numbers, and any other value is compared as text, written as the R engine
+  writes it, a boolean as TRUE or FALSE. A boolean filter on a 0/1 column thus
+  selects nothing in either engine. The only categorical filter in a shipped
+  design, `gender` in `es_gender_repro`, compares text, so no stimulus moves. The
+  twin-edge cases `animacy_norm`, `float_categorical` and `bool_filter` pin both
+  engines to one outcome, and the R engine is unchanged.
 
 ### Security
 

@@ -1,0 +1,25 @@
+# Twin-edge case: animate against inanimate nouns, the conditions defined by a 0/1
+# animacy norm that leaves four of the forty words uncovered. An uncovered word gets
+# a missing value, so the Python engine held the column as floats and compared '1.0'
+# with '1'. Neither condition then had a candidate and the run stopped, while the R
+# engine selected. Both engines now select the same six animate-inanimate sets.
+# The word forms are common English words, and the norm codes each by its meaning.
+# The Zipf frequencies are invented for this fixture and describe no corpus.
+name: twin_edge_animacy_norm
+language: english
+lexicon: lexicon.csv
+description: 'Animate versus inanimate nouns, defined by a 0/1 norm that covers 36 of the 40 words.'
+norms:
+  - path: animacy.csv
+    columns: [animate]
+n_per_condition: 6
+conditions:
+  - name: animate
+    define_by:
+      animate: 1
+  - name: inanimate
+    define_by:
+      animate: 0
+match_on: [length, frequency]
+counterbalance:
+  lists: 2

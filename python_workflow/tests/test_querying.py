@@ -3,6 +3,7 @@ import unicodedata
 
 import pandas as pd
 import pytest
+import yaml
 
 from lexsync.querying import (
     add_neighbourhood,
@@ -371,6 +372,73 @@ def test_build_pool_refuses_a_non_finite_bound():
 def test_build_pool_keeps_a_degenerate_range():
     df = pd.DataFrame({"word": list("abcde"), "frequency": [1, 2, 3, 4, 5]})
     assert build_pool(df, {"frequency": [2, 2]})["word"].tolist() == ["b"]
+
+
+# The lexicon of the four tests below, which test-querying.R writes row for row. Four
+# words lack `animate` and one lacks `n_morph`, so this engine's reader holds both
+# columns as floats. `is_noun` is logical, and `is_noun01` holds the same codes as 0
+# and 1.
+def _coded_lexicon(schema, tmp_path):
+    rows = ["word,freq_zipf,animate,n_morph,is_noun,is_noun01"]
+    for i in range(40):
+        animate = "" if i % 10 == 9 else str(i % 2)
+        n_morph = "" if i == 0 else str(1 + i % 3)
+        noun = i % 3 != 0
+        rows.append(f"w{i:02d},{3 + i % 4},{animate},{n_morph},"
+                    f"{'TRUE' if noun else 'FALSE'},{int(noun)}")
+    path = tmp_path / "coded.csv"
+    path.write_text("\n".join(rows) + "\n", encoding="utf-8")
+    return load_lexicon(str(path), schema)
+
+
+def _n_selected(lex, text):
+    """The rows build_pool keeps under a filter written as a design writes it."""
+    return len(build_pool(lex, yaml.safe_load(text)))
+
+
+# Pins the same contract as "a 0/1 norm with blanks filters categorically" in the R
+# engine's test-querying.R. One missing value makes the column float, and the filter
+# compared '1.0' with '1'. A condition on a norm that leaves some words uncovered thus
+# selected nothing in this engine, where the R engine selected.
+def test_a_zero_one_norm_with_blanks_filters_categorically(schema, tmp_path):
+    lex = _coded_lexicon(schema, tmp_path)
+    assert int(lex["animate"].isna().sum()) == 4
+    assert lex["animate"].dtype == "float64"
+    assert _n_selected(lex, "{animate: 1}") == 16
+    assert _n_selected(lex, "{animate: 0}") == 20
+    assert _n_selected(lex, "{animate: [1]}") == 16
+    # A quoted code is text, compared with the cell as the R engine writes it: '1'.
+    assert _n_selected(lex, "{animate: '1'}") == 16
+
+
+# Pins the same contract as "a float column filters on whole values" in the R engine's
+# test-querying.R.
+def test_a_float_column_filters_on_whole_values(schema, tmp_path):
+    lex = _coded_lexicon(schema, tmp_path)
+    assert _n_selected(lex, "{n_morph: [1, 2, 3]}") == 39
+    assert _n_selected(lex, "{n_morph: [1.0, 2.0, 3.0]}") == 39
+    # Beside text, a number is text too, written as the R engine writes it.
+    assert _n_selected(lex, "{n_morph: [1, a]}") == 13
+
+
+# Pins the same contract as "a boolean filter on a logical column" in the R engine's
+# test-querying.R. [true, false] was taken for a reversed numeric range and refused.
+def test_a_boolean_filter_on_a_logical_column(schema, tmp_path):
+    lex = _coded_lexicon(schema, tmp_path)
+    assert _n_selected(lex, "{is_noun: [true, false]}") == 40
+    assert _n_selected(lex, "{is_noun: [false, true]}") == 40
+    assert _n_selected(lex, "{is_noun: [true]}") == 26
+    assert _n_selected(lex, "{is_noun: ['TRUE']}") == 26
+
+
+# Pins the same contract as "a boolean filter on a 0/1 column selects nothing" in the R
+# engine's test-querying.R. A boolean is not a number in R, and as text it is TRUE or
+# FALSE, which no 0/1 cell is.
+def test_a_boolean_filter_on_a_zero_one_column_selects_nothing(schema, tmp_path):
+    lex = _coded_lexicon(schema, tmp_path)
+    assert _n_selected(lex, "{is_noun01: [true, false]}") == 0
+    assert _n_selected(lex, "{is_noun01: true}") == 0
+    assert _n_selected(lex, "{is_noun01: 1}") == 26
 
 
 def _neighbourhood_by_loop(words, reference, n_old=20):

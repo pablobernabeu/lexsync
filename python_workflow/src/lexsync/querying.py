@@ -737,6 +737,40 @@ def load_items(path: str, required_fields) -> pd.DataFrame:
     return df
 
 
+def _is_number(v) -> bool:
+    """Whether a filter value is a number, as R's is.numeric() judges it.
+
+    Python's bool is a kind of int, but R's logical is not numeric, so a YAML true or
+    false is never a number here. It is the test _is_number in datasheet.py applies to
+    a condition's window.
+    """
+    return isinstance(v, (int, float)) and not isinstance(v, bool)
+
+
+def _r_text(v):
+    """A cell or a filter value as R's as.character() writes it, or None if missing.
+
+    The R engine compares a categorical filter as text on both sides, as.character()
+    of the column against as.character() of the values. A boolean is TRUE or FALSE
+    there, and a whole double has no decimal point. A 0/1 column that one missing
+    value has made float holds 1.0, so str() gives '1.0' where R gives '1'. Another
+    float is written by repr, and the two agree for a number of up to 15 significant
+    digits that R writes in fixed notation. This does not reproduce R's scientific
+    notation for 100000 ('1e+05') or 0.0001 ('1e-04'), nor its rounding of a longer
+    number to 15 digits. A missing value is None and matches nothing.
+    """
+    if isinstance(v, (bool, np.bool_)):
+        return "TRUE" if v else "FALSE"
+    if v is None or (not isinstance(v, str) and pd.api.types.is_scalar(v) and pd.isna(v)):
+        return None
+    if isinstance(v, (int, np.integer)):
+        return str(int(v))
+    if isinstance(v, (float, np.floating)):
+        f = float(v)
+        return "%d" % int(f) if f.is_integer() else repr(f)
+    return str(v)
+
+
 def build_pool(lexicon: pd.DataFrame, filters: dict | None = None) -> pd.DataFrame:
     """Build an experimental candidate pool by filtering a lexicon.
 
@@ -744,6 +778,14 @@ def build_pool(lexicon: pd.DataFrame, filters: dict | None = None) -> pd.DataFra
     permitted values. A row missing the filtered column is dropped under either
     kind, and a range with a reversed or non-finite bound is an error rather than an
     empty pool.
+
+    Two numbers make a range, and a boolean is not a number, so YAML's
+    ``[true, false]`` is a list of permitted values. A list of numbers is compared
+    with a numeric column as numbers, and any other list as text, the cells and the
+    values written as R's as.character() writes them (see _r_text). A filter of 1
+    therefore keeps the 1.0 cells of a 0/1 column that a missing value has made
+    float. As in the R engine, ``[true, false]`` keeps both values of a logical
+    column and no row of a 0/1 column.
 
     A filter naming a column the frame does not have is silently skipped, because the
     same function filters lexica, supplied pools and pair tables, and those carry
@@ -760,7 +802,7 @@ def build_pool(lexicon: pd.DataFrame, filters: dict | None = None) -> pd.DataFra
             if col not in df.columns:
                 continue
             vals = list(rng) if isinstance(rng, (list, tuple)) else [rng]
-            if len(vals) == 2 and all(isinstance(v, (int, float)) for v in vals):
+            if len(vals) == 2 and all(_is_number(v) for v in vals):
                 # YAML's .inf and .nan arrive as ordinary floats, and either one,
                 # like a reversed range, silently empties the pool row by row.
                 # Non-finite first: a NaN bound would make the reversal test
@@ -774,6 +816,14 @@ def build_pool(lexicon: pd.DataFrame, filters: dict | None = None) -> pd.DataFra
                         f"lexsync: filter '{col}' has a reversed range; "
                         "give it as [low, high].")
                 df = df[df[col].notna() & (df[col] >= vals[0]) & (df[col] <= vals[1])]
+            elif (pd.api.types.is_numeric_dtype(df[col])
+                  and not pd.api.types.is_bool_dtype(df[col])
+                  and all(_is_number(v) for v in vals)):
+                # pandas counts a bool column as numeric and R does not, hence the
+                # second test. Compared as numbers, 1 matches the 1.0 that R writes '1'.
+                df = df[df[col].notna() & df[col].isin([float(v) for v in vals])]
             else:
-                df = df[df[col].notna() & df[col].astype(str).isin([str(v) for v in vals])]
+                wanted = {t for t in map(_r_text, vals) if t is not None}
+                keep = np.array([_r_text(v) in wanted for v in df[col]], dtype=bool)
+                df = df[df[col].notna() & keep]
     return df.reset_index(drop=True)

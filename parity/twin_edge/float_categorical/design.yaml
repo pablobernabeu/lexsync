@@ -1,0 +1,25 @@
+# Twin-edge case: nouns against verbs, after a pool filter that keeps the words of
+# one, two or three morphemes. One word has no morpheme count, so the Python engine
+# held the column as floats and compared '1.0' with '1'. The filter then kept no word
+# and the run stopped, while the R engine selected. Both engines now keep the 38
+# words the filter admits, leaving out the uncounted word and unhelpfulness, which
+# has four, and select the same six noun-verb sets.
+# The word forms are common English words, and n_morph counts their morphemes. The
+# Zipf frequencies are invented for this fixture and describe no corpus.
+name: twin_edge_float_categorical
+language: english
+lexicon: lexicon.csv
+description: 'Nouns versus verbs of one to three morphemes, from a lexicon that leaves one word uncounted.'
+n_per_condition: 6
+pool_filters:
+  n_morph: [1, 2, 3]
+conditions:
+  - name: noun
+    define_by:
+      pos: [noun]
+  - name: verb
+    define_by:
+      pos: [verb]
+match_on: [length, frequency]
+counterbalance:
+  lists: 2

@@ -1,0 +1,26 @@
+# Twin-edge case: nouns against verbs, after a pool filter that keeps the words whose
+# inflection a logical column codes as regular or irregular. The filter is the YAML
+# list [true, false]. The Python engine took it for a numeric range from 1 down to 0
+# and refused it as reversed, while the R engine kept the 39 coded words. Both engines
+# now keep them, leaving out the one word the column does not code, and select the
+# same six noun-verb sets.
+# The word forms are common English words, and `regular` records whether each forms
+# its plural or past tense regularly. The Zipf frequencies are invented for this
+# fixture and describe no corpus.
+name: twin_edge_bool_filter
+language: english
+lexicon: lexicon.csv
+description: 'Nouns versus verbs whose inflection is coded, kept by the boolean filter [true, false].'
+n_per_condition: 6
+pool_filters:
+  regular: [true, false]
+conditions:
+  - name: noun
+    define_by:
+      pos: [noun]
+  - name: verb
+    define_by:
+      pos: [verb]
+match_on: [length, frequency]
+counterbalance:
+  lists: 2

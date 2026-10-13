@@ -1,0 +1,11 @@
+group,dimension,n,mean,sd,min,median,max
+animate,length,6,5,0.894,4,5,6
+animate,frequency,6,4.698,0.394,4.17,4.765,5.12
+animate,n_syllables,6,1.667,0.516,1,2,2
+animate,bigram_freq,6,0.013,0.003,0.008,0.014,0.016
+animate,animate,6,1,0,1,1,1
+inanimate,length,6,5.333,0.516,5,5,6
+inanimate,frequency,6,4.567,0.137,4.33,4.575,4.71
+inanimate,n_syllables,6,1.667,0.516,1,2,2
+inanimate,bigram_freq,6,0.013,0.003,0.009,0.013,0.018
+inanimate,animate,6,0,0,0,0,0

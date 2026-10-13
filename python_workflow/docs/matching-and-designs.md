@@ -53,9 +53,12 @@ abbreviations pass the screen, and a lexicon of your own is loaded as it stands.
 to a selection and how to screen them out.
 
 `build_pool` narrows that lexicon to the candidates a design will consider. A two-element numeric
-range is read as an inclusive `[min, max]` band, and anything else is read as a set of allowed
-values, compared as strings. Rows missing the filtered column are dropped, and a filter naming a
-column the lexicon does not have is skipped without complaint.
+range is read as an inclusive `[min, max]` band, and anything else, `[true, false]` included, is
+read as a set of allowed values. A set of numbers is compared with a numeric column as numbers.
+Any other set is compared as text, the cells and the values written as the R engine writes them,
+so `true` matches TRUE in a logical column and never 1 in a 0/1 column. Rows missing the filtered
+column are dropped, and a filter naming a column the lexicon does not have is skipped without
+complaint.
 
 ```python exec="1" source="material-block" result="text" session="matching"
 pool = lexsync.build_pool(lexicon, {"length": [3, 8], "frequency": [3.8, 7.0]})

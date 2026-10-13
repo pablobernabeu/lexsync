@@ -1,0 +1,7 @@
+# Both engines keep the 38 words of one to three morphemes, 19 nouns and 19 verbs, and
+# select the same six noun-verb sets. The Python engine used to keep no word at all.
+outcome: artefacts
+compare: [stimuli, descriptives, comparisons]
+datasheet:
+  selection.candidate_pool.0.n_candidates: 19
+  selection.candidate_pool.1.n_candidates: 19

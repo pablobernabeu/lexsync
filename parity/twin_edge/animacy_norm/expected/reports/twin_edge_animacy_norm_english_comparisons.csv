@@ -1,0 +1,6 @@
+condition,reference,dimension,cohens_d,d_ci_low,d_ci_high,var_ratio,tost_p,equivalent,mean_diff,role
+inanimate,animate,length,-0.456,-1.516,0.604,0.333,0.4707,FALSE,-0.333,controlled
+inanimate,animate,frequency,0.447,-0.613,1.506,0.122,0.4641,FALSE,0.132,controlled
+inanimate,animate,n_syllables,0,-1.046,1.046,1,0.2034,FALSE,0,uncontrolled
+inanimate,animate,bigram_freq,0.05,-0.996,1.097,1.069,0.227,FALSE,0,uncontrolled
+inanimate,animate,animate,,,,1,1,FALSE,1,manipulated

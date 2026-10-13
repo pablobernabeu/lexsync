@@ -1,0 +1,8 @@
+# Both engines keep the 39 words whose inflection is coded, 20 nouns and 19 verbs,
+# write `regular` as TRUE and FALSE, and select the same six noun-verb sets. The
+# Python engine used to refuse the filter as a reversed range.
+outcome: artefacts
+compare: [stimuli, descriptives, comparisons]
+datasheet:
+  selection.candidate_pool.0.n_candidates: 20
+  selection.candidate_pool.1.n_candidates: 19

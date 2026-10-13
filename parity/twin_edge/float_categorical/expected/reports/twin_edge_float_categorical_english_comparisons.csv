@@ -1,0 +1,5 @@
+condition,reference,dimension,cohens_d,d_ci_low,d_ci_high,var_ratio,tost_p,equivalent,mean_diff,role
+verb,noun,length,0,-1.046,1.046,0.4,0.2034,FALSE,0,controlled
+verb,noun,frequency,0.078,-0.969,1.124,0.588,0.2406,FALSE,0.038,controlled
+verb,noun,n_syllables,-0.913,-2.012,0.187,,0.7546,FALSE,-0.333,uncontrolled
+verb,noun,bigram_freq,-0.18,-1.229,0.868,0.986,0.2959,FALSE,-0.001,uncontrolled

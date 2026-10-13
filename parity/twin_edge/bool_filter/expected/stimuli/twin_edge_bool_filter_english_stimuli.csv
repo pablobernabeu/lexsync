@@ -1,0 +1,13 @@
+word,freq_zipf,pos,regular,id,length,n_syllables,frequency,language,condition,set,list,trial
+goose,3.68,noun,FALSE,20,5,2,3.68,english,noun,3,1,1
+travel,4.86,verb,TRUE,36,6,2,4.86,english,verb,5,1,2
+punish,3.77,verb,TRUE,29,6,2,3.77,english,verb,1,1,3
+river,4.71,noun,TRUE,31,5,2,4.71,english,noun,5,1,4
+climb,4.21,verb,TRUE,9,5,1,4.21,english,verb,3,1,5
+anchor,3.66,noun,TRUE,1,6,2,3.66,english,noun,1,1,6
+wander,3.83,verb,TRUE,37,6,2,3.83,english,verb,4,2,1
+begin,5.01,verb,FALSE,4,5,2,5.01,english,verb,2,2,2
+child,5.05,noun,FALSE,8,5,1,5.05,english,noun,2,2,3
+ladder,3.74,noun,TRUE,24,6,2,3.74,english,noun,4,2,4
+woman,5.25,noun,FALSE,40,5,2,5.25,english,noun,6,2,5
+follow,5.08,verb,TRUE,13,6,2,5.08,english,verb,6,2,6

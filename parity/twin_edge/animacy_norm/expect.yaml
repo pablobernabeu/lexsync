@@ -1,0 +1,9 @@
+# Both engines select the same six animate-inanimate sets from the 36 words the norm
+# covers, 18 in each condition. The Python engine used to find no candidate for
+# either condition.
+outcome: artefacts
+compare: [stimuli, descriptives, comparisons]
+datasheet:
+  materials_source.norms.0.columns.0.n_matched: 36
+  selection.candidate_pool.0.n_candidates: 18
+  selection.candidate_pool.1.n_candidates: 18
