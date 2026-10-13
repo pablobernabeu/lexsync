@@ -19,11 +19,11 @@
     },
     {
       "file": "output/experiments/en_lexdec_english_psychopy.py",
-      "sha256": "82fb2e0292639e1736824d31587838373d6f9e6a5e26f1285166c0aa49c87c0c"
+      "sha256": "43f7f79cd484ee4759d951eac3db36cd1a3845db740fb5187e4ffd0ed4565b10"
     },
     {
       "file": "output/experiments/en_lexdec_english.osexp",
-      "sha256": "427f406882cbe29243353a5ce54cd842a3cbf1eaffe41e2a485a6a51672f49b5"
+      "sha256": "41763eb075cd836f9895d6fd3811ff2f1e7d653b2efd8c29a66450c663856054"
     },
     {
       "file": "output/experiments/en_lexdec_english.html",
@@ -193,7 +193,7 @@
   "reproducibility": {
     "design_sha256": "d60354a52b459d477cf3422535ad3288835f369111eb157e143c203c615ad912",
     "schema_path": "config/schema.yaml",
-    "schema_sha256": "f6382012c85d9eb8088f1c5542f89a244c1e03c197d05a80632a64d0613d784e",
+    "schema_sha256": "f2c268f23e8a5e374f920f8cb8a0a89392ab207acc0c1809f2f409a2aa844120",
     "seed": 2026,
     "versions": {
       "engine": "python",

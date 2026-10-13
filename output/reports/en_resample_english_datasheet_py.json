@@ -19,19 +19,19 @@
     },
     {
       "file": "output/experiments/en_resample_english_psychopy.py",
-      "sha256": "51c51e824c42542c9c322cdad37234ff4ee7c4e977dfa741bdd1df313ddaee27"
+      "sha256": "9a58946f6f28790500f12d31abb81d19f12878ffae3907a45bc14287169fc088"
     },
     {
       "file": "output/experiments/en_resample_english_rep1_list1.osexp",
-      "sha256": "b95605c45d4f55faee0521cb55fdc318a2ce949ac6487fe47a4123de173d9921"
+      "sha256": "127c35f2192f23c63fa3c8921bea413cd6da3c77fbb5928b2cfa3df93f3aaf68"
     },
     {
       "file": "output/experiments/en_resample_english_rep2_list1.osexp",
-      "sha256": "58f2be481f2cb68e86396aadc2395f1ee968dbd2a4cf575becda6260ec926a88"
+      "sha256": "8a439418a3ec94e943e62f8a6e7a318ca1ec6a8f08672e839657795099d86e91"
     },
     {
       "file": "output/experiments/en_resample_english_rep3_list1.osexp",
-      "sha256": "623fe0e3752d7157fe27e31803d192e4337a4220b51c4f5cad64e6c262753f58"
+      "sha256": "815fa81151e6b30f97a923e7c3d96300e17fee89e486eb7000a1efe9c0beefc4"
     },
     {
       "file": "output/experiments/en_resample_english.html",
@@ -304,7 +304,7 @@
   "reproducibility": {
     "design_sha256": "c81f94cf439dc0fcc0ad0fec6c111de2476402c9524a96a5121e2b91283fd9fe",
     "schema_path": "config/schema.yaml",
-    "schema_sha256": "f6382012c85d9eb8088f1c5542f89a244c1e03c197d05a80632a64d0613d784e",
+    "schema_sha256": "f2c268f23e8a5e374f920f8cb8a0a89392ab207acc0c1809f2f409a2aa844120",
     "seed": 2026,
     "versions": {
       "engine": "python",

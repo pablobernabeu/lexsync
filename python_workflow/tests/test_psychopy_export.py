@@ -7,10 +7,11 @@ assert that the onset trigger is written on the very flip the word first appears
 and run the script's ``main()`` to see which trials a participant is presented and
 what the data file records.
 
-Each flip advances a simulated clock by one 60 Hz frame. The fake keyboard
-(``psychopy.hardware.keyboard.Keyboard``) presses keys on a schedule against that
-clock: a response window opens whenever the script resets the keyboard clock, which
-it queues on the flip that opens the window, and the schedule says which key is
+Each flip advances a simulated clock to the display's next refresh, 60 Hz unless a
+test asks for another rate, and core.wait() advances it by the time waited. The fake
+keyboard (``psychopy.hardware.keyboard.Keyboard``) presses keys on a schedule against
+that clock: a response window opens whenever the script resets the keyboard clock,
+which it queues on the flip that opens the window, and the schedule says which key is
 pressed how many seconds later. Like the real keyboard, a key's ``rt`` is the time
 of the press on that clock, not the time the script polled for it.
 """
@@ -18,6 +19,7 @@ import csv
 import glob
 import importlib.util
 import json
+import math
 import os
 import re
 import sys
@@ -34,9 +36,11 @@ FRAME_S = 1.0 / 60.0
 
 
 class FakeTime:
-    """The simulated time, in seconds, that the fake display has reached."""
+    """The simulated time, in seconds, that the fake display has reached, and the
+    display's refresh rate."""
 
     now = 0.0
+    hz = 60.0
 
 
 # The text of every TextStim drawn, in order, so a test can see what was on screen when
@@ -53,16 +57,18 @@ class FakeWin:
         self._queue.append((fn, args, kwargs))
 
     def flip(self):
-        # Real PsychoPy returns the time of the flip, and so does this one.
+        # A flip lands on the display's next refresh, and the callbacks queued for it
+        # run then, as in PsychoPy's Window.flip(). Real PsychoPy returns the time of
+        # the flip, and so does this one.
         self.flip_count += 1
-        FakeTime.now += FRAME_S
+        FakeTime.now = (math.floor(FakeTime.now * FakeTime.hz + 1e-6) + 1) / FakeTime.hz
         queue, self._queue = self._queue, []
         for fn, args, kwargs in queue:
             fn(*args, **kwargs)
         return FakeTime.now
 
     def getActualFrameRate(self, *args, **kwargs):
-        return 60.0
+        return FakeTime.hz
 
     def close(self):
         pass
@@ -137,18 +143,25 @@ class FakeKeyboard:
 class FakePort:
     def __init__(self, win):
         self.win = win
-        self.events = []
+        self.events = []      # (flip, code)
+        self.writes = []      # (seconds, code)
 
     def setData(self, data):
         self.events.append((self.win.flip_count, int(data)))
+        self.writes.append((FakeTime.now, int(data)))
 
 
-def _install_fake_psychopy(dialog=None, press=None, gate="space"):
+def _install_fake_psychopy(dialog=None, press=None, gate="space", hz=60.0,
+                           port_writes=None):
     """Install the fake package and return its keyboard. ``dialog`` holds what the
     start-up dialog returns when OK is pressed; None stands for Cancel. ``press`` is
     the keyboard's schedule, by default the first key 600 ms into each window, and
-    ``gate`` the key pressed at the instructions."""
+    ``gate`` the key pressed at the instructions. The display refreshes at ``hz``.
+    Without ``port_writes`` no parallel port opens, so the script falls back to its
+    mock; with a list, a port opens and each write to it is appended there as
+    (seconds, code)."""
     FakeTime.now = 0.0
+    FakeTime.hz = float(hz)
     DRAWN.clear()
     kb = FakeKeyboard(press or press_first_key_after(0.6), gate)
     psychopy = types.ModuleType("psychopy")
@@ -169,9 +182,12 @@ def _install_fake_psychopy(dialog=None, press=None, gate="space"):
         def draw(self):
             DRAWN.append(self.text)
 
+    def wait(secs, *args, **kwargs):
+        FakeTime.now += float(secs)
+
     visual.Window = FakeWin
     visual.TextStim = TextStim
-    core.wait = lambda *_a, **_k: None
+    core.wait = wait
     core.quit = lambda *_a, **_k: None
     event.getKeys = lambda *_a, **_k: []
     event.waitKeys = lambda *_a, **_k: None
@@ -188,7 +204,11 @@ def _install_fake_psychopy(dialog=None, press=None, gate="space"):
 
     class ParallelPort:
         def __init__(self, *a, **k):
-            raise NotImplementedError
+            if port_writes is None:
+                raise NotImplementedError
+
+        def setData(self, data):
+            port_writes.append((FakeTime.now, int(data)))
 
     parallel.ParallelPort = ParallelPort
     psychopy.visual, psychopy.core, psychopy.event, psychopy.parallel = visual, core, event, parallel
@@ -583,6 +603,117 @@ def test_every_shipped_script_writes_one_row_per_trial(tmp_path, monkeypatch):
                 assert (row["rt_ms"], row["timed_out"]) == ("600.0", "0"), script
             if any(ev["type"] == "question" for ev in module.EVENTS):
                 assert row["question_rt_ms"] == "600.0", script
+
+
+# ---- How long each code is held -------------------------------------------------------
+#
+# The 254 and 255 session markers were set on a flip and cleared by the next statement.
+# A code on an event shorter than the hold was cleared as soon as the event's last flip
+# returned, so a one-flip event's pulse lasted no time at all. And the hold, floored at
+# 10 ms before it was rounded to flips, fell to 6.9 ms at 144 Hz and 8.3 ms at 240 Hz.
+# Recorders that sample the port every 0.5 to 2 ms miss such pulses. Every code now
+# lasts the hold, in whole flips at the measured refresh and never under 10 ms. A code
+# that outlasts its event is reset in the events after it, unless the next onset's code
+# replaces it first.
+
+def _pulses(writes):
+    """Each code written to the port, as (code, onset, width, truncated), in seconds.
+
+    A code lasts until the next write. It is truncated when that write is a 0 that the
+    next code follows at the same moment, which is how a new onset ends a code still
+    held. A write of 0 to a port at 0, such as the one that opens it, is not a pulse."""
+    out = []
+    for i, (t, code) in enumerate(writes):
+        if code == 0:
+            continue
+        assert i + 1 < len(writes), f"code {code} was never reset"
+        end_t, end_code = writes[i + 1]
+        truncated = (end_code == 0 and i + 2 < len(writes) and writes[i + 2][1] != 0
+                     and writes[i + 2][0] == end_t)
+        out.append((code, t, end_t - t, truncated))
+    return out
+
+
+@pytest.mark.parametrize("hz", [60, 144, 240])
+def test_every_code_lasts_the_hold_in_every_shipped_script(hz, tmp_path, monkeypatch):
+    shipped = _shipped_scripts()
+    assert len(shipped) == 21
+    for script, _rows, _keys, _recipe in shipped:
+        name = os.path.basename(script)
+        writes = []
+        _install_fake_psychopy(hz=hz, port_writes=writes)
+        module = _load_generated(script)
+        _run_main(module, ["--participant", "1"], monkeypatch, tmp_path / name)
+        hold = float(module.TRIGGER_HOLD_MS) / 1000.0
+        pulses = _pulses(writes)
+        assert pulses[0][0] == 254 and pulses[-1][0] == 255, name
+        assert writes[-1][1] == 0, name
+        for code, onset, width, truncated in pulses:
+            # At least 10 ms, and within half a flip of the hold unless the next onset
+            # ended it.
+            assert width >= 0.010 - 1e-9, (name, code, onset, width)
+            if not truncated:
+                assert abs(width - hold) <= 0.5 / hz + 1e-9, (name, code, onset, width)
+
+
+def test_the_hold_is_rounded_to_flips_and_never_below_10_ms(schema, tmp_path):
+    _install_fake_psychopy()
+    stim, design = _lexdec()
+    module = _load_generated(export_psychopy(stim, design, schema, str(tmp_path)))
+    # The default 50 ms hold keeps the flips it had, the nearest whole number of them.
+    assert [module.trigger_hold_frames(hz) for hz in (60, 144, 240)] == [3, 7, 12]
+    # A 10 ms hold is rounded up where the nearest whole number of flips falls short of
+    # 10 ms: 6.9 ms (one flip) at 144 Hz, and 8.3 ms (two) at 240 Hz.
+    module.TRIGGER_HOLD_MS = 10
+    assert [module.trigger_hold_frames(hz) for hz in (60, 144, 240)] == [1, 2, 3]
+
+
+def _one_trial(schema, tmp_path, events, press):
+    """Run one trial of a design with these events at 60 Hz, and return what each
+    event recorded and what was written to the port."""
+    kb = _install_fake_psychopy(press=press)
+    stim = assign_triggers(pd.DataFrame({"word": ["cat"], "condition": ["a"], "set": [1],
+                                         "trial": [1]}))
+    module = _load_generated(export_psychopy(stim, {"name": "t", "language": "english",
+                                                    "events": events},
+                                             schema, str(tmp_path)))
+    module.KEYBOARD = kb
+    module.TRIGGER_HOLD_FRAMES = module.trigger_hold_frames(60)
+    win = FakeWin()
+    port = FakePort(win)
+    records = module.run_trial(win, port, module.visual.TextStim(),
+                               {"word": "cat", "condition_trigger": "101",
+                                "item_trigger": "40"})
+    return records, port.writes
+
+
+def test_a_code_outlasts_an_event_shorter_than_the_hold(schema, tmp_path):
+    # A 17 ms prime is one flip at 60 Hz, and its code is held for the three flips of the
+    # 50 ms hold, through the mask after it. A key 20 ms into the target ends the target,
+    # and its code is still held for the hold, through the blank that follows.
+    fixation = {"type": "fixation", "content": "+", "duration_ms": 500}
+    prime = {"type": "text", "content": "{word}", "duration_ms": 17, "trigger": 20}
+    target = {"type": "text", "content": "{word}", "duration_ms": 800,
+              "trigger": "condition"}
+    response = {"type": "response", "keys": ["left", "right"], "timeout_ms": 2000}
+    blank = {"type": "blank", "duration_ms": 250}
+    records, writes = _one_trial(
+        schema, tmp_path, [fixation, prime, {"type": "mask", "content": "#####",
+                                             "duration_ms": 100}, target, response, blank],
+        press_first_key_after(0.02))
+    assert [(code, round(width * 1000, 1), truncated)
+            for code, _, width, truncated in _pulses(writes)] == [
+        (20, 50.0, False), (101, 50.0, False)]
+    # The prime still lasted its one flip and the mask its six; the key ended the
+    # target on its third flip.
+    assert [r["flips"] for r in records] == [30, 1, 6, 3, 15]
+    # A code still held when the next onset comes ends on that onset's flip, with a 0
+    # written just before the new code.
+    _, writes = _one_trial(schema, tmp_path, [fixation, prime, target, response, blank],
+                           press_first_key_after(0.6))
+    assert [(code, round(width * 1000, 1), truncated)
+            for code, _, width, truncated in _pulses(writes)] == [
+        (20, 16.7, True), (101, 50.0, False)]
 
 
 # ---- One counterbalancing version per participant ------------------------------------

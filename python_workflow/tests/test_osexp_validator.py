@@ -1,10 +1,14 @@
 """Structural and referential validation of the generated OpenSesame .osexp, and an
 emulation of what OpenSesame 3.3 and 4.x do with the cells of its loop table."""
+import contextlib
 import csv
 import ctypes
 import glob
+import itertools
+import math
 import os
 import re
+from unittest import mock
 
 import pandas as pd
 import pytest
@@ -254,21 +258,51 @@ def _items(osexp):
     return items
 
 
-def _run(osexp_path, version, responses):
+def _sequence(items, name):
+    """The items a sequence runs, in order."""
+    return [line.split()[1] for line in items[name]["lines"] if line.startswith("run ")]
+
+
+# A keyword left out of a call, as opposed to one given as None.
+_OWN = object()
+
+
+def _run(osexp_path, version, responses, hz=None):
     """Run a generated experiment's scripts against stand-ins for OpenSesame's runtime,
     with `version`'s variable store, and return what each item showed, sent, slept and
     logged.
 
+    The experiment runs as OpenSesame runs it (libopensesame/sequence.py and loop.py in
+    3.3.14 and 4.1.20): a sequence prepares every item it holds before it runs any, and
+    each cycle of the loop sets the trial's variables and then prepares and runs the
+    trial sequence. Of the items around the loop, the trigger setup and the two session
+    markers run. A check or a screen that waits for a key at start-up is left out,
+    since this run sets no subject number and presses no key before the trials.
     OpenSesame 4 runs inline scripts in the variable store itself, so every loop column
-    is also a global there; 3.3 keeps a separate workspace. A clock in milliseconds
-    advances with each sleep and each wait for a key, and a canvas's show() returns it.
+    is also a global there; 3.3 keeps a separate workspace.
+
+    Time is kept in milliseconds. Without `hz`, show() returns the time at once, and
+    the clock advances only with each sleep and each wait for a key. With `hz`, the
+    display refreshes every 1000 / hz ms: show() takes half a millisecond to draw and
+    then waits for the next refresh, as the xpyriment backend's blocking flip does, and
+    the clock reads and sleeps in whole milliseconds, as the legacy clock the generated
+    experiment selects does (pygame's get_ticks() and delay(int(ms))). Building a
+    canvas and drawing text on it each take a millisecond, so a canvas built while a
+    sequence runs delays what follows it. The trigger device is the setup's test-mode
+    printer, whose time.sleep() advances the clock.
+
     `responses` gives the participant's press in each response window, in order: a
     (key, ms) pair, the key pressed that many milliseconds after the window opened, or
     None for no press. A window opens when a script flushes its keyboard or first asks
     it for a key, and at each keyboard_response. The self-paced reading regions take no
-    entry: each is advanced with the space bar 300 ms after it appears. Each logger
-    run adds a copy of the variable store to `logged`, read as the CSV logger reads it,
-    without evaluation."""
+    entry: each is advanced with the space bar 300 ms after it appears.
+
+    Returns (shown, sent, slept, logged). `shown` holds (item, text, time) for each text
+    on each canvas shown, text None for a blank canvas, and `sent` holds (item, code,
+    time) for each code written to the port, at the time of the display. `slept` holds
+    (item, ms) for each sleep. Each logger run adds a copy of the variable store to
+    `logged`, read as the CSV logger reads it, without evaluation, and without the
+    names beginning with an underscore that OpenSesame 4's logger leaves out."""
     folder = os.path.dirname(osexp_path)
     with open(osexp_path, encoding="utf-8") as handle:
         items = _items(handle.read())
@@ -276,6 +310,13 @@ def _run(osexp_path, version, responses):
     responses = iter(responses)
     current = [None]
     now = [0.0]
+
+    def ticks():
+        return now[0] if hz is None else float(math.floor(now[0] + 1e-9))
+
+    def cost(ms):
+        if hz is not None:
+            now[0] += ms
 
     class Var:
         def __getattr__(self, name):
@@ -294,11 +335,21 @@ def _run(osexp_path, version, responses):
             return read_value(version, val, _eval)
 
     class Canvas:
+        def __init__(self, *args, **kwargs):
+            self.texts = []
+            cost(1.0)
+
         def text(self, text, *args, **kwargs):
-            shown.append((current[0], text))
+            self.texts.append(text)
+            cost(1.0)
 
         def show(self):
-            return now[0]
+            if hz is not None:
+                frame = 1000.0 / hz
+                now[0] = (math.floor((now[0] + 0.5) / frame - 1e-9) + 1) * frame
+            for text in self.texts or [None]:
+                shown.append((current[0], text, now[0]))
+            return ticks()
 
     class Keyboard:
         def __init__(self, keylist=None, timeout=None):
@@ -310,54 +361,113 @@ def _run(osexp_path, version, responses):
                           else next(responses))
             self.opened = now[0]
 
-        def get_key(self, timeout=None, **kwargs):
+        def get_key(self, timeout=_OWN, **kwargs):
+            # A timeout given in the call holds for that call, None included, and the
+            # keyboard's own applies when none is given (openexp.backend.configurable).
             if self.opened is None:
                 self.flush()
-            timeout = self.timeout if timeout is None else timeout
-            limit = float("inf") if timeout is None else now[0] + timeout
+            timeout = self.timeout if timeout is _OWN else timeout
+            # The legacy keyboard polls pygame's whole-millisecond ticks from the call.
+            start = ticks()
+            limit = float("inf") if timeout is None else (
+                start + (timeout if hz is None else math.ceil(timeout)))
             if self.press is not None and self.opened + self.press[1] <= limit:
                 now[0] = max(now[0], self.opened + self.press[1])
                 key, self.press = self.press[0], None
-                return key, now[0]
-            now[0] = limit
-            return None, now[0]
+                return key, ticks()
+            now[0] = max(now[0], limit)
+            return None, ticks()
 
     class Clock:
+        def time(self):
+            return ticks()
+
         def sleep(self, ms):
             slept.append((current[0], ms))
-            now[0] += float(ms)
+            now[0] += float(ms) if hz is None else float(max(0, int(ms)))
+
+    def time_sleep(seconds):
+        now[0] += seconds * 1000.0
 
     workspace = store if version == "4.x" else {}
     workspace.update(var=Var(), pool={f: os.path.join(folder, f) for f in os.listdir(folder)},
                      Canvas=Canvas, Keyboard=Keyboard, clock=Clock())
-    exec("\n".join(items["lexsync_trigger_setup"]["___prepare__"]), workspace)
-    workspace["send_trigger"] = lambda code: sent.append((current[0], code))
     source = re.search(r'set source_file "(.+)"', "\n".join(items["lexsync_loop"]["lines"]))
-    order = [l.split()[1] for l in items["lexsync_trial"]["lines"] if l.startswith("run ")]
     with open(os.path.join(folder, source.group(1)), newline="", encoding="utf-8") as handle:
         rows = list(csv.DictReader(handle))
-    for row in rows:
-        for name, cell in row.items():
-            store[name] = loop_value(version, cell)
-        for name in order:
+    top = [name for name in _sequence(items, "lexsync_experiment")
+           if name in ("lexsync_trigger_setup", "lexsync_session_start", "lexsync_loop",
+                       "lexsync_session_end")]
+
+    def prepare(names):
+        for name in names:
             current[0] = name
             if items[name]["type"] == "inline_script":
+                exec("\n".join(items[name]["___prepare__"]), workspace)
+
+    def run(names):
+        for name in names:
+            current[0] = name
+            kind = items[name]["type"]
+            if kind == "inline_script":
                 exec("\n".join(items[name]["___run__"]), workspace)
-            elif items[name]["type"] == "logger":
+            elif kind == "loop":
+                for row in rows:
+                    for column, cell in row.items():
+                        store[column] = loop_value(version, cell)
+                    prepare(_sequence(items, "lexsync_trial"))
+                    run(_sequence(items, "lexsync_trial"))
+            elif kind == "logger":
                 assert "set auto_log yes" in items[name]["lines"]
-                logged.append({k: read_value(version, v, False) for k, v in store.items()})
+                logged.append({k: read_value(version, v, False) for k, v in store.items()
+                               if not k.startswith("_")})
             else:
                 # keyboard_response: response_store.add stores syntax.sanitize(key),
                 # which 4.x then auto-types, so a timeout is None there and 'None' in 3.3.
                 # The item times its response from its own onset.
-                assert items[name]["type"] == "keyboard_response"
+                assert kind == "keyboard_response"
                 press = next(responses)
                 key = None if press is None else press[0]
                 raw = "None" if key is None else key
                 store["response"] = (_auto_type(raw, allow_bool=True, allow_none=True)
                                      if version == "4.x" else raw)
-                store["response_time"] = 2000.0 if press is None else press[1]
+                timeout = float(next(line.split()[2] for line in items[name]["lines"]
+                                     if line.startswith("set timeout ")))
+                store["response_time"] = timeout if press is None else press[1]
+                now[0] += store["response_time"]
+
+    with (mock.patch("time.sleep", time_sleep) if hz is not None
+          else contextlib.nullcontext()):
+        prepare(top)
+        # The setup has opened the trigger device. Each write to it is recorded with
+        # the time of the display, and still made, so that a write that blocks shows.
+        device = workspace["send_trigger"]
+
+        def send_trigger(code):
+            sent.append((current[0], code, now[0]))
+            device(code)
+
+        workspace["send_trigger"] = send_trigger
+        run(top)
     return shown, sent, slept, logged
+
+
+def _pulses(sent):
+    """Each code written to the port, as (item, code, onset, width, truncated).
+
+    A code lasts until the next write. It is truncated when that write is a 0 that the
+    next code follows at the same moment, which is how a new onset ends a code still
+    held. A write of 0 starts no pulse."""
+    out = []
+    for i, (item, code, t) in enumerate(sent):
+        if code == 0:
+            continue
+        end = next(((c, s) for _, c, s in sent[i + 1:]), None)
+        assert end is not None, f"code {code} from {item} was never reset"
+        truncated = (end[0] == 0 and i + 2 < len(sent) and sent[i + 2][1] != 0
+                     and sent[i + 2][2] == end[1])
+        out.append((item, code, t, end[1] - t, truncated))
+    return out
 
 
 @pytest.mark.parametrize("version", ["3.3", "4.x"])
@@ -379,26 +489,33 @@ def test_the_scripts_present_the_text_verbatim_and_score_a_timeout(version, sche
     shown, sent, slept, logged = _run(path, version, responses)
 
     def by(item):
-        return [text for name, text in shown if name == item]
+        return [text for name, text, _ in shown if name == item and text is not None]
 
     # The word and its response window are one item, so the events after it moved up.
     assert by("lexsync_e1") == HOSTILE
     assert by("lexsync_e3") == [r for s in stim["sentence"] for r in s.split("|") if r]
     assert by("lexsync_e4") == list(stim["question"])
     assert by("lexsync_e2") == ["Too slow", "Incorrect"] + ["Correct"] * (n - 2)
-    codes = [code for _, code in sent]
+    codes = [code for _, code, _ in sent]
     assert codes and all(type(code) is int for code in codes)
-    assert [ms for name, ms in slept if name == "lexsync_e5"] == list(stim["iti_ms"])
+    # The interval read from the items is timed from its own onset, and ends half a
+    # frame early so that the next display lands on the refresh that ends it. A display
+    # that cannot be measured, as this one, is taken to run at the assumed 60 Hz.
+    waits = [sum(ms for _, ms in group)
+             for name, group in itertools.groupby(slept, key=lambda s: s[0])
+             if name == "lexsync_e5"]
+    assert waits == pytest.approx([ms - 1000.0 / 60 / 2 for ms in stim["iti_ms"]])
     # The logger wrote a row per trial: the response, timed from the word's onset, with
     # the timeout and the accuracy, each region's reading time and the question.
     assert len(logged) == n
     assert [row["response"] for row in logged] == pressed
-    assert [row["response_time"] for row in logged] == [""] + [600.0] * (n - 1)
+    assert [row["response_time"] for row in logged] == [""] + [pytest.approx(600.0)] * (n - 1)
     assert [row["timed_out"] for row in logged] == [1] + [0] * (n - 1)
     assert [row["correct"] for row in logged] == [0, 0] + [1] * (n - 2)
     assert [row["lexsync_region_rts"] for row in logged] == [
         "|".join("300.0" for r in s.split("|") if r) for s in stim["sentence"]]
-    assert {(row["question_response"], row["question_rt"]) for row in logged} == {("f", 400.0)}
+    assert [(row["question_response"], row["question_rt"]) for row in logged] == [
+        ("f", pytest.approx(400.0))] * n
     # The labels the text table holds are copied in for the logger.
     assert [row["lexsync_condition"] for row in logged] == list(stim["condition"])
     assert [row["lexsync_answer"] for row in logged] == list(stim["answer"])
@@ -427,7 +544,7 @@ def test_a_delayed_response_is_scored_and_logged(version, schema, tmp_path, monk
     pressed = [None, "f"] + list(stim["answer"])[2:]
     shown, _, _, logged = _run(path, version,
                                [None if key is None else (key, 300.0) for key in pressed])
-    assert ([text for name, text in shown if name == "lexsync_e4"]
+    assert ([text for name, text, _ in shown if name == "lexsync_e4"]
             == ["Too slow", "Incorrect"] + ["Correct"] * (n - 2))
     assert [row["timed_out"] for row in logged] == [1] + [0] * (n - 1)
     assert [row["correct"] for row in logged] == [0, 0] + [1] * (n - 2)
@@ -457,20 +574,26 @@ def test_an_onset_locked_response_runs_in_its_stimulus_script(schema, tmp_path):
     assert not any(line.startswith("define keyboard_response") for line in lines)
     assert _trial_runs(lines) == ["lexsync_trial_start", "lexsync_e0", "lexsync_e1",
                                   "lexsync_e2", "lexsync_record", "lexsync_logger"]
-    script = _items("\n".join(lines))["lexsync_e1"]["___run__"]
-    assert script == [
-        "c = Canvas()",
-        "c.text(_lexsync_row()[u'target'])",
-        "_t0 = c.show()",
+    item = _items("\n".join(lines))["lexsync_e1"]
+    # The target and the blank after it are built before the trial runs.
+    assert item["___prepare__"] == [
+        "_lexsync_c_e1 = Canvas()",
+        "_lexsync_c_e1.text(_lexsync_row()[u'target'])",
+        "_lexsync_c_e1_blank = Canvas()",
+    ]
+    # The window is timed from the target's onset: the keyboard is polled until half a
+    # frame before the target's 800 ms are up, so that the blank lands on the refresh
+    # that ends them, and then until 2,000 ms after that.
+    assert item["___run__"] == [
+        "_t0 = _lexsync_c_e1.show()",
         "var.onset_time = _t0",
-        "send_trigger(int(var.get(u'condition_trigger', _eval=False)))",
+        "_lexsync_onset(int(var.get(u'condition_trigger', _eval=False)), _t0)",
         "_kb = Keyboard(keylist=[u'left', u'right'])",
         "_kb.flush()",
-        "_key, _t = _kb.get_key(timeout=800)",
+        "_key, _t = _lexsync_key(_kb, _t0 + 800 - _LEXSYNC_HALF_FRAME)",
         "if _key is None:",
-        "    c = Canvas()",
-        "    c.show()",
-        "    _key, _t = _kb.get_key(timeout=2000)",
+        "    _lexsync_c_e1_blank.show()",
+        "    _key, _t = _lexsync_key(_kb, _t0 + 800 + 2000)",
         "var.response = _key",
         "var.response_time = u'' if _key is None else _t - _t0",
         "var.timed_out = 1 if _key is None else 0",
@@ -516,8 +639,10 @@ def test_the_instructions_wait_for_the_space_bar_before_the_loop(schema, tmp_pat
     text = open(path, encoding="utf-8").read()
     assert validate_osexp(text)
     runs = [line for line in text.splitlines() if line.startswith("\trun lexsync_")]
-    assert runs[-3:] == ["\trun lexsync_trigger_setup always",
-                         "\trun lexsync_instructions always", "\trun lexsync_loop always"]
+    assert runs[-5:] == ["\trun lexsync_trigger_setup always",
+                         "\trun lexsync_instructions always",
+                         "\trun lexsync_session_start always", "\trun lexsync_loop always",
+                         "\trun lexsync_session_end always"]
     shown, keyboards = _run_instructions(path, "space")
     assert shown == ["Read &amp; press &lt;f&gt;.<br />Then j.<br /><br />Press the space "
                      "bar to begin."]
@@ -535,7 +660,8 @@ def test_every_shipped_experiment_shows_its_instructions_before_the_loop():
             lines = handle.read().splitlines()
         at = lines.index("define sequence lexsync_experiment")
         runs = [line.split()[1] for line in lines[at:] if line.startswith("\trun ")]
-        assert runs[-2:] == ["lexsync_instructions", "lexsync_loop"], path
+        assert runs[-4:] == ["lexsync_instructions", "lexsync_session_start",
+                             "lexsync_loop", "lexsync_session_end"], path
         shown, keyboards = _run_instructions(path, "space")
         assert len(shown) == 1 and shown[0].endswith("Press the space bar to begin."), path
         assert keyboards == [(["space", "escape"], None)], path
@@ -553,13 +679,13 @@ def test_opensesame_timeouts_are_written_in_whole_milliseconds_as_declared(schem
     lines = open(export_opensesame(_stim(), delayed, schema, str(tmp_path)),
                  encoding="utf-8").read().splitlines()
     assert "\tset timeout 1001" in lines
-    assert "\t_kb = Keyboard(keylist=[u'f', u'j'], timeout=1003)" in lines
+    assert "\t_key, _t = _lexsync_key(_kb, _t0 + 1003)" in lines
     onset = {"name": "o", "language": "english", "events": [
         {"type": "text", "content": "{word}", "duration_ms": 300},
         {"type": "response", "keys": ["f", "j"], "timeout_ms": 1001}]}
     lines = open(export_opensesame(_stim(), onset, schema, str(tmp_path)),
                  encoding="utf-8").read().splitlines()
-    assert "\t    _key, _t = _kb.get_key(timeout=1001)" in lines
+    assert "\t    _key, _t = _lexsync_key(_kb, _t0 + 300 + 1001)" in lines
 
 
 def test_every_shipped_experiment_logs_each_trial():
@@ -579,6 +705,210 @@ def test_every_shipped_experiment_logs_each_trial():
         # Every shipped response follows its target, so none waits for the target to go.
         assert not [name for name, item in items.items()
                     if item["type"] == "keyboard_response"], path
+
+
+# ---- When each display appears and how long each code is held --------------------------
+#
+# OpenSesame prepares every item of a sequence before it runs any, and its inline scripts
+# share one workspace (libopensesame/sequence.py and inline_script.py, 3.3.14 and 4.1.20).
+# The generated scripts built each canvas while the trial ran and slept each event's full
+# duration after a blocking 10 ms pulse, the pattern OpenSesame's timing manual shows as
+# the way not to time a display. Every event overran: at 60 Hz the 50 ms prime lasted
+# about 67 ms and the 83 ms prime-target SOA about 117 ms. The experiment also ignored
+# triggers.trigger_hold_ms and sent neither session marker. test-scripting.R pins the
+# same generated structure, and the timing itself is run here, on a simulated display.
+
+def _every_event_design():
+    """One event of every type: a triggered prime and mask, a target with its response,
+    feedback, a sentence region by region, a question, a delayed response and a
+    per-trial interval."""
+    return {"name": "every", "language": "english", "events": [
+        {"type": "fixation", "content": "+", "duration_ms": 500},
+        {"type": "text", "content": "{word}", "duration_ms": 50, "trigger": 20},
+        {"type": "mask", "content": "#####", "duration_ms": 33},
+        {"type": "text", "content": "{word}", "duration_ms": 300, "trigger": "condition"},
+        {"type": "response", "keys": ["f", "j"], "timeout_ms": 2000},
+        {"type": "feedback", "answer": "answer", "duration_ms": 600},
+        {"type": "region_by_region", "content": "{sentence}", "critical_region_trigger": "item"},
+        {"type": "question", "content": "{question}", "keys": ["f", "j"], "timeout_ms": 4000},
+        {"type": "blank", "duration_ms": 200},
+        {"type": "response", "keys": ["f", "j"], "timeout_ms": 1000},
+        {"type": "blank", "duration": {"from_column": "iti_ms"}},
+    ]}
+
+
+def _every_event_experiment(schema, tmp_path):
+    path = export_opensesame(_hostile_stim(), _every_event_design(), schema, str(tmp_path))
+    with open(path, encoding="utf-8") as handle:
+        text = handle.read()
+    return path, _items(text), _trial_runs(text.splitlines())
+
+
+def test_each_canvas_is_prepared_under_its_own_name(schema, tmp_path):
+    _, items, trial = _every_event_experiment(schema, tmp_path)
+    prepared = {}
+    for name in trial:
+        item = items[name]
+        if item["type"] != "inline_script":
+            continue
+        run = "\n".join(item["___run__"])
+        # Nothing is built while the trial runs: every canvas a script shows was
+        # built in its prepare phase, before the sequence ran its first item.
+        assert "Canvas(" not in run, name
+        own = {m.group(1) for line in item["___prepare__"]
+               for m in [re.match(r"(_lexsync_c_\w+) = ", line)] if m}
+        assert set(re.findall(r"\b(_lexsync_c_\w+)\b", run)) <= own, name
+        # The workspace is shared, so a canvas is named after its item. A shared name
+        # would show, in every item, the canvas the sequence prepared last.
+        suffix = "_lexsync_c_" + name[len("lexsync_"):]
+        assert all(n == suffix or n.startswith(suffix + "_") for n in own), name
+        prepared[name] = own
+    names = [n for own in prepared.values() for n in own]
+    assert len(names) == len(set(names))
+    assert sorted(name for name, own in prepared.items() if own) == [
+        "lexsync_e0", "lexsync_e1", "lexsync_e2", "lexsync_e3", "lexsync_e4", "lexsync_e5",
+        "lexsync_e6", "lexsync_e7", "lexsync_e8_blank", "lexsync_e9"]
+
+
+def test_no_event_sleeps_its_full_duration_after_a_trigger(schema, tmp_path):
+    _, items, trial = _every_event_experiment(schema, tmp_path)
+    for name in trial:
+        run = items[name]["___run__"]
+        # Every wait is timed from an onset through the setup's helpers, which also
+        # reset the code when its hold is up. No script sleeps or writes to the port.
+        assert not any("clock.sleep" in line or "send_trigger(" in line for line in run), name
+    # A timed event shows its canvas, sends its code and waits until half a frame
+    # before its end, measured from its onset, so that the next display lands on the
+    # refresh that ends it.
+    assert items["lexsync_e1"]["___run__"] == [
+        "_t0 = _lexsync_c_e1.show()", "var.onset_time = _t0", "_lexsync_onset(20, _t0)",
+        "_lexsync_wait(_t0 + 50 - _LEXSYNC_HALF_FRAME)"]
+    assert items["lexsync_e2"]["___run__"] == [
+        "_t0 = _lexsync_c_e2.show()", "var.onset_time = _t0",
+        "_lexsync_wait(_t0 + 33 - _LEXSYNC_HALF_FRAME)"]
+    assert items["lexsync_e9"]["___run__"][-1] == (
+        "_lexsync_wait(_t0 + int(float(var.get(u'iti_ms', _eval=False))) "
+        "- _LEXSYNC_HALF_FRAME)")
+    # The trigger device writes a code and returns.
+    setup = items["lexsync_trigger_setup"]["___prepare__"]
+    assert not any("time.sleep" in line for line in setup)
+
+
+def test_the_session_markers_are_sent_and_held(schema, tmp_path):
+    _, items, _ = _every_event_experiment(schema, tmp_path)
+    # The setup runs first, and the markers enclose the loop: 254 just before it and 255
+    # just after it, whatever the experiment shows before the trials.
+    sequence = _sequence(items, "lexsync_experiment")
+    loop = sequence.index("lexsync_loop")
+    assert sequence[0] == "lexsync_trigger_setup"
+    assert sequence[loop - 1:] == ["lexsync_session_start", "lexsync_loop",
+                                   "lexsync_session_end"]
+    assert items["lexsync_session_start"]["___run__"] == ["_lexsync_marker(254)"]
+    assert items["lexsync_session_end"]["___run__"] == ["_lexsync_marker(255)"]
+    setup = items["lexsync_trigger_setup"]["___prepare__"]
+    # The hold is the schema's, and the frame period falls back to the assumed rate.
+    assert "_LEXSYNC_HOLD = 50" in setup
+    assert "    _LEXSYNC_FRAME = 1000.0 / 60" in setup
+    # A hold below the 10 ms most recorders need is raised to it.
+    short = dict(schema, triggers=dict(schema.get("triggers") or {}, trigger_hold_ms=4),
+                 presentation=dict(schema.get("presentation") or {}, assumed_refresh_hz=144))
+    path = export_opensesame(_stim(), {"name": "s", "language": "english"}, short,
+                             str(tmp_path))
+    with open(path, encoding="utf-8") as handle:
+        setup = _items(handle.read())["lexsync_trigger_setup"]["___prepare__"]
+    assert "_LEXSYNC_HOLD = 10" in setup
+    assert "    _LEXSYNC_FRAME = 1000.0 / 144" in setup
+
+
+@pytest.mark.parametrize("hz", [60, 120, 144])
+def test_the_priming_soa_holds_at_60_120_and_144_hz(hz, monkeypatch):
+    # The shipped priming experiment, run on a display that refreshes at `hz`: the prime
+    # and the mask last the flips the PsychoPy script gives them, so the SOA is 83.3 ms
+    # at all three rates, and every code is held for the schema's 50 ms. It used to be
+    # 116.7 ms at 60 Hz and 108.3 ms at 120 Hz.
+    monkeypatch.setattr(ctypes, "windll", None, raising=False)
+    path = repo_path("output", "experiments", "en_priming_english_list1.osexp")
+    with open(str(path)[:-len(".osexp")] + "_opensesame.csv", encoding="utf-8") as handle:
+        n = len(handle.read().splitlines()) - 1
+    shown, sent, _, logged = _run(str(path), "4.x", [("left", 600.0)] * n, hz=hz)
+    frame = 1000.0 / hz
+    onsets = {name: [t for item, _, t in shown if item == name]
+              for name in ("lexsync_e1", "lexsync_e2", "lexsync_e3")}
+    assert len(onsets["lexsync_e1"]) == n
+    for prime, mask, target in zip(*onsets.values(), strict=True):
+        assert mask - prime == pytest.approx(round(50 * hz / 1000) * frame, abs=1e-6)
+        assert target - mask == pytest.approx(round(33 * hz / 1000) * frame, abs=1e-6)
+        assert abs(target - prime - 250.0 / 3) < frame
+    pulses = _pulses(sent)
+    assert pulses[0][1] == 254 and pulses[-1][1] == 255
+    assert [code for _, code, *_ in pulses[1:-1]] == [
+        c for row in logged for c in (20, int(row["condition_trigger"]))]
+    for item, code, _, width, truncated in pulses:
+        # To the millisecond the legacy clock counts.
+        assert not truncated and abs(width - 50.0) <= 1.0, (item, code, width)
+    # The experiment logs the frame period it measured: the median of 20 intervals in
+    # the legacy clock's whole milliseconds, 17 at 60 Hz, 8 at 120 and 7 at 144.
+    assert {row["lexsync_frame_ms"] for row in logged} == {float(round(frame))}
+
+
+def test_a_code_is_held_past_a_short_event_and_an_early_key(schema, tmp_path, monkeypatch):
+    # A 17 ms prime is one flip at 60 Hz, and its code is held for the 50 ms hold
+    # through the mask after it, where the old script cleared it after 10 ms whatever
+    # the hold. A key 20 ms into the target ends the target, and its code is still held
+    # for the hold, through the blank that follows.
+    monkeypatch.setattr(ctypes, "windll", None, raising=False)
+    design = {"name": "short", "language": "english", "events": [
+        {"type": "fixation", "content": "+", "duration_ms": 500},
+        {"type": "text", "content": "{word}", "duration_ms": 17, "trigger": 20},
+        {"type": "mask", "content": "#####", "duration_ms": 100},
+        {"type": "text", "content": "{word}", "duration_ms": 800, "trigger": "condition"},
+        {"type": "response", "keys": ["f", "j"], "timeout_ms": 2000},
+        {"type": "blank", "duration_ms": 250}]}
+    stim = _hostile_stim().head(3)
+    path = export_opensesame(stim, design, schema, str(tmp_path))
+    shown, sent, _, logged = _run(path, "4.x", [("f", 20.0)] * len(stim), hz=60)
+    pulses = _pulses(sent)
+    trial_codes = pulses[1:-1]
+    assert [code for _, code, *_ in trial_codes] == [
+        c for row in logged for c in (20, int(row["condition_trigger"]))]
+    for item, code, _, width, truncated in trial_codes:
+        assert not truncated and abs(width - 50.0) <= 1.0, (item, code, width)
+    # Each code is reset in the event after the one that sent it.
+    resets = [item for item, code, _ in sent if code == 0]
+    assert resets == ["lexsync_session_start"] + ["lexsync_e2", "lexsync_e4"] * len(stim) + [
+        "lexsync_session_end"]
+    # The prime still lasted its one flip and the mask its six.
+    for prime, mask in zip([t for item, _, t in shown if item == "lexsync_e1"],
+                           [t for item, _, t in shown if item == "lexsync_e2"], strict=True):
+        assert mask - prime == pytest.approx(1000.0 / 60)
+
+
+def test_a_key_window_resets_a_code_whose_hold_ends_with_it(schema, tmp_path, monkeypatch):
+    # At 120 Hz the legacy clock measures the frame as 8 ms, so a 54 ms target that
+    # collects its own response polls the keyboard until 50 ms after its onset, the
+    # moment its 50 ms hold ends. _lexsync_wait() resets a code whose hold ends with its
+    # wait, and _lexsync_key() must do the same. It reset the code only once its hold had
+    # ended before the window did, so here the code stayed on the port until the blank
+    # appeared, 58.3 ms after the onset. test-scripting.R pins the same comparison.
+    monkeypatch.setattr(ctypes, "windll", None, raising=False)
+    design = {"name": "edge", "language": "english", "events": [
+        {"type": "fixation", "content": "+", "duration_ms": 500},
+        {"type": "text", "content": "{word}", "duration_ms": 54, "trigger": "condition"},
+        {"type": "response", "keys": ["f", "j"], "timeout_ms": 2000},
+        {"type": "blank", "duration_ms": 250}]}
+    stim = _hostile_stim().head(3)
+    path = export_opensesame(stim, design, schema, str(tmp_path))
+    with open(path, encoding="utf-8") as handle:
+        setup = _items(handle.read())["lexsync_trigger_setup"]["___prepare__"]
+    assert ("    if _lexsync_due[0] is not None and (t is None or _lexsync_due[0] <= t):"
+            in setup)
+    _, sent, _, logged = _run(path, "4.x", [("f", 600.0)] * len(stim), hz=120)
+    assert {row["lexsync_frame_ms"] for row in logged} == {8.0}
+    trial_codes = _pulses(sent)[1:-1]
+    assert [code for _, code, *_ in trial_codes] == [
+        int(row["condition_trigger"]) for row in logged]
+    for item, code, _, width, truncated in trial_codes:
+        assert not truncated and abs(width - 50.0) <= 1.0, (item, code, width)
 
 
 # ---- One experiment per counterbalancing version ---------------------------------------

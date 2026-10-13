@@ -19,11 +19,11 @@
     },
     {
       "file": "output/experiments/zh_freqcontrast_chinese_psychopy.py",
-      "sha256": "4a19bcdf52050e2817df0f22e1d1f2228f353bf47c1772ac3b32b737ae676c7a"
+      "sha256": "1499db729e63c66f3d129bf05bf9ef104b91f3e50e6a78abb776f4444129874f"
     },
     {
       "file": "output/experiments/zh_freqcontrast_chinese.osexp",
-      "sha256": "c78d1fcd713b635edc4bf16b235684f474d4638d37627af54f09bffa38e966f3"
+      "sha256": "24e72bc18eb3268f62036b419cb08eefbdd373a9827f5307b8e0bdca33b66b35"
     },
     {
       "file": "output/experiments/zh_freqcontrast_chinese.html",
@@ -213,7 +213,7 @@
   "reproducibility": {
     "design_sha256": "bf1f073989dc3aac339617a7a9cbb157f5039c5a057d747506988933a8bbd663",
     "schema_path": "config/schema.yaml",
-    "schema_sha256": "f6382012c85d9eb8088f1c5542f89a244c1e03c197d05a80632a64d0613d784e",
+    "schema_sha256": "f2c268f23e8a5e374f920f8cb8a0a89392ab207acc0c1809f2f409a2aa844120",
     "seed": 2026,
     "versions": {
       "engine": "python",

@@ -740,6 +740,42 @@
   report table or experiment changes. The twin-edge case `trigger_typo` pins the
   refusal in both engines.
 
+* Generated OpenSesame experiments build every stimulus before the trial runs and
+  time each event from its onset. Each inline script built its canvas while the
+  trial ran and slept the event's full duration after a trigger pulse that blocked
+  for 10 ms, the pattern OpenSesame's timing manual shows as the way not to time a
+  display, so every event overran: at 60 Hz the 50 ms prime was predicted to last
+  about 67 ms and the 83 ms stimulus-onset asynchrony from prime to target about
+  117 ms. Each event now ends half a frame before its duration is up, so that the
+  next display lands on the refresh that ends it. On a simulated display at 60, 120
+  and 144 Hz, the prime and the mask then last the flips the PsychoPy script gives
+  them, and the asynchrony stays 83.3 ms. These figures are predictions, and the
+  experiments vignette now gives a photodiode checklist for measuring them. The
+  experiment measures the display's frame period at start-up and logs it as
+  `lexsync_frame_ms`. It holds each trigger code for `trigger_hold_ms`, which it
+  ignored, without delaying any display. A response kept after the stimulus with
+  `from: offset` opens its window once a code still held has been reset, since
+  OpenSesame's `keyboard_response` runs none of lexsync's code. The experiment also
+  sends the 254 and 255 session markers, as the PsychoPy script does. The 32
+  committed `.osexp` files change, and so do the datasheets and run logs that
+  record their checksums. No stimulus moves.
+
+* Trigger codes in the PsychoPy script last the hold, and never less than 10 ms.
+  The 254 and 255 session markers were cleared by the statement after their flip,
+  and a code on an event shorter than the hold was cleared as soon as the event's
+  last flip returned, so the markers and a one-flip prime's code lasted no time at
+  all. A hold set to 10 ms was rounded to 6.9 ms at 144 Hz and 8.3 ms at 240 Hz.
+  The default 50 ms hold was not affected. Every code is now counted down flip by
+  flip and reset on the flip that ends its hold, in a later event when its own is
+  shorter. Only the next onset's code ends it sooner, and a key that ends a
+  stimulus early no longer cuts its code short. The self-paced reading
+  critical-region code is held the same way. It was held for `inter_trigger_ms`,
+  10 ms, which is accepted and no longer used: `validate_design()` returns a note
+  for the run log when a schema sets it, and the shipped schema no longer does. A
+  literal code of 254 or 255 is reported as a code both laboratory targets send.
+  The 21 committed PsychoPy scripts change, and the datasheets and run logs are
+  regenerated. No stimulus moves.
+
 # lexsync 0.1.1
 
 * `assign_triggers()` gains a `conditions` argument that fixes the order of the

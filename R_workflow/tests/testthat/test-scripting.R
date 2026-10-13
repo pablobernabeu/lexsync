@@ -112,23 +112,25 @@ test_that("PsychoPy export is frame-locked and OpenSesame export is internally c
   expect_true(all(runs %in% defs))                 # every run resolves to a definition
 })
 
-test_that("INTER_TRIGGER_S goes through %.17g like its neighbouring substitutions", {
-  # as.character(16.65 / 1000) gives "0.01665" while Python's str() gives
-  # "0.016649999999999998", so the substitution is pinned through %.17g in both
-  # engines. test_scripting.py asserts these same generated lines.
+test_that("inter_trigger_ms is accepted and no longer used", {
+  # The self-paced reading critical-region code was held for inter_trigger_ms, 10 ms,
+  # where every other code is held for trigger_hold_ms, and nothing else read the key.
+  # A schema that still sets it is accepted, and the run log says the key is not used.
+  # test_scripting.py asserts the same.
   schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
   design <- list(name = "t", language = "english", timing = list())
   out <- tempfile("lexsync"); dir.create(out)
-  schema$triggers$inter_trigger_ms <- 16.65
-  pytxt <- paste(readLines(export_psychopy(make_stim(), design, schema, out), warn = FALSE),
+  old <- schema
+  old$triggers$inter_trigger_ms <- 16.65
+  pytxt <- paste(readLines(export_psychopy(make_stim(), design, old, out), warn = FALSE),
                  collapse = "\n")
-  expect_true(grepl("INTER_TRIGGER_S = 0.016649999999999998\n", pytxt, fixed = TRUE))
-  # The shipped default still renders as "0.01", so no committed experiment
-  # byte moves.
-  schema$triggers$inter_trigger_ms <- NULL
-  pytxt <- paste(readLines(export_psychopy(make_stim(), design, schema, out), warn = FALSE),
-                 collapse = "\n")
-  expect_true(grepl("INTER_TRIGGER_S = 0.01\n", pytxt, fixed = TRUE))
+  expect_false(grepl("INTER_TRIGGER", pytxt, fixed = TRUE))
+  expect_identical(validate_design(design, old), paste(
+    "lexsync: triggers.inter_trigger_ms is no longer used; the self-paced reading",
+    "critical-region code is held for triggers.trigger_hold_ms, as every other code is."))
+  # The shipped schema no longer sets it.
+  expect_null(schema$triggers[["inter_trigger_ms"]])
+  expect_identical(validate_design(design, schema), character(0))
 })
 
 test_that("the OpenSesame export carries both trigger backends and a test-mode fallback", {
@@ -287,22 +289,26 @@ test_that("a delayed response still opens after the stimulus", {
                      "\trun lexsync_e2_score always", "\trun lexsync_e3 always"))
 })
 
-# The items the trial sequence runs, in order.
-trial_runs <- function(lines) {
-  at <- match("define sequence lexsync_trial", lines)
+# The items a sequence runs, in order, by default those of the trial sequence.
+trial_runs <- function(lines, name = "lexsync_trial") {
+  at <- match(sprintf("define sequence %s", name), lines)
   rest <- lines[(at + 1L):length(lines)]
   rest <- rest[seq_len(match("", rest) - 1L)]
   sub("^\trun (\\S+).*$", "\\1", grep("^\trun ", rest, value = TRUE))
 }
 
-# One inline script's run phase, without the leading tab.
-run_phase <- function(lines, name) {
+# One phase of an inline script, "run" or "prepare", without the leading tab, or
+# character(0) when the script leaves that phase empty.
+script_phase <- function(lines, name, phase = "run") {
   at <- match(sprintf("define inline_script %s", name), lines)
   rest <- lines[(at + 1L):length(lines)]
-  start <- match("\t___run__", rest)
-  end <- match("\t__end__", rest)
-  substring(rest[(start + 1L):(end - 1L)], 2L)
+  rest <- rest[seq_len(match("", rest) - 1L)]
+  start <- match(sprintf("\t___%s__", phase), rest)
+  if (is.na(start)) return(character(0))
+  end <- start + match("\t__end__", rest[(start + 1L):length(rest)])
+  substring(rest[seq_len(end - start - 1L) + start], 2L)
 }
+run_phase <- function(lines, name) script_phase(lines, name, "run")
 
 test_that("an onset-locked response runs in its stimulus script", {
   # The target and its response window are one inline script, which shows the target,
@@ -320,19 +326,24 @@ test_that("an onset-locked response runs in its stimulus script", {
   expect_false(any(startsWith(os, "define keyboard_response")))
   expect_identical(trial_runs(os), c("lexsync_trial_start", "lexsync_e0", "lexsync_e1",
                                      "lexsync_e2", "lexsync_record", "lexsync_logger"))
+  # The target and the blank after it are built before the trial runs.
+  expect_identical(script_phase(os, "lexsync_e1", "prepare"), c(
+    "_lexsync_c_e1 = Canvas()",
+    "_lexsync_c_e1.text(_lexsync_row()[u'target'])",
+    "_lexsync_c_e1_blank = Canvas()"))
+  # The window is timed from the target's onset: the keyboard is polled until half a
+  # frame before the target's 800 ms are up, so that the blank lands on the refresh
+  # that ends them, and then until 2,000 ms after that.
   expect_identical(run_phase(os, "lexsync_e1"), c(
-    "c = Canvas()",
-    "c.text(_lexsync_row()[u'target'])",
-    "_t0 = c.show()",
+    "_t0 = _lexsync_c_e1.show()",
     "var.onset_time = _t0",
-    "send_trigger(int(var.get(u'condition_trigger', _eval=False)))",
+    "_lexsync_onset(int(var.get(u'condition_trigger', _eval=False)), _t0)",
     "_kb = Keyboard(keylist=[u'left', u'right'])",
     "_kb.flush()",
-    "_key, _t = _kb.get_key(timeout=800)",
+    "_key, _t = _lexsync_key(_kb, _t0 + 800 - _LEXSYNC_HALF_FRAME)",
     "if _key is None:",
-    "    c = Canvas()",
-    "    c.show()",
-    "    _key, _t = _kb.get_key(timeout=2000)",
+    "    _lexsync_c_e1_blank.show()",
+    "    _key, _t = _lexsync_key(_kb, _t0 + 800 + 2000)",
     "var.response = _key",
     "var.response_time = u'' if _key is None else _t - _t0",
     "var.timed_out = 1 if _key is None else 0",
@@ -357,12 +368,184 @@ test_that("OpenSesame timeouts are written in whole milliseconds as declared", {
     list(type = "question", content = "{word}", keys = c("f", "j"), timeout_ms = 1003L)))
   os <- readLines(export_opensesame(make_stim(), delayed, schema, out), warn = FALSE)
   expect_true("\tset timeout 1001" %in% os)
-  expect_true("\t_kb = Keyboard(keylist=[u'f', u'j'], timeout=1003)" %in% os)
+  expect_true("\t_key, _t = _lexsync_key(_kb, _t0 + 1003)" %in% os)
   onset <- list(name = "o", language = "english", events = list(
     list(type = "text", content = "{word}", duration_ms = 300L),
     list(type = "response", keys = c("f", "j"), timeout_ms = 1001L)))
   os <- readLines(export_opensesame(make_stim(), onset, schema, out), warn = FALSE)
-  expect_true("\t    _key, _t = _kb.get_key(timeout=1001)" %in% os)
+  expect_true("\t    _key, _t = _lexsync_key(_kb, _t0 + 300 + 1001)" %in% os)
+})
+
+# The tests below pin when each display appears and how long each code is held.
+# OpenSesame prepares every item of a sequence before it runs any, and its inline
+# scripts share one workspace. The generated scripts built each canvas while the trial
+# ran and slept each event's full duration after a blocking 10 ms pulse, so every event
+# overran: at 60 Hz the 50 ms prime lasted about 67 ms. The experiment also ignored
+# triggers.trigger_hold_ms and sent neither session marker. test_osexp_validator.py
+# pins the same structure and runs the timing on a simulated display.
+
+# One event of every type: a triggered prime and mask, a target with its response,
+# feedback, a sentence region by region, a question, a delayed response and a per-trial
+# interval.
+every_event_design <- function() {
+  list(name = "every", language = "english", events = list(
+    list(type = "fixation", content = "+", duration_ms = 500L),
+    list(type = "text", content = "{word}", duration_ms = 50L, trigger = 20L),
+    list(type = "mask", content = "#####", duration_ms = 33L),
+    list(type = "text", content = "{word}", duration_ms = 300L, trigger = "condition"),
+    list(type = "response", keys = c("f", "j"), timeout_ms = 2000L),
+    list(type = "feedback", answer = "answer", duration_ms = 600L),
+    list(type = "region_by_region", content = "{sentence}",
+         critical_region_trigger = "item"),
+    list(type = "question", content = "{question}", keys = c("f", "j"), timeout_ms = 4000L),
+    list(type = "blank", duration_ms = 200L),
+    list(type = "response", keys = c("f", "j"), timeout_ms = 1000L),
+    list(type = "blank", duration = list(from_column = "iti_ms"))))
+}
+
+every_event_experiment <- function(schema) {
+  stim <- assign_triggers(data.frame(
+    word = c("cat", "dog"), sentence = c("The|cat|sat.", "A|dog|ran."),
+    question = c("Sat?", "Ran?"), condition = c("a", "b"), set = c(1, 2), list = 1L,
+    trial = 1:2, critical_region = 2L, answer = c("f", "j"), iti_ms = c(400L, 425L),
+    stringsAsFactors = FALSE))
+  out <- tempfile("lexsync"); dir.create(out)
+  readLines(export_opensesame(stim, every_event_design(), schema, out), warn = FALSE)
+}
+
+is_inline_script <- function(lines, name) sprintf("define inline_script %s", name) %in% lines
+
+test_that("each canvas is prepared under its own name", {
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  os <- every_event_experiment(schema)
+  prepared <- list()
+  for (name in trial_runs(os)) {
+    if (!is_inline_script(os, name)) next
+    run <- run_phase(os, name)
+    # Nothing is built while the trial runs: every canvas a script shows was built in
+    # its prepare phase, before the sequence ran its first item.
+    expect_false(any(grepl("Canvas(", run, fixed = TRUE)), info = name)
+    prep <- script_phase(os, name, "prepare")
+    own <- unique(sub("^(_lexsync_c_\\w+) = .*$", "\\1",
+                      grep("^_lexsync_c_\\w+ = ", prep, value = TRUE, perl = TRUE),
+                      perl = TRUE))
+    used <- unique(unlist(regmatches(run, gregexpr("_lexsync_c_\\w+", run, perl = TRUE))))
+    expect_true(all(used %in% own), info = name)
+    # The workspace is shared, so a canvas is named after its item. A shared name would
+    # show, in every item, the canvas the sequence prepared last.
+    suffix <- paste0("_lexsync_c_", sub("^lexsync_", "", name))
+    expect_true(all(own == suffix | startsWith(own, paste0(suffix, "_"))), info = name)
+    prepared[[name]] <- own
+  }
+  all_names <- unlist(prepared, use.names = FALSE)
+  expect_false(anyDuplicated(all_names) > 0L)
+  expect_identical(
+    sort(names(Filter(length, prepared)), method = "radix"),
+    c("lexsync_e0", "lexsync_e1", "lexsync_e2", "lexsync_e3", "lexsync_e4", "lexsync_e5",
+      "lexsync_e6", "lexsync_e7", "lexsync_e8_blank", "lexsync_e9"))
+})
+
+test_that("no event sleeps its full duration after a trigger", {
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  os <- every_event_experiment(schema)
+  for (name in Filter(function(n) is_inline_script(os, n), trial_runs(os))) {
+    run <- run_phase(os, name)
+    # Every wait is timed from an onset through the setup's helpers, which also reset
+    # the code when its hold is up. No script sleeps or writes to the port.
+    expect_false(any(grepl("clock.sleep", run, fixed = TRUE) |
+                       grepl("send_trigger(", run, fixed = TRUE)), info = name)
+  }
+  # A timed event shows its canvas, sends its code and waits until half a frame before
+  # its end, measured from its onset, so that the next display lands on the refresh
+  # that ends it.
+  expect_identical(run_phase(os, "lexsync_e1"), c(
+    "_t0 = _lexsync_c_e1.show()", "var.onset_time = _t0", "_lexsync_onset(20, _t0)",
+    "_lexsync_wait(_t0 + 50 - _LEXSYNC_HALF_FRAME)"))
+  expect_identical(run_phase(os, "lexsync_e2"), c(
+    "_t0 = _lexsync_c_e2.show()", "var.onset_time = _t0",
+    "_lexsync_wait(_t0 + 33 - _LEXSYNC_HALF_FRAME)"))
+  e9 <- run_phase(os, "lexsync_e9")
+  expect_identical(e9[length(e9)], paste(
+    "_lexsync_wait(_t0 + int(float(var.get(u'iti_ms', _eval=False)))",
+    "- _LEXSYNC_HALF_FRAME)"))
+  # The trigger device writes a code and returns.
+  setup <- script_phase(os, "lexsync_trigger_setup", "prepare")
+  expect_false(any(grepl("time.sleep", setup, fixed = TRUE)))
+})
+
+test_that("the session markers are sent and held", {
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  os <- every_event_experiment(schema)
+  # The setup runs first, and the markers enclose the loop: 254 just before it and 255
+  # just after it, whatever the experiment shows before the trials.
+  sequence <- trial_runs(os, "lexsync_experiment")
+  loop <- match("lexsync_loop", sequence)
+  expect_identical(sequence[1], "lexsync_trigger_setup")
+  expect_identical(sequence[(loop - 1L):length(sequence)],
+                   c("lexsync_session_start", "lexsync_loop", "lexsync_session_end"))
+  expect_identical(run_phase(os, "lexsync_session_start"), "_lexsync_marker(254)")
+  expect_identical(run_phase(os, "lexsync_session_end"), "_lexsync_marker(255)")
+  setup <- script_phase(os, "lexsync_trigger_setup", "prepare")
+  # The hold is the schema's, and the frame period falls back to the assumed rate.
+  expect_true("_LEXSYNC_HOLD = 50" %in% setup)
+  expect_true("    _LEXSYNC_FRAME = 1000.0 / 60" %in% setup)
+  # A hold below the 10 ms most recorders need is raised to it.
+  short <- schema
+  short$triggers$trigger_hold_ms <- 4
+  short$presentation$assumed_refresh_hz <- 144
+  out <- tempfile("lexsync"); dir.create(out)
+  os <- readLines(export_opensesame(make_stim(), list(name = "s", language = "english"),
+                                    short, out), warn = FALSE)
+  setup <- script_phase(os, "lexsync_trigger_setup", "prepare")
+  expect_true("_LEXSYNC_HOLD = 10" %in% setup)
+  expect_true("    _LEXSYNC_FRAME = 1000.0 / 144" %in% setup)
+})
+
+test_that("a key window resets a code whose hold ends with it", {
+  # _lexsync_wait() resets a code whose hold ends with its wait, and _lexsync_key() must
+  # do the same. It reset the code only once its hold had ended before the window did,
+  # so at 120 Hz, where the legacy clock measures the frame as 8 ms, a 54 ms target that
+  # collects its own response kept its code on the port until the blank appeared,
+  # 58.3 ms after the onset. test_osexp_validator.py runs that case on a simulated
+  # display.
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  setup <- script_phase(every_event_experiment(schema), "lexsync_trigger_setup", "prepare")
+  expect_true("    if _lexsync_due[0] is not None and _lexsync_due[0] <= t:" %in% setup)
+  expect_true(paste("    if _lexsync_due[0] is not None and",
+                    "(t is None or _lexsync_due[0] <= t):") %in% setup)
+})
+
+test_that("the PsychoPy script holds every code for the hold, the markers included", {
+  # The 254 and 255 markers were cleared by the statement after their flip, a code on an
+  # event shorter than the hold was cleared as soon as the event's last flip returned,
+  # and the 10 ms floor was applied before the hold was rounded to flips, so a 10 ms
+  # hold lasted 6.9 ms at 144 Hz. The script is the template both engines fill, and
+  # test_psychopy_export.py runs every committed one against a fake PsychoPy at 60, 144
+  # and 240 Hz. Here the script this engine writes is checked for the lines that hold
+  # the codes.
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  out <- tempfile("lexsync"); dir.create(out)
+  on.exit(unlink(out, recursive = TRUE), add = TRUE)
+  py <- readLines(export_psychopy(make_stim(), list(name = "t", language = "english"),
+                                  schema, out), warn = FALSE)
+  # The floor is rounded up to whole flips, the hold to the nearest.
+  expect_true(paste("    floor = int(math.ceil(float(MIN_TRIGGER_HOLD_MS) * float(hz)",
+                    "/ 1000.0))") %in% py)
+  expect_true("    return max(1, hold, floor)" %in% py)
+  # Every flip counts the hold down. The onset codes, the critical region's included,
+  # and the two markers go through the same count.
+  expect_true("    count_flip(win)" %in% py)
+  expect_true("        send_code(win, port, trigger)" %in% py)
+  expect_true("                send_code(win, port, trig)" %in% py)
+  expect_true("    send_marker(win, port, BLOCK_START_TRIGGER)" %in% py)
+  expect_true("    send_marker(win, port, BLOCK_END_TRIGGER)" %in% py)
+  # The port is set to 0 only when it opens, on a flip queued by send_code() or
+  # count_flip(), and by end_code() once a hold has been waited out.
+  expect_identical(grep("setData(\\(|, )0\\)", py, value = TRUE), c(
+    "        port.setData(0)  # the dummy backend raises NotImplementedError here",
+    "        win.callOnFlip(PULSE[\"port\"].setData, 0)",
+    "            win.callOnFlip(PULSE[\"port\"].setData, 0)",
+    "        PULSE[\"port\"].setData(0)"))
 })
 
 test_that("a per-design font overrides the Latin default for logographic scripts", {
@@ -450,15 +633,18 @@ test_that("one OpenSesame experiment per version", {
     expect_true(sprintf(paste0("\twith open(pool[u't_english_list%d_opensesame_text.csv'], ",
                                "encoding=u'utf-8-sig', newline=u'') as _f:"), k) %in% lines)
     # Each experiment checks the subject number against its own version before the
-    # loop, then shows its instructions, and no run line carries a condition.
+    # loop, then shows its instructions, and no run line carries a condition. The
+    # session markers come after the instructions, just before and after the loop.
     expect_true("define inline_script lexsync_version_check" %in% lines)
     expect_true(sprintf("\t_version = %d", k) %in% lines)
     expect_true("\t_versions = 2" %in% lines)
     runs <- grep("^\trun ", lines, value = TRUE)
-    expect_identical(utils::tail(runs, 4),
+    expect_identical(utils::tail(runs, 6),
                      c("\trun lexsync_trigger_setup always",
                        "\trun lexsync_version_check always",
-                       "\trun lexsync_instructions always", "\trun lexsync_loop always"))
+                       "\trun lexsync_instructions always",
+                       "\trun lexsync_session_start always", "\trun lexsync_loop always",
+                       "\trun lexsync_session_end always"))
     expect_false(any(grepl('"', runs, fixed = TRUE)))
   }
 })
@@ -615,12 +801,12 @@ test_that("a literal trigger of 254 or 255 is logged", {
   expect_identical(
     capture_messages(assign_triggers(stim, events = list(with_trigger(fix_ev, 254L),
                                                          word_ev("condition")))),
-    paste("lexsync: event 1 sends code 254, which the PsychoPy experiment also sends when",
-          "the session starts.\n"))
+    paste("lexsync: event 1 sends code 254, which the PsychoPy and OpenSesame experiments",
+          "also send when the session starts.\n"))
   expect_identical(
     capture_messages(assign_triggers(stim, events = list(fix_ev, word_ev(255L)))),
-    paste("lexsync: event 2 sends code 255, which the PsychoPy experiment also sends when",
-          "the session ends.\n"))
+    paste("lexsync: event 2 sends code 255, which the PsychoPy and OpenSesame experiments",
+          "also send when the session ends.\n"))
   # export_experiments hands the design's events to assign_triggers.
   schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
   out <- tempfile("lexsync"); dir.create(out)

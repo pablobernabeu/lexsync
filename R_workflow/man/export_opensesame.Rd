@@ -42,6 +42,16 @@ Self-paced reading sets \code{lexsync_region_rts} and a question \code{question_
 trial's labels into \code{lexsync_condition}, \code{lexsync_block} and \code{lexsync_answer}, and a
 logger item ends the trial.
 
+Every canvas a trial shows is built before the trial runs, in the prepare phase of its
+script, and each event is timed from the onset its display returns. An event ends
+half a frame before its duration is up, so that the next display lands on the refresh
+that ends it. The frame period is measured at start-up and logged as
+\code{lexsync_frame_ms}, with \code{presentation.assumed_refresh_hz} as the fallback when the
+measurement fails. Each trigger code is held for \code{triggers.trigger_hold_ms}, at least
+10 ms, through the events after it when its own is shorter, unless the next onset's
+code replaces it first. The session markers, 254 and 255, are sent just before the
+first trial and just after the last, held the same way.
+
 A design with more than one presentation version, one per (replicate, list) pair
 of the trials, gets one experiment per version instead, each with its own two
 tables holding only that version's trials: \verb{<base>_list<k>.osexp}, or

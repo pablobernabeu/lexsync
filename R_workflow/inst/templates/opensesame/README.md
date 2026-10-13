@@ -73,9 +73,16 @@ Timing: the word is drawn and shown from inside an `inline_script`, and the
 trigger is sent immediately after `canvas.show()` returns. Because `show()`
 blocks until the display refresh (with the `psycho`/`xpyriment` backends), the
 marker is written immediately after the verified stimulus flip. It is therefore
-time-locked to onset, by the method OpenSesame recommends. The durations are
-less exact, because the generated experiment builds each canvas at run time and
-`send_trigger()` blocks for its 10 ms pulse before the event sleeps for its full
-duration. Every event therefore overruns its stated length. At 60 Hz, a 50 ms
-prime is predicted to last about 67 ms, and an 83 ms stimulus-onset asynchrony
-about 117 ms. Check any onset-critical study with a photodiode.
+time-locked to onset, by the method OpenSesame recommends. In the generated
+experiment, each event's canvas is built in its script's Prepare phase, which
+OpenSesame runs for every item of a trial before it runs any. The event is then
+timed from the onset `show()` returns, and it ends half a frame before its
+duration is up, so that the next display lands on the refresh that ends it. Each
+code is held for `triggers.trigger_hold_ms`, 50 ms by default, through the events
+after it when its own is shorter, and 254 and 255 are sent before the first trial
+and after the last. The snippets keep the simplest form of the onset-aligned send:
+the canvas is built in the Run tab, and `send_trigger()` holds each code for
+10 ms before it returns. An event built from them therefore lasts its duration
+plus that pulse and the time the next canvas takes to build, rounded up to the
+next refresh. Follow the generated file where a duration matters, and check any
+onset-critical study with a photodiode.

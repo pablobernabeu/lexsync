@@ -19,11 +19,11 @@
     },
     {
       "file": "output/experiments/en_richdim_english_psychopy.py",
-      "sha256": "a6d2b7bb9d5e4e5dca4257b099f0eea4e2afcc3db5b1fc3909236698b38e196b"
+      "sha256": "93695b399d572de79cae5dff605cece0ff5a522104c67126e747d8943abce3bb"
     },
     {
       "file": "output/experiments/en_richdim_english.osexp",
-      "sha256": "e2ca2bbd6788165c13b29510cdf18c65c471836753714565092721b1859a26fb"
+      "sha256": "6daa3f65532347c67767bcd25589a4926e17e4d4638298960956e83f93a22ce0"
     },
     {
       "file": "output/experiments/en_richdim_english.html",
@@ -232,7 +232,7 @@
   "reproducibility": {
     "design_sha256": "a46f5222c481512959ff91e40e2360a67d1a33f60b477b0518727e22bf6b5489",
     "schema_path": "config/schema.yaml",
-    "schema_sha256": "f6382012c85d9eb8088f1c5542f89a244c1e03c197d05a80632a64d0613d784e",
+    "schema_sha256": "f2c268f23e8a5e374f920f8cb8a0a89392ab207acc0c1809f2f409a2aa844120",
     "seed": 2026,
     "versions": {
       "engine": "python",

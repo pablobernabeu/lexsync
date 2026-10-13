@@ -94,13 +94,19 @@ and converts each duration into the nearest whole number of flips: 50 ms is thre
 flips at 60 Hz and seven at 144 Hz. The trigger stays bound to the flip.
 
 The other two targets time their events differently. The generated OpenSesame
-experiment builds each canvas at run time, sends the onset trigger as a blocking
-10 ms pulse and then sleeps for the full duration, so every event overruns its
-stated length. At 60 Hz, a 50 ms prime is predicted to last about 67 ms, and the
-83 ms stimulus-onset asynchrony of the `priming` paradigm about 117 ms. In the
-browser, timing varies with the machine and the browser, and primes of 33 to
-50 ms are not reliably realised online. Whatever the target, verify the timing a
-study depends on with a photodiode.
+experiment builds every canvas of a trial before the trial starts and times each
+event from the onset its display returns. It ends the event half a frame before its
+duration is up, so that the next display lands on the refresh that ends it. On a
+simulated display at 60, 120 and 144 Hz, the prime and the mask of the `priming`
+paradigm then last the flips the PsychoPy script gives them. Its 83 ms
+stimulus-onset asynchrony stays 83.3 ms at all three rates. A duration within a
+millisecond or so of halfway between two whole numbers of flips can still come out
+a flip longer or shorter than in PsychoPy. The experiment used to build each canvas
+while the trial ran and to sleep each event's full duration after a blocking 10 ms
+pulse, so every event overran its stated length. In the browser, timing varies with
+the machine and the browser, and primes of 33 to 50 ms are not reliably realised
+online. Whatever the target, verify the timing a study depends on with a photodiode,
+as described under checking the timing below.
 
 A duration may also be given as `duration_frames`, which designs written before
 this change still use. A frame count is converted to milliseconds when the design
@@ -241,9 +247,9 @@ resolves to a per-item code. Events with no trigger send nothing.
 A literal code must be a whole number from 1 to 255, the values one byte on the
 port can carry. Anything else, a misspelt token such as `"conditon"` included, is
 refused when the experiment is generated, with a message naming the event. A literal
-of 254 or 255, which the PsychoPy experiment sends when the session starts and ends,
-is reported then. One equal to a condition code the design sends is reported too, as
-is one within the range of the item codes it sends.
+of 254 or 255, which the PsychoPy and OpenSesame experiments send when the session
+starts and ends, is reported then. One equal to a condition code the design sends is
+reported too, as is one within the range of the item codes it sends.
 
 The tokens are resolved by `assign_triggers()`, which computes the codes and adds
 them as columns.
@@ -579,14 +585,15 @@ counts the blank after it as well, up to the key or the close of the window. The
 realised durations can be checked against the declared ones there.
 
 OpenSesame (Mathôt et al., 2012) is generated as a complete plain-text `.osexp`,
-block by block, with each event becoming an inline script. It gets its trigger by
-a different route, discussed below, and it opens the trigger device with a
-fallback: if no parallel port is available, it prints the codes and carries on,
-so the experiment still runs on a machine without the hardware. The generated
-setup opens the parallel port only. Its code has a serial branch, but nothing in
-the design selects it, so a serial device needs the setup script edited by hand.
-OpenSesame takes full screen or a window from the mode it is launched in, while
-the PsychoPy script runs in a 1280 x 1024 window.
+block by block, with each event becoming an inline script. Each script builds its
+canvases before the trial runs, in its prepare phase, and its event is timed from the
+onset its display returns. It gets its trigger by a different route, discussed
+below, and it opens the trigger device with a fallback: if no parallel port is
+available, it prints the codes and carries on, so the experiment still runs on a
+machine without the hardware. The generated setup opens the parallel port only. Its
+code has a serial branch, but nothing in the design selects it, so a serial device
+needs the setup script edited by hand. OpenSesame takes full screen or a window from
+the mode it is launched in, while the PsychoPy script runs in a 1280 x 1024 window.
 
 OpenSesame also evaluates what its loop table holds. In both versions, a cell
 holding `[=...]` runs as Python, and so does one holding a single `{` in
@@ -625,7 +632,11 @@ after it. It sets `response`, `response_time` (from the word's onset), `timed_ou
 and `correct`, the last scored against the trial's `answer` by the script itself.
 OpenSesame's own `correct_response` is not used, since its variable syntax differs
 between 3.3 and 4.x. A response kept after the stimulus with `from: offset` is a
-`keyboard_response`, followed by a script that sets `timed_out` and `correct`.
+`keyboard_response` after a blank screen, followed by a script that sets `timed_out`
+and `correct`. A `keyboard_response` runs none of lexsync's code, so the script that
+shows the blank first holds out a code still held. After a stimulus shorter than the
+hold, the window therefore opens when the hold is up, and `response_time`, which
+OpenSesame times from the item's start, runs from there.
 Self-paced reading sets `lexsync_region_rts` and a question `question_response` and
 `question_rt`. Each trial starts by clearing these, and before the logger a script
 copies the trial's `condition`, `block` and `answer` from the text table into
@@ -749,42 +760,89 @@ package's test suite pins it, driving the generated script against a mock Psycho
 window and a mock port and asserting that the trigger is bound to the flip.
 
 The reset is handled the same way. A recorder needs the line to return to zero
-before the next code, so the script schedules a write of 0 on a later flip.
+before the next code, so the script counts the hold down flip by flip and queues a
+write of 0 on the flip that ends it. A code whose stimulus is shorter than the hold,
+such as a one-flip prime, stays on the port through the events that follow and is
+reset on that flip all the same. Only the next onset's code ends it sooner, with a 0
+written just before the new code. The session markers, 254 before the first trial
+and 255 after the last, are held the same way.
 
 ```{r trigger-settings}
 str(schema$triggers)
 ```
 
 `trigger_hold_ms` is 50, comfortably above the 10 ms minimum most recorders need
-to register a pulse. The script converts it to whole flips against the refresh it
-measures, so the pulse stays about 50 ms whether the display runs at 60 Hz or at
-240 Hz. As a frame count it used to shorten with the refresh, reaching 12.5 ms at
-240 Hz. The older `reset_after_frames` is still accepted and converted.
-`inter_trigger_ms`
-spaces any trailing markers. `parallel_address` is the LPT1 base address on a
-typical laboratory machine, and it is a schema value because it belongs to the
-machine, which will run many designs. `allow_code_overlap` is false, so a design
-whose item codes cannot all be kept apart from its other codes is refused, as
-described under triggers above.
+to register a pulse. The script converts it to the nearest whole number of flips at
+the refresh it measures, and never to fewer than the flips that cover 10 ms. The
+pulse therefore stays about 50 ms whether the display runs at 60 Hz or at 240 Hz. As
+a frame count it used to shorten with the refresh, reaching 12.5 ms at 240 Hz. The
+older `reset_after_frames` is still accepted and converted. `inter_trigger_ms` held
+the self-paced reading critical-region code for 10 ms. That code is now held like
+every other, so the key is no longer used, and the run log says so when a schema
+sets it. `parallel_address` is the LPT1 base address on a typical laboratory
+machine, and it is a schema value because it belongs to the machine, which will run
+many designs. `allow_code_overlap` is false, so a design whose item codes cannot all
+be kept apart from its other codes is refused, as described under triggers above.
 
 OpenSesame reaches the same place by a different route, and the difference is
 worth being explicit about. It has no `callOnFlip`, so the generated inline script
-sends the trigger on the line after `c.show()`:
+sends the trigger on the line after the canvas is shown:
 
 ```
-var.onset_time = c.show()
-send_trigger(int(var.get(u'condition_trigger', _eval=False)))
+_t0 = _lexsync_c_e1.show()
+var.onset_time = _t0
+_lexsync_onset(int(var.get(u'condition_trigger', _eval=False)), _t0)
 ```
 
 This is sound because `show()` blocks until the display refresh and returns at it,
 so the next statement runs immediately after the stimulus becomes visible. The
 residual offset is the few microseconds of the return and the port write, and it
 is constant rather than jittered. That makes it a close second to the flip lock,
-which is why PsychoPy stays the reference target for EEG.
+which is why PsychoPy stays the reference target for EEG. The canvas was built in
+the script's prepare phase, before the trial started, so nothing delays the show.
+`_lexsync_onset` notes when the code is due to be reset, and the waits after it reset
+the code once `trigger_hold_ms` has passed, in a later event when this one is
+shorter. The setup script measures the frame period at start-up and logs it as
+`lexsync_frame_ms`. Each event ends half a frame before its duration is up, so that
+the next display lands on the refresh that ends it. OpenSesame's legacy clock
+counts whole milliseconds, so the waits are kept to the millisecond, and so is a
+hold that ends during one. A hold that ends while the experiment waits for the next
+refresh lasts until that display, up to a frame longer. One that ends after the last
+wait of a trial lasts until the next trial's first display. Between trials, the
+logger and the next trial's prepare phase run while the last display stays up, so a
+trial's last event lasts a little longer than its duration.
 
 Neither generation nor its tests import PsychoPy, pyserial or any port driver.
 Generation only writes text. The hardware is needed to *run* an experiment, not to
 build one, which is what lets the whole demonstration reproduce on a laptop.
+
+### Checking the timing
+
+The durations above are what the generated code asks for, and what the Python
+package's tests confirm on simulated displays. A real display adds delays no
+software can see, such as an LCD's input lag. A study whose effect depends on a
+duration or an onset should therefore be measured on the machine that will run it.
+A photodiode on the screen, recorded by the same amplifier as the trigger port,
+measures the display and the triggers on one clock.
+
+1. Tape the photodiode over the place where the critical stimulus appears. White
+   text on a black background drives most diodes. A small stimulus, such as a
+   fixation cross, may need a white patch drawn with it for the pilot.
+2. Run a pilot session on the laboratory machine, at the refresh rate and in the
+   screen mode of the study, and record the diode and the trigger channel together.
+3. For each trial, measure the time from the trigger's onset to the diode's rise.
+   It should be nearly constant. Its mean is the display's lag, which includes the
+   time the screen takes to draw down to the diode and, on an LCD, an input lag
+   that can exceed 10 ms. The analysis can subtract it. Its spread is the jitter an
+   ERP average will carry.
+4. Measure each critical stimulus from the diode's rise to its fall and compare it
+   with the flips its duration asks for at that refresh rate: a 50 ms prime is
+   three flips at 60 Hz and seven, 48.6 ms, at 144 Hz.
+5. Measure the trigger pulses. Each should last about `trigger_hold_ms`, 50 ms by
+   default, unless the next onset ends it sooner, and 254 should come before the
+   first trial and 255 after the last.
+6. Measure again after any change to the machine, the display, its refresh rate or
+   the presentation software.
 
 ## Adding a paradigm
 

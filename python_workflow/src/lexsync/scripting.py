@@ -96,6 +96,12 @@ def _refresh_hz(schema: dict) -> float:
     return hz
 
 
+# The shortest hold either laboratory target gives a code, in milliseconds: a pulse
+# shorter than this may not register on a recorder at all. The PsychoPy template applies
+# the same floor as MIN_TRIGGER_HOLD_MS. Must match .MIN_HOLD_MS in scripting.R.
+_MIN_HOLD_MS = 10.0
+
+
 def _trigger_hold_ms(schema: dict) -> float:
     """How long the onset code is held before it is reset to 0, in milliseconds.
 
@@ -218,9 +224,9 @@ def assign_triggers(stimuli: pd.DataFrame, conditions=None, events=None,
     :func:`render_events` checks it.
 
     A notice is printed for a code of the design's own that the stream already uses
-    for something else: 254 or 255, which the PsychoPy experiment sends when the
-    session starts and ends, a condition code the design sends, or a code within the
-    range of the item codes it sends.
+    for something else: 254 or 255, which the PsychoPy and OpenSesame experiments send
+    when the session starts and ends, a condition code the design sends, or a code
+    within the range of the item codes it sends.
 
     The condition codes follow ``conditions`` when it is given: its first entry is
     101, its second 102, and so on, whether or not every entry occurs in
@@ -345,17 +351,17 @@ def _codes_sent(events) -> dict:
 def _code_notes(sent: dict, conds: list, item_codes: list) -> list:
     """The notices for the design's own codes that the stream already uses.
 
-    A code of 254 or 255, which the PsychoPy experiment sends when the session starts
-    and ends, a code equal to a condition code the design sends, and a code within the
-    range of the item codes it sends. The allocation keeps every item code off the
-    design's own codes, so the last is a warning for anyone who decodes item codes by
-    their range. Must match .code_notes in scripting.R.
+    A code of 254 or 255, which the PsychoPy and OpenSesame experiments send when the
+    session starts and ends, a code equal to a condition code the design sends, and a
+    code within the range of the item codes it sends. The allocation keeps every item
+    code off the design's own codes, so the last is a warning for anyone who decodes
+    item codes by their range. Must match .code_notes in scripting.R.
     """
     notes = []
     for i, code in sent["literals"]:
         if code in (254, 255):
-            notes.append("lexsync: event %d sends code %d, which the PsychoPy experiment also "
-                         "sends when the session %s."
+            notes.append("lexsync: event %d sends code %d, which the PsychoPy and OpenSesame "
+                         "experiments also send when the session %s."
                          % (i, code, "starts" if code == 254 else "ends"))
         if sent["condition"] and 101 <= code <= 100 + len(conds):
             notes.append("lexsync: event %d sends code %d, which is also the condition code "
@@ -958,6 +964,12 @@ def export_psychopy(stimuli: pd.DataFrame, design: dict, schema: dict, outdir: s
     reaction time, the measured refresh rate, and each event's realised flips and
     onset.
 
+    Each trigger code goes out on its stimulus's first flip and is held for
+    ``triggers.trigger_hold_ms``, in whole flips at the measured refresh and never under
+    10 ms, through the events after it when its own is shorter, unless the next onset's
+    code replaces it first. The session markers, 254 before the first trial and 255
+    after the last, are held the same way.
+
     Args:
         stimuli: Stimuli with trigger columns (see :func:`assign_triggers`).
         design: A parsed design configuration.
@@ -994,11 +1006,6 @@ def _psychopy_files(stimuli, design, schema, outdir, base=None) -> list:
         "BASE": base,
         "TRIGGER_ADDRESS": clean_port(triggers.get("parallel_address", "0x0378")),
         "TRIGGER_HOLD_MS": "%.17g" % _trigger_hold_ms(schema),
-        # Through %.17g like its neighbours, never default stringification: str()
-        # and R's as.character() part company on a non-integer quotient
-        # (str(16.65 / 1000) gives "0.016649999999999998", as.character gives
-        # "0.01665"), and this value lands in the generated script.
-        "INTER_TRIGGER_S": "%.17g" % (triggers.get("inter_trigger_ms", 10) / 1000),
         "WORD_FONT": clean_meta(
             design.get("font") or presentation.get("font") or "Courier New", "the font"),
         "FULLSCREEN": "False",
@@ -1106,6 +1113,16 @@ def _osexp_event_block(name: str, ev: dict, scores: bool = True,
     ``var.correct`` scores: the design's response events, or its questions when it has
     no response event. ``feedback_scores`` names the variable a feedback event reads,
     ``response`` or ``question_response``, after whichever collected a key last.
+
+    Every canvas an event shows is built in its script's prepare phase, which OpenSesame
+    runs for every item of the trial sequence before it runs any, so building and drawing
+    take no time between one display and the next. The canvas is named after its script,
+    ``_lexsync_c_e<i>``, because all inline scripts share one workspace and a shared name
+    would show, in every script, the canvas prepared last. The run phase shows it and
+    times everything from the onset that show() returns, through the helpers the setup
+    script defines (see _osexp_timing): ``_lexsync_onset`` sends the event's code,
+    ``_lexsync_wait`` sleeps and ``_lexsync_key`` polls the keyboard until a time
+    measured from the onset, each resetting a code whose hold has run out.
     """
     t = ev["type"]
     blocks = ev.get("blocks")
@@ -1115,114 +1132,138 @@ def _osexp_event_block(name: str, ev: dict, scores: bool = True,
         raise ValueError(
             "lexsync: a `response` event cannot be restricted to blocks on the "
             "OpenSesame target. Restrict a feedback or stimulus event instead.")
+    canvas = "_lexsync_c_" + name[len("lexsync_"):]
     # A fixed duration is a literal; one that varies per trial reads the loop-table
     # column, which OpenSesame exposes on `var`. Must match .osexp_event_block in
     # scripting.R, since the two engines write the same .osexp.
-    sleep_arg = ("int(float(var.get(%s, _eval=False)))"
-                 % _pyq(clean_column(ev["ms_column"], "a jittered duration's `as`"))
-                 if ev.get("ms_column") else str(int(ev.get("ms", 0))))
+    ms = ("int(float(var.get(%s, _eval=False)))"
+          % _pyq(clean_column(ev["ms_column"], "a jittered duration's `as`"))
+          if ev.get("ms_column") else str(int(ev.get("ms", 0))))
+    # The event ends half a frame before its duration is up. The next show() then waits
+    # for the refresh that ends the duration, and lands on it, where sleeping the whole
+    # duration made it miss that refresh and wait for the next (OpenSesame's Timing
+    # manual advises asking for slightly less than the interval wanted).
+    end = f"_t0 + {ms} - _LEXSYNC_HALF_FRAME"
+    trig = _trigger_expr(ev.get("trigger"))
+    onset = [] if trig is None else [f"_lexsync_onset({trig}, _t0)"]
     if t == "text" and ev.get("respond"):
         # The stimulus collects its own response, from its onset. The keyboard is
         # flushed once the trigger is out, so nothing pressed before the stimulus counts,
         # and polled while the stimulus is shown. Without a key by its end, the screen
-        # blanks and the keyboard is polled for the timeout, so the window is the one the
-        # stimulus and a separate response event had. A key ends the event either way.
+        # blanks and the keyboard is polled until the timeout has passed after it, so the
+        # window is the one the stimulus and a separate response event had, timed from
+        # the onset. A key ends the event either way, and does not cut its code short.
         respond = ev["respond"]
         keylist = ", ".join(_pyq(k) for k in respond["keys"])
-        body = ["c = Canvas()", f"c.text({_content_expr(ev)})", "_t0 = c.show()",
-                "var.onset_time = _t0"]
-        trig = _trigger_expr(ev.get("trigger"))
-        if trig is not None:
-            body.append(f"send_trigger({trig})")
-        body += [f"_kb = Keyboard(keylist=[{keylist}])",
-                 "_kb.flush()",
-                 f"_key, _t = _kb.get_key(timeout={sleep_arg})",
-                 "if _key is None:",
-                 "    c = Canvas()",
-                 "    c.show()",
-                 f"    _key, _t = _kb.get_key(timeout={_whole_ms(respond['timeout'])})",
-                 "var.response = _key",
-                 "var.response_time = u'' if _key is None else _t - _t0",
-                 "var.timed_out = 1 if _key is None else 0"]
+        prepare = [f"{canvas} = Canvas()", f"{canvas}.text({_content_expr(ev)})",
+                   f"{canvas}_blank = Canvas()"]
+        body = [f"_t0 = {canvas}.show()", "var.onset_time = _t0", *onset,
+                f"_kb = Keyboard(keylist=[{keylist}])",
+                "_kb.flush()",
+                f"_key, _t = _lexsync_key(_kb, {end})",
+                "if _key is None:",
+                f"    {canvas}_blank.show()",
+                f"    _key, _t = _lexsync_key(_kb, _t0 + {ms} + "
+                f"{_whole_ms(respond['timeout'])})",
+                "var.response = _key",
+                "var.response_time = u'' if _key is None else _t - _t0",
+                "var.timed_out = 1 if _key is None else 0"]
         if scores:
             body += _osexp_correct("_key")
         return (_inline_block(name, "Show the stimulus and collect the response from its "
-                              "onset", _osexp_block_guard(body, blocks), run=True), [name])
+                              "onset", _osexp_block_guard(body, blocks), run=True,
+                              prepare=_osexp_block_guard(prepare, blocks)), [name])
     if t in ("fixation", "text", "mask", "blank"):
-        body = ["c = Canvas()"]
+        prepare = [f"{canvas} = Canvas()"]
         if t != "blank":
-            body.append(f"c.text({_content_expr(ev)})")
-        body.append("var.onset_time = c.show()")
-        trig = _trigger_expr(ev.get("trigger"))
-        if trig is not None:
-            body.append(f"send_trigger({trig})")
-        body.append(f"clock.sleep({sleep_arg})")
+            prepare.append(f"{canvas}.text({_content_expr(ev)})")
+        body = [f"_t0 = {canvas}.show()", "var.onset_time = _t0", *onset,
+                f"_lexsync_wait({end})"]
         return (_inline_block(name, "Show stimulus and send onset-aligned trigger",
-                              _osexp_block_guard(body, blocks), run=True),
+                              _osexp_block_guard(body, blocks), run=True,
+                              prepare=_osexp_block_guard(prepare, blocks)),
                 [name])
     if t == "region":
         trig = _trigger_expr(ev.get("crit_trigger"))
-        # Each region is timed from its own onset, and the keyboard is flushed as it
-        # appears, so a key pressed before it cannot advance it.
+        # One canvas per region, in a list. Each region is timed from its own onset,
+        # and the keyboard is flushed as it appears, so a key pressed before it cannot
+        # advance it.
+        prepare = [
+            f"{canvas} = []",
+            f"for _r in [r for r in {_text_expr(ev['field'])}"
+            f".split({_pyq(ev.get('sep', '|'))}) if r != u'']:",
+            "    _c = Canvas()",
+            "    _c.text(_r)",
+            f"    {canvas}.append(_c)",
+        ]
         body = [
-            f"_regions = [r for r in {_text_expr(ev['field'])}.split({_pyq(ev.get('sep', '|'))})"
-            " if r != u'']",
             # An empty cell, a sentence with no critical region, reads as 0: no trigger.
             "_crit = int(var.get(u'critical_region', 0, _eval=False) or 0)",
             f"_kb = Keyboard(keylist=[{_pyq(ev.get('key', 'space'))}], timeout=None)",
             "_rts = []",
-            "for _i, _region in enumerate(_regions, start=1):",
-            "    c = Canvas(); c.text(_region); _t0 = c.show()",
+            f"for _i, _c in enumerate({canvas}, start=1):",
+            "    _t0 = _c.show()",
         ]
         if trig is not None:
-            body.append(f"    if _i == _crit: send_trigger({trig})")
+            body.append(f"    if _i == _crit: _lexsync_onset({trig}, _t0)")
         body += ["    _kb.flush()",
-                 "    _key, _t = _kb.get_key()",
+                 "    _key, _t = _lexsync_key(_kb, None)",
                  "    _rts.append(u'%.1f' % (_t - _t0))",
                  "var.lexsync_region_rts = u'|'.join(_rts)"]
         return (_inline_block(name, "Self-paced reading region by region",
-                              _osexp_block_guard(body, blocks), run=True), [name])
+                              _osexp_block_guard(body, blocks), run=True,
+                              prepare=_osexp_block_guard(prepare, blocks)), [name])
     if t == "question":
+        prepare = [f"{canvas} = Canvas()", f"{canvas}.text({_text_expr(ev['field'])})"]
         body = [
-            f"c = Canvas(); c.text({_text_expr(ev['field'])}); _t0 = c.show()",
-            f"_kb = Keyboard(keylist=[{', '.join(_pyq(k) for k in ev.get('keys', ['f', 'j']))}], "
-            f"timeout={_whole_ms(ev.get('timeout', 5))})",
+            f"_t0 = {canvas}.show()",
+            f"_kb = Keyboard(keylist=[{', '.join(_pyq(k) for k in ev.get('keys', ['f', 'j']))}])",
             "_kb.flush()",
-            "_key, _t = _kb.get_key()",
+            f"_key, _t = _lexsync_key(_kb, _t0 + {_whole_ms(ev.get('timeout', 5))})",
             "var.question_response = _key",
             "var.question_rt = u'' if _key is None else _t - _t0",
         ]
         if scores:
             body += _osexp_correct("_key")
         return (_inline_block(name, "Comprehension question",
-                              _osexp_block_guard(body, blocks), run=True), [name])
+                              _osexp_block_guard(body, blocks), run=True,
+                              prepare=_osexp_block_guard(prepare, blocks)), [name])
     if t == "feedback":
         # The key comes from whichever response or question collected one last. The
         # answer column (or whichever column the event names) holds the KEY that is
         # correct, so scoring is a string comparison. A timeout is reported separately,
         # because on a timed task it means something different from a wrong key.
         # OpenSesame 4.x stores it as None and 3.3 as the string 'None', so both count
-        # as no response.
+        # as no response. The response is not known until the trial runs, so all three
+        # messages are prepared and the run phase shows one.
+        prepare = [f"{canvas} = {{u'correct': Canvas(), u'incorrect': Canvas(), "
+                   "u'no_response': Canvas()}"]
+        prepare += [f"{canvas}[u'{key}'].text({_pyq(ev.get(key, default))})"
+                    for key, default in (("correct", "Correct"), ("incorrect", "Incorrect"),
+                                         ("no_response", "Too slow"))]
         body = [
             "_want = str(_lexsync_row().get(u'%s', u'')).strip()"
             % clean_column(ev.get("answer", "answer"), "a feedback event's `answer`"),
             "_got = var.get(u'%s', u'', _eval=False)" % feedback_scores,
             "_got = u'' if _got is None else str(_got).strip()",
-            "if _got in (u'', u'None'): _msg = %s" % _pyq(ev.get("no_response", "Too slow")),
-            "elif _got == _want: _msg = %s" % _pyq(ev.get("correct", "Correct")),
-            "else: _msg = %s" % _pyq(ev.get("incorrect", "Incorrect")),
-            "c = Canvas(); c.text(_msg); c.show()",
-            "clock.sleep(%s)" % sleep_arg,
+            "if _got in (u'', u'None'): _msg = u'no_response'",
+            "elif _got == _want: _msg = u'correct'",
+            "else: _msg = u'incorrect'",
+            f"_t0 = {canvas}[_msg].show()",
+            f"_lexsync_wait({end})",
         ]
         return (_inline_block(name, "Practice feedback",
-                              _osexp_block_guard(body, blocks), run=True), [name])
+                              _osexp_block_guard(body, blocks), run=True,
+                              prepare=_osexp_block_guard(prepare, blocks)), [name])
     if t == "response":
         keys = ";".join(ev.get("keys", ["left", "right"]))
         # A keyboard_response draws nothing, so the preceding canvas would stay up for
         # the whole response window. Blank it first, so the stimulus offsets at its own
-        # duration as it does in the PsychoPy and jsPsych targets.
+        # duration as it does in the PsychoPy and jsPsych targets. The keyboard_response
+        # runs no code of lexsync's, so a code still held is held out first.
         block = _inline_block(f"{name}_blank", "Clear the screen for the response window",
-                              ["c = Canvas()", "c.show()"], run=True)
+                              [f"{canvas}_blank.show()", "_lexsync_end_hold()"], run=True,
+                              prepare=[f"{canvas}_blank = Canvas()"])
         block += [
             f"define keyboard_response {name}",
             "\tset timeout " + str(_whole_ms(ev.get("timeout", 2))),
@@ -1277,13 +1318,100 @@ def _osexp_record() -> list:
                          run=True)
 
 
-def _inline_block(name: str, desc: str, body: list, run: bool) -> list:
-    tab = ["\t" + b for b in body]
+def _inline_block(name: str, desc: str, body: list, run: bool,
+                  prepare: list | None = None) -> list:
+    """An inline_script item whose run phase is ``body`` and whose prepare phase is
+    ``prepare``. A sequence runs the prepare phase of every item it holds before it runs
+    any, so ``prepare`` is where a script builds what it shows. Must match
+    .inline_block in scripting.R."""
+    head = [f"define inline_script {name}", f'\tset description "{desc}"']
+    if prepare:
+        head += ["\t___prepare__", *["\t" + p for p in prepare], "\t__end__"]
+    else:
+        head.append('\tset _prepare ""')
+    return [*head, "\t___run__", *["\t" + b for b in body], "\t__end__", ""]
+
+
+def _osexp_timing(schema: dict) -> list:
+    """The setup's lines that measure the display and time the events and their codes.
+
+    The frame period is measured once, as the median interval between 20 flips of a
+    blank canvas. A median outside 1 to 50 ms, a refresh rate outside 20 to 1000 Hz, is
+    a failed measurement, such as a backend without a blocking flip gives, and
+    ``presentation.assumed_refresh_hz`` stands in for it. The period is logged as
+    ``lexsync_frame_ms``. An event ends half a period before its duration is up (see
+    _osexp_event_block).
+
+    The trigger device writes a code and returns. A code is held for
+    ``triggers.trigger_hold_ms``, never less than _MIN_HOLD_MS, from the onset it marks:
+    ``_lexsync_onset`` writes it and notes when it is due to be reset, and
+    ``_lexsync_wait`` and ``_lexsync_key`` reset it on the way when that time comes no
+    later than the time they wait for. A code that outlasts its event is therefore
+    reset in a later event, without delaying any display, unless the next onset's code
+    replaces it first, with a 0 written just before. Before a wait that runs no code of
+    lexsync's, a keyboard_response, ``_lexsync_end_hold`` waits out the rest of the
+    hold. ``_lexsync_marker`` sends a session marker and holds it. The legacy clock the
+    experiment selects counts and sleeps whole milliseconds, so a hold that ends during
+    a wait lasts within a millisecond of what is asked. One that ends while show()
+    waits for the next refresh lasts until that display, up to a frame longer. One that
+    ends after the last wait of a trial lasts until the next trial's first display.
+    Must match .osexp_timing in scripting.R.
+    """
     return [
-        f"define inline_script {name}",
-        f'\tset description "{desc}"',
-        '\tset _prepare ""', "\t___run__", *tab, "\t__end__", "",
+        "_c = Canvas()",
+        "_d = [_c.show() for _i in range(21)]",
+        "_d = sorted(_b - _a for _a, _b in zip(_d, _d[1:]))",
+        "_LEXSYNC_FRAME = (_d[9] + _d[10]) / 2.0",
+        "if not 1.0 < _LEXSYNC_FRAME < 50.0:",
+        "    _LEXSYNC_FRAME = 1000.0 / %.17g" % _refresh_hz(schema),
+        "var.lexsync_frame_ms = _LEXSYNC_FRAME",
+        "_LEXSYNC_HALF_FRAME = _LEXSYNC_FRAME / 2.0",
+        "_LEXSYNC_HOLD = %.17g" % max(_trigger_hold_ms(schema), _MIN_HOLD_MS),
+        "_lexsync_due = [None]",
+        "def _lexsync_until(t):",
+        "    _left = t - clock.time()",
+        "    if _left > 0:",
+        "        clock.sleep(_left)",
+        "def _lexsync_onset(code, t0):",
+        "    if _lexsync_due[0] is not None:",
+        "        send_trigger(0)",
+        "    send_trigger(code)",
+        "    _lexsync_due[0] = t0 + _LEXSYNC_HOLD",
+        "def _lexsync_reset():",
+        "    send_trigger(0)",
+        "    _lexsync_due[0] = None",
+        "def _lexsync_wait(t):",
+        "    if _lexsync_due[0] is not None and _lexsync_due[0] <= t:",
+        "        _lexsync_until(_lexsync_due[0])",
+        "        _lexsync_reset()",
+        "    _lexsync_until(t)",
+        "def _lexsync_key(kb, t):",
+        "    if _lexsync_due[0] is not None and (t is None or _lexsync_due[0] <= t):",
+        "        _left = _lexsync_due[0] - clock.time()",
+        "        if _left > 0:",
+        "            _key, _t = kb.get_key(timeout=_left)",
+        "            if _key is not None:",
+        "                return _key, _t",
+        "        _lexsync_reset()",
+        "    return kb.get_key(timeout=None if t is None else max(0, t - clock.time()))",
+        "def _lexsync_end_hold():",
+        "    if _lexsync_due[0] is not None:",
+        "        _lexsync_until(_lexsync_due[0])",
+        "        _lexsync_reset()",
+        "def _lexsync_marker(code):",
+        "    _lexsync_onset(code, clock.time())",
+        "    _lexsync_end_hold()",
     ]
+
+
+def _osexp_markers() -> list:
+    """The two inline scripts that send the session markers, 254 just before the loop
+    and 255 just after it, each held for the hold, as the PsychoPy script sends them.
+    Must match .osexp_markers in scripting.R."""
+    return (_inline_block("lexsync_session_start", "Mark the start of the trials with 254",
+                          ["_lexsync_marker(254)"], run=True)
+            + _inline_block("lexsync_session_end", "Mark the end of the trials with 255",
+                            ["_lexsync_marker(255)"], run=True))
 
 
 def _osexp_version_check(version: int, n_versions: int) -> list:
@@ -1362,7 +1490,10 @@ def build_osexp(design: dict, conditions_file: str, schema: dict, rendered: list
     the participant would normally run another. It then shows ``instructions`` and
     waits for the space bar. By default they are list 1's instructions, the design's own
     text or lexsync's for its task. Each trial starts by clearing the last trial's
-    responses and ends with a logger item. Must match build_osexp in scripting.R.
+    responses and ends with a logger item. The setup script measures the frame period
+    and defines the helpers that time the events and hold their codes (see
+    _osexp_timing), and the session markers 254 and 255 are sent just before and after
+    the loop. Must match build_osexp in scripting.R.
     """
     if instructions is None:
         instructions = _instructions(design, _response_mapping(design))
@@ -1389,11 +1520,11 @@ def build_osexp(design: dict, conditions_file: str, schema: dict, rendered: list
         "var.trigger_backend = u'parallel'",
         f"var.parallel_port_address = {addr}",
         "var.test_mode = u'no'",
-        "import time",
+        # The device writes a code and returns. The scripts reset it when its hold is up
+        # (see _osexp_timing). It used to sleep 10 ms and reset the code itself, so every
+        # triggered event overran by those 10 ms and the schema's hold was ignored.
         "def _printer(code):",
         "    print(u'[lexsync test trigger] %d' % int(code))",
-        "    time.sleep(0.01)",
-        "    print(u'[lexsync test trigger] 0')",
         "send_trigger = _printer",
         "try:",
         "    if var.trigger_backend == u'serial':",
@@ -1404,8 +1535,6 @@ def build_osexp(design: dict, conditions_file: str, schema: dict, rendered: list
         "            _sp = serial.Serial(_ports[0].device)",
         "            def send_trigger(code):",
         "                _sp.write(int(code).to_bytes(1, 'big'))",
-        "                time.sleep(0.01)",
-        "                _sp.write((0).to_bytes(1, 'big'))",
         "        else:",
         "            var.test_mode = u'yes'",
         "    else:",
@@ -1414,12 +1543,11 @@ def build_osexp(design: dict, conditions_file: str, schema: dict, rendered: list
         "        _addr = int(var.parallel_port_address)",
         "        def send_trigger(code):",
         "            _io.DlPortWritePortUchar(_addr, int(code))",
-        "            time.sleep(0.01)",
-        "            _io.DlPortWritePortUchar(_addr, 0)",
         "except Exception as _exc:",
         "    var.test_mode = u'yes'",
         "    print(u'lexsync: trigger device unavailable; test mode.')",
         "send_trigger(0)",
+        *_osexp_timing(schema),
     ]
 
     # var.correct scores the response, or the question in a design with no response
@@ -1481,9 +1609,12 @@ def build_osexp(design: dict, conditions_file: str, schema: dict, rendered: list
         "\trun lexsync_trigger_setup always",
         *(["\trun lexsync_version_check always"] if checked else []),
         "\trun lexsync_instructions always",
-        "\trun lexsync_loop always", "",
+        "\trun lexsync_session_start always",
+        "\trun lexsync_loop always",
+        "\trun lexsync_session_end always", "",
     ]
-    return "\n".join(header + check + _osexp_instructions(instructions) + event_blocks + trial)
+    return "\n".join(header + check + _osexp_instructions(instructions) + _osexp_markers()
+                     + event_blocks + trial)
 
 
 def export_opensesame(stimuli, design, schema, outdir, base=None) -> str:
@@ -1507,6 +1638,16 @@ def export_opensesame(stimuli, design, schema, outdir, base=None) -> str:
     ``question_response`` and ``question_rt``. A script clears these as each trial
     starts, another copies the trial's labels into ``lexsync_condition``,
     ``lexsync_block`` and ``lexsync_answer``, and a logger item ends the trial.
+
+    Every canvas a trial shows is built before the trial runs, in the prepare phase of
+    its script, and each event is timed from the onset its display returns. An event
+    ends half a frame before its duration is up, so that the next display lands on
+    the refresh that ends it. The frame period is measured at start-up and logged as
+    ``lexsync_frame_ms``, with ``presentation.assumed_refresh_hz`` as the fallback when
+    the measurement fails. Each trigger code is held for ``triggers.trigger_hold_ms``,
+    at least 10 ms, through the events after it when its own is shorter, unless the
+    next onset's code replaces it first. The session markers, 254 and 255, are sent
+    just before the first trial and just after the last, held the same way.
 
     A design with more than one presentation version (see
     :func:`presentation_versions`) gets one experiment per version instead, each with

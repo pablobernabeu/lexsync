@@ -23,7 +23,7 @@ priming_events <- list(
 ms_of <- function(rendered) vapply(rendered, function(e) as.integer(e$ms), integer(1))
 
 test_that("frames convert at 60 Hz to the documented milliseconds", {
-  # The values the committed OpenSesame goldens carry as clock.sleep(...).
+  # The durations the committed OpenSesame goldens time their events by.
   expect_equal(ms_of(render_events(priming_events, list(), 60)),
                c(500L, 50L, 33L, 800L, 250L))
 })

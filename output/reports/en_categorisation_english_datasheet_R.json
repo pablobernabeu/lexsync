@@ -122,7 +122,7 @@
     },
     "design_sha256": "eb78662c116035999f6c50902f27d3466034028929a43b49d9ecafdb7c9ac59d",
     "schema_path": "config/schema.yaml",
-    "schema_sha256": "f6382012c85d9eb8088f1c5542f89a244c1e03c197d05a80632a64d0613d784e"
+    "schema_sha256": "f2c268f23e8a5e374f920f8cb8a0a89392ab207acc0c1809f2f409a2aa844120"
   },
   "artifacts": [
     {
@@ -131,15 +131,15 @@
     },
     {
       "file": "output/experiments/en_categorisation_english_psychopy.py",
-      "sha256": "6c5edc89e64bc200bb6f0344cdc8866a9cd6ff3a5a70e024ff6d50b5ff82af7b"
+      "sha256": "11188e76eecc79968763445444056645068b4d92b16d8fc18581e75fd0c63ecf"
     },
     {
       "file": "output/experiments/en_categorisation_english_list1.osexp",
-      "sha256": "5161678c5260d3da105418daaff5aa179d743a10d3b53557c39a0f04cc365ac0"
+      "sha256": "c43b25641b932fe3f14a0d66776d22870fa3a8d6c03a56c7d8034dd92ceb3a69"
     },
     {
       "file": "output/experiments/en_categorisation_english_list2.osexp",
-      "sha256": "97b403d51cc71941cd019e3900956e14d20c77b31d74d3c40947ab65d846d408"
+      "sha256": "bc8fce7dfd5e15e3977f0cd5734626f1a2d7821ed733ac84bc4138b7a48072d8"
     },
     {
       "file": "output/experiments/en_categorisation_english.html",

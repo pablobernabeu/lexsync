@@ -6,6 +6,7 @@ import pandas as pd
 import pytest
 
 from lexsync.counterbalancing import counterbalance
+from lexsync.design import validate_design
 from lexsync.io_utils import _round_dp
 from lexsync.paradigms import resolve_events
 from lexsync.scripting import (
@@ -119,23 +120,22 @@ def test_psychopy_export_is_frame_locked(schema, tmp_path):
     assert "{{" not in text  # all placeholders substituted
 
 
-def test_inter_trigger_s_goes_through_17g_like_its_neighbours(schema, tmp_path):
-    # str(16.65 / 1000) gives "0.016649999999999998" while R's as.character()
-    # gives "0.01665", so the substitution is pinned through %.17g in both
-    # engines. test-scripting.R asserts these same generated lines.
+def test_inter_trigger_ms_is_accepted_and_no_longer_used(schema, tmp_path):
+    # The self-paced reading critical-region code was held for inter_trigger_ms, 10 ms,
+    # where every other code is held for trigger_hold_ms, and nothing else read the key.
+    # A schema that still sets it is accepted, and the run log says the key is not used.
+    # test-scripting.R asserts the same.
     design = {"name": "t", "language": "english", "timing": {}}
-    fractional = dict(schema, triggers=dict(schema.get("triggers") or {},
-                                            inter_trigger_ms=16.65))
-    text = open(export_psychopy(_stim(), design, fractional, str(tmp_path)),
+    old = dict(schema, triggers=dict(schema.get("triggers") or {}, inter_trigger_ms=16.65))
+    text = open(export_psychopy(_stim(), design, old, str(tmp_path)),
                 encoding="utf-8").read()
-    assert "INTER_TRIGGER_S = 0.016649999999999998\n" in text
-    # The shipped default still renders as "0.01", so no committed experiment
-    # byte moves.
-    default = dict(schema, triggers={k: v for k, v in (schema.get("triggers") or {}).items()
-                                     if k != "inter_trigger_ms"})
-    text = open(export_psychopy(_stim(), design, default, str(tmp_path)),
-                encoding="utf-8").read()
-    assert "INTER_TRIGGER_S = 0.01\n" in text
+    assert "INTER_TRIGGER" not in text
+    assert validate_design(design, old) == [
+        "lexsync: triggers.inter_trigger_ms is no longer used; the self-paced reading "
+        "critical-region code is held for triggers.trigger_hold_ms, as every other code is."]
+    # The shipped schema no longer sets it.
+    assert "inter_trigger_ms" not in (schema.get("triggers") or {})
+    assert validate_design(design, schema) == []
 
 
 def test_opensesame_export_is_consistent(schema, tmp_path):
@@ -371,13 +371,17 @@ def test_one_opensesame_experiment_per_version(schema, tmp_path):
                 "encoding=u'utf-8-sig', newline=u'') as _f:" % k) in lines
         # Each experiment checks the subject number against its own version before
         # the loop, then shows its instructions, and no run line carries a condition.
+        # The session markers come after the instructions, just before and after the
+        # loop.
         assert "define inline_script lexsync_version_check" in lines
         assert f"\t_version = {k}" in lines and "\t_versions = 2" in lines
         runs = [line for line in lines if line.startswith("\trun ")]
-        assert runs[-4:] == ["\trun lexsync_trigger_setup always",
+        assert runs[-6:] == ["\trun lexsync_trigger_setup always",
                              "\trun lexsync_version_check always",
                              "\trun lexsync_instructions always",
-                             "\trun lexsync_loop always"]
+                             "\trun lexsync_session_start always",
+                             "\trun lexsync_loop always",
+                             "\trun lexsync_session_end always"]
         assert not any('"' in line for line in runs)
 
 
@@ -515,12 +519,12 @@ def test_a_literal_trigger_of_254_or_255_is_logged(schema, tmp_path, capsys):
     stim = _sets(2)
     assign_triggers(stim, events=[dict(_FIX, trigger=254), _word("condition")])
     assert capsys.readouterr().out == (
-        "lexsync: event 1 sends code 254, which the PsychoPy experiment also sends when the "
-        "session starts.\n")
+        "lexsync: event 1 sends code 254, which the PsychoPy and OpenSesame experiments also "
+        "send when the session starts.\n")
     assign_triggers(stim, events=[_FIX, _word(255)])
     assert capsys.readouterr().out == (
-        "lexsync: event 2 sends code 255, which the PsychoPy experiment also sends when the "
-        "session ends.\n")
+        "lexsync: event 2 sends code 255, which the PsychoPy and OpenSesame experiments also "
+        "send when the session ends.\n")
     # export_experiments hands the design's events to assign_triggers.
     design = {"name": "t", "language": "english",
               "events": [dict(_FIX, trigger=254), _word("condition")]}

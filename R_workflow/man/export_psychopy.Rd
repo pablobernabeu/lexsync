@@ -41,4 +41,10 @@ trigger codes, the response and its reaction time from the onset of the stimulus
 answers, whether the window closed without one, whether the key was the trial's
 \code{answer}, the self-paced reading times, the question's response and reaction time,
 the measured refresh rate, and each event's realised flips and onset.
+
+Each trigger code goes out on its stimulus's first flip and is held for
+\code{triggers.trigger_hold_ms}, in whole flips at the measured refresh and never under
+10 ms, through the events after it when its own is shorter, unless the next onset's
+code replaces it first. The session markers, 254 before the first trial and 255 after
+the last, are held the same way.
 }

@@ -230,7 +230,7 @@
     },
     "design_sha256": "d30dc7616299d6fc538066bf435a44c2739dd24d0136d4843b214f0630a198c1",
     "schema_path": "config/schema.yaml",
-    "schema_sha256": "f6382012c85d9eb8088f1c5542f89a244c1e03c197d05a80632a64d0613d784e"
+    "schema_sha256": "f2c268f23e8a5e374f920f8cb8a0a89392ab207acc0c1809f2f409a2aa844120"
   },
   "artifacts": [
     {
@@ -247,11 +247,11 @@
     },
     {
       "file": "output/experiments/es_gender_repro_spanish_psychopy.py",
-      "sha256": "6c724a20b4a143d6550d26335e45cbadee8a304c8cb2d387608173756a9a0edb"
+      "sha256": "cf76115ca891107ec1524cd0b5ff54e78c3a65bd37d29148f88848885ca62884"
     },
     {
       "file": "output/experiments/es_gender_repro_spanish.osexp",
-      "sha256": "e2f4e005bde73832b5422290f2930229fd3a1b154652183b9e79a47fc55b371b"
+      "sha256": "6521c89b7ae97d432494471fc38def1367af7b210ece6a786c776865e8ec40d6"
     },
     {
       "file": "output/experiments/es_gender_repro_spanish.html",

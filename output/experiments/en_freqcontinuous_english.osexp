@@ -41,11 +41,8 @@ define inline_script lexsync_trigger_setup
 	var.trigger_backend = u'parallel'
 	var.parallel_port_address = 0x0378
 	var.test_mode = u'no'
-	import time
 	def _printer(code):
 	    print(u'[lexsync test trigger] %d' % int(code))
-	    time.sleep(0.01)
-	    print(u'[lexsync test trigger] 0')
 	send_trigger = _printer
 	try:
 	    if var.trigger_backend == u'serial':
@@ -56,8 +53,6 @@ define inline_script lexsync_trigger_setup
 	            _sp = serial.Serial(_ports[0].device)
 	            def send_trigger(code):
 	                _sp.write(int(code).to_bytes(1, 'big'))
-	                time.sleep(0.01)
-	                _sp.write((0).to_bytes(1, 'big'))
 	        else:
 	            var.test_mode = u'yes'
 	    else:
@@ -66,12 +61,53 @@ define inline_script lexsync_trigger_setup
 	        _addr = int(var.parallel_port_address)
 	        def send_trigger(code):
 	            _io.DlPortWritePortUchar(_addr, int(code))
-	            time.sleep(0.01)
-	            _io.DlPortWritePortUchar(_addr, 0)
 	except Exception as _exc:
 	    var.test_mode = u'yes'
 	    print(u'lexsync: trigger device unavailable; test mode.')
 	send_trigger(0)
+	_c = Canvas()
+	_d = [_c.show() for _i in range(21)]
+	_d = sorted(_b - _a for _a, _b in zip(_d, _d[1:]))
+	_LEXSYNC_FRAME = (_d[9] + _d[10]) / 2.0
+	if not 1.0 < _LEXSYNC_FRAME < 50.0:
+	    _LEXSYNC_FRAME = 1000.0 / 60
+	var.lexsync_frame_ms = _LEXSYNC_FRAME
+	_LEXSYNC_HALF_FRAME = _LEXSYNC_FRAME / 2.0
+	_LEXSYNC_HOLD = 50
+	_lexsync_due = [None]
+	def _lexsync_until(t):
+	    _left = t - clock.time()
+	    if _left > 0:
+	        clock.sleep(_left)
+	def _lexsync_onset(code, t0):
+	    if _lexsync_due[0] is not None:
+	        send_trigger(0)
+	    send_trigger(code)
+	    _lexsync_due[0] = t0 + _LEXSYNC_HOLD
+	def _lexsync_reset():
+	    send_trigger(0)
+	    _lexsync_due[0] = None
+	def _lexsync_wait(t):
+	    if _lexsync_due[0] is not None and _lexsync_due[0] <= t:
+	        _lexsync_until(_lexsync_due[0])
+	        _lexsync_reset()
+	    _lexsync_until(t)
+	def _lexsync_key(kb, t):
+	    if _lexsync_due[0] is not None and (t is None or _lexsync_due[0] <= t):
+	        _left = _lexsync_due[0] - clock.time()
+	        if _left > 0:
+	            _key, _t = kb.get_key(timeout=_left)
+	            if _key is not None:
+	                return _key, _t
+	        _lexsync_reset()
+	    return kb.get_key(timeout=None if t is None else max(0, t - clock.time()))
+	def _lexsync_end_hold():
+	    if _lexsync_due[0] is not None:
+	        _lexsync_until(_lexsync_due[0])
+	        _lexsync_reset()
+	def _lexsync_marker(code):
+	    _lexsync_onset(code, clock.time())
+	    _lexsync_end_hold()
 	__end__
 
 define inline_script lexsync_instructions
@@ -84,6 +120,20 @@ define inline_script lexsync_instructions
 	_key, _t = Keyboard(keylist=[u'space', u'escape'], timeout=None).get_key()
 	if _key == u'escape':
 	    raise RuntimeError(u'lexsync: stopped at the instructions.')
+	__end__
+
+define inline_script lexsync_session_start
+	set description "Mark the start of the trials with 254"
+	set _prepare ""
+	___run__
+	_lexsync_marker(254)
+	__end__
+
+define inline_script lexsync_session_end
+	set description "Mark the end of the trials with 255"
+	set _prepare ""
+	___run__
+	_lexsync_marker(255)
 	__end__
 
 define inline_script lexsync_trial_start
@@ -101,30 +151,33 @@ define inline_script lexsync_trial_start
 
 define inline_script lexsync_e0
 	set description "Show stimulus and send onset-aligned trigger"
-	set _prepare ""
+	___prepare__
+	_lexsync_c_e0 = Canvas()
+	_lexsync_c_e0.text(u'+')
+	__end__
 	___run__
-	c = Canvas()
-	c.text(u'+')
-	var.onset_time = c.show()
-	clock.sleep(500)
+	_t0 = _lexsync_c_e0.show()
+	var.onset_time = _t0
+	_lexsync_wait(_t0 + 500 - _LEXSYNC_HALF_FRAME)
 	__end__
 
 define inline_script lexsync_e1
 	set description "Show the stimulus and collect the response from its onset"
-	set _prepare ""
+	___prepare__
+	_lexsync_c_e1 = Canvas()
+	_lexsync_c_e1.text(_lexsync_row()[u'word'])
+	_lexsync_c_e1_blank = Canvas()
+	__end__
 	___run__
-	c = Canvas()
-	c.text(_lexsync_row()[u'word'])
-	_t0 = c.show()
+	_t0 = _lexsync_c_e1.show()
 	var.onset_time = _t0
-	send_trigger(int(var.get(u'condition_trigger', _eval=False)))
+	_lexsync_onset(int(var.get(u'condition_trigger', _eval=False)), _t0)
 	_kb = Keyboard(keylist=[u'left', u'right'])
 	_kb.flush()
-	_key, _t = _kb.get_key(timeout=800)
+	_key, _t = _lexsync_key(_kb, _t0 + 800 - _LEXSYNC_HALF_FRAME)
 	if _key is None:
-	    c = Canvas()
-	    c.show()
-	    _key, _t = _kb.get_key(timeout=2000)
+	    _lexsync_c_e1_blank.show()
+	    _key, _t = _lexsync_key(_kb, _t0 + 800 + 2000)
 	var.response = _key
 	var.response_time = u'' if _key is None else _t - _t0
 	var.timed_out = 1 if _key is None else 0
@@ -135,11 +188,13 @@ define inline_script lexsync_e1
 
 define inline_script lexsync_e2
 	set description "Show stimulus and send onset-aligned trigger"
-	set _prepare ""
+	___prepare__
+	_lexsync_c_e2 = Canvas()
+	__end__
 	___run__
-	c = Canvas()
-	var.onset_time = c.show()
-	clock.sleep(250)
+	_t0 = _lexsync_c_e2.show()
+	var.onset_time = _t0
+	_lexsync_wait(_t0 + 250 - _LEXSYNC_HALF_FRAME)
 	__end__
 
 define inline_script lexsync_record
@@ -179,5 +234,7 @@ define sequence lexsync_experiment
 	set description "Top-level experiment sequence"
 	run lexsync_trigger_setup always
 	run lexsync_instructions always
+	run lexsync_session_start always
 	run lexsync_loop always
+	run lexsync_session_end always
 

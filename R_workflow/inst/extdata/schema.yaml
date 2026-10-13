@@ -236,8 +236,9 @@ equivalence:
   alpha: 0.05
 
 # ---- Hardware triggers (defaults; overridable per design) -----------------
-# Triggers are reset to 0 after reset_after_frames; the reset value is fixed in
-# the emitted PsychoPy and OpenSesame code (scripting.py / scripting.R).
+# Each code is written at its stimulus's onset and reset to 0 once it has been held
+# for trigger_hold_ms. The PsychoPy and OpenSesame experiments also send 254 just
+# before the first trial and 255 just after the last, held the same way.
 triggers:
   parallel_address: '0x0378'   # typical LPT1 base address
   # How long the onset code is held before it is reset to 0, in milliseconds.
@@ -249,12 +250,16 @@ triggers:
   # at 360 Hz, below the 10 ms minimum most recorders need to register a pulse.
   #
   # 50 ms preserves exactly what the package has always done at 60 Hz, now stated
-  # honestly and in a unit that does not move. The generated script converts it to
-  # whole flips against the refresh it measures, never fewer than one flip and
-  # never less than 10 ms. `reset_after_frames` is still accepted and converted at
-  # presentation.assumed_refresh_hz.
+  # honestly and in a unit that does not move. The generated PsychoPy script converts
+  # it to the nearest whole number of flips at the refresh it measures, and never to
+  # fewer than the flips that cover 10 ms. The OpenSesame experiment holds it in
+  # milliseconds, at least 10, and resets it at the first wait that reaches the end
+  # of the hold. A code is held for the whole hold even when its event is shorter,
+  # through the events after it, unless the next onset's code replaces it first.
+  # `reset_after_frames` is still accepted and converted at
+  # presentation.assumed_refresh_hz. `inter_trigger_ms`, which held the self-paced
+  # reading critical-region code, is accepted and no longer used.
   trigger_hold_ms: 50
-  inter_trigger_ms: 10         # spacing of trailing markers (matches the original)
   # A design's own trigger codes are whole numbers from 1 to 255, checked when the
   # experiment is generated. Item codes run from 40 in code-point order of the set
   # labels, so with sets 1 to 20, set 10 is 41 and set 2 is 51. Decode them through
@@ -282,7 +287,10 @@ presentation:
   # measures the display's actual refresh at start-up and converts milliseconds
   # back into whole flips, so a design presents its intended duration on a 60,
   # 120 or 144 Hz monitor alike while the trigger stays bound to the flip. The
-  # script falls back to this value only if that measurement fails.
+  # OpenSesame experiment measures the frame period at start-up as well, and ends
+  # each event half a frame before its duration is up, so that the next display
+  # lands on the refresh that ends it. Both fall back to this value only if the
+  # measurement fails.
   assumed_refresh_hz: 60
   #
   # An event's duration may also vary from trial to trial, declared per event in

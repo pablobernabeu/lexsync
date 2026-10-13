@@ -13,7 +13,7 @@ validate_design(design, schema)
 }
 \value{
 A character vector of notes on unknown keys, in the order the keys were
-written; empty when there are none.
+written, then the note on \code{triggers.inter_trigger_ms}; empty when there are none.
 }
 \description{
 \code{\link[=run_pipeline]{run_pipeline()}} calls this right after reading the two files, so a design that
@@ -37,7 +37,9 @@ names.
 \details{
 Any other key lexsync does not read is not refused yet. It is returned as a note,
 which \code{\link[=run_pipeline]{run_pipeline()}} writes into the run log, and a later release will refuse
-it. \code{description} and keys beginning \code{x_} are annotations and are never noted.
+it. \code{description} and keys beginning \code{x_} are annotations and are never noted. A
+schema that still sets \code{triggers.inter_trigger_ms}, which no longer does anything,
+gets a note too.
 
 The experiments' instructions and response mapping are checked here too. It refuses
 \code{instructions} that are not text, are empty or hold a control character other than a

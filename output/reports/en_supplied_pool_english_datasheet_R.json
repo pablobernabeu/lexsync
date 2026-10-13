@@ -233,7 +233,7 @@
     },
     "design_sha256": "96e3f168d678f74002536a44ebe9d2577155affe83c7fd6751bf73e3ff057af7",
     "schema_path": "config/schema.yaml",
-    "schema_sha256": "f6382012c85d9eb8088f1c5542f89a244c1e03c197d05a80632a64d0613d784e"
+    "schema_sha256": "f2c268f23e8a5e374f920f8cb8a0a89392ab207acc0c1809f2f409a2aa844120"
   },
   "artifacts": [
     {
@@ -250,11 +250,11 @@
     },
     {
       "file": "output/experiments/en_supplied_pool_english_psychopy.py",
-      "sha256": "6fb1448a6b9bd9717d876cb78ac25e4d5eb5b5cf74efb945910e823f58c4ef77"
+      "sha256": "2c76988dd2681cacbf008b1140e1a9d02f7ed847f8437e308e4ab00b6e084d73"
     },
     {
       "file": "output/experiments/en_supplied_pool_english.osexp",
-      "sha256": "1783b1e3ea0aa54049149cedc91bbb97d6163152e2b101d7b8d14fc0e62abefc"
+      "sha256": "5dc0744ff5503abd100d020ac5d73cd62389a56a1e43db3654a9e32376c1184f"
     },
     {
       "file": "output/experiments/en_supplied_pool_english.html",

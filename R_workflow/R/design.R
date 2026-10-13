@@ -400,7 +400,9 @@ design_stem <- function(design) {
 #'
 #' Any other key lexsync does not read is not refused yet. It is returned as a note,
 #' which [run_pipeline()] writes into the run log, and a later release will refuse
-#' it. `description` and keys beginning `x_` are annotations and are never noted.
+#' it. `description` and keys beginning `x_` are annotations and are never noted. A
+#' schema that still sets `triggers.inter_trigger_ms`, which no longer does anything,
+#' gets a note too.
 #'
 #' The experiments' instructions and response mapping are checked here too. It refuses
 #' `instructions` that are not text, are empty or hold a control character other than a
@@ -412,7 +414,7 @@ design_stem <- function(design) {
 #' @param design A parsed design configuration.
 #' @param schema The parsed global schema.
 #' @return A character vector of notes on unknown keys, in the order the keys were
-#'   written; empty when there are none.
+#'   written, then the note on `triggers.inter_trigger_ms`; empty when there are none.
 #' @examples
 #' validate_design(list(name = "demo", language = "english", x_note = "pilot"), list())
 #' @export
@@ -423,6 +425,15 @@ validate_design <- function(design, schema) {
   }
   notes <- c(.check_keys(design, .DESIGN_KEYS, "design"),
              .check_keys(schema, .SCHEMA_KEYS, "schema"))
+  # The key held the self-paced reading critical-region code, which is now held for
+  # trigger_hold_ms like every other code. A schema written for an earlier release still
+  # sets it, so it is accepted and noted. Must match validate_design in design.py.
+  triggers <- schema[["triggers"]]
+  if (.is_mapping(triggers) && !is.null(triggers[["inter_trigger_ms"]])) {
+    notes <- c(notes, paste("lexsync: triggers.inter_trigger_ms is no longer used; the",
+                            "self-paced reading critical-region code is held for",
+                            "triggers.trigger_hold_ms, as every other code is."))
+  }
   .name_and_language(design)
   .resolve_n(design, NULL)
   counterbalance <- design[["counterbalance"]]

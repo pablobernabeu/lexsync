@@ -466,7 +466,8 @@ def validate_design(design: dict, schema: dict) -> list:
     Any other key lexsync does not read is not refused yet. It is returned as a note,
     which ``run_pipeline`` writes into the run log, and a later release will refuse
     it. ``description`` and keys beginning ``x_`` are annotations and are never
-    noted.
+    noted. A schema that still sets ``triggers.inter_trigger_ms``, which no longer
+    does anything, gets a note too.
 
     The experiments' instructions and response mapping are checked here too. It
     refuses ``instructions`` that are not text, are empty or hold a control character
@@ -485,8 +486,8 @@ def validate_design(design: dict, schema: dict) -> list:
     Returns
     -------
     list of str
-        The notes on unknown keys, in the order the keys were written; empty when
-        there are none.
+        The notes on unknown keys, in the order the keys were written, then the note
+        on ``triggers.inter_trigger_ms``; empty when there are none.
     """
     # Imported here: scripting names its files through design_stem, so a module-level
     # import would be circular.
@@ -497,6 +498,14 @@ def validate_design(design: dict, schema: dict) -> list:
         raise ValueError("lexsync: a design must be a mapping of keys to values.")
     notes = (_check_keys(design, DESIGN_KEYS, "design")
              + _check_keys(schema, SCHEMA_KEYS, "schema"))
+    # The key held the self-paced reading critical-region code, which is now held for
+    # trigger_hold_ms like every other code. A schema written for an earlier release
+    # still sets it, so it is accepted and noted.
+    triggers = schema.get("triggers")
+    if isinstance(triggers, dict) and triggers.get("inter_trigger_ms") is not None:
+        notes.append("lexsync: triggers.inter_trigger_ms is no longer used; the "
+                     "self-paced reading critical-region code is held for "
+                     "triggers.trigger_hold_ms, as every other code is.")
     _name_and_language(design)
     _resolve_n(design, None)
     counterbalance = design.get("counterbalance")

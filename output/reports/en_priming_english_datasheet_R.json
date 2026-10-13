@@ -106,7 +106,7 @@
     },
     "design_sha256": "5ca7a41429f438521850e8d58319d4f7daddc0b0c754c20611c0e1f58ee90158",
     "schema_path": "config/schema.yaml",
-    "schema_sha256": "f6382012c85d9eb8088f1c5542f89a244c1e03c197d05a80632a64d0613d784e"
+    "schema_sha256": "f2c268f23e8a5e374f920f8cb8a0a89392ab207acc0c1809f2f409a2aa844120"
   },
   "artifacts": [
     {
@@ -115,15 +115,15 @@
     },
     {
       "file": "output/experiments/en_priming_english_psychopy.py",
-      "sha256": "103b0f0b0c693a9a0dc13631647fac667e9adb54a183192482b37ea324675ecc"
+      "sha256": "5a1e59ab6aea21d5ffa4b090e80ee274e9d9aa7e1f74c85f9693377dab467926"
     },
     {
       "file": "output/experiments/en_priming_english_list1.osexp",
-      "sha256": "4c4a6f8034721ec8efba239e825f7c4e99db761f6239151ea7fe439f83544646"
+      "sha256": "862ab92096bf94fe2ef17a9002495f84096719ba777be68b6691ff7cd10a61be"
     },
     {
       "file": "output/experiments/en_priming_english_list2.osexp",
-      "sha256": "82bb22c3b5c9e6a2cfe977f6e2f33ea88c6c271fd2165e94a04a09becb30db4e"
+      "sha256": "43b5044fa157ffbcc2e316006dc8a1ccde7e57b97ea34ac39dfe902b148558c8"
     },
     {
       "file": "output/experiments/en_priming_english.html",

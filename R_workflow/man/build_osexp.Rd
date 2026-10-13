@@ -41,7 +41,9 @@ lexsync's for its task.}
 }
 \value{
 The experiment's text, one string. Each trial starts by clearing the last
-trial's responses and ends with a logger item.
+trial's responses and ends with a logger item. The setup script measures the frame
+period and defines the helpers that time the events and hold their codes, and the
+session markers 254 and 255 are sent just before and after the loop.
 }
 \description{
 The loop table and its companion text table are both looked up through OpenSesame's

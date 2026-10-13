@@ -45,9 +45,9 @@ item codes it had before. Each trigger in \code{events} is checked as
 \code{\link[=render_events]{render_events()}} checks it.
 
 A notice is given for a code of the design's own that the stream already uses for
-something else: 254 or 255, which the PsychoPy experiment sends when the session
-starts and ends, a condition code the design sends, or a code within the range of
-the item codes it sends.
+something else: 254 or 255, which the PsychoPy and OpenSesame experiments send when
+the session starts and ends, a condition code the design sends, or a code within the
+range of the item codes it sends.
 
 The condition codes follow \code{conditions} when it is given: its first entry is
 101, its second 102, and so on, whether or not every entry occurs in

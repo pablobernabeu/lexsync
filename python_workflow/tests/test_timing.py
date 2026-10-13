@@ -27,7 +27,7 @@ PRIMING_EVENTS = [
 
 
 def test_frames_convert_at_sixty_hz_to_the_documented_milliseconds():
-    # The values the committed OpenSesame goldens carry as clock.sleep(...).
+    # The durations the committed OpenSesame goldens time their events by.
     assert [e["ms"] for e in render_events(PRIMING_EVENTS, {}, 60)] == [500, 50, 33, 800, 250]
 
 
