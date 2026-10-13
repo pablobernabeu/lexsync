@@ -1,0 +1,5 @@
+lexsync_row,condition,prime,target
+1,unrelated,table,cat
+2,unrelated,planet,bread
+3,related,queen,king
+4,related,nurse,doctor

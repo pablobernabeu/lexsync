@@ -11,6 +11,8 @@ comes first (``frames * 1000 / hz``), which is a different floating-point
 computation from ``frames * (1000 / hz)`` and agrees with it only by accident of
 the divisor being 60.
 """
+import re
+
 import pytest
 
 from lexsync.scripting import _event_ms, _frames_to_ms, _refresh_hz, render_events
@@ -112,3 +114,57 @@ def test_reset_after_frames_converts_with_the_off_by_one_it_actually_had():
     # An explicit hold wins over the legacy key.
     assert _trigger_hold_ms(
         {"triggers": {"trigger_hold_ms": 20, "reset_after_frames": 2}}) == 20.0
+
+
+# ---- A fixed duration is a finite number that is not negative --------------------
+#
+# duration_ms: -50 was written into the OpenSesame experiment as clock.sleep(-50), the R
+# engine wrote clock.sleep(NA) for a NaN, and both truncated 33.7 ms to 33.
+# test-timing.R pins the same rules and messages.
+
+_DURATION_RULE = "; a duration must be a finite number, not negative."
+
+
+@pytest.mark.parametrize("event,message", [
+    ({"type": "fixation", "content": "+", "duration_ms": -50},
+     "lexsync: event 1 has duration_ms '-50'"),
+    ({"type": "fixation", "content": "+", "duration_ms": float("nan")},
+     "lexsync: event 1 has duration_ms 'NaN'"),
+    ({"type": "blank", "duration_frames": -2}, "lexsync: event 1 has duration_frames '-2'"),
+    ({"type": "blank", "duration_frames": float("inf")},
+     "lexsync: event 1 has duration_frames 'Inf'"),
+    ({"type": "fixation", "content": "+", "duration_ms": "500ms"},
+     "lexsync: event 1 has duration_ms '500ms'"),
+    ({"type": "fixation", "content": "+", "duration_ms": True},
+     "lexsync: event 1 has duration_ms 'true'"),
+])
+def test_a_negative_or_non_finite_fixed_duration_is_refused(event, message):
+    with pytest.raises(ValueError, match=re.escape(message + _DURATION_RULE)):
+        render_events([event], {}, 60)
+
+
+def test_a_timing_block_duration_is_checked_like_an_events_own():
+    with pytest.raises(ValueError, match=re.escape(
+            "lexsync: timing.word_ms is '-50'" + _DURATION_RULE)):
+        render_events(PRIMING_EVENTS, {"word_ms": -50}, 60)
+    with pytest.raises(ValueError, match=re.escape(
+            "lexsync: timing.isi_frames is 'NaN'" + _DURATION_RULE)):
+        render_events(PRIMING_EVENTS, {"isi_frames": float("nan")}, 60)
+    # A feedback event is numbered where it stands in the design.
+    feedback = [{"type": "response"}, {"type": "feedback", "duration_ms": -1}]
+    with pytest.raises(ValueError, match=re.escape(
+            "lexsync: event 2 has duration_ms '-1'" + _DURATION_RULE)):
+        render_events(feedback, {}, 60)
+
+
+def test_a_fractional_fixed_duration_is_rounded_not_truncated():
+    events = [{"type": "fixation", "content": "+", "duration_ms": 33.7},
+              {"type": "text", "content": "{w}", "duration_ms": 82.5, "trigger": "condition"},
+              {"type": "blank", "duration_ms": "250"}]
+    # The shared rounder takes 82.5 away from zero. A duration written as a plain
+    # number in quotes is read as that number, as before.
+    assert [e["ms"] for e in render_events(events, {}, 60)] == [34, 83, 250]
+    assert render_events(events, {"word_ms": 400.5}, 60)[1]["ms"] == 401
+    # A null duration_frames is absent, as it is in the R engine, so the default of one
+    # frame applies.
+    assert render_events([{"type": "blank", "duration_frames": None}], {}, 60)[0]["ms"] == 17

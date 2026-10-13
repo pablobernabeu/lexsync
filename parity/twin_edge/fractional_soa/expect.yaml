@@ -1,0 +1,4 @@
+# Both engines round the four prime durations to 17, 33, 83 and 67 ms and write the
+# same stimuli and experiments, the jsPsych page included.
+outcome: artefacts
+compare: [stimuli, experiments]

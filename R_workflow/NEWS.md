@@ -621,6 +621,55 @@
   lexica as before and, like the Python package, counts their length, N and OLD20
   in code points.
 
+* Durations that `resolve_trial_timing()` reads from an item column must be
+  present, finite and not negative. Fractional milliseconds are rounded once and
+  recorded. A blank or negative value used to produce experiments that stopped at
+  the blank in OpenSesame and PsychoPy or showed the stimulus for no time in
+  jsPsych. A fractional one made the R and Python jsPsych pages differ, because
+  jsonlite kept four decimal places of it. A blank, negative or non-numeric value
+  is now refused, naming the column and the trial's set and condition. A column of
+  fractional milliseconds is rounded with the rounder both engines share and
+  written back to the stimuli and the loop tables, so 82.5 ms is presented as 83 in
+  every target. The returned table records how many values were rounded in its
+  `"duration_rounding"` attribute, and `run_pipeline()` writes the count into the
+  run log. Fixed durations are checked the same way. A negative `duration_ms`,
+  `duration_frames` or `timing` value reached OpenSesame as `clock.sleep(-50)`, and
+  a NaN as `clock.sleep(NA)`, and both are now refused, naming the event or the
+  key. A fractional `duration_ms` is rounded where it was truncated, so 33.7 ms is
+  presented as 34, and the lower bound of a jitter must not be negative. The
+  jsPsych page writes each trial's numbers to 15 significant digits, as the Python
+  engine does. No shipped design reads a fractional or blank duration, so no
+  stimulus or experiment changes. The twin-edge case `fractional_soa` pins both
+  engines to one outcome.
+
+* Trigger codes are checked when the experiment is generated. A literal must be a
+  whole number from 1 to 255, written as a number or as a string of digits, and
+  anything else is refused with a message naming the event. A misspelt token such
+  as `conditon` was written into the OpenSesame experiment as `send_trigger(NA)`,
+  while the Python engine stopped. Codes such as 300, 0 and -5 reached the parallel
+  port, which keeps only the low byte, and 20.5 was taken as 20. A literal of 254
+  or 255, which the PsychoPy experiment sends when the session starts and ends, is
+  reported, and so is one equal to a condition code the design sends or one within
+  the range of the item codes it sends. A design that sends item codes together
+  with condition codes, or with a code of its own from 40 to 239, gets item codes
+  that never coincide with those codes. Sets 65 and 66 of a 70-set design took 101
+  and 102, the condition codes. Such a design is refused before any file is written
+  when it has more item sets than free codes, unless the schema sets the new
+  `triggers.allow_code_overlap: true`, which lets the item codes wrap and repeat
+  within the free codes. `assign_triggers()` gains `events` and `schema` arguments
+  for this, and `export_experiments()` passes them. Any other design keeps its item
+  codes, so no shipped loop table changes. The experiments vignette now says that
+  item codes follow the code-point order of the set labels, so that with sets 1 to
+  20 set 10 is 41 and set 2 is 51, and that they are decoded through the loop
+  table. It said that condition codes stay unique regardless. The codes did, but
+  the marker stream did not once both kinds were sent. The OpenSesame
+  snippet `inline_send_triggers.py` sends only the condition code at the word's
+  onset. It sent the item code first, whose 10 ms pulse delayed the condition code.
+  The schema's comments describe the new key, so the 42 committed datasheets, which
+  record the schema's SHA-256, and their run logs are regenerated. No stimulus,
+  report table or experiment changes. The twin-edge case `trigger_typo` pins the
+  refusal in both engines.
+
 # lexsync 0.1.1
 
 * `assign_triggers()` gains a `conditions` argument that fixes the order of the

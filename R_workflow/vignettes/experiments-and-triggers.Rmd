@@ -186,6 +186,13 @@ token `"condition"` on the target resolves per trial to that trial's condition
 code, which is the marker an ERP analysis will epoch on. The token `"item"`
 resolves to a per-item code. Events with no trigger send nothing.
 
+A literal code must be a whole number from 1 to 255, the values one byte on the
+port can carry. Anything else, a misspelt token such as `"conditon"` included, is
+refused when the experiment is generated, with a message naming the event. A literal
+of 254 or 255, which the PsychoPy experiment sends when the session starts and ends,
+is reported then. One equal to a condition code the design sends is reported too, as
+is one within the range of the item codes it sends.
+
 The tokens are resolved by `assign_triggers()`, which computes the codes and adds
 them as columns.
 
@@ -209,10 +216,26 @@ unique(assign_triggers(stim, conditions = c("low", "high"))[
   , c("condition", "condition_trigger")])
 ```
 
-Item codes run from 40 upwards and wrap at 200 values, so a design with more than
-200 items reuses item codes. That ceiling comes from the 8-bit parallel port: a
-code is one byte, and the block markers 254 and 255 are reserved. Condition codes
-stay unique regardless, so the analysis that matters is unaffected.
+Item codes run from 40 upwards in code-point order of the set labels, and once a
+design has ten sets or more that order is not the numeric one. With sets 1 to 20,
+set 10 takes 41 and set 2 takes 51. Decode an item code through the loop table,
+which pairs each trial's set with its code, and never from the label.
+
+```{r item-codes}
+twenty <- assign_triggers(data.frame(condition = "a", set = 1:20))
+stats::setNames(twenty$item_trigger, twenty$set)
+```
+
+Item codes stay below 240, since a code is one byte and 254 and 255 mark the
+session. A design may send item codes together with condition codes, or with a code
+of its own from 40 to 239. Its item codes are then drawn from the codes those leave
+free, skipping 101 upwards and the design's own codes. Otherwise, sets 65 and 66 of
+a 70-set design would take 101 and 102, and an analysis that cuts its epochs at the
+condition codes would also catch two items. Such a design is refused when it has
+more item sets than free codes, unless the schema sets
+`triggers.allow_code_overlap: true`, which lets the item codes wrap and repeat
+within the free codes. Any other design keeps the codes it always had. They wrap at
+200 values, so a design with more than 200 item sets reuses item codes.
 
 
 ### Timing that varies from trial to trial
@@ -246,6 +269,16 @@ table, because timing that varies is a variable the analysis needs, not
 presentation detail. `config/design_en_priming_jitter.yaml` is a worked
 example carrying both. Its prime lasts `prime_ms` and a 33 ms mask follows, so its
 stimulus-onset asynchrony is `prime_ms` plus 33 ms.
+
+Every value read from a column must be a finite number of milliseconds, not
+negative. A blank or negative cell is refused, naming the column and the trial's set
+and condition. Left alone, it would give an experiment that stops at the blank or
+shows the stimulus for no time at all. Fractional milliseconds, such as the
+33.333333 that an item table built on 60 Hz frames carries, are rounded once with
+the rounder both engines share and written back. The stimuli, the loop tables and
+all three targets then present the same whole milliseconds, and the run log counts
+the values rounded. A fixed `duration_ms` or `duration_frames` is checked the same
+way, and the lower bound of a jitter must not be negative.
 
 ## The paradigm registry
 
@@ -665,7 +698,9 @@ measures, so the pulse stays about 50 ms whether the display runs at 60 Hz or at
 `inter_trigger_ms`
 spaces any trailing markers. `parallel_address` is the LPT1 base address on a
 typical laboratory machine, and it is a schema value because it belongs to the
-machine, which will run many designs.
+machine, which will run many designs. `allow_code_overlap` is false, so a design
+whose item codes cannot all be kept apart from its other codes is refused, as
+described under triggers above.
 
 OpenSesame reaches the same place by a different route, and the difference is
 worth being explicit about. It has no `callOnFlip`, so the generated inline script

@@ -1,0 +1,9 @@
+item,condition,prime,target,prime_ms
+1,related,nurse,doctor,16.666667
+1,unrelated,window,doctor,16.666667
+2,related,dog,cat,33.333333
+2,unrelated,table,cat,33.333333
+3,related,queen,king,82.5
+3,unrelated,pencil,king,82.5
+4,related,butter,bread,66.666667
+4,unrelated,planet,bread,66.666667

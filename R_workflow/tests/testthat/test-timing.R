@@ -105,3 +105,54 @@ test_that("reset_after_frames converts with the off-by-one it actually had", {
   expect_equal(lexsync:::.trigger_hold_ms(
     list(triggers = list(trigger_hold_ms = 20, reset_after_frames = 2L))), 20)
 })
+
+# ---- A fixed duration is a finite number that is not negative --------------------
+#
+# duration_ms: -50 was written into the OpenSesame experiment as clock.sleep(-50), this
+# engine wrote clock.sleep(NA) for a NaN, and both truncated 33.7 ms to 33.
+# test_timing.py pins the same rules and messages.
+
+duration_rule <- "; a duration must be a finite number, not negative."
+
+test_that("a negative or non-finite fixed duration is refused", {
+  cases <- list(
+    list(list(type = "fixation", content = "+", duration_ms = -50),
+         "lexsync: event 1 has duration_ms '-50'"),
+    list(list(type = "fixation", content = "+", duration_ms = NaN),
+         "lexsync: event 1 has duration_ms 'NaN'"),
+    list(list(type = "blank", duration_frames = -2L), "lexsync: event 1 has duration_frames '-2'"),
+    list(list(type = "blank", duration_frames = Inf),
+         "lexsync: event 1 has duration_frames 'Inf'"),
+    list(list(type = "fixation", content = "+", duration_ms = "500ms"),
+         "lexsync: event 1 has duration_ms '500ms'"),
+    list(list(type = "fixation", content = "+", duration_ms = TRUE),
+         "lexsync: event 1 has duration_ms 'true'"))
+  for (case in cases) {
+    expect_error(render_events(list(case[[1]]), list(), 60), paste0(case[[2]], duration_rule),
+                 fixed = TRUE)
+  }
+})
+
+test_that("a timing block duration is checked like an event's own", {
+  expect_error(render_events(priming_events, list(word_ms = -50), 60),
+               paste0("lexsync: timing.word_ms is '-50'", duration_rule), fixed = TRUE)
+  expect_error(render_events(priming_events, list(isi_frames = NaN), 60),
+               paste0("lexsync: timing.isi_frames is 'NaN'", duration_rule), fixed = TRUE)
+  # A feedback event is numbered where it stands in the design.
+  feedback <- list(list(type = "response"), list(type = "feedback", duration_ms = -1))
+  expect_error(render_events(feedback, list(), 60),
+               paste0("lexsync: event 2 has duration_ms '-1'", duration_rule), fixed = TRUE)
+})
+
+test_that("a fractional fixed duration is rounded, not truncated", {
+  ev <- list(list(type = "fixation", content = "+", duration_ms = 33.7),
+             list(type = "text", content = "{w}", duration_ms = 82.5, trigger = "condition"),
+             list(type = "blank", duration_ms = "250"))
+  # The shared rounder takes 82.5 away from zero. A duration written as a plain number
+  # in quotes is read as that number, as before.
+  expect_identical(ms_of(render_events(ev, list(), 60)), c(34L, 83L, 250L))
+  expect_identical(render_events(ev, list(word_ms = 400.5), 60)[[2]]$ms, 401L)
+  # A null duration_frames is absent, so the default of one frame applies.
+  expect_identical(render_events(list(list(type = "blank", duration_frames = NULL)), list(),
+                                 60)[[1]]$ms, 17L)
+})

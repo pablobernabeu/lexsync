@@ -24,9 +24,27 @@ find_template <- function(relpath) {
 #'
 #' Adds `condition_trigger` (101, 102, ... per condition) and `item_trigger`
 #' (40-239 per item/`set`). Events reference these by the tokens "condition" and
-#' "item", or carry their own integer codes. The item range holds 200 codes (an
-#' 8-bit-port constraint), so past 200 sets the codes wrap and repeat, and a
-#' runtime notice says so.
+#' "item", or carry their own codes, whole numbers from 1 to 255. Item codes follow
+#' the code-point order of the set labels, so with sets 1 to 20, set 10 is 41 and set
+#' 2 is 51. Decode an item code through the loop table, not from the set's label. The
+#' item range holds 200 codes (an 8-bit-port constraint), so past 200 sets the codes
+#' wrap and repeat, and a runtime notice says so.
+#'
+#' `events`, the design's event list, says which codes the experiment sends. When it
+#' sends item codes together with condition codes, or with a code of its own from 40
+#' to 239, the item codes skip 101 to 100 + k, the codes of the k conditions, and the
+#' design's own codes, so that no item takes a code that marks something else. Sets
+#' 65 and 66 of a 70-set design took 101 and 102, the condition codes. A design with
+#' more item sets than free codes is then refused, unless `schema` sets
+#' `triggers.allow_code_overlap: true`, which lets the item codes wrap and repeat
+#' within the free codes. Every other design, and a call without `events`, gets the
+#' item codes it had before. Each trigger in `events` is checked as
+#' [render_events()] checks it.
+#'
+#' A notice is given for a code of the design's own that the stream already uses for
+#' something else: 254 or 255, which the PsychoPy experiment sends when the session
+#' starts and ends, a condition code the design sends, or a code within the range of
+#' the item codes it sends.
 #'
 #' The condition codes follow `conditions` when it is given: its first entry is
 #' 101, its second 102, and so on, whether or not every entry occurs in
@@ -45,6 +63,11 @@ find_template <- function(relpath) {
 #' @param conditions Optional character vector of condition labels, in the order
 #'   that assigns their codes from 101 upwards. `NULL` (the default) numbers the
 #'   conditions in order of first appearance.
+#' @param events Optional list of the design's events, as [resolve_events()] returns
+#'   them, which says which codes the experiment sends. `NULL` (the default) allocates
+#'   the item codes as for a design that sends no other code beside them.
+#' @param schema Optional parsed global schema, read for
+#'   `triggers.allow_code_overlap`, which must be `true` or `false` when given.
 #' @return `stimuli` with trigger columns added.
 #' @examples
 #' stim <- data.frame(condition = c("low", "high", "low", "high"), set = c(1, 1, 2, 2))
@@ -53,8 +76,28 @@ find_template <- function(relpath) {
 #' # The design's order: high = 101, low = 102, however the rows are shuffled.
 #' unique(assign_triggers(stim, conditions = c("high", "low"))[
 #'   , c("condition", "condition_trigger")])
+#' # Item codes follow the code-point order of the set labels: set 2 is 51 here.
+#' twenty <- assign_triggers(data.frame(condition = "a", set = 1:20))
+#' stats::setNames(twenty$item_trigger, twenty$set)
 #' @export
-assign_triggers <- function(stimuli, conditions = NULL) {
+assign_triggers <- function(stimuli, conditions = NULL, events = NULL, schema = NULL) {
+  res <- .allocate_codes(stimuli, conditions, events, schema)
+  for (note in res$notes) message(note)
+  res$stimuli
+}
+
+# The codes item markers are drawn from, 40 to 239. That leaves 1 to 39 for a design's
+# own codes, such as the priming paradigm's 20, and keeps clear of the session markers
+# 254 and 255. Must match _ITEM_CODES in scripting.py.
+.ITEM_CODES <- 40:239
+
+# assign_triggers() without its notices: list(stimuli = the stimuli with the codes,
+# notes = the notices). run_pipeline() calls it before any file is written, so that a
+# design whose item codes cannot be kept apart is refused there, and assign_triggers()
+# gives the notices once, when the experiments are written. Must match _allocate_codes
+# in scripting.py.
+.allocate_codes <- function(stimuli, conditions = NULL, events = NULL, schema = NULL) {
+  allow_overlap <- .allow_code_overlap(schema)
   present <- unique(as.character(stimuli$condition))
   if (is.null(conditions)) {
     conds <- present
@@ -68,16 +111,108 @@ assign_triggers <- function(stimuli, conditions = NULL) {
   stimuli$condition_trigger <- 100L + match(as.character(stimuli$condition), conds)
   sets <- unique(stimuli$set)
   sets <- sets[order(as.character(sets), method = "radix")]
-  # A wrapped code no longer identifies its item one to one, which the analyst
-  # must hear about at generation time, not at decode time.
-  if (length(sets) > 200L) {
-    message(sprintf(
-      "lexsync: %d item sets exceed the 200-code trigger range; item codes wrap and repeat.",
-      length(sets)))
+  sent <- .codes_sent(events)
+  own <- sort(unique(vapply(sent$literals, function(l) l[["code"]], integer(1))))
+  notes <- character(0)
+  if (sent$item && (sent$condition || any(own %in% .ITEM_CODES))) {
+    # The item codes share the stream with codes that mean something else, so they are
+    # drawn only from the codes nothing else takes.
+    free <- setdiff(.ITEM_CODES, c(100L + seq_along(conds), own))
+    if (length(sets) > length(free)) {
+      if (!(allow_overlap && length(free))) {
+        stop(sprintf(paste("lexsync: %d item sets need %d item codes, but only %d of the codes",
+                           "from 40 to 239 are free of the condition codes and the design's",
+                           "own codes; send fewer kinds of code, or set",
+                           "triggers.allow_code_overlap: true to let item codes repeat."),
+                     length(sets), length(sets), length(free)), call. = FALSE)
+      }
+      notes <- c(notes, sprintf(
+        "lexsync: %d item sets exceed the %d free item codes; item codes wrap and repeat.",
+        length(sets), length(free)))
+    }
+    code <- free[(seq_along(sets) - 1L) %% length(free) + 1L]
+  } else {
+    # A wrapped code no longer identifies its item one to one, which the analyst
+    # must hear about at generation time, not at decode time.
+    if (length(sets) > 200L) {
+      notes <- c(notes, sprintf(
+        "lexsync: %d item sets exceed the 200-code trigger range; item codes wrap and repeat.",
+        length(sets)))
+    }
+    code <- 40L + ((seq_along(sets) - 1L) %% 200L)
   }
-  code <- 40L + ((seq_along(sets) - 1L) %% 200L)
   stimuli$item_trigger <- code[match(stimuli$set, sets)]
-  stimuli
+  list(stimuli = stimuli, notes = c(notes, .code_notes(sent, conds, code)))
+}
+
+# The schema's triggers.allow_code_overlap, FALSE when absent. Read strictly: a value
+# that is not TRUE or FALSE is refused, since isTRUE() would quietly read "yes" as false
+# where Python's truth test reads it as true. Must match _allow_code_overlap in
+# scripting.py.
+.allow_code_overlap <- function(schema) {
+  value <- (schema[["triggers"]] %||% list())[["allow_code_overlap"]]
+  if (is.null(value)) return(FALSE)
+  if (!is.logical(value) || length(value) != 1L || is.na(value)) {
+    stop("lexsync: triggers.allow_code_overlap must be true or false.", call. = FALSE)
+  }
+  value
+}
+
+# The codes a design's events send: `item` and `condition` say whether any event sends
+# the item code or the condition code, and `literals` lists the design's own codes as
+# list(event, code), the event counted from 1, in event order. A fixation, text or mask
+# event sends its `trigger` and a region-by-region event its `critical_region_trigger`,
+# the keys render_events() reads, and each is checked as it is there. Must match
+# _codes_sent in scripting.py.
+.codes_sent <- function(events) {
+  sent <- list(item = FALSE, condition = FALSE, literals = list())
+  for (i in seq_along(events)) {
+    ev <- events[[i]]
+    type <- ev[["type"]]
+    key <- if (isTRUE(type %in% c("fixation", "text", "mask"))) "trigger" else
+      if (identical(type, "region_by_region")) "critical_region_trigger" else NULL
+    spec <- if (is.null(key)) NULL else trigger_spec(ev[[key]], i, key)
+    if (is.null(spec)) next
+    if (identical(spec, "@item_trigger")) {
+      sent$item <- TRUE
+    } else if (identical(spec, "@condition_trigger")) {
+      sent$condition <- TRUE
+    } else {
+      sent$literals[[length(sent$literals) + 1L]] <- list(event = i, code = spec)
+    }
+  }
+  sent
+}
+
+# The notices for the design's own codes that the stream already uses: a code of 254 or
+# 255, which the PsychoPy experiment sends when the session starts and ends, a code
+# equal to a condition code the design sends, and a code within the range of the item
+# codes it sends. The allocation keeps every item code off the design's own codes, so
+# the last is a warning for anyone who decodes item codes by their range. Must match
+# _code_notes in scripting.py.
+.code_notes <- function(sent, conds, item_codes) {
+  notes <- character(0)
+  for (l in sent$literals) {
+    i <- l[["event"]]
+    code <- l[["code"]]
+    if (code %in% c(254L, 255L)) {
+      notes <- c(notes, sprintf(paste("lexsync: event %d sends code %d, which the PsychoPy",
+                                      "experiment also sends when the session %s."),
+                                i, code, if (code == 254L) "starts" else "ends"))
+    }
+    if (sent$condition && code >= 101L && code <= 100L + length(conds)) {
+      notes <- c(notes, sprintf(paste("lexsync: event %d sends code %d, which is also the",
+                                      "condition code of '%s'."),
+                                i, code, .shown(conds[code - 100L])))
+    }
+    if (sent$item && length(item_codes) && code >= min(item_codes) && code <= max(item_codes)) {
+      notes <- c(notes, sprintf(paste("lexsync: event %d sends code %d, which lies inside the",
+                                      "range of the item codes (%d to %d); decode item codes",
+                                      "through the loop table."),
+                                i, code, min(item_codes), max(item_codes)))
+    }
+  }
+  notes
 }
 
 # The names of a design's declared conditions, in the order the design lists
@@ -90,12 +225,33 @@ assign_triggers <- function(stimuli, conditions = NULL) {
   if (length(nm)) as.character(nm) else NULL
 }
 
+# Translate a paradigm trigger token to a renderer spec (an integer or "@column"). A
+# trigger is the token "condition" or "item", or a whole number from 1 to 255, written
+# as a number or as a string of digits. Anything else is refused, naming the event by
+# `index`, its place in the design counted from 1, and the `key` the value came from.
+# as.integer() took 20.5 as 20 and let 300, 0 or -5 reach the port, which keeps only
+# the low byte. It turned a misspelt token such as "conditon" into NA, which reached the
+# OpenSesame experiment as send_trigger(NA), while the Python engine stopped. Must match
+# _trigger_spec in scripting.py.
 #' @keywords internal
-trigger_spec <- function(value) {
+trigger_spec <- function(value, index = NULL, key = "trigger") {
   if (is.null(value)) return(NULL)
-  if (identical(value, "condition")) return("@condition_trigger")
-  if (identical(value, "item")) return("@item_trigger")
-  as.integer(value)
+  code <- NA_real_
+  if (is.character(value) && length(value) == 1L && !is.na(value)) {
+    if (identical(value, "condition")) return("@condition_trigger")
+    if (identical(value, "item")) return("@item_trigger")
+    # \z and not $, for the reason given beside .PORT_SHAPE in io_utils.R.
+    if (grepl("^[0-9]+\\z", value, perl = TRUE)) code <- as.numeric(value)
+  } else if (is.numeric(value) && length(value) == 1L && is.finite(value) &&
+             value == trunc(value)) {
+    code <- as.numeric(value)
+  }
+  if (is.na(code) || code < 1 || code > 255) {
+    where <- if (is.null(index)) "an event" else sprintf("event %d", as.integer(index))
+    stop(sprintf("lexsync: %s has %s '%s'; use 'condition', 'item' or a code from 1 to 255.",
+                 where, key, .shown(value)), call. = FALSE)
+  }
+  as.integer(code)
 }
 
 # Frames to milliseconds at a given refresh rate. Multiplication comes first so
@@ -145,22 +301,62 @@ frames_to_ms <- function(frames, hz) {
   ms
 }
 
+# A duration as a number, or NA when the value is not one. A number is taken as it is,
+# and so is text that is a plain decimal number, as a design that quotes a duration
+# carries it and as a column holding some text is read. A logical value is not a
+# duration. Must match _as_duration in scripting.py.
+.as_duration <- function(value) {
+  if (is.list(value) || length(value) != 1L || is.logical(value)) return(NA_real_)
+  if (is.numeric(value)) return(as.numeric(value))
+  if (is.character(value) && !is.na(value) && grepl(.PLAIN_NUMBER, value, perl = TRUE)) {
+    return(as.numeric(value))
+  }
+  NA_real_
+}
+
+# A duration the design fixes, checked: a finite number, not negative. `what` names the
+# value in the refusal, as in "event 2 has duration_ms" or "timing.word_ms is". A
+# negative value reached the OpenSesame experiment as clock.sleep(-50), and a NaN as
+# clock.sleep(NA). Must match _fixed_duration in scripting.py.
+.fixed_duration <- function(value, what) {
+  number <- .as_duration(value)
+  if (is.na(number) || !is.finite(number) || number < 0) {
+    stop(sprintf("lexsync: %s '%s'; a duration must be a finite number, not negative.",
+                 what, .shown(value)), call. = FALSE)
+  }
+  number
+}
+
 # Resolve one event's duration to whole milliseconds. Milliseconds are canonical;
 # a frame count is accepted for backward compatibility and converted at the
 # design's assumed refresh rate. An explicit `duration_ms` wins over
-# `duration_frames` if a design carries both.
+# `duration_frames` if a design carries both. Either must be a finite number, not
+# negative, or the event is refused, named by `index`, its place in the design counted
+# from 1. A fractional `duration_ms` is rounded with .round_dp, as a duration read from
+# the items is. as.integer() truncated it, so 33.7 ms was presented as 33. The
+# overrides come from the design's `timing` block, which .render_each() has already
+# checked. Must match _event_ms in scripting.py.
 #' @keywords internal
-.event_ms <- function(ev, override_ms, override_frames, hz, default_frames = 1L) {
-  if (!is.null(override_ms)) return(as.integer(override_ms))
+.event_ms <- function(ev, override_ms, override_frames, hz, default_frames = 1L,
+                      index = NULL) {
+  where <- if (is.null(index)) "an event" else sprintf("event %d", as.integer(index))
+  if (!is.null(override_ms)) return(as.integer(.round_dp(as.numeric(override_ms), 0)))
   if (!is.null(override_frames)) return(frames_to_ms(override_frames, hz))
-  if (!is.null(ev[["duration_ms"]])) return(as.integer(ev[["duration_ms"]]))
-  frames_to_ms(ev[["duration_frames"]] %||% default_frames, hz)
+  if (!is.null(ev[["duration_ms"]])) {
+    ms <- .fixed_duration(ev[["duration_ms"]], paste(where, "has duration_ms"))
+    return(as.integer(.round_dp(ms, 0)))
+  }
+  frames <- ev[["duration_frames"]]
+  if (is.null(frames)) return(frames_to_ms(default_frames, hz))
+  frames_to_ms(.fixed_duration(frames, paste(where, "has duration_frames")), hz)
 }
 
 
 # A design's per-event `duration:` block, if it declares one.
 #   duration: {from_column: soa_ms}                  read per trial from the items
 #   duration: {jitter: [400, 800], as: isi_ms}       drawn per trial from the hash
+# A jitter's bounds must be finite numbers and the lower one not negative, since every
+# value drawn between them is a duration. Must match _duration_spec in scripting.py.
 #' @keywords internal
 .duration_spec <- function(ev, index) {
   d <- ev[["duration"]]
@@ -169,12 +365,18 @@ frames_to_ms <- function(frames, hz) {
     return(list(column = as.character(d[["from_column"]]), jitter = NULL))
   }
   if (!is.null(d[["jitter"]])) {
-    rng <- as.integer(unlist(d[["jitter"]]))
-    if (length(rng) != 2L) {
+    bounds <- d[["jitter"]]
+    if (length(bounds) != 2L) {
       stop("lexsync: duration jitter must be a two-element range [lo, hi].", call. = FALSE)
     }
+    num <- vapply(as.list(bounds), .as_duration, numeric(1))
+    if (anyNA(num) || !all(is.finite(num)) || num[1] < 0) {
+      stop(sprintf(paste("lexsync: event %d has jitter %s; a jittered duration needs finite",
+                         "bounds, the lower one not negative."), index, .shown(bounds)),
+           call. = FALSE)
+    }
     return(list(column = as.character(d[["as"]] %||% sprintf("event%d_ms", index)),
-                jitter = rng))
+                jitter = as.integer(num)))
   }
   stop("lexsync: a duration block needs either 'from_column' or 'jitter'.", call. = FALSE)
 }
@@ -197,21 +399,43 @@ frames_to_ms <- function(frames, hz) {
 #' written into the stimuli table as well as the generated script, because timing
 #' that varies is a variable the analysis needs, not presentation detail.
 #'
+#' Every value read from a column must be a finite number of milliseconds, not
+#' negative. The first that is not, a blank cell included, is refused, naming the
+#' column and the trial's set and condition. A blank or negative value used to reach
+#' the experiments, where OpenSesame and PsychoPy stopped at the blank and jsPsych
+#' ended the trial at once. When a column holds fractional milliseconds, each of its
+#' values is rounded once with the rounder both engines share and written back, so the
+#' stimuli, the loop tables and every target carry the same whole milliseconds. A
+#' column of whole numbers is left as it is.
+#'
 #' @param stimuli A counterbalanced stimuli data frame.
 #' @param design A parsed design configuration.
 #' @param schema The parsed global schema (provides the seed).
-#' @return `stimuli` with one integer column per jittered event.
+#' @return `stimuli` with one integer column per jittered event, and every column of
+#'   fractional milliseconds rounded. Each column rounded is recorded in the
+#'   `"duration_rounding"` attribute, as one `list(event, column, n_rounded)` entry,
+#'   which [run_pipeline()] writes into the run log.
 #' @export
 resolve_trial_timing <- function(stimuli, design, schema) {
   events <- resolve_events(design)
   seed <- schema[["seed"]] %||% 1L
+  # A record carried in from an earlier call describes that call, not this one.
+  attr(stimuli, "duration_rounding") <- NULL
+  rounding <- list()
   for (i in seq_along(events)) {
     spec <- .duration_spec(events[[i]], i)
-    if (is.null(spec) || is.null(spec$jitter)) {
-      # from_column reads a column the items already carry; nothing to realise.
-      if (!is.null(spec) && !(spec$column %in% names(stimuli))) {
+    if (is.null(spec)) next
+    if (is.null(spec$jitter)) {
+      # from_column reads a column the items already carry, so it is checked here.
+      if (!(spec$column %in% names(stimuli))) {
         stop(sprintf("lexsync: event %d reads its duration from column '%s', which the items do not have.",
                      i, spec$column), call. = FALSE)
+      }
+      checked <- .column_durations(stimuli, i, spec$column)
+      if (checked$n_rounded > 0L) {
+        stimuli[[spec$column]] <- checked$values
+        rounding[[length(rounding) + 1L]] <- list(event = i, column = spec$column,
+                                                  n_rounded = checked$n_rounded)
       }
       next
     }
@@ -223,7 +447,44 @@ resolve_trial_timing <- function(stimuli, design, schema) {
                  .key_part(stimuli$condition), sep = "|")
     stimuli[[spec$column]] <- hash_int_range(key, spec$jitter[1], spec$jitter[2])
   }
+  if (length(rounding)) attr(stimuli, "duration_rounding") <- rounding
   stimuli
+}
+
+# Check the durations event `index` reads from `column`, and round fractional ones.
+# Returns list(values, n_rounded): the column's values as numbers, rounded with
+# .round_dp, and how many of them the rounding changed. A value given as text is read as
+# a number when it is a plain decimal one, so the refusal names the cell that is not.
+# Must match _column_durations in scripting.py.
+.column_durations <- function(stimuli, index, column) {
+  x <- stimuli[[column]]
+  values <- numeric(length(x))
+  for (row in seq_along(x)) {
+    value <- x[[row]]
+    blank <- length(value) == 1L && !is.list(value) && is.na(value)
+    number <- if (blank) NA_real_ else .as_duration(value)
+    if (is.na(number) || !is.finite(number) || number < 0) {
+      what <- if (blank) "is blank" else sprintf("holds '%s'", .shown(value))
+      stop(sprintf(paste("lexsync: event %d reads its duration from column '%s', which %s for",
+                         "%s; a duration must be a finite number of milliseconds, not",
+                         "negative."), index, column, what, .trial_named(stimuli, row)),
+           call. = FALSE)
+    }
+    values[row] <- number
+  }
+  list(values = .round_dp(values, 0), n_rounded = sum(values != trunc(values)))
+}
+
+# A trial as a refusal names it: its set and condition, and its block when the trials
+# carry one, or else its row, counted from 1. Must match _trial_named in scripting.py.
+.trial_named <- function(stimuli, row) {
+  if (!all(c("set", "condition") %in% names(stimuli))) return(sprintf("row %d", row))
+  named <- sprintf("set %s in condition '%s'", .shown(stimuli[["set"]][[row]]),
+                   .shown(stimuli[["condition"]][[row]]))
+  if ("block" %in% names(stimuli)) {
+    named <- paste0(named, sprintf(" of block '%s'", .shown(stimuli[["block"]][[row]])))
+  }
+  named
 }
 
 #' Translate paradigm events into backend-neutral rendering dictionaries
@@ -344,9 +605,17 @@ render_events <- function(events, timing, hz = 60) {
                  paste(sprintf("'%s'", sort(unknown)), collapse = ", "),
                  paste(known, collapse = ", ")), call. = FALSE)
   }
-  fix_ms <- timing[["fixation_ms"]];  fix <- timing[["fixation_frames"]]
-  word_ms <- timing[["word_ms"]];    word <- timing[["word_frames"]]
-  isi_ms <- timing[["isi_ms"]];      isi <- timing[["isi_frames"]]
+  # Each value of the block is a fixed duration, checked as an event's own is, in the
+  # order of `known` so that both engines name the same key first.
+  checked <- list()
+  for (key in known) {
+    if (!is.null(timing[[key]])) {
+      checked[[key]] <- .fixed_duration(timing[[key]], sprintf("timing.%s is", key))
+    }
+  }
+  fix_ms <- checked[["fixation_ms"]];  fix <- checked[["fixation_frames"]]
+  word_ms <- checked[["word_ms"]];    word <- checked[["word_frames"]]
+  isi_ms <- checked[["isi_ms"]];      isi <- checked[["isi_frames"]]
   out <- list()
   # A feedback event scores the key the participant pressed, so something must have
   # collected one first. With no preceding response or question the OpenSesame runner
@@ -382,19 +651,23 @@ render_events <- function(events, timing, hz = 60) {
           ev,
           if (t == "fixation") fix_ms else if (is_word) word_ms else NULL,
           if (t == "fixation") fix else if (is_word) word else NULL,
-          hz
+          hz, index = i
         )
       }
-      spec <- trigger_spec(ev[["trigger"]])
+      spec <- trigger_spec(ev[["trigger"]], i)
       if (!is.null(spec)) r$trigger <- spec
     } else if (t == "blank") {
       spec <- .duration_spec(ev, i)
-      if (!is.null(spec)) r$ms_column <- spec$column else r$ms <- .event_ms(ev, isi_ms, isi, hz)
+      if (!is.null(spec)) {
+        r$ms_column <- spec$column
+      } else {
+        r$ms <- .event_ms(ev, isi_ms, isi, hz, index = i)
+      }
     } else if (t == "region_by_region") {
       r$field <- content_field(ev[["content"]])
       r$sep <- ev[["sep"]] %||% "|"
       r$key <- ev[["advance"]] %||% "space"
-      spec <- trigger_spec(ev[["critical_region_trigger"]])
+      spec <- trigger_spec(ev[["critical_region_trigger"]], i, "critical_region_trigger")
       if (!is.null(spec)) r$crit_trigger <- spec
     } else if (t == "response") {
       # A list, which jsonlite writes as an array even for one key, as the Python
@@ -417,7 +690,7 @@ render_events <- function(events, timing, hz = 60) {
       r$correct <- as.character(ev[["correct"]] %||% "Correct")
       r$incorrect <- as.character(ev[["incorrect"]] %||% "Incorrect")
       r$no_response <- as.character(ev[["no_response"]] %||% "Too slow")
-      r$ms <- .event_ms(ev, NULL, NULL, hz, default_frames = 36L)
+      r$ms <- .event_ms(ev, NULL, NULL, hz, default_frames = 36L, index = i)
     } else {
       stop(sprintf("lexsync: unknown event type '%s'.", t), call. = FALSE)
     }
@@ -1293,7 +1566,13 @@ export_jspsych <- function(stimuli, design, schema, outdir, base = NULL) {
     LANGUAGE = clean_meta(design[["language"]], "the design's `language`"),
     LANGUAGE_TAG = .language_tag(design), WORD_FONT = clean_meta(font, "the font"),
     EVENTS_JSON = .json_html(jsonlite::toJSON(rendered, auto_unbox = TRUE)),
-    TRIALS_JSON = .json_html(jsonlite::toJSON(trials, dataframe = "rows")),
+    # Each double to 15 significant digits, the digits the Python engine writes
+    # (_fifteen_digits in scripting.py). The default of four decimal places wrote
+    # 33.3333 for an item table's 33.333333, where Python wrote every digit, so the two
+    # engines' pages differed. I(15), not digits = NA, which jsonlite 1.8.5 and 1.8.6
+    # wrote to 17 digits; I(15) is "%.15g" in every version, and DESCRIPTION sets no
+    # floor on jsonlite.
+    TRIALS_JSON = .json_html(jsonlite::toJSON(trials, dataframe = "rows", digits = I(15))),
     VERSIONS_JSON = .json_html(jsonlite::toJSON(versions, auto_unbox = TRUE))
   )
   for (k in names(subs)) {
@@ -1312,7 +1591,10 @@ export_jspsych <- function(stimuli, design, schema, outdir, base = NULL) {
 #' the first is 101, the second 102, and so on, whatever order the counterbalanced
 #' trials put them in. A design with no `conditions` block (a generated lexical
 #' decision, an item table) falls back to the order of first appearance, unless
-#' `conditions` is given.
+#' `conditions` is given. [assign_triggers()] is given the design's events and the
+#' schema, so the item codes of a design that sends them alongside other codes are
+#' kept apart from those codes, and a code of the design's own that the stream
+#' already uses is reported.
 #'
 #' @inheritParams export_psychopy
 #' @param conditions Optional character vector of condition labels in the order
@@ -1326,7 +1608,8 @@ export_jspsych <- function(stimuli, design, schema, outdir, base = NULL) {
 #' @export
 export_experiments <- function(stimuli, design, schema, outdir, base = NULL,
                                conditions = NULL) {
-  stimuli <- assign_triggers(stimuli, conditions %||% .design_condition_names(design))
+  stimuli <- assign_triggers(stimuli, conditions %||% .design_condition_names(design),
+                             events = resolve_events(design), schema = schema)
   psychopy <- .psychopy_files(stimuli, design, schema, outdir, base)
   opensesame <- .opensesame_files(stimuli, design, schema, outdir, base)
   jspsych <- export_jspsych(stimuli, design, schema, outdir, base)

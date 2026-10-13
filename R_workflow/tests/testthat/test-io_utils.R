@@ -314,7 +314,7 @@ test_that("the_key_vocabularies_agree_across_engines", {
   expect_identical(digest_of(.DESIGN_KEYS),
                    "85bb0bc2e376483bf5c818469cbc9e9446f952d5095d64c69e9e19086c5ee357")
   expect_identical(digest_of(.SCHEMA_KEYS),
-                   "a62e1a4f7cc410ef37d511e9758107b414bedec2c7ab008704c57171fc7f0e5c")
+                   "3da6fe93e219c8b2d112c3d10c84538cbb67c8271b01d5751c3e5388de938529")
 })
 
 valid_design <- function(...) {

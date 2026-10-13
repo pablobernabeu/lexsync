@@ -9,10 +9,14 @@
 # method, equivalent in effect to PsychoPy's win.callOnFlip. (Sending the marker
 # from a separate item that merely follows the stimulus would add the latency of
 # an item transition and is not onset-aligned.)
+#
+# One marker is sent, the condition code, which is the one an ERP analysis epochs
+# on. send_trigger() holds each code for 10 ms before it returns, so a marker sent
+# first would delay it, and the loop table already records which item each trial
+# presented.
 
 c = Canvas()
 c.text(var.word)
 var.onset_time = c.show()            # blocks until the refresh; returns the onset
-send_trigger(var.item_trigger)           # onset-aligned per-item marker
-send_trigger(var.condition_trigger)      # condition marker
+send_trigger(var.condition_trigger)      # onset-aligned condition marker
 clock.sleep(var.word_duration_ms)

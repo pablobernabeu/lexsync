@@ -69,3 +69,33 @@ def test_find_template_resolves_to_the_packaged_copy():
         resolved = find_template(relpath)
         assert os.path.exists(resolved)
         assert _read(resolved) == _read(os.path.join(CANONICAL, relpath))
+
+
+def test_the_opensesame_snippet_sends_only_the_condition_code_at_onset():
+    """The snippet for pasting into an existing experiment sent the item code and then,
+    once that 10 ms pulse had ended, the condition code. The marker an ERP analysis
+    epochs on therefore came at least 10 ms after the onset, and the stream held item
+    codes that could equal a condition code. It is run here in a stand-in for the inline
+    script's namespace, as OpenSesame would run it."""
+    sent, slept = [], []
+
+    class Var:
+        word, item_trigger, condition_trigger, word_duration_ms = "cat", 45, 101, 500
+
+    class Canvas:
+        def text(self, text):
+            pass
+
+        def show(self):
+            return 0.0
+
+    class Clock:
+        def sleep(self, ms):
+            slept.append(ms)
+
+    path = os.path.join(CANONICAL, "opensesame", "inline_send_triggers.py")
+    with open(path, encoding="utf-8") as handle:
+        exec(handle.read(), {"var": Var(), "Canvas": Canvas, "clock": Clock(),
+                             "send_trigger": sent.append})
+    assert sent == [101]
+    assert slept == [500]

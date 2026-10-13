@@ -42,5 +42,8 @@ the design's \code{conditions} entries, so in a design that declares its conditi
 the first is 101, the second 102, and so on, whatever order the counterbalanced
 trials put them in. A design with no \code{conditions} block (a generated lexical
 decision, an item table) falls back to the order of first appearance, unless
-\code{conditions} is given.
+\code{conditions} is given. \code{\link[=assign_triggers]{assign_triggers()}} is given the design's events and the
+schema, so the item codes of a design that sends them alongside other codes are
+kept apart from those codes, and a code of the design's own that the stream
+already uses is reported.
 }

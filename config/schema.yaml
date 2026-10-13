@@ -251,6 +251,14 @@ triggers:
   # presentation.assumed_refresh_hz.
   trigger_hold_ms: 50
   inter_trigger_ms: 10         # spacing of trailing markers (matches the original)
+  # A design's own trigger codes are whole numbers from 1 to 255, checked when the
+  # experiment is generated. Item codes run from 40 in code-point order of the set
+  # labels, so with sets 1 to 20, set 10 is 41 and set 2 is 51. Decode them through
+  # the loop table. When the events send item codes together with condition codes,
+  # or with a code of the design's own from 40 to 239, the item codes skip those
+  # codes. A design with more item sets than free codes is then refused. Setting
+  # this to true lets the item codes wrap and repeat within the free codes instead.
+  allow_code_overlap: false
 
 # ---- Presentation defaults (overridable per design) -----------------------
 # The word font used by the generated PsychoPy and OpenSesame experiments. The
@@ -286,6 +294,10 @@ presentation:
   # sharing a value. Either form writes the realised milliseconds into the
   # stimuli table, so timing that varies is available to the analysis as a
   # regressor instead of being undocumented noise. See design_en_priming_jitter.
+  # A value read from the items must be a finite number of milliseconds, not
+  # negative, and fractional ones are rounded once to whole milliseconds, which
+  # the run log counts. A fixed duration_ms or duration_frames is checked the same
+  # way, and a jitter's lower bound must not be negative.
   #
   # A response event after a text event collects its key from that stimulus's
   # onset. A key pressed while the stimulus is on screen counts, the reaction time

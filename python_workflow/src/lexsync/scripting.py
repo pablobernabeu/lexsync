@@ -58,6 +58,12 @@ _OS_NUMERIC = {"trial": "lexsync_trial", "list": "lexsync_list", "replicate": "r
 # A plain decimal number, which both OpenSesame versions store and read back as written.
 # [0-9], not \d, which in Python also matches the digits of other scripts.
 _PLAIN_NUMBER = re.compile(r"\A-?[0-9]+(\.[0-9]+)?\Z")
+# A trigger code written as text: digits only, so no sign, space or decimal point.
+_DIGITS = re.compile(r"\A[0-9]+\Z")
+# The codes item markers are drawn from, 40 to 239. That leaves 1 to 39 for a design's
+# own codes, such as the priming paradigm's 20, and keeps clear of the session markers
+# 254 and 255.
+_ITEM_CODES = range(40, 240)
 
 
 def _frames_to_ms(frames, hz) -> int:
@@ -114,20 +120,65 @@ def _trigger_hold_ms(schema: dict) -> float:
     return ms
 
 
-def _event_ms(ev: dict, override_ms, override_frames, hz, default_frames: int = 1) -> int:
+def _as_duration(value):
+    """A duration as a float, or None when the value is not a number.
+
+    A number is taken as it is, and so is text that is a plain decimal number, as a
+    design that quotes a duration carries it and as a column holding some text is read.
+    A boolean is not a duration, although Python counts True as 1. Must match
+    .as_duration in scripting.R.
+    """
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, numbers.Real):
+        return float(value)
+    if isinstance(value, str) and _PLAIN_NUMBER.match(value):
+        return float(value)
+    return None
+
+
+def _fixed_duration(value, what: str) -> float:
+    """A duration the design fixes, checked: a finite number, not negative.
+
+    ``what`` names the value in the refusal, as in ``event 2 has duration_ms`` or
+    ``timing.word_ms is``. A negative value reached the OpenSesame experiment as
+    clock.sleep(-50), and a NaN as clock.sleep(NA) from the R engine. Must match
+    .fixed_duration in scripting.R.
+    """
+    number = _as_duration(value)
+    if number is None or not math.isfinite(number) or number < 0:
+        raise ValueError("lexsync: %s '%s'; a duration must be a finite number, not negative."
+                         % (what, _shown(value)))
+    return number
+
+
+def _event_ms(ev: dict, override_ms, override_frames, hz, default_frames: int = 1,
+              index: int | None = None) -> int:
     """Resolve one event's duration to whole milliseconds.
 
     Milliseconds are canonical; a frame count is accepted for backward
     compatibility and converted at the design's assumed refresh rate. An explicit
     ``duration_ms`` wins over ``duration_frames`` if a design carries both.
+
+    Either must be a finite number, not negative, or the event is refused, named by
+    ``index``, its place in the design counted from 1. A fractional ``duration_ms`` is
+    rounded with _round_dp, as a duration read from the items is. int() truncated it,
+    so 33.7 ms was presented as 33. A null ``duration_frames`` counts as absent, as it
+    does in the R engine. The overrides come from the design's ``timing`` block, which
+    _render_each has already checked. Must match .event_ms in scripting.R.
     """
+    where = "an event" if index is None else "event %d" % index
     if override_ms is not None:
-        return int(override_ms)
+        return int(_round_dp(float(override_ms), 0))
     if override_frames is not None:
         return _frames_to_ms(override_frames, hz)
     if ev.get("duration_ms") is not None:
-        return int(ev["duration_ms"])
-    return _frames_to_ms(ev.get("duration_frames", default_frames), hz)
+        ms = _fixed_duration(ev["duration_ms"], where + " has duration_ms")
+        return int(_round_dp(ms, 0))
+    frames = ev.get("duration_frames")
+    if frames is None:
+        return _frames_to_ms(default_frames, hz)
+    return _frames_to_ms(_fixed_duration(frames, where + " has duration_frames"), hz)
 
 
 def find_template(relpath: str) -> str:
@@ -144,13 +195,32 @@ def find_template(relpath: str) -> str:
     raise FileNotFoundError(f"lexsync: template '{relpath}' not found.")
 
 
-def assign_triggers(stimuli: pd.DataFrame, conditions=None) -> pd.DataFrame:
+def assign_triggers(stimuli: pd.DataFrame, conditions=None, events=None,
+                    schema=None) -> pd.DataFrame:
     """A per-condition marker and a per-item marker, both 0-255 EEG codes.
 
     ``condition_trigger`` numbers the conditions from 101 upwards and
-    ``item_trigger`` numbers the item sets from 40. The item range holds 200 codes
+    ``item_trigger`` numbers the item sets from 40, in code-point order of their
+    labels, so with sets 1 to 20, set 10 is 41 and set 2 is 51. Decode an item code
+    through the loop table, not from the set's label. The item range holds 200 codes
     (an 8-bit-port constraint), so past 200 sets the codes wrap and repeat, and a
     runtime notice says so.
+
+    ``events``, the design's event list, says which codes the experiment sends. When
+    it sends item codes together with condition codes, or with a code of its own from
+    40 to 239, the item codes skip 101 to 100 + k, the codes of the k conditions, and
+    the design's own codes, so that no item takes a code that marks something else.
+    Sets 65 and 66 of a 70-set design took 101 and 102, the condition codes. A design
+    with more item sets than free codes is then refused, unless ``schema`` sets
+    ``triggers.allow_code_overlap: true``, which lets the item codes wrap and repeat
+    within the free codes. Every other design, and a call without ``events``, gets the
+    item codes it had before. Each trigger in ``events`` is checked as
+    :func:`render_events` checks it.
+
+    A notice is printed for a code of the design's own that the stream already uses
+    for something else: 254 or 255, which the PsychoPy experiment sends when the
+    session starts and ends, a condition code the design sends, or a code within the
+    range of the item codes it sends.
 
     The condition codes follow ``conditions`` when it is given: its first entry is
     101, its second 102, and so on, whether or not every entry occurs in
@@ -172,6 +242,22 @@ def assign_triggers(stimuli: pd.DataFrame, conditions=None) -> pd.DataFrame:
     >>> assign_triggers(stim, conditions=["high", "low"])["condition_trigger"].tolist()
     [102, 101, 102, 101]
     """
+    stimuli, notes = _allocate_codes(stimuli, conditions, events, schema)
+    for note in notes:
+        print(note)
+    return stimuli
+
+
+def _allocate_codes(stimuli: pd.DataFrame, conditions=None, events=None,
+                    schema=None) -> tuple:
+    """assign_triggers without its notices: ``(stimuli with the codes, notices)``.
+
+    run_pipeline calls it before any file is written, so that a design whose item
+    codes cannot be kept apart is refused there, and assign_triggers prints the
+    notices once, when the experiments are written. Must match .allocate_codes in
+    scripting.R.
+    """
+    allow_overlap = _allow_code_overlap(schema)
     stimuli = stimuli.copy()
     if conditions is None:
         conds = list(dict.fromkeys(stimuli["condition"]))
@@ -186,14 +272,99 @@ def assign_triggers(stimuli: pd.DataFrame, conditions=None) -> pd.DataFrame:
         stimuli["condition_trigger"] = stimuli["condition"].map(
             lambda c: 101 + conds.index(str(c)))
     sets = sorted(stimuli["set"].unique(), key=lambda s: str(s))
-    # A wrapped code no longer identifies its item one to one, which the analyst
-    # must hear about at generation time, not at decode time.
-    if len(sets) > 200:
-        print(f"lexsync: {len(sets)} item sets exceed the 200-code trigger range; "
-              "item codes wrap and repeat.")
-    set_code = {s: 40 + (i % 200) for i, s in enumerate(sets)}
+    sent = _codes_sent(events)
+    own = sorted({code for _, code in sent["literals"]})
+    notes = []
+    if sent["item"] and (sent["condition"] or any(c in _ITEM_CODES for c in own)):
+        # The item codes share the stream with codes that mean something else, so they
+        # are drawn only from the codes nothing else takes.
+        condition_codes = range(101, 101 + len(conds))
+        free = [c for c in _ITEM_CODES if c not in condition_codes and c not in own]
+        if len(sets) > len(free):
+            if not (allow_overlap and free):
+                raise ValueError(
+                    "lexsync: %d item sets need %d item codes, but only %d of the codes from "
+                    "40 to 239 are free of the condition codes and the design's own codes; "
+                    "send fewer kinds of code, or set triggers.allow_code_overlap: true to "
+                    "let item codes repeat." % (len(sets), len(sets), len(free)))
+            notes.append("lexsync: %d item sets exceed the %d free item codes; item codes "
+                         "wrap and repeat." % (len(sets), len(free)))
+        set_code = {s: free[i % len(free)] for i, s in enumerate(sets)}
+    else:
+        # A wrapped code no longer identifies its item one to one, which the analyst
+        # must hear about at generation time, not at decode time.
+        if len(sets) > 200:
+            notes.append(f"lexsync: {len(sets)} item sets exceed the 200-code trigger range; "
+                         "item codes wrap and repeat.")
+        set_code = {s: 40 + (i % 200) for i, s in enumerate(sets)}
     stimuli["item_trigger"] = stimuli["set"].map(set_code)
-    return stimuli
+    notes += _code_notes(sent, conds, list(set_code.values()))
+    return stimuli, notes
+
+
+def _allow_code_overlap(schema) -> bool:
+    """The schema's ``triggers.allow_code_overlap``, false when absent.
+
+    Read strictly: a value that is not a boolean is refused, as R's isTRUE() would
+    quietly read 'yes' as false where Python's truth test reads it as true. Must match
+    .allow_code_overlap in scripting.R.
+    """
+    value = ((schema or {}).get("triggers") or {}).get("allow_code_overlap")
+    if value is None:
+        return False
+    if not isinstance(value, bool):
+        raise ValueError("lexsync: triggers.allow_code_overlap must be true or false.")
+    return value
+
+
+def _codes_sent(events) -> dict:
+    """The codes a design's events send.
+
+    ``item`` and ``condition`` say whether any event sends the item code or the
+    condition code, and ``literals`` lists the design's own codes as ``(event, code)``
+    pairs, the event counted from 1, in event order. A fixation, text or mask event
+    sends its ``trigger`` and a region-by-region event its ``critical_region_trigger``,
+    the keys render_events reads, and each is checked as it is there. Must match
+    .codes_sent in scripting.R.
+    """
+    sent = {"item": False, "condition": False, "literals": []}
+    for i, ev in enumerate(events or [], start=1):
+        kind = ev.get("type")
+        key = ("trigger" if kind in ("fixation", "text", "mask")
+               else "critical_region_trigger" if kind == "region_by_region" else None)
+        spec = None if key is None else _trigger_spec(ev.get(key), i, key)
+        if spec == "@item_trigger":
+            sent["item"] = True
+        elif spec == "@condition_trigger":
+            sent["condition"] = True
+        elif spec is not None:
+            sent["literals"].append((i, spec))
+    return sent
+
+
+def _code_notes(sent: dict, conds: list, item_codes: list) -> list:
+    """The notices for the design's own codes that the stream already uses.
+
+    A code of 254 or 255, which the PsychoPy experiment sends when the session starts
+    and ends, a code equal to a condition code the design sends, and a code within the
+    range of the item codes it sends. The allocation keeps every item code off the
+    design's own codes, so the last is a warning for anyone who decodes item codes by
+    their range. Must match .code_notes in scripting.R.
+    """
+    notes = []
+    for i, code in sent["literals"]:
+        if code in (254, 255):
+            notes.append("lexsync: event %d sends code %d, which the PsychoPy experiment also "
+                         "sends when the session %s."
+                         % (i, code, "starts" if code == 254 else "ends"))
+        if sent["condition"] and 101 <= code <= 100 + len(conds):
+            notes.append("lexsync: event %d sends code %d, which is also the condition code "
+                         "of '%s'." % (i, code, _shown(conds[code - 101])))
+        if sent["item"] and item_codes and min(item_codes) <= code <= max(item_codes):
+            notes.append("lexsync: event %d sends code %d, which lies inside the range of the "
+                         "item codes (%d to %d); decode item codes through the loop table."
+                         % (i, code, min(item_codes), max(item_codes)))
+    return notes
 
 
 def _keys_of(ev: dict, default: list) -> list:
@@ -210,15 +381,35 @@ def _keys_of(ev: dict, default: list) -> list:
     return [clean_key(k) for k in keys]
 
 
-def _trigger_spec(value):
-    """Translate a paradigm trigger token to a renderer spec (int or '@column')."""
+def _trigger_spec(value, index: int | None = None, key: str = "trigger"):
+    """Translate a paradigm trigger token to a renderer spec (int or '@column').
+
+    A trigger is the token "condition" or "item", or a whole number from 1 to 255,
+    written as a number or as a string of digits. Anything else is refused, naming the
+    event by ``index``, its place in the design counted from 1, and the ``key`` the
+    value came from. int() took 20.5 as 20, and 300, 0 or -5 reached the port, which
+    keeps only the low byte. A misspelt token such as "conditon" stopped this engine
+    with int()'s own error, while the R engine wrote NA into the OpenSesame experiment.
+    Must match trigger_spec in scripting.R.
+    """
     if value is None:
         return None
-    if value == "condition":
-        return "@condition_trigger"
-    if value == "item":
-        return "@item_trigger"
-    return int(value)
+    code = None
+    if isinstance(value, str):
+        if value == "condition":
+            return "@condition_trigger"
+        if value == "item":
+            return "@item_trigger"
+        if _DIGITS.match(value):
+            code = int(value)
+    elif (isinstance(value, numbers.Real) and not isinstance(value, bool)
+          and math.isfinite(value) and value == int(value)):
+        code = int(value)
+    if code is None or not 1 <= code <= 255:
+        where = "an event" if index is None else "event %d" % index
+        raise ValueError("lexsync: %s has %s '%s'; use 'condition', 'item' or a code from 1 "
+                         "to 255." % (where, key, _shown(value)))
+    return code
 
 
 
@@ -229,6 +420,11 @@ def _duration_spec(ev: dict, index: int):
 
     ``duration: {from_column: soa_ms}``            read per trial from the items
     ``duration: {jitter: [400, 800], as: isi_ms}`` drawn per trial from the hash
+
+    A jitter's bounds must be finite numbers and the lower one not negative, since
+    every value drawn between them is a duration. A lone bound is a range of one and
+    is refused, as the R engine refuses it, where iterating it raised a TypeError.
+    Must match .duration_spec in scripting.R.
     """
     d = ev.get("duration")
     if not isinstance(d, dict):
@@ -236,10 +432,18 @@ def _duration_spec(ev: dict, index: int):
     if d.get("from_column") is not None:
         return {"column": str(d["from_column"]), "jitter": None}
     if d.get("jitter") is not None:
-        rng = [int(v) for v in d["jitter"]]
-        if len(rng) != 2:
+        bounds = d["jitter"]
+        if isinstance(bounds, dict):
+            bounds = list(bounds.values())
+        bounds = list(bounds) if isinstance(bounds, (list, tuple)) else [bounds]
+        if len(bounds) != 2:
             raise ValueError("lexsync: duration jitter must be a two-element range [lo, hi].")
-        return {"column": str(d.get("as") or ("event%d_ms" % index)), "jitter": rng}
+        lo, hi = (_as_duration(v) for v in bounds)
+        if lo is None or hi is None or not (math.isfinite(lo) and math.isfinite(hi)) or lo < 0:
+            raise ValueError("lexsync: event %d has jitter %s; a jittered duration needs finite "
+                             "bounds, the lower one not negative." % (index, _shown(bounds)))
+        return {"column": str(d.get("as") or ("event%d_ms" % index)),
+                "jitter": [int(lo), int(hi)]}
     raise ValueError("lexsync: a duration block needs either 'from_column' or 'jitter'.")
 
 
@@ -251,18 +455,38 @@ def resolve_trial_timing(stimuli: pd.DataFrame, design: dict, schema: dict) -> p
     the keyed hash, so both engines realise the same milliseconds, and it is
     written into the stimuli table as well as the generated script, because timing
     that varies is a variable the analysis needs, not presentation detail.
+
+    Every value read from a column must be a finite number of milliseconds, not
+    negative. The first that is not, a blank cell included, is refused, naming the
+    column and the trial's set and condition. A blank or negative value used to reach
+    the experiments, where OpenSesame and PsychoPy stopped at the blank and jsPsych
+    ended the trial at once. When a column holds fractional milliseconds, each of its
+    values is rounded once with the rounder both engines share and written back, so
+    the stimuli, the loop tables and every target carry the same whole milliseconds.
+    A column of whole numbers is left as it is. Each column rounded is recorded in
+    the returned frame's ``attrs["duration_rounding"]``, as one
+    ``{"event", "column", "n_rounded"}`` entry, which run_pipeline writes into the run
+    log.
     """
     events = resolve_events(design)
     seed = (schema or {}).get("seed", 1)
     stimuli = stimuli.copy()
+    # A record carried in from an earlier call describes that call, not this one.
+    stimuli.attrs.pop("duration_rounding", None)
+    rounding = []
     for i, ev in enumerate(events, start=1):
         spec = _duration_spec(ev, i)
-        if spec is None or spec["jitter"] is None:
-            # from_column reads a column the items already carry; nothing to realise.
-            if spec is not None and spec["column"] not in stimuli.columns:
+        if spec is None:
+            continue
+        if spec["jitter"] is None:
+            # from_column reads a column the items already carry, so it is checked here.
+            if spec["column"] not in stimuli.columns:
                 raise ValueError(
                     "lexsync: event %d reads its duration from column '%s', which the "
                     "items do not have." % (i, spec["column"]))
+            n_rounded = _column_durations(stimuli, i, spec["column"])
+            if n_rounded:
+                rounding.append({"event": i, "column": spec["column"], "n_rounded": n_rounded})
             continue
         lo, hi = spec["jitter"]
         # The key names the column as well as the trial, so two jittered events in
@@ -273,7 +497,47 @@ def resolve_trial_timing(stimuli: pd.DataFrame, design: dict, schema: dict) -> p
                           _key_part(l), _key_part(s), _key_part(c)])
                 for l, s, c in zip(lists, stimuli["set"], stimuli["condition"], strict=True)]
         stimuli[spec["column"]] = [hash_int_range(k, lo, hi) for k in keys]
+    if rounding:
+        stimuli.attrs["duration_rounding"] = rounding
     return stimuli
+
+
+def _column_durations(stimuli: pd.DataFrame, index: int, column: str) -> int:
+    """Check the durations event ``index`` reads from ``column``, and round fractions.
+
+    A column holding fractional milliseconds is written back rounded, in ``stimuli``
+    itself, and the number of values that changed is returned. A value given as text
+    is read as a number when it is a plain decimal one, so the refusal names the cell
+    that is not. Must match .column_durations in scripting.R.
+    """
+    values = []
+    for row, value in enumerate(stimuli[column].tolist()):
+        blank = value is None or value is pd.NA or (isinstance(value, float) and value != value)
+        number = None if blank else _as_duration(value)
+        if number is None or not math.isfinite(number) or number < 0:
+            what = "is blank" if blank else "holds '%s'" % _shown(value)
+            raise ValueError(
+                "lexsync: event %d reads its duration from column '%s', which %s for %s; a "
+                "duration must be a finite number of milliseconds, not negative."
+                % (index, column, what, _trial_named(stimuli, row)))
+        values.append(number)
+    n_rounded = sum(1 for v in values if v != math.trunc(v))
+    if n_rounded:
+        stimuli[column] = [_round_dp(v, 0) for v in values]
+    return n_rounded
+
+
+def _trial_named(stimuli: pd.DataFrame, row: int) -> str:
+    """A trial as a refusal names it: its set and condition, and its block when the
+    trials carry one, or else its row, counted from 1. Must match .trial_named in
+    scripting.R."""
+    if "set" not in stimuli.columns or "condition" not in stimuli.columns:
+        return "row %d" % (row + 1)
+    named = "set %s in condition '%s'" % (_shown(stimuli["set"].iloc[row]),
+                                          _shown(stimuli["condition"].iloc[row]))
+    if "block" in stimuli.columns:
+        named += " of block '%s'" % _shown(stimuli["block"].iloc[row])
+    return named
 
 
 def render_events(events: list, timing: dict, hz: float = 60) -> list:
@@ -395,9 +659,13 @@ def _render_each(events: list, timing: dict, hz: float) -> list:
         raise ValueError(
             "lexsync: unknown timing key(s) %s. Known keys: %s."
             % (", ".join("'%s'" % k for k in unknown), ", ".join(known)))
-    fix_ms, fix = timing.get("fixation_ms"), timing.get("fixation_frames")
-    word_ms, word = timing.get("word_ms"), timing.get("word_frames")
-    isi_ms, isi = timing.get("isi_ms"), timing.get("isi_frames")
+    # Each value of the block is a fixed duration, checked as an event's own is, in the
+    # order of `known` so that both engines name the same key first.
+    checked = {key: _fixed_duration(timing[key], "timing.%s is" % key)
+               for key in known if timing.get(key) is not None}
+    fix_ms, fix = checked.get("fixation_ms"), checked.get("fixation_frames")
+    word_ms, word = checked.get("word_ms"), checked.get("word_frames")
+    isi_ms, isi = checked.get("isi_ms"), checked.get("isi_frames")
     # A feedback event scores the key the participant pressed, so something must have
     # collected one first. With no preceding response or question the OpenSesame runner
     # raises on the unset variable, PsychoPy compares against None and jsPsych finds no
@@ -434,9 +702,9 @@ def _render_each(events: list, timing: dict, hz: float) -> list:
                     ev,
                     fix_ms if t == "fixation" else (word_ms if is_word else None),
                     fix if t == "fixation" else (word if is_word else None),
-                    hz,
+                    hz, index=i,
                 )
-            spec = _trigger_spec(ev.get("trigger"))
+            spec = _trigger_spec(ev.get("trigger"), i)
             if spec is not None:
                 r["trigger"] = spec
         elif t == "blank":
@@ -444,12 +712,12 @@ def _render_each(events: list, timing: dict, hz: float) -> list:
             if spec is not None:
                 r["ms_column"] = spec["column"]
             else:
-                r["ms"] = _event_ms(ev, isi_ms, isi, hz)
+                r["ms"] = _event_ms(ev, isi_ms, isi, hz, index=i)
         elif t == "region_by_region":
             r["field"] = content_field(ev.get("content"))
             r["sep"] = ev.get("sep", "|")
             r["key"] = ev.get("advance", "space")
-            spec = _trigger_spec(ev.get("critical_region_trigger"))
+            spec = _trigger_spec(ev.get("critical_region_trigger"), i, "critical_region_trigger")
             if spec is not None:
                 r["crit_trigger"] = spec
         elif t == "response":
@@ -471,7 +739,7 @@ def _render_each(events: list, timing: dict, hz: float) -> list:
             r["correct"] = str(ev.get("correct", "Correct"))
             r["incorrect"] = str(ev.get("incorrect", "Incorrect"))
             r["no_response"] = str(ev.get("no_response", "Too slow"))
-            r["ms"] = _event_ms(ev, None, None, hz, default_frames=36)
+            r["ms"] = _event_ms(ev, None, None, hz, default_frames=36, index=i)
         else:
             raise ValueError(f"lexsync: unknown event type '{t}'.")
         # An event may be restricted to named blocks. This is what lets feedback run
@@ -1352,6 +1620,21 @@ def _json_r(obj) -> str:
     return json.dumps(integral(obj), separators=(",", ":"), ensure_ascii=False)
 
 
+def _fifteen_digits(value):
+    """A trial's number as the R engine's jsonlite::toJSON(digits = I(15)) writes it.
+
+    jsonlite writes a double to 15 significant digits, dropping the last digits of a
+    value such as 1000 / 30, so the double nearest that 15-digit decimal is embedded
+    here, and json.dumps then writes the same digits. jsonlite's default of four
+    decimal places wrote 33.3333 for an item table's 33.333333, while this engine
+    wrote every digit. Must match the TRIALS_JSON line of export_jspsych in
+    scripting.R.
+    """
+    if isinstance(value, float) and math.isfinite(value):
+        return float("%.15g" % value)
+    return value
+
+
 def _json_html(obj) -> str:
     """JSON safe to embed inside an HTML <script> (escape <, >, & and JS line seps)."""
     return (_json_r(obj).replace("<", "\\u003c").replace(">", "\\u003e")
@@ -1384,7 +1667,8 @@ def export_jspsych(stimuli, design, schema, outdir, base=None) -> str:
     rendered = _map_keys_for_jspsych(
         render_events(events, design.get("timing") or {}, _refresh_hz(schema)))
     versions = presentation_versions(stimuli)
-    trials = loop_table(stimuli, events).to_dict(orient="records")
+    trials = [{key: _fifteen_digits(value) for key, value in row.items()}
+              for row in loop_table(stimuli, events).to_dict(orient="records")]
     presentation = schema.get("presentation") or {}
     font = design.get("font") or presentation.get("font") or "Courier New"
     with open(find_template("jspsych/experiment_template.html"), encoding="utf-8") as handle:
@@ -1426,7 +1710,10 @@ def export_experiments(stimuli, design, schema, outdir, base=None, conditions=No
     conditions the first is 101, the second 102, and so on, whatever order the
     counterbalanced trials put them in. A design with no ``conditions`` block (a
     generated lexical decision, an item table) falls back to the order of first
-    appearance, unless ``conditions`` is given.
+    appearance, unless ``conditions`` is given. ``assign_triggers`` is given the
+    design's events and the schema, so the item codes of a design that sends them
+    alongside other codes are kept apart from those codes, and a code of the design's
+    own that the stream already uses is reported.
 
     Returns the generated paths by target: ``psychopy``, ``opensesame`` (version 1's
     experiment when a design has several, see :func:`export_opensesame`) and
@@ -1436,7 +1723,7 @@ def export_experiments(stimuli, design, schema, outdir, base=None, conditions=No
     """
     if conditions is None:
         conditions = _design_condition_names(design)
-    stimuli = assign_triggers(stimuli, conditions)
+    stimuli = assign_triggers(stimuli, conditions, events=resolve_events(design), schema=schema)
     script, conditions_file = _psychopy_files(stimuli, design, schema, outdir, base)
     experiments, tables = _opensesame_files(stimuli, design, schema, outdir, base)
     page = export_jspsych(stimuli, design, schema, outdir, base)

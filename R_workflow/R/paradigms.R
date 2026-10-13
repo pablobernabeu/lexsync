@@ -9,11 +9,11 @@
 #'
 #' Each event is a list with `type` (fixation | text | mask | blank |
 #' region_by_region | response | question | feedback), `content` (a literal or a
-#' `{field}` reference), an optional `trigger` (an integer EEG code or the token
-#' "condition"/"item"), `onset_locked`, response `keys`/`timeout_ms`, a response's
-#' `from` (where its window opens: "onset", with the text event before it, which is
-#' the default after a text event, or "offset", once that has gone), and an optional
-#' `blocks` restricting the event to named blocks.
+#' `{field}` reference), an optional `trigger` (a whole-number EEG code from 1 to 255
+#' or the token "condition"/"item"), `onset_locked`, response `keys`/`timeout_ms`, a
+#' response's `from` (where its window opens: "onset", with the text event before it,
+#' which is the default after a text event, or "offset", once that has gone), and an
+#' optional `blocks` restricting the event to named blocks.
 #'
 #' @format A named list with one entry per paradigm (`factorial`,
 #'   `lexical_decision`, `priming`, `categorisation`, `self_paced_reading`), each

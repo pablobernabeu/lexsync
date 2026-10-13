@@ -1,0 +1,24 @@
+# Twin-edge case: a misspelt trigger token. `conditon` stopped the Python engine with
+# int()'s own error, while the R engine wrote send_trigger(NA) into the OpenSesame
+# experiment. Both now refuse it when the design is checked, before anything is
+# selected or written, naming the event and the forms a trigger takes.
+# The word forms are common English words paired for this fixture.
+name: twin_edge_trigger_typo
+language: english
+description: 'A target whose trigger token is misspelt.'
+items:
+  source: table
+  path: items.csv
+events:
+  - type: fixation
+    content: '+'
+    duration_ms: 500
+  - type: text
+    content: '{word}'
+    duration_ms: 800
+    trigger: conditon
+  - type: response
+    keys: [f, j]
+    timeout_ms: 2000
+counterbalance:
+  lists: 1

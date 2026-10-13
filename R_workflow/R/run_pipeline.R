@@ -552,6 +552,18 @@ run_pipeline <- function(design_path, schema_path = NULL,
   # inside the generated script. Run on the presented set, so practice and filler
   # trials get their own realised durations too.
   presented <- resolve_trial_timing(blk$presented, design, schema)
+  # Fractional milliseconds read from the items are rounded once, and the run log says
+  # how many. The record is read straight off the frame and dropped, so no table
+  # written later carries it.
+  for (note in attr(presented, "duration_rounding") %||% list()) {
+    log <- log_step(log, sprintf("rounded %d fractional duration(s) in column '%s' to whole milliseconds",
+                                 note$n_rounded, note$column), note)
+  }
+  attr(presented, "duration_rounding") <- NULL
+  # A design whose item codes cannot be kept apart from its other trigger codes is
+  # refused here, before any file is written. export_experiments() allocates the same
+  # codes again and reports on them.
+  .allocate_codes(presented, condition_order, resolve_events(design), schema)
   stim <- if (is.null(blocks)) presented
           else presented[presented$block == .BLOCK_MAIN, , drop = FALSE]
   rownames(stim) <- NULL

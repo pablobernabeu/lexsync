@@ -44,7 +44,7 @@ from .generation import _lexdec_eligible, _read_known_forms, build_lexdec_stimul
 from .io_utils import _is_continuous, read_config, write_csv_utf8
 from .matching import _resolve_policy, match_stimuli, resample_stimuli, select_continuous_stimuli
 from .pairs import join_member_norms, member_lexicon_path, select_continuous_pairs
-from .paradigms import required_fields
+from .paradigms import required_fields, resolve_events
 from .paths import resolve_schema
 from .querying import (
     _apply_exclude_words,
@@ -61,7 +61,12 @@ from .querying import (
     load_lexicon,
     load_pool,
 )
-from .scripting import _design_condition_names, export_experiments, resolve_trial_timing
+from .scripting import (
+    _allocate_codes,
+    _design_condition_names,
+    export_experiments,
+    resolve_trial_timing,
+)
 from .validation import balance_check, match_report, match_report_continuous
 
 # The dimensions lexsync derives from the forms when a lexicon lacks them, in the
@@ -625,6 +630,16 @@ def run_pipeline(design_path: str, schema_path: str | None = None, outdir: str =
     # Run on the presented set, so practice and filler trials get their own realised
     # durations too.
     presented = resolve_trial_timing(blk["presented"], design, schema)
+    # Fractional milliseconds read from the items are rounded once, and the run log says
+    # how many. The record is read straight off the frame and dropped, so no table
+    # written later carries it.
+    for note in presented.attrs.pop("duration_rounding", []):
+        runlog.log_step(log, "rounded %d fractional duration(s) in column '%s' to whole "
+                             "milliseconds" % (note["n_rounded"], note["column"]), dict(note))
+    # A design whose item codes cannot be kept apart from its other trigger codes is
+    # refused here, before any file is written. export_experiments allocates the same
+    # codes again and reports on them.
+    _allocate_codes(presented, condition_order, resolve_events(design), schema)
     stim = (presented if blocks is None
             else presented[presented["block"] == BLOCK_MAIN].reset_index(drop=True))
     if blocks is not None:

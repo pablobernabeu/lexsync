@@ -32,10 +32,11 @@ for self-paced reading) are in `<base>_opensesame_text.csv`. The generated
 scripts read it with Python's `csv` module. The snippet above reads `var.word`
 from your own loop table, so keep braces, square brackets and a leading `=` out
 of the words there. Read that way, a word such as `nan` or `infinity` also
-stops OpenSesame 4.x. The snippet sends `item_trigger` and then, once that
-10 ms pulse has ended, `condition_trigger`, whereas the generated file sends one
-marker at each onset, the one its event names. Adjust those names if you paste
-the snippet into a design whose loop table names its markers differently.
+stops OpenSesame 4.x. The snippet sends one marker at the word's onset,
+`condition_trigger`, as the generated file sends the one marker its event names.
+A marker sent before it would hold it back by its own 10 ms pulse, and the loop
+table already identifies the item. Adjust the name if you paste the snippet into
+a design whose loop table names its marker differently.
 
 A design with more than one counterbalancing list, or with resampled item sets,
 has several presentation versions, and each participant runs one. It gets one

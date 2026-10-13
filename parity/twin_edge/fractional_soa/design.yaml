@@ -1,0 +1,38 @@
+# Twin-edge case: prime durations read from the items in fractions of a millisecond,
+# as an SOA table built on 60 Hz frames (1000/60 ms each) carries them to six places.
+# The values reached the experiments with all their digits, and the R engine's jsPsych
+# page kept only four decimal places of them, so the two engines' pages differed. Each
+# value is now rounded once to whole milliseconds, by the rounder both engines share,
+# which takes 82.5 to 83. The stimuli, the loop tables and the page carry the rounded
+# values, and the run log says how many were rounded.
+# The prime-target pairs are common English words paired for this fixture, and the
+# prime durations are illustrative.
+name: twin_edge_fractional_soa
+language: english
+paradigm: priming
+description: 'Priming with fractional prime durations read from the items, rounded once to whole milliseconds.'
+items:
+  source: table
+  path: items.csv
+events:
+  - type: fixation
+    content: '+'
+    duration_ms: 500
+  - type: text
+    content: '{prime}'
+    duration: {from_column: prime_ms}
+    trigger: 20
+    onset_locked: true
+  - type: mask
+    content: '#####'
+    duration_ms: 33
+  - type: text
+    content: '{target}'
+    duration_ms: 800
+    trigger: condition
+    onset_locked: true
+  - type: response
+    keys: [left, right]
+    timeout_ms: 2000
+counterbalance:
+  lists: 2

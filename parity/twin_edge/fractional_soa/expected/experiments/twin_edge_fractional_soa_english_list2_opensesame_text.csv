@@ -1,0 +1,5 @@
+lexsync_row,condition,prime,target
+1,related,dog,cat
+2,unrelated,window,doctor
+3,unrelated,pencil,king
+4,related,butter,bread

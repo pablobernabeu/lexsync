@@ -1,0 +1,2 @@
+outcome: refusal
+refusal: "lexsync: event 2 has trigger 'conditon'; use 'condition', 'item' or a code from 1 to 255."

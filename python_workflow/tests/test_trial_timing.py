@@ -14,6 +14,8 @@ sharing a value.
 
 R_workflow/tests/testthat/test-trial-timing.R asserts the same values.
 """
+import re
+
 import pandas as pd
 import pytest
 
@@ -131,3 +133,75 @@ def test_a_hash_key_component_that_cannot_be_rendered_identically_is_refused():
     # A value past the integer range would make R's as.integer() return NA, which would
     # put an empty component into the key.
     assert _key_part(3e9) == "3000000000"
+
+
+# ---- A duration read from the items is checked, and a fractional one rounded --------
+#
+# A blank or negative value used to reach the experiments, where OpenSesame's int('')
+# and PsychoPy's float('') raised during the session and jsPsych ended the trial at
+# once. A fractional value kept all its digits, which R's jsonlite cut to four decimal
+# places, so the two engines' jsPsych pages differed. test-trial-timing.R pins the same
+# values and messages.
+
+def _with_soa(values):
+    return STIM.assign(soa_ms=values)
+
+
+def test_a_fractional_column_duration_is_rounded_once_and_recorded():
+    # A frame at 60 Hz lasts 1000/60 ms, which an item table carries to six places.
+    out = resolve_trial_timing(_with_soa([33.333333, 250, 82.5, 66.666667]),
+                               {"events": EVENTS}, SCHEMA)
+    # The shared rounder takes 82.5 away from zero, where Python's round() gives 82.
+    assert list(out["soa_ms"]) == [33, 250, 83, 67]
+    assert out.attrs["duration_rounding"] == [{"event": 2, "column": "soa_ms", "n_rounded": 3}]
+    assert list(loop_table(out, EVENTS)["soa_ms"]) == [33, 250, 83, 67]
+    # Rounded once: the realised table has nothing left to round, and the record of the
+    # first call does not carry over to the second.
+    again = resolve_trial_timing(out, {"events": EVENTS}, SCHEMA)
+    assert list(again["soa_ms"]) == [33, 250, 83, 67]
+    assert "duration_rounding" not in again.attrs
+
+
+def test_whole_column_durations_are_left_as_they_are():
+    out = resolve_trial_timing(STIM, {"events": EVENTS}, SCHEMA)
+    assert list(out["soa_ms"]) == [60, 250, 1200, 60]
+    assert out["soa_ms"].dtype == STIM["soa_ms"].dtype
+    assert "duration_rounding" not in out.attrs
+
+
+@pytest.mark.parametrize("value,what", [
+    (float("nan"), "is blank"),
+    (None, "is blank"),
+    (-50, "holds '-50'"),
+    (float("inf"), "holds 'Inf'"),
+    ("fast", "holds 'fast'"),
+])
+def test_a_column_duration_that_is_blank_negative_or_not_a_number_is_refused(value, what):
+    stim = _with_soa([60, value, 1200, 60])
+    with pytest.raises(ValueError, match=re.escape(
+            "lexsync: event 2 reads its duration from column 'soa_ms', which %s for set 2 in "
+            "condition 'unrelated'; a duration must be a finite number of milliseconds, not "
+            "negative." % what)):
+        resolve_trial_timing(stim, {"events": EVENTS}, SCHEMA)
+    # A column of booleans is not a duration either, although Python counts True as 1.
+    with pytest.raises(ValueError, match=re.escape(
+            "which holds 'true' for set 1 in condition 'related'")):
+        resolve_trial_timing(_with_soa([True, False, True, False]), {"events": EVENTS}, SCHEMA)
+
+
+def test_a_refused_column_duration_names_the_block_of_its_trial():
+    stim = _with_soa([60, 250, -1, 60]).assign(block=["practice", "main", "main", "main"])
+    with pytest.raises(ValueError, match=re.escape(
+            "which holds '-1' for set 3 in condition 'related' of block 'main'")):
+        resolve_trial_timing(stim, {"events": EVENTS}, SCHEMA)
+
+
+def test_a_jitter_range_must_start_at_zero_or_more():
+    for bad, shown in (([-100, 200], "[-100, 200]"), ([0, float("nan")], "[0, NaN]")):
+        with pytest.raises(ValueError, match=re.escape(
+                "lexsync: event 1 has jitter %s; a jittered duration needs finite bounds, "
+                "the lower one not negative." % shown)):
+            render_events([{"type": "blank", "duration": {"jitter": bad}}], {}, 60)
+    # Zero is a duration like any other.
+    ok = render_events([{"type": "blank", "duration": {"jitter": [0, 200]}}], {}, 60)
+    assert ok[0]["ms_column"] == "event1_ms"

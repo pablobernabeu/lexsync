@@ -58,7 +58,7 @@
   "matching.on_insufficient_tolerance", "matching.tie_break",
   "equivalence", "equivalence.bound_d", "equivalence.alpha",
   "triggers", "triggers.parallel_address", "triggers.trigger_hold_ms",
-  "triggers.reset_after_frames", "triggers.inter_trigger_ms",
+  "triggers.reset_after_frames", "triggers.inter_trigger_ms", "triggers.allow_code_overlap",
   "presentation", "presentation.font", "presentation.opensesame_font",
   "presentation.assumed_refresh_hz",
   "counterbalance", "counterbalance.incomplete"
@@ -145,10 +145,23 @@
   notes
 }
 
-# A scalar as the user typed it, near enough to quote back in a message.
+# A value as the user typed it, near enough to quote back in a message. A number that is
+# not finite is shown as R prints it, NaN, Inf or -Inf, and a list or a vector of more
+# than one value in brackets, so the two engines quote the same text. .key_part() would
+# refuse the first, and sprintf() would turn the second into several messages. Must
+# match _shown in python_workflow/src/lexsync/design.py.
 .shown <- function(value) {
+  if (is.list(value) || length(value) != 1L) {
+    return(paste0("[", paste(vapply(as.list(value), .shown, character(1)), collapse = ", "),
+                  "]"))
+  }
   if (is.logical(value)) return(if (isTRUE(value)) "true" else "false")
-  if (is.numeric(value)) return(.key_part(value))
+  if (is.numeric(value)) {
+    if (is.nan(value)) return("NaN")
+    if (is.infinite(value)) return(if (value > 0) "Inf" else "-Inf")
+    if (is.na(value)) return("NA")
+    return(.key_part(value))
+  }
   as.character(value)
 }
 

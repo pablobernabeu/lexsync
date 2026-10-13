@@ -279,7 +279,7 @@ def test_read_config_refuses_a_duplicated_mapping_key(tmp_path):
 # same digests for .DESIGN_KEYS and .SCHEMA_KEYS, so a key added to one engine only
 # fails both suites.
 DESIGN_KEYS_SHA256 = "85bb0bc2e376483bf5c818469cbc9e9446f952d5095d64c69e9e19086c5ee357"
-SCHEMA_KEYS_SHA256 = "a62e1a4f7cc410ef37d511e9758107b414bedec2c7ab008704c57171fc7f0e5c"
+SCHEMA_KEYS_SHA256 = "3da6fe93e219c8b2d112c3d10c84538cbb67c8271b01d5751c3e5388de938529"
 
 
 def test_the_key_vocabularies_agree_across_engines():

@@ -4,7 +4,7 @@
 \alias{assign_triggers}
 \title{Assign EEG trigger codes to stimuli}
 \usage{
-assign_triggers(stimuli, conditions = NULL)
+assign_triggers(stimuli, conditions = NULL, events = NULL, schema = NULL)
 }
 \arguments{
 \item{stimuli}{A stimuli data frame.}
@@ -12,6 +12,13 @@ assign_triggers(stimuli, conditions = NULL)
 \item{conditions}{Optional character vector of condition labels, in the order
 that assigns their codes from 101 upwards. \code{NULL} (the default) numbers the
 conditions in order of first appearance.}
+
+\item{events}{Optional list of the design's events, as \code{\link[=resolve_events]{resolve_events()}} returns
+them, which says which codes the experiment sends. \code{NULL} (the default) allocates
+the item codes as for a design that sends no other code beside them.}
+
+\item{schema}{Optional parsed global schema, read for
+\code{triggers.allow_code_overlap}, which must be \code{true} or \code{false} when given.}
 }
 \value{
 \code{stimuli} with trigger columns added.
@@ -19,11 +26,29 @@ conditions in order of first appearance.}
 \description{
 Adds \code{condition_trigger} (101, 102, ... per condition) and \code{item_trigger}
 (40-239 per item/\code{set}). Events reference these by the tokens "condition" and
-"item", or carry their own integer codes. The item range holds 200 codes (an
-8-bit-port constraint), so past 200 sets the codes wrap and repeat, and a
-runtime notice says so.
+"item", or carry their own codes, whole numbers from 1 to 255. Item codes follow
+the code-point order of the set labels, so with sets 1 to 20, set 10 is 41 and set
+2 is 51. Decode an item code through the loop table, not from the set's label. The
+item range holds 200 codes (an 8-bit-port constraint), so past 200 sets the codes
+wrap and repeat, and a runtime notice says so.
 }
 \details{
+\code{events}, the design's event list, says which codes the experiment sends. When it
+sends item codes together with condition codes, or with a code of its own from 40
+to 239, the item codes skip 101 to 100 + k, the codes of the k conditions, and the
+design's own codes, so that no item takes a code that marks something else. Sets
+65 and 66 of a 70-set design took 101 and 102, the condition codes. A design with
+more item sets than free codes is then refused, unless \code{schema} sets
+\code{triggers.allow_code_overlap: true}, which lets the item codes wrap and repeat
+within the free codes. Every other design, and a call without \code{events}, gets the
+item codes it had before. Each trigger in \code{events} is checked as
+\code{\link[=render_events]{render_events()}} checks it.
+
+A notice is given for a code of the design's own that the stream already uses for
+something else: 254 or 255, which the PsychoPy experiment sends when the session
+starts and ends, a condition code the design sends, or a code within the range of
+the item codes it sends.
+
 The condition codes follow \code{conditions} when it is given: its first entry is
 101, its second 102, and so on, whether or not every entry occurs in
 \code{stimuli}, so the same condition keeps the same code in a subset such as a
@@ -44,4 +69,7 @@ unique(assign_triggers(stim)[, c("condition", "condition_trigger")])
 # The design's order: high = 101, low = 102, however the rows are shuffled.
 unique(assign_triggers(stim, conditions = c("high", "low"))[
   , c("condition", "condition_trigger")])
+# Item codes follow the code-point order of the set labels: set 2 is 51 here.
+twenty <- assign_triggers(data.frame(condition = "a", set = 1:20))
+stats::setNames(twenty$item_trigger, twenty$set)
 }

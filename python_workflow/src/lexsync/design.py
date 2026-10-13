@@ -71,7 +71,7 @@ SCHEMA_KEYS = (
     "matching.on_insufficient_tolerance", "matching.tie_break",
     "equivalence", "equivalence.bound_d", "equivalence.alpha",
     "triggers", "triggers.parallel_address", "triggers.trigger_hold_ms",
-    "triggers.reset_after_frames", "triggers.inter_trigger_ms",
+    "triggers.reset_after_frames", "triggers.inter_trigger_ms", "triggers.allow_code_overlap",
     "presentation", "presentation.font", "presentation.opensesame_font",
     "presentation.assumed_refresh_hz",
     "counterbalance", "counterbalance.incomplete",
@@ -186,11 +186,25 @@ def _check_keys(config, vocabulary, kind: str) -> list:
 
 
 def _shown(value) -> str:
-    """A scalar as the user typed it, near enough to quote back in a message."""
+    """A value as the user typed it, near enough to quote back in a message.
+
+    A number that is not finite is shown as R prints it, NaN, Inf or -Inf, and a list in
+    brackets, so the two engines quote the same text. _key_part would refuse the first,
+    and str() would quote each string of the second. Must match .shown in
+    R_workflow/R/design.R.
+    """
     if isinstance(value, bool):
         return "true" if value else "false"
     if isinstance(value, numbers.Real):
+        if value != value:
+            return "NaN"
+        if value in (math.inf, -math.inf):
+            return "Inf" if value > 0 else "-Inf"
         return _key_part(value)
+    if isinstance(value, dict):
+        value = list(value.values())
+    if isinstance(value, (list, tuple)):
+        return "[" + ", ".join(_shown(v) for v in value) + "]"
     return str(value)
 
 

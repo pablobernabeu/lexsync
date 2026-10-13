@@ -652,6 +652,54 @@ no function signature changes.
   letter. The guide's fetch section says that length, N and OLD20 count code
   points in both packages, so a vowel sign, a virama or a zero-width non-joiner
   is a character of its own.
+- Durations that `resolve_trial_timing` reads from an item column must be present,
+  finite and not negative. Fractional milliseconds are rounded once and recorded.
+  A blank or negative value used to produce experiments that stopped at
+  the blank in OpenSesame and PsychoPy or showed the stimulus for no time in
+  jsPsych. A fractional one made the R and Python jsPsych pages differ, because the
+  R engine's jsonlite kept four decimal places of it. A blank, negative or
+  non-numeric value is now refused, naming the column and the trial's set and
+  condition. A column of fractional milliseconds is rounded with the rounder both
+  engines share and written back to the stimuli and the loop tables, so 82.5 ms is
+  presented as 83 in every target. The returned frame records how many values
+  were rounded in `attrs["duration_rounding"]`, and `run_pipeline` writes the
+  count into the run log. Fixed durations are checked the same way. A
+  negative `duration_ms`, `duration_frames` or `timing` value reached OpenSesame as
+  `clock.sleep(-50)`, and a NaN as `clock.sleep(NA)` from the R engine, and both
+  are now refused, naming the event or the key. A fractional `duration_ms` is
+  rounded where it was truncated, so 33.7 ms is presented as 34, and the lower
+  bound of a jitter must not be negative. Both engines write each trial's numbers on the
+  jsPsych page to 15 significant digits. No shipped design reads a fractional or
+  blank duration, so no stimulus or experiment changes. The twin-edge case
+  `fractional_soa` pins both engines to one outcome.
+- Trigger codes are checked when the experiment is generated. A literal must be a
+  whole number from 1 to 255, written as a number or as a string of digits, and
+  anything else is refused with a message naming the event. A misspelt token such
+  as `conditon` stopped this engine with `int()`'s own error, while the R engine
+  wrote `send_trigger(NA)` into the OpenSesame experiment. Codes such as 300, 0 and
+  -5 reached the parallel port, which keeps only the low byte, and 20.5 was taken
+  as 20. A literal of 254 or 255, which the PsychoPy experiment sends when the
+  session starts and ends, is reported on standard output, and so is one equal to a
+  condition code the design sends or one within the range of the item codes it
+  sends. A design that sends item codes together with condition codes, or with a
+  code of its own from 40 to 239, gets item codes that never coincide with those
+  codes. Sets 65 and 66 of a 70-set design took 101 and 102, the condition codes.
+  Such a design is refused before any file is written when it has more item sets
+  than free codes, unless the schema sets the new
+  `triggers.allow_code_overlap: true`, which lets the item codes wrap and repeat
+  within the free codes. `assign_triggers` gains `events` and `schema` for this,
+  and `export_experiments` passes them. Any other design keeps its item codes, so
+  no shipped loop table changes. The guide now says that item codes follow the
+  code-point order of the set labels, so that with sets 1 to 20 set 10 is 41 and
+  set 2 is 51, and that they are decoded through the loop table. The R vignette
+  said that condition codes stay unique regardless. The codes did, but the marker
+  stream did not once both kinds were sent. The OpenSesame snippet
+  `templates/opensesame/inline_send_triggers.py` sends only the condition code at
+  the word's onset. It sent the item code first, whose 10 ms pulse delayed the
+  condition code. The schema's comments describe the new key, so the 42 committed
+  datasheets, which record the schema's SHA-256, and their run logs are
+  regenerated. No stimulus, report table or experiment changes. The twin-edge case
+  `trigger_typo` pins the refusal in both engines.
 
 ### Security
 

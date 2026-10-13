@@ -520,3 +520,161 @@ test_that("a presentation version is numbered by whole-number lists", {
   expect_identical(lapply(v, function(x) c(x$list, x$n_trials)),
                    list(c(2L, 2L), c(3L, 1L), c(10L, 1L)))
 })
+
+# ---- Trigger codes are checked when the experiment is generated -------------------
+#
+# A literal code was never range-checked: 300 reached the parallel port, which keeps
+# only the low byte, and the serial port's to_bytes(1) raised during the session. A
+# misspelt token such as `conditon` made this engine write send_trigger(NA) into the
+# OpenSesame experiment, while the Python engine stopped with int()'s own error.
+# test_scripting.py pins the same rules, codes and messages.
+
+fix_ev <- list(type = "fixation", content = "+", duration_ms = 500L)
+word_ev <- function(trigger) {
+  list(type = "text", content = "{word}", duration_ms = 800L, trigger = trigger)
+}
+with_trigger <- function(ev, trigger) {
+  ev$trigger <- trigger
+  ev
+}
+region_item <- list(type = "region_by_region", content = "{sentence}",
+                    critical_region_trigger = "item")
+# Two conditions crossed with sets 1 to n.
+sets_of <- function(n) {
+  data.frame(condition = rep(c("a", "b"), n), set = rep(seq_len(n), each = 2L),
+             stringsAsFactors = FALSE)
+}
+item_codes <- function(stim) {
+  u <- unique(stim[, c("set", "item_trigger")])
+  stats::setNames(u$item_trigger, u$set)
+}
+
+test_that("a trigger is condition, item or a code from 1 to 255", {
+  spec <- function(trigger) {
+    render_events(list(fix_ev, word_ev(trigger)), list(), 60)[[2]]$trigger
+  }
+  expect_identical(spec("condition"), "@condition_trigger")
+  expect_identical(spec("item"), "@item_trigger")
+  # A whole number, written as a number or as a string of digits.
+  expect_identical(lapply(list(1L, 255L, "20", 20), spec), list(1L, 255L, 20L, 20L))
+  bad <- list(list(300L, "300"), list(0L, "0"), list(-5L, "-5"), list("conditon", "conditon"),
+              list(20.5, "20.5"), list(TRUE, "true"), list("20 ", "20 "))
+  for (case in bad) {
+    expect_error(render_events(list(fix_ev, word_ev(case[[1]])), list(), 60),
+                 sprintf(paste("lexsync: event 2 has trigger '%s'; use 'condition', 'item' or",
+                               "a code from 1 to 255."), case[[2]]),
+                 fixed = TRUE)
+  }
+  region <- region_item
+  region$critical_region_trigger <- 256L
+  expect_error(render_events(list(region), list(), 60),
+               paste("lexsync: event 1 has critical_region_trigger '256'; use 'condition',",
+                     "'item' or a code from 1 to 255."), fixed = TRUE)
+})
+
+test_that("a literal trigger of 254 or 255 is logged", {
+  stim <- sets_of(2)
+  expect_identical(
+    capture_messages(assign_triggers(stim, events = list(with_trigger(fix_ev, 254L),
+                                                         word_ev("condition")))),
+    paste("lexsync: event 1 sends code 254, which the PsychoPy experiment also sends when",
+          "the session starts.\n"))
+  expect_identical(
+    capture_messages(assign_triggers(stim, events = list(fix_ev, word_ev(255L)))),
+    paste("lexsync: event 2 sends code 255, which the PsychoPy experiment also sends when",
+          "the session ends.\n"))
+  # export_experiments hands the design's events to assign_triggers.
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  out <- tempfile("lexsync"); dir.create(out)
+  on.exit(unlink(out, recursive = TRUE), add = TRUE)
+  design <- list(name = "t", language = "english",
+                 events = list(with_trigger(fix_ev, 254L), word_ev("condition")))
+  full <- stim
+  full$word <- "cat"
+  full$trial <- 1:4
+  expect_message(export_experiments(full, design, schema, out),
+                 "lexsync: event 1 sends code 254", fixed = TRUE)
+})
+
+test_that("a literal trigger that shares a code in use is logged", {
+  # A code equal to a condition code the design sends.
+  msgs <- capture_messages(out <- assign_triggers(
+    sets_of(2), events = list(with_trigger(fix_ev, 102L), word_ev("condition"))))
+  expect_identical(msgs,
+                   "lexsync: event 1 sends code 102, which is also the condition code of 'b'.\n")
+  expect_setequal(unname(item_codes(out)), c(40L, 41L))
+  # A code among the item codes the design sends: no item takes it, but a reader who
+  # decoded item codes by their range would.
+  msgs <- capture_messages(out <- assign_triggers(
+    sets_of(10), events = list(with_trigger(fix_ev, 45L), region_item)))
+  expect_identical(msgs, paste("lexsync: event 1 sends code 45, which lies inside the range of",
+                               "the item codes (40 to 50); decode item codes through the loop",
+                               "table.\n"))
+  expect_false(45L %in% item_codes(out))
+  # A design that sends neither kind of code hears nothing about them.
+  expect_silent(assign_triggers(sets_of(10),
+                                events = list(with_trigger(fix_ev, 45L), word_ev(102L))))
+})
+
+test_that("a 70-set design sending both code kinds has no overlap", {
+  expect_silent(out <- assign_triggers(sets_of(70),
+                                       events = list(word_ev("condition"), region_item)))
+  codes <- item_codes(out)
+  expect_false(any(codes %in% c(101L, 102L)))
+  expect_identical(length(unique(codes)), 70L)
+  # Item codes follow the code-point order of the set labels, so set 10 is 41 and set 2
+  # is 51. Sets 65 and 66, which took 101 and 102, take the next free codes.
+  expect_identical(unname(codes[c("10", "2", "64", "65", "66")]),
+                   c(41L, 51L, 100L, 103L, 104L))
+})
+
+test_that("item codes are allocated as before unless both kinds are sent", {
+  for (events in list(NULL, list(word_ev("condition")), list(region_item),
+                      list(with_trigger(fix_ev, 20L), region_item))) {
+    codes <- item_codes(assign_triggers(sets_of(70), events = events))
+    expect_identical(unname(codes[c("10", "2", "65", "66")]), c(41L, 51L, 101L, 102L))
+  }
+})
+
+test_that("item codes beyond the free codes are refused unless overlap is allowed", {
+  events <- list(word_ev("condition"), region_item)
+  expect_error(assign_triggers(sets_of(199), events = events),
+               paste("lexsync: 199 item sets need 199 item codes, but only 198 of the codes",
+                     "from 40 to 239 are free of the condition codes and the design's own",
+                     "codes; send fewer kinds of code, or set triggers.allow_code_overlap: true",
+                     "to let item codes repeat."), fixed = TRUE)
+  expect_identical(length(unique(item_codes(assign_triggers(sets_of(198), events = events)))),
+                   198L)
+  msgs <- capture_messages(out <- assign_triggers(
+    sets_of(199), events = events, schema = list(triggers = list(allow_code_overlap = TRUE))))
+  expect_identical(msgs, paste("lexsync: 199 item sets exceed the 198 free item codes; item",
+                               "codes wrap and repeat.\n"))
+  codes <- item_codes(out)
+  expect_false(any(codes %in% c(101L, 102L)))
+  # The first set's code is the one used twice.
+  expect_identical(sum(codes == 40L), 2L)
+  expect_identical(length(unique(codes)), 198L)
+  expect_error(assign_triggers(sets_of(2), events = events,
+                               schema = list(triggers = list(allow_code_overlap = "yes"))),
+               "lexsync: triggers.allow_code_overlap must be true or false.", fixed = TRUE)
+})
+
+test_that("the trials JSON carries 15 significant digits", {
+  # jsonlite wrote four decimal places of a fractional number here and the Python engine
+  # every digit, so the page differed between the engines. Both now write 15 significant
+  # digits. test_scripting.py pins the same line.
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  out <- tempfile("lexsync"); dir.create(out)
+  on.exit(unlink(out, recursive = TRUE), add = TRUE)
+  stim <- data.frame(word = c("cat", "dog"), condition = c("a", "b"), set = c(1, 1),
+                     trial = 1:2, word_ms = c(33.333333, 1000 / 30), stringsAsFactors = FALSE)
+  design <- list(name = "t", language = "english", events = list(
+    list(type = "text", content = "{word}", duration = list(from_column = "word_ms"))))
+  html <- paste(readLines(export_jspsych(assign_triggers(stim), design, schema, out),
+                          warn = FALSE), collapse = "\n")
+  expect_true(grepl(paste0(
+    'const TRIALS = [{"trial":1,"set":1,"condition":"a","word":"cat",',
+    '"word_ms":33.333333,"condition_trigger":101,"item_trigger":40},',
+    '{"trial":2,"set":1,"condition":"b","word":"dog","word_ms":33.3333333333333,',
+    '"condition_trigger":102,"item_trigger":40}];'), html, fixed = TRUE))
+})

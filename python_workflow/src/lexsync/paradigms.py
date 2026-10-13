@@ -14,7 +14,7 @@ An *event* is a small dictionary::
 ``type``     one of fixation | text | mask | blank | region_by_region | response |
              question | feedback
 ``content``  a literal ("+", "#####") or a field reference ("{target}", "{sentence}")
-``trigger``  an integer EEG code, or the token "condition" / "item"
+``trigger``  a whole-number EEG code from 1 to 255, or the token "condition" / "item"
 ``onset_locked``  write the trigger on the event's verified onset flip
 ``from``     where a response's window opens: "onset", with the text event before it
              (the default after a text event), or "offset", once that has gone

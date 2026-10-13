@@ -1,0 +1,9 @@
+item,condition,prime,target,prime_ms,set,list,trial
+2,unrelated,table,cat,33,2,1,1
+4,unrelated,planet,bread,67,4,1,2
+3,related,queen,king,83,3,1,3
+1,related,nurse,doctor,17,1,1,4
+2,related,dog,cat,33,2,2,1
+1,unrelated,window,doctor,17,1,2,2
+3,unrelated,pencil,king,83,3,2,3
+4,related,butter,bread,67,4,2,4

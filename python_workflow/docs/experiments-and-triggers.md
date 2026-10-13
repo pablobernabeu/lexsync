@@ -26,9 +26,9 @@ braces, such as `"{target}"`, which is filled per trial from the loop table. `du
 event's length in milliseconds, the unit all three targets present, so a design asks for the same
 interval wherever it runs, although each target delivers it differently (below). The PsychoPy script measures the display's refresh at start-up and
 converts it to the nearest whole number of flips. `duration_frames` is still accepted for designs
-written before that change and is converted at `presentation.assumed_refresh_hz`. `trigger` is an
-integer EEG code, or the token `condition` or `item`, and `onset_locked` asks for it to be written
-on the event's onset flip.
+written before that change and is converted at `presentation.assumed_refresh_hz`. `trigger` is a
+whole-number EEG code from 1 to 255, or the token `condition` or `item`, and `onset_locked` asks for
+it to be written on the event's onset flip.
 
 Each target realises those durations in its own way. PsychoPy rounds them to whole flips at the
 measured refresh and locks the trigger to the flip. The generated OpenSesame experiment builds each
@@ -98,6 +98,15 @@ table, because timing that varies is a variable the analysis needs, not
 presentation detail. `config/design_en_priming_jitter.yaml` is a worked
 example carrying both. Its prime lasts `prime_ms` and a 33 ms mask follows, so its
 stimulus-onset asynchrony is `prime_ms` plus 33 ms.
+
+Every value read from a column must be a finite number of milliseconds, not negative. A blank or
+negative cell is refused, naming the column and the trial's set and condition. Left alone, it would
+give an experiment that stops at the blank or shows the stimulus for no time at all. Fractional
+milliseconds, such as the 33.333333 that an item table built on 60 Hz frames carries, are rounded
+once with the rounder both engines share and written back. The stimuli, the loop tables and all
+three targets then present the same whole milliseconds, and the run log counts the values rounded.
+A fixed `duration_ms` or `duration_frames` is checked the same way, and the lower bound of a jitter
+must not be negative.
 
 ## The five paradigms
 
@@ -355,9 +364,9 @@ engines put participant 3 in the same cell.
 ## Triggers
 
 `assign_triggers` gives each row two EEG codes in the 0–255 range a parallel port can carry. The
-condition marker starts at 101 and counts up per condition. The item marker starts at 40 and wraps
-after 200 sets. `export_experiments` calls it for you, so you only need it directly if you are
-exporting one target at a time.
+condition marker starts at 101 and counts up per condition. The item marker starts at 40 and counts
+up in code-point order of the set labels. `export_experiments` calls it for you, so you only need it
+directly if you are exporting one target at a time.
 
 The condition codes follow the order given in the `conditions` argument, or the order of first
 appearance when there is none. The order of first appearance in a shuffled trial list depends on the
@@ -389,11 +398,39 @@ trial,list,set,condition,word,condition_trigger,item_trigger
 3,1,3,high_frequency,fact,101,42
 ```
 
+Code-point order is not numeric order once a design has ten sets or more. With sets 1 to 20, set 10
+is 41 and set 2 is 51. Decode an item code through the loop table, which pairs each trial's set with
+its code, and never from the label.
+
+```python exec="1" source="material-block" result="text" session="experiments"
+import pandas as pd
+
+twenty = assign_triggers(pd.DataFrame({"condition": "a", "set": range(1, 21)}))
+print(dict(zip(twenty["set"].tolist(), twenty["item_trigger"].tolist(), strict=True)))
+```
+
+Item codes stay below 240, since a code is one byte and 254 and 255 mark the session. A design may
+send item codes together with condition codes, or with a code of its own from 40 to 239. Its item
+codes are then drawn from the codes those leave free, skipping 101 upwards and the design's own
+codes. Otherwise, sets 65 and 66 of a 70-set design would take 101 and 102, and an analysis that
+cuts its epochs at the condition codes would also catch two items. Such a design is refused when it has more item
+sets than free codes, unless the schema sets `triggers.allow_code_overlap: true`, which lets the
+item codes wrap and repeat within the free codes. Any other design keeps the codes it always had,
+wrapping at 200 values.
+
+A literal code must be a whole number from 1 to 255. Anything else, a misspelt token such as
+`conditon` included, is refused when the experiment is generated, with a message naming the event.
+A literal of 254 or 255, which the PsychoPy experiment sends when the session starts and ends, is
+reported then. One equal to a condition code the design sends is reported too, as is one within the
+range of the item codes it sends.
+
 The schema sets the hardware defaults: `triggers.parallel_address` (`0x0378`, a typical LPT1 base
 address), `triggers.trigger_hold_ms` (50, comfortably above the 10 ms minimum recorders need to
 see, and converted to whole flips against the measured refresh so it does not shorten on a fast
 display), and `triggers.inter_trigger_ms` (10, the spacing of trailing markers). A design can
 override them. The older `triggers.reset_after_frames` is still accepted and converted.
+`triggers.allow_code_overlap` is false, so a design whose item codes cannot all be kept apart from
+its other codes is refused.
 
 ## The three targets
 

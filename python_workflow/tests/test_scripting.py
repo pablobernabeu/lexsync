@@ -427,3 +427,142 @@ def test_a_presentation_version_is_numbered_by_whole_number_lists():
     mixed = pd.DataFrame({"list": [" 2 ", "2.0", "10", "3"]})
     assert [(v["list"], v["n_trials"]) for v in presentation_versions(mixed)] == [
         (2, 2), (3, 1), (10, 1)]
+
+
+# ---- Trigger codes are checked when the experiment is generated -------------------
+#
+# A literal code was never range-checked: 300 reached the parallel port, which keeps
+# only the low byte, and the serial port's to_bytes(1) raised during the session. A
+# misspelt token such as `conditon` stopped this engine with int()'s own error, while
+# the R engine wrote send_trigger(NA) into the OpenSesame experiment. test-scripting.R
+# pins the same rules, codes and messages.
+
+def _word(trigger):
+    return {"type": "text", "content": "{word}", "duration_ms": 800, "trigger": trigger}
+
+
+_REGION_ITEM = {"type": "region_by_region", "content": "{sentence}",
+                "critical_region_trigger": "item"}
+
+
+def _sets(n):
+    """Two conditions crossed with sets 1 to n."""
+    return pd.DataFrame({"condition": ["a", "b"] * n,
+                         "set": [s for s in range(1, n + 1) for _ in (1, 2)]})
+
+
+def _item_codes(stim):
+    return dict(zip(stim["set"], stim["item_trigger"], strict=True))
+
+
+def test_a_trigger_is_condition_item_or_a_code_from_1_to_255():
+    def spec(trigger):
+        return render_events([_FIX, _word(trigger)], {}, 60)[1]["trigger"]
+
+    assert spec("condition") == "@condition_trigger"
+    assert spec("item") == "@item_trigger"
+    # A whole number, written as a number or as a string of digits.
+    assert [spec(t) for t in (1, 255, "20", 20.0)] == [1, 255, 20, 20]
+    for bad, shown in ((300, "300"), (0, "0"), (-5, "-5"), ("conditon", "conditon"),
+                       (20.5, "20.5"), (True, "true"), ("20 ", "20 ")):
+        with pytest.raises(ValueError, match=re.escape(
+                "lexsync: event 2 has trigger '%s'; use 'condition', 'item' or a code from "
+                "1 to 255." % shown)):
+            render_events([_FIX, _word(bad)], {}, 60)
+    with pytest.raises(ValueError, match=re.escape(
+            "lexsync: event 1 has critical_region_trigger '256'; use 'condition', 'item' or "
+            "a code from 1 to 255.")):
+        render_events([dict(_REGION_ITEM, critical_region_trigger=256)], {}, 60)
+
+
+def test_a_literal_trigger_of_254_or_255_is_logged(schema, tmp_path, capsys):
+    stim = _sets(2)
+    assign_triggers(stim, events=[dict(_FIX, trigger=254), _word("condition")])
+    assert capsys.readouterr().out == (
+        "lexsync: event 1 sends code 254, which the PsychoPy experiment also sends when the "
+        "session starts.\n")
+    assign_triggers(stim, events=[_FIX, _word(255)])
+    assert capsys.readouterr().out == (
+        "lexsync: event 2 sends code 255, which the PsychoPy experiment also sends when the "
+        "session ends.\n")
+    # export_experiments hands the design's events to assign_triggers.
+    design = {"name": "t", "language": "english",
+              "events": [dict(_FIX, trigger=254), _word("condition")]}
+    export_experiments(stim.assign(word="cat", trial=[1, 2, 3, 4]), design, schema,
+                       str(tmp_path))
+    assert "lexsync: event 1 sends code 254" in capsys.readouterr().out
+
+
+def test_a_literal_trigger_that_shares_a_code_in_use_is_logged(capsys):
+    # A code equal to a condition code the design sends.
+    out = assign_triggers(_sets(2), events=[dict(_FIX, trigger=102), _word("condition")])
+    assert capsys.readouterr().out == (
+        "lexsync: event 1 sends code 102, which is also the condition code of 'b'.\n")
+    assert set(_item_codes(out).values()) == {40, 41}
+    # A code among the item codes the design sends: no item takes it, but a reader who
+    # decoded item codes by their range would.
+    out = assign_triggers(_sets(10), events=[dict(_FIX, trigger=45), _REGION_ITEM])
+    assert capsys.readouterr().out == (
+        "lexsync: event 1 sends code 45, which lies inside the range of the item codes "
+        "(40 to 50); decode item codes through the loop table.\n")
+    assert 45 not in _item_codes(out).values()
+    # A design that sends neither kind of code hears nothing about them.
+    assign_triggers(_sets(10), events=[dict(_FIX, trigger=45), _word(102)])
+    assert capsys.readouterr().out == ""
+
+
+def test_a_70_set_design_sending_both_code_kinds_has_no_overlap(capsys):
+    out = assign_triggers(_sets(70), events=[_word("condition"), _REGION_ITEM])
+    codes = _item_codes(out)
+    assert set(codes.values()).isdisjoint({101, 102})
+    assert len(set(codes.values())) == 70
+    # Item codes follow the code-point order of the set labels, so set 10 is 41 and set 2
+    # is 51. Sets 65 and 66, which took 101 and 102, take the next free codes.
+    assert [codes[s] for s in (10, 2, 64, 65, 66)] == [41, 51, 100, 103, 104]
+    assert capsys.readouterr().out == ""
+
+
+def test_item_codes_are_allocated_as_before_unless_both_kinds_are_sent():
+    for events in (None, [_word("condition")], [_REGION_ITEM], [dict(_FIX, trigger=20),
+                                                                  _REGION_ITEM]):
+        codes = _item_codes(assign_triggers(_sets(70), events=events))
+        assert [codes[s] for s in (10, 2, 65, 66)] == [41, 51, 101, 102]
+
+
+def test_item_codes_beyond_the_free_codes_are_refused_unless_overlap_is_allowed(capsys):
+    events = [_word("condition"), _REGION_ITEM]
+    with pytest.raises(ValueError, match=re.escape(
+            "lexsync: 199 item sets need 199 item codes, but only 198 of the codes from 40 "
+            "to 239 are free of the condition codes and the design's own codes; send fewer "
+            "kinds of code, or set triggers.allow_code_overlap: true to let item codes "
+            "repeat.")):
+        assign_triggers(_sets(199), events=events)
+    assert len(set(_item_codes(assign_triggers(_sets(198), events=events)).values())) == 198
+    out = assign_triggers(_sets(199), events=events,
+                          schema={"triggers": {"allow_code_overlap": True}})
+    assert capsys.readouterr().out == (
+        "lexsync: 199 item sets exceed the 198 free item codes; item codes wrap and repeat.\n")
+    codes = list(_item_codes(out).values())
+    assert set(codes).isdisjoint({101, 102})
+    # The first set's code is the one used twice.
+    assert sorted(codes).count(40) == 2 and len(set(codes)) == 198
+    with pytest.raises(ValueError, match=re.escape(
+            "lexsync: triggers.allow_code_overlap must be true or false.")):
+        assign_triggers(_sets(2), events=events,
+                        schema={"triggers": {"allow_code_overlap": "yes"}})
+
+
+def test_the_trials_json_carries_15_significant_digits(schema, tmp_path):
+    # R's jsonlite wrote four decimal places of a fractional number and this engine every
+    # digit, so the page differed between the engines. Both now write 15 significant
+    # digits. test-scripting.R pins the same line.
+    stim = pd.DataFrame({"word": ["cat", "dog"], "condition": ["a", "b"], "set": [1, 1],
+                         "trial": [1, 2], "word_ms": [33.333333, 1000 / 30]})
+    design = {"name": "t", "language": "english", "events": [
+        {"type": "text", "content": "{word}", "duration": {"from_column": "word_ms"}}]}
+    html = open(export_jspsych(assign_triggers(stim), design, schema, str(tmp_path)),
+                encoding="utf-8").read()
+    assert ('const TRIALS = [{"trial":1,"set":1,"condition":"a","word":"cat",'
+            '"word_ms":33.333333,"condition_trigger":101,"item_trigger":40},'
+            '{"trial":2,"set":1,"condition":"b","word":"dog","word_ms":33.3333333333333,'
+            '"condition_trigger":102,"item_trigger":40}];') in html
