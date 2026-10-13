@@ -47,10 +47,18 @@ from .io_utils import _fmt_dp, _fmt_g, _is_continuous, _round_dp, sha256_file
 from .matching import PAIRWISE_CAP, TIE_SALT, _resolve_tie_break
 from .paradigms import resolve_events
 
-# The versions and the response windows come from the module that writes the
-# experiments, so the record counts the versions the participants are given and states
-# the windows they respond in.
-from .scripting import _refresh_hz, _response_windows, presentation_versions
+# The versions, the response windows and the response mapping come from the module that
+# writes the experiments, so the record counts the versions the participants are given
+# and states the windows they respond in and the keys they press.
+from .scripting import (
+    _key_label,
+    _refresh_hz,
+    _response_keys,
+    _response_mapping,
+    _response_windows,
+    _rotates,
+    presentation_versions,
+)
 
 # 1.1 added `materials_source["norms"]` (the design's joined norm tables, with their
 # checksums and per-column coverage) and, for a pair-keyed design, a `relational`
@@ -110,6 +118,9 @@ from .scripting import _refresh_hz, _response_windows, presentation_versions
 #                               or {replicate, condition, n} for resampled sets
 #   design.n_per_condition      the request the selector applied, its default when the
 #                               design gives none (1.1 copied the design's key, or null)
+#   presentation.response_mapping  the key each condition takes, {conditions, keys,
+#                               rotate_by_list, source}, present only when a mapping
+#                               applies: the design's own or a lexical decision's default
 DATASHEET_VERSION = "1.2"
 
 # Datasheet labels for the pseudoword generators in generation.py, keyed by the
@@ -447,6 +458,53 @@ def _response_note(ds: dict) -> str:
                 "offset, and a response ended the trial." % int(w["timeout_ms"]))
     return (" Responses were collected from target onset until %d ms after it, and a "
             "response ended the trial." % int(w["window_ms"]))
+
+
+def _response_mapping_record(design: dict):
+    """The response mapping the experiments score against, as the record keeps it.
+
+    ``{conditions, keys, rotate_by_list, source}``: the key each condition takes in list
+    1, the keys the response event allows in their order, whether the mapping rotates
+    across lists and whether it is the design's own or a lexical decision's default.
+    None when no mapping applies. Mirrors .response_mapping_record in datasheet.R.
+    """
+    mapping = _response_mapping(design)
+    if mapping is None:
+        return None
+    return {"conditions": dict(mapping), "keys": list(_response_keys(design)),
+            "rotate_by_list": _rotates(design),
+            "source": "default" if design.get("response_mapping") is None else "design"}
+
+
+def _mapping_note(ds: dict) -> str:
+    """The response mapping, for the Methods text: which key the participants pressed for
+    which condition, and how it rotated across lists.
+
+    The keys come in the response event's order and the conditions that share a key in
+    code-point order, so a record read back from its JSON, whose objects this engine
+    writes with sorted keys, renders the same text. A rotation is mentioned only when the
+    record holds more than one list. Empty without a mapping, and for a record written
+    before the field existed. Mirrors .mapping_note in datasheet.R.
+    """
+    rec = (ds.get("presentation") or {}).get("response_mapping")
+    if not rec:
+        return ""
+    named = {"word": "words", "pseudoword": "pseudowords"}
+    phrases = []
+    for key in dict.fromkeys(rec["keys"]):
+        conds = sorted(c for c, k in rec["conditions"].items() if k == key)
+        if conds:
+            what = (named[conds[0]] if len(conds) == 1 and conds[0] in named
+                    else _and_join(conds) + " trials")
+            phrases.append("%s for %s" % (_key_label(key), what))
+    text = " Participants pressed " + _and_join(phrases)
+    lists = int((ds.get("counterbalancing") or {}).get("lists") or 1)
+    if rec.get("rotate_by_list") and lists > 1:
+        if len(rec["keys"]) == 2:
+            text += " in odd-numbered lists and the reverse in even-numbered lists"
+        else:
+            text += " in list 1, and the keys rotated by one place in each further list"
+    return text + "."
 
 
 def _and_join(parts) -> str:
@@ -896,6 +954,13 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
     equivalence = {"bound_d": (schema.get("equivalence") or {}).get("bound_d", 0.5),
                    "alpha": (schema.get("equivalence") or {}).get("alpha", 0.05)}
 
+    # The key the participants pressed for each condition, recorded only when a response
+    # mapping applies: the design's own, or a lexical decision's default.
+    presentation = {"response_windows": windows}
+    mapping = _response_mapping_record(design)
+    if mapping is not None:
+        presentation["response_mapping"] = mapping
+
     reproducibility = {"seed": seed, "versions": _versions(engine)}
     # The design and schema decide everything the seed does not, so their checksums
     # complete the reproducibility record when the pipeline names them.
@@ -925,7 +990,7 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
         "equivalence": equivalence,
         "realised_control": realised,
         "counterbalancing": counterbalancing,
-        "presentation": {"response_windows": windows},
+        "presentation": presentation,
         "resampling": ({"n_sets": (design.get("resample") or {}).get("n_sets"),
                         "disjoint": True} if design.get("resample") else None),
         "items": {
@@ -1380,8 +1445,9 @@ def methods_paragraph(ds: dict) -> str:
     interval, then the equivalence tests, then, largest first, up to five comparisons of
     an uncontrolled dimension whose |d| exceeds the bound (see _control_note). Every
     interval is labelled by the schema's alpha. A continuous design gives the predictor's
-    spread and the control windows (see _bands_note). Mirrors methods_paragraph in
-    datasheet.R.
+    spread and the control windows (see _bands_note). When a response mapping applies, it
+    says which key the participants pressed for which condition (see _mapping_note).
+    Mirrors methods_paragraph in datasheet.R.
     """
     d = ds["design"]
     src = ds["materials_source"]["type"]
@@ -1417,8 +1483,8 @@ def methods_paragraph(ds: dict) -> str:
                 f"contrast (Kuperman, 2015; Liben-Nowell et al., 2019)."
                 f"{_bands_note(ds, rc)}{corr_str}{_norms_note(ds)}{excluded} Materials were "
                 f"counterbalanced into {cb['lists']} list(s) ({recipe_label}) and generated "
-                f"for PsychoPy, OpenSesame and jsPsych.{_versions_note(ds)}{_response_note(ds)} "
-                f"The selection is deterministic and reproducible (lexsync "
+                f"for PsychoPy, OpenSesame and jsPsych.{_versions_note(ds)}{_response_note(ds)}"
+                f"{_mapping_note(ds)} The selection is deterministic and reproducible (lexsync "
                 f"{ds['reproducibility']['versions']['lexsync']}), and the seed "
                 f"({ds['reproducibility']['seed']}) fixes the trial order.")
     items = "item" if one else "items"
@@ -1457,8 +1523,8 @@ def methods_paragraph(ds: dict) -> str:
     recipe_label = _recipe_label(cb)
     tail = (resamp + f". Materials were counterbalanced into {cb['lists']} list(s) "
             f"({recipe_label}) and generated for PsychoPy, OpenSesame and "
-            f"jsPsych.{_versions_note(ds)}{_response_note(ds)} The selection is "
-            f"deterministic and reproducible (lexsync "
+            f"jsPsych.{_versions_note(ds)}{_response_note(ds)}{_mapping_note(ds)} The "
+            f"selection is deterministic and reproducible (lexsync "
             f"{ds['reproducibility']['versions']['lexsync']}), and the seed "
             f"({ds['reproducibility']['seed']}) fixes the trial order.")
     cp = (ds.get("selection") or {}).get("candidate_pool")

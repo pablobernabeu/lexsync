@@ -12,6 +12,32 @@ no function signature changes.
 
 ### Added
 
+- Generated experiments show task instructions before the first trial and wait for the
+  space bar, so the experimenter can start the run when the participant is ready. A
+  design sets the text with `instructions`. It may hold line breaks and no other control
+  character, and every target carries it as data. Without it, a lexical decision, a
+  categorisation and a design with comprehension questions get English instructions that
+  say what their keys mean. The run log notes a design in another language that gives no
+  text of its own, and a design whose keys the instructions can only name, as in every
+  factorial and priming demonstration. A lexical-decision design states its response
+  mapping: word on the response event's first key and pseudoword on its second, unless
+  the design gives `response_mapping`, and `rotate_mapping_by_list: true` rotates the
+  keys across lists. A mapping that names a key the response event does not allow, or
+  leaves a condition's trials without an answer, is refused. The loop tables carry each
+  trial's correct key in `answer`, so accuracy can be scored on every trial of a lexical
+  decision, where it could be scored only on practice and filler trials. jsPsych records
+  a key by the browser's name for it, so the jsPsych page names each answer that way,
+  `arrowleft` for `left`, as it already named the keys, and in every target a correct
+  response equals its trial's answer. `export_experiments` derives the answers as it
+  assigns the trigger codes, so the stimuli file does not change. A practice or filler
+  table keeps its own answers, and the run log notes any that the mapping contradicts.
+  The datasheet records the mapping as `presentation.response_mapping`, a field of
+  datasheet format 1.2, and its Methods text says which key the participants pressed for
+  which condition. The schema's comments describe the three keys. Every demonstration's
+  experiments, datasheets and run logs change, and the loop tables of the three lexical
+  decisions carry an answer on every trial. The twin-edge cases `mapping_rotated` and
+  `instructions_text` pin both engines to one outcome. No design selects different
+  items.
 - `items.generation.exclude` lists further word forms that a generated pseudoword
   must not equal: files with one form per line, CSV files with a `word` column, or
   corpora fetched into the cache with `fetch_corpus`. The forms are normalised as
@@ -322,6 +348,21 @@ no function signature changes.
 
 ### Fixed
 
+- The lexical-decision practice table no longer presents the English word 'plank' as a
+  pseudoword. Its replacement, 'plang', came from the package's own generator and is not
+  among wordfreq's English forms, and `design_en_lexdec_blocks.yaml` records the command.
+  The categorisation example adds 16 non-member foils as fillers
+  (`items/categorisation_foils_en.csv`), nouns that do not belong to the category they
+  appear under, so pressing the 'yes' key on every trial no longer scores perfectly. Each
+  list now holds 16 'yes' and 16 'no' trials. The foils are interleaved with the members,
+  so the example's stimuli file gains a `block` column and its trials are renumbered,
+  while the same items stay in the same lists and conditions.
+- The PsychoPy and jsPsych experiments paused wherever the block changed. Fillers are
+  interleaved with the main trials so that nothing sets them apart, yet a pause came
+  before and after every filler, and each pause after one said that the practice had
+  ended. Fillers now run with the main trials, and the one pause comes where the
+  practice trials end, in `design_en_lexdec_blocks.yaml` and in the categorisation
+  example, whose foils are fillers.
 - Under pandas 3 with pyarrow installed, the Python engine lower-cased the words
   of a lexicon or a supplied pool by Unicode's simple case mapping, because pandas
   then hands `.str.lower()` to Arrow. A final capital sigma became σ where

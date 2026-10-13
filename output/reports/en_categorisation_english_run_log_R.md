@@ -1,8 +1,8 @@
 # lexsync run log: en_categorisation
 
 - Engine: R 4.6.1
-- Started: 2026-10-13 14:24:38.730952
-- Finished: 2026-10-13 14:24:40.958224
+- Started: 2026-10-13 18:16:19.970303
+- Finished: 2026-10-13 18:16:21.31428
 
 ## Run metadata
 
@@ -16,54 +16,61 @@
 
 ## Steps
 
-- **2026-10-13 14:24:38.758361**: loading items 'items/categorisation_en.csv'
-- **2026-10-13 14:24:38.830028**: loaded 16 items across 2 conditions
+- **2026-10-13 18:16:19.98244**: loading items 'items/categorisation_en.csv'
+- **2026-10-13 18:16:20.016252**: loaded 16 items across 2 conditions
     - conditions: narrow, broad
-- **2026-10-13 14:24:38.951337**: wrote 'en_categorisation_english_stimuli_R.csv'
+- **2026-10-13 18:16:20.157204**: block 'main': 16 trial(s) per list
+    - block: main
+    - n_per_list: 16
+- **2026-10-13 18:16:20.162058**: block 'filler': 16 trial(s) per list, interleaved with the main trials by the seeded order
+    - block: filler
+    - n_per_list: 16
+- **2026-10-13 18:16:20.168593**: presented 64 trial(s); 32 analysed
+- **2026-10-13 18:16:20.19534**: wrote 'en_categorisation_english_stimuli_R.csv'
     - path: output/stimuli/en_categorisation_english_stimuli_R.csv
     - rows: 32
-    - md5: 5875c5e4de8add0e2689720265c9b9e5
-- **2026-10-13 14:24:39.842024**: wrote 'en_categorisation_english_psychopy.py'
+    - md5: 0f036a762ade330e3352f7b03ed28f73
+- **2026-10-13 18:16:20.696087**: wrote 'en_categorisation_english_psychopy.py'
     - path: output/experiments/en_categorisation_english_psychopy.py
     - rows: NA
-    - md5: 951d28497ce76155ae8ac29c6f0c0ee2
-- **2026-10-13 14:24:39.868975**: wrote 'en_categorisation_english_list1.osexp'
+    - md5: 10a24c609ce3730426ae1beb2d3673fa
+- **2026-10-13 18:16:20.714021**: wrote 'en_categorisation_english_list1.osexp'
     - path: output/experiments/en_categorisation_english_list1.osexp
     - rows: NA
-    - md5: 5100767e077c761b7f323cf775090eac
-- **2026-10-13 14:24:39.900438**: wrote 'en_categorisation_english_list2.osexp'
+    - md5: b0cf4402c1924cc87017f9cb712a9fa6
+- **2026-10-13 18:16:20.731918**: wrote 'en_categorisation_english_list2.osexp'
     - path: output/experiments/en_categorisation_english_list2.osexp
     - rows: NA
-    - md5: 680516d81b8c8cb4101437bab8ffd827
-- **2026-10-13 14:24:39.938332**: wrote 'en_categorisation_english.html'
+    - md5: b8cb5cf8fb76650665b2ff4cdbd14cb0
+- **2026-10-13 18:16:20.758313**: wrote 'en_categorisation_english.html'
     - path: output/experiments/en_categorisation_english.html
     - rows: NA
-    - md5: e56f2f0526e1e33edbbf42136b7cc139
-- **2026-10-13 14:24:39.97978**: wrote 'en_categorisation_english_psychopy.csv'
+    - md5: 748ce05e40cd630750e28b668806d2c8
+- **2026-10-13 18:16:20.799872**: wrote 'en_categorisation_english_psychopy.csv'
     - path: output/experiments/en_categorisation_english_psychopy.csv
     - rows: NA
-    - md5: d8c3c0ed7a1d792461c769ab0c92915a
-- **2026-10-13 14:24:40.007033**: wrote 'en_categorisation_english_list1_opensesame.csv'
+    - md5: c98cb20db773eef4ff817424f452fa40
+- **2026-10-13 18:16:20.839442**: wrote 'en_categorisation_english_list1_opensesame.csv'
     - path: output/experiments/en_categorisation_english_list1_opensesame.csv
     - rows: NA
-    - md5: 6c2864b2b184e9612d793f94d339a50e
-- **2026-10-13 14:24:40.040861**: wrote 'en_categorisation_english_list1_opensesame_text.csv'
+    - md5: 66d5c32cde31bbd1430a8b1f48c225dc
+- **2026-10-13 18:16:20.87866**: wrote 'en_categorisation_english_list1_opensesame_text.csv'
     - path: output/experiments/en_categorisation_english_list1_opensesame_text.csv
     - rows: NA
-    - md5: fceb171d46e432ba4c66e490e2c106d3
-- **2026-10-13 14:24:40.070045**: wrote 'en_categorisation_english_list2_opensesame.csv'
+    - md5: 60c9814af72bcf6a5a5f63aa4e547f81
+- **2026-10-13 18:16:20.899017**: wrote 'en_categorisation_english_list2_opensesame.csv'
     - path: output/experiments/en_categorisation_english_list2_opensesame.csv
     - rows: NA
-    - md5: eaa92f5ce059058ff743a851843de5d5
-- **2026-10-13 14:24:40.094506**: wrote 'en_categorisation_english_list2_opensesame_text.csv'
+    - md5: 8d7e1046cb55769c3f459d9530c003fd
+- **2026-10-13 18:16:20.930959**: wrote 'en_categorisation_english_list2_opensesame_text.csv'
     - path: output/experiments/en_categorisation_english_list2_opensesame_text.csv
     - rows: NA
-    - md5: 1e032c2469430079a244cf61e337132a
-- **2026-10-13 14:24:40.831022**: wrote 'en_categorisation_english_datasheet_R.json'
+    - md5: 027d3928276bcc05a34bb73ad5d8157d
+- **2026-10-13 18:16:21.283029**: wrote 'en_categorisation_english_datasheet_R.json'
     - path: output/reports/en_categorisation_english_datasheet_R.json
     - rows: NA
-    - md5: acc5a0878ba69b86bea96bd0a543dae2
-- **2026-10-13 14:24:40.898309**: wrote 'en_categorisation_english_datasheet_R.md'
+    - md5: 8c6521f05388833b79df6a9bd237e808
+- **2026-10-13 18:16:21.299529**: wrote 'en_categorisation_english_datasheet_R.md'
     - path: output/reports/en_categorisation_english_datasheet_R.md
     - rows: NA
-    - md5: 0f6274656429ca640a0c6f747d8a9114
+    - md5: d149d441bd29260586bbb7b8ae0fe2c8

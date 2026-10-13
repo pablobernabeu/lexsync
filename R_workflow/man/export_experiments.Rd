@@ -47,3 +47,13 @@ schema, so the item codes of a design that sends them alongside other codes are
 kept apart from those codes, and a code of the design's own that the stream
 already uses is reported.
 }
+\details{
+Each trial that names no \code{answer} of its own takes the key the design's response
+mapping gives its condition in its list, so the loop tables can score every trial.
+A lexical decision maps word to its response event's first key and pseudoword to
+its second unless the design gives \code{response_mapping}, and
+\code{rotate_mapping_by_list: true} rotates the keys across lists. A practice or filler
+trial keeps the answer its table gives. The stimuli passed in are not changed. Every
+target shows the design's \code{instructions}, or lexsync's English instructions for its
+task, and waits for the space bar before the first trial.
+}

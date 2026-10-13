@@ -61,4 +61,11 @@ A corpus, pool or generate design may list words to leave out under
 removed from the candidates after any \verb{norms:} join and before the pool filters, and
 the datasheet records the list with its checksum. The neighbourhood reference, and
 the words a generated pseudoword must not equal, keep them.
+
+The run log notes a design in a language other than English that gives no
+\code{instructions}, since lexsync's own are in English, and a design whose response keys
+lexsync's instructions only name, such as a factorial or priming design. It also
+notes every practice or filler answer that the response mapping contradicts. A
+\code{response_mapping} that would leave a trial without an answer is refused before
+anything is written.
 }

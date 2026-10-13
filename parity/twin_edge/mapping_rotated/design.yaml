@@ -1,0 +1,36 @@
+# Twin-edge case: a lexical decision whose response mapping rotates across two lists.
+# The lexical-decision default maps word to f and pseudoword to j, the keys the response
+# event allows, and rotate_mapping_by_list swaps them in list 2. Both engines must write
+# the same answers into each list's loop table, and the same instructions, which name
+# each list's own keys, into all three targets. The practice table keeps its own
+# answers, which the run log notes as contradicting list 2's mapping.
+name: twin_edge_mapping_rotated
+language: english
+paradigm: lexical_decision
+description: 'A lexical decision whose response keys rotate across two lists.'
+items:
+  source: table
+  path: items.csv
+practice:
+  path: practice.csv
+events:
+  - type: fixation
+    content: '+'
+    duration_ms: 500
+  - type: text
+    content: '{target}'
+    duration_ms: 800
+    trigger: condition
+    onset_locked: true
+  - type: response
+    keys: [f, j]
+    timeout_ms: 2000
+  - type: feedback
+    answer: answer
+    duration_ms: 600
+    blocks: [practice]
+  - type: blank
+    duration_ms: 250
+rotate_mapping_by_list: true
+counterbalance:
+  lists: 2

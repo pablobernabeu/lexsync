@@ -139,7 +139,19 @@
         "from": "onset",
         "window_ms": 2800
       }
-    ]
+    ],
+    "response_mapping": {
+      "conditions": {
+        "word": "left",
+        "pseudoword": "right"
+      },
+      "keys": [
+        "left",
+        "right"
+      ],
+      "rotate_by_list": false,
+      "source": "default"
+    }
   },
   "resampling": null,
   "items": {
@@ -178,7 +190,7 @@
     },
     "design_sha256": "d2bb8d6fb28ecd2df0610cc1c224f40168c6e90044e95d94d145f5a81646712e",
     "schema_path": "config/schema.yaml",
-    "schema_sha256": "522d6852eddbefadcabf6973c491abbe35ad2d4eafcca2160c3b48f03a551693"
+    "schema_sha256": "f6382012c85d9eb8088f1c5542f89a244c1e03c197d05a80632a64d0613d784e"
   },
   "artifacts": [
     {
@@ -195,19 +207,19 @@
     },
     {
       "file": "output/experiments/en_lexdec_wuggy_english_psychopy.py",
-      "sha256": "8c1e9a5d78fba28c42f65288ed992df8325981e16d4ee73c37be52a611773305"
+      "sha256": "bf39c9a22dcaf4f5f993716a5f7396517566d2fd71f898330ad2e2ab7dce16ad"
     },
     {
       "file": "output/experiments/en_lexdec_wuggy_english.osexp",
-      "sha256": "c25391850f403d6c4d99af2c75c48132559ca45b4392a4fddbc5d97a5180ee2b"
+      "sha256": "405a6a10ecca20bf0828081960caabf9e900ed7e8c6de716198a84f624cc8539"
     },
     {
       "file": "output/experiments/en_lexdec_wuggy_english.html",
-      "sha256": "d74edcb19d2c54730d1d44b1884b696e12497fd7f60a15d612d56766b151cf17"
+      "sha256": "5d51798e13871e054be68554eabcd32173d98c6c1ddc01f4d4e95b5bfd3093cc"
     },
     {
       "file": "output/experiments/en_lexdec_wuggy_english_psychopy.csv",
-      "sha256": "b727e785f81efac7c0effb4014137b8308f03523a8151780b33f4221c60ea327"
+      "sha256": "0ac26b3839a94b4166dd7139a65eb810743eb0c9a85e53f23e4f1d921a7b343a"
     },
     {
       "file": "output/experiments/en_lexdec_wuggy_english_opensesame.csv",
@@ -215,7 +227,7 @@
     },
     {
       "file": "output/experiments/en_lexdec_wuggy_english_opensesame_text.csv",
-      "sha256": "8571f4480c493a49f368831a07571cbc40f7ecc46bcc8a98d3fc0a291436065d"
+      "sha256": "69679c299c61ca7fe97d525ceef9c985667398d826a5cb17aac97f4d661f156a"
     }
   ]
 }

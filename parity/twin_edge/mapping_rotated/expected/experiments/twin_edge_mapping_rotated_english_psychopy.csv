@@ -1,0 +1,13 @@
+trial,list,block,set,condition,target,answer,condition_trigger,item_trigger
+1,1,practice,5,word,tree,f,101,44
+2,1,practice,6,pseudoword,trel,j,102,45
+3,1,main,1,pseudoword,cag,j,102,40
+4,1,main,3,pseudoword,sul,j,102,42
+5,1,main,3,word,sun,f,101,42
+6,1,main,1,word,cat,f,101,40
+1,2,practice,5,word,tree,f,101,44
+2,2,practice,6,pseudoword,trel,j,102,45
+3,2,main,2,word,dog,j,101,41
+4,2,main,2,pseudoword,dop,f,102,41
+5,2,main,4,pseudoword,mav,f,102,43
+6,2,main,4,word,map,j,101,43

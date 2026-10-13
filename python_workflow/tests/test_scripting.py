@@ -370,12 +370,13 @@ def test_one_opensesame_experiment_per_version(schema, tmp_path):
         assert ("\twith open(pool[u't_english_list%d_opensesame_text.csv'], "
                 "encoding=u'utf-8-sig', newline=u'') as _f:" % k) in lines
         # Each experiment checks the subject number against its own version before
-        # the loop, and no run line carries a condition.
+        # the loop, then shows its instructions, and no run line carries a condition.
         assert "define inline_script lexsync_version_check" in lines
         assert f"\t_version = {k}" in lines and "\t_versions = 2" in lines
         runs = [line for line in lines if line.startswith("\trun ")]
-        assert runs[-3:] == ["\trun lexsync_trigger_setup always",
+        assert runs[-4:] == ["\trun lexsync_trigger_setup always",
                              "\trun lexsync_version_check always",
+                             "\trun lexsync_instructions always",
                              "\trun lexsync_loop always"]
         assert not any('"' in line for line in runs)
 

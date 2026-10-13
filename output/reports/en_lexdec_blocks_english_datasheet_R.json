@@ -148,7 +148,7 @@
           "block": "practice",
           "n_per_list": 8,
           "path": "items/practice_en_lexdec.csv",
-          "sha256": "d38d3503941c758abaddd6d453cebb4697a1d1c2e70b16afc1e6847f17749615",
+          "sha256": "d76b0252bb6e63cfa3a5346d5896f551e542914ef635d4a05f80ad7bd55bc8bc",
           "placement": "before the main trials"
         }
       ],
@@ -162,7 +162,19 @@
         "from": "onset",
         "window_ms": 2800
       }
-    ]
+    ],
+    "response_mapping": {
+      "conditions": {
+        "word": "f",
+        "pseudoword": "j"
+      },
+      "keys": [
+        "f",
+        "j"
+      ],
+      "rotate_by_list": false,
+      "source": "default"
+    }
   },
   "resampling": null,
   "items": {
@@ -199,9 +211,9 @@
       "stringi": "1.8.7",
       "os": "Windows x86-64"
     },
-    "design_sha256": "0a213e43f99cabb2727d0ca80a253128656fc19621867d2bd932b69456e4c461",
+    "design_sha256": "4ec2a4083431a2fab0175938a22e82b2a649a9953e13eb6f77ad567080e4d87b",
     "schema_path": "config/schema.yaml",
-    "schema_sha256": "522d6852eddbefadcabf6973c491abbe35ad2d4eafcca2160c3b48f03a551693"
+    "schema_sha256": "f6382012c85d9eb8088f1c5542f89a244c1e03c197d05a80632a64d0613d784e"
   },
   "artifacts": [
     {
@@ -218,19 +230,19 @@
     },
     {
       "file": "output/experiments/en_lexdec_blocks_english_psychopy.py",
-      "sha256": "692f3d8509f772cf9e0019c9bdcc30d05616856f4213fd58754aaabf972bbfe3"
+      "sha256": "62cbbf62876b4e9f55cf01b31a6aabf02a8a83c385220c31406ec68bca67a49b"
     },
     {
       "file": "output/experiments/en_lexdec_blocks_english.osexp",
-      "sha256": "1c7c72c120e8f30360b13fb2a42e1f49dfd4cd9fe16336cb7cf78783494bd247"
+      "sha256": "2effe307bf3e527fa745665e5e324b02c7de50d11faef44738e52016b5ed7435"
     },
     {
       "file": "output/experiments/en_lexdec_blocks_english.html",
-      "sha256": "ce71745ba807ce69035b1554bffceee6bcdd5673024de0fa88d2ecb3ea0e71e5"
+      "sha256": "ddd282566a94b0845c5a8e94675c5eac3b905346e716a5f6e18cf2f5d9d3a604"
     },
     {
       "file": "output/experiments/en_lexdec_blocks_english_psychopy.csv",
-      "sha256": "8af5918aeda207ce2c402f98e3d52c88f3483255030580fee30aaa067c311775"
+      "sha256": "425ff1e7f36038154af7d5596c85c07a1d9c7e8f32b9ce231fb4cb86389099b6"
     },
     {
       "file": "output/experiments/en_lexdec_blocks_english_opensesame.csv",
@@ -238,7 +250,7 @@
     },
     {
       "file": "output/experiments/en_lexdec_blocks_english_opensesame_text.csv",
-      "sha256": "b0b6b65b6e56a6f5d0d836b7498d345d59505f37f71ea5df43caf3bd0bc5e8d0"
+      "sha256": "e1c2d66783cded8ac2c40d1fc984324d04a66dfa651028d0cc55ef8b67411373"
     }
   ]
 }

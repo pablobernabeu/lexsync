@@ -128,7 +128,7 @@ test_that("every block appears in every version of a resampled design", {
     expect_setequal(g$target[g$block == "main"], stim$target[stim$replicate == r])
   }
   expect_identical(p$target[p$replicate == 2L], c(
-    "plank", "light", "chair", "plost", "skirn", "clock", "frelt", "brave",
+    "plang", "light", "chair", "plost", "skirn", "clock", "frelt", "brave",
     "strunk", "candle", "vantle", "plimth", "w05", "tundra", "blorge", "w07", "w06",
     "marble", "bridge", "w08"))
   # The main block is counted per version, as the practice and the fillers are.

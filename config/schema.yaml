@@ -314,3 +314,25 @@ presentation:
   #     keys: [f, j]
   #     timeout_ms: 2000
   #     from: offset      # onset (the default after a text event) | offset
+  #
+  # Every generated experiment shows instructions and waits for the space bar before
+  # its first trial. A design may give its own text, line breaks included:
+  #
+  #   instructions: |
+  #     Press F if the letters spell a real word and J if they do not.
+  #
+  # Without it, a lexical decision, a categorisation and a design with comprehension
+  # questions get English instructions that say what their keys mean. Any other
+  # design's instructions only name the keys, which its run log notes, and the run log
+  # also notes a design in another language that gives no text of its own.
+  #
+  # A lexical decision maps word to its response event's first key and pseudoword to
+  # its second, and the loop tables carry each trial's correct key in `answer`. Any
+  # design may give its own mapping, with keys its response event allows, and may
+  # rotate it across lists:
+  #
+  #   response_mapping: {word: j, pseudoword: f}
+  #   rotate_mapping_by_list: true   # list k moves each key k - 1 places along
+  #
+  # A practice or filler table keeps its own answers, the run log notes any that the
+  # mapping contradicts, and the datasheet records the mapping.

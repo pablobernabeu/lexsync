@@ -1,0 +1,9 @@
+item,condition,target,answer,set,block,list,trial
+1,pseudoword,cag,,1,main,1,3
+3,pseudoword,sul,,3,main,1,4
+3,word,sun,,3,main,1,5
+1,word,cat,,1,main,1,6
+2,word,dog,,2,main,2,3
+2,pseudoword,dop,,2,main,2,4
+4,pseudoword,mav,,4,main,2,5
+4,word,map,,4,main,2,6

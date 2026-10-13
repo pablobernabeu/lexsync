@@ -38,6 +38,13 @@ names.
 Any other key lexsync does not read is not refused yet. It is returned as a note,
 which \code{\link[=run_pipeline]{run_pipeline()}} writes into the run log, and a later release will refuse
 it. \code{description} and keys beginning \code{x_} are annotations and are never noted.
+
+The experiments' instructions and response mapping are checked here too. It refuses
+\code{instructions} that are not text, are empty or hold a control character other than a
+line break. It refuses a \code{response_mapping} that is not a mapping of conditions to
+single keys, names a key the response event does not allow, or comes with no response
+event. And it refuses a \code{rotate_mapping_by_list} that is not true or false, or that
+has no mapping to rotate.
 }
 \examples{
 validate_design(list(name = "demo", language = "english", x_note = "pilot"), list())

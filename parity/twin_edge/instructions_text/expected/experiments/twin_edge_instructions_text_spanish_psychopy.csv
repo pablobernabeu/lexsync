@@ -1,0 +1,5 @@
+trial,list,set,condition,word,answer,condition_trigger,item_trigger
+1,1,2,baja,masa,j,102,41
+2,1,2,alta,mesa,f,101,41
+3,1,1,alta,casa,f,101,40
+4,1,1,baja,cosa,j,102,40

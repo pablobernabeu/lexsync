@@ -5,7 +5,7 @@
     "language": "english",
     "paradigm": "categorisation",
     "source": "table",
-    "description": "Cued semantic categorisation: concrete nouns judged against a narrow or a broad category cue, Latin-square counterbalanced over two lists so no target repeats within a list.",
+    "description": "Cued semantic categorisation: concrete nouns judged against a narrow or a broad category cue, with non-member foils as fillers, Latin-square counterbalanced over two lists so no target repeats within a list.",
     "n_per_condition": null
   },
   "materials_source": {
@@ -58,7 +58,23 @@
       }
     ],
     "versions": 2,
-    "assignment": "version = ((participant - 1) mod 2) + 1 unless a version is given at launch"
+    "assignment": "version = ((participant - 1) mod 2) + 1 unless a version is given at launch",
+    "blocks": {
+      "blocks": [
+        {
+          "block": "main",
+          "n_per_list": 16
+        },
+        {
+          "block": "filler",
+          "n_per_list": 16,
+          "path": "items/categorisation_foils_en.csv",
+          "sha256": "7aa30171fdb1aaef0442ef9e319c3ec119a2930a97cbe3f0458d15e42540f369",
+          "placement": "interleaved with the main trials by the seeded order"
+        }
+      ],
+      "analysed": "main"
+    }
   },
   "presentation": {
     "response_windows": [
@@ -88,7 +104,7 @@
       }
     ],
     "stimuli_file": "output/stimuli/en_categorisation_english_stimuli_R.csv",
-    "stimuli_sha256": "9610d97fc11575205e384e5f736251ad7da05efff6cd2c3bdb722f45e99be6a9"
+    "stimuli_sha256": "04f7fb7aa8775405d5ef6e502b7dae57cca3c3acefdeb89300e03f1e24376f53"
   },
   "reproducibility": {
     "seed": 2026,
@@ -104,50 +120,50 @@
       "stringi": "1.8.7",
       "os": "Windows x86-64"
     },
-    "design_sha256": "0535f924775a71d520cd2125b385c4752d7fe1ad336ef0a65e854b68ac356679",
+    "design_sha256": "eb78662c116035999f6c50902f27d3466034028929a43b49d9ecafdb7c9ac59d",
     "schema_path": "config/schema.yaml",
-    "schema_sha256": "522d6852eddbefadcabf6973c491abbe35ad2d4eafcca2160c3b48f03a551693"
+    "schema_sha256": "f6382012c85d9eb8088f1c5542f89a244c1e03c197d05a80632a64d0613d784e"
   },
   "artifacts": [
     {
       "file": "output/stimuli/en_categorisation_english_stimuli_R.csv",
-      "sha256": "9610d97fc11575205e384e5f736251ad7da05efff6cd2c3bdb722f45e99be6a9"
+      "sha256": "04f7fb7aa8775405d5ef6e502b7dae57cca3c3acefdeb89300e03f1e24376f53"
     },
     {
       "file": "output/experiments/en_categorisation_english_psychopy.py",
-      "sha256": "75bfc59220d8f9e17a461228354f3dfa3c42109e411767d7c0de4200d6c8a6f0"
+      "sha256": "6c5edc89e64bc200bb6f0344cdc8866a9cd6ff3a5a70e024ff6d50b5ff82af7b"
     },
     {
       "file": "output/experiments/en_categorisation_english_list1.osexp",
-      "sha256": "7a262114a0172aadf5e6dc7d18bee789ffec18ec7257cc96884db3293e40b326"
+      "sha256": "5161678c5260d3da105418daaff5aa179d743a10d3b53557c39a0f04cc365ac0"
     },
     {
       "file": "output/experiments/en_categorisation_english_list2.osexp",
-      "sha256": "4c36a0aa873804100360802417452fce18865fe2d9bf728edf7d4955dbb3d29d"
+      "sha256": "97b403d51cc71941cd019e3900956e14d20c77b31d74d3c40947ab65d846d408"
     },
     {
       "file": "output/experiments/en_categorisation_english.html",
-      "sha256": "067bf1111f810ae090101df1026191616f2348ff85dd5e2fbe9194c54b6d0be8"
+      "sha256": "689aaf2ed60832e42a95dc8b7ef6c81ce8552c233b8135b0222f9e50cf18ea09"
     },
     {
       "file": "output/experiments/en_categorisation_english_psychopy.csv",
-      "sha256": "850d6c7f0359f9e72e41d579087a321d820832346f5256a448846efcd6c755dd"
+      "sha256": "dfe75af9436fad67495b6949c5dec57368f5f97b2193dcba791dba50e3856341"
     },
     {
       "file": "output/experiments/en_categorisation_english_list1_opensesame.csv",
-      "sha256": "5315adde2553179bd8bf5684ab28b4a8ec55d8a3866f1d5c5f43f81197694c20"
+      "sha256": "a6caf708cfdac922e67f5563ad8a4a4d384300ccec9fc0c25be6e25279eb032a"
     },
     {
       "file": "output/experiments/en_categorisation_english_list1_opensesame_text.csv",
-      "sha256": "9c06034b05a8e90e440438c9db4ca3f3c1a2c0e8d33fa2423cd2c468eec98491"
+      "sha256": "4f70f1a0e06b0f17f6e8882dcc08bc126513883cf5acf059fdfb8bf6b171596c"
     },
     {
       "file": "output/experiments/en_categorisation_english_list2_opensesame.csv",
-      "sha256": "28628df08e2a5d7512a5a14879f4586fb893763925873f74de9f2b368e5d7507"
+      "sha256": "539155f66cb51aea3df5a4261472324667f26fdd648bf96862b66c22c960e8e4"
     },
     {
       "file": "output/experiments/en_categorisation_english_list2_opensesame_text.csv",
-      "sha256": "289ac67946d244fd6338ddef45c62b5e95aa0e44b862cf9464a9b7334b052d9a"
+      "sha256": "2b3083bcfba365406c21a5a958823af4e10bfeacbae5cd56e494df65c38095c6"
     }
   ]
 }

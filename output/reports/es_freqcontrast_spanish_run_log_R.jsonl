@@ -1,21 +1,23 @@
-{"time":"2026-10-13 14:29:19.176361","message":"loading lexicon 'corpora/derived/es.csv'","data":null}
-{"time":"2026-10-13 14:29:21.438816","message":"lexicon loaded: 30000 words","data":{"words":30000}}
-{"time":"2026-10-13 14:29:21.787466","message":"pool after filters: 7172 words","data":{"pool":7172}}
-{"time":"2026-10-13 14:29:22.674797","message":"matched 160 items across 2 conditions","data":{"conditions":"high_frequency, low_frequency"}}
-{"time":"2026-10-13 14:29:23.775803","message":"equivalence low_frequency vs high_frequency on 'length': d = 0.05 [-0.21, 0.31], TOST p = 0.002 (equivalent)","data":null}
-{"time":"2026-10-13 14:29:23.803068","message":"equivalence low_frequency vs high_frequency on 'frequency': d = 5.39 [4.83, 5.95], TOST p = 1.000 (not shown equivalent)","data":null}
-{"time":"2026-10-13 14:29:23.818223","message":"equivalence low_frequency vs high_frequency on 'n_density': d = 0.08 [-0.18, 0.34], TOST p = 0.004 (equivalent)","data":null}
-{"time":"2026-10-13 14:29:23.848931","message":"equivalence low_frequency vs high_frequency on 'old20': d = 0.01 [-0.26, 0.27], TOST p = 0.001 (equivalent)","data":null}
-{"time":"2026-10-13 14:29:23.890644","message":"equivalence low_frequency vs high_frequency on 'n_syllables': d = 0.02 [-0.24, 0.28], TOST p = 0.001 (equivalent)","data":null}
-{"time":"2026-10-13 14:29:23.923295","message":"equivalence low_frequency vs high_frequency on 'bigram_freq': d = 0.35 [0.08, 0.61], TOST p = 0.169 (not shown equivalent)","data":null}
-{"time":"2026-10-13 14:29:24.969817","message":"wrote 'es_freqcontrast_spanish_stimuli_R.csv'","data":{"path":"output/stimuli/es_freqcontrast_spanish_stimuli_R.csv","rows":160,"md5":"817324e156de4da0ea8e4a8518c13197"}}
-{"time":"2026-10-13 14:29:25.207123","message":"wrote 'es_freqcontrast_spanish_descriptives_R.csv'","data":{"path":"output/reports/es_freqcontrast_spanish_descriptives_R.csv","rows":12,"md5":"fa8ad452d8561f61cf719be63ac70a0e"}}
-{"time":"2026-10-13 14:29:25.363784","message":"wrote 'es_freqcontrast_spanish_comparisons_R.csv'","data":{"path":"output/reports/es_freqcontrast_spanish_comparisons_R.csv","rows":6,"md5":"7b2f2ef77c780892ce33c363d380d6fc"}}
-{"time":"2026-10-13 14:29:30.155089","message":"wrote 'es_freqcontrast_spanish_psychopy.py'","data":{"path":"output/experiments/es_freqcontrast_spanish_psychopy.py","rows":"NA","md5":"ff38f1bf04fab14a443529573a88d1f2"}}
-{"time":"2026-10-13 14:29:30.204496","message":"wrote 'es_freqcontrast_spanish.osexp'","data":{"path":"output/experiments/es_freqcontrast_spanish.osexp","rows":"NA","md5":"19deb3af454ce0433f85da463e87ea10"}}
-{"time":"2026-10-13 14:29:30.257227","message":"wrote 'es_freqcontrast_spanish.html'","data":{"path":"output/experiments/es_freqcontrast_spanish.html","rows":"NA","md5":"b7eaa56fe32f20601b1eda0717cc032e"}}
-{"time":"2026-10-13 14:29:30.298837","message":"wrote 'es_freqcontrast_spanish_psychopy.csv'","data":{"path":"output/experiments/es_freqcontrast_spanish_psychopy.csv","rows":"NA","md5":"b314fe13029b2aa8fc712238fbf0c65a"}}
-{"time":"2026-10-13 14:29:30.336131","message":"wrote 'es_freqcontrast_spanish_opensesame.csv'","data":{"path":"output/experiments/es_freqcontrast_spanish_opensesame.csv","rows":"NA","md5":"92e29c7a204d46f2df23de8018ad235a"}}
-{"time":"2026-10-13 14:29:30.386221","message":"wrote 'es_freqcontrast_spanish_opensesame_text.csv'","data":{"path":"output/experiments/es_freqcontrast_spanish_opensesame_text.csv","rows":"NA","md5":"29a387c11a553fc5bc875d7cbe0b9f29"}}
-{"time":"2026-10-13 14:29:31.337676","message":"wrote 'es_freqcontrast_spanish_datasheet_R.json'","data":{"path":"output/reports/es_freqcontrast_spanish_datasheet_R.json","rows":"NA","md5":"6819d0c8ffcc06eacaa66b20e5be6a70"}}
-{"time":"2026-10-13 14:29:31.386257","message":"wrote 'es_freqcontrast_spanish_datasheet_R.md'","data":{"path":"output/reports/es_freqcontrast_spanish_datasheet_R.md","rows":"NA","md5":"97ec31cf90c34f785c1f5d32032bb7ba"}}
+{"time":"2026-10-13 18:18:00.96723","message":"lexsync: the design gives no `instructions` and its language is 'spanish', so the experiments show lexsync's instructions in English; give `instructions` in the participants' language.","data":null}
+{"time":"2026-10-13 18:18:00.976095","message":"lexsync: the design gives no `instructions`, and lexsync cannot tell what the response keys of a factorial design mean, so the experiments only name the keys; give `instructions` that say what each key means.","data":null}
+{"time":"2026-10-13 18:18:00.982068","message":"loading lexicon 'corpora/derived/es.csv'","data":null}
+{"time":"2026-10-13 18:18:01.957511","message":"lexicon loaded: 30000 words","data":{"words":30000}}
+{"time":"2026-10-13 18:18:01.986647","message":"pool after filters: 7172 words","data":{"pool":7172}}
+{"time":"2026-10-13 18:18:02.42894","message":"matched 160 items across 2 conditions","data":{"conditions":"high_frequency, low_frequency"}}
+{"time":"2026-10-13 18:18:02.926004","message":"equivalence low_frequency vs high_frequency on 'length': d = 0.05 [-0.21, 0.31], TOST p = 0.002 (equivalent)","data":null}
+{"time":"2026-10-13 18:18:03.087626","message":"equivalence low_frequency vs high_frequency on 'frequency': d = 5.39 [4.83, 5.95], TOST p = 1.000 (not shown equivalent)","data":null}
+{"time":"2026-10-13 18:18:03.117478","message":"equivalence low_frequency vs high_frequency on 'n_density': d = 0.08 [-0.18, 0.34], TOST p = 0.004 (equivalent)","data":null}
+{"time":"2026-10-13 18:18:03.123725","message":"equivalence low_frequency vs high_frequency on 'old20': d = 0.01 [-0.26, 0.27], TOST p = 0.001 (equivalent)","data":null}
+{"time":"2026-10-13 18:18:03.134639","message":"equivalence low_frequency vs high_frequency on 'n_syllables': d = 0.02 [-0.24, 0.28], TOST p = 0.001 (equivalent)","data":null}
+{"time":"2026-10-13 18:18:03.144188","message":"equivalence low_frequency vs high_frequency on 'bigram_freq': d = 0.35 [0.08, 0.61], TOST p = 0.169 (not shown equivalent)","data":null}
+{"time":"2026-10-13 18:18:03.33814","message":"wrote 'es_freqcontrast_spanish_stimuli_R.csv'","data":{"path":"output/stimuli/es_freqcontrast_spanish_stimuli_R.csv","rows":160,"md5":"817324e156de4da0ea8e4a8518c13197"}}
+{"time":"2026-10-13 18:18:03.412014","message":"wrote 'es_freqcontrast_spanish_descriptives_R.csv'","data":{"path":"output/reports/es_freqcontrast_spanish_descriptives_R.csv","rows":12,"md5":"fa8ad452d8561f61cf719be63ac70a0e"}}
+{"time":"2026-10-13 18:18:03.491905","message":"wrote 'es_freqcontrast_spanish_comparisons_R.csv'","data":{"path":"output/reports/es_freqcontrast_spanish_comparisons_R.csv","rows":6,"md5":"7b2f2ef77c780892ce33c363d380d6fc"}}
+{"time":"2026-10-13 18:18:05.680915","message":"wrote 'es_freqcontrast_spanish_psychopy.py'","data":{"path":"output/experiments/es_freqcontrast_spanish_psychopy.py","rows":"NA","md5":"e1b1d9dbce2c66cf5aba192d2187b74c"}}
+{"time":"2026-10-13 18:18:05.704893","message":"wrote 'es_freqcontrast_spanish.osexp'","data":{"path":"output/experiments/es_freqcontrast_spanish.osexp","rows":"NA","md5":"490b236aa1916a12af83c6e6f39a7c73"}}
+{"time":"2026-10-13 18:18:05.724572","message":"wrote 'es_freqcontrast_spanish.html'","data":{"path":"output/experiments/es_freqcontrast_spanish.html","rows":"NA","md5":"358efbcde3d2fb04b67394a585d2aaa8"}}
+{"time":"2026-10-13 18:18:05.74945","message":"wrote 'es_freqcontrast_spanish_psychopy.csv'","data":{"path":"output/experiments/es_freqcontrast_spanish_psychopy.csv","rows":"NA","md5":"b314fe13029b2aa8fc712238fbf0c65a"}}
+{"time":"2026-10-13 18:18:05.770844","message":"wrote 'es_freqcontrast_spanish_opensesame.csv'","data":{"path":"output/experiments/es_freqcontrast_spanish_opensesame.csv","rows":"NA","md5":"92e29c7a204d46f2df23de8018ad235a"}}
+{"time":"2026-10-13 18:18:05.788596","message":"wrote 'es_freqcontrast_spanish_opensesame_text.csv'","data":{"path":"output/experiments/es_freqcontrast_spanish_opensesame_text.csv","rows":"NA","md5":"29a387c11a553fc5bc875d7cbe0b9f29"}}
+{"time":"2026-10-13 18:18:06.102781","message":"wrote 'es_freqcontrast_spanish_datasheet_R.json'","data":{"path":"output/reports/es_freqcontrast_spanish_datasheet_R.json","rows":"NA","md5":"73159631d8d9a121e97c161c627c3500"}}
+{"time":"2026-10-13 18:18:06.125563","message":"wrote 'es_freqcontrast_spanish_datasheet_R.md'","data":{"path":"output/reports/es_freqcontrast_spanish_datasheet_R.md","rows":"NA","md5":"97ec31cf90c34f785c1f5d32032bb7ba"}}

@@ -27,5 +27,6 @@ when every condition holds fewer items than the bound needs, then, largest first
 up to five comparisons of an uncontrolled dimension whose |d| exceeds the bound.
 Every interval is labelled by the schema's alpha. A continuous design's paragraph
 gives the predictor's spread, the control windows and the controls' realised
-spread.
+spread. When a response mapping applies, the paragraph says which key the
+participants pressed for which condition.
 }

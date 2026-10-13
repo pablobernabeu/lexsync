@@ -1,0 +1,9 @@
+# Both engines write the same experiments: list 1's loop table maps word to f and list
+# 2's to j, and each version's instructions name its own keys.
+outcome: artefacts
+compare: [stimuli, experiments]
+datasheet:
+  counterbalancing.lists: 2
+  presentation.response_mapping.conditions.word: f
+  presentation.response_mapping.rotate_by_list: true
+  presentation.response_mapping.source: default

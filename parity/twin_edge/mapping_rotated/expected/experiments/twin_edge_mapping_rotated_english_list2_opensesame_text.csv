@@ -1,0 +1,7 @@
+lexsync_row,block,condition,target,answer
+1,practice,word,tree,f
+2,practice,pseudoword,trel,j
+3,main,word,dog,j
+4,main,pseudoword,dop,f
+5,main,pseudoword,mav,f
+6,main,word,map,j

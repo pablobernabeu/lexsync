@@ -113,6 +113,13 @@
 #' the datasheet records the list with its checksum. The neighbourhood reference, and
 #' the words a generated pseudoword must not equal, keep them.
 #'
+#' The run log notes a design in a language other than English that gives no
+#' `instructions`, since lexsync's own are in English, and a design whose response keys
+#' lexsync's instructions only name, such as a factorial or priming design. It also
+#' notes every practice or filler answer that the response mapping contradicts. A
+#' `response_mapping` that would leave a trial without an answer is refused before
+#' anything is written.
+#'
 #' @param design_path Path to a design configuration (YAML).
 #' @param schema_path Path to the global schema (YAML), or `NULL` (the default)
 #'   to resolve it: `config/schema.yaml` in the working directory, then
@@ -200,6 +207,9 @@ run_pipeline <- function(design_path, schema_path = NULL,
     schema_path = .posix_path(schema_path)
   ))
   for (note in key_notes) log <- log_step(log, note)
+  # What the experiments' instructions leave unsaid: lexsync's own are in English, and
+  # for a task lexsync cannot describe they name the keys without saying what each means.
+  for (note in .instruction_notes(design)) log <- log_step(log, note)
   # Only a corpus or a supplied pool has derived dimensions to compute. Elsewhere the
   # argument changes nothing, so it is said here and kept out of the datasheet.
   override <- !is.null(reference_words) && source %in% c("corpus", "pool")
@@ -580,6 +590,10 @@ run_pipeline <- function(design_path, schema_path = NULL,
     log <- log_step(log, sprintf("presented %d trial(s); %d analysed",
                                  nrow(presented), nrow(stim)))
   }
+  # The answers the experiments will carry, derived as export_experiments() derives them:
+  # checked here, so a mapping that leaves trials unscored is refused before anything is
+  # written, and a practice or filler answer it contradicts is noted.
+  for (note in .assign_answers(presented, design)$notes) log <- log_step(log, note)
 
   base <- design_stem(design)
   for (sub in c("stimuli", "reports", "experiments")) {

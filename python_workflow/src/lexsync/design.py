@@ -27,11 +27,12 @@ from .paradigms import resolve_events
 
 # Every key lexsync reads from a design, as dotted paths. `[]` marks a list whose
 # entries are mappings. A key whose value holds names the user chooses is listed
-# without children (pool_filters, define_by, tolerance_k, timing, norms), so nothing
-# below it is checked here: timing checks its own keys in render_events, and the keys
-# of a norms entry are checked where the norms are joined. Seeded from every key the
-# shipped designs, both engines, both apps and the tests read. Must list the same
-# paths in the same order as .DESIGN_KEYS in R_workflow/R/design.R, and both test
+# without children (pool_filters, define_by, tolerance_k, timing, norms,
+# response_mapping), so nothing below it is checked here: timing checks its own keys in
+# render_events, the keys of a norms entry are checked where the norms are joined, and
+# a response mapping is checked against the response event's keys. Seeded from every
+# key the shipped designs, both engines, both apps and the tests read. Must list the
+# same paths in the same order as .DESIGN_KEYS in R_workflow/R/design.R, and both test
 # suites pin a digest of the list.
 DESIGN_KEYS = (
     "name", "language", "language_tag", "description", "paradigm", "lexicon",
@@ -57,7 +58,7 @@ DESIGN_KEYS = (
     "events[].advance",
     "events[].sep", "events[].critical_region_trigger", "events[].answer",
     "events[].correct", "events[].incorrect", "events[].no_response", "events[].blocks",
-    "timing", "font",
+    "timing", "font", "instructions", "response_mapping", "rotate_mapping_by_list",
     "practice", "practice.path",
     "fillers", "fillers.path",
 )
@@ -467,6 +468,13 @@ def validate_design(design: dict, schema: dict) -> list:
     it. ``description`` and keys beginning ``x_`` are annotations and are never
     noted.
 
+    The experiments' instructions and response mapping are checked here too. It
+    refuses ``instructions`` that are not text, are empty or hold a control character
+    other than a line break. It refuses a ``response_mapping`` that is not a mapping of
+    conditions to single keys, names a key the response event does not allow, or comes
+    with no response event. And it refuses a ``rotate_mapping_by_list`` that is not
+    true or false, or that has no mapping to rotate.
+
     Parameters
     ----------
     design : dict
@@ -482,7 +490,7 @@ def validate_design(design: dict, schema: dict) -> list:
     """
     # Imported here: scripting names its files through design_stem, so a module-level
     # import would be circular.
-    from .scripting import _refresh_hz, render_events
+    from .scripting import _check_instructions_and_mapping, _refresh_hz, render_events
 
     schema = schema or {}
     if not isinstance(design, dict):
@@ -508,6 +516,7 @@ def validate_design(design: dict, schema: dict) -> list:
     clean_meta(font or presentation.get("opensesame_font") or "mono", "the font")
     clean_port((schema.get("triggers") or {}).get("parallel_address", "0x0378"))
     render_events(resolve_events(design), design.get("timing") or {}, _refresh_hz(schema))
+    _check_instructions_and_mapping(design)
 
     _check_conditions(design)
     _exclude_words(design)

@@ -18,7 +18,7 @@ import re
 
 import pandas as pd
 
-from .design import _shown, design_stem
+from .design import _key_name, _shown, design_stem
 from .io_utils import (
     _key_part,
     _readr_cell,
@@ -944,6 +944,11 @@ def export_psychopy(stimuli: pd.DataFrame, design: dict, schema: dict, outdir: s
     ``--participant``, else what a start-up dialogue asks for. A version the script does
     not have stops the run with a message.
 
+    Before the first trial, the script shows the version's instructions, the design's
+    ``instructions`` or lexsync's for its task, and waits for the space bar, which also
+    lets the experimenter start the run. Escape there stops the run before anything is
+    recorded. The text is embedded as JSON data, one text per version.
+
     Each run writes ``data/<base>_p<participant>_v<version>_<date>-<time>.csv`` beside
     the script, without the ``_p`` part when no participant number is given, one row
     per trial, each written as its trial ends. A row holds the run, the trial's fields
@@ -1001,6 +1006,7 @@ def _psychopy_files(stimuli, design, schema, outdir, base=None) -> list:
         "ASSUMED_REFRESH_HZ": "%.17g" % _refresh_hz(schema),
         "EVENTS_JSON": _json_r(rendered),
         "VERSIONS_JSON": _json_r(versions),
+        "INSTRUCTIONS_JSON": _json_r(_instruction_texts(design, versions)),
     }
     for key, value in subs.items():
         tmpl = tmpl.replace("{{" + key + "}}", str(value))
@@ -1315,9 +1321,36 @@ def _osexp_version_check(version: int, n_versions: int) -> list:
                          run=True)
 
 
+def _osexp_html(text: str) -> str:
+    """Text for OpenSesame's canvas, which reads a subset of HTML: &, < and > escaped, and
+    each line break written as <br />. Mirrors .osexp_html in scripting.R."""
+    return (text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+            .replace("\n", "<br />"))
+
+
+def _osexp_instructions(text: str) -> list:
+    """The inline script that shows the instructions and waits for the space bar.
+
+    It runs once, before the loop, so the participant reads at their own pace and the
+    first trial starts on the space bar, which also lets the experimenter start the run.
+    Escape stops the session, as it does at the version check. The text is written into
+    the script as a _pyq literal, which escapes its line breaks, so it cannot add a line
+    to the experiment. Must match .osexp_instructions in scripting.R.
+    """
+    body = ["c = Canvas()",
+            "c.text(%s)" % _pyq(_osexp_html(text) + "<br /><br />" + _START_PROMPT),
+            "c.show()",
+            "_key, _t = Keyboard(keylist=[u'space', u'escape'], timeout=None).get_key()",
+            "if _key == u'escape':",
+            "    raise RuntimeError(u'lexsync: stopped at the instructions.')"]
+    return _inline_block("lexsync_instructions",
+                         "Show the instructions and wait for the space bar", body, run=True)
+
+
 def build_osexp(design: dict, conditions_file: str, schema: dict, rendered: list,
                 font: str = "mono", text_file: str | None = None,
-                version: int | None = None, n_versions: int | None = None) -> str:
+                version: int | None = None, n_versions: int | None = None,
+                instructions: str | None = None) -> str:
     """The plain text of an OpenSesame experiment for a rendered event list.
 
     ``conditions_file`` names the loop table and ``text_file`` its companion text
@@ -1326,10 +1359,13 @@ def build_osexp(design: dict, conditions_file: str, schema: dict, rendered: list
     experiment's own folder. ``version`` and ``n_versions`` mark the experiment as
     version ``version`` of ``n_versions``. With more than one version, the experiment
     checks OpenSesame's subject number against its own before the loop and warns when
-    the participant would normally run another. Each trial starts by clearing the last
-    trial's responses and ends with a logger item. Must match build_osexp in
-    scripting.R.
+    the participant would normally run another. It then shows ``instructions`` and
+    waits for the space bar. By default they are list 1's instructions, the design's own
+    text or lexsync's for its task. Each trial starts by clearing the last trial's
+    responses and ends with a logger item. Must match build_osexp in scripting.R.
     """
+    if instructions is None:
+        instructions = _instructions(design, _response_mapping(design))
     addr = clean_port((schema.get("triggers") or {}).get("parallel_address", "0x378"))
     design_name = clean_meta(design["name"], "the design's `name`")
     language = clean_meta(design["language"], "the design's `language`")
@@ -1444,9 +1480,10 @@ def build_osexp(design: dict, conditions_file: str, schema: dict, rendered: list
         '\tset description "Top-level experiment sequence"',
         "\trun lexsync_trigger_setup always",
         *(["\trun lexsync_version_check always"] if checked else []),
+        "\trun lexsync_instructions always",
         "\trun lexsync_loop always", "",
     ]
-    return "\n".join(header + check + event_blocks + trial)
+    return "\n".join(header + check + _osexp_instructions(instructions) + event_blocks + trial)
 
 
 def export_opensesame(stimuli, design, schema, outdir, base=None) -> str:
@@ -1460,7 +1497,9 @@ def export_opensesame(stimuli, design, schema, outdir, base=None) -> str:
     ``csv`` module, so OpenSesame never evaluates them. Copy both tables with the
     experiment.
 
-    Every trial is logged. A response after a text event is collected by that event's
+    Before the loop, an inline script, ``lexsync_instructions``, shows the design's
+    ``instructions``, or lexsync's for its task, and waits for the space bar. Every
+    trial is logged. A response after a text event is collected by that event's
     script from the stimulus's onset, which sets ``response``, ``response_time``,
     ``timed_out`` and ``correct``. A response kept after the stimulus with
     ``from: offset`` is a keyboard_response, and a script after it sets ``timed_out``
@@ -1518,21 +1557,22 @@ def _opensesame_files(stimuli, design, schema, outdir, base=None) -> tuple:
     presentation = schema.get("presentation") or {}
     font = design.get("font") or presentation.get("opensesame_font") or "mono"
     versions = presentation_versions(stimuli)
+    texts = _instruction_texts(design, versions)
     if len(versions) <= 1:
         # One version keeps the file names an experiment has always had.
-        parts = [(base, stimuli, None)]
+        parts = [(base, stimuli, None, texts[0] if texts else None)]
     else:
         by_replicate = _spans_replicates(versions)
         parts = [((f"{base}_rep{v['replicate']}_list{v['list']}" if by_replicate
-                   else f"{base}_list{v['list']}"), _version_rows(stimuli, v), v)
-                 for v in versions]
+                   else f"{base}_list{v['list']}"), _version_rows(stimuli, v), v, texts[k])
+                 for k, v in enumerate(versions)]
     written = []
-    for stem, rows, v in parts:
+    for stem, rows, v, instructions in parts:
         numbers, text = _opensesame_tables(rows, events)
         csv_name, text_name = f"{stem}_opensesame.csv", f"{stem}_opensesame_text.csv"
         osexp = build_osexp(design, csv_name, schema, rendered, font=font, text_file=text_name,
                             version=None if v is None else v["version"],
-                            n_versions=len(versions))
+                            n_versions=len(versions), instructions=instructions)
         written.append((stem, csv_name, text_name, numbers, text, osexp))
     experiments, tables = [], []
     for stem, csv_name, text_name, numbers, text, osexp in written:
@@ -1598,6 +1638,25 @@ def _map_keys_for_jspsych(rendered: list) -> list:
             e["respond"] = dict(e["respond"],
                                 keys=[_JSPSYCH_KEYS.get(k, k) for k in e["respond"]["keys"]])
         out.append(e)
+    return out
+
+
+def _map_answers_for_jspsych(trials: pd.DataFrame) -> pd.DataFrame:
+    """The loop table with each trial's ``answer`` named as the browser names the key.
+
+    jsPsych records the key pressed by the browser's name for it, so a press of the left
+    arrow is recorded as ``arrowleft``, the name the page's events give the key (see
+    _map_keys_for_jspsych). The loop tables name it ``left``, as PsychoPy and OpenSesame
+    record it. The page's answers are named as its keys are, so a correct response equals
+    its trial's answer, in the data rows and on the feedback screen. The spaces the
+    runners ignore around an answer are ignored here too. Mirrors .map_answers_jspsych in
+    scripting.R.
+    """
+    if "answer" not in trials.columns:
+        return trials
+    out = trials.copy()
+    out["answer"] = [_JSPSYCH_KEYS.get(v.strip(" \t\r\n"), v) if isinstance(v, str) else v
+                     for v in out["answer"]]
     return out
 
 
@@ -1667,8 +1726,12 @@ def export_jspsych(stimuli, design, schema, outdir, base=None) -> str:
     runs one, named in its address: ``?version=K``, ``?list=K`` when there are no
     replicates, or ``?participant=N``, whose version is ``((N - 1) mod V) + 1``. A page
     with more than one version, opened with none of these, shows a screen naming them
-    and runs nothing. The data rows carry the participant, the version, the list and
-    the replicate, and the data file is named after the participant and the version.
+    and runs nothing. Its welcome screen shows the version's instructions, the design's
+    ``instructions`` or lexsync's for its task, and waits for the space bar. The data
+    rows carry the participant, the version, the list and the replicate, and the data
+    file is named after the participant and the version. The page names the keys as the
+    browser does, ``arrowleft`` for ``left``, in its events and in each trial's
+    ``answer``, so a recorded response can be compared with the answer as it stands.
     """
     base = base or design_stem(design)
     events = resolve_events(design)
@@ -1676,26 +1739,366 @@ def export_jspsych(stimuli, design, schema, outdir, base=None) -> str:
         render_events(events, design.get("timing") or {}, _refresh_hz(schema)))
     versions = presentation_versions(stimuli)
     trials = [{key: _fifteen_digits(value) for key, value in row.items()}
-              for row in loop_table(stimuli, events).to_dict(orient="records")]
+              for row in _map_answers_for_jspsych(
+                  loop_table(stimuli, events)).to_dict(orient="records")]
     presentation = schema.get("presentation") or {}
     font = design.get("font") or presentation.get("font") or "Courier New"
     with open(find_template("jspsych/experiment_template.html"), encoding="utf-8") as handle:
         tmpl = handle.read()
     # DESIGN lands in <title> and a comment, LANGUAGE_TAG in a lang attribute, WORD_FONT
-    # inside a CSS font-family declaration. Only the two JSON blobs are escaped by
-    # _json_html; the rest are validated, since a quote or an angle bracket in any of
-    # them would leave its attribute or rule and start markup in a page that collects
-    # participant responses.
+    # inside a CSS font-family declaration. Only the JSON blobs, the instructions among
+    # them, are escaped by _json_html; the rest are validated, since a quote or an angle
+    # bracket in any of them would leave its attribute or rule and start markup in a page
+    # that collects participant responses.
     subs = {
         "DESIGN": clean_meta(design["name"], "the design's `name`"),
         "LANGUAGE": clean_meta(design["language"], "the design's `language`"),
         "LANGUAGE_TAG": _language_tag(design), "WORD_FONT": clean_meta(font, "the font"),
         "EVENTS_JSON": _json_html(rendered), "TRIALS_JSON": _json_html(trials),
         "VERSIONS_JSON": _json_html(versions),
+        "INSTRUCTIONS_JSON": _json_html(_instruction_texts(design, versions)),
     }
     for k, v in subs.items():
         tmpl = tmpl.replace("{{" + k + "}}", str(v))
     return _write_text(tmpl.rstrip("\n"), os.path.join(outdir, f"{base}.html"))
+
+
+# ---- Instructions and the response mapping --------------------------------------------
+#
+# Every experiment shows instructions and waits for the space bar before its first trial.
+# A design may give its own text, which travels as data: JSON in the PsychoPy script and
+# the jsPsych page, and a _pyq literal in the OpenSesame script. Without one, lexsync
+# writes English instructions for the tasks it knows. The loop tables carry each trial's
+# correct key in `answer`, taken from the response mapping where the trial names none.
+
+# The prompt every target shows below the instructions. It and the runners' other
+# messages are in English. Must match both templates and .START_PROMPT in scripting.R.
+_START_PROMPT = "Press the space bar to begin."
+
+# What instructions may not hold: every control character but the line feed, and the two
+# Unicode separators, which end a line in JavaScript before ES2019 and in Python's
+# str.splitlines(), so they could split the OpenSesame script the text is written into.
+# Must match .INSTRUCTION_CONTROL in scripting.R.
+_INSTRUCTION_CONTROL = re.compile("[\x00-\x09\x0b-\x1f\x7f-\x9f  ]")
+
+# The names the instructions give the keys that are more than one character.
+_KEY_LABELS = {"space": "the space bar", "left": "the left arrow key",
+               "right": "the right arrow key", "up": "the up arrow key",
+               "down": "the down arrow key", "return": "the Enter key"}
+
+_MAPPING_SHAPE = ("lexsync: response_mapping must map each condition to one response key, "
+                  "as in {word: f, pseudoword: j}.")
+
+
+def _key_label(key) -> str:
+    """A response key as the instructions and the Methods text name it.
+
+    A single character is upper-cased, as a keyboard prints it (F, J, 1), and the arrow
+    keys, the space bar and Enter are named. Any other key is "the <name> key". Key names
+    are ASCII (see clean_key), so the two engines upper-case them alike. Mirrors
+    .key_label in scripting.R.
+    """
+    key = str(key)
+    if key in _KEY_LABELS:
+        return _KEY_LABELS[key]
+    return key.upper() if len(key) == 1 else "the %s key" % key
+
+
+def _join_words(parts, conjunction: str) -> str:
+    """Words joined as a list in prose: "a", "a or b", "a, b or c". Mirrors .join_words
+    in scripting.R."""
+    parts = [str(p) for p in parts]
+    if len(parts) < 2:
+        return "".join(parts)
+    return "%s %s %s" % (", ".join(parts[:-1]), conjunction, parts[-1])
+
+
+def _first_event(events: list, kind: str):
+    """The first event of a type, or None."""
+    return next((ev for ev in events if ev.get("type") == kind), None)
+
+
+def _response_keys(design: dict):
+    """The keys the design's first response event allows, or None without one."""
+    ev = _first_event(resolve_events(design), "response")
+    return None if ev is None else _keys_of(ev, ["left", "right"])
+
+
+def _design_instructions(design: dict):
+    """The design's own `instructions`, checked, or None when it gives none.
+
+    Free text, which may hold line breaks and no other control character. Spaces and line
+    breaks at either end are trimmed, so the closing line break of a YAML block scalar adds
+    no empty line. Must stay identical to .design_instructions in scripting.R.
+    """
+    value = design.get("instructions")
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        raise ValueError("lexsync: the design's `instructions` must be text.")
+    bad = _INSTRUCTION_CONTROL.search(value)
+    if bad:
+        raise ValueError("lexsync: the design's `instructions` contain the control character "
+                         "U+%04X; only line breaks are allowed." % ord(bad.group(0)))
+    text = value.strip(" \n")
+    if not text:
+        raise ValueError("lexsync: the design's `instructions` are empty; write the text or "
+                         "leave the key out.")
+    return text
+
+
+def _response_mapping(design: dict):
+    """The design's response mapping, ``{condition: key}``, or None when it has none.
+
+    A design's own `response_mapping` maps each condition to a key that its first response
+    event allows. Without one, a lexical decision maps word to that event's first key and
+    pseudoword to its second, the order in which its practice table codes them, so its
+    main trials can be scored. No other paradigm has a default. Must stay identical to
+    .response_mapping in scripting.R.
+    """
+    keys = _response_keys(design)
+    given = design.get("response_mapping")
+    if given is None:
+        if (design.get("paradigm") == "lexical_decision" and keys is not None
+                and len(keys) >= 2):
+            return {"word": keys[0], "pseudoword": keys[1]}
+        return None
+    if not isinstance(given, dict) or not given:
+        raise ValueError(_MAPPING_SHAPE)
+    if keys is None:
+        raise ValueError("lexsync: the design gives `response_mapping`, but none of its events "
+                         "is a response whose keys it could name.")
+    out = {}
+    for cond, key in given.items():
+        if isinstance(key, bool) or not isinstance(key, (str, numbers.Real)):
+            raise ValueError(_MAPPING_SHAPE)
+        key = clean_key(key, "a key in response_mapping")
+        if key not in keys:
+            raise ValueError("lexsync: response_mapping maps '%s' to '%s', but the response "
+                             "event allows only %s."
+                             % (_key_name(cond), key, _join_words(keys, "and")))
+        out[_key_name(cond)] = key
+    return out
+
+
+def _rotates(design: dict) -> bool:
+    """Whether the design rotates its response mapping across lists, checked."""
+    value = design.get("rotate_mapping_by_list")
+    if value is None:
+        return False
+    if not isinstance(value, bool):
+        raise ValueError("lexsync: rotate_mapping_by_list must be true or false.")
+    return value
+
+
+def _list_mapping(design: dict, mapping, lst):
+    """The response mapping in list ``lst``.
+
+    Rotated, list k moves each key k - 1 places along the response event's keys, so with
+    two keys every even-numbered list swaps them. Mirrors .list_mapping in scripting.R.
+    """
+    if mapping is None or not _rotates(design):
+        return mapping
+    keys = _response_keys(design)
+    return {c: keys[(keys.index(k) + int(lst) - 1) % len(keys)] for c, k in mapping.items()}
+
+
+def _check_instructions_and_mapping(design: dict) -> None:
+    """Refuse instructions, a response mapping or a rotation the experiments cannot carry.
+
+    validate_design calls this. Mirrors .check_instructions_and_mapping in scripting.R.
+    """
+    _design_instructions(design)
+    mapping = _response_mapping(design)
+    if _rotates(design) and mapping is None:
+        raise ValueError("lexsync: rotate_mapping_by_list rotates a response mapping, and the "
+                         "design has none; give `response_mapping`.")
+
+
+def _default_instructions(design: dict, mapping) -> tuple:
+    """lexsync's English instructions for a design that gives none, and whether they say
+    what every key the participant presses means.
+
+    A lexical decision names the keys its mapping gives word and pseudoword. A
+    categorisation says that the first key of its response means yes and the second no,
+    and a comprehension question says the same of its keys. Self-paced reading names the
+    key that shows the next part. Any other response is only named, so the text cannot
+    say what its keys mean, which is all a factorial or priming design gets. A design with
+    neither a response nor a question is told what it will see. Must stay identical to
+    .default_instructions in scripting.R.
+    """
+    events = resolve_events(design)
+    paradigm = design.get("paradigm", "factorial")
+    keys = _response_keys(design)
+    region = _first_event(events, "region_by_region")
+    question = _first_event(events, "question")
+    parts, explained = [], True
+    if (paradigm == "lexical_decision" and mapping is not None
+            and "word" in mapping and "pseudoword" in mapping):
+        parts.append("You will see a string of letters. Press %s if it is a real English word "
+                     "and %s if it is not." % (_key_label(mapping["word"]),
+                                               _key_label(mapping["pseudoword"])))
+    elif paradigm == "categorisation" and keys is not None and len(keys) == 2:
+        parts.append("You will see a category and then a word. Press %s for yes if the word "
+                     "belongs to the category and %s for no if it does not."
+                     % (_key_label(keys[0]), _key_label(keys[1])))
+    elif keys is not None:
+        parts.append("When a response is needed, press %s."
+                     % _join_words([_key_label(k) for k in keys], "or"))
+        explained = False
+    if region is not None:
+        parts.append("You will read each sentence one part at a time. Press %s to see the "
+                     "next part." % _key_label(region.get("advance", "space")))
+    if question is not None:
+        qkeys = _keys_of(question, ["f", "j"])
+        if len(qkeys) == 2:
+            parts.append("Answer each question by pressing %s for yes and %s for no."
+                         % (_key_label(qkeys[0]), _key_label(qkeys[1])))
+        else:
+            parts.append("Answer each question by pressing %s."
+                         % _join_words([_key_label(k) for k in qkeys], "or"))
+            explained = False
+    if keys is not None:
+        parts.append("Respond as quickly and accurately as you can.")
+    if not parts:
+        parts.append("You will see items presented one at a time on the screen.")
+    return " ".join(parts), explained
+
+
+def _instructions(design: dict, mapping) -> str:
+    """The instructions shown with ``mapping``, one list's response mapping: the
+    design's own text, or lexsync's."""
+    own = _design_instructions(design)
+    return own if own is not None else _default_instructions(design, mapping)[0]
+
+
+def _instruction_texts(design: dict, versions: list) -> list:
+    """The instructions each presentation version shows, in version order.
+
+    A mapping rotated across lists names each list's keys, so the texts can differ from
+    one version to the next. Mirrors .instruction_texts in scripting.R.
+    """
+    mapping = _response_mapping(design)
+    return [_instructions(design, _list_mapping(design, mapping, v["list"])) for v in versions]
+
+
+def _instruction_notes(design: dict) -> list:
+    """The run-log notes on a design's instructions, in the order the run log gives them.
+
+    A design that gives none shows lexsync's, which are in English, so a design in another
+    language is told so. One whose response keys lexsync cannot explain is told that its
+    experiments only name them, as a factorial or priming design's do. A design that
+    rotates its mapping across lists and gives its own text is reminded that the text is
+    the same in every list. Mirrors .instruction_notes in scripting.R.
+    """
+    notes = []
+    if _design_instructions(design) is None:
+        if _language_tag(design).split("-")[0].lower() != "en":
+            notes.append("lexsync: the design gives no `instructions` and its language is "
+                         "'%s', so the experiments show lexsync's instructions in English; "
+                         "give `instructions` in the participants' language."
+                         % design.get("language"))
+        if not _default_instructions(design, _response_mapping(design))[1]:
+            notes.append("lexsync: the design gives no `instructions`, and lexsync cannot tell "
+                         "what the response keys of a %s design mean, so the experiments only "
+                         "name the keys; give `instructions` that say what each key means."
+                         % design.get("paradigm", "factorial"))
+    elif _rotates(design) and _response_mapping(design) is not None:
+        notes.append("lexsync: the response keys rotate across lists, but the design's "
+                     "`instructions` are the same in every list, so they should not name the "
+                     "keys.")
+    return notes
+
+
+def _answer_text(value):
+    """A trial's own answer as the text its loop-table cell holds, or None when it names
+    none.
+
+    A table's answer column is typed by its values, so a practice table that codes its
+    answers as number keys is read as numbers. This engine holds them as floats once the
+    main trials' missing answers join them. Such an answer is the text the CSV writer
+    gives it, 1 and not 1.0, and so the text the R engine gives it. Text is kept as it
+    is. Mirrors .answer_text in scripting.R.
+    """
+    if value is None:
+        return None
+    if isinstance(value, str):
+        return value
+    if pd.isna(value):
+        return None
+    return _readr_cell(value)
+
+
+def _answer_given(value):
+    """A trial's own answer, trimmed, or None when it names none."""
+    text = _answer_text(value)
+    if text is None:
+        return None
+    # The characters R's trimws() removes, and no other space.
+    text = text.strip(" \t\r\n")
+    return text or None
+
+
+def _assign_answers(stimuli: pd.DataFrame, design: dict) -> tuple:
+    """Fill each trial's `answer` from the response mapping, where the trial names none.
+
+    Returns ``(stimuli, notes)``, the trials with their answers and the run-log notes. A
+    trial that names its own answer, such as a practice or filler trial, keeps it as text
+    (see _answer_text), and a note counts the trials whose answer contradicts the mapping
+    for their condition and list. With rotation, each trial takes its list's mapping. A
+    design's own mapping is refused when it gives no key for a condition whose trials
+    name no answer, or names a condition no trial has, since both are typing errors that
+    would leave trials unscored. The lexical-decision default maps word and pseudoword
+    only, and a note counts the trials of any other condition it leaves without an
+    answer. Without a mapping, the trials come back as they came. export_experiments
+    applies this as it assigns the trigger codes, so the stimuli file does not change.
+    Must stay identical to .assign_answers in scripting.R.
+    """
+    mapping = _response_mapping(design)
+    if mapping is None:
+        return stimuli, []
+    n = len(stimuli)
+    lists = _version_key(stimuli, "list")
+    conditions = [str(c) for c in stimuli["condition"]]
+    own = list(stimuli["answer"]) if "answer" in stimuli.columns else [None] * n
+    blocks = ([None if pd.isna(b) else str(b) for b in stimuli["block"]]
+              if "block" in stimuli.columns else [None] * n)
+    by_list = {lst: _list_mapping(design, mapping, lst) for lst in dict.fromkeys(lists)}
+    answers, missing, conflicts = [], {}, {}
+    for lst, cond, mine, blk in zip(lists, conditions, own, blocks, strict=True):
+        want = by_list[lst].get(cond)
+        have = _answer_given(mine)
+        if have is not None:
+            answers.append(_answer_text(mine))
+            if want is not None and have != want:
+                key = (blk, lst, cond, have, want)
+                conflicts[key] = conflicts.get(key, 0) + 1
+        else:
+            answers.append(want)
+            if want is None:
+                missing[cond] = missing.get(cond, 0) + 1
+    if design.get("response_mapping") is not None:
+        for cond, count in missing.items():
+            raise ValueError("lexsync: response_mapping gives no key for condition '%s', and "
+                             "%d trial(s) of it have no answer of their own." % (cond, count))
+        present = list(dict.fromkeys(conditions))
+        for cond in mapping:
+            if cond not in present:
+                raise ValueError("lexsync: response_mapping names condition '%s', which no "
+                                 "trial has; the trials' conditions are %s."
+                                 % (cond, _join_words(present, "and")))
+    several = len(set(lists)) > 1
+    notes = ["lexsync: %d %strial(s) of condition '%s'%s keep their answer '%s', where the "
+             "response mapping gives '%s'."
+             % (count, "" if blk is None else blk + " ", cond,
+                " in list %d" % lst if several else "", have, want)
+             for (blk, lst, cond, have, want), count in conflicts.items()]
+    notes += ["lexsync: %d trial(s) of condition '%s' have no answer, since the "
+              "lexical-decision default maps only word and pseudoword; give "
+              "`response_mapping`." % (count, cond) for cond, count in missing.items()]
+    out = stimuli.copy()
+    out["answer"] = answers
+    return out, notes
 
 
 def _design_condition_names(design) -> list | None:
@@ -1723,6 +2126,15 @@ def export_experiments(stimuli, design, schema, outdir, base=None, conditions=No
     alongside other codes are kept apart from those codes, and a code of the design's
     own that the stream already uses is reported.
 
+    Each trial that names no ``answer`` of its own takes the key the design's response
+    mapping gives its condition in its list, so the loop tables can score every trial.
+    A lexical decision maps word to its response event's first key and pseudoword to
+    its second unless the design gives ``response_mapping``, and
+    ``rotate_mapping_by_list: true`` rotates the keys across lists. A practice or filler
+    trial keeps the answer its table gives. The stimuli passed in are not changed. Every
+    target shows the design's ``instructions``, or lexsync's English instructions for its
+    task, and waits for the space bar before the first trial.
+
     Returns the generated paths by target: ``psychopy``, ``opensesame`` (version 1's
     experiment when a design has several, see :func:`export_opensesame`) and
     ``jspsych``. ``files`` lists every file written, in a fixed order: the PsychoPy
@@ -1732,6 +2144,7 @@ def export_experiments(stimuli, design, schema, outdir, base=None, conditions=No
     if conditions is None:
         conditions = _design_condition_names(design)
     stimuli = assign_triggers(stimuli, conditions, events=resolve_events(design), schema=schema)
+    stimuli = _assign_answers(stimuli, design)[0]
     script, conditions_file = _psychopy_files(stimuli, design, schema, outdir, base)
     experiments, tables = _opensesame_files(stimuli, design, schema, outdir, base)
     page = export_jspsych(stimuli, design, schema, outdir, base)

@@ -133,7 +133,7 @@ def test_every_block_appears_in_every_version_of_a_resampled_design(design, sche
         assert set(g.loc[g["block"] == BLOCK_MAIN, "target"]) == set(
             stim.loc[stim["replicate"] == rep, "target"]), rep
     assert list(presented.loc[presented["replicate"] == 2, "target"]) == [
-        "plank", "light", "chair", "plost", "skirn", "clock", "frelt", "brave",
+        "plang", "light", "chair", "plost", "skirn", "clock", "frelt", "brave",
         "strunk", "candle", "vantle", "plimth", "w05", "tundra", "blorge", "w07", "w06",
         "marble", "bridge", "w08"]
     # The main block is counted per version, as the practice and the fillers are.

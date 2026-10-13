@@ -31,7 +31,9 @@ the inline scripts read with Python's \code{csv} module, so OpenSesame never eva
 them. Copy both tables with the experiment.
 }
 \details{
-Every trial is logged. A response after a text event is collected by that event's
+Before the loop, an inline script, \code{lexsync_instructions}, shows the design's
+\code{instructions}, or lexsync's for its task, and waits for the space bar. Every trial
+is logged. A response after a text event is collected by that event's
 script from the stimulus's onset, which sets \code{response}, \code{response_time},
 \code{timed_out} and \code{correct}. A response kept after the stimulus with \code{from: offset} is
 a keyboard_response, and a script after it sets \code{timed_out} and \code{correct}.

@@ -66,6 +66,54 @@ since a window from the onset opens with a text event and none comes right befor
 records each response window as `presentation.response_windows`, and its Methods text says when
 responses were collected.
 
+## Instructions and the response mapping
+
+Every generated experiment shows instructions and waits for the space bar before its first trial.
+The participant reads them at their own pace, and the experimenter can start the run when the
+participant is ready. A design gives its own text under `instructions`, which may hold line
+breaks:
+
+```yaml
+instructions: |
+  You will see a string of letters.
+  Press F if it is a real English word and J if it is not.
+```
+
+The text is carried as data: JSON in the PsychoPy script and the jsPsych page, and an escaped
+literal in the OpenSesame script, so nothing in it can become code. A control character other than
+the line break is refused. Without the key, lexsync writes English instructions for the tasks it
+knows. A lexical decision names the keys for a word and a pseudoword. A categorisation says that
+its first key means yes and its second no, and a comprehension question says the same of its keys.
+Any other design is told only which keys to press, and its run log asks for instructions that say
+what each key means. The run log also notes a design in another language that gives no text of its
+own. The targets' own short messages, such as the prompt to press the space bar, are in English.
+
+A lexical decision maps word to its response event's first key and pseudoword to its second. The
+paradigm's events therefore map word to the left arrow key, and
+`config/design_en_lexdec_blocks.yaml`, whose events use f and j, maps word to f, as its practice
+table does. A design may give its own mapping, with keys its response event allows, and may rotate
+it across lists:
+
+```yaml
+response_mapping: {word: j, pseudoword: f}
+rotate_mapping_by_list: true
+```
+
+Rotated, list *k* moves each key *k* - 1 places along the response event's keys, which with two keys
+swaps them in every even-numbered list, and each version's instructions name its own keys. lexsync
+refuses a mapping that names a key the response event does not allow. It also refuses one that
+gives no key for a condition whose trials name no answer, and one that names a condition no trial
+has.
+
+`export_experiments` gives each trial its correct key in `answer` as it assigns the trigger codes,
+so every trial of a lexical decision can be scored. A practice or filler table keeps its own
+answers, and the run log notes any that the mapping contradicts, as a rotated mapping does in its
+even-numbered lists. The stimuli file does not change. jsPsych records a key by the browser's name
+for it, so the jsPsych page names each answer that way, `arrowleft` for `left`, and in every target
+a correct response equals its trial's answer. The datasheet records the mapping as
+`presentation.response_mapping`, and its Methods text says which key the participants pressed for
+which condition.
+
 
 ## Timing that varies from trial to trial
 
@@ -133,8 +181,10 @@ written in. Because the paradigm requires the field, the PsychoPy and OpenSesame
 each response against it, and the jsPsych data rows carry it beside the response. Its recipe is
 `latin_square_target` for the same reason a priming design uses one: each item carries both cues,
 and a factorial deal would show a participant the same target twice, turning the second
-presentation into a repetition-priming trial.
-`config/design_en_categorisation.yaml` is a worked example.
+presentation into a repetition-priming trial. A categorisation also needs 'no' trials, or pressing
+the yes key on every trial scores perfectly. `config/design_en_categorisation.yaml` is a worked
+example, whose 16 foils, nouns that do not belong to the category they appear under, are fillers
+with the answer j.
 
 `required_fields` tells you what a design's items must carry: the paradigm's own fields, plus any
 extra field its events reference.
@@ -199,7 +249,8 @@ main trials. That is correct, since adding fillers changes the sequence and the 
 where each item actually appeared. Both blocks appear in every list and neither is counterbalanced,
 because they carry no manipulation to rotate and every participant should get the same practice. In
 a resampled design, the copy of a list in each replicate is a presentation version of its own, and
-it gets both blocks too.
+it gets both blocks too. The PsychoPy and jsPsych runners pause where the practice trials end and
+nowhere else, since a pause around a filler would set it apart.
 
 Each block's item table is read with the same validation as any other, and given a `set` range that
 cannot collide with the main items, which a naive read would not manage since practice item 1 and
@@ -220,12 +271,13 @@ compares it as a string with the key the participant pressed, and displays `corr
   blocks: [practice]
 ```
 
-`blocks:` restricts an event to the named blocks, and this is its main use: feedback teaches the
-mapping during practice, and would contaminate reaction times in the task itself. The restriction has
-to be expressed on the event because the event list is global to the design. Since a feedback event
-scores a keypress, something before it must have collected one. A design whose feedback event has no
-preceding `response` or `question` is refused when the experiment is generated. Left to run time,
-that one design error would surface as three different failures, one per target.
+`blocks:` restricts an event to the named blocks, and this is its main use: feedback during practice
+confirms the mapping the instructions state, and would contaminate reaction times in the task
+itself. The restriction has to be expressed on the event because the event list is global to the
+design. Since a feedback event scores a keypress, something before it must have collected one. A
+design whose feedback event has no preceding `response` or `question` is refused when the
+experiment is generated. Left to run time, that one design error would surface as three different
+failures, one per target.
 `config/design_en_lexdec_blocks.yaml` puts all of this together.
 
 ## Counterbalancing
@@ -503,7 +555,9 @@ Keys come from PsychoPy's `keyboard` module. A stimulus that collects its respon
 and `open_window` queues the reset of the keyboard's clock and the clearing of its queue on the same
 onset flip as the trigger. The keyboard is polled after every flip, the first key ends the stimulus,
 and its `rt` runs from the onset. A window kept with `from: offset`, each self-paced reading region
-and each question open on their own first flip in the same way.
+and each question open on their own first flip in the same way. Before the first trial, the script
+shows the version's instructions and waits for the space bar. Escape there ends the run before a
+data file is opened.
 
 Each run writes a data file under `data/` beside the script, named
 `<base>_p<participant>_v<version>_<date>-<time>.csv`, without the `_p` part when no participant
@@ -596,6 +650,9 @@ put this target out of step with the other two. A response kept after the stimul
 `from: offset` is a `keyboard_response` preceded by a blank canvas. A `keyboard_response` draws
 nothing, so the preceding stimulus would otherwise stay on screen for the whole response window
 instead of offsetting at its stated duration. A script after it records `timed_out` and `correct`.
+Before the loop, an inline script, `lexsync_instructions`, shows the instructions and waits for the
+space bar, and escape there stops the session. OpenSesame's canvas reads a subset of HTML, so the
+script writes the text with `&`, `<` and `>` escaped and each line break as `<br />`.
 A structural validator in the test suite checks the generated file's blocks and references. A second
 test runs its scripts under an emulation of each version's variable store, on item text that
 OpenSesame would otherwise evaluate.
@@ -611,16 +668,18 @@ versions' loggers write a variable without evaluating it.
 ### jsPsych
 
 The browser export is a single HTML file carrying the same rendered events and the trial data
-inline. It opens with instructions, attaches each item's design fields to every recorded row, and
-ends by saving the collected data as a CSV download, so a generated experiment gathers usable data
-with no server behind it. The jsPsych library and its stylesheet load from a content delivery
+inline. It opens with a welcome screen that shows the instructions and waits for the space bar.
+It attaches each item's design fields to every recorded row and ends by saving the collected data
+as a CSV download, so a generated experiment gathers usable data with no server behind it. The
+jsPsych library and its stylesheet load from a content delivery
 network, so the first run needs an internet connection. A target and its response window are one
 jsPsych trial, recorded with `lexsync_event` set to `target`. It accepts the response keys from the
 target's onset, shows the target for its duration and runs on for the timeout. The first key ends
 it, so its `rt` is timed from the target's onset.
 
 Two things are handled on the way out. Event-model key names are mapped to browser key names, so
-`left` becomes `arrowleft` and `space` becomes a literal space. The design's free-text `language`
+`left` becomes `arrowleft` and `space` becomes a literal space, in the events and in each trial's
+`answer`, since jsPsych records the key pressed by that name. The design's free-text `language`
 label is mapped to a BCP 47 tag for the `lang` attribute, falling back to `und` rather than emitting
 `lang="english"`, which no user agent can resolve. A design may state `language_tag` outright.
 

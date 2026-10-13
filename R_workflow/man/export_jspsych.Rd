@@ -36,7 +36,10 @@ The page embeds every presentation version of the design, one per (replicate,
 list) pair, and runs one, named in its address: \code{?version=K}, \code{?list=K} when there
 are no replicates, or \code{?participant=N}, whose version is \verb{((N - 1) mod V) + 1}. A
 page with more than one version, opened with none of these, shows a screen naming
-them and runs nothing. The data rows carry the participant, the version, the list
-and the replicate, and the data file is named after the participant and the
-version.
+them and runs nothing. Its welcome screen shows the version's instructions, the
+design's \code{instructions} or lexsync's for its task, and waits for the space bar. The
+data rows carry the participant, the version, the list and the replicate, and the
+data file is named after the participant and the version. The page names the keys
+as the browser does, \code{arrowleft} for \code{left}, in its events and in each trial's
+\code{answer}, so a recorded response can be compared with the answer as it stands.
 }

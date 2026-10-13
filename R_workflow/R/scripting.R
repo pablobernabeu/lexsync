@@ -901,6 +901,11 @@ loop_table <- function(stimuli, events = NULL) {
 #' `--participant`, else what a start-up dialogue asks for. A version the script does
 #' not have stops the run with a message.
 #'
+#' Before the first trial, the script shows the version's instructions, the design's
+#' `instructions` or lexsync's for its task, and waits for the space bar, which also
+#' lets the experimenter start the run. Escape there stops the run before anything is
+#' recorded. The text is embedded as JSON data, one text per version.
+#'
 #' Each run writes `data/<base>_p<participant>_v<version>_<date>-<time>.csv` beside
 #' the script, without the `_p` part when no participant number is given, one row per
 #' trial, each written as its trial ends. A row holds the run, the trial's fields and
@@ -952,7 +957,10 @@ export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
     # The fallback used only when the script cannot measure the display.
     ASSUMED_REFRESH_HZ = sprintf("%.17g", .refresh_hz(schema)),
     EVENTS_JSON = as.character(jsonlite::toJSON(rendered, auto_unbox = TRUE)),
-    VERSIONS_JSON = as.character(jsonlite::toJSON(versions, auto_unbox = TRUE))
+    VERSIONS_JSON = as.character(jsonlite::toJSON(versions, auto_unbox = TRUE)),
+    # A list, which jsonlite writes as an array even for one version.
+    INSTRUCTIONS_JSON = as.character(jsonlite::toJSON(
+      as.list(.instruction_texts(design, versions)), auto_unbox = TRUE))
   )
   for (k in names(subs)) {
     tmpl <- gsub(sprintf("{{%s}}", k), as.character(subs[[k]]), tmpl, fixed = TRUE)
@@ -1248,6 +1256,33 @@ export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
                 "Warn when the subject number belongs to another version", body)
 }
 
+# Text for OpenSesame's canvas, which reads a subset of HTML: &, < and > escaped, and
+# each line break written as <br />. Mirrors _osexp_html in scripting.py.
+.osexp_html <- function(text) {
+  text <- gsub("&", "&amp;", text, fixed = TRUE)
+  text <- gsub("<", "&lt;", text, fixed = TRUE)
+  text <- gsub(">", "&gt;", text, fixed = TRUE)
+  gsub("\n", "<br />", text, fixed = TRUE)
+}
+
+# The inline script that shows the instructions and waits for the space bar. It runs once,
+# before the loop, so the participant reads at their own pace and the first trial starts
+# on the space bar, which also lets the experimenter start the run. Escape stops the
+# session, as it does at the version check. The text is written into the script as a
+# .pyq literal, which escapes its line breaks, so it cannot add a line to the experiment.
+# Must match _osexp_instructions in scripting.py.
+.osexp_instructions <- function(text) {
+  body <- c(
+    "c = Canvas()",
+    sprintf("c.text(%s)", .pyq(paste0(.osexp_html(text), "<br /><br />", .START_PROMPT))),
+    "c.show()",
+    "_key, _t = Keyboard(keylist=[u'space', u'escape'], timeout=None).get_key()",
+    "if _key == u'escape':",
+    "    raise RuntimeError(u'lexsync: stopped at the instructions.')")
+  .inline_block("lexsync_instructions", "Show the instructions and wait for the space bar",
+                body)
+}
+
 #' Build a complete plain-text OpenSesame experiment from rendered events
 #'
 #' The loop table and its companion text table are both looked up through OpenSesame's
@@ -1265,11 +1300,16 @@ export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
 #'   more than one version, it checks OpenSesame's subject number against its own before
 #'   the loop and warns when the participant would normally run another. `NULL` (the
 #'   default) marks a design with one version, which needs no check.
+#' @param instructions The text the experiment shows before the loop, waiting for the
+#'   space bar. `NULL` (the default) takes list 1's, the design's own `instructions` or
+#'   lexsync's for its task.
 #' @return The experiment's text, one string. Each trial starts by clearing the last
 #'   trial's responses and ends with a logger item.
 #' @keywords internal
 build_osexp <- function(design, conditions_file, schema, rendered, font = "mono",
-                        text_file = NULL, version = NULL, n_versions = NULL) {
+                        text_file = NULL, version = NULL, n_versions = NULL,
+                        instructions = NULL) {
+  instructions <- instructions %||% .instructions(design, .response_mapping(design))
   addr <- clean_port(schema[["triggers"]][["parallel_address"]] %||% "0x378")
   design_name <- clean_meta(design[["name"]], "the design's `name`")
   language <- clean_meta(design[["language"]], "the design's `language`")
@@ -1386,9 +1426,11 @@ build_osexp <- function(design, conditions_file, schema, rendered, font = "mono"
     '\tset description "Top-level experiment sequence"',
     "\trun lexsync_trigger_setup always",
     if (checked) "\trun lexsync_version_check always",
+    "\trun lexsync_instructions always",
     "\trun lexsync_loop always", ""
   )
-  paste(c(header, check, event_blocks, trial), collapse = "\n")
+  paste(c(header, check, .osexp_instructions(instructions), event_blocks, trial),
+        collapse = "\n")
 }
 
 #' Export a complete plain-text OpenSesame experiment
@@ -1401,7 +1443,9 @@ build_osexp <- function(design, conditions_file, schema, rendered, font = "mono"
 #' the inline scripts read with Python's `csv` module, so OpenSesame never evaluates
 #' them. Copy both tables with the experiment.
 #'
-#' Every trial is logged. A response after a text event is collected by that event's
+#' Before the loop, an inline script, `lexsync_instructions`, shows the design's
+#' `instructions`, or lexsync's for its task, and waits for the space bar. Every trial
+#' is logged. A response after a text event is collected by that event's
 #' script from the stimulus's onset, which sets `response`, `response_time`,
 #' `timed_out` and `correct`. A response kept after the stimulus with `from: offset` is
 #' a keyboard_response, and a script after it sets `timed_out` and `correct`.
@@ -1444,15 +1488,19 @@ export_opensesame <- function(stimuli, design, schema, outdir, base = NULL) {
   presentation <- schema[["presentation"]] %||% list()
   font <- design[["font"]] %||% presentation[["opensesame_font"]] %||% "mono"
   versions <- .presentation_versions(stimuli)
+  texts <- .instruction_texts(design, versions)
   parts <- if (length(versions) <= 1L) {
     # One version keeps the file names an experiment has always had.
-    list(list(stem = base, rows = stimuli, version = NULL))
+    list(list(stem = base, rows = stimuli, version = NULL,
+              instructions = if (length(texts)) texts[[1]] else NULL))
   } else {
     by_replicate <- .spans_replicates(versions)
-    lapply(versions, function(v) {
+    lapply(seq_along(versions), function(k) {
+      v <- versions[[k]]
       stem <- if (by_replicate) sprintf("%s_rep%d_list%d", base, v[["replicate"]], v[["list"]])
               else sprintf("%s_list%d", base, v[["list"]])
-      list(stem = stem, rows = .version_rows(stimuli, v), version = v[["version"]])
+      list(stem = stem, rows = .version_rows(stimuli, v), version = v[["version"]],
+           instructions = texts[[k]])
     })
   }
   written <- lapply(parts, function(p) {
@@ -1462,7 +1510,8 @@ export_opensesame <- function(stimuli, design, schema, outdir, base = NULL) {
          tables = .opensesame_tables(p[["rows"]], events),
          osexp = build_osexp(design, csv_name, schema, rendered, font = font,
                              text_file = text_name, version = p[["version"]],
-                             n_versions = length(versions)))
+                             n_versions = length(versions),
+                             instructions = p[["instructions"]]))
   })
   experiments <- character(0)
   tables <- character(0)
@@ -1524,6 +1573,22 @@ export_opensesame <- function(stimuli, design, schema, outdir, base = NULL) {
   })
 }
 
+# The loop table with each trial's `answer` named as the browser names the key. jsPsych
+# records the key pressed by the browser's name for it, so a press of the left arrow is
+# recorded as `arrowleft`, the name the page's events give the key (see
+# .map_keys_jspsych()). The loop tables name it `left`, as PsychoPy and OpenSesame record
+# it. The page's answers are named as its keys are, so a correct response equals its
+# trial's answer, in the data rows and on the feedback screen. The spaces the runners
+# ignore around an answer are ignored here too. Mirrors _map_answers_for_jspsych in
+# scripting.py.
+.map_answers_jspsych <- function(trials) {
+  answer <- trials[["answer"]]
+  if (!is.character(answer)) return(trials)
+  browser <- .JSPSYCH_KEYS[trimws(answer)]
+  trials[["answer"]] <- ifelse(is.na(answer) | is.na(browser), answer, unname(browser))
+  trials
+}
+
 .json_html <- function(x) {
   s <- as.character(x)
   s <- gsub("<", "\\u003c", s, fixed = TRUE)
@@ -1554,9 +1619,12 @@ export_opensesame <- function(stimuli, design, schema, outdir, base = NULL) {
 #' list) pair, and runs one, named in its address: `?version=K`, `?list=K` when there
 #' are no replicates, or `?participant=N`, whose version is `((N - 1) mod V) + 1`. A
 #' page with more than one version, opened with none of these, shows a screen naming
-#' them and runs nothing. The data rows carry the participant, the version, the list
-#' and the replicate, and the data file is named after the participant and the
-#' version.
+#' them and runs nothing. Its welcome screen shows the version's instructions, the
+#' design's `instructions` or lexsync's for its task, and waits for the space bar. The
+#' data rows carry the participant, the version, the list and the replicate, and the
+#' data file is named after the participant and the version. The page names the keys
+#' as the browser does, `arrowleft` for `left`, in its events and in each trial's
+#' `answer`, so a recorded response can be compared with the answer as it stands.
 #'
 #' @inheritParams export_psychopy
 #' @return The path to the generated `.html`, invisibly.
@@ -1568,7 +1636,7 @@ export_jspsych <- function(stimuli, design, schema, outdir, base = NULL) {
   rendered <- .map_keys_jspsych(
     render_events(events, design[["timing"]] %||% list(), .refresh_hz(schema)))
   versions <- .presentation_versions(stimuli)
-  trials <- loop_table(stimuli, events)
+  trials <- .map_answers_jspsych(loop_table(stimuli, events))
   presentation <- schema[["presentation"]] %||% list()
   font <- design[["font"]] %||% presentation[["font"]] %||% "Courier New"
   tmpl <- paste(readLines(find_template("jspsych/experiment_template.html"), warn = FALSE),
@@ -1585,7 +1653,9 @@ export_jspsych <- function(stimuli, design, schema, outdir, base = NULL) {
     # wrote to 17 digits; I(15) is "%.15g" in every version, and DESCRIPTION sets no
     # floor on jsonlite.
     TRIALS_JSON = .json_html(jsonlite::toJSON(trials, dataframe = "rows", digits = I(15))),
-    VERSIONS_JSON = .json_html(jsonlite::toJSON(versions, auto_unbox = TRUE))
+    VERSIONS_JSON = .json_html(jsonlite::toJSON(versions, auto_unbox = TRUE)),
+    INSTRUCTIONS_JSON = .json_html(jsonlite::toJSON(as.list(.instruction_texts(design, versions)),
+                                                    auto_unbox = TRUE))
   )
   for (k in names(subs)) {
     tmpl <- gsub(sprintf("{{%s}}", k), as.character(subs[[k]]), tmpl, fixed = TRUE)
@@ -1593,6 +1663,360 @@ export_jspsych <- function(stimuli, design, schema, outdir, base = NULL) {
   out <- file.path(outdir, paste0(base, ".html"))
   write_lines_lf(tmpl, out)
   invisible(out)
+}
+
+# ---- Instructions and the response mapping ----------------------------------------
+#
+# Every experiment shows instructions and waits for the space bar before its first trial.
+# A design may give its own text, which travels as data: JSON in the PsychoPy script and
+# the jsPsych page, and a .pyq literal in the OpenSesame script. Without one, lexsync
+# writes English instructions for the tasks it knows. The loop tables carry each trial's
+# correct key in `answer`, taken from the response mapping where the trial names none.
+# Mirrors the section of the same name in scripting.py.
+
+# The prompt every target shows below the instructions. It and the runners' other
+# messages are in English. Must match both templates and _START_PROMPT in scripting.py.
+.START_PROMPT <- "Press the space bar to begin."
+
+# The names the instructions give the keys that are more than one character.
+.KEY_LABELS <- c(space = "the space bar", left = "the left arrow key",
+                 right = "the right arrow key", up = "the up arrow key",
+                 down = "the down arrow key", "return" = "the Enter key")
+
+.MAPPING_SHAPE <- paste("lexsync: response_mapping must map each condition to one response",
+                        "key, as in {word: f, pseudoword: j}.")
+
+# A response key as the instructions and the Methods text name it. A single character is
+# upper-cased, as a keyboard prints it (F, J, 1), and the arrow keys, the space bar and
+# Enter are named. Any other key is "the <name> key". Key names are ASCII (see
+# clean_key()), so the two engines upper-case them alike. Mirrors _key_label in
+# scripting.py.
+.key_label <- function(key) {
+  key <- as.character(key)
+  if (key %in% names(.KEY_LABELS)) return(unname(.KEY_LABELS[[key]]))
+  if (nchar(key) == 1L) toupper(key) else sprintf("the %s key", key)
+}
+
+# Words joined as a list in prose: "a", "a or b", "a, b or c". Mirrors _join_words in
+# scripting.py.
+.join_words <- function(parts, conjunction) {
+  parts <- as.character(unlist(parts, use.names = FALSE))
+  n <- length(parts)
+  if (n < 2L) return(paste(parts, collapse = ""))
+  paste(paste(parts[-n], collapse = ", "), conjunction, parts[n])
+}
+
+# The first event of a type, or NULL.
+.first_event <- function(events, kind) {
+  for (ev in events) if (identical(ev[["type"]], kind)) return(ev)
+  NULL
+}
+
+# The keys the design's first response event allows, or NULL without one.
+.response_keys <- function(design) {
+  ev <- .first_event(resolve_events(design), "response")
+  if (is.null(ev)) NULL else .keys_of(ev, c("left", "right"))
+}
+
+# The design's own `instructions`, checked, or NULL when it gives none. Free text, which
+# may hold line breaks and no other control character: not the C0 and C1 controls, and
+# not the two Unicode separators, which end a line in JavaScript before ES2019 and in
+# Python's str.splitlines(), so they could split the OpenSesame script the text is
+# written into. The code points are read with utf8ToInt(), so the check does not depend
+# on the locale. Spaces and line breaks at either end are trimmed, so the closing line
+# break of a YAML block scalar adds no empty line. Must stay identical to
+# _design_instructions in scripting.py.
+.design_instructions <- function(design) {
+  value <- design[["instructions"]]
+  if (is.null(value)) return(NULL)
+  if (!is.character(value) || length(value) != 1L || is.na(value)) {
+    stop("lexsync: the design's `instructions` must be text.", call. = FALSE)
+  }
+  codes <- utf8ToInt(enc2utf8(value))
+  bad <- codes[(codes <= 0x1fL & codes != 0x0aL) | (codes >= 0x7fL & codes <= 0x9fL) |
+                 codes %in% c(0x2028L, 0x2029L)]
+  if (length(bad)) {
+    stop(sprintf(paste("lexsync: the design's `instructions` contain the control character",
+                       "U+%04X; only line breaks are allowed."), bad[1]), call. = FALSE)
+  }
+  text <- sub("[ \n]+$", "", sub("^[ \n]+", "", value))
+  if (!nzchar(text)) {
+    stop(paste("lexsync: the design's `instructions` are empty; write the text or leave the",
+               "key out."), call. = FALSE)
+  }
+  text
+}
+
+# The design's response mapping, list(condition = key), or NULL when it has none. A
+# design's own `response_mapping` maps each condition to a key that its first response
+# event allows. Without one, a lexical decision maps word to that event's first key and
+# pseudoword to its second, the order in which its practice table codes them, so its
+# main trials can be scored. No other paradigm has a default. Must stay identical to
+# _response_mapping in scripting.py.
+.response_mapping <- function(design) {
+  keys <- .response_keys(design)
+  given <- design[["response_mapping"]]
+  if (is.null(given)) {
+    if (identical(design[["paradigm"]], "lexical_decision") && !is.null(keys) &&
+        length(keys) >= 2L) {
+      return(list(word = keys[[1]], pseudoword = keys[[2]]))
+    }
+    return(NULL)
+  }
+  if (!.is_mapping(given) || !length(given)) stop(.MAPPING_SHAPE, call. = FALSE)
+  if (is.null(keys)) {
+    stop(paste("lexsync: the design gives `response_mapping`, but none of its events is a",
+               "response whose keys it could name."), call. = FALSE)
+  }
+  out <- list()
+  for (i in seq_along(given)) {
+    key <- given[[i]]
+    if (is.null(key) || is.list(key) || is.logical(key) || length(key) != 1L ||
+        is.na(key) || !(is.character(key) || is.numeric(key))) {
+      stop(.MAPPING_SHAPE, call. = FALSE)
+    }
+    key <- clean_key(key, "a key in response_mapping")
+    cond <- names(given)[i]
+    if (!(key %in% keys)) {
+      stop(sprintf(paste("lexsync: response_mapping maps '%s' to '%s', but the response",
+                         "event allows only %s."), cond, key, .join_words(keys, "and")),
+           call. = FALSE)
+    }
+    out[[cond]] <- key
+  }
+  out
+}
+
+# Whether the design rotates its response mapping across lists, checked.
+.rotates <- function(design) {
+  value <- design[["rotate_mapping_by_list"]]
+  if (is.null(value)) return(FALSE)
+  if (!is.logical(value) || length(value) != 1L || is.na(value)) {
+    stop("lexsync: rotate_mapping_by_list must be true or false.", call. = FALSE)
+  }
+  value
+}
+
+# The response mapping in list `lst`. Rotated, list k moves each key k - 1 places along
+# the response event's keys, so with two keys every even-numbered list swaps them.
+# Mirrors _list_mapping in scripting.py.
+.list_mapping <- function(design, mapping, lst) {
+  if (is.null(mapping) || !.rotates(design)) return(mapping)
+  keys <- .response_keys(design)
+  lapply(mapping, function(k) {
+    keys[[((match(k, keys) - 1L + as.integer(lst) - 1L) %% length(keys)) + 1L]]
+  })
+}
+
+# Refuse instructions, a response mapping or a rotation the experiments cannot carry.
+# validate_design() calls this. Mirrors _check_instructions_and_mapping in scripting.py.
+.check_instructions_and_mapping <- function(design) {
+  .design_instructions(design)
+  mapping <- .response_mapping(design)
+  if (.rotates(design) && is.null(mapping)) {
+    stop(paste("lexsync: rotate_mapping_by_list rotates a response mapping, and the design",
+               "has none; give `response_mapping`."), call. = FALSE)
+  }
+  invisible(NULL)
+}
+
+# lexsync's English instructions for a design that gives none, as list(text, explained):
+# the text, and whether it says what every key the participant presses means. A lexical
+# decision names the keys its mapping gives word and pseudoword. A categorisation says
+# that the first key of its response means yes and the second no, and a comprehension
+# question says the same of its keys. Self-paced reading names the key that shows the
+# next part. Any other response is only named, so the text cannot say what its keys
+# mean, which is all a factorial or priming design gets. A design with neither a
+# response nor a question is told what it will see. Must stay identical to
+# _default_instructions in scripting.py.
+.default_instructions <- function(design, mapping) {
+  events <- resolve_events(design)
+  paradigm <- design[["paradigm"]] %||% "factorial"
+  keys <- .response_keys(design)
+  region <- .first_event(events, "region_by_region")
+  question <- .first_event(events, "question")
+  key_labels <- function(k) vapply(k, .key_label, character(1), USE.NAMES = FALSE)
+  parts <- character(0)
+  explained <- TRUE
+  if (identical(paradigm, "lexical_decision") && !is.null(mapping) &&
+      !is.null(mapping[["word"]]) && !is.null(mapping[["pseudoword"]])) {
+    parts <- c(parts, sprintf(paste("You will see a string of letters. Press %s if it is a",
+                                    "real English word and %s if it is not."),
+                              .key_label(mapping[["word"]]), .key_label(mapping[["pseudoword"]])))
+  } else if (identical(paradigm, "categorisation") && !is.null(keys) && length(keys) == 2L) {
+    parts <- c(parts, sprintf(paste("You will see a category and then a word. Press %s for",
+                                    "yes if the word belongs to the category and %s for no",
+                                    "if it does not."),
+                              .key_label(keys[[1]]), .key_label(keys[[2]])))
+  } else if (!is.null(keys)) {
+    parts <- c(parts, sprintf("When a response is needed, press %s.",
+                              .join_words(key_labels(keys), "or")))
+    explained <- FALSE
+  }
+  if (!is.null(region)) {
+    parts <- c(parts, sprintf(paste("You will read each sentence one part at a time. Press",
+                                    "%s to see the next part."),
+                              .key_label(region[["advance"]] %||% "space")))
+  }
+  if (!is.null(question)) {
+    qkeys <- .keys_of(question, c("f", "j"))
+    if (length(qkeys) == 2L) {
+      parts <- c(parts, sprintf("Answer each question by pressing %s for yes and %s for no.",
+                                .key_label(qkeys[[1]]), .key_label(qkeys[[2]])))
+    } else {
+      parts <- c(parts, sprintf("Answer each question by pressing %s.",
+                                .join_words(key_labels(qkeys), "or")))
+      explained <- FALSE
+    }
+  }
+  if (!is.null(keys)) parts <- c(parts, "Respond as quickly and accurately as you can.")
+  if (!length(parts)) parts <- "You will see items presented one at a time on the screen."
+  list(text = paste(parts, collapse = " "), explained = explained)
+}
+
+# The instructions shown with `mapping`, one list's response mapping: the design's own
+# text, or lexsync's.
+.instructions <- function(design, mapping) {
+  .design_instructions(design) %||% .default_instructions(design, mapping)$text
+}
+
+# The instructions each presentation version shows, in version order, as a character
+# vector. A mapping rotated across lists names each list's keys, so the texts can differ
+# from one version to the next. Mirrors _instruction_texts in scripting.py.
+.instruction_texts <- function(design, versions) {
+  mapping <- .response_mapping(design)
+  vapply(versions, function(v) .instructions(design, .list_mapping(design, mapping, v[["list"]])),
+         character(1))
+}
+
+# The run-log notes on a design's instructions, in the order the run log gives them. A
+# design that gives none shows lexsync's, which are in English, so a design in another
+# language is told so. One whose response keys lexsync cannot explain is told that its
+# experiments only name them, as a factorial or priming design's do. A design that
+# rotates its mapping across lists and gives its own text is reminded that the text is
+# the same in every list. Mirrors _instruction_notes in scripting.py.
+.instruction_notes <- function(design) {
+  notes <- character(0)
+  if (is.null(.design_instructions(design))) {
+    primary <- tolower(strsplit(.language_tag(design), "-", fixed = TRUE)[[1]][1])
+    if (!identical(primary, "en")) {
+      notes <- c(notes, sprintf(paste(
+        "lexsync: the design gives no `instructions` and its language is '%s', so the",
+        "experiments show lexsync's instructions in English; give `instructions` in the",
+        "participants' language."), design[["language"]]))
+    }
+    if (!.default_instructions(design, .response_mapping(design))$explained) {
+      notes <- c(notes, sprintf(paste(
+        "lexsync: the design gives no `instructions`, and lexsync cannot tell what the",
+        "response keys of a %s design mean, so the experiments only name the keys; give",
+        "`instructions` that say what each key means."),
+        design[["paradigm"]] %||% "factorial"))
+    }
+  } else if (.rotates(design) && !is.null(.response_mapping(design))) {
+    notes <- c(notes, paste("lexsync: the response keys rotate across lists, but the",
+                            "design's `instructions` are the same in every list, so they",
+                            "should not name the keys."))
+  }
+  notes
+}
+
+# A trial's own answer as the text its loop-table cell holds, or NA when it names none. A
+# table's answer column is typed by its values, so a practice table that codes its
+# answers as number keys is read as numbers. Such an answer is the text
+# write_csv_utf8() gives it, 100000 where as.character() gives 1e+05, and so the text the
+# Python engine gives it. Text is kept as it is. Mirrors _answer_text in scripting.py.
+.answer_text <- function(x) {
+  if (is.character(x)) return(x)
+  if (!length(x)) return(character(0))
+  one <- data.frame(answer = x)
+  .check_csv_writable(one)
+  # One line per cell: a number or a logical needs no quoting, and strsplit() drops only
+  # the piece after the last line's end, so a missing answer stays an empty line.
+  cells <- strsplit(readr::format_csv(one, na = "", col_names = FALSE), "\n",
+                    fixed = TRUE)[[1]]
+  cells[!nzchar(cells)] <- NA_character_
+  cells
+}
+
+# A trial's own answer, trimmed, or NA when it names none. trimws() removes the
+# characters _answer_given in scripting.py strips.
+.answer_given <- function(x) {
+  s <- trimws(.answer_text(x))
+  s[!is.na(s) & !nzchar(s)] <- NA_character_
+  s
+}
+
+# Fill each trial's `answer` from the response mapping, where the trial names none.
+# Returns list(stimuli, notes), the trials with their answers and the run-log notes. A
+# trial that names its own answer, such as a practice or filler trial, keeps it as text
+# (see .answer_text()), and a note counts the trials whose answer contradicts the mapping
+# for their condition and list. With rotation, each trial takes its list's mapping. A
+# design's own mapping is refused when it gives no key for a condition whose trials name
+# no answer, or names a condition no trial has, since both are typing errors that would
+# leave trials unscored. The lexical-decision default maps word and pseudoword only, and
+# a note counts the trials of any other condition it leaves without an answer. Without a
+# mapping, the trials come back as they came. export_experiments() applies this as it
+# assigns the trigger codes, so the stimuli file does not change. Must stay identical to
+# _assign_answers in scripting.py.
+.assign_answers <- function(stimuli, design) {
+  mapping <- .response_mapping(design)
+  if (is.null(mapping)) return(list(stimuli = stimuli, notes = character(0)))
+  n <- nrow(stimuli)
+  lists <- .version_key(stimuli, "list")
+  conditions <- as.character(stimuli[["condition"]])
+  own <- .answer_text(if ("answer" %in% names(stimuli)) stimuli[["answer"]]
+                      else rep(NA_character_, n))
+  have <- .answer_given(own)
+  blocks <- if ("block" %in% names(stimuli)) as.character(stimuli[["block"]])
+            else rep(NA_character_, n)
+  by_list <- stats::setNames(lapply(unique(lists), function(l) .list_mapping(design, mapping, l)),
+                             as.character(unique(lists)))
+  want <- vapply(seq_len(n), function(i) {
+    key <- by_list[[as.character(lists[i])]][[conditions[i]]]
+    if (is.null(key)) NA_character_ else key
+  }, character(1))
+  answers <- ifelse(is.na(have), want, own)
+  conflict <- !is.na(have) & !is.na(want) & have != want
+  missing <- is.na(have) & is.na(want)
+  if (!is.null(design[["response_mapping"]])) {
+    if (any(missing)) {
+      cond <- conditions[missing][1]
+      stop(sprintf(paste("lexsync: response_mapping gives no key for condition '%s', and %d",
+                         "trial(s) of it have no answer of their own."),
+                   cond, sum(missing & conditions == cond)), call. = FALSE)
+    }
+    present <- unique(conditions)
+    stray <- setdiff(names(mapping), present)
+    if (length(stray)) {
+      stop(sprintf(paste("lexsync: response_mapping names condition '%s', which no trial has;",
+                         "the trials' conditions are %s."),
+                   stray[1], .join_words(present, "and")), call. = FALSE)
+    }
+  }
+  several <- length(unique(lists)) > 1L
+  notes <- character(0)
+  if (any(conflict)) {
+    key <- paste(blocks, lists, conditions, have, want, sep = "\x1f")[conflict]
+    rows <- which(conflict)
+    for (j in which(!duplicated(key))) {
+      i <- rows[j]
+      notes <- c(notes, sprintf(paste("lexsync: %d %strial(s) of condition '%s'%s keep their",
+                                      "answer '%s', where the response mapping gives '%s'."),
+                                sum(key == key[j]),
+                                if (is.na(blocks[i])) "" else paste0(blocks[i], " "),
+                                conditions[i],
+                                if (several) sprintf(" in list %d", lists[i]) else "",
+                                have[i], want[i]))
+    }
+  }
+  for (cond in unique(conditions[missing])) {
+    notes <- c(notes, sprintf(paste("lexsync: %d trial(s) of condition '%s' have no answer,",
+                                    "since the lexical-decision default maps only word and",
+                                    "pseudoword; give `response_mapping`."),
+                              sum(missing & conditions == cond), cond))
+  }
+  stimuli$answer <- answers
+  list(stimuli = stimuli, notes = notes)
 }
 
 #' Export all presentation targets (PsychoPy, OpenSesame, jsPsych)
@@ -1608,6 +2032,15 @@ export_jspsych <- function(stimuli, design, schema, outdir, base = NULL) {
 #' kept apart from those codes, and a code of the design's own that the stream
 #' already uses is reported.
 #'
+#' Each trial that names no `answer` of its own takes the key the design's response
+#' mapping gives its condition in its list, so the loop tables can score every trial.
+#' A lexical decision maps word to its response event's first key and pseudoword to
+#' its second unless the design gives `response_mapping`, and
+#' `rotate_mapping_by_list: true` rotates the keys across lists. A practice or filler
+#' trial keeps the answer its table gives. The stimuli passed in are not changed. Every
+#' target shows the design's `instructions`, or lexsync's English instructions for its
+#' task, and waits for the space bar before the first trial.
+#'
 #' @inheritParams export_psychopy
 #' @param conditions Optional character vector of condition labels in the order
 #'   that assigns their trigger codes (see [assign_triggers()]). `NULL` (the
@@ -1622,6 +2055,7 @@ export_experiments <- function(stimuli, design, schema, outdir, base = NULL,
                                conditions = NULL) {
   stimuli <- assign_triggers(stimuli, conditions %||% .design_condition_names(design),
                              events = resolve_events(design), schema = schema)
+  stimuli <- .assign_answers(stimuli, design)$stimuli
   psychopy <- .psychopy_files(stimuli, design, schema, outdir, base)
   opensesame <- .opensesame_files(stimuli, design, schema, outdir, base)
   jspsych <- export_jspsych(stimuli, design, schema, outdir, base)

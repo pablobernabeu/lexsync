@@ -22,9 +22,28 @@
 # item actually appeared.
 #
 # The practice block gets feedback and the main block does not, which is the usual
-# arrangement: feedback teaches the mapping during practice, and would contaminate
-# reaction times in the task itself. That is expressed by the `blocks:` key on the
-# feedback event, since the event list is global to the design.
+# arrangement: feedback during practice confirms the mapping the instructions state, and
+# would contaminate reaction times in the task itself. That is expressed by the `blocks:`
+# key on the feedback event, since the event list is global to the design.
+#
+# The response event allows f and j, so the lexical-decision default maps word to f and
+# pseudoword to j, the keys the practice and filler tables give, and the main trials
+# carry those keys in `answer`. lexsync's instructions name them before the first trial.
+#
+# The practice pseudoword 'plang' replaced 'plank', a real English word. The package's
+# generator made it, checking it against the known English forms. In Python, from the
+# repository root, with `schema` read from config/schema.yaml:
+#
+#   lexsync.generate_pseudowords(
+#       ["plank"],
+#       lexsync.load_lexicon("corpora/derived/en_v2.csv", schema, language="english")["word"],
+#       exclude=open("corpora/derived/en_known_forms.txt", encoding="utf-8").read().split("\n"))
+#
+# and in R, which gives the same nonword:
+#
+#   generate_pseudowords("plank",
+#                        load_lexicon("corpora/derived/en_v2.csv", schema, language = "english")$word,
+#                        exclude = readLines("corpora/derived/en_known_forms.txt"))
 name: en_lexdec_blocks
 language: english
 paradigm: lexical_decision

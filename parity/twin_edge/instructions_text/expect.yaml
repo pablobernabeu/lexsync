@@ -1,0 +1,7 @@
+# Both engines write the same instructions into every target and the same answers into
+# the loop table.
+outcome: artefacts
+compare: [experiments]
+datasheet:
+  presentation.response_mapping.conditions.alta: f
+  presentation.response_mapping.source: design

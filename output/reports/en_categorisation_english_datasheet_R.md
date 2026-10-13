@@ -5,7 +5,7 @@
 ## Provenance
 
 - **Paradigm:** categorisation  |  **Item source:** table
-- **Description:** Cued semantic categorisation: concrete nouns judged against a narrow or a broad category cue, Latin-square counterbalanced over two lists so no target repeats within a list.
+- **Description:** Cued semantic categorisation: concrete nouns judged against a narrow or a broad category cue, with non-member foils as fillers, Latin-square counterbalanced over two lists so no target repeats within a list.
 - **Materials source:** `items/categorisation_en.csv` (sha256 `fc39af1c03cebc10...`)
 - **Selection:** item table (user-supplied)
 - **Cross-engine determinism:** n/a (user-supplied items)

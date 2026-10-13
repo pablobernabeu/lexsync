@@ -63,7 +63,9 @@ from .querying import (
 )
 from .scripting import (
     _allocate_codes,
+    _assign_answers,
     _design_condition_names,
+    _instruction_notes,
     export_experiments,
     resolve_trial_timing,
 )
@@ -208,6 +210,13 @@ def run_pipeline(design_path: str, schema_path: str | None = None, outdir: str =
     filters, and the datasheet records the list with its checksum. The neighbourhood
     reference, and the words a generated pseudoword must not equal, keep them.
 
+    The run log notes a design in a language other than English that gives no
+    ``instructions``, since lexsync's own are in English, and a design whose response
+    keys lexsync's instructions only name, such as a factorial or priming design. It
+    also notes every practice or filler answer that the response mapping contradicts. A
+    ``response_mapping`` that would leave a trial without an answer is refused before
+    anything is written.
+
     Args:
         design_path: Path to a design configuration (YAML).
         schema_path: The schema to read. Left as None, it is resolved by
@@ -288,6 +297,10 @@ def run_pipeline(design_path: str, schema_path: str | None = None, outdir: str =
         "schema_path": _posix(schema_path),
     })
     for note in key_notes:
+        runlog.log_step(log, note)
+    # What the experiments' instructions leave unsaid: lexsync's own are in English, and
+    # for a task lexsync cannot describe they name the keys without saying what each means.
+    for note in _instruction_notes(design):
         runlog.log_step(log, note)
     # Only a corpus or a supplied pool has derived dimensions to compute. Elsewhere the
     # argument changes nothing, so it is said here and kept out of the datasheet.
@@ -655,6 +668,11 @@ def run_pipeline(design_path: str, schema_path: str | None = None, outdir: str =
                 {"block": b["block"], "n_per_list": b["n_per_list"]})
         runlog.log_step(log, "presented %d trial(s); %d analysed"
                              % (len(presented), len(stim)))
+    # The answers the experiments will carry, derived as export_experiments derives them:
+    # checked here, so a mapping that leaves trials unscored is refused before anything is
+    # written, and a practice or filler answer it contradicts is noted.
+    for note in _assign_answers(presented, design)[1]:
+        runlog.log_step(log, note)
 
     base = design_stem(design)
     for sub in ("stimuli", "reports", "experiments"):

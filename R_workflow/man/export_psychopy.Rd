@@ -29,6 +29,11 @@ the participant's by the rule \verb{((participant - 1) mod V) + 1} from
 not have stops the run with a message.
 }
 \details{
+Before the first trial, the script shows the version's instructions, the design's
+\code{instructions} or lexsync's for its task, and waits for the space bar, which also
+lets the experimenter start the run. Escape there stops the run before anything is
+recorded. The text is embedded as JSON data, one text per version.
+
 Each run writes \verb{data/<base>_p<participant>_v<version>_<date>-<time>.csv} beside
 the script, without the \verb{_p} part when no participant number is given, one row per
 trial, each written as its trial ends. A row holds the run, the trial's fields and

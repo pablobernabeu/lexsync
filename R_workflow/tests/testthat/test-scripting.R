@@ -450,14 +450,15 @@ test_that("one OpenSesame experiment per version", {
     expect_true(sprintf(paste0("\twith open(pool[u't_english_list%d_opensesame_text.csv'], ",
                                "encoding=u'utf-8-sig', newline=u'') as _f:"), k) %in% lines)
     # Each experiment checks the subject number against its own version before the
-    # loop, and no run line carries a condition.
+    # loop, then shows its instructions, and no run line carries a condition.
     expect_true("define inline_script lexsync_version_check" %in% lines)
     expect_true(sprintf("\t_version = %d", k) %in% lines)
     expect_true("\t_versions = 2" %in% lines)
     runs <- grep("^\trun ", lines, value = TRUE)
-    expect_identical(utils::tail(runs, 3),
+    expect_identical(utils::tail(runs, 4),
                      c("\trun lexsync_trigger_setup always",
-                       "\trun lexsync_version_check always", "\trun lexsync_loop always"))
+                       "\trun lexsync_version_check always",
+                       "\trun lexsync_instructions always", "\trun lexsync_loop always"))
     expect_false(any(grepl('"', runs, fixed = TRUE)))
   }
 })

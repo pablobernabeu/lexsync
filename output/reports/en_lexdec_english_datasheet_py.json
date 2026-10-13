@@ -19,19 +19,19 @@
     },
     {
       "file": "output/experiments/en_lexdec_english_psychopy.py",
-      "sha256": "893088e95d3bbde04c02745f6182c3efd8863865072d3dbea216120a5fa3abda"
+      "sha256": "82fb2e0292639e1736824d31587838373d6f9e6a5e26f1285166c0aa49c87c0c"
     },
     {
       "file": "output/experiments/en_lexdec_english.osexp",
-      "sha256": "8bf404bf49736b54dded8c888086843a9ec23c4f4018de4af2b48f7a71428622"
+      "sha256": "427f406882cbe29243353a5ce54cd842a3cbf1eaffe41e2a485a6a51672f49b5"
     },
     {
       "file": "output/experiments/en_lexdec_english.html",
-      "sha256": "a5ea48a3a621093e6cf6bf29678da1da61c44d3e58cabe9b7ec36cc63a550c2d"
+      "sha256": "084529f514e79f37e0cca25ec8bacf6695b735b327961d9cb696c88661663f45"
     },
     {
       "file": "output/experiments/en_lexdec_english_psychopy.csv",
-      "sha256": "e6bfb84d0ef57ecddbb0d0932e8a297a253ae68bd10c73d2e4d55548f658859b"
+      "sha256": "32eea0a7309a7378c899ce034be1cf1a62c37f5534cf2f0a1a88b5f2a1879810"
     },
     {
       "file": "output/experiments/en_lexdec_english_opensesame.csv",
@@ -39,7 +39,7 @@
     },
     {
       "file": "output/experiments/en_lexdec_english_opensesame_text.csv",
-      "sha256": "dc024048991d298406b5bf7b83269090e7f79062bbe04219273575577523cd32"
+      "sha256": "e38ce731c4489a20ae1c249d01540c62c0ad746593347a352cfa81e8161a8013"
     }
   ],
   "counterbalancing": {
@@ -115,6 +115,18 @@
     "type": "generate"
   },
   "presentation": {
+    "response_mapping": {
+      "conditions": {
+        "pseudoword": "right",
+        "word": "left"
+      },
+      "keys": [
+        "left",
+        "right"
+      ],
+      "rotate_by_list": false,
+      "source": "default"
+    },
     "response_windows": [
       {
         "event": 3,
@@ -181,7 +193,7 @@
   "reproducibility": {
     "design_sha256": "d60354a52b459d477cf3422535ad3288835f369111eb157e143c203c615ad912",
     "schema_path": "config/schema.yaml",
-    "schema_sha256": "522d6852eddbefadcabf6973c491abbe35ad2d4eafcca2160c3b48f03a551693",
+    "schema_sha256": "f6382012c85d9eb8088f1c5542f89a244c1e03c197d05a80632a64d0613d784e",
     "seed": 2026,
     "versions": {
       "engine": "python",

@@ -48,6 +48,13 @@ subject number OpenSesame asks for at start-up with its own version. When that
 participant would normally run another, it says so and waits for a key. Space
 goes on with this file, and escape stops the session.
 
+Before the loop, an inline script, `lexsync_instructions`, shows the design's
+`instructions`, or lexsync's English instructions for its task, and waits for
+the space bar. The participant reads them at their own pace, and escape there
+stops the session. The text is written into the script with `&`, `<` and `>`
+escaped and each line break as `<br />`, because OpenSesame's canvas reads a
+subset of HTML.
+
 A response after a text event is collected by that event's own script, from
 the stimulus's onset. The keyboard is flushed as the stimulus appears and polled
 through it and then through a blank screen, for the stimulus's duration and the

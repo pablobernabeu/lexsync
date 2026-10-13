@@ -12,7 +12,8 @@ build_osexp(
   font = "mono",
   text_file = NULL,
   version = NULL,
-  n_versions = NULL
+  n_versions = NULL,
+  instructions = NULL
 )
 }
 \arguments{
@@ -33,6 +34,10 @@ build_osexp(
 more than one version, it checks OpenSesame's subject number against its own before
 the loop and warns when the participant would normally run another. \code{NULL} (the
 default) marks a design with one version, which needs no check.}
+
+\item{instructions}{The text the experiment shows before the loop, waiting for the
+space bar. \code{NULL} (the default) takes list 1's, the design's own \code{instructions} or
+lexsync's for its task.}
 }
 \value{
 The experiment's text, one string. Each trial starts by clearing the last

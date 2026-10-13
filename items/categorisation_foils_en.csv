@@ -1,0 +1,17 @@
+item,condition,target,category,answer
+1,narrow,tiger,A BIRD?,j
+2,narrow,eagle,A FISH?,j
+3,narrow,pigeon,A MAMMAL?,j
+4,narrow,potato,A FRUIT?,j
+5,narrow,cherry,A VEGETABLE?,j
+6,narrow,basket,A TOOL?,j
+7,narrow,wrench,A CONTAINER?,j
+8,narrow,pebble,A METAL?,j
+9,broad,tulip,AN ANIMAL?,j
+10,broad,pencil,AN ANIMAL?,j
+11,broad,badger,A PLANT?,j
+12,broad,wallet,A PLANT?,j
+13,broad,donkey,AN OBJECT?,j
+14,broad,turtle,AN OBJECT?,j
+15,broad,violin,A SUBSTANCE?,j
+16,broad,monkey,A SUBSTANCE?,j

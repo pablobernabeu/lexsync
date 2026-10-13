@@ -19,23 +19,23 @@
     },
     {
       "file": "output/experiments/en_resample_english_psychopy.py",
-      "sha256": "fdfb967dd46286b697c1c210bb28ab1f8b1aaf49c9a9f17ec8586a0259f784a7"
+      "sha256": "51c51e824c42542c9c322cdad37234ff4ee7c4e977dfa741bdd1df313ddaee27"
     },
     {
       "file": "output/experiments/en_resample_english_rep1_list1.osexp",
-      "sha256": "ff0f8ff00b532c7a8806b4afa53d4fd40ed0189d0142d6c2b83f19a431bf1dd5"
+      "sha256": "b95605c45d4f55faee0521cb55fdc318a2ce949ac6487fe47a4123de173d9921"
     },
     {
       "file": "output/experiments/en_resample_english_rep2_list1.osexp",
-      "sha256": "d850415489706dd7d7355569af7710160904de1e1571b11ac756c3768d885724"
+      "sha256": "58f2be481f2cb68e86396aadc2395f1ee968dbd2a4cf575becda6260ec926a88"
     },
     {
       "file": "output/experiments/en_resample_english_rep3_list1.osexp",
-      "sha256": "d63f886623c9fa75acfed027f5f07756a3cb8afd9a37eae2baf1e189e19f7ede"
+      "sha256": "623fe0e3752d7157fe27e31803d192e4337a4220b51c4f5cad64e6c262753f58"
     },
     {
       "file": "output/experiments/en_resample_english.html",
-      "sha256": "048d9eb1bb12e3b3bc01fdec4e7c9ca44915fd469cf50412f925f076747cf3f7"
+      "sha256": "3311c41c439c5d7c77a7fc1cc03497b3f454e9a0a06f491214bd03e0946e42f5"
     },
     {
       "file": "output/experiments/en_resample_english_psychopy.csv",
@@ -304,7 +304,7 @@
   "reproducibility": {
     "design_sha256": "c81f94cf439dc0fcc0ad0fec6c111de2476402c9524a96a5121e2b91283fd9fe",
     "schema_path": "config/schema.yaml",
-    "schema_sha256": "522d6852eddbefadcabf6973c491abbe35ad2d4eafcca2160c3b48f03a551693",
+    "schema_sha256": "f6382012c85d9eb8088f1c5542f89a244c1e03c197d05a80632a64d0613d784e",
     "seed": 2026,
     "versions": {
       "engine": "python",

@@ -19,27 +19,27 @@
     },
     {
       "file": "output/experiments/en_balanced_lists_english_psychopy.py",
-      "sha256": "15f77bbf05f1684a36c2bf18b1b2abaccb1acf33bb32abb459110b3a057cb9c3"
+      "sha256": "369f0fe9153cd3de01706a36bc0e95784dbe6c1380db6b71a0b9e2047012d757"
     },
     {
       "file": "output/experiments/en_balanced_lists_english_list1.osexp",
-      "sha256": "631c3b2ffc574950106e39e082dcfa8572294a9bd25bd51595ee786c7c606937"
+      "sha256": "ab714f0897ae46a400d9b4970c0661aa181638c8d045081e644b6bb22f6f9ae2"
     },
     {
       "file": "output/experiments/en_balanced_lists_english_list2.osexp",
-      "sha256": "3ab5211f9bd13a91e032912a1a65ae201faa548b1024a33feec4be61751cbf59"
+      "sha256": "c715966c2950614adca14285233ca96191e48371c29b5b3a0492ddc090ee30c1"
     },
     {
       "file": "output/experiments/en_balanced_lists_english_list3.osexp",
-      "sha256": "6cca3f3b1e12bbd95f8f8bd32e2f0284fa38f7384d0d6dd403578b0df7a68229"
+      "sha256": "75f6fb6d32ea29aee7599b27c1b68a057f0efe262b4156ba9a7b68445e432b32"
     },
     {
       "file": "output/experiments/en_balanced_lists_english_list4.osexp",
-      "sha256": "e63a13bd0a08cce57b6d3820db355922b61a6c8093dd1ef160cab667deffec8c"
+      "sha256": "9e0aaf37f37452f88c447b8b65991d37ec21a581e4fe5fe9c96b6546ee7dfb10"
     },
     {
       "file": "output/experiments/en_balanced_lists_english.html",
-      "sha256": "5855e59dfa29e8df2c44c149a4b567f618fdccbee5936d8a99c1ae64ce85e2dd"
+      "sha256": "909f809d56a8587d0755c5221cbd6346778282812a8ba745406dafd56ccb5c6d"
     },
     {
       "file": "output/experiments/en_balanced_lists_english_psychopy.csv",
@@ -311,7 +311,7 @@
   "reproducibility": {
     "design_sha256": "b999f5bf7e79e5ae644ef75fdd4b30a724e32695365d5a4398eee6cfc6cc63c0",
     "schema_path": "config/schema.yaml",
-    "schema_sha256": "522d6852eddbefadcabf6973c491abbe35ad2d4eafcca2160c3b48f03a551693",
+    "schema_sha256": "f6382012c85d9eb8088f1c5542f89a244c1e03c197d05a80632a64d0613d784e",
     "seed": 2026,
     "versions": {
       "engine": "python",

@@ -14,11 +14,12 @@
 
 # Every key lexsync reads from a design, as dotted paths. `[]` marks a list whose
 # entries are mappings. A key whose value holds names the user chooses is listed
-# without children (pool_filters, define_by, tolerance_k, timing, norms), so nothing
-# below it is checked here: timing checks its own keys in render_events(), and the
-# keys of a norms entry are checked where the norms are joined. Seeded from every key
-# the shipped designs, both engines, both apps and the tests read. Must list the same
-# paths in the same order as DESIGN_KEYS in design.py, and both test suites pin a
+# without children (pool_filters, define_by, tolerance_k, timing, norms,
+# response_mapping), so nothing below it is checked here: timing checks its own keys in
+# render_events(), the keys of a norms entry are checked where the norms are joined, and
+# a response mapping is checked against the response event's keys. Seeded from every
+# key the shipped designs, both engines, both apps and the tests read. Must list the
+# same paths in the same order as DESIGN_KEYS in design.py, and both test suites pin a
 # digest of the list.
 .DESIGN_KEYS <- c(
   "name", "language", "language_tag", "description", "paradigm", "lexicon",
@@ -44,7 +45,7 @@
   "events[].advance",
   "events[].sep", "events[].critical_region_trigger", "events[].answer",
   "events[].correct", "events[].incorrect", "events[].no_response", "events[].blocks",
-  "timing", "font",
+  "timing", "font", "instructions", "response_mapping", "rotate_mapping_by_list",
   "practice", "practice.path",
   "fillers", "fillers.path"
 )
@@ -401,6 +402,13 @@ design_stem <- function(design) {
 #' which [run_pipeline()] writes into the run log, and a later release will refuse
 #' it. `description` and keys beginning `x_` are annotations and are never noted.
 #'
+#' The experiments' instructions and response mapping are checked here too. It refuses
+#' `instructions` that are not text, are empty or hold a control character other than a
+#' line break. It refuses a `response_mapping` that is not a mapping of conditions to
+#' single keys, names a key the response event does not allow, or comes with no response
+#' event. And it refuses a `rotate_mapping_by_list` that is not true or false, or that
+#' has no mapping to rotate.
+#'
 #' @param design A parsed design configuration.
 #' @param schema The parsed global schema.
 #' @return A character vector of notes on unknown keys, in the order the keys were
@@ -436,6 +444,7 @@ validate_design <- function(design, schema) {
   clean_meta(font %||% presentation[["opensesame_font"]] %||% "mono", "the font")
   clean_port(schema[["triggers"]][["parallel_address"]] %||% "0x0378")
   render_events(resolve_events(design), design[["timing"]] %||% list(), .refresh_hz(schema))
+  .check_instructions_and_mapping(design)
 
   .check_conditions(design)
   .exclude_words(design)

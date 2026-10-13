@@ -62,6 +62,9 @@
 #                               or (replicate, condition, n) for resampled sets
 #   design$n_per_condition      the request the selector applied, its default when the
 #                               design gives none (1.1 copied the design's key, or null)
+#   presentation$response_mapping  the key each condition takes, (conditions, keys,
+#                               rotate_by_list, source), present only when a mapping
+#                               applies: the design's own or a lexical decision's default
 DATASHEET_VERSION <- "1.2"
 
 # Datasheet labels for the pseudoword generators in generation.R, keyed by the
@@ -362,6 +365,53 @@ DATASHEET_VERSION <- "1.2"
   }
   sprintf(paste(" Responses were collected from target onset until %d ms after it, and a",
                 "response ended the trial."), as.integer(window_ms))
+}
+
+# The response mapping the experiments score against, as the record keeps it:
+# list(conditions, keys, rotate_by_list, source), the key each condition takes in list 1,
+# the keys the response event allows in their order, whether the mapping rotates across
+# lists and whether it is the design's own or a lexical decision's default. NULL when no
+# mapping applies. The keys are a list, so jsonlite writes them as an array even when
+# there is one. Mirrors _response_mapping_record in datasheet.py.
+.response_mapping_record <- function(design) {
+  mapping <- .response_mapping(design)
+  if (is.null(mapping)) return(NULL)
+  list(conditions = mapping, keys = as.list(.response_keys(design)),
+       rotate_by_list = .rotates(design),
+       source = if (is.null(design[["response_mapping"]])) "default" else "design")
+}
+
+# The response mapping, for the Methods text: which key the participants pressed for which
+# condition, and how it rotated across lists. The keys come in the response event's order
+# and the conditions that share a key in code-point order, so a record read back from
+# either engine's JSON renders the same text, though the Python engine writes its objects
+# with sorted keys. A rotation is mentioned only when the record holds more than one list.
+# Empty without a mapping, and for a record written before the field existed. Mirrors
+# _mapping_note in datasheet.py.
+.mapping_note <- function(ds) {
+  rec <- ds[["presentation"]][["response_mapping"]]
+  if (is.null(rec) || !length(rec)) return("")
+  conds <- names(rec[["conditions"]])
+  keys <- vapply(rec[["conditions"]], function(k) as.character(k), character(1),
+                 USE.NAMES = FALSE)
+  named <- c(word = "words", pseudoword = "pseudowords")
+  phrases <- character(0)
+  for (key in unique(as.character(unlist(rec[["keys"]], use.names = FALSE)))) {
+    group <- conds[keys == key]
+    if (!length(group)) next
+    group <- group[order(group, method = "radix")]
+    what <- if (length(group) == 1L && group %in% names(named)) named[[group]]
+            else paste(.and_join(group), "trials")
+    phrases <- c(phrases, paste(.key_label(key), "for", what))
+  }
+  text <- paste0(" Participants pressed ", .and_join(phrases))
+  lists <- as.integer(ds[["counterbalancing"]][["lists"]] %||% 1L)
+  if (isTRUE(rec[["rotate_by_list"]]) && lists > 1L) {
+    text <- paste0(text, if (length(rec[["keys"]]) == 2L)
+      " in odd-numbered lists and the reverse in even-numbered lists"
+      else " in list 1, and the keys rotated by one place in each further list")
+  }
+  paste0(text, ".")
 }
 
 # Words or phrases joined as a list in prose: "a", "a and b", "a, b and c". Mirrors
@@ -821,6 +871,12 @@ build_datasheet <- function(design, schema, report, stimuli, source_path, artifa
   equivalence <- list(bound_d = schema[["equivalence"]][["bound_d"]] %||% 0.5,
                       alpha = schema[["equivalence"]][["alpha"]] %||% 0.05)
 
+  # The key the participants pressed for each condition, recorded only when a response
+  # mapping applies: the design's own, or a lexical decision's default. Assigning NULL
+  # leaves the field out, as the Python engine does.
+  presentation <- list(response_windows = windows)
+  presentation$response_mapping <- .response_mapping_record(design)
+
   reproducibility <- list(seed = seed, versions = .versions_R(engine))
   # The design and schema decide everything the seed does not, so their checksums
   # complete the reproducibility record when the pipeline names them.
@@ -849,7 +905,7 @@ build_datasheet <- function(design, schema, report, stimuli, source_path, artifa
     equivalence = equivalence,
     realised_control = realised,
     counterbalancing = counterbalancing,
-    presentation = list(response_windows = windows),
+    presentation = presentation,
     resampling = if (!is.null(design[["resample"]]))
       list(n_sets = design[["resample"]][["n_sets"]], disjoint = TRUE) else NULL,
     items = list(n_total = nrow(stimuli), n_conditions = length(conditions),
@@ -1269,7 +1325,8 @@ build_datasheet <- function(design, schema, report, stimuli, source_path, artifa
 #' up to five comparisons of an uncontrolled dimension whose |d| exceeds the bound.
 #' Every interval is labelled by the schema's alpha. A continuous design's paragraph
 #' gives the predictor's spread, the control windows and the controls' realised
-#' spread.
+#' spread. When a response mapping applies, the paragraph says which key the
+#' participants pressed for which condition.
 #'
 #' @param ds A datasheet list, from [build_datasheet()].
 #' @return A single character string describing the materials procedure.
@@ -1317,7 +1374,8 @@ methods_paragraph <- function(ds) {
                   "2019).", .bands_note(ds, rc), corr_str, .norms_note(ds), excluded,
                   " Materials were counterbalanced into ", cb[["lists"]], " list(s) (",
                   recipe_label, ") and generated for PsychoPy, OpenSesame and jsPsych.",
-                  .versions_note(ds), .response_note(ds), " The selection is deterministic ",
+                  .versions_note(ds), .response_note(ds), .mapping_note(ds),
+                  " The selection is deterministic ",
                   "and reproducible (lexsync ", ds[["reproducibility"]][["versions"]][["lexsync"]],
                   "), and the seed (", ds[["reproducibility"]][["seed"]],
                   ") fixes the trial order."))
@@ -1360,10 +1418,10 @@ methods_paragraph <- function(ds) {
   cb <- ds$counterbalancing
   recipe_label <- .recipe_label(cb)
   tail <- sprintf(paste0(resamp, ". Materials were counterbalanced into %s list(s) (%s) and generated for ",
-                         "PsychoPy, OpenSesame and jsPsych.%s%s The selection is deterministic and ",
+                         "PsychoPy, OpenSesame and jsPsych.%s%s%s The selection is deterministic and ",
                          "reproducible (lexsync %s), and the seed (%s) fixes the trial order."),
                   cb$lists, recipe_label, .versions_note(ds), .response_note(ds),
-                  ds$reproducibility$versions$lexsync, ds$reproducibility$seed)
+                  .mapping_note(ds), ds$reproducibility$versions$lexsync, ds$reproducibility$seed)
   bal <- ds$counterbalancing$optimise
   bal_note <- if (is.null(bal)) "" else sprintf(
     paste0(". Item sets were assigned to lists so as to equate the lists on %s rather ",

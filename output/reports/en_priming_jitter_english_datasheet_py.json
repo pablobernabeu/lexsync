@@ -11,19 +11,19 @@
     },
     {
       "file": "output/experiments/en_priming_jitter_english_psychopy.py",
-      "sha256": "53d14514ee72c9e67c216d9cc0544b1714ae8c18ea5887c0be36072a36cfbe41"
+      "sha256": "0948de906dc366f8c502c4019edc34a8f6fefd45b062088b68aef68a86fe8957"
     },
     {
       "file": "output/experiments/en_priming_jitter_english_list1.osexp",
-      "sha256": "e5d642968d456c8a41ad08e1a3da73ef0bcd274956e0163d4559f5576b0a577f"
+      "sha256": "11fe8adb721a0271d886bac1482a883db664907621479eb85dc351d800db4d71"
     },
     {
       "file": "output/experiments/en_priming_jitter_english_list2.osexp",
-      "sha256": "92a527d9895a36889a4f30454857b667814ade5323dacca62e19eff1a4fdd0d3"
+      "sha256": "09dbb1a6ebed5088a603da49f891874d206aa8f202e4c15722ed190c412b322a"
     },
     {
       "file": "output/experiments/en_priming_jitter_english.html",
-      "sha256": "3e414809c4cdba45fcb1203a38dfc4bf6b427a568f76a088a599f844711774e6"
+      "sha256": "b63cfccdd6c95a37c8e6f6a39904c22f6eab8e99ff638c29bd0df1919784527e"
     },
     {
       "file": "output/experiments/en_priming_jitter_english_psychopy.csv",
@@ -130,7 +130,7 @@
   "reproducibility": {
     "design_sha256": "d3e01a766c834148f6f16b192c892a3c04edb74e71d0b68955e1f5ae8c99fd90",
     "schema_path": "config/schema.yaml",
-    "schema_sha256": "522d6852eddbefadcabf6973c491abbe35ad2d4eafcca2160c3b48f03a551693",
+    "schema_sha256": "f6382012c85d9eb8088f1c5542f89a244c1e03c197d05a80632a64d0613d784e",
     "seed": 2026,
     "versions": {
       "engine": "python",

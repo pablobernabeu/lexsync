@@ -74,6 +74,18 @@ define inline_script lexsync_trigger_setup
 	send_trigger(0)
 	__end__
 
+define inline_script lexsync_instructions
+	set description "Show the instructions and wait for the space bar"
+	set _prepare ""
+	___run__
+	c = Canvas()
+	c.text(u'You will see a string of letters. Press Y if it is a real English word and N if it is not. Respond as quickly and accurately as you can.<br /><br />Press the space bar to begin.')
+	c.show()
+	_key, _t = Keyboard(keylist=[u'space', u'escape'], timeout=None).get_key()
+	if _key == u'escape':
+	    raise RuntimeError(u'lexsync: stopped at the instructions.')
+	__end__
+
 define inline_script lexsync_trial_start
 	set description "Clear the previous trial's responses"
 	set _prepare ""
@@ -166,5 +178,6 @@ define sequence lexsync_experiment
 	set flush_keyboard yes
 	set description "Top-level experiment sequence"
 	run lexsync_trigger_setup always
+	run lexsync_instructions always
 	run lexsync_loop always
 

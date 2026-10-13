@@ -480,6 +480,67 @@ def test_an_onset_locked_response_runs_in_its_stimulus_script(schema, tmp_path):
     ]
 
 
+def _run_instructions(osexp_path, key):
+    """Run an experiment's instructions script with `key` pressed, and return the texts it
+    showed and the (keylist, timeout) of each keyboard it opened. The script reads no
+    variable, so it runs alike in both versions."""
+    with open(osexp_path, encoding="utf-8") as handle:
+        items = _items(handle.read())
+    shown, keyboards = [], []
+
+    class Canvas:
+        def text(self, text, *args, **kwargs):
+            shown.append(text)
+
+        def show(self):
+            return 0.0
+
+    class Keyboard:
+        def __init__(self, keylist=None, timeout=None):
+            keyboards.append((keylist, timeout))
+
+        def get_key(self, **kwargs):
+            return key, 0.0
+
+    exec("\n".join(items["lexsync_instructions"]["___run__"]),
+         {"Canvas": Canvas, "Keyboard": Keyboard})
+    return shown, keyboards
+
+
+def test_the_instructions_wait_for_the_space_bar_before_the_loop(schema, tmp_path):
+    # The experiment went straight from the trigger setup into the loop. A script now
+    # shows the instructions, as text written into it and escaped for OpenSesame's
+    # canvas, which reads a subset of HTML, and waits for the space bar.
+    design = {"name": "t", "language": "english", "instructions": "Read & press <f>.\nThen j."}
+    path = export_opensesame(_stim(), design, schema, str(tmp_path))
+    text = open(path, encoding="utf-8").read()
+    assert validate_osexp(text)
+    runs = [line for line in text.splitlines() if line.startswith("\trun lexsync_")]
+    assert runs[-3:] == ["\trun lexsync_trigger_setup always",
+                         "\trun lexsync_instructions always", "\trun lexsync_loop always"]
+    shown, keyboards = _run_instructions(path, "space")
+    assert shown == ["Read &amp; press &lt;f&gt;.<br />Then j.<br /><br />Press the space "
+                     "bar to begin."]
+    assert keyboards == [(["space", "escape"], None)]
+    with pytest.raises(RuntimeError, match="lexsync: stopped at the instructions"):
+        _run_instructions(path, "escape")
+
+
+def test_every_shipped_experiment_shows_its_instructions_before_the_loop():
+    folder = repo_path("output", "experiments")
+    paths = sorted(glob.glob(os.path.join(folder, "*.osexp")))
+    assert paths, f"no OpenSesame experiments under {folder}"
+    for path in paths:
+        with open(path, encoding="utf-8") as handle:
+            lines = handle.read().splitlines()
+        at = lines.index("define sequence lexsync_experiment")
+        runs = [line.split()[1] for line in lines[at:] if line.startswith("\trun ")]
+        assert runs[-2:] == ["lexsync_instructions", "lexsync_loop"], path
+        shown, keyboards = _run_instructions(path, "space")
+        assert len(shown) == 1 and shown[0].endswith("Press the space bar to begin."), path
+        assert keyboards == [(["space", "escape"], None)], path
+
+
 def test_opensesame_timeouts_are_written_in_whole_milliseconds_as_declared(schema, tmp_path):
     # 1.001 s times 1000 is 1000.9999999999999 in binary floating point, so int() wrote
     # a declared 1,001 ms as 1,000: 95 of the whole-millisecond timeouts from 1 to 10,000

@@ -18,14 +18,26 @@
 # shows a target once, under one cue, and the cue rotates across lists. That is what
 # keeps a participant from seeing the same word twice, which would make the second
 # presentation a repetition-priming trial rather than a categorisation trial.
+#
+# Every member is a 'yes' trial, so pressing f on every trial would score perfectly. The
+# 16 foils in items/categorisation_foils_en.csv are concrete nouns that do not belong to
+# the category they appear under (tiger under A BIRD?, tulip under AN ANIMAL?), eight under
+# a narrow cue and eight under a broad one, each with answer j. They are fillers, shown in
+# every list and interleaved with the members, so each list holds 16 'yes' and 16 'no'
+# trials and neither cue type predicts the answer. Fillers are not analysed, so the
+# stimuli file holds the members only. lexsync's instructions for this paradigm say that
+# f means yes and j means no.
 name: en_categorisation
 language: english
 paradigm: categorisation
-description: 'Cued semantic categorisation: concrete nouns judged against a narrow or a broad category cue, Latin-square counterbalanced over two lists so no target repeats within a list.'
+description: 'Cued semantic categorisation: concrete nouns judged against a narrow or a broad category cue, with non-member foils as fillers, Latin-square counterbalanced over two lists so no target repeats within a list.'
 
 items:
   source: table
   path: items/categorisation_en.csv
+
+fillers:
+  path: items/categorisation_foils_en.csv
 
 counterbalance:
   lists: 2

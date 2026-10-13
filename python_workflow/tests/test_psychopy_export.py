@@ -39,6 +39,11 @@ class FakeTime:
     now = 0.0
 
 
+# The text of every TextStim drawn, in order, so a test can see what was on screen when
+# the script waited for a key. Cleared by _install_fake_psychopy.
+DRAWN = []
+
+
 class FakeWin:
     def __init__(self, *args, **kwargs):
         self.flip_count = 0
@@ -84,12 +89,16 @@ class FakeKeyboard:
     (counted from 1) and the seconds after the window opened at which it is pressed,
     or None for no press. A window opens at each reset of the keyboard clock."""
 
-    def __init__(self, press):
+    def __init__(self, press, gate="space"):
         self.press = press
+        self.gate = gate
         self.window = 0
         self.planned = None
         self.reset_at = 0.0
         self.windows = []        # the keys each window accepted, in order
+        # Each wait for a key: the keys it accepted, the text last drawn and how many
+        # response windows had opened before it.
+        self.waits = []
         keyboard = self
 
         class Clock:
@@ -119,8 +128,10 @@ class FakeKeyboard:
         return [FakeKey(name, at)]
 
     def waitKeys(self, keyList=None, **kwargs):
-        # A pause between blocks: the participant goes on at once.
-        return [FakeKey("space", 0.0)]
+        # The start gate, where the participant presses `gate`, and the pauses between
+        # blocks, where the participant goes on at once.
+        self.waits.append((list(keyList), DRAWN[-1] if DRAWN else None, self.window))
+        return [FakeKey(self.gate if len(self.waits) == 1 else "space", 0.0)]
 
 
 class FakePort:
@@ -132,12 +143,14 @@ class FakePort:
         self.events.append((self.win.flip_count, int(data)))
 
 
-def _install_fake_psychopy(dialog=None, press=None):
+def _install_fake_psychopy(dialog=None, press=None, gate="space"):
     """Install the fake package and return its keyboard. ``dialog`` holds what the
     start-up dialog returns when OK is pressed; None stands for Cancel. ``press`` is
-    the keyboard's schedule, by default the first key 600 ms into each window."""
+    the keyboard's schedule, by default the first key 600 ms into each window, and
+    ``gate`` the key pressed at the instructions."""
     FakeTime.now = 0.0
-    kb = FakeKeyboard(press or press_first_key_after(0.6))
+    DRAWN.clear()
+    kb = FakeKeyboard(press or press_first_key_after(0.6), gate)
     psychopy = types.ModuleType("psychopy")
     visual = types.ModuleType("psychopy.visual")
     core = types.ModuleType("psychopy.core")
@@ -150,11 +163,11 @@ def _install_fake_psychopy(dialog=None, press=None):
     hardware.keyboard = keyboard
 
     class TextStim:
-        def __init__(self, *a, **k):
-            self.text = ""
+        def __init__(self, *a, text="", **k):
+            self.text = text
 
         def draw(self):
-            pass
+            DRAWN.append(self.text)
 
     visual.Window = FakeWin
     visual.TextStim = TextStim
@@ -464,6 +477,79 @@ def test_an_escape_leaves_a_valid_data_file(schema, tmp_path, monkeypatch):
     header, rows = _read_data(_data_files(tmp_path / "data")[0])
     assert header[-len(MEASURES):] == MEASURES
     assert [(r["target"], r["response"]) for r in rows] == [("cat", "left"), ("dog", "left")]
+
+
+LEXDEC_TEXT = ("You will see a string of letters. Press %s if it is a real English word and "
+               "%s if it is not. Respond as quickly and accurately as you can.")
+START = "\n\nPress the space bar to begin."
+
+
+def test_the_runner_shows_the_instructions_and_waits_for_space(schema, tmp_path,
+                                                                monkeypatch):
+    # The script started the trials at once, so nothing told the participant which key
+    # meant what. It now shows the instructions and waits for the space bar, which also
+    # lets the experimenter start the run, before the first trial.
+    kb = _install_fake_psychopy()
+    stim, design = _lexdec()
+    module = _load_generated(export_psychopy(stim, design, schema, str(tmp_path)))
+    text = LEXDEC_TEXT % ("the left arrow key", "the right arrow key")
+    assert module.INSTRUCTIONS == [text]
+    presented = _run_main(module, ["--participant", "1"], monkeypatch, tmp_path / "data")
+    # The first wait for a key came before any response window opened.
+    assert kb.waits[0] == (["space", "escape"], text + START, 0)
+    assert len(presented) == 4
+    assert len(_read_data(_data_files(tmp_path / "data")[0])[1]) == 4
+    # A mapping rotated across lists gives each version its own keys.
+    kb = _install_fake_psychopy()
+    rotated = dict(design, rotate_mapping_by_list=True)
+    two = pd.concat([stim, stim.assign(list=2)], ignore_index=True)
+    module = _load_generated(export_psychopy(two, rotated, schema, str(tmp_path)))
+    assert module.INSTRUCTIONS == [text, LEXDEC_TEXT % ("the right arrow key",
+                                                        "the left arrow key")]
+    _run_main(module, ["--participant", "2"], monkeypatch, tmp_path / "data")
+    assert kb.waits[0][1] == module.INSTRUCTIONS[1] + START
+
+
+def _practice_and_fillers():
+    """Two practice trials, then main trials with two fillers interleaved, as add_blocks
+    orders them."""
+    stim = assign_triggers(pd.DataFrame({
+        "target": ["tree", "trel", "cat", "sun", "cag", "map", "dop"],
+        "condition": ["word", "pseudoword", "word", "word", "pseudoword", "word",
+                      "pseudoword"],
+        "block": ["practice", "practice", "main", "filler", "main", "filler", "main"],
+        "set": [10, 11, 1, 20, 1, 21, 2], "trial": list(range(1, 8)), "list": 1,
+        "answer": ["left", "right", "left", "left", "right", "left", "right"]}))
+    return stim, {"name": "t", "language": "english", "paradigm": "lexical_decision"}
+
+
+def test_fillers_run_with_the_main_trials_and_only_the_practice_ends_in_a_pause(
+        schema, tmp_path, monkeypatch):
+    # The script paused wherever the block changed, and fillers are interleaved with the
+    # main trials, so a pause came before and after every filler, set it apart and, after
+    # each one, said that the practice trials had ended. Fillers now run with the main
+    # trials, and the one pause comes where the practice trials end.
+    kb = _install_fake_psychopy()
+    stim, design = _practice_and_fillers()
+    module = _load_generated(export_psychopy(stim, design, schema, str(tmp_path)))
+    presented = _run_main(module, ["--participant", "1"], monkeypatch, tmp_path / "data")
+    assert [t["target"] for t in presented] == ["tree", "trel", "cat", "sun", "cag", "map",
+                                                "dop"]
+    # The start gate, then the end of the practice, after its two response windows.
+    assert [(text.split("\n")[0], opened) for _, text, opened in kb.waits] == [
+        ("You will see a string of letters. Press the left arrow key if it is a real "
+         "English word and the right arrow key if it is not. Respond as quickly and "
+         "accurately as you can.", 0),
+        ("End of the practice trials.", 2)]
+
+
+def test_escape_at_the_instructions_stops_before_any_trial(schema, tmp_path, monkeypatch):
+    _install_fake_psychopy(gate="escape")
+    stim, design = _lexdec()
+    module = _load_generated(export_psychopy(stim, design, schema, str(tmp_path)))
+    assert _run_main(module, ["--participant", "1"], monkeypatch, tmp_path / "data") == []
+    # Nothing ran, so no data file was opened.
+    assert _data_files(tmp_path / "data") == []
 
 
 def test_a_second_run_never_overwrites_the_first(schema, tmp_path, monkeypatch):

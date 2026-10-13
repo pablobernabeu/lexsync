@@ -231,7 +231,7 @@
     },
     "design_sha256": "08428e5f090244fb55490364bcbc218561e71a8fca325d0497f1a36c1c0b1580",
     "schema_path": "config/schema.yaml",
-    "schema_sha256": "522d6852eddbefadcabf6973c491abbe35ad2d4eafcca2160c3b48f03a551693"
+    "schema_sha256": "f6382012c85d9eb8088f1c5542f89a244c1e03c197d05a80632a64d0613d784e"
   },
   "artifacts": [
     {
@@ -248,15 +248,15 @@
     },
     {
       "file": "output/experiments/es_freqcontrast_spanish_psychopy.py",
-      "sha256": "3fca3b19405b5b5c8973f00dbd09eff139d106281e5efc7a09ab6607df829061"
+      "sha256": "84d038fe7e2ec1b83ecc2c9dab1af0e4f843643238828bfa8de836240e668911"
     },
     {
       "file": "output/experiments/es_freqcontrast_spanish.osexp",
-      "sha256": "dee2f3c0676acacd62c35e89bab065f0de03eba08c6abd99089819059585fbb6"
+      "sha256": "9950525b3dbb781ba013545c3052d956736ddd5d3bb3660d6093d67c4df3264c"
     },
     {
       "file": "output/experiments/es_freqcontrast_spanish.html",
-      "sha256": "6dd1cc1625d41cf7826fa78d9b93a5346aeb67564f654a002c365fd61aa4443d"
+      "sha256": "d65249be9b41c33452dfc2adfab6c255f9deb09dd2acf0e660e806c96c66c768"
     },
     {
       "file": "output/experiments/es_freqcontrast_spanish_psychopy.csv",

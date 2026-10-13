@@ -1,52 +1,53 @@
-{"time":"2026-10-13 14:23:56.28464","message":"loading lexicon 'corpora/derived/en_v2.csv'","data":null}
-{"time":"2026-10-13 14:24:00.990668","message":"lexicon loaded: 30000 words","data":{"words":30000}}
-{"time":"2026-10-13 14:24:01.100272","message":"exclude_words: removed 53 of the 53 listed word(s) from the candidates (config/exclude_en_demo.txt)","data":{"exclude_words":"config/exclude_en_demo.txt","sha256":"cac9f88fb86fa6d0e6dbabc287c9ebb782100d071eeded13eb812584b9d41e9f","n_removed":53}}
-{"time":"2026-10-13 14:24:01.240983","message":"pool after filters: 5184 words","data":{"pool":5184}}
-{"time":"2026-10-13 14:24:01.50256","message":"matched 72 items across 4 conditions","data":{"conditions":"HF_largeN, HF_smallN, LF_largeN, LF_smallN"}}
-{"time":"2026-10-13 14:24:02.608345","message":"equivalence HF_smallN vs HF_largeN on 'length': d = 0.18 [-0.38, 0.75], TOST p = 0.173 (not shown equivalent)","data":null}
-{"time":"2026-10-13 14:24:02.631112","message":"equivalence HF_smallN vs HF_largeN on 'frequency': d = -0.45 [-1.02, 0.12], TOST p = 0.442 (not shown equivalent)","data":null}
-{"time":"2026-10-13 14:24:02.661831","message":"equivalence HF_smallN vs HF_largeN on 'n_density': d = 3.20 [2.35, 4.05], TOST p = 1.000 (not shown equivalent)","data":null}
-{"time":"2026-10-13 14:24:02.68481","message":"equivalence HF_smallN vs HF_largeN on 'old20': d = -2.50 [-3.25, -1.75], TOST p = 1.000 (not shown equivalent)","data":null}
-{"time":"2026-10-13 14:24:02.71351","message":"equivalence HF_smallN vs HF_largeN on 'n_syllables': d = -0.38 [-0.95, 0.19], TOST p = 0.362 (not shown equivalent)","data":null}
-{"time":"2026-10-13 14:24:02.745233","message":"equivalence HF_smallN vs HF_largeN on 'bigram_freq': d = 0.51 [-0.06, 1.08], TOST p = 0.511 (not shown equivalent)","data":null}
-{"time":"2026-10-13 14:24:02.787571","message":"equivalence LF_largeN vs HF_largeN on 'length': d = 0.18 [-0.38, 0.75], TOST p = 0.173 (not shown equivalent)","data":null}
-{"time":"2026-10-13 14:24:02.813153","message":"equivalence LF_largeN vs HF_largeN on 'frequency': d = 4.63 [3.55, 5.71], TOST p = 1.000 (not shown equivalent)","data":null}
-{"time":"2026-10-13 14:24:02.840314","message":"equivalence LF_largeN vs HF_largeN on 'n_density': d = 0.46 [-0.12, 1.03], TOST p = 0.448 (not shown equivalent)","data":null}
-{"time":"2026-10-13 14:24:02.851247","message":"equivalence LF_largeN vs HF_largeN on 'old20': d = -0.71 [-1.29, -0.13], TOST p = 0.734 (not shown equivalent)","data":null}
-{"time":"2026-10-13 14:24:02.880306","message":"equivalence LF_largeN vs HF_largeN on 'n_syllables': d = 0.35 [-0.22, 0.92], TOST p = 0.327 (not shown equivalent)","data":null}
-{"time":"2026-10-13 14:24:02.899561","message":"equivalence LF_largeN vs HF_largeN on 'bigram_freq': d = -0.02 [-0.58, 0.54], TOST p = 0.080 (not shown equivalent)","data":null}
-{"time":"2026-10-13 14:24:02.916221","message":"equivalence LF_smallN vs HF_largeN on 'length': d = 0.18 [-0.38, 0.75], TOST p = 0.173 (not shown equivalent)","data":null}
-{"time":"2026-10-13 14:24:02.961095","message":"equivalence LF_smallN vs HF_largeN on 'frequency': d = 4.54 [3.48, 5.61], TOST p = 1.000 (not shown equivalent)","data":null}
-{"time":"2026-10-13 14:24:02.992184","message":"equivalence LF_smallN vs HF_largeN on 'n_density': d = 3.05 [2.22, 3.88], TOST p = 1.000 (not shown equivalent)","data":null}
-{"time":"2026-10-13 14:24:03.025518","message":"equivalence LF_smallN vs HF_largeN on 'old20': d = -3.46 [-4.35, -2.57], TOST p = 1.000 (not shown equivalent)","data":null}
-{"time":"2026-10-13 14:24:03.05084","message":"equivalence LF_smallN vs HF_largeN on 'n_syllables': d = 0.28 [-0.29, 0.84], TOST p = 0.255 (not shown equivalent)","data":null}
-{"time":"2026-10-13 14:24:03.079108","message":"equivalence LF_smallN vs HF_largeN on 'bigram_freq': d = 0.71 [0.13, 1.29], TOST p = 0.733 (not shown equivalent)","data":null}
-{"time":"2026-10-13 14:24:03.124202","message":"equivalence LF_largeN vs HF_smallN on 'length': d = 0.00 [-0.56, 0.56], TOST p = 0.071 (not shown equivalent)","data":null}
-{"time":"2026-10-13 14:24:03.147148","message":"equivalence LF_largeN vs HF_smallN on 'frequency': d = 4.81 [3.70, 5.92], TOST p = 1.000 (not shown equivalent)","data":null}
-{"time":"2026-10-13 14:24:03.180849","message":"equivalence LF_largeN vs HF_smallN on 'n_density': d = -3.26 [-4.12, -2.40], TOST p = 1.000 (not shown equivalent)","data":null}
-{"time":"2026-10-13 14:24:03.224355","message":"equivalence LF_largeN vs HF_smallN on 'old20': d = 1.92 [1.24, 2.61], TOST p = 1.000 (not shown equivalent)","data":null}
-{"time":"2026-10-13 14:24:03.247498","message":"equivalence LF_largeN vs HF_smallN on 'n_syllables': d = 0.73 [0.15, 1.31], TOST p = 0.751 (not shown equivalent)","data":null}
-{"time":"2026-10-13 14:24:03.280122","message":"equivalence LF_largeN vs HF_smallN on 'bigram_freq': d = -0.42 [-0.99, 0.15], TOST p = 0.409 (not shown equivalent)","data":null}
-{"time":"2026-10-13 14:24:03.340954","message":"equivalence LF_smallN vs HF_smallN on 'length': d = 0.00 [-0.56, 0.56], TOST p = 0.071 (not shown equivalent)","data":null}
-{"time":"2026-10-13 14:24:03.390853","message":"equivalence LF_smallN vs HF_smallN on 'frequency': d = 4.73 [3.63, 5.83], TOST p = 1.000 (not shown equivalent)","data":null}
-{"time":"2026-10-13 14:24:03.41807","message":"equivalence LF_smallN vs HF_smallN on 'n_density': d = -0.42 [-0.99, 0.15], TOST p = 0.409 (not shown equivalent)","data":null}
-{"time":"2026-10-13 14:24:03.441977","message":"equivalence LF_smallN vs HF_smallN on 'old20': d = -0.19 [-0.76, 0.37], TOST p = 0.180 (not shown equivalent)","data":null}
-{"time":"2026-10-13 14:24:03.472444","message":"equivalence LF_smallN vs HF_smallN on 'n_syllables': d = 0.61 [0.04, 1.19], TOST p = 0.633 (not shown equivalent)","data":null}
-{"time":"2026-10-13 14:24:03.538666","message":"equivalence LF_smallN vs HF_smallN on 'bigram_freq': d = 0.16 [-0.41, 0.72], TOST p = 0.155 (not shown equivalent)","data":null}
-{"time":"2026-10-13 14:24:03.600739","message":"equivalence LF_smallN vs LF_largeN on 'length': d = 0.00 [-0.56, 0.56], TOST p = 0.071 (not shown equivalent)","data":null}
-{"time":"2026-10-13 14:24:03.636399","message":"equivalence LF_smallN vs LF_largeN on 'frequency': d = 0.07 [-0.50, 0.63], TOST p = 0.101 (not shown equivalent)","data":null}
-{"time":"2026-10-13 14:24:03.713261","message":"equivalence LF_smallN vs LF_largeN on 'n_density': d = 3.08 [2.25, 3.92], TOST p = 1.000 (not shown equivalent)","data":null}
-{"time":"2026-10-13 14:24:03.801728","message":"equivalence LF_smallN vs LF_largeN on 'old20': d = -2.70 [-3.48, -1.92], TOST p = 1.000 (not shown equivalent)","data":null}
-{"time":"2026-10-13 14:24:03.849564","message":"equivalence LF_smallN vs LF_largeN on 'n_syllables': d = 0.00 [-0.56, 0.56], TOST p = 0.071 (not shown equivalent)","data":null}
-{"time":"2026-10-13 14:24:03.882087","message":"equivalence LF_smallN vs LF_largeN on 'bigram_freq': d = 0.57 [-0.01, 1.14], TOST p = 0.579 (not shown equivalent)","data":null}
-{"time":"2026-10-13 14:24:04.597022","message":"wrote 'en_andrews_repro_english_stimuli_R.csv'","data":{"path":"output/stimuli/en_andrews_repro_english_stimuli_R.csv","rows":72,"md5":"e30ab48f26204a5b8c8e4dee26916f96"}}
-{"time":"2026-10-13 14:24:05.085226","message":"wrote 'en_andrews_repro_english_descriptives_R.csv'","data":{"path":"output/reports/en_andrews_repro_english_descriptives_R.csv","rows":24,"md5":"f1e93d0fdfd978adba33172095d5874c"}}
-{"time":"2026-10-13 14:24:05.429314","message":"wrote 'en_andrews_repro_english_comparisons_R.csv'","data":{"path":"output/reports/en_andrews_repro_english_comparisons_R.csv","rows":36,"md5":"028c95f25843ddedf975c859bf490602"}}
-{"time":"2026-10-13 14:24:11.956428","message":"wrote 'en_andrews_repro_english_psychopy.py'","data":{"path":"output/experiments/en_andrews_repro_english_psychopy.py","rows":"NA","md5":"8d500634ba47e885e9fcfd83ea095be9"}}
-{"time":"2026-10-13 14:24:12.350699","message":"wrote 'en_andrews_repro_english.osexp'","data":{"path":"output/experiments/en_andrews_repro_english.osexp","rows":"NA","md5":"fe2721ed0fbebd52ce1a466df4d04b40"}}
-{"time":"2026-10-13 14:24:12.434544","message":"wrote 'en_andrews_repro_english.html'","data":{"path":"output/experiments/en_andrews_repro_english.html","rows":"NA","md5":"9d3963190002782998a0f808131129a7"}}
-{"time":"2026-10-13 14:24:12.72289","message":"wrote 'en_andrews_repro_english_psychopy.csv'","data":{"path":"output/experiments/en_andrews_repro_english_psychopy.csv","rows":"NA","md5":"d45fdb80d0c39577344554d09b3f7f2e"}}
-{"time":"2026-10-13 14:24:12.818443","message":"wrote 'en_andrews_repro_english_opensesame.csv'","data":{"path":"output/experiments/en_andrews_repro_english_opensesame.csv","rows":"NA","md5":"8ed2d40076b9d193c0ae26c859cee534"}}
-{"time":"2026-10-13 14:24:12.859641","message":"wrote 'en_andrews_repro_english_opensesame_text.csv'","data":{"path":"output/experiments/en_andrews_repro_english_opensesame_text.csv","rows":"NA","md5":"f597095380e3c7f3689c99e84b4556fa"}}
-{"time":"2026-10-13 14:24:15.745685","message":"wrote 'en_andrews_repro_english_datasheet_R.json'","data":{"path":"output/reports/en_andrews_repro_english_datasheet_R.json","rows":"NA","md5":"306690e4eaa92961faae839642b1dbf7"}}
-{"time":"2026-10-13 14:24:15.780627","message":"wrote 'en_andrews_repro_english_datasheet_R.md'","data":{"path":"output/reports/en_andrews_repro_english_datasheet_R.md","rows":"NA","md5":"d926bafe96b910bd7d3605be1685582c"}}
+{"time":"2026-10-13 18:15:59.683611","message":"lexsync: the design gives no `instructions`, and lexsync cannot tell what the response keys of a factorial design mean, so the experiments only name the keys; give `instructions` that say what each key means.","data":null}
+{"time":"2026-10-13 18:15:59.710666","message":"loading lexicon 'corpora/derived/en_v2.csv'","data":null}
+{"time":"2026-10-13 18:16:03.87578","message":"lexicon loaded: 30000 words","data":{"words":30000}}
+{"time":"2026-10-13 18:16:03.905101","message":"exclude_words: removed 53 of the 53 listed word(s) from the candidates (config/exclude_en_demo.txt)","data":{"exclude_words":"config/exclude_en_demo.txt","sha256":"cac9f88fb86fa6d0e6dbabc287c9ebb782100d071eeded13eb812584b9d41e9f","n_removed":53}}
+{"time":"2026-10-13 18:16:04.022134","message":"pool after filters: 5184 words","data":{"pool":5184}}
+{"time":"2026-10-13 18:16:04.253885","message":"matched 72 items across 4 conditions","data":{"conditions":"HF_largeN, HF_smallN, LF_largeN, LF_smallN"}}
+{"time":"2026-10-13 18:16:05.215407","message":"equivalence HF_smallN vs HF_largeN on 'length': d = 0.18 [-0.38, 0.75], TOST p = 0.173 (not shown equivalent)","data":null}
+{"time":"2026-10-13 18:16:05.245299","message":"equivalence HF_smallN vs HF_largeN on 'frequency': d = -0.45 [-1.02, 0.12], TOST p = 0.442 (not shown equivalent)","data":null}
+{"time":"2026-10-13 18:16:05.252192","message":"equivalence HF_smallN vs HF_largeN on 'n_density': d = 3.20 [2.35, 4.05], TOST p = 1.000 (not shown equivalent)","data":null}
+{"time":"2026-10-13 18:16:05.25905","message":"equivalence HF_smallN vs HF_largeN on 'old20': d = -2.50 [-3.25, -1.75], TOST p = 1.000 (not shown equivalent)","data":null}
+{"time":"2026-10-13 18:16:05.277094","message":"equivalence HF_smallN vs HF_largeN on 'n_syllables': d = -0.38 [-0.95, 0.19], TOST p = 0.362 (not shown equivalent)","data":null}
+{"time":"2026-10-13 18:16:05.308573","message":"equivalence HF_smallN vs HF_largeN on 'bigram_freq': d = 0.51 [-0.06, 1.08], TOST p = 0.511 (not shown equivalent)","data":null}
+{"time":"2026-10-13 18:16:05.330559","message":"equivalence LF_largeN vs HF_largeN on 'length': d = 0.18 [-0.38, 0.75], TOST p = 0.173 (not shown equivalent)","data":null}
+{"time":"2026-10-13 18:16:05.337534","message":"equivalence LF_largeN vs HF_largeN on 'frequency': d = 4.63 [3.55, 5.71], TOST p = 1.000 (not shown equivalent)","data":null}
+{"time":"2026-10-13 18:16:05.348785","message":"equivalence LF_largeN vs HF_largeN on 'n_density': d = 0.46 [-0.12, 1.03], TOST p = 0.448 (not shown equivalent)","data":null}
+{"time":"2026-10-13 18:16:05.358649","message":"equivalence LF_largeN vs HF_largeN on 'old20': d = -0.71 [-1.29, -0.13], TOST p = 0.734 (not shown equivalent)","data":null}
+{"time":"2026-10-13 18:16:05.369258","message":"equivalence LF_largeN vs HF_largeN on 'n_syllables': d = 0.35 [-0.22, 0.92], TOST p = 0.327 (not shown equivalent)","data":null}
+{"time":"2026-10-13 18:16:05.380222","message":"equivalence LF_largeN vs HF_largeN on 'bigram_freq': d = -0.02 [-0.58, 0.54], TOST p = 0.080 (not shown equivalent)","data":null}
+{"time":"2026-10-13 18:16:05.394633","message":"equivalence LF_smallN vs HF_largeN on 'length': d = 0.18 [-0.38, 0.75], TOST p = 0.173 (not shown equivalent)","data":null}
+{"time":"2026-10-13 18:16:05.410285","message":"equivalence LF_smallN vs HF_largeN on 'frequency': d = 4.54 [3.48, 5.61], TOST p = 1.000 (not shown equivalent)","data":null}
+{"time":"2026-10-13 18:16:05.423427","message":"equivalence LF_smallN vs HF_largeN on 'n_density': d = 3.05 [2.22, 3.88], TOST p = 1.000 (not shown equivalent)","data":null}
+{"time":"2026-10-13 18:16:05.435392","message":"equivalence LF_smallN vs HF_largeN on 'old20': d = -3.46 [-4.35, -2.57], TOST p = 1.000 (not shown equivalent)","data":null}
+{"time":"2026-10-13 18:16:05.450555","message":"equivalence LF_smallN vs HF_largeN on 'n_syllables': d = 0.28 [-0.29, 0.84], TOST p = 0.255 (not shown equivalent)","data":null}
+{"time":"2026-10-13 18:16:05.461143","message":"equivalence LF_smallN vs HF_largeN on 'bigram_freq': d = 0.71 [0.13, 1.29], TOST p = 0.733 (not shown equivalent)","data":null}
+{"time":"2026-10-13 18:16:05.473864","message":"equivalence LF_largeN vs HF_smallN on 'length': d = 0.00 [-0.56, 0.56], TOST p = 0.071 (not shown equivalent)","data":null}
+{"time":"2026-10-13 18:16:05.493891","message":"equivalence LF_largeN vs HF_smallN on 'frequency': d = 4.81 [3.70, 5.92], TOST p = 1.000 (not shown equivalent)","data":null}
+{"time":"2026-10-13 18:16:05.499653","message":"equivalence LF_largeN vs HF_smallN on 'n_density': d = -3.26 [-4.12, -2.40], TOST p = 1.000 (not shown equivalent)","data":null}
+{"time":"2026-10-13 18:16:05.511063","message":"equivalence LF_largeN vs HF_smallN on 'old20': d = 1.92 [1.24, 2.61], TOST p = 1.000 (not shown equivalent)","data":null}
+{"time":"2026-10-13 18:16:05.53688","message":"equivalence LF_largeN vs HF_smallN on 'n_syllables': d = 0.73 [0.15, 1.31], TOST p = 0.751 (not shown equivalent)","data":null}
+{"time":"2026-10-13 18:16:05.544837","message":"equivalence LF_largeN vs HF_smallN on 'bigram_freq': d = -0.42 [-0.99, 0.15], TOST p = 0.409 (not shown equivalent)","data":null}
+{"time":"2026-10-13 18:16:05.556126","message":"equivalence LF_smallN vs HF_smallN on 'length': d = 0.00 [-0.56, 0.56], TOST p = 0.071 (not shown equivalent)","data":null}
+{"time":"2026-10-13 18:16:05.566409","message":"equivalence LF_smallN vs HF_smallN on 'frequency': d = 4.73 [3.63, 5.83], TOST p = 1.000 (not shown equivalent)","data":null}
+{"time":"2026-10-13 18:16:05.578607","message":"equivalence LF_smallN vs HF_smallN on 'n_density': d = -0.42 [-0.99, 0.15], TOST p = 0.409 (not shown equivalent)","data":null}
+{"time":"2026-10-13 18:16:05.600914","message":"equivalence LF_smallN vs HF_smallN on 'old20': d = -0.19 [-0.76, 0.37], TOST p = 0.180 (not shown equivalent)","data":null}
+{"time":"2026-10-13 18:16:05.611833","message":"equivalence LF_smallN vs HF_smallN on 'n_syllables': d = 0.61 [0.04, 1.19], TOST p = 0.633 (not shown equivalent)","data":null}
+{"time":"2026-10-13 18:16:05.62297","message":"equivalence LF_smallN vs HF_smallN on 'bigram_freq': d = 0.16 [-0.41, 0.72], TOST p = 0.155 (not shown equivalent)","data":null}
+{"time":"2026-10-13 18:16:05.636039","message":"equivalence LF_smallN vs LF_largeN on 'length': d = 0.00 [-0.56, 0.56], TOST p = 0.071 (not shown equivalent)","data":null}
+{"time":"2026-10-13 18:16:05.654367","message":"equivalence LF_smallN vs LF_largeN on 'frequency': d = 0.07 [-0.50, 0.63], TOST p = 0.101 (not shown equivalent)","data":null}
+{"time":"2026-10-13 18:16:05.666197","message":"equivalence LF_smallN vs LF_largeN on 'n_density': d = 3.08 [2.25, 3.92], TOST p = 1.000 (not shown equivalent)","data":null}
+{"time":"2026-10-13 18:16:05.681179","message":"equivalence LF_smallN vs LF_largeN on 'old20': d = -2.70 [-3.48, -1.92], TOST p = 1.000 (not shown equivalent)","data":null}
+{"time":"2026-10-13 18:16:05.694029","message":"equivalence LF_smallN vs LF_largeN on 'n_syllables': d = 0.00 [-0.56, 0.56], TOST p = 0.071 (not shown equivalent)","data":null}
+{"time":"2026-10-13 18:16:05.704944","message":"equivalence LF_smallN vs LF_largeN on 'bigram_freq': d = 0.57 [-0.01, 1.14], TOST p = 0.579 (not shown equivalent)","data":null}
+{"time":"2026-10-13 18:16:06.256295","message":"wrote 'en_andrews_repro_english_stimuli_R.csv'","data":{"path":"output/stimuli/en_andrews_repro_english_stimuli_R.csv","rows":72,"md5":"e30ab48f26204a5b8c8e4dee26916f96"}}
+{"time":"2026-10-13 18:16:06.45173","message":"wrote 'en_andrews_repro_english_descriptives_R.csv'","data":{"path":"output/reports/en_andrews_repro_english_descriptives_R.csv","rows":24,"md5":"f1e93d0fdfd978adba33172095d5874c"}}
+{"time":"2026-10-13 18:16:06.661503","message":"wrote 'en_andrews_repro_english_comparisons_R.csv'","data":{"path":"output/reports/en_andrews_repro_english_comparisons_R.csv","rows":36,"md5":"028c95f25843ddedf975c859bf490602"}}
+{"time":"2026-10-13 18:16:08.600905","message":"wrote 'en_andrews_repro_english_psychopy.py'","data":{"path":"output/experiments/en_andrews_repro_english_psychopy.py","rows":"NA","md5":"d506f469f21abaee6fe081aa02a1a5fa"}}
+{"time":"2026-10-13 18:16:08.633812","message":"wrote 'en_andrews_repro_english.osexp'","data":{"path":"output/experiments/en_andrews_repro_english.osexp","rows":"NA","md5":"16521eafef0be6dd26393ba4145429e7"}}
+{"time":"2026-10-13 18:16:08.656796","message":"wrote 'en_andrews_repro_english.html'","data":{"path":"output/experiments/en_andrews_repro_english.html","rows":"NA","md5":"017015766df865f5113c40a21a7660aa"}}
+{"time":"2026-10-13 18:16:08.683705","message":"wrote 'en_andrews_repro_english_psychopy.csv'","data":{"path":"output/experiments/en_andrews_repro_english_psychopy.csv","rows":"NA","md5":"d45fdb80d0c39577344554d09b3f7f2e"}}
+{"time":"2026-10-13 18:16:08.699397","message":"wrote 'en_andrews_repro_english_opensesame.csv'","data":{"path":"output/experiments/en_andrews_repro_english_opensesame.csv","rows":"NA","md5":"8ed2d40076b9d193c0ae26c859cee534"}}
+{"time":"2026-10-13 18:16:08.714745","message":"wrote 'en_andrews_repro_english_opensesame_text.csv'","data":{"path":"output/experiments/en_andrews_repro_english_opensesame_text.csv","rows":"NA","md5":"f597095380e3c7f3689c99e84b4556fa"}}
+{"time":"2026-10-13 18:16:10.207892","message":"wrote 'en_andrews_repro_english_datasheet_R.json'","data":{"path":"output/reports/en_andrews_repro_english_datasheet_R.json","rows":"NA","md5":"e45674ce14e30e0c1938accd25e7c4f1"}}
+{"time":"2026-10-13 18:16:10.225895","message":"wrote 'en_andrews_repro_english_datasheet_R.md'","data":{"path":"output/reports/en_andrews_repro_english_datasheet_R.md","rows":"NA","md5":"d926bafe96b910bd7d3605be1685582c"}}

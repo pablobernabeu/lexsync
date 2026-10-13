@@ -1,0 +1,32 @@
+# Twin-edge case: a design's own instructions and response mapping. The text holds a
+# line break, accented letters, double quotes, an ampersand and angle brackets. Both
+# engines must write it byte for byte as JSON into the PsychoPy script and into the
+# jsPsych page, which escapes it for HTML. They must also write it as an escaped literal
+# into the OpenSesame script. The mapping is declared for a factorial design, which has
+# no default of its own, and the loop table takes each trial's answer from it.
+name: twin_edge_instructions_text
+language: spanish
+description: 'A design that gives its own instructions and response mapping.'
+items:
+  source: table
+  path: items.csv
+instructions: |
+  Pulse F si la palabra es "alta" & J si es <baja>.
+  ¿Listo? Pulse la barra espaciadora para empezar.
+response_mapping: {alta: f, baja: j}
+events:
+  - type: fixation
+    content: '+'
+    duration_ms: 500
+  - type: text
+    content: '{word}'
+    duration_ms: 800
+    trigger: condition
+    onset_locked: true
+  - type: response
+    keys: [f, j]
+    timeout_ms: 2000
+  - type: blank
+    duration_ms: 250
+counterbalance:
+  lists: 1
