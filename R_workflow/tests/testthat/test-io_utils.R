@@ -326,7 +326,7 @@ test_that("the_key_vocabularies_agree_across_engines", {
   digest_of <- function(keys) digest::digest(paste(keys, collapse = "\n"), algo = "sha256",
                                              serialize = FALSE)
   expect_identical(digest_of(.DESIGN_KEYS),
-                   "46cb25ea6f0ad0a7973200fa362673a2df818c1121361c58d9d32794fb6ee241")
+                   "b9d90d9cfe9b71aae92cc11b633031a209bfedebcced4487cb3e0040f51da72a")
   expect_identical(digest_of(.SCHEMA_KEYS),
                    "6fe50b7e1f4cd526cb9a555bf649686c8859b62ec8783d24c6ba073ad1927aa3")
 })

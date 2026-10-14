@@ -150,7 +150,7 @@ define inline_script lexsync_instructions
 	set _prepare ""
 	___run__
 	c = Canvas()
-	c.text(u'When a response is needed, press the left arrow key or the right arrow key. Respond as quickly and accurately as you can.<br /><br />Press the space bar to begin.')
+	c.text(u'You will see a row of hash marks and then a string of capital letters. Press the left arrow key if the letters spell a real English word and the right arrow key if they do not. Respond as quickly and accurately as you can.<br /><br />Press the space bar to begin.')
 	c.show()
 	_key, _t = Keyboard(keylist=[u'space', u'escape'], timeout=None).get_key()
 	if _key == u'escape':
@@ -188,7 +188,7 @@ define inline_script lexsync_e0
 	set description "Show stimulus and send onset-aligned trigger"
 	___prepare__
 	_lexsync_c_e0 = Canvas()
-	_lexsync_c_e0.text(u'+')
+	_lexsync_c_e0.text(u'########')
 	__end__
 	___run__
 	_t0 = _lexsync_c_e0.show()
@@ -200,7 +200,7 @@ define inline_script lexsync_e1
 	set description "Show stimulus and send onset-aligned trigger"
 	___prepare__
 	_lexsync_c_e1 = Canvas()
-	_lexsync_c_e1.text(_lexsync_row()[u'prime'])
+	_lexsync_c_e1.text(_lexsync_row()[u'prime'].lower())
 	__end__
 	___run__
 	_t0 = _lexsync_c_e1.show()
@@ -210,34 +210,22 @@ define inline_script lexsync_e1
 	__end__
 
 define inline_script lexsync_e2
-	set description "Show stimulus and send onset-aligned trigger"
+	set description "Show the stimulus and collect the response from its onset"
 	___prepare__
 	_lexsync_c_e2 = Canvas()
-	_lexsync_c_e2.text(u'#####')
+	_lexsync_c_e2.text(_lexsync_row()[u'target'].upper())
+	_lexsync_c_e2_blank = Canvas()
 	__end__
 	___run__
 	_t0 = _lexsync_c_e2.show()
 	var.onset_time = _t0
-	_lexsync_wait(_t0 + 33 - _LEXSYNC_HALF_FRAME)
-	__end__
-
-define inline_script lexsync_e3
-	set description "Show the stimulus and collect the response from its onset"
-	___prepare__
-	_lexsync_c_e3 = Canvas()
-	_lexsync_c_e3.text(_lexsync_row()[u'target'])
-	_lexsync_c_e3_blank = Canvas()
-	__end__
-	___run__
-	_t0 = _lexsync_c_e3.show()
-	var.onset_time = _t0
 	_lexsync_onset(int(var.get(u'condition_trigger', _eval=False)), _t0)
 	_kb = Keyboard(keylist=[u'left', u'right'])
 	_kb.flush()
-	_key, _t = _lexsync_key(_kb, _t0 + 800 - _LEXSYNC_HALF_FRAME)
+	_key, _t = _lexsync_key(_kb, _t0 + 2000 - _LEXSYNC_HALF_FRAME)
 	if _key is None:
-	    _lexsync_c_e3_blank.show()
-	    _key, _t = _lexsync_key(_kb, _t0 + 800 + 2000)
+	    _lexsync_c_e2_blank.show()
+	    _key, _t = _lexsync_key(_kb, _t0 + 2000 + 0)
 	var.response = _key
 	var.response_time = u'' if _key is None else _t - _t0
 	var.timed_out = 1 if _key is None else 0
@@ -246,13 +234,13 @@ define inline_script lexsync_e3
 	var.correct = (1 if _got == _want else 0) if _want else u''
 	__end__
 
-define inline_script lexsync_e4
+define inline_script lexsync_e3
 	set description "Show stimulus and send onset-aligned trigger"
 	___prepare__
-	_lexsync_c_e4 = Canvas()
+	_lexsync_c_e3 = Canvas()
 	__end__
 	___run__
-	_t0 = _lexsync_c_e4.show()
+	_t0 = _lexsync_c_e3.show()
 	var.onset_time = _t0
 	_lexsync_wait(_t0 + 250 - _LEXSYNC_HALF_FRAME)
 	__end__
@@ -279,7 +267,6 @@ define sequence lexsync_trial
 	run lexsync_e1 always
 	run lexsync_e2 always
 	run lexsync_e3 always
-	run lexsync_e4 always
 	run lexsync_record always
 	run lexsync_logger always
 

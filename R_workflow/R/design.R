@@ -42,7 +42,7 @@
   "events[].duration_frames", "events[].duration", "events[].duration.from_column",
   "events[].duration.jitter", "events[].duration.as", "events[].trigger",
   "events[].onset_locked", "events[].keys", "events[].timeout_ms", "events[].from",
-  "events[].advance",
+  "events[].case", "events[].length_of", "events[].advance",
   "events[].sep", "events[].critical_region_trigger", "events[].answer",
   "events[].correct", "events[].incorrect", "events[].no_response", "events[].blocks",
   "timing", "font", "instructions", "response_mapping", "rotate_mapping_by_list",

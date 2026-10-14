@@ -115,6 +115,26 @@ means the rate the count was written for, whatever rate the experiment then runs
 at. The `timeout_ms` of a response window has always been in milliseconds,
 because a response deadline is not tied to the refresh.
 
+A text event's `case`, `upper` or `lower`, sets the letter case its text is shown
+in. The runners apply it as they show the text, with `str.upper()` and
+`str.lower()` in PsychoPy and OpenSesame and `toUpperCase()` and `toLowerCase()` in
+jsPsych, so the loop tables and the data files keep each item as it was written.
+lexsync never changes the case itself, because `toupper()` leaves the German sharp
+s as it is where Python and JavaScript give "SS", and the two engines must write the
+same files. A mask's `length_of` names fields of the trials, and its one-character
+content is repeated as many times as the longest of their values has characters,
+counted when the experiments are written:
+
+```yaml
+- type: mask
+  content: '#'
+  length_of: [prime, target]
+  duration_ms: 500
+```
+
+The count is in characters, not bytes, over every trial of every list, so each
+target and each list shows the same mask.
+
 ### When a response is collected
 
 A response event after a text event collects its key from that stimulus's onset.
@@ -133,6 +153,10 @@ keeps a window that opens once the stimulus has gone:
   timeout_ms: 2000
   from: offset
 ```
+
+A stimulus that should stay on screen for the whole window, as the
+`masked_priming` target does, takes the window's length as its duration, and its
+response a `timeout_ms` of 0.
 
 A response after any other event gets the same window by default, so one that
 follows a blank keeps the window it had, timed from the window's own onset.
@@ -366,9 +390,23 @@ but presents a `target`, which is a real word or a generated pseudoword.
 `priming` is backward pattern-masked: a 50 ms prime and a 33 ms `#####` mask come
 before the target, so the stimulus-onset asynchrony is 83 ms at 60 Hz. There is no
 forward mask, and prime and target keep the item table's letter case.
-`self_paced_reading` replaces the word event with a region-by-region sentence and
-adds a comprehension question. `categorisation` shows a category cue and then the
-word to judge against it.
+`masked_priming` is the procedure of Forster and Davis (1984): a forward mask of
+hash marks for 500 ms, as many as the longest prime or target has characters, the
+prime in lower case for three frames (50 ms at 60 Hz) and the target in upper case,
+on screen until the response or for 2,000 ms. Without the forward mask, a prime of
+50 ms is usually visible. The change of case keeps a related prime and its target
+from sharing their visual form, so that priming does not arise from the overlap of
+the two displays. `self_paced_reading` replaces the word event with a
+region-by-region sentence and adds a comprehension question. `categorisation` shows
+a category cue and then the word to judge against it.
+
+`design_en_rastle_repro.yaml` uses `masked_priming` for the Rastle, Davis and New
+(2004) reproduction, a lexical decision whose nonword targets are fillers with the
+right arrow key as their answer, while its response mapping puts both priming
+conditions on the left. `design_en_andrews_repro.yaml` runs the Andrews (1989)
+reproduction as a lexical decision the same way, with one pseudoword per selected
+word. Both designs' comments say how the fillers were made and what still differs
+from the original studies.
 
 That last one is worth a paragraph, because what separates it from lexical
 decision is not the shape of the trial but where the question lives. The cue is
@@ -388,7 +426,8 @@ the answer j.
 The `counterbalance` entry is the part that is easy to overlook and important to
 get right. The factorial recipe shows every matched item and splits the matched
 sets across lists. The Latin-square recipe exists because `priming`,
-`self_paced_reading` and `categorisation` have a property the word paradigms do
+`masked_priming`, `self_paced_reading` and `categorisation` have a property the
+word paradigms do
 not: the same target appears in more than one condition. Showing a participant
 both the related and the unrelated version of one target would let them see the
 manipulation, and showing the same word under both category cues would turn the
@@ -939,6 +978,14 @@ that walks the same rendered event list, and it will serve every paradigm at onc
 
 ## References
 
+Andrews, S. (1989). Frequency and neighborhood effects on lexical access:
+Activation or search? *Journal of Experimental Psychology: Learning, Memory, and
+Cognition*, *15*(5), 802–814. https://doi.org/10.1037/0278-7393.15.5.802
+
+Forster, K. I., & Davis, C. (1984). Repetition priming and frequency attenuation in
+lexical access. *Journal of Experimental Psychology: Learning, Memory, and
+Cognition*, *10*(4), 680–698. https://doi.org/10.1037/0278-7393.10.4.680
+
 Mathôt, S., Schreij, D., & Theeuwes, J. (2012). OpenSesame: An open-source,
 graphical experiment builder for the social sciences. *Behavior Research
 Methods*, *44*(2), 314–324. https://doi.org/10.3758/s13428-011-0168-7
@@ -947,3 +994,7 @@ Peirce, J., Gray, J. R., Simpson, S., MacAskill, M., Höchenberger, R., Sogo, H.
 Kastman, E., & Lindeløv, J. K. (2019). PsychoPy2: Experiments in behavior made
 easy. *Behavior Research Methods*, *51*(1), 195–203.
 https://doi.org/10.3758/s13428-018-01193-y
+
+Rastle, K., Davis, M. H., & New, B. (2004). The broth in my brother's brothel:
+Morpho-orthographic segmentation in visual word recognition. *Psychonomic Bulletin
+& Review*, *11*(6), 1090–1098. https://doi.org/10.3758/BF03196742

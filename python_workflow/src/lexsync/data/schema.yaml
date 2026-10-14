@@ -173,8 +173,8 @@ matching:
 # ---- Counterbalancing list assignment --------------------------------------
 # A design's paradigm decides its counterbalancing recipe, whether or not the design
 # lists its own events: `factorial` for the factorial and lexical_decision paradigms,
-# and `latin_square_target` for priming, self_paced_reading and categorisation. A
-# design may name the recipe itself:
+# and `latin_square_target` for priming, masked_priming, self_paced_reading and
+# categorisation. A design may name the recipe itself:
 #
 #   counterbalance:
 #     recipe: latin_square_target   # factorial | latin_square_target
@@ -350,6 +350,20 @@ presentation:
   #     keys: [f, j]
   #     timeout_ms: 2000
   #     from: offset      # onset (the default after a text event) | offset
+  #
+  # A text event may set the letter case it is shown in, and a mask may take its
+  # length from the trials. The runners apply the case as they show the text, so the
+  # files keep each item as it was written. A mask's one character is repeated as
+  # many times as the longest text of the named fields has characters, counted when
+  # the experiments are written. The masked_priming paradigm uses both:
+  #
+  #   - type: mask
+  #     content: '#'
+  #     length_of: [prime, target]   # the fields whose longest text sets the length
+  #     duration_ms: 500
+  #   - type: text
+  #     content: '{target}'
+  #     case: upper                  # upper | lower
   #
   # Every generated experiment shows instructions and waits for the space bar before
   # its first trial. A design may give its own text, line breaks included:

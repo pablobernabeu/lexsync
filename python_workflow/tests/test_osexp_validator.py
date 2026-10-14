@@ -524,6 +524,27 @@ def test_the_scripts_present_the_text_verbatim_and_score_a_timeout(version, sche
     assert {row["lexsync_block"] for row in logged} == {""}
 
 
+@pytest.mark.parametrize("version", ["3.3", "4.x"])
+def test_the_scripts_show_each_text_in_the_case_its_event_asks_for(version, schema,
+                                                                   tmp_path, monkeypatch):
+    # A text event's `case` is applied by the script that shows the text, with Python's
+    # own case mapping, not by lexsync, whose two engines upper-case 'ß' differently.
+    # The forward mask is as many hash marks as the longest string has characters.
+    monkeypatch.setattr(ctypes, "windll", None, raising=False)
+    stim = assign_triggers(pd.DataFrame({
+        "prime": ["Naïveté", "cat"], "target": ["straße", "moon"],
+        "condition": ["related", "unrelated"], "set": [1, 2], "trial": [1, 2], "list": 1}))
+    design = {"name": "t", "language": "english", "paradigm": "masked_priming"}
+    path = export_opensesame(stim, design, schema, str(tmp_path))
+    shown, _, _, logged = _run(path, version, [("left", 600.0), None])
+    assert [(name, text) for name, text, _ in shown if text is not None] == [
+        ("lexsync_e0", "#######"), ("lexsync_e1", "naïveté"), ("lexsync_e2", "STRASSE"),
+        ("lexsync_e0", "#######"), ("lexsync_e1", "cat"), ("lexsync_e2", "MOON")]
+    # The target stays on until the key or for its whole window: the first trial's key
+    # ends it at 600 ms, and the second trial's runs out at 2,000 ms.
+    assert [(row["response"], row["timed_out"]) for row in logged] == [("left", 0), (None, 1)]
+
+
 def _delayed_design():
     return {"name": "delayed", "language": "english", "events": [
         {"type": "fixation", "content": "+", "duration_ms": 500},

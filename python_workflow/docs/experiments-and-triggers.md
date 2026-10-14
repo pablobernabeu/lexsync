@@ -2,7 +2,7 @@
 
 Once a set of stimuli exists, something has to present it, on the right machine, at the right time,
 and in an EEG study it has to tell the amplifier when the stimulus appeared. lexsync writes that
-something. This guide covers the declarative trial model that makes one engine serve five paradigms
+something. This guide covers the declarative trial model that makes one engine serve six paradigms
 and three presentation targets, how items are rotated across lists and blocked into practice and
 fillers, and where the trigger is written in each target and why the placement is the interesting
 part.
@@ -29,6 +29,24 @@ converts it to the nearest whole number of flips. `duration_frames` is still acc
 written before that change and is converted at `presentation.assumed_refresh_hz`. `trigger` is a
 whole-number EEG code from 1 to 255, or the token `condition` or `item`, and `onset_locked` asks for
 it to be written on the event's onset flip.
+
+A text event's `case`, `upper` or `lower`, sets the letter case its text is shown in. The runners
+apply it as they show the text, with `str.upper()` and `str.lower()` in PsychoPy and OpenSesame and
+`toUpperCase()` and `toLowerCase()` in jsPsych, so the loop tables and the data files keep each item
+as it was written. lexsync never changes the case itself, because R's `toupper()` leaves "ß" as it
+is where Python and JavaScript give "SS", and the two engines must write the same files. A mask's
+`length_of` names fields of the trials, and its one-character content is repeated as many times as
+the longest of their values has characters, counted when the experiments are written:
+
+```yaml
+- type: mask
+  content: '#'
+  length_of: [prime, target]
+  duration_ms: 500
+```
+
+The count is in characters, not bytes, over every trial of every list, so each target and each list
+shows the same mask.
 
 Each target realises those durations in its own way. PsychoPy rounds them to whole flips at the
 measured refresh and locks the trigger to the flip. The generated OpenSesame experiment builds every
@@ -65,6 +83,9 @@ that opens once the stimulus has gone:
   timeout_ms: 2000
   from: offset
 ```
+
+A stimulus that should stay on screen for the whole window, as the `masked_priming` target does,
+takes the window's length as its duration, and its response a `timeout_ms` of 0.
 
 A response after any other event gets the same window by default, so one that follows a blank keeps
 the window it had, timed from the window's own onset. `from: onset` after such an event is refused,
@@ -162,7 +183,7 @@ three targets then present the same whole milliseconds, and the run log counts t
 A fixed `duration_ms` or `duration_frames` is checked the same way, and the lower bound of a jitter
 must not be negative.
 
-## The five paradigms
+## The six paradigms
 
 `PARADIGMS` is a plain dictionary. Each entry gives the fields the paradigm presents, its
 counterbalancing recipe and its default event sequence.
@@ -172,8 +193,20 @@ counterbalancing recipe and its default event sequence.
 | `factorial` | `word` | `factorial` | Fixation, the critical word carrying the onset-locked condition marker, response, blank. |
 | `lexical_decision` | `target` | `factorial` | The same shape, with a generic target field so a real word and a pseudoword are interchangeable. |
 | `priming` | `prime`, `target` | `latin_square_target` | Backward pattern-masked: fixation, a 50 ms prime with its own fixed marker, a 33 ms `#####` mask, then the target with the condition marker (an 83 ms stimulus-onset asynchrony at 60 Hz). There is no forward mask, and prime and target keep the item table's letter case. |
+| `masked_priming` | `prime`, `target` | `latin_square_target` | A forward mask of hash marks for 500 ms, as many as the longest prime or target has characters, a lower-case prime for three frames (50 ms at 60 Hz) with its own fixed marker, then the upper-case target with the condition marker, on screen until the response or for 2,000 ms, and a 250 ms blank. |
 | `self_paced_reading` | `sentence`, `question` | `latin_square_target` | Fixation, the sentence region by region with the critical region marked, then a yes/no comprehension question. |
 | `categorisation` | `target`, `category`, `answer` | `latin_square_target` | Fixation, the category cue, then the word to judge against it with the condition marker, response, blank. |
+
+`masked_priming` is the procedure of [Forster and Davis (1984)](references.md#forster-1984).
+Without the forward mask, a prime of 50 ms is usually visible. The change of case keeps a related
+prime and its target from sharing their visual form, so that priming does not arise from the
+overlap of the two displays. `config/design_en_rastle_repro.yaml` uses it for the
+[Rastle, Davis and New (2004)](references.md#rastle-2004) reproduction, a lexical decision whose
+nonword targets are fillers with the right arrow key as their answer, while its response mapping
+puts both priming conditions on the left. `config/design_en_andrews_repro.yaml` runs the
+[Andrews (1989)](references.md#andrews-1989) reproduction as a lexical decision the same way, with
+one pseudoword per selected word. Both designs' comments say how the fillers were made and what
+still differs from the original studies.
 
 `categorisation` is worth a paragraph, because what separates it from lexical decision is not the
 shape of the trial but where the question lives. The category cue is a trial event, shown afresh each

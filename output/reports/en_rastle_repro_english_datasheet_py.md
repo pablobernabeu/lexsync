@@ -4,8 +4,8 @@
 
 ## Provenance
 
-- **Paradigm:** priming  |  **Item source:** table
-- **Description:** Reproducing the item-selection structure of Rastle, Davis & New (2004): transparent, opaque and orthographic (form) prime-target relationships, each against an unrelated baseline, presented with the backward-masked priming paradigm and no nonword targets, so not their masked-priming lexical-decision task; Latin-square counterbalanced over two lists.
+- **Paradigm:** masked_priming  |  **Item source:** table
+- **Description:** Reproducing Rastle, Davis & New (2004): masked priming of word targets by transparent, opaque and orthographic (form) primes, each against an unrelated baseline, in a lexical decision with interleaved nonword fillers, Latin-square counterbalanced over two lists.
 - **Materials source:** `items/rastle_priming_en.csv` (sha256 `53bd365a801a3e82…`)
 - **Selection:** item table (user-supplied)
 - **Cross-engine determinism:** n/a (user-supplied items)
@@ -25,12 +25,12 @@
 
 ## Suggested analysis
 
-- **Model:** `response ~ condition + (1 + condition | subject) + (1 + condition | item)` — where the response is reaction time from the onset of `{target}`; responses collected for 2800 ms; a response ends the trial.
+- **Model:** `response ~ condition + (1 + condition | subject) + (1 + condition | item)` — where the response is reaction time from the onset of `{target}`; responses collected for 2000 ms; a response ends the trial.
 - Crossed random effects for subjects and items guard against the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). Begin with this maximal structure (Barr et al., 2013). If the model is singular or fails to converge, simplify it as Matuschek et al. (2017) describe. The formula is lme4 syntax, for lme4 in R or pymer4 in Python; statsmodels MixedLM cannot take it directly and needs the random effects restated in its own arguments. The equivalence tests in the realised control are post-selection diagnostics on deterministically selected items, not inferential tests over a sample.
 
 ## Methods paragraph
 
-12 items were drawn from an item table for a priming design (English). Materials were counterbalanced into 2 list(s) (a Latin-square rotation) and generated for PsychoPy, OpenSesame and jsPsych. Each participant was presented one of the 2 lists, assigned in rotation by participant number. Responses were collected from target onset until 2800 ms after it, and a response ended the trial. The selection is deterministic and reproducible (lexsync 0.1.1), and the seed (2026) fixes the trial order.
+12 items were drawn from an item table for a masked_priming design (English). Materials were counterbalanced into 2 list(s) (a Latin-square rotation) and generated for PsychoPy, OpenSesame and jsPsych. Each participant was presented one of the 2 lists, assigned in rotation by participant number. Responses were collected from target onset until 2000 ms after it, and a response ended the trial. Participants pressed the left arrow key for related and unrelated trials. The selection is deterministic and reproducible (lexsync 0.1.1), and the seed (2026) fixes the trial order.
 
 ## Pre-registration template
 
@@ -47,10 +47,10 @@
 ### Design
 - Manipulated variable(s):
 - Measured variable(s):
-- Paradigm: priming
+- Paradigm: masked_priming
 
 ### Materials (from the lexsync datasheet)
-12 items were drawn from an item table for a priming design (English). Materials were counterbalanced into 2 list(s) (a Latin-square rotation) and generated for PsychoPy, OpenSesame and jsPsych. Each participant was presented one of the 2 lists, assigned in rotation by participant number. Responses were collected from target onset until 2800 ms after it, and a response ended the trial. The selection is deterministic and reproducible (lexsync 0.1.1), and the seed (2026) fixes the trial order.
+12 items were drawn from an item table for a masked_priming design (English). Materials were counterbalanced into 2 list(s) (a Latin-square rotation) and generated for PsychoPy, OpenSesame and jsPsych. Each participant was presented one of the 2 lists, assigned in rotation by participant number. Responses were collected from target onset until 2000 ms after it, and a response ended the trial. Participants pressed the left arrow key for related and unrelated trials. The selection is deterministic and reproducible (lexsync 0.1.1), and the seed (2026) fixes the trial order.
 
 ### Sampling plan
 - Sample size and justification:

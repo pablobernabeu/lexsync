@@ -1,8 +1,8 @@
 # lexsync run log: en_andrews_repro
 
 - Engine: Python 3.13.7
-- Started: 2026-10-14T01:26:00
-- Finished: 2026-10-14T01:26:02
+- Started: 2026-10-14T22:45:37
+- Finished: 2026-10-14T22:45:43
 
 ## Run metadata
 
@@ -16,95 +16,101 @@
 
 ## Steps
 
-- **2026-10-14T01:26:00**: lexsync: the design gives no `instructions`, and lexsync cannot tell what the response keys of a factorial design mean, so the experiments only name the keys; give `instructions` that say what each key means.
-- **2026-10-14T01:26:00**: loading lexicon 'corpora/derived/en_v2.csv'
-- **2026-10-14T01:26:01**: lexicon loaded: 30000 words
+- **2026-10-14T22:45:37**: loading lexicon 'corpora/derived/en_v2.csv'
+- **2026-10-14T22:45:39**: lexicon loaded: 30000 words
     - words: 30000
-- **2026-10-14T01:26:01**: exclude_words: removed 53 of the 53 listed word(s) from the candidates (config/exclude_en_demo.txt)
+- **2026-10-14T22:45:39**: exclude_words: removed 53 of the 53 listed word(s) from the candidates (config/exclude_en_demo.txt)
     - exclude_words: config/exclude_en_demo.txt
     - sha256: cac9f88fb86fa6d0e6dbabc287c9ebb782100d071eeded13eb812584b9d41e9f
     - n_removed: 53
-- **2026-10-14T01:26:01**: pool after filters: 5184 words
+- **2026-10-14T22:45:39**: pool after filters: 5184 words
     - pool: 5184
-- **2026-10-14T01:26:01**: matched 72 items across 4 conditions
+- **2026-10-14T22:45:39**: matched 72 items across 4 conditions
     - conditions: HF_largeN, HF_smallN, LF_largeN, LF_smallN
-- **2026-10-14T01:26:01**: equivalence HF_smallN vs HF_largeN on 'length': d = 0.18 [-0.38, 0.75], TOST p = 0.1728 (not shown equivalent)
-- **2026-10-14T01:26:01**: equivalence HF_smallN vs HF_largeN on 'frequency': d = -0.45 [-1.02, 0.12], TOST p = 0.4417 (not shown equivalent)
-- **2026-10-14T01:26:01**: equivalence HF_smallN vs HF_largeN on 'n_density': d = 3.20 [2.35, 4.05], TOST p = 1.0 (not shown equivalent)
-- **2026-10-14T01:26:01**: equivalence HF_smallN vs HF_largeN on 'old20': d = -2.50 [-3.25, -1.75], TOST p = 1.0 (not shown equivalent)
-- **2026-10-14T01:26:01**: equivalence HF_smallN vs HF_largeN on 'n_syllables': d = -0.38 [-0.95, 0.19], TOST p = 0.3619 (not shown equivalent)
-- **2026-10-14T01:26:01**: equivalence HF_smallN vs HF_largeN on 'bigram_freq': d = 0.51 [-0.06, 1.08], TOST p = 0.5115 (not shown equivalent)
-- **2026-10-14T01:26:01**: equivalence LF_largeN vs HF_largeN on 'length': d = 0.18 [-0.38, 0.75], TOST p = 0.1728 (not shown equivalent)
-- **2026-10-14T01:26:01**: equivalence LF_largeN vs HF_largeN on 'frequency': d = 4.63 [3.55, 5.71], TOST p = 1.0 (not shown equivalent)
-- **2026-10-14T01:26:01**: equivalence LF_largeN vs HF_largeN on 'n_density': d = 0.46 [-0.12, 1.03], TOST p = 0.4479 (not shown equivalent)
-- **2026-10-14T01:26:01**: equivalence LF_largeN vs HF_largeN on 'old20': d = -0.71 [-1.29, -0.13], TOST p = 0.7341 (not shown equivalent)
-- **2026-10-14T01:26:01**: equivalence LF_largeN vs HF_largeN on 'n_syllables': d = 0.35 [-0.22, 0.92], TOST p = 0.3268 (not shown equivalent)
-- **2026-10-14T01:26:01**: equivalence LF_largeN vs HF_largeN on 'bigram_freq': d = -0.02 [-0.58, 0.54], TOST p = 0.0795 (not shown equivalent)
-- **2026-10-14T01:26:01**: equivalence LF_smallN vs HF_largeN on 'length': d = 0.18 [-0.38, 0.75], TOST p = 0.1728 (not shown equivalent)
-- **2026-10-14T01:26:01**: equivalence LF_smallN vs HF_largeN on 'frequency': d = 4.54 [3.48, 5.61], TOST p = 1.0 (not shown equivalent)
-- **2026-10-14T01:26:01**: equivalence LF_smallN vs HF_largeN on 'n_density': d = 3.05 [2.22, 3.88], TOST p = 1.0 (not shown equivalent)
-- **2026-10-14T01:26:01**: equivalence LF_smallN vs HF_largeN on 'old20': d = -3.46 [-4.35, -2.57], TOST p = 1.0 (not shown equivalent)
-- **2026-10-14T01:26:01**: equivalence LF_smallN vs HF_largeN on 'n_syllables': d = 0.28 [-0.29, 0.84], TOST p = 0.2546 (not shown equivalent)
-- **2026-10-14T01:26:01**: equivalence LF_smallN vs HF_largeN on 'bigram_freq': d = 0.71 [0.13, 1.29], TOST p = 0.7329 (not shown equivalent)
-- **2026-10-14T01:26:01**: equivalence LF_largeN vs HF_smallN on 'length': d = 0.00 [-0.56, 0.56], TOST p = 0.0714 (not shown equivalent)
-- **2026-10-14T01:26:01**: equivalence LF_largeN vs HF_smallN on 'frequency': d = 4.81 [3.70, 5.92], TOST p = 1.0 (not shown equivalent)
-- **2026-10-14T01:26:01**: equivalence LF_largeN vs HF_smallN on 'n_density': d = -3.26 [-4.12, -2.40], TOST p = 1.0 (not shown equivalent)
-- **2026-10-14T01:26:01**: equivalence LF_largeN vs HF_smallN on 'old20': d = 1.93 [1.24, 2.61], TOST p = 0.9999 (not shown equivalent)
-- **2026-10-14T01:26:01**: equivalence LF_largeN vs HF_smallN on 'n_syllables': d = 0.73 [0.15, 1.31], TOST p = 0.7511 (not shown equivalent)
-- **2026-10-14T01:26:01**: equivalence LF_largeN vs HF_smallN on 'bigram_freq': d = -0.42 [-0.99, 0.15], TOST p = 0.4095 (not shown equivalent)
-- **2026-10-14T01:26:01**: equivalence LF_smallN vs HF_smallN on 'length': d = 0.00 [-0.56, 0.56], TOST p = 0.0714 (not shown equivalent)
-- **2026-10-14T01:26:01**: equivalence LF_smallN vs HF_smallN on 'frequency': d = 4.73 [3.63, 5.83], TOST p = 1.0 (not shown equivalent)
-- **2026-10-14T01:26:01**: equivalence LF_smallN vs HF_smallN on 'n_density': d = -0.42 [-0.99, 0.15], TOST p = 0.4091 (not shown equivalent)
-- **2026-10-14T01:26:01**: equivalence LF_smallN vs HF_smallN on 'old20': d = -0.19 [-0.76, 0.37], TOST p = 0.1803 (not shown equivalent)
-- **2026-10-14T01:26:01**: equivalence LF_smallN vs HF_smallN on 'n_syllables': d = 0.61 [0.04, 1.19], TOST p = 0.6335 (not shown equivalent)
-- **2026-10-14T01:26:01**: equivalence LF_smallN vs HF_smallN on 'bigram_freq': d = 0.16 [-0.41, 0.72], TOST p = 0.155 (not shown equivalent)
-- **2026-10-14T01:26:01**: equivalence LF_smallN vs LF_largeN on 'length': d = 0.00 [-0.56, 0.56], TOST p = 0.0714 (not shown equivalent)
-- **2026-10-14T01:26:01**: equivalence LF_smallN vs LF_largeN on 'frequency': d = 0.07 [-0.50, 0.63], TOST p = 0.1013 (not shown equivalent)
-- **2026-10-14T01:26:01**: equivalence LF_smallN vs LF_largeN on 'n_density': d = 3.08 [2.25, 3.92], TOST p = 1.0 (not shown equivalent)
-- **2026-10-14T01:26:01**: equivalence LF_smallN vs LF_largeN on 'old20': d = -2.70 [-3.48, -1.92], TOST p = 1.0 (not shown equivalent)
-- **2026-10-14T01:26:01**: equivalence LF_smallN vs LF_largeN on 'n_syllables': d = 0.00 [-0.56, 0.56], TOST p = 0.0714 (not shown equivalent)
-- **2026-10-14T01:26:01**: equivalence LF_smallN vs LF_largeN on 'bigram_freq': d = 0.57 [-0.01, 1.14], TOST p = 0.5791 (not shown equivalent)
-- **2026-10-14T01:26:01**: wrote 'en_andrews_repro_english_stimuli_py.csv'
+- **2026-10-14T22:45:39**: equivalence HF_smallN vs HF_largeN on 'length': d = 0.18 [-0.38, 0.75], TOST p = 0.1728 (not shown equivalent)
+- **2026-10-14T22:45:39**: equivalence HF_smallN vs HF_largeN on 'frequency': d = -0.45 [-1.02, 0.12], TOST p = 0.4417 (not shown equivalent)
+- **2026-10-14T22:45:39**: equivalence HF_smallN vs HF_largeN on 'n_density': d = 3.20 [2.35, 4.05], TOST p = 1.0 (not shown equivalent)
+- **2026-10-14T22:45:39**: equivalence HF_smallN vs HF_largeN on 'old20': d = -2.50 [-3.25, -1.75], TOST p = 1.0 (not shown equivalent)
+- **2026-10-14T22:45:39**: equivalence HF_smallN vs HF_largeN on 'n_syllables': d = -0.38 [-0.95, 0.19], TOST p = 0.3619 (not shown equivalent)
+- **2026-10-14T22:45:39**: equivalence HF_smallN vs HF_largeN on 'bigram_freq': d = 0.51 [-0.06, 1.08], TOST p = 0.5115 (not shown equivalent)
+- **2026-10-14T22:45:39**: equivalence LF_largeN vs HF_largeN on 'length': d = 0.18 [-0.38, 0.75], TOST p = 0.1728 (not shown equivalent)
+- **2026-10-14T22:45:39**: equivalence LF_largeN vs HF_largeN on 'frequency': d = 4.63 [3.55, 5.71], TOST p = 1.0 (not shown equivalent)
+- **2026-10-14T22:45:39**: equivalence LF_largeN vs HF_largeN on 'n_density': d = 0.46 [-0.12, 1.03], TOST p = 0.4479 (not shown equivalent)
+- **2026-10-14T22:45:39**: equivalence LF_largeN vs HF_largeN on 'old20': d = -0.71 [-1.29, -0.13], TOST p = 0.7341 (not shown equivalent)
+- **2026-10-14T22:45:39**: equivalence LF_largeN vs HF_largeN on 'n_syllables': d = 0.35 [-0.22, 0.92], TOST p = 0.3268 (not shown equivalent)
+- **2026-10-14T22:45:39**: equivalence LF_largeN vs HF_largeN on 'bigram_freq': d = -0.02 [-0.58, 0.54], TOST p = 0.0795 (not shown equivalent)
+- **2026-10-14T22:45:39**: equivalence LF_smallN vs HF_largeN on 'length': d = 0.18 [-0.38, 0.75], TOST p = 0.1728 (not shown equivalent)
+- **2026-10-14T22:45:39**: equivalence LF_smallN vs HF_largeN on 'frequency': d = 4.54 [3.48, 5.61], TOST p = 1.0 (not shown equivalent)
+- **2026-10-14T22:45:39**: equivalence LF_smallN vs HF_largeN on 'n_density': d = 3.05 [2.22, 3.88], TOST p = 1.0 (not shown equivalent)
+- **2026-10-14T22:45:39**: equivalence LF_smallN vs HF_largeN on 'old20': d = -3.46 [-4.35, -2.57], TOST p = 1.0 (not shown equivalent)
+- **2026-10-14T22:45:39**: equivalence LF_smallN vs HF_largeN on 'n_syllables': d = 0.28 [-0.29, 0.84], TOST p = 0.2546 (not shown equivalent)
+- **2026-10-14T22:45:39**: equivalence LF_smallN vs HF_largeN on 'bigram_freq': d = 0.71 [0.13, 1.29], TOST p = 0.7329 (not shown equivalent)
+- **2026-10-14T22:45:39**: equivalence LF_largeN vs HF_smallN on 'length': d = 0.00 [-0.56, 0.56], TOST p = 0.0714 (not shown equivalent)
+- **2026-10-14T22:45:39**: equivalence LF_largeN vs HF_smallN on 'frequency': d = 4.81 [3.70, 5.92], TOST p = 1.0 (not shown equivalent)
+- **2026-10-14T22:45:39**: equivalence LF_largeN vs HF_smallN on 'n_density': d = -3.26 [-4.12, -2.40], TOST p = 1.0 (not shown equivalent)
+- **2026-10-14T22:45:39**: equivalence LF_largeN vs HF_smallN on 'old20': d = 1.93 [1.24, 2.61], TOST p = 0.9999 (not shown equivalent)
+- **2026-10-14T22:45:39**: equivalence LF_largeN vs HF_smallN on 'n_syllables': d = 0.73 [0.15, 1.31], TOST p = 0.7511 (not shown equivalent)
+- **2026-10-14T22:45:39**: equivalence LF_largeN vs HF_smallN on 'bigram_freq': d = -0.42 [-0.99, 0.15], TOST p = 0.4095 (not shown equivalent)
+- **2026-10-14T22:45:39**: equivalence LF_smallN vs HF_smallN on 'length': d = 0.00 [-0.56, 0.56], TOST p = 0.0714 (not shown equivalent)
+- **2026-10-14T22:45:39**: equivalence LF_smallN vs HF_smallN on 'frequency': d = 4.73 [3.63, 5.83], TOST p = 1.0 (not shown equivalent)
+- **2026-10-14T22:45:39**: equivalence LF_smallN vs HF_smallN on 'n_density': d = -0.42 [-0.99, 0.15], TOST p = 0.4091 (not shown equivalent)
+- **2026-10-14T22:45:39**: equivalence LF_smallN vs HF_smallN on 'old20': d = -0.19 [-0.76, 0.37], TOST p = 0.1803 (not shown equivalent)
+- **2026-10-14T22:45:39**: equivalence LF_smallN vs HF_smallN on 'n_syllables': d = 0.61 [0.04, 1.19], TOST p = 0.6335 (not shown equivalent)
+- **2026-10-14T22:45:39**: equivalence LF_smallN vs HF_smallN on 'bigram_freq': d = 0.16 [-0.41, 0.72], TOST p = 0.155 (not shown equivalent)
+- **2026-10-14T22:45:39**: equivalence LF_smallN vs LF_largeN on 'length': d = 0.00 [-0.56, 0.56], TOST p = 0.0714 (not shown equivalent)
+- **2026-10-14T22:45:39**: equivalence LF_smallN vs LF_largeN on 'frequency': d = 0.07 [-0.50, 0.63], TOST p = 0.1013 (not shown equivalent)
+- **2026-10-14T22:45:39**: equivalence LF_smallN vs LF_largeN on 'n_density': d = 3.08 [2.25, 3.92], TOST p = 1.0 (not shown equivalent)
+- **2026-10-14T22:45:39**: equivalence LF_smallN vs LF_largeN on 'old20': d = -2.70 [-3.48, -1.92], TOST p = 1.0 (not shown equivalent)
+- **2026-10-14T22:45:39**: equivalence LF_smallN vs LF_largeN on 'n_syllables': d = 0.00 [-0.56, 0.56], TOST p = 0.0714 (not shown equivalent)
+- **2026-10-14T22:45:39**: equivalence LF_smallN vs LF_largeN on 'bigram_freq': d = 0.57 [-0.01, 1.14], TOST p = 0.5791 (not shown equivalent)
+- **2026-10-14T22:45:39**: block 'main': 72 trial(s) per list
+    - block: main
+    - n_per_list: 72
+- **2026-10-14T22:45:39**: block 'filler': 72 trial(s) per list, interleaved with the main trials by the seeded order
+    - block: filler
+    - n_per_list: 72
+- **2026-10-14T22:45:39**: presented 144 trial(s); 72 analysed
+- **2026-10-14T22:45:40**: wrote 'en_andrews_repro_english_stimuli_py.csv'
     - path: output\stimuli\en_andrews_repro_english_stimuli_py.csv
     - rows: 72
-    - md5: e30ab48f26204a5b8c8e4dee26916f96
-- **2026-10-14T01:26:01**: wrote 'en_andrews_repro_english_descriptives_py.csv'
+    - md5: f113e6561ced6fc7a11bc9c9362fa7af
+- **2026-10-14T22:45:40**: wrote 'en_andrews_repro_english_descriptives_py.csv'
     - path: output\reports\en_andrews_repro_english_descriptives_py.csv
     - rows: 24
     - md5: f1e93d0fdfd978adba33172095d5874c
-- **2026-10-14T01:26:01**: wrote 'en_andrews_repro_english_comparisons_py.csv'
+- **2026-10-14T22:45:40**: wrote 'en_andrews_repro_english_comparisons_py.csv'
     - path: output\reports\en_andrews_repro_english_comparisons_py.csv
     - rows: 36
     - md5: 028c95f25843ddedf975c859bf490602
-- **2026-10-14T01:26:01**: wrote 'en_andrews_repro_english_psychopy.py'
+- **2026-10-14T22:45:40**: wrote 'en_andrews_repro_english_psychopy.py'
     - path: output\experiments\en_andrews_repro_english_psychopy.py
     - rows: None
-    - md5: a9513c4e2e890f274b826dd0e5b263d6
-- **2026-10-14T01:26:01**: wrote 'en_andrews_repro_english.osexp'
+    - md5: 2aa915c70e74b3187870185c38b7b5ce
+- **2026-10-14T22:45:40**: wrote 'en_andrews_repro_english.osexp'
     - path: output\experiments\en_andrews_repro_english.osexp
     - rows: None
-    - md5: 2cb3b1a87f54f27b13c4f2c391836a64
-- **2026-10-14T01:26:01**: wrote 'en_andrews_repro_english.html'
+    - md5: 36046311498d3b5c31fe4a00f4c5d91a
+- **2026-10-14T22:45:40**: wrote 'en_andrews_repro_english.html'
     - path: output\experiments\en_andrews_repro_english.html
     - rows: None
-    - md5: 3f60e06942f07b5a9c9a3cc677d21903
-- **2026-10-14T01:26:01**: wrote 'en_andrews_repro_english_psychopy.csv'
+    - md5: 217173b911cce23e4b7a9e5c8c627fd1
+- **2026-10-14T22:45:40**: wrote 'en_andrews_repro_english_psychopy.csv'
     - path: output\experiments\en_andrews_repro_english_psychopy.csv
     - rows: None
-    - md5: d45fdb80d0c39577344554d09b3f7f2e
-- **2026-10-14T01:26:01**: wrote 'en_andrews_repro_english_opensesame.csv'
+    - md5: 8e028efd70ca7e0d15948394e21d7009
+- **2026-10-14T22:45:40**: wrote 'en_andrews_repro_english_opensesame.csv'
     - path: output\experiments\en_andrews_repro_english_opensesame.csv
     - rows: None
-    - md5: 8ed2d40076b9d193c0ae26c859cee534
-- **2026-10-14T01:26:02**: wrote 'en_andrews_repro_english_opensesame_text.csv'
+    - md5: b4eb2f8af1738b0deb96627e1ba02210
+- **2026-10-14T22:45:41**: wrote 'en_andrews_repro_english_opensesame_text.csv'
     - path: output\experiments\en_andrews_repro_english_opensesame_text.csv
     - rows: None
-    - md5: f597095380e3c7f3689c99e84b4556fa
-- **2026-10-14T01:26:02**: wrote 'en_andrews_repro_english_datasheet_py.json'
+    - md5: 50764632accec49ef74bde59101bf4bf
+- **2026-10-14T22:45:43**: wrote 'en_andrews_repro_english_datasheet_py.json'
     - path: output\reports\en_andrews_repro_english_datasheet_py.json
     - rows: None
-    - md5: 932bdd8f176ad73c8217c6726e0638eb
-- **2026-10-14T01:26:02**: wrote 'en_andrews_repro_english_datasheet_py.md'
+    - md5: 99bfd0cb47b2379bbd6d938dda88ce20
+- **2026-10-14T22:45:43**: wrote 'en_andrews_repro_english_datasheet_py.md'
     - path: output\reports\en_andrews_repro_english_datasheet_py.md
     - rows: None
-    - md5: 6a1c6190d16340bbb8401bb58b904fdb
+    - md5: 671c73d4f6606b292f4d452d7460842f

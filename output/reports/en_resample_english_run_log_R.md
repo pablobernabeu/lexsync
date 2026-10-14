@@ -1,8 +1,8 @@
 # lexsync run log: en_resample
 
 - Engine: R 4.6.1
-- Started: 2026-10-14 01:25:17.759806
-- Finished: 2026-10-14 01:25:21.441391
+- Started: 2026-10-14 22:42:19.682781
+- Finished: 2026-10-14 22:43:04.736555
 
 ## Run metadata
 
@@ -16,89 +16,89 @@
 
 ## Steps
 
-- **2026-10-14 01:25:17.764418**: lexsync: the design gives no `instructions`, and lexsync cannot tell what the response keys of a factorial design mean, so the experiments only name the keys; give `instructions` that say what each key means.
-- **2026-10-14 01:25:17.769497**: loading lexicon 'corpora/derived/en_v2.csv'
-- **2026-10-14 01:25:18.983551**: lexicon loaded: 30000 words
+- **2026-10-14 22:42:19.704746**: lexsync: the design gives no `instructions`, and lexsync cannot tell what the response keys of a factorial design mean, so the experiments only name the keys; give `instructions` that say what each key means.
+- **2026-10-14 22:42:19.759066**: loading lexicon 'corpora/derived/en_v2.csv'
+- **2026-10-14 22:42:23.088261**: lexicon loaded: 30000 words
     - words: 30000
-- **2026-10-14 01:25:18.996511**: exclude_words: removed 53 of the 53 listed word(s) from the candidates (config/exclude_en_demo.txt)
+- **2026-10-14 22:42:23.186973**: exclude_words: removed 53 of the 53 listed word(s) from the candidates (config/exclude_en_demo.txt)
     - exclude_words: config/exclude_en_demo.txt
     - sha256: cac9f88fb86fa6d0e6dbabc287c9ebb782100d071eeded13eb812584b9d41e9f
     - n_removed: 53
-- **2026-10-14 01:25:19.044503**: pool after filters: 8597 words
+- **2026-10-14 22:42:23.345328**: pool after filters: 8597 words
     - pool: 8597
-- **2026-10-14 01:25:19.820104**: resampled 3 disjoint matched sets (240 items total)
+- **2026-10-14 22:42:25.885167**: resampled 3 disjoint matched sets (240 items total)
     - conditions: high_frequency, low_frequency
-- **2026-10-14 01:25:20.075795**: equivalence low_frequency vs high_frequency on 'length': d = 0.06 [-0.15, 0.27], TOST p = 0.000 (equivalent)
-- **2026-10-14 01:25:20.081443**: equivalence low_frequency vs high_frequency on 'frequency': d = 5.44 [4.98, 5.90], TOST p = 1.000 (not shown equivalent)
-- **2026-10-14 01:25:20.124221**: equivalence low_frequency vs high_frequency on 'n_density': d = 0.03 [-0.18, 0.25], TOST p = 0.000 (equivalent)
-- **2026-10-14 01:25:20.130242**: equivalence low_frequency vs high_frequency on 'old20': d = 0.04 [-0.17, 0.26], TOST p = 0.000 (equivalent)
-- **2026-10-14 01:25:20.135342**: equivalence low_frequency vs high_frequency on 'n_syllables': d = 0.08 [-0.14, 0.29], TOST p = 0.001 (equivalent)
-- **2026-10-14 01:25:20.140974**: equivalence low_frequency vs high_frequency on 'bigram_freq': d = 0.10 [-0.11, 0.32], TOST p = 0.001 (equivalent)
-- **2026-10-14 01:25:20.216757**: wrote 'en_resample_english_stimuli_R.csv'
+- **2026-10-14 22:42:26.507362**: equivalence low_frequency vs high_frequency on 'length': d = 0.06 [-0.15, 0.27], TOST p = 0.000 (equivalent)
+- **2026-10-14 22:42:26.705814**: equivalence low_frequency vs high_frequency on 'frequency': d = 5.44 [4.98, 5.90], TOST p = 1.000 (not shown equivalent)
+- **2026-10-14 22:42:26.773406**: equivalence low_frequency vs high_frequency on 'n_density': d = 0.03 [-0.18, 0.25], TOST p = 0.000 (equivalent)
+- **2026-10-14 22:42:26.858428**: equivalence low_frequency vs high_frequency on 'old20': d = 0.04 [-0.17, 0.26], TOST p = 0.000 (equivalent)
+- **2026-10-14 22:42:26.893838**: equivalence low_frequency vs high_frequency on 'n_syllables': d = 0.08 [-0.14, 0.29], TOST p = 0.001 (equivalent)
+- **2026-10-14 22:42:26.900868**: equivalence low_frequency vs high_frequency on 'bigram_freq': d = 0.10 [-0.11, 0.32], TOST p = 0.001 (equivalent)
+- **2026-10-14 22:42:30.78211**: wrote 'en_resample_english_stimuli_R.csv'
     - path: output/stimuli/en_resample_english_stimuli_R.csv
     - rows: 240
     - md5: 5d0f694b6d637eb1fb5ee4ee1dcc2584
-- **2026-10-14 01:25:20.23349**: wrote 'en_resample_english_descriptives_R.csv'
+- **2026-10-14 22:42:31.307556**: wrote 'en_resample_english_descriptives_R.csv'
     - path: output/reports/en_resample_english_descriptives_R.csv
     - rows: 12
     - md5: 8601705efb80583ee86404ec89930b8e
-- **2026-10-14 01:25:20.247967**: wrote 'en_resample_english_comparisons_R.csv'
+- **2026-10-14 22:42:31.628847**: wrote 'en_resample_english_comparisons_R.csv'
     - path: output/reports/en_resample_english_comparisons_R.csv
     - rows: 6
     - md5: 14e581ef6ea391b74345441ab4b4cdb0
-- **2026-10-14 01:25:20.814792**: wrote 'en_resample_english_psychopy.py'
+- **2026-10-14 22:42:57.490044**: wrote 'en_resample_english_psychopy.py'
     - path: output/experiments/en_resample_english_psychopy.py
     - rows: NA
-    - md5: 6f924363b37921db38c10d5cfa09dc68
-- **2026-10-14 01:25:20.82602**: wrote 'en_resample_english_rep1_list1.osexp'
+    - md5: 7f3acb5381d330a076cb0afb75385af3
+- **2026-10-14 22:42:57.808418**: wrote 'en_resample_english_rep1_list1.osexp'
     - path: output/experiments/en_resample_english_rep1_list1.osexp
     - rows: NA
     - md5: dfbaaa8e29e62febf0ecff007ba5dccf
-- **2026-10-14 01:25:20.835528**: wrote 'en_resample_english_rep2_list1.osexp'
+- **2026-10-14 22:42:58.108119**: wrote 'en_resample_english_rep2_list1.osexp'
     - path: output/experiments/en_resample_english_rep2_list1.osexp
     - rows: NA
     - md5: 5a668d354c6dc987e9e55eff76915bc0
-- **2026-10-14 01:25:20.846099**: wrote 'en_resample_english_rep3_list1.osexp'
+- **2026-10-14 22:42:58.382876**: wrote 'en_resample_english_rep3_list1.osexp'
     - path: output/experiments/en_resample_english_rep3_list1.osexp
     - rows: NA
     - md5: 0806f33bbd474f65a1f21fa43d2dd0ed
-- **2026-10-14 01:25:20.856487**: wrote 'en_resample_english.html'
+- **2026-10-14 22:42:58.938635**: wrote 'en_resample_english.html'
     - path: output/experiments/en_resample_english.html
     - rows: NA
-    - md5: 6d8325270ca46280f5f7f3227229ead0
-- **2026-10-14 01:25:20.87339**: wrote 'en_resample_english_psychopy.csv'
+    - md5: 70765b65783b7f6f7759e539b676457d
+- **2026-10-14 22:42:59.144985**: wrote 'en_resample_english_psychopy.csv'
     - path: output/experiments/en_resample_english_psychopy.csv
     - rows: NA
     - md5: 34986297f381c0f061e5879ed334404d
-- **2026-10-14 01:25:20.882344**: wrote 'en_resample_english_rep1_list1_opensesame.csv'
+- **2026-10-14 22:42:59.697883**: wrote 'en_resample_english_rep1_list1_opensesame.csv'
     - path: output/experiments/en_resample_english_rep1_list1_opensesame.csv
     - rows: NA
     - md5: faf6c046eb12e7ff7667246f48f04c90
-- **2026-10-14 01:25:20.890267**: wrote 'en_resample_english_rep1_list1_opensesame_text.csv'
+- **2026-10-14 22:43:00.441025**: wrote 'en_resample_english_rep1_list1_opensesame_text.csv'
     - path: output/experiments/en_resample_english_rep1_list1_opensesame_text.csv
     - rows: NA
     - md5: 9e3e21d6ff566e65c292da3b9a5317d9
-- **2026-10-14 01:25:20.901455**: wrote 'en_resample_english_rep2_list1_opensesame.csv'
+- **2026-10-14 22:43:01.226284**: wrote 'en_resample_english_rep2_list1_opensesame.csv'
     - path: output/experiments/en_resample_english_rep2_list1_opensesame.csv
     - rows: NA
     - md5: 53e1c07d9d8fabfe74108fb02f263493
-- **2026-10-14 01:25:20.910434**: wrote 'en_resample_english_rep2_list1_opensesame_text.csv'
+- **2026-10-14 22:43:01.577597**: wrote 'en_resample_english_rep2_list1_opensesame_text.csv'
     - path: output/experiments/en_resample_english_rep2_list1_opensesame_text.csv
     - rows: NA
     - md5: a170c848d8ab728547a7371eb838a86e
-- **2026-10-14 01:25:20.918611**: wrote 'en_resample_english_rep3_list1_opensesame.csv'
+- **2026-10-14 22:43:02.1358**: wrote 'en_resample_english_rep3_list1_opensesame.csv'
     - path: output/experiments/en_resample_english_rep3_list1_opensesame.csv
     - rows: NA
     - md5: fff54ac32667248a70d2bbde92cbc1be
-- **2026-10-14 01:25:20.927063**: wrote 'en_resample_english_rep3_list1_opensesame_text.csv'
+- **2026-10-14 22:43:02.658962**: wrote 'en_resample_english_rep3_list1_opensesame_text.csv'
     - path: output/experiments/en_resample_english_rep3_list1_opensesame_text.csv
     - rows: NA
     - md5: 1ed11abd8ba0d2baa6120708a223d190
-- **2026-10-14 01:25:21.417765**: wrote 'en_resample_english_datasheet_R.json'
+- **2026-10-14 22:43:04.506767**: wrote 'en_resample_english_datasheet_R.json'
     - path: output/reports/en_resample_english_datasheet_R.json
     - rows: NA
-    - md5: 91c3f1928af8714e92f28f797f0a9e32
-- **2026-10-14 01:25:21.430659**: wrote 'en_resample_english_datasheet_R.md'
+    - md5: 32f07deda70c89314dcccea920b65f22
+- **2026-10-14 22:43:04.631672**: wrote 'en_resample_english_datasheet_R.md'
     - path: output/reports/en_resample_english_datasheet_R.md
     - rows: NA
     - md5: 2311f9ea5f6b6d129e22646abbfb6499

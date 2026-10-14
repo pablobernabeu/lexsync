@@ -34,7 +34,10 @@ DEMO_DIR = ROOT / "site" / "demos"
 PARADIGM_LABELS = {
     "lexical_decision": "Lexical decision",
     "factorial_word": "Factorial word contrast",
-    "priming": "Priming",
+    # The `priming` paradigm has no forward mask, so its trials are backward-masked
+    # priming, and only `masked_priming` follows Forster and Davis (1984).
+    "priming": "Backward-masked priming",
+    "masked_priming": "Masked priming",
     "self_paced_reading": "Self-paced reading",
     "continuous": "Continuous predictor",
 }

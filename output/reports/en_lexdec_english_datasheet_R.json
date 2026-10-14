@@ -190,7 +190,7 @@
     },
     "design_sha256": "d60354a52b459d477cf3422535ad3288835f369111eb157e143c203c615ad912",
     "schema_path": "config/schema.yaml",
-    "schema_sha256": "363d42ebb6d2076d91b9e1ecedc10cdd1133b6e662cea5123146c9bb4e69fb73"
+    "schema_sha256": "105322550d8c6dc00e06f71b44b61a7c45959c1a4caaceac414192dbd5f9520b"
   },
   "artifacts": [
     {
@@ -207,7 +207,7 @@
     },
     {
       "file": "output/experiments/en_lexdec_english_psychopy.py",
-      "sha256": "fcc722c0e2f0f114a8dcc3739b52c1ba838778479c6a36ae3959edc734d82c8e"
+      "sha256": "3e7126eaf755db4269ce13ae8ad998949c5b027e49cf986f4602937d15fb5799"
     },
     {
       "file": "output/experiments/en_lexdec_english.osexp",
@@ -215,7 +215,7 @@
     },
     {
       "file": "output/experiments/en_lexdec_english.html",
-      "sha256": "8607ff2eb2fdf6da84623abe100416614f4388cf8cc6fc0d7d5421970acfa5a9"
+      "sha256": "eb9153635cf9f0154123f93d575b966e9e65c74803265ae3183734f090405acd"
     },
     {
       "file": "output/experiments/en_lexdec_english_psychopy.csv",

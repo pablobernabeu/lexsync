@@ -273,7 +273,7 @@ inter-stimulus durations in milliseconds (`fixation_ms`, `word_ms`, `isi_ms`), t
 the presentation font, which matters for a non-Latin script: `config/design_zh_freqcontrast.yaml`
 sets `SimHei`, because the Latin default has no glyphs for Han characters.
 
-`paradigm` names one of the five registered paradigms and inherits its trial-event sequence and its
+`paradigm` names one of the six registered paradigms and inherits its trial-event sequence and its
 counterbalancing recipe. Omitting it gives `factorial`. A design may instead supply an explicit
 `events` list and describe its own trial. Both routes are covered in
 [Experiments and triggers](experiments-and-triggers.md).

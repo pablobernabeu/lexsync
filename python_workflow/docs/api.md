@@ -89,7 +89,7 @@ in the R and Python engines.
 ## Paradigms and trial events
 
 A trial is a list of event dictionaries rather than backend code, which is what lets one engine serve
-five paradigms and three presentation targets. A design either names a paradigm and inherits its
+six paradigms and three presentation targets. A design either names a paradigm and inherits its
 event sequence, or supplies its own `events`.
 
 ::: lexsync.PARADIGMS

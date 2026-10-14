@@ -315,6 +315,31 @@ def test_fillers_run_with_the_main_trials_and_only_the_practice_ends_in_a_pause(
 
 
 @pytest.mark.skipif(NODE is None, reason="node is not installed")
+def test_the_page_shows_each_text_in_the_case_its_event_asks_for(schema, tmp_path):
+    # A text event's `case` is applied by the page as it builds the screen, with
+    # JavaScript's own case mapping, which gives 'SS' for 'ß' as Python does. The forward
+    # mask is as many hash marks as the longest string has characters, and the target
+    # stays on for its whole 2,000 ms window unless a key ends it.
+    stim = assign_triggers(pd.DataFrame({
+        "prime": ["Naïveté"], "target": ["straße"], "condition": ["related"], "set": [1],
+        "trial": [1], "list": 1}))
+    design = {"name": "t", "language": "english", "paradigm": "masked_priming"}
+    run = _run_page(export_jspsych(stim, design, schema, str(tmp_path)), "", tmp_path)
+    shown = [(d.get("lexsync_event"), s, t) for d, s, t
+             in zip(run["data"], run["stimuli"], run["trials"], strict=True)
+             if d.get("lexsync_event") in ("mask", "text", "target", "blank")]
+    assert [(event, text) for event, text, _ in shown] == [
+        ("mask", '<span class="lexsync-stim">#######</span>'),
+        ("text", '<span class="lexsync-stim">naïveté</span>'),
+        ("target", '<span class="lexsync-stim">STRASSE</span>'), ("blank", "")]
+    assert [t["trial_duration"] for _, _, t in shown] == [500, 50, 2000, 250]
+    assert shown[2][2]["stimulus_duration"] == 2000
+    # The data rows keep each item as the materials spell it.
+    target = next(d for d in run["data"] if d.get("lexsync_event") == "target")
+    assert (target["prime"], target["target"]) == ("Naïveté", "straße")
+
+
+@pytest.mark.skipif(NODE is None, reason="node is not installed")
 def test_feedback_scores_an_arrow_key_against_its_answer(schema, tmp_path):
     # jsPsych records a press of the left arrow as arrowleft, and the page named the
     # answer left, as the loop table does, so the feedback screen called a correct

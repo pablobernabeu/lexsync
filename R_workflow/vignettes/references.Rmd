@@ -85,6 +85,10 @@ Forster, K. I. (2000). The potential for experimenter bias effects in word
 recognition experiments. *Memory & Cognition*, *28*(7), 1109–1115.
 https://doi.org/10.3758/BF03211812
 
+Forster, K. I., & Davis, C. (1984). Repetition priming and frequency attenuation in
+lexical access. *Journal of Experimental Psychology: Learning, Memory, and
+Cognition*, *10*(4), 680–698. https://doi.org/10.1037/0278-7393.10.4.680
+
 González Alonso, J., Bernabeu, P., Silva, G., DeLuca, V., Poch, C., Ivanova, I., &
 Rothman, J. (2025). Starting from the very beginning: Unraveling third language
 (L3) development with longitudinal data from artificial language learning and
@@ -136,6 +140,10 @@ Peirce, J., Gray, J. R., Simpson, S., MacAskill, M., Höchenberger, R., Sogo, H.
 Kastman, E., & Lindeløv, J. K. (2019). PsychoPy2: Experiments in behavior made
 easy. *Behavior Research Methods*, *51*(1), 195–203.
 https://doi.org/10.3758/s13428-018-01193-y
+
+Rastle, K., Davis, M. H., & New, B. (2004). The broth in my brother's brothel:
+Morpho-orthographic segmentation in visual word recognition. *Psychonomic Bulletin
+& Review*, *11*(6), 1090–1098. https://doi.org/10.3758/BF03196742
 
 Roettger, T. B. (2019). Researcher degrees of freedom in phonetic research.
 *Laboratory Phonology*, *10*(1), Article 1.

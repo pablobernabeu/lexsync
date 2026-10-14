@@ -5,7 +5,7 @@
     "language": "english",
     "paradigm": "factorial",
     "source": "corpus",
-    "description": "Reproducing the item selection of Andrews (1989): frequency x orthographic neighbourhood size (Coltheart's N), a 2x2 of words with every cell matched on length; no nonwords or response mapping, so not a lexical-decision task.",
+    "description": "Reproducing Andrews (1989): frequency x orthographic neighbourhood size (Coltheart's N), a 2x2 of words with every cell matched on length, in a lexical decision with one interleaved pseudoword per word.",
     "n_per_condition": 18
   },
   "materials_source": {
@@ -595,7 +595,23 @@
       }
     ],
     "versions": 1,
-    "assignment": "version = ((participant - 1) mod 1) + 1 unless a version is given at launch"
+    "assignment": "version = ((participant - 1) mod 1) + 1 unless a version is given at launch",
+    "blocks": {
+      "blocks": [
+        {
+          "block": "main",
+          "n_per_list": 72
+        },
+        {
+          "block": "filler",
+          "n_per_list": 72,
+          "path": "items/andrews_pseudoword_fillers_en.csv",
+          "sha256": "4a7215527038c4425083fa1c567b45e5542d5ef03b9b64dfd517874a6c9e8302",
+          "placement": "interleaved with the main trials by the seeded order"
+        }
+      ],
+      "analysed": "main"
+    }
   },
   "presentation": {
     "response_windows": [
@@ -604,7 +620,21 @@
         "from": "onset",
         "window_ms": 2500
       }
-    ]
+    ],
+    "response_mapping": {
+      "conditions": {
+        "HF_largeN": "left",
+        "HF_smallN": "left",
+        "LF_largeN": "left",
+        "LF_smallN": "left"
+      },
+      "keys": [
+        "left",
+        "right"
+      ],
+      "rotate_by_list": false,
+      "source": "design"
+    }
   },
   "resampling": null,
   "items": {
@@ -635,7 +665,7 @@
       }
     ],
     "stimuli_file": "output/stimuli/en_andrews_repro_english_stimuli_R.csv",
-    "stimuli_sha256": "581a6613edbf3a5817df4de9a86cc7c8e4b2fb30af0009695c7c110134e652a9"
+    "stimuli_sha256": "f3c59aa594ae607250e201b41cb13421a0e1363bd9c62068e96b08bced4c9e7e"
   },
   "reproducibility": {
     "seed": 2026,
@@ -651,14 +681,14 @@
       "stringi": "1.8.7",
       "os": "Windows x86-64"
     },
-    "design_sha256": "55511ae043dcee3d17a63d80bccd165609766e165585e21ec9b97d3a325225c6",
+    "design_sha256": "2bf820c7ea24d1871745b37c4dd0f0d3633ae232e7c2bf41b35e2fdb1a244afa",
     "schema_path": "config/schema.yaml",
-    "schema_sha256": "363d42ebb6d2076d91b9e1ecedc10cdd1133b6e662cea5123146c9bb4e69fb73"
+    "schema_sha256": "105322550d8c6dc00e06f71b44b61a7c45959c1a4caaceac414192dbd5f9520b"
   },
   "artifacts": [
     {
       "file": "output/stimuli/en_andrews_repro_english_stimuli_R.csv",
-      "sha256": "581a6613edbf3a5817df4de9a86cc7c8e4b2fb30af0009695c7c110134e652a9"
+      "sha256": "f3c59aa594ae607250e201b41cb13421a0e1363bd9c62068e96b08bced4c9e7e"
     },
     {
       "file": "output/reports/en_andrews_repro_english_descriptives_R.csv",
@@ -670,27 +700,27 @@
     },
     {
       "file": "output/experiments/en_andrews_repro_english_psychopy.py",
-      "sha256": "c03488b9e800d53579548d3ceb2a5e8a5cf110d10d243e058a7b4078c1831ba8"
+      "sha256": "03fc7a4c7b6bcb3fb1090ad4f69e56bf8fddde36a447501dd2445eb3b2ce016f"
     },
     {
       "file": "output/experiments/en_andrews_repro_english.osexp",
-      "sha256": "aed8c7b06c6368b71c66eee70bbaddb8f39177c3cdbe178c94bdc37ba52a803c"
+      "sha256": "364c6da5d61641c81da7d3023762421f2e0bff8e35eee0622bdcefefcdb68189"
     },
     {
       "file": "output/experiments/en_andrews_repro_english.html",
-      "sha256": "d4a58c4f550778c7e78b84624060da3c20cb2db5ea09359b169446b3c6d11276"
+      "sha256": "bd68d76ce67b3b7eb7e7adb232ef704106d33e64bacd4a79619165ff10ef2a21"
     },
     {
       "file": "output/experiments/en_andrews_repro_english_psychopy.csv",
-      "sha256": "2f1b163ba4aea0a38d96146c96315705fa0fb57ad7cdf4ad164e6268858a48da"
+      "sha256": "740364680ea333f321208eb784c38d08dbc5268c7dbf49764762748ab1336779"
     },
     {
       "file": "output/experiments/en_andrews_repro_english_opensesame.csv",
-      "sha256": "b93e4992012b57bbe223b2e6ab014cdece619b1767e2099a7efb6e104a35aaf8"
+      "sha256": "b6f179698c53b3e6ede550010d492f8226848a8f68b8b037cbf376f5a1680b04"
     },
     {
       "file": "output/experiments/en_andrews_repro_english_opensesame_text.csv",
-      "sha256": "c6aefde9e5f859158c4d45f02ce1651ff6f8f965735710a07b75f1953665bdea"
+      "sha256": "69a211a2f18e311f980ad199f84fa6a49dcd5d4d71ff44546607544e0769d4fd"
     }
   ]
 }

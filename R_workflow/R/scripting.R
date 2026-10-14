@@ -255,6 +255,77 @@ trigger_spec <- function(value, index = NULL, key = "trigger") {
   as.integer(code)
 }
 
+# A text event's `case`, "upper" or "lower", checked. The case travels with the rendered
+# event and the runners apply it as they show the text: str.upper() and str.lower() in
+# PsychoPy and OpenSesame, toUpperCase() and toLowerCase() in jsPsych. The generators
+# never change the text, because toupper() leaves the German sharp s as it is where
+# Python gives "SS", and the two engines must write the same files. Must match _case_of
+# in scripting.py.
+.case_of <- function(ev, index) {
+  value <- ev[["case"]]
+  if (!is.character(value) || length(value) != 1L || is.na(value) ||
+      !(value %in% c("upper", "lower"))) {
+    stop(sprintf(paste("lexsync: event %d has case '%s'; a text event takes case: upper or",
+                       "case: lower."), as.integer(index), .shown(value)), call. = FALSE)
+  }
+  value
+}
+
+# A mask's `length_of`, the fields whose longest text sets its length, checked. A scalar
+# names one field, and each must be a name a {field} reference could give. The mask's
+# content must be one character, which .sized_masks() repeats once the trials are known.
+# Must match _length_of in scripting.py.
+.length_of <- function(ev, index) {
+  value <- ev[["length_of"]]
+  fields <- if (is.list(value)) value else as.list(value)
+  ok <- is.null(names(value)) && length(fields) > 0L &&
+    all(vapply(fields, function(f) {
+      is.character(f) && length(f) == 1L && !is.na(f) &&
+        grepl("^[A-Za-z_][A-Za-z0-9_]*\\z", f, perl = TRUE)
+    }, logical(1)))
+  if (!ok) {
+    stop(sprintf(paste("lexsync: event %d has length_of '%s'; name the fields whose longest",
+                       "text sets the mask's length, as in [prime, target]."),
+                 as.integer(index), .shown(value)), call. = FALSE)
+  }
+  content <- ev[["content"]]
+  if (!is.character(content) || length(content) != 1L || is.na(content) ||
+      nchar(content, type = "chars") != 1L) {
+    stop(sprintf(paste("lexsync: event %d repeats its content to the length of the longest",
+                       "text of the trials, so its content must be one character, such as",
+                       "'#'."), as.integer(index)), call. = FALSE)
+  }
+  as.list(unlist(fields, use.names = FALSE))
+}
+
+# The rendered events with each `length_of` mask written out for these trials. Such a
+# mask's character is repeated as many times as the longest text of its fields has
+# characters (code points, so a word of seven letters with two accents counts 7 where
+# UTF-8 gives 9 bytes), among all the trials of every version, so each target and each
+# version shows the same mask. A missing cell is passed over. The mask then travels as
+# literal text, as any other mask does. Must match _sized_masks in scripting.py.
+.sized_masks <- function(rendered, stimuli) {
+  lapply(rendered, function(ev) {
+    fields <- ev[["length_of"]]
+    if (is.null(fields)) return(ev)
+    longest <- 1L
+    for (field in unlist(fields, use.names = FALSE)) {
+      if (!(field %in% names(stimuli))) {
+        stop(sprintf(paste("lexsync: a mask takes its length from field '%s', which the",
+                           "trials do not have."), field), call. = FALSE)
+      }
+      values <- stimuli[[field]]
+      values <- values[!is.na(values)]
+      if (length(values)) {
+        longest <- max(longest, nchar(enc2utf8(as.character(values)), type = "chars"))
+      }
+    }
+    ev[["length_of"]] <- NULL
+    ev[["text"]] <- strrep(ev[["text"]], longest)
+    ev
+  })
+}
+
 # Frames to milliseconds at a given refresh rate. Multiplication comes first so
 # both engines evaluate the same two IEEE-754 operations on the same doubles:
 # `frames * 1000 / hz`, never `frames * (1000 / hz)`, which is a different
@@ -608,6 +679,10 @@ resolve_trial_timing <- function(stimuli, design, schema) {
 #' runs from its onset for `ms` plus the timeout, so the total window is the one the
 #' two events had. A response collected from the offset stays an event of its own.
 #' Keys are rendered as lists, which jsonlite writes as arrays even for one key.
+#'
+#' A text event's `case` is carried as it is, for the runners to apply. A mask's
+#' `length_of` is carried too, with the one character to repeat as its `text`, and the
+#' exporters write the mask out for their trials (see `.sized_masks()`).
 #' @keywords internal
 render_events <- function(events, timing, hz = 60) {
   rendered <- .render_each(events, timing, hz)
@@ -744,9 +819,18 @@ render_events <- function(events, timing, hz = 60) {
     ev <- events[[i]]
     t <- ev[["type"]]
     r <- list(type = if (identical(t, "region_by_region")) "region" else t)
+    if (!is.null(ev[["case"]]) && !identical(t, "text")) {
+      stop(sprintf("lexsync: event %d is a %s event, and only a text event takes `case`.",
+                   i, .shown(t)), call. = FALSE)
+    }
+    if (!is.null(ev[["length_of"]]) && !identical(t, "mask")) {
+      stop(sprintf("lexsync: event %d is a %s event, and only a mask event takes `length_of`.",
+                   i, .shown(t)), call. = FALSE)
+    }
     if (t %in% c("fixation", "text", "mask")) {
       f <- content_field(ev[["content"]])
       if (!is.null(f)) r$field <- f else r$text <- as.character(ev[["content"]] %||% "")
+      if (!is.null(ev[["length_of"]])) r$length_of <- .length_of(ev, i)
       # The overrides are type-keyed, as before: `fixation_*` reaches every
       # fixation and `word_*` only a text event whose trigger is "condition",
       # which is why a priming prime (trigger 20) keeps its own duration.
@@ -764,6 +848,7 @@ render_events <- function(events, timing, hz = 60) {
       }
       spec <- trigger_spec(ev[["trigger"]], i)
       if (!is.null(spec)) r$trigger <- spec
+      if (!is.null(ev[["case"]])) r$case <- .case_of(ev, i)
     } else if (t == "blank") {
       spec <- .duration_spec(ev, i)
       if (!is.null(spec)) {
@@ -1044,7 +1129,8 @@ export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
 .psychopy_files <- function(stimuli, design, schema, outdir, base = NULL) {
   base <- base %||% design_stem(design)
   events <- resolve_events(design)
-  rendered <- render_events(events, design[["timing"]] %||% list(), .refresh_hz(schema))
+  rendered <- .sized_masks(
+    render_events(events, design[["timing"]] %||% list(), .refresh_hz(schema)), stimuli)
   versions <- .presentation_versions(stimuli)
   csv_name <- paste0(base, "_psychopy.csv")
   write_csv_utf8(loop_table(stimuli, events), file.path(outdir, csv_name))
@@ -1108,8 +1194,15 @@ export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
 # A trial's value of a numeric loop column, read without evaluation.
 .number_expr <- function(column) sprintf("int(var.get(%s, _eval=False))", .pyq(column))
 
+# The text an event shows, as the inline script computes it. A text event's `case` is
+# applied there, with Python's str.upper() or str.lower(), as the text is shown. Must
+# match _content_expr in scripting.py.
 .content_expr <- function(ev) {
-  if (!is.null(ev[["field"]])) .text_expr(ev[["field"]]) else .pyq(ev[["text"]] %||% "")
+  expr <- if (!is.null(ev[["field"]])) .text_expr(ev[["field"]]) else .pyq(ev[["text"]] %||% "")
+  case <- ev[["case"]]
+  if (identical(case, "upper")) return(paste0(expr, ".upper()"))
+  if (identical(case, "lower")) return(paste0(expr, ".lower()"))
+  expr
 }
 
 .trigger_expr <- function(spec) {
@@ -1811,7 +1904,9 @@ export_opensesame <- function(stimuli, design, schema, outdir, base = NULL) {
 .opensesame_files <- function(stimuli, design, schema, outdir, base = NULL) {
   base <- base %||% design_stem(design)
   events <- resolve_events(design)
-  rendered <- render_events(events, design[["timing"]] %||% list(), .refresh_hz(schema))
+  # Sized from every version's trials, so each version's experiment shows one mask.
+  rendered <- .sized_masks(
+    render_events(events, design[["timing"]] %||% list(), .refresh_hz(schema)), stimuli)
   presentation <- schema[["presentation"]] %||% list()
   font <- design[["font"]] %||% presentation[["opensesame_font"]] %||% "mono"
   versions <- .presentation_versions(stimuli)
@@ -1963,8 +2058,8 @@ export_opensesame <- function(stimuli, design, schema, outdir, base = NULL) {
 export_jspsych <- function(stimuli, design, schema, outdir, base = NULL) {
   base <- base %||% design_stem(design)
   events <- resolve_events(design)
-  rendered <- .map_keys_jspsych(
-    render_events(events, design[["timing"]] %||% list(), .refresh_hz(schema)))
+  rendered <- .map_keys_jspsych(.sized_masks(
+    render_events(events, design[["timing"]] %||% list(), .refresh_hz(schema)), stimuli))
   versions <- .presentation_versions(stimuli)
   trials <- .map_answers_jspsych(loop_table(stimuli, events))
   presentation <- schema[["presentation"]] %||% list()

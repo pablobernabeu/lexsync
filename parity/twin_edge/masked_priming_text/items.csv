@@ -1,0 +1,5 @@
+item,condition,prime,target
+1,related,größere,groß
+1,unrelated,Tischler,groß
+2,related,Füßchen,fuß
+2,unrelated,Lampe,fuß

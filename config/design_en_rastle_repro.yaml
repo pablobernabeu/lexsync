@@ -10,23 +10,51 @@
 # Their result (equal priming for transparent and opaque, none for form) argued
 # for an early morpho-orthographic decomposition stage blind to meaning.
 #
-# lexsync reproduces the item-selection structure of the design, not the masked-
-# priming task. Each target appears with a related prime (of its assigned
-# prime_type) and an unrelated, length-matched control, and Latin-square
-# counterbalancing ensures a target is seen once per list. prime_type
-# (transparent | opaque | form) is the between-items factor carried for analysis.
-# The trials come from lexsync's priming paradigm, which is backward pattern-masked
-# with no forward mask, and the design has no nonword targets, so it is not a
-# lexical-decision task. This is a representative item set following the
-# prime-type STRUCTURE of Rastle et al. (2004), not their materials: they used 150
-# prime-target pairs, 50 per condition, each target also appearing with an
-# unrelated control prime, plus 50 filler word pairs and 200 nonword targets.
+# lexsync runs the design as a masked-priming lexical decision. Each trial shows a
+# forward mask of hash marks for 500 ms, the prime in lower case for three frames
+# (50 ms at 60 Hz) and the target in upper case until the response, for at most
+# 2,000 ms. Each target appears with a related prime (of its assigned prime_type) and
+# an unrelated, length-matched control, and Latin-square counterbalancing ensures a
+# target is seen once per list. prime_type (transparent | opaque | form) is the
+# between-items factor carried for analysis. Twelve nonword targets, each with a word
+# prime, are interleaved with the word trials as fillers. The response mapping puts
+# both priming conditions on the left arrow key, and the filler table gives each
+# nonword the right.
+#
+# What remains different from the original: this is a representative item set
+# following the prime-type STRUCTURE of Rastle et al. (2004), not their materials: they
+# used 150 prime-target pairs, 50 per condition, each target also appearing with an
+# unrelated control prime, plus 50 filler word pairs and 200 nonword targets. Every
+# participant on a list sees the same trial order. The nonwords come from lexsync's
+# letter-substitution generator, and some are unpronounceable letter strings (cqt,
+# ssin), which a participant can reject more easily than a pronounceable pseudoword.
+#
+# The fillers, items/rastle_nonword_fillers_en.csv, were made once. Each nonword is the
+# generator's pseudoword for one word target, checked against the known English forms.
+# In Python, from the repository root, with `schema` read from config/schema.yaml:
+#
+#   items = pandas.read_csv("items/rastle_priming_en.csv")
+#   lexsync.generate_pseudowords(
+#       items[items["condition"] == "related"]["target"],
+#       lexsync.load_lexicon("corpora/derived/en_v2.csv", schema, language="english")["word"],
+#       exclude=open("corpora/derived/en_known_forms.txt", encoding="utf-8").read().split("\n"))
+#
+# and R's generate_pseudowords() gives the same nonwords. Each nonword's prime is the
+# word of en_v2.csv, unmarked by the screen, not on config/exclude_en_demo.txt and not in
+# the item table, that has the length of the related prime of the target the nonword
+# was made from and the Zipf frequency nearest that prime's. An exact tie goes to the
+# smaller SHA-256 of 'lexsync-tie-v1|' and the word, the rule the matcher breaks ties
+# by, and no word is chosen twice.
 name: en_rastle_repro
 language: english
-paradigm: priming
-description: 'Reproducing the item-selection structure of Rastle, Davis & New (2004): transparent, opaque and orthographic (form) prime-target relationships, each against an unrelated baseline, presented with the backward-masked priming paradigm and no nonword targets, so not their masked-priming lexical-decision task; Latin-square counterbalanced over two lists.'
+paradigm: masked_priming
+description: 'Reproducing Rastle, Davis & New (2004): masked priming of word targets by transparent, opaque and orthographic (form) primes, each against an unrelated baseline, in a lexical decision with interleaved nonword fillers, Latin-square counterbalanced over two lists.'
 items:
   source: table
   path: items/rastle_priming_en.csv
+fillers:
+  path: items/rastle_nonword_fillers_en.csv
+response_mapping: {related: left, unrelated: left}
+instructions: 'You will see a row of hash marks and then a string of capital letters. Press the left arrow key if the letters spell a real English word and the right arrow key if they do not. Respond as quickly and accurately as you can.'
 counterbalance:
   lists: 2

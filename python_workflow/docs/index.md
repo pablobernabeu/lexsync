@@ -155,7 +155,7 @@ covers the same ground without any code.
   continuous alternative to dichotomising a predictor, resampling items as a random
   factor, and pseudoword generation.
 - [Experiments and triggers](experiments-and-triggers.md): the declarative trial
-  model, the five paradigms, counterbalancing, practice and filler blocks, and the
+  model, the six paradigms, counterbalancing, practice and filler blocks, and the
   three presentation targets, including where the EEG trigger is written and why
   that placement matters.
 - [Reproducibility and parity](reproducibility-and-parity.md): what the

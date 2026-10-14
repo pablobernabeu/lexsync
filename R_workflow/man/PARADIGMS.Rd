@@ -5,8 +5,8 @@
 \title{The paradigm registry: default event sequences and required fields}
 \format{
 A named list with one entry per paradigm (\code{factorial},
-\code{lexical_decision}, \code{priming}, \code{categorisation}, \code{self_paced_reading}), each
-holding
+\code{lexical_decision}, \code{priming}, \code{masked_priming}, \code{categorisation},
+\code{self_paced_reading}), each holding
 \code{stimulus_fields}, a \code{counterbalance} recipe and an \code{events} list.
 }
 \usage{
@@ -27,6 +27,21 @@ region_by_region | response | question | feedback), \code{content} (a literal or
 \code{{field}} reference), an optional \code{trigger} (a whole-number EEG code from 1 to 255
 or the token "condition"/"item"), \code{onset_locked}, response \code{keys}/\code{timeout_ms}, a
 response's \code{from} (where its window opens: "onset", with the text event before it,
-which is the default after a text event, or "offset", once that has gone), and an
-optional \code{blocks} restricting the event to named blocks.
+which is the default after a text event, or "offset", once that has gone), a text
+event's \code{case} ("upper" or "lower", applied by the runners as they show the text), a
+mask's \code{length_of} (the fields whose longest text, in characters, sets how often its
+one-character content is repeated), and an optional \code{blocks} restricting the event to
+named blocks.
+}
+\details{
+\code{priming} is backward-masked: a 50 ms prime, a 33 ms \verb{#####} mask and the target,
+with no forward mask and the item table's letter case. \code{masked_priming} follows
+Forster and Davis (1984): a forward mask of hash marks for 500 ms, a lower-case prime
+for three frames and an upper-case target that stays on until the response or for
+2,000 ms.
+}
+\references{
+Forster, K. I., & Davis, C. (1984). Repetition priming and frequency
+attenuation in lexical access. \emph{Journal of Experimental Psychology: Learning,
+Memory, and Cognition, 10}(4), 680-698. \doi{10.1037/0278-7393.10.4.680}
 }

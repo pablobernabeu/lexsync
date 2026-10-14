@@ -26,6 +26,10 @@ window opens, and under "mock" it prints the codes without trying the device, af
 the same notice. The window fills the screen unless ``FULLSCREEN`` is False, and the
 stimulus text is ``TEXT_HEIGHT_PX`` pixels high.
 
+A text event with ``case`` is shown in upper or lower case, applied here with
+Python's own case mapping as the text is shown, while the conditions and data files
+keep each item as it was written.
+
 Keys are read from psychopy.hardware.keyboard. A stimulus that collects its own
 response (an event with ``respond``) resets the keyboard clock and clears the
 keyboard on its onset flip, beside its trigger, so a key pressed while it is on
@@ -595,12 +599,28 @@ def start_gate(win, text):
     return "escape" if keys and any(k.name == "escape" for k in keys) else None
 
 
+def shown_text(ev, trial):
+    """The text an event shows on this trial, in the letter case its ``case`` asks for.
+
+    The case is applied here, as the text is shown, and never by lexsync, whose R engine
+    upper-cases some letters differently from Python (the German sharp s stays as it is
+    in R and becomes 'SS' here). The conditions file and the data file keep the item as
+    it was written.
+    """
+    text = trial[ev["field"]] if "field" in ev else ev.get("text", "")
+    if ev.get("case") == "upper":
+        return text.upper()
+    if ev.get("case") == "lower":
+        return text.lower()
+    return text
+
+
 def run_event(win, port, text_stim, ev, trial):
     """Present one event of a trial and return what it recorded (see new_record)."""
     shown = new_record()
     etype = ev["type"]
     if etype in ("fixation", "text", "mask"):
-        text_stim.text = trial[ev["field"]] if "field" in ev else ev.get("text", "")
+        text_stim.text = shown_text(ev, trial)
         ms = event_ms(ev, trial)
         trigger = resolve_trigger(ev.get("trigger"), trial)
         respond = ev.get("respond")

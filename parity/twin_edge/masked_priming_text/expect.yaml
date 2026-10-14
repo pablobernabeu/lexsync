@@ -1,0 +1,4 @@
+# Both engines size the forward mask by characters, not bytes, and carry each text
+# event's case to the runners without changing the item text.
+outcome: artefacts
+compare: [stimuli, experiments]

@@ -8,14 +8,32 @@
 # four cells matched on length. Frequencies come from a contemporary corpus
 # (wordfreq; Speer 2022) instead of the Kucera-Francis counts of the original. The
 # realised bands therefore differ, while the factorial structure and the length
-# control are reproduced. The design has no nonwords and no response mapping, so it
-# is not a lexical-decision task. On the unscreened lexicon its low-frequency cells
-# held mostly names and acronyms, so it selects from the screened one (see
+# control are reproduced. On the unscreened lexicon its low-frequency cells held
+# mostly names and acronyms, so it selects from the screened one (see
 # corpora/ATTRIBUTION.md).
+#
+# It runs as a lexical decision. One pseudoword per selected word, of the word's
+# length, is interleaved with the words as a filler, and the response mapping puts
+# every word on the left arrow key, while the filler table gives each pseudoword the
+# right. The pseudowords, items/andrews_pseudoword_fillers_en.csv, were made once with
+# lexsync's letter-substitution generator from the 72 words the design selected,
+# checked against the known English forms. In Python, from the repository root, with
+# `schema` read from config/schema.yaml:
+#
+#   lexsync.generate_pseudowords(
+#       sorted(pandas.read_csv("output/stimuli/en_andrews_repro_english_stimuli_py.csv")["word"],
+#              key=str.encode),
+#       lexsync.load_lexicon("corpora/derived/en_v2.csv", schema, language="english")["word"],
+#       exclude=open("corpora/derived/en_known_forms.txt", encoding="utf-8").read().split("\n"))
+#
+# and R's generate_pseudowords() gives the same pseudowords. Many of those made from
+# three-letter words are unpronounceable letter strings (ckr, hgd, wjs), which a
+# participant can reject more easily than a pronounceable pseudoword, so the task is
+# easier than a lexical decision with wordlike nonwords.
 name: en_andrews_repro
 language: english
 lexicon: corpora/derived/en_v2.csv
-description: 'Reproducing the item selection of Andrews (1989): frequency x orthographic neighbourhood size (Coltheart''s N), a 2x2 of words with every cell matched on length; no nonwords or response mapping, so not a lexical-decision task.'
+description: 'Reproducing Andrews (1989): frequency x orthographic neighbourhood size (Coltheart''s N), a 2x2 of words with every cell matched on length, in a lexical decision with one interleaved pseudoword per word.'
 n_per_condition: 18
 pool_filters:
   length: [3, 5]
@@ -42,6 +60,10 @@ conditions:
       frequency: [2.5, 4.2]
       n_density: [0, 5]
 match_on: [length]
+fillers:
+  path: items/andrews_pseudoword_fillers_en.csv
+response_mapping: {HF_largeN: left, HF_smallN: left, LF_largeN: left, LF_smallN: left}
+instructions: 'You will see a string of letters. Press the left arrow key if it is a real English word and the right arrow key if it is not. Respond as quickly and accurately as you can.'
 counterbalance:
   lists: 1
 timing:

@@ -1,0 +1,5 @@
+trial,list,set,condition,prime,target,condition_trigger,item_trigger
+1,1,2,unrelated,Lampe,fuß,102,41
+2,1,1,related,größere,groß,101,40
+1,2,2,related,Füßchen,fuß,101,41
+2,2,1,unrelated,Tischler,groß,102,40

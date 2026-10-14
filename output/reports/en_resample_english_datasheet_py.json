@@ -19,7 +19,7 @@
     },
     {
       "file": "output/experiments/en_resample_english_psychopy.py",
-      "sha256": "8dcfccb7c8d73475cada0b16cd96a51d1a11b2982ec05dbf37a45d1c446bc7c1"
+      "sha256": "2a205b8be6295d0141a124681200a408da762048a7f31e9f64ff4e3e20eb6769"
     },
     {
       "file": "output/experiments/en_resample_english_rep1_list1.osexp",
@@ -35,7 +35,7 @@
     },
     {
       "file": "output/experiments/en_resample_english.html",
-      "sha256": "2e54b41265a4cd8edaaed0d697f6dce6a1bd35cd701d191d7454b51b49d0965f"
+      "sha256": "46a912e4f2fddc020a78e6c8a6621e6c893acee016137672fc39b013b23a28db"
     },
     {
       "file": "output/experiments/en_resample_english_psychopy.csv",
@@ -304,7 +304,7 @@
   "reproducibility": {
     "design_sha256": "c81f94cf439dc0fcc0ad0fec6c111de2476402c9524a96a5121e2b91283fd9fe",
     "schema_path": "config/schema.yaml",
-    "schema_sha256": "363d42ebb6d2076d91b9e1ecedc10cdd1133b6e662cea5123146c9bb4e69fb73",
+    "schema_sha256": "105322550d8c6dc00e06f71b44b61a7c45959c1a4caaceac414192dbd5f9520b",
     "seed": 2026,
     "versions": {
       "engine": "python",

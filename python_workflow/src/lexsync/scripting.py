@@ -519,7 +519,77 @@ def _trigger_spec(value, index: int | None = None, key: str = "trigger"):
     return code
 
 
+def _case_of(ev: dict, index: int) -> str:
+    """A text event's ``case``, "upper" or "lower", checked.
 
+    The case travels with the rendered event and the runners apply it as they show the
+    text: str.upper() and str.lower() in PsychoPy and OpenSesame, toUpperCase() and
+    toLowerCase() in jsPsych. The generators never change the text, because R's
+    toupper() leaves 'ß' as it is where Python gives 'SS', and the two engines must
+    write the same files. Must match .case_of in scripting.R.
+    """
+    value = ev.get("case")
+    if not isinstance(value, str) or value not in ("upper", "lower"):
+        raise ValueError("lexsync: event %d has case '%s'; a text event takes case: upper or "
+                         "case: lower." % (index, _shown(value)))
+    return value
+
+
+# A field a mask's length_of may name, as a {field} reference names one.
+_FIELD_NAME = re.compile(r"\A[A-Za-z_][A-Za-z0-9_]*\Z")
+
+
+def _length_of(ev: dict, index: int) -> list:
+    """A mask's ``length_of``, the fields whose longest text sets its length, checked.
+
+    A scalar names one field. The mask's content must be one character, which
+    _sized_masks repeats once the trials are known. Must match .length_of in
+    scripting.R.
+    """
+    value = ev["length_of"]
+    fields = [value] if isinstance(value, str) else value
+    if (not isinstance(fields, list) or not fields
+            or not all(isinstance(f, str) and _FIELD_NAME.match(f) for f in fields)):
+        raise ValueError("lexsync: event %d has length_of '%s'; name the fields whose longest "
+                         "text sets the mask's length, as in [prime, target]."
+                         % (index, _shown(value)))
+    content = ev.get("content")
+    if not isinstance(content, str) or len(content) != 1:
+        raise ValueError("lexsync: event %d repeats its content to the length of the longest "
+                         "text of the trials, so its content must be one character, such as "
+                         "'#'." % index)
+    return list(fields)
+
+
+def _sized_masks(rendered: list, stimuli: pd.DataFrame) -> list:
+    """The rendered events with each ``length_of`` mask written out for these trials.
+
+    Such a mask's character is repeated as many times as the longest text of its fields
+    has characters (code points, so 'naïveté' counts 7 where UTF-8 gives 9 bytes),
+    among all the trials of every version, so each target and each version shows the
+    same mask. A missing cell is passed over. The mask then travels as literal text, as
+    any other mask does. Must match .sized_masks in scripting.R.
+    """
+    out = []
+    for ev in rendered:
+        if "length_of" not in ev:
+            out.append(ev)
+            continue
+        longest = 1
+        for field in ev["length_of"]:
+            if field not in stimuli.columns:
+                raise ValueError("lexsync: a mask takes its length from field '%s', which the "
+                                 "trials do not have." % field)
+            for value in stimuli[field]:
+                if value is None or value is pd.NA or (isinstance(value, float)
+                                                       and value != value):
+                    continue
+                text = value if isinstance(value, str) else _readr_cell(value)
+                longest = max(longest, len(text))
+        sized = {k: v for k, v in ev.items() if k != "length_of"}
+        sized["text"] = ev["text"] * longest
+        out.append(sized)
+    return out
 
 
 def _duration_spec(ev: dict, index: int):
@@ -664,6 +734,10 @@ def render_events(events: list, timing: dict, hz: float = 60) -> list:
     the window runs from its onset for ``ms`` plus the timeout, so the total window is
     the one the two events had. A response collected from the offset stays an event of
     its own.
+
+    A text event's ``case`` is carried as it is, for the runners to apply. A mask's
+    ``length_of`` is carried too, with the one character to repeat as its ``text``, and
+    the exporters write the mask out for their trials (see ``_sized_masks``).
     """
     rendered = _render_each(events, timing, hz)
     out = []
@@ -791,12 +865,20 @@ def _render_each(events: list, timing: dict, hz: float) -> list:
     for i, ev in enumerate(events, start=1):
         t = ev["type"]
         r = {"type": "region" if t == "region_by_region" else t}
+        if ev.get("case") is not None and t != "text":
+            raise ValueError("lexsync: event %d is a %s event, and only a text event takes "
+                             "`case`." % (i, _shown(t)))
+        if ev.get("length_of") is not None and t != "mask":
+            raise ValueError("lexsync: event %d is a %s event, and only a mask event takes "
+                             "`length_of`." % (i, _shown(t)))
         if t in ("fixation", "text", "mask"):
             f = content_field(ev.get("content"))
             if f:
                 r["field"] = f
             else:
                 r["text"] = str(ev.get("content", ""))
+            if ev.get("length_of") is not None:
+                r["length_of"] = _length_of(ev, i)
             # The overrides are type-keyed, as before: `fixation_*` reaches every
             # fixation and `word_*` only a text event whose trigger is "condition",
             # which is why a priming prime (trigger 20) keeps its own duration.
@@ -814,6 +896,8 @@ def _render_each(events: list, timing: dict, hz: float) -> list:
             spec = _trigger_spec(ev.get("trigger"), i)
             if spec is not None:
                 r["trigger"] = spec
+            if ev.get("case") is not None:
+                r["case"] = _case_of(ev, i)
         elif t == "blank":
             spec = _duration_spec(ev, i)
             if spec is not None:
@@ -1091,7 +1175,8 @@ def _psychopy_files(stimuli, design, schema, outdir, base=None) -> list:
     """Write the PsychoPy script and its conditions file, and return both paths."""
     base = base or design_stem(design)
     events = resolve_events(design)
-    rendered = render_events(events, design.get("timing") or {}, _refresh_hz(schema))
+    rendered = _sized_masks(
+        render_events(events, design.get("timing") or {}, _refresh_hz(schema)), stimuli)
     versions = presentation_versions(stimuli)
     csv_name = f"{base}_psychopy.csv"
     write_csv_utf8(loop_table(stimuli, events), os.path.join(outdir, csv_name))
@@ -1156,7 +1241,10 @@ def _number_expr(column: str) -> str:
 
 
 def _content_expr(ev: dict) -> str:
-    return _text_expr(ev["field"]) if "field" in ev else _pyq(ev.get("text", ""))
+    """The text an event shows, as the inline script computes it. A text event's `case`
+    is applied there, with Python's str.upper() or str.lower(), as the text is shown."""
+    expr = _text_expr(ev["field"]) if "field" in ev else _pyq(ev.get("text", ""))
+    return expr + {"upper": ".upper()", "lower": ".lower()"}.get(ev.get("case"), "")
 
 
 def _trigger_expr(spec) -> str | None:
@@ -1882,7 +1970,9 @@ def _opensesame_files(stimuli, design, schema, outdir, base=None) -> tuple:
     """
     base = base or design_stem(design)
     events = resolve_events(design)
-    rendered = render_events(events, design.get("timing") or {}, _refresh_hz(schema))
+    # Sized from every version's trials, so each version's experiment shows one mask.
+    rendered = _sized_masks(
+        render_events(events, design.get("timing") or {}, _refresh_hz(schema)), stimuli)
     presentation = schema.get("presentation") or {}
     font = design.get("font") or presentation.get("opensesame_font") or "mono"
     versions = presentation_versions(stimuli)
@@ -2067,8 +2157,8 @@ def export_jspsych(stimuli, design, schema, outdir, base=None) -> str:
     """
     base = base or design_stem(design)
     events = resolve_events(design)
-    rendered = _map_keys_for_jspsych(
-        render_events(events, design.get("timing") or {}, _refresh_hz(schema)))
+    rendered = _map_keys_for_jspsych(_sized_masks(
+        render_events(events, design.get("timing") or {}, _refresh_hz(schema)), stimuli))
     versions = presentation_versions(stimuli)
     trials = [{key: _fifteen_digits(value) for key, value in row.items()}
               for row in _map_answers_for_jspsych(

@@ -18,6 +18,7 @@ of the press on that clock, not the time the script polled for it.
 import csv
 import glob
 import importlib.util
+import itertools
 import json
 import math
 import os
@@ -604,6 +605,31 @@ def test_fillers_run_with_the_main_trials_and_only_the_practice_ends_in_a_pause(
          "English word and the right arrow key if it is not. Respond as quickly and "
          "accurately as you can.", 0),
         ("End of the practice trials.", 2)]
+
+
+def test_a_masked_priming_target_is_shown_in_upper_case(schema, tmp_path, monkeypatch):
+    # A text event's `case` is applied by the runner as it shows the text, not by
+    # lexsync, whose two engines upper-case 'ß' differently. The forward mask comes
+    # first, as many hash marks as the longest string has characters, then the prime in
+    # lower case for three flips and the target in upper case until the key, pressed
+    # 600 ms after its onset.
+    _install_fake_psychopy(port_writes=[], press=press_first_key_after(0.6))
+    stim = assign_triggers(pd.DataFrame({
+        "prime": ["Naïveté"], "target": ["straße"], "condition": ["related"], "set": [1],
+        "trial": [1], "list": 1}))
+    design = {"name": "t", "language": "english", "paradigm": "masked_priming"}
+    module = _load_generated(export_psychopy(stim, design, schema, str(tmp_path)))
+    _run_main(module, ["--participant", "1"], monkeypatch, tmp_path / "data")
+    start = DRAWN.index("#######")
+    shown = [(text, len(list(run))) for text, run in itertools.groupby(DRAWN[start:])]
+    assert shown[:2] == [("#######", 30), ("naïveté", 3)]
+    assert shown[2][0] == "STRASSE" and 36 <= shown[2][1] <= 38
+    assert len(shown) == 3
+    _, rows = _read_data(_data_files(tmp_path / "data")[0])
+    # The data file keeps each item as the materials spell it.
+    assert [(r["prime"], r["target"], r["response"]) for r in rows] == [
+        ("Naïveté", "straße", "left")]
+    assert abs(float(rows[0]["rt_ms"]) - 600.0) <= 1000.0 / 60
 
 
 def test_escape_at_the_instructions_stops_before_any_trial(schema, tmp_path, monkeypatch):

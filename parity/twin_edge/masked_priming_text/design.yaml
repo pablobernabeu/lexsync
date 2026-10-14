@@ -1,0 +1,15 @@
+# Twin-edge case: masked priming over items with letters outside ASCII. The longest
+# string, 'Tischler', has eight characters, and 'größere' and 'Füßchen' have seven
+# characters but nine UTF-8 bytes, so the forward mask is eight hash marks in both
+# engines. The targets keep their 'ß' in every file: the runners upper-case it as they
+# show it, which R's toupper() would do differently from Python's str.upper().
+name: twin_edge_masked_priming_text
+language: german
+description: 'A masked-priming design over items with letters outside ASCII.'
+paradigm: masked_priming
+items:
+  source: table
+  path: items.csv
+instructions: 'Drücken Sie die linke Pfeiltaste für ein Wort und die rechte für ein Nichtwort.'
+counterbalance:
+  lists: 2

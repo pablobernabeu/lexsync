@@ -35,6 +35,29 @@ no function signature changes.
   the commands that built the committed lexica (30,000 forms for English and Spanish,
   20,000 for Chinese), and the usage line of `corpora/fetch_corpora.py` now gives them
   too.
+- A `masked_priming` paradigm presents a forward mask of hash marks for 500 ms, a
+  lower-case prime for three frames and an upper-case target that stays until the
+  response, the procedure of Forster and Davis (1984). Without a forward mask, a prime
+  this brief is usually visible. The target collects its response from its onset and
+  stays on screen for the whole 2,000 ms window. A text event's `case: upper` or
+  `case: lower` is applied by the runners when they display it, with `str.upper()` and
+  `str.lower()` in PsychoPy and OpenSesame and `toUpperCase()` and `toLowerCase()` in
+  jsPsych, so the loop tables and the data files keep each item as it was written.
+  lexsync does not change the case itself, because R's `toupper()` leaves "ß" as it is
+  where Python gives "SS". A mask's `length_of` names the fields whose longest value
+  sets its length. Its one character is repeated as many times as that value has
+  characters, not bytes, counted over every trial when the experiments are written, so
+  each target and each list shows the same mask. `validate_design` refuses a case other
+  than upper or lower and a `case` on any event but a text event. It also refuses
+  `length_of` on any event but a mask and on a mask whose content is not one character.
+  `export_experiments` refuses a `length_of` field the trials do not have. The two keys
+  join the design vocabulary in both engines, whose suites pin the new digest, and the
+  schema's comments describe them. The `priming` paradigm is unchanged and is
+  documented as backward-masked, as is its label in the demos index. The registry is
+  pinned by a digest that both suites compute, so a paradigm changed in one engine only
+  fails both. Every demonstration's experiments, datasheets and run logs change,
+  because the PsychoPy and jsPsych templates do. The twin-edge case
+  `masked_priming_text` pins both engines to one outcome.
 - Generated experiments show task instructions before the first trial and wait for the
   space bar, so the experimenter can start the run when the participant is ready. A
   design sets the text with `instructions`. It may hold line breaks and no other control
@@ -153,6 +176,18 @@ no function signature changes.
 
 ### Changed
 
+- The `en_rastle_repro` example uses masked priming with nonword targets, and
+  `en_andrews_repro` gains pseudowords, so both run as lexical-decision tasks.
+  `en_rastle_repro` interleaves twelve nonword targets, each with a word prime, as
+  fillers (`items/rastle_nonword_fillers_en.csv`), and `en_andrews_repro` one
+  pseudoword per selected word (`items/andrews_pseudoword_fillers_en.csv`). The
+  nonwords were made once with the package's letter-substitution generator and checked
+  against wordfreq's known English forms, and each design's comment gives the command
+  and lists what still differs from the original study. Each design puts its word
+  conditions on the left arrow key, gives its fillers the right and shows its own
+  instructions. Their stimuli files gain a `block` column and their trials are
+  renumbered, since the fillers are interleaved with the words. The items, sets, lists
+  and conditions are the same, and no descriptives or comparisons change.
 - `CITATION.cff` and `codemeta.json`, which describe the repository and so both
   packages, give the Zenodo concept DOI,
   <https://doi.org/10.5281/zenodo.22906962>, which

@@ -9,7 +9,7 @@ matter of configuration.
 An *event* is a small dictionary::
 
     {type, content, duration_frames|duration_ms, trigger, onset_locked, keys, timeout_ms,
-     from}
+     from, case, length_of}
 
 ``type``     one of fixation | text | mask | blank | region_by_region | response |
              question | feedback
@@ -18,6 +18,10 @@ An *event* is a small dictionary::
 ``onset_locked``  write the trigger on the event's verified onset flip
 ``from``     where a response's window opens: "onset", with the text event before it
              (the default after a text event), or "offset", once that has gone
+``case``     a text event's letter case on screen, "upper" or "lower", applied by the
+             runners as they show the text
+``length_of``  a mask's fields: its one-character content is repeated to the length,
+             in characters, of the longest of these fields among the trials
 ``blocks``   restrict the event to the named blocks (see blocks.add_blocks)
 
 This module is pure data and small helpers, identical in the R and Python
@@ -77,6 +81,29 @@ PARADIGMS = {
              "trigger": "condition", "onset_locked": True},
             {"type": "response", "keys": ["left", "right"], "timeout_ms": 2000},
             {"type": "blank", "duration_frames": _ISI},
+        ],
+    },
+    # Masked priming as Forster and Davis (1984) introduced it: a forward mask of hash
+    # marks for 500 ms, the prime in lower case for 3 frames (50 ms at 60 Hz) and the
+    # target in upper case, which masks the prime and stays on until the response or
+    # for 2,000 ms. Without the forward mask, a prime this brief is usually visible. The
+    # mask has as many marks as the longest prime or target has characters, counted
+    # when the experiments are written. The runners apply the case as they show the
+    # text, since R's toupper() leaves the German sharp s as it is and Python's gives
+    # "SS". The target's response is collected from its onset, and its display lasts the
+    # whole window, so the timeout after the display is 0.
+    "masked_priming": {
+        "stimulus_fields": ["prime", "target"],
+        "counterbalance": "latin_square_target",
+        "events": [
+            {"type": "mask", "content": "#", "length_of": ["prime", "target"],
+             "duration_ms": 500},
+            {"type": "text", "content": "{prime}", "duration_frames": 3,
+             "trigger": 20, "onset_locked": True, "case": "lower"},
+            {"type": "text", "content": "{target}", "duration_ms": 2000,
+             "trigger": "condition", "onset_locked": True, "case": "upper"},
+            {"type": "response", "keys": ["left", "right"], "timeout_ms": 0},
+            {"type": "blank", "duration_ms": 250},
         ],
     },
     # Cued semantic categorisation: a category question, then the word to judge against

@@ -3,9 +3,9 @@
   "design": {
     "name": "en_rastle_repro",
     "language": "english",
-    "paradigm": "priming",
+    "paradigm": "masked_priming",
     "source": "table",
-    "description": "Reproducing the item-selection structure of Rastle, Davis & New (2004): transparent, opaque and orthographic (form) prime-target relationships, each against an unrelated baseline, presented with the backward-masked priming paradigm and no nonword targets, so not their masked-priming lexical-decision task; Latin-square counterbalanced over two lists.",
+    "description": "Reproducing Rastle, Davis & New (2004): masked priming of word targets by transparent, opaque and orthographic (form) primes, each against an unrelated baseline, in a lexical decision with interleaved nonword fillers, Latin-square counterbalanced over two lists.",
     "n_per_condition": null
   },
   "materials_source": {
@@ -21,7 +21,7 @@
   },
   "relational": null,
   "analysis": {
-    "response": "reaction time from the onset of `{target}`; responses collected for 2800 ms; a response ends the trial",
+    "response": "reaction time from the onset of `{target}`; responses collected for 2000 ms; a response ends the trial",
     "suggested_model": "response ~ condition + (1 + condition | subject) + (1 + condition | item)",
     "note": "Crossed random effects for subjects and items guard against the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). Begin with this maximal structure (Barr et al., 2013). If the model is singular or fails to converge, simplify it as Matuschek et al. (2017) describe. The formula is lme4 syntax, for lme4 in R or pymer4 in Python; statsmodels MixedLM cannot take it directly and needs the random effects restated in its own arguments. The equivalence tests in the realised control are post-selection diagnostics on deterministically selected items, not inferential tests over a sample."
   },
@@ -58,16 +58,44 @@
       }
     ],
     "versions": 2,
-    "assignment": "version = ((participant - 1) mod 2) + 1 unless a version is given at launch"
+    "assignment": "version = ((participant - 1) mod 2) + 1 unless a version is given at launch",
+    "blocks": {
+      "blocks": [
+        {
+          "block": "main",
+          "n_per_list": 12
+        },
+        {
+          "block": "filler",
+          "n_per_list": 12,
+          "path": "items/rastle_nonword_fillers_en.csv",
+          "sha256": "af905cfdc59aed2494832925ee484161d94f4d84170136e68cae7242ea1adbcd",
+          "placement": "interleaved with the main trials by the seeded order"
+        }
+      ],
+      "analysed": "main"
+    }
   },
   "presentation": {
     "response_windows": [
       {
-        "event": 5,
+        "event": 4,
         "from": "onset",
-        "window_ms": 2800
+        "window_ms": 2000
       }
-    ]
+    ],
+    "response_mapping": {
+      "conditions": {
+        "related": "left",
+        "unrelated": "left"
+      },
+      "keys": [
+        "left",
+        "right"
+      ],
+      "rotate_by_list": false,
+      "source": "design"
+    }
   },
   "resampling": null,
   "items": {
@@ -88,7 +116,7 @@
       }
     ],
     "stimuli_file": "output/stimuli/en_rastle_repro_english_stimuli_R.csv",
-    "stimuli_sha256": "fe1a1ee921eebb9429580b57eeb8c3c8728ce581687c2b2a78a34bcedb21d2f0"
+    "stimuli_sha256": "2f0b782d0832ad9d747b520cb842abebe7fc22febc072103fd5c1108b8a42533"
   },
   "reproducibility": {
     "seed": 2026,
@@ -104,50 +132,50 @@
       "stringi": "1.8.7",
       "os": "Windows x86-64"
     },
-    "design_sha256": "3d060b7a7653715ce8f6785b20f2be9f062fa0da5f157d6c88423af290332d29",
+    "design_sha256": "d5785c349c760c31814de8568d7fbce5a971715e833e844388c2a633613eb221",
     "schema_path": "config/schema.yaml",
-    "schema_sha256": "363d42ebb6d2076d91b9e1ecedc10cdd1133b6e662cea5123146c9bb4e69fb73"
+    "schema_sha256": "105322550d8c6dc00e06f71b44b61a7c45959c1a4caaceac414192dbd5f9520b"
   },
   "artifacts": [
     {
       "file": "output/stimuli/en_rastle_repro_english_stimuli_R.csv",
-      "sha256": "fe1a1ee921eebb9429580b57eeb8c3c8728ce581687c2b2a78a34bcedb21d2f0"
+      "sha256": "2f0b782d0832ad9d747b520cb842abebe7fc22febc072103fd5c1108b8a42533"
     },
     {
       "file": "output/experiments/en_rastle_repro_english_psychopy.py",
-      "sha256": "61295986a7ff8080bab57001e7ad989d17ff5e618ad60dec5fff8590f790975c"
+      "sha256": "be8e8226aa9f1fbb209d33a62ffddbb3bcbd1a51b054258c993dca2e4e225a87"
     },
     {
       "file": "output/experiments/en_rastle_repro_english_list1.osexp",
-      "sha256": "f8c47b1e83ca094f70a2e2736963cbc1bd00296f83abaa9e332749a0304106a6"
+      "sha256": "dbbe32b8869a41fbc8d25cd8d0e1d7cd9b6af1cb41b19402eda1993555abed15"
     },
     {
       "file": "output/experiments/en_rastle_repro_english_list2.osexp",
-      "sha256": "f000923a2aa835222bd8fc21bb335fe958bb92923a93c41e9d6e49b03d071e8d"
+      "sha256": "a9a161240161688c74b1e3f12833cf9b3878056f16c033b8f60d76d2a1c2b54d"
     },
     {
       "file": "output/experiments/en_rastle_repro_english.html",
-      "sha256": "41b5aa3fc5dc8b47d8fcf92352b5a213c79db32308fc1538d9cf8bf616da1397"
+      "sha256": "60ed5fcc6ae94d19fade40c0d1d8ac573f827da0dcc09b0f7cc013cc91b8adf6"
     },
     {
       "file": "output/experiments/en_rastle_repro_english_psychopy.csv",
-      "sha256": "630ee96d012f1b1b9d37f2b49f9e384404422d4726341dc021c1684d0f4ba316"
+      "sha256": "7c093c646b1aca7c175c25b5703511f06e7cfd8f1321ed6f159e92a87e2cd587"
     },
     {
       "file": "output/experiments/en_rastle_repro_english_list1_opensesame.csv",
-      "sha256": "bbdc716b6f1513045ff7ee47bc5386b82ea2472e2e1d07974f5f62411e1b6d1c"
+      "sha256": "9b878500b4ad236a1108aa1059085cc235642d872136acaf21dd9da3622eb6c8"
     },
     {
       "file": "output/experiments/en_rastle_repro_english_list1_opensesame_text.csv",
-      "sha256": "acdf72c09fd2be1f2780e43da228f1210018cd86d8fadcce017c44e92e28f54e"
+      "sha256": "9a3a54fad38140220f05e4aa728a152a9fdd6d6c72653502b683606bd2aee6a4"
     },
     {
       "file": "output/experiments/en_rastle_repro_english_list2_opensesame.csv",
-      "sha256": "7a8252c67b7088afbb40a27fe8e32c336092a4ff5a3d8f9bfb0c5f7dbfb7483c"
+      "sha256": "ad9971da3beb2a34a58be78c5377e59b1e3391c63bd7a19fa7dde9dce94a15f9"
     },
     {
       "file": "output/experiments/en_rastle_repro_english_list2_opensesame_text.csv",
-      "sha256": "b10fcc530827c7fa540c64b0927dd5010103487fe3d0a1c5a610d98720a424a9"
+      "sha256": "91c1e5d2f753b06bdea11be02b343bf210f11912debe6d328b91b5b93b92468a"
     }
   ]
 }

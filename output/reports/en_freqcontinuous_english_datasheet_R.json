@@ -182,7 +182,7 @@
     },
     "design_sha256": "4600d42c9086cdd30fc1dd40e6237694a14d9e86cd28e831827dd3227e211f3b",
     "schema_path": "config/schema.yaml",
-    "schema_sha256": "363d42ebb6d2076d91b9e1ecedc10cdd1133b6e662cea5123146c9bb4e69fb73"
+    "schema_sha256": "105322550d8c6dc00e06f71b44b61a7c45959c1a4caaceac414192dbd5f9520b"
   },
   "artifacts": [
     {
@@ -199,7 +199,7 @@
     },
     {
       "file": "output/experiments/en_freqcontinuous_english_psychopy.py",
-      "sha256": "1a1fa4b1ed8625c63130675ad2d932682c4aa7adacffbf6263661c8080c2fdf3"
+      "sha256": "c76dd9e1f6b8a07fa5a4d914c84189d8225628ef957a584256e943d3b30821d6"
     },
     {
       "file": "output/experiments/en_freqcontinuous_english.osexp",
@@ -207,7 +207,7 @@
     },
     {
       "file": "output/experiments/en_freqcontinuous_english.html",
-      "sha256": "e2d4d9f536d8b814ebad618a40f0ab45eab6d318c83e976d3541f33ddaf0f579"
+      "sha256": "832e189464a4f3a598ebcd1983a86423cd127523f8fe59d7b29e54e8af197e5b"
     },
     {
       "file": "output/experiments/en_freqcontinuous_english_psychopy.csv",

@@ -26,6 +26,10 @@ window opens, and under "mock" it prints the codes without trying the device, af
 the same notice. The window fills the screen unless ``FULLSCREEN`` is False, and the
 stimulus text is ``TEXT_HEIGHT_PX`` pixels high.
 
+A text event with ``case`` is shown in upper or lower case, applied here with
+Python's own case mapping as the text is shown, while the conditions and data files
+keep each item as it was written.
+
 Keys are read from psychopy.hardware.keyboard. A stimulus that collects its own
 response (an event with ``respond``) resets the keyboard clock and clears the
 keyboard on its onset flip, beside its trigger, so a key pressed while it is on
@@ -120,13 +124,13 @@ PULSE = {"port": None, "flips": 0}
 TRIGGER_MODE_IN_USE = None
 
 # The trial event sequence (declarative data, written by lexsync).
-EVENTS = json.loads(r"""[{"type":"fixation","text":"+","ms":500},{"type":"text","field":"prime","ms":50,"trigger":20},{"type":"mask","text":"#####","ms":33},{"type":"text","field":"target","ms":800,"trigger":"@condition_trigger","respond":{"keys":["left","right"],"timeout":2}},{"type":"blank","ms":250}]""")
+EVENTS = json.loads(r"""[{"type":"mask","text":"########","ms":500},{"type":"text","field":"prime","ms":50,"trigger":20,"case":"lower"},{"type":"text","field":"target","ms":2000,"trigger":"@condition_trigger","case":"upper","respond":{"keys":["left","right"],"timeout":0}},{"type":"blank","ms":250}]""")
 # The presentation versions, one per (replicate, list) pair of the conditions file,
 # numbered in that order. A run presents one of them.
-VERSIONS = json.loads(r"""[{"version":1,"replicate":1,"list":1,"n_trials":12},{"version":2,"replicate":1,"list":2,"n_trials":12}]""")
+VERSIONS = json.loads(r"""[{"version":1,"replicate":1,"list":1,"n_trials":24},{"version":2,"replicate":1,"list":2,"n_trials":24}]""")
 # The instructions each version shows before its first trial, in version order. A
 # response mapping rotated across lists names each list's keys.
-INSTRUCTIONS = json.loads(r"""["When a response is needed, press the left arrow key or the right arrow key. Respond as quickly and accurately as you can.","When a response is needed, press the left arrow key or the right arrow key. Respond as quickly and accurately as you can."]""")
+INSTRUCTIONS = json.loads(r"""["You will see a row of hash marks and then a string of capital letters. Press the left arrow key if the letters spell a real English word and the right arrow key if they do not. Respond as quickly and accurately as you can.","You will see a row of hash marks and then a string of capital letters. Press the left arrow key if the letters spell a real English word and the right arrow key if they do not. Respond as quickly and accurately as you can."]""")
 
 # The data file's columns. The run and the trial's place in the design lead, the
 # trial's other fields follow in the conditions file's order, then its trigger codes
@@ -595,12 +599,28 @@ def start_gate(win, text):
     return "escape" if keys and any(k.name == "escape" for k in keys) else None
 
 
+def shown_text(ev, trial):
+    """The text an event shows on this trial, in the letter case its ``case`` asks for.
+
+    The case is applied here, as the text is shown, and never by lexsync, whose R engine
+    upper-cases some letters differently from Python (the German sharp s stays as it is
+    in R and becomes 'SS' here). The conditions file and the data file keep the item as
+    it was written.
+    """
+    text = trial[ev["field"]] if "field" in ev else ev.get("text", "")
+    if ev.get("case") == "upper":
+        return text.upper()
+    if ev.get("case") == "lower":
+        return text.lower()
+    return text
+
+
 def run_event(win, port, text_stim, ev, trial):
     """Present one event of a trial and return what it recorded (see new_record)."""
     shown = new_record()
     etype = ev["type"]
     if etype in ("fixation", "text", "mask"):
-        text_stim.text = trial[ev["field"]] if "field" in ev else ev.get("text", "")
+        text_stim.text = shown_text(ev, trial)
         ms = event_ms(ev, trial)
         trigger = resolve_trigger(ev.get("trigger"), trial)
         respond = ev.get("respond")

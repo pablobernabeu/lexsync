@@ -59,6 +59,11 @@ Forster, K. I. (2000). The potential for experimenter bias effects in word recog
 *Memory & Cognition*, *28*(7), 1109–1115. <https://doi.org/10.3758/BF03211812>
 { #forster-2000 }
 
+Forster, K. I., & Davis, C. (1984). Repetition priming and frequency attenuation in lexical access.
+*Journal of Experimental Psychology: Learning, Memory, and Cognition*, *10*(4), 680–698.
+<https://doi.org/10.1037/0278-7393.10.4.680>
+{ #forster-1984 }
+
 Gu, X. S., & Rosenbaum, P. R. (1993). Comparison of multivariate matching methods: Structures,
 distances, and algorithms. *Journal of Computational and Graphical Statistics*, *2*(4), 405–420.
 <https://doi.org/10.1080/10618600.1993.10474623>
@@ -111,6 +116,11 @@ Peirce, J., Gray, J. R., Simpson, S., MacAskill, M., Höchenberger, R., Sogo, H.
 Lindeløv, J. K. (2019). PsychoPy2: Experiments in behavior made easy. *Behavior Research Methods*,
 *51*(1), 195–203. <https://doi.org/10.3758/s13428-018-01193-y>
 { #peirce-2019 }
+
+Rastle, K., Davis, M. H., & New, B. (2004). The broth in my brother's brothel: Morpho-orthographic
+segmentation in visual word recognition. *Psychonomic Bulletin & Review*, *11*(6), 1090–1098.
+<https://doi.org/10.3758/BF03196742>
+{ #rastle-2004 }
 
 Roettger, T. B. (2019). Researcher degrees of freedom in phonetic research. *Laboratory Phonology*,
 *10*(1), Article 1. <https://doi.org/10.5334/labphon.147>

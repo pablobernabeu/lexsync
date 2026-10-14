@@ -1,22 +1,22 @@
-{"time":"2026-10-14 01:25:34.742748","message":"lexsync: the design gives no `instructions` and its language is 'chinese', so the experiments show lexsync's instructions in English; give `instructions` in the participants' language.","data":null}
-{"time":"2026-10-14 01:25:34.749515","message":"lexsync: the design gives no `instructions`, and lexsync cannot tell what the response keys of a factorial design mean, so the experiments only name the keys; give `instructions` that say what each key means.","data":null}
-{"time":"2026-10-14 01:25:34.75616","message":"loading lexicon 'corpora/derived/zh.csv'","data":null}
-{"time":"2026-10-14 01:25:35.310869","message":"lexicon loaded: 20000 words","data":{"words":20000}}
-{"time":"2026-10-14 01:25:35.331413","message":"pool after filters: 13613 words","data":{"pool":13613}}
-{"time":"2026-10-14 01:25:36.356065","message":"matched 160 items across 2 conditions","data":{"conditions":"high_frequency, low_frequency"}}
-{"time":"2026-10-14 01:25:36.733271","message":"equivalence low_frequency vs high_frequency on 'length': d = 0.00 [0.00, 0.00], TOST p = 0.000 (equivalent)","data":null}
-{"time":"2026-10-14 01:25:36.73887","message":"equivalence low_frequency vs high_frequency on 'frequency': d = 6.11 [5.49, 6.73], TOST p = 1.000 (not shown equivalent)","data":null}
-{"time":"2026-10-14 01:25:36.744916","message":"equivalence low_frequency vs high_frequency on 'n_density': d = 0.07 [-0.19, 0.33], TOST p = 0.004 (equivalent)","data":null}
-{"time":"2026-10-14 01:25:36.749363","message":"equivalence low_frequency vs high_frequency on 'old20': d = 0.11 [-0.16, 0.37], TOST p = 0.007 (equivalent)","data":null}
-{"time":"2026-10-14 01:25:36.753457","message":"equivalence low_frequency vs high_frequency on 'bigram_freq': d = 0.61 [0.34, 0.88], TOST p = 0.758 (not shown equivalent)","data":null}
-{"time":"2026-10-14 01:25:36.83607","message":"wrote 'zh_freqcontrast_chinese_stimuli_R.csv'","data":{"path":"output/stimuli/zh_freqcontrast_chinese_stimuli_R.csv","rows":160,"md5":"4a1365f005dca09f61342d15f42c1d24"}}
-{"time":"2026-10-14 01:25:36.853373","message":"wrote 'zh_freqcontrast_chinese_descriptives_R.csv'","data":{"path":"output/reports/zh_freqcontrast_chinese_descriptives_R.csv","rows":10,"md5":"f3a421f38ccaaf0fed543e9ccff884fb"}}
-{"time":"2026-10-14 01:25:36.867336","message":"wrote 'zh_freqcontrast_chinese_comparisons_R.csv'","data":{"path":"output/reports/zh_freqcontrast_chinese_comparisons_R.csv","rows":5,"md5":"3f255a12031364bf20836d42096d6b12"}}
-{"time":"2026-10-14 01:25:37.188743","message":"wrote 'zh_freqcontrast_chinese_psychopy.py'","data":{"path":"output/experiments/zh_freqcontrast_chinese_psychopy.py","rows":"NA","md5":"f8d1f74e2af69766ef5292a4cf487295"}}
-{"time":"2026-10-14 01:25:37.197371","message":"wrote 'zh_freqcontrast_chinese.osexp'","data":{"path":"output/experiments/zh_freqcontrast_chinese.osexp","rows":"NA","md5":"34ba29f107e0f4abae9f9e1b38c5c801"}}
-{"time":"2026-10-14 01:25:37.208137","message":"wrote 'zh_freqcontrast_chinese.html'","data":{"path":"output/experiments/zh_freqcontrast_chinese.html","rows":"NA","md5":"5c097d4ca67c1d418dc0015d89f9325f"}}
-{"time":"2026-10-14 01:25:37.222118","message":"wrote 'zh_freqcontrast_chinese_psychopy.csv'","data":{"path":"output/experiments/zh_freqcontrast_chinese_psychopy.csv","rows":"NA","md5":"0bdeeed7b653a0a854572711cb3daef9"}}
-{"time":"2026-10-14 01:25:37.228912","message":"wrote 'zh_freqcontrast_chinese_opensesame.csv'","data":{"path":"output/experiments/zh_freqcontrast_chinese_opensesame.csv","rows":"NA","md5":"92e29c7a204d46f2df23de8018ad235a"}}
-{"time":"2026-10-14 01:25:37.237783","message":"wrote 'zh_freqcontrast_chinese_opensesame_text.csv'","data":{"path":"output/experiments/zh_freqcontrast_chinese_opensesame_text.csv","rows":"NA","md5":"cb48f54cc0bad839e8a2503b476e528a"}}
-{"time":"2026-10-14 01:25:37.423253","message":"wrote 'zh_freqcontrast_chinese_datasheet_R.json'","data":{"path":"output/reports/zh_freqcontrast_chinese_datasheet_R.json","rows":"NA","md5":"800939efc290e0f1bc2596a3b4d0ad8f"}}
-{"time":"2026-10-14 01:25:37.439765","message":"wrote 'zh_freqcontrast_chinese_datasheet_R.md'","data":{"path":"output/reports/zh_freqcontrast_chinese_datasheet_R.md","rows":"NA","md5":"f4f20e8c45b9aafcd6a2e2194abc8cac"}}
+{"time":"2026-10-14 22:44:33.676538","message":"lexsync: the design gives no `instructions` and its language is 'chinese', so the experiments show lexsync's instructions in English; give `instructions` in the participants' language.","data":null}
+{"time":"2026-10-14 22:44:33.684247","message":"lexsync: the design gives no `instructions`, and lexsync cannot tell what the response keys of a factorial design mean, so the experiments only name the keys; give `instructions` that say what each key means.","data":null}
+{"time":"2026-10-14 22:44:33.695893","message":"loading lexicon 'corpora/derived/zh.csv'","data":null}
+{"time":"2026-10-14 22:44:34.879732","message":"lexicon loaded: 20000 words","data":{"words":20000}}
+{"time":"2026-10-14 22:44:34.928225","message":"pool after filters: 13613 words","data":{"pool":13613}}
+{"time":"2026-10-14 22:44:36.88309","message":"matched 160 items across 2 conditions","data":{"conditions":"high_frequency, low_frequency"}}
+{"time":"2026-10-14 22:44:37.848713","message":"equivalence low_frequency vs high_frequency on 'length': d = 0.00 [0.00, 0.00], TOST p = 0.000 (equivalent)","data":null}
+{"time":"2026-10-14 22:44:37.921242","message":"equivalence low_frequency vs high_frequency on 'frequency': d = 6.11 [5.49, 6.73], TOST p = 1.000 (not shown equivalent)","data":null}
+{"time":"2026-10-14 22:44:37.948217","message":"equivalence low_frequency vs high_frequency on 'n_density': d = 0.07 [-0.19, 0.33], TOST p = 0.004 (equivalent)","data":null}
+{"time":"2026-10-14 22:44:37.955434","message":"equivalence low_frequency vs high_frequency on 'old20': d = 0.11 [-0.16, 0.37], TOST p = 0.007 (equivalent)","data":null}
+{"time":"2026-10-14 22:44:37.964313","message":"equivalence low_frequency vs high_frequency on 'bigram_freq': d = 0.61 [0.34, 0.88], TOST p = 0.758 (not shown equivalent)","data":null}
+{"time":"2026-10-14 22:44:39.232108","message":"wrote 'zh_freqcontrast_chinese_stimuli_R.csv'","data":{"path":"output/stimuli/zh_freqcontrast_chinese_stimuli_R.csv","rows":160,"md5":"4a1365f005dca09f61342d15f42c1d24"}}
+{"time":"2026-10-14 22:44:39.357101","message":"wrote 'zh_freqcontrast_chinese_descriptives_R.csv'","data":{"path":"output/reports/zh_freqcontrast_chinese_descriptives_R.csv","rows":10,"md5":"f3a421f38ccaaf0fed543e9ccff884fb"}}
+{"time":"2026-10-14 22:44:39.61391","message":"wrote 'zh_freqcontrast_chinese_comparisons_R.csv'","data":{"path":"output/reports/zh_freqcontrast_chinese_comparisons_R.csv","rows":5,"md5":"3f255a12031364bf20836d42096d6b12"}}
+{"time":"2026-10-14 22:45:03.81649","message":"wrote 'zh_freqcontrast_chinese_psychopy.py'","data":{"path":"output/experiments/zh_freqcontrast_chinese_psychopy.py","rows":"NA","md5":"d583de115e3f621f2dd8b2c0d55ccb5e"}}
+{"time":"2026-10-14 22:45:04.100698","message":"wrote 'zh_freqcontrast_chinese.osexp'","data":{"path":"output/experiments/zh_freqcontrast_chinese.osexp","rows":"NA","md5":"34ba29f107e0f4abae9f9e1b38c5c801"}}
+{"time":"2026-10-14 22:45:04.277307","message":"wrote 'zh_freqcontrast_chinese.html'","data":{"path":"output/experiments/zh_freqcontrast_chinese.html","rows":"NA","md5":"d4be09bac6663b642219e3882a7a09fb"}}
+{"time":"2026-10-14 22:45:04.635932","message":"wrote 'zh_freqcontrast_chinese_psychopy.csv'","data":{"path":"output/experiments/zh_freqcontrast_chinese_psychopy.csv","rows":"NA","md5":"0bdeeed7b653a0a854572711cb3daef9"}}
+{"time":"2026-10-14 22:45:04.71456","message":"wrote 'zh_freqcontrast_chinese_opensesame.csv'","data":{"path":"output/experiments/zh_freqcontrast_chinese_opensesame.csv","rows":"NA","md5":"92e29c7a204d46f2df23de8018ad235a"}}
+{"time":"2026-10-14 22:45:04.751108","message":"wrote 'zh_freqcontrast_chinese_opensesame_text.csv'","data":{"path":"output/experiments/zh_freqcontrast_chinese_opensesame_text.csv","rows":"NA","md5":"cb48f54cc0bad839e8a2503b476e528a"}}
+{"time":"2026-10-14 22:45:05.743141","message":"wrote 'zh_freqcontrast_chinese_datasheet_R.json'","data":{"path":"output/reports/zh_freqcontrast_chinese_datasheet_R.json","rows":"NA","md5":"d2b6d2ae8789e3b1302e26e305b3bf34"}}
+{"time":"2026-10-14 22:45:05.830369","message":"wrote 'zh_freqcontrast_chinese_datasheet_R.md'","data":{"path":"output/reports/zh_freqcontrast_chinese_datasheet_R.md","rows":"NA","md5":"f4f20e8c45b9aafcd6a2e2194abc8cac"}}

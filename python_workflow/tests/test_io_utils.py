@@ -292,7 +292,7 @@ def test_read_config_reads_an_unquoted_y_and_n_as_text(tmp_path):
 # The two key vocabularies, joined by newlines and hashed. test-io_utils.R pins the
 # same digests for .DESIGN_KEYS and .SCHEMA_KEYS, so a key added to one engine only
 # fails both suites.
-DESIGN_KEYS_SHA256 = "46cb25ea6f0ad0a7973200fa362673a2df818c1121361c58d9d32794fb6ee241"
+DESIGN_KEYS_SHA256 = "b9d90d9cfe9b71aae92cc11b633031a209bfedebcced4487cb3e0040f51da72a"
 SCHEMA_KEYS_SHA256 = "6fe50b7e1f4cd526cb9a555bf649686c8859b62ec8783d24c6ba073ad1927aa3"
 
 
