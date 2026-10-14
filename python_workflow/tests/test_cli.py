@@ -14,6 +14,21 @@ def test_corpora_list_runs(capsys):
     assert "language" in out
 
 
+# The committed lexica hold 30,000 forms (20,000 for Chinese), and `lexsync fetch` built
+# 10,000 with no way to ask for more.
+def test_fetch_takes_n_words(monkeypatch, capsys):
+    import lexsync.cli as cli
+    calls = []
+    monkeypatch.setattr(cli, "fetch_corpus",
+                        lambda name, **options: calls.append((name, options)) or "x.csv")
+    main(["fetch", "fr", "--n-words", "30000"])
+    main(["fetch", "fr"])
+    assert calls == [("fr", {"n_words": 30000}), ("fr", {"n_words": 10000})]
+    with pytest.raises(SystemExit) as exc:
+        main(["fetch", "fr", "--n-words", "0"])
+    assert exc.value.code == 2
+
+
 def test_version_prints_and_exits_zero(capsys):
     # argparse's version action exits, so the SystemExit is the success path.
     with pytest.raises(SystemExit) as exc:

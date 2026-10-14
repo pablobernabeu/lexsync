@@ -177,6 +177,65 @@ count_syllables <- function(word) {
                      "it holds '%s'."), name, bad[1]), call. = FALSE)
 }
 
+# Refuses Zipf values outside 0 to 9, naming the likely cause. A Zipf value is log10 of
+# a frequency per million plus 3 (van Heuven et al., 2014), so 9 is a word making up
+# the whole corpus and 0 one in a thousand million words. A larger value is almost
+# always a rate per million saved under the wrong name, which the frequency filters and
+# the matcher would otherwise read on the wrong scale. A log count such as SUBTLEX-US's
+# Lg10WF (at most 6.33) lies inside the range, so this check cannot catch it. Mirrors
+# _check_zipf_range in python_workflow/src/lexsync/querying.py.
+.check_zipf_range <- function(values) {
+  v <- as.numeric(values)
+  v <- v[!is.na(v)]
+  if (!length(v)) return(invisible(NULL))
+  if (max(v) > 9) {
+    stop(sprintf(paste("lexsync: freq_zipf values reach %s, which looks like frequencies per",
+                       "million; convert with Zipf = log10(per million) + 3 or use",
+                       "normalise_lexicon()."), .fmt_g(max(v))), call. = FALSE)
+  }
+  if (min(v) < 0) {
+    stop(sprintf(paste("lexsync: freq_zipf values fall to %s, below 0, where no Zipf value",
+                       "lies; check which of the source's columns was saved as freq_zipf."),
+                 .fmt_g(min(v))), call. = FALSE)
+  }
+  invisible(NULL)
+}
+
+# How near a rounding boundary a scaled Zipf value may lie before the two engines'
+# log10 could round it apart. The engines' log and exp were measured to differ by one
+# unit in the last place (see hash_unit in io_utils.R). One unit in the last place of a
+# Zipf value times 1000 is under 2e-12, so 1e-9 is a wide margin. Mirrors
+# _ZIPF_BOUNDARY in python_workflow/src/lexsync/querying.py.
+.ZIPF_BOUNDARY <- 1e-9
+
+# Zipf = log10(per million) + 3, rounded to three places by the shared rounder, with
+# the number of values that lay within 1e-9 of a rounding boundary once scaled by 1000.
+# log10 is the one operation here that IEEE-754 does not require to be correctly
+# rounded, and R and Python call different implementations of it. A value that close to
+# a boundary could therefore round one way in one engine and the other way in the other.
+# Every other step is a correctly rounded operation. The count is expected to be 0. Mirrors
+# _zipf_from_permillion in python_workflow/src/lexsync/querying.py.
+.zipf_from_permillion <- function(pm) {
+  z <- log10(as.numeric(pm)) + 3
+  y <- z * 1000
+  list(zipf = .round_dp(z, 3),
+       near_boundary = sum(abs(abs(y - trunc(y)) - 0.5) < .ZIPF_BOUNDARY))
+}
+
+# The rounding-boundary record for a frame carrying freq_permillion, or NULL:
+# list(n_values, near_boundary), how many positive rates per million the frame holds
+# and how many of them put Zipf within 1e-9 of a three-place rounding boundary.
+# normalise_lexicon() writes the column whenever it derives Zipf from it, so
+# run_pipeline() records this for the lexicon a run reads. NULL for a frame without the
+# column, which is every lexicon lexsync ships. Mirrors _zipf_derivation in
+# python_workflow/src/lexsync/querying.py.
+.zipf_derivation <- function(frame) {
+  pm <- frame[["freq_permillion"]]
+  if (is.null(pm) || !is.numeric(pm)) return(NULL)
+  pm <- pm[is.finite(pm) & pm > 0]
+  list(n_values = length(pm), near_boundary = .zipf_from_permillion(pm)$near_boundary)
+}
+
 #' Load a lexicon from a CSV file
 #'
 #' Reads a derived lexicon, validates the column contract, lower-cases the
@@ -186,6 +245,11 @@ count_syllables <- function(word) {
 #' neighbourhood dimensions are added later, on the experimental pool, by
 #' [add_neighbourhood()], because they are quadratic in the size of the
 #' reference set.
+#'
+#' A `freq_zipf` value outside 0 to 9 is refused: it is almost always a frequency per
+#' million in the wrong column (convert it with [normalise_lexicon()]). A log count
+#' such as SUBTLEX-US's `Lg10WF`, log10(count + 1) and at most 6.33, passes the check
+#' and must still be converted, since it reads about 1.3 below Zipf.
 #'
 #' @param path Path to a derived lexicon CSV.
 #' @param schema The parsed schema (see `config/schema.yaml`).
@@ -212,6 +276,8 @@ load_lexicon <- function(path, schema, language = NULL) {
   df$word <- .lower_invariant(.trim_invariant(df$word))
   keep <- !is.na(df$word) & nzchar(df$word) & !is.na(df[[freq_col]])
   df <- df[keep, , drop = FALSE]
+  # The rows the lexicon keeps, before de-duplication, as the Python engine checks them.
+  if (is.numeric(df[["freq_zipf"]])) .check_zipf_range(df[["freq_zipf"]])
   # NFC before de-duplication, so the two spellings of a word are one word and the
   # first row in file order is the one kept.
   nf <- .nfc_count(df$word)

@@ -78,6 +78,65 @@ test_that("fetch_corpus rejects a corpus absent from the registry", {
                "not in the registry")
 })
 
+# Pins the same contract as test_fetch_corpus_refuses_a_name_that_is_a_path in the
+# Python engine's test_corpora.py. The name becomes the cached file's name, so an
+# edited registry with an entry named '../../../escaped' made fetch_corpus() write
+# three levels above the cache, where lexsync_cache_clear() then refused to look. The
+# rule is lexsync_cache_clear()'s, applied before the registry is read and whether or
+# not a `dest` is given.
+test_that("fetch_corpus refuses a name that is a path", {
+  dir <- temp_cache()
+  entry <- list(language = list(name = "Test", iso = "xx"), status = "supported",
+                openlexicon = "https://example.invalid/escaped.csv", citation = "Test (2026).")
+  reg <- file.path(dir, "registry.yaml")
+  yaml::write_yaml(list(corpora = list(`../../../escaped` = entry, `a/b` = entry)), reg)
+  local_mocked_bindings(download.file = mock_download(CSV_BODY))
+  with_user_cache({
+    for (bad in list("../../../escaped", "..\\escaped", "a/b", "C:escaped", "",
+                     NA_character_, c("a", "b"), 1)) {
+      expect_error(fetch_corpus(bad, registry_path = reg),
+                   "'name' must be a single corpus name, not a path", fixed = TRUE,
+                   info = deparse(bad))
+      expect_error(fetch_corpus(bad, registry_path = reg, dest = file.path(dir, "x.csv")),
+                   "not a path", info = deparse(bad))
+    }
+    expect_false(dir.exists(lexsync_cache_dir()))
+  })
+  expect_identical(list.files(dir), "registry.yaml")
+})
+
+# Pins the same contract as test_fetch_corpus_refusals_name_the_registry_they_read in
+# the Python engine's test_corpora.py. The refusals cited corpora/registry.yaml, a path
+# that an installed package does not have, and called an entry with no URL at all a
+# landing page.
+test_that("fetch_corpus refusals name the registry they read", {
+  shipped <- registry_path()
+  expect_error(fetch_corpus("subtlex_uk", registry_path = shipped),
+               sprintf("registers only a landing page .* in '%s'", shipped))
+  expect_error(fetch_corpus("subtlex_klingon", registry_path = shipped),
+               sprintf("not in the registry '%s'", shipped), fixed = TRUE)
+  # subtlex_nl registers neither a landing page nor a file.
+  expect_error(fetch_corpus("subtlex_nl", registry_path = shipped),
+               sprintf("registers no download URL in '%s'", shipped), fixed = TRUE)
+  path <- temp_registry("file:///etc/passwd")
+  expect_error(fetch_corpus("fake", registry_path = path),
+               sprintf("in '%s'; refusing to download", path), fixed = TRUE)
+})
+
+# This test has no Python twin, because that engine builds the lexicon. R's refusal
+# said the language was "not in the registry", which lists it.
+test_that("fetch_corpus explains that a wordfreq language is built by the Python package", {
+  with_user_cache({
+    expect_error(
+      fetch_corpus("fr", registry_path = registry_path()),
+      paste0("lexsync: 'fr' is a wordfreq language; its lexicon is built by the Python ",
+             "package (`lexsync fetch fr`), and the R package reads the result with ",
+             "load_lexicon()."),
+      fixed = TRUE)
+    expect_false(dir.exists(lexsync_cache_dir()))
+  })
+})
+
 # The registry's own header defines 'validated' as a bundled example slice
 # demonstrated end to end. Every bundled lexicon is wordfreq-derived, so no
 # SUBTLEX entry may claim it; list_corpora() shows 'status' to users.
@@ -112,16 +171,47 @@ test_that("subtlex_uk advertises a landing page, not a dead download", {
 })
 
 # 'supported' means fetchable into the user cache, which fetch_corpus() can only
-# honour through an 'openlexicon' key; conversely an entry carrying that key
-# advertises a download, so it may not claim a status that denies one. Pinning the
-# equivalence keeps a rotted URL from being demoted in status alone.
+# honour through an 'openlexicon' key or a 'derived' file; conversely an entry
+# carrying either advertises a download, so it may not claim a status that denies
+# one. Pinning the equivalence keeps a rotted URL from being demoted in status alone.
+download_url <- function(entry) entry[["derived"]][["url"]] %||% entry[["openlexicon"]]
+
 test_that("the openlexicon key and 'supported' status agree", {
   reg <- yaml::read_yaml(registry_path())
   for (name in names(reg$corpora)) {
-    entry <- reg$corpora[[name]]
-    has_file <- !is.null(entry$openlexicon) && nzchar(entry$openlexicon)
-    expect_identical(has_file, identical(entry$status, "supported"), info = name)
+    url <- download_url(reg$corpora[[name]])
+    has_file <- !is.null(url) && nzchar(url)
+    expect_identical(has_file, identical(reg$corpora[[name]]$status, "supported"), info = name)
   }
+})
+
+registry_copies <- function() {
+  paths <- registry_path()
+  root <- repo_root()
+  if (!is.null(root)) {
+    paths <- c(paths, file.path(root, "corpora", "registry.yaml"),
+               file.path(root, "python_workflow", "src", "lexsync", "data", "registry.yaml"))
+  }
+  paths
+}
+
+# Pins the same contract as test_every_supported_entry_has_a_download_url_and_a_sha256
+# in the Python engine's test_corpora.py. A download is cached only once it matches
+# the registry's digest, and an entry without one would cache whatever the server sent.
+test_that("every supported entry has a download URL and a SHA-256", {
+  supported <- character(0)
+  for (path in registry_copies()) {
+    entries <- yaml::read_yaml(path)$corpora
+    for (name in names(entries)) {
+      entry <- entries[[name]]
+      if (!identical(entry$status, "supported")) next
+      supported <- c(supported, name)
+      sha <- if (is.null(entry$derived)) entry$sha256 else entry$derived$sha256
+      expect_match(download_url(entry), "^https://", info = paste(path, name))
+      expect_match(sha %||% "", "^[0-9a-f]{64}$", info = paste(path, name))
+    }
+  }
+  expect_true("subtlex_us" %in% supported)
 })
 
 # Pins the same contract as test_registry_column_maps_are_not_log_counts in the
@@ -246,9 +336,8 @@ test_that("an oversized download is aborted and leaves nothing behind", {
 })
 
 # Pins the same contract as test_fetch_corpus_refuses_a_checksum_mismatch in the
-# Python engine's test_corpora.py. The field is optional and no shipped registry
-# entry carries one yet, so the contract is exercised through the temporary
-# registry alone.
+# Python engine's test_corpora.py. The field is optional in the code, so the contract
+# is exercised through a temporary registry.
 test_that("a checksum mismatch is refused and leaves nothing behind", {
   dir <- temp_cache()
   local_mocked_bindings(download.file = mock_download(CSV_BODY))
@@ -277,6 +366,92 @@ test_that("a matching checksum is accepted", {
     "downloaded 'fake'"
   )
   expect_identical(list.files(dir), "fake.csv")
+})
+
+# Pins the same contract as test_a_mocked_fetch_of_subtlex_us_normalises_into_the_cache
+# in the Python engine's test_corpora.py. The shipped entry names openlexicon's TSV and
+# its SHA-256, which a fixture cannot match, so the fixture is first refused against the
+# shipped entry and then served to a copy of the entry that carries its own digest.
+test_that("a mocked fetch of subtlex_us normalises into the cache", {
+  body <- charToRaw(enc2utf8(SUBTLEX_US))
+  entry <- yaml::read_yaml(registry_path())$corpora$subtlex_us
+  seen <- character(0)
+  local_mocked_bindings(download.file = function(url, destfile, ...) {
+    seen <<- c(seen, url)
+    writeBin(body, destfile)
+    0L
+  })
+  with_user_cache({
+    expect_error(fetch_corpus("subtlex_us", registry_path = registry_path()),
+                 "checksum mismatch for corpus 'subtlex_us'")
+    expect_identical(seen, entry$openlexicon)
+    expect_identical(list.files(lexsync_cache_dir()), character(0))
+    entry$sha256 <- digest::digest(body, algo = "sha256", serialize = FALSE)
+    reg <- tempfile(fileext = ".yaml")
+    yaml::write_yaml(list(corpora = list(subtlex_us = entry)), reg)
+    msgs <- character(0)
+    dest <- withCallingHandlers(
+      fetch_corpus("subtlex_us", registry_path = reg),
+      message = function(m) {
+        msgs <<- c(msgs, conditionMessage(m))
+        invokeRestart("muffleMessage")
+      })
+    expect_identical(dest, file.path(lexsync_cache_dir(), "subtlex_us.csv"))
+    expect_identical(list.files(lexsync_cache_dir()), "subtlex_us.csv")
+    expect_identical(read_corpus_file(dest), SUBTLEX_US_LEXICON)
+    expect_true(any(grepl("normalised 5 forms from 'SUBTLEXus74286wordstextversion.tsv'",
+                          msgs, fixed = TRUE)))
+    expect_true(any(grepl("downloaded 'subtlex_us'. Please cite: Brysbaert & New (2009)",
+                          msgs, fixed = TRUE)))
+  })
+})
+
+# Pins the same contract as
+# test_a_download_that_cannot_be_normalised_leaves_nothing_behind in the Python
+# engine's test_corpora.py: the normalisation is one more check the sidecar must pass
+# before it may enter the cache.
+test_that("a download that cannot be normalised leaves nothing behind", {
+  entry <- list(language = list(name = "Test", iso = "xx"), status = "supported",
+                openlexicon = "https://example.invalid/raw.tsv",
+                columns = list(word = "Word", freq_permillion = "SUBTLWF"),
+                citation = "Test (2026).")
+  reg <- tempfile(fileext = ".yaml")
+  yaml::write_yaml(list(corpora = list(fake = entry)), reg)
+  local_mocked_bindings(download.file = mock_download(charToRaw("Word\tFREQcount\ndog\t9831\n")))
+  with_user_cache({
+    expect_error(fetch_corpus("fake", registry_path = reg), "has no column 'SUBTLWF'",
+                 fixed = TRUE)
+    expect_identical(list.files(lexsync_cache_dir()), character(0))
+  })
+})
+
+# Pins the same contract as
+# test_a_derived_file_is_fetched_in_place_of_the_openlexicon_file in the Python
+# engine's test_corpora.py. A 'derived' file is a lexicon already normalised, which
+# both engines then read byte for byte, so it is preferred and cached as it arrives.
+test_that("a derived file is fetched in place of the openlexicon file", {
+  body <- charToRaw("word,freq_zipf,freq_permillion\ncat,4.848,70.41\n")
+  entry <- list(language = list(name = "Test", iso = "xx"), status = "supported",
+                openlexicon = "https://example.invalid/raw.tsv",
+                derived = list(url = "https://example.invalid/derived.csv",
+                               sha256 = digest::digest(body, algo = "sha256",
+                                                       serialize = FALSE)),
+                columns = list(word = "Word", freq_permillion = "SUBTLWF"),
+                citation = "Test (2026).")
+  reg <- tempfile(fileext = ".yaml")
+  yaml::write_yaml(list(corpora = list(fake = entry)), reg)
+  seen <- character(0)
+  local_mocked_bindings(download.file = function(url, destfile, ...) {
+    seen <<- c(seen, url)
+    writeBin(body, destfile)
+    0L
+  })
+  with_user_cache({
+    dest <- suppressMessages(fetch_corpus("fake", registry_path = reg))
+    expect_identical(seen, "https://example.invalid/derived.csv")
+    expect_identical(list.files(lexsync_cache_dir()), "fake.csv")
+    expect_identical(readBin(dest, "raw", n = file.size(dest)), body)
+  })
 })
 
 # Pins the same contract as test_cache_dir_only_reports_the_path in the Python

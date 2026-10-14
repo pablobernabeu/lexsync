@@ -96,6 +96,8 @@ lexsync run config/design_en_freqcontrast.yaml    # one design, end to end
 lexsync run                                       # every design_*.yaml in --config-dir
 lexsync corpora list                              # the registry, as a table
 lexsync fetch fr                                  # derive a French lexicon via wordfreq
+lexsync fetch fr --n-words 30000                  # the same, with 30,000 forms
+lexsync fetch subtlex_us                          # download and normalise SUBTLEX-US
 ```
 
 `lexsync run` is the orchestrator. It reads the schema and the design, loads the lexicon, derives
@@ -130,16 +132,41 @@ argparse's usage status, 2.
 connector and citation. `lexsync fetch` takes either a registry entry name or a language code. If
 the name is one of the thirty language codes registered for the wordfreq connector, a lexicon is
 built with wordfreq and cached under `~/.lexsync/cache`. Otherwise the registered delimited file is
-downloaded there. Either way the path is printed and the citation for the source goes to standard
-output with it. The cache persists between sessions. `lexsync.corpora.cache_clear("fr")` removes
-one corpus from it, and `cache_clear()` with no name removes the whole cache. Building a wordfreq
-lexicon is Python-only. The R package can read the result as an ordinary corpus but cannot build
-one, so an R laboratory reaches the wider language set through lexica derived here. Registered
-corpora fetched from R go to a separate cache under `tools::R_user_dir("lexsync", "cache")`, which
-`lexsync_cache_clear()` empties.
+downloaded there, checked against the SHA-256 the registry records and normalised into a lexicon,
+as `normalise_lexicon` does below. Either way the path is printed and the citation for the source
+goes to standard output with it. A name holding `/`, `\` or `:` is refused, since it becomes the
+cached file's name, and every refusal names the registry file it read. The cache persists between
+sessions. `lexsync.corpora.cache_clear("fr")` removes one corpus from it, and `cache_clear()` with
+no name removes the whole cache. Building a wordfreq lexicon is Python-only. The R package can read
+the result as an ordinary corpus but cannot build one, so an R laboratory reaches the wider
+language set through lexica derived here. Registered corpora fetched from R go to a separate cache
+under `tools::R_user_dir("lexsync", "cache")`, which `lexsync_cache_clear()` empties.
+
+A corpus file downloaded by hand, such as SUBTLEX-UK from its own page, is made into a lexicon by
+`normalise_lexicon`, which both packages export:
+
+```python
+import lexsync
+lexsync.normalise_lexicon("SUBTLEX-UK.txt", entry="subtlex_uk", out="subtlex_uk.csv")
+```
+
+It reads a tab- or comma-separated file and takes the column names from the registry entry's
+`columns` map (or from `columns=`). A frequency per million is converted with Zipf =
+log10(per million) + 3, rounded to three places, and the words are lower-cased and put in NFC. A
+form listed twice is resolved by the entry's `duplicates` rule: the first row by default, or the
+sum of its rates per million, which Lexique needs because it splits a homograph's frequency
+between its rows. A rate of 0 has no Zipf value and is refused. The line it prints counts the Zipf
+values that lay within 1e-9 of a rounding boundary, the one step at which the two packages'
+`log10` could round a value apart. The count is expected to be 0, and a run over the lexicon
+records it in its run log and datasheet. `load_lexicon` refuses a `freq_zipf` column with values
+outside 0 to 9, which are frequencies per million under the wrong name. A log count such as
+SUBTLEX-US's `Lg10WF` lies inside that range, so it has to be converted all the same.
 
 A wordfreq lexicon holds the language's most frequent forms that are spelt with letters, 10,000 of
-them unless `fetch_corpus` is given another `n_words`. Each form is lower-cased and put in Unicode
+them unless `fetch_corpus` is given another `n_words` or `lexsync fetch` another `--n-words`. The
+lexica committed under `corpora/derived/` hold more: they were built with `python
+corpora/fetch_corpora.py --languages en es --n-words 30000` and, for Chinese, `--languages zh
+--n-words 20000`. Each form is lower-cased and put in Unicode
 NFC. Combining marks are part of the spelling, so the vowel signs and viramas of Hindi and Bengali
 are kept, and so is the zero-width non-joiner that Persian spells many words with. A Ukrainian
 word may also hold an apostrophe between two letters, as п'ять does, and a Catalan word a middle dot

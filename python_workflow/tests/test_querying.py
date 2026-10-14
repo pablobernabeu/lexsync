@@ -178,6 +178,25 @@ def test_load_lexicon_refuses_a_frequency_column_that_is_not_numeric(schema, tmp
         load_lexicon(str(path), schema, "english")
 
 
+# Pins the same contract as "load_lexicon refuses Zipf values outside 0 to 9" in
+# test-querying.R. Frequencies per million saved as freq_zipf were read as Zipf values,
+# so a filter on [3.8, 7] selected different words with nothing said. A log count such
+# as SUBTLEX-US's Lg10WF stays within the range, and no check on the values can catch it.
+def test_load_lexicon_refuses_zipf_values_outside_0_to_9(schema, tmp_path):
+    path = tmp_path / "per_million.csv"
+    path.write_text("word,freq_zipf\nthe,29449.18\ndog,192.76\n", encoding="utf-8")
+    msg = ("lexsync: freq_zipf values reach 29449.2, which looks like frequencies per "
+           "million; convert with Zipf = log10(per million) + 3 or use normalise_lexicon().")
+    with pytest.raises(ValueError, match=re.escape(msg)):
+        load_lexicon(str(path), schema, "english")
+    path.write_text("word,freq_zipf\nthe,7.5\ndog,-0.25\n", encoding="utf-8")
+    with pytest.raises(ValueError, match=re.escape("freq_zipf values fall to -0.25, below 0")):
+        load_lexicon(str(path), schema, "english")
+    # The ends of the scale are Zipf values, and a log count passes.
+    path.write_text("word,freq_zipf\nthe,9\ndog,0\ncat,6.1766\n", encoding="utf-8")
+    assert len(load_lexicon(str(path), schema, "english")) == 3
+
+
 def test_missing_column_raises(schema, tmp_path):
     bad = tmp_path / "bad.csv"
     pd.DataFrame({"notword": ["x"]}).to_csv(bad, index=False)

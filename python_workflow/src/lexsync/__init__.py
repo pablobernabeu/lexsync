@@ -1,5 +1,5 @@
 """lexsync: lexical optimisation and hardware-timed experiment generation."""
-from .corpora import fetch_corpus, list_corpora
+from .corpora import fetch_corpus, list_corpora, normalise_lexicon
 from .counterbalancing import balance_lists, counterbalance, participant_table
 from .datasheet import build_datasheet, methods_paragraph, write_datasheet
 from .design import design_stem, validate_design
@@ -47,7 +47,7 @@ __all__ = [
     "match_report_continuous", "export_experiments",
     "export_psychopy", "export_opensesame", "export_jspsych", "resolve_trial_timing",
     "add_pair_overlap",
-    "list_corpora", "fetch_corpus",
+    "list_corpora", "fetch_corpus", "normalise_lexicon",
     "build_datasheet", "methods_paragraph", "write_datasheet",
     "run_pipeline", "run_all", "validate_design", "design_stem",
 ]

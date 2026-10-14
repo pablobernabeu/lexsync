@@ -121,6 +121,10 @@ from .scripting import (
 #   presentation.response_mapping  the key each condition takes, {conditions, keys,
 #                               rotate_by_list, source}, present only when a mapping
 #                               applies: the design's own or a lexical decision's default
+#   materials_source["zipf_derivation"]   for a lexicon carrying freq_permillion, the
+#                                     positive rates it holds and how many of them put
+#                                     Zipf within 1e-9 of a rounding boundary
+#                                     ({n_values, near_boundary})
 DATASHEET_VERSION = "1.2"
 
 # Datasheet labels for the pseudoword generators in generation.py, keyed by the
@@ -680,7 +684,7 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
                     balance=None, blocks=None, design_path=None, schema_path=None,
                     selection_audit=None, neighbourhood_reference=None,
                     counterbalance_check=None, input_normalisation=None,
-                    generation_exclude=None, exclusions=None) -> dict:
+                    generation_exclude=None, exclusions=None, zipf_derivation=None) -> dict:
     """Assemble the datasheet dictionary from the pipeline's objects.
 
     For a corpus or generated design, ``materials_source["provenance"]`` credits the
@@ -750,6 +754,12 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
     words it lists and the number of candidates it removed. Recorded as
     ``materials_source["exclusions"]``, because the words decide which candidates the
     selection could draw.
+
+    ``zipf_derivation`` (optional) is ``{"n_values", "near_boundary"}`` for a lexicon
+    carrying ``freq_permillion``, as ``normalise_lexicon`` writes one: how many positive
+    rates it holds, and how many put Zipf = log10(per million) + 3 within 1e-9 of a
+    three-place rounding boundary, where the two engines' log10 could round a derived
+    value apart. Recorded as ``materials_source["zipf_derivation"]``.
 
     ``design["n_per_condition"]`` is the request the selector applied, the selector's
     default when the design gives none, and ``items["n_per_condition_realised"]``
@@ -906,6 +916,10 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
         materials_source["input_normalisation"] = {
             "changed": int(input_normalisation["changed"]),
             "collapsed": int(input_normalisation["collapsed"])}
+    if zipf_derivation is not None:
+        materials_source["zipf_derivation"] = {
+            "n_values": int(zipf_derivation["n_values"]),
+            "near_boundary": int(zipf_derivation["near_boundary"])}
 
     # A corpus design draws on every schema dimension, and so does a pair-keyed
     # design: every lexicon dimension is joined onto each member. A generate or plain
@@ -1643,6 +1657,10 @@ def render_datasheet_md(ds: dict) -> str:
     if nfc:
         lines.append("- **Input normalisation:** %d text form(s) rewritten to Unicode NFC, "
                      "%d duplicate(s) removed" % (nfc["changed"], nfc["collapsed"]))
+    zd = (ds.get("materials_source") or {}).get("zipf_derivation")
+    if zd:
+        lines.append("- **Zipf from frequencies per million:** %d of %d value(s) within 1e-9 "
+                     "of a rounding boundary" % (zd["near_boundary"], zd["n_values"]))
     # The known-form lists a generated design's pseudowords were checked against: they
     # decide which pseudowords the run produced, as the lexicon does.
     for r in (ds.get("selection") or {}).get("generation_exclude") or []:

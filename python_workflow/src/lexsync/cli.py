@@ -19,6 +19,17 @@ def _version() -> str:
         return "unknown"
 
 
+def _positive_int(text: str) -> int:
+    """An argparse type for a count of at least 1."""
+    try:
+        value = int(text)
+    except ValueError:
+        value = 0
+    if value < 1:
+        raise argparse.ArgumentTypeError(f"must be a whole number of at least 1, not {text!r}")
+    return value
+
+
 def main(argv=None) -> None:
     parser = argparse.ArgumentParser(
         prog="lexsync",
@@ -44,6 +55,10 @@ def main(argv=None) -> None:
 
     fetch = sub.add_parser("fetch", help="fetch a corpus by registry name or language code")
     fetch.add_argument("name")
+    # The committed lexica were built with 30,000 forms (20,000 for zh) by
+    # corpora/fetch_corpora.py. The default stays 10,000, as before.
+    fetch.add_argument("--n-words", type=_positive_int, default=10000,
+                       help="forms in a lexicon the wordfreq connector builds (default 10000)")
 
     args = parser.parse_args(argv)
     try:
@@ -55,7 +70,7 @@ def main(argv=None) -> None:
         elif args.command == "corpora":
             print(list_corpora().to_string(index=False))
         elif args.command == "fetch":
-            print(fetch_corpus(args.name))
+            print(fetch_corpus(args.name, n_words=args.n_words))
         else:
             parser.print_help()
     except Exception as exc:

@@ -52,6 +52,7 @@ from .querying import (
     _nfc_count,
     _nfc_record,
     _read_exclude_words,
+    _zipf_derivation,
     add_bigram_frequency,
     add_neighbourhood,
     add_pair_overlap,
@@ -313,6 +314,7 @@ def run_pipeline(design_path: str, schema_path: str | None = None, outdir: str =
     pair_eligible = None
     generation_exclude = None
     exclusions = None
+    zipf_derivation = None
     norms: list = []
     selection_audit = None
     # What NFC normalisation did to the inputs this run read (see querying._nfc_count),
@@ -346,6 +348,18 @@ def run_pipeline(design_path: str, schema_path: str | None = None, outdir: str =
                              "n_within_tolerance": rx["n_within_tolerance"],
                              "n_needed": rx["n_needed"]})
         return stim
+
+    # A lexicon carrying freq_permillion, as normalise_lexicon writes one, gets a record
+    # of how many of its rates put Zipf within 1e-9 of a rounding boundary, the one
+    # place the two engines' log10 could have derived a different value. Every lexicon
+    # lexsync ships lacks the column, so their runs log and record nothing new.
+    def note_zipf_derivation(frame):
+        record = _zipf_derivation(frame)
+        if record is not None:
+            runlog.log_step(log, "freq_permillion: %d of %d value(s) put Zipf within 1e-9 of "
+                                 "a rounding boundary"
+                                 % (record["near_boundary"], record["n_values"]), dict(record))
+        return record
 
     # The design's `norms:` tables are joined onto the lexicon before the pool is
     # built, so a filter, a matched dimension or a continuous predictor may name a
@@ -394,12 +408,14 @@ def run_pipeline(design_path: str, schema_path: str | None = None, outdir: str =
                      % (len(lex), "" if not lexicon
                         else " (dimensions from '%s')" % lexicon),
                 {"words": len(lex), "lexicon": lexicon})
+            zipf_derivation = note_zipf_derivation(lex)
         else:
             lexicon = items_cfg.get("lexicon") or design.get("lexicon")
             runlog.log_step(log, f"loading lexicon '{lexicon}'")
             lex = load_lexicon(lexicon, schema, language=design["language"])
             tally(lex.attrs.get("input_normalisation"))
             runlog.log_step(log, f"lexicon loaded: {len(lex)} words", {"words": len(lex)})
+            zipf_derivation = note_zipf_derivation(lex)
             ref_words = _neighbourhood_reference(lex)
         lex = join_norms(lex)
         # The design's exclude_words leave the candidates here, after the norms join and
@@ -545,6 +561,7 @@ def run_pipeline(design_path: str, schema_path: str | None = None, outdir: str =
             runlog.log_step(log, f"loading member lexicon '{mem_lexicon}'")
             mem_lex = load_lexicon(mem_lexicon, schema, language=design["language"])
             tally(mem_lex.attrs.get("input_normalisation"))
+            zipf_derivation = note_zipf_derivation(mem_lex)
             mem_lex = join_norms(mem_lex)
             stim = join_member_norms(stim, members, items_cfg, design, schema, lex=mem_lex)
             runlog.log_step(log, "joined word-level norms onto %s" % " and ".join(members))
@@ -739,7 +756,8 @@ def run_pipeline(design_path: str, schema_path: str | None = None, outdir: str =
                          selection_audit=selection_audit,
                          neighbourhood_reference=nref, counterbalance_check=cb_check,
                          input_normalisation=input_normalisation,
-                         generation_exclude=generation_exclude, exclusions=exclusions)
+                         generation_exclude=generation_exclude, exclusions=exclusions,
+                         zipf_derivation=zipf_derivation)
     ds_json = os.path.join(outdir, "reports", f"{base}_datasheet_py.json")
     ds_md = os.path.join(outdir, "reports", f"{base}_datasheet_py.md")
     write_datasheet(ds, ds_json, ds_md)

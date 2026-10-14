@@ -171,6 +171,7 @@ reference:
   contents:
   - list_corpora
   - fetch_corpus
+  - normalise_lexicon
   - lexsync_cache_dir
   - lexsync_cache_clear
   - load_lexicon

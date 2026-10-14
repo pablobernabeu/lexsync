@@ -2,7 +2,8 @@
 """Build lexsync derived lexica from wordfreq, with N and OLD20 precomputed.
 
 Usage:
-    python corpora/fetch_corpora.py --languages en es --n-words 10000
+    python corpora/fetch_corpora.py --languages en es --n-words 30000
+    python corpora/fetch_corpora.py --languages zh --n-words 20000
     python corpora/fetch_corpora.py --known-forms en es
     python corpora/fetch_corpora.py --screen-en [--subtlex-us PATH]
     python corpora/fetch_corpora.py --slice-en

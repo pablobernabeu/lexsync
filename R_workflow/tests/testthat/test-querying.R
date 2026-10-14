@@ -169,6 +169,28 @@ test_that("load_lexicon refuses a frequency column that is not numeric", {
                      "but it holds '1,000'."), fixed = TRUE)
 })
 
+# Pins the same contract as test_load_lexicon_refuses_zipf_values_outside_0_to_9 in
+# test_querying.py. Frequencies per million saved as freq_zipf were read as Zipf
+# values, so a filter on [3.8, 7] selected different words with nothing said. A log
+# count such as SUBTLEX-US's Lg10WF stays within the range, and no check on the values
+# can catch it.
+test_that("load_lexicon refuses Zipf values outside 0 to 9", {
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  path <- tempfile(fileext = ".csv")
+  on.exit(unlink(path), add = TRUE)
+  writeLines(c("word,freq_zipf", "the,29449.18", "dog,192.76"), path)
+  expect_error(load_lexicon(path, schema, language = "english"),
+               paste("lexsync: freq_zipf values reach 29449.2, which looks like frequencies",
+                     "per million; convert with Zipf = log10(per million) + 3 or use",
+                     "normalise_lexicon()."), fixed = TRUE)
+  writeLines(c("word,freq_zipf", "the,7.5", "dog,-0.25"), path)
+  expect_error(load_lexicon(path, schema, language = "english"),
+               "freq_zipf values fall to -0.25, below 0", fixed = TRUE)
+  # The ends of the scale are Zipf values, and a log count passes.
+  writeLines(c("word,freq_zipf", "the,9", "dog,0", "cat,6.1766"), path)
+  expect_identical(nrow(load_lexicon(path, schema, language = "english")), 3L)
+})
+
 test_that(".lower_invariant reproduces Unicode default casing whatever the locale", {
   # Written as code points so the source stays ASCII (CRAN), and so the expected
   # Greek final sigma (U+03C2) and dotted-I expansion are unambiguous.

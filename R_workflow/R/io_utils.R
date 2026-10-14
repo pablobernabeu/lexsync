@@ -276,19 +276,22 @@
 #'
 #' @param path Path to a CSV file.
 #' @param as_character Character vector of column names that stay text, trimmed. A
-#'   name the file's header does not carry is ignored.
+#'   name the file's header does not carry is ignored, and `TRUE` keeps every column
+#'   as text.
+#' @param delim `","`, or a tab character for a tab-separated file, which is read with
+#'   no quoting, as tab-separated corpora such as SUBTLEX-US and Lexique are written: a
+#'   quotation mark there is part of the cell. Mirrors the Python twin's `delim`.
 #' @return A data frame (a tibble). An empty file gives one with no columns.
-#' @importFrom readr read_csv locale
+#' @importFrom readr read_csv read_delim locale
 #' @keywords internal
-read_csv_utf8 <- function(path, as_character = character(0)) {
+read_csv_utf8 <- function(path, as_character = character(0), delim = ",") {
   if (!file.exists(path)) {
     stop(sprintf("lexsync: file not found: '%s'", path), call. = FALSE)
   }
   # The header row is read as data, so that the names are seen before readr repairs a
   # duplicate, and every cell as text with nothing trimmed or treated as missing, so
   # that the rule below is the only one applied.
-  raw <- readr::read_csv(
-    path,
+  options <- list(
     col_names = FALSE,
     col_types = readr::cols(.default = readr::col_character()),
     na = character(0),
@@ -297,13 +300,20 @@ read_csv_utf8 <- function(path, as_character = character(0)) {
     progress = FALSE,
     locale = readr::locale(encoding = "UTF-8")
   )
+  raw <- if (identical(delim, "\t")) {
+    do.call(readr::read_delim, c(list(path, delim = "\t", quote = "", escape_double = FALSE),
+                                 options))
+  } else {
+    do.call(readr::read_csv, c(list(path), options))
+  }
   if (!nrow(raw)) return(raw)
   nm <- .csv_names(unlist(raw[1L, ], use.names = FALSE), path)
   out <- raw[-1L, , drop = FALSE]
   names(out) <- nm
+  every <- isTRUE(as_character)
   for (j in seq_along(nm)) {
     cells <- .csv_cells(out[[j]])
-    out[[j]] <- if (nm[j] %in% as_character) cells else .type_column(cells)
+    out[[j]] <- if (every || nm[j] %in% as_character) cells else .type_column(cells)
   }
   out
 }

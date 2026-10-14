@@ -1,5 +1,35 @@
 # lexsync (development version)
 
+* `normalise_lexicon()` turns a delimited corpus file into a lexicon `load_lexicon()`
+  reads. It applies a column map, reads tab-separated files, derives Zipf values from
+  frequencies per million (Zipf = log10(per million) + 3) and writes `word` and
+  `freq_zipf`, with `freq_permillion` and `pos` when the file has them. Words are
+  lower-cased and put in NFC, and a form listed more than once keeps its first row or,
+  under a registry entry's `duplicates: sum`, the sum of its rows' frequencies, as
+  Lexique needs. A message counts the derived values that lay within 1e-9 of a
+  rounding boundary, the one step at which the two engines' `log10()` could round a
+  value apart, and a run over a lexicon carrying `freq_permillion` records the count in
+  its run log and as `materials_source$zipf_derivation`, a field of datasheet format
+  1.2. `fetch_corpus("subtlex_us")` downloads SUBTLEX-US from openlexicon, checks its
+  SHA-256 and normalises it in either engine. No registered corpus could be fetched
+  before. An entry may also name a `derived` file, a lexicon already normalised, which
+  is fetched in its place. The registry header describes this route where it said
+  that the column maps were not yet applied. Lexique 3.83 stays a listed entry: the
+  manual confirms that it splits a homograph's frequency between rows, so the entry
+  records `duplicates: sum`, but the forms its film corpus never attests carry a
+  frequency of 0, which has no Zipf value.
+
+* `load_lexicon()` refuses Zipf values outside 0 to 9, which are frequencies per
+  million in the wrong column. A log count such as SUBTLEX-US's `Lg10WF` lies inside
+  that range and must still be converted.
+
+* `fetch_corpus()` refuses a corpus name containing a path before it reads the
+  registry, so an edited registry cannot make it write outside the cache. Its
+  refusals name the registry they read and say when an entry registers no download
+  address, and a wordfreq language code now gets an explanation that its lexicon is
+  built by the Python package (`lexsync fetch fr`) and read here with
+  `load_lexicon()`, where the refusal said the language was not in the registry.
+
 * Generated experiments show task instructions before the first trial and wait for
   the space bar, so the experimenter can start the run when the participant is
   ready. A design sets the text with `instructions`. It may hold line breaks and no

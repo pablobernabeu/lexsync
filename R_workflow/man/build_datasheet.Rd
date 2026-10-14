@@ -24,7 +24,8 @@ build_datasheet(
   counterbalance_check = NULL,
   input_normalisation = NULL,
   generation_exclude = NULL,
-  exclusions = NULL
+  exclusions = NULL,
+  zipf_derivation = NULL
 )
 }
 \arguments{
@@ -109,6 +110,12 @@ or \code{"inline"} for a list in the design, its checksum, the number of distinc
 it lists and the number of candidates it removed. Recorded as
 \code{materials_source$exclusions}, because the words decide which candidates the
 selection could draw.}
+
+\item{zipf_derivation}{Optional \code{list(n_values, near_boundary)} for a lexicon
+carrying \code{freq_permillion}, as \code{\link[=normalise_lexicon]{normalise_lexicon()}} writes one: how many positive
+rates it holds, and how many put Zipf = log10(per million) + 3 within 1e-9 of a
+three-place rounding boundary, where the two engines' \code{log10} could round a
+derived value apart. Recorded as \code{materials_source$zipf_derivation}.}
 }
 \value{
 The datasheet as a nested list, ready for \code{\link[=write_datasheet]{write_datasheet()}}.

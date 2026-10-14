@@ -220,6 +220,15 @@ of headroom, so the comparisons files still come out byte-identical. The guarant
 margin of some seven orders of magnitude rather than on the construction, and saying so is what
 stops anyone widening the reported precision without checking the margin first.
 
+`normalise_lexicon` has the same kind of step. Zipf = log10(per million) + 3 calls each engine's
+own `log10`, which IEEE-754 does not require to be correctly rounded. A value whose scaled Zipf lies
+within one unit in the last place of a rounding boundary could therefore round to different
+three-place values in the two engines. The function counts the values that lie within 1e-9 of a
+boundary, and the count is expected to be 0. A run over a lexicon carrying `freq_permillion`
+records it as `materials_source.zipf_derivation` in its datasheet and in its run log. A registry
+entry's `derived` file, a lexicon normalised once and checksummed, lets both engines read the same
+bytes and leaves no such step at all.
+
 Trial order is no longer on this list. Earlier versions drew it from each engine's own seeded
 generator, reproducible within an engine, given `schema.seed`, and never across the two. The
 keyed-hash shuffle retired that exception: the permutation is part of the byte-identical surface,

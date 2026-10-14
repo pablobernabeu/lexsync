@@ -65,6 +65,10 @@
 #   presentation$response_mapping  the key each condition takes, (conditions, keys,
 #                               rotate_by_list, source), present only when a mapping
 #                               applies: the design's own or a lexical decision's default
+#   materials_source$zipf_derivation   for a lexicon carrying freq_permillion, the
+#                                      positive rates it holds and how many of them put
+#                                      Zipf within 1e-9 of a rounding boundary
+#                                      (n_values, near_boundary)
 DATASHEET_VERSION <- "1.2"
 
 # Datasheet labels for the pseudoword generators in generation.R, keyed by the
@@ -650,6 +654,11 @@ DATASHEET_VERSION <- "1.2"
 #'   it lists and the number of candidates it removed. Recorded as
 #'   `materials_source$exclusions`, because the words decide which candidates the
 #'   selection could draw.
+#' @param zipf_derivation Optional `list(n_values, near_boundary)` for a lexicon
+#'   carrying `freq_permillion`, as [normalise_lexicon()] writes one: how many positive
+#'   rates it holds, and how many put Zipf = log10(per million) + 3 within 1e-9 of a
+#'   three-place rounding boundary, where the two engines' `log10` could round a
+#'   derived value apart. Recorded as `materials_source$zipf_derivation`.
 #' @details For a corpus or generated design, `materials_source$provenance` credits the
 #'   lexicon that `source_path` names. A lexicon lexsync ships is credited by its
 #'   source, a corpus fetched into the cache by the registry's citation, and any other
@@ -669,7 +678,7 @@ build_datasheet <- function(design, schema, report, stimuli, source_path, artifa
                             schema_path = NULL, selection_audit = NULL,
                             neighbourhood_reference = NULL, counterbalance_check = NULL,
                             input_normalisation = NULL, generation_exclude = NULL,
-                            exclusions = NULL) {
+                            exclusions = NULL, zipf_derivation = NULL) {
   source <- design[["items"]][["source"]] %||% "corpus"
   is_continuous <- .is_continuous(design)
   controlled <- .controlled_dims(design, source)
@@ -828,6 +837,11 @@ build_datasheet <- function(design, schema, report, stimuli, source_path, artifa
     materials_source$input_normalisation <- list(
       changed = as.integer(input_normalisation$changed),
       collapsed = as.integer(input_normalisation$collapsed))
+  }
+  if (!is.null(zipf_derivation)) {
+    materials_source$zipf_derivation <- list(
+      n_values = as.integer(zipf_derivation$n_values),
+      near_boundary = as.integer(zipf_derivation$near_boundary))
   }
 
   # A corpus design draws on every schema dimension, and so does a pair-keyed design:
@@ -1543,6 +1557,11 @@ render_datasheet_md <- function(ds) {
       sprintf("- **Input normalisation:** %d text form(s) rewritten to Unicode NFC, %d duplicate(s) removed",
               as.integer(ds$materials_source$input_normalisation$changed),
               as.integer(ds$materials_source$input_normalisation$collapsed))
+    else NULL,
+    if (!is.null(ds$materials_source$zipf_derivation))
+      sprintf("- **Zipf from frequencies per million:** %d of %d value(s) within 1e-9 of a rounding boundary",
+              as.integer(ds$materials_source$zipf_derivation$near_boundary),
+              as.integer(ds$materials_source$zipf_derivation$n_values))
     else NULL,
     # The known-form lists a generated design's pseudowords were checked against: they
     # decide which pseudowords the run produced, as the lexicon does.

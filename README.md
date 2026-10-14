@@ -171,19 +171,23 @@ proper names, acronyms and other forms that are not words of the language, and
 English demonstrations and the packages' English example slices draw only on the
 forms it leaves unmarked.
 
-`fetch_corpus()` can download only an entry that registers a delimited file, and
-no registry entry does yet. A SUBTLEX-family file is therefore loaded by hand.
-Download it from the corpus's own page and rename its columns to `word` and
-`freq_zipf`, converting a per-million frequency with Zipf = log10(per million) +
-3. Then save it comma-separated and pass it to `load_lexicon()`. The registry's
-`columns` map names the source columns, though lexsync does not yet apply it.
-Lexica for the wordfreq languages are built by the Python package only.
-`lexsync fetch <language>` derives one into a user cache, and the R package can
-read the result as an ordinary corpus but cannot build one itself. An R-only
-laboratory therefore reaches the wider language set only through lexica derived
-elsewhere. Every corpus is cited, with its licence and retrieval date, in
-`corpora/ATTRIBUTION.md`. The bundled corpora are a fixed, checksummed snapshot,
-so the demonstrations reproduce with no download.
+`normalise_lexicon()`, in both packages, turns a corpus file in its publisher's
+layout into a lexicon that `load_lexicon()` reads. It reads a tab- or
+comma-separated file, renames its columns by the registry's `columns` map,
+converts a frequency per million with Zipf = log10(per million) + 3 and puts the
+words in lower case and Unicode NFC. `normalise_lexicon(path, entry =
+"subtlex_uk")` does this for a SUBTLEX-UK file downloaded from its own page.
+`fetch_corpus()` downloads an entry that registers a delimited file, checks its
+SHA-256 and normalises it the same way. SUBTLEX-US is the first such entry, so
+`fetch_corpus("subtlex_us")` gives either package SUBTLEX-US as a lexicon. Lexica
+for the wordfreq languages are built by the Python package only. `lexsync fetch
+<language> --n-words <N>` derives one into a user cache (10,000 forms unless told
+otherwise), and the R package can read the result as an ordinary corpus but
+cannot build one itself. The committed `corpora/derived/` lexica were built with
+`python corpora/fetch_corpora.py --languages en es --n-words 30000` and, for
+Chinese, `--languages zh --n-words 20000`. Every corpus is cited, with its licence
+and retrieval date, in `corpora/ATTRIBUTION.md`. The bundled corpora are a fixed,
+checksummed snapshot, so the demonstrations reproduce with no download.
 'wordfreq' itself was frozen in 2024, giving a stable snapshot of usage through
 roughly 2021, which keeps fetched corpora reproducible where a live source would
 let them drift.

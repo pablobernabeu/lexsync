@@ -1,5 +1,6 @@
 import hashlib
 import os
+import re
 import sys
 import time
 import types
@@ -10,6 +11,7 @@ import urllib.request
 import pandas as pd
 import pytest
 import yaml
+from helper_corpus_files import SUBTLEX_US, SUBTLEX_US_LEXICON
 from helper_repo import REPO
 
 import lexsync
@@ -130,6 +132,46 @@ def test_fetch_corpus_rejects_unregistered_corpus():
         fetch_corpus("subtlex_klingon", registry_path=_registry_path())
 
 
+# Pins the same contract as "fetch_corpus refuses a name that is a path" in the R
+# engine's test-corpora.R. The name becomes the cached file's name, so an edited
+# registry with an entry named '../../../escaped' made fetch_corpus write three levels
+# above the cache, where cache_clear() then refused to look. The rule is
+# cache_clear()'s, and it is applied before the registry is read.
+@pytest.mark.parametrize("bad", ["../../../escaped", "..\\escaped", "a/b", "C:escaped", "",
+                                 ["a", "b"], 1])
+def test_fetch_corpus_refuses_a_name_that_is_a_path(tmp_path, monkeypatch, bad):
+    cache = _absent_cache(tmp_path, monkeypatch)
+    entry = {"language": {"name": "Test", "iso": "xx"}, "status": "supported",
+             "openlexicon": "https://example.invalid/escaped.csv", "citation": "Test (2026)."}
+    reg = tmp_path / "registry.yaml"
+    reg.write_text(yaml.safe_dump({"corpora": {"../../../escaped": entry, "a/b": entry}}),
+                   encoding="utf-8")
+    _mock_transport(monkeypatch, b"word,freq_zipf\ndog,4.5\n")
+    with pytest.raises(ValueError, match="'name' must be a single corpus name, not a path"):
+        fetch_corpus(bad, registry_path=str(reg))
+    assert not cache.exists()
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["registry.yaml"]
+
+
+# Pins the same contract as "fetch_corpus refusals name the registry they read" in the
+# R engine's test-corpora.R. The refusals cited corpora/registry.yaml, a path that an
+# installed package does not have, and called an entry with no URL at all a landing page.
+def test_fetch_corpus_refusals_name_the_registry_they_read(tmp_path):
+    shipped = _registry_path()
+    with pytest.raises(ValueError, match="registers only a landing page .* in '%s'"
+                                         % re.escape(shipped)):
+        fetch_corpus("subtlex_uk", registry_path=shipped)
+    with pytest.raises(ValueError, match="not in the registry '%s'" % re.escape(shipped)):
+        fetch_corpus("subtlex_klingon", registry_path=shipped)
+    # subtlex_nl registers neither a landing page nor a file.
+    with pytest.raises(ValueError, match="registers no download URL in '%s'"
+                                         % re.escape(shipped)):
+        fetch_corpus("subtlex_nl", registry_path=shipped)
+    path = _temp_registry(tmp_path, "file:///etc/passwd")
+    with pytest.raises(ValueError, match="non-http.* in '%s'" % re.escape(path)):
+        fetch_corpus("fake", registry_path=path)
+
+
 # The registry's own header defines 'validated' as a bundled example slice
 # demonstrated end to end. Every bundled lexicon is wordfreq-derived, so no
 # SUBTLEX entry may claim it; list_corpora() shows 'status' to users.
@@ -159,12 +201,35 @@ def test_subtlex_uk_advertises_a_landing_page_not_a_dead_download(registry):
 
 
 # 'supported' means fetchable into the user cache, which fetch_corpus() can only
-# honour through an 'openlexicon' key; conversely an entry carrying that key
-# advertises a download, so it may not claim a status that denies one. Pinning the
-# equivalence keeps a rotted URL from being demoted in status alone.
+# honour through an 'openlexicon' key or a 'derived' file; conversely an entry carrying
+# either advertises a download, so it may not claim a status that denies one. Pinning
+# the equivalence keeps a rotted URL from being demoted in status alone.
+def _download_url(entry):
+    return (entry.get("derived") or {}).get("url") or entry.get("openlexicon")
+
+
 def test_openlexicon_key_and_supported_status_agree(registry):
     for name, entry in registry["corpora"].items():
-        assert bool(entry.get("openlexicon")) == (entry.get("status") == "supported"), name
+        assert bool(_download_url(entry)) == (entry.get("status") == "supported"), name
+
+
+# Pins the same contract as "every supported entry has a download URL and a SHA-256"
+# in the R engine's test-corpora.R. A download is cached only once it matches the
+# registry's digest, and an entry without one would cache whatever the server sent.
+def test_every_supported_entry_has_a_download_url_and_a_sha256():
+    supported = []
+    for path in _registry_copies():
+        with open(path, encoding="utf-8") as handle:
+            entries = yaml.safe_load(handle)["corpora"]
+        for name, entry in entries.items():
+            if entry.get("status") != "supported":
+                continue
+            supported.append(name)
+            derived = entry.get("derived")
+            sha = derived.get("sha256") if derived else entry.get("sha256")
+            assert _download_url(entry).startswith("https://"), (path, name)
+            assert re.fullmatch(r"[0-9a-f]{64}", sha or ""), (path, name)
+    assert "subtlex_us" in supported
 
 
 # SUBTLEX-US's Lg10WF and SUBTLEX-DE's lgSUBTLEX are log10 word counts, which read
@@ -297,9 +362,8 @@ def test_fetch_corpus_aborts_an_oversized_download(tmp_path, monkeypatch):
 
 
 # Pins the same contract as "a checksum mismatch is refused and leaves nothing
-# behind" in the R engine's test-corpora.R. The field is optional and no shipped
-# registry entry carries one yet, so the contract is exercised through the
-# temporary registry alone.
+# behind" in the R engine's test-corpora.R. The field is optional in the code, so the
+# contract is exercised through a temporary registry.
 def test_fetch_corpus_refuses_a_checksum_mismatch(tmp_path, monkeypatch):
     path = _temp_registry(tmp_path, "https://example.invalid/good.csv", sha256="0" * 64)
     cache = _local_cache(tmp_path, monkeypatch)
@@ -320,6 +384,74 @@ def test_fetch_corpus_accepts_a_matching_checksum(tmp_path, monkeypatch):
     dest = fetch_corpus("fake", registry_path=path)
     assert [p.name for p in cache.iterdir()] == ["fake.csv"]
     assert os.path.basename(dest) == "fake.csv"
+
+
+# Pins the same contract as "a mocked fetch of subtlex_us normalises into the cache"
+# in the R engine's test-corpora.R. The shipped entry names openlexicon's TSV and its
+# SHA-256, which a fixture cannot match, so the fixture is first refused against the
+# shipped entry and then served to a copy of the entry that carries its own digest.
+def test_a_mocked_fetch_of_subtlex_us_normalises_into_the_cache(tmp_path, monkeypatch,
+                                                                registry, capsys):
+    body = SUBTLEX_US.encode("utf-8")
+    entry = dict(registry["corpora"]["subtlex_us"])
+    cache = _absent_cache(tmp_path, monkeypatch)
+    calls = _mock_transport(monkeypatch, body)
+    with pytest.raises(ValueError, match="checksum mismatch for corpus 'subtlex_us'"):
+        fetch_corpus("subtlex_us", registry_path=_registry_path())
+    assert calls["url"] == entry["openlexicon"]
+    assert _listing(cache) == []
+    entry["sha256"] = hashlib.sha256(body).hexdigest()
+    reg = tmp_path / "registry.yaml"
+    reg.write_text(yaml.safe_dump({"corpora": {"subtlex_us": entry}}), encoding="utf-8")
+    capsys.readouterr()
+    dest = fetch_corpus("subtlex_us", registry_path=str(reg))
+    assert dest == str(cache / "subtlex_us.csv")
+    assert _listing(cache) == ["subtlex_us.csv"]
+    with open(dest, "rb") as handle:
+        assert handle.read().decode("utf-8") == SUBTLEX_US_LEXICON
+    out = capsys.readouterr().out
+    assert "normalised 5 forms from 'SUBTLEXus74286wordstextversion.tsv'" in out
+    assert "downloaded 'subtlex_us'. Please cite: Brysbaert & New (2009)" in out
+
+
+# Pins the same contract as "a download that cannot be normalised leaves nothing
+# behind" in the R engine's test-corpora.R: the normalisation is one more check the
+# sidecar must pass before it may enter the cache.
+def test_a_download_that_cannot_be_normalised_leaves_nothing_behind(tmp_path, monkeypatch):
+    entry = {"language": {"name": "Test", "iso": "xx"}, "status": "supported",
+             "openlexicon": "https://example.invalid/raw.tsv",
+             "columns": {"word": "Word", "freq_permillion": "SUBTLWF"},
+             "citation": "Test (2026)."}
+    reg = tmp_path / "registry.yaml"
+    reg.write_text(yaml.safe_dump({"corpora": {"fake": entry}}), encoding="utf-8")
+    cache = _absent_cache(tmp_path, monkeypatch)
+    _mock_transport(monkeypatch, b"Word\tFREQcount\ndog\t9831\n")
+    with pytest.raises(ValueError, match="has no column 'SUBTLWF'"):
+        fetch_corpus("fake", registry_path=str(reg))
+    assert _listing(cache) == []
+
+
+# Pins the same contract as "a derived file is fetched in place of the openlexicon
+# file" in the R engine's test-corpora.R. A 'derived' file is a lexicon already
+# normalised, which both engines then read byte for byte, so it is preferred and
+# cached as it arrives.
+def test_a_derived_file_is_fetched_in_place_of_the_openlexicon_file(tmp_path, monkeypatch):
+    body = b"word,freq_zipf,freq_permillion\ncat,4.848,70.41\n"
+    entry = {"language": {"name": "Test", "iso": "xx"}, "status": "supported",
+             "openlexicon": "https://example.invalid/raw.tsv",
+             "derived": {"url": "https://example.invalid/derived.csv",
+                         "sha256": hashlib.sha256(body).hexdigest()},
+             "columns": {"word": "Word", "freq_permillion": "SUBTLWF"},
+             "citation": "Test (2026)."}
+    reg = tmp_path / "registry.yaml"
+    reg.write_text(yaml.safe_dump({"corpora": {"fake": entry}}), encoding="utf-8")
+    cache = _absent_cache(tmp_path, monkeypatch)
+    calls = _mock_transport(monkeypatch, body)
+    dest = fetch_corpus("fake", registry_path=str(reg))
+    assert calls["url"] == "https://example.invalid/derived.csv"
+    assert _listing(cache) == ["fake.csv"]
+    with open(dest, "rb") as handle:
+        assert handle.read() == body
 
 
 # Pins the same contract as "lexsync_cache_dir reports the path without creating

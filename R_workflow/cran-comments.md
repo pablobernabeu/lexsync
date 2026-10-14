@@ -121,11 +121,12 @@ Everything else in the package, code and remaining data alike, is MIT.
   use the package, so they are not dependencies.
 - Only the small example lexica described above are bundled. `fetch_corpus()`
   downloads into `tools::R_user_dir()` a corpus whose registry entry names a
-  delimited file, and no entry in the shipped registry does yet, so a user
-  otherwise loads a corpus file of their own. No example, test or vignette
-  downloads anything. The tests do call `fetch_corpus()`, but every call
+  delimited file, of which the shipped registry has one, SUBTLEX-US, and
+  `normalise_lexicon()` converts a corpus file the user saved. No example, test or
+  vignette downloads anything. The tests do call `fetch_corpus()`, but every call
   that gets as far as a download goes through a local stand-in for
   `download.file()`, and the calls that download to the default cache first
   point `R_USER_CACHE_DIR` at a directory under `tempdir()` and restore it
   afterwards. The calls that are refused, for an unknown corpus, a
-  landing-page-only entry or a non-http(s) URL, stop before anything is written.
+  landing-page-only entry, a corpus name that is a path or a non-http(s) URL,
+  stop before anything is written.

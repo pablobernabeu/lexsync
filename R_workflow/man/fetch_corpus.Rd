@@ -2,7 +2,7 @@
 % Please edit documentation in R/corpora.R
 \name{fetch_corpus}
 \alias{fetch_corpus}
-\title{Download a CSV-format registered corpus into the cache}
+\title{Download a registered corpus into the cache}
 \usage{
 fetch_corpus(name, registry_path = NULL, dest = NULL)
 }
@@ -18,13 +18,26 @@ fetch_corpus(name, registry_path = NULL, dest = NULL)
 The path to the downloaded file, invisibly.
 }
 \description{
-Suitable for Connector A corpora that expose a delimited file. The URL's
-scheme is checked first; the transfer then lands in a sidecar file that is
-renamed into place only after the size cap, the markup sniff and any
-\code{sha256} the registry entry carries have all passed. The download is
-recorded so it can be cited; consult \code{\link[=list_corpora]{list_corpora()}} for the citation.
+Downloads the file a registry entry names and caches it as a lexicon that
+\code{\link[=load_lexicon]{load_lexicon()}} reads. \code{name} must be a single corpus name: one holding a slash, a
+backslash or a colon is refused before the registry is read, since the name
+becomes the cached file's name.
 }
 \details{
+An entry's \code{derived} file, a lexicon already normalised, is fetched when it has
+one and cached as it arrives. Otherwise its \code{openlexicon} file is fetched and
+converted by \code{\link[=normalise_lexicon]{normalise_lexicon()}} with the entry's \code{columns} and \code{duplicates}, so
+\code{fetch_corpus("subtlex_us")} caches SUBTLEX-US as a lexicon. The URL's scheme is
+checked first. The transfer then lands in a sidecar file that is renamed into
+place only after the size cap, the markup sniff, any \code{sha256} the registry entry
+carries and the normalisation have all passed. Every refusal names the registry
+file it read. The download is recorded so it can be cited; consult
+\code{\link[=list_corpora]{list_corpora()}} for the citation.
+
+The lexica of the wordfreq connector's languages are built by the Python package
+(\verb{lexsync fetch fr}), and this package reads the result with \code{\link[=load_lexicon]{load_lexicon()}}. A
+wordfreq language code given here is refused with that explanation.
+
 The file lands in \code{\link[=lexsync_cache_dir]{lexsync_cache_dir()}} unless \code{dest} names somewhere else.
 The cache directory is created only once the registry entry and its URL have
 been accepted, so a refused call writes nothing. A download to the default

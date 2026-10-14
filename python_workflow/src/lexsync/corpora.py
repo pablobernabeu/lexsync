@@ -3,7 +3,8 @@
 Mirrors R_workflow/R/corpora.R, and adds the wordfreq connector (Connector B,
 thirty registered languages; wordfreq covers 42). The demonstrations read the
 bundled, pre-derived lexica; new languages are fetched on demand into a user
-cache.
+cache, and normalise_lexicon turns a corpus file in its publisher's layout into a
+lexicon load_lexicon reads.
 """
 from __future__ import annotations
 
@@ -18,7 +19,8 @@ import numpy as np
 import pandas as pd
 import yaml
 
-from .io_utils import sha256_file
+from .io_utils import _exact_sum, _fmt_g, _type_column, read_csv_utf8, sha256_file, write_csv_utf8
+from .querying import _check_zipf_range, _fold_words, _nfc, _require_numbers, _zipf_from_permillion
 
 
 def _registry_path(registry_path: str | None = None) -> str:
@@ -47,6 +49,21 @@ def list_corpora(registry_path: str | None = None) -> pd.DataFrame:
             citation=entry.get("citation"),
         ))
     return pd.DataFrame(rows)
+
+
+def _check_corpus_name(name) -> None:
+    """Refuse a corpus name that could reach a file outside the cache.
+
+    The name becomes a file name inside the cache, so a path separator, or the colon
+    of a Windows drive such as 'D:', would let it reach a file other than the corpus's
+    own: os.path.join() drops the cache directory before a drive. All three characters
+    are refused on every platform, so the two engines refuse the same names. Both
+    cache_clear and fetch_corpus apply the rule, fetch_corpus before it reads the
+    registry, since an edited registry may name an entry '../../escaped'. Mirrors
+    .check_corpus_name in R_workflow/R/corpora.R.
+    """
+    if not isinstance(name, str) or not name or re.search(r"[/\\:]", name):
+        raise ValueError("lexsync: 'name' must be a single corpus name, not a path.")
 
 
 def cache_dir() -> str:
@@ -99,13 +116,7 @@ def cache_clear(name: str | None = None) -> list[str]:
         # report what survives below.
         shutil.rmtree(cache, ignore_errors=True)
     else:
-        # The name becomes a file name inside the cache, so a path separator, or
-        # the colon of a Windows drive such as 'D:', would let it reach a file
-        # other than the corpus's own: os.path.join() drops the cache directory
-        # before a drive. All three characters are refused on every platform, so
-        # the two engines refuse the same names.
-        if not isinstance(name, str) or not name or re.search(r"[/\\:]", name):
-            raise ValueError("lexsync: 'name' must be a single corpus name, not a path.")
+        _check_corpus_name(name)
         targets = [os.path.join(cache, f"{name}{suffix}")
                    for suffix in (".csv", ".csv.part", "_wordfreq.csv")]
         removed = [path for path in targets if os.path.isfile(path)]
@@ -329,9 +340,49 @@ def _max_download_bytes() -> int:
     return 200 * 1024 * 1024
 
 
+def _read_registry(registry_path: str | None) -> tuple:
+    """The registry's path and its parsed contents."""
+    path = _registry_path(registry_path)
+    with open(path, encoding="utf-8") as handle:
+        return path, (yaml.safe_load(handle) or {})
+
+
+def _download_source(name: str, entry: dict, reg_path: str) -> tuple:
+    """The URL a registry entry is fetched from, its sha256, and whether to normalise it.
+
+    A ``derived`` file, ``{url, sha256}``, is a lexicon already normalised, so both
+    engines can read the same bytes, and it is read first when an entry has one.
+    Otherwise ``openlexicon`` names the corpus file in its publisher's layout, which
+    normalise_lexicon turns into a lexicon. ``url`` alone is a landing page, and
+    downloading that would cache an HTML document as <name>.csv. Mirrors
+    .download_source in R_workflow/R/corpora.R.
+    """
+    derived = entry.get("derived")
+    if derived is not None:
+        if not isinstance(derived, dict) or not derived.get("url"):
+            raise ValueError(f"lexsync: corpus '{name}' registers a 'derived' file without a "
+                             f"url in '{reg_path}'.")
+        return derived["url"], derived.get("sha256"), False
+    if entry.get("openlexicon"):
+        return entry["openlexicon"], entry.get("sha256"), True
+    if entry.get("url"):
+        raise ValueError(
+            f"lexsync: corpus '{name}' registers only a landing page ({entry['url']}) in "
+            f"'{reg_path}'; lexsync cannot download it automatically. Retrieve the "
+            f"delimited file manually, convert it with normalise_lexicon() and pass the "
+            f"result to load_lexicon().")
+    raise ValueError(
+        f"lexsync: corpus '{name}' registers no download URL in '{reg_path}'; retrieve "
+        f"its file manually, convert it with normalise_lexicon() and pass the result to "
+        f"load_lexicon().")
+
+
 def fetch_corpus(name: str, registry_path: str | None = None, n_words: int = 10000, *,
                  strict: bool = False, exclude_latin: bool = False) -> str:
     """Fetch a registered corpus into the cache.
+
+    `name` must be a single corpus name: one holding '/', '\\' or ':' is refused
+    before the registry is read, since the name becomes the cached file's name.
 
     If `name` is a language code supported by the wordfreq connector, a lexicon
     is built with wordfreq from up to `n_words` of its most frequent forms that
@@ -342,11 +393,17 @@ def fetch_corpus(name: str, registry_path: str | None = None, n_words: int = 100
     left with fewer forms is reported on standard output, or refused with
     `strict`, and `exclude_latin` drops every form holding a Latin letter. These
     three arguments apply to the wordfreq connector only, and
-    ``lexsync.corpora.build_wordfreq_lexicon`` gives the rule in full. Otherwise
-    the corpus's registered URL is downloaded, once its scheme has been checked;
-    the transfer lands in a sidecar file that is renamed into the cache only
-    after the size cap, the markup sniff and any registered sha256 have all
-    passed.
+    ``lexsync.corpora.build_wordfreq_lexicon`` gives the rule in full.
+
+    For any other name the registry entry's file is downloaded, once its URL's scheme
+    has been checked. An entry's ``derived`` file, a lexicon already normalised, is
+    fetched when it has one and cached as it arrives. Otherwise its ``openlexicon``
+    file is fetched and converted by :func:`normalise_lexicon` with the entry's
+    ``columns`` and ``duplicates``, so ``fetch_corpus("subtlex_us")`` caches a lexicon
+    that :func:`lexsync.load_lexicon` reads. The transfer lands in a sidecar file that
+    is renamed into the cache only after the size cap, the markup sniff, any registered
+    sha256 and the normalisation have all passed. Every refusal names the registry
+    file it read.
 
     The file lands in :func:`cache_dir`. The cache directory is created only once
     the registry entry and its URL have been accepted, or the wordfreq lexicon
@@ -357,8 +414,8 @@ def fetch_corpus(name: str, registry_path: str | None = None, n_words: int = 100
     removes one corpus or the whole cache, and the next call fetches the corpus
     again.
     """
-    with open(_registry_path(registry_path), encoding="utf-8") as handle:
-        reg = yaml.safe_load(handle)
+    _check_corpus_name(name)
+    reg_path, reg = _read_registry(registry_path)
     wf = reg.get("wordfreq_connector") or {}
     if name in (wf.get("languages") or []):
         df = build_wordfreq_lexicon(name, n_words, strict=strict, exclude_latin=exclude_latin)
@@ -370,24 +427,15 @@ def fetch_corpus(name: str, registry_path: str | None = None, n_words: int = 100
         return dest
     entry = (reg.get("corpora") or {}).get(name)
     if not entry:
-        raise ValueError(f"lexsync: corpus '{name}' is not in the registry.")
-    # Only 'openlexicon' names a delimited file; 'url' is the landing page, and
-    # downloading that would silently cache an HTML document as <name>.csv.
-    url = entry.get("openlexicon")
-    if not url:
-        raise ValueError(
-            f"lexsync: corpus '{name}' registers only a landing page "
-            f"({entry.get('url', 'see registry.yaml')}); lexsync cannot download it "
-            f"automatically. Retrieve the delimited file manually and pass it to "
-            f"load_lexicon()."
-        )
+        raise ValueError(f"lexsync: corpus '{name}' is not in the registry '{reg_path}'.")
+    url, expected, normalise = _download_source(name, entry, reg_path)
     # A registry is editable, and fetch_corpus() writes wherever it points, so a
     # 'file://' or 'ftp://' entry would read a local path under the guise of a
     # download. Only the two schemes a corpus is published over are honoured.
     if not re.match(r"https?://", url, re.IGNORECASE):
         raise ValueError(
-            f"lexsync: corpus '{name}' registers a non-http(s) URL ({url}); "
-            f"refusing to download."
+            f"lexsync: corpus '{name}' registers a non-http(s) URL ({url}) in "
+            f"'{reg_path}'; refusing to download."
         )
     import urllib.error
     import urllib.request
@@ -417,8 +465,8 @@ def fetch_corpus(name: str, registry_path: str | None = None, n_words: int = 100
             os.remove(part)
         raise RuntimeError(
             f"lexsync: could not download corpus '{name}' from {url} ({exc}). "
-            f"Check the URL in registry.yaml, or download the file manually and "
-            f"pass it to load_lexicon()."
+            f"Check the URL in '{reg_path}', or download the file manually, convert it "
+            f"with normalise_lexicon() and pass the result to load_lexicon()."
         ) from exc
     except ValueError:
         if os.path.exists(part):
@@ -433,14 +481,226 @@ def fetch_corpus(name: str, registry_path: str | None = None, n_words: int = 100
         )
     # 'sha256' is optional per registry entry; when present the download must
     # match it before it may enter the cache.
-    expected = entry.get("sha256")
     if expected and sha256_file(part) != expected:
         os.remove(part)
         raise ValueError(
             f"lexsync: checksum mismatch for corpus '{name}'; the download does "
             f"not match the registry's sha256. Retry the download, or verify the "
-            f"sha256 recorded in registry.yaml."
+            f"sha256 recorded in '{reg_path}'."
         )
+    if normalise:
+        # The corpus file is read into memory and its sidecar then holds the lexicon,
+        # so a file that cannot be normalised leaves nothing behind either.
+        try:
+            # The file's name and extension, without any query or fragment.
+            named = re.sub(r"[?#].*$", "", url)
+            lexicon, message = _normalise(part, None, entry, _delimiter_for(named),
+                                          os.path.basename(named))
+        finally:
+            os.remove(part)
+        print(message)
+        write_csv_utf8(lexicon, part)
     os.replace(part, dest)
     print(f"lexsync: downloaded '{name}'. Please cite: {entry.get('citation', '(see registry)')}")
     return dest
+
+
+# ---- normalise_lexicon -------------------------------------------------------
+# A corpus file in its publisher's layout, made into a lexicon load_lexicon reads. The
+# registry's `columns` map names a source's columns, and its `duplicates` rule says
+# what a repeated form means. Mirrors normalise_lexicon in R_workflow/R/corpora.R, and
+# the twin tests hold both engines to the same output bytes.
+
+# The lexsync columns a map may name, in the order they are written.
+_NORMALISE_KEYS = ("word", "freq_zipf", "freq_permillion", "pos")
+_DUPLICATE_RULES = ("first", "sum")
+
+
+def _delimiter_for(name):
+    """',' or a tab from a file name's extension, or None when it says neither."""
+    ext = os.path.splitext(str(name).lower())[1]
+    return {".tsv": "\t", ".tab": "\t", ".csv": ","}.get(ext)
+
+
+def _sniff_delimiter(path: str) -> str:
+    """A tab when the header line holds one, and a comma otherwise."""
+    with open(path, "rb") as handle:
+        head = handle.readline()
+    return "\t" if b"\t" in head else ","
+
+
+def _corpus_entry(entry) -> dict:
+    """A registry entry given as itself, or by its name in the registry found by default."""
+    if entry is None:
+        return {}
+    if isinstance(entry, str):
+        reg_path, reg = _read_registry(None)
+        found = (reg.get("corpora") or {}).get(entry)
+        if not found:
+            raise ValueError(f"lexsync: corpus '{entry}' is not in the registry '{reg_path}'.")
+        return found
+    if isinstance(entry, dict):
+        return entry
+    raise ValueError("lexsync: 'entry' must be a registry entry or the name of one.")
+
+
+def _first_bad(values, bad):
+    """The index of the first value `bad` flags, or None."""
+    for i, v in enumerate(values):
+        if bad(v):
+            return i
+    return None
+
+
+def _normalise(path, columns, entry, delimiter, label) -> tuple:
+    """normalise_lexicon's work: the lexicon and the line that reports on it."""
+    entry = _corpus_entry(entry)
+    cmap = dict(columns if columns is not None else (entry.get("columns") or {}))
+    unknown = [k for k in cmap if k not in _NORMALISE_KEYS]
+    if unknown:
+        raise ValueError(f"lexsync: unknown key '{unknown[0]}' in the column map; known keys: "
+                         f"word, freq_zipf, freq_permillion, pos.")
+    if "freq_zipf" in cmap and "freq_permillion" in cmap:
+        raise ValueError("lexsync: the column map names both frequency columns; name "
+                         "freq_zipf or freq_permillion, not both.")
+    rule = entry.get("duplicates") or "first"
+    if rule not in _DUPLICATE_RULES:
+        raise ValueError(f"lexsync: duplicates must be 'first' or 'sum', not '{rule}'.")
+    if delimiter is None:
+        delimiter = _delimiter_for(path) or _sniff_delimiter(path)
+    if delimiter not in (",", "\t"):
+        raise ValueError("lexsync: delimiter must be ',' or a tab.")
+    df = read_csv_utf8(path, as_character=True, delim=delimiter)
+    names = list(df.columns)
+    if "freq_zipf" in cmap or "freq_permillion" in cmap:
+        freq_key = "freq_zipf" if "freq_zipf" in cmap else "freq_permillion"
+        freq_col = cmap[freq_key]
+    elif "freq_zipf" in names or "freq_permillion" in names:
+        freq_key = freq_col = "freq_zipf" if "freq_zipf" in names else "freq_permillion"
+    else:
+        raise ValueError(f"lexsync: '{label}' has no column named freq_zipf or "
+                         f"freq_permillion, and the column map names neither; map one of "
+                         f"them to the file's frequency column.")
+    word_col = cmap.get("word", "word")
+    pos_col = cmap.get("pos", "pos" if "pos" in names else None)
+    wanted = [("word", word_col), (freq_key, freq_col)]
+    if pos_col is not None:
+        wanted.append(("pos", pos_col))
+    for target, col in wanted:
+        if col not in names:
+            raise ValueError(f"lexsync: '{label}' has no column '{col}' (mapped to {target}); "
+                             f"its columns are {', '.join(repr(n) for n in names)}.")
+    if rule == "sum" and freq_key != "freq_permillion":
+        raise ValueError("lexsync: duplicates: sum adds frequencies per million, so the "
+                         "column map must name freq_permillion; Zipf values cannot be added.")
+    n_read = len(df)
+    freq = _type_column([None if v != v else v for v in df[freq_col]])
+    _require_numbers(freq, freq_col)
+    keep = (df[word_col].notna() & freq.notna()).to_numpy()
+    words = _fold_words(df[word_col][keep])
+    values = [float(v) for v in freq[keep]]
+    pos = (list(df[pos_col][keep]) if pos_col is not None else None)
+    nonempty = [i for i, w in enumerate(words) if w != ""]
+    words = [_nfc(words[i]) for i in nonempty]
+    values = [values[i] for i in nonempty]
+    if pos is not None:
+        pos = [pos[i] for i in nonempty]
+    if not words:
+        raise ValueError(f"lexsync: '{label}' has no usable rows: every row is missing its "
+                         f"word or its frequency.")
+    if freq_key == "freq_permillion":
+        i = _first_bad(values, lambda v: v < 0)
+        if i is not None:
+            raise ValueError(f"lexsync: column '{freq_col}' holds {_fmt_g(values[i])} for "
+                             f"'{words[i]}', and a frequency per million must be positive "
+                             f"to have a Zipf value; remove such rows first.")
+    # One row per form: the first in file order, or under `sum` the first row's other
+    # cells with the frequencies of every row added in file order.
+    first = {}
+    for i, w in enumerate(words):
+        first.setdefault(w, i)
+    rows = sorted(first.values())
+    if rule == "sum":
+        groups = {}
+        for w, v in zip(words, values, strict=True):
+            groups.setdefault(w, []).append(v)
+        resolved = [_exact_sum(groups[words[i]]) for i in rows]
+    else:
+        resolved = [values[i] for i in rows]
+    forms = [words[i] for i in rows]
+    if freq_key == "freq_permillion":
+        i = _first_bad(resolved, lambda v: v <= 0)
+        if i is not None:
+            raise ValueError(f"lexsync: column '{freq_col}' holds {_fmt_g(resolved[i])} for "
+                             f"'{forms[i]}', and a frequency per million must be positive "
+                             f"to have a Zipf value; remove such rows first.")
+        zipf, near = _zipf_from_permillion(resolved)
+    else:
+        _check_zipf_range(resolved)
+        zipf, near = resolved, 0
+    out = {"word": forms, "freq_zipf": zipf}
+    if freq_key == "freq_permillion":
+        out["freq_permillion"] = resolved
+    if pos is not None:
+        out["pos"] = [pos[i] for i in rows]
+    frame = pd.DataFrame(out)
+    frame["word"] = frame["word"].astype(object)
+    # UTF-8 byte order, the order load_lexicon gives a lexicon in both engines.
+    frame = (frame.assign(_k=frame["word"].map(lambda w: w.encode("utf-8")))
+             .sort_values("_k", kind="stable").drop(columns="_k").reset_index(drop=True))
+    derived = freq_key == "freq_permillion"
+    frame.attrs["normalisation"] = {
+        "n_read": int(n_read), "n_forms": len(frame), "n_merged": len(words) - len(frame),
+        "duplicates": rule, "zipf_derived": derived, "near_boundary": int(near)}
+    message = "lexsync: normalised %d form%s from '%s'" % (
+        len(frame), "" if len(frame) == 1 else "s", label)
+    if derived:
+        message += (f"; {near} of the Zipf values derived from frequencies per million lay "
+                    f"within 1e-9 of a rounding boundary.")
+    else:
+        message += "."
+    return frame, message
+
+
+def normalise_lexicon(path: str, columns=None, entry=None, delimiter=None,
+                      out: str | None = None) -> pd.DataFrame:
+    """Turn a corpus file in its publisher's layout into a lexicon load_lexicon reads.
+
+    Reads a tab- or comma-separated file. ``delimiter`` names the separator, "," or
+    "\\t". Left as None, it is taken from the extension (.tsv and .tab are tab, .csv is
+    comma) and otherwise from the header line, which is tab-separated when it holds a
+    tab. A tab-separated file is read with no quoting.
+
+    ``columns`` maps lexsync's column names to the file's, as a registry entry's
+    ``columns`` does: ``word``, one of ``freq_zipf`` and ``freq_permillion``, and
+    optionally ``pos``. ``entry`` is a registry entry, or the name of one in the
+    registry lexsync finds by default (see :func:`list_corpora`), and supplies the map
+    when ``columns`` is None and the ``duplicates`` rule. Without a map the file's own
+    ``word``, ``freq_zipf`` or ``freq_permillion``, and ``pos`` columns are read.
+
+    Words are trimmed, lower-cased and put in Unicode NFC, as load_lexicon keys them,
+    and rows missing a word or a frequency are dropped. A form that then appears more
+    than once is resolved by ``duplicates``: ``first`` (the default) keeps the first
+    row in file order, and ``sum`` adds its rows' frequencies per million, as Lexique
+    needs, since it splits a homograph's frequency between its rows. Frequencies per
+    million are converted with Zipf = log10(per million) + 3, rounded to three places
+    by lexsync's shared rounder. A value of 0 or below has no Zipf value and is
+    refused. Zipf values read as they are must lie between 0 and 9.
+
+    The lexicon has the columns ``word``, ``freq_zipf``, then ``freq_permillion`` when
+    Zipf was derived from it, and ``pos`` when the file has one, in the UTF-8 byte
+    order of ``word``. With ``out`` it is also written there, comma-separated with LF
+    line endings. A line on standard output gives the number of forms, and for derived
+    Zipf values the number that lay within 1e-9 of a rounding boundary after scaling.
+    That is the only step at which the two engines' log10 could round a value apart,
+    and the count is expected to be 0. ``attrs["normalisation"]`` holds ``{"n_read",
+    "n_forms", "n_merged", "duplicates", "zipf_derived", "near_boundary"}``, and a run
+    over the lexicon records the boundary count in its run log and datasheet.
+
+    Mirrors normalise_lexicon in R_workflow/R/corpora.R, which writes the same bytes.
+    """
+    frame, message = _normalise(path, columns, entry, delimiter, os.path.basename(str(path)))
+    print(message)
+    if out is not None:
+        write_csv_utf8(frame, out)
+    return frame

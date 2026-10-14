@@ -6,6 +6,7 @@ hashing used by the run log (MD5, matching the R engine).
 """
 from __future__ import annotations
 
+import csv
 import hashlib
 import math
 import os
@@ -101,7 +102,7 @@ def _type_column(cells) -> pd.Series:
     return pd.Series([np.nan if v is None else v for v in cells], dtype=object)
 
 
-def read_csv_utf8(path: str, as_character=None) -> pd.DataFrame:
+def read_csv_utf8(path: str, as_character=None, delim: str = ",") -> pd.DataFrame:
     """Read a UTF-8 CSV file by the rule both engines share.
 
     Every header name and cell is trimmed of spaces, tabs, carriage returns and line
@@ -109,7 +110,12 @@ def read_csv_utf8(path: str, as_character=None) -> pd.DataFrame:
     every other word, ``null``, ``nan`` and ``none`` included, is a value. Each column
     not named in ``as_character`` then takes its type from all of its values (see
     _type_column), and a column named there stays text. A name in ``as_character`` that
-    the header does not carry is ignored. A UTF-8 byte-order mark is ignored.
+    the header does not carry is ignored, and ``as_character=True`` keeps every column
+    as text. A UTF-8 byte-order mark is ignored.
+
+    ``delim`` is "," or a tab. A tab-separated file is read with no quoting, as
+    tab-separated corpora such as SUBTLEX-US and Lexique are written: a quotation mark
+    there is part of the cell. Mirrors read_csv_utf8 in R_workflow/R/io_utils.R.
 
     Text columns have the object dtype under every pandas version. pandas 3 would give
     them its "str" dtype, which pyarrow backs when it is installed, and the .str
@@ -121,19 +127,21 @@ def read_csv_utf8(path: str, as_character=None) -> pd.DataFrame:
     """
     if not os.path.exists(path):
         raise FileNotFoundError(f"lexsync: file not found: '{path}'")
+    options = ({"sep": "\t", "quoting": csv.QUOTE_NONE} if delim == "\t" else {})
     try:
         raw = pd.read_csv(path, encoding="utf-8", header=None, dtype=str,
-                          keep_default_na=False, na_filter=False)
+                          keep_default_na=False, na_filter=False, **options)
     except pd.errors.EmptyDataError:
         # readr reads an empty file as a frame of no columns, and so does this engine.
         return pd.DataFrame()
     names = _csv_names(raw.iloc[0].tolist(), path)
-    text = set(as_character or [])
+    every = as_character is True
+    text = set() if every else set(as_character or [])
     cols = {}
     for j, name in enumerate(names):
         cells = _csv_cells(raw.iloc[1:, j].tolist())
         cols[name] = (pd.Series([np.nan if v is None else v for v in cells], dtype=object)
-                      if name in text else _type_column(cells))
+                      if every or name in text else _type_column(cells))
     return pd.DataFrame(cols, columns=names)
 
 

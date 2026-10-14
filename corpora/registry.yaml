@@ -9,21 +9,28 @@
 # A corpus is promoted to 'supported'/'validated' only after its citation has
 # been verified against Crossref or the official record, and its licence checked.
 #
-# The two URL keys are not interchangeable:
+# The URL keys are not interchangeable:
 #   url         -> the corpus's human-facing landing page (citation/provenance only)
-#   openlexicon -> a directly downloadable delimited file; fetch_corpus() requires this
+#   openlexicon -> a directly downloadable delimited file in its publisher's layout,
+#                  which fetch_corpus() downloads and then normalises
+#   derived     -> { url, sha256 } of a lexicon already normalised, which
+#                  fetch_corpus() prefers and caches unchanged, so both engines read
+#                  one file
 # An entry may also carry 'sha256' (hex digest); fetch_corpus() then verifies the download.
 #
 # 'connector' selects the ingestion path:
 #   openlexicon -> a SUBTLEX-family/openlexicon delimited file (Connector A)
 #   wordfreq    -> the wordfreq Python package, thirty registered languages
 #                  (wordfreq covers 42) (Connector B)
-# The 'columns' map documents how a source's columns correspond to lexsync's.
-# lexsync does not yet apply it: rename the columns by hand and, for a source
-# without a Zipf column, convert with Zipf = log10(per million) + 3 before
-# load_lexicon(). SUBTLEX-UK's own Zipf column is Laplace-smoothed (van Heuven
-# et al., 2014) and wordfreq's is not. No entry is currently downloadable by
-# fetch_corpus().
+# The 'columns' map names the source's columns for lexsync's word, freq_zipf or
+# freq_permillion, and pos. normalise_lexicon() applies it: it reads a tab- or
+# comma-separated file, renames the columns, converts a rate per million with
+# Zipf = log10(per million) + 3, puts the words in lower case and Unicode NFC and
+# writes a lexicon that load_lexicon() reads. 'duplicates' says what a form listed
+# more than once means: 'first' (the default) keeps its first row, and 'sum' adds
+# its rates per million. fetch_corpus() normalises an 'openlexicon' download the
+# same way. SUBTLEX-UK's own Zipf column is Laplace-smoothed (van Heuven et al.,
+# 2014) and wordfreq's is not.
 
 defaults:
   licence: 'CC BY-SA 4.0'
@@ -47,10 +54,9 @@ corpora:
     notes: >-
       Published only as zipped xlsx/txt archives, which the delimited-file
       connector cannot ingest, so no 'openlexicon' key: download
-      SUBTLEX-UK.txt.zip from the landing page, unzip it, and pass the file to
-      load_lexicon(). The 'columns' map above names its columns, which lexsync
-      does not rename for you: rename Spelling to word and LogFreq(Zipf) to
-      freq_zipf, and save the table comma-separated first.
+      SUBTLEX-UK.txt.zip from the landing page, unzip it and convert the file with
+      normalise_lexicon(path, entry = 'subtlex_uk'), which applies the 'columns'
+      map above, before load_lexicon().
 
   subtlex_esp:
     language: { name: 'Spanish', iso: es }
@@ -65,8 +71,12 @@ corpora:
   subtlex_us:
     language: { name: 'English (American)', iso: en-US }
     connector: openlexicon
-    status: listed
+    status: supported
     url: 'https://www.ugent.be/pp/experimentele-psychologie/en/research/documents/subtlexus'
+    # openlexicon's copy, 3,298,971 bytes. https://www.lexique.org fails the TLS
+    # hostname check, and the bare domain serves the same bytes.
+    openlexicon: 'https://lexique.org/databases/SUBTLEX-US/SUBTLEXus74286wordstextversion.tsv'
+    sha256: 'c5f86f065fc5d057fbf366433b8c5ca550aa7c24e128362dea4394f2b29c86e4'
     licence: 'CC BY-SA 4.0 (Brysbaert terms)'
     citation_key: brysbaert2009subtlexus
     citation: 'Brysbaert & New (2009). Behavior Research Methods, 41(4), 977-990. doi:10.3758/BRM.41.4.977'
@@ -100,6 +110,14 @@ corpora:
     citation_key: new2004lexique
     citation: 'New, Pallier, Brysbaert & Ferrand (2004). Lexique 2. Behavior Research Methods, Instruments, & Computers, 36(3), 516-524. doi:10.3758/BF03195598'
     columns: { word: 'ortho', freq_permillion: 'freqfilms2' }
+    # Lexique gives a homograph one row per lemma and category and splits the form's
+    # film frequency between them (Manuel de Lexique 3, freqfilms2), so the rows add.
+    duplicates: sum
+    notes: >-
+      Lexique 3.83 is published as Lexique383.tsv. It lists forms its film corpus
+      never attests with a freqfilms2 of 0, which has no Zipf value, so remove
+      those rows before normalise_lexicon(path, entry = 'lexique_fr'). Not yet
+      downloadable by fetch_corpus(): the file's SHA-256 is still to be recorded.
 
   subtlex_it:
     language: { name: 'Italian', iso: it }

@@ -4,13 +4,18 @@
 \alias{read_csv_utf8}
 \title{Read a UTF-8 CSV file by the rule both engines share}
 \usage{
-read_csv_utf8(path, as_character = character(0))
+read_csv_utf8(path, as_character = character(0), delim = ",")
 }
 \arguments{
 \item{path}{Path to a CSV file.}
 
 \item{as_character}{Character vector of column names that stay text, trimmed. A
-name the file's header does not carry is ignored.}
+name the file's header does not carry is ignored, and \code{TRUE} keeps every column
+as text.}
+
+\item{delim}{\code{","}, or a tab character for a tab-separated file, which is read with
+no quoting, as tab-separated corpora such as SUBTLEX-US and Lexique are written: a
+quotation mark there is part of the cell. Mirrors the Python twin's \code{delim}.}
 }
 \value{
 A data frame (a tibble). An empty file gives one with no columns.

@@ -15,11 +15,14 @@ cite is listed in full on the [references page](references.md).
 
 Languages are supplied through a corpus registry, so reaching a new one takes a registry entry and
 no code. These functions find a corpus, download it into a per-user cache that can be cleared
-again, and read a derived lexicon or a prepared item table into the frame everything else expects.
+again, turn a corpus file in its publisher's layout into a lexicon, and read a derived lexicon or a
+prepared item table into the frame everything else expects.
 
 ::: lexsync.list_corpora
 
 ::: lexsync.fetch_corpus
+
+::: lexsync.normalise_lexicon
 
 ::: lexsync.corpora.build_wordfreq_lexicon
 

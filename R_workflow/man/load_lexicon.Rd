@@ -30,6 +30,12 @@ neighbourhood dimensions are added later, on the experimental pool, by
 \code{\link[=add_neighbourhood]{add_neighbourhood()}}, because they are quadratic in the size of the
 reference set.
 }
+\details{
+A \code{freq_zipf} value outside 0 to 9 is refused: it is almost always a frequency per
+million in the wrong column (convert it with \code{\link[=normalise_lexicon]{normalise_lexicon()}}). A log count
+such as SUBTLEX-US's \code{Lg10WF}, log10(count + 1) and at most 6.33, passes the check
+and must still be converted, since it reads about 1.3 below Zipf.
+}
 \examples{
 # Both inputs are bundled with the package, so this runs offline and touches
 # nothing outside the installation.

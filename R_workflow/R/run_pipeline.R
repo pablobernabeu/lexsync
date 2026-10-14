@@ -222,6 +222,7 @@ run_pipeline <- function(design_path, schema_path = NULL,
   pair_eligible <- NULL
   generation_exclude <- NULL
   exclusions <- NULL
+  zipf_derivation <- NULL
   norms <- list()
   selection_audit <- NULL
   # What NFC normalisation did to the inputs this run read (see .nfc_count), summed
@@ -255,6 +256,18 @@ run_pipeline <- function(design_path, schema_path = NULL,
                             n_needed = rx$n_needed))
     }
     stim
+  }
+
+  # A lexicon carrying freq_permillion, as normalise_lexicon() writes one, gets a
+  # record of how many of its rates put Zipf within 1e-9 of a rounding boundary, the
+  # one place the two engines' log10 could have derived a different value. Every
+  # lexicon lexsync ships lacks the column, so their runs log and record nothing new.
+  note_zipf_derivation <- function(frame, log) {
+    record <- .zipf_derivation(frame)
+    zipf_derivation <<- record
+    if (is.null(record)) return(log)
+    log_step(log, sprintf("freq_permillion: %d of %d value(s) put Zipf within 1e-9 of a rounding boundary",
+                          record$near_boundary, record$n_values), record)
   }
 
   # The design's `norms:` tables are joined onto the lexicon before the pool is
@@ -306,12 +319,14 @@ run_pipeline <- function(design_path, schema_path = NULL,
                                    if (is.null(lexicon)) ""
                                    else sprintf(" (dimensions from '%s')", lexicon)),
                       list(words = nrow(lex), lexicon = lexicon %||% NA_character_))
+      log <- note_zipf_derivation(lex, log)
     } else {
       lexicon <- items_cfg[["lexicon"]] %||% design[["lexicon"]]
       log <- log_step(log, sprintf("loading lexicon '%s'", lexicon))
       lex <- load_lexicon(lexicon, schema, language = design[["language"]])
       tally(attr(lex, "input_normalisation"))
       log <- log_step(log, sprintf("lexicon loaded: %d words", nrow(lex)), list(words = nrow(lex)))
+      log <- note_zipf_derivation(lex, log)
       ref_words <- .neighbourhood_reference(lex)
     }
     jn <- join_norms(lex, log); lex <- jn$lexicon; log <- jn$log
@@ -462,6 +477,7 @@ run_pipeline <- function(design_path, schema_path = NULL,
       log <- log_step(log, sprintf("loading member lexicon '%s'", mem_lexicon))
       mem_lex <- load_lexicon(mem_lexicon, schema, language = design[["language"]])
       tally(attr(mem_lex, "input_normalisation"))
+      log <- note_zipf_derivation(mem_lex, log)
       jn <- join_norms(mem_lex, log); mem_lex <- jn$lexicon; log <- jn$log
       stim <- .join_member_norms(stim, members, items_cfg, design, schema, lex = mem_lex)
       log <- log_step(log, sprintf("joined word-level norms onto %s", paste(members, collapse = " and ")))
@@ -659,7 +675,8 @@ run_pipeline <- function(design_path, schema_path = NULL,
                         selection_audit = selection_audit,
                         neighbourhood_reference = nref, counterbalance_check = cb_check,
                         input_normalisation = input_normalisation,
-                        generation_exclude = generation_exclude, exclusions = exclusions)
+                        generation_exclude = generation_exclude, exclusions = exclusions,
+                        zipf_derivation = zipf_derivation)
   ds_json <- file.path(outdir, "reports", paste0(base, "_datasheet_R.json"))
   ds_md <- file.path(outdir, "reports", paste0(base, "_datasheet_R.md"))
   write_datasheet(ds, ds_json, ds_md)

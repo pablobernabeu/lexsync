@@ -16,7 +16,7 @@ from rapidfuzz import process
 from rapidfuzz.distance import Levenshtein
 
 from .design import _key_name
-from .io_utils import _NUMERIC_CELL, _round_dp, clean_field, read_csv_utf8, sha256_file
+from .io_utils import _NUMERIC_CELL, _fmt_g, _round_dp, clean_field, read_csv_utf8, sha256_file
 
 # The syllable estimate counts maximal runs of Latin vowel letters. A word is first
 # decomposed (NFD) and stripped of its combining marks, so every accented vowel counts
@@ -171,14 +171,91 @@ def _require_numbers(col: pd.Series, name: str) -> None:
             "'%s'." % (name, bad))
 
 
+def _check_zipf_range(values) -> None:
+    """Refuse Zipf values outside 0 to 9, naming the likely cause.
+
+    A Zipf value is log10 of a frequency per million plus 3 (van Heuven et al., 2014), so
+    9 is a word making up the whole corpus and 0 one in a thousand million words. A
+    larger value is almost always a rate per million saved under the wrong name, which
+    the frequency filters and the matcher would otherwise read on the wrong scale. A
+    log count such as SUBTLEX-US's Lg10WF (at most 6.33) lies inside the range, so this
+    check cannot catch it. Mirrors .check_zipf_range in R_workflow/R/querying.R.
+    """
+    vals = [float(v) for v in values if v == v]
+    if not vals:
+        return
+    if max(vals) > 9:
+        raise ValueError(
+            "lexsync: freq_zipf values reach %s, which looks like frequencies per million; "
+            "convert with Zipf = log10(per million) + 3 or use normalise_lexicon()."
+            % _fmt_g(max(vals)))
+    if min(vals) < 0:
+        raise ValueError(
+            "lexsync: freq_zipf values fall to %s, below 0, where no Zipf value lies; check "
+            "which of the source's columns was saved as freq_zipf." % _fmt_g(min(vals)))
+
+
+# How near a rounding boundary a scaled Zipf value may lie before the two engines'
+# log10 could round it apart. The engines' log and exp were measured to differ by one
+# unit in the last place (see hash_unit in io_utils.py). One unit in the last place of a
+# Zipf value times 1000 is under 2e-12, so 1e-9 is a wide margin. Mirrors .ZIPF_BOUNDARY
+# in R_workflow/R/querying.R.
+_ZIPF_BOUNDARY = 1e-9
+
+
+def _zipf_from_permillion(values) -> tuple:
+    """Zipf = log10(per million) + 3, rounded to three places by the shared rounder.
+
+    Returns the values and the number of them that lay within 1e-9 of a rounding
+    boundary once scaled by 1000. log10 is the one operation here that IEEE-754 does not
+    require to be correctly rounded, and R and Python call different implementations of
+    it. A value that close to a boundary could therefore round one way in one engine and
+    the other way in the other. Every other step is a correctly rounded operation. The
+    count is expected to be 0. Mirrors .zipf_from_permillion in R_workflow/R/querying.R.
+    """
+    zipf = []
+    near = 0
+    for v in values:
+        z = math.log10(float(v)) + 3
+        y = z * 1000.0
+        if abs(abs(y - math.trunc(y)) - 0.5) < _ZIPF_BOUNDARY:
+            near += 1
+        zipf.append(_round_dp(z, 3))
+    return zipf, near
+
+
+def _zipf_derivation(frame: pd.DataFrame):
+    """The rounding-boundary record for a frame carrying ``freq_permillion``, or None.
+
+    ``{"n_values", "near_boundary"}``: how many positive rates per million the frame
+    holds, and how many of them put Zipf within 1e-9 of a three-place rounding boundary
+    (see _zipf_from_permillion). normalise_lexicon writes the column whenever it derives
+    Zipf from it, so run_pipeline records this for the lexicon a run reads. None for a
+    frame without the column, which is every lexicon lexsync ships. Mirrors
+    .zipf_derivation in R_workflow/R/querying.R.
+    """
+    if "freq_permillion" not in frame.columns:
+        return None
+    col = frame["freq_permillion"]
+    if not pd.api.types.is_numeric_dtype(col) or pd.api.types.is_bool_dtype(col):
+        return None
+    vals = [float(v) for v in col if v == v and math.isfinite(float(v)) and v > 0]
+    return {"n_values": len(vals), "near_boundary": _zipf_from_permillion(vals)[1]}
+
+
 def load_lexicon(path: str, schema: dict, language: str | None = None) -> pd.DataFrame:
     """Load a derived lexicon and give it the inexpensive dimensions.
 
     ``word`` is trimmed, lower-cased and normalised to Unicode NFC, and duplicates are
     then removed, keeping the first row in file order. When normalisation changed or
     merged any word, ``attrs["input_normalisation"]`` holds ``{"changed",
-    "collapsed"}``: the words it rewrote and the duplicate rows it removed. Mirrors
-    load_lexicon in R_workflow/R/querying.R.
+    "collapsed"}``: the words it rewrote and the duplicate rows it removed.
+
+    A ``freq_zipf`` value outside 0 to 9 is refused: it is almost always a frequency per
+    million in the wrong column (convert it with ``normalise_lexicon``). A log count such
+    as SUBTLEX-US's ``Lg10WF``, log10(count + 1) and at most 6.33, passes the check and
+    must still be converted, since it reads about 1.3 below Zipf. Mirrors load_lexicon
+    in R_workflow/R/querying.R.
     """
     df = read_csv_utf8(path)
     validate_lexicon(df, schema)
@@ -195,6 +272,10 @@ def load_lexicon(path: str, schema: dict, language: str | None = None) -> pd.Dat
     df = df[df["word"].notna() & df[freq_col].notna()].copy()
     df["word"] = _fold_words(df["word"])
     df = df[df["word"] != ""].copy()
+    # The rows the lexicon keeps, before de-duplication, as the R engine checks them.
+    zipf = df["freq_zipf"]
+    if pd.api.types.is_numeric_dtype(zipf) and not pd.api.types.is_bool_dtype(zipf):
+        _check_zipf_range(zipf)
     # NFC before de-duplication, so the two spellings of a word are one word and the
     # first row in file order is the one kept.
     df["word"], changed, collapsed = _nfc_count(df["word"])
