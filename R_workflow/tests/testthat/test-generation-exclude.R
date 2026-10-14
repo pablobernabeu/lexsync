@@ -115,13 +115,23 @@ test_that("a_registry_name_without_a_cached_corpus_is_refused_with_the_fetch_hin
                                           n_forms = 2L)))
 })
 
-test_that("a_spanish_band_counts_only_its_a_z_words_as_eligible", {
-  band <- build_pool(load_lexicon(ge_es(), ge_schema(), "spanish"), ge_band)
-  eligible <- .lexdec_eligible(band)
-  expect_true(all(grepl("^[a-z]+$", eligible$word, perl = TRUE)))
-  n_az <- sum(grepl("^[a-z]+$", band$word, perl = TRUE))
-  expect_identical(nrow(eligible), n_az)
-  expect_lt(n_az, nrow(band))
+# How many of the words are written wholly in letters, by ICU's letter class.
+ge_in_letters <- function(words) sum(stringi::stri_detect_regex(words, "^\\p{L}+$"), na.rm = TRUE)
+
+test_that("a_band_counts_the_words_written_in_attested_letters_as_eligible", {
+  # Every word of the Spanish band is written in letters the lexicon attests, its
+  # accented words included, which the a-z filter left out.
+  lex <- load_lexicon(ge_es(), ge_schema(), "spanish")
+  band <- build_pool(lex, ge_band)
+  eligible <- .lexdec_eligible(band, lex$word)
+  expect_identical(eligible$word, band$word)
+  expect_identical(ge_in_letters(band$word), nrow(band))
+  expect_true(any(grepl("[^\\x01-\\x7f]", eligible$word, perl = TRUE)))
+  # A hyphen, a digit or a letter the reference lacks still leaves a word out.
+  pool <- data.frame(word = c("a\u00f1o", "e-mail", "mar2", "\u00fcber", "casa"),
+                     stringsAsFactors = FALSE)
+  got <- .lexdec_eligible(pool, c("a\u00f1o", "casa", "mar", "email"))
+  expect_identical(got$word, c("a\u00f1o", "casa"))
 })
 
 ge_design <- function(dir, exclude = NULL) {
@@ -145,17 +155,20 @@ ge_pseudowords <- function(outdir) {
 }
 
 test_that("a_generated_design_reports_the_words_the_generator_could_use", {
-  # The record counted the band before the a-z filter, so a Spanish band reported the
-  # accented words the generator can never use as eligible candidates.
+  # The record counted the band before the letter filter. It now counts the words
+  # written in letters the lexicon attests, which in this band, accents and all, is
+  # every word. parity/twin_edge/generation_exclude holds both engines to a band with a
+  # hyphenated word, which the filter leaves out.
   band <- build_pool(load_lexicon(ge_es(), ge_schema(), "spanish"), ge_band)
-  n_az <- sum(grepl("^[a-z]+$", band$word, perl = TRUE))
   dir <- tempfile("gen_count_"); dir.create(dir); on.exit(unlink(dir, recursive = TRUE))
   out <- file.path(dir, "out")
   run_pipeline(ge_design(dir), system.file("extdata", "schema.yaml", package = "lexsync"),
                out, verbose = FALSE)
   ds <- ge_datasheet(out)
   expect_identical(ds$selection$candidate_pool,
-                   list(list(condition = "words in band", n_candidates = n_az)))
+                   list(list(condition = "words in band",
+                             n_candidates = ge_in_letters(band$word))))
+  expect_gt(ge_in_letters(band$word), sum(grepl("^[a-z]+$", band$word, perl = TRUE)))
   expect_null(ds$selection$generation_exclude)
 })
 

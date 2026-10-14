@@ -526,11 +526,11 @@ def run_pipeline(design_path: str, schema_path: str | None = None, outdir: str =
         sf = _resolve_policy(design, schema, "shortfall", "error", ("error", "allow"))
         realised = int(stim["set"].nunique())
         if realised < n and sf != "allow":
-            # build_lexdec_stimuli filters the pool to a-z forms before selecting,
-            # so the eligible pool can be smaller than the request without any
-            # pool_filters.
+            # build_lexdec_stimuli keeps only the words written in letters the lexicon
+            # attests before selecting, so the eligible pool can be smaller than the
+            # request without any pool_filters.
             raise ValueError(f"lexsync: {n} sets per condition were requested but only "
-                             f"{realised} could be generated; the eligible a-z pool is "
+                             f"{realised} could be generated; the eligible pool is "
                              f"smaller than the request, so lower n_per_condition or supply "
                              f"more words, or set matching: shortfall: allow to accept a "
                              f"smaller set.")
@@ -738,9 +738,10 @@ def run_pipeline(design_path: str, schema_path: str | None = None, outdir: str =
                           for c in (design.get("conditions") or [])]
     elif source == "generate":
         # The words the generator can use, which build_lexdec_stimuli draws from: the
-        # band after the a-z filter, not before it.
+        # band after the letter filter, not before it.
         candidate_pool = [{"condition": "words in band",
-                           "n_candidates": int(len(_lexdec_eligible(pool)))}]
+                           "n_candidates": int(len(_lexdec_eligible(pool,
+                                                                    lex["word"].tolist())))}]
     # The neighbourhood reference is provenance: overriding it changes n_density,
     # old20 and bigram_freq without touching any input file the datasheet hashes. It
     # is recorded only when a recomputation ran, with the columns it was applied to.

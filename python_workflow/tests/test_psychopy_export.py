@@ -654,7 +654,7 @@ def test_a_second_run_never_overwrites_the_first(schema, tmp_path, monkeypatch):
 
 def test_every_shipped_script_writes_one_row_per_trial(tmp_path, monkeypatch):
     shipped = _shipped_scripts()
-    assert len(shipped) == 21
+    assert len(shipped) == 22
     for script, _rows, _keys, _recipe in shipped:
         _install_fake_psychopy()
         module = _load_generated(script)
@@ -706,7 +706,7 @@ def _pulses(writes):
 @pytest.mark.parametrize("hz", [60, 144, 240])
 def test_every_code_lasts_the_hold_in_every_shipped_script(hz, tmp_path, monkeypatch):
     shipped = _shipped_scripts()
-    assert len(shipped) == 21
+    assert len(shipped) == 22
     for script, _rows, _keys, _recipe in shipped:
         name = os.path.basename(script)
         writes = []

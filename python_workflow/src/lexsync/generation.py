@@ -25,11 +25,20 @@ template's transition frequencies, matches letter length by default and has
 orthographic language plugins. By default it keeps two thirds of the segments,
 whereas lexsync's subsyllabic method replaces up to ceil(2k/3) of a word's k
 constituents.
+
+The letters a generator substitutes are those the reference words attest, so a
+Spanish lexicon lends it á, é, í, ó, ú, ü and ñ. A word can serve as a base word when
+every character in it is such a letter. The generators were defined for a to z alone,
+which left out 16.5% of a typical Spanish band (1,368 of 8,305 words, among them 261
+preterites in -ó) and never produced an accented pseudoword. A word in a logographic
+script is refused.
 """
 from __future__ import annotations
 
+import functools
 import os
 import re
+import unicodedata
 
 import numpy as np
 import pandas as pd
@@ -38,9 +47,47 @@ from rapidfuzz.distance import Levenshtein
 
 from . import corpora as _corpora
 from .io_utils import read_csv_utf8, sha256_file
-from .querying import _SYLLABLE_VOWELS, _norm_key
+from .querying import _SYLLABLE_MARKS, _SYLLABLE_VOWELS, _norm_key
 
-_LETTERS = "abcdefghijklmnopqrstuvwxyz"
+# A word holding a character from one of these ranges is written in a logographic
+# script: the CJK Unified Ideographs with Extension A (U+3400-U+9FFF), the CJK
+# Compatibility Ideographs (U+F900-U+FAFF) and the supplementary ideographic planes
+# (U+20000 and above). Unicode counts these characters as letters, so the letter test
+# alone would admit Chinese, and a form made by swapping one character for another is
+# of unknown validity as a pseudoword. Code-point ranges keep the test independent of
+# the engines' Unicode tables. Mirrors .LOGOGRAPHIC in generation.R.
+_LOGOGRAPHIC = re.compile("[\u3400-\u9fff\uf900-\ufaff\U00020000-\U0010ffff]")
+
+
+def _reference_alphabet(words) -> list:
+    """The letters the words attest, in UTF-8 byte order: a generator's alphabet.
+
+    A letter is a character that ``str.isalpha`` accepts, one of Unicode's general
+    category L, which the R twin's ``\\p{L}`` matches, so a hyphen, an apostrophe or a
+    digit is never substituted in. UTF-8 byte order is the order R's radix sort gives.
+    Missing values are skipped. Mirrors .reference_alphabet in generation.R.
+    """
+    letters = {c for w in words if isinstance(w, str) for c in w if c.isalpha()}
+    return sorted(letters, key=str.encode)
+
+
+def _written_in(word, letters: set) -> bool:
+    """Whether a word is non-empty and every character in it is one of ``letters``."""
+    return isinstance(word, str) and word != "" and all(c in letters for c in word)
+
+
+def _refuse_logographic(words) -> None:
+    """Refuse words in a logographic script, naming the first in UTF-8 byte order.
+
+    Mirrors .refuse_logographic in generation.R.
+    """
+    hits = [w for w in words if isinstance(w, str) and _LOGOGRAPHIC.search(w)]
+    if hits:
+        first = min(hits, key=str.encode)
+        raise ValueError(f"lexsync: pseudoword generation is defined for alphabetic scripts, "
+                         f"and '{first}' is written in a logographic one.")
+
+
 # Order in which subsyllabic constituents are considered for substitution: codas
 # and nuclei vary more freely than onsets, which carry the most identifying
 # orthography, so they are changed first.
@@ -66,19 +113,25 @@ def _score(cand: str, bigrams: dict) -> int:
     return sum(bigrams.get(cand[i:i + 2], 0) for i in range(len(cand) - 1))
 
 
-def make_pseudoword(word: str, bigrams: dict, lexicon: set, used: set) -> str | None:
+def make_pseudoword(word: str, bigrams: dict, lexicon: set, used: set,
+                    alphabet=None) -> str | None:
     """The most bigram-plausible legal non-word at the smallest edit distance.
 
     Searches single-letter substitutions first, then two-letter substitutions;
     candidates are ranked by summed bigram frequency with a byte-order tie-break,
-    so the choice is deterministic and identical across engines.
+    so the choice is deterministic and identical across engines. ``alphabet`` lists
+    the letters substituted in, in UTF-8 byte order. It defaults to the letters of
+    the bigram table, which hold every letter a legal candidate of two letters or
+    more can use. The generators pass the letters of the whole reference.
     """
     word = str(word)
     L = len(word)
+    if alphabet is None:
+        alphabet = _reference_alphabet(bigrams)
     # Distance 1: one substituted position.
     cands = []
     for pos in range(L):
-        for c in _LETTERS:
+        for c in alphabet:
             if c == word[pos]:
                 continue
             cand = word[:pos] + c + word[pos + 1:]
@@ -90,10 +143,10 @@ def make_pseudoword(word: str, bigrams: dict, lexicon: set, used: set) -> str | 
         # Distance 2: two substituted positions (rare fallback).
         for i in range(L):
             for j in range(i + 1, L):
-                for ci in _LETTERS:
+                for ci in alphabet:
                     if ci == word[i]:
                         continue
-                    for cj in _LETTERS:
+                    for cj in alphabet:
                         if cj == word[j]:
                             continue
                         cand = word[:i] + ci + word[i + 1:j] + cj + word[j + 1:]
@@ -132,18 +185,21 @@ def generate_pseudowords(base_words, reference_words, exclude=None) -> pd.DataFr
     """A length-matched pseudoword for each base word.
 
     Base words are processed in byte order so the ``used`` set evolves identically
-    across engines. ``exclude`` (optional) lists further word forms no pseudoword
-    may equal, such as a list of low-frequency words the reference lacks. Returns a
-    frame with ``base_word`` and ``pseudoword``.
+    across engines. The letters substituted in are those the reference words attest.
+    ``exclude`` (optional) lists further word forms no pseudoword may equal, such as
+    a list of low-frequency words the reference lacks. A base word in a logographic
+    script is refused. Returns a frame with ``base_word`` and ``pseudoword``.
     """
     base = [str(w) for w in base_words]
+    _refuse_logographic(base)
     lexicon = _known_set(reference_words, exclude)
     bigrams = bigram_counts(reference_words)
+    alphabet = _reference_alphabet(reference_words)
     order = sorted(range(len(base)), key=lambda i: base[i].encode("utf-8"))
     used: set = set()
     pseudo = [None] * len(base)
     for i in order:
-        pw = make_pseudoword(base[i], bigrams, lexicon, used)
+        pw = make_pseudoword(base[i], bigrams, lexicon, used, alphabet)
         if pw is None:
             raise ValueError(f"lexsync: could not generate a pseudoword for '{base[i]}'.")
         used.add(pw)
@@ -151,27 +207,38 @@ def generate_pseudowords(base_words, reference_words, exclude=None) -> pd.DataFr
     return pd.DataFrame({"base_word": base, "pseudoword": pseudo})
 
 
+@functools.lru_cache(maxsize=None)
+def _is_vowel_letter(ch: str) -> bool:
+    """Whether a letter is a vowel of the syllable estimate's class, whatever its accent.
+
+    The letter is decomposed and stripped of its combining marks, as count_syllables
+    treats a word, so á, ü and ő are vowels and ñ is not. A letter of another script
+    is no vowel. Mirrors .vowel_letters in generation.R.
+    """
+    base = _SYLLABLE_MARKS.sub("", unicodedata.normalize("NFD", ch))
+    return _SYLLABLE_VOWELS.fullmatch(base) is not None
+
+
 def segment_subsyllabic(word) -> list:
     """Split a word into ordered ``(role, text)`` subsyllabic constituents.
 
-    Nuclei are the maximal vowel runs (the same regex used for syllable counting);
-    the consonants before the first nucleus form the first onset, those after the
-    last nucleus the final coda, and a consonant run *between* two nuclei is split
-    at its midpoint (``floor(m/2)`` to the left coda, the rest to the right onset).
-    Segmentation is on character indices, so accented multi-byte vowels are handled
-    identically in R and Python. A word with no vowel run returns ``[]`` (its caller
-    falls back to letter substitution). This is a deterministic orthographic
-    approximation of Wuggy's subsyllabic model (Keuleers & Brysbaert, 2010), not
-    phonological syllabification.
+    Nuclei are the maximal runs of vowels, a vowel being a letter whose base letter
+    is in the syllable estimate's vowel class, so an accented vowel counts. The
+    consonants before the first nucleus form the first onset, those after the last
+    nucleus the final coda, and a consonant run *between* two nuclei is split at its
+    midpoint (``floor(m/2)`` to the left coda, the rest to the right onset).
+    Segmentation is on character indices, so accented multi-byte letters are handled
+    identically in R and Python. A word with a character that is not a letter (a
+    hyphen, an apostrophe, a digit) or with no vowel, such as a Cyrillic word, returns
+    ``[]``, and its caller falls back to letter substitution. This is a deterministic
+    orthographic approximation of Wuggy's subsyllabic model (Keuleers & Brysbaert,
+    2010), not phonological syllabification.
     """
     w = str(word).lower()
-    # Subsyllabic segmentation is an orthographic model for Latin a-z words; any
-    # word with a character outside a-z (accented, hyphenated, digit) returns [] so
-    # the caller falls back to letter substitution, which keeps the two engines in
-    # step and avoids multi-byte-string edge cases.
-    if not (w.isascii() and w.isalpha()):
+    if not w.isalpha():
         return []
-    spans = [(m.start(), m.end()) for m in _SYLLABLE_VOWELS.finditer(w)]
+    mask = "".join("v" if _is_vowel_letter(c) else "c" for c in w)
+    spans = [(m.start(), m.end()) for m in re.finditer("v+", mask)]
     if not spans:
         return []
     out = []
@@ -261,11 +328,14 @@ def generate_pseudowords_subsyllabic(base_words, reference_words,
     Base words are processed in byte order so the ``used`` set evolves identically
     across engines; a base word with no legal subsyllabic swap falls back to the
     letter-substitution generator, so every word yields a pseudoword. ``exclude``
-    is as for :func:`generate_pseudowords`.
+    is as for :func:`generate_pseudowords`, and so are the fallback's letters and
+    the refusal of a logographic base word.
     """
     base = [str(w) for w in base_words]
+    _refuse_logographic(base)
     lexicon = _known_set(reference_words, exclude)
     bigrams = bigram_counts(reference_words)
+    alphabet = _reference_alphabet(reference_words)
     inv = build_constituent_inventory(reference_words)
     order = sorted(range(len(base)), key=lambda i: base[i].encode("utf-8"))
     used: set = set()
@@ -273,7 +343,7 @@ def generate_pseudowords_subsyllabic(base_words, reference_words,
     for i in order:
         pw = make_subsyllabic_pseudoword(base[i], inv, bigrams, lexicon, used)
         if pw is None:
-            pw = make_pseudoword(base[i], bigrams, lexicon, used)
+            pw = make_pseudoword(base[i], bigrams, lexicon, used, alphabet)
         if pw is None:
             raise ValueError(f"lexsync: could not generate a pseudoword for '{base[i]}'.")
         used.add(pw)
@@ -281,17 +351,20 @@ def generate_pseudowords_subsyllabic(base_words, reference_words,
     return pd.DataFrame({"base_word": base, "pseudoword": pseudo})
 
 
-def _lexdec_eligible(pool: pd.DataFrame) -> pd.DataFrame:
+def _lexdec_eligible(pool: pd.DataFrame, reference_words=None) -> pd.DataFrame:
     """The rows of a pool the pseudoword generators can use, in the pool's order.
 
-    The generators are orthographic and defined for Latin a-z words, so a word with
-    any other character (an accent, a hyphen, a digit) is left out. The pipeline
-    counts these rows as a generated design's candidates: counting the whole band
-    reported, for a Spanish band, accented words the generator never sees. Mirrors
-    .lexdec_eligible in generation.R.
+    A word is eligible when every character in it is a letter that ``reference_words``
+    attests (the pool's own words when it is not given), so a word with a hyphen, an
+    apostrophe, a digit or a letter the reference lacks is left out, and an accented
+    word of the reference's language is kept. The pipeline counts these rows as a
+    generated design's candidates: counting the whole band reported words the
+    generator never sees. Mirrors .lexdec_eligible in generation.R.
     """
-    keep = pool["word"].astype(str).str.fullmatch(r"[a-z]+").fillna(False).astype(bool)
-    return pool[keep.to_numpy()].reset_index(drop=True)
+    words = pool["word"].tolist()
+    letters = set(_reference_alphabet(words if reference_words is None else reference_words))
+    keep = np.array([_written_in(w, letters) for w in words], dtype=bool)
+    return pool[keep].reset_index(drop=True)
 
 
 def build_lexdec_stimuli(pool: pd.DataFrame, n: int, reference_words=None,
@@ -300,25 +373,27 @@ def build_lexdec_stimuli(pool: pd.DataFrame, n: int, reference_words=None,
 
     Real words are drawn by an even spread across the byte-ordered pool (the same
     deterministic device as the matcher's anchor), then a length-matched
-    pseudoword is generated for each. The pool is first filtered to lower-case
-    a-z forms, the only ones the pseudoword generators are defined for, so the
-    eligible pool can be smaller than the request; the pipeline's shortfall
-    policy then decides whether that errors. ``reference_words`` (the full lexicon)
-    supplies the bigram statistics and the real-word list a pseudoword must avoid;
-    it falls back to the pool when not given. ``exclude`` (optional) lists further
-    known word forms a pseudoword must not equal, which the reference may lack. The
-    presented string is the ``target`` column; conditions are ``word`` and
-    ``pseudoword`` and ``set`` pairs them. ``base`` gives the word each pseudoword
-    was made from, a word's own form for a word, and ``edit_distance`` the
-    Levenshtein distance from ``target`` to ``base``, 0 for a word.
+    pseudoword is generated for each. The pool is first filtered to the words
+    written wholly in letters the reference attests, which the generators
+    substitute among, so the eligible pool can be smaller than the request; the
+    pipeline's shortfall policy then decides whether that errors. A pool word in a
+    logographic script is refused. ``reference_words`` (the full lexicon)
+    supplies the letters, the bigram statistics and the real-word list a
+    pseudoword must avoid; it falls back to the pool when not given. ``exclude``
+    (optional) lists further known word forms a pseudoword must not equal, which
+    the reference may lack. The presented string is the ``target`` column;
+    conditions are ``word`` and ``pseudoword`` and ``set`` pairs them. ``base``
+    gives the word each pseudoword was made from, a word's own form for a word, and
+    ``edit_distance`` the Levenshtein distance from ``target`` to ``base``, 0 for a
+    word.
     """
     pool = (pool.assign(_k=pool["word"].map(lambda w: w.encode("utf-8")))
             .sort_values("_k").drop(columns="_k").reset_index(drop=True))
-    # The pseudoword generators are orthographic and defined for Latin a-z words;
-    # any word with another character is skipped, keeping the two engines in step.
-    pool = _lexdec_eligible(pool)
+    pool = _lexdec_eligible(pool, reference_words)
+    _refuse_logographic(pool["word"].tolist())
     if len(pool) == 0:
-        raise ValueError("lexsync: lexical-decision pool has no a-z words.")
+        raise ValueError("lexsync: lexical-decision pool has no word written wholly in "
+                         "letters the reference attests.")
     n_take = min(n, len(pool))
     idx = np.unique(np.round(np.linspace(1, len(pool), n_take)).astype(int)) - 1
     words = pool.iloc[idx].reset_index(drop=True)

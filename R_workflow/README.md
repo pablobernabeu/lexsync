@@ -110,7 +110,7 @@ these are published beside the documentation. The [lexical-decision
 demonstration](https://pablobernabeu.github.io/lexsync/demos/en_lexdec_english.html)
 is a single HTML file, self-contained apart from the jsPsych library it loads from
 a CDN, written by the same pipeline that emits the PsychoPy and OpenSesame
-scripts. All 21 are listed at [the demos
+scripts. All 22 are listed at [the demos
 index](https://pablobernabeu.github.io/lexsync/demos/), and a design with several
 counterbalancing versions has a link for each.
 

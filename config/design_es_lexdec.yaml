@@ -1,0 +1,35 @@
+# Demonstration paradigm: Spanish lexical decision.
+# Real words (a frequency band) are contrasted with length-matched, orthographically
+# legal pseudowords generated deterministically by constrained letter substitution. The
+# generator substitutes the letters es.csv attests, so the band keeps its accented words
+# (preterites in -ó, nouns in -ción) and a pseudoword can carry an accent or an ñ.
+# Lexicality is checked against the lexicon and against wordfreq's fuller list of
+# Spanish forms, which items.generation.exclude names. Without that list, 19 of the 60
+# pseudowords were forms wordfreq lists for Spanish, among them animara, contare and
+# sueros. A form missing from both may still be a word. Spanish has no screened
+# lexicon, so es.csv still holds names and other forms that are not words of the
+# language (see corpora/ATTRIBUTION.md), and some reach the selection. The presented
+# string is the 'target', the conditions are 'word' and 'pseudoword', and 'set' pairs
+# each word with its pseudoword. Trial events: fixation -> target (onset-locked
+# condition marker) -> response -> blank.
+name: es_lexdec
+language: spanish
+paradigm: lexical_decision
+description: 'Spanish lexical decision: real words, accented ones included, versus length-matched, orthographically legal pseudowords (deterministically generated).'
+items:
+  source: generate
+  lexicon: corpora/derived/es.csv
+  generation:
+    # Every Spanish form wordfreq lists at Zipf 1 or above, so that no pseudoword is a
+    # real word too rare for the lexicon.
+    exclude: [corpora/derived/es_known_forms.txt]
+n_per_condition: 60
+pool_filters:
+  length: [4, 7]
+  frequency: [3.5, 6.0]
+counterbalance:
+  lists: 1
+timing:
+  fixation_frames: 30
+  word_frames: 48
+  isi_frames: 15

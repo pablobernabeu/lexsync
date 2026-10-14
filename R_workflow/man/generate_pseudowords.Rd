@@ -23,3 +23,8 @@ A data frame with columns \code{base_word} and \code{pseudoword}.
 \description{
 A length-matched pseudoword for each base word (byte-order processing)
 }
+\details{
+The letters substituted in are those the reference words attest, so a
+Spanish reference lends the generator its accented vowels. A base word in a
+logographic script, such as Chinese, is refused.
+}

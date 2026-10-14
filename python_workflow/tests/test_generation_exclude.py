@@ -140,12 +140,24 @@ def test_a_registry_name_without_a_cached_corpus_is_refused_with_the_fetch_hint(
                                "n_forms": 2}]
 
 
-def test_a_spanish_band_counts_only_its_a_z_words_as_eligible(schema):
-    band = build_pool(load_lexicon(_data("es_example.csv"), schema, "spanish"), BAND)
-    eligible = _lexdec_eligible(band)
-    assert eligible["word"].str.fullmatch(r"[a-z]+").all()
-    n_az = int(band["word"].str.fullmatch(r"[a-z]+").sum())
-    assert len(eligible) == n_az < len(band)
+def _in_letters(words):
+    """How many of the words are written wholly in letters, by Python's own str."""
+    return sum(isinstance(w, str) and w.isalpha() for w in words)
+
+
+def test_a_band_counts_the_words_written_in_attested_letters_as_eligible(schema):
+    # Every word of the Spanish band is written in letters the lexicon attests, its
+    # accented words included, which the a-z filter left out.
+    lex = load_lexicon(_data("es_example.csv"), schema, "spanish")
+    band = build_pool(lex, BAND)
+    eligible = _lexdec_eligible(band, lex["word"].tolist())
+    assert eligible["word"].tolist() == band["word"].tolist()
+    assert _in_letters(band["word"]) == len(band)
+    assert any(not w.isascii() for w in eligible["word"])
+    # A hyphen, a digit or a letter the reference lacks still leaves a word out.
+    pool = pd.DataFrame({"word": ["año", "e-mail", "mar2", "über", "casa"]})
+    got = _lexdec_eligible(pool, ["año", "casa", "mar", "email"])
+    assert got["word"].tolist() == ["año", "casa"]
 
 
 def _write_generate_design(tmp_path, exclude=None):
@@ -174,15 +186,17 @@ def _pseudowords(outdir):
 
 
 def test_a_generated_design_reports_the_words_the_generator_could_use(tmp_path, schema):
-    # The record counted the band before the a-z filter, so a Spanish band reported
-    # the accented words the generator can never use as eligible candidates.
+    # The record counted the band before the letter filter. It now counts the words
+    # written in letters the lexicon attests, which in this band, accents and all, is
+    # every word. parity/twin_edge/generation_exclude holds both engines to a band with
+    # a hyphenated word, which the filter leaves out.
     band = build_pool(load_lexicon(_data("es_example.csv"), schema, "spanish"), BAND)
-    n_az = int(band["word"].str.fullmatch(r"[a-z]+").sum())
     out = str(tmp_path / "out")
     run_pipeline(_write_generate_design(tmp_path), _data("schema.yaml"), out, verbose=False)
     ds = _datasheet(out)
     assert ds["selection"]["candidate_pool"] == [
-        {"condition": "words in band", "n_candidates": n_az}]
+        {"condition": "words in band", "n_candidates": _in_letters(band["word"])}]
+    assert _in_letters(band["word"]) > int(band["word"].str.fullmatch(r"[a-z]+").sum())
     assert "generation_exclude" not in ds["selection"]
 
 

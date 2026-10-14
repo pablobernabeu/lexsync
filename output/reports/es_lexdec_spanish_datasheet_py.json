@@ -1,0 +1,226 @@
+{
+  "analysis": {
+    "note": "Crossed random effects for subjects and items guard against the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). The condition column codes lexicality, word or pseudoword. Begin with this maximal structure (Barr et al., 2013). If the model is singular or fails to converge, simplify it as Matuschek et al. (2017) describe. The formula is lme4 syntax, for lme4 in R or pymer4 in Python; statsmodels MixedLM cannot take it directly and needs the random effects restated in its own arguments. The equivalence tests in the realised control are post-selection diagnostics on deterministically selected items, not inferential tests over a sample.",
+    "response": "reaction time from the onset of `{target}`; responses collected for 2800 ms; a response ends the trial",
+    "suggested_model": "response ~ condition + (1 + condition | subject) + (1 | item)"
+  },
+  "artifacts": [
+    {
+      "file": "output/stimuli/es_lexdec_spanish_stimuli_py.csv",
+      "sha256": "07ecf90017bfa1e08ec25dcd6a0a18b1c9f2461b7f649054a6684b723f30bfbf"
+    },
+    {
+      "file": "output/reports/es_lexdec_spanish_descriptives_py.csv",
+      "sha256": "09f6d7287479e45c102841190975e8df1b92403f85443ca1ebc2d7559cca5658"
+    },
+    {
+      "file": "output/reports/es_lexdec_spanish_comparisons_py.csv",
+      "sha256": "0a139776aeaee52c4159c1a12023154634b0deb44bba3f680d54177901794267"
+    },
+    {
+      "file": "output/experiments/es_lexdec_spanish_psychopy.py",
+      "sha256": "eda99957b48c9785df6a54db3d5a37210dd238b59944fa559caf9cf93d604fab"
+    },
+    {
+      "file": "output/experiments/es_lexdec_spanish.osexp",
+      "sha256": "9a98a1c854dde56a9cf39e3fd54182134ded12b6afe55225ea649e4c65c8b6e3"
+    },
+    {
+      "file": "output/experiments/es_lexdec_spanish.html",
+      "sha256": "e6d206ce3d83e8415e6a4cbce1e0cad636f6d4bf4c50121e05bb65aacc126c88"
+    },
+    {
+      "file": "output/experiments/es_lexdec_spanish_psychopy.csv",
+      "sha256": "98423a350675d784eda0936bad2005ba95ba35a15b67fc9026c8edca83a84c08"
+    },
+    {
+      "file": "output/experiments/es_lexdec_spanish_opensesame.csv",
+      "sha256": "8bf045e4f061953932ea7a17fa2f78916d3c688e903fec71c75091613e54d105"
+    },
+    {
+      "file": "output/experiments/es_lexdec_spanish_opensesame_text.csv",
+      "sha256": "ab35b89e4a848205b7165ca47e44342db611afbfbfe86e98a3bdf49ab8cbb64e"
+    }
+  ],
+  "counterbalancing": {
+    "assignment": "version = ((participant - 1) mod 1) + 1 unless a version is given at launch",
+    "cells": [
+      {
+        "condition": "pseudoword",
+        "list": 1,
+        "n_trials": 60
+      },
+      {
+        "condition": "word",
+        "list": 1,
+        "n_trials": 60
+      }
+    ],
+    "complete": true,
+    "issues": [],
+    "lists": 1,
+    "recipe": "factorial",
+    "versions": 1
+  },
+  "design": {
+    "description": "Spanish lexical decision: real words, accented ones included, versus length-matched, orthographically legal pseudowords (deterministically generated).",
+    "language": "spanish",
+    "n_per_condition": 60,
+    "name": "es_lexdec",
+    "paradigm": "lexical_decision",
+    "source": "generate"
+  },
+  "dimensions": {
+    "length": {
+      "compute": "n_letters",
+      "type": "derived",
+      "unit": "characters"
+    }
+  },
+  "equivalence": {
+    "alpha": 0.05,
+    "bound_d": 0.5
+  },
+  "items": {
+    "conditions": [
+      "pseudoword",
+      "word"
+    ],
+    "n_conditions": 2,
+    "n_per_condition_realised": [
+      {
+        "condition": "pseudoword",
+        "n": 60
+      },
+      {
+        "condition": "word",
+        "n": 60
+      }
+    ],
+    "n_total": 120,
+    "stimuli_file": "output/stimuli/es_lexdec_spanish_stimuli_py.csv",
+    "stimuli_sha256": "07ecf90017bfa1e08ec25dcd6a0a18b1c9f2461b7f649054a6684b723f30bfbf"
+  },
+  "lexsync_datasheet_version": "1.2",
+  "materials_source": {
+    "path": "corpora/derived/es.csv",
+    "provenance": "wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md",
+    "sha256": "e9f93013c16ec9745c0d02f82c697f2488c328365b95b57c5f04ac2565c123ea",
+    "type": "generate"
+  },
+  "presentation": {
+    "response_mapping": {
+      "conditions": {
+        "pseudoword": "right",
+        "word": "left"
+      },
+      "keys": [
+        "left",
+        "right"
+      ],
+      "rotate_by_list": false,
+      "source": "default"
+    },
+    "response_windows": [
+      {
+        "event": 3,
+        "from": "onset",
+        "window_ms": 2800
+      }
+    ]
+  },
+  "realised_control": [
+    {
+      "ci_high": 0.303,
+      "ci_low": -0.303,
+      "cohens_d": 0.0,
+      "condition": "pseudoword",
+      "dimension": "length",
+      "equivalent": true,
+      "mean_diff": 0.0,
+      "reference": "word",
+      "role": "controlled",
+      "tost_p": 0.0036,
+      "var_ratio": 1.0
+    },
+    {
+      "ci_high": -0.88,
+      "ci_low": -1.538,
+      "cohens_d": -1.209,
+      "condition": "pseudoword",
+      "dimension": "bigram_freq",
+      "equivalent": false,
+      "mean_diff": -0.004,
+      "reference": "word",
+      "role": "uncontrolled",
+      "tost_p": 0.9999,
+      "var_ratio": 0.662
+    },
+    {
+      "ci_high": 0.303,
+      "ci_low": -0.303,
+      "cohens_d": 0.0,
+      "condition": "pseudoword",
+      "dimension": "n_density",
+      "equivalent": true,
+      "mean_diff": 0.0,
+      "reference": "word",
+      "role": "uncontrolled",
+      "tost_p": 0.0036,
+      "var_ratio": 0.483
+    },
+    {
+      "ci_high": 0.323,
+      "ci_low": -0.282,
+      "cohens_d": 0.021,
+      "condition": "pseudoword",
+      "dimension": "old20",
+      "equivalent": true,
+      "mean_diff": 0.007,
+      "reference": "word",
+      "role": "uncontrolled",
+      "tost_p": 0.0049,
+      "var_ratio": 0.645
+    }
+  ],
+  "relational": null,
+  "reproducibility": {
+    "design_sha256": "69aaf532ff7741f1cdbd7aec1366d49699f3b1dacc768b3a62a0659db4481386",
+    "schema_path": "config/schema.yaml",
+    "schema_sha256": "105322550d8c6dc00e06f71b44b61a7c45959c1a4caaceac414192dbd5f9520b",
+    "seed": 2026,
+    "versions": {
+      "engine": "python",
+      "lexsync": "0.1.1",
+      "numpy": "2.3.2",
+      "os": "Windows AMD64",
+      "pandas": "2.3.2",
+      "python": "3.13.7",
+      "pyyaml": "6.0.3",
+      "rapidfuzz": "3.14.5",
+      "scipy": "1.17.1"
+    }
+  },
+  "resampling": null,
+  "selection": {
+    "candidate_pool": [
+      {
+        "condition": "words in band",
+        "n_candidates": 8305
+      }
+    ],
+    "cross_engine": "byte-identical",
+    "generation_exclude": [
+      {
+        "n_forms": 334625,
+        "sha256": "281fa6c374e1fa6550e6f5700d19b9bae4ccb664cfd3fc37ca6ffc087acdd776",
+        "source": "corpora/derived/es_known_forms.txt"
+      }
+    ],
+    "generation_method": "letter_substitution",
+    "matched_on": [
+      "length"
+    ],
+    "method": "constrained letter substitution (deterministic pseudowords)"
+  }
+}

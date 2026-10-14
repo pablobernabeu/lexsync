@@ -20,6 +20,67 @@
 # matches the template's transition frequencies, matches letter length by default
 # and has orthographic language plugins, and by default keeps two thirds of the
 # segments, whereas lexsync replaces up to ceil(2k/3) of a word's k constituents.
+#
+# The letters a generator substitutes are those the reference words attest, so a Spanish
+# lexicon lends it its accented vowels and n with a tilde. A word can serve as a base
+# word when every character in it is such a letter. The generators were defined for a
+# to z alone, which left out 16.5% of a typical Spanish band (1,368 of 8,305 words,
+# among them 261 preterites ending in an accented o) and never produced an accented
+# pseudoword. A word in a logographic script is refused.
+
+# A word holding a character from one of these ranges is written in a logographic
+# script: the CJK Unified Ideographs with Extension A (U+3400-U+9FFF), the CJK
+# Compatibility Ideographs (U+F900-U+FAFF) and the supplementary ideographic planes
+# (U+20000 and above). Unicode counts these characters as letters, so the letter test
+# alone would admit Chinese, and a form made by swapping one character for another is of
+# unknown validity as a pseudoword. Code-point ranges keep the test independent of the
+# engines' Unicode tables. ICU reads the escapes through stringi. Mirrors _LOGOGRAPHIC
+# in generation.py.
+.LOGOGRAPHIC <- "[\\x{3400}-\\x{9fff}\\x{f900}-\\x{faff}\\x{20000}-\\x{10ffff}]"
+
+# The letters the words attest, in UTF-8 byte order: a generator's alphabet. A letter
+# is a character of Unicode's general category L, which ICU's \p{L} matches in every
+# locale and Python's str.isalpha accepts, so a hyphen, an apostrophe or a digit is
+# never substituted in. Radix order is UTF-8 byte order. Missing values are skipped.
+# Mirrors _reference_alphabet in generation.py.
+.reference_alphabet <- function(words) {
+  words <- as.character(words)
+  words <- words[!is.na(words) & nzchar(words)]
+  if (!length(words)) return(character(0))
+  chars <- unique(unlist(strsplit(words, "", fixed = TRUE), use.names = FALSE))
+  sort(chars[stringi::stri_detect_regex(chars, "^\\p{L}$")], method = "radix")
+}
+
+# Whether each word is non-empty and every character in it is one of `alphabet`.
+.written_in <- function(words, alphabet) {
+  words <- as.character(words)
+  ok <- !is.na(words) & nzchar(words)
+  out <- logical(length(words))
+  if (any(ok)) {
+    out[ok] <- vapply(strsplit(words[ok], "", fixed = TRUE),
+                      function(ch) all(ch %in% alphabet), logical(1))
+  }
+  out
+}
+
+# Refuse words in a logographic script, naming the first in UTF-8 byte order. Mirrors
+# _refuse_logographic in generation.py.
+.refuse_logographic <- function(words) {
+  words <- as.character(words)
+  hits <- words[!is.na(words) & stringi::stri_detect_regex(words, .LOGOGRAPHIC)]
+  if (length(hits)) {
+    stop(sprintf(paste0("lexsync: pseudoword generation is defined for alphabetic ",
+                        "scripts, and '%s' is written in a logographic one."),
+                 sort(hits, method = "radix")[1]), call. = FALSE)
+  }
+  invisible(NULL)
+}
+
+# A word with the letter at `pos` replaced by `ch`, on characters, not bytes.
+.swap_letter <- function(chars, pos, ch) {
+  chars[pos] <- ch
+  paste0(chars, collapse = "")
+}
 
 # The forms a pseudoword must not equal, as an environment used as a set: the
 # reference words and `exclude`. The excluded forms are trimmed, lower-cased and put
@@ -76,18 +137,22 @@ bigram_counts <- function(words) {
 #' @param lexset Environment used as a set of the real word forms a pseudoword
 #'   must avoid.
 #' @param usedset Environment used as a set of the pseudowords already taken.
+#' @param alphabet Character vector of the letters substituted in, in UTF-8 byte
+#'   order. The default, `NULL`, takes the letters of the bigram table's names,
+#'   which hold every letter a legal candidate of two letters or more can use.
+#'   [generate_pseudowords()] passes the letters of the whole reference.
 #' @return A single pseudoword string, or `NULL` if no legal candidate exists.
 #' @export
-make_pseudoword <- function(word, bigrams, lexset, usedset) {
+make_pseudoword <- function(word, bigrams, lexset, usedset, alphabet = NULL) {
   word <- as.character(word)
   L <- nchar(word)
   chars <- strsplit(word, "", fixed = TRUE)[[1]]
+  if (is.null(alphabet)) alphabet <- .reference_alphabet(names(bigrams))
   cands <- character(0)
   for (pos in seq_len(L)) {
-    for (ch in letters) {
+    for (ch in alphabet) {
       if (ch == chars[pos]) next
-      cand <- word
-      substr(cand, pos, pos) <- ch
+      cand <- .swap_letter(chars, pos, ch)
       if (exists(cand, envir = lexset, inherits = FALSE)) next
       if (exists(cand, envir = usedset, inherits = FALSE)) next
       if (.bg_legal(cand, bigrams)) cands <- c(cands, cand)
@@ -96,13 +161,13 @@ make_pseudoword <- function(word, bigrams, lexset, usedset) {
   if (length(cands) == 0L) {
     for (i in seq_len(L)) for (j in seq_len(L)) {
       if (j <= i) next
-      for (ci in letters) {
+      for (ci in alphabet) {
         if (ci == chars[i]) next
-        for (cj in letters) {
+        for (cj in alphabet) {
           if (cj == chars[j]) next
-          cand <- word
-          substr(cand, i, i) <- ci
-          substr(cand, j, j) <- cj
+          two <- chars
+          two[i] <- ci
+          cand <- .swap_letter(two, j, cj)
           if (exists(cand, envir = lexset, inherits = FALSE)) next
           if (exists(cand, envir = usedset, inherits = FALSE)) next
           if (.bg_legal(cand, bigrams)) cands <- c(cands, cand)
@@ -124,16 +189,21 @@ make_pseudoword <- function(word, bigrams, lexset, usedset) {
 #'   may equal, such as low-frequency words the reference lacks. They are trimmed,
 #'   lower-cased and put in Unicode NFC, as a lexicon's words are, and play no part
 #'   in the bigram statistics.
+#' @details The letters substituted in are those the reference words attest, so a
+#'   Spanish reference lends the generator its accented vowels. A base word in a
+#'   logographic script, such as Chinese, is refused.
 #' @return A data frame with columns `base_word` and `pseudoword`.
 #' @export
 generate_pseudowords <- function(base_words, reference_words, exclude = NULL) {
   base <- as.character(base_words)
+  .refuse_logographic(base)
   bigrams <- bigram_counts(reference_words)
   lexset <- .known_set(reference_words, exclude)
+  alphabet <- .reference_alphabet(reference_words)
   usedset <- new.env(hash = TRUE, parent = emptyenv())
   pseudo <- character(length(base))
   for (i in order(base, method = "radix")) {
-    pw <- make_pseudoword(base[i], bigrams, lexset, usedset)
+    pw <- make_pseudoword(base[i], bigrams, lexset, usedset, alphabet)
     if (is.null(pw)) {
       stop(sprintf("lexsync: could not generate a pseudoword for '%s'.", base[i]), call. = FALSE)
     }
@@ -147,24 +217,36 @@ generate_pseudowords <- function(base_words, reference_words, exclude = NULL) {
 # and nuclei vary more freely than onsets. Mirrors generation.py _ROLE_ORDER.
 .ROLE_ORDER <- c(coda = 0L, nucleus = 1L, onset = 2L)
 
+# Whether each letter is a vowel of the syllable estimate's class, whatever its accent.
+# The letter is decomposed and stripped of its combining marks, as count_syllables()
+# treats a word, so an a with an acute accent and a u with a diaeresis are vowels and
+# an n with a tilde is not. A letter of another script is no vowel. Mirrors
+# _is_vowel_letter in generation.py.
+.vowel_letters <- function(chars) {
+  base <- stringi::stri_replace_all_regex(stringi::stri_trans_nfd(chars), .SYLLABLE_MARKS, "")
+  stringi::stri_detect_regex(base, paste0("^", .SYLLABLE_VOWELS, "$"))
+}
+
 #' Split a word into ordered (role, text) subsyllabic constituents
 #'
-#' Nuclei are the maximal vowel runs; consonants before the first nucleus form the
-#' first onset, those after the last nucleus the final coda, and a consonant run
-#' between two nuclei is split at its midpoint (floor(m/2) to the left coda). An
-#' orthographic model for Latin a-z words only: any word with a character outside
-#' a-z (accented, hyphenated, digit) returns an empty list, as does a word with no
-#' vowel, and the caller falls back to letter substitution. Mirrors
+#' Nuclei are the maximal runs of vowels, a vowel being a letter whose base letter is
+#' in the vowel class of [count_syllables()], so an accented vowel counts. Consonants
+#' before the first nucleus form the first onset, those after the last nucleus the
+#' final coda, and a consonant run between two nuclei is split at its midpoint
+#' (floor(m/2) to the left coda). Segmentation is on characters, so accented letters
+#' are handled identically in the two engines. A word with a character that is not a
+#' letter (a hyphen, an apostrophe, a digit) or with no vowel, such as a Cyrillic word,
+#' returns an empty list, and the caller falls back to letter substitution. Mirrors
 #' segment_subsyllabic in generation.py.
 #' @keywords internal
 segment_subsyllabic <- function(word) {
   w <- .lower_invariant(word)
-  # Subsyllabic segmentation is an orthographic model for Latin a-z words; any word
-  # with a character outside a-z returns an empty list so the caller falls back to
-  # letter substitution (keeps the engines in step; avoids multi-byte edge cases).
-  if (!grepl("^[a-z]+$", w, perl = TRUE)) return(list())   # perl: locale-independent ASCII a-z
+  # ICU's \p{L}, through stringi, applies Unicode's letter class in every locale.
+  if (!isTRUE(stringi::stri_detect_regex(w, "^\\p{L}+$"))) return(list())
   L <- nchar(w)
-  loc <- stringi::stri_locate_all_regex(w, .SYLLABLE_VOWELS)[[1]]
+  mask <- paste0(ifelse(.vowel_letters(strsplit(w, "", fixed = TRUE)[[1]]), "v", "c"),
+                 collapse = "")
+  loc <- stringi::stri_locate_all_regex(mask, "v+")[[1]]
   if (is.na(loc[1L, 1L])) return(list())
   starts <- as.integer(loc[, "start"])
   ends <- as.integer(loc[, "end"])
@@ -256,18 +338,21 @@ make_subsyllabic_pseudoword <- function(word, inv, bigrams, lexset, usedset) {
 
 #' A subsyllabic pseudoword for each base word (with letter-substitution fallback)
 #'
-#' `exclude` is as for [generate_pseudowords()].
+#' `exclude` is as for [generate_pseudowords()], and so are the letters of the
+#' letter-substitution fallback and the refusal of a logographic base word.
 #' @keywords internal
 generate_pseudowords_subsyllabic <- function(base_words, reference_words, exclude = NULL) {
   base <- as.character(base_words)
+  .refuse_logographic(base)
   bigrams <- bigram_counts(reference_words)
   lexset <- .known_set(reference_words, exclude)
+  alphabet <- .reference_alphabet(reference_words)
   inv <- build_constituent_inventory(reference_words)
   usedset <- new.env(hash = TRUE, parent = emptyenv())
   pseudo <- character(length(base))
   for (i in order(base, method = "radix")) {
     pw <- make_subsyllabic_pseudoword(base[i], inv, bigrams, lexset, usedset)
-    if (is.null(pw)) pw <- make_pseudoword(base[i], bigrams, lexset, usedset)
+    if (is.null(pw)) pw <- make_pseudoword(base[i], bigrams, lexset, usedset, alphabet)
     if (is.null(pw)) {
       stop(sprintf("lexsync: could not generate a pseudoword for '%s'.", base[i]), call. = FALSE)
     }
@@ -281,17 +366,19 @@ generate_pseudowords_subsyllabic <- function(base_words, reference_words, exclud
 #'
 #' Real words are drawn by an even spread across the byte-ordered pool, then a
 #' length-matched pseudoword is generated for each. The pool is first filtered to
-#' lower-case a-z forms, the only ones the pseudoword generators are defined for,
-#' so the eligible pool can be smaller than the request; the pipeline's shortfall
-#' policy then decides whether that errors. `reference_words` (the full
-#' lexicon) supplies the bigram statistics and the real-word list a pseudoword
-#' must avoid. The presented string is the `target` column; conditions are `word`
-#' and `pseudoword` and `set` pairs them.
+#' the words written wholly in letters the reference attests, which the generators
+#' substitute among, so the eligible pool can be smaller than the request; the
+#' pipeline's shortfall policy then decides whether that errors. A pool word in a
+#' logographic script is refused. `reference_words` (the full lexicon) supplies
+#' the letters, the bigram statistics and the real-word list a pseudoword must
+#' avoid. The presented string is the `target` column; conditions are `word` and
+#' `pseudoword` and `set` pairs them.
 #'
 #' @param pool Data frame of candidate words, e.g. from [build_pool()].
 #' @param n Number of real words to select.
-#' @param reference_words Character vector supplying the bigram statistics and
-#'   the real word forms a pseudoword must avoid; defaults to the pool's words.
+#' @param reference_words Character vector supplying the letters, the bigram
+#'   statistics and the real word forms a pseudoword must avoid; defaults to the
+#'   pool's words.
 #' @param method Pseudoword generator: `"letter_substitution"` (default) or
 #'   `"subsyllabic"` (Wuggy-style; Keuleers & Brysbaert, 2010).
 #' @param exclude Optional character vector of further known word forms a
@@ -305,9 +392,12 @@ generate_pseudowords_subsyllabic <- function(base_words, reference_words, exclud
 build_lexdec_stimuli <- function(pool, n, reference_words = NULL, method = "letter_substitution",
                                  exclude = NULL) {
   pool <- pool[order(pool$word, method = "radix"), , drop = FALSE]
-  # The pseudoword generators are defined for Latin a-z words; skip others.
-  pool <- .lexdec_eligible(pool)
-  if (nrow(pool) == 0L) stop("lexsync: lexical-decision pool has no a-z words.", call. = FALSE)
+  pool <- .lexdec_eligible(pool, reference_words)
+  .refuse_logographic(pool$word)
+  if (nrow(pool) == 0L) {
+    stop(paste0("lexsync: lexical-decision pool has no word written wholly in letters the ",
+                "reference attests."), call. = FALSE)
+  }
   n_take <- min(n, nrow(pool))
   idx <- unique(round(seq(1, nrow(pool), length.out = n_take)))
   words <- pool[idx, , drop = FALSE]
@@ -336,14 +426,16 @@ build_lexdec_stimuli <- function(pool, n, reference_words = NULL, method = "lett
   out
 }
 
-# The rows of a pool the pseudoword generators can use, in the pool's order. The
-# generators are orthographic and defined for Latin a-z words, so a word with any
-# other character (an accent, a hyphen, a digit) is left out. The pipeline counts
-# these rows as a generated design's candidates: counting the whole band reported,
-# for a Spanish band, accented words the generator never sees. Mirrors
+# The rows of a pool the pseudoword generators can use, in the pool's order. A word is
+# eligible when every character in it is a letter that `reference_words` attests (the
+# pool's own words when it is NULL), so a word with a hyphen, an apostrophe, a digit or
+# a letter the reference lacks is left out, and an accented word of the reference's
+# language is kept. The pipeline counts these rows as a generated design's candidates:
+# counting the whole band reported words the generator never sees. Mirrors
 # _lexdec_eligible in generation.py.
-.lexdec_eligible <- function(pool) {
-  keep <- !is.na(pool$word) & grepl("^[a-z]+$", pool$word, perl = TRUE)
+.lexdec_eligible <- function(pool, reference_words = NULL) {
+  alphabet <- .reference_alphabet(if (is.null(reference_words)) pool$word else reference_words)
+  keep <- .written_in(pool$word, alphabet)
   out <- pool[keep, , drop = FALSE]
   rownames(out) <- NULL
   out

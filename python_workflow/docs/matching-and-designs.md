@@ -729,12 +729,18 @@ probability is about *d* = −1.0, words minus pseudowords, in `en_lexdec` and `
 Read the generated forms before a study runs.
 
 Both generators process base words in byte order, so the set of already-used pseudowords evolves
-identically in R and Python, and both select byte-identical stimuli. Both are also orthographic
-models defined for a–z words: `build_lexdec_stimuli` filters the pool to those, and
-`segment_subsyllabic` returns nothing for a word with an accent, a hyphen or a digit, which sends it
-down the letter-substitution path. That is why lexical decision is demonstrated on the English
-designs and never on the Chinese one. A generated design's datasheet counts only these a–z words in
-the band as its candidates.
+identically in R and Python, and both select byte-identical stimuli. Their alphabet is derived from
+the reference. It is the set of letters the reference words attest, in UTF-8 byte order, so a
+Spanish lexicon lends them `á`, `é`, `í`, `ó`, `ú`, `ü` and `ñ`, which one word in six carries in a
+typical Spanish band. `build_lexdec_stimuli` keeps the pool's words written wholly in those
+letters, and a generated design's datasheet counts these words in the band as its candidates. A
+word with a hyphen, an apostrophe or a digit is left out. `segment_subsyllabic` takes its nuclei
+from the vowels of the syllable estimate, whatever their accent, and a word without one, such as a
+Russian or Greek word, goes down the letter-substitution path. Chinese is refused, since Unicode
+counts its characters as letters but a form made by swapping one character for another is of
+unknown validity as a pseudoword. In the Spanish demonstration, `design_es_lexdec.yaml`, 8 of the 60 words and 4 of
+the pseudowords hold a letter outside a to z, and the pseudowords are checked against wordfreq's
+Spanish word list.
 
 The stimuli give each pseudoword its `base` word and its `edit_distance` from it, the Levenshtein
 distance, and give a word its own form and 0. A generated design's report compares the words with

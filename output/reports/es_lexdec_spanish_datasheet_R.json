@@ -1,0 +1,227 @@
+{
+  "lexsync_datasheet_version": "1.2",
+  "design": {
+    "name": "es_lexdec",
+    "language": "spanish",
+    "paradigm": "lexical_decision",
+    "source": "generate",
+    "description": "Spanish lexical decision: real words, accented ones included, versus length-matched, orthographically legal pseudowords (deterministically generated).",
+    "n_per_condition": 60
+  },
+  "materials_source": {
+    "type": "generate",
+    "path": "corpora/derived/es.csv",
+    "sha256": "e9f93013c16ec9745c0d02f82c697f2488c328365b95b57c5f04ac2565c123ea",
+    "provenance": "wordfreq (Speer, 2022), data CC BY-SA 4.0; full corpus licence and citation at https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md"
+  },
+  "dimensions": {
+    "length": {
+      "type": "derived",
+      "compute": "n_letters",
+      "unit": "characters"
+    }
+  },
+  "selection": {
+    "method": "constrained letter substitution (deterministic pseudowords)",
+    "generation_method": "letter_substitution",
+    "matched_on": [
+      "length"
+    ],
+    "candidate_pool": [
+      {
+        "condition": "words in band",
+        "n_candidates": 8305
+      }
+    ],
+    "cross_engine": "byte-identical",
+    "generation_exclude": [
+      {
+        "source": "corpora/derived/es_known_forms.txt",
+        "sha256": "281fa6c374e1fa6550e6f5700d19b9bae4ccb664cfd3fc37ca6ffc087acdd776",
+        "n_forms": 334625
+      }
+    ]
+  },
+  "relational": null,
+  "analysis": {
+    "response": "reaction time from the onset of `{target}`; responses collected for 2800 ms; a response ends the trial",
+    "suggested_model": "response ~ condition + (1 + condition | subject) + (1 | item)",
+    "note": "Crossed random effects for subjects and items guard against the language-as-fixed-effect fallacy (Clark, 1973; Baayen et al., 2008). The condition column codes lexicality, word or pseudoword. Begin with this maximal structure (Barr et al., 2013). If the model is singular or fails to converge, simplify it as Matuschek et al. (2017) describe. The formula is lme4 syntax, for lme4 in R or pymer4 in Python; statsmodels MixedLM cannot take it directly and needs the random effects restated in its own arguments. The equivalence tests in the realised control are post-selection diagnostics on deterministically selected items, not inferential tests over a sample."
+  },
+  "equivalence": {
+    "bound_d": 0.5,
+    "alpha": 0.05
+  },
+  "realised_control": [
+    {
+      "condition": "pseudoword",
+      "reference": "word",
+      "dimension": "length",
+      "role": "controlled",
+      "cohens_d": 0,
+      "ci_low": -0.303,
+      "ci_high": 0.303,
+      "var_ratio": 1,
+      "tost_p": 0.0036,
+      "equivalent": true,
+      "mean_diff": 0
+    },
+    {
+      "condition": "pseudoword",
+      "reference": "word",
+      "dimension": "bigram_freq",
+      "role": "uncontrolled",
+      "cohens_d": -1.209,
+      "ci_low": -1.538,
+      "ci_high": -0.88,
+      "var_ratio": 0.662,
+      "tost_p": 0.9999,
+      "equivalent": false,
+      "mean_diff": -0.004
+    },
+    {
+      "condition": "pseudoword",
+      "reference": "word",
+      "dimension": "n_density",
+      "role": "uncontrolled",
+      "cohens_d": 0,
+      "ci_low": -0.303,
+      "ci_high": 0.303,
+      "var_ratio": 0.483,
+      "tost_p": 0.0036,
+      "equivalent": true,
+      "mean_diff": 0
+    },
+    {
+      "condition": "pseudoword",
+      "reference": "word",
+      "dimension": "old20",
+      "role": "uncontrolled",
+      "cohens_d": 0.021,
+      "ci_low": -0.282,
+      "ci_high": 0.323,
+      "var_ratio": 0.645,
+      "tost_p": 0.0049,
+      "equivalent": true,
+      "mean_diff": 0.007
+    }
+  ],
+  "counterbalancing": {
+    "recipe": "factorial",
+    "lists": 1,
+    "complete": true,
+    "issues": [],
+    "cells": [
+      {
+        "list": 1,
+        "condition": "pseudoword",
+        "n_trials": 60
+      },
+      {
+        "list": 1,
+        "condition": "word",
+        "n_trials": 60
+      }
+    ],
+    "versions": 1,
+    "assignment": "version = ((participant - 1) mod 1) + 1 unless a version is given at launch"
+  },
+  "presentation": {
+    "response_windows": [
+      {
+        "event": 3,
+        "from": "onset",
+        "window_ms": 2800
+      }
+    ],
+    "response_mapping": {
+      "conditions": {
+        "word": "left",
+        "pseudoword": "right"
+      },
+      "keys": [
+        "left",
+        "right"
+      ],
+      "rotate_by_list": false,
+      "source": "default"
+    }
+  },
+  "resampling": null,
+  "items": {
+    "n_total": 120,
+    "n_conditions": 2,
+    "conditions": [
+      "pseudoword",
+      "word"
+    ],
+    "n_per_condition_realised": [
+      {
+        "condition": "pseudoword",
+        "n": 60
+      },
+      {
+        "condition": "word",
+        "n": 60
+      }
+    ],
+    "stimuli_file": "output/stimuli/es_lexdec_spanish_stimuli_R.csv",
+    "stimuli_sha256": "07ecf90017bfa1e08ec25dcd6a0a18b1c9f2461b7f649054a6684b723f30bfbf"
+  },
+  "reproducibility": {
+    "seed": 2026,
+    "versions": {
+      "engine": "R",
+      "lexsync": "0.1.1",
+      "R": "4.6.1",
+      "readr": "2.2.0",
+      "stringdist": "0.9.17",
+      "jsonlite": "2.0.0",
+      "digest": "0.6.39",
+      "yaml": "2.3.12",
+      "stringi": "1.8.7",
+      "os": "Windows x86-64"
+    },
+    "design_sha256": "69aaf532ff7741f1cdbd7aec1366d49699f3b1dacc768b3a62a0659db4481386",
+    "schema_path": "config/schema.yaml",
+    "schema_sha256": "105322550d8c6dc00e06f71b44b61a7c45959c1a4caaceac414192dbd5f9520b"
+  },
+  "artifacts": [
+    {
+      "file": "output/stimuli/es_lexdec_spanish_stimuli_R.csv",
+      "sha256": "07ecf90017bfa1e08ec25dcd6a0a18b1c9f2461b7f649054a6684b723f30bfbf"
+    },
+    {
+      "file": "output/reports/es_lexdec_spanish_descriptives_R.csv",
+      "sha256": "09f6d7287479e45c102841190975e8df1b92403f85443ca1ebc2d7559cca5658"
+    },
+    {
+      "file": "output/reports/es_lexdec_spanish_comparisons_R.csv",
+      "sha256": "0a139776aeaee52c4159c1a12023154634b0deb44bba3f680d54177901794267"
+    },
+    {
+      "file": "output/experiments/es_lexdec_spanish_psychopy.py",
+      "sha256": "eda99957b48c9785df6a54db3d5a37210dd238b59944fa559caf9cf93d604fab"
+    },
+    {
+      "file": "output/experiments/es_lexdec_spanish.osexp",
+      "sha256": "9a98a1c854dde56a9cf39e3fd54182134ded12b6afe55225ea649e4c65c8b6e3"
+    },
+    {
+      "file": "output/experiments/es_lexdec_spanish.html",
+      "sha256": "e6d206ce3d83e8415e6a4cbce1e0cad636f6d4bf4c50121e05bb65aacc126c88"
+    },
+    {
+      "file": "output/experiments/es_lexdec_spanish_psychopy.csv",
+      "sha256": "98423a350675d784eda0936bad2005ba95ba35a15b67fc9026c8edca83a84c08"
+    },
+    {
+      "file": "output/experiments/es_lexdec_spanish_opensesame.csv",
+      "sha256": "8bf045e4f061953932ea7a17fa2f78916d3c688e903fec71c75091613e54d105"
+    },
+    {
+      "file": "output/experiments/es_lexdec_spanish_opensesame_text.csv",
+      "sha256": "ab35b89e4a848205b7165ca47e44342db611afbfbfe86e98a3bdf49ab8cbb64e"
+    }
+  ]
+}

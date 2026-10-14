@@ -7,6 +7,7 @@
 generate_pseudowords_subsyllabic(base_words, reference_words, exclude = NULL)
 }
 \description{
-\code{exclude} is as for \code{\link[=generate_pseudowords]{generate_pseudowords()}}.
+\code{exclude} is as for \code{\link[=generate_pseudowords]{generate_pseudowords()}}, and so are the letters of the
+letter-substitution fallback and the refusal of a logographic base word.
 }
 \keyword{internal}

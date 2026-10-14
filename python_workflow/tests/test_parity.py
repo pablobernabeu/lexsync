@@ -30,6 +30,9 @@ CASES = [
     ("zh_freqcontrast_chinese", "config/design_zh_freqcontrast.yaml", ["word", "condition", "set"]),
     ("en_lexdec_english", "config/design_en_lexdec.yaml", ["target", "condition", "set"]),
     ("en_lexdec_wuggy_english", "config/design_en_lexdec_wuggy.yaml", ["target", "condition", "set"]),
+    # Accented words and pseudowords: the generator's alphabet is the letters es.csv
+    # attests, so the engines must agree on the byte order of letters past z.
+    ("es_lexdec_spanish", "config/design_es_lexdec.yaml", ["target", "condition", "set"]),
     # Practice and filler blocks. The stimuli file holds only the analysed rows, so this
     # case checks that the split lands the same way in both engines; the presented set,
     # which is larger, reaches the shared loop table that both engines write.

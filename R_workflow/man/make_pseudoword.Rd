@@ -4,7 +4,7 @@
 \alias{make_pseudoword}
 \title{The most bigram-plausible legal non-word at the smallest edit distance}
 \usage{
-make_pseudoword(word, bigrams, lexset, usedset)
+make_pseudoword(word, bigrams, lexset, usedset, alphabet = NULL)
 }
 \arguments{
 \item{word}{The base word to derive the pseudoword from.}
@@ -15,6 +15,11 @@ make_pseudoword(word, bigrams, lexset, usedset)
 must avoid.}
 
 \item{usedset}{Environment used as a set of the pseudowords already taken.}
+
+\item{alphabet}{Character vector of the letters substituted in, in UTF-8 byte
+order. The default, \code{NULL}, takes the letters of the bigram table's names,
+which hold every letter a legal candidate of two letters or more can use.
+\code{\link[=generate_pseudowords]{generate_pseudowords()}} passes the letters of the whole reference.}
 }
 \value{
 A single pseudoword string, or \code{NULL} if no legal candidate exists.

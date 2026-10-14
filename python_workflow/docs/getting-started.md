@@ -27,7 +27,7 @@ The development version comes straight from the repository, where the Python pac
 pip install "git+https://github.com/pablobernabeu/lexsync.git#subdirectory=python_workflow"
 ```
 
-If you want the 21 worked designs, the derived corpora and the committed outputs as well, clone the
+If you want the 22 worked designs, the derived corpora and the committed outputs as well, clone the
 repository and install the package in editable mode from inside it:
 
 ```bash

@@ -13,7 +13,7 @@ digest_reports <- function() {
   reports <- repo_path("output", "reports", message = "committed reports not available")
   names <- sort(list.files(reports, pattern = "_datasheet_.*\\.json$"))
   skip_if(length(names) == 0, "committed reports not available")
-  # 21 shipped designs, one datasheet per engine. A sweep that finds far fewer has
+  # 22 shipped designs, one datasheet per engine. A sweep that finds far fewer has
   # lost its inputs, and passing it would prove nothing.
   expect_gte(length(names), 40)
   stats::setNames(file.path(reports, names), names)

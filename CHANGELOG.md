@@ -100,6 +100,24 @@ no function signature changes.
   datasheets, which record the schema's SHA-256, and their run logs are
   regenerated. The twin-edge case `generation_exclude` pins both engines to one
   outcome.
+- Lexical-decision generation works with accented letters, in both engines. The
+  generators' alphabet is the set of letters the reference lexicon attests, in UTF-8
+  byte order. A Spanish design therefore keeps its accented words, 16.5% of a typical
+  band (1,368 of the 8,305 words of length 4-7 and Zipf 3.5-6, among them 261
+  preterites in `-ó`), and can generate accented pseudowords. The generators
+  substituted only the letters a to z and left those words out. A word is now eligible
+  when every character in it is a letter the reference attests, so a word with a
+  hyphen, an apostrophe or a digit is still left out. The subsyllabic segmenter finds
+  its nuclei among accented vowels too, and `make_pseudoword` gains an `alphabet`
+  parameter. A word in a logographic script, such as Chinese, is refused with a
+  message. Unicode counts its characters as letters, but a form made by swapping one
+  for another is of unknown validity as a pseudoword. A generated design's datasheet
+  counts the eligible words, so the Spanish band above now counts all 8,305. A new
+  example, `es_lexdec`, checks its pseudowords against wordfreq's Spanish word list.
+  English selections and every other committed output are unchanged. The twin-edge
+  case `generation_exclude` gains a hyphenated word, which the count leaves out, and
+  its known-form list now names the forms its new selection would otherwise produce.
+  The new case `lexdec_logographic` pins the refusal in both engines.
 - A screened English lexicon, `corpora/derived/en_v2.csv`, holds the same 30,000
   wordfreq forms as `en.csv` with columns from SUBTLEX-US (Brysbaert & New,
   2009): `in_subtlex_us`, `lowercase_share` and `nonstandard`, which marks forms

@@ -1,10 +1,12 @@
-# Both engines generate the same six pseudowords, none of them a form in known.txt,
-# and count the twenty a-z words in the band as the candidates. Without the list,
-# sets 4 and 5 were given mando and plana, two Spanish words the lexicon lacks.
+# Both engines generate the same six pseudowords, among them mantaña for montaña and
+# canaión for canción, and none is a form in known.txt. They count as the candidates
+# the twenty-nine words in the band written in letters the lexicon attests. Without
+# the list, sets 1 and 3 were given ague and cato, two forms wordfreq lists for Spanish
+# that the lexicon lacks.
 outcome: artefacts
 compare: [stimuli, descriptives, comparisons]
 datasheet:
-  selection.candidate_pool.0.n_candidates: 20
+  selection.candidate_pool.0.n_candidates: 29
   selection.generation_exclude.0.source: known.txt
   selection.generation_exclude.0.n_forms: 3
-  selection.generation_exclude.0.sha256: 66bb1e1e49697b2ba5b1665fee2006853533c00fb96ff0bca995593c47b12583
+  selection.generation_exclude.0.sha256: bb4ce8ebc21338ae7e8f16c5886ece287ccc3f6efec66a1ce18ea3ceb269d2fa

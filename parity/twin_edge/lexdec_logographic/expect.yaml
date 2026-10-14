@@ -1,0 +1,2 @@
+outcome: refusal
+refusal: "lexsync: pseudoword generation is defined for alphabetic scripts, and '中文' is written in a logographic one."

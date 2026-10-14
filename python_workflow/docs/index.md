@@ -28,7 +28,7 @@ same generated experiment down to the trial order. Nothing in the package draws 
 random number, so neither the platform's locale nor the last bit of a
 floating-point sum can change what comes out. A laboratory can run the R package
 and a collaborator the Python one, and the materials will agree rather than merely
-resemble each other. Continuous integration checks this on 21 worked designs
+resemble each other. Continuous integration checks this on 22 worked designs
 across English, Spanish and Mandarin Chinese.
 
 Two matching methods are a documented exception: `mahalanobis` and `optimal`
@@ -63,7 +63,7 @@ pip install "git+https://github.com/pablobernabeu/lexsync.git#subdirectory=pytho
 ```
 
 See [Getting started](getting-started.md) for what each extra carries, including the interpreters
-PsychoPy supports, and for the clone-based install that the 21 worked designs expect.
+PsychoPy supports, and for the clone-based install that the 22 worked designs expect.
 
 ## Sixty seconds
 
@@ -137,7 +137,7 @@ print(sorted(os.path.basename(p) for p in paths["files"]))
 The jsPsych file is self-contained apart from the library itself, so opening it in
 a browser runs the experiment. Every worked design in the repository is published
 that way, and the Demo link in the header opens the generated lexical-decision
-task. All 21 are listed at
+task. All 22 are listed at
 [the demos index](https://pablobernabeu.github.io/lexsync/demos/), including cued
 categorisation, a lexical decision carrying practice and filler blocks, relational
 priming over pairs, and a Mandarin Chinese contrast on a logographic script. A design

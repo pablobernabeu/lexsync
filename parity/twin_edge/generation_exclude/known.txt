@@ -1,7 +1,7 @@
-# Spanish word forms the thirty-word lexicon lacks. Each is listed as a user
+# Spanish word forms the thirty-one-word lexicon lacks. Each is listed as a user
 # might write it: one in capitals, one twice.
-MANDO
-plana
+AGUE
+cato
 plata
 
-mando
+ague

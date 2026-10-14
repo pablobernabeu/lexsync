@@ -62,8 +62,8 @@ def test_there_are_artefacts_to_compare():
         if REQUIRE_PARITY:
             pytest.fail("no _R/_py artefact pairs found; neither pipeline ran")
         pytest.skip("no generated artefacts present; run both pipelines first")
-    # 21 designs: a stimuli pair each, plus descriptives and comparisons pairs for the
-    # 16 that produce a report, so 53 pairs as the repository stands.
+    # 22 designs: a stimuli pair each, plus descriptives and comparisons pairs for the
+    # 17 that produce a report, so 56 pairs as the repository stands.
     assert len(pairs) >= 40
 
 

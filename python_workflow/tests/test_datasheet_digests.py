@@ -23,7 +23,7 @@ def _reports():
     sheets = sorted(reports.glob("*_datasheet_*.json")) if reports.is_dir() else []
     if not sheets:
         pytest.skip("committed reports not available")
-    # 21 shipped designs, one datasheet per engine. A sweep that finds far fewer
+    # 22 shipped designs, one datasheet per engine. A sweep that finds far fewer
     # has lost its inputs, and passing it would prove nothing.
     assert len(sheets) >= 40
     return sheets

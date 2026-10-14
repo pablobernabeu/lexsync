@@ -93,8 +93,8 @@ rounded, and the subsyllabic constituent inventory is integer counts keyed by ro
 is order-independent. Neither depends on the order in which the corpus was accumulated.
 
 The generated experiments are byte-identical as well, all of them: the PsychoPy script, the
-OpenSesame experiment, the jsPsych page and the three tables the first two read, 126 files across
-the 21 worked designs. One place they could drift is the event JSON embedded in the PsychoPy script, since
+OpenSesame experiment, the jsPsych page and the three tables the first two read, 165 files across
+the 22 worked designs. One place they could drift is the event JSON embedded in the PsychoPy script, since
 jsonlite pads no separators and drops a whole number's fractional part, serialising a 2000 ms
 timeout as `2` rather than `2.0`. Python is the side that conforms.
 
@@ -251,11 +251,11 @@ says what to check in a selection.
 
 ## How it is tested
 
-The claim is checked, not merely stated. `tests/test_parity.py` carries 21 cases, one per
+The claim is checked, not merely stated. `tests/test_parity.py` carries 22 cases, one per
 worked design, spanning English, Spanish and Mandarin Chinese and covering every item source and
 every paradigm: frequency and neighbourhood contrasts, lexical decision under both pseudoword
-generators, the continuous design, resampling, priming, self-paced reading and three reproductions
-of published designs.
+generators and in Spanish with accented letters, the continuous design, resampling, priming,
+self-paced reading and three reproductions of published designs.
 
 Each case regenerates the Python selection and compares it against the committed R reference in
 `output/stimuli/<base>_stimuli_R.csv`. The comparison is exact and it has two parts. The identity

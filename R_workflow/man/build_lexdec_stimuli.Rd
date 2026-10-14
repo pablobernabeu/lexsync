@@ -17,8 +17,9 @@ build_lexdec_stimuli(
 
 \item{n}{Number of real words to select.}
 
-\item{reference_words}{Character vector supplying the bigram statistics and
-the real word forms a pseudoword must avoid; defaults to the pool's words.}
+\item{reference_words}{Character vector supplying the letters, the bigram
+statistics and the real word forms a pseudoword must avoid; defaults to the
+pool's words.}
 
 \item{method}{Pseudoword generator: \code{"letter_substitution"} (default) or
 \code{"subsyllabic"} (Wuggy-style; Keuleers & Brysbaert, 2010).}
@@ -36,10 +37,11 @@ for a word.
 \description{
 Real words are drawn by an even spread across the byte-ordered pool, then a
 length-matched pseudoword is generated for each. The pool is first filtered to
-lower-case a-z forms, the only ones the pseudoword generators are defined for,
-so the eligible pool can be smaller than the request; the pipeline's shortfall
-policy then decides whether that errors. \code{reference_words} (the full
-lexicon) supplies the bigram statistics and the real-word list a pseudoword
-must avoid. The presented string is the \code{target} column; conditions are \code{word}
-and \code{pseudoword} and \code{set} pairs them.
+the words written wholly in letters the reference attests, which the generators
+substitute among, so the eligible pool can be smaller than the request; the
+pipeline's shortfall policy then decides whether that errors. A pool word in a
+logographic script is refused. \code{reference_words} (the full lexicon) supplies
+the letters, the bigram statistics and the real-word list a pseudoword must
+avoid. The presented string is the \code{target} column; conditions are \code{word} and
+\code{pseudoword} and \code{set} pairs them.
 }

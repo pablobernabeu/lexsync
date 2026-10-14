@@ -1,0 +1,16 @@
+# Twin-edge case: a generated lexical decision on a Chinese lexicon. Unicode counts Han
+# characters as letters, so every word here is written in letters the lexicon attests,
+# and without a refusal each pseudoword would be one character swapped for another, a
+# form of unknown validity. Both engines refuse the design and name the first word in
+# UTF-8 byte order. The word forms are common Chinese words. The Zipf frequencies are
+# invented for this fixture and describe no corpus.
+name: twin_edge_lexdec_logographic
+language: chinese
+paradigm: lexical_decision
+description: 'Five Chinese words, which pseudoword generation refuses.'
+items:
+  source: generate
+  lexicon: lexicon.csv
+n_per_condition: 2
+pool_filters:
+  length: [2, 2]

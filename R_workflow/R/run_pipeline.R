@@ -443,10 +443,11 @@ run_pipeline <- function(design_path, schema_path = NULL,
     sf <- .resolve_policy(design, schema, "shortfall", "error", c("error", "allow"))
     realised <- length(unique(stim$set))
     if (realised < n && !identical(sf, "allow")) {
-      # build_lexdec_stimuli filters the pool to a-z forms before selecting, so the
-      # eligible pool can be smaller than the request without any pool_filters.
+      # build_lexdec_stimuli keeps only the words written in letters the lexicon attests
+      # before selecting, so the eligible pool can be smaller than the request without
+      # any pool_filters.
       stop(sprintf(paste0("lexsync: %d sets per condition were requested but only %d could ",
-                          "be generated; the eligible a-z pool is smaller than the request, ",
+                          "be generated; the eligible pool is smaller than the request, ",
                           "so lower n_per_condition or supply more words, or set matching: ",
                           "shortfall: allow to accept a smaller set."),
                    n, realised), call. = FALSE)
@@ -654,9 +655,9 @@ run_pipeline <- function(design_path, schema_path = NULL,
       list(condition = cnd[["name"]], n_candidates = nrow(build_pool(pool, cnd[["define_by"]]))))
   } else if (identical(source, "generate")) {
     # The words the generator can use, which build_lexdec_stimuli() draws from: the
-    # band after the a-z filter, not before it.
+    # band after the letter filter, not before it.
     candidate_pool <- list(list(condition = "words in band",
-                                n_candidates = nrow(.lexdec_eligible(pool))))
+                                n_candidates = nrow(.lexdec_eligible(pool, lex$word))))
   }
   # The neighbourhood reference is provenance: overriding it changes n_density,
   # old20 and bigram_freq without touching any input file the datasheet hashes. It is
