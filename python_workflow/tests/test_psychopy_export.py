@@ -261,7 +261,12 @@ def _install_fake_serial(monkeypatch, opened, writes, fails=False):
 def _load_generated(path):
     spec = importlib.util.spec_from_file_location("lexsync_generated_psychopy", path)
     module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
+    # Compiled from the source on every load. The import system would reuse the bytecode it
+    # cached in __pycache__ while the source's size and whole-second modification time are
+    # unchanged, so a script regenerated within the same second with a same-length edit (a text
+    # height of 48 becoming 60) would run as the previous script.
+    with open(path, encoding="utf-8") as fh:
+        exec(compile(fh.read(), path, "exec"), module.__dict__)
     return module
 
 
