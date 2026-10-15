@@ -1,6 +1,17 @@
 # Run-time-only dependencies, needed to RUN a generated experiment on hardware,
 # never to GENERATE one. Kept separate so the generation pipeline and its tests
-# install and run with no presentation software. Install with:
+# install and run with no presentation software. The floors are those of the
+# [experiment] extra in pyproject.toml, and tests/test_metadata.py keeps the two
+# in step.
+#
+# PsychoPy's current releases support Python 3.10 to 3.12, so of the
+# interpreters lexsync supports, this file installs on those three only. Without
+# the floor, pip on Python 3.13 or later would reach back to PsychoPy 2023.1.3 or
+# older, obsolete source releases that predate PsychoPy's cap on the Python
+# version. With it, pip stops and reports that it cannot find a distribution for
+# psychopy>=2024.1.
+#
+# Install with:
 #   python -m pip install -r requirements-experiment.txt
-psychopy
-pyserial
+psychopy>=2024.1
+pyserial>=3.5

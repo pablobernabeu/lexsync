@@ -138,7 +138,8 @@ a lexicon derived from the bundled data, since that means crediting the original
 corpus authors, saying what was changed and passing the same licence on. Nothing
 of the sort applies to the code you write with the package. A reader who has only
 the package rather than the repository will find the same terms, and the credit
-they require, in the `LICENSE.note` file that ships in the sources.
+they require, in the `COPYRIGHTS` file installed with it, which
+`system.file("COPYRIGHTS", package = "lexsync")` locates.
 
 ## Versioning and archival
 

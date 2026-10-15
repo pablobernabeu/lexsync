@@ -1,9 +1,18 @@
-# Pinned runtime dependencies for the lexsync Python package. These are also
-# declared, with minimum versions, in pyproject.toml; this file pins the exact
-# versions used for the demonstrations so they reproduce.
+# Pinned runtime dependencies for the lexsync Python package. pyproject.toml
+# declares the same packages with minimum versions. The pins here are the
+# environment that every committed output/reports/*_datasheet_py.json records
+# (Python 3.13.7, Windows AMD64), so the demonstrations can be rebuilt under the
+# versions that produced them. tests/test_metadata.py checks them against the
+# datasheets.
+#
+# These pins install from wheels on Python 3.11 to 3.13 only: numpy 2.3.2 and
+# scipy 1.17.1 need Python 3.11 or later, and pandas 2.3.2 publishes no wheel for
+# 3.14. The package itself supports Python 3.10 and later through
+# `pip install lexsync`, which resolves the floors in pyproject.toml.
+#
 # Install with:  python -m pip install -r requirements.txt
-pandas==3.0.3
-numpy==2.4.6
+pandas==2.3.2
+numpy==2.3.2
 scipy==1.17.1
 rapidfuzz==3.14.5
 PyYAML==6.0.3

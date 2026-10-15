@@ -29,7 +29,7 @@ citFooter(
   "Please cite the corpus as well as the software. The bundled example lexica ",
   "are derived from wordfreq (Speer, 2022) and carry CC BY-SA 4.0; the terms, ",
   "the credit they require and each corpus's retrieval date are in the ",
-  "LICENSE.note file of the package sources and at ",
+  "COPYRIGHTS file installed with the package and at ",
   "https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md. ",
   "Every run's datasheet records the source file it read and its SHA-256."
 )

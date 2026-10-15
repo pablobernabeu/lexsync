@@ -1,8 +1,9 @@
 # DESCRIPTION is hand-maintained and other artefacts (the README, the sibling
 # citation files) treat it as the source of truth, so these tests pin its
 # contract: Imports names exactly the namespaces the R sources call
-# unconditionally, and the author record carries the same ORCID as
-# codemeta.json, CITATION.cff and .zenodo.json.
+# unconditionally, the author record carries the same ORCID as
+# codemeta.json, CITATION.cff and .zenodo.json, and the Copyright field names
+# a notice file that R installs.
 
 description_fields <- function() {
   path <- file.path("..", "..", "DESCRIPTION")
@@ -63,26 +64,33 @@ test_that("the Title is short enough for CRAN and stable under toTitleCase", {
   expect_false(startsWith(title, "lexsync"))
 })
 
-test_that("the data terms ship with the package and the LICENSE stub is untouched", {
+test_that("the data terms are installed with the package and the LICENSE stub is untouched", {
   # The bundled example lexica are wordfreq derivatives under CC BY-SA 4.0, not
-  # MIT, so a user who has only the tarball must still be able to find the terms.
-  # LICENSE stays the two-line CRAN template, which its own check constrains and
-  # which GitHub's licence detector needs unadorned; the disclosure lives in
-  # LICENSE.note, a filename R CMD check already knows at top level.
+  # MIT, so a user who has only an installed copy must still be able to find the
+  # terms. LICENSE stays the two-line CRAN template, which its own check
+  # constrains and which GitHub's licence detector needs unadorned. R installs no
+  # top-level file but INDEX, LICENSE or LICENCE and NEWS (Writing R Extensions,
+  # section 1.1.5), so the terms used to sit in LICENSE.note, which binary
+  # installations never carried. They now live in inst/COPYRIGHTS, the file
+  # section 1.1.1 names for a Copyright field to point at, and LICENSE.note stays
+  # in the sources as a pointer to it.
   # test_metadata.py::test_the_bundled_data_terms_ship_with_both_packages asserts
   # the same of the Python distribution.
   fields <- description_fields()
   expect_identical(fields$License, "MIT + file LICENSE")
-  expect_match(fields$Copyright, "LICENSE.note", fixed = TRUE)
+  copyright <- gsub("\\s+", " ", fields$Copyright)
+  expect_match(copyright, "COPYRIGHTS file installed with the package", fixed = TRUE)
+  expect_match(copyright, "https://creativecommons.org/licenses/by-sa/4.0/", fixed = TRUE)
+  expect_no_match(copyright, "LICENSE.note", fixed = TRUE)
 
   stub <- file.path("..", "..", "LICENSE")
-  if (!file.exists(stub)) skip("The source LICENSE is not in this tree.")
   expect_identical(readLines(stub, warn = FALSE),
                    c("YEAR: 2026", "COPYRIGHT HOLDER: Pablo Bernabeu"))
 
-  note <- file.path("..", "..", "LICENSE.note")
-  if (!file.exists(note)) skip("LICENSE.note is not in this tree.")
-  text <- paste(readLines(note, warn = FALSE, encoding = "UTF-8"), collapse = "\n")
+  # description_fields() skips away from the sources, so both files must be here.
+  notice <- file.path("..", "..", "inst", "COPYRIGHTS")
+  expect_true(file.exists(notice))
+  text <- paste(readLines(notice, warn = FALSE, encoding = "UTF-8"), collapse = "\n")
   expect_match(text, "CC BY-SA 4.0", fixed = TRUE)
   expect_match(text, "https://creativecommons.org/licenses/by-sa/4.0/", fixed = TRUE)
   expect_match(text, "SUBTLEX", fixed = TRUE)
@@ -93,4 +101,30 @@ test_that("the data terms ship with the package and the LICENSE stub is untouche
   # the list is a direct source of it.
   expect_match(gsub("\\s+", " ", text), "is therefore a direct source of en_example.csv",
                fixed = TRUE)
+
+  pointer <- paste(readLines(file.path("..", "..", "LICENSE.note"), warn = FALSE),
+                   collapse = " ")
+  expect_match(pointer, "inst/COPYRIGHTS", fixed = TRUE)
+  expect_no_match(pointer, "SUBTLEX", fixed = TRUE)
+
+  # The citation footer names the installed file too.
+  footer <- paste(readLines(file.path("..", "..", "inst", "CITATION"), warn = FALSE),
+                  collapse = " ")
+  expect_match(footer, "COPYRIGHTS", fixed = TRUE)
+  expect_no_match(footer, "LICENSE.note", fixed = TRUE)
+})
+
+test_that("an installed lexsync carries the data terms as COPYRIGHTS", {
+  # The test above reads the sources, and this one reads whatever copy of lexsync
+  # is loaded. Under R CMD check that is the installed package, and under
+  # devtools::load_all() system.file() looks in inst/. Binary installations of
+  # 0.1.1 carried the CC BY-SA lexica without the notice file their Copyright
+  # field named, because R does not install LICENSE.note.
+  skip_if_not(nzchar(system.file(package = "lexsync")), "lexsync is not installed")
+  notice <- system.file("COPYRIGHTS", package = "lexsync")
+  expect_true(nzchar(notice))
+  if (nzchar(notice)) {
+    text <- paste(readLines(notice, warn = FALSE, encoding = "UTF-8"), collapse = " ")
+    expect_match(text, "https://creativecommons.org/licenses/by-sa/4.0/", fixed = TRUE)
+  }
 })

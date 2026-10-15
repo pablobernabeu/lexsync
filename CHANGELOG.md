@@ -500,6 +500,14 @@ no function signature changes.
 
 ### Fixed
 
+- The R package installs its data licence notice as `COPYRIGHTS`. R does not install
+  `LICENSE.note`, which the `Copyright` field named, so binary installations carried the
+  CC BY-SA lexica without it, and the licence page said that the file shipped inside each
+  package. `requirements.txt` pins the pandas and numpy versions that produced the
+  committed demonstrations (2.3.2 of each, where it pinned 3.0.3 and 2.4.6) and says
+  which Python versions those pins install on, and `requirements-experiment.txt`
+  requires PsychoPy 2024.1 or later, as the `[experiment]` extra does. A test holds the
+  pins to the versions every committed Python datasheet records.
 - The commands that install the Streamlit app, on the documentation's page about the app
   and in `apps/README.md`, no longer end in a comment, so they paste into zsh, the default
   macOS shell, which passes a `#` and the words after it on to pip. A new test,

@@ -81,11 +81,13 @@ licence. lexsync standardises the columns and computes two orthographic
 neighbourhood variables from the word list; the frequencies are wordfreq's own.
 
 The terms, the changes made and the SUBTLEX credit that wordfreq's own
-permission passes through are set out in the top-level `LICENSE.note` file,
-which ships in the tarball. `DESCRIPTION` carries a `Copyright:` field pointing
-at that file, and `inst/CITATION` repeats the obligation for anyone citing the
-software. The `License:` field is left as `MIT + file LICENSE`, since MIT is the
-code's licence and a compound `+ file` form is not canonical.
+permission passes through are set out in `inst/COPYRIGHTS`, so that every
+installation, binary ones included, carries them. `DESCRIPTION` carries a
+`Copyright:` field pointing at that file, as Writing R Extensions suggests, and
+`inst/CITATION` repeats the obligation for anyone citing the software. The
+top-level `LICENSE.note`, which R does not install, now only points to it. The
+`License:` field is left as `MIT + file LICENSE`, since MIT is the code's
+licence and a compound `+ file` form is not canonical.
 
 Everything else in the package, code and remaining data alike, is MIT.
 

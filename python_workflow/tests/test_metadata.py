@@ -171,8 +171,14 @@ def test_licences_agree():
     # both distributions ship. Every format states both in whatever form it has.
     # The R DESCRIPTION keeps the bare stub because CRAN's template check
     # constrains that field; its Copyright field carries the disclosure instead.
+    # The field names inst/COPYRIGHTS, which R installs, where it used to name
+    # LICENSE.note, which R does not.
     assert "License: MIT + file LICENSE" in _description_text()
-    assert "LICENSE.note" in _description_text()
+    copyright = re.search(r"^Copyright:(.*?)\n(?=\S)", _description_text(), re.M | re.S).group(1)
+    copyright = " ".join(copyright.split())
+    assert "COPYRIGHTS file installed with the package" in copyright
+    assert "https://creativecommons.org/licenses/by-sa/4.0/" in copyright
+    assert "LICENSE.note" not in copyright
     assert 'license = "MIT AND CC-BY-SA-4.0"' in _pyproject_text()
     assert _codemeta()["license"] == ["https://spdx.org/licenses/MIT.html",
                                       "https://spdx.org/licenses/CC-BY-SA-4.0.html"]
@@ -205,9 +211,13 @@ def test_no_licence_classifier_beside_the_expression():
 def test_the_bundled_data_terms_ship_with_both_packages():
     # The CSVs under inst/extdata and src/lexsync/data are the same wordfreq
     # derivatives, so a user of either package must be able to find the terms
-    # without the repository. R CMD check knows LICENSE.note as a top-level file,
-    # and pyproject declares it under license-files.
-    for note in (REPO / "R_workflow" / "LICENSE.note",
+    # without the repository. R installs inst/COPYRIGHTS but no top-level
+    # LICENSE.note, which stays in the R sources as a pointer, and pyproject
+    # declares the Python LICENSE.note under license-files.
+    pointer = (REPO / "R_workflow" / "LICENSE.note").read_text(encoding="utf-8")
+    assert "inst/COPYRIGHTS" in pointer
+    assert "SUBTLEX" not in pointer
+    for note in (REPO / "R_workflow" / "inst" / "COPYRIGHTS",
                  REPO / "python_workflow" / "LICENSE.note"):
         text = note.read_text(encoding="utf-8")
         assert "CC BY-SA 4.0" in text
@@ -218,6 +228,58 @@ def test_the_bundled_data_terms_ship_with_both_packages():
         # The English slice keeps only forms SUBTLEX-US lists in lower case often enough,
         # so the list is a direct source of it.
         assert "is therefore a direct source of en_example.csv" in " ".join(text.split())
+    # The licence page names the file each package installs. It used to say that
+    # LICENSE.note ships inside each package, which no R binary did.
+    page = " ".join((REPO / "python_workflow" / "docs" / "licence.md")
+                    .read_text(encoding="utf-8").split())
+    assert "`COPYRIGHTS`" in page
+    assert "ships inside each package" not in page
+
+
+def _normalised(name):
+    # PEP 503 normalisation, so PyYAML in a requirements file and pyyaml in a
+    # datasheet's version record name the same distribution.
+    return re.sub(r"[-_.]+", "-", name).lower()
+
+
+def _requirement_lines(rel):
+    text = (REPO / rel).read_text(encoding="utf-8")
+    lines = [line.split("#", 1)[0].strip() for line in text.splitlines()]
+    return text, [line for line in lines if line]
+
+
+def test_requirements_pin_the_environment_the_datasheets_record():
+    # requirements.txt says that it pins the environment the committed
+    # demonstrations were produced in, and every Python datasheet records that
+    # environment. Its pandas and numpy pins used to name releases (3.0.3 and
+    # 2.4.6) that no datasheet records, so the file and the record disagreed.
+    text, lines = _requirement_lines("python_workflow/requirements.txt")
+    pins = {}
+    for line in lines:
+        m = re.fullmatch(r"([A-Za-z0-9._-]+)==(\S+)", line)
+        assert m, f"requirements.txt: {line!r} is not an exact pin"
+        pins[_normalised(m.group(1))] = m.group(2)
+    assert set(pins) == {"pandas", "numpy", "scipy", "rapidfuzz", "pyyaml"}
+    sheets = sorted((REPO / "output" / "reports").glob("*_datasheet_py.json"))
+    assert sheets
+    header = " ".join(text.split())
+    for sheet in sheets:
+        versions = json.loads(sheet.read_text(encoding="utf-8"))["reproducibility"]["versions"]
+        recorded = {_normalised(k): v for k, v in versions.items()}
+        assert {k: recorded.get(k) for k in pins} == pins, sheet.name
+        # The header names the interpreter and platform the datasheets record.
+        assert f"Python {versions['python']}, {versions['os']}" in header, sheet.name
+
+
+def test_experiment_requirements_carry_the_extra_floors():
+    # requirements-experiment.txt listed bare psychopy and pyserial. No PsychoPy
+    # release from 2024.1 on installs on Python 3.13 or later, so pip there
+    # reached back to a source release from 2023 or earlier. The file now
+    # carries the floors the [experiment] extra declares.
+    extra = re.search(r"^experiment = \[(.*?)\]", _pyproject_text(), re.M).group(1)
+    declared = re.findall(r'"([^"]+)"', extra)
+    _, lines = _requirement_lines("python_workflow/requirements-experiment.txt")
+    assert lines == declared
 
 
 def test_no_dead_analysis_extra():

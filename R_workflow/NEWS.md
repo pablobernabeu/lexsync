@@ -1,5 +1,11 @@
 # lexsync (development version)
 
+* The licence notice for the bundled CC BY-SA lexica is installed with the package, as
+  `COPYRIGHTS`. R does not install `LICENSE.note`, which the `Copyright` field named, so
+  binary installations carried the lexica without it. `LICENSE.note` now points to
+  `inst/COPYRIGHTS`, and the `Copyright` field, the citation footer and the About guide
+  name the installed file.
+
 * The datasheet records the materials source, the stimuli file and every artefact with
   forward slashes, as the Python engine does. A run given Windows paths recorded them
   with backslashes.
