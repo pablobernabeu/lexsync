@@ -87,7 +87,13 @@ test_that("the data terms are installed with the package and the LICENSE stub is
   expect_identical(readLines(stub, warn = FALSE),
                    c("YEAR: 2026", "COPYRIGHT HOLDER: Pablo Bernabeu"))
 
-  # description_fields() skips away from the sources, so both files must be here.
+  # The checks below read the sources. covr runs the tests inside the installed
+  # package, where DESCRIPTION and LICENSE also sit two levels up but inst/ does
+  # not exist, so the sources' inst/ folder marks a source tree. In a source tree
+  # or tarball both files below are always present, so a missing one fails.
+  if (!dir.exists(file.path("..", "..", "inst"))) {
+    skip("The package sources are not in this tree.")
+  }
   notice <- file.path("..", "..", "inst", "COPYRIGHTS")
   expect_true(file.exists(notice))
   text <- paste(readLines(notice, warn = FALSE, encoding = "UTF-8"), collapse = "\n")
