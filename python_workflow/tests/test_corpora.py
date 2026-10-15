@@ -605,6 +605,16 @@ def test_list_corpora_surfaces_registry_status():
     assert "validated" not in set(status.values())
 
 
+def test_a_registry_path_that_does_not_exist_is_refused(tmp_path):
+    """The caller's path was only the first place searched, so a misspelt or stale one
+    fell through to the checkout's registry or the bundled one, and list_corpora
+    reported that file's corpora under the path the caller gave. The R twin refused
+    the path with a connection error. Pinned identically in test-corpora.R."""
+    missing = str(tmp_path / "no_such_registry.yaml")
+    with pytest.raises(FileNotFoundError, match="lexsync: registry not found: '.*no_such_registry"):
+        list_corpora(missing)
+
+
 # Pins the same contract as "lexsync_cache_clear takes a name literally" in the R
 # engine's test-corpora.R, where unlink() once expanded "*" and emptied the
 # cache. A name names one corpus's files, and a directory that happens to carry

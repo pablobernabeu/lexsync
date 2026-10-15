@@ -15,6 +15,7 @@ A named list.
 \description{
 An unquoted \code{y}, \code{Y}, \code{n} or \code{N} is read as text, as the Python engine reads it,
 though YAML 1.1 lists them among its booleans. The other boolean spellings (\code{yes},
-\code{no}, \code{true}, \code{false}, \code{on} and \code{off}) are booleans in both engines.
+\code{no}, \code{true}, \code{false}, \code{on} and \code{off}) are booleans in both engines. The file is
+read as UTF-8 whatever the session locale, and a file that is not UTF-8 is refused.
 }
 \keyword{internal}

@@ -507,6 +507,61 @@ no function signature changes.
 
 ### Fixed
 
+- The R engine reads design, schema and registry files as UTF-8 whatever the session's
+  character type. `yaml::read_yaml()` converted each file to the session's encoding, so
+  under the C locale, as in a container or a batch job without a UTF-8 locale, a file
+  stopped at its first accented letter: `config/design_es_lexdec.yaml` read as an empty
+  design, `list_corpora()` and `fetch_corpus()` failed on the bundled registry's
+  citations, and the datasheet left out a cached corpus's citation without a word. A file
+  that is not UTF-8 is now refused in R, as Python refuses it, where it used to be cut
+  short with a warning, and a literal block scalar that ends a file keeps its final line
+  break in R, as it always has in Python. No shipped design or twin-edge case reads
+  differently.
+- The hash keys behind the trial order, list balancing, jitter and the tie-break between
+  candidates are UTF-8 in the R engine in every locale. Under the C locale, `paste()`
+  turned a latin1-marked condition label into escape text and `enc2utf8()` did the same to
+  an unmarked one, so R ranked such labels by other digests than Python. A run under the
+  C locale now writes the stimuli, reports and experiments of the Spanish and Chinese
+  demonstrations byte for byte.
+- `list_corpora` and `fetch_corpus` refuse a `registry_path` that does not exist. The
+  Python engine searched the caller's path first and then the usual places, so a misspelt
+  path read another registry and reported its corpora under the path given, and the R
+  engine stopped with a connection error.
+- `resample.n_sets`, and the `n_sets` argument of `resample_stimuli`, must be a whole
+  number of at least 1, the rule `n_per_condition` follows, and both engines refuse
+  anything else before a stimulus is selected. A fractional count was truncated in
+  silence, a boolean or a quoted number was taken as a count, and zero gave pandas' 'No
+  objects to concatenate' in Python and an empty selection in R.
+- `describe_stimuli` refuses a dimension or a grouping column the stimuli do not carry,
+  and so do `match_report` and `match_report_continuous`, which are built on it. A
+  misspelt name gave a bare `KeyError` in Python and, in R, a table of missing values
+  with an `n` of 0, which looked complete. The pipeline reports only the columns it has,
+  so no run is affected.
+- The Python engine's Methods paragraph keeps the design's language label as written,
+  raising only its first letter, as the R engine does. `str.capitalize()` lowered the
+  rest, so a design labelled 'British English' was drawn from 'the British english
+  lexicon'. Every shipped design uses a lower-case label, so no committed datasheet
+  changes.
+- The Streamlit app no longer stops on a condition bound that is not a number. The three
+  presets with one factor gave `lower2` and `upper2` no values at all, which Streamlit's
+  editor offers as free text, and the page then failed on a bound such as `4,5`, results
+  on screen included. Those columns now hold numbers, as in the Shiny app, and in both
+  apps a bound that is not a number leaves out the factor it belongs to.
+- The Streamlit app writes an uploaded lexicon or item table once for its content. The
+  script runs again on every widget interaction and the uploader hands back the file it
+  holds each time, so each rerun wrote another copy to a new temporary folder, about a
+  megabyte for a corpus, and none was removed.
+- The Streamlit sidebar holds 'Stimulus font' with the other design fields, above the
+  version line, as the app's guide and the Shiny app have it. Streamlit draws a widget
+  where its call is made, and the field's call came after the sidebar was closed.
+- The Python documentation site's Demo pill answers keyboard focus with the inversion it
+  shows under the pointer and a white ring. It had a hover state only, so a reader moving
+  through the header with the keyboard could not see the focus on it. The R site's Demo
+  link already had one, and a new test reads the stylesheet.
+- `corpora/fetch_corpora.py` writes every derived lexicon with LF line ends. pandas ends
+  a row with the platform's line separator unless told otherwise, so a rebuild on
+  Windows wrote CRLF into `corpora/derived/<language>.csv`, whose SHA-256 the datasheet
+  records. Its other writers already named LF, and a test now checks every one.
 - The R package installs its data licence notice as `COPYRIGHTS`. R does not install
   `LICENSE.note`, which the `Copyright` field named, so binary installations carried the
   CC BY-SA lexica without it, and the licence page said that the file shipped inside each

@@ -336,6 +336,25 @@ def test_describe_and_balance():
     assert len(balance_check(pd.DataFrame({"condition": ["a", "a", "b", "b"]}), "condition")) == 0
 
 
+def test_the_reports_refuse_a_column_the_stimuli_do_not_carry():
+    """describe_stimuli, match_report and match_report_continuous are exported for use
+    on a selection of one's own. A misspelt dimension or grouping column gave a bare
+    KeyError here, and in R a table of missing values that looked complete. Pinned
+    identically in test-validation.R."""
+    import pytest
+
+    stim = pd.DataFrame({"condition": ["hi", "hi", "lo", "lo"],
+                         "frequency": [6.0, 5.0, 3.0, 2.0]})
+    with pytest.raises(ValueError, match="dimension 'frequncy' is not a column of the stimuli"):
+        describe_stimuli(stim, ["frequncy"])
+    with pytest.raises(ValueError, match="grouping column 'group' is not a column of the stimuli"):
+        describe_stimuli(stim, ["frequency"], by="group")
+    with pytest.raises(ValueError, match="dimension 'old20' is not a column of the stimuli"):
+        match_report_continuous(stim, "frequency", ["old20"], {})
+    with pytest.raises(ValueError, match="grouping column 'condition' is not a column of the stimuli"):
+        match_report(stim.rename(columns={"condition": "cond"}), ["frequency"], {})
+
+
 def test_describe_stimuli_groups_in_first_appearance_order():
     # Not sorted order: this is the order validation.R's appearance-ordered factor
     # yields, and the order in which match_report() takes its anchor.

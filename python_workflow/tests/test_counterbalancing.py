@@ -234,6 +234,18 @@ def test_keyed_hash_shuffle_matches_the_r_engine():
     assert list(out2["word"]) != list(out["word"])
 
 
+def test_keyed_hash_shuffle_of_accented_conditions_matches_the_r_engine():
+    # The order test-counterbalancing.R requires of a UTF-8-, latin1- or unmarked
+    # condition label, in its own locale and in C, where the R engine used to hash
+    # escape text for the last two.
+    stim = pd.DataFrame({"word": list("abcdefgh"), "list": 1,
+                         "condition": ["café", "naïve"] * 4,
+                         "set": [1, 1, 2, 2, 3, 3, 4, 4]})
+    out = cb._shuffle_deterministic(stim, 2026)
+    assert list(out["word"]) == ["c", "e", "a", "f", "b", "h", "g", "d"]
+    assert list(out["trial"]) == list(range(1, 9))
+
+
 def test_keyed_hash_shuffle_is_a_uniform_permutation():
     # Ranking by a hash is only a legitimate randomisation if the resulting
     # permutation is uniform: an item must be as likely to appear first as last,

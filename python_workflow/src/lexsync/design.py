@@ -83,6 +83,7 @@ SCHEMA_KEYS = (
 )
 
 _N_MESSAGE = "lexsync: n_per_condition must be a positive whole number."
+_N_SETS_MESSAGE = "lexsync: resample.n_sets must be a positive whole number."
 # R's as.integer() gives NA beyond this, so both engines refuse a larger request.
 _INT_MAX = 2147483647
 
@@ -272,6 +273,21 @@ def _resolve_n(design: dict, default):
     return int(n)
 
 
+def _check_n_sets(n_sets) -> int:
+    """The number of resampled sets as an int, by the rule :func:`_resolve_n` applies.
+
+    A whole number of at least 1, written as 3 or 3.0. A fractional count was truncated
+    in silence, a boolean or a quoted number was taken as a count, and zero gave
+    pandas' 'No objects to concatenate' here and an empty selection in R. Must stay
+    identical to .check_n_sets in R_workflow/R/design.R.
+    """
+    if (isinstance(n_sets, bool) or not isinstance(n_sets, numbers.Real)
+            or not math.isfinite(n_sets) or n_sets < 1 or n_sets != int(n_sets)
+            or n_sets > _INT_MAX):
+        raise ValueError(_N_SETS_MESSAGE)
+    return int(n_sets)
+
+
 def _resolve_tolerance_k(design: dict, schema: dict) -> dict:
     """The tolerance windows, k per dimension, as R's modifyList() resolves them.
 
@@ -454,8 +470,8 @@ def validate_design(design: dict, schema: dict) -> list:
     both engines. It first refuses a key within one or two edits of a key lexsync
     reads at that level, naming the key it was probably meant to be (one edit for a
     known key of up to five characters, two for a longer one). It then refuses a
-    missing, empty or non-text ``name`` or ``language``, an ``n_per_condition`` or
-    ``n_per_cell`` that is not a whole number of at least 1, a
+    missing, empty or non-text ``name`` or ``language``, an ``n_per_condition``,
+    ``n_per_cell`` or ``resample.n_sets`` that is not a whole number of at least 1, a
     ``counterbalance.optimise`` that is not true or false, a ``counterbalance.scale``
     other than ``mean`` or ``mad``, a ``counterbalance.max_run`` or
     ``counterbalance.orders`` that is not a whole number of at least 1, and a
@@ -529,6 +545,9 @@ def validate_design(design: dict, schema: dict) -> list:
                      "triggers.trigger_hold_ms, as every other code is.")
     _name_and_language(design)
     _resolve_n(design, None)
+    resample = design.get("resample")
+    if isinstance(resample, dict) and resample.get("n_sets") is not None:
+        _check_n_sets(resample["n_sets"])
     counterbalance = design.get("counterbalance")
     if isinstance(counterbalance, dict):
         _require_bool(counterbalance.get("optimise"), "counterbalance.optimise")

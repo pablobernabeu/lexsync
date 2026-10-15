@@ -386,31 +386,47 @@ write_bundle_zip <- function(file, root) {
   invisible(file)
 }
 
+#' One end of a condition's window as a number, or NULL when the cell holds none
+#'
+#' A cell that holds text which is not a number, such as "4,5", counts as empty, so
+#' the factor it belongs to is left out. as.numeric() alone gave NA with a warning,
+#' and the window c(NA, upper) then reached the design. Mirrors _bound() in the
+#' Streamlit app.
+#'
+#' @param x One cell of the conditions table.
+#' @return A length-one number, or NULL.
+bound <- function(x) {
+  if (is.null(x) || length(x) != 1L || is.na(x)) return(NULL)
+  v <- suppressWarnings(as.numeric(x))
+  if (is.na(v)) NULL else v
+}
+
 #' Read the conditions table's rows into the design's `conditions` list
 #'
 #' A row contributes a condition when it names one and defines at least one window,
 #' a category list or a pair of numeric bounds. The optional second factor is added
-#' only when both of its bounds are given. Mirrors conditions_from_table() in the
+#' only when both of its bounds are numbers. Mirrors conditions_from_table() in the
 #' Streamlit app.
 #'
 #' @param df The edited conditions table.
 #' @return A list of `list(name =, define_by =)` entries, one per usable row.
 conditions_from_table <- function(df) {
   conditions <- list()
-  isnum <- function(x) !is.null(x) && !is.na(x) && nzchar(as.character(x))
   for (i in seq_len(nrow(df))) {
     nm <- trimws(as.character(df$name[i])); dim <- trimws(as.character(df$dimension[i]))
     if (!nzchar(nm) || !nzchar(dim)) next
     define_by <- list()
     cats <- trimws(as.character(df$categories[i]))
+    lower <- bound(df$lower[i]); upper <- bound(df$upper[i])
     if (!is.na(cats) && nzchar(cats)) {
       define_by[[dim]] <- trimws(strsplit(cats, ",")[[1]])
-    } else if (isnum(df$lower[i]) && isnum(df$upper[i])) {
-      define_by[[dim]] <- c(as.numeric(df$lower[i]), as.numeric(df$upper[i]))
+    } else if (!is.null(lower) && !is.null(upper)) {
+      define_by[[dim]] <- c(lower, upper)
     }
     dim2 <- trimws(as.character(df$dimension2[i]))
-    if (nzchar(dim2) && dim2 != "NA" && isnum(df$lower2[i]) && isnum(df$upper2[i]))
-      define_by[[dim2]] <- c(as.numeric(df$lower2[i]), as.numeric(df$upper2[i]))
+    lower2 <- bound(df$lower2[i]); upper2 <- bound(df$upper2[i])
+    if (nzchar(dim2) && dim2 != "NA" && !is.null(lower2) && !is.null(upper2))
+      define_by[[dim2]] <- c(lower2, upper2)
     if (length(define_by)) conditions[[length(conditions) + 1]] <-
       list(name = nm, define_by = define_by)
   }

@@ -17,5 +17,5 @@ describe_stimuli(stimuli, dims, by = "condition")
 A long data frame with n, mean, sd, min, median and max per group.
 }
 \description{
-Per-group descriptive statistics for several dimensions
+A grouping column or a dimension the stimuli do not carry is refused.
 }

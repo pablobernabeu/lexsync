@@ -15,7 +15,27 @@
 # a margin of some seven orders of magnitude, not on the by-construction argument
 # that carries the rest. Mirrors the note in validation.py.
 
+# Refuse a grouping column or a dimension the stimuli do not carry. The reports are
+# exported for use on a selection of one's own, where a misspelt dimension gave a table
+# of missing values with n of 0, which looked complete, and the Python twin a bare
+# KeyError. Mirrors _require_columns in validation.py.
+.require_columns <- function(stimuli, dims, by = NULL) {
+  if (!is.null(by) && !by %in% names(stimuli)) {
+    stop(sprintf("lexsync: grouping column '%s' is not a column of the stimuli.", by),
+         call. = FALSE)
+  }
+  for (d in dims) {
+    if (!d %in% names(stimuli)) {
+      stop(sprintf("lexsync: dimension '%s' is not a column of the stimuli.", d),
+           call. = FALSE)
+    }
+  }
+  invisible(NULL)
+}
+
 #' Per-group descriptive statistics for several dimensions
+#'
+#' A grouping column or a dimension the stimuli do not carry is refused.
 #'
 #' @param stimuli A stimuli data frame.
 #' @param dims Character vector of dimension columns.
@@ -23,6 +43,7 @@
 #' @return A long data frame with n, mean, sd, min, median and max per group.
 #' @export
 describe_stimuli <- function(stimuli, dims, by = "condition") {
+  .require_columns(stimuli, dims, by)
   # Group in order of first appearance: split() alone coerces to a factor whose
   # levels are locale-collated sort(unique(x)), which diverges from validation.py's
   # groupby(sort = FALSE) and from the anchor match_report() takes from unique().
@@ -240,12 +261,7 @@ balance_check <- function(stimuli, columns) {
 # condition's define_by is. A name that is not a column of the stimuli is refused.
 # Mirrors _reportable in validation.py.
 .reportable <- function(stimuli, dims) {
-  for (d in dims) {
-    if (!d %in% names(stimuli)) {
-      stop(sprintf("lexsync: dimension '%s' is not a column of the stimuli.", d),
-           call. = FALSE)
-    }
-  }
+  .require_columns(stimuli, dims)
   keep <- vapply(dims, function(d) any(!is.na(.numeric_values(stimuli[[d]]))), logical(1))
   dims[keep]
 }
@@ -292,6 +308,7 @@ balance_check <- function(stimuli, columns) {
 #'   other way up, the `condition` variance over the reference variance.
 #' @export
 match_report <- function(stimuli, dims, schema, roles = NULL) {
+  .require_columns(stimuli, character(0), "condition")
   conds <- unique(as.character(stimuli$condition))
   dims <- .reportable(stimuli, dims)
   desc <- describe_stimuli(stimuli, dims, by = "condition")

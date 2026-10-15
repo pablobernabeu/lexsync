@@ -89,6 +89,20 @@ def test_methods_paragraph_reads_naturally(schema):
     assert "deterministic and reproducible" in m
 
 
+def test_the_methods_paragraph_keeps_the_language_label_as_written(schema):
+    """str.capitalize() also lower-cases everything after the first letter, so a design
+    labelled 'British English' was described as drawn from 'the British english
+    lexicon', and differently from the R engine. Only the first letter is raised now.
+    Pinned identically in test-datasheet.R."""
+    stim = _stim()
+    report = match_report(stim, ["length", "frequency", "n_density", "old20"], schema)
+    for label, shown in (("British English", "British English"), ("english", "English"),
+                         ("Chinese (Mandarin)", "Chinese (Mandarin)")):
+        ds = build_datasheet(dict(_design(), language=label), schema, report, stim, "x.csv",
+                             {"stimuli": None, "experiments": {}}, 2026)
+        assert f"from the {shown} lexicon" in methods_paragraph(ds), label
+
+
 def test_write_datasheet_emits_json_and_prereg(schema, tmp_path):
     stim = _stim()
     report = match_report(stim, ["length", "frequency"], schema)

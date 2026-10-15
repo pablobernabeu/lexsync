@@ -634,11 +634,30 @@ sha256_file <- function(path) {
   !is.null(design[["continuous"]]) && src %in% c("corpus", "pool", "table")
 }
 
+# Text as UTF-8-marked strings, whatever its encoding mark and the session locale.
+# digest(serialize = FALSE) hashes the stored bytes, and what R stores depends on both:
+# a latin1-marked string holds one byte for an accented letter, paste() turns it into
+# the escape text "<e9>" under the C locale, and enc2utf8() reads an unmarked string as
+# being in the session's encoding, so under the C locale the bytes of an accented letter
+# become the escape text "<c3><a9>". A Python str carries no mark and is always hashed
+# as the UTF-8 of its code points. An unmarked string that is valid UTF-8 is therefore
+# taken to be UTF-8, the encoding lexsync reads every input in, and anything else is
+# converted from its mark or from the session's encoding as before.
+#' @keywords internal
+.as_utf8 <- function(x) {
+  x <- as.character(x)
+  unmarked <- Encoding(x) == "unknown" & validUTF8(x)
+  Encoding(x)[unmarked] <- "UTF-8"
+  enc2utf8(x)
+}
+
 # Render one component of a hash key. Never interpolate a number directly: R
 # prints 42.0 as "42" and Python as "42.0", and a pandas column silently promoted
 # to float64 by a single missing value would otherwise change every digest and so
 # every realised duration. Integral values go through %d in both engines.
-# Must stay identical to _key_part in python_workflow/src/lexsync/io_utils.py.
+# Must stay identical to _key_part in python_workflow/src/lexsync/io_utils.py, except
+# that text comes back UTF-8-marked (.as_utf8), a step a Python str does not need. A
+# key pasted from such parts is then UTF-8 in any locale.
 #' @keywords internal
 .key_part <- function(x) {
   # A component that cannot be rendered identically in both engines must never be
@@ -672,7 +691,7 @@ sha256_file <- function(path) {
     out[!ok] <- sprintf("%.17g", x[!ok])
     return(out)
   }
-  as.character(x)
+  .as_utf8(x)
 }
 
 # A uniform variate in [0, 1) derived from a keyed SHA-256 digest.
@@ -697,10 +716,9 @@ sha256_file <- function(path) {
 #' @importFrom digest digest
 #' @keywords internal
 hash_unit <- function(key) {
-  # enc2utf8 because digest(serialize = FALSE) hashes the stored bytes: a
-  # latin1-marked string read from a user's CSV would otherwise give a different
-  # digest from the same characters in Python.
-  h <- vapply(enc2utf8(as.character(key)),
+  # digest(serialize = FALSE) hashes the stored bytes, so the key is made UTF-8 first,
+  # in any locale (see .as_utf8).
+  h <- vapply(.as_utf8(key),
               function(k) digest::digest(k, algo = "sha256", serialize = FALSE),
               character(1), USE.NAMES = FALSE)
   (strtoi(substr(h, 1L, 7L), 16L) * 16777216 + strtoi(substr(h, 8L, 13L), 16L)) /
@@ -745,21 +763,48 @@ slugify <- function(...) {
   "bool#no" = function(x) if (x %in% c("n", "N")) x else FALSE
 )
 
+# Parse a YAML file as UTF-8 whatever the session locale. yaml::read_yaml() reads
+# through a connection that converts the text to the session's encoding, which under
+# the C locale is ASCII, so the text ended at the first accented letter: a design came
+# back holding the keys before it, with a warning, and the bundled registry, whose
+# citations carry accents, failed to parse. A file that is not UTF-8 was cut short in
+# the same way in any locale, where the Python engine refuses it. The bytes are read
+# as they are, as .read_utf8_lines() reads a word list, so the locale plays no part: a
+# byte-order mark is dropped, and text that is not UTF-8 or holds a NUL is refused.
+# libyaml takes LF, CRLF and CR as line breaks, and a block scalar that ends the file
+# keeps its final line break, as PyYAML keeps it and read_yaml() did not, since it
+# joined the lines without the last line feed. The parser is the one read_yaml()
+# calls, so a repeated mapping key is still refused. `...` goes to yaml::yaml.load(),
+# as `handlers` from read_config().
+#' @importFrom yaml yaml.load
+#' @keywords internal
+.read_yaml_utf8 <- function(path, ...) {
+  bytes <- readBin(path, "raw", file.info(path)$size)
+  bom <- as.raw(c(0xEF, 0xBB, 0xBF))
+  if (length(bytes) >= 3L && identical(bytes[1:3], bom)) bytes <- bytes[-(1:3)]
+  text <- if (any(bytes == as.raw(0L))) NA_character_ else rawToChar(bytes)
+  if (is.na(text) || !validUTF8(text)) {
+    stop(sprintf("lexsync: '%s' is not UTF-8 text.", path), call. = FALSE)
+  }
+  Encoding(text) <- "UTF-8"
+  yaml::yaml.load(text, error.label = path, ...)
+}
+
 #' Read a YAML configuration file
 #'
 #' An unquoted `y`, `Y`, `n` or `N` is read as text, as the Python engine reads it,
 #' though YAML 1.1 lists them among its booleans. The other boolean spellings (`yes`,
-#' `no`, `true`, `false`, `on` and `off`) are booleans in both engines.
+#' `no`, `true`, `false`, `on` and `off`) are booleans in both engines. The file is
+#' read as UTF-8 whatever the session locale, and a file that is not UTF-8 is refused.
 #'
 #' @param path Path to a YAML file.
 #' @return A named list.
-#' @importFrom yaml read_yaml
 #' @keywords internal
 read_config <- function(path) {
   if (!file.exists(path)) {
     stop(sprintf("lexsync: configuration not found: '%s'", path), call. = FALSE)
   }
-  yaml::read_yaml(path, handlers = .YAML_BOOL_HANDLERS)
+  .read_yaml_utf8(path, handlers = .YAML_BOOL_HANDLERS)
 }
 
 #' Validate a single stimulus value for safe inclusion in generated files

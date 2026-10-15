@@ -114,6 +114,24 @@ test_that("match_report gives a single-condition design an empty comparisons fra
   expect_length(seq_len(nrow(cmp)), 0L)
 })
 
+# describe_stimuli(), match_report() and match_report_continuous() are exported for use
+# on a selection of one's own. A misspelt dimension gave a table of missing values here,
+# with n of 0, which looked complete, and a bare KeyError in Python. Pinned identically
+# in test_validation.py.
+test_that("the reports refuse a column the stimuli do not carry", {
+  stim <- data.frame(condition = c("hi", "hi", "lo", "lo"), frequency = c(6, 5, 3, 2),
+                     stringsAsFactors = FALSE)
+  expect_error(describe_stimuli(stim, "frequncy"),
+               "dimension 'frequncy' is not a column of the stimuli", fixed = TRUE)
+  expect_error(describe_stimuli(stim, "frequency", by = "group"),
+               "grouping column 'group' is not a column of the stimuli", fixed = TRUE)
+  expect_error(match_report_continuous(stim, "frequency", "old20", list()),
+               "dimension 'old20' is not a column of the stimuli", fixed = TRUE)
+  renamed <- stats::setNames(stim, c("cond", "frequency"))
+  expect_error(match_report(renamed, "frequency", list()),
+               "grouping column 'condition' is not a column of the stimuli", fixed = TRUE)
+})
+
 test_that("cohens_d is undefined with fewer than two items a side", {
   # One item has no spread, so the pooled SD and with it d are undefined. Both
   # functions returned 0, a perfect balance, for a frequency contrast of 6.5 against

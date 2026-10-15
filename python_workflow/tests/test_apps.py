@@ -498,6 +498,11 @@ PRESET_COLUMNS = ("name", "dimension", "lower", "upper", "categories", "dimensio
                   "lower2", "upper2")
 
 
+def _empty_as_none(value):
+    """An empty bound, which a preset holds as NaN, as None, so rows compare."""
+    return None if isinstance(value, float) and value != value else value
+
+
 def test_both_apps_pin_the_same_presets(app):
     """The Shiny presets filled the conditions table and left 'Match on' and the
     method at their general defaults, so its neighbourhood preset matched on N and
@@ -505,9 +510,39 @@ def test_both_apps_pin_the_same_presets(app):
     matched on length and frequency."""
     assert list(app.PRESET_MATCHING) == list(PRESETS)
     for preset, (rows, match_on, method) in PRESETS.items():
-        got = [tuple(row[c] for c in PRESET_COLUMNS) for row in app.preset_rows(preset)]
+        got = [tuple(_empty_as_none(row[c]) for c in PRESET_COLUMNS)
+               for row in app.preset_rows(preset)]
         assert got == rows, preset
         assert app.PRESET_MATCHING[preset] == (match_on, method), preset
+
+
+def test_every_preset_hands_the_editor_numeric_bounds(app):
+    """Streamlit's editor offers a column that holds nothing but None as free text and
+    passes back whatever is typed in it, so on the three presets with one factor
+    'lower2' and 'upper2' took text such as '4,5'. An empty bound is NaN, as the Shiny
+    presets' is NA_real_, so every bound column is numeric and takes only numbers."""
+    import pandas as pd
+
+    for preset in app.PRESET_MATCHING:
+        frame = pd.DataFrame(app.preset_rows(preset))
+        for column in ("lower", "upper", "lower2", "upper2"):
+            assert pd.api.types.is_float_dtype(frame[column]), (preset, column)
+
+
+def test_a_bound_held_as_text_drops_the_factor_it_belongs_to(app):
+    """The table is read while the page is drawn, above the handler that reports a
+    pipeline error, so float() on a bound typed as '4,5' stopped the whole page, with
+    any results already on screen. Pinned identically in test-apps.R."""
+    import pandas as pd
+
+    frame = pd.DataFrame(app.preset_rows("2x2 frequency x neighbourhood")[:2])
+    frame["lower"] = ["5", "abc"]
+    frame["lower2"] = ["4,5", "0"]
+    frame["upper2"] = ["9", "5"]
+    assert app.conditions_from_table(frame) == [
+        {"name": "HF_largeN", "define_by": {"frequency": [5.0, 7.0]}},
+        {"name": "HF_smallN", "define_by": {"n_density": [0.0, 5.0]}},
+    ]
 
 
 def test_no_preset_matches_on_a_dimension_it_manipulates(app):
@@ -720,6 +755,60 @@ def test_a_new_run_discards_the_previous_run_directory():
     finally:
         for root in roots:
             shutil.rmtree(root, ignore_errors=True)
+
+
+def test_an_upload_is_written_once_and_not_on_every_rerun(monkeypatch, tmp_path):
+    """Streamlit runs the script again on every widget interaction, and the uploader
+    hands back the file it holds each time, so the app wrote an uploaded lexicon to a
+    new temporary folder on every rerun, about a megabyte per keystroke or slider move
+    for a corpus, and never removed any of them."""
+    pytest.importorskip("streamlit")
+    import streamlit as st
+    from streamlit.testing.v1 import AppTest
+
+    data = b"word,freq_zipf\ncat,5.0\ndog,4.8\n"
+
+    class Upload:
+        name = "mine.csv"
+
+        def getvalue(self):
+            return data
+
+        def getbuffer(self):
+            return memoryview(data)
+
+    monkeypatch.setattr(st, "file_uploader", lambda *args, **kwargs: Upload())
+    monkeypatch.setattr(tempfile, "tempdir", str(tmp_path))
+    st.cache_data.clear()
+    try:
+        at = AppTest.from_file(APP_PATH, default_timeout=120)
+        at.run()
+        assert not at.exception
+        lexicon = _labelled(at.selectbox, "Lexicon")
+        lexicon.select([o for o in lexicon.options if o.startswith("Upload a CSV")][0]).run()
+        at.run()
+        at.run()
+        assert not at.exception
+        written = [p for p in tmp_path.iterdir() if p.name.startswith("lexsync_")]
+        assert len(written) == 1
+        assert (written[0] / "mine.csv").read_bytes() == data
+    finally:
+        st.cache_data.clear()
+
+
+def test_the_stimulus_font_sits_with_the_other_design_fields():
+    """Streamlit draws a widget where its call is made, and 'Stimulus font' was created
+    after the sidebar's closing rule and version line, so it sat below them, where
+    neither the app's guide nor the Shiny twin puts it."""
+    at = _app_test()
+    nodes = [at.sidebar.children[i] for i in sorted(at.sidebar.children)]
+    labels = [getattr(node, "label", None) for node in nodes]
+    fields = ["Paradigm", "Design name", "Language label", "Stimulus font"]
+    assert [label for label in labels if label in fields] == fields
+    version = [i for i, node in enumerate(nodes)
+               if "the app runs the installed package" in str(getattr(node, "value", ""))]
+    assert len(version) == 1
+    assert labels.index("Stimulus font") < version[0]
 
 
 # The notes on the Experiment scripts and Download tabs. Pinned identically in

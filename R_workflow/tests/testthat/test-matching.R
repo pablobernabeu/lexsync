@@ -535,6 +535,29 @@ test_that("resample_stimuli produces disjoint matched sets", {
   expect_length(intersect(w[[2]], w[[3]]), 0)
 })
 
+# A fractional count was truncated in silence, a logical or a quoted number was taken
+# as a count, and zero gave an empty selection here and pandas' 'No objects to
+# concatenate' in Python. validate_design() refuses the design key by the same rule.
+# Pinned identically in test_matching.py.
+test_that("resample_stimuli refuses a count that is not a positive whole number", {
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  lex <- load_lexicon(system.file("extdata", "en_example.csv", package = "lexsync"), schema, "english")
+  design <- list(name = "r", language = "english", n_per_condition = 5,
+    pool_filters = list(length = c(3, 7), frequency = c(3.8, 7)),
+    conditions = list(list(name = "high", define_by = list(frequency = c(5.0, 7.0))),
+                      list(name = "low", define_by = list(frequency = c(3.8, 4.4)))),
+    match_on = list("length"))
+  pool <- build_pool(lex, design$pool_filters)
+  message <- "resample.n_sets must be a positive whole number"
+  for (bad in list(0, -1, 2.5, TRUE, "3", Inf)) {
+    expect_error(resample_stimuli(pool, design, schema, bad), message, fixed = TRUE)
+    resampled <- utils::modifyList(design, list(resample = list(n_sets = bad)))
+    expect_error(validate_design(resampled, schema), message, fixed = TRUE)
+  }
+  expect_length(validate_design(utils::modifyList(design, list(resample = list(n_sets = 2))),
+                                schema), 0L)
+})
+
 # ---- shortfall and tolerance policies, guards -------------------------------
 # Twinned with test_matching.py: every fixture, expectation and message below
 # must stay in step with the Python suite.

@@ -7,7 +7,8 @@
 list_corpora(registry_path = NULL)
 }
 \arguments{
-\item{registry_path}{Optional path to \code{registry.yaml}.}
+\item{registry_path}{Optional path to \code{registry.yaml}. A path that does not exist
+is refused.}
 }
 \value{
 A data frame describing each registered corpus.

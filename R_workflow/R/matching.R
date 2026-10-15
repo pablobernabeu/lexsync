@@ -46,11 +46,12 @@
 
 # The tie key of each word: the lower-case hex SHA-256 of the salt, a bar and the word,
 # in UTF-8. A digest favours no part of the alphabet, and radix order compares the hex
-# digits as Python compares the strings. enc2utf8 because digest(serialize = FALSE)
-# hashes the stored bytes, as in hash_unit(). Must stay identical to _tie_keys in
-# python_workflow/src/lexsync/matching.py.
+# digits as Python compares the strings. The words are made UTF-8 before they are
+# pasted, as in hash_unit(), because digest(serialize = FALSE) hashes the stored bytes
+# and paste() would turn a latin1 word into escape text under the C locale (see
+# .as_utf8). Must stay identical to _tie_keys in python_workflow/src/lexsync/matching.py.
 .tie_keys <- function(words) {
-  vapply(enc2utf8(paste0(.TIE_SALT, "|", words)),
+  vapply(paste0(.TIE_SALT, "|", .as_utf8(words)),
          function(k) digest::digest(k, algo = "sha256", serialize = FALSE),
          character(1), USE.NAMES = FALSE)
 }
@@ -555,7 +556,7 @@ match_joint <- function(subpools, cond_names, match_on, center, scale_, n, cap =
 # the rows arrived. Must stay identical to _in_tie_sort_order in
 # python_workflow/src/lexsync/matching.py.
 .tie_sort_order <- function(df, z, keys) {
-  if (is.null(keys)) keys <- .tie_sort_keys(enc2utf8(df[["word"]]), "bytes")
+  if (is.null(keys)) keys <- .tie_sort_keys(.as_utf8(df[["word"]]), "bytes")
   perm <- order(keys, seq_along(keys), method = "radix")
   list(df = df[perm, , drop = FALSE], z = z[perm, , drop = FALSE])
 }
@@ -865,7 +866,7 @@ select_continuous_stimuli <- function(pool, design, schema, verbose = FALSE,
 #' @param pool A candidate pool with the `match_on` dimensions present.
 #' @param design A parsed design configuration.
 #' @param schema The parsed global schema.
-#' @param n_sets Number of disjoint matched sets to draw.
+#' @param n_sets Number of disjoint matched sets to draw, a whole number of at least 1.
 #' @param verbose Logical; passed to [match_stimuli()].
 #' @return A data frame of matched stimuli with an added `replicate` column. The
 #'   first replicate draws on the whole pool, so its count of the candidates
@@ -875,10 +876,11 @@ select_continuous_stimuli <- function(pool, design, schema, verbose = FALSE,
 #'   console under `verbose` but not the run log or the datasheet.
 #' @export
 resample_stimuli <- function(pool, design, schema, n_sets, verbose = FALSE) {
+  n_sets <- .check_n_sets(n_sets)
   used <- character(0)
   parts <- list()
   incomplete <- list()
-  for (k in seq_len(as.integer(n_sets))) {
+  for (k in seq_len(n_sets)) {
     pk <- pool[!(pool$word %in% used), , drop = FALSE]
     sk <- match_stimuli(pk, design, schema, verbose = verbose)
     if (k == 1L) incomplete <- attr(sk, "audit")[["incomplete_dropped"]] %||% list()

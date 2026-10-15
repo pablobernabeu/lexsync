@@ -1,5 +1,37 @@
 # lexsync (development version)
 
+* Design, schema and registry files are read as UTF-8 whatever the session's character
+  type. `yaml::read_yaml()` converted each file to the session's encoding, so under the C
+  locale, as in a container or a batch job without a UTF-8 locale, a file stopped at its
+  first accented letter: `config/design_es_lexdec.yaml` read as an empty design,
+  `list_corpora()` and `fetch_corpus()` failed on the bundled registry's citations, and
+  the datasheet left out a cached corpus's citation without a word. A file that is not
+  UTF-8 is now refused, as the Python engine refuses it, where it used to be cut short
+  with a warning, and a literal block scalar that ends a file keeps its final line
+  break, as it does in Python.
+
+* The hash keys behind the trial order, list balancing, jitter and the tie-break between
+  candidates are UTF-8 in every locale. Under the C locale, `paste()` turned a
+  latin1-marked condition label into escape text and `enc2utf8()` did the same to an
+  unmarked one, so such labels ranked by other digests than in the Python engine. The
+  0.1.0 entry below that says a latin1-marked label "can no longer rank by different
+  digests" held in a UTF-8 session only. A run under the C locale now writes the stimuli,
+  reports and experiments of the Spanish and Chinese demonstrations byte for byte.
+
+* `list_corpora()` and `fetch_corpus()` refuse a `registry_path` that does not exist with
+  lexsync's own message, not the connection error `file()` gave. The Python twin read
+  whichever registry its search found next.
+
+* `resample_stimuli()` and `validate_design()` refuse a `resample.n_sets` that is not a
+  whole number of at least 1, the rule `n_per_condition` follows. A fractional count was
+  truncated in silence, a logical or a quoted number was taken as a count, and zero gave
+  an empty selection.
+
+* `describe_stimuli()` refuses a dimension or a grouping column the stimuli do not carry,
+  and so do `match_report()` and `match_report_continuous()`, which are built on it. A
+  misspelt dimension gave a table of missing values with an `n` of 0, which looked
+  complete. The pipeline reports only the columns it has, so no run is affected.
+
 * The licence notice for the bundled CC BY-SA lexica is installed with the package, as
   `COPYRIGHTS`. R does not install `LICENSE.note`, which the `Copyright` field named, so
   binary installations carried the lexica without it. `LICENSE.note` now points to

@@ -13,7 +13,7 @@ resample_stimuli(pool, design, schema, n_sets, verbose = FALSE)
 
 \item{schema}{The parsed global schema.}
 
-\item{n_sets}{Number of disjoint matched sets to draw.}
+\item{n_sets}{Number of disjoint matched sets to draw, a whole number of at least 1.}
 
 \item{verbose}{Logical; passed to \code{\link[=match_stimuli]{match_stimuli()}}.}
 }

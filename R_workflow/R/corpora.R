@@ -152,14 +152,26 @@ default_registry_path <- function() {
   cand[1]
 }
 
+# The registry a call reads. A path the caller names is read on its own, so a missing
+# one is refused by name, not with the connection error file() gives. The Python twin
+# fell through to another registry in that case. Mirrors _registry_path() in
+# python_workflow/src/lexsync/corpora.py.
+.registry_path <- function(registry_path = NULL) {
+  if (is.null(registry_path)) return(default_registry_path())
+  if (!file.exists(registry_path)) {
+    stop(sprintf("lexsync: registry not found: '%s'.", registry_path), call. = FALSE)
+  }
+  registry_path
+}
+
 #' List the corpora known to the registry
 #'
-#' @param registry_path Optional path to `registry.yaml`.
+#' @param registry_path Optional path to `registry.yaml`. A path that does not exist
+#'   is refused.
 #' @return A data frame describing each registered corpus.
-#' @importFrom yaml read_yaml
 #' @export
 list_corpora <- function(registry_path = NULL) {
-  reg <- yaml::read_yaml(registry_path %||% default_registry_path())
+  reg <- .read_yaml_utf8(.registry_path(registry_path))
   corp <- reg[["corpora"]]
   data.frame(
     name = names(corp),
@@ -265,17 +277,17 @@ list_corpora <- function(registry_path = NULL) {
 #' the `<dest>.part` sidecar of the download itself.
 #'
 #' @param name A corpus name present in the registry.
-#' @param registry_path Optional path to `registry.yaml`.
+#' @param registry_path Optional path to `registry.yaml`. A path that does not exist
+#'   is refused.
 #' @param dest Optional destination file; defaults to `<name>.csv` in
 #'   [lexsync_cache_dir()].
 #' @return The path to the downloaded file, invisibly.
-#' @importFrom yaml read_yaml
 #' @importFrom utils download.file
 #' @export
 fetch_corpus <- function(name, registry_path = NULL, dest = NULL) {
   .check_corpus_name(name)
-  reg_path <- registry_path %||% default_registry_path()
-  reg <- yaml::read_yaml(reg_path)
+  reg_path <- .registry_path(registry_path)
+  reg <- .read_yaml_utf8(reg_path)
   entry <- reg[["corpora"]][[name]]
   if (is.null(entry) && name %in% unlist(reg[["wordfreq_connector"]][["languages"]])) {
     stop(sprintf(paste0("lexsync: '%s' is a wordfreq language; its lexicon is built by the ",
@@ -391,7 +403,7 @@ fetch_corpus <- function(name, registry_path = NULL, dest = NULL) {
   if (is.null(entry)) return(list())
   if (is.character(entry) && length(entry) == 1L) {
     reg_path <- default_registry_path()
-    found <- yaml::read_yaml(reg_path)[["corpora"]][[entry]]
+    found <- .read_yaml_utf8(reg_path)[["corpora"]][[entry]]
     if (is.null(found)) {
       stop(sprintf("lexsync: corpus '%s' is not in the registry '%s'.", entry, reg_path),
            call. = FALSE)

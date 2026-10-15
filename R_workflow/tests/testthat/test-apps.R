@@ -496,6 +496,24 @@ test_that("no preset matches on a dimension it manipulates", {
   }
 })
 
+# A bound the conditions table holds as text drops the factor it belongs to. The table
+# coerces a typed cell to its column's type, so text reaches this function only through
+# a column that is not numeric, but the function then read "4,5" as a bound and wrote
+# c(NA, 9) into the design, with a coercion warning, as if that window had been asked
+# for. The Streamlit editor does hand over text, and its twin of this function stopped
+# the page on it. Pinned identically in tests/test_apps.py.
+test_that("a bound held as text drops the factor it belongs to", {
+  e <- app_env()
+  df <- e$preset_df("2x2 frequency x neighbourhood")[1:2, ]
+  df$lower <- c("5", "abc")
+  df$lower2 <- c("4,5", "0")
+  df$upper2 <- c("9", "5")
+  expect_no_warning(conditions <- e$conditions_from_table(df))
+  expect_identical(conditions, list(
+    list(name = "HF_largeN", define_by = list(frequency = c(5, 7))),
+    list(name = "HF_smallN", define_by = list(n_density = c(0, 5)))))
+})
+
 test_that("a preset sets the matched dimensions and the method", {
   e <- app_env()
   sent <- new.env()

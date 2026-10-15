@@ -70,6 +70,7 @@
 )
 
 .N_MESSAGE <- "lexsync: n_per_condition must be a positive whole number."
+.N_SETS_MESSAGE <- "lexsync: resample.n_sets must be a positive whole number."
 
 # A mapping read from YAML is a named list, and a sequence of mappings an unnamed one.
 .is_mapping <- function(x) is.list(x) && !is.null(names(x))
@@ -220,6 +221,19 @@
     stop(.N_MESSAGE, call. = FALSE)
   }
   as.integer(n)
+}
+
+# The number of resampled sets as an integer, by the rule .resolve_n applies: a whole
+# number of at least 1, written as 3 or 3.0. A fractional count was truncated in
+# silence, a logical or a quoted number was taken as a count, and zero gave an empty
+# selection here and pandas' 'No objects to concatenate' in Python. Must stay
+# identical to _check_n_sets in design.py.
+.check_n_sets <- function(n_sets) {
+  if (!is.numeric(n_sets) || length(n_sets) != 1L || !is.finite(n_sets) || n_sets < 1 ||
+      n_sets != trunc(n_sets) || n_sets > .Machine$integer.max) {
+    stop(.N_SETS_MESSAGE, call. = FALSE)
+  }
+  as.integer(n_sets)
 }
 
 # The items per condition each selector takes when a design gives no n_per_condition:
@@ -389,9 +403,9 @@ design_stem <- function(design) {
 #' both engines. It first refuses a key within one or two edits of a key lexsync
 #' reads at that level, naming the key it was probably meant to be (one edit for a
 #' known key of up to five characters, two for a longer one). It then refuses a
-#' missing, empty or non-text `name` or `language`, an `n_per_condition` or
-#' `n_per_cell` that is not a whole number of at least 1, a `counterbalance.optimise`
-#' that is not true or false, a `counterbalance.scale` other than `mean` or `mad`, a
+#' missing, empty or non-text `name` or `language`, an `n_per_condition`, `n_per_cell`
+#' or `resample.n_sets` that is not a whole number of at least 1, a
+#' `counterbalance.optimise` that is not true or false, a `counterbalance.scale` other than `mean` or `mad`, a
 #' `counterbalance.max_run` or `counterbalance.orders` that is not a whole number of at
 #' least 1, and a `counterbalance.run_on` that is not the name of a column. It refuses
 #' a name, language
@@ -449,6 +463,8 @@ validate_design <- function(design, schema) {
   }
   .name_and_language(design)
   .resolve_n(design, NULL)
+  resample <- design[["resample"]]
+  if (.is_mapping(resample) && !is.null(resample[["n_sets"]])) .check_n_sets(resample[["n_sets"]])
   counterbalance <- design[["counterbalance"]]
   if (.is_mapping(counterbalance)) {
     .require_bool(counterbalance[["optimise"]], "counterbalance.optimise")

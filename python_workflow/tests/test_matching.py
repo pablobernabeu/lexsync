@@ -573,6 +573,25 @@ def test_resample_produces_disjoint_matched_sets(schema, en_lexicon_path):
     assert len(words[2] & words[3]) == 0
 
 
+def test_resample_refuses_a_count_that_is_not_a_positive_whole_number(schema, en_lexicon_path):
+    """A fractional count was truncated in silence, a boolean or a quoted number was
+    taken as a count, and zero gave pandas' 'No objects to concatenate' here and an
+    empty selection in R. validate_design refuses the design key by the same rule.
+    Pinned identically in test-matching.R."""
+    from lexsync.design import validate_design
+
+    lex = load_lexicon(en_lexicon_path, schema, "english")
+    design = _resample_design()
+    pool = build_pool(lex, design["pool_filters"])
+    message = r"resample\.n_sets must be a positive whole number"
+    for bad in (0, -1, 2.5, True, "3", float("inf")):
+        with pytest.raises(ValueError, match=message):
+            resample_stimuli(pool, design, schema, bad)
+        with pytest.raises(ValueError, match=message):
+            validate_design(dict(design, resample={"n_sets": bad}), schema)
+    assert validate_design(dict(design, resample={"n_sets": 2.0}), schema) == []
+
+
 # ---- shortfall and tolerance policies, guards -------------------------------
 # Twinned with test-matching.R: every fixture, expectation and message below
 # must stay in step with the R suite.

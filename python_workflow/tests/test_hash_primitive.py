@@ -48,6 +48,23 @@ def test_known_keys_including_non_ascii():
     assert hash_int_range("42|0|A|1|北京大学汉字", 200, 800) == 209
 
 
+def test_accented_keys_pin_the_digests_the_r_engine_must_reach():
+    """A str carries no encoding mark, so this engine always hashes the UTF-8 of its
+    code points. The R engine hashes stored bytes, which depend on a string's mark and
+    on the session's character type, and under the C locale it hashed escape text for
+    a latin1-marked or unmarked word. test-hash-primitive.R pins these three values
+    for every mark, in its own locale and in C: a bare key, a key assembled as the
+    shuffle, balance and jitter keys are, and the matcher's tie key."""
+    from lexsync.io_utils import _key_part
+    from lexsync.matching import _tie_keys
+
+    word = "café"
+    assert hash_unit(word) == 0.519767628103242
+    assert hash_unit("|".join(["2026", _key_part(word), "soa"])) == 0.7908144324504798
+    assert _tie_keys([word]) == [
+        "53f13dc41932fe9189c6e7b9286329c7977acde4d6a827de74efc056d9fb8f65"]
+
+
 def test_the_integer_mapping_respects_both_bounds():
     for lo, hi in [(0, 1), (1, 3), (200, 800), (0, 0), (-5, 5)]:
         seen = {hash_int_range(f"k|{i}", lo, hi) for i in range(3000)}

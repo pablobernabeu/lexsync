@@ -33,6 +33,7 @@ import pandas as pd
 from .design import (
     N_DEFAULT_CONTINUOUS,
     N_DEFAULT_MATCHED,
+    _check_n_sets,
     _require_match_on,
     _resolve_n,
     _resolve_tolerance_k,
@@ -873,11 +874,14 @@ def resample_stimuli(pool: pd.DataFrame, design: dict, schema: dict,
     ``attrs["audit"]["incomplete_dropped"]``, as :func:`match_stimuli` records it.
     A relaxed tolerance window inside a replicate is not recorded: it reaches the
     console under ``verbose`` but not the run log or the datasheet.
+
+    ``n_sets`` must be a whole number of at least 1, as ``resample.n_sets`` must.
     """
+    n_sets = _check_n_sets(n_sets)
     used: set = set()
     parts = []
     incomplete = []
-    for k in range(1, int(n_sets) + 1):
+    for k in range(1, n_sets + 1):
         pk = pool[~pool["word"].isin(used)].reset_index(drop=True)
         sk = match_stimuli(pk, design, schema, verbose=verbose).copy()
         if k == 1:

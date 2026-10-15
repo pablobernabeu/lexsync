@@ -170,7 +170,7 @@ DATASHEET_VERSION <- "1.2"
     if (identical(.Platform$OS.type, "windows")) tolower(p) else p
   }
   if (!identical(where(dirname(path)), where(path.expand(lexsync_cache_dir())))) return(NULL)
-  reg <- tryCatch(yaml::read_yaml(default_registry_path()), error = function(e) NULL)
+  reg <- tryCatch(.read_yaml_utf8(default_registry_path()), error = function(e) NULL)
   if (!.is_mapping(reg)) return(NULL)
   stem <- sub("\\.csv$", "", name)
   is_text <- function(x) is.character(x) && length(x) == 1L && !is.na(x)

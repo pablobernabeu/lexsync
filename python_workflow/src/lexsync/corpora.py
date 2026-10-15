@@ -24,8 +24,15 @@ from .querying import _check_zipf_range, _fold_words, _nfc, _require_numbers, _z
 
 
 def _registry_path(registry_path: str | None = None) -> str:
+    # A path the caller names is read on its own. As the first place searched, a
+    # misspelt or stale one fell through to the checkout's registry or the bundled one,
+    # and every corpus reported came from that other file. Mirrors .registry_path in
+    # R_workflow/R/corpora.R.
+    if registry_path is not None:
+        if not os.path.exists(registry_path):
+            raise FileNotFoundError(f"lexsync: registry not found: '{registry_path}'.")
+        return registry_path
     candidates = [
-        registry_path,
         os.environ.get("LEXSYNC_REGISTRY"),
         os.path.join("corpora", "registry.yaml"),
         os.path.join("..", "corpora", "registry.yaml"),
@@ -403,7 +410,7 @@ def fetch_corpus(name: str, registry_path: str | None = None, n_words: int = 100
     that :func:`lexsync.load_lexicon` reads. The transfer lands in a sidecar file that
     is renamed into the cache only after the size cap, the markup sniff, any registered
     sha256 and the normalisation have all passed. Every refusal names the registry
-    file it read.
+    file it read. A `registry_path` that does not exist is refused.
 
     The file lands in :func:`cache_dir`. The cache directory is created only once
     the registry entry and its URL have been accepted, or the wordfreq lexicon

@@ -583,7 +583,9 @@ def main() -> None:
         print(f"[fetch_corpora] building '{lang}' (target {args.n_words} words) ...", flush=True)
         df = build(lang, args.n_words)
         out = DERIVED / f"{lang}.csv"
-        df.to_csv(out, index=False, encoding="utf-8")
+        # LF on every platform: pandas would end each row with os.linesep, and the
+        # datasheet of every run that reads this lexicon records the SHA-256 of its bytes.
+        df.to_csv(out, index=False, encoding="utf-8", lineterminator="\n")
         zmin, zmax = df.freq_zipf.min(), df.freq_zipf.max()
         # A superseded lexicon no longer supplies the slices: the English ones come from
         # en_v2.csv, which --screen-en rebuilds from this file.

@@ -29,7 +29,29 @@ from scipy import stats
 from .io_utils import _exact_mean, _exact_median, _exact_sd, _exact_sum, _exact_var, _round_dp
 
 
+def _require_columns(stimuli: pd.DataFrame, dims, by=None) -> None:
+    """Refuse a grouping column or a dimension the stimuli do not carry.
+
+    The reports are exported for use on a selection of one's own, where a misspelt
+    name gave a bare KeyError here and, in R, a table of missing values that looked
+    complete. Mirrors .require_columns in R_workflow/R/validation.R.
+    """
+    if by is not None and by not in stimuli.columns:
+        raise ValueError(f"lexsync: grouping column '{by}' is not a column of the stimuli.")
+    for d in dims:
+        if d not in stimuli.columns:
+            raise ValueError(f"lexsync: dimension '{d}' is not a column of the stimuli.")
+
+
 def describe_stimuli(stimuli: pd.DataFrame, dims, by: str = "condition") -> pd.DataFrame:
+    """Per-group descriptive statistics for several dimensions.
+
+    One row per group of ``by``, in order of first appearance, and dimension, with
+    ``n``, ``mean``, ``sd``, ``min``, ``median`` and ``max``. A grouping column or a
+    dimension the stimuli do not carry is refused. Mirrors describe_stimuli in
+    R_workflow/R/validation.R.
+    """
+    _require_columns(stimuli, dims, by)
     rows = []
     for g, d in stimuli.groupby(by, sort=False):
         for dim in dims:
@@ -214,9 +236,7 @@ def _reportable(stimuli: pd.DataFrame, dims) -> list:
     part-of-speech label named in a condition's ``define_by`` is. A name that is not a
     column of the stimuli is refused. Mirrors .reportable in R_workflow/R/validation.R.
     """
-    for d in dims:
-        if d not in stimuli.columns:
-            raise ValueError(f"lexsync: dimension '{d}' is not a column of the stimuli.")
+    _require_columns(stimuli, dims)
     return [d for d in dims if _numeric(stimuli[d]).notna().any()]
 
 
@@ -256,8 +276,10 @@ def match_report(stimuli: pd.DataFrame, dims, schema: dict, roles=None) -> dict:
     returns the row's ``role``: ``manipulated`` when the design sets the two
     conditions apart on the dimension, ``controlled`` when it matches them on it and
     ``uncontrolled`` otherwise. ``run_pipeline`` derives it from the design. Without
-    it, ``role`` is missing.
+    it, ``role`` is missing. Stimuli without a ``condition`` column, or without a
+    dimension named in ``dims``, are refused.
     """
+    _require_columns(stimuli, [], "condition")
     conds = list(dict.fromkeys(stimuli["condition"]))
     dims = _reportable(stimuli, dims)
     desc = describe_stimuli(stimuli, dims)

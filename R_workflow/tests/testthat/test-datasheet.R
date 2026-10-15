@@ -90,6 +90,24 @@ test_that("realised control records the pair, the role and the raw difference", 
                    "uncontrolled")
 })
 
+# Only the label's first letter is raised. The Python twin's str.capitalize() lowered
+# the rest, so a design labelled 'British English' drew from 'the British english
+# lexicon' there. Pinned identically in test_datasheet.py.
+test_that("the methods paragraph keeps the language label as written", {
+  schema <- ds_schema()
+  stim <- ds_stim()
+  report <- match_report(stim, c("length", "frequency", "n_density", "old20"), schema)
+  labels <- c("British English" = "British English", english = "English",
+              "Chinese (Mandarin)" = "Chinese (Mandarin)")
+  for (label in names(labels)) {
+    design <- utils::modifyList(ds_design(), list(language = label))
+    ds <- build_datasheet(design, schema, report, stim, "x.csv",
+                          list(stimuli = NULL, experiments = list()), 2026, engine = "R")
+    expect_true(grepl(paste0("from the ", labels[[label]], " lexicon"), methods_paragraph(ds),
+                      fixed = TRUE), label = label)
+  }
+})
+
 test_that("methods paragraph reads naturally and prereg template is emitted", {
   schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
   stim <- ds_stim()

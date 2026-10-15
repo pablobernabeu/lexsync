@@ -9,7 +9,8 @@ fetch_corpus(name, registry_path = NULL, dest = NULL)
 \arguments{
 \item{name}{A corpus name present in the registry.}
 
-\item{registry_path}{Optional path to \code{registry.yaml}.}
+\item{registry_path}{Optional path to \code{registry.yaml}. A path that does not exist
+is refused.}
 
 \item{dest}{Optional destination file; defaults to \verb{<name>.csv} in
 \code{\link[=lexsync_cache_dir]{lexsync_cache_dir()}}.}

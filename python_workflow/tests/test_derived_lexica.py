@@ -52,6 +52,24 @@ def _builder():
     return module
 
 
+def test_every_table_the_builder_writes_ends_its_lines_with_lf():
+    """pandas ends a row with os.linesep unless told otherwise, so a rebuild on Windows
+    wrote CRLF into corpora/derived/<language>.csv, and the datasheet of every run that
+    reads the lexicon records the SHA-256 of those bytes. Every to_csv call in the
+    builder now names its line end. The builder needs wordfreq and the network to run,
+    so its calls are read from the source."""
+    import ast
+
+    tree = ast.parse((REPO / "corpora" / "fetch_corpora.py").read_text(encoding="utf-8"))
+    calls = [node for node in ast.walk(tree) if isinstance(node, ast.Call)
+             and isinstance(node.func, ast.Attribute) and node.func.attr == "to_csv"]
+    assert calls
+    for call in calls:
+        ends = [k.value.value for k in call.keywords
+                if k.arg == "lineterminator" and isinstance(k.value, ast.Constant)]
+        assert ends == ["\n"], f"line {call.lineno}"
+
+
 def test_en_csv_keeps_its_bytes():
     data = (DERIVED / "en.csv").read_bytes()
     assert hashlib.sha256(data.replace(b"\r\n", b"\n")).hexdigest() == EN_LF_SHA256

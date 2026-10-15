@@ -1523,7 +1523,9 @@ def methods_paragraph(ds: dict) -> str:
     """
     d = ds["design"]
     src = ds["materials_source"]["type"]
-    lang = d["language"].capitalize()
+    # The first letter raised and the rest as written, as the R twin writes it.
+    # str.capitalize() lowered the rest, so 'British English' became 'British english'.
+    lang = d["language"][:1].upper() + d["language"][1:]
     sel = ds.get("selection") or {}
     lo, hi = _realised_range(ds)
     n = (_int_text(lo) + " to " + _int_text(hi)) if lo != hi else _int_text(lo)

@@ -145,7 +145,13 @@ Python's `sorted()` produces. A locale-collated sort would typically interleave
 them. Case folding is pinned for the same reason: `load_lexicon()` lower-cases
 through ICU at the root locale rather than through `tolower()`, whose behaviour
 depends on the C library and the locale, and which differs from Python's on
-Greek final sigma and the dotted Turkish capital I.
+Greek final sigma and the dotted Turkish capital I. The locale is kept out of two
+more places. Design, schema and registry files are read as UTF-8 whatever the
+session's character type, and a file in another encoding is refused. The text of
+every hash key, behind the trial order, list balancing, jitter and the tie-break
+between candidates, is made UTF-8 before it is digested, whatever encoding mark it
+carries, so a condition label such as `café` ranks by the same digest in R under
+the C locale as in Python.
 
 Frequencies of bigrams and of subsyllabic constituents are accumulated as
 integers, never as running floating-point sums, so the counts cannot depend on

@@ -21,9 +21,9 @@ cannot be honoured is refused before any output exists, with the same message in
 both engines. It first refuses a key within one or two edits of a key lexsync
 reads at that level, naming the key it was probably meant to be (one edit for a
 known key of up to five characters, two for a longer one). It then refuses a
-missing, empty or non-text \code{name} or \code{language}, an \code{n_per_condition} or
-\code{n_per_cell} that is not a whole number of at least 1, a \code{counterbalance.optimise}
-that is not true or false, a \code{counterbalance.scale} other than \code{mean} or \code{mad}, a
+missing, empty or non-text \code{name} or \code{language}, an \code{n_per_condition}, \code{n_per_cell}
+or \code{resample.n_sets} that is not a whole number of at least 1, a
+\code{counterbalance.optimise} that is not true or false, a \code{counterbalance.scale} other than \code{mean} or \code{mad}, a
 \code{counterbalance.max_run} or \code{counterbalance.orders} that is not a whole number of at
 least 1, and a \code{counterbalance.run_on} that is not the name of a column. It refuses
 a name, language

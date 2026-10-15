@@ -282,18 +282,30 @@ test_that("the keyed-hash shuffle gives both engines the same trial order", {
 
 test_that("the shuffle key hashes UTF-8 bytes whatever encoding the frame carries", {
   # digest(serialize = FALSE) hashes the stored bytes, so a latin1-marked
-  # condition read from a user's CSV used to rank by different digests from the
-  # same characters in UTF-8, and so from the Python engine. The key now goes
-  # through enc2utf8, as hash_unit always has.
+  # condition read from a user's CSV ranked by different digests from the same
+  # characters in UTF-8, and so from the Python engine. Wrapping the pasted key in
+  # enc2utf8() did not close the gap under the C locale: paste() had already turned
+  # a latin1 component into the escape text "caf<e9>", and enc2utf8() turned an
+  # unmarked one into "caf<c3><a9>". Every text component is now made UTF-8 before
+  # it is pasted, and the order is pinned to the Python engine's, which
+  # test_counterbalancing.py pins too.
+  python_order <- c("c", "e", "a", "f", "b", "h", "g", "d")
   stim <- data.frame(word = letters[1:8], list = 1L,
                      condition = rep(c("café", "naïve"), 4),
                      set = rep(1:4, each = 2), stringsAsFactors = FALSE)
-  stim$condition <- enc2utf8(stim$condition)
   lat <- stim
   lat$condition <- iconv(stim$condition, "UTF-8", "latin1")
   expect_identical(unique(Encoding(lat$condition)), "latin1")
-  out_utf <- lexsync:::.shuffle_deterministic(stim, 2026L)
-  out_lat <- lexsync:::.shuffle_deterministic(lat, 2026L)
-  expect_identical(out_lat$word, out_utf$word)
-  expect_identical(out_lat$trial, out_utf$trial)
+  unk <- stim
+  Encoding(unk$condition) <- "unknown"
+  expect_identical(unique(Encoding(unk$condition)), "unknown")
+  check <- function() {
+    for (frame in list(stim, lat, unk)) {
+      out <- lexsync:::.shuffle_deterministic(frame, 2026L)
+      expect_identical(out$word, python_order)
+      expect_identical(out$trial, 1:8)
+    }
+  }
+  check()
+  in_c_ctype(check)
 })

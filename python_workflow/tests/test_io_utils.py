@@ -289,6 +289,16 @@ def test_read_config_reads_an_unquoted_y_and_n_as_text(tmp_path):
         "long": [True, False, True, False, True, False]}
 
 
+def test_read_config_keeps_the_line_break_of_a_block_scalar_that_ends_the_file(tmp_path):
+    """The R engine's yaml::read_yaml() joined the file's lines without the last line
+    feed, so a literal block scalar that ends the file lost its final line break there
+    and kept it here. Both engines read the file's bytes as they are now. Pinned
+    identically in test-io_utils.R."""
+    path = tmp_path / "block.yaml"
+    path.write_bytes(b"name: a\ninstructions: |\n  Press a key.\n  Then wait.\n")
+    assert read_config(str(path))["instructions"] == "Press a key.\nThen wait.\n"
+
+
 # The two key vocabularies, joined by newlines and hashed. test-io_utils.R pins the
 # same digests for .DESIGN_KEYS and .SCHEMA_KEYS, so a key added to one engine only
 # fails both suites.

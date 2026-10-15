@@ -15,6 +15,7 @@ Run from the repository root:
 """
 from __future__ import annotations
 
+import hashlib
 import io
 import json
 import os
@@ -134,6 +135,51 @@ def corpus_preview(path: str) -> pd.DataFrame:
 
 
 @st.cache_data(show_spinner=False)
+def staged_upload(name: str, digest: str, _data: bytes) -> str:
+    """Write an uploaded file to a temporary folder, once for its content.
+
+    Streamlit runs the script again on every widget interaction, and the uploader
+    hands back the file it holds each time, so writing the upload where it is
+    received made a new folder and a new copy of the file on every rerun. The cache
+    is keyed on the name and the content's digest; ``_data``, whose leading
+    underscore keeps it out of the key, is written only on the first call.
+
+    Parameters
+    ----------
+    name : str
+        The uploaded file's name, which the written file keeps.
+    digest : str
+        The SHA-256 of ``_data``.
+    _data : bytes
+        The uploaded bytes.
+
+    Returns
+    -------
+    str
+        The path of the written file.
+    """
+    path = os.path.join(tempfile.mkdtemp(prefix="lexsync_upload_"), name)
+    with open(path, "wb") as fh:
+        fh.write(_data)
+    return path
+
+
+def received_upload(up) -> str:
+    """The path of an uploaded file's copy on disk (see :func:`staged_upload`).
+
+    A copy that has gone since it was cached, as a sweep of the temporary folder may
+    remove it, is written again.
+    """
+    data = up.getvalue()
+    digest = hashlib.sha256(data).hexdigest()
+    path = staged_upload(up.name, digest, data)
+    if not os.path.exists(path):
+        staged_upload.clear()
+        path = staged_upload(up.name, digest, data)
+    return path
+
+
+@st.cache_data(show_spinner=False)
 def lexicon_columns(path: str) -> list:
     """The column names of a lexicon CSV, or an empty list when it cannot be read."""
     try:
@@ -169,7 +215,11 @@ def pool_filters(length_range, frequency_range, columns, screened: bool) -> dict
     return filters
 
 
-def _preset_row(name, dim, lo, hi, cats="", dim2="", lo2=None, hi2=None):
+# An empty bound is NaN, as the Shiny presets' is NA_real_. A column of None alone is
+# one Streamlit's editor offers as free text and passes back unconverted, so the
+# presets with one factor took text in lower2 and upper2. A NaN keeps the column
+# numeric, and the editor then takes only numbers in it.
+def _preset_row(name, dim, lo, hi, cats="", dim2="", lo2=float("nan"), hi2=float("nan")):
     return {"name": name, "dimension": dim, "lower": lo, "upper": hi, "categories": cats,
             "dimension2": dim2, "lower2": lo2, "upper2": hi2}
 
@@ -195,11 +245,19 @@ def preset_rows(preset: str) -> list:
             _preset_row("condition_b", "frequency", 3.5, 4.5)]
 
 
-def _isnum(x) -> bool:
+def _bound(x):
+    """One end of a condition's window as a number, or None when the cell holds none.
+
+    A cell that holds text which is not a number, such as '4,5', counts as empty, so
+    the factor it belongs to is left out. The table is read while the page is drawn,
+    above the handler that reports a pipeline error, and a bare float() on such a cell
+    stopped the whole page. Mirrors bound() in the Shiny app.
+    """
     try:
-        return x is not None and x == x and str(x) != ""  # not None, not NaN, not ""
-    except Exception:
-        return False
+        value = float(x)
+    except (TypeError, ValueError):
+        return None
+    return None if value != value else value
 
 
 def conditions_from_table(cond_df: pd.DataFrame) -> list:
@@ -207,7 +265,7 @@ def conditions_from_table(cond_df: pd.DataFrame) -> list:
 
     A row contributes a condition when it names one and defines at least one window,
     a category list or a pair of numeric bounds. The optional second factor is added
-    only when both of its bounds are given. Mirrors conditions_from_table() in the
+    only when both of its bounds are numbers. Mirrors conditions_from_table() in the
     Shiny app.
     """
     conditions = []
@@ -218,13 +276,15 @@ def conditions_from_table(cond_df: pd.DataFrame) -> list:
             continue
         cats = str(row.get("categories") or "").strip()
         define_by = {}
+        lower, upper = _bound(row.get("lower")), _bound(row.get("upper"))
         if cats:
             define_by[dim] = [c.strip() for c in cats.split(",") if c.strip()]
-        elif _isnum(row.get("lower")) and _isnum(row.get("upper")):
-            define_by[dim] = [float(row["lower"]), float(row["upper"])]
+        elif lower is not None and upper is not None:
+            define_by[dim] = [lower, upper]
         dim2 = str(row.get("dimension2") or "").strip()
-        if dim2 and _isnum(row.get("lower2")) and _isnum(row.get("upper2")):
-            define_by[dim2] = [float(row["lower2"]), float(row["upper2"])]
+        lower2, upper2 = _bound(row.get("lower2")), _bound(row.get("upper2"))
+        if dim2 and lower2 is not None and upper2 is not None:
+            define_by[dim2] = [lower2, upper2]
         if define_by:
             conditions.append({"name": nm, "define_by": define_by})
     return conditions
@@ -674,7 +734,9 @@ with st.sidebar:
     paradigm = PARADIGMS[paradigm_label]
     name = st.text_input("Design name", value="my_design")
     language = st.text_input("Language label", value="english")
-    seed_note = st.empty()
+    # Here with the other design fields: Streamlit draws a widget where its call is
+    # made, and a call further down put this one under the rule and the version line.
+    font = st.text_input("Stimulus font", value="Courier New")
     st.divider()
     st.caption(
         "lexsync " + getattr(lexsync, "__version__", "") +
@@ -702,10 +764,7 @@ if paradigm in ("factorial", "lexical_decision"):
     if corpus_choice == "Upload a CSV…":
         up = st.file_uploader("Lexicon CSV (word, freq_zipf, …)", type=["csv"])
         if up is not None:
-            tmpdir = tempfile.mkdtemp(prefix="lexsync_lex_")
-            lexicon_abs = os.path.join(tmpdir, up.name)
-            with open(lexicon_abs, "wb") as fh:
-                fh.write(up.getbuffer())
+            lexicon_abs = received_upload(up)
             design["lexicon"] = f"corpora/{up.name}"
             uploaded_inputs[design["lexicon"]] = lexicon_abs
     else:
@@ -822,16 +881,12 @@ elif paradigm in ("priming", "self_paced_reading"):
         req = "item, condition, prime, target" if paradigm == "priming" else "item, condition, sentence (regions split by |), critical_region"
         up = st.file_uploader(f"Item table CSV ({req})", type=["csv"])
         if up is not None:
-            tmpdir = tempfile.mkdtemp(prefix="lexsync_items_")
-            items_abs = os.path.join(tmpdir, up.name)
-            with open(items_abs, "wb") as fh:
-                fh.write(up.getbuffer())
+            items_abs = received_upload(up)
             design["items"] = {"source": "table", "path": f"items/{up.name}"}
             uploaded_inputs[design["items"]["path"]] = items_abs
             st.dataframe(pd.read_csv(items_abs).head(8), width="stretch")
     design["counterbalance"] = {"lists": st.number_input("Counterbalancing lists", 1, 16, 2)}
 
-font = st.sidebar.text_input("Stimulus font", value="Courier New")
 if font and font != "Courier New":
     design["font"] = font
 

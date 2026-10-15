@@ -33,6 +33,34 @@ test_that("known keys, including non-ASCII, match the Python engine", {
   expect_equal(lexsync:::hash_int_range("42|0|A|1|北京大学汉字", 200L, 800L), 209L)
 })
 
+# digest() hashes the stored bytes, and what R stores for an accented letter depends on
+# the string's encoding mark and on the session's character type. Under the C locale
+# paste() turned a latin1 component into the escape text "caf<e9>" and enc2utf8() an
+# unmarked one into "caf<c3><a9>", so neither hashed as the Python engine hashes the
+# same word, and a trial order, a jittered duration or a tie between candidates came
+# out differently. The constants are the Python engine's, pinned in
+# test_hash_primitive.py. The second key goes through .key_part() and paste() as every
+# shuffle, balance and jitter key does, and the third is the matcher's tie key.
+test_that("a key hashes as in the Python engine whatever its encoding mark and locale", {
+  utf <- enc2utf8("café")
+  lat <- iconv(utf, "UTF-8", "latin1")
+  unk <- utf
+  Encoding(unk) <- "unknown"
+  expect_identical(c(Encoding(utf), Encoding(lat), Encoding(unk)),
+                   c("UTF-8", "latin1", "unknown"))
+  check <- function() {
+    for (w in list(utf, lat, unk)) {
+      expect_equal(lexsync:::hash_unit(w), 0.519767628103242)
+      key <- paste("2026", lexsync:::.key_part(w), "soa", sep = "|")
+      expect_equal(lexsync:::hash_unit(key), 0.7908144324504798)
+      expect_identical(lexsync:::.tie_keys(w),
+                       "53f13dc41932fe9189c6e7b9286329c7977acde4d6a827de74efc056d9fb8f65")
+    }
+  }
+  check()
+  in_c_ctype(check)
+})
+
 test_that("the integer mapping respects both bounds", {
   for (rng in list(c(0L, 1L), c(1L, 3L), c(200L, 800L), c(0L, 0L), c(-5L, 5L))) {
     v <- lexsync:::hash_int_range(sprintf("k|%d", 0:2999), rng[1], rng[2])

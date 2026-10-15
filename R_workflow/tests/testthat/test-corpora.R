@@ -643,3 +643,13 @@ test_that("list_corpora surfaces the registry status", {
   expect_identical(unname(status[["subtlex_esp"]]), "listed")
   expect_false("validated" %in% status)
 })
+
+# An explicit registry_path is read on its own. A missing one gave base R's connection
+# error here, while the Python twin fell through to another registry and reported its
+# corpora under the caller's path. Pinned identically in test_corpora.py.
+test_that("a registry_path that does not exist is refused", {
+  missing <- file.path(tempdir(), "no_such_registry.yaml")
+  expect_error(list_corpora(missing), "lexsync: registry not found", fixed = TRUE)
+  expect_error(fetch_corpus("subtlex_esp", registry_path = missing),
+               "lexsync: registry not found", fixed = TRUE)
+})

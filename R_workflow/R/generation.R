@@ -451,7 +451,7 @@ build_lexdec_stimuli <- function(pool, n, reference_words = NULL, method = "lett
 # found or read leaves the name to be read as a path.
 .registry_entry <- function(name) {
   if (!grepl(.REGISTRY_NAME, name, perl = TRUE)) return(NULL)
-  reg <- tryCatch(yaml::read_yaml(default_registry_path()), error = function(e) NULL)
+  reg <- tryCatch(.read_yaml_utf8(default_registry_path()), error = function(e) NULL)
   entry <- reg[["corpora"]][[name]]
   if (is.list(entry)) entry else NULL
 }

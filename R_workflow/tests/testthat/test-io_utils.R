@@ -192,7 +192,7 @@ test_that("the datasheet and run log pin LF like every other artefact", {
 })
 
 test_that("read_config refuses a duplicated mapping key", {
-  # yaml::read_yaml() rejects duplicate map keys by its libyaml parser default;
+  # The yaml package rejects duplicate map keys by its libyaml parser default;
   # asserting the refusal here pins that default, so a future yaml-package
   # regression is caught rather than silently reopening the gap. The Python
   # engine's yaml.safe_load kept the last value, so read_config there now refuses
@@ -222,6 +222,61 @@ test_that("read_config_reads_an_unquoted_y_and_n_as_text", {
   expect_identical(read_config(path),
                    list(keys = c("y", "n"), upper = c("Y", "N"), n = 1L, y = 2L,
                         long = c(TRUE, FALSE, TRUE, FALSE, TRUE, FALSE)))
+})
+
+# yaml::read_yaml() reads through a connection that converts the file to the session's
+# character type, so under the C locale the first accented letter ended the text: this
+# design came back as list(name = "caf") with two warnings, and the bundled registry,
+# whose citations carry accents, failed to parse, which list_corpora() reported as a
+# scanner error and the datasheet's citation lookup swallowed. The Python engine reads
+# both files as UTF-8 on every platform.
+test_that("YAML is read as UTF-8 whatever the session locale", {
+  path <- tempfile(fileext = ".yaml")
+  on.exit(unlink(path), add = TRUE)
+  writeBin(charToRaw(enc2utf8(paste0("name: café study\n",
+                                     "description: 'Palabras en español'\n",
+                                     "keys: [y, n]\n",
+                                     "n_per_condition: 18\n"))), path)
+  check <- function() {
+    expect_no_warning(cfg <- read_config(path))
+    expect_identical(names(cfg), c("name", "description", "keys", "n_per_condition"))
+    expect_identical(cfg$name, "café study")
+    expect_identical(Encoding(cfg$name), "UTF-8")
+    expect_identical(cfg$description, "Palabras en español")
+    expect_identical(cfg$keys, c("y", "n"))
+    expect_identical(cfg$n_per_condition, 18L)
+    reg <- list_corpora()
+    expect_match(reg$citation[reg$name == "subtlex_esp"], "González", fixed = TRUE)
+    expect_match(lexsync:::.corpus_entry("subtlex_esp")$citation, "Psicológica",
+                 fixed = TRUE)
+  }
+  check()
+  in_c_ctype(check)
+})
+
+# A design saved in Latin-1 is not UTF-8. read_yaml() warned and kept the text up to
+# the first such byte, so the run went ahead on part of the design, while the Python
+# engine refuses the file. Both now refuse it.
+test_that("a YAML file that is not UTF-8 is refused, not cut short", {
+  path <- tempfile(fileext = ".yaml")
+  on.exit(unlink(path), add = TRUE)
+  writeBin(c(charToRaw("name: caf"), as.raw(0xE9), charToRaw("\nn_per_condition: 18\n")),
+           path)
+  expect_error(read_config(path), "is not UTF-8 text", fixed = TRUE)
+  # A byte-order mark is not part of the text.
+  writeBin(c(as.raw(c(0xEF, 0xBB, 0xBF)), charToRaw("name: a\r\nn_per_condition: 18\r\n")),
+           path)
+  expect_identical(read_config(path), list(name = "a", n_per_condition = 18L))
+})
+
+# read_yaml() joined the file's lines without the last line feed, so a literal block
+# scalar that ends the file lost its final line break here and kept it in Python.
+# Pinned identically in test_io_utils.py.
+test_that("a block scalar that ends the file keeps its line break, as in Python", {
+  path <- tempfile(fileext = ".yaml")
+  on.exit(unlink(path), add = TRUE)
+  writeBin(charToRaw("name: a\ninstructions: |\n  Press a key.\n  Then wait.\n"), path)
+  expect_identical(read_config(path)$instructions, "Press a key.\nThen wait.\n")
 })
 
 test_that("a continuous design over a supplied pool takes the continuous path", {
