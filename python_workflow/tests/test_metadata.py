@@ -183,6 +183,25 @@ def test_licences_agree():
     assert "CC BY-SA 4.0" in _zenodo()["description"]
 
 
+def test_no_licence_classifier_beside_the_expression():
+    # PEP 639 deprecates the "License ::" classifiers and lets a build backend
+    # refuse one beside a License-Expression, as setuptools does. PyPI accepts
+    # the pairing today, so nothing but this test stops one being added.
+    text = _pyproject_text()
+    classifiers = re.search(r"^classifiers = \[\n(.*?)^\]", text, re.M | re.S).group(1)
+    assert "License ::" not in classifiers
+    # The comment above the list gives the reason. It used to say that PyPI
+    # rejects any upload carrying both, which Warehouse does not. It also pointed
+    # at scopusflow's pyproject.toml as a file that still paired them, which
+    # stops being true once that file drops its classifier.
+    block = re.search(r"((?:^#.*\n)+)classifiers = \[", text, re.M).group(1)
+    comment = " ".join(block.replace("#", " ").split())
+    assert "PEP 639 deprecates licence classifiers" in comment
+    assert "PyPI accepts the pairing" in comment
+    assert "PyPI rejects" not in comment
+    assert "scopusflow" not in comment
+
+
 def test_the_bundled_data_terms_ship_with_both_packages():
     # The CSVs under inst/extdata and src/lexsync/data are the same wordfreq
     # derivatives, so a user of either package must be able to find the terms

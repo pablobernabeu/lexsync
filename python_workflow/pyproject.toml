@@ -20,11 +20,10 @@ keywords = [
   "counterbalancing", "pseudoword generation", "EEG", "ERP",
   "PsychoPy", "OpenSesame", "jsPsych", "FAIR",
 ]
-# No "License :: ..." classifier belongs in this list, and adding one would stop
-# the release dead. Under PEP 639 the classifier and the License-Expression above
-# are mutually exclusive, and PyPI rejects the upload of any distribution that
-# carries both. scopusflow's pyproject.toml still pairs them, so that is not the
-# file to copy this list from.
+# No "License :: ..." classifier belongs in this list. PEP 639 deprecates licence
+# classifiers and lets build backends reject them alongside a License-Expression
+# (setuptools does). PyPI accepts the pairing today, but the expression above
+# already says all a classifier would. tests/test_metadata.py keeps one out.
 #
 # The five interpreter lines are the five the test matrix runs, on Linux, macOS
 # and Windows alike, so each one states something CI has checked. Alpha is the
