@@ -503,6 +503,28 @@ def test_artifact_paths_are_recorded_in_posix_form():
     assert _posix(None) is None
 
 
+def test_every_recorded_path_takes_forward_slashes(schema):
+    """The materials source, the stimuli file, every artefact and the schema, given
+    with backslashes as a Windows path may come. Pinned identically in test-datasheet.R,
+    where the R engine recorded them as given."""
+    stim = _stim()
+    exps = {"psychopy": r"output\experiments\t.py", "opensesame": r"output\experiments\t.osexp",
+            "jspsych": r"output\experiments\t.html",
+            "files": [r"output\experiments\t.py", r"output\experiments\t.osexp",
+                      r"output\experiments\t.html"]}
+    ds = build_datasheet(_design(), schema, None, stim, r"corpora\derived\x.csv",
+                         {"stimuli": r"output\stimuli\t_stimuli.csv",
+                          "descriptives": r"output\reports\t_descriptives.csv",
+                          "experiments": exps},
+                         2026, engine="python", schema_path=r"config\schema.yaml")
+    assert ds["materials_source"]["path"] == "corpora/derived/x.csv"
+    assert ds["items"]["stimuli_file"] == "output/stimuli/t_stimuli.csv"
+    assert [a["file"] for a in ds["artifacts"]] == [
+        "output/stimuli/t_stimuli.csv", "output/reports/t_descriptives.csv",
+        "output/experiments/t.py", "output/experiments/t.osexp", "output/experiments/t.html"]
+    assert ds["reproducibility"]["schema_path"] == "config/schema.yaml"
+
+
 # --- Truthful prose, audit honesty and provenance completeness ---------------
 # test-datasheet.R asserts the same properties.
 

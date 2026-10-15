@@ -122,9 +122,14 @@ the design needs only the number of counterbalancing lists.
 
 ## Running it
 
-'Run design' assembles the design, writes it to a `design.yaml` in a temporary directory with the
-lexicon and item paths resolved to absolute ones, and hands it to `run_pipeline` with the schema
-that ships inside the package. The button stays disabled while a factorial design has nothing to
+'Run design' assembles the design and lays out a temporary folder the way the download will be laid
+out. The design goes in under the name the 'Reproducible code' tab gives it, with the schema that
+ships inside the package at `config/schema.yaml` and the lexicon or item table at the path the
+design names. The app then runs the exported command line there as a separate process,
+`python -m lexsync run "<name>.yaml" --schema config/schema.yaml --outdir output`. The run
+therefore reads only relative paths, and its datasheet checksums the files the bundle holds. A
+separate process leaves the working directory of the app alone, which every browser session
+shares. The button stays disabled while a factorial design has nothing to
 match on. Three conditions are checked first, that a lexicon has been chosen
 or uploaded where the paradigm needs one, that a factorial design defines at least two conditions,
 and that an item-table paradigm has a table, and anything the pipeline itself refuses comes back as
@@ -154,14 +159,16 @@ sit.
 'Datasheet' renders the materials datasheet for the run, carrying the provenance of the corpus, the
 checksums, the realised control and the pre-registration skeleton.
 
-'Experiment scripts' offers one download per generated file. The PsychoPy script, the OpenSesame
-`.osexp` and the jsPsych HTML that runs in a browser are all compiled from the same trial
-description. A design with several counterbalancing versions has one `.osexp` per version, and the
-PsychoPy and OpenSesame experiments come with the tables they read.
+'Experiment scripts' offers one download per presentation target, each compiled from the same
+trial description. The PsychoPy download is a zip archive holding the script and the conditions
+file it loads from its own folder. The OpenSesame download is a zip archive holding the `.osexp`,
+one per counterbalancing version when the design has several, with the loop and text tables each
+one reads. Unzip either and run the experiment from the folder it makes. The jsPsych page carries
+its trials and runs in a browser as it stands.
 
 'Reproducible code' is what stops a session in the app from being a dead end. It shows the design
-configuration as YAML, with repository-relative paths such as `corpora/derived/en.csv` rather than
-the temporary ones the run used, followed by the one-line Python, R and command-line calls
+configuration as YAML, with repository-relative paths such as `corpora/derived/en.csv`, the same
+paths the run read, followed by the one-line Python, R and command-line calls
 that reproduce the same operation. Saving the YAML under the name the panel gives it and running
 any of those three lines repeats the run outside the app. The command lines quote the design file's
 name, and their quoting holds in bash, `cmd.exe` and PowerShell. The sentence under them is taken
@@ -171,10 +178,13 @@ they select equivalent but not byte-identical stimuli. Where the design names a 
 uploaded, which the repository does not hold, the panel says so and points at the bundle that
 carries it.
 
-'Download' packages the design, every artefact the run wrote and any lexicon or item table you
-uploaded into a single archive named after the design. The uploaded files are stored at the path
-the design names, so extracting the archive at the root of a clone leaves the exported code able to
-run unchanged.
+'Download' archives the folder the run ran in, under the design's name. It holds the design, the
+schema at `config/schema.yaml`, the lexicon or item table at the path the design names, uploads
+included, and every output under `output/`. The datasheet inside records the checksum of the design
+file beside it and no path outside the folder. Running the exported Python call, or either
+`lexsync run` command line, in the unzipped folder repeats the run. It rewrites every output with
+the same bytes, apart from the run logs, which record when they were written. The R lines write the
+R engine's files beside them.
 
 ## What you leave with
 

@@ -500,6 +500,21 @@ no function signature changes.
 
 ### Fixed
 
+- The apps' download bundles reproduce their own record. The apps ran a temporary copy of
+  the design with absolute paths and then bundled the displayed design, so the bundled
+  datasheet's design checksum matched no file in the bundle, and the datasheet and run logs
+  exposed the user's home and temporary directories. They now run the exported command in a
+  folder laid out like the bundle, with the design under its exported name, the schema at
+  `config/schema.yaml` and each input at the path the design names, and the Download tab
+  archives that folder. The outputs therefore sit under `output/` in the archive, where
+  they used to sit at its root, and rerunning the exported code in the unzipped folder
+  rewrites them with the same bytes, run logs apart. The Streamlit app runs the command as
+  a separate process, since the working directory belongs to every session, and the Shiny
+  app moves it for the call alone. The PsychoPy and OpenSesame downloads are zip archives
+  holding the tables those experiments load. Each app removes a run's folder once its
+  results leave the screen, and refuses a design name or uploaded file name that would
+  place a file outside the folder. The R engine's datasheet records the materials source,
+  the stimuli file and every artefact with forward slashes, as the Python engine's does.
 - The Shiny app's presets set the matched dimensions and the matching method, as the
   Streamlit app's presets do. Its neighbourhood preset matched on N, the dimension it
   manipulates, and on OLD20, a close correlate of N, and it left length unmatched. Both

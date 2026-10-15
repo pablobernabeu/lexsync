@@ -32,8 +32,8 @@ The app opens at <http://localhost:8501>.
 
 ## R (Shiny)
 
-Requirements: the `lexsync` package and `shiny`, `bslib`, `DT`. The Download tab also
-wants `zip`. Without it the app falls back to an external zip tool, and refuses the
+Requirements: the `lexsync` package and `shiny`, `bslib`, `DT`. The downloads also
+want `zip`. Without it the app falls back to an external zip tool, and refuses the
 download when none is on the path.
 
 ```r
@@ -63,6 +63,12 @@ The app opens at <http://localhost:8502>.
   `corpora/derived/en.csv`), so the exported configuration and one-line call run
   unchanged from the repository root. The command lines quote the design file's
   name and run in bash, `cmd.exe` and PowerShell.
+- Each application runs that code in a temporary folder laid out like its download:
+  the design, `config/schema.yaml`, the lexicon or item table at the path the design
+  names, and the outputs under `output/`. The Download tab archives that folder, so
+  the datasheet in it checksums the design beside it, names no path outside it, and
+  the exported code reruns in the unzipped folder. The PsychoPy and OpenSesame
+  downloads are archives holding each experiment with the tables it loads.
 - The `standardised_euclidean` and `joint` methods select byte-identical stimuli in
   both engines. `mahalanobis` and `optimal` use a covariance inverse or an assignment
   solver, so the two engines agree closely but not byte-for-byte, and both the

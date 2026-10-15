@@ -6,7 +6,11 @@ enough to reach the plain helper functions the export path is built from.
 """
 import importlib.util
 import io
+import json
 import os
+import re
+import shutil
+import tempfile
 import zipfile
 
 import pytest
@@ -57,85 +61,258 @@ def test_positive_tolerances_preserves_the_order_the_dimensions_are_matched_on(a
         {"old20": 2, "length": 1, "frequency": 0.5})) == ["old20", "length", "frequency"]
 
 
-def test_make_zip_holds_the_design_and_every_artefact(app, tmp_path):
-    out = tmp_path / "output"
-    (out / "reports").mkdir(parents=True)
-    (out / "stimuli.csv").write_text("word\ncat\n", encoding="utf-8")
-    (out / "reports" / "datasheet.md").write_text("# datasheet\n", encoding="utf-8")
+def test_make_zip_holds_the_run_directory_at_its_own_relative_paths(app, tmp_path):
+    """The bundle is the directory the run ran in, archived whole, so the exported
+    code finds the design, the schema and the outputs where it names them. The Shiny
+    app's write_bundle_zip produces the same entries (test-apps.R)."""
+    root = tmp_path / "run"
+    (root / "config").mkdir(parents=True)
+    (root / "output" / "reports").mkdir(parents=True)
+    (root / "my_design.yaml").write_text("name: my_design\n", encoding="utf-8")
+    (root / "config" / "schema.yaml").write_text("seed: 1\n", encoding="utf-8")
+    (root / "output" / "stimuli.csv").write_bytes(b"word\ncat\n")
+    (root / "output" / "reports" / "datasheet.md").write_text("# datasheet\n", encoding="utf-8")
 
-    payload = app.make_zip({"name": "my_design"}, "my_design.yaml", {"outdir": str(out)})
+    payload = app.make_zip({"root": str(root)})
 
-    # The artefact entries the Shiny app's write_bundle_zip also produces
-    # (test-apps.R), plus the schema the run actually used: names are relative
-    # to outdir and subdirectories survive.
     assert _names(payload) == ["config/schema.yaml", "my_design.yaml",
-                               "reports/datasheet.md", "stimuli.csv"]
+                               "output/reports/datasheet.md", "output/stimuli.csv"]
+    assert _contents(payload)["output/stimuli.csv"] == b"word\ncat\n"
 
 
-def test_make_zip_ships_an_uploaded_lexicon_at_the_path_the_design_names(app, tmp_path):
-    """The design names corpora/mine.csv, a path the repository does not hold, so
-    the bundle must carry the uploaded file there for the export to reproduce."""
-    out = tmp_path / "output"
-    out.mkdir()
-    (out / "my_design_stimuli_py.csv").write_text("word\ncat\n", encoding="utf-8")
-    upload = tmp_path / "upload" / "mine.csv"
-    upload.parent.mkdir()
-    upload.write_bytes(b"word,freq_zipf\ncat,5.0\n")
+def test_the_run_directory_is_laid_out_like_the_bundle(app, tmp_path):
+    """The design as displayed, the schema at config/schema.yaml and every input at
+    the path the design records, uploads included, and nothing else. An uploaded
+    lexicon lives only in a temporary directory, and a bundled one at a path that
+    resolves to nothing outside the checkout. Pinned identically in test-apps.R."""
+    lexicon = tmp_path / "upload" / "mine.csv"
+    lexicon.parent.mkdir()
+    lexicon.write_bytes(b"word,freq_zipf\ncat,5.0\n")
+    table = tmp_path / "example" / "pairs.csv"
+    table.parent.mkdir()
+    table.write_bytes(b"item,condition,prime,target\n1,rel,cat,dog\n")
+    design = {"name": "my design (v2)", "language": "english", "lexicon": "corpora/mine.csv",
+              "items": {"source": "table", "path": "items/pairs.csv"}}
 
-    design = {"name": "my_design", "lexicon": "corpora/mine.csv"}
-    payload = app.make_zip(design, "my_design.yaml", {"outdir": str(out)},
-                           {design["lexicon"]: str(upload)})
+    inputs = app.staged_inputs(design, str(lexicon), str(table))
+    assert inputs == {"corpora/mine.csv": str(lexicon), "items/pairs.csv": str(table)}
+    assert app.staged_inputs({"name": "x"}, None, None) == {}
 
-    assert "corpora/mine.csv" in _names(payload)
-    with zipfile.ZipFile(io.BytesIO(payload)) as z:
-        assert z.read("corpora/mine.csv") == b"word,freq_zipf\ncat,5.0\n"
+    root = app.stage_run(design, "my design (v2).yaml", inputs)
+    try:
+        found = sorted(os.path.relpath(os.path.join(d, f), root).replace(os.sep, "/")
+                       for d, _dirs, files in os.walk(root) for f in files)
+        assert found == ["config/schema.yaml", "corpora/mine.csv", "items/pairs.csv",
+                         "my design (v2).yaml"]
 
+        def read(rel):
+            with open(os.path.join(root, *rel.split("/")), "rb") as handle:
+                return handle.read()
 
-def test_make_zip_ships_an_uploaded_item_table_under_its_own_root(app, tmp_path):
-    """Item tables use items/, not corpora/, so the mapping must carry the design's
-    own path string rather than assume a single root."""
-    out = tmp_path / "output"
-    out.mkdir()
-    (out / "my_design_stimuli_py.csv").write_text("item\n1\n", encoding="utf-8")
-    upload = tmp_path / "upload" / "pairs.csv"
-    upload.parent.mkdir()
-    upload.write_text("item,condition,prime,target\n1,rel,cat,dog\n", encoding="utf-8")
-
-    design = {"name": "my_design", "items": {"source": "table", "path": "items/pairs.csv"}}
-    payload = app.make_zip(design, "my_design.yaml", {"outdir": str(out)},
-                           {design["items"]["path"]: str(upload)})
-
-    assert "items/pairs.csv" in _names(payload)
-
-
-def test_make_zip_without_uploads_is_unchanged(app, tmp_path):
-    """A lexicon path the repository does not hold ships nothing beyond the schema."""
-    out = tmp_path / "output"
-    out.mkdir()
-    (out / "my_design_stimuli_py.csv").write_text("word\ncat\n", encoding="utf-8")
-    design = {"name": "my_design", "lexicon": "corpora/derived/en_example.csv"}
-
-    assert (_contents(app.make_zip(design, "my_design.yaml", {"outdir": str(out)}, None))
-            == _contents(app.make_zip(design, "my_design.yaml", {"outdir": str(out)}, {})))
-    assert _names(app.make_zip(design, "my_design.yaml", {"outdir": str(out)})) == [
-        "config/schema.yaml", "my_design.yaml", "my_design_stimuli_py.csv",
-    ]
+        # The file the pipeline hashes is the text the Reproducible code tab shows,
+        # with LF endings on every platform.
+        assert read("my design (v2).yaml") == app.yaml_block(design).encode("utf-8")
+        with open(app.SCHEMA_PATH, "rb") as handle:
+            assert read("config/schema.yaml") == handle.read()
+        assert read("corpora/mine.csv") == lexicon.read_bytes()
+        assert read("items/pairs.csv") == table.read_bytes()
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
 
 
-def test_make_zip_ships_a_repository_bundled_corpus(app, tmp_path):
-    """A design built from a bundled corpus records corpora/derived/<x>.csv, a
-    path that resolves to nothing outside the checkout, so the export must carry
-    the file there for the reproduction code to run from the unzipped directory."""
-    out = tmp_path / "output"
-    out.mkdir()
-    (out / "my_design_stimuli_py.csv").write_text("word\ncat\n", encoding="utf-8")
-    design = {"name": "my_design", "lexicon": "corpora/derived/en.csv"}
+# Paths that would put a file outside the run directory: an uploaded file's name and
+# the design's name both reach it. Pinned identically in test-apps.R.
+ESCAPING = ["../x.csv", "corpora/../../x.csv", "/x.csv", "\\x.csv", "C:/x.csv", "c:x.csv",
+            "~/x.csv", ""]
 
-    payload = app.make_zip(design, "my_design.yaml", {"outdir": str(out)})
-    assert "corpora/derived/en.csv" in _names(payload)
-    with zipfile.ZipFile(io.BytesIO(payload)) as z:
-        with open(os.path.join(app.REPO_ROOT, "corpora", "derived", "en.csv"), "rb") as f:
-            assert z.read("corpora/derived/en.csv") == f.read()
+
+def _recording_mkdtemp(monkeypatch, app):
+    """Record every directory the app's runs create, so a test can check each went."""
+    made = []
+    real = tempfile.mkdtemp
+
+    def mkdtemp(*args, **kwargs):
+        made.append(real(*args, **kwargs))
+        return made[-1]
+
+    monkeypatch.setattr(app.tempfile, "mkdtemp", mkdtemp)
+    return made
+
+
+def test_a_path_that_leaves_the_run_directory_is_refused(app, tmp_path, monkeypatch):
+    root = str(tmp_path)
+    assert app.bundle_path(root, "corpora/derived/en.csv") == os.path.join(
+        root, "corpora", "derived", "en.csv")
+    for rel in ESCAPING:
+        with pytest.raises(ValueError, match="inside the bundle"):
+            app.bundle_path(root, rel)
+    source = tmp_path / "x.csv"
+    source.write_bytes(b"word\n")
+    made = _recording_mkdtemp(monkeypatch, app)
+    with pytest.raises(ValueError, match="inside the bundle"):
+        app.stage_run({"name": "x"}, "x.yaml", {"../x.csv": str(source)})
+    with pytest.raises(ValueError, match="inside the bundle"):
+        app.stage_run({"name": "x"}, "../x.yaml", {})
+    # A refused staging leaves no directory behind.
+    assert len(made) == 2
+    assert [d for d in made if os.path.exists(d)] == []
+
+
+# The downloads the Experiment scripts tab offers for a design with two lists, one per
+# target, each with the files that target reads. Pinned identically in test-apps.R.
+EXPERIMENT_FILES = ["out/a_psychopy.py", "out/a_list1.osexp", "out/a_list2.osexp", "out/a.html",
+                    "out/a_psychopy.csv", "out/a_list1_opensesame.csv",
+                    "out/a_list1_opensesame_text.csv", "out/a_list2_opensesame.csv",
+                    "out/a_list2_opensesame_text.csv"]
+EXPERIMENT_DOWNLOADS = [
+    {"target": "PsychoPy", "file_name": "a_psychopy.zip",
+     "files": ["out/a_psychopy.py", "out/a_psychopy.csv"]},
+    {"target": "OpenSesame", "file_name": "a_opensesame.zip",
+     "files": ["out/a_list1.osexp", "out/a_list2.osexp", "out/a_list1_opensesame.csv",
+               "out/a_list1_opensesame_text.csv", "out/a_list2_opensesame.csv",
+               "out/a_list2_opensesame_text.csv"]},
+    {"target": "jsPsych", "file_name": "a.html", "files": ["out/a.html"]},
+]
+
+
+def test_each_experiment_download_carries_the_tables_it_loads(app):
+    """The PsychoPy script loads its conditions file from its own folder and each
+    OpenSesame experiment its loop and text tables, but the tab offered each file on
+    its own, so a downloaded script could not run. The jsPsych page embeds its trials."""
+    assert app.experiment_downloads(EXPERIMENT_FILES, "a") == EXPERIMENT_DOWNLOADS
+    assert app.experiment_downloads([], "a") == []
+
+
+def _sha256(data: bytes) -> str:
+    import hashlib
+
+    return hashlib.sha256(data).hexdigest()
+
+
+# A small factorial design over the bundled en_v2, as the app would build it.
+def _factorial_design(method="standardised_euclidean"):
+    return {
+        "name": "my_design", "language": "english",
+        "lexicon": "corpora/derived/en_v2.csv",
+        "pool_filters": {"length": [3, 7], "frequency": [3.5, 7.0], "nonstandard": [0, 0]},
+        "paradigm": "factorial",
+        "conditions": [
+            {"name": "high_frequency", "define_by": {"frequency": [5.2, 7.0]}},
+            {"name": "low_frequency", "define_by": {"frequency": [3.8, 4.4]}},
+        ],
+        "n_per_condition": 10, "match_on": ["length", "old20"],
+        "matching": {"method": method},
+        "counterbalance": {"lists": 1},
+    }
+
+
+@pytest.fixture(scope="module")
+def bundled_run(app, tmp_path_factory):
+    """One run through the app's own path, its download and the bundle unzipped."""
+    lexicon = os.path.join(app.REPO_ROOT, "corpora", "derived", "en_v2.csv")
+    if not os.path.exists(lexicon):
+        pytest.skip("The bundled corpora are not in this tree.")
+    design = _factorial_design()
+    bundle = app.run_design(design, "my_design.yaml", app.staged_inputs(design, lexicon, None))
+    try:
+        payload = app.make_zip(bundle)
+        unzipped = tmp_path_factory.mktemp("bundle")
+        with zipfile.ZipFile(io.BytesIO(payload)) as z:
+            z.extractall(unzipped)
+        yield {"design": design, "bundle": bundle, "payload": payload, "dir": unzipped}
+    finally:
+        shutil.rmtree(bundle["root"], ignore_errors=True)
+
+
+def _bundled(run, rel):
+    return (run["dir"] / rel).read_bytes()
+
+
+def test_the_bundled_datasheet_checksums_the_bundled_files(bundled_run):
+    """The app ran a temporary copy of the design with absolute paths and then
+    bundled the displayed design, so the datasheet's design checksum matched no file
+    in the bundle. Pinned identically in test-apps.R."""
+    base = bundled_run["bundle"]["base"]
+    record = json.loads(_bundled(bundled_run, f"output/reports/{base}_datasheet_py.json"))
+    repro = record["reproducibility"]
+    assert repro["design_sha256"] == _sha256(_bundled(bundled_run, "my_design.yaml"))
+    assert repro["schema_path"] == "config/schema.yaml"
+    assert repro["schema_sha256"] == _sha256(_bundled(bundled_run, "config/schema.yaml"))
+    source = record["materials_source"]
+    assert source["path"] == "corpora/derived/en_v2.csv"
+    assert source["sha256"] == _sha256(_bundled(bundled_run, source["path"]))
+    assert record["items"]["stimuli_file"] == f"output/stimuli/{base}_stimuli_py.csv"
+    files = [a["file"] for a in record["artifacts"]]
+    assert files and all(f.startswith("output/") for f in files)
+    for artefact in record["artifacts"]:
+        assert artefact["sha256"] == _sha256(_bundled(bundled_run, artefact["file"]))
+
+
+def _strings(value):
+    if isinstance(value, dict):
+        for v in value.values():
+            yield from _strings(v)
+    elif isinstance(value, list):
+        for v in value:
+            yield from _strings(v)
+    elif isinstance(value, str):
+        yield value
+
+
+ABSOLUTE = re.compile(r"^([A-Za-z]:[\\/]|[\\/]|~)")
+
+
+def test_no_path_in_the_datasheet_or_run_logs_is_absolute(app, bundled_run):
+    """The datasheet and run logs named the user's home and temporary directories."""
+    base = bundled_run["bundle"]["base"]
+    reports = bundled_run["dir"] / "output" / "reports"
+    record = json.loads((reports / f"{base}_datasheet_py.json").read_text(encoding="utf-8"))
+    assert [s for s in _strings(record) if ABSOLUTE.match(s)] == []
+    for line in (reports / f"{base}_run_log_py.jsonl").read_text(encoding="utf-8").splitlines():
+        assert [s for s in _strings(json.loads(line)) if ABSOLUTE.match(s)] == []
+    places = {bundled_run["bundle"]["root"], tempfile.gettempdir(), os.path.expanduser("~"),
+              app.REPO_ROOT}
+    # A home directory of "/" would match every path, so a lone separator is dropped.
+    needles = {n for n in {p.replace("\\", "/") for p in places} | places if len(n) > 1}
+    for name in (f"{base}_datasheet_py.json", f"{base}_datasheet_py.md",
+                 f"{base}_run_log_py.md", f"{base}_run_log_py.jsonl"):
+        text = (reports / name).read_text(encoding="utf-8")
+        assert [n for n in needles if n in text] == [], name
+
+
+def test_the_exported_code_reproduces_the_bundle(app, bundled_run, monkeypatch):
+    """Running the exported Python code from the unzipped bundle rewrites every output
+    with the same bytes. The run logs record the time of the run, so they differ."""
+    shipped = {name: data for name, data in _contents(bundled_run["payload"]).items()
+               if name.startswith("output/") and "_run_log_" not in name}
+    code = app.reproduction_code(bundled_run["design"], "my_design.yaml")["python"]
+    monkeypatch.chdir(bundled_run["dir"])
+    exec(compile(code, "<exported>", "exec"), {})
+    rerun = {}
+    for d, _dirs, files in os.walk(bundled_run["dir"] / "output"):
+        for f in files:
+            rel = os.path.relpath(os.path.join(d, f), bundled_run["dir"]).replace(os.sep, "/")
+            if "_run_log_" not in rel:
+                with open(os.path.join(d, f), "rb") as handle:
+                    rerun[rel] = handle.read()
+    assert sorted(rerun) == sorted(shipped)
+    assert [name for name in shipped if rerun[name] != shipped[name]] == []
+
+
+def test_the_experiment_downloads_hold_the_tables_the_experiments_load(app, bundled_run):
+    bundle = bundled_run["bundle"]
+    base = bundle["base"]
+    groups = app.experiment_downloads(app.experiment_files(bundle["paths"]["experiments"]), base)
+    assert [g["file_name"] for g in groups] == [f"{base}_psychopy.zip", f"{base}_opensesame.zip",
+                                                f"{base}.html"]
+    psychopy, opensesame, jspsych = (app.experiment_payload(g) for g in groups)
+    assert _names(psychopy) == [f"{base}_psychopy.csv", f"{base}_psychopy.py"]
+    assert _names(opensesame) == [f"{base}.osexp", f"{base}_opensesame.csv",
+                                  f"{base}_opensesame_text.csv"]
+    assert jspsych == _bundled(bundled_run, f"output/experiments/{base}.html")
+    # The script loads the table it names, which now sits beside it.
+    script = _contents(psychopy)[f"{base}_psychopy.py"].decode("utf-8")
+    assert f"{base}_psychopy.csv" in script
 
 
 def test_dropdowns_offer_exactly_the_methods_the_engine_implements(app):
@@ -266,32 +443,32 @@ def test_the_caption_and_the_interval_label_come_from_the_run_datasheet(app):
     """End to end: a Mahalanobis run records an approximate cross-engine agreement,
     and the caption under its exported code says so. Pinned identically in
     test-apps.R for the Shiny app."""
-    import shutil
-
     lexicon = os.path.join(app.REPO_ROOT, "corpora", "derived", "en_v2.csv")
     if not os.path.exists(lexicon):
         pytest.skip("The bundled corpora are not in this tree.")
-    design = {
-        "name": "my_design", "language": "english",
-        "lexicon": "corpora/derived/en_v2.csv",
-        "pool_filters": {"length": [3, 7], "frequency": [3.5, 7.0], "nonstandard": [0, 0]},
-        "paradigm": "factorial",
-        "conditions": [
-            {"name": "high_frequency", "define_by": {"frequency": [5.2, 7.0]}},
-            {"name": "low_frequency", "define_by": {"frequency": [3.8, 4.4]}},
-        ],
-        "n_per_condition": 10, "match_on": ["length", "old20"],
-        "matching": {"method": "mahalanobis"},
-        "counterbalance": {"lists": 1},
-    }
-    bundle = app.run_design(design, lexicon, None)
+    design = _factorial_design("mahalanobis")
+    bundle = app.run_design(design, "my_design.yaml", app.staged_inputs(design, lexicon, None))
     try:
         record = bundle["record"]
         assert record["selection"]["cross_engine"].startswith("approximate")
         assert app.parity_claim(record) == APPROXIMATE
         assert app.interval_label(record) == "90% CI"
     finally:
-        shutil.rmtree(os.path.dirname(bundle["outdir"]), ignore_errors=True)
+        shutil.rmtree(bundle["root"], ignore_errors=True)
+
+
+def test_a_refused_design_reports_the_pipeline_message(app, monkeypatch):
+    """The run is a separate process now, so its refusal reaches the page as the
+    pipeline's own message, and its directory goes with it."""
+    lexicon = os.path.join(app.REPO_ROOT, "corpora", "derived", "en_v2.csv")
+    if not os.path.exists(lexicon):
+        pytest.skip("The bundled corpora are not in this tree.")
+    design = dict(_factorial_design(), match_on=[])
+    made = _recording_mkdtemp(monkeypatch, app)
+    with pytest.raises(RuntimeError, match=r"^lexsync: "):
+        app.run_design(design, "my_design.yaml", app.staged_inputs(design, lexicon, None))
+    assert len(made) == 1
+    assert not os.path.exists(made[0])
 
 
 # Each preset's rows (name, dimension, lower, upper, categories, dimension2, lower2,
@@ -522,3 +699,44 @@ def test_the_app_opens_on_the_screened_lexicon_and_guards_match_on():
     assert [w.value for w in at.warning] == [EMPTY_MATCH_ON]
     run = [button for button in at.button if "Run design" in button.label]
     assert run[0].disabled
+
+
+def test_a_new_run_discards_the_previous_run_directory():
+    """Every run leaves a directory holding a copy of its inputs and every output, and
+    a long-lived app kept one per press of Run. Only the run on screen is read from."""
+    at = _app_test()
+    if not os.path.isdir(os.path.join(REPO, "corpora", "derived")):
+        pytest.skip("The bundled corpora are not in this tree.")
+    roots = []
+    for _ in range(2):
+        [button for button in at.button if "Run design" in button.label][0].click().run()
+        assert not at.exception
+        assert [e.value for e in at.error] == []
+        roots.append(at.session_state["bundle"]["root"])
+    try:
+        assert roots[0] != roots[1]
+        assert not os.path.exists(roots[0])
+        assert os.path.isdir(roots[1])
+    finally:
+        for root in roots:
+            shutil.rmtree(root, ignore_errors=True)
+
+
+# The notes on the Experiment scripts and Download tabs. Pinned identically in
+# test-apps.R.
+EXPERIMENT_NOTE = ("The same matched stimuli compile to three presentation targets. The PsychoPy "
+                   "and OpenSesame downloads are archives that hold each experiment with the "
+                   "tables it reads, so unzip one and run the experiment from that folder. The "
+                   "jsPsych page holds its trials and runs on its own.")
+DOWNLOAD_NOTE = ("The bundle is the folder the run ran in: the design, the schema at "
+                 "config/schema.yaml, the lexicon or item table at the path the design names "
+                 "and every output under output/. Running the exported code inside the unzipped "
+                 "folder repeats the run.")
+
+
+def test_both_apps_word_the_download_notes_alike(app):
+    assert (app.EXPERIMENT_NOTE, app.DOWNLOAD_NOTE) == (EXPERIMENT_NOTE, DOWNLOAD_NOTE)
+    for path, joined in _joined_sources().items():
+        assert EXPERIMENT_NOTE in joined, path
+        assert DOWNLOAD_NOTE in joined, path
+        assert "so download them together" not in joined, path

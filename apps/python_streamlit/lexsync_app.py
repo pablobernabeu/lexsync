@@ -18,6 +18,10 @@ from __future__ import annotations
 import io
 import json
 import os
+import re
+import shutil
+import subprocess
+import sys
 import tempfile
 import zipfile
 
@@ -26,10 +30,13 @@ import streamlit as st
 import yaml
 
 import lexsync
-from lexsync import run_pipeline
 
 PKG_DIR = os.path.dirname(lexsync.__file__)
 SCHEMA_PATH = os.path.join(PKG_DIR, "data", "schema.yaml")
+# Where a run directory, and so the download bundle, keeps the schema and the outputs:
+# the paths the exported code names. The Shiny app uses the same two.
+BUNDLE_SCHEMA = "config/schema.yaml"
+BUNDLE_OUTDIR = "output"
 
 DIMENSIONS = ["length", "frequency", "n_density", "old20", "n_syllables", "bigram_freq"]
 # The engine's pseudoword generators (items.generation.method). The first is the
@@ -74,6 +81,26 @@ BYTE_IDENTICAL = ("The R and Python engines select byte-identical stimuli and tr
                   "from this configuration.")
 APPROXIMATE = ("The R and Python engines select equivalent but not byte-identical stimuli "
                "for this matching method.")
+# The notes on the Experiment scripts and Download tabs. Word-identical to the Shiny
+# app's.
+EXPERIMENT_NOTE = ("The same matched stimuli compile to three presentation targets. The PsychoPy "
+                   "and OpenSesame downloads are archives that hold each experiment with the "
+                   "tables it reads, so unzip one and run the experiment from that folder. The "
+                   "jsPsych page holds its trials and runs on its own.")
+DOWNLOAD_NOTE = ("The bundle is the folder the run ran in: the design, the schema at "
+                 "config/schema.yaml, the lexicon or item table at the path the design names "
+                 "and every output under output/. Running the exported code inside the unzipped "
+                 "folder repeats the run.")
+# The files each presentation target reads, by the end of their names, and the name its
+# download takes after the design's stem. A PsychoPy script loads its conditions file
+# from its own folder and an OpenSesame experiment its loop and text tables, so those
+# two downloads are archives. The jsPsych page embeds its trials. The Shiny app's
+# EXPERIMENT_TARGETS holds the same table.
+EXPERIMENT_TARGETS = [
+    ("PsychoPy", "_psychopy.zip", ("_psychopy.py", "_psychopy.csv")),
+    ("OpenSesame", "_opensesame.zip", (".osexp", "_opensesame.csv", "_opensesame_text.csv")),
+    ("jsPsych", ".html", (".html",)),
+]
 
 
 def find_repo_root() -> str:
@@ -303,40 +330,191 @@ def _write_design_yaml(design: dict, path: str) -> str:
 
     Without newline="\\n" the text-mode default writes CRLF on Windows, and the
     pipeline hashes this file into the datasheet's design_sha256, so its bytes
-    must depend on the content alone, never on the operating system. The Shiny
-    app's write_yaml_lf pins the same convention.
+    must depend on the content alone, never on the operating system. The text is
+    the one the Reproducible code tab shows. The Shiny app's write_yaml_lf pins the
+    same convention.
     """
     with open(path, "w", encoding="utf-8", newline="\n") as fh:
-        yaml.safe_dump(design, fh, sort_keys=False, allow_unicode=True)
+        fh.write(yaml_block(design))
     return path
 
 
-def run_design(design: dict, lexicon_abs: str | None, items_abs: str | None) -> dict:
-    """Write the design to a temp file, run the pipeline, and collect the outputs.
+def staged_inputs(design: dict, lexicon_abs: str | None, items_abs: str | None) -> dict:
+    """Map each input file the design names to the file chosen for it.
 
-    The design shown to the user keeps repository-relative paths. The copy that runs
-    is resolved to absolute paths, so it works from any directory.
+    Mirrors staged_inputs() in the Shiny app.
+
+    Parameters
+    ----------
+    design : dict
+        The design as shown to the user, carrying design-relative paths.
+    lexicon_abs, items_abs : str, optional
+        The chosen or uploaded lexicon and item table.
+
+    Returns
+    -------
+    dict
+        Design-relative path -> the file to place there.
     """
-    run_design_dict = {k: v for k, v in design.items()}
-    if lexicon_abs:
-        run_design_dict["lexicon"] = lexicon_abs
-    if items_abs:
-        items = dict(run_design_dict.get("items") or {})
-        items["path"] = items_abs
-        run_design_dict["items"] = items
+    out = {}
+    if lexicon_abs and isinstance(design.get("lexicon"), str):
+        out[design["lexicon"]] = lexicon_abs
+    items = design.get("items")
+    if items_abs and isinstance(items, dict) and isinstance(items.get("path"), str):
+        out[items["path"]] = items_abs
+    return out
 
-    tmp = tempfile.mkdtemp(prefix="lexsync_app_")
-    design_path = _write_design_yaml(run_design_dict, os.path.join(tmp, "design.yaml"))
-    out = os.path.join(tmp, "output")
-    result = run_pipeline(design_path, schema_path=SCHEMA_PATH, outdir=out, verbose=False)
 
-    bundle = {"paths": result, "outdir": out}
+# A path that would leave the run directory: absolute, under a drive or a home
+# directory, or climbing out through "..".
+_OUTSIDE = re.compile(r"^([/\\~]|[A-Za-z]:)")
+
+
+def bundle_path(root: str, rel: str) -> str:
+    """The place of a design-relative path inside a run directory.
+
+    An uploaded file's name and the design's name both reach this, so a path that
+    would put a file outside the directory is refused. Mirrors bundle_path() in the
+    Shiny app.
+    """
+    parts = re.split(r"[/\\]", rel) if isinstance(rel, str) else []
+    if not rel or not isinstance(rel, str) or _OUTSIDE.match(rel) or ".." in parts:
+        raise ValueError(f"The path '{rel}' does not lie inside the bundle.")
+    return os.path.join(root, *parts)
+
+
+def stage_run(design: dict, design_filename: str, inputs: dict) -> str:
+    """Lay out a temporary directory as the download bundle, ready to run.
+
+    It holds the design as displayed, under ``design_filename``, the schema at
+    config/schema.yaml and every input at the path the design records. The run
+    happens in it and the download archives it, so the datasheet checksums the
+    files the bundle holds and records the paths the exported code uses. Mirrors
+    stage_run() in the Shiny app.
+
+    Parameters
+    ----------
+    design : dict
+        The design as shown to the user.
+    design_filename : str
+        The name the design takes, which the exported code names.
+    inputs : dict
+        A :func:`staged_inputs` mapping.
+
+    Returns
+    -------
+    str
+        The directory.
+    """
+    root = tempfile.mkdtemp(prefix="lexsync_app_")
+    try:
+        def place(rel, source=None):
+            dest = bundle_path(root, rel)
+            os.makedirs(os.path.dirname(dest), exist_ok=True)
+            if source is not None:
+                shutil.copyfile(source, dest)
+            return dest
+
+        _write_design_yaml(design, place(design_filename))
+        place(BUNDLE_SCHEMA, SCHEMA_PATH)
+        for rel, source in inputs.items():
+            place(rel, source)
+    except Exception:
+        shutil.rmtree(root, ignore_errors=True)
+        raise
+    return root
+
+
+def run_command(design_filename: str) -> list:
+    """The command a run executes in its directory.
+
+    The exported command line, ``python -m lexsync run "<design>"``, with the schema
+    and the output directory it resolves to in that directory written out.
+    """
+    return [sys.executable, "-m", "lexsync", "run", design_filename,
+            "--schema", BUNDLE_SCHEMA, "--outdir", BUNDLE_OUTDIR]
+
+
+def _run_environment() -> dict:
+    """The environment of the run, which imports the lexsync this app imported.
+
+    A copy installed into site-packages is found there anyway. A source checkout
+    (PYTHONPATH or the test suite's path) is put first on PYTHONPATH, so the run
+    cannot pick up another install. UTF-8 output keeps a word outside the console's
+    code page from stopping the run while it narrates.
+    """
+    env = dict(os.environ, PYTHONIOENCODING="utf-8")
+    parent = os.path.dirname(PKG_DIR)
+    if os.path.basename(parent) not in ("site-packages", "dist-packages"):
+        env["PYTHONPATH"] = os.pathsep.join(p for p in (parent, env.get("PYTHONPATH")) if p)
+    return env
+
+
+def discard_run_dir(path: str | None) -> None:
+    """Remove a run directory whose results have left the screen.
+
+    Each holds a copy of the run's inputs and every output, and a long-lived app
+    otherwise kept one per press of Run.
+    """
+    if path and os.path.isdir(path):
+        shutil.rmtree(path, ignore_errors=True)
+
+
+def run_design(design: dict, design_filename: str, inputs: dict) -> dict:
+    """Run the design in a directory laid out like the bundle, and collect the outputs.
+
+    The run is a separate process started in that directory. ``os.chdir`` would move
+    every session at once, because Streamlit runs each session's script on a thread
+    of one process. A refused design raises RuntimeError with the pipeline's message,
+    and its directory is removed.
+    """
+    root = stage_run(design, design_filename, inputs)
+    proc = subprocess.run(run_command(design_filename), cwd=root, env=_run_environment(),
+                          capture_output=True, encoding="utf-8", errors="replace", check=False)
+    if proc.returncode != 0:
+        discard_run_dir(root)
+        lines = [line for line in proc.stderr.splitlines() if line.strip()]
+        raise RuntimeError(lines[-1] if lines else
+                           f"the pipeline stopped with exit status {proc.returncode}")
+    return collect_run(root, design)
+
+
+def collect_run(root: str, design: dict) -> dict:
+    """Read a finished run's outputs for the result tabs.
+
+    Parameters
+    ----------
+    root : str
+        The run directory.
+    design : dict
+        The design that ran, whose stem names its files.
+
+    Returns
+    -------
+    dict
+        The directory (``root``), the output paths (``paths``) and the tables, the
+        datasheet and its record the tabs show.
+    """
+    base = lexsync.design_stem(design)
+    out = os.path.join(root, BUNDLE_OUTDIR)
+
+    def output(sub, name):
+        path = os.path.join(out, sub, name)
+        return path if os.path.exists(path) else None
+
+    exp_dir = os.path.join(out, "experiments")
+    files = (sorted(os.path.join(exp_dir, f) for f in os.listdir(exp_dir))
+             if os.path.isdir(exp_dir) else [])
+    result = {"stimuli": output("stimuli", f"{base}_stimuli_py.csv"),
+              "descriptives": output("reports", f"{base}_descriptives_py.csv"),
+              "comparisons": output("reports", f"{base}_comparisons_py.csv"),
+              "experiments": {"files": files}}
+    bundle = {"root": root, "paths": result, "outdir": out}
     bundle["stimuli"] = pd.read_csv(result["stimuli"])
     bundle["descriptives"] = (pd.read_csv(result["descriptives"])
-                              if result.get("descriptives") and os.path.exists(result["descriptives"]) else None)
+                              if result["descriptives"] else None)
     bundle["comparisons"] = (pd.read_csv(result["comparisons"])
-                             if result.get("comparisons") and os.path.exists(result["comparisons"]) else None)
-    base = os.path.splitext(os.path.basename(result["stimuli"]))[0].replace("_stimuli_py", "")
+                             if result["comparisons"] else None)
     ds_md = os.path.join(out, "reports", f"{base}_datasheet_py.md")
     bundle["datasheet_md"] = None
     if os.path.exists(ds_md):
@@ -387,7 +565,7 @@ def experiment_files(experiments: dict) -> list:
     Parameters
     ----------
     experiments : dict
-        The ``experiments`` entry of ``run_pipeline``'s result.
+        The ``experiments`` entry of a run's output paths (:func:`collect_run`).
 
     Returns
     -------
@@ -399,84 +577,74 @@ def experiment_files(experiments: dict) -> list:
     return [experiments[k] for k in ("psychopy", "opensesame", "jspsych") if experiments.get(k)]
 
 
-def bundled_inputs(design: dict) -> dict:
-    """Map each repository-bundled input the design names to its source file.
+def experiment_downloads(files: list, base: str) -> list:
+    """The Experiment scripts tab's downloads, one per presentation target.
 
-    A design built from a bundled corpus or example item table records the
-    repository-relative path (``corpora/derived/<x>.csv``, ``items/<x>.csv``).
-    Outside the repository that path resolves to nothing, so the export carries
-    the file at exactly the path the design records. Uploaded inputs are handled
-    separately, through ``extra_files``.
+    Each takes the files of its target from ``files``, in the order given, and its
+    name from the design's stem (see ``EXPERIMENT_TARGETS``). A target that wrote
+    nothing is left out. Mirrors experiment_downloads() in the Shiny app.
 
     Parameters
     ----------
-    design : dict
-        The design as shown to the user, carrying repository-relative paths.
+    files : list
+        The paths :func:`experiment_files` gives.
+    base : str
+        The stem every file of the design is named after.
 
     Returns
     -------
-    dict
-        Design-relative path -> absolute path under the repository root.
+    list
+        One mapping per download, with ``target``, ``file_name`` and ``files``.
     """
-    out = {}
-    lexicon = design.get("lexicon")
-    if isinstance(lexicon, str) and lexicon.startswith("corpora/derived/"):
-        full = os.path.join(REPO_ROOT, *lexicon.split("/"))
-        if os.path.exists(full):
-            out[lexicon] = full
-    items = design.get("items")
-    items_path = items.get("path") if isinstance(items, dict) else None
-    if isinstance(items_path, str) and items_path.startswith("items/"):
-        full = os.path.join(REPO_ROOT, *items_path.split("/"))
-        if os.path.exists(full):
-            out[items_path] = full
+    out = []
+    for target, suffix, endings in EXPERIMENT_TARGETS:
+        chosen = [f for f in files if os.path.basename(f).endswith(endings)]
+        if chosen:
+            out.append({"target": target, "file_name": base + suffix, "files": chosen})
     return out
 
 
-def make_zip(design: dict, design_filename: str, bundle: dict,
-             extra_files: dict | None = None) -> bytes:
-    """Archive the design, the schema, every generated artefact, and the inputs.
+def experiment_payload(group: dict) -> bytes:
+    """The bytes of one :func:`experiment_downloads` entry.
+
+    The jsPsych page as it stands, and any other target as a zip archive holding
+    its files side by side, which is where each experiment looks for its tables.
+    """
+    if len(group["files"]) == 1 and group["file_name"].endswith(".html"):
+        with open(group["files"][0], "rb") as handle:
+            return handle.read()
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
+        for path in sorted(group["files"], key=os.path.basename):
+            z.write(path, os.path.basename(path))
+    return buf.getvalue()
+
+
+def make_zip(bundle: dict) -> bytes:
+    """Archive a run directory whole, at paths relative to it.
+
+    The directory holds the design, the schema, the inputs at the paths the design
+    records and every output (see :func:`stage_run`), so the exported code runs from
+    the unzipped archive and rewrites its outputs.
 
     Parameters
     ----------
-    design : dict
-        The design as shown to the user, carrying repository-relative paths.
-        Any repository-bundled input it names (a corpora/derived lexicon, an
-        items/ example table) is stored at that relative path, so the exported
-        reproduction code runs from the unzipped directory alone.
-    design_filename : str
-        Name the design YAML takes inside the archive.
     bundle : dict
-        A :func:`run_design` result; its ``outdir`` is walked for artefacts.
-    extra_files : dict, optional
-        Maps a design-relative path (``corpora/mine.csv``) to the absolute path of
-        the file to store there. An uploaded lexicon or item table lives only in a
-        temporary directory, so without this the design would name a path that the
-        bundle does not supply and the export would not reproduce the run.
+        A :func:`run_design` result, whose ``root`` is archived.
 
     Returns
     -------
     bytes
         The zip archive.
     """
+    root = bundle["root"]
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
-        z.writestr(design_filename, yaml_block(design))
-        # The exported reproduction code passes schema_path="config/schema.yaml",
-        # so the archive carries the schema the run actually used (the installed
-        # package copy) at that path.
-        z.write(SCHEMA_PATH, "config/schema.yaml")
-        inputs = dict(extra_files or {})
-        # An upload wins over a same-named repository file: it is the copy the run used.
-        for rel, full in bundled_inputs(design).items():
-            inputs.setdefault(rel, full)
-        for rel, full in inputs.items():
-            z.write(full, rel)
-        out = bundle["outdir"]
-        for root, _dirs, files in os.walk(out):
-            for f in files:
-                full = os.path.join(root, f)
-                z.write(full, os.path.relpath(full, out))
+        for folder, dirs, files in os.walk(root):
+            dirs.sort()
+            for f in sorted(files):
+                full = os.path.join(folder, f)
+                z.write(full, os.path.relpath(full, root).replace(os.sep, "/"))
     return buf.getvalue()
 
 
@@ -689,14 +857,17 @@ if run:
     if ready:
         try:
             with st.spinner("Running the lexsync pipeline…"):
-                bundle = run_design(design, lexicon_abs, items_abs)
+                bundle = run_design(design, design_filename,
+                                    staged_inputs(design, lexicon_abs, items_abs))
+            # The tabs now show this run, so the previous run's directory can go.
+            discard_run_dir((st.session_state.get("bundle") or {}).get("root"))
             st.session_state["bundle"] = bundle
             st.session_state["design"] = design
             st.session_state["design_filename"] = design_filename
             st.session_state["uploaded_inputs"] = uploaded_inputs
             st.success(f"Selected {len(bundle['stimuli'])} rows.")
         except Exception as exc:  # surface pipeline errors to the user
-            st.session_state.pop("bundle", None)
+            discard_run_dir((st.session_state.pop("bundle", None) or {}).get("root"))
             st.error(f"The pipeline raised an error: {exc}")
 
 if "bundle" in st.session_state:
@@ -755,14 +926,15 @@ if "bundle" in st.session_state:
             st.info("No datasheet was produced for this design.")
 
     with tabs[3]:
-        st.caption("The same matched stimuli compile to three presentation targets. A "
-                   "PsychoPy or OpenSesame experiment reads the tables that share its name, "
-                   "so download them together.")
-        for path in experiment_files(bundle["paths"].get("experiments", {})):
-            if path and os.path.exists(path):
-                with open(path, "rb") as fh:
-                    st.download_button(f"Download {os.path.basename(path)}", fh.read(),
-                                       file_name=os.path.basename(path), key=f"dl_exp_{path}")
+        st.caption(EXPERIMENT_NOTE)
+        files = [p for p in experiment_files(bundle["paths"].get("experiments", {}))
+                 if p and os.path.exists(p)]
+        for group in experiment_downloads(files, bundle["base"]):
+            zipped = group["file_name"].endswith(".zip")
+            st.download_button(f"Download {group['file_name']}", experiment_payload(group),
+                               file_name=group["file_name"],
+                               mime="application/zip" if zipped else "text/html",
+                               key=f"dl_exp_{group['target']}")
 
     with tabs[4]:
         code = reproduction_code(design, design_filename)
@@ -779,19 +951,16 @@ if "bundle" in st.session_state:
             st.warning(
                 "This design names " + ", ".join(f"`{p}`" for p in extra_files) +
                 ", which you uploaded and the repository does not hold. The Download "
-                "tab's bundle carries the file at that path: extract the bundle at the "
-                "repository root before running the code above."
+                "tab's bundle carries the file at that path, so run the code above from "
+                "the unzipped bundle."
             )
 
     with tabs[5]:
-        zip_bytes = make_zip(design, design_filename, bundle, extra_files)
         st.download_button(
             "Download everything (design + stimuli + report + datasheet + scripts)",
-            zip_bytes, file_name=f"{design['name']}_lexsync.zip", mime="application/zip",
-            type="primary",
+            make_zip(bundle), file_name=f"{design['name']}_lexsync.zip",
+            mime="application/zip", type="primary",
         )
-        st.caption("A self-contained bundle: the design YAML, the schema, every generated "
-                   "artefact, and the lexicon or item table the design names, at the path "
-                   "the design records.")
+        st.caption(DOWNLOAD_NOTE)
 else:
     st.info("Configure a design in the sidebar and panels above, then press **Run design**.")

@@ -38,22 +38,123 @@ test_that("positive_tolerances preserves the order the dimensions are matched on
                c("old20", "length", "frequency"))
 })
 
-test_that("the bundle zip holds the design and every artefact at outdir-relative paths", {
+test_that("the bundle zip holds the run directory at its own relative paths", {
   e <- app_env()
   skip_if_not_installed("zip")
-  outdir <- file.path(tempfile("lexsync_zip_"), "output")
-  dir.create(file.path(outdir, "reports"), recursive = TRUE)
-  writeLines("name: my_design", file.path(outdir, "my_design.yaml"))
-  writeLines("word\ncat", file.path(outdir, "stimuli.csv"))
-  writeLines("# datasheet", file.path(outdir, "reports", "datasheet.md"))
+  # The bundle is the directory the run ran in, archived whole, so the exported code
+  # finds the design, the schema and the outputs where it names them. The Streamlit
+  # app's make_zip produces the same entries (test_apps.py).
+  root <- tempfile("lexsync_zip_")
+  dir.create(file.path(root, "config"), recursive = TRUE)
+  dir.create(file.path(root, "output", "reports"), recursive = TRUE)
+  writeLines("name: my_design", file.path(root, "my_design.yaml"))
+  writeLines("seed: 1", file.path(root, "config", "schema.yaml"))
+  writeLines("word\ncat", file.path(root, "output", "stimuli.csv"))
+  writeLines("# datasheet", file.path(root, "output", "reports", "datasheet.md"))
 
   zf <- tempfile(fileext = ".zip")
-  e$write_bundle_zip(zf, outdir)
+  e$write_bundle_zip(zf, root)
 
-  # The same three entries the Streamlit app's make_zip produces (test_apps.py):
-  # names are relative to outdir and subdirectories survive.
   expect_equal(sort(zip::zip_list(zf)$filename),
-               c("my_design.yaml", "reports/datasheet.md", "stimuli.csv"))
+               c("config/schema.yaml", "my_design.yaml", "output/reports/datasheet.md",
+                 "output/stimuli.csv"))
+})
+
+test_that("the run directory is laid out like the bundle", {
+  e <- app_env()
+  # The design as displayed, the schema at config/schema.yaml and every input at the
+  # path the design records, and nothing else. A bundled lexicon lives at a path that
+  # resolves to nothing outside the checkout. Pinned identically in test_apps.py.
+  src <- tempfile("lexsync_inputs_"); dir.create(src)
+  lexicon <- file.path(src, "mine.csv")
+  writeBin(charToRaw("word,freq_zipf\ncat,5.0\n"), lexicon)
+  table <- file.path(src, "pairs.csv")
+  writeBin(charToRaw("item,condition,prime,target\n1,rel,cat,dog\n"), table)
+  design <- list(name = "my design (v2)", language = "english", lexicon = "corpora/mine.csv",
+                 items = list(source = "table", path = "items/pairs.csv"))
+
+  inputs <- e$staged_inputs(design, lexicon, table)
+  expect_identical(inputs, list("corpora/mine.csv" = lexicon, "items/pairs.csv" = table))
+  expect_identical(e$staged_inputs(list(name = "x"), NULL, NULL), list())
+
+  root <- e$stage_run(design, "my design (v2).yaml", inputs)
+  on.exit(unlink(root, recursive = TRUE), add = TRUE)
+  expect_identical(sort(list.files(root, recursive = TRUE)),
+                   c("config/schema.yaml", "corpora/mine.csv", "items/pairs.csv",
+                     "my design (v2).yaml"))
+  read <- function(rel) readBin(file.path(root, rel), "raw", file.info(file.path(root, rel))$size)
+  # The file the pipeline hashes is the text the Reproducible code tab shows, with LF
+  # endings on every platform.
+  expect_identical(rawToChar(read("my design (v2).yaml")), e$clean_yaml(design))
+  expect_identical(read("config/schema.yaml"),
+                   readBin(e$SCHEMA_PATH, "raw", file.info(e$SCHEMA_PATH)$size))
+  expect_identical(read("corpora/mine.csv"), readBin(lexicon, "raw", 100L))
+  expect_identical(read("items/pairs.csv"), readBin(table, "raw", 100L))
+})
+
+# Paths that would put a file outside the run directory: the design's name reaches it.
+# Pinned identically in test_apps.py.
+ESCAPING <- c("../x.csv", "corpora/../../x.csv", "/x.csv", "\\x.csv", "C:/x.csv", "c:x.csv",
+              "~/x.csv", "")
+
+test_that("a path that leaves the run directory is refused", {
+  e <- app_env()
+  root <- tempfile("lexsync_root_")
+  expect_identical(e$bundle_path(root, "corpora/derived/en.csv"),
+                   file.path(root, "corpora/derived/en.csv"))
+  for (rel in ESCAPING)
+    expect_error(e$bundle_path(root, rel), "inside the bundle", label = rel)
+  source <- tempfile(fileext = ".csv"); writeLines("word", source)
+  before <- list.files(tempdir(), pattern = "^lexsync_app_")
+  expect_error(e$stage_run(list(name = "x"), "x.yaml", list("../x.csv" = source)),
+               "inside the bundle")
+  expect_error(e$stage_run(list(name = "x"), "../x.yaml", list()), "inside the bundle")
+  # A refused staging leaves no directory behind.
+  expect_identical(setdiff(list.files(tempdir(), pattern = "^lexsync_app_"), before),
+                   character(0))
+})
+
+# The downloads the Experiment scripts tab offers for a design with two lists, one per
+# target, each with the files that target reads. Pinned identically in test_apps.py.
+EXPERIMENT_FILES <- c("out/a_psychopy.py", "out/a_list1.osexp", "out/a_list2.osexp",
+                      "out/a.html", "out/a_psychopy.csv", "out/a_list1_opensesame.csv",
+                      "out/a_list1_opensesame_text.csv", "out/a_list2_opensesame.csv",
+                      "out/a_list2_opensesame_text.csv")
+EXPERIMENT_DOWNLOADS <- list(
+  list(target = "PsychoPy", file_name = "a_psychopy.zip",
+       files = c("out/a_psychopy.py", "out/a_psychopy.csv")),
+  list(target = "OpenSesame", file_name = "a_opensesame.zip",
+       files = c("out/a_list1.osexp", "out/a_list2.osexp", "out/a_list1_opensesame.csv",
+                 "out/a_list1_opensesame_text.csv", "out/a_list2_opensesame.csv",
+                 "out/a_list2_opensesame_text.csv")),
+  list(target = "jsPsych", file_name = "a.html", files = "out/a.html"))
+
+test_that("each experiment download carries the tables it loads", {
+  e <- app_env()
+  # The PsychoPy script loads its conditions file from its own folder and each
+  # OpenSesame experiment its loop and text tables, but the tab offered each file on
+  # its own, so a downloaded script could not run. The jsPsych page embeds its trials.
+  expect_identical(e$experiment_downloads(EXPERIMENT_FILES, "a"), EXPERIMENT_DOWNLOADS)
+  expect_identical(e$experiment_downloads(character(0), "a"), list())
+})
+
+# The notes on the Experiment scripts and Download tabs. Pinned identically in
+# test_apps.py.
+EXPERIMENT_NOTE <- paste0(
+  "The same matched stimuli compile to three presentation targets. The PsychoPy ",
+  "and OpenSesame downloads are archives that hold each experiment with the ",
+  "tables it reads, so unzip one and run the experiment from that folder. The ",
+  "jsPsych page holds its trials and runs on its own.")
+DOWNLOAD_NOTE <- paste0(
+  "The bundle is the folder the run ran in: the design, the schema at ",
+  "config/schema.yaml, the lexicon or item table at the path the design names ",
+  "and every output under output/. Running the exported code inside the unzipped ",
+  "folder repeats the run.")
+
+test_that("both apps word the download notes alike", {
+  e <- app_env()
+  expect_identical(e$EXPERIMENT_NOTE, EXPERIMENT_NOTE)
+  expect_identical(e$DOWNLOAD_NOTE, DOWNLOAD_NOTE)
 })
 
 test_that("the bundle zip needs no external zip executable", {
@@ -228,6 +329,120 @@ test_that("the caption and the interval label come from the run datasheet", {
     expect_identical(e$parity_claim(b$record), APPROXIMATE)
     expect_identical(e$interval_label(b$record), "90% CI")
     expect_match(as.character(output$code_ui$html), APPROXIMATE, fixed = TRUE)
+  })
+})
+
+sha256_of <- function(path) digest::digest(file = path, algo = "sha256")
+
+# Runs `code` with `dir` as the working directory, and puts the old one back.
+in_dir <- function(dir, code) {
+  old <- setwd(dir)
+  on.exit(setwd(old))
+  force(code)
+}
+
+test_that("the download bundle reproduces its own record", {
+  e <- app_env()
+  skip_if_not_installed("zip")
+  repo <- app_repo()
+  # The app ran a temporary copy of the design with absolute paths and then bundled
+  # the displayed design, so the bundled datasheet's design checksum matched no file
+  # in the bundle, and the datasheet and run logs named the user's home and temporary
+  # directories. Pinned identically in test_apps.py.
+  e$CORPORA <- stats::setNames(file.path(repo, "corpora", "derived", "en_v2.csv"), "en_v2")
+  shiny::testServer(e$server, {
+    factorial_inputs(session)
+    session$setInputs(run = 1)
+    b <- bundle()
+    expect_null(b$error)
+    base <- sub("_stimuli_R\\.csv$", "", basename(b$paths$stimuli))
+    unzipped <- tempfile("lexsync_unzipped_")
+    zip::unzip(output$dl_zip, exdir = unzipped)
+    on.exit(unlink(unzipped, recursive = TRUE), add = TRUE)
+    at <- function(...) file.path(unzipped, ...)
+    reports <- at("output", "reports")
+
+    # The checksums name the files the bundle holds.
+    record <- jsonlite::read_json(file.path(reports, paste0(base, "_datasheet_R.json")))
+    expect_identical(record$reproducibility$design_sha256, sha256_of(at("my_design.yaml")))
+    expect_identical(record$reproducibility$schema_path, "config/schema.yaml")
+    expect_identical(record$reproducibility$schema_sha256, sha256_of(at("config", "schema.yaml")))
+    expect_identical(record$materials_source$path, "corpora/derived/en_v2.csv")
+    expect_identical(record$materials_source$sha256, sha256_of(at("corpora", "derived", "en_v2.csv")))
+    expect_identical(record$items$stimuli_file, paste0("output/stimuli/", base, "_stimuli_R.csv"))
+    files <- vapply(record$artifacts, function(a) a$file, character(1))
+    expect_true(length(files) > 0 && all(startsWith(files, "output/")))
+    for (a in record$artifacts) expect_identical(a$sha256, sha256_of(at(a$file)), label = a$file)
+
+    # No path in the datasheet or the run logs is absolute.
+    absolute <- "^([A-Za-z]:[\\\\/]|[\\\\/]|~)"
+    strings <- function(x) as.character(unlist(x, use.names = FALSE))
+    expect_identical(grep(absolute, strings(record), value = TRUE), character(0))
+    log_lines <- readLines(file.path(reports, paste0(base, "_run_log_R.jsonl")), encoding = "UTF-8")
+    for (line in log_lines)
+      expect_identical(grep(absolute, strings(jsonlite::parse_json(line)), value = TRUE),
+                       character(0))
+    places <- c(b$root, tempdir(), path.expand("~"), repo)
+    needles <- unique(c(places, gsub("\\", "/", places, fixed = TRUE),
+                        normalizePath(places, winslash = "/", mustWork = FALSE)))
+    # A home directory of "/" would match every path, so a lone separator is dropped.
+    needles <- needles[nchar(needles) > 1L]
+    for (name in paste0(base, c("_datasheet_R.json", "_datasheet_R.md", "_run_log_R.md",
+                                "_run_log_R.jsonl"))) {
+      text <- paste(readLines(file.path(reports, name), encoding = "UTF-8"), collapse = "\n")
+      expect_identical(needles[vapply(needles, grepl, logical(1), x = text, fixed = TRUE)],
+                       character(0), label = name)
+    }
+
+    # Running the exported R code from the unzipped bundle rewrites every output with
+    # the same bytes. The run logs record the time of the run, so they differ.
+    outputs <- function() {
+      rel <- sort(list.files(at("output"), recursive = TRUE))
+      rel <- rel[!grepl("_run_log_", rel, fixed = TRUE)]
+      stats::setNames(lapply(rel, function(p) readBin(at("output", p), "raw",
+                                                      file.info(at("output", p))$size)), rel)
+    }
+    shipped <- outputs()
+    code <- e$reproduction_code(b$design, b$cfg)$r
+    in_dir(unzipped, utils::capture.output(eval(parse(text = code), envir = new.env())))
+    rerun <- outputs()
+    expect_identical(names(rerun), names(shipped))
+    expect_identical(names(shipped)[!mapply(identical, shipped, rerun[names(shipped)])],
+                     character(0))
+
+    # The PsychoPy and OpenSesame downloads hold the tables those experiments load.
+    expect_identical(sort(zip::zip_list(output$dl_exp_psychopy)$filename),
+                     paste0(base, c("_psychopy.csv", "_psychopy.py")))
+    expect_identical(sort(zip::zip_list(output$dl_exp_opensesame)$filename),
+                     paste0(base, c(".osexp", "_opensesame.csv", "_opensesame_text.csv")))
+    page <- at("output", "experiments", paste0(base, ".html"))
+    expect_identical(unname(tools::md5sum(output$dl_exp_jspsych)), unname(tools::md5sum(page)))
+    expect_match(as.character(output$exp_ui$html), EXPERIMENT_NOTE, fixed = TRUE)
+    expect_match(as.character(output$results$html), DOWNLOAD_NOTE, fixed = TRUE)
+  })
+})
+
+test_that("a new run discards the previous run directory", {
+  e <- app_env()
+  repo <- app_repo()
+  # Every run leaves a directory holding a copy of its inputs and every output, and a
+  # long-lived app kept one per press of Run. Only the run on screen is read from.
+  e$CORPORA <- stats::setNames(file.path(repo, "corpora", "derived", "en_v2.csv"), "en_v2")
+  shiny::testServer(e$server, {
+    factorial_inputs(session)
+    session$setInputs(run = 1)
+    first <- bundle()$root
+    expect_true(dir.exists(first))
+    session$setInputs(run = 2)
+    second <- bundle()$root
+    expect_false(identical(first, second))
+    expect_false(dir.exists(first))
+    expect_true(dir.exists(second))
+    # A refused run takes the results off the screen, and their directory with them.
+    factorial_inputs(session, match_on = character(0))
+    session$setInputs(run = 3)
+    expect_identical(bundle()$error, e$EMPTY_MATCH_ON)
+    expect_false(dir.exists(second))
   })
 })
 

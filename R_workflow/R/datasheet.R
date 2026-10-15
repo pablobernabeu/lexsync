@@ -830,8 +830,12 @@ build_datasheet <- function(design, schema, report, stimuli, source_path, artifa
       list(source = r$source, sha256 = r$sha256, n_forms = as.integer(r$n_forms)))
   }
 
+  # Every path the record names is written with forward slashes, as datasheet.py's
+  # _posix writes them, whatever separator the caller used. A Windows path would
+  # otherwise make the record describe the machine that built it and disagree with
+  # the Python engine's record of the same file.
   materials_source <- list(
-    type = source, path = source_path, sha256 = sha256_file(source_path),
+    type = source, path = .posix_path(source_path), sha256 = sha256_file(source_path),
     provenance = if (source %in% c("corpus", "generate"))
       .lexicon_provenance(source_path)
     else if (identical(source, "pool"))
@@ -961,10 +965,11 @@ build_datasheet <- function(design, schema, report, stimuli, source_path, artifa
     items = list(n_total = nrow(stimuli), n_conditions = length(conditions),
                  conditions = as.list(conditions),
                  n_per_condition_realised = .realised_counts(stimuli, conditions),
-                 stimuli_file = artifacts$stimuli, stimuli_sha256 = sha256_file(artifacts$stimuli)),
+                 stimuli_file = .posix_path(artifacts$stimuli),
+                 stimuli_sha256 = sha256_file(artifacts$stimuli)),
     reproducibility = reproducibility,
     artifacts = lapply(Filter(Negate(is.null), .artifact_paths(artifacts)),
-                       function(p) list(file = p, sha256 = sha256_file(p)))
+                       function(p) list(file = .posix_path(p), sha256 = sha256_file(p)))
   )
 }
 

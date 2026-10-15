@@ -1,5 +1,19 @@
 # lexsync (development version)
 
+* The datasheet records the materials source, the stimuli file and every artefact with
+  forward slashes, as the Python engine does. A run given Windows paths recorded them
+  with backslashes.
+
+* The apps' download bundles reproduce their own record. The apps ran a temporary copy
+  of the design with absolute paths and then bundled the displayed design, so the
+  bundled datasheet's design checksum matched no file in the bundle, and the datasheet
+  and run logs exposed the user's home and temporary directories. They now run the
+  exported command in a folder laid out like the bundle, and the Download tab archives
+  that folder, with the outputs under `output/`. Rerunning the exported code in the
+  unzipped folder rewrites them with the same bytes, run logs apart. The PsychoPy and
+  OpenSesame downloads are zip archives holding the tables those experiments load, and
+  each app removes a run's folder once its results leave the screen.
+
 * The Shiny app's presets set the matched dimensions and the matching method, as the
   Streamlit app's presets do. Its neighbourhood preset matched on N, the dimension it
   manipulates, and on OLD20, a close correlate of N, and it left length unmatched.

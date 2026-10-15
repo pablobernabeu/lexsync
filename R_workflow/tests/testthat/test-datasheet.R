@@ -37,6 +37,30 @@ test_that("datasheet captures structure and realised control", {
   expect_identical(unname(roles["frequency"]), "uncontrolled")
 })
 
+test_that("every recorded path takes forward slashes", {
+  # The materials source, the stimuli file and every artefact were recorded as given,
+  # so a run handed Windows paths wrote backslashes where the Python engine writes
+  # forward slashes. Pinned identically in test_datasheet.py.
+  schema <- ds_schema()
+  exps <- list(psychopy = "output\\experiments\\t.py",
+               opensesame = "output\\experiments\\t.osexp",
+               jspsych = "output\\experiments\\t.html",
+               files = c("output\\experiments\\t.py", "output\\experiments\\t.osexp",
+                         "output\\experiments\\t.html"))
+  ds <- build_datasheet(ds_design(), schema, NULL, ds_stim(), "corpora\\derived\\x.csv",
+                        list(stimuli = "output\\stimuli\\t_stimuli.csv",
+                             descriptives = "output\\reports\\t_descriptives.csv",
+                             experiments = exps),
+                        2026, engine = "R", schema_path = "config\\schema.yaml")
+  expect_identical(ds$materials_source$path, "corpora/derived/x.csv")
+  expect_identical(ds$items$stimuli_file, "output/stimuli/t_stimuli.csv")
+  expect_identical(vapply(ds$artifacts, function(a) a$file, character(1)),
+                   c("output/stimuli/t_stimuli.csv", "output/reports/t_descriptives.csv",
+                     "output/experiments/t.py", "output/experiments/t.osexp",
+                     "output/experiments/t.html"))
+  expect_identical(ds$reproducibility$schema_path, "config/schema.yaml")
+})
+
 test_that("realised control records the pair, the role and the raw difference", {
   # Each entry names the two conditions it contrasts and gives the raw difference. A
   # report without roles, as a direct call of match_report() gives, takes them from the
@@ -199,7 +223,9 @@ test_that("the datasheet lists every experiment file", {
   ds <- build_datasheet(design, schema, NULL, stim, "items/p.csv",
                         list(stimuli = NULL, experiments = res), 2026, engine = "R")
   files <- vapply(ds$artifacts, function(a) a$file, character(1))
-  expect_identical(files, res$files)
+  # In POSIX form, as test_datasheet.py compares them: tempfile() gives backslashes on
+  # Windows, and the record writes forward slashes.
+  expect_identical(files, gsub("\\", "/", res$files, fixed = TRUE))
   expect_identical(basename(files)[-(1:4)], c(
     "p_english_psychopy.csv", "p_english_list1_opensesame.csv",
     "p_english_list1_opensesame_text.csv", "p_english_list2_opensesame.csv",
