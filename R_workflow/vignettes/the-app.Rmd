@@ -97,6 +97,12 @@ the candidate pool the design will consider at all, one for length in letters or
 characters and one for frequency in Zipf. They are the design's `pool_filters`,
 and they are a step that matters, because matching never re-reads them.
 
+The app opens on `en_v2`, the lexicon the shipped English designs use. A lexicon
+with a `nonstandard` column, such as `en_v2`, also brings a 'Screened forms only'
+checkbox, ticked from the start. It adds `nonstandard: [0, 0]` to the pool filters
+and so keeps only the forms the screen leaves unmarked. Clearing it lets the marked
+forms, such as names and acronyms, back into the pool.
+
 The conditions are an editable table. Each row names a condition and carves it
 out of the pool, either by a numeric window through the `dimension`, `lower` and
 `upper` columns or by a set of comma-separated values through `categories`, which
@@ -104,18 +110,26 @@ is what a categorical column such as the gender of the Spanish lexicon needs. Th
 optional `dimension2`, `lower2` and `upper2` columns add a second factor to the
 same row, so one row can define a full cell of a 2 × 2. Three presets fill the
 table in one click, a high versus low frequency contrast, a dense versus sparse
-neighbourhood contrast and a 2 × 2 of frequency by neighbourhood, and every cell
-stays editable afterwards, so a preset is only a starting point.
+neighbourhood contrast and a 2 × 2 of frequency by neighbourhood. A preset also
+sets the matched dimensions and the matching method that suit it, so the
+neighbourhood contrast arrives matched on length and frequency by the `joint`
+method and the 2 × 2 arrives matched on length alone. Every control stays
+editable afterwards, so a preset is only a starting point.
 
 Below the table sit the choices that govern the match itself. 'Items per
 condition' sets how many stimuli each condition should hold. 'Matching method'
 offers the four the engine implements, `standardised_euclidean`, `joint`,
-`mahalanobis` and `optimal`. 'Resampled disjoint sets' draws several matched sets
-that share no item, which is what lets items be treated as a random factor, and
-zero switches it off. 'Match on' picks the dimensions to equate across
+`mahalanobis` and `optimal`, and the note beneath it says that the last two agree
+only closely between the engines. 'Resampled disjoint sets' draws several matched
+sets that share no item, which is what lets items be treated as a random factor,
+and zero switches it off. 'Match on' picks the dimensions to equate across
 conditions, from length, frequency, neighbourhood N, OLD20, syllable count and
-bigram frequency. 'Counterbalancing lists' sets how many lists the items are
-rotated across.
+bigram frequency. A warning appears beneath it when it names a dimension whose
+windows differ between conditions, because matching on a dimension the conditions
+manipulate works against the contrast they define. A window that every
+condition shares only narrows the pool and draws no warning. With nothing chosen,
+the app says so and keeps 'Run design' disabled. 'Counterbalancing lists' sets how
+many lists the items are rotated across.
 
 The advanced panel underneath holds one tolerance window per matched dimension,
 the half-width in standard deviations of the band a candidate must fall inside.
@@ -147,7 +161,8 @@ only how many counterbalancing lists to build.
 
 'Run design' assembles the design, writes it to a `design.yaml` in a temporary
 directory with the lexicon and item paths resolved to absolute ones, and hands it
-to `run_pipeline()` with the schema that ships inside the package. Two conditions
+to `run_pipeline()` with the schema that ships inside the package. The button
+stays disabled while a factorial design has nothing to match on. Two conditions
 are checked first, that a lexicon has been chosen where the paradigm needs one
 and that a factorial design defines at least two conditions, and anything the
 pipeline itself refuses comes back as the error the pipeline raised, in its own
@@ -163,15 +178,18 @@ whether it is any good, what it will present and how to reproduce it.
 'Realised control' is the part that decides whether the set is usable. It covers
 every pair of conditions on every dimension the report includes. Each row gives
 the dimension's role (manipulated, controlled or uncontrolled), the raw
-difference, Cohen's *d* with its 90% confidence interval, the variance ratio and
-the verdict of the two one-sided tests procedure. The tab then draws the absolute
-standardised mean difference per dimension and pair as a bar chart with a dashed
-line at 0.5 standard deviations. Manipulated dimensions stand well above that line
-and matched ones sit near zero, so the chart shows immediately whether the
-matching worked. An uncontrolled dimension that stands high is a difference the
-design did not hold. The per-condition descriptive statistics follow underneath.
-A design drawn from an item table produces no corpus-matching report, and the tab
-says as much where an empty table would otherwise sit.
+difference, Cohen's *d* with its confidence interval, the variance ratio and the
+verdict of the two one-sided tests procedure. The interval matches the tests at
+the schema's alpha, covering 100(1 - 2 alpha) per cent, and its heading takes that
+level from the run's datasheet, so it reads 90% at the default alpha of .05. The
+tab then draws the absolute standardised mean difference per dimension and pair
+as a bar chart with a dashed line at 0.5 standard deviations. Manipulated
+dimensions stand well above that line and matched ones sit near zero, so the
+chart shows immediately whether the matching worked. An uncontrolled dimension
+that stands high is a difference the design did not hold. The per-condition
+descriptive statistics follow underneath. A design drawn from an item table
+produces no corpus-matching report, and the tab says as much where an empty table
+would otherwise sit.
 
 'Datasheet' renders the materials datasheet for the run, carrying the provenance
 of the corpus, the checksums, the realised control and the pre-registration
@@ -188,7 +206,12 @@ shows the design configuration as YAML, with repository-relative paths such as
 `corpora/derived/en.csv` rather than the temporary ones the run used, followed
 by the one-line R, Python and command-line calls that reproduce the same
 operation. Saving the YAML under the name the panel gives it and running any of
-those three lines repeats the run outside the app.
+those three lines repeats the run outside the app. The command lines quote the
+design file's name, and their quoting holds in bash, `cmd.exe` and PowerShell. The
+sentence under them is taken from the datasheet's cross-engine record. Under the
+deterministic methods it says that the two engines select byte-identical stimuli
+and trial order, and under `mahalanobis` and `optimal` that they select equivalent
+but not byte-identical stimuli.
 
 'Download' packages the design and every artefact the run wrote, the stimuli, the
 reports, the datasheet, the run log and the three experiments, into a single

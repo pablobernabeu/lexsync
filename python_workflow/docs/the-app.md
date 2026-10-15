@@ -18,9 +18,13 @@ covers the app.
 
 ```bash
 pip install -e python_workflow      # the lexsync package
-pip install streamlit
+pip install "streamlit>=1.49"
 streamlit run apps/python_streamlit/lexsync_app.py
 ```
+
+The app needs Streamlit 1.49 or later, the first release whose tables accept the `width` setting it
+passes. Naming the version makes pip upgrade an older Streamlit that is already installed, which a
+bare `pip install streamlit` reports as satisfied.
 
 Run that from the root of the clone. The app looks for `corpora/derived/` in the working directory
 and then in the two directories above it, and it finds the example item tables under `items/` the
@@ -60,6 +64,11 @@ to the candidate pool the design will consider at all, one for length in letters
 one for frequency in Zipf. They are the design's `pool_filters`, and they are a step that matters,
 because matching never re-reads them.
 
+The app opens on `en_v2`, the lexicon the shipped English designs use. A lexicon with a
+`nonstandard` column, such as `en_v2`, also brings a 'Screened forms only' checkbox, ticked from
+the start. It adds `nonstandard: [0, 0]` to the pool filters and so keeps only the forms the screen
+leaves unmarked. Clearing it lets the marked forms, such as names and acronyms, back into the pool.
+
 The conditions are an editable table that rows can be added to and removed from. Each row names a
 condition and carves it out of the pool, either by a numeric window through the `dimension`,
 `lower` and `upper` columns or by a set of comma-separated values through `categories`, which is
@@ -74,11 +83,15 @@ only a starting point.
 
 Below the table sit the choices that govern the match itself. 'Items per condition' sets how many
 stimuli each condition should hold. 'Match on' picks the dimensions to equate across conditions,
-from length, frequency, neighbourhood N, OLD20, syllable count and bigram frequency. 'Matching
-method' offers the four the engine implements, `standardised_euclidean`, `joint`, `mahalanobis` and
-`optimal`. 'Resampled disjoint sets' draws several matched sets that share no item, which is what
-lets items be treated as a random factor, and zero switches it off. 'Counterbalancing lists' sets
-how many lists the items are rotated across.
+from length, frequency, neighbourhood N, OLD20, syllable count and bigram frequency. A warning
+appears beneath it when it names a dimension whose windows differ between conditions, because
+matching on a dimension the conditions manipulate works against the contrast they define.
+A window that every condition shares only narrows the pool and draws no warning. With nothing
+chosen, the app says so and keeps 'Run design' disabled. 'Matching method' offers the four the
+engine implements, `standardised_euclidean`, `joint`, `mahalanobis` and `optimal`, and its help
+says that the last two agree only closely between the engines. 'Resampled disjoint sets' draws
+several matched sets that share no item, which is what lets items be treated as a random factor,
+and zero switches it off. 'Counterbalancing lists' sets how many lists the items are rotated across.
 
 The advanced panel underneath holds one tolerance window per matched dimension, the half-width in
 standard deviations of the band a candidate must fall inside. It is collapsed by default because
@@ -111,7 +124,8 @@ the design needs only the number of counterbalancing lists.
 
 'Run design' assembles the design, writes it to a `design.yaml` in a temporary directory with the
 lexicon and item paths resolved to absolute ones, and hands it to `run_pipeline` with the schema
-that ships inside the package. Three conditions are checked first, that a lexicon has been chosen
+that ships inside the package. The button stays disabled while a factorial design has nothing to
+match on. Three conditions are checked first, that a lexicon has been chosen
 or uploaded where the paradigm needs one, that a factorial design defines at least two conditions,
 and that an item-table paradigm has a table, and anything the pipeline itself refuses comes back as
 the error the pipeline raised, in its own words. A successful run reports how many rows were
@@ -126,8 +140,10 @@ what it will present and how to reproduce it.
 
 'Realised control' is the part that decides whether the set is usable. It covers every pair of
 conditions on every dimension the report includes. Each row gives the dimension's role
-(manipulated, controlled or uncontrolled), the raw difference, Cohen's *d* with its 90% confidence
-interval, the variance ratio and the verdict of the two one-sided tests procedure. The tab then
+(manipulated, controlled or uncontrolled), the raw difference, Cohen's *d* with its confidence
+interval, the variance ratio and the verdict of the two one-sided tests procedure. The interval
+matches the tests at the schema's alpha, covering 100(1 - 2 alpha) per cent, and its heading takes
+that level from the run's datasheet, so it reads 90% at the default alpha of .05. The tab then
 draws the absolute standardised mean difference per dimension and pair as a bar chart. Manipulated
 dimensions stand high and matched dimensions sit near zero, so the chart shows immediately whether
 the matching worked. An uncontrolled dimension that stands high is a difference the design did not
@@ -147,7 +163,11 @@ PsychoPy and OpenSesame experiments come with the tables they read.
 configuration as YAML, with repository-relative paths such as `corpora/derived/en.csv` rather than
 the temporary ones the run used, followed by the one-line Python, R and command-line calls
 that reproduce the same operation. Saving the YAML under the name the panel gives it and running
-any of those three lines repeats the run outside the app. Where the design names a file you
+any of those three lines repeats the run outside the app. The command lines quote the design file's
+name, and their quoting holds in bash, `cmd.exe` and PowerShell. The sentence under them is taken
+from the datasheet's cross-engine record. Under the deterministic methods it says that the two
+engines select byte-identical stimuli and trial order, and under `mahalanobis` and `optimal` that
+they select equivalent but not byte-identical stimuli. Where the design names a file you
 uploaded, which the repository does not hold, the panel says so and points at the bundle that
 carries it.
 

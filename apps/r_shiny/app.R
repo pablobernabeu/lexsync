@@ -29,6 +29,42 @@ PARADIGMS <- c(
   "Priming (item table)" = "priming",
   "Self-paced reading (item table)" = "self_paced_reading"
 )
+# The lexicon the app opens on: English screened against SUBTLEX-US, the lexicon the
+# shipped English designs use. The Streamlit app opens on the same one.
+DEFAULT_LEXICON <- "en_v2"
+SCREEN_HELP <- paste0(
+  "Adds nonstandard: [0, 0] to the pool filters, which keeps only the forms ",
+  "the lexicon leaves unmarked. In en_v2, a form is marked when SUBTLEX-US ",
+  "lacks it or when under a tenth of its uses begin with a lower-case letter.")
+# Each preset's matched dimensions and matching method, as the repository's design
+# files match such contrasts (design_en_freqcontrast.yaml, design_en_ndensity.yaml,
+# design_en_andrews_repro.yaml). A preset never matches on a dimension it
+# manipulates. The Streamlit app's PRESET_MATCHING holds the same table, and
+# tests/test_apps.py and test-apps.R pin both.
+PRESET_MATCHING <- list(
+  "High vs low frequency" = list(match_on = c("length", "n_density", "old20"),
+                                 method = "standardised_euclidean"),
+  "Dense vs sparse neighbourhood" = list(match_on = c("length", "frequency"),
+                                         method = "joint"),
+  "2x2 frequency x neighbourhood" = list(match_on = "length",
+                                         method = "standardised_euclidean"),
+  "Custom" = list(match_on = "length", method = "standardised_euclidean")
+)
+# The preset the chooser opens on, and so the one the matching controls start from.
+DEFAULT_PRESET <- names(PRESET_MATCHING)[[1]]
+METHOD_HELP <- paste0(
+  "joint/optimal pair two conditions (optimal selects the n pairs of ",
+  "least summed distance, joint takes the closest pair at each step); ",
+  "mahalanobis down-weights correlated dimensions. mahalanobis and ",
+  "optimal use a covariance inverse / assignment solver, so the R and ",
+  "Python engines agree closely but not byte-for-byte on them.")
+EMPTY_MATCH_ON <- "Choose at least one dimension to match on."
+# The caption under the exported code, chosen by the run's datasheet. Word-identical
+# to the Streamlit app's.
+BYTE_IDENTICAL <- paste0("The R and Python engines select byte-identical stimuli and trial ",
+                         "order from this configuration.")
+APPROXIMATE <- paste0("The R and Python engines select equivalent but not byte-identical ",
+                      "stimuli for this matching method.")
 
 find_repo_root <- function() {
   here <- normalizePath(getwd(), winslash = "/", mustWork = FALSE)
@@ -48,6 +84,41 @@ list_corpora <- function() {
   stats::setNames(file.path(CORPORA_DIR, f), sub("\\.csv$", "", f))
 }
 CORPORA <- list_corpora()
+
+#' The column names of a lexicon CSV
+#'
+#' @param path Path of the lexicon, or NULL.
+#' @return A character vector, empty when there is no file to read.
+lexicon_columns <- function(path) {
+  if (is.null(path) || !length(path) || !file.exists(path)) return(character(0))
+  tryCatch(names(utils::read.csv(path, nrows = 1, check.names = FALSE)),
+           error = function(e) character(0))
+}
+
+#' The design's pool filters from the two sliders and the screen checkbox
+#'
+#' A lexicon with a `nonstandard` column marks the forms its screen flags, and
+#' `nonstandard: [0, 0]` keeps only the unmarked ones, as the shipped English designs
+#' do. Mirrors pool_filters() in the Streamlit app.
+#'
+#' @param length_range,frequency_range The two ends of each slider.
+#' @param columns The chosen lexicon's column names.
+#' @param screened Whether 'Screened forms only' is ticked.
+#' @return The `pool_filters` list.
+pool_filters <- function(length_range, frequency_range, columns, screened) {
+  filters <- list(length = as.integer(length_range), frequency = frequency_range)
+  if (isTRUE(screened) && "nonstandard" %in% columns) filters$nonstandard <- c(0L, 0L)
+  filters
+}
+
+#' A preset's matched dimensions and method, the Custom ones for any other name
+#'
+#' @param preset A preset name.
+#' @return A list with `match_on` and `method`.
+preset_matching <- function(preset) {
+  m <- if (is.character(preset) && length(preset) == 1L) PRESET_MATCHING[[preset]]
+  if (is.null(m)) PRESET_MATCHING[["Custom"]] else m
+}
 
 preset_df <- function(preset) {
   blank <- function() data.frame(
@@ -181,6 +252,114 @@ write_bundle_zip <- function(file, outdir) {
   invisible(file)
 }
 
+#' Read the conditions table's rows into the design's `conditions` list
+#'
+#' A row contributes a condition when it names one and defines at least one window,
+#' a category list or a pair of numeric bounds. The optional second factor is added
+#' only when both of its bounds are given. Mirrors conditions_from_table() in the
+#' Streamlit app.
+#'
+#' @param df The edited conditions table.
+#' @return A list of `list(name =, define_by =)` entries, one per usable row.
+conditions_from_table <- function(df) {
+  conditions <- list()
+  isnum <- function(x) !is.null(x) && !is.na(x) && nzchar(as.character(x))
+  for (i in seq_len(nrow(df))) {
+    nm <- trimws(as.character(df$name[i])); dim <- trimws(as.character(df$dimension[i]))
+    if (!nzchar(nm) || !nzchar(dim)) next
+    define_by <- list()
+    cats <- trimws(as.character(df$categories[i]))
+    if (!is.na(cats) && nzchar(cats)) {
+      define_by[[dim]] <- trimws(strsplit(cats, ",")[[1]])
+    } else if (isnum(df$lower[i]) && isnum(df$upper[i])) {
+      define_by[[dim]] <- c(as.numeric(df$lower[i]), as.numeric(df$upper[i]))
+    }
+    dim2 <- trimws(as.character(df$dimension2[i]))
+    if (nzchar(dim2) && dim2 != "NA" && isnum(df$lower2[i]) && isnum(df$upper2[i]))
+      define_by[[dim2]] <- c(as.numeric(df$lower2[i]), as.numeric(df$upper2[i]))
+    if (length(define_by)) conditions[[length(conditions) + 1]] <-
+      list(name = nm, define_by = define_by)
+  }
+  conditions
+}
+
+#' The matched dimensions on which the conditions take different windows
+#'
+#' Matching on such a dimension works against the contrast the windows define. A
+#' band that every condition shares only restricts the pool, so it is not listed. A
+#' dimension that one condition restricts and another leaves open is listed.
+#' Mirrors manipulated_matches() in the Streamlit app.
+#'
+#' @param conditions The design's `conditions`.
+#' @param match_on The dimensions chosen under 'Match on'.
+#' @return The listed dimensions, in `match_on` order.
+manipulated_matches <- function(conditions, match_on) {
+  dims <- as.character(unlist(match_on))
+  differs <- function(d) {
+    windows <- lapply(conditions, function(cond) cond[["define_by"]][[d]])
+    any(!vapply(windows, is.null, logical(1))) &&
+      !all(vapply(windows, identical, logical(1), windows[[1]]))
+  }
+  dims[vapply(dims, differs, logical(1))]
+}
+
+#' The warning shown under 'Match on' for manipulated_matches(), or NULL
+#'
+#' @param dims The dimensions manipulated_matches() listed.
+#' @return A one-line character string, or NULL when there are none.
+manipulation_warning <- function(dims) {
+  n <- length(dims)
+  if (!n) return(NULL)
+  named <- if (n == 1L) dims else paste0(paste(dims[-n], collapse = ", "), " and ", dims[[n]])
+  paste0("'Match on' includes ", named, ", on which the conditions take different ",
+         "windows. Matching on a dimension the conditions manipulate works against ",
+         "the contrast they define.")
+}
+
+#' The caption under the exported code, from the run's datasheet record
+#'
+#' `selection$cross_engine` says whether the two engines select byte-identical
+#' materials for the run: `mahalanobis` and `optimal` agree only approximately,
+#' because their linear algebra differs in the last bits between the engines. A
+#' record without the field is read as the datasheet's own renderer reads it.
+#' Mirrors parity_claim() in the Streamlit app.
+#'
+#' @param record The run's datasheet, as read from its JSON file, or NULL.
+#' @return A one-line character string.
+parity_claim <- function(record) {
+  cross <- record[["selection"]][["cross_engine"]]
+  if (is.character(cross) && length(cross) == 1L && startsWith(cross, "approximate"))
+    APPROXIMATE
+  else
+    BYTE_IDENTICAL
+}
+
+#' The heading of the d interval column, from the run's datasheet record
+#'
+#' The interval beside a TOST at alpha is the 1 - 2 alpha interval, so 90% at the
+#' default alpha of .05. Mirrors interval_label() in the Streamlit app.
+#'
+#' @param record The run's datasheet, as read from its JSON file, or NULL.
+#' @return A label such as "90% CI".
+interval_label <- function(record) {
+  alpha <- record[["equivalence"]][["alpha"]]
+  if (is.null(alpha)) alpha <- 0.05
+  sprintf("%g%% CI", (1 - 2 * as.numeric(alpha)) * 100)
+}
+
+#' Enable or disable the Run button
+#'
+#' Older releases of shiny lack updateActionButton()'s `disabled` argument. There
+#' the button stays enabled, and the run observer refuses the run with the message
+#' the page already shows.
+#'
+#' @param session The Shiny session.
+#' @param enabled Whether the button should accept a press.
+set_run_enabled <- function(session, enabled) {
+  if ("disabled" %in% names(formals(updateActionButton)))
+    updateActionButton(session, "run", disabled = !enabled)
+}
+
 reproduction_code <- function(design, cfg) {
   list(
     yaml = clean_yaml(design),
@@ -188,11 +367,18 @@ reproduction_code <- function(design, cfg) {
                "\", schema_path = \"config/schema.yaml\", outdir = \"output\")"),
     python = paste0("# Python\nfrom lexsync import run_pipeline\n\nrun_pipeline(\"", cfg,
                     "\", schema_path=\"config/schema.yaml\", outdir=\"output\")"),
-    cli = paste0("# Command line\n",
-                 "Rscript -e 'lexsync::run_pipeline(\"", cfg,
-                 "\", outdir = \"output\")'    # R\n",
-                 "lexsync run ", cfg, "                              # Python console script\n",
-                 "python -m lexsync run ", cfg, "                    # Python (module form)")
+    # Double quotes outside and single quotes inside, which bash, cmd.exe and both
+    # PowerShells pass on unchanged: clean_meta() refuses every character in a
+    # design's name that would end either string. Each comment has a line of its
+    # own, because cmd.exe passes a trailing # on as one more argument.
+    # Word-identical to the Streamlit app's block.
+    cli = paste0("# R\n",
+                 "Rscript -e \"lexsync::run_pipeline('", cfg,
+                 "', schema_path = 'config/schema.yaml', outdir = 'output')\"\n",
+                 "# Python console script\n",
+                 "lexsync run \"", cfg, "\"\n",
+                 "# Python (module form)\n",
+                 "python -m lexsync run \"", cfg, "\"")
   )
 }
 
@@ -214,7 +400,8 @@ ui <- page_sidebar(
     "Reproducible psycholinguistic stimulus design, running on the R engine.",
     "Assemble a design, run the verified lexsync pipeline, and export the design",
     "file together with the R, Python and command-line code that reproduces it.",
-    "The two engines select byte-identical stimuli."
+    "Under the deterministic matching methods, which include the default, the two",
+    "engines select byte-identical stimuli."
   )),
   uiOutput("design_ui"),
   actionButton("run", "Run design", class = "btn-primary btn-lg w-100"),
@@ -223,8 +410,16 @@ ui <- page_sidebar(
 )
 
 server <- function(input, output, session) {
-  conds <- reactiveVal(preset_df("High vs low frequency"))
-  observeEvent(input$preset, conds(preset_df(input$preset)), ignoreInit = TRUE)
+  conds <- reactiveVal(preset_df(DEFAULT_PRESET))
+  observeEvent(input$preset, {
+    conds(preset_df(input$preset))
+    # The matched dimensions and the method travel with the preset, as in the
+    # Streamlit app. Left at their general defaults, they had the neighbourhood
+    # preset match on the dimension it manipulates and leave length unequated.
+    m <- preset_matching(input$preset)
+    updateSelectizeInput(session, "match_on", selected = m$match_on)
+    updateSelectInput(session, "method", selected = m$method)
+  }, ignoreInit = TRUE)
   observeEvent(input$cond_tbl_cell_edit, {
     # The table is rendered without row names, so the client numbers its columns
     # from 0 at 'name'. editData() assumes a row-name column unless told
@@ -233,35 +428,74 @@ server <- function(input, output, session) {
   })
   bundle <- reactiveVal(NULL)
 
+  # The paradigm's key, or NA before the chooser has a value.
+  paradigm <- reactive({
+    label <- input$paradigm
+    if (is.character(label) && length(label) == 1L && label %in% names(PARADIGMS))
+      PARADIGMS[[label]] else NA_character_
+  })
+
+  # The chosen lexicon's file, or NULL when there is none to read.
+  lexicon_path <- function() {
+    corpus <- input$corpus
+    if (!is.character(corpus) || length(corpus) != 1L || !corpus %in% names(CORPORA))
+      return(NULL)
+    unname(CORPORA[[corpus]])
+  }
+
+  # A factorial design with nothing under 'Match on' cannot run: every distance
+  # would be zero and the tie-break alone would choose the words, so the engines
+  # refuse it. The message, or NULL when the design can run.
+  run_blocked <- reactive(
+    if (identical(paradigm(), "factorial") && !length(input$match_on)) EMPTY_MATCH_ON)
+  observe(set_run_enabled(session, is.null(run_blocked())))
+
+  output$match_on_notes <- renderUI({
+    blocked <- run_blocked()
+    if (!is.null(blocked)) return(div(class = "alert alert-warning mt-2", blocked))
+    if (!identical(paradigm(), "factorial")) return(NULL)
+    note <- manipulation_warning(
+      manipulated_matches(conditions_from_table(conds()), input$match_on))
+    if (!is.null(note)) div(class = "alert alert-warning mt-2", note)
+  })
+
+  output$screen_ui <- renderUI({
+    if (!"nonstandard" %in% lexicon_columns(lexicon_path())) return(NULL)
+    tagList(checkboxInput("screened", "Screened forms only", TRUE), helpText(SCREEN_HELP))
+  })
+
   output$design_ui <- renderUI({
     p <- PARADIGMS[[input$paradigm]]
     tagList(
       if (p %in% c("factorial", "lexical_decision")) tagList(
         h4("Corpus"),
-        selectInput("corpus", "Lexicon", choices = names(CORPORA)),
+        selectInput("corpus", "Lexicon", choices = names(CORPORA),
+                    selected = if (DEFAULT_LEXICON %in% names(CORPORA)) DEFAULT_LEXICON),
         fluidRow(
           column(6, sliderInput("length", "Length (letters/characters)", 1, 20, c(3, 7))),
           column(6, sliderInput("frequency", "Frequency (Zipf)", 1, 8, c(3.5, 7.0), step = 0.1))
-        )
+        ),
+        uiOutput("screen_ui")
       ),
       if (p == "factorial") tagList(
         h4("Conditions"),
         helpText("Set the first factor with dimension/lower/upper (or categories for a ",
                  "categorical column such as gender). The optional dimension2/lower2/upper2 ",
                  "add a second factor for a 2x2 cell."),
-        selectInput("preset", "Start from a preset",
-                    c("High vs low frequency", "Dense vs sparse neighbourhood",
-                      "2x2 frequency x neighbourhood", "Custom")),
+        selectInput("preset", "Start from a preset", names(PRESET_MATCHING)),
         DT::DTOutput("cond_tbl"),
         br(),
         fluidRow(
           column(4, numericInput("n", "Items per condition", 80, 4, 400, 2)),
           column(4, selectInput("method", "Matching method",
-                                c("standardised_euclidean", "joint", "mahalanobis", "optimal"))),
+                                c("standardised_euclidean", "joint", "mahalanobis", "optimal"),
+                                selected = preset_matching(DEFAULT_PRESET)$method)),
           column(4, numericInput("nsets", "Resampled disjoint sets (0 = off)", 0, 0, 20, 1))
         ),
+        helpText(METHOD_HELP),
         selectizeInput("match_on", "Match on (controlled dimensions)", choices = DIMENSIONS,
-                       selected = c("length", "n_density", "old20"), multiple = TRUE),
+                       selected = preset_matching(DEFAULT_PRESET)$match_on, multiple = TRUE),
+        uiOutput("match_on_notes"),
         uiOutput("tolerance_ui"),
         numericInput("lists", "Counterbalancing lists", 1, 1, 16, 1)
       ),
@@ -320,31 +554,16 @@ server <- function(input, output, session) {
       d$font <- input$font
     lexicon_abs <- NULL; items_abs <- NULL
     if (p %in% c("factorial", "lexical_decision")) {
-      lexicon_abs <- unname(CORPORA[[input$corpus]])
+      lexicon_abs <- lexicon_path()
       d$lexicon <- paste0("corpora/derived/", input$corpus, ".csv")
-      d$pool_filters <- list(length = as.integer(input$length), frequency = input$frequency)
+      # The checkbox is drawn only for a lexicon that marks forms, and it starts
+      # ticked, so a value not yet sent counts as ticked.
+      d$pool_filters <- pool_filters(input$length, input$frequency,
+                                     lexicon_columns(lexicon_abs), !isFALSE(input$screened))
     }
     if (p == "factorial") {
       d$paradigm <- "factorial"
-      df <- conds(); conditions <- list()
-      isnum <- function(x) !is.null(x) && !is.na(x) && nzchar(as.character(x))
-      for (i in seq_len(nrow(df))) {
-        nm <- trimws(as.character(df$name[i])); dim <- trimws(as.character(df$dimension[i]))
-        if (!nzchar(nm) || !nzchar(dim)) next
-        define_by <- list()
-        cats <- trimws(as.character(df$categories[i]))
-        if (!is.na(cats) && nzchar(cats)) {
-          define_by[[dim]] <- trimws(strsplit(cats, ",")[[1]])
-        } else if (isnum(df$lower[i]) && isnum(df$upper[i])) {
-          define_by[[dim]] <- c(as.numeric(df$lower[i]), as.numeric(df$upper[i]))
-        }
-        dim2 <- trimws(as.character(df$dimension2[i]))
-        if (nzchar(dim2) && dim2 != "NA" && isnum(df$lower2[i]) && isnum(df$upper2[i]))
-          define_by[[dim2]] <- c(as.numeric(df$lower2[i]), as.numeric(df$upper2[i]))
-        if (length(define_by)) conditions[[length(conditions) + 1]] <-
-          list(name = nm, define_by = define_by)
-      }
-      d$conditions <- conditions
+      d$conditions <- conditions_from_table(conds())
       d$n_per_condition <- as.integer(input$n)
       d$match_on <- as.list(input$match_on)
       d$matching <- list(method = input$method)
@@ -378,6 +597,10 @@ server <- function(input, output, session) {
     if (p == "factorial" && length(d$conditions) < 2) {
       bundle(list(error = "Define at least two conditions.")); return()
     }
+    # Run is disabled while this holds, except under a shiny too old to disable it.
+    if (!is.null(run_blocked())) {
+      bundle(list(error = run_blocked())); return()
+    }
     run_d <- d
     if (!is.null(spec$lexicon_abs)) run_d$lexicon <- spec$lexicon_abs
     if (!is.null(spec$items_abs)) run_d$items$path <- spec$items_abs
@@ -392,7 +615,11 @@ server <- function(input, output, session) {
     if (!is.null(attr(res, "error"))) { bundle(list(error = attr(res, "error"))); return() }
     base <- sub("_stimuli_R\\.csv$", "", basename(res$stimuli))
     ds_md <- file.path(out, "reports", paste0(base, "_datasheet_R.md"))
+    # The machine-readable datasheet, which the caption under the exported code and
+    # the interval heading are read from.
+    ds_json <- file.path(out, "reports", paste0(base, "_datasheet_R.json"))
     bundle(list(design = d, cfg = paste0(input$name, ".yaml"), outdir = out, paths = res,
+                record = if (file.exists(ds_json)) jsonlite::read_json(ds_json) else NULL,
                 stimuli = utils::read.csv(res$stimuli, check.names = FALSE),
                 comparisons = if (!is.null(res$comparisons) && file.exists(res$comparisons))
                   utils::read.csv(res$comparisons) else NULL,
@@ -437,9 +664,12 @@ server <- function(input, output, session) {
       h5("Realised control for every pair of conditions and every dimension"),
       DT::renderDT({
         c <- b$comparisons
-        c$`90% CI` <- sprintf("[%.2f, %.2f]", c$d_ci_low, c$d_ci_high)
+        # The interval goes with the TOST at the schema's alpha, so its heading comes
+        # from the run's datasheet.
+        ci <- interval_label(b$record)
+        c[[ci]] <- sprintf("[%.2f, %.2f]", c$d_ci_low, c$d_ci_high)
         cols <- intersect(c("condition", "reference", "dimension", "role", "mean_diff",
-                            "cohens_d", "90% CI", "var_ratio", "tost_p", "equivalent"),
+                            "cohens_d", ci, "var_ratio", "tost_p", "equivalent"),
                           names(c))
         DT::datatable(c[, cols], rownames = FALSE, options = list(dom = "t"))
       }),
@@ -496,8 +726,7 @@ server <- function(input, output, session) {
       h5("Reproduce in R"), tags$pre(tags$code(code$r)),
       h5("Reproduce in Python"), tags$pre(tags$code(code$python)),
       h5("Reproduce from the command line"), tags$pre(tags$code(code$cli)),
-      helpText("The R and Python engines produce byte-identical stimuli and ",
-               "trial order from this configuration.")
+      helpText(parity_claim(b$record))
     )
   })
 

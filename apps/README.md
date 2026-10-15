@@ -20,11 +20,11 @@ resampling.
 
 ## Python (Streamlit)
 
-Requirements: `lexsync` and `streamlit`.
+Requirements: `lexsync` and `streamlit` 1.49 or later.
 
 ```bash
 pip install -e python_workflow        # the lexsync package
-pip install streamlit
+pip install "streamlit>=1.49"
 streamlit run apps/python_streamlit/lexsync_app.py
 ```
 
@@ -53,10 +53,18 @@ The app opens at <http://localhost:8502>.
 - The corpus-matching dimensions (length, frequency, Coltheart's N, OLD20, syllable
   count, bigram frequency) are computed by the package, and N and OLD20 are
   pre-computed in the bundled corpora, so a run is fast.
+- Both applications open on `en_v2`, the English lexicon screened against
+  SUBTLEX-US, and keep only the forms it leaves unmarked until 'Screened forms only'
+  is cleared. A preset sets the conditions, the matched dimensions and the matching
+  method together. Both applications warn when 'Match on' names a dimension whose
+  windows differ between conditions, and neither runs a factorial design with
+  nothing to match on.
 - The reproducible-code panel writes repository-relative paths (for example
   `corpora/derived/en.csv`), so the exported configuration and one-line call run
-  unchanged from the repository root.
+  unchanged from the repository root. The command lines quote the design file's
+  name and run in bash, `cmd.exe` and PowerShell.
 - The `standardised_euclidean` and `joint` methods select byte-identical stimuli in
   both engines. `mahalanobis` and `optimal` use a covariance inverse or an assignment
-  solver, so the two engines agree closely but not byte-for-byte, and the datasheet
-  tab reports which case applies. The `optimal` method needs the R `clue` package.
+  solver, so the two engines agree closely but not byte-for-byte, and both the
+  reproducible-code panel and the datasheet tab report which case applies, from the
+  run's datasheet. The `optimal` method needs the R `clue` package.

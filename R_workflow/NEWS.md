@@ -1,5 +1,22 @@
 # lexsync (development version)
 
+* The Shiny app's presets set the matched dimensions and the matching method, as the
+  Streamlit app's presets do. Its neighbourhood preset matched on N, the dimension it
+  manipulates, and on OLD20, a close correlate of N, and it left length unmatched.
+  Both apps now warn when 'Match on' names a dimension whose windows differ between
+  conditions, and neither runs a factorial design with nothing to match on. Their
+  command lines quote the design file's name and run in `cmd.exe` and Windows
+  PowerShell, and the Streamlit app's R line now passes the `outdir` that
+  `run_pipeline()` requires. The interval column is labelled by the configured alpha,
+  and the sentence under the exported code says that the engines agree byte for byte
+  only when the run's datasheet says so. The Shiny method selector carries the
+  Streamlit app's note on `mahalanobis` and `optimal`. Both apps open on `en_v2`, the
+  English lexicon screened against SUBTLEX-US, and keep only its unmarked forms unless
+  'Screened forms only' is cleared, as the shipped English designs do. A session left
+  at its defaults therefore selects different words from before. The Streamlit app no
+  longer passes `use_container_width`, an argument Streamlit is removing, and needs
+  Streamlit 1.49 or later.
+
 * `counterbalance.max_run` caps runs of one condition, or of one value of any column
   named in `counterbalance.run_on`, in the trial order. `counterbalance()` repairs the
   seeded order deterministically, taking at each step the earliest trial in it that

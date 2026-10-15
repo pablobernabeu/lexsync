@@ -16,6 +16,7 @@ Run from the repository root:
 from __future__ import annotations
 
 import io
+import json
 import os
 import tempfile
 import zipfile
@@ -44,6 +45,35 @@ PARADIGMS = {
     "Priming (item table)": "priming",
     "Self-paced reading (item table)": "self_paced_reading",
 }
+# The lexicon the app opens on: English screened against SUBTLEX-US, the lexicon the
+# shipped English designs use. The Shiny app opens on the same one.
+DEFAULT_LEXICON = "en_v2"
+SCREEN_HELP = ("Adds nonstandard: [0, 0] to the pool filters, which keeps only the forms "
+               "the lexicon leaves unmarked. In en_v2, a form is marked when SUBTLEX-US "
+               "lacks it or when under a tenth of its uses begin with a lower-case letter.")
+# Each preset's matched dimensions and matching method, as the repository's design
+# files match such contrasts (design_en_freqcontrast.yaml, design_en_ndensity.yaml,
+# design_en_andrews_repro.yaml). A preset never matches on a dimension it
+# manipulates. The Shiny app's PRESET_MATCHING holds the same table, and
+# tests/test_apps.py and test-apps.R pin both.
+PRESET_MATCHING = {
+    "High vs low frequency": (["length", "n_density", "old20"], "standardised_euclidean"),
+    "Dense vs sparse neighbourhood": (["length", "frequency"], "joint"),
+    "2x2 frequency x neighbourhood": (["length"], "standardised_euclidean"),
+    "Custom": (["length"], "standardised_euclidean"),
+}
+METHOD_HELP = ("joint/optimal pair two conditions (optimal selects the n pairs of "
+               "least summed distance, joint takes the closest pair at each step); "
+               "mahalanobis down-weights correlated dimensions. mahalanobis and "
+               "optimal use a covariance inverse / assignment solver, so the R and "
+               "Python engines agree closely but not byte-for-byte on them.")
+EMPTY_MATCH_ON = "Choose at least one dimension to match on."
+# The caption under the exported code, chosen by the run's datasheet. Word-identical
+# to the Shiny app's.
+BYTE_IDENTICAL = ("The R and Python engines select byte-identical stimuli and trial order "
+                  "from this configuration.")
+APPROXIMATE = ("The R and Python engines select equivalent but not byte-identical stimuli "
+               "for this matching method.")
 
 
 def find_repo_root() -> str:
@@ -76,6 +106,164 @@ def corpus_preview(path: str) -> pd.DataFrame:
     return pd.read_csv(path, nrows=5, keep_default_na=False, na_values=["", "NA"])
 
 
+@st.cache_data(show_spinner=False)
+def lexicon_columns(path: str) -> list:
+    """The column names of a lexicon CSV, or an empty list when it cannot be read."""
+    try:
+        return list(pd.read_csv(path, nrows=0).columns)
+    except (OSError, ValueError):
+        return []
+
+
+def pool_filters(length_range, frequency_range, columns, screened: bool) -> dict:
+    """The design's pool filters from the two sliders and the screen checkbox.
+
+    A lexicon with a ``nonstandard`` column marks the forms its screen flags, and
+    ``nonstandard: [0, 0]`` keeps only the unmarked ones, as the shipped English
+    designs do. Mirrors pool_filters() in the Shiny app.
+
+    Parameters
+    ----------
+    length_range, frequency_range : sequence
+        The two ends of each slider.
+    columns : list
+        The chosen lexicon's column names.
+    screened : bool
+        Whether 'Screened forms only' is ticked.
+
+    Returns
+    -------
+    dict
+        The ``pool_filters`` mapping.
+    """
+    filters = {"length": list(length_range), "frequency": list(frequency_range)}
+    if screened and "nonstandard" in columns:
+        filters["nonstandard"] = [0, 0]
+    return filters
+
+
+def _preset_row(name, dim, lo, hi, cats="", dim2="", lo2=None, hi2=None):
+    return {"name": name, "dimension": dim, "lower": lo, "upper": hi, "categories": cats,
+            "dimension2": dim2, "lower2": lo2, "upper2": hi2}
+
+
+def preset_rows(preset: str) -> list:
+    """The conditions table a preset fills, one mapping per row.
+
+    The same rows as preset_df() in the Shiny app. Any name that is not a preset
+    gives the Custom rows.
+    """
+    if preset == "High vs low frequency":
+        return [_preset_row("high_frequency", "frequency", 5.2, 7.0),
+                _preset_row("low_frequency", "frequency", 3.8, 4.4)]
+    if preset == "Dense vs sparse neighbourhood":
+        return [_preset_row("dense_neighbourhood", "n_density", 5.0, 100.0),
+                _preset_row("sparse_neighbourhood", "n_density", 0.0, 1.0)]
+    if preset == "2x2 frequency x neighbourhood":
+        return [_preset_row("HF_largeN", "frequency", 5.0, 7.0, "", "n_density", 9.0, 100.0),
+                _preset_row("HF_smallN", "frequency", 5.0, 7.0, "", "n_density", 0.0, 5.0),
+                _preset_row("LF_largeN", "frequency", 2.5, 4.2, "", "n_density", 9.0, 100.0),
+                _preset_row("LF_smallN", "frequency", 2.5, 4.2, "", "n_density", 0.0, 5.0)]
+    return [_preset_row("condition_a", "frequency", 5.0, 7.0),
+            _preset_row("condition_b", "frequency", 3.5, 4.5)]
+
+
+def _isnum(x) -> bool:
+    try:
+        return x is not None and x == x and str(x) != ""  # not None, not NaN, not ""
+    except Exception:
+        return False
+
+
+def conditions_from_table(cond_df: pd.DataFrame) -> list:
+    """Read the conditions editor's rows into the design's ``conditions`` list.
+
+    A row contributes a condition when it names one and defines at least one window,
+    a category list or a pair of numeric bounds. The optional second factor is added
+    only when both of its bounds are given. Mirrors conditions_from_table() in the
+    Shiny app.
+    """
+    conditions = []
+    for _, row in cond_df.iterrows():
+        nm = str(row.get("name") or "").strip()
+        dim = str(row.get("dimension") or "").strip()
+        if not nm or not dim:
+            continue
+        cats = str(row.get("categories") or "").strip()
+        define_by = {}
+        if cats:
+            define_by[dim] = [c.strip() for c in cats.split(",") if c.strip()]
+        elif _isnum(row.get("lower")) and _isnum(row.get("upper")):
+            define_by[dim] = [float(row["lower"]), float(row["upper"])]
+        dim2 = str(row.get("dimension2") or "").strip()
+        if dim2 and _isnum(row.get("lower2")) and _isnum(row.get("upper2")):
+            define_by[dim2] = [float(row["lower2"]), float(row["upper2"])]
+        if define_by:
+            conditions.append({"name": nm, "define_by": define_by})
+    return conditions
+
+
+def manipulated_matches(conditions: list, match_on: list) -> list:
+    """The matched dimensions on which the conditions take different windows.
+
+    Matching on such a dimension works against the contrast the windows define. A
+    band that every condition shares only restricts the pool, so it is not listed.
+    A dimension that one condition restricts and another leaves open is listed.
+    Mirrors manipulated_matches() in the Shiny app.
+
+    Parameters
+    ----------
+    conditions : list
+        The design's ``conditions``.
+    match_on : list
+        The dimensions chosen under 'Match on'.
+
+    Returns
+    -------
+    list
+        The listed dimensions, in ``match_on`` order.
+    """
+    out = []
+    for dim in match_on:
+        windows = [(c.get("define_by") or {}).get(dim) for c in conditions]
+        if any(w is not None for w in windows) and any(w != windows[0] for w in windows):
+            out.append(dim)
+    return out
+
+
+def manipulation_warning(dims: list) -> str | None:
+    """The warning shown under 'Match on' for :func:`manipulated_matches`, or None."""
+    if not dims:
+        return None
+    named = dims[0] if len(dims) == 1 else ", ".join(dims[:-1]) + " and " + dims[-1]
+    return (f"'Match on' includes {named}, on which the conditions take different "
+            "windows. Matching on a dimension the conditions manipulate works against "
+            "the contrast they define.")
+
+
+def parity_claim(record: dict | None) -> str:
+    """The caption under the exported code, from the run's datasheet record.
+
+    ``selection.cross_engine`` says whether the two engines select byte-identical
+    materials for the run: ``mahalanobis`` and ``optimal`` agree only approximately,
+    because their linear algebra differs in the last bits between the engines. A
+    record without the field is read as the datasheet's own renderer reads it.
+    Mirrors parity_claim() in the Shiny app.
+    """
+    cross = str(((record or {}).get("selection") or {}).get("cross_engine", "byte-identical"))
+    return APPROXIMATE if cross.startswith("approximate") else BYTE_IDENTICAL
+
+
+def interval_label(record: dict | None) -> str:
+    """The heading of the d interval column, from the run's datasheet record.
+
+    The interval beside a TOST at alpha is the 1 - 2 alpha interval, so 90% at the
+    default alpha of .05. Mirrors interval_label() in the Shiny app.
+    """
+    alpha = ((record or {}).get("equivalence") or {}).get("alpha", 0.05)
+    return f"{(1 - 2 * float(alpha)) * 100:g}% CI"
+
+
 def yaml_block(d: dict) -> str:
     return yaml.safe_dump(d, sort_keys=False, allow_unicode=True, default_flow_style=False)
 
@@ -93,11 +281,19 @@ def reproduction_code(design: dict, design_filename: str) -> dict:
         "library(lexsync)\n\n"
         f'run_pipeline("{cfg}", schema_path = "config/schema.yaml", outdir = "output")'
     )
+    # Double quotes outside and single quotes inside, which bash, cmd.exe and both
+    # PowerShells pass on unchanged: clean_meta() refuses every character in a
+    # design's name that would end either string. Each comment has a line of its
+    # own, because cmd.exe passes a trailing # on as one more argument. Word-identical
+    # to the Shiny app's block.
     cli = (
-        "# Command line\n"
-        f"lexsync run {cfg}                              # Python console script\n"
-        f"python -m lexsync run {cfg}                    # Python (module form)\n"
-        f"Rscript -e 'lexsync::run_pipeline(\"{cfg}\")'    # R"
+        "# R\n"
+        f"Rscript -e \"lexsync::run_pipeline('{cfg}', schema_path = 'config/schema.yaml', "
+        "outdir = 'output')\"\n"
+        "# Python console script\n"
+        f'lexsync run "{cfg}"\n'
+        "# Python (module form)\n"
+        f'python -m lexsync run "{cfg}"'
     )
     return {"yaml": yaml_block(design), "python": py, "r": r, "cli": cli}
 
@@ -149,6 +345,13 @@ def run_design(design: dict, lexicon_abs: str | None, items_abs: str | None) -> 
         # descriptor leak rather than a style point.
         with open(ds_md, encoding="utf-8") as handle:
             bundle["datasheet_md"] = handle.read()
+    # The machine-readable datasheet, which the caption under the exported code and
+    # the interval heading are read from.
+    ds_json = os.path.join(out, "reports", f"{base}_datasheet_py.json")
+    bundle["record"] = None
+    if os.path.exists(ds_json):
+        with open(ds_json, encoding="utf-8") as handle:
+            bundle["record"] = json.load(handle)
     bundle["base"] = base
     return bundle
 
@@ -285,8 +488,9 @@ st.markdown(
     "Reproducible psycholinguistic stimulus design, running on the Python engine. "
     "Assemble a design below, run the verified lexsync pipeline, and export the "
     "design file together with the R, Python and command-line code that reproduces "
-    "it. The two engines select byte-identical stimuli, so the exported code runs "
-    "the same operation in either ecosystem."
+    "it. Under the deterministic matching methods, which include the default, the two "
+    "engines select byte-identical stimuli, so the exported code runs the same "
+    "operation in either ecosystem."
 )
 
 corpora = list_corpora()
@@ -324,6 +528,7 @@ if paradigm in ("factorial", "lexical_decision"):
     with col1:
         corpus_choice = st.selectbox(
             "Lexicon", list(corpora) + ["Upload a CSV…"],
+            index=list(corpora).index(DEFAULT_LEXICON) if DEFAULT_LEXICON in corpora else 0,
             help="A word-frequency lexicon with at least `word` and `freq_zipf` columns.",
         )
     if corpus_choice == "Upload a CSV…":
@@ -339,7 +544,7 @@ if paradigm in ("factorial", "lexical_decision"):
         lexicon_abs = corpora[corpus_choice]
         design["lexicon"] = f"corpora/derived/{corpus_choice}.csv"
         with col2:
-            st.dataframe(corpus_preview(lexicon_abs), use_container_width=True, height=150)
+            st.dataframe(corpus_preview(lexicon_abs), width="stretch", height=150)
 
     st.subheader("Pool filters")
     c1, c2 = st.columns(2)
@@ -347,7 +552,10 @@ if paradigm in ("factorial", "lexical_decision"):
         length = st.slider("Length (letters/characters)", 1, 20, (3, 7))
     with c2:
         frequency = st.slider("Frequency (Zipf)", 1.0, 8.0, (3.5, 7.0), step=0.1)
-    design["pool_filters"] = {"length": list(length), "frequency": list(frequency)}
+    columns = lexicon_columns(lexicon_abs) if lexicon_abs else []
+    screened = ("nonstandard" in columns
+                and st.checkbox("Screened forms only", value=True, help=SCREEN_HELP))
+    design["pool_filters"] = pool_filters(length, frequency, columns, screened)
 
 if paradigm == "factorial":
     design["paradigm"] = "factorial"
@@ -362,92 +570,37 @@ if paradigm == "factorial":
         "categorical column such as `gender`). The optional *dimension2/lower2/upper2* "
         "add a second factor, so a row can define a full 2x2 cell."
     )
-    preset = st.selectbox(
-        "Start from a preset",
-        ["High vs low frequency", "Dense vs sparse neighbourhood",
-         "2x2 frequency x neighbourhood", "Custom"],
-    )
-
-    def _row(name, dim, lo, hi, cats="", dim2="", lo2=None, hi2=None):
-        return {"name": name, "dimension": dim, "lower": lo, "upper": hi, "categories": cats,
-                "dimension2": dim2, "lower2": lo2, "upper2": hi2}
-
-    if preset == "High vs low frequency":
-        cond_default = pd.DataFrame([
-            _row("high_frequency", "frequency", 5.2, 7.0),
-            _row("low_frequency", "frequency", 3.8, 4.4),
-        ])
-        match_default, method_default = ["length", "n_density", "old20"], "standardised_euclidean"
-    elif preset == "Dense vs sparse neighbourhood":
-        cond_default = pd.DataFrame([
-            _row("dense_neighbourhood", "n_density", 5.0, 100.0),
-            _row("sparse_neighbourhood", "n_density", 0.0, 1.0),
-        ])
-        match_default, method_default = ["length", "frequency"], "joint"
-    elif preset == "2x2 frequency x neighbourhood":
-        cond_default = pd.DataFrame([
-            _row("HF_largeN", "frequency", 5.0, 7.0, "", "n_density", 9.0, 100.0),
-            _row("HF_smallN", "frequency", 5.0, 7.0, "", "n_density", 0.0, 5.0),
-            _row("LF_largeN", "frequency", 2.5, 4.2, "", "n_density", 9.0, 100.0),
-            _row("LF_smallN", "frequency", 2.5, 4.2, "", "n_density", 0.0, 5.0),
-        ])
-        match_default, method_default = ["length"], "standardised_euclidean"
-    else:
-        cond_default = pd.DataFrame([
-            _row("condition_a", "frequency", 5.0, 7.0),
-            _row("condition_b", "frequency", 3.5, 4.5),
-        ])
-        match_default, method_default = ["length"], "standardised_euclidean"
+    preset = st.selectbox("Start from a preset", list(PRESET_MATCHING))
+    cond_default = pd.DataFrame(preset_rows(preset))
+    match_default, method_default = PRESET_MATCHING.get(preset, PRESET_MATCHING["Custom"])
 
     cond_df = st.data_editor(
-        cond_default, num_rows="dynamic", use_container_width=True, key=f"cond_editor_{preset}",
+        cond_default, num_rows="dynamic", width="stretch", key=f"cond_editor_{preset}",
         column_config={
             "dimension": st.column_config.SelectboxColumn("dimension", options=DIMENSIONS),
             "dimension2": st.column_config.SelectboxColumn("dimension2", options=[""] + DIMENSIONS),
         },
     )
-
-    def _isnum(x):
-        try:
-            return x is not None and x == x and str(x) != ""  # not None, not NaN, not ""
-        except Exception:
-            return False
-
-    conditions = []
-    for _, row in cond_df.iterrows():
-        nm = str(row.get("name") or "").strip()
-        dim = str(row.get("dimension") or "").strip()
-        if not nm or not dim:
-            continue
-        cats = str(row.get("categories") or "").strip()
-        define_by = {}
-        if cats:
-            define_by[dim] = [c.strip() for c in cats.split(",") if c.strip()]
-        elif _isnum(row.get("lower")) and _isnum(row.get("upper")):
-            define_by[dim] = [float(row["lower"]), float(row["upper"])]
-        dim2 = str(row.get("dimension2") or "").strip()
-        if dim2 and _isnum(row.get("lower2")) and _isnum(row.get("upper2")):
-            define_by[dim2] = [float(row["lower2"]), float(row["upper2"])]
-        if define_by:
-            conditions.append({"name": nm, "define_by": define_by})
-    design["conditions"] = conditions
+    design["conditions"] = conditions_from_table(cond_df)
 
     design["n_per_condition"] = st.number_input("Items per condition", 4, 400, 80, step=2)
     design["match_on"] = st.multiselect(
         "Match on (controlled dimensions)", DIMENSIONS, default=match_default,
         format_func=lambda d: DIM_LABEL[d],
     )
+    if not design["match_on"]:
+        st.warning(EMPTY_MATCH_ON)
+    else:
+        note = manipulation_warning(manipulated_matches(design["conditions"], design["match_on"]))
+        if note:
+            st.warning(note)
     c1, c2 = st.columns(2)
     with c1:
         methods = ["standardised_euclidean", "joint", "mahalanobis", "optimal"]
         method = st.radio(
             "Matching method", methods,
             index=methods.index(method_default) if method_default in methods else 0,
-            help="joint/optimal pair two conditions (optimal selects the n pairs of "
-                 "least summed distance, joint takes the closest pair at each step); "
-                 "mahalanobis down-weights correlated dimensions. mahalanobis and "
-                 "optimal use a covariance inverse / assignment solver, so the R and "
-                 "Python engines agree closely but not byte-for-byte on them.",
+            help=METHOD_HELP,
         )
     with c2:
         n_sets = st.number_input("Resampled disjoint sets (0 = off)", 0, 20, 0,
@@ -496,7 +649,7 @@ elif paradigm in ("priming", "self_paced_reading"):
     if use_example and os.path.exists(example):
         items_abs = example
         design["items"] = {"source": "table", "path": f"items/{default_item}"}
-        st.dataframe(pd.read_csv(example).head(8), use_container_width=True)
+        st.dataframe(pd.read_csv(example).head(8), width="stretch")
     else:
         req = "item, condition, prime, target" if paradigm == "priming" else "item, condition, sentence (regions split by |), critical_region"
         up = st.file_uploader(f"Item table CSV ({req})", type=["csv"])
@@ -507,7 +660,7 @@ elif paradigm in ("priming", "self_paced_reading"):
                 fh.write(up.getbuffer())
             design["items"] = {"source": "table", "path": f"items/{up.name}"}
             uploaded_inputs[design["items"]["path"]] = items_abs
-            st.dataframe(pd.read_csv(items_abs).head(8), use_container_width=True)
+            st.dataframe(pd.read_csv(items_abs).head(8), width="stretch")
     design["counterbalance"] = {"lists": st.number_input("Counterbalancing lists", 1, 16, 2)}
 
 font = st.sidebar.text_input("Stimulus font", value="Courier New")
@@ -516,7 +669,11 @@ if font and font != "Courier New":
 
 design_filename = f"{name}.yaml"
 
-run = st.button("▶  Run design", type="primary", use_container_width=True)
+# A factorial design with nothing under 'Match on' cannot run: every distance would be
+# zero and the tie-break alone would choose the words, so the engines refuse it.
+# The message sits under 'Match on'.
+run_blocked = paradigm == "factorial" and not design.get("match_on")
+run = st.button("▶  Run design", type="primary", width="stretch", disabled=run_blocked)
 
 if run:
     ready = True
@@ -552,7 +709,7 @@ if "bundle" in st.session_state:
                     "Reproducible code", "Download"])
 
     with tabs[0]:
-        st.dataframe(bundle["stimuli"], use_container_width=True, height=460)
+        st.dataframe(bundle["stimuli"], width="stretch", height=460)
 
     with tabs[1]:
         comp = bundle["comparisons"]
@@ -561,15 +718,18 @@ if "bundle" in st.session_state:
                     "control report is produced.")
         else:
             show = comp.copy()
+            # The interval goes with the TOST at the schema's alpha, so its heading
+            # comes from the run's datasheet.
+            ci = interval_label(bundle.get("record"))
             if {"d_ci_low", "d_ci_high"}.issubset(show.columns):
-                show["90% CI"] = show.apply(lambda r: f"[{r['d_ci_low']:.2f}, {r['d_ci_high']:.2f}]", axis=1)
+                show[ci] = show.apply(lambda r: f"[{r['d_ci_low']:.2f}, {r['d_ci_high']:.2f}]", axis=1)
             cols = [c for c in ["condition", "reference", "dimension", "role", "mean_diff",
-                                "cohens_d", "90% CI", "var_ratio", "tost_p", "equivalent"]
+                                "cohens_d", ci, "var_ratio", "tost_p", "equivalent"]
                     if c in show.columns]
             st.markdown("**Realised control for every pair of conditions and every dimension** "
-                        "(its role, the raw difference, Cohen's *d* with its 90% CI, and the "
+                        f"(its role, the raw difference, Cohen's *d* with its {ci}, and the "
                         "TOST verdict).")
-            st.dataframe(show[cols], use_container_width=True)
+            st.dataframe(show[cols], width="stretch")
             try:
                 # One bar per dimension and pair: a design with more than two conditions
                 # compares every pair, and bars sharing a dimension's label would merge.
@@ -586,7 +746,7 @@ if "bundle" in st.session_state:
                 pass
         if bundle["descriptives"] is not None:
             st.markdown("**Per-condition descriptive statistics**")
-            st.dataframe(bundle["descriptives"], use_container_width=True)
+            st.dataframe(bundle["descriptives"], width="stretch")
 
     with tabs[2]:
         if bundle["datasheet_md"]:
@@ -614,8 +774,7 @@ if "bundle" in st.session_state:
         st.code(code["r"], language="r")
         st.markdown("**Reproduce from the command line**")
         st.code(code["cli"], language="bash")
-        st.caption("The R and Python engines produce byte-identical stimuli and "
-                   "trial order from this configuration.")
+        st.caption(parity_claim(bundle.get("record")))
         if extra_files:
             st.warning(
                 "This design names " + ", ".join(f"`{p}`" for p in extra_files) +
