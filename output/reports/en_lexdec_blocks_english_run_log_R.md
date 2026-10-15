@@ -1,8 +1,8 @@
 # lexsync run log: en_lexdec_blocks
 
 - Engine: R 4.6.1
-- Started: 2026-10-15 03:28:38.003456
-- Finished: 2026-10-15 03:28:45.020678
+- Started: 2026-10-15 04:44:42.953941
+- Finished: 2026-10-15 04:44:52.699405
 
 ## Run metadata
 
@@ -16,75 +16,75 @@
 
 ## Steps
 
-- **2026-10-15 03:28:38.010955**: loading lexicon 'corpora/derived/en_v2.csv'
-- **2026-10-15 03:28:40.063085**: lexicon loaded: 30000 words
+- **2026-10-15 04:44:42.960468**: loading lexicon 'corpora/derived/en_v2.csv'
+- **2026-10-15 04:44:44.653703**: lexicon loaded: 30000 words
     - words: 30000
-- **2026-10-15 03:28:40.083076**: exclude_words: removed 53 of the 53 listed word(s) from the candidates (config/exclude_en_demo.txt)
+- **2026-10-15 04:44:44.702863**: exclude_words: removed 53 of the 53 listed word(s) from the candidates (config/exclude_en_demo.txt)
     - exclude_words: config/exclude_en_demo.txt
     - sha256: cac9f88fb86fa6d0e6dbabc287c9ebb782100d071eeded13eb812584b9d41e9f
     - n_removed: 53
-- **2026-10-15 03:28:40.108104**: pool after filters: 6767 words
+- **2026-10-15 04:44:44.760762**: pool after filters: 6767 words
     - pool: 6767
-- **2026-10-15 03:28:40.828291**: pseudowords checked against 289023 known word form(s) from 'corpora/derived/en_known_forms.txt'
+- **2026-10-15 04:44:46.059869**: pseudowords checked against 289023 known word form(s) from 'corpora/derived/en_known_forms.txt'
     - exclude: corpora/derived/en_known_forms.txt
     - sha256: 31fa1bfbf347a94ca31dcdc0fe69be459b5829621b9b194469c725ab64e5e2b4
-- **2026-10-15 03:28:43.137897**: generated 40 items (words + pseudowords, letter_substitution)
+- **2026-10-15 04:44:50.008862**: generated 40 items (words + pseudowords, letter_substitution)
     - conditions: word, pseudoword
-- **2026-10-15 03:28:43.824812**: equivalence pseudoword vs word on 'length': d = 0.00 [-0.53, 0.53], TOST p = 0.061 (not shown equivalent)
-- **2026-10-15 03:28:43.831962**: equivalence pseudoword vs word on 'bigram_freq': d = -1.07 [-1.64, -0.50], TOST p = 0.960 (not shown equivalent)
-- **2026-10-15 03:28:43.83695**: equivalence pseudoword vs word on 'n_density': d = 0.59 [0.04, 1.13], TOST p = 0.608 (not shown equivalent)
-- **2026-10-15 03:28:43.843985**: equivalence pseudoword vs word on 'old20': d = -0.34 [-0.88, 0.19], TOST p = 0.313 (not shown equivalent)
-- **2026-10-15 03:28:43.900278**: block 'main': 40 trial(s) per list
+- **2026-10-15 04:44:51.168218**: equivalence pseudoword vs word on 'length': d = 0.00 [-0.53, 0.53], TOST p = 0.061 (not shown equivalent)
+- **2026-10-15 04:44:51.178355**: equivalence pseudoword vs word on 'bigram_freq': d = -1.07 [-1.64, -0.50], TOST p = 0.960 (not shown equivalent)
+- **2026-10-15 04:44:51.185166**: equivalence pseudoword vs word on 'n_density': d = 0.59 [0.04, 1.13], TOST p = 0.608 (not shown equivalent)
+- **2026-10-15 04:44:51.191257**: equivalence pseudoword vs word on 'old20': d = -0.34 [-0.88, 0.19], TOST p = 0.313 (not shown equivalent)
+- **2026-10-15 04:44:51.252297**: block 'main': 40 trial(s) per list
     - block: main
     - n_per_list: 40
-- **2026-10-15 03:28:43.905767**: block 'filler': 8 trial(s) per list, interleaved with the main trials by the seeded order
+- **2026-10-15 04:44:51.2634**: block 'filler': 8 trial(s) per list, interleaved with the main trials by the seeded order
     - block: filler
     - n_per_list: 8
-- **2026-10-15 03:28:43.913831**: block 'practice': 8 trial(s) per list, before the main trials
+- **2026-10-15 04:44:51.274816**: block 'practice': 8 trial(s) per list, before the main trials
     - block: practice
     - n_per_list: 8
-- **2026-10-15 03:28:43.922712**: presented 56 trial(s); 40 analysed
-- **2026-10-15 03:28:43.949058**: wrote 'en_lexdec_blocks_english_stimuli_R.csv'
+- **2026-10-15 04:44:51.284878**: presented 56 trial(s); 40 analysed
+- **2026-10-15 04:44:51.358745**: wrote 'en_lexdec_blocks_english_stimuli_R.csv'
     - path: output/stimuli/en_lexdec_blocks_english_stimuli_R.csv
     - rows: 40
     - md5: de3527f875f4ff136a699a94cd70a5c4
-- **2026-10-15 03:28:43.970048**: wrote 'en_lexdec_blocks_english_descriptives_R.csv'
+- **2026-10-15 04:44:51.401716**: wrote 'en_lexdec_blocks_english_descriptives_R.csv'
     - path: output/reports/en_lexdec_blocks_english_descriptives_R.csv
     - rows: 8
     - md5: 2a850cb740dd71a9e19df55114e81d07
-- **2026-10-15 03:28:43.994481**: wrote 'en_lexdec_blocks_english_comparisons_R.csv'
+- **2026-10-15 04:44:51.471152**: wrote 'en_lexdec_blocks_english_comparisons_R.csv'
     - path: output/reports/en_lexdec_blocks_english_comparisons_R.csv
     - rows: 4
     - md5: de9be9cf488d534d685f1e02fba7959a
-- **2026-10-15 03:28:44.249969**: wrote 'en_lexdec_blocks_english_psychopy.py'
+- **2026-10-15 04:44:51.874943**: wrote 'en_lexdec_blocks_english_psychopy.py'
     - path: output/experiments/en_lexdec_blocks_english_psychopy.py
     - rows: NA
     - md5: 201afdf856175ae7067894c002085ea8
-- **2026-10-15 03:28:44.262979**: wrote 'en_lexdec_blocks_english.osexp'
+- **2026-10-15 04:44:51.886318**: wrote 'en_lexdec_blocks_english.osexp'
     - path: output/experiments/en_lexdec_blocks_english.osexp
     - rows: NA
     - md5: 29d5674460bc5e0c5b43cb6a79f7ad8d
-- **2026-10-15 03:28:44.274939**: wrote 'en_lexdec_blocks_english.html'
+- **2026-10-15 04:44:51.898818**: wrote 'en_lexdec_blocks_english.html'
     - path: output/experiments/en_lexdec_blocks_english.html
     - rows: NA
     - md5: dbd4a049027fdead0afcf3526967b8e9
-- **2026-10-15 03:28:44.289874**: wrote 'en_lexdec_blocks_english_psychopy.csv'
+- **2026-10-15 04:44:51.915377**: wrote 'en_lexdec_blocks_english_psychopy.csv'
     - path: output/experiments/en_lexdec_blocks_english_psychopy.csv
     - rows: NA
     - md5: c42fb38924882488482cdc1e4a951151
-- **2026-10-15 03:28:44.300805**: wrote 'en_lexdec_blocks_english_opensesame.csv'
+- **2026-10-15 04:44:51.924181**: wrote 'en_lexdec_blocks_english_opensesame.csv'
     - path: output/experiments/en_lexdec_blocks_english_opensesame.csv
     - rows: NA
     - md5: 2f7351bc8df496f4eb354857d7c5d4a9
-- **2026-10-15 03:28:44.313744**: wrote 'en_lexdec_blocks_english_opensesame_text.csv'
+- **2026-10-15 04:44:51.932978**: wrote 'en_lexdec_blocks_english_opensesame_text.csv'
     - path: output/experiments/en_lexdec_blocks_english_opensesame_text.csv
     - rows: NA
     - md5: 2bb1b612e8a2cece78e53c81c07202b5
-- **2026-10-15 03:28:44.989476**: wrote 'en_lexdec_blocks_english_datasheet_R.json'
+- **2026-10-15 04:44:52.673419**: wrote 'en_lexdec_blocks_english_datasheet_R.json'
     - path: output/reports/en_lexdec_blocks_english_datasheet_R.json
     - rows: NA
-    - md5: 8fd6c3005381b137386eb47252235b75
-- **2026-10-15 03:28:45.005515**: wrote 'en_lexdec_blocks_english_datasheet_R.md'
+    - md5: fb022f8e0d42a3b1059e002fb15b87e7
+- **2026-10-15 04:44:52.688126**: wrote 'en_lexdec_blocks_english_datasheet_R.md'
     - path: output/reports/en_lexdec_blocks_english_datasheet_R.md
     - rows: NA
     - md5: 9eaeea57db71f3fcf5ef1ceaa56d3218

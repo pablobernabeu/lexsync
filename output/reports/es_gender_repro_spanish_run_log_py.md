@@ -1,8 +1,8 @@
 # lexsync run log: es_gender_repro
 
 - Engine: Python 3.13.7
-- Started: 2026-10-15T03:30:51
-- Finished: 2026-10-15T03:30:52
+- Started: 2026-10-15T04:46:50
+- Finished: 2026-10-15T04:46:51
 
 ## Run metadata
 
@@ -16,62 +16,62 @@
 
 ## Steps
 
-- **2026-10-15T03:30:51**: lexsync: the design gives no `instructions` and its language is 'spanish', so the experiments show lexsync's instructions in English; give `instructions` in the participants' language.
-- **2026-10-15T03:30:51**: lexsync: the design gives no `instructions`, and lexsync cannot tell what the response keys of a factorial design mean, so the experiments only name the keys; give `instructions` that say what each key means.
-- **2026-10-15T03:30:51**: loading lexicon 'corpora/derived/es_gender.csv'
-- **2026-10-15T03:30:51**: lexicon loaded: 10185 words
+- **2026-10-15T04:46:50**: lexsync: the design gives no `instructions` and its language is 'spanish', so the experiments show lexsync's instructions in English; give `instructions` in the participants' language.
+- **2026-10-15T04:46:50**: lexsync: the design gives no `instructions`, and lexsync cannot tell what the response keys of a factorial design mean, so the experiments only name the keys; give `instructions` that say what each key means.
+- **2026-10-15T04:46:50**: loading lexicon 'corpora/derived/es_gender.csv'
+- **2026-10-15T04:46:50**: lexicon loaded: 10185 words
     - words: 10185
-- **2026-10-15T03:30:51**: pool after filters: 9294 words
+- **2026-10-15T04:46:50**: pool after filters: 9294 words
     - pool: 9294
-- **2026-10-15T03:30:51**: matched 96 items across 2 conditions
+- **2026-10-15T04:46:50**: matched 96 items across 2 conditions
     - conditions: feminine, masculine
-- **2026-10-15T03:30:52**: equivalence masculine vs feminine on 'length': d = 0.00 [-0.34, 0.34], TOST p = 0.0081 (equivalent)
-- **2026-10-15T03:30:52**: equivalence masculine vs feminine on 'frequency': d = 0.02 [-0.32, 0.36], TOST p = 0.0105 (equivalent)
-- **2026-10-15T03:30:52**: equivalence masculine vs feminine on 'n_density': d = 0.15 [-0.19, 0.49], TOST p = 0.0433 (equivalent)
-- **2026-10-15T03:30:52**: equivalence masculine vs feminine on 'old20': d = -0.01 [-0.35, 0.32], TOST p = 0.0098 (equivalent)
-- **2026-10-15T03:30:52**: equivalence masculine vs feminine on 'n_syllables': d = 0.13 [-0.21, 0.47], TOST p = 0.0361 (equivalent)
-- **2026-10-15T03:30:52**: equivalence masculine vs feminine on 'bigram_freq': d = 0.23 [-0.10, 0.57], TOST p = 0.0987 (not shown equivalent)
-- **2026-10-15T03:30:52**: wrote 'es_gender_repro_spanish_stimuli_py.csv'
+- **2026-10-15T04:46:51**: equivalence masculine vs feminine on 'length': d = 0.00 [-0.34, 0.34], TOST p = 0.0081 (equivalent)
+- **2026-10-15T04:46:51**: equivalence masculine vs feminine on 'frequency': d = 0.02 [-0.32, 0.36], TOST p = 0.0105 (equivalent)
+- **2026-10-15T04:46:51**: equivalence masculine vs feminine on 'n_density': d = 0.15 [-0.19, 0.49], TOST p = 0.0433 (equivalent)
+- **2026-10-15T04:46:51**: equivalence masculine vs feminine on 'old20': d = -0.01 [-0.35, 0.32], TOST p = 0.0098 (equivalent)
+- **2026-10-15T04:46:51**: equivalence masculine vs feminine on 'n_syllables': d = 0.13 [-0.21, 0.47], TOST p = 0.0361 (equivalent)
+- **2026-10-15T04:46:51**: equivalence masculine vs feminine on 'bigram_freq': d = 0.23 [-0.10, 0.57], TOST p = 0.0987 (not shown equivalent)
+- **2026-10-15T04:46:51**: wrote 'es_gender_repro_spanish_stimuli_py.csv'
     - path: output\stimuli\es_gender_repro_spanish_stimuli_py.csv
     - rows: 96
     - md5: fb913d59159b8ff0f28e2500e37293cc
-- **2026-10-15T03:30:52**: wrote 'es_gender_repro_spanish_descriptives_py.csv'
+- **2026-10-15T04:46:51**: wrote 'es_gender_repro_spanish_descriptives_py.csv'
     - path: output\reports\es_gender_repro_spanish_descriptives_py.csv
     - rows: 12
     - md5: 6a7606491f66d8e7edc9d01c9c68d60c
-- **2026-10-15T03:30:52**: wrote 'es_gender_repro_spanish_comparisons_py.csv'
+- **2026-10-15T04:46:51**: wrote 'es_gender_repro_spanish_comparisons_py.csv'
     - path: output\reports\es_gender_repro_spanish_comparisons_py.csv
     - rows: 6
     - md5: 616802681caa63a66084ad9584dbc44c
-- **2026-10-15T03:30:52**: wrote 'es_gender_repro_spanish_psychopy.py'
+- **2026-10-15T04:46:51**: wrote 'es_gender_repro_spanish_psychopy.py'
     - path: output\experiments\es_gender_repro_spanish_psychopy.py
     - rows: None
     - md5: afd350ef3ea2a7b7e25ae580d7f982e0
-- **2026-10-15T03:30:52**: wrote 'es_gender_repro_spanish.osexp'
+- **2026-10-15T04:46:51**: wrote 'es_gender_repro_spanish.osexp'
     - path: output\experiments\es_gender_repro_spanish.osexp
     - rows: None
     - md5: 756d79875c16731491313da0524ce791
-- **2026-10-15T03:30:52**: wrote 'es_gender_repro_spanish.html'
+- **2026-10-15T04:46:51**: wrote 'es_gender_repro_spanish.html'
     - path: output\experiments\es_gender_repro_spanish.html
     - rows: None
     - md5: 20c9d5c483112011dbc85852cc30c531
-- **2026-10-15T03:30:52**: wrote 'es_gender_repro_spanish_psychopy.csv'
+- **2026-10-15T04:46:51**: wrote 'es_gender_repro_spanish_psychopy.csv'
     - path: output\experiments\es_gender_repro_spanish_psychopy.csv
     - rows: None
     - md5: 0eb63319194528c0c179c3b153236aa8
-- **2026-10-15T03:30:52**: wrote 'es_gender_repro_spanish_opensesame.csv'
+- **2026-10-15T04:46:51**: wrote 'es_gender_repro_spanish_opensesame.csv'
     - path: output\experiments\es_gender_repro_spanish_opensesame.csv
     - rows: None
     - md5: 84fe9dd521f4209376f827234a0b89d1
-- **2026-10-15T03:30:52**: wrote 'es_gender_repro_spanish_opensesame_text.csv'
+- **2026-10-15T04:46:51**: wrote 'es_gender_repro_spanish_opensesame_text.csv'
     - path: output\experiments\es_gender_repro_spanish_opensesame_text.csv
     - rows: None
     - md5: 6e3f3663c8f25af2fba15f45cb5c3ccc
-- **2026-10-15T03:30:52**: wrote 'es_gender_repro_spanish_datasheet_py.json'
+- **2026-10-15T04:46:51**: wrote 'es_gender_repro_spanish_datasheet_py.json'
     - path: output\reports\es_gender_repro_spanish_datasheet_py.json
     - rows: None
-    - md5: 951442702b8a78fbf33e7c634a57aa84
-- **2026-10-15T03:30:52**: wrote 'es_gender_repro_spanish_datasheet_py.md'
+    - md5: 15cb0d5d54e7601998fead29bee14bb8
+- **2026-10-15T04:46:51**: wrote 'es_gender_repro_spanish_datasheet_py.md'
     - path: output\reports\es_gender_repro_spanish_datasheet_py.md
     - rows: None
     - md5: 6efbad244b38cd3dbd3cd6694173faef

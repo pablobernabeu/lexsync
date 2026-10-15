@@ -1,0 +1,7 @@
+# Both engines deal the six item sets to the same two lists under the mad scale, and
+# both datasheets record the scale.
+outcome: artefacts
+compare: [stimuli]
+datasheet:
+  counterbalancing.optimise.scale: mad
+  counterbalancing.optimise.n_swaps: 1

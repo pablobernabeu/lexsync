@@ -1,0 +1,26 @@
+# Twin-edge case: balanced lists under counterbalance.scale: mad. Each dimension is
+# quantised as deviations from its mean in units of its mean absolute deviation, on
+# hundredths from the shared rounder, and both engines must deal the item sets to the
+# same lists. The ratings sit between 6 and 7, so under the default mean scale their
+# spread is a small part of their mean, they count for little, and the sets are dealt
+# differently.
+# The word forms are common English words. The Zipf frequencies and the ratings are
+# invented for this fixture and describe no corpus.
+name: twin_edge_scale_mad
+language: english
+lexicon: lexicon.csv
+description: 'Nouns versus verbs, dealt to two lists balanced on length, frequency and a rating, each in units of its mean absolute deviation.'
+n_per_condition: 6
+conditions:
+  - name: noun
+    define_by:
+      pos: [noun]
+  - name: verb
+    define_by:
+      pos: [verb]
+match_on: [length, frequency]
+counterbalance:
+  lists: 2
+  optimise: true
+  balance_on: [length, frequency, rating]
+  scale: mad

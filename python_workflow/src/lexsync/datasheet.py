@@ -131,6 +131,9 @@ from .scripting import (
 #                               design sets counterbalance.max_run
 #   counterbalancing.orders     the trial orders per list ({m, rule}), present only when
 #                               the design sets counterbalance.orders above 1
+#   counterbalancing.optimise.scale  the scale the balance optimiser quantised on,
+#                               present only when it is not the default, mean (whose
+#                               cost_unit names it)
 DATASHEET_VERSION = "1.2"
 
 # Datasheet labels for the pseudoword generators in generation.py, keyed by the
@@ -139,6 +142,15 @@ DATASHEET_VERSION = "1.2"
 _GENERATION_LABELS = {
     "letter_substitution": "constrained letter substitution (deterministic pseudowords)",
     "subsyllabic": "subsyllabic constituent swap (Wuggy-style, deterministic pseudowords)",
+}
+
+# What the Methods paragraph says of the balance optimiser's scale, keyed by
+# counterbalance.scale. The default, mean, adds nothing, so its sentence reads as it
+# did before the option. Kept character-for-character identical to
+# .BALANCE_SCALE_NOTES in datasheet.R.
+_BALANCE_SCALE_NOTES = {
+    "mad": (" on each dimension's deviations from its mean, in units of its mean "
+            "absolute deviation"),
 }
 
 # The credit the datasheet and the Methods paragraph give a lexicon lexsync ships.
@@ -1618,10 +1630,10 @@ def methods_paragraph(ds: dict) -> str:
     bal = (ds.get("counterbalancing") or {}).get("optimise")
     bal_note = "" if not bal else (
         ". Item sets were assigned to lists so as to equate the lists on %s rather than "
-        "by an arbitrary deal, by a deterministic integer search (%d swap(s); imbalance "
-        "reduced from %d to %d)"
-        % (", ".join(bal["dimensions"]), bal["n_swaps"],
-           bal["cost_before"], bal["cost_after"]))
+        "by an arbitrary deal, by a deterministic integer search%s (%d swap(s); "
+        "imbalance reduced from %d to %d)"
+        % (", ".join(bal["dimensions"]), _BALANCE_SCALE_NOTES.get(bal.get("scale"), ""),
+           bal["n_swaps"], bal["cost_before"], bal["cost_after"]))
     # Placed before the pool size, which it shrank.
     excluded = _exclusions_note(ds)
     excluded = ". " + excluded if excluded else ""

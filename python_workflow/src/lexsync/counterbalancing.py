@@ -19,7 +19,8 @@ from itertools import product
 import numpy as np
 import pandas as pd
 
-from .io_utils import _key_part
+from .design import _shown
+from .io_utils import _key_part, _round_dp_scaled
 from .paradigms import get_paradigm
 
 # The recipes counterbalance() knows, which counterbalance.recipe may name, and the
@@ -470,18 +471,21 @@ def _trial_order_record(presented: pd.DataFrame, design: dict) -> dict:
 #
 # Mirrors R_workflow/R/counterbalancing.R.
 
-# Milli-units of a dimension's own mean, the scale every dimension is quantised to.
-# Expressing all dimensions in one unit is what lets their imbalances be added without
-# a per-dimension float weight: a word's length and its Zipf frequency differ by
-# orders of magnitude in raw units, and summing raw deviations would silently optimise
-# almost entirely for whichever dimension has the larger numbers.
+# Each dimension is quantised to its own unit, the mean's or the mean absolute
+# deviation's as counterbalance.scale says (see _quantise_dim). Expressing all
+# dimensions in such a unit is what lets their imbalances be added without a
+# per-dimension float weight: a word's length and its Zipf frequency differ by orders
+# of magnitude in raw units, and summing raw deviations would silently optimise almost
+# entirely for whichever dimension has the larger numbers.
 #
-# The constant is 1000 times the 100 that `unit` already carries (see _quantise_dim),
-# so a value at the dimension's mean quantises to 1000. That factor is not cosmetic: at
-# 1000 here, a value at the mean quantised to 10, which left only about ten
-# distinguishable levels across a dimension's whole range, and imbalances smaller than
-# a tenth of the mean were invisible to the objective. The search then traded away a
-# dimension it could not see in order to improve one it could.
+# Under the mean scale the constant is 1000 times the 100 that `unit` already carries,
+# so a value at the dimension's mean quantises to 1000, a milli-unit of the mean. That
+# factor is not cosmetic: at 1000 here, a value at the mean quantised to 10, which left
+# only about ten distinguishable levels across a dimension's whole range, and
+# imbalances smaller than a tenth of the mean were invisible to the objective. The
+# search then traded away a dimension it could not see in order to improve one it
+# could. Under the mad scale the deviation and the unit are both in hundredths, so a
+# deviation of one mean absolute deviation quantises to 100000.
 BALANCE_UNIT_SCALE = 100000
 
 # Guard on the objective's magnitude. Python ints are arbitrary precision, but the R
@@ -489,6 +493,41 @@ BALANCE_UNIT_SCALE = 100000
 # both engines refuse the same designs rather than one of them silently rounding.
 # Nothing near this is reachable with realistic designs.
 BALANCE_MAX_MAGNITUDE = 2 ** 50
+
+# The scales counterbalance.scale may name. A closed set, so a misspelt value is
+# refused, and the error names it.
+BALANCE_SCALES = ("mean", "mad")
+
+# What the report's cost is counted in, under each scale. The mean scale's wording is
+# that of every release before counterbalance.scale, so a record of the default reads
+# as it did. Must stay identical to .BALANCE_COST_UNITS in
+# R_workflow/R/counterbalancing.R.
+_BALANCE_COST_UNITS = {
+    "mean": ("summed absolute deviation of each list's dimension total from its fair "
+             "share, in milli-units of the dimension's mean, scaled by the number of "
+             "item sets"),
+    "mad": ("summed absolute deviation of each list's dimension total from its fair "
+            "share, in hundred-thousandths of the dimension's mean absolute deviation "
+            "about its mean, scaled by the number of item sets"),
+}
+
+
+def _balance_scale(design: dict) -> str:
+    """The scale balance_lists() quantises each dimension on.
+
+    ``counterbalance.scale`` when the design names one, else ``mean``, the rule of
+    every release before the option, so a design that names no scale keeps its lists.
+    Read on presence, as R's %||% reads it, so the two engines refuse the same values.
+    validate_design() calls this too, so an unknown scale is refused before anything
+    is selected. Mirrors .balance_scale in R_workflow/R/counterbalancing.R.
+    """
+    val = (design.get("counterbalance") or {}).get("scale")
+    if val is None:
+        return "mean"
+    if not isinstance(val, str) or val not in BALANCE_SCALES:
+        raise ValueError(f"lexsync: unknown counterbalance.scale '{_shown(val)}'. "
+                         f"Known scales: {', '.join(BALANCE_SCALES)}.")
+    return val
 
 
 def _balance_dims(design: dict) -> list:
@@ -507,25 +546,33 @@ def _balance_dims(design: dict) -> list:
     return out
 
 
-def _quantise_dim(values, name: str) -> list:
-    """Quantise one dimension to integers in milli-units of its own mean.
+def _quantise_dim(values, name: str, scale: str = "mean") -> list:
+    """Quantise one dimension to integers, on the scale counterbalance.scale names.
 
-    The only floating-point steps in the whole optimiser are here, and each is a
-    single IEEE operation that the standard requires to be correctly rounded, so both
-    engines hold the same double before it is truncated. Truncation of a double is
-    exact, so no rounding mode is involved. ``round`` would have agreed on every case
-    measured, but truncation removes the question rather than answering it.
+    Under ``mean``, each value in milli-units of the dimension's own mean. The only
+    floating-point steps in the whole optimiser are here, and each is a single IEEE
+    operation that the standard requires to be correctly rounded, so both engines hold
+    the same double before it is truncated. Truncation of a double is exact, so no
+    rounding mode is involved. ``round`` would have agreed on every case measured, but
+    truncation removes the question rather than answering it.
 
     The mean is computed from INTEGER counts, never as a float sum: summing 20000
     doubles was measured to give three different answers across R's sum(),
     math.fsum, numpy's pairwise sum and a naive loop, so a float mean here could put
     the two engines on different search paths from the first step.
+
+    Dividing by the mean weights a dimension by its SD / mean, which depends on where
+    its scale starts: Zipf frequency, which starts near 3, counted for least of the
+    four dimensions in en_balanced_lists. That suits ratio scales only. ``mad``
+    quantises deviations from the mean instead (see _quantise_mad).
     """
     vals = [float(v) for v in values]
     if any(v != v for v in vals):
         raise ValueError(
             "lexsync: dimension '%s' has missing values, so it cannot be balanced "
             "across lists. Fill or drop those items." % name)
+    if scale == "mad":
+        return _quantise_mad(vals, name)
     # math.trunc, guarded on finiteness, rather than a bare int(): int(inf) raises
     # OverflowError with a message of Python's own, where R's trunc(Inf) is Inf and
     # reaches the size refusal below. Truncating BEFORE the comparison, as the R twin
@@ -539,14 +586,47 @@ def _quantise_dim(values, name: str) -> list:
     return [int(v * BALANCE_UNIT_SCALE / unit) for v in vals]
 
 
-def _balance_values(stimuli: pd.DataFrame, dims: list) -> dict:
+def _quantise_mad(vals: list, name: str) -> list:
+    """Quantise one dimension's deviations from its mean, in hundred-thousandths of
+    its mean absolute deviation.
+
+    Each value becomes a whole number of hundredths by the shared rounder, the
+    integer mean is the floor of their sum over their count, and the unit is the
+    integer mean of the absolute deviations from it, at least 1. The values are
+    rounded, not truncated, because a shifted value can scale to a hair below a whole
+    hundredth ((5.26 - 3) * 100 is 225.99999999999997), and truncation would move it
+    by one. Adding a constant that is a whole number of hundredths then moves every
+    value, and the mean with them, by the same whole number, and leaves the
+    deviations and the unit as they were. The division by the unit is a single IEEE
+    operation and the truncation is exact, so both engines hold the same integers.
+    Mirrors .quantise_mad in R_workflow/R/counterbalancing.R.
+    """
+    hundredths = []
+    for v in vals:
+        y = v * 100
+        # An infinite value has no hundredths. The R twin's rounder passes it through
+        # to the size refusal, so it is refused here by the same message.
+        h = _round_dp_scaled(y) if math.isfinite(y) else None
+        if h is None or abs(h) > 2 ** 31 - 1:
+            raise ValueError(
+                "lexsync: dimension '%s' has values too large to balance on." % name)
+        hundredths.append(h)
+    n = len(hundredths)
+    # Floor division, as R's %/% gives, so a negative sum rounds down in both engines.
+    centre = sum(hundredths) // n
+    deviations = [h - centre for h in hundredths]
+    unit = max(1, sum(abs(d) for d in deviations) // n)
+    return [math.trunc(float(d * BALANCE_UNIT_SCALE) / unit) for d in deviations]
+
+
+def _balance_values(stimuli: pd.DataFrame, dims: list, scale: str = "mean") -> dict:
     """One integer per set per dimension: the set's total, because a list receives
     whole sets. Rows are grouped by set in sorted order so both engines build the
     same matrix from the same frame."""
     sets = sorted(stimuli["set"].unique())
     V = {}
     for d in dims:
-        q = _quantise_dim(stimuli[d], d)
+        q = _quantise_dim(stimuli[d], d, scale)
         by_set = {s: 0 for s in sets}
         for s, qv in zip(stimuli["set"], q, strict=True):
             by_set[s] += qv                          # exact integer sum
@@ -583,6 +663,13 @@ def balance_lists(stimuli: pd.DataFrame, design: dict, schema: dict) -> dict:
     is a non-negative integer that strictly decreases, the search terminates;
     ``max_passes`` bounds it anyway and the report says whether the bound was reached.
 
+    ``counterbalance.scale`` sets each dimension's unit. ``mean``, the default,
+    divides by the dimension's mean, which suits ratio scales only. ``mad`` balances
+    deviations from the mean in units of the mean absolute deviation, so adding a
+    constant to a dimension, such as writing Zipf frequency as Zipf - 3, leaves the
+    lists unchanged. The report then gives ``scale`` too, and ``cost_unit`` names the
+    unit under either scale.
+
     Five situations raise ``ValueError`` rather than being answered with an assignment
     that would mislead. A Latin-square design is refused because every item already
     appears in every list there, so there is nothing left to equate, and fewer than two
@@ -617,11 +704,16 @@ def balance_lists(stimuli: pd.DataFrame, design: dict, schema: dict) -> dict:
         raise ValueError("lexsync: cannot balance on column(s) the stimuli do not "
                          "have: %s." % ", ".join("'%s'" % a for a in absent))
 
+    scale = _balance_scale(design)
     sets = sorted(stimuli["set"].unique())
     n_sets = len(sets)
-    V = _balance_values(stimuli, dims)
+    V = _balance_values(stimuli, dims, scale)
     totals = {d: sum(v) for d, v in V.items()}
-    if max((abs(t) for t in totals.values()), default=0) * n_sets > BALANCE_MAX_MAGNITUDE:
+    # Bounded on the sum of the absolute set totals, which bounds every list's total.
+    # Under mad the values are deviations whose total is near zero, so a bound on the
+    # total would bound nothing. For values of one sign the two bounds are the same.
+    if (max((sum(abs(v) for v in vals) for vals in V.values()), default=0) * n_sets
+            > BALANCE_MAX_MAGNITUDE):
         raise ValueError(
             "lexsync: the balance objective would exceed the exact-integer range.")
 
@@ -680,17 +772,18 @@ def balance_lists(stimuli: pd.DataFrame, design: dict, schema: dict) -> dict:
         if pass_i == max_passes:
             hit_bound = True
 
-    return {
-        "list_of_set": {s: int(a) for s, a in zip(sets, assign, strict=True)},
-        "report": {
-            "dimensions": list(dims), "cost_before": int(cost0),
-            "cost_after": int(cost), "n_swaps": int(n_swaps),
-            "max_passes_reached": hit_bound,
-            "cost_unit": ("summed absolute deviation of each list's dimension total "
-                          "from its fair share, in milli-units of the dimension's "
-                          "mean, scaled by the number of item sets"),
-        },
+    report = {
+        "dimensions": list(dims), "cost_before": int(cost0),
+        "cost_after": int(cost), "n_swaps": int(n_swaps),
+        "max_passes_reached": hit_bound,
+        "cost_unit": _BALANCE_COST_UNITS[scale],
     }
+    # Recorded only off the default, so the record of a design that names no scale
+    # reads as it did before the option. Its cost_unit names the mean.
+    if scale != "mean":
+        report["scale"] = scale
+    return {"list_of_set": {s: int(a) for s, a in zip(sets, assign, strict=True)},
+            "report": report}
 
 
 def counterbalance(stimuli: pd.DataFrame, design: dict, schema: dict,

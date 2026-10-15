@@ -326,7 +326,7 @@ test_that("the_key_vocabularies_agree_across_engines", {
   digest_of <- function(keys) digest::digest(paste(keys, collapse = "\n"), algo = "sha256",
                                              serialize = FALSE)
   expect_identical(digest_of(.DESIGN_KEYS),
-                   "5fff45d5c9a3416c72c02bd641aea16ef1c6cf2f503dcbf9a6099dbab98f6f15")
+                   "0d3f42421a7f86fcaa4a8c5b68f1809bae54b3ec2b5587834b075b1e114fdead")
   expect_identical(digest_of(.SCHEMA_KEYS),
                    "6fe50b7e1f4cd526cb9a555bf649686c8859b62ec8783d24c6ba073ad1927aa3")
 })
@@ -419,6 +419,23 @@ test_that("counterbalance_optimise_must_be_true_or_false", {
   for (value in list(TRUE, FALSE, NULL)) {
     design <- valid_design(counterbalance = list(lists = 2L, optimise = value))
     expect_identical(validate_design(design, list()), character(0))
+  }
+})
+
+test_that("counterbalance_scale_is_mean_or_mad", {
+  # counterbalance.scale decides how the balance optimiser weighs its dimensions, so a
+  # value it does not know is refused before anything is selected, with one message in
+  # both engines. Pinned identically in test_io_utils.py.
+  for (value in list("mean", "mad", NULL)) {
+    design <- valid_design(counterbalance = list(lists = 2L, scale = value))
+    expect_identical(validate_design(design, list()), character(0))
+  }
+  shown <- list(range = "range", MAD = "MAD", true = TRUE, `1` = 1L)
+  for (text in names(shown)) {
+    design <- valid_design(counterbalance = list(lists = 2L, scale = shown[[text]]))
+    expect_error(validate_design(design, list()),
+                 sprintf(paste("lexsync: unknown counterbalance.scale '%s'.",
+                               "Known scales: mean, mad."), text), fixed = TRUE)
   }
 })
 

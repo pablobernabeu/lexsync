@@ -1,21 +1,21 @@
-{"time":"2026-10-15 03:29:45.202378","message":"lexsync: the design gives no `instructions` and its language is 'spanish', so the experiments show lexsync's instructions in English; give `instructions` in the participants' language.","data":null}
-{"time":"2026-10-15 03:29:45.21083","message":"loading lexicon 'corpora/derived/es.csv'","data":null}
-{"time":"2026-10-15 03:29:45.971336","message":"lexicon loaded: 30000 words","data":{"words":30000}}
-{"time":"2026-10-15 03:29:45.990444","message":"pool after filters: 8305 words","data":{"pool":8305}}
-{"time":"2026-10-15 03:29:47.253526","message":"pseudowords checked against 334625 known word form(s) from 'corpora/derived/es_known_forms.txt'","data":{"exclude":"corpora/derived/es_known_forms.txt","sha256":"281fa6c374e1fa6550e6f5700d19b9bae4ccb664cfd3fc37ca6ffc087acdd776"}}
-{"time":"2026-10-15 03:29:54.594029","message":"generated 120 items (words + pseudowords, letter_substitution)","data":{"conditions":"word, pseudoword"}}
-{"time":"2026-10-15 03:29:56.662831","message":"equivalence pseudoword vs word on 'length': d = 0.00 [-0.30, 0.30], TOST p = 0.004 (equivalent)","data":null}
-{"time":"2026-10-15 03:29:56.672718","message":"equivalence pseudoword vs word on 'bigram_freq': d = -1.21 [-1.54, -0.88], TOST p = 1.000 (not shown equivalent)","data":null}
-{"time":"2026-10-15 03:29:56.680737","message":"equivalence pseudoword vs word on 'n_density': d = 0.00 [-0.30, 0.30], TOST p = 0.004 (equivalent)","data":null}
-{"time":"2026-10-15 03:29:56.689265","message":"equivalence pseudoword vs word on 'old20': d = 0.02 [-0.28, 0.32], TOST p = 0.005 (equivalent)","data":null}
-{"time":"2026-10-15 03:29:56.770451","message":"wrote 'es_lexdec_spanish_stimuli_R.csv'","data":{"path":"output/stimuli/es_lexdec_spanish_stimuli_R.csv","rows":120,"md5":"f34a8e3b82774563ec5c6e51211fa385"}}
-{"time":"2026-10-15 03:29:56.808611","message":"wrote 'es_lexdec_spanish_descriptives_R.csv'","data":{"path":"output/reports/es_lexdec_spanish_descriptives_R.csv","rows":8,"md5":"a5359adc48f76fd75aefa9b95c83907e"}}
-{"time":"2026-10-15 03:29:56.844654","message":"wrote 'es_lexdec_spanish_comparisons_R.csv'","data":{"path":"output/reports/es_lexdec_spanish_comparisons_R.csv","rows":4,"md5":"a2b9a2754d018354bbe0abdbb5850666"}}
-{"time":"2026-10-15 03:29:57.329293","message":"wrote 'es_lexdec_spanish_psychopy.py'","data":{"path":"output/experiments/es_lexdec_spanish_psychopy.py","rows":"NA","md5":"6e8ec3994e96f4ef6239e27d55e8836a"}}
-{"time":"2026-10-15 03:29:57.351393","message":"wrote 'es_lexdec_spanish.osexp'","data":{"path":"output/experiments/es_lexdec_spanish.osexp","rows":"NA","md5":"275c631cd7a24cd5bd7d7b5c2f6d7dc5"}}
-{"time":"2026-10-15 03:29:57.373834","message":"wrote 'es_lexdec_spanish.html'","data":{"path":"output/experiments/es_lexdec_spanish.html","rows":"NA","md5":"d18626fc6446058d92149ddd78bdbd8d"}}
-{"time":"2026-10-15 03:29:57.403029","message":"wrote 'es_lexdec_spanish_psychopy.csv'","data":{"path":"output/experiments/es_lexdec_spanish_psychopy.csv","rows":"NA","md5":"2a6f6f7cfb6929d91027c03e23698263"}}
-{"time":"2026-10-15 03:29:57.426371","message":"wrote 'es_lexdec_spanish_opensesame.csv'","data":{"path":"output/experiments/es_lexdec_spanish_opensesame.csv","rows":"NA","md5":"d0ffb15c8bb700fa775f65d16d8ae164"}}
-{"time":"2026-10-15 03:29:57.451219","message":"wrote 'es_lexdec_spanish_opensesame_text.csv'","data":{"path":"output/experiments/es_lexdec_spanish_opensesame_text.csv","rows":"NA","md5":"bf9c50c952be24b560b4a1ce78815bce"}}
-{"time":"2026-10-15 03:29:57.968314","message":"wrote 'es_lexdec_spanish_datasheet_R.json'","data":{"path":"output/reports/es_lexdec_spanish_datasheet_R.json","rows":"NA","md5":"a0741ed99c1b63d0e114a9de36bc625a"}}
-{"time":"2026-10-15 03:29:57.991124","message":"wrote 'es_lexdec_spanish_datasheet_R.md'","data":{"path":"output/reports/es_lexdec_spanish_datasheet_R.md","rows":"NA","md5":"5796250c054ac313bbe49ef66df1b06a"}}
+{"time":"2026-10-15 04:45:41.964829","message":"lexsync: the design gives no `instructions` and its language is 'spanish', so the experiments show lexsync's instructions in English; give `instructions` in the participants' language.","data":null}
+{"time":"2026-10-15 04:45:41.970387","message":"loading lexicon 'corpora/derived/es.csv'","data":null}
+{"time":"2026-10-15 04:45:42.93021","message":"lexicon loaded: 30000 words","data":{"words":30000}}
+{"time":"2026-10-15 04:45:42.9511","message":"pool after filters: 8305 words","data":{"pool":8305}}
+{"time":"2026-10-15 04:45:44.016295","message":"pseudowords checked against 334625 known word form(s) from 'corpora/derived/es_known_forms.txt'","data":{"exclude":"corpora/derived/es_known_forms.txt","sha256":"281fa6c374e1fa6550e6f5700d19b9bae4ccb664cfd3fc37ca6ffc087acdd776"}}
+{"time":"2026-10-15 04:45:49.50057","message":"generated 120 items (words + pseudowords, letter_substitution)","data":{"conditions":"word, pseudoword"}}
+{"time":"2026-10-15 04:45:51.398247","message":"equivalence pseudoword vs word on 'length': d = 0.00 [-0.30, 0.30], TOST p = 0.004 (equivalent)","data":null}
+{"time":"2026-10-15 04:45:51.402723","message":"equivalence pseudoword vs word on 'bigram_freq': d = -1.21 [-1.54, -0.88], TOST p = 1.000 (not shown equivalent)","data":null}
+{"time":"2026-10-15 04:45:51.407842","message":"equivalence pseudoword vs word on 'n_density': d = 0.00 [-0.30, 0.30], TOST p = 0.004 (equivalent)","data":null}
+{"time":"2026-10-15 04:45:51.412076","message":"equivalence pseudoword vs word on 'old20': d = 0.02 [-0.28, 0.32], TOST p = 0.005 (equivalent)","data":null}
+{"time":"2026-10-15 04:45:51.457157","message":"wrote 'es_lexdec_spanish_stimuli_R.csv'","data":{"path":"output/stimuli/es_lexdec_spanish_stimuli_R.csv","rows":120,"md5":"f34a8e3b82774563ec5c6e51211fa385"}}
+{"time":"2026-10-15 04:45:51.474722","message":"wrote 'es_lexdec_spanish_descriptives_R.csv'","data":{"path":"output/reports/es_lexdec_spanish_descriptives_R.csv","rows":8,"md5":"a5359adc48f76fd75aefa9b95c83907e"}}
+{"time":"2026-10-15 04:45:51.492398","message":"wrote 'es_lexdec_spanish_comparisons_R.csv'","data":{"path":"output/reports/es_lexdec_spanish_comparisons_R.csv","rows":4,"md5":"a2b9a2754d018354bbe0abdbb5850666"}}
+{"time":"2026-10-15 04:45:51.791859","message":"wrote 'es_lexdec_spanish_psychopy.py'","data":{"path":"output/experiments/es_lexdec_spanish_psychopy.py","rows":"NA","md5":"6e8ec3994e96f4ef6239e27d55e8836a"}}
+{"time":"2026-10-15 04:45:51.801624","message":"wrote 'es_lexdec_spanish.osexp'","data":{"path":"output/experiments/es_lexdec_spanish.osexp","rows":"NA","md5":"275c631cd7a24cd5bd7d7b5c2f6d7dc5"}}
+{"time":"2026-10-15 04:45:51.811028","message":"wrote 'es_lexdec_spanish.html'","data":{"path":"output/experiments/es_lexdec_spanish.html","rows":"NA","md5":"d18626fc6446058d92149ddd78bdbd8d"}}
+{"time":"2026-10-15 04:45:51.826012","message":"wrote 'es_lexdec_spanish_psychopy.csv'","data":{"path":"output/experiments/es_lexdec_spanish_psychopy.csv","rows":"NA","md5":"2a6f6f7cfb6929d91027c03e23698263"}}
+{"time":"2026-10-15 04:45:51.83375","message":"wrote 'es_lexdec_spanish_opensesame.csv'","data":{"path":"output/experiments/es_lexdec_spanish_opensesame.csv","rows":"NA","md5":"d0ffb15c8bb700fa775f65d16d8ae164"}}
+{"time":"2026-10-15 04:45:51.84085","message":"wrote 'es_lexdec_spanish_opensesame_text.csv'","data":{"path":"output/experiments/es_lexdec_spanish_opensesame_text.csv","rows":"NA","md5":"bf9c50c952be24b560b4a1ce78815bce"}}
+{"time":"2026-10-15 04:45:52.300231","message":"wrote 'es_lexdec_spanish_datasheet_R.json'","data":{"path":"output/reports/es_lexdec_spanish_datasheet_R.json","rows":"NA","md5":"5e20da8bf753094ac2446aad7609d297"}}
+{"time":"2026-10-15 04:45:52.311778","message":"wrote 'es_lexdec_spanish_datasheet_R.md'","data":{"path":"output/reports/es_lexdec_spanish_datasheet_R.md","rows":"NA","md5":"5796250c054ac313bbe49ef66df1b06a"}}

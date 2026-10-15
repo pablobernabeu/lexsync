@@ -459,18 +459,21 @@
 # comparison, all of which are exact on integers held in doubles below 2^53. There is
 # no division anywhere in the objective.
 
-# Milli-units of a dimension's own mean, the scale every dimension is quantised to.
-# Expressing all dimensions in one unit is what lets their imbalances be added
-# without a per-dimension float weight: a word's length and its Zipf frequency differ
-# by orders of magnitude in raw units, and summing raw deviations would silently
-# optimise almost entirely for whichever dimension has the larger numbers.
+# Each dimension is quantised to its own unit, the mean's or the mean absolute
+# deviation's as counterbalance.scale says (see .quantise_dim). Expressing all
+# dimensions in such a unit is what lets their imbalances be added without a
+# per-dimension float weight: a word's length and its Zipf frequency differ by orders
+# of magnitude in raw units, and summing raw deviations would silently optimise almost
+# entirely for whichever dimension has the larger numbers.
 #
-# The constant is 1000 times the 100 that `unit` already carries (see .quantise_dim),
-# so a value at the dimension's mean quantises to 1000. That factor is not cosmetic:
-# at 1000 here, a value at the mean quantised to 10, which left only about ten
-# distinguishable levels across a dimension's whole range, and imbalances smaller than
-# a tenth of the mean were invisible to the objective. The search then traded away a
-# dimension it could not see in order to improve one it could.
+# Under the mean scale the constant is 1000 times the 100 that `unit` already
+# carries, so a value at the dimension's mean quantises to 1000, a milli-unit of the
+# mean. That factor is not cosmetic: at 1000 here, a value at the mean quantised to
+# 10, which left only about ten distinguishable levels across a dimension's whole
+# range, and imbalances smaller than a tenth of the mean were invisible to the
+# objective. The search then traded away a dimension it could not see in order to
+# improve one it could. Under the mad scale the deviation and the unit are both in
+# hundredths, so a deviation of one mean absolute deviation quantises to 100000.
 .BALANCE_UNIT_SCALE <- 100000L
 
 # Guard on the objective's magnitude. The arithmetic is exact only while every
@@ -480,6 +483,38 @@
 # tripwire rather than a limit, and it fails loudly where quiet rounding would hide
 # the problem.
 .BALANCE_MAX_MAGNITUDE <- 2^50
+
+# The scales counterbalance.scale may name. A closed set, so a misspelt value is
+# refused, and the error names it.
+.BALANCE_SCALES <- c("mean", "mad")
+
+# What the report's cost is counted in, under each scale. The mean scale's wording is
+# that of every release before counterbalance.scale, so a record of the default reads
+# as it did. Must stay identical to _BALANCE_COST_UNITS in counterbalancing.py.
+.BALANCE_COST_UNITS <- c(
+  mean = paste("summed absolute deviation of each list's dimension total from its fair",
+               "share, in milli-units of the dimension's mean, scaled by the number of",
+               "item sets"),
+  mad = paste("summed absolute deviation of each list's dimension total from its fair",
+              "share, in hundred-thousandths of the dimension's mean absolute deviation",
+              "about its mean, scaled by the number of item sets")
+)
+
+# The scale balance_lists() quantises each dimension on: counterbalance.scale when the
+# design names one, else "mean", the rule of every release before the option, so a
+# design that names no scale keeps its lists. %||% takes any value that is present, as
+# the Python twin does, so the two engines refuse the same values. validate_design()
+# calls this too, so an unknown scale is refused before anything is selected. Mirrors
+# _balance_scale in counterbalancing.py.
+.balance_scale <- function(design) {
+  val <- design[["counterbalance"]][["scale"]]
+  if (is.null(val)) return("mean")
+  if (!is.character(val) || length(val) != 1L || is.na(val) || !val %in% .BALANCE_SCALES) {
+    stop(sprintf("lexsync: unknown counterbalance.scale '%s'. Known scales: %s.",
+                 .shown(val), paste(.BALANCE_SCALES, collapse = ", ")), call. = FALSE)
+  }
+  val
+}
 
 .balance_dims <- function(design) {
   cb <- design[["counterbalance"]] %||% list()
@@ -492,11 +527,12 @@
   unique(as.character(dims))
 }
 
-# Quantise one dimension to integers in milli-units of its own mean.
+# Quantise one dimension to integers, on the scale counterbalance.scale names.
 #
-# The only floating-point steps in the whole optimiser are here, and each is a single
-# IEEE operation that the standard requires to be correctly rounded, so both engines
-# hold the same double before it is truncated. Truncation of a double is exact, so no
+# Under "mean", each value in milli-units of the dimension's own mean. The only
+# floating-point steps in the whole optimiser are here, and each is a single IEEE
+# operation that the standard requires to be correctly rounded, so both engines hold
+# the same double before it is truncated. Truncation of a double is exact, so no
 # rounding mode is involved. `round()` would have agreed on every case measured, but
 # truncation removes the question rather than answering it.
 #
@@ -504,12 +540,18 @@
 # doubles was measured to give three different answers across R's sum(), math.fsum,
 # numpy's pairwise sum and a naive loop, so a float mean here could put the two
 # engines on different search paths from the first step.
-.quantise_dim <- function(values, name) {
+#
+# Dividing by the mean weights a dimension by its SD / mean, which depends on where its
+# scale starts: Zipf frequency, which starts near 3, counted for least of the four
+# dimensions in en_balanced_lists. That suits ratio scales only. "mad" quantises
+# deviations from the mean instead (see .quantise_mad).
+.quantise_dim <- function(values, name, scale = "mean") {
   if (any(is.na(values))) {
     stop(sprintf(paste("lexsync: dimension '%s' has missing values, so it cannot be",
                        "balanced across lists. Fill or drop those items."), name),
          call. = FALSE)
   }
+  if (identical(scale, "mad")) return(.quantise_mad(values, name))
   # Integer magnitudes first, so the unit is reproducible without a float reduction.
   # sum() over an integer vector accumulates in a 64-bit integer and returns a double
   # if the total leaves int range (measured on R 4.6.1: no warning, no NA), so the
@@ -524,15 +566,45 @@
   trunc(as.numeric(values) * .BALANCE_UNIT_SCALE / unit)
 }
 
+# Quantise one dimension's deviations from its mean, in hundred-thousandths of its mean
+# absolute deviation.
+#
+# Each value becomes a whole number of hundredths by the shared rounder, the integer
+# mean is the floor of their sum over their count, and the unit is the integer mean of
+# the absolute deviations from it, at least 1. The values are rounded, not truncated,
+# because a shifted value can scale to a hair below a whole hundredth ((5.26 - 3) * 100
+# is 225.99999999999997), and truncation would move it by one. Adding a constant that
+# is a whole number of hundredths then moves every value, and the mean with them, by
+# the same whole number, and leaves the deviations and the unit as they were. The
+# division by the unit is a single IEEE operation and the truncation is exact, so both
+# engines hold the same integers. Mirrors _quantise_mad in counterbalancing.py.
+.quantise_mad <- function(values, name) {
+  # An infinite value passes through the rounder unchanged and is refused here, with
+  # any finite value too large for its hundredths to be summed exactly.
+  hundredths <- .round_dp_scaled(as.numeric(values) * 100)
+  if (max(abs(hundredths), 0) > .Machine$integer.max) {
+    stop(sprintf("lexsync: dimension '%s' has values too large to balance on.", name),
+         call. = FALSE)
+  }
+  n <- length(hundredths)
+  # Whole numbers held in doubles, exact below 2^53, which the bound above and any
+  # realistic number of items keep the sums well inside. %/% on doubles is floor
+  # division, as Python's // is, so a negative sum rounds down in both engines.
+  centre <- sum(hundredths) %/% n
+  deviations <- hundredths - centre
+  unit <- max(1, sum(abs(deviations)) %/% n)
+  trunc(deviations * .BALANCE_UNIT_SCALE / unit)
+}
+
 # One integer per set per dimension: the set's total, because a list receives whole
 # sets. Rows are grouped by set in byte order so the two engines build the same
 # matrix from the same frame.
-.balance_values <- function(stimuli, dims) {
+.balance_values <- function(stimuli, dims, scale = "mean") {
   sets <- sort(unique(stimuli$set))
   V <- matrix(0, nrow = length(dims), ncol = length(sets),
               dimnames = list(dims, as.character(sets)))
   for (i in seq_along(dims)) {
-    q <- .quantise_dim(stimuli[[dims[i]]], dims[i])
+    q <- .quantise_dim(stimuli[[dims[i]]], dims[i], scale)
     # A plain integer sum per set: exact, so grouping order cannot matter.
     for (j in seq_along(sets)) V[i, j] <- sum(q[stimuli$set == sets[j]])
   }
@@ -569,6 +641,13 @@
 #' non-negative integer that strictly decreases, the search terminates; `max_passes`
 #' bounds it anyway and the report says whether the bound was reached.
 #'
+#' `counterbalance.scale` sets each dimension's unit. `mean`, the default, divides by
+#' the dimension's mean, which suits ratio scales only. `mad` balances deviations from
+#' the mean in units of the mean absolute deviation, so adding a constant to a
+#' dimension, such as writing Zipf frequency as Zipf - 3, leaves the lists unchanged.
+#' The report then gives `scale` too, and `cost_unit` names the unit under either
+#' scale.
+#'
 #' Five situations are refused rather than answered with an assignment that would
 #' mislead. A Latin-square design is refused because every item already appears in
 #' every list there, so there is nothing left to equate, and fewer than two lists
@@ -581,11 +660,13 @@
 #' @param stimuli A stimuli data frame with a `set` column and the balance dimensions.
 #' @param design A parsed design configuration. Reads `counterbalance.lists`,
 #'   `counterbalance.balance_on` (defaulting to `match_on`, then to the continuous
-#'   predictor and controls) and `counterbalance.max_passes`.
+#'   predictor and controls), `counterbalance.max_passes` and `counterbalance.scale`
+#'   (`mean` or `mad`, defaulting to `mean`).
 #' @param schema The parsed global schema (provides the seed).
 #' @return A list with `list_of_set` (a named integer vector mapping each set to a
 #'   list) and `report` (the dimensions, the integer cost before and after, the number
-#'   of swaps taken, and whether the pass bound was reached).
+#'   of swaps taken, whether the pass bound was reached, the unit the cost is counted
+#'   in and, under the `mad` scale, the scale).
 #' @export
 balance_lists <- function(stimuli, design, schema) {
   n_lists <- as.integer(design[["counterbalance"]][["lists"]] %||% 1L)
@@ -613,11 +694,15 @@ balance_lists <- function(stimuli, design, schema) {
          call. = FALSE)
   }
 
+  scale <- .balance_scale(design)
   sets <- sort(unique(stimuli$set))
   n_sets <- length(sets)
-  V <- .balance_values(stimuli, dims)
+  V <- .balance_values(stimuli, dims, scale)
   totals <- rowSums(V)
-  if (max(abs(totals)) * n_sets > .BALANCE_MAX_MAGNITUDE) {
+  # Bounded on the sum of the absolute set totals, which bounds every list's total.
+  # Under mad the values are deviations whose total is near zero, so a bound on the
+  # total would bound nothing. For values of one sign the two bounds are the same.
+  if (max(rowSums(abs(V))) * n_sets > .BALANCE_MAX_MAGNITUDE) {
     stop("lexsync: the balance objective would exceed the exact-integer range.",
          call. = FALSE)
   }
@@ -685,13 +770,14 @@ balance_lists <- function(stimuli, design, schema) {
     if (pass == max_passes) hit_bound <- TRUE
   }
 
+  report <- list(dimensions = as.list(dims), cost_before = cost0, cost_after = cost,
+                 n_swaps = n_swaps, max_passes_reached = hit_bound,
+                 cost_unit = .BALANCE_COST_UNITS[[scale]])
+  # Recorded only off the default, so the record of a design that names no scale reads
+  # as it did before the option. Its cost_unit names the mean.
+  if (!identical(scale, "mean")) report$scale <- scale
   list(list_of_set = stats::setNames(as.integer(assign), as.character(sets)),
-       report = list(dimensions = as.list(dims), cost_before = cost0, cost_after = cost,
-                     n_swaps = n_swaps, max_passes_reached = hit_bound,
-                     cost_unit = paste("summed absolute deviation of each list's",
-                                       "dimension total from its fair share, in",
-                                       "milli-units of the dimension's mean, scaled",
-                                       "by the number of item sets")))
+       report = report)
 }
 
 #' Assign stimuli to lists and a randomised, reproducible trial order

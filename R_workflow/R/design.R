@@ -37,6 +37,7 @@
   "counterbalance.balance_on", "counterbalance.max_passes", "counterbalance.recipe",
   "counterbalance.incomplete", "counterbalance.max_run", "counterbalance.run_on",
   "counterbalance.orders",
+  "counterbalance.scale",
   "continuous", "continuous.predictor", "continuous.controls",
   "norms",
   "events", "events[].type", "events[].content", "events[].duration_ms",
@@ -390,9 +391,10 @@ design_stem <- function(design) {
 #' known key of up to five characters, two for a longer one). It then refuses a
 #' missing, empty or non-text `name` or `language`, an `n_per_condition` or
 #' `n_per_cell` that is not a whole number of at least 1, a `counterbalance.optimise`
-#' that is not true or false, a `counterbalance.max_run` or `counterbalance.orders`
-#' that is not a whole number of at least 1, and a `counterbalance.run_on` that is not
-#' the name of a column. It refuses a name, language
+#' that is not true or false, a `counterbalance.scale` other than `mean` or `mad`, a
+#' `counterbalance.max_run` or `counterbalance.orders` that is not a whole number of at
+#' least 1, and a `counterbalance.run_on` that is not the name of a column. It refuses
+#' a name, language
 #' or font that cannot be written into the generated experiments, a trigger port that
 #' is not an address, and an event list the renderer refuses, such as one with an
 #' unknown timing key, a bad response key or a response key that YAML reads as a
@@ -450,6 +452,7 @@ validate_design <- function(design, schema) {
   counterbalance <- design[["counterbalance"]]
   if (.is_mapping(counterbalance)) {
     .require_bool(counterbalance[["optimise"]], "counterbalance.optimise")
+    .balance_scale(design)
   }
   # counterbalance.max_run, run_on and orders, refused here before anything is
   # selected, by the rule counterbalance() applies them with.

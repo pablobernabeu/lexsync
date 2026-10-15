@@ -1,0 +1,21 @@
+# Twin-edge case: a counterbalance.scale the optimiser does not know. `range` was one
+# of the location-invariant scales considered, and lexsync offers `mad` instead. Both
+# engines must refuse it before anything is selected, with the same message.
+# The word forms are common English words. The Zipf frequencies are invented for
+# this fixture and describe no corpus.
+name: twin_edge_scale_unknown
+language: english
+lexicon: lexicon.csv
+n_per_condition: 3
+conditions:
+  - name: noun
+    define_by:
+      pos: [noun]
+  - name: verb
+    define_by:
+      pos: [verb]
+match_on: [length, frequency]
+counterbalance:
+  lists: 2
+  optimise: true
+  scale: range

@@ -1,0 +1,13 @@
+word,freq_zipf,rating,pos,id,length,n_syllables,frequency,language,condition,set,list,trial
+garden,4.83,6.88,noun,10,6,2,4.83,english,noun,3,1,1
+gather,4.18,6.35,verb,11,6,2,4.18,english,verb,1,1,2
+listen,4.91,6.97,verb,13,6,2,4.91,english,verb,3,1,3
+carry,5.12,6.27,verb,6,5,2,5.12,english,verb,4,1,4
+anchor,3.66,6.42,noun,1,6,2,3.66,english,noun,1,1,5
+house,5.62,6.61,noun,12,5,2,5.62,english,noun,4,1,6
+river,4.71,6.83,noun,16,5,2,4.71,english,noun,5,2,1
+travel,4.86,6.56,verb,20,6,2,4.86,english,verb,2,2,2
+bottle,4.58,6.93,noun,5,6,2,4.58,english,noun,2,2,3
+telephone,4.62,6.31,noun,19,9,4,4.62,english,noun,6,2,4
+arrive,4.27,6.81,verb,2,6,3,4.27,english,verb,6,2,5
+follow,5.08,6.12,verb,9,6,2,5.08,english,verb,5,2,6

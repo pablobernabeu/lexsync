@@ -11,14 +11,16 @@ balance_lists(stimuli, design, schema)
 
 \item{design}{A parsed design configuration. Reads \code{counterbalance.lists},
 \code{counterbalance.balance_on} (defaulting to \code{match_on}, then to the continuous
-predictor and controls) and \code{counterbalance.max_passes}.}
+predictor and controls), \code{counterbalance.max_passes} and \code{counterbalance.scale}
+(\code{mean} or \code{mad}, defaulting to \code{mean}).}
 
 \item{schema}{The parsed global schema (provides the seed).}
 }
 \value{
 A list with \code{list_of_set} (a named integer vector mapping each set to a
 list) and \code{report} (the dimensions, the integer cost before and after, the number
-of swaps taken, and whether the pass bound was reached).
+of swaps taken, whether the pass bound was reached, the unit the cost is counted
+in and, under the \code{mad} scale, the scale).
 }
 \description{
 The factorial recipe's default deal is by set rank, which balances nothing. This
@@ -33,6 +35,13 @@ best swap each pass, and ties are broken by the seeded keyed hash rather than by
 position, so no list is favoured by being numbered first. Because the cost is a
 non-negative integer that strictly decreases, the search terminates; \code{max_passes}
 bounds it anyway and the report says whether the bound was reached.
+
+\code{counterbalance.scale} sets each dimension's unit. \code{mean}, the default, divides by
+the dimension's mean, which suits ratio scales only. \code{mad} balances deviations from
+the mean in units of the mean absolute deviation, so adding a constant to a
+dimension, such as writing Zipf frequency as Zipf - 3, leaves the lists unchanged.
+The report then gives \code{scale} too, and \code{cost_unit} names the unit under either
+scale.
 
 Five situations are refused rather than answered with an assignment that would
 mislead. A Latin-square design is refused because every item already appears in

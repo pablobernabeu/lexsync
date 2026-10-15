@@ -75,6 +75,9 @@
 #                               design sets counterbalance.max_run
 #   counterbalancing$orders     the trial orders per list (m, rule), present only when
 #                               the design sets counterbalance.orders above 1
+#   counterbalancing$optimise$scale  the scale the balance optimiser quantised on,
+#                               present only when it is not the default, mean (whose
+#                               cost_unit names it)
 DATASHEET_VERSION <- "1.2"
 
 # Datasheet labels for the pseudoword generators in generation.R, keyed by the
@@ -83,6 +86,15 @@ DATASHEET_VERSION <- "1.2"
 .GENERATION_LABELS <- list(
   letter_substitution = "constrained letter substitution (deterministic pseudowords)",
   subsyllabic = "subsyllabic constituent swap (Wuggy-style, deterministic pseudowords)"
+)
+
+# What the Methods paragraph says of the balance optimiser's scale, keyed by
+# counterbalance.scale. The default, mean, adds nothing, so its sentence reads as it
+# did before the option. Kept character-for-character identical to
+# _BALANCE_SCALE_NOTES in datasheet.py.
+.BALANCE_SCALE_NOTES <- list(
+  mad = paste(" on each dimension's deviations from its mean, in units of its mean",
+              "absolute deviation")
 )
 
 # The credit the datasheet and the Methods paragraph give a lexicon lexsync ships. Kept
@@ -1487,10 +1499,11 @@ methods_paragraph <- function(ds) {
   bal <- ds$counterbalancing$optimise
   bal_note <- if (is.null(bal)) "" else sprintf(
     paste0(". Item sets were assigned to lists so as to equate the lists on %s rather ",
-           "than by an arbitrary deal, by a deterministic integer search (%d swap(s); ",
+           "than by an arbitrary deal, by a deterministic integer search%s (%d swap(s); ",
            "imbalance reduced from %s to %s)"),
-    paste(unlist(bal$dimensions), collapse = ", "), bal$n_swaps,
-    format(bal$cost_before, scientific = FALSE),
+    paste(unlist(bal$dimensions), collapse = ", "),
+    .BALANCE_SCALE_NOTES[[bal[["scale"]] %||% "mean"]] %||% "",
+    bal$n_swaps, format(bal$cost_before, scientific = FALSE),
     format(bal$cost_after, scientific = FALSE))
   cp <- ds$selection$candidate_pool
   # The candidate pool counts the candidates excluded for a missing matched value,

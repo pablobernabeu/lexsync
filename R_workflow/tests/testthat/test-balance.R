@@ -143,3 +143,139 @@ test_that("a design without optimise is dealt by rank", {
   deal <- ((match(out$set, sets) - 1L) %% 4L) + 1L
   expect_identical(out$list, deal)
 })
+
+# ---- counterbalance.scale ----------------------------------------------------
+#
+# The mean scale divides each dimension by its mean, so a dimension's weight in the
+# objective is proportional to SD / mean and depends on where its scale starts. On
+# en_balanced_lists, Zipf frequency (SD / mean 0.17) counts for least, and writing it
+# as Zipf - 3 moves 22 of the 40 sets to another list. The mad scale quantises each
+# dimension's deviations from its mean in units of its mean absolute deviation, which
+# a constant shift on the hundredths grid leaves exactly as they were.
+
+bal_en_balanced <- function(scale = NULL) {
+  d <- list(name = "en_balanced_lists", language = "english",
+            match_on = list("length", "n_density", "old20"),
+            counterbalance = list(lists = 4L, optimise = TRUE,
+                                  balance_on = list("length", "n_density", "old20",
+                                                    "frequency")))
+  d$counterbalance$scale <- scale
+  d
+}
+
+bal_mean_cost_unit <- paste("summed absolute deviation of each list's dimension total",
+                            "from its fair share, in milli-units of the dimension's",
+                            "mean, scaled by the number of item sets")
+
+# The committed en_balanced_lists stimuli, whose `list` column the default scale dealt.
+bal_en_stimuli <- function() {
+  as.data.frame(read_csv_utf8(repo_path("output", "stimuli",
+                                        "en_balanced_lists_english_stimuli_R.csv"),
+                              as_character = "word"))
+}
+
+# Zipf - 3, a quarter added to OLD20 and two letters off every length: shifts that are
+# exact on the hundredths grid.
+bal_shifted <- function(stim) {
+  stim$frequency <- stim$frequency - 3
+  stim$old20 <- stim$old20 + 0.25
+  stim$length <- stim$length - 2L
+  stim
+}
+
+test_that("under mad, shifting a scale moves no set", {
+  stim <- bal_en_stimuli()
+  mad <- bal_en_balanced("mad")
+  expect_identical(balance_lists(bal_shifted(stim), mad, bal_schema)$list_of_set,
+                   balance_lists(stim, mad, bal_schema)$list_of_set)
+  # The same shifts move sets under the mean scale, which is what mad is for.
+  expect_false(identical(
+    balance_lists(bal_shifted(stim), bal_en_balanced(), bal_schema)$list_of_set,
+    balance_lists(stim, bal_en_balanced(), bal_schema)$list_of_set))
+})
+
+test_that("the engines agree on en_balanced_lists under mad", {
+  # Pinned character for character in test_balance.py.
+  res <- balance_lists(bal_en_stimuli(), bal_en_balanced("mad"), bal_schema)
+  expect_identical(paste(res$list_of_set, collapse = ""),
+                   "4434123412113234223122143432123411341324")
+  expect_equal(res$report$cost_before, 435405140)
+  expect_equal(res$report$cost_after, 22133820)
+  expect_identical(res$report$n_swaps, 8L)
+  expect_identical(res$report$scale, "mad")
+  expect_identical(res$report$cost_unit,
+                   paste("summed absolute deviation of each list's dimension total from",
+                         "its fair share, in hundred-thousandths of the dimension's mean",
+                         "absolute deviation about its mean, scaled by the number of",
+                         "item sets"))
+})
+
+test_that("the default scale reproduces the shipped lists", {
+  # Running studies keep their lists: the default, and `mean` named explicitly, deal
+  # the committed stimuli exactly as they were dealt, and the report reads as it did.
+  stim <- bal_en_stimuli()
+  shipped <- tapply(stim$list, stim$set, unique)
+  for (scale in list(NULL, "mean")) {
+    res <- balance_lists(stim, bal_en_balanced(scale), bal_schema)
+    expect_identical(unname(res$list_of_set), as.integer(unname(shipped)))
+    expect_identical(names(res$list_of_set), names(shipped))
+    expect_null(res$report$scale)
+    expect_identical(res$report$cost_unit, bal_mean_cost_unit)
+  }
+})
+
+test_that("the mad quantiser arithmetic is pinned across engines", {
+  # 0.125 is a tie on the hundredths grid and rounds away from zero. The shared rounder
+  # rounds the scaled double: 2.675 is stored a hair below 2.675 but scales to exactly
+  # 267.5 and rounds up, and 1.005 scales to 100.49999999999999 and rounds down. The
+  # hundredths sum to -59, so the integer mean is the floor, -8, where truncation would
+  # give -7. Pinned identically in test_balance.py.
+  vals <- c(-1.5, 0.25, -0.02, 0.125, -0.125, 2.675, 1.005, -3.0)
+  expect_identical(lexsync:::.quantise_dim(vals, "x", "mad"),
+                   c(-129090, 30000, 5454, 19090, -4545, 250909, 98181, -265454))
+  # A dimension that does not vary contributes nothing, and its unit floors at 1.
+  expect_identical(lexsync:::.quantise_dim(c(4L, 4L, 4L), "x", "mad"), c(0, 0, 0))
+  expect_error(lexsync:::.quantise_dim(c(1, NA), "x", "mad"), "missing values")
+  for (big in c(1e10, Inf)) {
+    expect_error(lexsync:::.quantise_dim(c(1, big), "x", "mad"), "too large to balance on")
+  }
+})
+
+test_that("an unknown scale is refused", {
+  d <- bal_design()
+  d$counterbalance$scale <- "range"
+  expect_error(balance_lists(bal_mk(), d, bal_schema),
+               "lexsync: unknown counterbalance.scale 'range'. Known scales: mean, mad.",
+               fixed = TRUE)
+})
+
+test_that("the datasheet names the scale", {
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  stim <- bal_mk()
+  texts <- list()
+  for (scale in c("mean", "mad")) {
+    design <- bal_design()
+    design$counterbalance$scale <- scale
+    res <- balance_lists(stim, design, bal_schema)
+    ds <- build_datasheet(design, schema, NULL,
+                          counterbalance(stim, design, bal_schema, res$list_of_set),
+                          "x.csv", list(stimuli = NULL, experiments = list()), 2026,
+                          engine = "R", balance = res$report)
+    texts[[scale]] <- list(record = ds$counterbalancing$optimise,
+                           methods = methods_paragraph(ds),
+                           md = render_datasheet_md(ds))
+  }
+  mad <- texts$mad
+  expect_identical(mad$record$scale, "mad")
+  expect_true(grepl(paste0("by a deterministic integer search on each dimension's ",
+                           "deviations from its mean, in units of its mean absolute ",
+                           "deviation ("), mad$methods, fixed = TRUE))
+  expect_true(grepl(paste0("- **Cost unit:** ", mad$record$cost_unit), mad$md,
+                    fixed = TRUE))
+  # The default's sentence and record read as they did before the option existed.
+  mean <- texts$mean
+  expect_null(mean$record$scale)
+  expect_true(grepl("by a deterministic integer search (", mean$methods, fixed = TRUE))
+  expect_true(grepl(paste0("- **Cost unit:** ", bal_mean_cost_unit), mean$md,
+                    fixed = TRUE))
+})

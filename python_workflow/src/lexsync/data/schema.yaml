@@ -202,12 +202,28 @@ matching:
 # and after so the result is checkable rather than asserted. List sizes are preserved.
 #
 # There is no random number generator and no floating-point score anywhere in it. The
-# dimensions are quantised to integers once, in milli-units of each dimension's own
-# mean so that dimensions on different scales carry comparable weight, and the search
-# then uses only integer arithmetic and comparison; ties are broken by the same seeded
-# keyed hash that fixes trial order. A float objective was measured to differ between
-# the engines by around 3e-16, which is enough to send them down different search
-# paths and select different words.
+# dimensions are quantised to integers once, each in a unit of its own so that
+# dimensions on different scales can be summed, and the search then uses only integer
+# arithmetic and comparison; ties are broken by the same seeded keyed hash that fixes
+# trial order. A float objective was measured to differ between the engines by around
+# 3e-16, which is enough to send them down different search paths and select
+# different words.
+#
+# counterbalance.scale chooses each dimension's unit:
+#
+#   counterbalance:
+#     scale: mad   # mean | mad
+#
+#   mean  milli-units of the dimension's mean, the default. A dimension then weighs in
+#         proportion to its SD over its mean, which depends on where its scale starts,
+#         so this suits ratio scales only. Zipf frequency starts near 3, and in
+#         design_en_balanced_lists.yaml it counts for least of the four dimensions.
+#         Writing it as Zipf - 3 moves 22 of that design's 40 item sets to another list.
+#   mad   deviations from the dimension's mean in units of its mean absolute
+#         deviation, both taken on hundredths from the shared rounder. Adding a
+#         constant that is a whole number of hundredths leaves the lists unchanged.
+#
+# The default stays mean so that a study already running keeps its lists.
 #
 # It does not apply to the Latin-square recipe and is refused there: every item
 # appears in every list already, so the lists are balanced on the items by

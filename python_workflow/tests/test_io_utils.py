@@ -292,7 +292,7 @@ def test_read_config_reads_an_unquoted_y_and_n_as_text(tmp_path):
 # The two key vocabularies, joined by newlines and hashed. test-io_utils.R pins the
 # same digests for .DESIGN_KEYS and .SCHEMA_KEYS, so a key added to one engine only
 # fails both suites.
-DESIGN_KEYS_SHA256 = "5fff45d5c9a3416c72c02bd641aea16ef1c6cf2f503dcbf9a6099dbab98f6f15"
+DESIGN_KEYS_SHA256 = "0d3f42421a7f86fcaa4a8c5b68f1809bae54b3ec2b5587834b075b1e114fdead"
 SCHEMA_KEYS_SHA256 = "6fe50b7e1f4cd526cb9a555bf649686c8859b62ec8783d24c6ba073ad1927aa3"
 
 
@@ -379,6 +379,21 @@ def test_counterbalance_optimise_must_be_true_or_false(tmp_path):
     for value in (True, False, None):
         assert validate_design(_valid_design(counterbalance={"lists": 2, "optimise": value}),
                                {}) == []
+
+
+def test_counterbalance_scale_is_mean_or_mad():
+    """counterbalance.scale decides how the balance optimiser weighs its dimensions, so
+    a value it does not know is refused before anything is selected, with one message
+    in both engines. Pinned identically in test-io_utils.R."""
+    from lexsync.design import validate_design
+    for value in ("mean", "mad", None):
+        assert validate_design(_valid_design(counterbalance={"lists": 2, "scale": value}),
+                               {}) == []
+    for value, shown in (("range", "range"), ("MAD", "MAD"), (True, "true"), (1, "1")):
+        with pytest.raises(ValueError, match=re.escape(
+                "lexsync: unknown counterbalance.scale '%s'. Known scales: mean, mad."
+                % shown)):
+            validate_design(_valid_design(counterbalance={"lists": 2, "scale": value}), {})
 
 
 def test_a_response_events_from_is_a_key_lexsync_reads():

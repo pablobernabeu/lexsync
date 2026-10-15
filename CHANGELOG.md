@@ -35,6 +35,25 @@ no function signature changes.
   Participants on one list no longer all meet the same order. The datasheet records
   `counterbalancing.orders` (the number of orders and the rule), a field of datasheet
   format 1.2.
+- `counterbalance.scale: mad` balances lists on each dimension's deviations from its mean
+  in units of its mean absolute deviation, so a dimension's weight no longer depends on
+  where its scale starts. The values are rounded to hundredths by the shared rounder
+  before the integer mean and the unit are taken, so adding a constant that is a whole
+  number of hundredths leaves the lists unchanged. The default, `mean`, divides by the
+  dimension's mean, which suits ratio scales only: Zipf frequency, whose scale starts
+  near 3, carried the least weight of the four dimensions in `en_balanced_lists`, and
+  re-expressing it as Zipf - 3 moved 22 of 40 sets to another list. The default is
+  unchanged so running studies keep their lists. Under `mad`, the `balance_lists` report
+  and the datasheet's `counterbalancing.optimise` record give `scale`, a field of
+  datasheet format 1.2, `cost_unit` names the unit and the Methods paragraph names the
+  scale. `validate_design` refuses any other scale, and the key joins the design
+  vocabulary in both engines, whose suites pin the new digest. The optimiser's
+  exact-integer guard now bounds the sum of the absolute set totals, since signed
+  deviations can sum to near zero, and gives the same answer as before for values of
+  one sign. The schema's comments describe the option in all three copies. The edit
+  changes `config/schema.yaml`, so every committed datasheet records a new schema
+  digest and every run log a new datasheet checksum. The twin-edge cases `scale_mad`
+  and `scale_unknown` pin both engines to one outcome.
 - `normalise_lexicon` turns a delimited corpus file into a lexicon `load_lexicon` reads,
   in both engines. It applies a column map, reads tab-separated files, derives Zipf values
   from frequencies per million (Zipf = log10(per million) + 3) and writes `word` and

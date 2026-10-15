@@ -280,7 +280,7 @@
     },
     "design_sha256": "b999f5bf7e79e5ae644ef75fdd4b30a724e32695365d5a4398eee6cfc6cc63c0",
     "schema_path": "config/schema.yaml",
-    "schema_sha256": "899bcef12bdc0bf94093d4b81cde29c3f94a6a7972113766c37946aa3960def1"
+    "schema_sha256": "4698d37f5d396b00272c32ccd46a7529bd1f4dc5af70cd0b2746ae09aba2baf7"
   },
   "artifacts": [
     {

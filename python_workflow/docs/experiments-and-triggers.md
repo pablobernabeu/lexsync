@@ -477,6 +477,16 @@ list and the lists are balanced on the items by construction. `balance_lists` ru
 if you want the assignment without applying it. `config/design_en_balanced_lists.yaml` is the worked
 example.
 
+Each dimension is counted in a unit of its own before the totals are compared. By default the unit
+is the dimension's mean, which suits ratio scales only, since a dimension then weighs in proportion
+to its SD over its mean and so depends on where its scale starts. Zipf frequency starts near 3, and
+on the shipped design it counts for least of the four dimensions. Written as Zipf - 3, it would move
+22 of the 40 item sets to another list. `counterbalance.scale: mad` counts each dimension's
+deviations from its mean in units of its mean absolute deviation. The values are rounded to
+hundredths first, so adding a constant that is a whole number of hundredths leaves the lists as they
+were. The default stays `mean` so that a study already running keeps its lists, and under `mad` the
+datasheet and the Methods paragraph name the scale.
+
 `participant_table` allocates participants to the cells of any crossed factors, cycling through the
 grid so the allocation stays balanced whatever the participant count.
 

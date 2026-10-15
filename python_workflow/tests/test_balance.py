@@ -19,10 +19,19 @@ a design that does not ask for it has to be unaffected.
 
 test-balance.R asserts the same properties.
 """
+import copy
+import re
+
 import pandas as pd
 import pytest
+from helper_repo import repo_path
 
-from lexsync.counterbalancing import balance_lists, counterbalance, counterbalance_factorial
+from lexsync.counterbalancing import (
+    _quantise_dim,
+    balance_lists,
+    counterbalance,
+    counterbalance_factorial,
+)
 
 SCHEMA = {"seed": 2026}
 
@@ -153,3 +162,133 @@ def test_a_design_without_optimise_is_dealt_by_rank():
     deal = {s: (i % 4) + 1 for i, s in enumerate(sets)}
     for s, l in zip(out["set"], out["list"], strict=True):
         assert l == deal[s]
+
+
+# ---- counterbalance.scale ---------------------------------------------------
+#
+# The mean scale divides each dimension by its mean, so a dimension's weight in the
+# objective is proportional to SD / mean and depends on where its scale starts. On
+# en_balanced_lists, Zipf frequency (SD / mean 0.17) counts for least, and writing it
+# as Zipf - 3 moves 22 of the 40 sets to another list. The mad scale quantises each
+# dimension's deviations from its mean in units of its mean absolute deviation, which a
+# constant shift on the hundredths grid leaves exactly as they were.
+
+EN_BALANCED = {"name": "en_balanced_lists", "language": "english",
+               "match_on": ["length", "n_density", "old20"],
+               "counterbalance": {"lists": 4, "optimise": True,
+                                  "balance_on": ["length", "n_density", "old20",
+                                                 "frequency"]}}
+
+MEAN_COST_UNIT = ("summed absolute deviation of each list's dimension total from its "
+                  "fair share, in milli-units of the dimension's mean, scaled by the "
+                  "number of item sets")
+
+
+def _en_balanced_stimuli():
+    """The committed en_balanced_lists stimuli, whose `list` column the default scale
+    dealt."""
+    return pd.read_csv(repo_path("output", "stimuli",
+                                 "en_balanced_lists_english_stimuli_R.csv"))
+
+
+def _with_scale(design, scale):
+    out = copy.deepcopy(design)
+    out["counterbalance"]["scale"] = scale
+    return out
+
+
+def _shifted(stim):
+    """Zipf - 3, a quarter added to OLD20 and two letters off every length: shifts
+    that are exact on the hundredths grid."""
+    out = stim.copy()
+    out["frequency"] = out["frequency"] - 3.0
+    out["old20"] = out["old20"] + 0.25
+    out["length"] = out["length"] - 2
+    return out
+
+
+def test_under_mad_shifting_a_scale_moves_no_set():
+    stim = _en_balanced_stimuli()
+    mad = _with_scale(EN_BALANCED, "mad")
+    assert (balance_lists(_shifted(stim), mad, SCHEMA)["list_of_set"]
+            == balance_lists(stim, mad, SCHEMA)["list_of_set"])
+    # The same shifts move sets under the mean scale, which is what mad is for.
+    assert (balance_lists(_shifted(stim), EN_BALANCED, SCHEMA)["list_of_set"]
+            != balance_lists(stim, EN_BALANCED, SCHEMA)["list_of_set"])
+
+
+def test_the_engines_agree_on_en_balanced_lists_under_mad():
+    # Pinned character for character in test-balance.R.
+    res = balance_lists(_en_balanced_stimuli(), _with_scale(EN_BALANCED, "mad"), SCHEMA)
+    assert ("".join(str(v) for v in res["list_of_set"].values())
+            == "4434123412113234223122143432123411341324")
+    assert res["report"]["cost_before"] == 435405140
+    assert res["report"]["cost_after"] == 22133820
+    assert res["report"]["n_swaps"] == 8
+    assert res["report"]["scale"] == "mad"
+    assert res["report"]["cost_unit"] == (
+        "summed absolute deviation of each list's dimension total from its fair share, "
+        "in hundred-thousandths of the dimension's mean absolute deviation about its "
+        "mean, scaled by the number of item sets")
+
+
+def test_the_default_scale_reproduces_the_shipped_lists():
+    # Running studies keep their lists: the default, and `mean` named explicitly,
+    # deal the committed stimuli exactly as they were dealt, and the report reads as
+    # it did.
+    stim = _en_balanced_stimuli()
+    shipped = {int(s): int(l) for s, l in zip(stim["set"], stim["list"], strict=True)}
+    for design in (EN_BALANCED, _with_scale(EN_BALANCED, "mean")):
+        res = balance_lists(stim, design, SCHEMA)
+        assert res["list_of_set"] == shipped
+        assert "scale" not in res["report"]
+        assert res["report"]["cost_unit"] == MEAN_COST_UNIT
+
+
+def test_the_mad_quantiser_arithmetic_is_pinned_across_engines():
+    # 0.125 is a tie on the hundredths grid and rounds away from zero. The shared
+    # rounder rounds the scaled double: 2.675 is stored a hair below 2.675 but scales
+    # to exactly 267.5 and rounds up, and 1.005 scales to 100.49999999999999 and rounds
+    # down. The hundredths sum to -59, so the integer mean is the floor, -8, where
+    # truncation would give -7. Pinned identically in test-balance.R.
+    vals = [-1.5, 0.25, -0.02, 0.125, -0.125, 2.675, 1.005, -3.0]
+    assert _quantise_dim(vals, "x", "mad") == [-129090, 30000, 5454, 19090, -4545,
+                                               250909, 98181, -265454]
+    # A dimension that does not vary contributes nothing, and its unit floors at 1.
+    assert _quantise_dim([4, 4, 4], "x", "mad") == [0, 0, 0]
+    with pytest.raises(ValueError, match="missing values"):
+        _quantise_dim([1.0, float("nan")], "x", "mad")
+    for big in (1e10, float("inf")):
+        with pytest.raises(ValueError, match="too large to balance on"):
+            _quantise_dim([1.0, big], "x", "mad")
+
+
+def test_an_unknown_scale_is_refused():
+    with pytest.raises(ValueError, match=re.escape(
+            "lexsync: unknown counterbalance.scale 'range'. Known scales: mean, mad.")):
+        balance_lists(mk(), _with_scale(DESIGN, "range"), SCHEMA)
+
+
+def test_the_datasheet_names_the_scale(schema):
+    from lexsync.datasheet import build_datasheet, methods_paragraph, render_datasheet_md
+    stim = mk()
+    texts = {}
+    for scale in ("mean", "mad"):
+        design = _with_scale(DESIGN, scale)
+        res = balance_lists(stim, design, SCHEMA)
+        ds = build_datasheet(design, schema, None,
+                             counterbalance(stim, design, SCHEMA, res["list_of_set"]),
+                             "x.csv", {"stimuli": None, "experiments": {}}, 2026,
+                             balance=res["report"])
+        texts[scale] = (ds["counterbalancing"]["optimise"], methods_paragraph(ds),
+                        render_datasheet_md(ds))
+    record, methods, md = texts["mad"]
+    assert record["scale"] == "mad"
+    assert ("by a deterministic integer search on each dimension's deviations from its "
+            "mean, in units of its mean absolute deviation (") in methods
+    assert "- **Cost unit:** " + record["cost_unit"] in md
+    # The default's sentence and record read as they did before the option existed.
+    record, methods, md = texts["mean"]
+    assert "scale" not in record
+    assert "by a deterministic integer search (" in methods
+    assert "- **Cost unit:** " + MEAN_COST_UNIT in md
