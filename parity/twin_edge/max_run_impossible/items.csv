@@ -1,0 +1,17 @@
+item,condition,target
+1,word,cat
+1,pseudoword,cag
+2,word,dog
+2,pseudoword,dop
+3,word,sun
+3,pseudoword,sul
+4,word,hat
+4,pseudoword,haf
+5,word,pen
+5,pseudoword,pem
+6,word,cup
+6,pseudoword,cuv
+7,word,map
+7,pseudoword,mav
+8,word,bed
+8,pseudoword,bez

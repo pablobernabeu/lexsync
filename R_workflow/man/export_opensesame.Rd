@@ -67,8 +67,12 @@ of the trials, gets one experiment per version instead, each with its own two
 tables holding only that version's trials: \verb{<base>_list<k>.osexp}, or
 \verb{<base>_rep<r>_list<k>.osexp} when the versions span several replicates. Each one
 checks OpenSesame's subject number at start-up and shows a warning when that
-participant would normally run another version. \code{\link[=export_experiments]{export_experiments()}} lists every
-file written.
+participant would normally run another version. A design with
+\code{counterbalance.orders: m} gets one experiment per version and order,
+\verb{<base>_list<k>_order<j>.osexp} (\verb{<base>_order<j>.osexp} for a single version), each
+with tables sorted by its order, a \code{lexsync_order} variable that every trial logs,
+and a check that compares the participant's order too, order
+\verb{(((p - 1) div V) mod m) + 1}. \code{\link[=export_experiments]{export_experiments()}} lists every file written.
 
 OpenSesame evaluates the cells of a loop table: in 4.x a cell holding \verb{\{} runs as a
 Python f-string, and in 3.3 a cell starting with \code{=} or holding \verb{[=...]} runs as

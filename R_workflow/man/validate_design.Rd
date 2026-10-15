@@ -22,8 +22,10 @@ both engines. It first refuses a key within one or two edits of a key lexsync
 reads at that level, naming the key it was probably meant to be (one edit for a
 known key of up to five characters, two for a longer one). It then refuses a
 missing, empty or non-text \code{name} or \code{language}, an \code{n_per_condition} or
-\code{n_per_cell} that is not a whole number of at least 1, and a
-\code{counterbalance.optimise} that is not true or false. It refuses a name, language
+\code{n_per_cell} that is not a whole number of at least 1, a \code{counterbalance.optimise}
+that is not true or false, a \code{counterbalance.max_run} or \code{counterbalance.orders}
+that is not a whole number of at least 1, and a \code{counterbalance.run_on} that is not
+the name of a column. It refuses a name, language
 or font that cannot be written into the generated experiments, a trigger port that
 is not an address, and an event list the renderer refuses, such as one with an
 unknown timing key, a bad response key or a response key that YAML reads as a

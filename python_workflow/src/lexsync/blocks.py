@@ -15,14 +15,17 @@ blocks -- a design without them keeps exactly the columns it had.
 Where each block goes in the sequence is a methodological choice, not a convenience:
 
 Practice comes first, as its own run of trials, because its purpose is to precede the
-task. It is shuffled within itself so participants do not all meet the practice items in
-one order.
+task. It is ordered within itself by the seeded keyed hash, so every participant given a
+list meets the practice items in one fixed order. With ``counterbalance.orders`` each
+order of a list has its own practice order, still before the main trials.
 
 Fillers are INTERLEAVED with the main trials, not appended, because a block of fillers at
 the end is not a filler -- it is a second block that participants can tell apart. They
 are merged into each list before the order is drawn, so one deterministic shuffle mixes
 them through. That does renumber the main trials, which is correct: adding fillers
 changes the sequence, and the stimuli file records where each item actually appeared.
+``counterbalance.max_run`` applies to this interleaved order and, separately, to the
+practice order, since a pause separates the two.
 
 Both blocks appear in EVERY list. They are not counterbalanced, because they carry no
 manipulation to rotate; every participant should get the same practice. In a resampled
@@ -36,7 +39,7 @@ from __future__ import annotations
 
 import pandas as pd
 
-from .counterbalancing import _shuffle_deterministic
+from .counterbalancing import _order_trials, _trial_order_settings, _unit_label
 from .io_utils import sha256_file
 from .paradigms import required_fields
 from .querying import load_items
@@ -102,7 +105,10 @@ def add_blocks(stimuli: pd.DataFrame, design: dict, schema: dict) -> dict:
     design declares no extra block; and ``{"changed", "collapsed"}``, what Unicode NFC
     normalisation did to the practice and filler tables (see ``load_items``). Trials are
     numbered from 1 within each list, or within each (replicate, list) pair of a
-    resampled design, and the counts are per list or pair.
+    resampled design, and the counts are per list or pair. ``counterbalance.max_run``
+    applies to the main and filler trials together and to the practice trials on their
+    own. With ``counterbalance.orders: m``, ``order_1`` to ``order_m`` give each trial's
+    position in each order, the practice trials first in every one.
     """
     practice_cfg = design.get("practice")
     filler_cfg = design.get("fillers")
@@ -137,6 +143,8 @@ def add_blocks(stimuli: pd.DataFrame, design: dict, schema: dict) -> dict:
         keep = stimuli["list"] == li
         return keep & (stimuli["replicate"] == rep) if by_replicate else keep
 
+    settings = _trial_order_settings(design)
+    orders = settings["orders"]
     parts = []
     for rep, li in units:
         body = stimuli[in_unit(rep, li)].reset_index(drop=True)
@@ -147,13 +155,19 @@ def add_blocks(stimuli: pd.DataFrame, design: dict, schema: dict) -> dict:
                 f["replicate"] = rep
             body = _concat_blocks(body, f)
         # One shuffle over main and fillers together is what interleaves them.
-        body = _shuffle_deterministic(body, seed).reset_index(drop=True)
+        unit = _unit_label(body)
+        body = _order_trials(body, seed, settings, unit).reset_index(drop=True)
         if practice is not None:
             p = practice.copy()
             p["list"] = li
             if by_replicate:
                 p["replicate"] = rep
-            p = _shuffle_deterministic(p, seed).reset_index(drop=True)
+            p = _order_trials(p, seed, settings,
+                              "the practice block of " + unit).reset_index(drop=True)
+            # The practice trials come first in every order.
+            if orders > 1:
+                for j in range(1, orders + 1):
+                    body["order_%d" % j] = body["order_%d" % j] + len(p)
             body = _concat_blocks(p, body)
         body["trial"] = range(1, len(body) + 1)
         parts.append(body)

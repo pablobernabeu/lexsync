@@ -26,7 +26,10 @@ the design, one per (replicate, list) pair, and the script presents one per run:
 the version given by \code{--version} (or \code{--list} when there are no replicates), else
 the participant's by the rule \verb{((participant - 1) mod V) + 1} from
 \code{--participant}, else what a start-up dialogue asks for. A version the script does
-not have stops the run with a message.
+not have stops the run with a message. With \code{counterbalance.orders: m} the
+conditions file holds each trial's position in each of m orders, and the script
+presents the version in order \verb{(((participant - 1) div V) mod m) + 1}, or in order 1
+without a participant number. The data file then records the order.
 }
 \details{
 Before the first trial, the script shows the version's instructions, the design's

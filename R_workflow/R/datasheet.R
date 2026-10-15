@@ -69,6 +69,12 @@
 #                                      positive rates it holds and how many of them put
 #                                      Zipf within 1e-9 of a rounding boundary
 #                                      (n_values, near_boundary)
+#   counterbalancing$max_run    the run limit (k, run_on, longest), longest giving the
+#                               longest run realised in each presentation version as
+#                               (replicate, list, longest_run), present only when the
+#                               design sets counterbalance.max_run
+#   counterbalancing$orders     the trial orders per list (m, rule), present only when
+#                               the design sets counterbalance.orders above 1
 DATASHEET_VERSION <- "1.2"
 
 # Datasheet labels for the pseudoword generators in generation.R, keyed by the
@@ -659,6 +665,12 @@ DATASHEET_VERSION <- "1.2"
 #'   rates it holds, and how many put Zipf = log10(per million) + 3 within 1e-9 of a
 #'   three-place rounding boundary, where the two engines' `log10` could round a
 #'   derived value apart. Recorded as `materials_source$zipf_derivation`.
+#' @param trial_order Optional record of the trial-order settings on the presented
+#'   trials, which the pipeline passes. Without it, the record is taken from `stimuli`.
+#'   It gives `counterbalancing$max_run` (`list(k, run_on, longest)`, the longest run
+#'   realised in each presentation version) when the design limits runs, and
+#'   `counterbalancing$orders` (`list(m, rule)`) when it asks for more than one trial
+#'   order.
 #' @details For a corpus or generated design, `materials_source$provenance` credits the
 #'   lexicon that `source_path` names. A lexicon lexsync ships is credited by its
 #'   source, a corpus fetched into the cache by the registry's citation, and any other
@@ -678,7 +690,8 @@ build_datasheet <- function(design, schema, report, stimuli, source_path, artifa
                             schema_path = NULL, selection_audit = NULL,
                             neighbourhood_reference = NULL, counterbalance_check = NULL,
                             input_normalisation = NULL, generation_exclude = NULL,
-                            exclusions = NULL, zipf_derivation = NULL) {
+                            exclusions = NULL, zipf_derivation = NULL,
+                            trial_order = NULL) {
   source <- design[["items"]][["source"]] %||% "corpus"
   is_continuous <- .is_continuous(design)
   controlled <- .controlled_dims(design, source)
@@ -879,6 +892,17 @@ build_datasheet <- function(design, schema, report, stimuli, source_path, artifa
   # file against the experiment would otherwise find them a different length with no
   # explanation.
   if (!is.null(blocks)) counterbalancing$blocks <- blocks
+  # The run limit and the trial orders, recorded only when the design sets them, so a
+  # design without either keeps the record it had.
+  trial_order <- trial_order %||% .trial_order_record(stimuli, design)
+  if (!is.null(trial_order$max_run)) counterbalancing$max_run <- trial_order$max_run
+  if (!is.null(trial_order$orders)) {
+    m <- as.integer(trial_order$orders)
+    counterbalancing$orders <- list(
+      m = m, rule = sprintf(paste("order = (((participant - 1) div %d) mod %d) + 1; a run",
+                                  "without a participant number presents order 1"),
+                            as.integer(versions), m))
+  }
 
   # The equivalence settings the report's TOST verdicts were computed against,
   # recorded so the Methods prose can state the bound it actually ran with.
@@ -962,6 +986,29 @@ build_datasheet <- function(design, schema, report, stimuli, source_path, artifa
           else "lists"
   sprintf(paste(" Each participant was presented one of the %d %s, assigned in rotation",
                 "by participant number."), as.integer(n), unit)
+}
+
+# The trial orders and the run limit, for the Methods text. Empty for a design with one
+# order and no limit, and for a record written before the fields existed. Mirrors
+# _trial_order_note in datasheet.py.
+.trial_order_note <- function(ds) {
+  cb <- ds[["counterbalancing"]]
+  out <- ""
+  orders <- cb[["orders"]]
+  if (!is.null(orders)) {
+    out <- paste0(out, sprintf(paste(" Each list was presented in %d trial orders, assigned",
+                                     "in rotation by participant number."),
+                               as.integer(orders[["m"]])))
+  }
+  limit <- cb[["max_run"]]
+  if (!is.null(limit)) {
+    what <- if (identical(limit[["run_on"]], "condition")) "condition" else
+      paste("value of", limit[["run_on"]])
+    out <- paste0(out, sprintf(paste(" Runs of consecutive trials with the same %s were",
+                                     "limited to %d (van Casteren & Davis, 2006)."),
+                               what, as.integer(limit[["k"]])))
+  }
+  out
 }
 
 # The norm tables named in the Methods prose. Basenames only: the full paths and
@@ -1388,8 +1435,8 @@ methods_paragraph <- function(ds) {
                   "2019).", .bands_note(ds, rc), corr_str, .norms_note(ds), excluded,
                   " Materials were counterbalanced into ", cb[["lists"]], " list(s) (",
                   recipe_label, ") and generated for PsychoPy, OpenSesame and jsPsych.",
-                  .versions_note(ds), .response_note(ds), .mapping_note(ds),
-                  " The selection is deterministic ",
+                  .versions_note(ds), .trial_order_note(ds), .response_note(ds),
+                  .mapping_note(ds), " The selection is deterministic ",
                   "and reproducible (lexsync ", ds[["reproducibility"]][["versions"]][["lexsync"]],
                   "), and the seed (", ds[["reproducibility"]][["seed"]],
                   ") fixes the trial order."))
@@ -1432,10 +1479,11 @@ methods_paragraph <- function(ds) {
   cb <- ds$counterbalancing
   recipe_label <- .recipe_label(cb)
   tail <- sprintf(paste0(resamp, ". Materials were counterbalanced into %s list(s) (%s) and generated for ",
-                         "PsychoPy, OpenSesame and jsPsych.%s%s%s The selection is deterministic and ",
+                         "PsychoPy, OpenSesame and jsPsych.%s%s%s%s The selection is deterministic and ",
                          "reproducible (lexsync %s), and the seed (%s) fixes the trial order."),
-                  cb$lists, recipe_label, .versions_note(ds), .response_note(ds),
-                  .mapping_note(ds), ds$reproducibility$versions$lexsync, ds$reproducibility$seed)
+                  cb$lists, recipe_label, .versions_note(ds), .trial_order_note(ds),
+                  .response_note(ds), .mapping_note(ds), ds$reproducibility$versions$lexsync,
+                  ds$reproducibility$seed)
   bal <- ds$counterbalancing$optimise
   bal_note <- if (is.null(bal)) "" else sprintf(
     paste0(". Item sets were assigned to lists so as to equate the lists on %s rather ",
@@ -1577,6 +1625,16 @@ render_datasheet_md <- function(ds) {
     if ((ds$counterbalancing[["versions"]] %||% 1L) > 1L)
       sprintf("- **Presentation versions:** %s, assigned as %s",
               ds$counterbalancing[["versions"]], ds$counterbalancing[["assignment"]])
+    else NULL,
+    if (!is.null(ds$counterbalancing[["orders"]]))
+      sprintf("- **Trial orders:** %d per list, assigned as %s",
+              as.integer(ds$counterbalancing$orders$m), ds$counterbalancing$orders$rule)
+    else NULL,
+    if (!is.null(ds$counterbalancing[["max_run"]]))
+      sprintf("- **Run limit:** at most %d consecutive trials with the same `%s` (longest realised: %d)",
+              as.integer(ds$counterbalancing$max_run$k), ds$counterbalancing$max_run$run_on,
+              as.integer(max(0L, vapply(ds$counterbalancing$max_run$longest,
+                                        function(r) as.integer(r$longest_run), integer(1)))))
     else NULL,
     sprintf("- **Items:** %s rows across %s conditions (%s)", ds$items$n_total,
             ds$items$n_conditions, paste(unlist(ds$items$conditions), collapse = ", ")),

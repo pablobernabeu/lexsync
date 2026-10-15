@@ -24,9 +24,9 @@ from scipy import stats
 # The cache and the registry, for crediting a lexicon fetch_corpus fetched.
 from . import corpora as _corpora
 
-# The recipe and the rotation check come from the module that counterbalances, so
-# the record describes the counterbalancing that ran.
-from .counterbalancing import _recipe
+# The recipe, the rotation check and the trial-order record come from the module that
+# counterbalances, so the record describes the counterbalancing that ran.
+from .counterbalancing import _recipe, _trial_order_record
 from .counterbalancing import counterbalance_check as _counterbalance_check
 
 # The tolerance windows and the number of items as the selectors resolve them: one
@@ -125,6 +125,12 @@ from .scripting import (
 #                                     positive rates it holds and how many of them put
 #                                     Zipf within 1e-9 of a rounding boundary
 #                                     ({n_values, near_boundary})
+#   counterbalancing.max_run    the run limit ({k, run_on, longest}), longest giving the
+#                               longest run realised in each presentation version as
+#                               {replicate, list, longest_run}, present only when the
+#                               design sets counterbalance.max_run
+#   counterbalancing.orders     the trial orders per list ({m, rule}), present only when
+#                               the design sets counterbalance.orders above 1
 DATASHEET_VERSION = "1.2"
 
 # Datasheet labels for the pseudoword generators in generation.py, keyed by the
@@ -684,7 +690,8 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
                     balance=None, blocks=None, design_path=None, schema_path=None,
                     selection_audit=None, neighbourhood_reference=None,
                     counterbalance_check=None, input_normalisation=None,
-                    generation_exclude=None, exclusions=None, zipf_derivation=None) -> dict:
+                    generation_exclude=None, exclusions=None, zipf_derivation=None,
+                    trial_order=None) -> dict:
     """Assemble the datasheet dictionary from the pipeline's objects.
 
     For a corpus or generated design, ``materials_source["provenance"]`` credits the
@@ -760,6 +767,13 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
     rates it holds, and how many put Zipf = log10(per million) + 3 within 1e-9 of a
     three-place rounding boundary, where the two engines' log10 could round a derived
     value apart. Recorded as ``materials_source["zipf_derivation"]``.
+
+    ``trial_order`` (optional) is the trial-order record of the presented trials, which
+    the pipeline passes. Without it, the record is taken from ``stimuli``. It gives
+    ``counterbalancing["max_run"]`` (``{"k", "run_on", "longest"}``, the longest run
+    realised in each presentation version) when the design limits runs, and
+    ``counterbalancing["orders"]`` (``{"m", "rule"}``) when it asks for more than one
+    trial order.
 
     ``design["n_per_condition"]`` is the request the selector applied, the selector's
     default when the design gives none, and ``items["n_per_condition_realised"]``
@@ -962,6 +976,17 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
     # explanation.
     if blocks:
         counterbalancing["blocks"] = blocks
+    # The run limit and the trial orders, recorded only when the design sets them, so a
+    # design without either keeps the record it had.
+    if trial_order is None:
+        trial_order = _trial_order_record(stimuli, design)
+    if trial_order.get("max_run"):
+        counterbalancing["max_run"] = trial_order["max_run"]
+    if trial_order.get("orders"):
+        m = int(trial_order["orders"])
+        counterbalancing["orders"] = {
+            "m": m, "rule": (f"order = (((participant - 1) div {versions}) mod {m}) + 1; a "
+                             "run without a participant number presents order 1")}
 
     # The equivalence settings the report's TOST verdicts were computed against,
     # recorded so the Methods prose can state the bound it actually ran with.
@@ -1072,6 +1097,27 @@ def _versions_note(ds: dict) -> str:
             else "lists")
     return (f" Each participant was presented one of the {n} {unit}, assigned in rotation "
             "by participant number.")
+
+
+def _trial_order_note(ds: dict) -> str:
+    """The trial orders and the run limit, for the Methods text.
+
+    Empty for a design with one order and no limit, and for a record written before
+    the fields existed. Mirrors .trial_order_note in datasheet.R.
+    """
+    cb = ds.get("counterbalancing") or {}
+    out = ""
+    orders = cb.get("orders")
+    if orders:
+        out += (f" Each list was presented in {orders['m']} trial orders, assigned in "
+                "rotation by participant number.")
+    limit = cb.get("max_run")
+    if limit:
+        what = ("condition" if limit["run_on"] == "condition"
+                else f"value of {limit['run_on']}")
+        out += (f" Runs of consecutive trials with the same {what} were limited to "
+                f"{limit['k']} (van Casteren & Davis, 2006).")
+    return out
 
 
 def _num(v):
@@ -1497,7 +1543,8 @@ def methods_paragraph(ds: dict) -> str:
                 f"contrast (Kuperman, 2015; Liben-Nowell et al., 2019)."
                 f"{_bands_note(ds, rc)}{corr_str}{_norms_note(ds)}{excluded} Materials were "
                 f"counterbalanced into {cb['lists']} list(s) ({recipe_label}) and generated "
-                f"for PsychoPy, OpenSesame and jsPsych.{_versions_note(ds)}{_response_note(ds)}"
+                f"for PsychoPy, OpenSesame and jsPsych.{_versions_note(ds)}"
+                f"{_trial_order_note(ds)}{_response_note(ds)}"
                 f"{_mapping_note(ds)} The selection is deterministic and reproducible (lexsync "
                 f"{ds['reproducibility']['versions']['lexsync']}), and the seed "
                 f"({ds['reproducibility']['seed']}) fixes the trial order.")
@@ -1537,7 +1584,8 @@ def methods_paragraph(ds: dict) -> str:
     recipe_label = _recipe_label(cb)
     tail = (resamp + f". Materials were counterbalanced into {cb['lists']} list(s) "
             f"({recipe_label}) and generated for PsychoPy, OpenSesame and "
-            f"jsPsych.{_versions_note(ds)}{_response_note(ds)}{_mapping_note(ds)} The "
+            f"jsPsych.{_versions_note(ds)}{_trial_order_note(ds)}{_response_note(ds)}"
+            f"{_mapping_note(ds)} The "
             f"selection is deterministic and reproducible (lexsync "
             f"{ds['reproducibility']['versions']['lexsync']}), and the seed "
             f"({ds['reproducibility']['seed']}) fixes the trial order.")
@@ -1676,6 +1724,15 @@ def render_datasheet_md(ds: dict) -> str:
     if (ds["counterbalancing"].get("versions") or 1) > 1:
         lines.append(f"- **Presentation versions:** {ds['counterbalancing']['versions']}, "
                      f"assigned as {ds['counterbalancing']['assignment']}")
+    orders = ds["counterbalancing"].get("orders")
+    if orders:
+        lines.append(f"- **Trial orders:** {orders['m']} per list, assigned as "
+                     f"{orders['rule']}")
+    limit = ds["counterbalancing"].get("max_run")
+    if limit:
+        realised = max((r["longest_run"] for r in limit["longest"]), default=0)
+        lines.append(f"- **Run limit:** at most {limit['k']} consecutive trials with the "
+                     f"same `{limit['run_on']}` (longest realised: {realised})")
     lines += [
         f"- **Items:** {ds['items']['n_total']} rows across "
         f"{ds['items']['n_conditions']} conditions "

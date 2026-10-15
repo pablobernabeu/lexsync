@@ -1,0 +1,11 @@
+# Both engines repair both orders of each list identically, so the stimuli file and
+# every experiment, the four OpenSesame experiments among them, match byte for byte.
+outcome: artefacts
+compare: [stimuli, experiments]
+datasheet:
+  counterbalancing.lists: 2
+  counterbalancing.max_run.k: 2
+  counterbalancing.max_run.run_on: condition
+  counterbalancing.max_run.longest.0.longest_run: 2
+  counterbalancing.max_run.longest.1.longest_run: 2
+  counterbalancing.orders.m: 2

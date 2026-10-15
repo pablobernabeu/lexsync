@@ -19,7 +19,7 @@
     },
     {
       "file": "output/experiments/en_freqcontinuous_english_psychopy.py",
-      "sha256": "c76dd9e1f6b8a07fa5a4d914c84189d8225628ef957a584256e943d3b30821d6"
+      "sha256": "87e20e1fd250d6f725161ca6b83afd2c5c64ed882f9128cdd32d29128b5ca118"
     },
     {
       "file": "output/experiments/en_freqcontinuous_english.osexp",
@@ -27,7 +27,7 @@
     },
     {
       "file": "output/experiments/en_freqcontinuous_english.html",
-      "sha256": "832e189464a4f3a598ebcd1983a86423cd127523f8fe59d7b29e54e8af197e5b"
+      "sha256": "1c03a95e1b0cef89e26de53562ca5c8cd98c58d29f795447b9c5886c2694f9f8"
     },
     {
       "file": "output/experiments/en_freqcontinuous_english_psychopy.csv",
@@ -184,7 +184,7 @@
   "reproducibility": {
     "design_sha256": "4600d42c9086cdd30fc1dd40e6237694a14d9e86cd28e831827dd3227e211f3b",
     "schema_path": "config/schema.yaml",
-    "schema_sha256": "105322550d8c6dc00e06f71b44b61a7c45959c1a4caaceac414192dbd5f9520b",
+    "schema_sha256": "899bcef12bdc0bf94093d4b81cde29c3f94a6a7972113766c37946aa3960def1",
     "seed": 2026,
     "versions": {
       "engine": "python",

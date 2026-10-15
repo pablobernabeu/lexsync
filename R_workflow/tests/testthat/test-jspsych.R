@@ -122,7 +122,7 @@ test_that("the page carries the versions and selects one", {
   versions <- jsonlite::fromJSON(vs, simplifyDataFrame = FALSE)
   expect_equal(versions, list(list(version = 1L, replicate = 1L, list = 1L, n_trials = 2L),
                               list(version = 2L, replicate = 1L, list = 2L, n_trials = 2L)))
-  expect_true(grepl("const RUN_TRIALS = TRIALS.filter(", html, fixed = TRUE))
+  expect_true(grepl("const RUN_TRIALS = inOrder(TRIALS.filter(", html, fixed = TRUE))
   tr <- regmatches(html, regexec("const TRIALS = (.*?);\\n", html))[[1]][2]
   trials <- jsonlite::fromJSON(tr, simplifyDataFrame = FALSE)
   # The page's filter keeps a trial whose replicate and list are the version's, a trial

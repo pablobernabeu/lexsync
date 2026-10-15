@@ -170,7 +170,20 @@
 # pipeline. The replicate term keeps independently counterbalanced item sets from
 # sharing one permutation pattern.
 .shuffle_deterministic <- function(df, seed) {
+  df <- df[order(.order_ranks(df, seed), method = "radix"), , drop = FALSE]
+  df$trial <- seq_len(nrow(df))
+  df
+}
+
+# Each row's SHA-256 rank in trial order `order` of its list. Order 1 hashes
+# "seed|replicate|list|set|condition", the key every order had before
+# counterbalance.orders existed, so a design with one order keeps its order. Order j
+# from 2 hashes "seed|order<j>|replicate|list|set|condition". Mirrors _order_ranks in
+# counterbalancing.py.
+.order_ranks <- function(df, seed, order = 1L) {
   rep_id <- if ("replicate" %in% names(df)) df$replicate else 0L
+  head <- if (order == 1L) .key_part(seed) else paste(.key_part(seed), paste0("order", order),
+                                                      sep = "|")
   # Every component is formatted explicitly rather than interpolated. Default
   # stringification is where the two engines silently part company: R renders the
   # double 42 as "42" and Python as "42.0", and a pandas column is promoted to
@@ -180,13 +193,242 @@
   # enc2utf8 because digest(serialize = FALSE) hashes the stored bytes, as
   # hash_unit already does: a latin1-marked condition read from a user's CSV
   # would otherwise give a different digest from the same characters in Python.
-  key <- enc2utf8(paste(.key_part(seed), .key_part(rep_id), .key_part(df$list),
+  key <- enc2utf8(paste(head, .key_part(rep_id), .key_part(df$list),
                         .key_part(df$set), .key_part(df$condition), sep = "|"))
-  rank <- vapply(key, function(k) digest::digest(k, algo = "sha256", serialize = FALSE),
-                 character(1), USE.NAMES = FALSE)
-  df <- df[order(rank, method = "radix"), , drop = FALSE]
-  df$trial <- seq_len(nrow(df))
-  df
+  vapply(key, function(k) digest::digest(k, algo = "sha256", serialize = FALSE),
+         character(1), USE.NAMES = FALSE)
+}
+
+# ---- Trial-order constraints (counterbalance.max_run, run_on, orders) --------
+#
+# The keyed-hash order is a uniform shuffle, and a uniform shuffle gives long runs of
+# one condition: over seeds 1 to 1000 of a 60 + 60 lexical decision the longest run
+# had a median of 7 and a maximum of 21. `max_run: k` repairs the seeded order so that
+# no run of one `run_on` value is longer than k, the kind of sequence constraint that
+# pseudorandomisation programs such as Mix impose (van Casteren & Davis, 2006). The
+# repair is deterministic and identical in both engines, and it refuses only a
+# constraint that no order can meet. `orders: m` gives each list m orders, the first
+# being the order the list has without the key, so that participants on one list need
+# not all meet one order. Mirrors python_workflow/src/lexsync/counterbalancing.py.
+
+# Whether a design value is a whole number from 1, written as 2 or 2.0, within the
+# range as.integer() holds. Must match _whole_at_least_one in counterbalancing.py.
+.whole_at_least_one <- function(value) {
+  is.numeric(value) && length(value) == 1L && !is.na(value) && is.finite(value) &&
+    value == trunc(value) && value >= 1 && value <= .Machine$integer.max
+}
+
+# counterbalance.max_run, run_on and orders, checked. Returns list(max_run, run_on,
+# orders): max_run is NULL when the design sets no limit, run_on defaults to
+# "condition" and orders to 1. A limit or a number of orders that is not a whole
+# number from 1 is refused, and so is a run_on that is not the name of a column.
+# Mirrors _trial_order_settings in counterbalancing.py.
+.trial_order_settings <- function(design) {
+  cb <- if (is.list(design)) design[["counterbalance"]] else NULL
+  if (!is.list(cb)) cb <- list()
+  k <- cb[["max_run"]]
+  if (!is.null(k) && !.whole_at_least_one(k)) {
+    stop("lexsync: counterbalance.max_run must be a whole number of at least 1.",
+         call. = FALSE)
+  }
+  run_on <- cb[["run_on"]]
+  if (is.null(run_on)) {
+    run_on <- "condition"
+  } else if (!is.character(run_on) || length(run_on) != 1L || is.na(run_on) ||
+             !nzchar(trimws(run_on))) {
+    stop("lexsync: counterbalance.run_on must name a column of the trials.", call. = FALSE)
+  }
+  m <- cb[["orders"]]
+  if (is.null(m)) {
+    m <- 1L
+  } else if (!.whole_at_least_one(m)) {
+    stop("lexsync: counterbalance.orders must be a whole number of at least 1.",
+         call. = FALSE)
+  }
+  list(max_run = if (is.null(k)) NULL else as.integer(k), run_on = run_on,
+       orders = as.integer(m))
+}
+
+# The list a frame of trials belongs to, as the refusals name it: "list 2", or "list 2
+# of replicate 3" when the frame carries a replicate.
+.unit_label <- function(df) {
+  label <- paste("list", .key_part(df$list[1]))
+  if ("replicate" %in% names(df)) label <- paste(label, "of replicate", .key_part(df$replicate[1]))
+  label
+}
+
+# A missing run_on value: NA, or text that is empty once trimws() has stripped it.
+# Every missing value forms one category.
+.missing_category <- function(x) {
+  if (is.character(x) || is.factor(x)) {
+    x <- as.character(x)
+    return(is.na(x) | !nzchar(trimws(x)))
+  }
+  is.na(x)
+}
+
+# Each row's run_on value as a category: NA for a missing value, else the value as the
+# hash key renders it, so 1 and 1.0 are one category in both engines.
+.run_categories <- function(df, run_on, unit) {
+  if (!run_on %in% names(df)) {
+    stop(sprintf("lexsync: counterbalance.run_on names '%s', a column that %s does not have.",
+                 run_on, unit), call. = FALSE)
+  }
+  x <- df[[run_on]]
+  missing <- .missing_category(x)
+  out <- rep(NA_character_, length(x))
+  if (any(!missing)) out[!missing] <- .key_part(x[!missing])
+  out
+}
+
+# Whether the trials still to place can follow the current run with no run longer than
+# k. Category c can be split by the others into at most (others + 1) runs of k, and its
+# first run continues the current run when c is the current run's category:
+# remaining(c) <= k * (others + 1), less the current run's length for that category.
+# `remaining` is a named integer vector over category codes, `current` a code or 0L.
+# Must match _run_feasible in counterbalancing.py.
+.run_feasible <- function(remaining, current, run, k) {
+  total <- sum(remaining)
+  limit <- k * (total - remaining + 1L) - ifelse(seq_along(remaining) == current, run, 0L)
+  !any(remaining > 0L & remaining > limit)
+}
+
+# Category codes 1..C for the categories, NA (a missing value) a code of its own.
+.category_codes <- function(categories) {
+  key <- ifelse(is.na(categories), "\001NA", paste0("\002", categories))
+  match(key, unique(key))
+}
+
+# Refuse a limit no order of these trials can meet. At most one category can break it,
+# the one holding more than half the trials, so the message names it.
+.check_run_limit <- function(categories, k, run_on, unit) {
+  codes <- .category_codes(categories)
+  counts <- tabulate(codes)
+  if (.run_feasible(counts, 0L, 0L, k)) return(invisible(NULL))
+  total <- length(codes)
+  worst <- which(counts > k * (total - counts + 1L))[1]
+  n <- counts[worst]
+  value <- categories[match(worst, codes)]
+  label <- if (is.na(value)) sprintf("trials with no '%s'", run_on) else
+    sprintf("'%s' trials", value)
+  stop(sprintf("lexsync: no order of %s keeps runs of '%s' to %d or fewer: %d %s against %d others.",
+               unit, run_on, as.integer(k), as.integer(n), label, as.integer(total - n)),
+       call. = FALSE)
+}
+
+# The seeded order `perm` (row indices in rank order), repaired so that no run of one
+# category is longer than k. Each step takes the earliest trial still unplaced in the
+# seeded order that neither extends the current run beyond k nor leaves the rest
+# infeasible (see .run_feasible). A trial that keeps both is always there once the
+# start is feasible, which .check_run_limit has established. Taking the earliest trial
+# that does not extend the run, without the look-ahead, refused 931 of 1,000 seeds of a
+# feasible 40 + 80 design at k = 2 near the end of the list. Mirrors _repair_runs in
+# counterbalancing.py.
+.repair_runs <- function(perm, categories, k) {
+  codes <- .category_codes(categories)
+  remaining <- tabulate(codes)
+  left <- perm
+  out <- integer(0)
+  current <- 0L
+  run <- 0L
+  while (length(left)) {
+    verdict <- rep(NA, length(remaining))
+    pick <- 0L
+    for (pos in seq_along(left)) {
+      c <- codes[left[pos]]
+      if (c == current && run >= k) next
+      if (is.na(verdict[c])) {
+        remaining[c] <- remaining[c] - 1L
+        verdict[c] <- .run_feasible(remaining, c, if (c == current) run + 1L else 1L, k)
+        remaining[c] <- remaining[c] + 1L
+      }
+      if (verdict[c]) {
+        pick <- pos
+        break
+      }
+    }
+    if (!pick) stop("lexsync: the trial-order repair found no trial to place.", call. = FALSE)
+    c <- codes[left[pick]]
+    out <- c(out, left[pick])
+    left <- left[-pick]
+    remaining[c] <- remaining[c] - 1L
+    run <- if (c == current) run + 1L else 1L
+    current <- c
+  }
+  out
+}
+
+# Order one list's trials, and add each trial's position in every order. The rows come
+# back in order 1 with `trial` numbered from 1. With settings$orders above 1, order_1 to
+# order_m give each trial's position in each order, order_1 equal to `trial`. With
+# settings$max_run set and `max_run` TRUE, every order is repaired so that no run of
+# one run_on value is longer than the limit. Without either setting this is
+# .shuffle_deterministic(). Mirrors _order_trials in counterbalancing.py.
+.order_trials <- function(df, seed, settings, unit, max_run = TRUE) {
+  k <- if (isTRUE(max_run)) settings$max_run else NULL
+  m <- settings$orders %||% 1L
+  categories <- NULL
+  if (!is.null(k)) {
+    categories <- .run_categories(df, settings$run_on, unit)
+    .check_run_limit(categories, k, settings$run_on, unit)
+  }
+  perms <- lapply(seq_len(m), function(j) {
+    perm <- order(.order_ranks(df, seed, j), method = "radix")
+    if (!is.null(k)) perm <- .repair_runs(perm, categories, k)
+    perm
+  })
+  out <- df[perms[[1]], , drop = FALSE]
+  n <- nrow(df)
+  out$trial <- seq_len(n)
+  if (m > 1L) {
+    for (j in seq_len(m)) {
+      position <- integer(n)
+      position[perms[[j]]] <- seq_len(n)
+      out[[paste0("order_", j)]] <- position[perms[[1]]]
+    }
+  }
+  out
+}
+
+# The longest run of one run_on value in a version's presented trials, over every
+# order. A pause separates the practice trials from the rest, so a run does not
+# continue across it.
+.longest_runs <- function(trials, run_on, orders) {
+  if (!run_on %in% names(trials) || !nrow(trials)) return(0L)
+  best <- 0L
+  for (j in seq_len(orders)) {
+    column <- if (orders > 1L) paste0("order_", j) else "trial"
+    ordered <- trials[order(trials[[column]], method = "radix"), , drop = FALSE]
+    practice <- if ("block" %in% names(ordered)) ordered$block %in% "practice" else
+      rep(FALSE, nrow(ordered))
+    cats <- .run_categories(ordered, run_on, "")
+    key <- paste(practice, ifelse(is.na(cats), "\001NA", paste0("\002", cats)))
+    runs <- rle(key)$lengths
+    best <- max(best, runs)
+  }
+  as.integer(best)
+}
+
+# What the datasheet records of the trial-order settings, from the presented trials:
+# list(max_run = list(k, run_on, longest)) when the design sets a limit, `longest`
+# giving the longest run realised in each presentation version, and list(orders = m)
+# when it asks for more than one order. Empty for a design with neither. Mirrors
+# _trial_order_record in counterbalancing.py.
+.trial_order_record <- function(presented, design) {
+  settings <- .trial_order_settings(design)
+  record <- list()
+  if (!is.null(settings$max_run)) {
+    longest <- lapply(.presentation_versions(presented), function(v) {
+      row <- list(list = as.integer(v$list))
+      if ("replicate" %in% names(presented)) row <- c(list(replicate = as.integer(v$replicate)), row)
+      row$longest_run <- .longest_runs(.version_rows(presented, v), settings$run_on,
+                                       settings$orders)
+      row
+    })
+    record$max_run <- list(k = settings$max_run, run_on = settings$run_on, longest = longest)
+  }
+  if (settings$orders > 1L) record$orders <- settings$orders
+  record
 }
 
 # ---- Balance-aware list assignment (counterbalance.optimise) ----------------
@@ -460,17 +702,27 @@ balance_lists <- function(stimuli, design, schema) {
 #' design's own `events` list has no say in the recipe. The factorial recipe refuses
 #' more lists than item sets, since the surplus lists would be empty.
 #'
+#' Each list's trials are ordered by the seeded keyed hash. `counterbalance.max_run`
+#' repairs that order so that no run of one `counterbalance.run_on` value (by default
+#' the condition) is longer than the limit, and refuses a limit no order can meet. A
+#' design with fillers has the limit applied when the fillers are interleaved, to that
+#' order. `counterbalance.orders: m` adds `order_1` to `order_m`, each trial's position
+#' in each of m orders of its list, `order_1` being the order `trial` gives.
+#'
 #' @param stimuli A stimuli data frame (matched set or loaded item table).
 #' @param design A parsed design configuration. Reads `paradigm`,
-#'   `counterbalance.recipe` and `counterbalance.lists`.
+#'   `counterbalance.recipe`, `counterbalance.lists`, `counterbalance.max_run`,
+#'   `counterbalance.run_on`, `counterbalance.orders` and `fillers`.
 #' @param schema The parsed global schema (provides the seed).
 #' @param list_of_set Optional named integer vector mapping each `set` to a list,
 #'   from [balance_lists()]. Supplied by the pipeline when
 #'   `counterbalance.optimise` is on; when `NULL` the factorial recipe deals sets to
 #'   lists by rank as before.
-#' @return `stimuli` with added `list` and `trial` columns.
+#' @return `stimuli` with added `list` and `trial` columns, and the order columns
+#'   when there is more than one order.
 #' @export
 counterbalance <- function(stimuli, design, schema, list_of_set = NULL) {
+  .trial_order_settings(design)
   # Resampled designs counterbalance each replicate (an independent item set) on
   # its own, so trial order is numbered within each replicate.
   if ("replicate" %in% names(stimuli) && length(unique(stimuli$replicate)) > 1L) {
@@ -532,8 +784,16 @@ counterbalance_factorial <- function(stimuli, design, schema, list_of_set = NULL
     }
   }
 
+  settings <- .trial_order_settings(design)
+  # With fillers, .add_blocks() draws the order again over the main trials and the
+  # fillers together, and the limit belongs to that order: the main trials alone may be
+  # all one condition, as a lexical decision's words are when its pseudowords are
+  # fillers.
+  limit <- is.null(design[["fillers"]])
   parts <- split(stimuli, stimuli$list)
-  stimuli <- do.call(rbind, lapply(parts, .shuffle_deterministic, seed = seed))
+  stimuli <- do.call(rbind, lapply(parts, function(df) {
+    .order_trials(df, seed, settings, .unit_label(df), max_run = limit)
+  }))
   rownames(stimuli) <- NULL
   stimuli
 }
@@ -554,6 +814,8 @@ counterbalance_latin_square <- function(stimuli, design, schema) {
   n_cond <- length(conds)
   n_lists <- design[["counterbalance"]][["lists"]] %||% n_cond
   sets <- sort(unique(stimuli$set))
+  settings <- .trial_order_settings(design)
+  limit <- is.null(design[["fillers"]])
 
   parts <- list()
   for (li in seq_len(n_lists) - 1L) {
@@ -569,7 +831,7 @@ counterbalance_latin_square <- function(stimuli, design, schema) {
     }
     df <- do.call(rbind, rows)
     df$list <- li + 1L
-    df <- .shuffle_deterministic(df, seed)
+    df <- .order_trials(df, seed, settings, .unit_label(df), max_run = limit)
     parts[[length(parts) + 1L]] <- df
   }
   out <- do.call(rbind, parts)

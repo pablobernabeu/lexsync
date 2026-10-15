@@ -25,7 +25,8 @@ build_datasheet(
   input_normalisation = NULL,
   generation_exclude = NULL,
   exclusions = NULL,
-  zipf_derivation = NULL
+  zipf_derivation = NULL,
+  trial_order = NULL
 )
 }
 \arguments{
@@ -116,6 +117,13 @@ carrying \code{freq_permillion}, as \code{\link[=normalise_lexicon]{normalise_le
 rates it holds, and how many put Zipf = log10(per million) + 3 within 1e-9 of a
 three-place rounding boundary, where the two engines' \code{log10} could round a
 derived value apart. Recorded as \code{materials_source$zipf_derivation}.}
+
+\item{trial_order}{Optional record of the trial-order settings on the presented
+trials, which the pipeline passes. Without it, the record is taken from \code{stimuli}.
+It gives \code{counterbalancing$max_run} (\code{list(k, run_on, longest)}, the longest run
+realised in each presentation version) when the design limits runs, and
+\code{counterbalancing$orders} (\code{list(m, rule)}) when it asks for more than one trial
+order.}
 }
 \value{
 The datasheet as a nested list, ready for \code{\link[=write_datasheet]{write_datasheet()}}.

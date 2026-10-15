@@ -490,6 +490,59 @@ def test_one_opensesame_experiment_per_version(schema, tmp_path):
         assert not any('"' in line for line in runs)
 
 
+def _two_list_three_orders(schema, lists=2, orders=3):
+    """Eight item sets dealt into `lists` lists, each list in `orders` trial orders."""
+    stim = pd.DataFrame({"word": ["w%02d" % i for i in range(1, 17)],
+                         "condition": ["hi", "lo"] * 8,
+                         "set": [s for s in range(1, 9) for _ in (0, 1)]})
+    design = {"name": "o", "language": "english", "timing": {},
+              "counterbalance": {"lists": lists, "orders": orders}}
+    return assign_triggers(counterbalance(stim, design, schema)), design
+
+
+def test_one_opensesame_experiment_per_version_and_order(schema, tmp_path):
+    # OpenSesame's loop presents its table in file order, so each trial order of each
+    # version is an experiment of its own, its tables sorted by that order. The loop
+    # table numbers the trials as presented. test-scripting.R pins the same files.
+    stim, design = _two_list_three_orders(schema)
+    out = export_experiments(stim, design, schema, str(tmp_path))
+    stems = ["o_english_list%d_order%d" % (k, j) for k in (1, 2) for j in (1, 2, 3)]
+    assert [os.path.basename(p) for p in out["files"] if p.endswith(".osexp")] == [
+        s + ".osexp" for s in stems]
+    assert out["opensesame"] == out["files"][1]
+    for k in (1, 2):
+        for j in (1, 2, 3):
+            stem = "o_english_list%d_order%d" % (k, j)
+            numbers = pd.read_csv(tmp_path / f"{stem}_opensesame.csv")
+            text = pd.read_csv(tmp_path / f"{stem}_opensesame_text.csv")
+            want = stim[stim["list"] == k].sort_values("order_%d" % j)
+            assert list(text["word"]) == list(want["word"]), stem
+            assert list(numbers["lexsync_trial"]) == list(range(1, 9)), stem
+            assert list(text["order_%d" % j]) == list(range(1, 9)), stem
+            lines = (tmp_path / f"{stem}.osexp").read_text(encoding="utf-8").splitlines()
+            assert f"set lexsync_order {j}" in lines
+            assert f"\t_version = {k}" in lines and "\t_versions = 2" in lines
+            assert f"\t_order = {j}" in lines and "\t_orders = 3" in lines
+    # The loop table of the PsychoPy script and the page holds every order.
+    loop = pd.read_csv(tmp_path / "o_english_psychopy.csv")
+    assert [c for c in loop.columns if c.startswith("order_")] == [
+        "order_1", "order_2", "order_3"]
+    # The script and the page are told how many orders the trials carry.
+    py = open(out["psychopy"], encoding="utf-8").read().splitlines()
+    assert "ORDERS = 3" in py
+    html = open(out["jspsych"], encoding="utf-8").read().splitlines()
+    assert "  const ORDERS = 3;" in html
+
+
+def test_one_version_in_several_orders_names_each_order(schema, tmp_path):
+    stim, design = _two_list_three_orders(schema, lists=1, orders=2)
+    out = export_experiments(stim, design, schema, str(tmp_path))
+    assert [os.path.basename(p) for p in out["files"] if p.endswith(".osexp")] == [
+        "o_english_order1.osexp", "o_english_order2.osexp"]
+    osexp = (tmp_path / "o_english_order2.osexp").read_text(encoding="utf-8")
+    assert "lexsync_version_check" in osexp
+
+
 def test_single_version_designs_keep_their_file_names(schema, tmp_path):
     design = {"name": "t", "language": "english", "timing": {}}
     out = export_experiments(_stim(), design, schema, str(tmp_path))

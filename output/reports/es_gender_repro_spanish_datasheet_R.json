@@ -230,7 +230,7 @@
     },
     "design_sha256": "d30dc7616299d6fc538066bf435a44c2739dd24d0136d4843b214f0630a198c1",
     "schema_path": "config/schema.yaml",
-    "schema_sha256": "105322550d8c6dc00e06f71b44b61a7c45959c1a4caaceac414192dbd5f9520b"
+    "schema_sha256": "899bcef12bdc0bf94093d4b81cde29c3f94a6a7972113766c37946aa3960def1"
   },
   "artifacts": [
     {
@@ -247,7 +247,7 @@
     },
     {
       "file": "output/experiments/es_gender_repro_spanish_psychopy.py",
-      "sha256": "15470db2197477a88a5c25ca66a8fd59e92de35ba27815585b40d2a3e056a336"
+      "sha256": "011c2d0aa444da8c04a47c0f1bd98ef4b68c66c5e2a27733a5109863e1192d0c"
     },
     {
       "file": "output/experiments/es_gender_repro_spanish.osexp",
@@ -255,7 +255,7 @@
     },
     {
       "file": "output/experiments/es_gender_repro_spanish.html",
-      "sha256": "acb9e68c5a078dbc29c242ad25da62d9602b022418b54e29134ad3a2d508ae66"
+      "sha256": "309f7d9f597c9b8092a9241ddc357f61bc37f8053bde03e9f10c27de0460ccb1"
     },
     {
       "file": "output/experiments/es_gender_repro_spanish_psychopy.csv",

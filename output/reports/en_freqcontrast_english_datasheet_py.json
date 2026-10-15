@@ -19,7 +19,7 @@
     },
     {
       "file": "output/experiments/en_freqcontrast_english_psychopy.py",
-      "sha256": "f28fe513f8c2c4e41e572e50b4148882e9d2c737ce351092b8c192c7c06603a3"
+      "sha256": "8bf6b0a78c1763e9b8b999ffa8df7e2e3fcf0c77abe7c36ee2d5fff85388a754"
     },
     {
       "file": "output/experiments/en_freqcontrast_english.osexp",
@@ -27,7 +27,7 @@
     },
     {
       "file": "output/experiments/en_freqcontrast_english.html",
-      "sha256": "c8a358351b49c782730b954a1fa7579ddef6066e517dd81cce6ac27e41d93076"
+      "sha256": "e7dd9707928e8b9b75ae3d33d5eaba088362d9658a2daff1269393d73513761c"
     },
     {
       "file": "output/experiments/en_freqcontrast_english_psychopy.csv",
@@ -232,7 +232,7 @@
   "reproducibility": {
     "design_sha256": "3b0ad7a1e1cd3214c0a31fc64e7b800aca65068c9f58f833aa943ce37a71e621",
     "schema_path": "config/schema.yaml",
-    "schema_sha256": "105322550d8c6dc00e06f71b44b61a7c45959c1a4caaceac414192dbd5f9520b",
+    "schema_sha256": "899bcef12bdc0bf94093d4b81cde29c3f94a6a7972113766c37946aa3960def1",
     "seed": 2026,
     "versions": {
       "engine": "python",

@@ -19,7 +19,7 @@
     },
     {
       "file": "output/experiments/en_priming_continuous_english_psychopy.py",
-      "sha256": "d62c19729eae3767198ee31dd7d47bbfbee9ff962071672f93361732dff495d5"
+      "sha256": "50e309eec905b68da58a107d4e8e72c09663efc39edc394464db263e4ce66e92"
     },
     {
       "file": "output/experiments/en_priming_continuous_english_list1.osexp",
@@ -31,7 +31,7 @@
     },
     {
       "file": "output/experiments/en_priming_continuous_english.html",
-      "sha256": "086335709e79542bf41f1c37c6fa4911020545a52aaf1bdfba60d985022a07be"
+      "sha256": "e5d2614c91eb63ab1f246852ffb32329776d42904efff4b124388db6ad33be80"
     },
     {
       "file": "output/experiments/en_priming_continuous_english_psychopy.csv",
@@ -226,7 +226,7 @@
   "reproducibility": {
     "design_sha256": "dc211a70b9c1ba03dd207dcdf117be3096514e37f328fe09a76f0fd83e98285e",
     "schema_path": "config/schema.yaml",
-    "schema_sha256": "105322550d8c6dc00e06f71b44b61a7c45959c1a4caaceac414192dbd5f9520b",
+    "schema_sha256": "899bcef12bdc0bf94093d4b81cde29c3f94a6a7972113766c37946aa3960def1",
     "seed": 2026,
     "versions": {
       "engine": "python",

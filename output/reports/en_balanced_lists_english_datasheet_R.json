@@ -280,7 +280,7 @@
     },
     "design_sha256": "b999f5bf7e79e5ae644ef75fdd4b30a724e32695365d5a4398eee6cfc6cc63c0",
     "schema_path": "config/schema.yaml",
-    "schema_sha256": "105322550d8c6dc00e06f71b44b61a7c45959c1a4caaceac414192dbd5f9520b"
+    "schema_sha256": "899bcef12bdc0bf94093d4b81cde29c3f94a6a7972113766c37946aa3960def1"
   },
   "artifacts": [
     {
@@ -297,7 +297,7 @@
     },
     {
       "file": "output/experiments/en_balanced_lists_english_psychopy.py",
-      "sha256": "7c18310129edfbfc9c607950334e0fcfeea2f50e667d3fb9c8aa0c13780e3ae9"
+      "sha256": "898826059de3ae2ef1b4d613b06bf269b9860fc95c64434c2382680961f82787"
     },
     {
       "file": "output/experiments/en_balanced_lists_english_list1.osexp",
@@ -317,7 +317,7 @@
     },
     {
       "file": "output/experiments/en_balanced_lists_english.html",
-      "sha256": "d14e273ba7e628cba4645de15d8e294623cddf98bb96517b3c039f486acfdae8"
+      "sha256": "8e535fd3050e86d31bcc08a7618e98bd9c7497b18fba5b47e3c7ff10b33635bf"
     },
     {
       "file": "output/experiments/en_balanced_lists_english_psychopy.csv",

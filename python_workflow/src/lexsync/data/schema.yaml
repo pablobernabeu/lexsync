@@ -218,6 +218,25 @@ matching:
 # run log and the datasheet report it, and the Methods text calls the rotation
 # incomplete. Under `error`, the run is refused. A design's own
 # counterbalance.incomplete overrides the setting here.
+#
+# The trial order within a list comes from the seeded keyed hash, which behaves as a
+# uniform shuffle. One seed gives one order per list, which every participant given
+# that list meets, and runs of one condition are as long as chance makes them. A
+# design may limit the runs and ask for several orders:
+#
+#   counterbalance:
+#     max_run: 2          # at most 2 consecutive trials with one value of run_on
+#     run_on: condition   # optional; a column of the trials, condition by default
+#     orders: 3           # optional; trial orders per list, chosen by participant number
+#
+# max_run repairs the seeded order deterministically. Each step takes the earliest
+# trial in that order that keeps the limit and leaves the rest of the list able to
+# keep it, so only a limit that no order meets is refused. A missing value of run_on
+# counts as a value of its own. With fillers, the limit applies to the order they are
+# interleaved in, and the practice trials keep it on their own. orders writes order_1
+# to order_m into the loop tables, order_1 being the seeded order. Participant p runs
+# order (((p - 1) div V) mod m) + 1, where V is the number of presentation versions.
+# Both keys are off by default, so a running study keeps its order.
 counterbalance:
   incomplete: allow   # what to do with an incomplete Latin-square rotation: allow | error
 

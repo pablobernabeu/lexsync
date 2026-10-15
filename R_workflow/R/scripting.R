@@ -915,7 +915,9 @@ render_events <- function(events, timing, hz = 60) {
 #' table has one, then by list, then by trial. `trial` restarts at 1 in every list
 #' and in every replicate, so ordering on it alone interleaved the versions. The
 #' sort is stable, so rows that tie keep their incoming order and the two engines
-#' write the same table.
+#' write the same table. A design with `counterbalance.orders` carries `order_1` to
+#' `order_m` after the columns that place a trial, each trial's position in each
+#' order, which the experiments sort a version by.
 #' @keywords internal
 loop_table <- function(stimuli, events = NULL) {
   fields <- if (!is.null(events)) referenced_fields(events) else
@@ -929,8 +931,9 @@ loop_table <- function(stimuli, events = NULL) {
   # practice or filler block, so no existing loop table gains a column. `replicate`,
   # present only in a resampled design, is what tells its item samples apart, since
   # each is numbered from trial 1 and set 1.
-  order_cols <- c("trial", "list", "replicate", "block", "set", "condition", fields,
-                  ms_cols, "critical_region", "answer", "condition_trigger", "item_trigger")
+  order_cols <- c("trial", "list", "replicate", "block", "set", "condition",
+                  .order_columns(stimuli), fields, ms_cols, "critical_region", "answer",
+                  "condition_trigger", "item_trigger")
   cols <- character(0)
   for (c in order_cols) if (c %in% names(stimuli) && !(c %in% cols)) cols <- c(cols, c)
   tab <- stimuli[, cols, drop = FALSE]
@@ -1014,6 +1017,32 @@ loop_table <- function(stimuli, events = NULL) {
   length(unique(vapply(versions, function(v) v[["replicate"]], integer(1)))) > 1L
 }
 
+# The trial-order columns order_1 to order_m the trials carry, in order. counterbalance()
+# writes them when a design asks for more than one order. The numbering runs from
+# order_1 without a gap, so a column of another name, such as an item table's own
+# order_9, is not taken for one. Mirrors _order_columns in scripting.py.
+.order_columns <- function(stimuli) {
+  out <- character(0)
+  while (paste0("order_", length(out) + 1L) %in% names(stimuli)) {
+    out <- c(out, paste0("order_", length(out) + 1L))
+  }
+  if (length(out) > 1L) out else character(0)
+}
+
+# The number of trial orders the trials carry, 1 when they carry none.
+.n_orders <- function(stimuli) max(1L, length(.order_columns(stimuli)))
+
+# One version's rows in trial order `order`, with `trial` set to each trial's position
+# in it, so a table written from them numbers the trials as presented. Mirrors
+# _rows_in_order in scripting.py.
+.rows_in_order <- function(rows, order) {
+  key <- paste0("order_", order)
+  out <- rows[order(rows[[key]], method = "radix"), , drop = FALSE]
+  out$trial <- out[[key]]
+  rownames(out) <- NULL
+  out
+}
+
 # The loop-table columns the OpenSesame target carries as numbers, under the names its
 # loop table gives them. OpenSesame evaluates every cell of a loop table. In 4.x, a cell
 # holding a single `{` runs as a Python f-string, and in 3.3 a cell starting with `=` or
@@ -1080,7 +1109,10 @@ loop_table <- function(stimuli, events = NULL) {
 #' the version given by `--version` (or `--list` when there are no replicates), else
 #' the participant's by the rule `((participant - 1) mod V) + 1` from
 #' `--participant`, else what a start-up dialogue asks for. A version the script does
-#' not have stops the run with a message.
+#' not have stops the run with a message. With `counterbalance.orders: m` the
+#' conditions file holds each trial's position in each of m orders, and the script
+#' presents the version in order `(((participant - 1) div V) mod m) + 1`, or in order 1
+#' without a participant number. The data file then records the order.
 #'
 #' Before the first trial, the script shows the version's instructions, the design's
 #' `instructions` or lexsync's for its task, and waits for the space bar, which also
@@ -1161,6 +1193,7 @@ export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
     ASSUMED_REFRESH_HZ = sprintf("%.17g", .refresh_hz(schema)),
     EVENTS_JSON = as.character(jsonlite::toJSON(rendered, auto_unbox = TRUE)),
     VERSIONS_JSON = as.character(jsonlite::toJSON(versions, auto_unbox = TRUE)),
+    ORDERS = as.character(.n_orders(stimuli)),
     # A list, which jsonlite writes as an array even for one version.
     INSTRUCTIONS_JSON = as.character(jsonlite::toJSON(
       as.list(.instruction_texts(design, versions)), auto_unbox = TRUE))
@@ -1652,8 +1685,38 @@ export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
 # belongs to another version, this shows a screen saying so and waits for a key. Space
 # goes on with this file, and escape stops the session. It runs before the loop, so the
 # experiment needs no run-if condition, a syntax that differs between OpenSesame 3.3
-# and 4.x. Must match _osexp_version_check in scripting.py.
-.osexp_version_check <- function(version, n_versions) {
+# and 4.x. With `n_orders` above 1, each experiment is one order of one version, and
+# participant p normally runs order (((p - 1) div V) mod m) + 1, which the check compares
+# too. Must match _osexp_version_check in scripting.py.
+.osexp_version_check <- function(version, n_versions, order = 1L, n_orders = 1L) {
+  if (n_orders > 1L) {
+    body <- c(
+      sprintf("_version = %d", as.integer(version)),
+      sprintf("_versions = %d", as.integer(n_versions)),
+      sprintf("_order = %d", as.integer(order)),
+      sprintf("_orders = %d", as.integer(n_orders)),
+      "try:",
+      "    _p = int(var.get(u'subject_nr', 0, _eval=False))",
+      "except (TypeError, ValueError):",
+      "    _p = 0",
+      "_expected = (_p - 1) % _versions + 1",
+      "_expected_order = (_p - 1) // _versions % _orders + 1",
+      "if (_expected, _expected_order) != (_version, _order):",
+      "    c = Canvas()",
+      paste0("    c.text(u'Participant %d would normally run version %d in order %d, and ",
+             "this file runs version %d in order %d. Press space to continue with this ",
+             "one or escape to stop.' % (_p, _expected, _expected_order, _version, ",
+             "_order))"),
+      "    c.show()",
+      "    _key, _t = Keyboard(keylist=[u'space', u'escape'], timeout=None).get_key()",
+      "    if _key == u'escape':",
+      paste0("        raise RuntimeError(u'lexsync: stopped at the version check, because ",
+             "participant %d would normally run version %d in order %d.' % (_p, ",
+             "_expected, _expected_order))"))
+    return(.inline_block("lexsync_version_check",
+                         "Warn when the subject number belongs to another version or order",
+                         body))
+  }
   body <- c(
     sprintf("_version = %d", as.integer(version)),
     sprintf("_versions = %d", as.integer(n_versions)),
@@ -1723,6 +1786,9 @@ export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
 #' @param instructions The text the experiment shows before the loop, waiting for the
 #'   space bar. `NULL` (the default) takes list 1's, the design's own `instructions` or
 #'   lexsync's for its task.
+#' @param order,n_orders The experiment presents trial order `order` of `n_orders`.
+#'   With more than one order, the check compares the participant's order too, and the
+#'   experiment sets `lexsync_order`, which every trial logs.
 #' @return The experiment's text, one string. Each trial starts by clearing the last
 #'   trial's responses and ends with a logger item. The setup script opens the trigger
 #'   device the schema names, measures the frame period and defines the helpers that
@@ -1732,7 +1798,7 @@ export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
 #' @keywords internal
 build_osexp <- function(design, conditions_file, schema, rendered, font = "mono",
                         text_file = NULL, version = NULL, n_versions = NULL,
-                        instructions = NULL) {
+                        instructions = NULL, order = 1L, n_orders = 1L) {
   instructions <- instructions %||% .instructions(design, .response_mapping(design))
   addr <- clean_port(schema[["triggers"]][["parallel_address"]] %||% "0x378")
   design_name <- clean_meta(design[["name"]], "the design's `name`")
@@ -1799,13 +1865,17 @@ build_osexp <- function(design, conditions_file, schema, rendered, font = "mono"
     sprintf("set font_size %d", .text_height_px(schema)),
     sprintf("set font_family %s", font), 'set description "Generated by lexsync"',
     "set coordinates uniform", "set compensation 0", "set color_backend legacy",
-    "set clock_backend legacy", "set canvas_backend xpyriment", "set background black", "",
+    "set clock_backend legacy", "set canvas_backend xpyriment", "set background black",
+    # The trial order this experiment presents, logged with every trial.
+    if (n_orders > 1L) sprintf("set lexsync_order %d", as.integer(order)), "",
     "define inline_script lexsync_trigger_setup",
     '\tset description "Load the trial texts and open the trigger device"',
     '\tset _run ""', "\t___prepare__", paste0("\t", setup), "\t__end__", ""
   )
-  checked <- !is.null(version) && !is.null(n_versions) && as.integer(n_versions) > 1L
-  check <- if (checked) .osexp_version_check(version, n_versions) else character(0)
+  checked <- !is.null(version) && !is.null(n_versions) &&
+    (as.integer(n_versions) > 1L || n_orders > 1L)
+  check <- if (checked) .osexp_version_check(version, n_versions, order, n_orders) else
+    character(0)
   trial <- c(
     "define sequence lexsync_trial",
     "\tset flush_keyboard yes",
@@ -1879,8 +1949,12 @@ build_osexp <- function(design, conditions_file, schema, rendered, font = "mono"
 #' tables holding only that version's trials: `<base>_list<k>.osexp`, or
 #' `<base>_rep<r>_list<k>.osexp` when the versions span several replicates. Each one
 #' checks OpenSesame's subject number at start-up and shows a warning when that
-#' participant would normally run another version. [export_experiments()] lists every
-#' file written.
+#' participant would normally run another version. A design with
+#' `counterbalance.orders: m` gets one experiment per version and order,
+#' `<base>_list<k>_order<j>.osexp` (`<base>_order<j>.osexp` for a single version), each
+#' with tables sorted by its order, a `lexsync_order` variable that every trial logs,
+#' and a check that compares the participant's order too, order
+#' `(((p - 1) div V) mod m) + 1`. [export_experiments()] lists every file written.
 #'
 #' OpenSesame evaluates the cells of a loop table: in 4.x a cell holding `{` runs as a
 #' Python f-string, and in 3.3 a cell starting with `=` or holding `[=...]` runs as
@@ -1911,19 +1985,30 @@ export_opensesame <- function(stimuli, design, schema, outdir, base = NULL) {
   font <- design[["font"]] %||% presentation[["opensesame_font"]] %||% "mono"
   versions <- .presentation_versions(stimuli)
   texts <- .instruction_texts(design, versions)
-  parts <- if (length(versions) <= 1L) {
+  n_orders <- .n_orders(stimuli)
+  parts <- if (length(versions) <= 1L && n_orders == 1L) {
     # One version keeps the file names an experiment has always had.
     list(list(stem = base, rows = stimuli, version = NULL,
-              instructions = if (length(texts)) texts[[1]] else NULL))
+              instructions = if (length(texts)) texts[[1]] else NULL, order = 1L))
   } else {
     by_replicate <- .spans_replicates(versions)
-    lapply(seq_along(versions), function(k) {
+    unlist(lapply(seq_along(versions), function(k) {
       v <- versions[[k]]
-      stem <- if (by_replicate) sprintf("%s_rep%d_list%d", base, v[["replicate"]], v[["list"]])
+      stem <- if (length(versions) == 1L) base
+              else if (by_replicate) sprintf("%s_rep%d_list%d", base, v[["replicate"]], v[["list"]])
               else sprintf("%s_list%d", base, v[["list"]])
-      list(stem = stem, rows = .version_rows(stimuli, v), version = v[["version"]],
-           instructions = texts[[k]])
-    })
+      rows <- .version_rows(stimuli, v)
+      if (n_orders == 1L) {
+        return(list(list(stem = stem, rows = rows, version = v[["version"]],
+                         instructions = texts[[k]], order = 1L)))
+      }
+      # OpenSesame's loop presents its table in file order, so each order of a version
+      # is an experiment of its own, its tables sorted by that order.
+      lapply(seq_len(n_orders), function(j) {
+        list(stem = sprintf("%s_order%d", stem, j), rows = .rows_in_order(rows, j),
+             version = v[["version"]], instructions = texts[[k]], order = j)
+      })
+    }), recursive = FALSE)
   }
   written <- lapply(parts, function(p) {
     csv_name <- paste0(p[["stem"]], "_opensesame.csv")
@@ -1933,7 +2018,8 @@ export_opensesame <- function(stimuli, design, schema, outdir, base = NULL) {
          osexp = build_osexp(design, csv_name, schema, rendered, font = font,
                              text_file = text_name, version = p[["version"]],
                              n_versions = length(versions),
-                             instructions = p[["instructions"]]))
+                             instructions = p[["instructions"]], order = p[["order"]],
+                             n_orders = n_orders))
   })
   experiments <- character(0)
   tables <- character(0)
@@ -2044,7 +2130,10 @@ export_opensesame <- function(stimuli, design, schema, outdir, base = NULL) {
 #' list) pair, and runs one, named in its address: `?version=K`, `?list=K` when there
 #' are no replicates, or `?participant=N`, whose version is `((N - 1) mod V) + 1`. A
 #' page with more than one version, opened with none of these, shows a screen naming
-#' them and runs nothing. Its welcome screen shows the version's instructions, the
+#' them and runs nothing. With `counterbalance.orders: m` the page presents the version
+#' in order `(((N - 1) div V) mod m) + 1`, or in order 1 without a participant number,
+#' and every data row carries the order. Its welcome screen shows the version's
+#' instructions, the
 #' design's `instructions` or lexsync's for its task, and waits for the space bar. The
 #' data rows carry the participant, the version, the list and the replicate, and the
 #' data file is named after the participant and the version. The page names the keys
@@ -2080,6 +2169,7 @@ export_jspsych <- function(stimuli, design, schema, outdir, base = NULL) {
     # floor on jsonlite.
     TRIALS_JSON = .json_html(jsonlite::toJSON(trials, dataframe = "rows", digits = I(15))),
     VERSIONS_JSON = .json_html(jsonlite::toJSON(versions, auto_unbox = TRUE)),
+    ORDERS = as.character(.n_orders(stimuli)),
     INSTRUCTIONS_JSON = .json_html(jsonlite::toJSON(as.list(.instruction_texts(design, versions)),
                                                     auto_unbox = TRUE))
   )

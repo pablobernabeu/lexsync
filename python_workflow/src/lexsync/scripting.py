@@ -949,6 +949,25 @@ def _render_each(events: list, timing: dict, hz: float) -> list:
     return out
 
 
+def _order_columns(stimuli: pd.DataFrame) -> list:
+    """The trial-order columns ``order_1`` to ``order_m`` the trials carry, in order.
+
+    ``counterbalance`` writes them when a design asks for more than one order. The
+    numbering runs from ``order_1`` without a gap, so a column of another name, such as
+    an item table's own ``order_9``, is not taken for one. Mirrors .order_columns in
+    scripting.R.
+    """
+    out = []
+    while "order_%d" % (len(out) + 1) in stimuli.columns:
+        out.append("order_%d" % (len(out) + 1))
+    return out if len(out) > 1 else []
+
+
+def _n_orders(stimuli: pd.DataFrame) -> int:
+    """The number of trial orders the trials carry, 1 when they carry none."""
+    return max(1, len(_order_columns(stimuli)))
+
+
 def _ms_columns(events: list | None) -> list:
     """The per-trial duration columns an event list reads, in event order."""
     cols = []
@@ -966,14 +985,18 @@ def loop_table(stimuli: pd.DataFrame, events: list | None = None) -> pd.DataFram
     table has one, then by list, then by trial. `trial` restarts at 1 in every list
     and in every replicate, so ordering on it alone interleaved the versions. The
     sort is stable, as R's order() is, so rows that tie keep their incoming order and
-    the two engines write the same table.
+    the two engines write the same table. A design with ``counterbalance.orders``
+    carries ``order_1`` to ``order_m`` after the columns that place a trial, each
+    trial's position in each order, which the experiments sort a version by.
     """
     fields = referenced_fields(events) if events else (["word"] if "word" in stimuli.columns else [])
     # A per-trial duration is read from the loop table at run time, so its column
     # has to travel with the trials, and cannot stay behind in the stimuli file.
     ms_cols = _ms_columns(events)
+    order_cols = _order_columns(stimuli)
     cols = []
-    for c in _STD_COLS[:_LEADING_COLS] + fields + ms_cols + _STD_COLS[_LEADING_COLS:]:
+    for c in (_STD_COLS[:_LEADING_COLS] + order_cols + fields + ms_cols
+              + _STD_COLS[_LEADING_COLS:]):
         if c in stimuli.columns and c not in cols:
             cols.append(c)
     tab = stimuli[cols].copy()
@@ -1067,6 +1090,15 @@ def _version_rows(stimuli: pd.DataFrame, version: dict) -> pd.DataFrame:
     return stimuli.loc[mask].reset_index(drop=True)
 
 
+def _rows_in_order(rows: pd.DataFrame, order: int) -> pd.DataFrame:
+    """One version's rows in trial order ``order``, with ``trial`` set to each trial's
+    position in it, so a table written from them numbers the trials as presented."""
+    key = "order_%d" % order
+    out = rows.sort_values(key, kind="stable").reset_index(drop=True)
+    out["trial"] = out[key].to_numpy()
+    return out
+
+
 def _spans_replicates(versions: list) -> bool:
     """Whether the versions come from more than one replicate. A list then names no
     single version, so file names and launch options name the replicate as well."""
@@ -1125,7 +1157,10 @@ def export_psychopy(stimuli: pd.DataFrame, design: dict, schema: dict, outdir: s
     version given by ``--version`` (or ``--list`` when there are no replicates), else
     the participant's by the rule ``((participant - 1) mod V) + 1`` from
     ``--participant``, else what a start-up dialogue asks for. A version the script does
-    not have stops the run with a message.
+    not have stops the run with a message. With ``counterbalance.orders: m`` the
+    conditions file holds each trial's position in each of m orders, and the script
+    presents the version in order ``(((participant - 1) div V) mod m) + 1``, or in order 1
+    without a participant number. The data file then records the order.
 
     Before the first trial, the script shows the version's instructions, the design's
     ``instructions`` or lexsync's for its task, and waits for the space bar, which also
@@ -1210,6 +1245,7 @@ def _psychopy_files(stimuli, design, schema, outdir, base=None) -> list:
         "ASSUMED_REFRESH_HZ": "%.17g" % _refresh_hz(schema),
         "EVENTS_JSON": _json_r(rendered),
         "VERSIONS_JSON": _json_r(versions),
+        "ORDERS": str(_n_orders(stimuli)),
         "INSTRUCTIONS_JSON": _json_r(_instruction_texts(design, versions)),
     }
     for key, value in subs.items():
@@ -1700,7 +1736,8 @@ def _osexp_markers() -> list:
                             ["_lexsync_marker(255)"], run=True))
 
 
-def _osexp_version_check(version: int, n_versions: int) -> list:
+def _osexp_version_check(version: int, n_versions: int, order: int = 1,
+                         n_orders: int = 1) -> list:
     """The inline script that checks the subject number against this file's version.
 
     A design with several presentation versions gets one experiment per version, and
@@ -1709,8 +1746,37 @@ def _osexp_version_check(version: int, n_versions: int) -> list:
     number belongs to another version, this shows a screen saying so and waits for a
     key. Space goes on with this file, and escape stops the session. It runs before the
     loop, so the experiment needs no run-if condition, a syntax that differs between
-    OpenSesame 3.3 and 4.x. Must match .osexp_version_check in scripting.R.
+    OpenSesame 3.3 and 4.x. With ``n_orders`` above 1, each experiment is one order of
+    one version, and participant p normally runs order (((p - 1) div V) mod m) + 1, which
+    the check compares too. Must match .osexp_version_check in scripting.R.
     """
+    if n_orders > 1:
+        return _inline_block(
+            "lexsync_version_check",
+            "Warn when the subject number belongs to another version or order", [
+                f"_version = {int(version)}",
+                f"_versions = {int(n_versions)}",
+                f"_order = {int(order)}",
+                f"_orders = {int(n_orders)}",
+                "try:",
+                "    _p = int(var.get(u'subject_nr', 0, _eval=False))",
+                "except (TypeError, ValueError):",
+                "    _p = 0",
+                "_expected = (_p - 1) % _versions + 1",
+                "_expected_order = (_p - 1) // _versions % _orders + 1",
+                "if (_expected, _expected_order) != (_version, _order):",
+                "    c = Canvas()",
+                "    c.text(u'Participant %d would normally run version %d in order %d, and "
+                "this file runs version %d in order %d. Press space to continue with this "
+                "one or escape to stop.' % (_p, _expected, _expected_order, _version, "
+                "_order))",
+                "    c.show()",
+                "    _key, _t = Keyboard(keylist=[u'space', u'escape'], timeout=None).get_key()",
+                "    if _key == u'escape':",
+                "        raise RuntimeError(u'lexsync: stopped at the version check, because "
+                "participant %d would normally run version %d in order %d.' % (_p, "
+                "_expected, _expected_order))",
+            ], run=True)
     body = [
         f"_version = {int(version)}",
         f"_versions = {int(n_versions)}",
@@ -1764,16 +1830,19 @@ def _osexp_instructions(text: str) -> list:
 def build_osexp(design: dict, conditions_file: str, schema: dict, rendered: list,
                 font: str = "mono", text_file: str | None = None,
                 version: int | None = None, n_versions: int | None = None,
-                instructions: str | None = None) -> str:
+                instructions: str | None = None, order: int = 1,
+                n_orders: int = 1) -> str:
     """The plain text of an OpenSesame experiment for a rendered event list.
 
     ``conditions_file`` names the loop table and ``text_file`` its companion text
     table, which defaults to the loop table's name with ``_text`` before ``.csv``.
     Both are looked up through OpenSesame's file pool, which also searches the
     experiment's own folder. ``version`` and ``n_versions`` mark the experiment as
-    version ``version`` of ``n_versions``. With more than one version, the experiment
+    version ``version`` of ``n_versions``, and ``order`` and ``n_orders`` as trial order
+    ``order`` of ``n_orders``. With more than one version or order, the experiment
     checks OpenSesame's subject number against its own before the loop and warns when
-    the participant would normally run another. It then shows ``instructions`` and
+    the participant would normally run another. With more than one order, it also sets
+    ``lexsync_order``, which every trial logs. It then shows ``instructions`` and
     waits for the space bar. By default they are list 1's instructions, the design's own
     text or lexsync's for its task. Each trial starts by clearing the last trial's
     responses and ends with a logger item. The setup script opens the trigger device
@@ -1848,13 +1917,16 @@ def build_osexp(design: dict, conditions_file: str, schema: dict, rendered: list
         f"set font_size {_text_height_px(schema)}",
         f"set font_family {font}", 'set description "Generated by lexsync"',
         "set coordinates uniform", "set compensation 0", "set color_backend legacy",
-        "set clock_backend legacy", "set canvas_backend xpyriment", "set background black", "",
+        "set clock_backend legacy", "set canvas_backend xpyriment", "set background black",
+        # The trial order this experiment presents, logged with every trial.
+        *([f"set lexsync_order {int(order)}"] if n_orders > 1 else []), "",
         "define inline_script lexsync_trigger_setup",
         '\tset description "Load the trial texts and open the trigger device"',
         '\tset _run ""', "\t___prepare__", *["\t" + s for s in setup], "\t__end__", "",
     ]
-    checked = version is not None and n_versions is not None and int(n_versions) > 1
-    check = _osexp_version_check(version, n_versions) if checked else []
+    checked = version is not None and n_versions is not None and (
+        int(n_versions) > 1 or n_orders > 1)
+    check = _osexp_version_check(version, n_versions, order, n_orders) if checked else []
     trial = [
         "define sequence lexsync_trial",
         "\tset flush_keyboard yes",
@@ -1930,8 +2002,12 @@ def export_opensesame(stimuli, design, schema, outdir, base=None) -> str:
     its own two tables holding only that version's trials: ``<base>_list<k>.osexp``, or
     ``<base>_rep<r>_list<k>.osexp`` when the versions span several replicates. Each one
     checks OpenSesame's subject number at start-up and shows a warning when that
-    participant would normally run another version. ``export_experiments`` lists every
-    file written.
+    participant would normally run another version. A design with
+    ``counterbalance.orders: m`` gets one experiment per version and order,
+    ``<base>_list<k>_order<j>.osexp`` (``<base>_order<j>.osexp`` for a single version),
+    each with tables sorted by its order, a ``lexsync_order`` variable that every trial
+    logs, and a check that compares the participant's order too, order
+    ``(((p - 1) div V) mod m) + 1``. ``export_experiments`` lists every file written.
 
     OpenSesame evaluates the cells of a loop table: in 4.x a cell holding ``{`` runs as
     a Python f-string, and in 3.3 a cell starting with ``=`` or holding ``[=...]`` runs
@@ -1977,21 +2053,33 @@ def _opensesame_files(stimuli, design, schema, outdir, base=None) -> tuple:
     font = design.get("font") or presentation.get("opensesame_font") or "mono"
     versions = presentation_versions(stimuli)
     texts = _instruction_texts(design, versions)
-    if len(versions) <= 1:
+    n_orders = _n_orders(stimuli)
+    if len(versions) <= 1 and n_orders == 1:
         # One version keeps the file names an experiment has always had.
-        parts = [(base, stimuli, None, texts[0] if texts else None)]
+        parts = [(base, stimuli, None, texts[0] if texts else None, 1)]
     else:
         by_replicate = _spans_replicates(versions)
-        parts = [((f"{base}_rep{v['replicate']}_list{v['list']}" if by_replicate
-                   else f"{base}_list{v['list']}"), _version_rows(stimuli, v), v, texts[k])
-                 for k, v in enumerate(versions)]
+        parts = []
+        for k, v in enumerate(versions):
+            stem = (base if len(versions) == 1
+                    else f"{base}_rep{v['replicate']}_list{v['list']}" if by_replicate
+                    else f"{base}_list{v['list']}")
+            rows = _version_rows(stimuli, v)
+            if n_orders == 1:
+                parts.append((stem, rows, v, texts[k], 1))
+                continue
+            # OpenSesame's loop presents its table in file order, so each order of a
+            # version is an experiment of its own, its tables sorted by that order.
+            for j in range(1, n_orders + 1):
+                parts.append((f"{stem}_order{j}", _rows_in_order(rows, j), v, texts[k], j))
     written = []
-    for stem, rows, v, instructions in parts:
+    for stem, rows, v, instructions, order in parts:
         numbers, text = _opensesame_tables(rows, events)
         csv_name, text_name = f"{stem}_opensesame.csv", f"{stem}_opensesame_text.csv"
         osexp = build_osexp(design, csv_name, schema, rendered, font=font, text_file=text_name,
                             version=None if v is None else v["version"],
-                            n_versions=len(versions), instructions=instructions)
+                            n_versions=len(versions), instructions=instructions,
+                            order=order, n_orders=n_orders)
         written.append((stem, csv_name, text_name, numbers, text, osexp))
     experiments, tables = [], []
     for stem, csv_name, text_name, numbers, text, osexp in written:
@@ -2148,7 +2236,9 @@ def export_jspsych(stimuli, design, schema, outdir, base=None) -> str:
     runs one, named in its address: ``?version=K``, ``?list=K`` when there are no
     replicates, or ``?participant=N``, whose version is ``((N - 1) mod V) + 1``. A page
     with more than one version, opened with none of these, shows a screen naming them
-    and runs nothing. Its welcome screen shows the version's instructions, the design's
+    and runs nothing. With ``counterbalance.orders: m`` the page presents the version in
+    order ``(((N - 1) div V) mod m) + 1``, or in order 1 without a participant number,
+    and every data row carries the order. Its welcome screen shows the version's instructions, the design's
     ``instructions`` or lexsync's for its task, and waits for the space bar. The data
     rows carry the participant, the version, the list and the replicate, and the data
     file is named after the participant and the version. The page names the keys as the
@@ -2179,6 +2269,7 @@ def export_jspsych(stimuli, design, schema, outdir, base=None) -> str:
         "TEXT_HEIGHT_PX": str(_text_height_px(schema)),
         "EVENTS_JSON": _json_html(rendered), "TRIALS_JSON": _json_html(trials),
         "VERSIONS_JSON": _json_html(versions),
+        "ORDERS": str(_n_orders(stimuli)),
         "INSTRUCTIONS_JSON": _json_html(_instruction_texts(design, versions)),
     }
     for k, v in subs.items():

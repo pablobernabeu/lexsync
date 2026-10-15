@@ -23,7 +23,12 @@
     ?participant=N runs version ((N - 1) mod V) + 1 of the V versions, ?version=K
     runs version K, and ?list=K runs list K when the versions do not span several
     replicates. A page with more than one version, opened without any of these,
-    says how to open it and runs nothing. A welcome screen shows the version's
+    says how to open it and runs nothing. A design with counterbalance.orders
+    gives each version ORDERS trial orders, and ?participant=N runs order
+    (((N - 1) div V) mod ORDERS) + 1, so the participants given one version meet
+    its orders in turn. A run without a participant number runs order 1, and
+    every recorded row then carries the order and numbers its trial as presented.
+    A welcome screen shows the version's
     instructions (INSTRUCTIONS, the design's own text or lexsync's for its task)
     and waits for the space bar before the trials, and a completion screen follows
     them. Every recorded row carries the item's design
@@ -68,6 +73,9 @@
   // The presentation versions, one per (replicate, list) pair of TRIALS, numbered in
   // that order. One page serves every participant, and a run presents one version.
   const VERSIONS = [{"version":1,"replicate":1,"list":1,"n_trials":40}];
+  // The trial orders of each version. With more than one, each trial carries its
+  // position in each order, order_1 to order_<ORDERS>.
+  const ORDERS = 1;
   // The instructions each version shows on its welcome screen, in version order. A
   // response mapping rotated across lists names each list's keys.
   const INSTRUCTIONS = ["When a response is needed, press the left arrow key or the right arrow key. Respond as quickly and accurately as you can."];
@@ -121,12 +129,26 @@
       return { error: "This experiment has " + n + " versions, and each participant runs "
                  + "one of them. " + usage };
     }
-    return { version: chosen, participant: read.participant };
+    // Participant N runs order (((N - 1) div V) mod ORDERS) + 1, and a run without a
+    // participant number runs order 1.
+    const order = read.participant === undefined ? 1
+      : Math.floor((read.participant - 1) / n) % ORDERS + 1;
+    return { version: chosen, participant: read.participant, order: order };
+  }
+
+  // A version's trials in the run's trial order, sorted by each trial's position in
+  // it, which also numbers them as presented. With one order, the trials keep the
+  // embedded order, which is that order.
+  function inOrder(trials) {
+    if (ORDERS === 1 || RUN.error) return trials;
+    const key = "order_" + RUN.order;
+    return trials.slice().sort((a, b) => a[key] - b[key])
+      .map(t => Object.assign({}, t, { trial: t[key] }));
   }
 
   const RUN = chooseVersion();
-  const RUN_TRIALS = TRIALS.filter(t => !RUN.error
-    && whole(t.replicate) === RUN.version.replicate && whole(t.list) === RUN.version.list);
+  const RUN_TRIALS = inOrder(TRIALS.filter(t => !RUN.error
+    && whole(t.replicate) === RUN.version.replicate && whole(t.list) === RUN.version.list));
   // A filename for the saved data, derived from the page title and the run's
   // participant and version, so no design value is interpolated into JavaScript;
   // non-filename characters become underscores.
@@ -139,6 +161,7 @@
     // Every recorded row says which participant and version it came from.
     const run = { version: RUN.version.version, replicate: RUN.version.replicate,
                   list: RUN.version.list };
+    if (ORDERS > 1) run.order = RUN.order;
     if (RUN.participant !== undefined) run.participant = RUN.participant;
     jsPsych.data.addProperties(run);
   }

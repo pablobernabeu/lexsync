@@ -48,7 +48,8 @@ DESIGN_KEYS = (
     "resample", "resample.n_sets",
     "counterbalance", "counterbalance.lists", "counterbalance.optimise",
     "counterbalance.balance_on", "counterbalance.max_passes", "counterbalance.recipe",
-    "counterbalance.incomplete",
+    "counterbalance.incomplete", "counterbalance.max_run", "counterbalance.run_on",
+    "counterbalance.orders",
     "continuous", "continuous.predictor", "continuous.controls",
     "norms",
     "events", "events[].type", "events[].content", "events[].duration_ms",
@@ -453,8 +454,10 @@ def validate_design(design: dict, schema: dict) -> list:
     reads at that level, naming the key it was probably meant to be (one edit for a
     known key of up to five characters, two for a longer one). It then refuses a
     missing, empty or non-text ``name`` or ``language``, an ``n_per_condition`` or
-    ``n_per_cell`` that is not a whole number of at least 1, and a
-    ``counterbalance.optimise`` that is not true or false. It refuses a name,
+    ``n_per_cell`` that is not a whole number of at least 1, a
+    ``counterbalance.optimise`` that is not true or false, a ``counterbalance.max_run``
+    or ``counterbalance.orders`` that is not a whole number of at least 1, and a
+    ``counterbalance.run_on`` that is not the name of a column. It refuses a name,
     language or font that cannot be written into the generated experiments, a
     trigger port that is not an address, and an event list the renderer refuses, such
     as one with an unknown timing key, a bad response key or a response key that
@@ -499,6 +502,7 @@ def validate_design(design: dict, schema: dict) -> list:
     """
     # Imported here: scripting names its files through design_stem, so a module-level
     # import would be circular.
+    from .counterbalancing import _trial_order_settings
     from .scripting import (
         _check_instructions_and_mapping,
         _fullscreen,
@@ -526,6 +530,9 @@ def validate_design(design: dict, schema: dict) -> list:
     counterbalance = design.get("counterbalance")
     if isinstance(counterbalance, dict):
         _require_bool(counterbalance.get("optimise"), "counterbalance.optimise")
+    # counterbalance.max_run, run_on and orders, refused here before anything is
+    # selected, by the rule counterbalance() applies them with.
+    _trial_order_settings(design)
 
     clean_meta(design["name"], "the design's `name`")
     clean_meta(design["language"], "the design's `language`")

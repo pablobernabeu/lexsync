@@ -60,6 +60,13 @@ participant number and the version in a dialogue, and a blank version takes the
 participant's by the same rule. A version the script does not have stops the run
 with a message.
 
+A design with counterbalance.orders gives each version ``ORDERS`` trial orders, and
+the conditions file holds each trial's position in each, order_1 to order_m.
+Participant p runs order (((p - 1) div V) mod ORDERS) + 1, so the participants given
+one version meet its orders in turn, and a run without a participant number runs
+order 1. The data file then gains an ``order`` column, and its ``trial`` column
+numbers the trials as presented.
+
 Before the first trial, the script shows the version's instructions
 (``INSTRUCTIONS``, one text per version), the design's own text or lexsync's for
 its task, and waits for the space bar, which also lets the experimenter start the
@@ -128,6 +135,9 @@ EVENTS = json.loads(r"""[{"type":"mask","text":"########","ms":500},{"type":"tex
 # The presentation versions, one per (replicate, list) pair of the conditions file,
 # numbered in that order. A run presents one of them.
 VERSIONS = json.loads(r"""[{"version":1,"replicate":1,"list":1,"n_trials":24},{"version":2,"replicate":1,"list":2,"n_trials":24}]""")
+# The trial orders of each version. With more than one, the conditions file holds each
+# trial's position in each order, order_1 to order_<ORDERS>.
+ORDERS = 1
 # The instructions each version shows before its first trial, in version order. A
 # response mapping rotated across lists names each list's keys.
 INSTRUCTIONS = json.loads(r"""["You will see a row of hash marks and then a string of capital letters. Press the left arrow key if the letters spell a real English word and the right arrow key if they do not. Respond as quickly and accurately as you can.","You will see a row of hash marks and then a string of capital letters. Press the left arrow key if the letters spell a real English word and the right arrow key if they do not. Respond as quickly and accurately as you can."]""")
@@ -304,6 +314,24 @@ def choose_version(given):
     else:
         sys.exit("lexsync: give a participant number, or a version from 1 to %d." % n)
     return chosen, participant
+
+
+def choose_order(participant):
+    """The trial order this run presents. Participant p runs order
+    (((p - 1) div V) mod ORDERS) + 1, so the participants given one version meet its
+    orders in turn, and a run without a participant number runs order 1."""
+    if participant is None:
+        return 1
+    return ((participant - 1) // len(VERSIONS)) % ORDERS + 1
+
+
+def in_order(trials, order):
+    """A version's rows in trial order ``order``, sorted by each trial's position in it.
+    With one order, the rows keep the conditions file's order, which is that order."""
+    if ORDERS == 1:
+        return trials
+    key = "order_%d" % order
+    return sorted(trials, key=lambda trial: int(float(trial[key])))
 
 
 def resolve_trigger(spec, trial):
@@ -710,19 +738,26 @@ def ms_text(seconds):
 
 
 def data_columns(trials):
-    """The data file's header: the run, the trial's fields and what it recorded."""
+    """The data file's header: the run, the trial's fields and what it recorded. With
+    more than one trial order, the order the run presented follows the version."""
     fields = list(trials[0]) if trials else []
-    middle = [f for f in fields if f not in LEADING_COLUMNS and f not in CODE_COLUMNS]
+    leading = (LEADING_COLUMNS if ORDERS == 1
+               else LEADING_COLUMNS[:2] + ["order"] + LEADING_COLUMNS[2:])
+    middle = [f for f in fields if f not in leading and f not in CODE_COLUMNS]
     codes = [c for c in CODE_COLUMNS if c != "answer" or c in fields]
-    return LEADING_COLUMNS + middle + codes + MEASURE_COLUMNS
+    return leading + middle + codes + MEASURE_COLUMNS
 
 
-def trial_row(trial, version, participant, records):
+def trial_row(trial, version, participant, records, order=1):
     """One trial's row of the data file."""
     row = dict(trial)
     row.update(participant="" if participant is None else participant,
                version=version["version"], replicate=version["replicate"],
                list=version["list"], block=trial.get("block", ""))
+    if ORDERS > 1:
+        # The trial's place in the order presented. Its order_1 to order_m cells keep
+        # its place in every order.
+        row.update(order=order, trial=trial["order_%d" % order])
     response = question = None
     rts = []
     for ev, shown in zip(EVENTS, records):
@@ -774,13 +809,16 @@ def main():
     if not given:
         given = ask_launch()
     version, participant = choose_version(given)
-    trials = version_rows(load_trials(CONDITIONS_FILE), version)
+    order = choose_order(participant)
+    trials = in_order(version_rows(load_trials(CONDITIONS_FILE), version), order)
     if not trials:
         sys.exit("lexsync: version %d holds no trials in %s."
                  % (version["version"], os.path.basename(CONDITIONS_FILE)))
     print("[lexsync] version %d of %d (replicate %d, list %d): %d trials"
           % (version["version"], len(VERSIONS), version["replicate"], version["list"],
              len(trials)))
+    if ORDERS > 1:
+        print("[lexsync] trial order %d of %d" % (order, ORDERS))
     if participant is not None:
         usual = VERSIONS[(participant - 1) % len(VERSIONS)]
         if usual["version"] != version["version"]:
@@ -842,7 +880,7 @@ def main():
                 # Escape: the trial in progress is not written, and the file holds
                 # every trial completed before it.
                 break
-            writer.writerow(trial_row(trial, version, participant, records))
+            writer.writerow(trial_row(trial, version, participant, records, order))
             handle.flush()
     print("[lexsync] data written to %s" % path)
 

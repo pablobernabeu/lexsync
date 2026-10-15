@@ -1,0 +1,29 @@
+# Twin-edge case: a run limit that no order can meet. Each list holds four words and
+# eight pseudowords after the fillers are interleaved, and eight pseudowords cannot be
+# kept to runs of one with only four words between them. Both engines must refuse the
+# design with the same message, naming the list and the counts, before any file is
+# written.
+name: twin_edge_max_run_impossible
+language: english
+paradigm: lexical_decision
+description: 'A lexical decision whose run limit no order can meet.'
+items:
+  source: table
+  path: items.csv
+fillers:
+  path: fillers.csv
+events:
+  - type: fixation
+    content: '+'
+    duration_ms: 500
+  - type: text
+    content: '{target}'
+    duration_ms: 800
+    trigger: condition
+    onset_locked: true
+  - type: response
+    keys: [f, j]
+    timeout_ms: 2000
+counterbalance:
+  lists: 2
+  max_run: 1

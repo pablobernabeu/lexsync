@@ -46,7 +46,11 @@ version's trials. Open the participant's: participant *p* runs version
 ((*p* - 1) mod *V*) + 1 of the *V* versions. Each experiment compares the
 subject number OpenSesame asks for at start-up with its own version. When that
 participant would normally run another, it says so and waits for a key. Space
-goes on with this file, and escape stops the session.
+goes on with this file, and escape stops the session. A design with
+`counterbalance.orders: m` gets one experiment per version and trial order,
+`<base>_list<k>_order<j>.osexp`, its tables sorted by that order. Participant *p*
+runs order (((*p* - 1) div *V*) mod *m*) + 1, the check compares the order as well
+as the version, and every trial logs `lexsync_order`.
 
 Before the loop, an inline script, `lexsync_instructions`, shows the design's
 `instructions`, or lexsync's English instructions for its task, and waits for

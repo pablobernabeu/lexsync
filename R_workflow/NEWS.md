@@ -1,5 +1,39 @@
 # lexsync (development version)
 
+* `counterbalance.max_run` caps runs of one condition, or of one value of any column
+  named in `counterbalance.run_on`, in the trial order. `counterbalance()` repairs the
+  seeded order deterministically, taking at each step the earliest trial in it that
+  keeps the limit and leaves the rest of the list able to keep it, so it refuses only a
+  limit no order can meet, with a message giving the counts. A missing value counts as a
+  value of its own. With fillers, the limit applies to the order they are interleaved
+  in, and the practice trials keep it on their own. The datasheet records the limit and
+  the longest run realised in each presentation version as `counterbalancing$max_run`,
+  a field of datasheet format 1.2, and the Methods text states it, citing van Casteren
+  and Davis (2006). The shipped designs hold runs of up to eleven trials of one
+  condition, and the lexical decisions up to seven consecutive trials with the same
+  correct key. Both new keys are off by default, so no shipped design changes.
+
+* `counterbalance.orders: m` gives each list m trial orders. `counterbalance()` adds
+  `order_1` to `order_m`, each trial's position in each order, to the stimuli and the
+  loop tables. Order 1 is the seeded order, and order j from 2 is ranked by the SHA-256
+  of `seed|order<j>|replicate|list|set|condition`. Participant p runs version
+  `((p - 1) mod V) + 1` in order `(((p - 1) div V) mod m) + 1`: the PsychoPy script and
+  the jsPsych page sort the version's trials by that order and record it in every data
+  row, and OpenSesame gets one experiment per version and order,
+  `<base>_list<k>_order<j>.osexp`, whose start-up check compares the order too.
+  Participants on one list no longer all meet the same order. The datasheet records
+  `counterbalancing$orders` (the number of orders and the rule), a field of datasheet
+  format 1.2.
+
+* Every generated PsychoPy script and jsPsych page carries `ORDERS` and the code that
+  picks an order, so their bytes change, and so do the checksums the datasheets record
+  of them and of the schema, whose comments describe the new keys. No stimulus, loop
+  table or OpenSesame experiment moves.
+
+* The documentation said that practice trials are shuffled so that participants meet
+  them in different orders. Every participant given a list meets them in one fixed
+  order, as the design intends, and the text now says so.
+
 * `normalise_lexicon()` turns a delimited corpus file into a lexicon `load_lexicon()`
   reads. It applies a column map, reads tab-separated files, derives Zipf values from
   frequencies per million (Zipf = log10(per million) + 3) and writes `word` and

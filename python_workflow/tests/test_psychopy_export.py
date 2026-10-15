@@ -1062,6 +1062,58 @@ def test_replicates_are_versions_that_a_list_cannot_name(schema, tmp_path, monke
                                "(1 to 2) instead.")
 
 
+def _ordered_stimuli(schema):
+    """Eight item sets dealt into two lists, each list in three trial orders."""
+    stim = pd.DataFrame({"word": ["w%02d" % i for i in range(1, 17)],
+                         "condition": ["hi", "lo"] * 8,
+                         "set": [s for s in range(1, 9) for _ in (0, 1)]})
+    design = {"name": "o", "language": "english",
+              "counterbalance": {"lists": 2, "orders": 3}}
+    return assign_triggers(counterbalance(stim, design, schema)), design
+
+
+def test_the_participant_number_chooses_the_order(schema, tmp_path, monkeypatch):
+    # Every participant given a list used to meet one order, so each item sat at one
+    # serial position for all of them. With counterbalance.orders the conditions file
+    # carries each trial's position in every order, and participant p runs version
+    # ((p - 1) mod V) + 1 in order (((p - 1) div V) mod m) + 1.
+    _install_fake_psychopy()
+    stim, design = _ordered_stimuli(schema)
+    module = _load_generated(export_psychopy(stim, design, schema, str(tmp_path)))
+    assert module.ORDERS == 3
+    shown_orders = set()
+    for participant in range(1, 8):
+        version = (participant - 1) % 2 + 1
+        order = ((participant - 1) // 2) % 3 + 1
+        data = tmp_path / ("p%d" % participant)
+        shown = _run_main(module, ["--participant", str(participant)], monkeypatch, data)
+        want = stim[stim["list"] == version].sort_values("order_%d" % order)
+        assert [t["word"] for t in shown] == list(want["word"]), participant
+        shown_orders.add(tuple(t["word"] for t in shown))
+        # The data rows say which order ran and number the trials as presented.
+        fields, rows = _read_data(_data_files(data)[0])
+        assert fields[:3] == ["participant", "version", "order"]
+        assert {r["order"] for r in rows} == {str(order)}
+        assert [r["trial"] for r in rows] == [str(i) for i in range(1, 9)]
+        assert [r["order_%d" % order] for r in rows] == [r["trial"] for r in rows]
+    # Six (version, order) pairs give six sequences, and participant 7 repeats the first.
+    assert len(shown_orders) == 6
+    # A version named without a participant number runs in order 1, the file's order.
+    shown = _run_main(module, ["--version", "2"], monkeypatch, tmp_path / "v2")
+    assert [t["word"] for t in shown] == list(
+        stim[stim["list"] == 2].sort_values("trial")["word"])
+
+
+def test_a_design_without_orders_writes_no_order_column(schema, tmp_path, monkeypatch):
+    _install_fake_psychopy()
+    stim, design = _two_list_stimuli(schema)
+    module = _load_generated(export_psychopy(stim, design, schema, str(tmp_path)))
+    assert module.ORDERS == 1
+    _run_main(module, ["--participant", "1"], monkeypatch, tmp_path / "data")
+    fields, _ = _read_data(_data_files(tmp_path / "data")[0])
+    assert "order" not in fields
+
+
 def test_a_single_version_design_presents_every_trial(schema, tmp_path, monkeypatch):
     _install_fake_psychopy()
     stim = assign_triggers(pd.DataFrame({

@@ -1,0 +1,38 @@
+# Twin-edge case: a lexical decision with a run limit and two trial orders per list.
+# Eight filler pseudowords are interleaved with sixteen words and sixteen pseudowords,
+# so pseudowords outnumber words and the seeded order holds runs of three and more.
+# counterbalance.max_run caps every run of one condition at two trials, in the
+# interleaved order and in the practice order, and counterbalance.orders writes two
+# orders per list, order_1 and order_2, into the loop tables. Both engines must repair
+# the orders identically and write the same experiments, two OpenSesame experiments
+# per list. The words are common English words and the pseudowords were made for this
+# fixture.
+name: twin_edge_trial_orders
+language: english
+paradigm: lexical_decision
+description: 'A lexical decision with runs capped at two trials and two orders per list.'
+items:
+  source: table
+  path: items.csv
+practice:
+  path: practice.csv
+fillers:
+  path: fillers.csv
+events:
+  - type: fixation
+    content: '+'
+    duration_ms: 500
+  - type: text
+    content: '{target}'
+    duration_ms: 800
+    trigger: condition
+    onset_locked: true
+  - type: response
+    keys: [f, j]
+    timeout_ms: 2000
+  - type: blank
+    duration_ms: 250
+counterbalance:
+  lists: 2
+  max_run: 2
+  orders: 2

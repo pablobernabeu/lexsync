@@ -607,6 +607,17 @@ run_pipeline <- function(design_path, schema_path = NULL,
     log <- log_step(log, sprintf("presented %d trial(s); %d analysed",
                                  nrow(presented), nrow(stim)))
   }
+  # The trial orders and the run limit, logged only when the design sets them.
+  order_record <- .trial_order_record(presented, design)
+  if (!is.null(order_record$orders)) {
+    log <- log_step(log, sprintf("trial orders: %d per list", as.integer(order_record$orders)))
+  }
+  if (!is.null(order_record$max_run)) {
+    limit <- order_record$max_run
+    longest <- max(0L, vapply(limit$longest, function(r) as.integer(r$longest_run), integer(1)))
+    log <- log_step(log, sprintf("runs of '%s' limited to %d trial(s); longest realised %d",
+                                 limit$run_on, as.integer(limit$k), as.integer(longest)))
+  }
   # The answers the experiments will carry, derived as export_experiments() derives them:
   # checked here, so a mapping that leaves trials unscored is refused before anything is
   # written, and a practice or filler answer it contradicts is noted.
@@ -677,7 +688,7 @@ run_pipeline <- function(design_path, schema_path = NULL,
                         neighbourhood_reference = nref, counterbalance_check = cb_check,
                         input_normalisation = input_normalisation,
                         generation_exclude = generation_exclude, exclusions = exclusions,
-                        zipf_derivation = zipf_derivation)
+                        zipf_derivation = zipf_derivation, trial_order = order_record)
   ds_json <- file.path(outdir, "reports", paste0(base, "_datasheet_R.json"))
   ds_md <- file.path(outdir, "reports", paste0(base, "_datasheet_R.md"))
   write_datasheet(ds, ds_json, ds_md)

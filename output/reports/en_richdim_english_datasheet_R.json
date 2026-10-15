@@ -237,7 +237,7 @@
     },
     "design_sha256": "a46f5222c481512959ff91e40e2360a67d1a33f60b477b0518727e22bf6b5489",
     "schema_path": "config/schema.yaml",
-    "schema_sha256": "105322550d8c6dc00e06f71b44b61a7c45959c1a4caaceac414192dbd5f9520b"
+    "schema_sha256": "899bcef12bdc0bf94093d4b81cde29c3f94a6a7972113766c37946aa3960def1"
   },
   "artifacts": [
     {
@@ -254,7 +254,7 @@
     },
     {
       "file": "output/experiments/en_richdim_english_psychopy.py",
-      "sha256": "afd9c7f7cde5c22d0d27a693564fd42648a12b38110fe7b9b6ab33091826ec2f"
+      "sha256": "517580251f966d8408fc95507bbd5a8c04f926e1a0325069575bc7d531ddd299"
     },
     {
       "file": "output/experiments/en_richdim_english.osexp",
@@ -262,7 +262,7 @@
     },
     {
       "file": "output/experiments/en_richdim_english.html",
-      "sha256": "654065761c35a5eb0abc1704c0eabdc70c72381adf07cc5f905b2e86ab8dae3a"
+      "sha256": "92533830b77238607a843edd29952f4b05b86510d932f8f8e6066e6ebdc81493"
     },
     {
       "file": "output/experiments/en_richdim_english_psychopy.csv",

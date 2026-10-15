@@ -16,15 +16,17 @@
 # Where each block goes in the sequence is a methodological choice, not a convenience:
 #
 # Practice comes first, as its own run of trials, because its purpose is to precede the
-# task. It is shuffled within itself so participants do not all meet the practice items
-# in one order.
+# task. It is ordered within itself by the seeded keyed hash, so every participant given
+# a list meets the practice items in one fixed order. With counterbalance.orders each
+# order of a list has its own practice order, still before the main trials.
 #
 # Fillers are INTERLEAVED with the main trials, not appended, because a block of fillers
 # at the end is not a filler -- it is a second block that participants can tell apart.
 # They are merged into each list before the order is drawn, so one deterministic shuffle
 # mixes them through. That does renumber the main trials, which is correct: adding
 # fillers changes the sequence, and the stimuli file records where each item actually
-# appeared.
+# appeared. counterbalance.max_run applies to this interleaved order and, separately,
+# to the practice order, since a pause separates the two.
 #
 # Both blocks appear in EVERY list. They are not counterbalanced, because they carry no
 # manipulation to rotate; every participant should get the same practice. In a resampled
@@ -84,7 +86,10 @@
 #'   `normalisation` (`list(changed, collapsed)`, what Unicode NFC normalisation did to
 #'   the practice and filler tables; see [load_items()]). Trials are numbered from 1
 #'   within each list, or within each (replicate, list) pair of a resampled design, and
-#'   the counts are per list or pair.
+#'   the counts are per list or pair. `counterbalance.max_run` applies to the main and
+#'   filler trials together and to the practice trials on their own. With
+#'   `counterbalance.orders: m`, `order_1` to `order_m` give each trial's position in
+#'   each order, the practice trials first in every one.
 #' @keywords internal
 .add_blocks <- function(stimuli, design, schema) {
   practice_cfg <- design[["practice"]]
@@ -124,6 +129,8 @@
     practice <- .load_block(practice_cfg, design, "practice", offset)
   }
 
+  settings <- .trial_order_settings(design)
+  orders <- settings$orders
   parts <- list()
   for (i in seq_len(nrow(units))) {
     li <- units$list[i]
@@ -134,11 +141,19 @@
       body <- .rbind_blocks(body, f)
     }
     # One shuffle over main and fillers together is what interleaves them.
-    body <- .shuffle_deterministic(body, seed)
+    unit <- .unit_label(body)
+    body <- .order_trials(body, seed, settings, unit)
     if (!is.null(practice)) {
       p <- practice; p$list <- li
       if (by_replicate) p$replicate <- units$replicate[i]
-      p <- .shuffle_deterministic(p, seed)
+      p <- .order_trials(p, seed, settings, paste("the practice block of", unit))
+      # The practice trials come first in every order.
+      if (orders > 1L) {
+        for (j in seq_len(orders)) {
+          col <- paste0("order_", j)
+          body[[col]] <- body[[col]] + nrow(p)
+        }
+      }
       body <- .rbind_blocks(p, body)
     }
     body$trial <- seq_len(nrow(body))

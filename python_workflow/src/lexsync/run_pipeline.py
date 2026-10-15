@@ -21,6 +21,7 @@ from .counterbalancing import (
     _check_incomplete,
     _incomplete_policy,
     _recipe,
+    _trial_order_record,
     balance_lists,
     counterbalance,
     counterbalance_check,
@@ -685,6 +686,15 @@ def run_pipeline(design_path: str, schema_path: str | None = None, outdir: str =
                 {"block": b["block"], "n_per_list": b["n_per_list"]})
         runlog.log_step(log, "presented %d trial(s); %d analysed"
                              % (len(presented), len(stim)))
+    # The trial orders and the run limit, logged only when the design sets them.
+    order_record = _trial_order_record(presented, design)
+    if order_record.get("orders"):
+        runlog.log_step(log, "trial orders: %d per list" % order_record["orders"])
+    if order_record.get("max_run"):
+        limit = order_record["max_run"]
+        runlog.log_step(log, "runs of '%s' limited to %d trial(s); longest realised %d"
+                             % (limit["run_on"], limit["k"],
+                                max((r["longest_run"] for r in limit["longest"]), default=0)))
     # The answers the experiments will carry, derived as export_experiments derives them:
     # checked here, so a mapping that leaves trials unscored is refused before anything is
     # written, and a practice or filler answer it contradicts is noted.
@@ -758,7 +768,7 @@ def run_pipeline(design_path: str, schema_path: str | None = None, outdir: str =
                          neighbourhood_reference=nref, counterbalance_check=cb_check,
                          input_normalisation=input_normalisation,
                          generation_exclude=generation_exclude, exclusions=exclusions,
-                         zipf_derivation=zipf_derivation)
+                         zipf_derivation=zipf_derivation, trial_order=order_record)
     ds_json = os.path.join(outdir, "reports", f"{base}_datasheet_py.json")
     ds_md = os.path.join(outdir, "reports", f"{base}_datasheet_py.md")
     write_datasheet(ds, ds_json, ds_md)

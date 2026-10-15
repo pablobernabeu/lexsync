@@ -1,8 +1,8 @@
 # lexsync run log: en_richdim
 
 - Engine: R 4.6.1
-- Started: 2026-10-14 22:43:05.024978
-- Finished: 2026-10-14 22:43:27.793539
+- Started: 2026-10-15 03:29:31.654601
+- Finished: 2026-10-15 03:29:36.742198
 
 ## Run metadata
 
@@ -16,66 +16,66 @@
 
 ## Steps
 
-- **2026-10-14 22:43:05.056429**: lexsync: the design gives no `instructions`, and lexsync cannot tell what the response keys of a factorial design mean, so the experiments only name the keys; give `instructions` that say what each key means.
-- **2026-10-14 22:43:05.278454**: loading lexicon 'corpora/derived/en_v2.csv'
-- **2026-10-14 22:43:09.075065**: lexicon loaded: 30000 words
+- **2026-10-15 03:29:31.669393**: lexsync: the design gives no `instructions`, and lexsync cannot tell what the response keys of a factorial design mean, so the experiments only name the keys; give `instructions` that say what each key means.
+- **2026-10-15 03:29:31.678731**: loading lexicon 'corpora/derived/en_v2.csv'
+- **2026-10-15 03:29:33.95471**: lexicon loaded: 30000 words
     - words: 30000
-- **2026-10-14 22:43:09.331074**: exclude_words: removed 53 of the 53 listed word(s) from the candidates (config/exclude_en_demo.txt)
+- **2026-10-15 03:29:33.990443**: exclude_words: removed 53 of the 53 listed word(s) from the candidates (config/exclude_en_demo.txt)
     - exclude_words: config/exclude_en_demo.txt
     - sha256: cac9f88fb86fa6d0e6dbabc287c9ebb782100d071eeded13eb812584b9d41e9f
     - n_removed: 53
-- **2026-10-14 22:43:09.452478**: pool after filters: 8597 words
+- **2026-10-15 03:29:34.092235**: pool after filters: 8597 words
     - pool: 8597
-- **2026-10-14 22:43:09.492907**: computing bigram frequency (phonotactic-probability proxy)
-- **2026-10-14 22:43:12.551002**: matched 120 items across 2 conditions
+- **2026-10-15 03:29:34.097477**: computing bigram frequency (phonotactic-probability proxy)
+- **2026-10-15 03:29:35.540274**: matched 120 items across 2 conditions
     - conditions: high_frequency, low_frequency
-- **2026-10-14 22:43:12.863056**: equivalence low_frequency vs high_frequency on 'length': d = 0.00 [-0.30, 0.30], TOST p = 0.004 (equivalent)
-- **2026-10-14 22:43:12.970355**: equivalence low_frequency vs high_frequency on 'frequency': d = 5.56 [4.89, 6.22], TOST p = 1.000 (not shown equivalent)
-- **2026-10-14 22:43:13.011437**: equivalence low_frequency vs high_frequency on 'n_density': d = -0.13 [-0.43, 0.17], TOST p = 0.022 (equivalent)
-- **2026-10-14 22:43:13.017425**: equivalence low_frequency vs high_frequency on 'old20': d = -0.07 [-0.37, 0.23], TOST p = 0.010 (equivalent)
-- **2026-10-14 22:43:13.046764**: equivalence low_frequency vs high_frequency on 'n_syllables': d = 0.02 [-0.28, 0.32], TOST p = 0.005 (equivalent)
-- **2026-10-14 22:43:13.064426**: equivalence low_frequency vs high_frequency on 'bigram_freq': d = 0.02 [-0.28, 0.33], TOST p = 0.005 (equivalent)
-- **2026-10-14 22:43:14.871172**: wrote 'en_richdim_english_stimuli_R.csv'
+- **2026-10-15 03:29:35.602784**: equivalence low_frequency vs high_frequency on 'length': d = 0.00 [-0.30, 0.30], TOST p = 0.004 (equivalent)
+- **2026-10-15 03:29:35.608685**: equivalence low_frequency vs high_frequency on 'frequency': d = 5.56 [4.89, 6.22], TOST p = 1.000 (not shown equivalent)
+- **2026-10-15 03:29:35.615875**: equivalence low_frequency vs high_frequency on 'n_density': d = -0.13 [-0.43, 0.17], TOST p = 0.022 (equivalent)
+- **2026-10-15 03:29:35.622112**: equivalence low_frequency vs high_frequency on 'old20': d = -0.07 [-0.37, 0.23], TOST p = 0.010 (equivalent)
+- **2026-10-15 03:29:35.629888**: equivalence low_frequency vs high_frequency on 'n_syllables': d = 0.02 [-0.28, 0.32], TOST p = 0.005 (equivalent)
+- **2026-10-15 03:29:35.636168**: equivalence low_frequency vs high_frequency on 'bigram_freq': d = 0.02 [-0.28, 0.33], TOST p = 0.005 (equivalent)
+- **2026-10-15 03:29:35.693946**: wrote 'en_richdim_english_stimuli_R.csv'
     - path: output/stimuli/en_richdim_english_stimuli_R.csv
     - rows: 120
     - md5: c91057197226d449b407d11cbad842ec
-- **2026-10-14 22:43:15.282253**: wrote 'en_richdim_english_descriptives_R.csv'
+- **2026-10-15 03:29:35.720763**: wrote 'en_richdim_english_descriptives_R.csv'
     - path: output/reports/en_richdim_english_descriptives_R.csv
     - rows: 12
     - md5: 43550dcba20992170506aa9212065cf5
-- **2026-10-14 22:43:15.589277**: wrote 'en_richdim_english_comparisons_R.csv'
+- **2026-10-15 03:29:35.744806**: wrote 'en_richdim_english_comparisons_R.csv'
     - path: output/reports/en_richdim_english_comparisons_R.csv
     - rows: 6
     - md5: 7f75c26160216125137214f43601aa2b
-- **2026-10-14 22:43:24.471993**: wrote 'en_richdim_english_psychopy.py'
+- **2026-10-15 03:29:36.228907**: wrote 'en_richdim_english_psychopy.py'
     - path: output/experiments/en_richdim_english_psychopy.py
     - rows: NA
-    - md5: ea0c31dfa81d5d3ac84ca6917b53f3af
-- **2026-10-14 22:43:24.601023**: wrote 'en_richdim_english.osexp'
+    - md5: 6f7648ca244261f1e1427dd9eaf658dd
+- **2026-10-15 03:29:36.243574**: wrote 'en_richdim_english.osexp'
     - path: output/experiments/en_richdim_english.osexp
     - rows: NA
     - md5: 113ca1a9575cbd027b18605f65577212
-- **2026-10-14 22:43:24.814279**: wrote 'en_richdim_english.html'
+- **2026-10-15 03:29:36.254306**: wrote 'en_richdim_english.html'
     - path: output/experiments/en_richdim_english.html
     - rows: NA
-    - md5: 30ec2b9ef3eaa64be419096420e79d62
-- **2026-10-14 22:43:24.838426**: wrote 'en_richdim_english_psychopy.csv'
+    - md5: ce5919c33d456a9d56cd2ea1e14a7453
+- **2026-10-15 03:29:36.270219**: wrote 'en_richdim_english_psychopy.csv'
     - path: output/experiments/en_richdim_english_psychopy.csv
     - rows: NA
     - md5: 15c3ec229ea2f235ea71993ff5884d51
-- **2026-10-14 22:43:24.91922**: wrote 'en_richdim_english_opensesame.csv'
+- **2026-10-15 03:29:36.280734**: wrote 'en_richdim_english_opensesame.csv'
     - path: output/experiments/en_richdim_english_opensesame.csv
     - rows: NA
     - md5: 688d6883920616305069d8117f36a179
-- **2026-10-14 22:43:25.225293**: wrote 'en_richdim_english_opensesame_text.csv'
+- **2026-10-15 03:29:36.293085**: wrote 'en_richdim_english_opensesame_text.csv'
     - path: output/experiments/en_richdim_english_opensesame_text.csv
     - rows: NA
     - md5: cb591bc0fa64c110771aa5242b43bc7b
-- **2026-10-14 22:43:26.750286**: wrote 'en_richdim_english_datasheet_R.json'
+- **2026-10-15 03:29:36.71043**: wrote 'en_richdim_english_datasheet_R.json'
     - path: output/reports/en_richdim_english_datasheet_R.json
     - rows: NA
-    - md5: 0b552e0260069b12f843719c76e4c69a
-- **2026-10-14 22:43:26.917865**: wrote 'en_richdim_english_datasheet_R.md'
+    - md5: d2c82eeaca9bf09690d3928e1e670078
+- **2026-10-15 03:29:36.726519**: wrote 'en_richdim_english_datasheet_R.md'
     - path: output/reports/en_richdim_english_datasheet_R.md
     - rows: NA
     - md5: bc9f409b76bd29c69f255f31b2055931

@@ -101,7 +101,7 @@ def test_the_page_carries_the_versions_and_selects_one(schema, tmp_path):
     versions = _versions(text)
     assert versions == [{"version": 1, "replicate": 1, "list": 1, "n_trials": 2},
                         {"version": 2, "replicate": 1, "list": 2, "n_trials": 2}]
-    assert "const RUN_TRIALS = TRIALS.filter(" in text
+    assert "const RUN_TRIALS = inOrder(TRIALS.filter(" in text
     # The embedded trials hold both versions. The page's filter keeps a trial whose
     # replicate and list are the version's, a trial without either column counting as
     # replicate 1 or list 1. Each version then shows each target once.
@@ -215,6 +215,38 @@ def test_every_published_link_to_a_demo_names_a_version_it_runs(monkeypatch):
     for page, queries in cards.items():
         n = len(_versions((folder / page).read_text(encoding="utf-8")))
         assert queries == ([f"version={k}" for k in range(1, n + 1)] if n > 1 else [""]), page
+
+
+@pytest.mark.skipif(NODE is None, reason="node is not installed")
+def test_the_participant_number_chooses_the_order(schema, tmp_path):
+    # With counterbalance.orders the page carries every trial's position in each order,
+    # and ?participant=N runs version ((N - 1) mod V) + 1 in order
+    # (((N - 1) div V) mod m) + 1. test_psychopy_export.py holds the script to the rule.
+    stim = pd.DataFrame({"word": ["w%02d" % i for i in range(1, 17)],
+                         "condition": ["hi", "lo"] * 8,
+                         "set": [s for s in range(1, 9) for _ in (0, 1)]})
+    design = {"name": "o", "language": "english", "timing": {},
+              "counterbalance": {"lists": 2, "orders": 3}}
+    stim = assign_triggers(counterbalance(stim, design, schema))
+    path = export_jspsych(stim, design, schema, str(tmp_path))
+    sequences = set()
+    for participant in range(1, 8):
+        version = (participant - 1) % 2 + 1
+        order = ((participant - 1) // 2) % 3 + 1
+        run = _run_page(path, "?participant=%d" % participant, tmp_path)
+        shown = [d for d in run["data"] if d.get("lexsync_event") == "fixation"]
+        want = stim[stim["list"] == version].sort_values("order_%d" % order)
+        assert [d["word"] for d in shown] == list(want["word"]), participant
+        assert [d["trial"] for d in shown] == list(range(1, 9)), participant
+        assert run["properties"] == {"version": version, "replicate": 1, "list": version,
+                                     "order": order, "participant": participant}
+        sequences.add(tuple(d["word"] for d in shown))
+    assert len(sequences) == 6
+    # A version named without a participant number runs in order 1.
+    run = _run_page(path, "?version=2", tmp_path)
+    shown = [d["word"] for d in run["data"] if d.get("lexsync_event") == "fixation"]
+    assert shown == list(stim[stim["list"] == 2].sort_values("trial")["word"])
+    assert run["properties"]["order"] == 1
 
 
 @pytest.mark.skipif(NODE is None, reason="node is not installed")

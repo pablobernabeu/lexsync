@@ -1,20 +1,20 @@
-{"time":"2026-10-14 22:39:29.460445","message":"lexsync: the design gives no `instructions`, and lexsync cannot tell what the response keys of a factorial design mean, so the experiments only name the keys; give `instructions` that say what each key means.","data":null}
-{"time":"2026-10-14 22:39:29.717825","message":"loading lexicon 'corpora/derived/en_v2.csv'","data":null}
-{"time":"2026-10-14 22:39:32.711892","message":"lexicon loaded: 30000 words","data":{"words":30000}}
-{"time":"2026-10-14 22:39:32.787097","message":"exclude_words: removed 53 of the 53 listed word(s) from the candidates (config/exclude_en_demo.txt)","data":{"exclude_words":"config/exclude_en_demo.txt","sha256":"cac9f88fb86fa6d0e6dbabc287c9ebb782100d071eeded13eb812584b9d41e9f","n_removed":53}}
-{"time":"2026-10-14 22:39:32.834371","message":"pool after filters: 6308 words","data":{"pool":6308}}
-{"time":"2026-10-14 22:39:32.99513","message":"selected 80 items spanning 'frequency' (continuous design)","data":{"predictor":"frequency"}}
-{"time":"2026-10-14 22:39:33.168167","message":"continuous: 'length' correlation with the predictor r = -0.226","data":null}
-{"time":"2026-10-14 22:39:33.208028","message":"continuous: 'n_density' correlation with the predictor r = 0.301","data":null}
-{"time":"2026-10-14 22:39:33.285816","message":"continuous: 'old20' correlation with the predictor r = -0.295","data":null}
-{"time":"2026-10-14 22:39:34.096129","message":"wrote 'en_freqcontinuous_english_stimuli_R.csv'","data":{"path":"output/stimuli/en_freqcontinuous_english_stimuli_R.csv","rows":80,"md5":"ef4feebea410e6a1b40610574f3731a9"}}
-{"time":"2026-10-14 22:39:34.307258","message":"wrote 'en_freqcontinuous_english_descriptives_R.csv'","data":{"path":"output/reports/en_freqcontinuous_english_descriptives_R.csv","rows":4,"md5":"8deba049a56522b5428aa66b8a529ab4"}}
-{"time":"2026-10-14 22:39:34.483453","message":"wrote 'en_freqcontinuous_english_comparisons_R.csv'","data":{"path":"output/reports/en_freqcontinuous_english_comparisons_R.csv","rows":4,"md5":"6de5d8a105d57d2a0f13418a86c4d4b4"}}
-{"time":"2026-10-14 22:39:38.341495","message":"wrote 'en_freqcontinuous_english_psychopy.py'","data":{"path":"output/experiments/en_freqcontinuous_english_psychopy.py","rows":"NA","md5":"7b6a87b99005ad0f792018406721eb22"}}
-{"time":"2026-10-14 22:39:38.374449","message":"wrote 'en_freqcontinuous_english.osexp'","data":{"path":"output/experiments/en_freqcontinuous_english.osexp","rows":"NA","md5":"cb2a75b1c214c4fb75a33e0c64814009"}}
-{"time":"2026-10-14 22:39:38.415445","message":"wrote 'en_freqcontinuous_english.html'","data":{"path":"output/experiments/en_freqcontinuous_english.html","rows":"NA","md5":"3b3c8696dd2be9306085811fa388a039"}}
-{"time":"2026-10-14 22:39:38.484695","message":"wrote 'en_freqcontinuous_english_psychopy.csv'","data":{"path":"output/experiments/en_freqcontinuous_english_psychopy.csv","rows":"NA","md5":"bcdd546051f2673d0cf58a96721dca07"}}
-{"time":"2026-10-14 22:39:38.572237","message":"wrote 'en_freqcontinuous_english_opensesame.csv'","data":{"path":"output/experiments/en_freqcontinuous_english_opensesame.csv","rows":"NA","md5":"667f183c9bffc66dfd04f92645e07466"}}
-{"time":"2026-10-14 22:39:38.65436","message":"wrote 'en_freqcontinuous_english_opensesame_text.csv'","data":{"path":"output/experiments/en_freqcontinuous_english_opensesame_text.csv","rows":"NA","md5":"639f53f5320babf616c29c70cb1440ea"}}
-{"time":"2026-10-14 22:39:39.604994","message":"wrote 'en_freqcontinuous_english_datasheet_R.json'","data":{"path":"output/reports/en_freqcontinuous_english_datasheet_R.json","rows":"NA","md5":"985690b1efde951f18d7eb9baff5bc30"}}
-{"time":"2026-10-14 22:39:39.704281","message":"wrote 'en_freqcontinuous_english_datasheet_R.md'","data":{"path":"output/reports/en_freqcontinuous_english_datasheet_R.md","rows":"NA","md5":"4812966c414a373e7069bfd01e83bac2"}}
+{"time":"2026-10-15 03:28:21.819736","message":"lexsync: the design gives no `instructions`, and lexsync cannot tell what the response keys of a factorial design mean, so the experiments only name the keys; give `instructions` that say what each key means.","data":null}
+{"time":"2026-10-15 03:28:21.826076","message":"loading lexicon 'corpora/derived/en_v2.csv'","data":null}
+{"time":"2026-10-15 03:28:23.746989","message":"lexicon loaded: 30000 words","data":{"words":30000}}
+{"time":"2026-10-15 03:28:23.764644","message":"exclude_words: removed 53 of the 53 listed word(s) from the candidates (config/exclude_en_demo.txt)","data":{"exclude_words":"config/exclude_en_demo.txt","sha256":"cac9f88fb86fa6d0e6dbabc287c9ebb782100d071eeded13eb812584b9d41e9f","n_removed":53}}
+{"time":"2026-10-15 03:28:23.796674","message":"pool after filters: 6308 words","data":{"pool":6308}}
+{"time":"2026-10-15 03:28:23.896422","message":"selected 80 items spanning 'frequency' (continuous design)","data":{"predictor":"frequency"}}
+{"time":"2026-10-15 03:28:23.945858","message":"continuous: 'length' correlation with the predictor r = -0.226","data":null}
+{"time":"2026-10-15 03:28:23.955139","message":"continuous: 'n_density' correlation with the predictor r = 0.301","data":null}
+{"time":"2026-10-15 03:28:23.964249","message":"continuous: 'old20' correlation with the predictor r = -0.295","data":null}
+{"time":"2026-10-15 03:28:24.015621","message":"wrote 'en_freqcontinuous_english_stimuli_R.csv'","data":{"path":"output/stimuli/en_freqcontinuous_english_stimuli_R.csv","rows":80,"md5":"ef4feebea410e6a1b40610574f3731a9"}}
+{"time":"2026-10-15 03:28:24.039791","message":"wrote 'en_freqcontinuous_english_descriptives_R.csv'","data":{"path":"output/reports/en_freqcontinuous_english_descriptives_R.csv","rows":4,"md5":"8deba049a56522b5428aa66b8a529ab4"}}
+{"time":"2026-10-15 03:28:24.066429","message":"wrote 'en_freqcontinuous_english_comparisons_R.csv'","data":{"path":"output/reports/en_freqcontinuous_english_comparisons_R.csv","rows":4,"md5":"6de5d8a105d57d2a0f13418a86c4d4b4"}}
+{"time":"2026-10-15 03:28:24.397477","message":"wrote 'en_freqcontinuous_english_psychopy.py'","data":{"path":"output/experiments/en_freqcontinuous_english_psychopy.py","rows":"NA","md5":"a398f9972171e2de91b0137a4801fd4a"}}
+{"time":"2026-10-15 03:28:24.418485","message":"wrote 'en_freqcontinuous_english.osexp'","data":{"path":"output/experiments/en_freqcontinuous_english.osexp","rows":"NA","md5":"cb2a75b1c214c4fb75a33e0c64814009"}}
+{"time":"2026-10-15 03:28:24.432175","message":"wrote 'en_freqcontinuous_english.html'","data":{"path":"output/experiments/en_freqcontinuous_english.html","rows":"NA","md5":"642f04dbdeea25cdd52d16187a2183fe"}}
+{"time":"2026-10-15 03:28:24.457177","message":"wrote 'en_freqcontinuous_english_psychopy.csv'","data":{"path":"output/experiments/en_freqcontinuous_english_psychopy.csv","rows":"NA","md5":"bcdd546051f2673d0cf58a96721dca07"}}
+{"time":"2026-10-15 03:28:24.470709","message":"wrote 'en_freqcontinuous_english_opensesame.csv'","data":{"path":"output/experiments/en_freqcontinuous_english_opensesame.csv","rows":"NA","md5":"667f183c9bffc66dfd04f92645e07466"}}
+{"time":"2026-10-15 03:28:24.486257","message":"wrote 'en_freqcontinuous_english_opensesame_text.csv'","data":{"path":"output/experiments/en_freqcontinuous_english_opensesame_text.csv","rows":"NA","md5":"639f53f5320babf616c29c70cb1440ea"}}
+{"time":"2026-10-15 03:28:25.081519","message":"wrote 'en_freqcontinuous_english_datasheet_R.json'","data":{"path":"output/reports/en_freqcontinuous_english_datasheet_R.json","rows":"NA","md5":"37ccf4275dddf0eb904cacdde257060f"}}
+{"time":"2026-10-15 03:28:25.10035","message":"wrote 'en_freqcontinuous_english_datasheet_R.md'","data":{"path":"output/reports/en_freqcontinuous_english_datasheet_R.md","rows":"NA","md5":"4812966c414a373e7069bfd01e83bac2"}}

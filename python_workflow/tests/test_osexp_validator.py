@@ -1158,3 +1158,37 @@ def test_each_experiment_warns_when_the_subject_number_belongs_to_another_versio
         # Escape at the warning stops the session.
         with pytest.raises(RuntimeError, match="lexsync: stopped at the version check"):
             _run_version_check(path, version, 3 - k, "escape")
+
+
+@pytest.mark.parametrize("version", ["3.3", "4.x"])
+def test_each_experiment_warns_when_the_subject_number_belongs_to_another_order(
+        version, schema, tmp_path):
+    # With counterbalance.orders each (version, order) pair is an experiment, and
+    # participant p normally runs version ((p - 1) mod V) + 1 in order
+    # (((p - 1) div V) mod m) + 1.
+    from lexsync.counterbalancing import counterbalance
+    stim = pd.DataFrame({"prime": ["hot", "sky", "sun", "big"],
+                         "target": ["cold", "cold", "moon", "moon"],
+                         "condition": ["related", "unrelated"] * 2, "set": [1, 1, 2, 2]})
+    design = {"name": "t", "language": "english", "paradigm": "priming",
+              "counterbalance": {"lists": 2, "orders": 2}}
+    stim = assign_triggers(counterbalance(stim, design, schema))
+    export_opensesame(stim, design, schema, str(tmp_path))
+    for k in (1, 2):
+        for j in (1, 2):
+            path = tmp_path / f"t_english_list{k}_order{j}.osexp"
+            assert validate_osexp(path.read_text(encoding="utf-8"))
+            _assert_inert(tmp_path / f"t_english_list{k}_order{j}_opensesame.csv")
+            for subject in range(1, 6):
+                expected = ((subject - 1) % 2 + 1, ((subject - 1) // 2) % 2 + 1)
+                shown = _run_version_check(path, version, subject, "space")
+                if expected == (k, j):
+                    assert shown == [], (k, j, subject)
+                else:
+                    assert shown == [
+                        f"Participant {subject} would normally run version {expected[0]} "
+                        f"in order {expected[1]}, and this file runs version {k} in order "
+                        f"{j}. Press space to continue with this one or escape to stop."]
+            wrong = 2 if (k, j) == (1, 1) else 1
+            with pytest.raises(RuntimeError, match="lexsync: stopped at the version check"):
+                _run_version_check(path, version, wrong, "escape")

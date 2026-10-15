@@ -279,8 +279,9 @@ fillers:
   path: items/fillers_en_lexdec.csv
 ```
 
-Where each block goes is a methodological choice. Practice comes first, as its own run, shuffled
-within itself so participants do not all meet the practice items in one order. Fillers are
+Where each block goes is a methodological choice. Practice comes first, as its own run, ordered
+within itself by the seeded keyed hash, so every participant given a list meets the practice items in
+one fixed order. Fillers are
 interleaved with the main trials, because a block of fillers at the end is not a filler at all: it
 is a second block the participant can tell apart. They are merged in
 before the order is drawn, so one deterministic shuffle mixes them through, which does renumber the
@@ -389,6 +390,54 @@ print(
 A design with a `replicate` column, from `resample_stimuli`, is counterbalanced replicate by
 replicate, and trial order is numbered within each.
 
+### Trial orders and runs of one condition
+
+One seed gives each list one order, and every participant given that list meets it, so each item
+sits at the same serial position for all of them. The order also has runs of one condition as long
+as a uniform shuffle gives. Over seeds 1 to 1000 of a lexical decision with 60 words and 60
+pseudowords, the longest run had a median of 7 and a maximum of 21. A run of seven is seven trials
+in a row with the same correct key. Two keys change this, and both are off by default.
+
+```yaml
+counterbalance:
+  lists: 2
+  max_run: 2
+  orders: 3
+```
+
+`max_run: k` caps every run of one condition at k trials, or of one value of the column `run_on`
+names, where a missing value counts as a value of its own. The repair keeps as much of the seeded
+order as the limit allows. Each step takes the earliest remaining trial in the seeded order that
+neither extends the current run beyond k nor leaves the rest of the list unable to keep the limit.
+This is the kind of sequence constraint that pseudorandomisation programs such as Mix impose
+([van Casteren & Davis, 2006](references.md#van-casteren-2006)). The look-ahead matters. Without
+it, the repair ran out of trials near the end of 931 of 1,000 seeded orders of a list of 40 words
+and 80 pseudowords at k = 2, a limit that some order of that list keeps. With it, only a limit that
+no order can meet is refused, and the message gives the counts that rule it out, such as 80
+pseudoword trials against 40 others at k = 1. With fillers, the limit applies to the order they are
+interleaved in, and the practice trials keep it on their own.
+
+`orders: m` writes m orders of each list into the loop tables, as `order_1` to `order_m`, each
+trial's position in each order. Order 1 is the seeded order, and orders 2 to m are ranked by the
+same digest with the order's number in the key, each repaired under `max_run`. The experiments
+choose an order by participant number. Participant *p* runs version `((p - 1) mod V) + 1` in order
+`(((p - 1) div V) mod m) + 1`. The participants given one version therefore meet its orders in
+turn, and a run without a participant number runs order 1. OpenSesame, whose loop presents its
+table in file order, gets one experiment per version and order. The orders travel inside the loop
+tables, which both engines write byte for byte, so the browser page needs no hashing of its own.
+The datasheet's `counterbalancing` record gives the limit, the longest run realised in each version
+and the number of orders, and the Methods text states them.
+
+```python exec="1" source="material-block" result="text" session="experiments"
+limited = dict(design, counterbalance={"lists": 1, "max_run": 2, "orders": 2})
+ordered = lexsync.counterbalance(stimuli, limited, schema)
+print(
+    ordered.sort_values("order_2")[["trial", "order_1", "order_2", "condition", "word"]]
+    .head(6)
+    .to_string(index=False)
+)
+```
+
 ### Balanced list assignment
 
 The factorial deal sends set 1 to list 1, set 2 to list 2 and so on. That is reproducible, but it
@@ -450,7 +499,7 @@ engines put participant 3 in the same cell.
     never agree on a permutation. Each trial is instead ranked by the SHA-256 digest of its seed,
     replicate, list, set and condition, so the order is a pure function of the design: the same
     bytes from either engine on any platform, a different order for every seed, and no systematic
-    position effects.
+    position effects across seeds.
 
 ## Triggers
 
@@ -907,3 +956,14 @@ present. The loop tables keep each version's trials together, ordered by replica
 They carry `replicate` when the design has one. Item codes are allocated by set, so in a resampled
 design an item code identifies an item only within its replicate, which the `replicate` column
 tells apart.
+
+With `counterbalance.orders: m` (see [Trial orders and runs of one
+condition](#trial-orders-and-runs-of-one-condition)), each version also has m trial orders.
+Participant *p* runs order `(((p - 1) div V) mod m) + 1`. In a two-list design with two orders,
+participants 1 and 2 run lists 1 and 2 in order 1, participants 3 and 4 run them in order 2, and
+participant 5 starts the cycle again. The
+PsychoPy script and the jsPsych page sort the version's trials by the participant's order, and a
+run without a participant number presents order 1. Their data rows then carry the order, and their
+`trial` column numbers the trials as presented. The OpenSesame target writes one experiment per
+version and order, `<base>_list<k>_order<j>.osexp`, whose check compares the order as well as the
+version, and every trial logs `lexsync_order`.

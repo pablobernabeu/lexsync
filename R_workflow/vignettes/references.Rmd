@@ -164,6 +164,9 @@ https://doi.org/10.1177/0956797611417632
 Stuart, E. A. (2010). Matching methods for causal inference: A review and a look
 forward. *Statistical Science*, *25*(1), 1–21. https://doi.org/10.1214/09-STS313
 
+van Casteren, M., & Davis, M. H. (2006). Mix, a program for pseudorandomization.
+*Behavior Research Methods*, *38*(4), 584–589. https://doi.org/10.3758/BF03193889
+
 van Heuven, W. J. B., Mandera, P., Keuleers, E., & Brysbaert, M. (2014).
 SUBTLEX-UK: A new and improved word frequency database for British English.
 *Quarterly Journal of Experimental Psychology*, *67*(6), 1176–1190.

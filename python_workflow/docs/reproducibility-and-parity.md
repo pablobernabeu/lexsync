@@ -108,7 +108,10 @@ counterbalancing recipe. Distinct inputs to SHA-256 behave as independent unifor
 ordering by the digest realises a seeded random permutation, but as a pure function of the design.
 The same bytes come out of both engines on any platform, there is no generator state to save or
 restore, a different seed still gives a different order, and the order remains random in the sense
-a reviewer cares about, with no systematic position effects.
+a reviewer cares about, with no systematic position effects across seeds. One seed gives each list
+one order. `counterbalance.orders` adds further orders, ranked by the same digest with `order<j>`
+after the seed in the key. `counterbalance.max_run` repairs each order so that no run of one
+condition is longer than the limit, by a rule both engines apply identically.
 
 The tie-break is the one mechanism here that a design can set. `matching.tie_break` chooses
 between two rules, and both keep the guarantee. `bytes` compares the words' UTF-8

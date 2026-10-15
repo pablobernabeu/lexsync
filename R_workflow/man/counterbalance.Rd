@@ -10,7 +10,8 @@ counterbalance(stimuli, design, schema, list_of_set = NULL)
 \item{stimuli}{A stimuli data frame (matched set or loaded item table).}
 
 \item{design}{A parsed design configuration. Reads \code{paradigm},
-\code{counterbalance.recipe} and \code{counterbalance.lists}.}
+\code{counterbalance.recipe}, \code{counterbalance.lists}, \code{counterbalance.max_run},
+\code{counterbalance.run_on}, \code{counterbalance.orders} and \code{fillers}.}
 
 \item{schema}{The parsed global schema (provides the seed).}
 
@@ -20,7 +21,8 @@ from \code{\link[=balance_lists]{balance_lists()}}. Supplied by the pipeline whe
 lists by rank as before.}
 }
 \value{
-\code{stimuli} with added \code{list} and \code{trial} columns.
+\code{stimuli} with added \code{list} and \code{trial} columns, and the order columns
+when there is more than one order.
 }
 \description{
 The recipe is \code{counterbalance.recipe} when the design names one, and otherwise
@@ -28,4 +30,12 @@ the recipe of the paradigm it names. That is the factorial recipe for matched wo
 lists, or a Latin square over conditions for the paired and sentence paradigms. A
 design's own \code{events} list has no say in the recipe. The factorial recipe refuses
 more lists than item sets, since the surplus lists would be empty.
+}
+\details{
+Each list's trials are ordered by the seeded keyed hash. \code{counterbalance.max_run}
+repairs that order so that no run of one \code{counterbalance.run_on} value (by default
+the condition) is longer than the limit, and refuses a limit no order can meet. A
+design with fillers has the limit applied when the fillers are interleaved, to that
+order. \code{counterbalance.orders: m} adds \code{order_1} to \code{order_m}, each trial's position
+in each of m orders of its list, \code{order_1} being the order \code{trial} gives.
 }

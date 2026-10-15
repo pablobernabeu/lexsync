@@ -810,6 +810,67 @@ test_that("one OpenSesame experiment per version", {
   }
 })
 
+# Eight item sets dealt into `lists` lists, each list in `orders` trial orders.
+two_list_three_orders <- function(schema, lists = 2L, orders = 3L) {
+  stim <- data.frame(word = sprintf("w%02d", 1:16), condition = rep(c("hi", "lo"), 8),
+                     set = rep(1:8, each = 2), stringsAsFactors = FALSE)
+  design <- list(name = "o", language = "english", timing = list(),
+                 counterbalance = list(lists = lists, orders = orders))
+  list(stimuli = assign_triggers(counterbalance(stim, design, schema)), design = design)
+}
+
+test_that("one OpenSesame experiment per version and order", {
+  # OpenSesame's loop presents its table in file order, so each trial order of each
+  # version is an experiment of its own, its tables sorted by that order. The loop table
+  # numbers the trials as presented. test_scripting.py pins the same files.
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  out <- tempfile("lexsync"); dir.create(out)
+  two <- two_list_three_orders(schema)
+  res <- export_experiments(two$stimuli, two$design, schema, out)
+  stems <- as.vector(t(outer(1:2, 1:3, function(k, j) sprintf("o_english_list%d_order%d", k, j))))
+  expect_identical(basename(grep("\\.osexp$", res$files, value = TRUE)), paste0(stems, ".osexp"))
+  expect_identical(res$opensesame, res$files[[2]])
+  for (k in 1:2) {
+    for (j in 1:3) {
+      stem <- sprintf("o_english_list%d_order%d", k, j)
+      numbers <- utils::read.csv(file.path(out, paste0(stem, "_opensesame.csv")))
+      text <- utils::read.csv(file.path(out, paste0(stem, "_opensesame_text.csv")),
+                              stringsAsFactors = FALSE)
+      mine <- two$stimuli[two$stimuli$list == k, , drop = FALSE]
+      want <- mine[order(mine[[paste0("order_", j)]]), , drop = FALSE]
+      expect_identical(text$word, want$word)
+      expect_identical(numbers$lexsync_trial, 1:8)
+      expect_identical(text[[paste0("order_", j)]], 1:8)
+      lines <- readLines(file.path(out, paste0(stem, ".osexp")), warn = FALSE)
+      expect_true(sprintf("set lexsync_order %d", j) %in% lines)
+      expect_true(sprintf("\t_version = %d", k) %in% lines)
+      expect_true("\t_versions = 2" %in% lines)
+      expect_true(sprintf("\t_order = %d", j) %in% lines)
+      expect_true("\t_orders = 3" %in% lines)
+    }
+  }
+  loop <- utils::read.csv(file.path(out, "o_english_psychopy.csv"))
+  expect_identical(grep("^order_", names(loop), value = TRUE),
+                   c("order_1", "order_2", "order_3"))
+  # The script and the page are told how many orders the trials carry.
+  py <- readLines(res$psychopy, warn = FALSE)
+  expect_true("ORDERS = 3" %in% py)
+  html <- readLines(res$jspsych, warn = FALSE)
+  expect_true("  const ORDERS = 3;" %in% html)
+})
+
+test_that("one version in several orders names each order", {
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  out <- tempfile("lexsync"); dir.create(out)
+  one <- two_list_three_orders(schema, lists = 1L, orders = 2L)
+  res <- export_experiments(one$stimuli, one$design, schema, out)
+  expect_identical(basename(grep("\\.osexp$", res$files, value = TRUE)),
+                   c("o_english_order1.osexp", "o_english_order2.osexp"))
+  osexp <- paste(readLines(file.path(out, "o_english_order2.osexp"), warn = FALSE),
+                 collapse = "\n")
+  expect_true(grepl("lexsync_version_check", osexp, fixed = TRUE))
+})
+
 test_that("single-version designs keep their file names", {
   schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
   out <- tempfile("lexsync"); dir.create(out)
