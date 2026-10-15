@@ -14,10 +14,11 @@ This page describes the app without running it, since the app needs a live serve
 The app is not part of the package. It lives in the repository, under `apps/python_streamlit`,
 beside the corpora and the example item tables that it reads, so launch it from a clone. Streamlit
 itself is the only extra dependency, and it also comes with the `dev` extra, because the test suite
-covers the app.
+covers the app. The first of the three commands below installs lexsync from the clone, the second
+installs Streamlit and the third starts the app.
 
 ```bash
-pip install -e python_workflow      # the lexsync package
+pip install -e python_workflow
 pip install "streamlit>=1.49"
 streamlit run apps/python_streamlit/lexsync_app.py
 ```

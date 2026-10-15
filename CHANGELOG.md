@@ -500,6 +500,13 @@ no function signature changes.
 
 ### Fixed
 
+- The commands that install the Streamlit app, on the documentation's page about the app
+  and in `apps/README.md`, no longer end in a comment, so they paste into zsh, the default
+  macOS shell, which passes a `#` and the words after it on to pip. A new test,
+  `tests/test_install_lines.py`, checks every `pip install` in the Python package's README,
+  documentation and sources, and in the repository's README and `apps/README.md`. It
+  requires extras in double quotes, which zsh would otherwise read as a pattern, and
+  install lines in shell blocks without comments. The extras were already quoted.
 - The apps' download bundles reproduce their own record. The apps ran a temporary copy of
   the design with absolute paths and then bundled the displayed design, so the bundled
   datasheet's design checksum matched no file in the bundle, and the datasheet and run logs

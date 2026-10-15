@@ -20,10 +20,12 @@ resampling.
 
 ## Python (Streamlit)
 
-Requirements: `lexsync` and `streamlit` 1.49 or later.
+Requirements: `lexsync` and `streamlit` 1.49 or later. The first of the three
+commands below installs lexsync from this checkout, the second installs Streamlit
+and the third starts the app.
 
 ```bash
-pip install -e python_workflow        # the lexsync package
+pip install -e python_workflow
 pip install "streamlit>=1.49"
 streamlit run apps/python_streamlit/lexsync_app.py
 ```
