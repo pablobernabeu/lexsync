@@ -207,7 +207,7 @@ def generate_pseudowords(base_words, reference_words, exclude=None) -> pd.DataFr
     return pd.DataFrame({"base_word": base, "pseudoword": pseudo})
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def _is_vowel_letter(ch: str) -> bool:
     """Whether a letter is a vowel of the syllable estimate's class, whatever its accent.
 
