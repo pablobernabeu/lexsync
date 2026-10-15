@@ -6,6 +6,13 @@
   `inst/COPYRIGHTS`, and the `Copyright` field, the citation footer and the About guide
   name the installed file.
 
+* The spelling test fails a check run with `NOT_CRAN` set, as in `devtools::check()` and
+  on GitHub Actions, when the help pages, the vignettes, the README, this file or the
+  package description use a word found neither in the British English dictionary nor in
+  `inst/WORDLIST`. It used to list such words and carry on, so a misspelling left only a
+  NOTE, which does not fail a run. CRAN and a plain `R CMD check` still skip the test.
+  The documentation has no such word today, so the word list is unchanged.
+
 * The datasheet records the materials source, the stimuli file and every artefact with
   forward slashes, as the Python engine does. A run given Windows paths recorded them
   with backslashes.

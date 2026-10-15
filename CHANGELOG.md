@@ -497,6 +497,13 @@ no function signature changes.
   the mode it is launched in, as the experiments guide now says. Every committed
   experiment changes, and so do the datasheets and run logs, which record the
   checksums of the experiments and the schema. No stimulus moves.
+- The R package's spelling test fails a check run with `NOT_CRAN` set, as in
+  `devtools::check()` and on GitHub Actions, when its documentation uses a word found
+  neither in the British English dictionary nor in `R_workflow/inst/WORDLIST`. It used to
+  list such words and carry on, so a misspelling left only a NOTE, which does not fail a
+  run. CRAN and a plain `R CMD check` still skip the test. The documentation has no such
+  word today, so the word list is unchanged, and the contributing guide says how to list
+  the words the test flags and what to do with each.
 
 ### Fixed
 

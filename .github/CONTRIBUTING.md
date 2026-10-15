@@ -66,6 +66,13 @@ share, as the corpora do.
 Other conventions: British spelling in prose, durations declared in milliseconds,
 and tests that run offline against the bundled example lexicons.
 
+`devtools::check("R_workflow")` and continuous integration run a spelling test on
+the R package's help pages, vignettes, README and NEWS. It stops at any word found
+neither in the British English dictionary nor in `R_workflow/inst/WORDLIST`, and
+`spelling::spell_check_package("R_workflow")` lists those words. Correct a
+misspelling where it occurs, and add a name or a term of art to the word list.
+CRAN and a plain `R CMD check` skip the test.
+
 ## Submitting a pull request
 
 Base your work on `main` and keep the change focused. Every feature needs a
