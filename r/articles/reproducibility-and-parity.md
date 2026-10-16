@@ -1,0 +1,944 @@
+# Reproducibility, parity and the materials datasheet
+
+A stimulus set is usually described rather than shared. The methods
+section says the words were matched on length and frequency, and the set
+itself, the criteria that produced it and the code that applied them are
+not recoverable from the paper. `lexsync` treats the set as an artefact
+in its own right: the selection and the trial order are deterministic,
+the R and Python engines produce the same artefacts from the same input,
+and each run emits a provenance record with the checksums needed to
+verify it.
+
+This vignette explains the guarantee and its limits, the mechanisms that
+achieve it, the continuous-integration test that keeps it honest, and
+the two records a run leaves behind.
+
+``` r
+
+library(lexsync)
+schema <- yaml::read_yaml(
+  system.file("extdata", "schema.yaml", package = "lexsync")
+)
+lex <- load_lexicon(
+  system.file("extdata", "en_example.csv", package = "lexsync"),
+  schema, language = "english"
+)
+pool <- build_pool(lex, list(length = c(3, 7), frequency = c(3.8, 7.0)))
+
+design <- list(
+  name = "vignette_repro", language = "english", n_per_condition = 15,
+  conditions = list(
+    list(name = "high", define_by = list(frequency = c(5.2, 7.0))),
+    list(name = "low",  define_by = list(frequency = c(3.8, 4.4)))
+  ),
+  match_on = list("length", "n_density", "old20"),
+  counterbalance = list(lists = 1)
+)
+```
+
+## What is guaranteed
+
+The claim is worth stating exactly. Given the same lexicon and the same
+design, the R and Python engines produce byte-identical stimuli under
+the `standardised_euclidean` and `joint` matching methods, under
+continuous selection, and under both pseudoword generators. The claim
+covers which items are chosen, how they are paired and the order they
+are presented in, so the generated experiments are byte-identical in
+full. The only exceptions are the `mahalanobis` and `optimal` matching
+methods.
+
+‘Byte-identical’ is meant literally, and stating it that way turned out
+to matter. The parity test originally read both engines’ stimuli files
+back with a CSV parser and compared the values, under which `1` and
+`1.0` are the same number. On that test 13 of the shipped designs passed
+while differing byte for byte. Three of the differences were
+serialisation: a whole number written `1` by one writer and `1.0` by the
+other, a boolean written `FALSE` and `False`, and a small value written
+`9e-4` and `0.0009`. One was not: two reported means differed in the
+last decimal published, because one engine’s summation was pairwise and
+the other’s was not. Every sum in the package now goes through a single
+compensated-summation algorithm written out in both engines, whose
+agreement follows from IEEE-754 requiring addition and subtraction to be
+correctly rounded, and the mean, variance and standard deviation are
+built on it. The median sorts and takes the middle value, or the
+plain-double average of the two middle values when the count is even,
+which keeps it clear of the long-double accumulator that
+[`stats::median()`](https://rdrr.io/r/stats/median.html) reaches by way
+of [`mean()`](https://rdrr.io/r/base/mean.html). The artefacts are now
+compared as bytes.
+
+Two files sit outside the claim by design, because each records the
+engine that produced it: the materials datasheet names its engine and
+that engine’s package versions, and the run log adds wall-clock
+timestamps. Their contents are compared field by field instead.
+
+Within one engine, selection is a pure function of its input.
+
+``` r
+
+a <- match_stimuli(pool, design, schema)
+b <- match_stimuli(pool, design, schema)
+identical(a, b)
+```
+
+    [1] TRUE
+
+That is not a small claim to make about an R function. Repeated calls
+agree because nothing in the selection path consults a random number
+generator, and because every operation that could depend on the ambient
+environment has been pinned. The interesting question is why the
+*Python* engine also agrees, since the two implementations share no
+code.
+
+## How byte-identical output is achieved
+
+Cross-engine identity is not an accident of two careful translations.
+Each mechanism below closes a specific way the engines could otherwise
+drift.
+
+The first is that there is no random number generator anywhere. The
+obvious way to choose 15 items from 700 is to sample them, and `lexsync`
+never does. The anchor condition is chosen by an even spread across its
+sorted subpool, taking positions along the whole range, and every later
+item is determined by a distance. A seeded RNG would not help here,
+because R’s Mersenne-Twister stream and NumPy’s are different streams:
+the same seed gives different draws, so any sampling step would break
+parity by construction. Determinism through absence is the only option
+that survives two languages, and it now extends to trial order, whose
+shuffle is described below.
+
+``` r
+
+anchor_pool <- pool[pool$frequency >= 5.2 & pool$frequency <= 7.0, ]
+anchor_pool <- anchor_pool[
+  order(anchor_pool$frequency, anchor_pool$word, method = "radix"),
+]
+idx <- unique(round(seq(1, nrow(anchor_pool), length.out = 15)))
+idx
+```
+
+     [1]  1  7 13 19 25 31 37 44 50 56 62 68 74 80 86
+
+The spread is [`seq()`](https://rdrr.io/r/base/seq.html) over the row
+positions, rounded to integers. Both engines compute the same positions
+from the same row count, and the rounding rule is written out in both.
+
+Sorting is by byte order everywhere. R’s default string sort is
+locale-collated, and a French locale, a C locale and a Windows locale
+can order the same words differently, while any of those orders would
+differ from Python’s, which sorts by code point. Every sort on the
+selection path therefore passes `method = "radix"`, which sorts by
+bytes.
+
+``` r
+
+words <- c("zebra", "Apple", "apple", "Zebra")
+sort(words, method = "radix")
+```
+
+    [1] "Apple" "Zebra" "apple" "zebra"
+
+Uppercase sorts before lowercase because that is the byte order, and
+this is what Python’s `sorted()` produces. A locale-collated sort would
+typically interleave them. Case folding is pinned for the same reason:
+[`load_lexicon()`](https://pablobernabeu.github.io/lexsync/r/reference/load_lexicon.md)
+lower-cases through ICU at the root locale rather than through
+[`tolower()`](https://rdrr.io/r/base/chartr.html), whose behaviour
+depends on the C library and the locale, and which differs from Python’s
+on Greek final sigma and the dotted Turkish capital I. The locale is
+kept out of two more places. Design, schema and registry files are read
+as UTF-8 whatever the session’s character type, and a file in another
+encoding is refused. The text of every hash key, behind the trial order,
+list balancing, jitter and the tie-break between candidates, is made
+UTF-8 before it is digested, whatever encoding mark it carries, so a
+condition label such as `café` ranks by the same digest in R under the C
+locale as in Python.
+
+Frequencies of bigrams and of subsyllabic constituents are accumulated
+as integers, never as running floating-point sums, so the counts cannot
+depend on summation order.
+
+Rounding comes before the tie-break, which is the subtle one of these
+mechanisms. Two candidate words can sit at exactly equal distance from
+an anchor, and the last bits of a square root can differ between two
+linear-algebra implementations. If the engines compared raw doubles, an
+inconsequential difference in the fifteenth decimal would make one
+engine call a tie and the other not, and they would pick different
+words. Distances are therefore rounded to nine decimal places before
+ranking, which puts both engines on the same side of every comparison
+that matters.
+
+Rounding creates ties rather than removing them, so the ties in turn
+need a rule that both engines can apply identically, and that rule is a
+total order. Under `tie_break: bytes`, the rule of lexsync 0.1,
+candidates are ordered by distance, then by the word’s bytes, then by
+its integer `id`. That is the comparison the matcher makes, and it is
+reproduced here on three imaginary candidates.
+
+``` r
+
+distance <- c(0.5, 0.5, 0.2)
+word     <- c("beta", "alpha", "gamma")
+id       <- c(1L, 2L, 3L)
+word[order(distance, word, id, method = "radix")]
+```
+
+    [1] "gamma" "alpha" "beta" 
+
+`gamma` wins on distance. `alpha` and `beta` are tied on distance to the
+ninth decimal, and the word’s bytes settle it, identically in both
+engines. Since `word` is unique within a lexicon the order is total, so
+there is always exactly one winner and never a coin to flip.
+
+Under `tie_break: hash`, the default, the word’s bytes give way to its
+tie key, the hexadecimal SHA-256 of `lexsync-tie-v1|` followed by the
+word. Both engines compute the key from the same UTF-8 bytes and sort it
+the same way. Here are four candidates tied on distance, in the order
+each rule gives them.
+
+``` r
+
+tied <- c("bat", "cat", "dog", "eel")
+key <- vapply(paste0("lexsync-tie-v1|", tied), digest::digest, character(1),
+              algo = "sha256", serialize = FALSE, USE.NAMES = FALSE)
+data.frame(bytes = tied[order(tied, method = "radix")],
+           hash = tied[order(key, method = "radix")])
+```
+
+      bytes hash
+    1   bat  eel
+    2   cat  dog
+    3   dog  cat
+    4   eel  bat
+
+Either rule is a total order that the two engines compute identically,
+so either keeps the guarantee, and the choice between them is a setting,
+`matching.tie_break`. `bytes` reproduces the selections of lexsync 0.1.
+`hash`, the default, stops a condition decided by ties from filling with
+early-alphabet words, which the matching vignette measures. Its salt is
+fixed and independent of the seed, which keys the trial order. A tie key
+built on the seed would change the items whenever a cohort’s order was
+re-randomised, and would let re-seeding shop among equally matched sets.
+
+The even-spread rounding is shared as well. `unique(round(seq(...)))` is
+used identically in both engines, including the
+[`unique()`](https://rdrr.io/r/base/unique.html), which matters when the
+pool is smaller than the requested n and the rounding produces a
+repeated index.
+
+### Trial order: a seeded shuffle without a generator
+
+Trial order used to be the honest exception. Each engine drew the order
+from its own seeded generator, R’s Mersenne-Twister against NumPy’s
+PCG64, and the same seed could not give the same permutation, so an
+order was reproducible within an engine and different between the
+engines. That exception is retired. Order is now decided by a keyed
+hash: each row of a list is ranked by the SHA-256 digest of
+`seed|replicate|list|set|condition`, a tuple that identifies the trial
+uniquely under either counterbalancing recipe. Distinct inputs to
+SHA-256 behave as independent uniform draws, so sorting rows by their
+digests realises a seeded random permutation, and because a digest is a
+pure function of its input, the permutation is a pure function of the
+design: the same bytes from both engines on any platform, no generator
+state to save or restore, and a different order for every seed. The
+implementation is `.shuffle_deterministic()` in `R/counterbalancing.R`,
+mirrored in the Python engine’s `counterbalancing.py`.
+
+``` r
+
+stim <- counterbalance(match_stimuli(pool, design, schema), design, schema)
+head(stim[, c("trial", "condition", "word")], 4)
+```
+
+      trial condition    word
+    1     1       low arrange
+    2     2      high    with
+    3     3      high  coming
+    4     4      high   major
+
+``` r
+
+same <- counterbalance(match_stimuli(pool, design, schema), design, schema)
+identical(stim$trial, same$trial)
+```
+
+    [1] TRUE
+
+The order is still randomised in the sense a study needs: an item’s
+properties bear no systematic relation to its position, and a different
+seed gives a different order. What changed is that the permutation is
+engine-invariant, so it now sits inside the cross-engine contract, and
+the guarantee reaches the generated experiments whole: for every shipped
+design, the PsychoPy script, the OpenSesame file, the jsPsych page and
+the three CSV tables that the PsychoPy and OpenSesame experiments read
+are byte-identical across the engines.
+
+One detail matters to anyone embedding `lexsync` in a longer script:
+counterbalancing no longer touches the random number generator at all,
+since nothing in the package consults one, so calling it cannot disturb
+the stream your own code is drawing from.
+
+## The CSV input contract
+
+Both engines read a lexicon, a norm table, a supplied pool or an item
+table by one rule. Each reads every cell as text and converts it itself.
+readr and pandas guess types by different heuristics, and the guesses
+used to disagree: a padded category made the Python engine refuse a
+design this engine ran, and a column of `T` and `F` was written `FALSE`
+here and `F` there.
+
+Header names and cells are trimmed of spaces, tabs, carriage returns and
+line feeds. After trimming, an empty cell and `NA` (quoted or not) are
+missing, and every other word is a value. A column is numeric only when
+every value is a plain decimal number, with an optional sign, point and
+exponent and no thousands separators, so `1,000` is text. It is logical
+only when every value is TRUE or FALSE in upper, lower or title case, so
+`T` and `F` stay text. Any other column is text, a column of dates
+included. Every row counts towards the type. The columns a paradigm
+presents, and an item table’s `item` and `condition`, are always text. A
+header that names a column twice is refused, and an empty header cell is
+named by its position (`...3`).
+
+The numbers themselves are parsed to the same double in both engines.
+Python’s `float()` returns the double nearest the decimal. readr’s
+parser and R’s [`as.numeric()`](https://rdrr.io/r/base/numeric.html) can
+each miss it by one unit in the last place, readr’s on
+`50.768212762897100` and
+[`as.numeric()`](https://rdrr.io/r/base/numeric.html) on
+`0.586135918132`, for instance. This engine therefore computes every
+number of up to 15 significant digits, with a power of ten within 10^22,
+as one exact integer multiplied or divided by one exact power of ten.
+IEEE-754 rounds that single operation correctly, so the result is
+Python’s double. Every value in the shipped lexica is of that kind. Any
+other number is rounded in exact integer arithmetic, which gives
+Python’s double on every platform.
+[`as.numeric()`](https://rdrr.io/r/base/numeric.html) is not used there,
+because it accumulates the digits in `long double`. Where that type is
+no wider than a double, as on Apple Silicon, an emulation of R’s parser
+missed on about one in ten of the values Python’s `repr()` writes for
+computed doubles. A negative zero is read as zero, since the two engines
+would otherwise write it as `-0` and `0`.
+
+## The YAML input contract
+
+A design and the schema are read as YAML 1.1, by
+[`yaml::read_yaml()`](https://yaml.r-lib.org/reference/read_yaml.html)
+here and by PyYAML in Python, and the two readers resolve a few unquoted
+values differently. YAML 1.1 lists `y`, `Y`, `n` and `N` among its
+booleans, and PyYAML keeps them as text. lexsync reads them as text in
+both engines, so `keys: [y, n]` gives the response keys y and
+n. Booleans are written `true` and `false`. An unquoted `yes`, `no`,
+`on` or `off` is a boolean to both readers as well. A response key that
+YAML reads as a boolean is therefore refused with a hint to quote it. A
+norms entry names its join key `join_on`, since a bare `on` is read as
+true. `counterbalance.optimise` must be `true` or `false`, and any other
+value, such as `n` or `1`, is refused.
+
+Some differences remain, and they are known. PyYAML reads `1:30` as the
+base-60 number 90, `1_000` as 1000, `0b101` as 5 and `2026-10-13` as a
+date, and this engine reads all four as text. No shipped design or
+schema holds such a value. Quote one, or write the number plainly, where
+a design must read alike in both engines. This engine also reads a
+sequence of one value, such as `[true]`, as that value, while PyYAML
+keeps a list. `optimise: [true]` or `name: [demo]` therefore passes here
+and is refused in Python, so write a single value without brackets.
+
+## The Unicode input contract
+
+Word matching, deduplication and the `length` dimension operate on
+Unicode code points, and every text key is normalised to Unicode
+Normalization Form C (NFC). The words of a lexicon or a supplied pool
+and both sides of a norm-table or pair-member join are first trimmed and
+lower-cased as described above. The item id, condition and presented
+fields of an item table, practice and filler tables included, and a
+supplied reference list are normalised as read. A precomposed character
+such as `é` and its decomposed counterpart, the base letter followed by
+a combining accent, are therefore one character, and a lexicon that
+mixes the two conventions holds each word once, in the first row the
+file gives it. Before this, the two spellings were two words of
+different lengths, and the matcher could place them in opposite
+conditions of one matched set. When normalisation rewrites or merges
+anything, the run log says how many forms it rewrote and how many
+duplicates it removed, and the datasheet records the two counts as
+`materials_source$input_normalisation`. Input already in NFC, the form
+most corpora distribute, leaves no trace.
+
+Unicode’s stability policy fixes the NFC form of every assigned
+character, so the two engines can disagree only on a character that one
+engine’s Unicode version assigns and the other’s lacks. R’s stringi uses
+the ICU it bundles or, on some Linux builds, the system’s ICU, which may
+implement another version, and Python’s `unicodedata` follows the
+interpreter (Unicode 15.1 in Python 3.13).
+
+The syllable estimator and the pseudoword generators carry a narrower
+contract still. Both are orthographic approximations defined for Latin
+orthographies.
+[`count_syllables()`](https://pablobernabeu.github.io/lexsync/r/reference/count_syllables.md)
+decomposes a word (NFD), sets its combining marks aside and counts the
+maximal runs of the letters a, e, i, o, u, y, ae (U+00E6), o with stroke
+(U+00F8), dotless i (U+0131) and oe (U+0153), so a vowel counts whatever
+its accent, in Polish, Czech, Hungarian, Romanian, Turkish and
+Vietnamese as in English or Spanish. Hiatus (`idea` counts 2) and the
+Czech syllabic r and l (`vlk`, `krk`) stay undercounted. A word holding
+a character outside the code points U+0001-U+024F, U+02B0-U+036F,
+U+1E00-U+1EFF and U+2000-U+206F gets no estimate. Its `n_syllables` is
+`NA` in R and NaN in Python, and
+[`run_pipeline()`](https://pablobernabeu.github.io/lexsync/r/reference/run_pipeline.md)
+refuses a design that refers to `n_syllables` while its pool holds such
+a word. The test is on code-point ranges, which keeps the two engines
+independent of their Unicode tables, and the same stability policy fixes
+the decompositions. This vignette said before that the class covered the
+Latin-1 vowels, but it lacked U+00E6, and every Chinese, Russian or
+Greek word counted 0 syllables. The pseudoword generators build their
+candidates from lower-case a to z. The shipped Chinese design matches on
+`length`, `n_density` and `old20` for these reasons.
+
+## File names
+
+Every file a run writes is named after a stem built from the design’s
+`name` and `language`, which
+[`design_stem()`](https://pablobernabeu.github.io/lexsync/r/reference/design_stem.md)
+computes in both engines. The stem keeps ASCII letters and digits only,
+so names that differ only outside ASCII would share it: two designs with
+Chinese names, both in `chinese`, would write the same files, the second
+overwriting the first. Whenever the name or the language holds a
+non-ASCII character, the stem therefore ends in an underscore and the
+first eight hexadecimal digits of the SHA-256 of the NFC-normalised text
+`name|language`, such as `chinese_14aadfa7`. A name and language with no
+ASCII letter or digit at all, which used to give file names beginning
+with an underscore or a dot, get those eight digits alone. Normalising
+to NFC here keeps a precomposed and a decomposed spelling of one name on
+one stem. Names in plain ASCII are unaffected.
+[`run_all()`](https://pablobernabeu.github.io/lexsync/r/reference/run_all.md)
+also computes every design’s stem before it runs any, and refuses two
+designs that would write the same files, such as `en-lexdec` and
+`en_lexdec`.
+
+## The documented exceptions
+
+`mahalanobis` and `optimal` are equivalent to their byte-identical
+siblings in what they compute and not in what they select, and the
+reason is worth understanding.
+
+`mahalanobis` needs the inverse of the pool’s correlation matrix. A
+matrix inverse is computed by LAPACK, and R’s LAPACK is not necessarily
+the one NumPy is built against. The two may differ in blocking, in
+vectorisation and in the order they accumulate sums. The results agree
+to well within any tolerance you would care about and they need not
+agree in their last bits, and the rounding that saves the Euclidean path
+cannot save this one: the distance is now a function of a matrix whose
+entries already differ below the rounding threshold, so the rounding can
+land on either side.
+
+`optimal` solves a linear assignment problem. Where several assignments
+have the same total cost, which one a solver returns is an
+implementation detail of the solver, and R’s
+[`clue::solve_LSAP()`](https://rdrr.io/pkg/clue/man/solve_LSAP.html) and
+SciPy’s implementation resolve those ties differently. Both return an
+optimal assignment. They need not return the same one.
+
+Neither is a bug that a determined engineer could fix. Guaranteeing them
+would mean shipping a bit-exact matrix inverse and a tie-canonical
+assignment solver in both languages, which is a large amount of
+numerical code to maintain for a modest gain. The chosen trade-off is to
+keep the byte-identical methods as the defaults, document the exception,
+and record it per run.
+
+``` r
+
+maha <- design
+maha$matching <- list(method = "mahalanobis")
+maha_stim <- match_stimuli(pool, maha, schema)
+maha_ds <- build_datasheet(
+  maha, schema, NULL, maha_stim,
+  system.file("extdata", "en_example.csv", package = "lexsync"),
+  list(stimuli = NA_character_), schema$seed
+)
+maha_ds$selection$cross_engine
+```
+
+    [1] "approximate (platform linear algebra)"
+
+Every datasheet carries this field, so a reader of the record does not
+have to know the rule. It reads `byte-identical` for the default methods
+and `approximate (platform linear algebra)` for these two, and the
+generated methods paragraph adds a sentence stating the caveat in prose
+when it applies. The constraint also shapes the roadmap: a
+covariance-aware distance might well be the better default, and it stays
+optional precisely because it cannot carry the guarantee.
+
+One further place is worth naming, though it is not an exception. Almost
+everything on the path to a compared artefact is built from operations
+IEEE-754 either mandates correctly rounded or makes exact, so the
+engines agree by construction rather than by measurement. The Student t
+quantile and distribution behind the confidence interval and the TOST
+*p*-value are where that argument does not reach:
+[`stats::qt`](https://rdrr.io/r/stats/TDist.html) and
+[`stats::pt`](https://rdrr.io/r/stats/TDist.html) on one side, SciPy’s
+on the other, two independent implementations that were measured to
+disagree by up to about 1e-12 over the range these reports use. The
+published values are rounded to three and four decimal places, which
+leaves 5e-4 and 5e-5 of headroom, so the comparisons files still come
+out byte-identical. The guarantee there rests on a margin of some seven
+orders of magnitude rather than on the construction, and saying so is
+what stops anyone widening the reported precision without checking the
+margin first.
+
+[`normalise_lexicon()`](https://pablobernabeu.github.io/lexsync/r/reference/normalise_lexicon.md)
+has the same kind of step. Zipf = log10(per million) + 3 calls each
+engine’s own [`log10()`](https://rdrr.io/r/base/Log.html), which
+IEEE-754 does not require to be correctly rounded. A value whose scaled
+Zipf lies within one unit in the last place of a rounding boundary could
+therefore round to different three-place values in the two engines. The
+function counts the values that lie within 1e-9 of a boundary, and the
+count is expected to be 0. A run over a lexicon carrying
+`freq_permillion` records it as `materials_source$zipf_derivation` in
+its datasheet and in its run log. A registry entry’s `derived` file, a
+lexicon normalised once and checksummed, lets both engines read the same
+bytes and leaves no such step at all.
+
+## The parity test
+
+A guarantee that is not tested is a comment. The parity gate in
+continuous integration runs the R pipeline over the shipped designs,
+regenerates each with the Python engine and compares the two, across
+designs covering both engines’ matching methods, continuous selection,
+both pseudoword generators, resampling, priming and self-paced reading,
+three languages including a logographic script, and three reproductions
+of published designs.
+
+The comparison is on identity columns: the word or target, the condition
+and the `set` index. Including `set` is what gives the test teeth, since
+without it the engines could select the same items and pair them
+differently and still pass. Having matched on those, the test then
+checks every other shared column, so the `trial` position and the
+dimensions each engine computes at run time (`n_density`, `old20`,
+`n_syllables`, `bigram_freq`) must also agree.
+
+Three details keep the gate from passing vacuously. The test skips when
+the R reference output is absent, since the Python package can be
+installed on its own, so CI sets `LEXSYNC_REQUIRE_PARITY=1` to turn
+those skips into failures: a job meant to run both engines cannot pass
+by quietly skipping. The R references are regenerated and then checked
+with `git diff --exit-code`, so an R-engine regression fails the build.
+Without that step the comparison would run against a stale snapshot that
+the regression matches. And the R suite is run once from the source tree
+with a check that nothing skipped, because the repository-coupled tests
+silently skip when run from an installed copy.
+
+The shipped designs have clean inputs: every cell is in NFC, none is
+padded and the norms cover every word. The gate therefore never reaches
+the code that padded fields, missing values or unusual YAML would take,
+and a defect both engines share would pass it, since they agree. The
+twin-edge cases cover that ground. Each is a folder under
+`parity/twin_edge/` at the repository root, holding a small
+`design.yaml`, its inputs (paths relative to the folder), an optional
+`schema.yaml` and an `expect.yaml` that pins the outcome. An artefacts
+case keeps the files the design must produce, byte for byte, in
+`expected/`, and may assert values in the datasheet. A refusal case
+gives a substring of the error the design must raise. The R suite’s
+`test-twin-edge.R` and the Python suite’s `test_twin_edge.py` each hold
+their own engine to every case. CI also runs `tools/compare_engines.py`,
+which compares the two engines on the same cases and repeats the
+whole-tree comparison on any machine. To add a case, create its folder
+with `design.yaml` and `expect.yaml` and write `expected/` with
+`python tools/twin_edge.py --update <case>`. Read the pinned files to
+confirm they are right, then run this suite, which checks that the R
+engine writes the same bytes. A fix for an input defect adds its case in
+the same commit, so the gate never lands red.
+
+## The materials datasheet
+
+Each run emits a datasheet in two forms, a JSON record for machines and
+a Markdown rendering for people. It exists because the reproducibility
+literature in linguistics keeps finding the same gap: materials are
+described but rarely deposited in a form that permits reuse or
+verification (Bochynska et al., 2023), and the degrees of freedom in
+preparing them are large enough to matter (Roettger, 2019). A datasheet
+is the FAIR-style record of one selection (Wilkinson et al., 2016).
+
+``` r
+
+out <- file.path(tempdir(), "lexsync_repro")
+dir.create(out, showWarnings = FALSE)
+report <- match_report(
+  stim, c("frequency", "length", "n_density", "old20"), schema
+)
+stim_path <- file.path(out, "stimuli.csv")
+write.csv(stim, stim_path, row.names = FALSE)
+
+ds <- build_datasheet(
+  design, schema, report, stim,
+  source_path = system.file("extdata", "en_example.csv", package = "lexsync"),
+  artifacts = list(stimuli = stim_path),
+  seed = schema$seed,
+  candidate_pool = lapply(design$conditions, function(cnd)
+    list(
+      condition = cnd$name,
+      n_candidates = nrow(build_pool(pool, cnd$define_by))
+    ))
+)
+names(ds)
+```
+
+     [1] "lexsync_datasheet_version" "design"                   
+     [3] "materials_source"          "dimensions"               
+     [5] "selection"                 "relational"               
+     [7] "analysis"                  "equivalence"              
+     [9] "realised_control"          "counterbalancing"         
+    [11] "presentation"              "resampling"               
+    [13] "items"                     "reproducibility"          
+    [15] "artifacts"                
+
+The record answers the questions a sceptical reader would ask. Where the
+words came from, and whether this is the same file, is settled by
+`materials_source`, which carries the path and its SHA-256. What was
+applied is recorded in `selection`, covering the method, the matched
+dimensions and the tolerance windows as resolved, which is the design’s
+overrides merged onto the schema’s defaults rather than the defaults a
+design may have replaced. The rule that broke exact ties is there too,
+as `tie_break`, with its salt under `hash`. What the selection achieved
+is in `realised_control`, as the effect sizes, intervals, variance
+ratios and TOST verdicts for every pair of conditions, each row naming
+its pair in `condition` and `reference`, giving the raw difference as
+`mean_diff` and the dimension’s role. What it could have chosen instead
+is in `candidate_pool`, which records how many items satisfied each
+condition before matching. A candidate missing a matched dimension
+satisfies its condition but cannot be matched. Such candidates are
+counted in `incomplete_dropped`, present only when a condition lost any,
+and the methods paragraph leaves them out of its count of eligible
+candidates. How the items were dealt to lists is in `counterbalancing`.
+It gives the recipe that ran, the lists the stimuli table holds and the
+trials each list gives each condition, and it says whether a
+Latin-square rotation is complete. How many items there are is in
+`items`, whose `n_per_condition_realised` counts the items each
+condition holds, per replicate for resampled sets. The request the
+selector applied is `design$n_per_condition`, its default when the
+design gives none.
+
+The record keeps each statistic as the comparisons report rounded it, to
+three places and the TOST *p* to four. The Markdown rendering and the
+methods paragraph show them at two or three places and the TOST *p* at
+four. The rounding is done by lexsync’s own formatter, half away from
+zero from that record, so both engines print the same digits. A *d* of
+0.1649 is stored as 0.165 and is therefore shown as 0.17.
+
+``` r
+
+ds$materials_source$sha256
+```
+
+    [1] "34a3c81cb559a42918864f5ecd2bcea93647cc4b0058dd03132ffe8723f4c310"
+
+``` r
+
+str(ds$selection$tolerance_k)
+```
+
+    List of 4
+     $ length   : num 2
+     $ frequency: num 1
+     $ n_density: num 2
+     $ old20    : num 2
+
+``` r
+
+do.call(rbind, lapply(ds$selection$candidate_pool, as.data.frame))
+```
+
+      condition n_candidates
+    1      high           86
+    2       low          465
+
+The candidate-pool counts do a job that is easy to miss. Here the high
+condition was drawn from fewer than a hundred eligible words and the low
+condition from several hundred, which are different epistemic
+situations: choosing 15 items from a large candidate set invites the
+concern that a selection could be steered towards almost any result,
+whereas a condition with barely more candidates than items had little
+freedom to be steered. Recording the counts, alongside the fact that the
+selection is deterministic and blind to any outcome measure, lets a
+reader judge that rather than take it on trust.
+
+Note that the resolved windows include a `frequency` entry even though
+this design matches on the three orthographic dimensions only. The
+record reports the windows as resolved from the schema and the design,
+and a window is applied only to a dimension named in `match_on`.
+
+``` r
+
+str(ds$reproducibility)
+```
+
+    List of 2
+     $ seed    : int 2026
+     $ versions:List of 10
+      ..$ engine    : chr "R"
+      ..$ lexsync   : chr "0.1.1"
+      ..$ R         : chr "4.6.1"
+      ..$ readr     : chr "2.2.0"
+      ..$ stringdist: chr "0.9.17"
+      ..$ jsonlite  : chr "2.0.0"
+      ..$ digest    : chr "0.6.39"
+      ..$ yaml      : chr "2.3.12"
+      ..$ stringi   : chr "1.8.9"
+      ..$ os        : chr "Linux x86_64"
+
+The reproducibility block records the seed and the versions of the
+engine and its dependencies, since a bug fix in a dependency can change
+a selection and the record should say which versions produced this one.
+
+### The methods paragraph and the pre-registration template
+
+The datasheet renders itself into prose, which is a small feature that
+removes a common source of error: a methods section transcribed by hand
+from numbers on a screen.
+
+``` r
+
+cat(strwrap(methods_paragraph(ds), width = 76), sep = "\n")
+```
+
+    15 items per condition were selected from the English lexicon (wordfreq
+    (Speer, 2022) screened against SUBTLEX-US (Brysbaert & New, 2009), data CC
+    BY-SA 4.0; forms absent from SUBTLEX-US or beginning with a lower-case
+    letter in under 10% of their uses are left out, and N and OLD20 count
+    neighbours only among the forms the screen keeps; full corpus licence and
+    citation at
+    https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md)
+    and matched item by item on length, n_density, old20 using lexsync's
+    standardised_euclidean matcher. The largest difference on a matched
+    dimension was -0.133 neighbours in n_density (low against high; d = -0.03,
+    90% CI [-0.66, 0.59]). Two one-sided tests at a bound of 0.5 SD (alpha
+    0.05) supported equivalence on 0 of 3 matched comparisons; with 15 items
+    per condition no dimension that varies can pass this test, however well
+    matched. The smallest condition was selected from 86 eligible candidates,
+    and the selection was deterministic and blind to any outcome measure.
+    Materials were counterbalanced into 1 list(s) (a factorial split) and
+    generated for PsychoPy, OpenSesame and jsPsych. Responses were collected
+    from target onset until 2800 ms after it, and a response ended the trial.
+    The selection is deterministic and reproducible (lexsync 0.1.1), and the
+    seed (2026) fixes the trial order.
+
+The paragraph is generated from the record, so it cannot disagree with
+the stimuli. It states the items each condition holds and the
+candidate-pool size, and it adds the cross-engine caveat when the
+design’s method warrants it. It describes the realised control before it
+tests it, since tests on a selected set concern a closed population
+(Sassenhagen & Alday, 2016). It gives the largest difference on any
+matched dimension, in that dimension’s unit, with d and its interval,
+and only then the two one-sided tests, with the number of matched
+comparisons they supported. It then names, largest first, up to five
+comparisons of a dimension the design did not control whose \|d\|
+exceeds the equivalence bound. The report here covers only the matched
+dimensions and frequency, which defines the conditions, so there is none
+to name.
+
+This run shows why the order matters, and why the paragraph is a draft
+to adapt rather than one to paste unread. The demonstration matches only
+15 items per condition. At a bound of 0.5 SD and an alpha of .05, no
+dimension that varies can pass the tests with fewer than 23 items per
+condition, however well it is matched. The paragraph says so, and a
+failed test is then not mistaken for a failed match. That is the
+dependence on set size that the matching vignette warns against reading
+past. A real study would either match enough items or report the control
+by the differences it describes.
+
+[`write_datasheet()`](https://pablobernabeu.github.io/lexsync/r/reference/write_datasheet.md)
+writes both forms, and the Markdown rendering carries a pre-registration
+skeleton with its materials section already filled in.
+
+``` r
+
+paths <- write_datasheet(
+  ds, file.path(out, "datasheet.json"), file.path(out, "datasheet.md")
+)
+md <- readLines(file.path(out, "datasheet.md"))
+grep("^#", md, value = TRUE)
+```
+
+     [1] "# Materials datasheet -- vignette_repro (english)"
+     [2] "## Provenance"                                    
+     [3] "## Counterbalanced lists"                         
+     [4] "## Selection transparency"                        
+     [5] "## Realised control"                              
+     [6] "## Suggested analysis"                            
+     [7] "## Methods paragraph"                             
+     [8] "## Pre-registration template"                     
+     [9] "### Study information"                            
+    [10] "### Hypotheses"                                   
+    [11] "### Design"                                       
+    [12] "### Materials (from the lexsync datasheet)"       
+    [13] "### Sampling plan"                                
+    [14] "### Analysis plan"                                
+
+The sections left blank are the ones no tool can fill: the hypotheses,
+the sampling plan and the inference criteria. The analysis plan is the
+exception: it arrives with a suggested model, and the suggestion takes a
+position.
+
+``` r
+
+ds$analysis$suggested_model
+```
+
+    [1] "response ~ condition + scale(length, scale = FALSE) + scale(n_density, scale = FALSE) + scale(old20, scale = FALSE) + (1 + condition | subject) + (1 | item)"
+
+The model crosses random effects for subjects and items because items
+are a sample of the language rather than the population of interest, and
+an analysis treating them as fixed generalises only to the words that
+were used (Clark, 1973; Yarkoni, 2022). The matched dimensions enter as
+centred covariates, computed from the stimuli file’s own columns,
+because matching leaves residual differences and Sassenhagen and Alday
+(2016) recommend adjusting for potential confounds. A structure is
+maximal only when every effect that varies within subjects or items has
+a random slope there (Barr et al., 2013). These covariates have none, so
+the accompanying note describes the slopes the model has. It also
+advises simplifying a model that is singular or fails to converge
+(Matuschek et al., 2017). It is a starting point for a design of this
+shape.
+
+## The run log
+
+The datasheet records what a run produced. The run log records what it
+did.
+
+``` r
+
+log <- new_run_log(
+  "vignette_repro",
+  meta = list(seed = schema$seed, language = "english")
+)
+log <- log_step(
+  log,
+  sprintf("lexicon loaded: %d words", nrow(lex)),
+  list(words = nrow(lex))
+)
+```
+
+    [lexsync] lexicon loaded: 3000 words
+
+``` r
+
+log <- log_step(log, sprintf("pool after filters: %d words", nrow(pool)))
+```
+
+    [lexsync] pool after filters: 859 words
+
+``` r
+
+log <- log_artefact(log, stim_path, rows = nrow(stim))
+```
+
+    [lexsync] wrote 'stimuli.csv'
+
+``` r
+
+log_md <- write_run_log(log, file.path(out, "run_log.md"),
+                        file.path(out, "run_log.jsonl"))
+cat(readLines(log_md), sep = "\n")
+```
+
+    # lexsync run log: vignette_repro
+
+    - Engine: R 4.6.1
+    - Started: 2026-10-16 22:38:14.033363
+    - Finished: 2026-10-16 22:38:14.035492
+
+    ## Run metadata
+
+    - seed: 2026
+    - language: english
+
+    ## Steps
+
+    - **2026-10-16 22:38:14.034113**: lexicon loaded: 3000 words
+        - words: 3000
+    - **2026-10-16 22:38:14.034515**: pool after filters: 859 words
+    - **2026-10-16 22:38:14.034883**: wrote 'stimuli.csv'
+        - path: /tmp/RtmpTeMgfB/lexsync_repro/stimuli.csv
+        - rows: 30
+        - md5: 06832f9e8e1d901adde134e464579401
+
+The pipeline builds this log as it goes, recording each stage with its
+parameters, the equivalence verdict on every dimension, any balance
+warning, and an entry per file written with its MD5. The experiments’
+loop and text tables are among them, and the stimuli and report tables
+are logged with their row counts too. A design or schema key that
+lexsync does not read is noted there as well, since it changed nothing
+about the run. Both a Markdown log and a JSON Lines log are emitted, the
+latter so that a run can be checked by a script. The MD5 here is a
+content fingerprint for spotting drift between runs, whereas the
+datasheet’s SHA-256 is the stronger one that belongs in a permanent
+record.
+
+## Reproducing a run
+
+The pipeline does all of the above in one call, and
+[`run_pipeline()`](https://pablobernabeu.github.io/lexsync/r/reference/run_pipeline.md)
+on a design configuration is the reproducible unit: it writes the
+stimuli, the reports, the three experiments, the datasheet and the log.
+Sharing the design file and the corpus is then enough for someone else
+to regenerate the materials and verify the checksums, in either
+language.
+
+Two habits make that work. Pin the corpus, since a selection is only
+reproducible against a fixed lexicon, which is why the bundled corpora
+are a checksummed snapshot and why the `wordfreq` connector draws on a
+package frozen in 2024, whose data is a stable snapshot of usage through
+roughly 2021. And where cross-engine reproducibility matters, prefer the
+default matching methods, since they are the ones that carry the
+guarantee.
+
+A reproducible lexicon is not a screened one. The bundled lexica are the
+most frequent forms `wordfreq` returns, so they hold proper names,
+acronyms and other forms that are not words of the language, and N and
+OLD20 are computed over them. Their share differs between frequency
+bands, which can confound a frequency contrast. The repository’s
+`corpora/derived/en_v2.csv` marks such forms in the English lexicon, and
+[What the derived lexica
+contain](https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md#what-the-derived-lexica-contain)
+says what to check in a selection.
+
+## References
+
+Barr, D. J., Levy, R., Scheepers, C., & Tily, H. J. (2013). Random
+effects structure for confirmatory hypothesis testing: Keep it maximal.
+*Journal of Memory and Language*, *68*(3), 255–278.
+<https://doi.org/10.1016/j.jml.2012.11.001>
+
+Bochynska, A., Keeble, L., Halfacre, C., Casillas, J. V., Champagne,
+I.-A., Chen, K., Röthlisberger, M., Buchanan, E. M., & Roettger, T. B.
+(2023). Reproducible research practices and transparency across
+linguistics. *Glossa Psycholinguistics*, *2*(1).
+<https://doi.org/10.5070/G6011239>
+
+Clark, H. H. (1973). The language-as-fixed-effect fallacy: A critique of
+language statistics in psychological research. *Journal of Verbal
+Learning and Verbal Behavior*, *12*(4), 335–359.
+<https://doi.org/10.1016/S0022-5371(73)80014-3>
+
+Matuschek, H., Kliegl, R., Vasishth, S., Baayen, H., & Bates, D. (2017).
+Balancing Type I error and power in linear mixed models. *Journal of
+Memory and Language*, *94*, 305–315.
+<https://doi.org/10.1016/j.jml.2017.01.001>
+
+Roettger, T. B. (2019). Researcher degrees of freedom in phonetic
+research. *Laboratory Phonology*, *10*(1), Article 1.
+<https://doi.org/10.5334/labphon.147>
+
+Sassenhagen, J., & Alday, P. M. (2016). A common misapplication of
+statistical inference: Nuisance control with null-hypothesis
+significance tests. *Brain and Language*, *162*, 42–45.
+<https://doi.org/10.1016/j.bandl.2016.08.001>
+
+Wilkinson, M. D., Dumontier, M., Aalbersberg, IJ. J., Appleton, G.,
+Axton, M., Baak, A., Blomberg, N., Boiten, J.-W., da Silva Santos, L.
+B., Bourne, P. E., Bouwman, J., Brookes, A. J., Clark, T., Crosas, M.,
+Dillo, I., Dumon, O., Edmunds, S., Evelo, C. T., Finkers, R., … Mons, B.
+(2016). The FAIR Guiding Principles for scientific data management and
+stewardship. *Scientific Data*, *3*, Article 160018.
+<https://doi.org/10.1038/sdata.2016.18>
+
+Yarkoni, T. (2022). The generalizability crisis. *Behavioral and Brain
+Sciences*, *45*, Article e1. <https://doi.org/10.1017/S0140525X20001685>

@@ -1,0 +1,1986 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Lexical optimisation and hardware-timed experiment generation. Select matched stimuli from a corpus in any of dozens of languages and generate the experiment that presents them.">
+      
+      
+        <meta name="author" content="Pablo Bernabeu">
+      
+      
+        <link rel="canonical" href="https://pablobernabeu.github.io/lexsync/python/matching-and-designs/">
+      
+      
+        <link rel="prev" href="../api/">
+      
+      
+        <link rel="next" href="../experiments-and-triggers/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/favicon.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Matching and designs - lexsync (Python)</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,700,700i%7CJetBrains+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_markdown_exec_pyodide.css">
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../stylesheets/brand.css">
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="amber">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#matching-and-designs" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="lexsync (Python)" class="md-header__button md-logo" aria-label="lexsync (Python)" data-md-component="logo">
+      
+  <img src="../assets/logo.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            lexsync (Python)
+          </span>
+          <small class="mrd-version" title="Released version">0.1.1</small>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Matching and designs
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Demo link (added: not part of upstream header.html) -->
+    <a data-md-component="demo-link" href="https://pablobernabeu.github.io/lexsync/demos/en_lexdec_english.html" title="Open the demonstration experiment: a generated jsPsych lexical-decision task" class="md-header__button">Demo</a>
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/pablobernabeu/lexsync" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+    
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="amber"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="amber"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../getting-started/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Get started
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../api/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  API reference
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="./" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../changelog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Changelog
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../about/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  About
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="lexsync (Python)" class="md-nav__button md-logo" aria-label="lexsync (Python)" data-md-component="logo">
+      
+  <img src="../assets/logo.svg" alt="logo">
+
+    </a>
+    lexsync (Python)
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/pablobernabeu/lexsync" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Get started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Matching and designs
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Matching and designs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#from-lexicon-to-pool" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        From lexicon to pool
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#choosing-and-screening-a-lexicon" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Choosing and screening a lexicon
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#supplied-item-pools" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Supplied item pools
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#relational-designs-where-the-item-is-a-pair" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Relational designs, where the item is a pair
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-dimensions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The dimensions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-matching-works" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How matching works
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="How matching works">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-four-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The four methods
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reading-the-realised-control" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reading the realised control
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#continuous-designs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Continuous designs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#items-as-a-random-factor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Items as a random factor
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pseudowords" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pseudowords
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../experiments-and-triggers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Experiments and triggers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reproducibility-and-parity/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reproducibility and parity
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../the-app/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The app
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../references/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    References
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../about/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    About
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#from-lexicon-to-pool" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        From lexicon to pool
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#choosing-and-screening-a-lexicon" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Choosing and screening a lexicon
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#supplied-item-pools" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Supplied item pools
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#relational-designs-where-the-item-is-a-pair" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Relational designs, where the item is a pair
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-dimensions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The dimensions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-matching-works" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How matching works
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="How matching works">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-four-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The four methods
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reading-the-realised-control" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reading the realised control
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#continuous-designs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Continuous designs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#items-as-a-random-factor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Items as a random factor
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pseudowords" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pseudowords
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="matching-and-designs">Matching and designs<a class="headerlink" href="#matching-and-designs" title="Permanent link">&para;</a></h1>
+<p>Selecting stimuli is the part of an experiment that most often decides what the experiment can
+show, and it is the part that is least often written down. This guide follows a set from the corpus
+to the finished selection: how a lexicon becomes a candidate pool, which dimensions can be equated,
+what the four matching methods actually do, how to read the report that says whether the matching
+worked, and what to do instead when dichotomising a predictor is the wrong move.</p>
+<p>The examples run against the lexicon bundled with the package, so you can paste them into a session
+and get the output shown. Only the norm-merging sketch needs a file of your own.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">importlib.resources</span><span class="w"> </span><span class="kn">import</span> <span class="n">files</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">yaml</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">lexsync</span>
+
+<span class="n">data</span> <span class="o">=</span> <span class="n">files</span><span class="p">(</span><span class="s2">"lexsync"</span><span class="p">)</span> <span class="o">/</span> <span class="s2">"data"</span>
+<span class="n">schema</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">((</span><span class="n">data</span> <span class="o">/</span> <span class="s2">"schema.yaml"</span><span class="p">)</span><span class="o">.</span><span class="n">read_text</span><span class="p">(</span><span class="n">encoding</span><span class="o">=</span><span class="s2">"utf-8"</span><span class="p">))</span>
+<span class="n">lexicon</span> <span class="o">=</span> <span class="n">lexsync</span><span class="o">.</span><span class="n">load_lexicon</span><span class="p">(</span>
+    <span class="nb">str</span><span class="p">(</span><span class="n">data</span> <span class="o">/</span> <span class="s2">"en_example.csv"</span><span class="p">),</span> <span class="n">schema</span><span class="p">,</span> <span class="n">language</span><span class="o">=</span><span class="s2">"english"</span>
+<span class="p">)</span>
+</code></pre></div>
+<div class="result"></div>
+<h2 id="from-lexicon-to-pool">From lexicon to pool<a class="headerlink" href="#from-lexicon-to-pool" title="Permanent link">&para;</a></h2>
+<p><code>load_lexicon</code> reads a derived corpus and does rather more than parse a CSV. It checks the column
+contract from the schema, which requires <code>word</code> and <code>freq_zipf</code> and nothing else. It drops rows with
+a missing word or frequency, lower-cases and strips the rest, and removes duplicates. Then it sorts
+the whole table by the UTF-8 bytes of the word and numbers the rows from one.</p>
+<p>That sort is the quiet step everything else depends on. Byte order is stable where a platform's
+collation is not, so the lexicon comes out in the same order on a German laptop and an English
+continuous integration runner, and in the same order as the R engine, which sorts the same way.
+Everything downstream inherits it, including the <code>id</code> column, which is the last tie-break in the
+matcher.</p>
+<p>Three columns are derived on the way in: <code>length</code> in characters, <code>n_syllables</code> from vowel runs, and
+<code>frequency</code>, which is whatever column the schema's <code>dimensions.frequency.column</code> names, by default
+<code>freq_zipf</code>.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="nb">print</span><span class="p">(</span><span class="n">lexicon</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">to_string</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+</code></pre></div>
+<div class="result">
+<div class="language-text highlight"><pre><span></span><code> word  freq_zipf language   source  n_density  old20  id  length  n_syllables  frequency
+  aaa       3.77  english wordfreq          7   1.65   1       3            1       3.77
+  aba       3.32  english wordfreq          9   1.40   2       3            2       3.32
+aback       2.99  english wordfreq          0   1.95   3       5            2       2.99
+</code></pre></div>
+</div>
+<p><code>load_lexicon</code> takes the lexicon as given and screens nothing for lexical status. The bundled
+English slice loaded here is cut from the screened English lexicon. The screen leaves out the forms
+SUBTLEX-US lacks or writes with a capital in more than 90% of their uses, such as proper names and
+acronyms. The slice's N and OLD20 count only the forms it keeps. Taboo words and some
+abbreviations pass the screen, and a lexicon of your own is loaded as it stands.
+<a href="#choosing-and-screening-a-lexicon">Choosing and screening a lexicon</a> below says what such forms do
+to a selection and how to screen them out.</p>
+<p><code>build_pool</code> narrows that lexicon to the candidates a design will consider. A two-element numeric
+range is read as an inclusive <code>[min, max]</code> band, and anything else, <code>[true, false]</code> included, is
+read as a set of allowed values. A set of numbers is compared with a numeric column as numbers.
+Any other set is compared as text, the cells and the values written as the R engine writes them,
+so <code>true</code> matches TRUE in a logical column and never 1 in a 0/1 column. Rows missing the filtered
+column are dropped, and a filter naming a column the lexicon does not have is skipped without
+complaint.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="n">pool</span> <span class="o">=</span> <span class="n">lexsync</span><span class="o">.</span><span class="n">build_pool</span><span class="p">(</span><span class="n">lexicon</span><span class="p">,</span> <span class="p">{</span><span class="s2">"length"</span><span class="p">:</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">8</span><span class="p">],</span> <span class="s2">"frequency"</span><span class="p">:</span> <span class="p">[</span><span class="mf">3.8</span><span class="p">,</span> <span class="mf">7.0</span><span class="p">]})</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">pool</span><span class="p">))</span>
+</code></pre></div>
+<div class="result">
+<div class="language-text highlight"><pre><span></span><code>1035
+</code></pre></div>
+</div>
+<p>The pool step is not optional even though nothing enforces it. <code>match_stimuli</code> never looks at a
+design's <code>pool_filters</code>. It matches over whatever frame you hand it. A script that skips
+<code>build_pool</code> therefore matches over the entire lexicon and silently ignores the design's bands, and
+the selection will look plausible while answering a different question. The package's own test suite
+pins this, checking that the README's example calls <code>build_pool</code> before matching.</p>
+<h2 id="choosing-and-screening-a-lexicon">Choosing and screening a lexicon<a class="headerlink" href="#choosing-and-screening-a-lexicon" title="Permanent link">&para;</a></h2>
+<p>The lexica in the repository's <code>corpora/derived/</code> hold the most frequent forms wordfreq gives for a
+language, and wordfreq lists names, acronyms and internet forms beside words. Such forms enter a
+selection unevenly across conditions: when the <code>en_andrews_repro</code> demonstration read <code>en.csv</code>, they
+made up 24 of its 36 low-frequency items and none of its 36 high-frequency ones. N and OLD20 count
+them as neighbours too, so that <code>cat</code> has 32 neighbours in <code>en.csv</code>, among them <code>caa</code>, <code>cbt</code> and
+<code>cdt</code>.</p>
+<p><code>corpora/derived/en_v2.csv</code> screens the English lexicon against SUBTLEX-US
+(<a href="../references/#brysbaert-2009">Brysbaert &amp; New, 2009</a>). It holds the 30,000 forms and frequencies
+of <code>en.csv</code> and adds four columns. <code>in_subtlex_us</code> is 1 when SUBTLEX-US lists the form, and
+<code>lowercase_share</code> is the share of its SUBTLEX-US uses that begin with a lower-case letter, empty
+for a form SUBTLEX-US lacks. <code>nonstandard</code> is 1 for a form SUBTLEX-US lacks or whose share is below
+0.10, which marks 6,565 forms, mostly names and acronyms, and <code>reference_member</code> is 1 for the other
+23,435. The file's <code>n_density</code> and <code>old20</code> count neighbours among those only, so <code>cat</code> has 21, and
+<code>n_density_raw</code> and <code>old20_raw</code> keep the values of <code>en.csv</code>. To select among the unmarked forms,
+filter on the flag.</p>
+<div class="language-yaml highlight"><pre><span></span><code><span class="nt">lexicon</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">corpora/derived/en_v2.csv</span>
+<span class="nt">pool_filters</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">nonstandard</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">0</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">0</span><span class="p p-Indicator">]</span>
+</code></pre></div>
+<p>The threshold is low on purpose. A capital at the start of a sentence pulls ordinary words down, so
+even <code>what</code>, <code>how</code>, <code>why</code>, <code>maybe</code>, <code>okay</code> and <code>yes</code> begin with a lower-case letter in under half
+their uses. A filter such as <code>lowercase_share: [0.5, 1]</code> would drop them all. Even at 0.10 the flag
+marks the days of the week, the months other than <code>march</code> and <code>may</code>, most nationality words, <code>god</code>,
+<code>ok</code> and <code>tv</code>. It also marks every form the 2009 corpus lacks, such as <code>selfie</code>, <code>emoji</code> and
+<code>covid</code>. A design that needs some of those can leave the flag unfiltered and remove what it does
+not want by name. A range filter on <code>lowercase_share</code> would also drop every form SUBTLEX-US lacks,
+whose share is empty.</p>
+<p><code>exclude_words</code> removes words by name. It lists them in the design, or names a UTF-8 file with one
+word per line, in which blank lines and lines beginning <code>#</code> are skipped.</p>
+<div class="language-yaml highlight"><pre><span></span><code><span class="nt">exclude_words</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">adams</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">dubai</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">espn</span><span class="p p-Indicator">]</span>
+<span class="c1"># or, from a file: exclude_words: {path: config/exclude_en.txt}</span>
+</code></pre></div>
+<p>The words are trimmed, lower-cased and put in NFC, as a lexicon's words are. They leave the
+candidates of a corpus, pool or generated design after any <code>norms:</code> join and before the pool
+filters. The neighbourhood reference still counts them, and a generated pseudoword still may not
+equal one, because an excluded word is still a word of the language. A design with an item table
+refuses the key, since its items are already a selection of your own. The datasheet records the
+list as <code>materials_source.exclusions</code>, with its checksum, the number of words it lists and the
+number of candidates it removed, and the Methods paragraph reports the removal.</p>
+<p><code>en.csv</code> keeps its bytes, so a design written for lexsync 0.1 selects what it selected. The English
+demonstrations read <code>en_v2.csv</code> with the filter above. Their <code>exclude_words</code> file,
+<code>config/exclude_en_demo.txt</code>, leaves out the taboo words and the forms that pass the screen without
+being standard English words, such as abbreviations that subtitles write in lower case (<code>mph</code>,
+<code>msg</code>). Its header states the criteria, and the list was made by reading what the demonstrations
+selected. Spanish and Chinese have no screened lexicon, because no source of letter case or known
+words with a verified licence exists for them. Read a selection in either language before a study
+runs, and leave out what you find with <code>exclude_words</code>.</p>
+<p>The datasheet credits the lexicon a corpus or generated design read. A lexicon lexsync ships is
+credited to wordfreq, and <code>en_v2.csv</code> and the English example slice drawn from it to wordfreq
+screened against SUBTLEX-US, with the rule. A corpus that <code>fetch_corpus</code> put in the cache is
+credited by the registry's citation, and any other file by its name and the first twelve digits of
+its checksum.</p>
+<h2 id="supplied-item-pools">Supplied item pools<a class="headerlink" href="#supplied-item-pools" title="Permanent link">&para;</a></h2>
+<p>Narrowing a whole lexicon is the right way round when any word of the language will do. It is the
+wrong way round when the candidate set is itself a research decision: a list from a previous study,
+from a norming session, or one restricted to a semantic category that no lexical filter can express.
+Such a list used to have to masquerade as a lexicon, which meant inventing a <code>freq_zipf</code> column for
+it, or else skip matching entirely by going in as <code>items.source: table</code>.</p>
+<p><code>items.source: pool</code> takes the list as it is.</p>
+<div class="language-yaml highlight"><pre><span></span><code><span class="nt">items</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">source</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">pool</span>
+<span class="w">  </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">items/pool_en_concrete_nouns.csv</span>
+<span class="w">  </span><span class="nt">lexicon</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">corpora/derived/en_v2.csv</span>
+</code></pre></div>
+<p>The list needs only a <code>word</code> column. Length and the syllable estimate are derived from the form, and
+<code>items.lexicon</code> supplies the rest, frequency above all, by lookup. A word the lexicon does not have
+raises a hard error, because the tolerance windows drop rows with missing values silently and the
+pool would then be smaller than it appears to be.</p>
+<p>One subtlety would quietly invalidate the controls if it went the other way. <code>n_density</code> and <code>old20</code>
+are properties of a word in its <em>language</em>, not among the 131 words of a supplied list, so they are
+computed against the lexicon's words. A supplied pool with no lexicon falls back to itself, which is
+why one is given above. <code>load_pool</code> returns both parts of that, <code>{"pool": ..., "reference": ...}</code>,
+if you call it directly outside a design.</p>
+<p>Everything downstream is unchanged: the same conditions, the same <code>match_on</code>, the same report, the
+same datasheet. What differs is only where the candidates came from, and the datasheet records the
+list's checksum so that is answerable later. <code>config/design_en_supplied_pool.yaml</code> is a worked
+example.</p>
+<h2 id="relational-designs-where-the-item-is-a-pair">Relational designs, where the item is a pair<a class="headerlink" href="#relational-designs-where-the-item-is-a-pair" title="Permanent link">&para;</a></h2>
+<p>A priming study's theoretical variable is a property of the <em>pair</em>, such as distributional
+similarity or associative strength, while its nuisance variables are properties of each <em>member</em>:
+frequency, length, neighbourhood. A design could previously have matching, or its own item table,
+but not both, so a relational design had to be assembled by hand.</p>
+<p><code>items.members</code> promotes an ordinary item table to a pair-keyed one.</p>
+<div class="language-yaml highlight"><pre><span></span><code><span class="nt">items</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">source</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">table</span>
+<span class="w">  </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">items/priming_pairs_en.csv</span>
+<span class="w">  </span><span class="nt">members</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">prime</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">target</span><span class="p p-Indicator">]</span><span class="w">             </span><span class="c1"># the two word fields</span>
+<span class="w">  </span><span class="nt">lexicon</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">corpora/derived/en_v2.csv</span><span class="w">   </span><span class="c1"># where each member's norms are looked up</span>
+<span class="w">  </span><span class="nt">anchor_condition</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">related</span><span class="w">            </span><span class="c1"># whose row represents the pair during selection</span>
+</code></pre></div>
+<p>Each member's word-level norms are joined from the lexicon and prefixed, giving <code>prime.frequency</code>,
+<code>target.length</code> and so on. The member name leads and the dimension follows, for a reason specific
+to R: <code>prime.frequency</code> is safe because R's <code>df$prime</code> still exact-matches the bare <code>prime</code> column,
+whereas <code>frequency.prime</code> would be a partial-matching hazard. Those prefixed names are then usable
+wherever a dimension is: in <code>pool_filters</code>, in <code>match_on</code>, as a <code>continuous.predictor</code> or as a
+control.</p>
+<p><code>pair.lev</code> is the Levenshtein distance between the two members and <code>pair.overlap</code>
+is <code>1 - pair.lev / length of the longer form</code>, a normalised orthographic similarity. It scores edit
+operations, so it is not a count of shared material: <code>abc</code> and <code>cba</code> share every letter but score
+0.33. Orthographic overlap is the standard confound control in a priming design, since a related
+pair that also shares letters confounds semantic relatedness with orthographic similarity. The
+pipeline adds both automatically when the two members are named <code>prime</code> and <code>target</code>. Under any
+other member names, call <code>add_pair_overlap</code> on the item table yourself. A predictor that cannot be
+computed from the forms alone, such as cosine similarity or forward associative strength, arrives as
+an extra column on the item table and is used like any other.</p>
+<div class="language-yaml highlight"><pre><span></span><code><span class="nt">n_per_condition</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8</span><span class="w">                  </span><span class="c1"># counts PAIRS: 8 pairs, 16 rows, 8 per list over 2 lists</span>
+<span class="nt">pool_filters</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">target.length</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">3</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">7</span><span class="p p-Indicator">]</span>
+<span class="w">  </span><span class="nt">target.frequency</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">3.0</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">6.0</span><span class="p p-Indicator">]</span>
+<span class="nt">continuous</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">predictor</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">target.frequency</span>
+<span class="w">  </span><span class="nt">controls</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">target.length</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">pair.overlap</span><span class="p p-Indicator">]</span>
+<span class="nt">match_on</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">target.length</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">pair.overlap</span><span class="p p-Indicator">]</span>
+</code></pre></div>
+<p>Two rules follow from the item being a pair. A filter applies to a pair only if <em>every</em> one of its
+rows passes, and selection runs over one row per pair, the <code>anchor_condition</code>, defaulting to the
+byte-first condition, with the result re-expanded afterwards so every condition row of every chosen
+pair survives. Neither is an optimisation. A filter on <code>prime.frequency</code> applied row by row would
+keep a pair's related row and drop its unrelated one, leaving a set the Latin-square counterbalancer
+cannot complete. Only a dimension that varies within the pair can split it that way, which the
+prime-level and pair-level ones do and the target-level ones do not, since the target is the same
+word in both rows.</p>
+<p>A member name may not be one of <code>word</code>, <code>id</code>, <code>set</code>, <code>list</code>, <code>trial</code>, <code>condition</code>, <code>replicate</code> or
+<code>item</code>, which the engines read directly, and a design using one is refused. The datasheet gains a
+<code>relational</code> block recording the members, the pair count, the member lexicon and its checksum, and
+the member-level dimensions separately from the relational ones.
+<code>config/design_en_priming_continuous.yaml</code> is the worked example, and its own comments go further
+into why each rule is there.</p>
+<h2 id="the-dimensions">The dimensions<a class="headerlink" href="#the-dimensions" title="Permanent link">&para;</a></h2>
+<p>Six dimensions are declared in the schema. Three arrive from <code>load_lexicon</code>: <code>length</code> and
+<code>n_syllables</code> derived from the form, <code>frequency</code> read from the column the schema names. <code>n_density</code>
+and <code>old20</code> are carried by every corpus lexsync distributes, so they too are usually present at load
+time, and <code>add_neighbourhood</code> computes them only for a lexicon that lacks them. <code>bigram_freq</code> is the
+one dimension that always needs a separate call.</p>
+<table>
+<thead>
+<tr>
+<th>Dimension</th>
+<th>Unit</th>
+<th>Where it comes from</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>length</code></td>
+<td>letters</td>
+<td>Derived at load time from the word.</td>
+</tr>
+<tr>
+<td><code>frequency</code></td>
+<td>Zipf</td>
+<td>The lexicon's <code>freq_zipf</code> column (<a href="../references/#van-heuven-2014">van Heuven et al., 2014</a>).</td>
+</tr>
+<tr>
+<td><code>n_density</code></td>
+<td>neighbours</td>
+<td><code>add_neighbourhood</code>: Coltheart's N, same-length single substitutions (<a href="../references/#coltheart-1977">Coltheart et al., 1977</a>).</td>
+</tr>
+<tr>
+<td><code>old20</code></td>
+<td>mean Levenshtein distance</td>
+<td><code>add_neighbourhood</code>: the mean distance to the 20 nearest words (<a href="../references/#yarkoni-2008">Yarkoni et al., 2008</a>).</td>
+</tr>
+<tr>
+<td><code>n_syllables</code></td>
+<td>syllables</td>
+<td>Derived at load time by counting maximal vowel runs, and missing outside the Latin script.</td>
+</tr>
+<tr>
+<td><code>bigram_freq</code></td>
+<td>mean bigram probability (type-based, non-positional)</td>
+<td><code>add_bigram_frequency</code>, a phonotactic-probability proxy.</td>
+</tr>
+</tbody>
+</table>
+<p><code>add_neighbourhood</code> computes both neighbourhood measures against a reference word list, which
+should normally be the full lexicon, since a word's neighbours do not stop
+existing because your design excluded them. The pipeline passes the full lexicon for exactly that
+reason. It computes <code>n_density</code>, <code>old20</code> and <code>bigram_freq</code> for a lexicon that lacks them whenever
+the design refers to them, whether in <code>match_on</code>, a condition's <code>define_by</code>, <code>pool_filters</code>, a
+continuous predictor or control, or <code>counterbalance.balance_on</code>. The filters the lexicon can answer
+run first and those on a derived dimension after it is computed, so the calculation, quadratic in the
+reference size, runs on the smaller pool. A lexicon can name the words that make up the reference
+with a <code>reference_member</code> column (1 for a member, 0 otherwise). Passing <code>reference_words</code> to
+<code>run_pipeline</code> recomputes N and OLD20, and <code>bigram_freq</code> where the lexicon carries it or the design
+uses it, against that list instead, overriding the lexicon's columns. The datasheet's <code>selection.neighbourhood_reference</code>
+then records the list with the columns it was applied to.</p>
+<p><code>add_bigram_frequency</code> averages, over a word's adjacent letter bigrams, the corpus probability of
+each. It works from integer counts and rounds the result to nine decimal places, which keeps
+it identical in the two engines to the last decimal place.</p>
+<p><code>count_syllables</code> is honest about being an estimate. It counts maximal runs of Latin vowels, an
+orthographic approximation with no pronunciation model behind it.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="nb">print</span><span class="p">(</span>
+    <span class="p">[</span><span class="n">lexsync</span><span class="o">.</span><span class="n">count_syllables</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"cat"</span><span class="p">,</span> <span class="s2">"banana"</span><span class="p">,</span> <span class="s2">"strength"</span><span class="p">,</span> <span class="s2">"idea"</span><span class="p">]]</span>
+<span class="p">)</span>
+</code></pre></div>
+<div class="result">
+<div class="language-text highlight"><pre><span></span><code>[1, 3, 1, 2]
+</code></pre></div>
+</div>
+<p><code>strength</code> returning 1 and <code>idea</code> returning 2 shows both the method and its limits in one line.</p>
+<p>A vowel counts whatever its accent, since the word is decomposed and its diacritics set aside, so
+Polish będę, Turkish kız, Czech dům and Vietnamese một count 2, 1, 1 and 1. The estimate is
+defined for Latin orthographies only: a word holding a character outside the Latin script returns
+<code>None</code>, and its <code>n_syllables</code> is NaN. <code>run_pipeline</code> refuses a design that refers to <code>n_syllables</code>
+when such a word passes the other filters the lexicon can answer. Every Chinese, Russian or Greek
+word used to count 0 syllables, and a design matched on them reported perfect balance.
+<a href="../reproducibility-and-parity/">Reproducibility and parity</a> gives the exact letters and code points.</p>
+<p>The set of dimensions is not closed. <code>merge_norms</code> left-joins any word-keyed norm table, which is
+the connector for anything the corpus does not carry: concreteness, age of acquisition, valence, or
+the English Lexicon Project's behavioural measures. The norm data are fetched separately, because
+their licensing varies, and merged here so the matcher can equate on the new column as if it had
+been there all along.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="c1"># illustrative: needs a norm table of your own at norms/concreteness_en.csv</span>
+<span class="n">lexicon</span> <span class="o">=</span> <span class="n">lexsync</span><span class="o">.</span><span class="n">merge_norms</span><span class="p">(</span><span class="n">lexicon</span><span class="p">,</span> <span class="s2">"norms/concreteness_en.csv"</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="s2">"word"</span><span class="p">,</span>
+                              <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">"concreteness"</span><span class="p">])</span>
+<span class="c1"># then: match_on: [length, frequency, concreteness]</span>
+</code></pre></div>
+<p>The join drops missing keys, takes the first row per key, and is case- and whitespace-insensitive on
+both sides. The result is the lexicon itself with columns appended, in its own row and column order,
+which is what makes the two engines agree by construction: <code>pandas.merge</code> and R's <code>merge()</code> disagree
+about where the key column lands and about how they disambiguate a name clash. A clash is refused,
+because a silent rename leaves the dimension the design matches on under a name nothing looks for.</p>
+<p>In a design you do not call this yourself. Name the tables in a <code>norms:</code> block and the pipeline joins
+them before the pool is built, so a norm column can be filtered on, matched on or spanned like any
+other dimension.</p>
+<div class="language-yaml highlight"><pre><span></span><code><span class="nt">norms</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">norms/concreteness_en.csv</span>
+<span class="w">    </span><span class="nt">join_on</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">word</span><span class="w">             </span><span class="c1"># optional join key, default 'word'</span>
+<span class="w">    </span><span class="nt">columns</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">concreteness</span><span class="p p-Indicator">]</span><span class="w">   </span><span class="c1"># optional; default every column but the key</span>
+
+<span class="nt">pool_filters</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">concreteness</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">2.0</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">5.0</span><span class="p p-Indicator">]</span>
+<span class="nt">match_on</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">length</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">concreteness</span><span class="p p-Indicator">]</span>
+</code></pre></div>
+<p>The join key is written <code>join_on</code>. This page used to write it <code>on:</code>, which YAML reads as the
+boolean true, so the join used <code>word</code> whatever the entry named. A bare <code>on:</code> is now read as the join
+key, with a note in the run log, and any other key in an entry is refused.</p>
+<p>lexsync ships no norm data: licences vary, and the citation is yours to honour. What it does do is
+record what you joined. Every table appears in the materials datasheet with its checksum and its
+per-column coverage, because a norm table can supply the very variable a design manipulates, and a
+selection over columns of unstated origin is not reproducible from the record that exists to make it
+so. Coverage is recorded for a related reason: a word the table does not cover gets a missing value.
+A filter on the column drops it, and the matcher excludes it before selecting whenever the column is a
+matched dimension, a continuous predictor or a control. The run log and the datasheet count those
+exclusions per condition.</p>
+<h2 id="how-matching-works">How matching works<a class="headerlink" href="#how-matching-works" title="Permanent link">&para;</a></h2>
+<p><code>match_stimuli</code> runs in two stages, and understanding the split explains most of its behaviour.
+Both need at least one dimension in <code>match_on</code>. Without one, every candidate lies at distance zero
+from every anchor and the tie-break alone would choose the words, so a design with
+conditions and no <code>match_on</code>, or an empty one, is refused before anything is selected.</p>
+<p>First it standardises. Every matched dimension is z-scored against the whole pool's mean and sample
+standard deviation, so a distance in letters and a distance in Zipf units become comparable. A
+dimension with zero or undefined spread gets a scale of 1, which keeps the distance finite. A
+candidate missing any matched dimension has no place in that space, so every condition's subpool is
+cut to its complete rows before any method runs. The run log and the datasheet count what each
+condition lost, and the <code>shortfall</code> policy below applies to what remains.</p>
+<p>Then it picks an anchor. The first condition in the design is the anchor, and its subpool is sorted
+by the first dimension its <code>define_by</code> mentions, with a byte-order tie-break, after which the
+selection is an even spread across that sorted subpool. Taking the top <em>n</em> would pile the anchor
+into one corner of its own band. The even spread makes the anchor representative of the condition it
+is meant to define.</p>
+<p>The anchor's realised mean and standard deviation on each matched dimension then set a tolerance
+window, mean ± <em>k</em> × SD, where <em>k</em> comes from <code>matching.tolerance_k</code> in the schema and may be
+overridden per dimension by the design. This is the anchored path, so it is what
+<code>standardised_euclidean</code> and <code>mahalanobis</code> do. <code>joint</code> and <code>optimal</code> score cross-condition pairs
+directly and never read <code>tolerance_k</code> at all. The defaults are 2.0 for <code>length</code>, <code>n_density</code> and <code>old20</code>,
+and 1.0 for <code>frequency</code>, and any other dimension takes 2. The design's values are merged over the
+schema's as R's <code>modifyList()</code> merges two lists. A <code>null</code> in the schema is ignored, and a <code>null</code> in
+the design removes the schema's value for that dimension, so either leaves <em>k</em> at 2. Each remaining
+condition is filtered to its window, and then every anchor item is assigned its nearest unused
+candidate by standardised distance.</p>
+<p>The assignment is where determinism is bought. Distances are rounded to nine decimal places before
+they are compared, which absorbs last-bit floating-point differences between the two engines. Each
+anchor item chooses among the candidates not yet used, so no word can be assigned twice. A tie in
+distance is broken by the rule that <code>matching.tie_break</code> names, and then by the lexicon id.</p>
+<p>Exact ties are common, because lengths and neighbourhood counts are whole numbers and frequencies
+carry two decimals. When <code>en_freqcontrast</code> read <code>en.csv</code>, 71 of its 80 anchored picks had another
+candidate at exactly the chosen distance, with a median of eight tied candidates, and the tie-break
+chose the word. Under <code>bytes</code>, the rule of lexsync 0.1, a tie goes to the word whose UTF-8 bytes
+sort first, so a condition decided by ties fills with early-alphabet words. In that design, 61% of
+the low-frequency words began with a or b, against 13% of their candidates, and in <code>en_ndensity</code>'s
+dense condition every word did. A word's initial phoneme biases voice-key measures of naming
+latency (<a href="../references/#kessler-2002">Kessler et al., 2002</a>), and the realised-control report cannot
+show such a skew, because it measures only the matched dimensions.</p>
+<p>Under <code>hash</code>, the default, a tie goes to the smaller SHA-256 digest of <code>lexsync-tie-v1|</code> followed by
+the word. The salt is fixed, so the rule does not depend on the seed, and the digests favour no part
+of the alphabet. On <code>en.csv</code>, the low-frequency share fell to 12.5% and the dense share to 17.5%,
+against 13% and 12% among the candidates, while Cohen's <em>d</em> on every matched dimension of every
+shipped matched design was unchanged. Under either rule, <code>standardised_euclidean</code> and <code>joint</code> give
+the same selection in the two engines, and <code>bytes</code> reproduces the selections of lexsync 0.1. The
+even spreads that pick the anchor's items and a continuous design's items keep the byte order under
+both rules.</p>
+<div class="language-yaml highlight"><pre><span></span><code><span class="nt">matching</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">tie_break</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">bytes</span><span class="w">   </span><span class="c1"># hash (the default) or bytes, in a design or in the schema</span>
+</code></pre></div>
+<p>Two guards are worth knowing about because they turn silent corruption into an error. If a condition
+has fewer candidates inside its window than the anchor has items, the window is relaxed to the whole
+subpool, and <code>verbose=True</code> says so. If even the relaxed subpool is too small, <code>match_stimuli</code> raises.
+Without that check, an exhausted pool would leave an anchor item with no unused candidate to take.</p>
+<p>Both behaviours are policies, and the schema's <code>matching</code> block names them.
+<code>on_insufficient_tolerance</code> governs the window fallback. Its default of <code>relax</code> keeps the behaviour
+just described, while <code>error</code> makes the matcher refuse and say so, which is the honest setting when
+the window is itself the criterion, as it is when reproducing a published study's stated windows.
+<code>shortfall</code> governs what happens when fewer sets than <code>n_per_condition</code> can be selected at all, and
+it defaults to <code>error</code> deliberately, because a smaller set changes the design that was planned. A
+design that can live with fewer sets says so with <code>shortfall: allow</code>. The datasheet then records
+the items each condition holds, and the methods paragraph states them beside the request. Either
+key may be overridden under the design's own <code>matching:</code> block, exactly as <code>tolerance_k</code> may be.</p>
+<h3 id="the-four-methods">The four methods<a class="headerlink" href="#the-four-methods" title="Permanent link">&para;</a></h3>
+<p>The method is set with <code>matching.method</code> in a design, or globally in the schema.</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>What it does</th>
+<th>Conditions</th>
+<th>Cross-engine</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>standardised_euclidean</code></td>
+<td>Greedy nearest neighbour on z-scored dimensions, anchored on the first condition. The default.</td>
+<td>Any number</td>
+<td>Byte-identical</td>
+</tr>
+<tr>
+<td><code>joint</code></td>
+<td>Scores every cross-condition pair and greedily takes the cheapest disjoint ones.</td>
+<td>Exactly two</td>
+<td>Byte-identical</td>
+</tr>
+<tr>
+<td><code>mahalanobis</code></td>
+<td>Nearest neighbour under a covariance-aware distance that down-weights correlated dimensions.</td>
+<td>Any number</td>
+<td>Equivalent, byte-identity not guaranteed</td>
+</tr>
+<tr>
+<td><code>optimal</code></td>
+<td>Selects the <em>n</em> pairs of least summed distance, solved exactly as an assignment problem.</td>
+<td>Exactly two</td>
+<td>Equivalent, byte-identity not guaranteed</td>
+</tr>
+</tbody>
+</table>
+<p><code>joint</code> differs from the default in what it is allowed to discard. The anchored matcher fixes the
+first condition and then finds the best counterpart for each of its items, so a bad anchor item
+drags a bad pair into the set. <code>joint</code> keeps only items that have a good counterpart, which matters
+when the manipulation is confounded with a control, neighbourhood density with word length being the
+standard case. Both conditions are first capped to the 1200 rows nearest the other condition's
+centroid, which keeps the all-pairs cost matrix tractable, and the cap itself is applied to rounded
+distances. Pairs of equal cost, and rows tied at the cap, are ordered by the same <code>tie_break</code> rule
+as the anchored picks.</p>
+<p><code>mahalanobis</code> uses the inverse of the pool's correlation matrix in standardised space as its metric,
+with a small ridge to survive near-collinear dimensions, so that two dimensions measuring much the
+same thing are not counted twice (<a href="../references/#rubin-1980">Rubin, 1980</a>;
+<a href="../references/#stuart-2010">Stuart, 2010</a>). The correlations come from the pool's rows that are
+complete on every matched dimension, and with <em>k</em> matched dimensions the pool needs at least <em>k</em> + 2
+such rows. <code>optimal</code> selects the <em>n</em> disjoint pairs whose summed distance is smallest. Choosing <em>n</em>
+pairs from two pools is the <em>k</em>-cardinality assignment problem, and lexsync solves it exactly by
+padding the cost matrix with dummy rows and columns until every optimal assignment uses exactly <em>n</em>
+real pairs (<a href="../references/#volgenant-2004">Volgenant, 2004</a>). Greedy <code>joint</code> matching can spend a
+hard item's only good counterpart on an item that had alternatives, and <code>optimal</code> cannot, although
+on the pools tested <code>joint</code> came within a few per cent of the optimum. When the conditions overlap,
+a word cannot be paired with itself or used twice. A pair lost that way is replaced by solving again
+over the unused words, and the selection is then no longer guaranteed to have the least summed
+distance. Gu and Rosenbaum (<a href="../references/#gu-1993">1993</a>) compared optimal and greedy pair matching
+of every treated unit, a related problem, and found optimal matching no better at balancing the
+covariates.</p>
+<p>Both of these carry the parity caveat. A matrix inverse and an assignment solver are the two places
+where the R and Python linear-algebra backends can disagree in their last bits, and an assignment
+solver's tie handling differs outright. The engines agree closely, and <code>mahalanobis</code> usually agrees
+exactly, but neither is guaranteed byte-for-byte. <code>optimal</code> in particular tends to select an equally
+optimal but different set. Each run's datasheet records which case applies.</p>
+<p>Comparing them on the same pool shows how little separates them when the pool is generous:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="n">pool</span> <span class="o">=</span> <span class="n">lexsync</span><span class="o">.</span><span class="n">build_pool</span><span class="p">(</span><span class="n">lexicon</span><span class="p">,</span> <span class="p">{</span><span class="s2">"length"</span><span class="p">:</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">],</span> <span class="s2">"frequency"</span><span class="p">:</span> <span class="p">[</span><span class="mf">3.5</span><span class="p">,</span> <span class="mf">7.0</span><span class="p">]})</span>
+<span class="n">design</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">"name"</span><span class="p">:</span> <span class="s2">"methods"</span><span class="p">,</span> <span class="s2">"language"</span><span class="p">:</span> <span class="s2">"english"</span><span class="p">,</span> <span class="s2">"n_per_condition"</span><span class="p">:</span> <span class="mi">40</span><span class="p">,</span>
+    <span class="s2">"conditions"</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"high_frequency"</span><span class="p">,</span> <span class="s2">"define_by"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"frequency"</span><span class="p">:</span> <span class="p">[</span><span class="mf">5.2</span><span class="p">,</span> <span class="mf">7.0</span><span class="p">]}},</span>
+        <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"low_frequency"</span><span class="p">,</span> <span class="s2">"define_by"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"frequency"</span><span class="p">:</span> <span class="p">[</span><span class="mf">3.5</span><span class="p">,</span> <span class="mf">4.4</span><span class="p">]}},</span>
+    <span class="p">],</span>
+    <span class="s2">"match_on"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"length"</span><span class="p">,</span> <span class="s2">"n_density"</span><span class="p">,</span> <span class="s2">"old20"</span><span class="p">],</span>
+<span class="p">}</span>
+
+<span class="k">for</span> <span class="n">method</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"standardised_euclidean"</span><span class="p">,</span> <span class="s2">"joint"</span><span class="p">,</span> <span class="s2">"mahalanobis"</span><span class="p">,</span> <span class="s2">"optimal"</span><span class="p">]:</span>
+    <span class="n">stimuli</span> <span class="o">=</span> <span class="n">lexsync</span><span class="o">.</span><span class="n">match_stimuli</span><span class="p">(</span>
+        <span class="n">pool</span><span class="p">,</span> <span class="p">{</span><span class="o">**</span><span class="n">design</span><span class="p">,</span> <span class="s2">"matching"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"method"</span><span class="p">:</span> <span class="n">method</span><span class="p">}},</span> <span class="n">schema</span>
+    <span class="p">)</span>
+    <span class="n">report</span> <span class="o">=</span> <span class="n">lexsync</span><span class="o">.</span><span class="n">match_report</span><span class="p">(</span>
+        <span class="n">stimuli</span><span class="p">,</span> <span class="p">[</span><span class="s2">"length"</span><span class="p">,</span> <span class="s2">"n_density"</span><span class="p">,</span> <span class="s2">"old20"</span><span class="p">],</span> <span class="n">schema</span>
+    <span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">method</span><span class="p">,</span> <span class="p">[</span><span class="nb">round</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">report</span><span class="p">[</span><span class="s2">"comparisons"</span><span class="p">][</span><span class="s2">"cohens_d"</span><span class="p">]])</span>
+</code></pre></div>
+<div class="result">
+<div class="language-text highlight"><pre><span></span><code>standardised_euclidean [0.023, 0.04, 0.02]
+joint [0.0, 0.0, 0.0]
+mahalanobis [0.0, 0.023, 0.016]
+optimal [0.0, 0.0, 0.0]
+</code></pre></div>
+</div>
+<p>The two pairwise methods reach exact equality on all three controls here, because a pool of this size
+contains, for most anchor words, a low-frequency counterpart with the same length, the same
+neighbourhood count and the same OLD20. The default and the covariance-aware method leave a
+standardised difference in the second decimal place. None of these differences would matter to a
+result. The default remains the default because it is byte-identical across engines and generalises
+past two conditions, and that is the trade lexsync makes: an algorithm is adopted as a default only
+if it can keep the guarantee.</p>
+<h2 id="reading-the-realised-control">Reading the realised control<a class="headerlink" href="#reading-the-realised-control" title="Permanent link">&para;</a></h2>
+<p><code>match_report</code> is what turns a selection into a claim you can defend. It returns a dictionary with
+two frames. <code>descriptives</code> gives n, mean, SD, minimum, median and maximum per condition per
+dimension. <code>comparisons</code> contrasts every pair of conditions on each dimension. The rows against the
+first condition, the anchor, come first, and every further pair follows in condition order, with
+the earlier condition of the pair named in <code>reference</code>. A 2 x 2 design such as <code>en_andrews_repro</code>
+therefore shows the contrasts within each factor, such as its two low-frequency cells, beside the
+three against its first cell.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="n">stimuli</span> <span class="o">=</span> <span class="n">lexsync</span><span class="o">.</span><span class="n">match_stimuli</span><span class="p">(</span><span class="n">pool</span><span class="p">,</span> <span class="n">design</span><span class="p">,</span> <span class="n">schema</span><span class="p">)</span>
+<span class="n">report</span> <span class="o">=</span> <span class="n">lexsync</span><span class="o">.</span><span class="n">match_report</span><span class="p">(</span>
+    <span class="n">stimuli</span><span class="p">,</span> <span class="p">[</span><span class="s2">"length"</span><span class="p">,</span> <span class="s2">"frequency"</span><span class="p">,</span> <span class="s2">"n_density"</span><span class="p">,</span> <span class="s2">"old20"</span><span class="p">],</span> <span class="n">schema</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">report</span><span class="p">[</span><span class="s2">"comparisons"</span><span class="p">]</span><span class="o">.</span><span class="n">to_string</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+</code></pre></div>
+<div class="result">
+<div class="language-text highlight"><pre><span></span><code>    condition      reference dimension  cohens_d  d_ci_low  d_ci_high  var_ratio  tost_p  equivalent  mean_diff role
+low_frequency high_frequency    length     0.023    -0.349      0.396      0.892  0.0181        True      0.025 None
+low_frequency high_frequency frequency     5.114     4.345      5.883      0.420  1.0000       False      1.570 None
+low_frequency high_frequency n_density     0.040    -0.332      0.413      0.816  0.0216        True      0.175 None
+low_frequency high_frequency     old20     0.020    -0.353      0.392      0.824  0.0174        True      0.007 None
+</code></pre></div>
+</div>
+<p>Each row carries the statistics below, each answering something the others cannot.</p>
+<p><code>cohens_d</code> is the standardised mean difference, using the pooled standard deviation. It is the mean
+of the condition named in <code>reference</code> minus the mean of the condition in that row, so a positive
+<em>d</em> means the reference scores higher. A condition with a single item has no spread, so <em>d</em> and its
+interval are then left empty. <code>d_ci_low</code> and <code>d_ci_high</code> bound it with the 90%
+interval that goes with a two one-sided tests decision at the .05 level
+(<a href="../references/#lakens-2017">Lakens, 2017</a>), built from the large-sample standard error of <em>d</em>
+(<a href="../references/#hedges-1985">Hedges &amp; Olkin, 1985</a>). That standard error grows with <em>d</em>, so the
+interval on the manipulated dimension is much wider than on a well-matched control. The interval is
+reported alongside the verdict because it keeps the dependence on item count visible: with few items
+it is wide, whatever the point estimate. Its upper limit is the largest imbalance still consistent
+with the stimuli you have. TOST tests the raw mean difference, so the interval is slightly wider than
+the one its decision implies, and for a limit close to the bound, <code>tost_p</code> is the verdict.</p>
+<p><code>tost_p</code> and <code>equivalent</code> come from two one-sided tests against the schema's <code>equivalence.bound_d</code>,
+0.5 by default, at <code>equivalence.alpha</code>. A non-significant <em>t</em>-test says the data failed to show a
+difference, which is not the same as showing there is none. TOST says the difference is smaller than
+the bound you declared uninteresting (<a href="../references/#lakens-2017">Lakens, 2017</a>). The bound of 0.5 is
+a convention and not a default of Lakens's, who asks for the bound to be justified for the study at
+hand, so set one you can defend. The verdict also depends on the number of items: at a bound of 0.5
+and an alpha of .05, no dimension that varies can pass with fewer than 23 items per condition, even
+when the conditions are identical.</p>
+<p>Both statistics treat the selected items as a sample from a larger population, which they are not.
+<a href="../references/#sassenhagen-2016">Sassenhagen and Alday (2016)</a> point out that a test on stimuli
+concerns a closed population (the items you chose). They recommend describing the stimuli, which the
+descriptives do, and entering potential confounds in the analysis as covariates.</p>
+<p>The datasheet's Methods paragraph follows that advice. It describes the realised control first: the
+largest difference on a matched dimension, in that dimension's unit, with <em>d</em> and its interval. The
+interval is labelled by the schema's alpha, 90% at .05 and 99% at .005. Raw differences in different
+units cannot be ranked against each other, so the largest is the one with the largest |<em>d</em>|. The two
+one-sided tests come second, as a check, with the number of matched comparisons they supported. When
+every condition holds fewer items than the bound needs, the paragraph says that no dimension that
+varies can pass, however well matched. It then names, largest first, up to five comparisons of a
+dimension the design did not control whose |<em>d</em>| exceeds the bound, such as the syllable difference
+in <code>en_ndensity</code>, or says that none does. The suggested model enters the matched dimensions as
+centred covariates.</p>
+<p><code>var_ratio</code> is the condition's variance over the reference's. It is there because everything above
+is about means, and two conditions can share a mean while differing in spread, which still confounds
+(<a href="../references/#armstrong-2012">Armstrong et al., 2012</a>;
+<a href="../references/#austin-2009">Austin, 2009</a>). A ratio near 1 is balanced. A common heuristic treats
+anything outside roughly [0.5, 2] as unequal spread. It returns <code>None</code> when a variance is undefined.</p>
+<p><code>mean_diff</code> is the same contrast in the dimension's own unit: the reference mean minus the
+condition mean, in letters, Zipf units, neighbours or syllables, to three places. It is defined
+whenever each condition has an item, so it remains when <em>d</em> is left empty.</p>
+<p><code>role</code> says what the design did with the dimension in that pair. A dimension is <code>manipulated</code> when
+the two conditions' <code>define_by</code> windows on it differ, <code>controlled</code> when the design matches on it,
+and <code>uncontrolled</code> otherwise. The role belongs to the pair: in <code>en_andrews_repro</code>, frequency is
+manipulated between a high- and a low-frequency cell and uncontrolled between the two
+high-frequency cells, which share the window [5, 7]. <code>run_pipeline</code> derives the roles from the
+design and passes them to <code>match_report</code> as <code>roles</code>, a function of the row's condition, reference
+and dimension. Called without it, as above, <code>match_report</code> leaves <code>role</code> empty.</p>
+<p>The pipeline reports every dimension lexsync knows for the items, whether or not the design matches
+on it. Length, frequency, N, OLD20, syllables and bigram frequency come first, then the matched
+dimensions, every <code>define_by</code> dimension and every joined norm column, so a norm that defines the
+conditions appears as the manipulated dimension it is. Bigram frequency is computed for the report when the stimuli
+lack it, which leaves the stimuli file and the selection as they were. A dimension with no numeric
+value among the items, such as <code>n_syllables</code> for Chinese words, is left out. The uncontrolled rows
+are where a confound shows. In <code>en_ndensity</code>, the dense words have fewer estimated syllables than
+the sparse ones (<em>d</em> = -0.53, 90% CI [-0.79, -0.26]), which a report of the matched dimensions
+alone could not reveal.</p>
+<p>Two smaller functions round this out. <code>describe_stimuli</code> gives the descriptives alone, grouped by any
+column you like, <code>condition</code> included. <code>balance_check</code> reports columns whose value counts are
+unequal, which is how the pipeline notices an unbalanced condition and writes it into the run log.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="nb">print</span><span class="p">(</span><span class="n">lexsync</span><span class="o">.</span><span class="n">balance_check</span><span class="p">(</span><span class="n">stimuli</span><span class="p">,</span> <span class="s2">"condition"</span><span class="p">))</span>    <span class="c1"># empty when balanced</span>
+</code></pre></div>
+<div class="result">
+<div class="language-text highlight"><pre><span></span><code>[]
+</code></pre></div>
+</div>
+<h2 id="continuous-designs">Continuous designs<a class="headerlink" href="#continuous-designs" title="Permanent link">&para;</a></h2>
+<p>Splitting a continuous predictor into high and low conditions throws away information, costs power
+and can introduce selection artefacts (<a href="../references/#kuperman-2015">Kuperman, 2015</a>;
+<a href="../references/#liben-nowell-2019">Liben-Nowell et al., 2019</a>). A design can replace its
+<code>conditions</code> with a <code>continuous</code> block, and select a set that spreads over the predictor's ranks
+while windows trim the controls' tails, for analysis by regression or a mixed model.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="n">design</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">"name"</span><span class="p">:</span> <span class="s2">"continuous"</span><span class="p">,</span> <span class="s2">"language"</span><span class="p">:</span> <span class="s2">"english"</span><span class="p">,</span> <span class="s2">"n_per_condition"</span><span class="p">:</span> <span class="mi">60</span><span class="p">,</span>
+    <span class="s2">"continuous"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"predictor"</span><span class="p">:</span> <span class="s2">"frequency"</span><span class="p">,</span>
+        <span class="s2">"controls"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"length"</span><span class="p">,</span> <span class="s2">"n_density"</span><span class="p">,</span> <span class="s2">"old20"</span><span class="p">]</span>
+    <span class="p">},</span>
+    <span class="s2">"match_on"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"length"</span><span class="p">,</span> <span class="s2">"n_density"</span><span class="p">,</span> <span class="s2">"old20"</span><span class="p">],</span>
+    <span class="s2">"matching"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"tolerance_k"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"length"</span><span class="p">:</span> <span class="mf">1.5</span><span class="p">,</span> <span class="s2">"n_density"</span><span class="p">:</span> <span class="mf">1.5</span><span class="p">,</span> <span class="s2">"old20"</span><span class="p">:</span> <span class="mf">1.5</span><span class="p">}</span>
+    <span class="p">},</span>
+<span class="p">}</span>
+<span class="n">pool</span> <span class="o">=</span> <span class="n">lexsync</span><span class="o">.</span><span class="n">build_pool</span><span class="p">(</span><span class="n">lexicon</span><span class="p">,</span> <span class="p">{</span><span class="s2">"length"</span><span class="p">:</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">8</span><span class="p">],</span> <span class="s2">"frequency"</span><span class="p">:</span> <span class="p">[</span><span class="mf">3.8</span><span class="p">,</span> <span class="mf">7.0</span><span class="p">]})</span>
+<span class="n">stimuli</span> <span class="o">=</span> <span class="n">lexsync</span><span class="o">.</span><span class="n">select_continuous_stimuli</span><span class="p">(</span><span class="n">pool</span><span class="p">,</span> <span class="n">design</span><span class="p">,</span> <span class="n">schema</span><span class="p">)</span>
+<span class="n">report</span> <span class="o">=</span> <span class="n">lexsync</span><span class="o">.</span><span class="n">match_report_continuous</span><span class="p">(</span>
+    <span class="n">stimuli</span><span class="p">,</span> <span class="s2">"frequency"</span><span class="p">,</span> <span class="p">[</span><span class="s2">"length"</span><span class="p">,</span> <span class="s2">"n_density"</span><span class="p">,</span> <span class="s2">"old20"</span><span class="p">],</span> <span class="n">schema</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">report</span><span class="p">[</span><span class="s2">"comparisons"</span><span class="p">]</span><span class="o">.</span><span class="n">to_string</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+</code></pre></div>
+<div class="result">
+<div class="language-text highlight"><pre><span></span><code>dimension      role  pearson_r  predictor_span    sd  sd_ratio  window_low  window_high
+frequency predictor        NaN            3.05 0.549     0.608         NaN          NaN
+   length   control     -0.248            3.05 1.111     0.739       3.512        8.355
+n_density   control      0.069            3.05 2.857     0.597      -5.396       12.663
+    old20   control     -0.129            3.05 0.458     0.757       1.118        3.181
+</code></pre></div>
+</div>
+<p>The selection is two deterministic passes, with no per-item matching and no random numbers. An even
+spread over the predictor's ranks across the whole pool sets a tolerance window on each control. The
+pool is then filtered to those windows, and a second even spread over the ranks of the filtered pool
+is the selection. Because
+both passes reuse the matcher's even-spread primitive, the two engines select byte-identical stimuli
+here as well.</p>
+<p>Because the spread is over ranks and not values, the selection follows the pool's distribution of
+the predictor. In the <code>en_freqcontinuous</code> demonstration its quantiles lie within 0.06 of the pool's,
+and 95% of the items fall in the lower half of the frequency range, since frequent words are rare in
+any lexicon. The windows trim the controls' tails without holding the controls constant.</p>
+<p><code>match_report_continuous</code> returns the same <code>{descriptives, comparisons}</code> shape as <code>match_report</code>, so
+the pipeline and the datasheet stay uniform, but the comparisons describe a predictor. Its realised
+span replaces the effect size, and each control's Pearson
+correlation with the predictor replaces the equivalence verdict. Those correlations are what you
+report: at <em>k</em> = 1.5 the three controls sit between −0.248 and 0.069, and a control that stays
+correlated belongs in the model as a covariate. Tightening <em>k</em> does not reliably lower the
+correlations. In <code>en_freqcontinuous</code>, <em>k</em> = 1.0 gives <em>r</em> = 0.070 between frequency and
+<code>n_density</code>, against 0.301 at <em>k</em> = 1.5, but on the unscreened <code>en.csv</code> it gave 0.213 against
+−0.049. At <em>k</em> = 0.25 only 30 items fall within the windows, fewer than the 80 the design needs, so
+the selector relaxes them to the whole pool.</p>
+<p>Each row also gives the dimension's realised SD as <code>sd</code>. For the predictor, <code>sd_ratio</code> sets it
+against the SD of as many values spaced evenly over the same range. That SD is
+<code>(max - min) * sqrt(n * (n + 1) / 12) / (n - 1)</code>, which approaches <code>(max - min) / sqrt(12)</code> as <em>n</em>
+grows, so an even spread has a ratio of 1 at any size. A ratio below 1 means the items bunch
+together more than an even spread would: <code>en_freqcontinuous</code> has 0.59, an SD of 0.53 against 0.90.
+A ratio above 1 means they gather towards the ends of the range. For a control, <code>sd_ratio</code> sets the
+realised SD against the SD of the pool the selector drew from, and <code>window_low</code> and <code>window_high</code>
+give the window its first pass set. In <code>en_freqcontinuous</code>, length keeps 0.76 of the pool's SD, so
+the window trims the tails of a control and leaves much of its spread. The windows come from the
+audit <code>select_continuous_stimuli</code> attaches to its result, which <code>match_report_continuous</code> reads
+unless it is given one as <code>audit</code>. A window that held too few items and was widened to the whole
+pool is recorded in the datasheet's <code>window_relaxations</code>. The datasheet's Methods paragraph sets the
+predictor's SD against that of an even spread, gives each control's window and its realised SD
+against the pool's, and says when the windows were widened.</p>
+<p><code>match_on</code> must equal <code>continuous.controls</code>, the predictor must not appear among the controls, and
+there must be at least one control. All three are checked, and a design that breaks one of them
+raises.</p>
+<h2 id="items-as-a-random-factor">Items as a random factor<a class="headerlink" href="#items-as-a-random-factor" title="Permanent link">&para;</a></h2>
+<p>A stimulus set is a sample from a language, not a fixed property of it, and analysing one set as if
+it were fixed over-generalises (<a href="../references/#clark-1973">Clark, 1973</a>;
+<a href="../references/#yarkoni-2022">Yarkoni, 2022</a>). <code>resample_stimuli</code> produces several disjoint,
+independently matched sets from one pool, so a study can run a different sample per participant
+group, or show that an effect survives a change of items.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="n">pool</span> <span class="o">=</span> <span class="n">lexsync</span><span class="o">.</span><span class="n">build_pool</span><span class="p">(</span><span class="n">lexicon</span><span class="p">,</span> <span class="p">{</span><span class="s2">"length"</span><span class="p">:</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">],</span> <span class="s2">"frequency"</span><span class="p">:</span> <span class="p">[</span><span class="mf">3.5</span><span class="p">,</span> <span class="mf">7.0</span><span class="p">]})</span>
+<span class="n">design</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">"name"</span><span class="p">:</span> <span class="s2">"resample"</span><span class="p">,</span> <span class="s2">"language"</span><span class="p">:</span> <span class="s2">"english"</span><span class="p">,</span> <span class="s2">"n_per_condition"</span><span class="p">:</span> <span class="mi">20</span><span class="p">,</span>
+    <span class="s2">"conditions"</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"high_frequency"</span><span class="p">,</span> <span class="s2">"define_by"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"frequency"</span><span class="p">:</span> <span class="p">[</span><span class="mf">5.2</span><span class="p">,</span> <span class="mf">7.0</span><span class="p">]}},</span>
+        <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"low_frequency"</span><span class="p">,</span> <span class="s2">"define_by"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"frequency"</span><span class="p">:</span> <span class="p">[</span><span class="mf">3.5</span><span class="p">,</span> <span class="mf">4.4</span><span class="p">]}},</span>
+    <span class="p">],</span>
+    <span class="s2">"match_on"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"length"</span><span class="p">,</span> <span class="s2">"n_density"</span><span class="p">,</span> <span class="s2">"old20"</span><span class="p">],</span>
+<span class="p">}</span>
+<span class="n">stimuli</span> <span class="o">=</span> <span class="n">lexsync</span><span class="o">.</span><span class="n">resample_stimuli</span><span class="p">(</span><span class="n">pool</span><span class="p">,</span> <span class="n">design</span><span class="p">,</span> <span class="n">schema</span><span class="p">,</span> <span class="n">n_sets</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">stimuli</span><span class="p">[</span><span class="s2">"word"</span><span class="p">]</span><span class="o">.</span><span class="n">nunique</span><span class="p">(),</span> <span class="nb">len</span><span class="p">(</span><span class="n">stimuli</span><span class="p">))</span>
+</code></pre></div>
+<div class="result">
+<div class="language-text highlight"><pre><span></span><code>120 120
+</code></pre></div>
+</div>
+<p>Each replicate is fully matched in its own right, drawn from the pool with every earlier replicate's
+items removed, and marked with a <code>replicate</code> column. No word is reused, which the equal counts above
+confirm. In a design file this is <code>resample: {n_sets: 3}</code>, and the counterbalancer then treats each
+replicate as an independent set and numbers trial order within it. The whole thing stays
+deterministic because the matcher is deterministic and the used-item set evolves identically in both
+engines.</p>
+<p>Expect this to exhaust a small pool. Three sets of 20 per condition need 120 distinct words that all
+satisfy their bands, and a pool that comfortably supports one set may raise on the third.</p>
+<h2 id="pseudowords">Pseudowords<a class="headerlink" href="#pseudowords" title="Permanent link">&para;</a></h2>
+<p>Lexical decision needs non-words, and the usual difficulty is that they must be orthographically
+plausible without being real. <code>build_lexdec_stimuli</code> draws real words by an even spread across the
+byte-ordered pool, then generates a length-matched pseudoword for each.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="n">pool</span> <span class="o">=</span> <span class="n">lexsync</span><span class="o">.</span><span class="n">build_pool</span><span class="p">(</span><span class="n">lexicon</span><span class="p">,</span> <span class="p">{</span><span class="s2">"length"</span><span class="p">:</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">7</span><span class="p">],</span> <span class="s2">"frequency"</span><span class="p">:</span> <span class="p">[</span><span class="mf">3.5</span><span class="p">,</span> <span class="mf">6.0</span><span class="p">]})</span>
+<span class="n">stimuli</span> <span class="o">=</span> <span class="n">lexsync</span><span class="o">.</span><span class="n">build_lexdec_stimuli</span><span class="p">(</span>
+    <span class="n">pool</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">reference_words</span><span class="o">=</span><span class="n">lexicon</span><span class="p">[</span><span class="s2">"word"</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span>
+    <span class="n">stimuli</span><span class="p">[[</span><span class="s2">"target"</span><span class="p">,</span> <span class="s2">"condition"</span><span class="p">,</span> <span class="s2">"length"</span><span class="p">,</span> <span class="s2">"set"</span><span class="p">]]</span>
+    <span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">to_string</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="p">)</span>
+</code></pre></div>
+<div class="result">
+<div class="language-text highlight"><pre><span></span><code> target condition  length  set
+abandon      word       7    1
+ cannot      word       6    2
+efforts      word       7    3
+</code></pre></div>
+</div>
+<p>The presented string is <code>target</code>, the conditions are <code>word</code> and <code>pseudoword</code>, and <code>set</code> pairs each
+word with its non-word twin. <code>reference_words</code> should be the full lexicon: it supplies the bigram
+statistics and the list of real forms a pseudoword must avoid, and defaults to the pool when
+omitted, which is rarely what you want.</p>
+<p>Two methods are available, chosen per design under <code>items.generation.method</code>.</p>
+<p><code>letter_substitution</code>, the default, changes as few letters as possible subject to three constraints:
+every resulting bigram must be attested in the corpus, the form must not be in the reference list or
+already generated, and the length must be preserved exactly. Single substitutions are searched
+first, then pairs as a fallback. Among the legal candidates the most bigram-typical wins, with a
+byte-order tie-break.</p>
+<p><code>subsyllabic</code> splits each word into onset, nucleus and coda constituents and swaps whole
+constituents for attested alternatives of the same role and length, so the pseudowords keep their
+syllabic structure. Codas and nuclei are changed before onsets, which carry the most identifying
+orthography. Up to ceil(2<em>k</em>/3) of a word's <em>k</em> constituents are replaced, each swap preserves
+length, and a word with no legal swap falls back to letter substitution, so every word yields a
+pseudoword. It is a deterministic orthographic approximation of Wuggy
+(<a href="../references/#keuleers-2010">Keuleers &amp; Brysbaert, 2010</a>), and it differs from Wuggy in more than
+the phonological model. Wuggy matches the template's transition frequencies, matches letter length
+by default and has orthographic modules for several languages, and by default it keeps two thirds of
+the segments where lexsync replaces up to two thirds. What lexsync gains is cross-engine
+reproducibility.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="n">subsyllabic</span> <span class="o">=</span> <span class="n">lexsync</span><span class="o">.</span><span class="n">build_lexdec_stimuli</span><span class="p">(</span>
+    <span class="n">pool</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">reference_words</span><span class="o">=</span><span class="n">lexicon</span><span class="p">[</span><span class="s2">"word"</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span> <span class="n">method</span><span class="o">=</span><span class="s2">"subsyllabic"</span><span class="p">)</span>
+</code></pre></div>
+<div class="result"></div>
+<p>In both methods, the scoring picks the most bigram-typical candidate and does not match the base word,
+so the pseudowords come out more bigram-typical than their words. The difference in mean bigram
+probability is about <em>d</em> = −1.0, words minus pseudowords, in <code>en_lexdec</code> and <code>en_lexdec_wuggy</code> alike.
+Read the generated forms before a study runs.</p>
+<p>Both generators process base words in byte order, so the set of already-used pseudowords evolves
+identically in R and Python, and both select byte-identical stimuli. Their alphabet is derived from
+the reference. It is the set of letters the reference words attest, in UTF-8 byte order, so a
+Spanish lexicon lends them <code>á</code>, <code>é</code>, <code>í</code>, <code>ó</code>, <code>ú</code>, <code>ü</code> and <code>ñ</code>, which one word in six carries in a
+typical Spanish band. <code>build_lexdec_stimuli</code> keeps the pool's words written wholly in those
+letters, and a generated design's datasheet counts these words in the band as its candidates. A
+word with a hyphen, an apostrophe or a digit is left out. <code>segment_subsyllabic</code> takes its nuclei
+from the vowels of the syllable estimate, whatever their accent, and a word without one, such as a
+Russian or Greek word, goes down the letter-substitution path. Chinese is refused, since Unicode
+counts its characters as letters but a form made by swapping one character for another is of
+unknown validity as a pseudoword. In the Spanish demonstration, <code>design_es_lexdec.yaml</code>, 8 of the 60 words and 4 of
+the pseudowords hold a letter outside a to z, and the pseudowords are checked against wordfreq's
+Spanish word list.</p>
+<p>The stimuli give each pseudoword its <code>base</code> word and its <code>edit_distance</code> from it, the Levenshtein
+distance, and give a word its own form and 0. A generated design's report compares the words with
+their pseudowords on length, which they share by construction, and on bigram frequency, N and
+OLD20, which the generator does not hold. The report marks length as controlled and the other
+three as uncontrolled, and it computes those three against the lexicon on a copy of the stimuli.
+Since the most bigram-plausible candidate wins, the pseudowords tend to be more bigram-typical than
+their words: in <code>en_lexdec</code> the difference is <em>d</em> = -0.97 (90% CI [-1.29, -0.65]).</p>
+<p>A pseudoword is a non-word only relative to the reference words, so a real word too rare for the
+lexicon can still come out as one. The bundled English and Spanish lexica stop at Zipf 2.95 and
+3.11, and the English demonstrations produced crier and pall this way until they named the list
+below. <code>exclude</code> names further known word forms that no pseudoword may equal. They are trimmed,
+lower-cased and put in NFC like the lexicon's words, and they take no part in the bigram
+statistics. In a design the list goes under <code>items.generation.exclude</code>, and each entry is a file
+with one form per line, a CSV file with a <code>word</code> column, or a registry corpus already fetched into
+the cache:</p>
+<div class="language-yaml highlight"><pre><span></span><code><span class="nt">items</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">source</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">generate</span>
+<span class="w">  </span><span class="nt">lexicon</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">corpora/derived/en_v2.csv</span>
+<span class="w">  </span><span class="nt">generation</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">exclude</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">corpora/derived/en_known_forms.txt</span><span class="p p-Indicator">]</span>
+</code></pre></div>
+<p>Each file must be UTF-8 text, and no form in a one-form-per-line file may hold a tab, a comma or a
+semicolon. Such a file is a table whose rows would each be kept whole as a form that matches nothing,
+so it is refused. The datasheet records each list with its checksum and the number of forms it
+holds, and the Methods paragraph names it. In the repository, <code>python corpora/fetch_corpora.py --known-forms en es</code> writes
+wordfreq's fuller lists to <code>corpora/derived/</code> (289,023 English and 334,625 Spanish forms at Zipf 1.0
+or above). They are not shipped in the package.</p>
+<p>A long list costs the pseudowords some of their form. The generators' only check on form is that
+each letter pair occurs somewhere in the lexicon, so with fewer candidates left the most
+bigram-typical one can be ill-formed. In the English demonstrations, 13 of the 140 pseudowords are
+ill-formed, among them fdes, gngs and ntena. Each lacks a vowel or opens or closes on a letter pair
+that opens or closes no screened English word of three letters or more with a vowel. Without the
+list, the same designs give 5 such pseudowords. Read the generated forms before a study runs.</p>
+<p><code>generate_pseudowords</code> and <code>make_pseudoword</code> are available directly if you want the forms without the
+lexical-decision scaffolding around them.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="n">pairs</span> <span class="o">=</span> <span class="n">lexsync</span><span class="o">.</span><span class="n">generate_pseudowords</span><span class="p">(</span>
+    <span class="p">[</span><span class="s2">"house"</span><span class="p">,</span> <span class="s2">"table"</span><span class="p">],</span> <span class="n">lexicon</span><span class="p">[</span><span class="s2">"word"</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">pairs</span><span class="o">.</span><span class="n">to_string</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+</code></pre></div>
+<div class="result">
+<div class="language-text highlight"><pre><span></span><code>base_word pseudoword
+    house      houre
+    table      talle
+</code></pre></div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../api/" class="md-footer__link md-footer__link--prev" aria-label="Previous: API reference">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                API reference
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../experiments-and-triggers/" class="md-footer__link md-footer__link--next" aria-label="Next: Experiments and triggers">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Experiments and triggers
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      <span class="mrd-footer-badges"> <a href="https://pypi.org/project/lexsync/"><img src="https://img.shields.io/pypi/v/lexsync" alt="PyPI"></a> <a href="https://github.com/pablobernabeu/lexsync/actions/workflows/python-tests.yaml"><img src="https://github.com/pablobernabeu/lexsync/actions/workflows/python-tests.yaml/badge.svg" alt="python-tests"></a> <a href="https://lifecycle.r-lib.org/articles/stages.html#experimental"><img src="https://img.shields.io/badge/lifecycle-experimental-orange.svg" alt="Lifecycle: experimental"></a> <a href="https://opensource.org/license/MIT"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT"></a> </span> Developed by <a href="https://pablobernabeu.github.io">Pablo Bernabeu</a>. Open, reproducible research software in R and Python. Released under the <a href="https://pablobernabeu.github.io/lexsync/python/licence/">MIT licence</a>.
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.indexes", "navigation.top", "navigation.footer", "toc.follow", "content.code.copy", "search.suggest", "search.highlight"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": "0.1.1"}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="../assets/_markdown_exec_pyodide.js"></script>
+      
+    
+  </body>
+</html>

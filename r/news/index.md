@@ -1,0 +1,1810 @@
+# Changelog
+
+## lexsync (development version)
+
+- Design, schema and registry files are read as UTF-8 whatever the
+  session’s character type.
+  [`yaml::read_yaml()`](https://yaml.r-lib.org/reference/read_yaml.html)
+  converted each file to the session’s encoding, so under the C locale,
+  as in a container or a batch job without a UTF-8 locale, a file
+  stopped at its first accented letter: `config/design_es_lexdec.yaml`
+  read as an empty design,
+  [`list_corpora()`](https://pablobernabeu.github.io/lexsync/r/reference/list_corpora.md)
+  and
+  [`fetch_corpus()`](https://pablobernabeu.github.io/lexsync/r/reference/fetch_corpus.md)
+  failed on the bundled registry’s citations, and the datasheet left out
+  a cached corpus’s citation without a word. A file that is not UTF-8 is
+  now refused, as the Python engine refuses it, where it used to be cut
+  short with a warning, and a literal block scalar that ends a file
+  keeps its final line break, as it does in Python.
+
+- The hash keys behind the trial order, list balancing, jitter and the
+  tie-break between candidates are UTF-8 in every locale. Under the C
+  locale, [`paste()`](https://rdrr.io/r/base/paste.html) turned a
+  latin1-marked condition label into escape text and
+  [`enc2utf8()`](https://rdrr.io/r/base/Encoding.html) did the same to
+  an unmarked one, so such labels ranked by other digests than in the
+  Python engine. The 0.1.0 entry below that says a latin1-marked label
+  “can no longer rank by different digests” held in a UTF-8 session
+  only. A run under the C locale now writes the stimuli, reports and
+  experiments of the Spanish and Chinese demonstrations byte for byte.
+
+- [`list_corpora()`](https://pablobernabeu.github.io/lexsync/r/reference/list_corpora.md)
+  and
+  [`fetch_corpus()`](https://pablobernabeu.github.io/lexsync/r/reference/fetch_corpus.md)
+  refuse a `registry_path` that does not exist with lexsync’s own
+  message, not the connection error
+  [`file()`](https://rdrr.io/r/base/connections.html) gave. The Python
+  twin read whichever registry its search found next.
+
+- [`resample_stimuli()`](https://pablobernabeu.github.io/lexsync/r/reference/resample_stimuli.md)
+  and
+  [`validate_design()`](https://pablobernabeu.github.io/lexsync/r/reference/validate_design.md)
+  refuse a `resample.n_sets` that is not a whole number of at least 1,
+  the rule `n_per_condition` follows. A fractional count was truncated
+  in silence, a logical or a quoted number was taken as a count, and
+  zero gave an empty selection.
+
+- [`describe_stimuli()`](https://pablobernabeu.github.io/lexsync/r/reference/describe_stimuli.md)
+  refuses a dimension or a grouping column the stimuli do not carry, and
+  so do
+  [`match_report()`](https://pablobernabeu.github.io/lexsync/r/reference/match_report.md)
+  and
+  [`match_report_continuous()`](https://pablobernabeu.github.io/lexsync/r/reference/match_report_continuous.md),
+  which are built on it. A misspelt dimension gave a table of missing
+  values with an `n` of 0, which looked complete. The pipeline reports
+  only the columns it has, so no run is affected.
+
+- The licence notice for the bundled CC BY-SA lexica is installed with
+  the package, as `COPYRIGHTS`. R does not install `LICENSE.note`, which
+  the `Copyright` field named, so binary installations carried the
+  lexica without it. `LICENSE.note` now points to `inst/COPYRIGHTS`, and
+  the `Copyright` field, the citation footer and the About guide name
+  the installed file.
+
+- The spelling test fails a check run with `NOT_CRAN` set, as in
+  `devtools::check()` and on GitHub Actions, when the help pages, the
+  vignettes, the README, this file or the package description use a word
+  found neither in the British English dictionary nor in
+  `inst/WORDLIST`. It used to list such words and carry on, so a
+  misspelling left only a NOTE, which does not fail a run. CRAN and a
+  plain `R CMD check` still skip the test. The documentation has no such
+  word today, so the word list is unchanged.
+
+- The datasheet records the materials source, the stimuli file and every
+  artefact with forward slashes, as the Python engine does. A run given
+  Windows paths recorded them with backslashes.
+
+- The apps’ download bundles reproduce their own record. The apps ran a
+  temporary copy of the design with absolute paths and then bundled the
+  displayed design, so the bundled datasheet’s design checksum matched
+  no file in the bundle, and the datasheet and run logs exposed the
+  user’s home and temporary directories. They now run the exported
+  command in a folder laid out like the bundle, and the Download tab
+  archives that folder, with the outputs under `output/`. Rerunning the
+  exported code in the unzipped folder rewrites them with the same
+  bytes, run logs apart. The PsychoPy and OpenSesame downloads are zip
+  archives holding the tables those experiments load, and each app
+  removes a run’s folder once its results leave the screen.
+
+- The Shiny app’s presets set the matched dimensions and the matching
+  method, as the Streamlit app’s presets do. Its neighbourhood preset
+  matched on N, the dimension it manipulates, and on OLD20, a close
+  correlate of N, and it left length unmatched. Both apps now warn when
+  ‘Match on’ names a dimension whose windows differ between conditions,
+  and neither runs a factorial design with nothing to match on. Their
+  command lines quote the design file’s name and run in `cmd.exe` and
+  Windows PowerShell, and the Streamlit app’s R line now passes the
+  `outdir` that
+  [`run_pipeline()`](https://pablobernabeu.github.io/lexsync/r/reference/run_pipeline.md)
+  requires. The interval column is labelled by the configured alpha, and
+  the sentence under the exported code says that the engines agree byte
+  for byte only when the run’s datasheet says so. The Shiny method
+  selector carries the Streamlit app’s note on `mahalanobis` and
+  `optimal`. Both apps open on `en_v2`, the English lexicon screened
+  against SUBTLEX-US, and keep only its unmarked forms unless ‘Screened
+  forms only’ is cleared, as the shipped English designs do. A session
+  left at its defaults therefore selects different words from before.
+  The Streamlit app no longer passes `use_container_width`, an argument
+  Streamlit is removing, and needs Streamlit 1.49 or later.
+
+- `counterbalance.max_run` caps runs of one condition, or of one value
+  of any column named in `counterbalance.run_on`, in the trial order.
+  [`counterbalance()`](https://pablobernabeu.github.io/lexsync/r/reference/counterbalance.md)
+  repairs the seeded order deterministically, taking at each step the
+  earliest trial in it that keeps the limit and leaves the rest of the
+  list able to keep it, so it refuses only a limit no order can meet,
+  with a message giving the counts. A missing value counts as a value of
+  its own. With fillers, the limit applies to the order they are
+  interleaved in, and the practice trials keep it on their own. The
+  datasheet records the limit and the longest run realised in each
+  presentation version as `counterbalancing$max_run`, a field of
+  datasheet format 1.2, and the Methods text states it, citing van
+  Casteren and Davis (2006). The shipped designs hold runs of up to
+  eleven trials of one condition, and the lexical decisions up to seven
+  consecutive trials with the same correct key. Both new keys are off by
+  default, so no shipped design changes.
+
+- `counterbalance.orders: m` gives each list m trial orders.
+  [`counterbalance()`](https://pablobernabeu.github.io/lexsync/r/reference/counterbalance.md)
+  adds `order_1` to `order_m`, each trial’s position in each order, to
+  the stimuli and the loop tables. Order 1 is the seeded order, and
+  order j from 2 is ranked by the SHA-256 of
+  `seed|order<j>|replicate|list|set|condition`. Participant p runs
+  version `((p - 1) mod V) + 1` in order `(((p - 1) div V) mod m) + 1`:
+  the PsychoPy script and the jsPsych page sort the version’s trials by
+  that order and record it in every data row, and OpenSesame gets one
+  experiment per version and order, `<base>_list<k>_order<j>.osexp`,
+  whose start-up check compares the order too. Participants on one list
+  no longer all meet the same order. The datasheet records
+  `counterbalancing$orders` (the number of orders and the rule), a field
+  of datasheet format 1.2.
+
+- Every generated PsychoPy script and jsPsych page carries `ORDERS` and
+  the code that picks an order, so their bytes change, and so do the
+  checksums the datasheets record of them and of the schema, whose
+  comments describe the new keys. No stimulus, loop table or OpenSesame
+  experiment moves.
+
+- The documentation said that practice trials are shuffled so that
+  participants meet them in different orders. Every participant given a
+  list meets them in one fixed order, as the design intends, and the
+  text now says so.
+
+- `counterbalance.scale: mad` balances lists on each dimension’s
+  deviations from its mean in units of its mean absolute deviation, so a
+  dimension’s weight no longer depends on where its scale starts. The
+  values are rounded to hundredths by the shared rounder before the
+  integer mean and the unit are taken, so adding a constant that is a
+  whole number of hundredths leaves the lists unchanged. The default,
+  `mean`, divides by the dimension’s mean, which suits ratio scales
+  only: Zipf frequency, whose scale starts near 3, carried the least
+  weight of the four dimensions in `en_balanced_lists`, and
+  re-expressing it as Zipf - 3 moved 22 of 40 sets to another list. The
+  default is unchanged so running studies keep their lists. Under `mad`,
+  the
+  [`balance_lists()`](https://pablobernabeu.github.io/lexsync/r/reference/balance_lists.md)
+  report and the datasheet’s `counterbalancing$optimise` record give
+  `scale`, a field of datasheet format 1.2, `cost_unit` names the unit
+  and the Methods paragraph names the scale.
+  [`validate_design()`](https://pablobernabeu.github.io/lexsync/r/reference/validate_design.md)
+  refuses any other scale, and the key joins the design vocabulary in
+  both engines, whose suites pin the new digest. The optimiser’s
+  exact-integer guard now bounds the sum of the absolute set totals,
+  since signed deviations can sum to near zero, and gives the same
+  answer as before for values of one sign. The schema’s comments
+  describe the option in all three copies. The edit changes
+  `config/schema.yaml`, so every committed datasheet records a new
+  schema digest and every run log a new datasheet checksum. The
+  twin-edge cases `scale_mad` and `scale_unknown` pin both engines to
+  one outcome.
+
+- [`normalise_lexicon()`](https://pablobernabeu.github.io/lexsync/r/reference/normalise_lexicon.md)
+  turns a delimited corpus file into a lexicon
+  [`load_lexicon()`](https://pablobernabeu.github.io/lexsync/r/reference/load_lexicon.md)
+  reads. It applies a column map, reads tab-separated files, derives
+  Zipf values from frequencies per million (Zipf = log10(per
+  million) + 3) and writes `word` and `freq_zipf`, with
+  `freq_permillion` and `pos` when the file has them. Words are
+  lower-cased and put in NFC, and a form listed more than once keeps its
+  first row or, under a registry entry’s `duplicates: sum`, the sum of
+  its rows’ frequencies, as Lexique needs. A message counts the derived
+  values that lay within 1e-9 of a rounding boundary, the one step at
+  which the two engines’ [`log10()`](https://rdrr.io/r/base/Log.html)
+  could round a value apart, and a run over a lexicon carrying
+  `freq_permillion` records the count in its run log and as
+  `materials_source$zipf_derivation`, a field of datasheet format 1.2.
+  `fetch_corpus("subtlex_us")` downloads SUBTLEX-US from openlexicon,
+  checks its SHA-256 and normalises it in either engine. No registered
+  corpus could be fetched before. An entry may also name a `derived`
+  file, a lexicon already normalised, which is fetched in its place. The
+  registry header describes this route where it said that the column
+  maps were not yet applied. Lexique 3.83 stays a listed entry: the
+  manual confirms that it splits a homograph’s frequency between rows,
+  so the entry records `duplicates: sum`, but the forms its film corpus
+  never attests carry a frequency of 0, which has no Zipf value.
+
+- [`load_lexicon()`](https://pablobernabeu.github.io/lexsync/r/reference/load_lexicon.md)
+  refuses Zipf values outside 0 to 9, which are frequencies per million
+  in the wrong column. A log count such as SUBTLEX-US’s `Lg10WF` lies
+  inside that range and must still be converted.
+
+- [`fetch_corpus()`](https://pablobernabeu.github.io/lexsync/r/reference/fetch_corpus.md)
+  refuses a corpus name containing a path before it reads the registry,
+  so an edited registry cannot make it write outside the cache. Its
+  refusals name the registry they read and say when an entry registers
+  no download address, and a wordfreq language code now gets an
+  explanation that its lexicon is built by the Python package
+  (`lexsync fetch fr`) and read here with
+  [`load_lexicon()`](https://pablobernabeu.github.io/lexsync/r/reference/load_lexicon.md),
+  where the refusal said the language was not in the registry.
+
+- A `masked_priming` paradigm presents a forward mask of hash marks for
+  500 ms, a lower-case prime for three frames and an upper-case target
+  that stays until the response, the procedure of Forster and Davis
+  (1984). Without a forward mask, a prime this brief is usually visible.
+  The target collects its response from its onset and stays on screen
+  for the whole 2,000 ms window. A text event’s `case: upper` or
+  `case: lower` is applied by the runners when they display it, with
+  `str.upper()` and `str.lower()` in PsychoPy and OpenSesame and
+  `toUpperCase()` and `toLowerCase()` in jsPsych, so the loop tables and
+  the data files keep each item as it was written. lexsync does not
+  change the case itself, because
+  [`toupper()`](https://rdrr.io/r/base/chartr.html) leaves the German
+  sharp s unchanged where Python turns it into two letters. A mask’s
+  `length_of` names the fields whose longest value sets its length. Its
+  one character is repeated as many times as that value has characters,
+  not bytes, counted over every trial when the experiments are written,
+  so each target and each list shows the same mask.
+  [`validate_design()`](https://pablobernabeu.github.io/lexsync/r/reference/validate_design.md)
+  refuses a case other than upper or lower and a `case` on any event but
+  a text event. It also refuses `length_of` on any event but a mask and
+  on a mask whose content is not one character.
+  [`export_experiments()`](https://pablobernabeu.github.io/lexsync/r/reference/export_experiments.md)
+  refuses a `length_of` field the trials do not have. The two keys join
+  the design vocabulary in both engines, whose suites pin the new
+  digest, and the schema’s comments describe them. The `priming`
+  paradigm is unchanged and is documented as backward-masked, as is its
+  label in the demos index. The registry is pinned by a digest that both
+  suites compute, so a paradigm changed in one engine only fails both.
+  Every demonstration’s experiments, datasheets and run logs change,
+  because the PsychoPy and jsPsych templates do. The twin-edge case
+  `masked_priming_text` pins both engines to one outcome.
+
+- The `en_rastle_repro` example uses masked priming with nonword
+  targets, and `en_andrews_repro` gains pseudowords, so both run as
+  lexical-decision tasks. `en_rastle_repro` interleaves twelve nonword
+  targets, each with a word prime, as fillers
+  (`items/rastle_nonword_fillers_en.csv`), and `en_andrews_repro` one
+  pseudoword per selected word
+  (`items/andrews_pseudoword_fillers_en.csv`). The nonwords were made
+  once with the package’s letter-substitution generator and checked
+  against wordfreq’s known English forms, and each design’s comment
+  gives the command and lists what still differs from the original
+  study. Each design puts its word conditions on the left arrow key,
+  gives its fillers the right and shows its own instructions. Their
+  stimuli files gain a `block` column and their trials are renumbered,
+  since the fillers are interleaved with the words. The items, sets,
+  lists and conditions are the same, and no descriptives or comparisons
+  change.
+
+- Generated experiments show task instructions before the first trial
+  and wait for the space bar, so the experimenter can start the run when
+  the participant is ready. A design sets the text with `instructions`.
+  It may hold line breaks and no other control character, and every
+  target carries it as data. Without it, a lexical decision, a
+  categorisation and a design with comprehension questions get English
+  instructions that say what their keys mean. The run log notes a design
+  in another language that gives no text of its own, and a design whose
+  keys the instructions can only name, as in every factorial and priming
+  demonstration. A lexical-decision design states its response mapping:
+  word on the response event’s first key and pseudoword on its second,
+  unless the design gives `response_mapping`, and
+  `rotate_mapping_by_list: true` rotates the keys across lists. A
+  mapping that names a key the response event does not allow, or leaves
+  a condition’s trials without an answer, is refused. The loop tables
+  carry each trial’s correct key in `answer`, so accuracy can be scored
+  on every trial of a lexical decision, where it could be scored only on
+  practice and filler trials. jsPsych records a key by the browser’s
+  name for it, so the jsPsych page names each answer that way,
+  `arrowleft` for `left`, as it already named the keys, and in every
+  target a correct response equals its trial’s answer.
+  [`export_experiments()`](https://pablobernabeu.github.io/lexsync/r/reference/export_experiments.md)
+  derives the answers as it assigns the trigger codes, so the stimuli
+  file does not change. A practice or filler table keeps its own
+  answers, and the run log notes any that the mapping contradicts. The
+  datasheet records the mapping as `presentation$response_mapping`, a
+  field of datasheet format 1.2, and its Methods text says which key the
+  participants pressed for which condition. The schema’s comments
+  describe the three keys. Every demonstration’s experiments, datasheets
+  and run logs change, and the loop tables of the three lexical
+  decisions carry an answer on every trial. The twin-edge cases
+  `mapping_rotated` and `instructions_text` pin both engines to one
+  outcome. No design selects different items.
+
+- The lexical-decision practice table no longer presents the English
+  word ‘plank’ as a pseudoword. Its replacement, ‘plang’, came from the
+  package’s own generator and is not among wordfreq’s English forms, and
+  `design_en_lexdec_blocks.yaml` records the command. The categorisation
+  example adds 16 non-member foils as fillers
+  (`items/categorisation_foils_en.csv`), nouns that do not belong to the
+  category they appear under, so pressing the ‘yes’ key on every trial
+  no longer scores perfectly. Each list now holds 16 ‘yes’ and 16 ‘no’
+  trials. The foils are interleaved with the members, so the example’s
+  stimuli file gains a `block` column and its trials are renumbered,
+  while the same items stay in the same lists and conditions.
+
+- The PsychoPy and jsPsych experiments paused wherever the block
+  changed. Fillers are interleaved with the main trials so that nothing
+  sets them apart, yet a pause came before and after every filler, and
+  each pause after one said that the practice had ended. Fillers now run
+  with the main trials, and the one pause comes where the practice
+  trials end, in `design_en_lexdec_blocks.yaml` and in the
+  categorisation example, whose foils are fillers.
+
+- `CITATION.cff` and `codemeta.json`, which describe the repository and
+  so both packages, give the Zenodo concept DOI, which archives every
+  GitHub release of both, in place of the DOI that CRAN assigned to the
+  R package. They list each package’s identifiers, marked with the
+  package they name. `citation("lexsync")` is unchanged and gives the
+  CRAN DOI.
+
+- `citation("lexsync")` names its publisher in full, “Comprehensive R
+  Archive Network (CRAN)”, where it said “CRAN”, and the About page’s
+  reference and BibTeX entry and the R reference in `codemeta.json` now
+  name it too. Every reference across the package family and the
+  author’s website now names CRAN in the same words.
+
+- The CRAN DOI and the Zenodo DOI are shown as full links on the website
+  and in the README. The README gains a badge for the DOI CRAN assigned,
+  for GitHub and CRAN, which the home page leaves out of its sidebar,
+  where the DOI is already given under Citation.
+
+- 28 of the committed datasheets recorded the SHA-256 of a copy of
+  `corpora/derived/en.csv` or `es.csv` whose line endings one machine
+  had converted to CRLF, so the digest could not be reproduced from a
+  checkout and read as altered materials. Two of them also recorded such
+  a copy of `config/design_en_priming_continuous.yaml`. The datasheets
+  are regenerated from the committed bytes, and a test in both engines
+  recomputes every recorded digest, the design and schema digests
+  included. No stimulus, report table or experiment changes. The run
+  logs of the 14 designs concerned change with their datasheets, whose
+  MD5 they record.
+
+- Generated OpenSesame experiments no longer pass stimulus text through
+  OpenSesame’s variable store, which evaluates it. In OpenSesame 4.x, a
+  loop cell containing `{` runs as a Python f-string, and in 3.3 a
+  leading `=` or `[=...]` runs Python, so an item table shared with a
+  laboratory could execute code on the machine that presents it.
+  Ordinary words in the English lexicon, such as ‘infinity’ and ‘nan’,
+  could stop an OpenSesame 4.x session, though no demonstration design
+  selected one. The loop table now holds only numbers: `lexsync_row`,
+  the trial’s position in loop order, with `lexsync_trial`,
+  `lexsync_list`, `lexsync_set`, the trigger codes, `critical_region`
+  and any per-trial duration. The prefix stops the columns from
+  shadowing Python’s built-in `list` and `set` in OpenSesame 4’s inline
+  scripts. The inline scripts read the presented text, `condition`,
+  `block` and `answer` from a companion file,
+  `<base>_opensesame_text.csv`, to be copied with the experiment.
+  [`export_opensesame()`](https://pablobernabeu.github.io/lexsync/r/reference/export_opensesame.md)
+  refuses a value in one of the numeric columns that is not a plain
+  number, naming the column. A practice timeout is reported as ‘Too
+  slow’. Both versions scored it as a wrong key, because the response
+  came back as the string ‘None’. The 0.1.0 notes said stimulus text was
+  always safe. That held for PsychoPy and jsPsych but not for
+  OpenSesame. Every demonstration’s `.osexp` and OpenSesame loop table
+  change, and each demonstration gains a text table. The datasheets and
+  run logs change with them, since they record the experiment’s
+  checksum. No stimulus moves.
+
+- The Shiny app writes an edit to the conditions table into the cell
+  that was edited. Every edit landed one column to the left, because
+  [`DT::editData()`](https://rdrr.io/pkg/DT/man/editData.html) was
+  called without `rownames = FALSE`, so a custom condition could not be
+  entered. The bounds of the second factor, which the one-factor presets
+  leave empty, are now numeric columns, so a bound typed there is kept
+  as a number. They were logical columns, on which DT warned and stored
+  the typed text.
+
+- The R engine no longer reads a design key by partial matching. R’s `$`
+  accepts the start of a name when no name matches in full, so a key
+  that began another key’s name stood in for that key when it was
+  absent. `font_size: 40` set the font of all three generated
+  experiments to ‘40’, `language_tag` served as `language`, and an
+  annotation named `continuous_notes` made a factorial design fail.
+  Design, schema and corpus-registry entries are now read by exact name,
+  so a design carrying `font_size` or `continuous_notes` runs as it does
+  in Python, and one that gives `language_tag` without `language` stops,
+  as it does in Python. The Python engine was never affected.
+
+- Numbers in the Markdown datasheet and the Methods paragraph are
+  formatted by lexsync itself, not by each language’s printf, which
+  rounds decimal ties differently: R on Windows printed 0.0825 as 0.082
+  where Python printed 0.083. A displayed value is rounded half away
+  from zero from the value the JSON record stores, so a statistic stored
+  as 0.745 now shows as 0.75 in both engines, where both printed 0.74.
+  Some two-place cells in the committed datasheets of 10 designs change
+  for this reason, and the Methods paragraph of `es_freqcontrast` now
+  gives the interval as \[-0.19, 0.34\]. A cell in which the R datasheet
+  of `en_andrews_repro` disagreed with Python’s (-0.46 against -0.47)
+  now agrees. The TOST p column is printed to four places in both
+  engines, and a p that rounds to zero is shown as \< 0.0001. R wrote
+  such a column as 9e-04 and 1, Python as 0.0009 and 1.0. No JSON
+  record, stimulus, report table or experiment changes. The run logs of
+  the 10 designs change with their datasheets, whose MD5 they record.
+
+- Both engines read CSV input by one rule. Header names and fields are
+  trimmed, and an empty field or `NA` is missing. A column is numeric
+  only when every value is a plain decimal number (no thousands
+  separators), logical only when every value is TRUE or FALSE (in upper,
+  lower or title case), and text otherwise. The Python engine did not
+  trim, so a padded category or header made it refuse a design the R
+  engine ran. The R engine guessed types from the first 1,000 rows and
+  read `T` and `F` as logical, `1,000` as a number and ISO dates as
+  dates, so a pass-through column could be written `F` by one engine and
+  `FALSE` by the other. A header that names a column twice is now
+  refused, an empty header cell is named by its position (`...3`), and
+  [`load_lexicon()`](https://pablobernabeu.github.io/lexsync/r/reference/load_lexicon.md)
+  refuses a frequency column that is not numeric, naming the first value
+  that is not a plain number. The R engine parses every plain decimal
+  number to the nearest double, as Python’s `float()` does, because
+  readr’s parser could miss it by one unit in the last place
+  (`50.768212762897100`, for instance). A number of up to 15 significant
+  digits, with a power of ten within 10^22, takes one exact operation,
+  and any other is rounded in exact integer arithmetic, because
+  [`as.numeric()`](https://rdrr.io/r/base/numeric.html) misses as well,
+  now and then on x86-64 and far more often on Apple Silicon, where R
+  CMD check read `0.12345678901234567` one unit away. R wrote a negative
+  zero as `-0` and Python as `0`, so both engines now read it as zero.
+  Every demonstration’s stimuli and reports are unchanged.
+
+- Changes list assignment: a paradigm’s Latin-square recipe now applies
+  when a design lists its own `events`. Any `events:` list made
+  [`counterbalance()`](https://pablobernabeu.github.io/lexsync/r/reference/counterbalance.md)
+  deal the items factorially, so a priming, categorisation or self-paced
+  reading design with per-trial timing showed every target in both
+  conditions of each list (in `en_priming_jitter`, six targets per list,
+  each twice), while the datasheet and the Methods text described a
+  Latin square. `counterbalance.recipe` (`factorial` or
+  `latin_square_target`) overrides the paradigm’s recipe, and
+  `counterbalance.optimise` is now refused for these designs, as for
+  every Latin-square design. Of the shipped examples only
+  `en_priming_jitter` moves: each of its two lists now shows all twelve
+  targets once, and its stimuli, experiments and datasheets are
+  regenerated.
+
+- The datasheet, now format 1.2, records the counterbalancing that ran.
+  It takes the recipe from the resolver that
+  [`counterbalance()`](https://pablobernabeu.github.io/lexsync/r/reference/counterbalance.md)
+  dispatches on, and no longer infers it from the item source, which
+  recorded a table-sourced lexical-decision design as a Latin square. It
+  records the lists the counterbalancing realised, in place of
+  `counterbalance.lists` with a default of 1, and gives per-list cell
+  counts. An incomplete Latin-square rotation (a single list, or lists
+  or item sets not a multiple of the number of conditions) is reported
+  in the run log and the datasheet and described as incomplete in the
+  Methods text, and `counterbalance.incomplete: error`, in the design or
+  the schema, refuses it. A factorial design asking for more lists than
+  item sets is refused, because the surplus lists would be empty. Every
+  committed datasheet and run log is regenerated, and no other stimulus
+  moves.
+
+- The `en_priming_jitter` example names its per-trial column `prime_ms`.
+  It was called `soa_ms`, but a 33 ms mask follows the prime, so the
+  stimulus-onset asynchrony is `prime_ms` plus 33 ms.
+
+- Designs are checked before anything is selected or written, by the new
+  [`validate_design()`](https://pablobernabeu.github.io/lexsync/r/reference/validate_design.md),
+  which
+  [`run_pipeline()`](https://pablobernabeu.github.io/lexsync/r/reference/run_pipeline.md)
+  calls right after reading the design and the schema. A key one edit
+  from a known key of up to five characters, or two edits from a longer
+  one, is refused as a probable typo and named with the key it was
+  probably meant to be (`n_per_conditon` silently gave the default 20
+  items). Any other unknown key is reported in the run log and will be
+  refused in a later release, so annotations belong in `description` or
+  a key beginning `x_`. A missing or non-text `name` or `language`, an
+  unsafe name or font, a bad trigger address or response key, a non-text
+  or repeated condition name and a missing or empty `match_on` are
+  refused with one message in both engines. They used to fail at export,
+  after four files had been written, or at different points in each
+  engine, and without `match_on` this engine paired the alphabetically
+  first words.
+
+- The R engine reads an unquoted `y` or `n` in a design as text, as the
+  Python engine does. It read them as TRUE and FALSE, so `keys: [y, n]`
+  generated experiments that waited for keys named TRUE and FALSE, which
+  no participant can press. A YAML boolean given as a response key (an
+  unquoted `yes`, `no`, `on` or `off`) is refused with a hint to quote
+  it, and
+  [`validate_design()`](https://pablobernabeu.github.io/lexsync/r/reference/validate_design.md)
+  refuses a `counterbalance.optimise` that is not `true` or `false`,
+  since `optimise: n` or `1` balanced the lists in the Python engine
+  only. The twin-edge cases `yn_keys`, `yes_no_keys`, `optimise_n` and
+  `language_no` pin both engines to these outcomes.
+
+- A norms entry’s join key is written `join_on:`. Both engines’ YAML
+  readers took the documented `on:` for the boolean true, so every join
+  silently used `word`. A bare `on:` is now read as the join key, with a
+  note in the run log, and any other key in a norms entry is refused, so
+  a misspelt `join_on` no longer falls back to `word`. An entry that is
+  not a mapping, such as a bare file name, is refused as needing a
+  `path`, where it used to stop the run with R’s own error. This engine
+  also joined each entry of a `norms:` block written as a mapping of
+  named entries, such as `conc: {path: norms.csv}`, which the Python
+  engine refused. Both engines now refuse it and name `conc` as an
+  unknown key. The datasheet still records the key as `on`. The schema’s
+  comment now shows `join_on:`. The 42 committed datasheets record the
+  schema’s SHA-256 and the run logs record each datasheet’s MD5, so both
+  are regenerated. No stimulus, report table or experiment changes. The
+  twin-edge case `norms_on_bare` pins the join on `lemma`.
+
+- `n_per_condition` is resolved by one rule everywhere. A whole number
+  written as `4.0` is accepted, and 0 is refused by
+  [`match_stimuli()`](https://pablobernabeu.github.io/lexsync/r/reference/match_stimuli.md)
+  and
+  [`select_continuous_stimuli()`](https://pablobernabeu.github.io/lexsync/r/reference/select_continuous_stimuli.md),
+  which failed here with an obscure error and returned their default
+  size in Python. A `null` tolerance is read as
+  [`modifyList()`](https://rdrr.io/r/utils/modifyList.html) reads it in
+  both engines, and a schema without a `matching:` block works in
+  Python.
+
+- A design whose name or language has non-ASCII characters writes its
+  files under a stem with an eight-character checksum suffix, given by
+  the new
+  [`design_stem()`](https://pablobernabeu.github.io/lexsync/r/reference/design_stem.md),
+  so two designs with Chinese names in the same language no longer
+  overwrite each other’s files and an all-Chinese name no longer gives
+  files whose names begin with a dot or underscore.
+  [`run_all()`](https://pablobernabeu.github.io/lexsync/r/reference/run_all.md)
+  refuses two designs that would write the same files, such as
+  `en-lexdec` and `en_lexdec`.
+
+- The schema gains comments on the key check and on a `null` tolerance,
+  so the 42 committed datasheets, which record its SHA-256, and the run
+  logs, which record the datasheets’ MD5, are regenerated. No stimulus,
+  report table or experiment changes.
+
+- Both engines normalise text keys to Unicode NFC. Lexicon and pool
+  words and norm-table and pair-member keys are normalised after the
+  trimming and case-folding they already received. The item id,
+  condition and presented fields of an item table, practice and filler
+  tables included, and a `reference_words` list passed to
+  [`run_pipeline()`](https://pablobernabeu.github.io/lexsync/r/reference/run_pipeline.md)
+  are normalised as read. The two encodings of an accented letter,
+  precomposed or with a combining accent, used to make two words of one.
+  Both could then be selected, into opposite conditions of one matched
+  set and with different lengths, and a norm or member join missed
+  whichever spelling the lexicon did not use. De-duplication keeps the
+  first row in file order. When normalisation rewrites or merges any
+  form, the run log says how many, and the datasheet records the counts
+  as `materials_source$input_normalisation`, a field of datasheet format
+  1.2. Every demonstration’s output is unchanged, and the twin-edge case
+  `nfd_pool` pins the new outcome.
+
+- Matching excludes candidates that lack a matched dimension, in every
+  method and before anything is selected, and the run log and the
+  datasheet record how many each condition lost
+  (`selection.incomplete_dropped`, a 1.2 field present only when a
+  condition lost any). An anchor item missing a matched value used to be
+  paired with the alphabetically first candidate in its window, or to
+  re-pick a used candidate and stop the run with a false ‘overlapping
+  conditions’ error. `joint` filled a shortfall with incomplete pairs,
+  `optimal` failed with a solver error that differed between the
+  engines, and
+  [`select_continuous_stimuli()`](https://pablobernabeu.github.io/lexsync/r/reference/select_continuous_stimuli.md)
+  selected items without the predictor (4 of 10 when 40% of the pool
+  lacked it). The documentation already promised the exclusion. The
+  shortfall policy applies to what remains, a condition left without a
+  complete candidate is refused by name, and a word repeated within one
+  condition, which used to be reported as overlapping conditions, is
+  reported as an internal error. The datasheet’s verdict on whether the
+  pairwise cap fired, and the Methods text’s count of eligible
+  candidates, leave the excluded candidates out. For a design whose pool
+  has such candidates the selection changes, a breaking change under the
+  package’s versioning rule. No shipped design has one, so no stimulus,
+  report table or experiment moves. The schema’s note on norm coverage,
+  corrected in all three copies, changes `config/schema.yaml`, so every
+  committed datasheet records a new schema digest and every run log a
+  new datasheet checksum.
+
+- [`resample_stimuli()`](https://pablobernabeu.github.io/lexsync/r/reference/resample_stimuli.md)
+  records the candidates its first replicate excluded for a missing
+  matched value, those of the whole pool, so the run log and the
+  datasheet of a resampled design report them as well. Its `"audit"`
+  attribute had been that of the first replicate in R, and in Python it
+  was present only when all the replicates held the same one. A
+  selection no longer passes on an audit its pool already carried. The
+  Python engine did so whatever the method, and the R engine in
+  [`select_continuous_stimuli()`](https://pablobernabeu.github.io/lexsync/r/reference/select_continuous_stimuli.md).
+
+- `mahalanobis` matching estimates the correlations from the rows
+  complete on the matched dimensions, and refuses a pool with fewer than
+  k + 2 of them for k dimensions. A dimension with any missing value
+  used to lose all its correlations and enter the distance as an
+  independent term.
+
+- Joint matching on a dimension with missing values over more than 1,200
+  candidates failed in R (‘missing value where TRUE/FALSE needed’) and
+  ran in Python. `.exact_sum()` now returns `NA` for such input, as the
+  Python engine’s sum returns NaN. It also returns NaN where opposite
+  infinities make the running sum NaN, a case in which it stopped in the
+  same way.
+
+- Generated experiments present one counterbalancing version to each
+  participant. The PsychoPy, OpenSesame and jsPsych experiments used to
+  present every list in one session, interleaved, so in a Latin-square
+  design each target appeared in both conditions (in `en_priming`, all
+  12 targets twice, three of them on consecutive trials), and in a
+  resampled design every participant saw all the replicates. The 0.1.0
+  notes said that a categorisation participant never sees the same
+  target twice. That held within a list only. A version is one
+  (replicate, list) pair of the presented trials, numbered from 1 in
+  that order, and participant *p* runs version ((*p* - 1) mod *V*) + 1
+  of *V*, the rule
+  [`participant_table()`](https://pablobernabeu.github.io/lexsync/r/reference/participant_table.md)
+  uses. The PsychoPy script reads `--participant` and `--version`, or
+  `--list` without replicates, from its command line. Launched with
+  neither, it asks for them in a dialogue, which a design with one
+  version also shows and runs on blank answers. It stops on a version it
+  does not have. The jsPsych page reads `?participant=`, `?version=` or
+  `?list=` from its address, and a page with several versions opened
+  without one says how to open it and runs nothing. Every page names its
+  data file after the participant and the version, so a page with one
+  version saves `<title>_v1.csv`. The OpenSesame target writes one
+  experiment per version (`<base>_list<k>.osexp`, or
+  `<base>_rep<r>_list<k>.osexp` with replicates), each with its own
+  tables, and each warns when the subject number belongs to another
+  version. A design with one list and no replicates keeps its file
+  names.
+  [`export_experiments()`](https://pablobernabeu.github.io/lexsync/r/reference/export_experiments.md)
+  lists every file it wrote as `files`, beside the three paths it
+  returned before, so [`unlist()`](https://rdrr.io/r/base/unlist.html)
+  of its result now holds each script twice. The exporters refuse a
+  `list` or `replicate` value that is not a whole number, read by one
+  rule in both engines, since the versions are numbered by those values.
+  In a resampled design with practice or filler trials, each version has
+  its own copy of them, and fillers no longer stop such a design with an
+  error about a missing hash-key component. The loop tables carry
+  `replicate` and keep each version’s trials together. The datasheet
+  records `counterbalancing.versions` and `counterbalancing.assignment`,
+  and its Methods text says that each participant was presented one
+  version. Its artefact list and the run log include the loop and text
+  tables, which hold the trial order and the trigger codes. Every
+  demonstration’s experiments, datasheets and run logs change, and the
+  seven multi-list designs and `en_resample` have one OpenSesame
+  experiment per version in place of `<base>.osexp`. No stimulus
+  changes.
+
+- A design can refer to a derived dimension (`n_density`, `old20`,
+  `bigram_freq`) in a condition’s `define_by`, in `pool_filters`, as a
+  continuous predictor or control, or in `counterbalance.balance_on`, as
+  well as in `match_on`. When the lexicon lacks the dimension,
+  [`run_pipeline()`](https://pablobernabeu.github.io/lexsync/r/reference/run_pipeline.md)
+  computes it against the lexicon, after the filters the lexicon can
+  answer and before those on the derived dimension. A high- against
+  low-bigram contrast, a continuous design with `bigram_freq` as its
+  predictor, or an N design on a lexicon built by `lexsync fetch` used
+  to fail with ‘absent from the pool’. Two twin-edge cases,
+  `bigram_contrast` and `fetched_es_ndensity`, pin the result in both
+  engines.
+
+- The `reference_words` argument of
+  [`run_pipeline()`](https://pablobernabeu.github.io/lexsync/r/reference/run_pipeline.md)
+  takes effect. For a corpus or pool design, the pipeline recomputes N
+  and OLD20, and bigram frequency where the lexicon carries it or the
+  design uses it, against the supplied list, overriding the lexicon’s
+  columns, and logs the step. The datasheet’s
+  `selection$neighbourhood_reference` gains `applied_to`, the columns
+  recomputed, and is written only when the list was applied. Every
+  bundled lexicon carries N and OLD20, so the argument was ignored while
+  the datasheet recorded it as applied. A generate or table design does
+  not use the argument, and its run log now says that it was ignored. A
+  list that is empty or holds a missing value is refused, since it would
+  set every N to 0 and every OLD20 to missing. A lexicon may mark the
+  forms that make up the neighbourhood reference with a
+  `reference_member` column of 0 and 1, which
+  [`load_pool()`](https://pablobernabeu.github.io/lexsync/r/reference/load_pool.md)
+  honours too.
+
+- The schema documents `reference_member` and when the derived
+  dimensions are computed, so the committed datasheets, which record its
+  SHA-256, and the run logs, which record the datasheets’ MD5, are
+  regenerated. No stimulus, report table or experiment changes.
+
+- `items.generation.exclude` lists further word forms that a generated
+  pseudoword must not equal: files with one form per line, CSV files
+  with a `word` column, or corpora fetched into the cache with
+  [`fetch_corpus()`](https://pablobernabeu.github.io/lexsync/r/reference/fetch_corpus.md).
+  The forms are normalised as a lexicon’s words are, and the datasheet
+  records each list with its checksum as `selection$generation_exclude`,
+  a field of datasheet format 1.2. The Methods paragraph names the
+  lists. The generators checked only the lexicon, whose English and
+  Spanish forms stop at Zipf 2.95 and 3.11, so real words such as crier
+  and pall, and in Spanish renos and esteras, passed as pseudowords.
+  [`generate_pseudowords()`](https://pablobernabeu.github.io/lexsync/r/reference/generate_pseudowords.md)
+  and
+  [`build_lexdec_stimuli()`](https://pablobernabeu.github.io/lexsync/r/reference/build_lexdec_stimuli.md)
+  take the list as `exclude`. The repository’s
+  `corpora/fetch_corpora.py --known-forms` writes wordfreq’s fuller word
+  lists for this purpose (289,023 English and 334,625 Spanish forms),
+  and neither package ships them. No shipped design uses the key yet, so
+  no stimulus moves. The schema’s comments describe it, so the 42
+  committed datasheets, which record the schema’s SHA-256, and their run
+  logs are regenerated.
+
+- A generated lexical-decision design reports the number of words the
+  generator could use. It reported the band before the a-z filter, 8,305
+  words where 6,937 were eligible in a Spanish band of length 4-7 and
+  Zipf 3.5-6. The English demonstrations’ counts do not change, since
+  their bands hold only a-z words.
+
+- Lexical-decision generation works with accented letters. The
+  generators’ alphabet is the set of letters the reference lexicon
+  attests, in UTF-8 byte order. A Spanish design therefore keeps its
+  accented words, 16.5% of a typical band (1,368 of the 8,305 words of
+  length 4-7 and Zipf 3.5-6, among them 261 preterites in `-ó`), and can
+  generate accented pseudowords. The generators substituted only the
+  letters a to z and left those words out. A word is now eligible when
+  every character in it is a letter the reference attests, so a word
+  with a hyphen, an apostrophe or a digit is still left out. The
+  subsyllabic segmenter finds its nuclei among accented vowels too, and
+  [`make_pseudoword()`](https://pablobernabeu.github.io/lexsync/r/reference/make_pseudoword.md)
+  gains an `alphabet` argument. A word in a logographic script, such as
+  Chinese, is refused with a message. Unicode counts its characters as
+  letters, but a form made by swapping one for another is of unknown
+  validity as a pseudoword. A generated design’s datasheet counts the
+  eligible words, so the Spanish band above now counts all 8,305. A new
+  example, `es_lexdec`, checks its pseudowords against wordfreq’s
+  Spanish word list. English selections and every other committed output
+  are unchanged. The twin-edge case `generation_exclude` gains a
+  hyphenated word, which the count leaves out, and its known-form list
+  now names the forms its new selection would otherwise produce. The new
+  case `lexdec_logographic` pins the refusal in both engines.
+
+- `matching.tie_break` chooses how exact ties between equally close
+  candidates are broken. `bytes` breaks them by spelling, as lexsync 0.1
+  did, and reproduces its selections. `hash` breaks them by a keyed
+  SHA-256 of each word (salt `lexsync-tie-v1`), which favours no part of
+  the alphabet and does not depend on the seed. Ties decide most picks
+  because lengths and neighbourhood counts are whole numbers and
+  frequencies have two decimals. In `en_freqcontrast`, 71 of the 80
+  anchored picks had another candidate at the chosen distance, and
+  breaking them by spelling filled conditions with early-alphabet words.
+  In its low-frequency condition, 61% of the words began with a or b,
+  against 13% of the candidates, and in `en_ndensity`‘s dense condition
+  and the `en_andrews_repro` low-frequency cells every word did, an
+  initial-letter confound the realised-control report cannot see. Under
+  `hash`, the low-frequency share fell to 12.5% and the dense share to
+  17.5%, against 13% and 12% among the candidates, and Cohen’s d on
+  every matched dimension of every shipped matched design was unchanged.
+  The rule decides the anchored picks, the order of tied pairs in
+  `joint` and `optimal` matching and the rows tied at their candidate
+  cap. The even spreads that pick the anchor’s items and a continuous
+  design’s items keep the byte order. Under either rule,
+  `standardised_euclidean` and `joint` select identical items in the two
+  engines. The datasheet records the rule as `selection$tie_break`, a
+  1.2 field, with the salt under `hash`. Its Markdown no longer says
+  that selection is deterministic given the seed and free of
+  item-selection bias. Selection does not depend on the seed, which
+  fixes the trial order, and the Markdown and the Methods paragraph now
+  say so. The Methods sentence that read ’deterministic and reproducible
+  (seed 2026; lexsync 0.1.1)’ now reads ‘deterministic and reproducible
+  (lexsync 0.1.1), and the seed (2026) fixes the trial order’. The
+  schema gains `tie_break`, and the twin-edge case `tie_hash_small` pins
+  the `hash` rule in both engines.
+
+- [`count_syllables()`](https://pablobernabeu.github.io/lexsync/r/reference/count_syllables.md)
+  counts the vowels of Polish, Czech, Hungarian, Romanian, Turkish,
+  Danish, Norwegian and Vietnamese (ae, oe, the dotless i and the vowels
+  with an ogonek, caron, breve, macron, ring or double acute), and
+  returns `NA` for a word in another script, where it returned 0. It now
+  decomposes a word and sets its diacritics aside, so a vowel counts
+  whatever its accent. Every Chinese, Russian or Greek word counted 0
+  syllables, so a design could match on `n_syllables` and report perfect
+  balance.
+  [`run_pipeline()`](https://pablobernabeu.github.io/lexsync/r/reference/run_pipeline.md)
+  refuses a design that refers to `n_syllables` when a word without it
+  passes the other filters the lexicon can answer. The documentation
+  said the vowel class covered the Latin-1 vowels, but it lacked ae. The
+  `n_syllables` column of `zh_freqcontrast`’s stimuli is now empty, and
+  its datasheets and run logs change with it. No selection changes.
+
+- Responses are collected from the onset of the stimulus they answer,
+  and every target records them. The response window used to open only
+  when the target had gone, 800 ms after its onset in lexical decision,
+  and each target discarded a key pressed while the target was on
+  screen: jsPsych showed the target with no keys allowed, PsychoPy’s
+  `waitKeys()` cleared earlier presses and OpenSesame’s keyboard item
+  flushed them. jsPsych timed the reaction from the blank response
+  screen, and the PsychoPy and OpenSesame targets recorded no response
+  at all, so no accuracy, reaction time or reading time reached a data
+  file. The 0.1.0 notes said that a categorisation design’s data were
+  scoreable. That held for jsPsych only. A response event after a text
+  event now opens its window at that stimulus’s onset, for the same
+  total window, and a response ends the trial. `from: offset` on a
+  response event keeps the delayed window, which is also the default
+  after any other event, and `from: onset` after such an event is
+  refused. A response collected from the onset runs where its stimulus
+  runs, so a design that gives the two different `blocks` is refused.
+  The PsychoPy script writes
+  `data/<base>_p<participant>_v<version>_<date>-<time>.csv`, one row per
+  trial, written as it goes, with the response, its reaction time from
+  the stimulus’s onset, timeouts, accuracy when the item names its
+  answer, self-paced reading times, the question’s response, and each
+  event’s realised flips and onset. The OpenSesame experiment collects
+  the response in the stimulus’s own script, clears the response
+  variables as each trial starts and logs every trial with a logger
+  item. The jsPsych page saves its CSV as before, and its target is now
+  one trial whose `rt` runs from the onset. The datasheet records each
+  response window as `presentation.response_windows`, says in
+  `analysis.response` where a reaction time starts, and its Methods text
+  says when responses were collected. The R engine writes a response key
+  given alone as a list of one key, as the Python engine does. jsonlite
+  wrote it as a bare string, and the PsychoPy runner split that into
+  letters. Every demonstration’s experiments, datasheets and run logs
+  change. No stimulus moves.
+
+- OpenSesame response and question timeouts are written in whole
+  milliseconds as declared. A timeout of 1,001 ms was written as 1,000,
+  because the value went through seconds and back, and 95 of the
+  whole-millisecond values from 1 to 10,000 came out a millisecond
+  short. The demonstrations’ timeouts were not affected.
+
+- A screened English lexicon, `corpora/derived/en_v2.csv`, holds the
+  same 30,000 wordfreq forms as `en.csv` with columns from SUBTLEX-US
+  (Brysbaert & New, 2009): `in_subtlex_us`, `lowercase_share` and
+  `nonstandard`, which marks forms absent from SUBTLEX-US or beginning
+  with a lower-case letter in under a tenth of their uses (names,
+  acronyms and many internet forms, 6,565 in all). Its N and OLD20 are
+  computed against the 23,435 unmarked forms only, so the marked forms
+  no longer count as neighbours (`cat` has 21 where `en.csv` gives 32),
+  and `n_density_raw` and `old20_raw` keep the old values. Filter with
+  `pool_filters: {nonstandard: [0, 0]}`. `en.csv` is unchanged, so
+  designs that must reproduce earlier selections keep working. The
+  repository’s `corpora/fetch_corpora.py --screen-en` rebuilds the file
+  byte for byte from a SUBTLEX-US copy whose checksum it verifies, and
+  `corpora/ATTRIBUTION.md` and `LICENSE-DATA` credit SUBTLEX-US as its
+  direct source. This is repository data, and the package example slices
+  follow later.
+
+- A design can exclude words with `exclude_words`, a list or a file with
+  one word per line, applied before the pool filters and recorded in the
+  datasheet with its checksum. The words are keyed as a lexicon’s are
+  and leave the candidates of a corpus, pool or generated design after
+  the norms join. The neighbourhood reference, and the words a generated
+  pseudoword must not equal, keep them. The datasheet records the list
+  as `materials_source$exclusions` (its path or `inline`, checksum,
+  words listed and candidates removed), a field of datasheet format 1.2,
+  the run log notes the removal, and the Methods paragraph reports it. A
+  design with an item table refuses the key. The twin-edge case
+  `exclude_words_inline` pins both engines to one outcome.
+
+- The datasheet and the Methods text credit wordfreq only for the lexica
+  lexsync ships. A user’s own lexicon was described as wordfreq data, so
+  a study selecting from SUBTLEX would have cited the wrong corpus. It
+  is now named by its file name and checksum, and a corpus fetched into
+  the cache by the registry’s citation. A shipped lexicon is recognised
+  by its checksum with CRLF line endings read as LF, and the credit for
+  `en_v2.csv` states its screening rule. The shipped designs’ credits do
+  not change, and the twin-edge case `user_lexicon_provenance` pins both
+  engines. The schema’s comments describe the new key and columns, so
+  the 42 committed datasheets, which record the schema’s SHA-256, and
+  their run logs are regenerated. No stimulus, report table or
+  experiment changes.
+
+- The documentation now states what the lexica derived from `wordfreq`
+  contain: proper names, acronyms and other non-standard forms among the
+  most frequent forms, spread unevenly over frequency bands, with N and
+  OLD20 computed over them. It says that a continuous design spreads
+  items over the predictor’s ranks and not over its range, so the
+  selection follows the pool’s distribution and the tolerance windows
+  trim the controls’ tails without holding them constant, which the
+  0.1.0 entry for
+  [`select_continuous_stimuli()`](https://pablobernabeu.github.io/lexsync/r/reference/select_continuous_stimuli.md)
+  misstated. It also says that generated pseudowords are more
+  bigram-typical than their base words, that the `priming` paradigm is
+  backward-masked, that `en_rastle_repro` and `en_andrews_repro`
+  reproduce item selection and not a lexical-decision task, and how each
+  presentation target times its events.
+
+- The corpus registry no longer maps `freq_zipf` to the SUBTLEX-US and
+  SUBTLEX-DE log-count columns or to a column that the Chinese SUBTLEX
+  file does not contain. It says that its column maps are not yet
+  applied and that no entry can yet be downloaded by
+  [`fetch_corpus()`](https://pablobernabeu.github.io/lexsync/r/reference/fetch_corpus.md),
+  and DESCRIPTION names what the corpus access covers in place of
+  calling it many-language.
+
+- The documentation of
+  [`cohens_d_ci()`](https://pablobernabeu.github.io/lexsync/r/reference/cohens_d_ci.md)
+  and
+  [`tost_equiv()`](https://pablobernabeu.github.io/lexsync/r/reference/tost_equiv.md)
+  cites Sassenhagen and Alday (2016) and Lakens (2017) for what they
+  argue, and calls the 0.5 bound a convention. The quick start in the
+  README and the Get started vignette uses 60 items per condition, as
+  the Python twin’s does, in place of 15: at the default bound and
+  alpha, no dimension that varies can pass the equivalence test with
+  fewer than 23 items per condition. No stimulus, report table or
+  experiment changes. Every JSON datasheet records the new schema
+  digest, the five demonstrations whose design files were corrected
+  record new design digests, and the Markdown datasheets of the four
+  whose descriptions changed (`en_andrews_repro`, `en_freqcontinuous`,
+  `en_priming_continuous` and `en_rastle_repro`) change with them, as do
+  the run logs.
+
+- `optimal` matching minimises the summed distance of the n pairs it
+  selects. It solved a complete assignment over both candidate pools and
+  kept the n cheapest assigned pairs, which is not the optimum and was
+  consistently worse than greedy `joint`: 1.15 to 2.5 times the optimal
+  summed distance in tests where `joint` came within 3.4%. It now solves
+  the cardinality-constrained problem exactly with a padded assignment
+  (Volgenant, 2004). In R a problem at the 1,200-candidate cap takes
+  about 4 s, where the complete assignment took 34 s on the same
+  machine. Both capped pools are put in tie-break order before the
+  solve, by spelling under `bytes` as well as by key under `hash`, so
+  the solver’s choice among equally cheap pairs no longer depends on the
+  order in which the rows arrive. When the conditions overlap, a word
+  cannot be paired with itself or used twice. A pair the solve loses
+  that way is replaced by solving again over the unused words, and the
+  selection is then no longer guaranteed to have the least summed
+  distance. Designs using `optimal` select different items, a breaking
+  change under the package’s versioning rule. No shipped design uses it,
+  so no stimulus moves. The schema’s description of the method,
+  corrected in all three copies, changes `config/schema.yaml`, so every
+  committed datasheet records a new schema digest and every run log a
+  new datasheet checksum.
+
+- [`run_pipeline()`](https://pablobernabeu.github.io/lexsync/r/reference/run_pipeline.md)
+  and
+  [`run_all()`](https://pablobernabeu.github.io/lexsync/r/reference/run_all.md)
+  fall back to the schema bundled with the package when none is named
+  and none is found beside the designs, as the Python command line
+  already did, so the one-call pipeline works outside a clone. Both now
+  default to `schema_path = NULL`. Before the bundled copy,
+  [`run_pipeline()`](https://pablobernabeu.github.io/lexsync/r/reference/run_pipeline.md)
+  looks for `config/schema.yaml` and then for `schema.yaml` beside the
+  design, and
+  [`run_all()`](https://pablobernabeu.github.io/lexsync/r/reference/run_all.md)
+  looks in `config_dir` and then in `config/`. The first place each
+  function looks is its old default, so a call that worked before reads
+  the same file. A message names the schema chosen, and the run log
+  (`schema_path`) and the datasheet (`reproducibility$schema_path`)
+  record its path, so the choice is visible even when messages are
+  suppressed. Every committed datasheet and run log gains that field. A
+  named schema that does not exist is still an error, and the message
+  gives the bundled copy’s location.
+
+- The realised-control report covers every dimension lexsync knows for
+  the items, not only the standard four and `match_on`: syllables,
+  bigram frequency, every joined norm column and every `define_by`
+  dimension, each with a role (manipulated, controlled or uncontrolled),
+  and it compares every pair of conditions, the anchor rows first.
+  Uncontrolled differences used to go unreported while the Methods text
+  called the control close: in `en_ndensity` the dense words had fewer
+  estimated syllables than the sparse ones (d = -0.83), and a norm used
+  to define the conditions did not appear in the report at all. Each
+  comparison also gives the raw mean difference in the dimension’s own
+  unit (`mean_diff`). The comparisons gain rows, and two columns,
+  `mean_diff` and `role`, after the existing ones. A dimension is
+  manipulated in a pair whose `define_by` windows on it differ, so in
+  `en_andrews_repro` frequency is uncontrolled between the two
+  high-frequency cells.
+  [`match_report()`](https://pablobernabeu.github.io/lexsync/r/reference/match_report.md)
+  takes the roles as `roles`, a function of the condition, reference and
+  dimension that
+  [`run_pipeline()`](https://pablobernabeu.github.io/lexsync/r/reference/run_pipeline.md)
+  derives from the design, and leaves out a dimension with no numeric
+  value, such as `n_syllables` for Chinese. Bigram frequency is computed
+  for the report on a copy of the stimuli, so no stimuli file or
+  selection changes. The datasheet’s `realised_control` entries gain
+  `condition`, `reference` and `mean_diff`, fields of datasheet format
+  1.2, and their roles replace ‘manipulated/free’, the label every
+  unmatched dimension was given. Both apps show each row’s role and raw
+  difference and label each bar of the chart by dimension and pair. The
+  comparisons, datasheets and run logs of the eleven demonstrations that
+  match conditions change, and so do the descriptives of all of them but
+  `en_richdim`, whose report had syllables and bigram frequency already.
+  The twin-edge cases’ pinned reports are regenerated, and the new case
+  `four_conditions` pins the pairs and roles in both engines.
+
+- A generated lexical-decision design reports bigram frequency, N and
+  OLD20 for the words against the pseudowords, marked uncontrolled. Its
+  stimuli give the base word of each pseudoword and the edit distance
+  from it, as the `base` and `edit_distance` columns
+  [`build_lexdec_stimuli()`](https://pablobernabeu.github.io/lexsync/r/reference/build_lexdec_stimuli.md)
+  now returns. Its pseudowords were more bigram-typical than their words
+  (d about -1.5 in `en_lexdec`), which no report showed. The reports,
+  datasheets and run logs of the three lexical-decision demonstrations
+  change and their stimuli gain the two columns, while no pseudoword,
+  trial order or experiment changes.
+
+- A continuous design’s report gives the predictor’s SD against that of
+  as many values spread evenly over its range, each control’s SD against
+  the pool’s, and the control windows (`sd`, `sd_ratio`, `window_low`
+  and `window_high`). An even spread has a predictor ratio of 1 whatever
+  its size. In `en_freqcontinuous`, the frequency SD is 0.60 of that of
+  an even spread.
+  [`select_continuous_stimuli()`](https://pablobernabeu.github.io/lexsync/r/reference/select_continuous_stimuli.md)
+  records the windows and the pool’s SDs as the `control_windows` entry
+  of its `"audit"` attribute.
+  [`match_report_continuous()`](https://pablobernabeu.github.io/lexsync/r/reference/match_report_continuous.md)
+  reads them there, or takes them as `audit`, and the datasheet’s
+  continuous entries gain the four fields, in datasheet format 1.2. The
+  comparisons, datasheets and run logs of `en_freqcontinuous` and
+  `en_priming_continuous` change.
+
+- [`cohens_d()`](https://pablobernabeu.github.io/lexsync/r/reference/cohens_d.md)
+  and
+  [`cohens_d_ci()`](https://pablobernabeu.github.io/lexsync/r/reference/cohens_d_ci.md)
+  return NA when a condition has fewer than two items, where they
+  returned 0, a perfect balance. The Python pipeline no longer fails
+  while formatting the missing interval. The twin-edge case
+  `shortfall_one` pins the result in both engines.
+
+- The Methods text reports the realised control descriptively: the
+  largest difference on a matched dimension, in its own unit and with
+  its pair, d and interval, and then the equivalence tests as a
+  secondary check that says when the number of items is too small for
+  them ever to pass (fewer than 23 per condition at the default bound).
+  It called the control close, or not confirmed, on the tests alone. It
+  names, largest first, up to five comparisons of an uncontrolled
+  dimension that differ by more than the bound, and a generated lexical
+  decision says how its words and pseudowords differ in bigram
+  frequency, N and OLD20. It states the number of items each condition
+  holds, with the request beside it when a `shortfall: allow` run fell
+  short, where it stated the request. It labels the interval by the
+  configured alpha, where it always said 90%, and for a continuous
+  design it reports the realised spreads, the control windows and any
+  widened window in place of ‘near-constant’. The Markdown table of the
+  realised control gains the pair and the raw difference of each row.
+  The datasheet records the items each condition holds as
+  `items$n_per_condition_realised`, a field of datasheet format 1.2, and
+  `design$n_per_condition` gives the request the selector applied, its
+  default when the design gives none, where it was null. The datasheets
+  and run logs of every demonstration change, and no stimulus, report
+  table or experiment does. The twin-edge case `shortfall_one` pins the
+  new fields.
+
+- The suggested model uses the stimuli’s `condition` column, where a
+  lexical decision named a `lexicality` column the stimuli do not have.
+  It adds a matched design’s matched dimensions as centred covariates on
+  the stimuli file’s own columns (Sassenhagen & Alday, 2016), leaving
+  out one that does not vary among the items. It gives items a random
+  slope for condition whenever the counterbalancing recipe rotates the
+  conditions over the items by a Latin square (the categorisation design
+  had none), crosses the condition with the predictor in a continuous
+  pair design, with by-subject slopes for both and their interaction,
+  and says how to recode a crossed design into its factors. Its note
+  calls the random-effects structure maximal (Barr et al., 2013) only
+  when it is, and describes the slopes of a design whose covariates or
+  controls enter as fixed effects only.
+
+- Exact ties between equally close candidates are broken by the keyed
+  hash by default (`matching.tie_break: hash`), and `tie_break: bytes`
+  reproduces the selections of lexsync 0.1. Every design whose matched
+  dimensions tie selects different items, a breaking change under the
+  package’s versioning rule, and a design or schema that names `bytes`
+  selects what it did. The schema sets `tie_break: hash` in all three
+  copies. Of the shipped designs, the Spanish and Chinese ones
+  (`es_freqcontrast`, `es_ndensity`, `es_gender_repro` and
+  `zh_freqcontrast`) change their stimuli, reports, experiments and
+  datasheets for this reason alone, and the English ones for the change
+  below as well. Four twin-edge cases whose picks ties decided are
+  pinned anew (`four_conditions`, `joint_nan`, `nfd_pool` and
+  `user_lexicon_provenance`), `baseline_small` pins the hash rule in its
+  datasheet, and the new case `tie_bytes_small` holds both engines to
+  the rule of lexsync 0.1.
+
+- The English demonstrations select from the screened lexicon,
+  `corpora/derived/en_v2.csv`, with
+  `pool_filters: {nonstandard: [0, 0]}`, leave out the words of
+  `config/exclude_en_demo.txt` through `exclude_words`, and check their
+  generated pseudowords against wordfreq’s fuller English list,
+  `corpora/derived/en_known_forms.txt`. Every English demonstration that
+  draws its items from a lexicon or a supplied pool selects different
+  items, a breaking change. The selections no longer hold a form the
+  screen marks. The `en_andrews_repro` low-frequency cells held 24 such
+  forms among their 36 items (aclu, adhd, bbq and bmx among them), where
+  its high-frequency cells held none. The screen lets through taboo
+  words and some forms that are not standard English words, such as
+  abbreviations that subtitles write in lower case (mph, msg, yrs), and
+  the exclusion list leaves them out. Its 53 forms were found by reading
+  the demonstrations’ selections until a run selected none of them, and
+  its header states the criteria. They include the taboo forms the 0.1
+  demonstrations selected: bitch and boobs in `en_ndensity`, fuck in
+  `en_freqcontrast`, ass, damn and hell in `en_andrews_repro`, and asses
+  and shit in `en_resample`. The maintainer signs off the list’s
+  content. No generated pseudoword is a known English word now. The
+  check leaves the generators fewer candidates, so more pseudowords are
+  ill-formed at an edge or lack a vowel, as fdes, gngs and ntena do. The
+  matching vignette counts 13 of the 140, against 5 when the same
+  designs skip the check. `en_supplied_pool` and `en_priming_continuous`
+  read their norms from `en_v2.csv`, whose N and OLD20 count only the
+  unmarked forms, so `en_supplied_pool` selects different words and
+  `en_priming_continuous` keeps its pairs while its stimuli gain the
+  members’ screening columns. The documentation quotes the new figures.
+  In `en_ndensity`, the dense words have fewer estimated syllables than
+  the sparse ones by d = -0.53, where the unscreened selection gave
+  -0.83, and in `en_lexdec` the pseudowords are more bigram-typical than
+  their words by d = -0.97, where they were by -1.47.
+
+- The English example lexicon, `inst/extdata/en_example.csv`, holds
+  3,000 of the forms `en_v2.csv` keeps, with its frequencies, N and
+  OLD20, and the Python package bundles the same file. It was a slice of
+  `en.csv`, a quarter of it forms the screen marks, mostly names and
+  acronyms. Examples and tests that use it give different numbers: in
+  the quick start, frequency separates the conditions by d = 4.84, where
+  it gave 5.92. The datasheet credits the slice as screened against
+  SUBTLEX-US, and `LICENSE.note` and the repository’s `LICENSE-DATA`
+  credit SUBTLEX-US as a direct source of it. The repository’s
+  `corpora/fetch_corpora.py --slice-en` rebuilds it from the committed
+  `en_v2.csv`, as `--screen-en` now does too. The script writes the
+  slices with LF line ends on every platform, and rebuilding `en.csv` no
+  longer overwrites the English slice.
+
+- Lexica that the Python package’s wordfreq connector builds for Hindi,
+  Bengali, Persian, Ukrainian and Catalan now hold the words those
+  languages spell with combining marks, a zero-width non-joiner, an
+  apostrophe or a middle dot. The connector dropped them, so a Hindi
+  lexicon of 10,000 forms came back with 3,207, most of them
+  Latin-script tokens such as ‘and’. The R package reads the new lexica
+  as before and, like the Python package, counts their length, N and
+  OLD20 in code points.
+
+- Durations that
+  [`resolve_trial_timing()`](https://pablobernabeu.github.io/lexsync/r/reference/resolve_trial_timing.md)
+  reads from an item column must be present, finite and not negative.
+  Fractional milliseconds are rounded once and recorded. A blank or
+  negative value used to produce experiments that stopped at the blank
+  in OpenSesame and PsychoPy or showed the stimulus for no time in
+  jsPsych. A fractional one made the R and Python jsPsych pages differ,
+  because jsonlite kept four decimal places of it. A blank, negative or
+  non-numeric value is now refused, naming the column and the trial’s
+  set and condition. A column of fractional milliseconds is rounded with
+  the rounder both engines share and written back to the stimuli and the
+  loop tables, so 82.5 ms is presented as 83 in every target. The
+  returned table records how many values were rounded in its
+  `"duration_rounding"` attribute, and
+  [`run_pipeline()`](https://pablobernabeu.github.io/lexsync/r/reference/run_pipeline.md)
+  writes the count into the run log. Fixed durations are checked the
+  same way. A negative `duration_ms`, `duration_frames` or `timing`
+  value reached OpenSesame as `clock.sleep(-50)`, and a NaN as
+  `clock.sleep(NA)`, and both are now refused, naming the event or the
+  key. A fractional `duration_ms` is rounded where it was truncated, so
+  33.7 ms is presented as 34, and the lower bound of a jitter must not
+  be negative. The jsPsych page writes each trial’s numbers to 15
+  significant digits, as the Python engine does. No shipped design reads
+  a fractional or blank duration, so no stimulus or experiment changes.
+  The twin-edge case `fractional_soa` pins both engines to one outcome.
+
+- Trigger codes are checked when the experiment is generated. A literal
+  must be a whole number from 1 to 255, written as a number or as a
+  string of digits, and anything else is refused with a message naming
+  the event. A misspelt token such as `conditon` was written into the
+  OpenSesame experiment as `send_trigger(NA)`, while the Python engine
+  stopped. Codes such as 300, 0 and -5 reached the parallel port, which
+  keeps only the low byte, and 20.5 was taken as 20. A literal of 254 or
+  255, which the PsychoPy experiment sends when the session starts and
+  ends, is reported, and so is one equal to a condition code the design
+  sends or one within the range of the item codes it sends. A design
+  that sends item codes together with condition codes, or with a code of
+  its own from 40 to 239, gets item codes that never coincide with those
+  codes. Sets 65 and 66 of a 70-set design took 101 and 102, the
+  condition codes. Such a design is refused before any file is written
+  when it has more item sets than free codes, unless the schema sets the
+  new `triggers.allow_code_overlap: true`, which lets the item codes
+  wrap and repeat within the free codes.
+  [`assign_triggers()`](https://pablobernabeu.github.io/lexsync/r/reference/assign_triggers.md)
+  gains `events` and `schema` arguments for this, and
+  [`export_experiments()`](https://pablobernabeu.github.io/lexsync/r/reference/export_experiments.md)
+  passes them. Any other design keeps its item codes, so no shipped loop
+  table changes. The experiments vignette now says that item codes
+  follow the code-point order of the set labels, so that with sets 1 to
+  20 set 10 is 41 and set 2 is 51, and that they are decoded through the
+  loop table. It said that condition codes stay unique regardless. The
+  codes did, but the marker stream did not once both kinds were sent.
+  The OpenSesame snippet `inline_send_triggers.py` sends only the
+  condition code at the word’s onset. It sent the item code first, whose
+  10 ms pulse delayed the condition code. The schema’s comments describe
+  the new key, so the 42 committed datasheets, which record the schema’s
+  SHA-256, and their run logs are regenerated. No stimulus, report table
+  or experiment changes. The twin-edge case `trigger_typo` pins the
+  refusal in both engines.
+
+- Generated OpenSesame experiments build every stimulus before the trial
+  runs and time each event from its onset. Each inline script built its
+  canvas while the trial ran and slept the event’s full duration after a
+  trigger pulse that blocked for 10 ms, the pattern OpenSesame’s timing
+  manual shows as the way not to time a display, so every event overran:
+  at 60 Hz the 50 ms prime was predicted to last about 67 ms and the 83
+  ms stimulus-onset asynchrony from prime to target about 117 ms. Each
+  event now ends half a frame before its duration is up, so that the
+  next display lands on the refresh that ends it. On a simulated display
+  at 60, 120 and 144 Hz, the prime and the mask then last the flips the
+  PsychoPy script gives them, and the asynchrony stays 83.3 ms. These
+  figures are predictions, and the experiments vignette now gives a
+  photodiode checklist for measuring them. The experiment measures the
+  display’s frame period at start-up and logs it as `lexsync_frame_ms`.
+  It holds each trigger code for `trigger_hold_ms`, which it ignored,
+  without delaying any display. A response kept after the stimulus with
+  `from: offset` opens its window once a code still held has been reset,
+  since OpenSesame’s `keyboard_response` runs none of lexsync’s code.
+  The experiment also sends the 254 and 255 session markers, as the
+  PsychoPy script does. The 32 committed `.osexp` files change, and so
+  do the datasheets and run logs that record their checksums. No
+  stimulus moves.
+
+- Trigger codes in the PsychoPy script last the hold, and never less
+  than 10 ms. The 254 and 255 session markers were cleared by the
+  statement after their flip, and a code on an event shorter than the
+  hold was cleared as soon as the event’s last flip returned, so the
+  markers and a one-flip prime’s code lasted no time at all. A hold set
+  to 10 ms was rounded to 6.9 ms at 144 Hz and 8.3 ms at 240 Hz. The
+  default 50 ms hold was not affected. Every code is now counted down
+  flip by flip and reset on the flip that ends its hold, in a later
+  event when its own is shorter. Only the next onset’s code ends it
+  sooner, and a key that ends a stimulus early no longer cuts its code
+  short. The self-paced reading critical-region code is held the same
+  way. It was held for `inter_trigger_ms`, 10 ms, which is accepted and
+  no longer used:
+  [`validate_design()`](https://pablobernabeu.github.io/lexsync/r/reference/validate_design.md)
+  returns a note for the run log when a schema sets it, and the shipped
+  schema no longer does. A literal code of 254 or 255 is reported as a
+  code both laboratory targets send. The 21 committed PsychoPy scripts
+  change, and the datasheets and run logs are regenerated. No stimulus
+  moves.
+
+- The generated PsychoPy experiment runs full screen
+  (`presentation.fullscreen`, true by default), as PsychoPy advises for
+  frame timing. It always ran in a 1280 x 1024 window, which
+  `fullscreen: false` keeps. Text is 48 pixels high in all three targets
+  (`presentation.text_height_px`, a whole number from 8 to 400), where
+  the OpenSesame experiment used 32. In OpenSesame, the setting is the
+  experiment’s `font_size`, so its instructions grow with it. OpenSesame
+  takes full screen from the mode it is launched in, as the experiments
+  vignette now says. Every committed experiment changes, and so do the
+  datasheets and run logs, which record the checksums of the experiments
+  and the schema. No stimulus moves.
+
+- `triggers.mode` (`auto`, `hardware` or `mock`) decides what the
+  PsychoPy and OpenSesame experiments do when the trigger device cannot
+  be opened. `hardware` refuses to start: the PsychoPy script stops
+  before its window opens, and the OpenSesame experiment stops in its
+  setup. `auto`, the default, falls back to printing the codes as
+  before, but now says so on screen before the first trial, where the
+  experimenter presses C to go on, and records the mode with every
+  trial, as `trigger_mode` in the PsychoPy data file and as
+  `lexsync_trigger_mode` in the OpenSesame log. Both experiments used to
+  run on without triggers and with no notice on screen, and only the
+  OpenSesame log said so, in its `test_mode` column. `mock` prints the
+  codes without trying the device, after the same notice.
+  `triggers.backend: serial`, with `triggers.serial_port` and
+  `triggers.baudrate` (115200 by default), sends each code as one byte
+  over a serial port in both experiments. The OpenSesame setup had a
+  serial branch that ran only once the script was edited by hand, and it
+  then opened the first serial port it found. The OpenSesame snippet
+  `inline_trigger_setup.py` took the first serial port too, and now
+  opens the one named at its top.
+  [`validate_design()`](https://pablobernabeu.github.io/lexsync/r/reference/validate_design.md)
+  refuses a serial backend without a port, a port name that cannot be
+  written into the experiments, a mode or backend lexsync does not know,
+  and a baud rate, text height or full-screen setting of the wrong kind,
+  before anything is written. The experiments vignette describes the
+  delay a USB-serial adapter adds. The twin-edge case `trigger_serial`
+  pins both engines to one outcome.
+
+- The jsPsych page loads jsPsych, its keyboard plugin and its stylesheet
+  from unpkg with Subresource Integrity, each file’s SHA-384 and
+  `crossorigin="anonymous"`, so a browser refuses a modified copy. The
+  page loaded them with no integrity check, and the first two from bare
+  package addresses that the CDN answers with a redirect. The page’s
+  comment says how to run it offline, since a page opened from a
+  `file://` address cannot check the hash of a local copy.
+
+## lexsync 0.1.1
+
+CRAN release: 2026-09-25
+
+- [`assign_triggers()`](https://pablobernabeu.github.io/lexsync/r/reference/assign_triggers.md)
+  gains a `conditions` argument that fixes the order of the condition
+  codes, and
+  [`export_experiments()`](https://pablobernabeu.github.io/lexsync/r/reference/export_experiments.md)
+  gains one that defaults to the order of the design’s `conditions`. The
+  codes used to follow the order in which the conditions first appeared
+  in the counterbalanced trials, so a different seed could swap them,
+  and `low_frequency` was 101 in a design that lists `high_frequency`
+  first. The pipeline now passes the design’s order, followed by any
+  other condition in the order the item source lists it, so the first
+  condition the design lists is 101. The condition codes of 12 of the 21
+  demonstration designs change with it.
+  [`assign_triggers()`](https://pablobernabeu.github.io/lexsync/r/reference/assign_triggers.md)
+  called without `conditions` behaves as before.
+- [`cohens_d_ci()`](https://pablobernabeu.github.io/lexsync/r/reference/cohens_d_ci.md)
+  uses the large-sample standard error of d,
+  `sqrt(1/nx + 1/ny + d^2 / (2 * (nx + ny)))` (Hedges & Olkin, 1985;
+  Borenstein et al., 2009). It left out the `d^2` term, which treated
+  the pooled SD as known and made the interval on a manipulated
+  dimension far too narrow. In the English frequency contrast, d = 5.27
+  had the interval \[5.01, 5.53\] and now has \[4.72, 5.83\]. A matched
+  control, whose d is near zero, moves by at most 0.002 across the 21
+  demonstration designs, and no d, TOST p-value or verdict changes. The
+  comparisons, datasheets and run logs of the designs with a manipulated
+  dimension change with it. No stimulus moves.
+- [`match_report()`](https://pablobernabeu.github.io/lexsync/r/reference/match_report.md)
+  documents the direction of its signed statistics. `cohens_d` and its
+  interval are the reference (first) condition’s mean minus the mean of
+  the condition in that row, and `var_ratio` is that condition’s
+  variance over the reference’s.
+- New
+  [`lexsync_cache_clear()`](https://pablobernabeu.github.io/lexsync/r/reference/lexsync_cache_clear.md)
+  removes a fetched corpus from the cache, together with any partial
+  download of it, or with no argument removes the whole cache. It
+  returns the paths it removed, invisibly.
+- [`lexsync_cache_dir()`](https://pablobernabeu.github.io/lexsync/r/reference/lexsync_cache_dir.md)
+  only reports the cache’s path. It created the directory on every call,
+  so asking where the cache was left an empty directory behind.
+  [`fetch_corpus()`](https://pablobernabeu.github.io/lexsync/r/reference/fetch_corpus.md)
+  now creates the cache when a download into it starts, once the
+  registry entry and its URL have been accepted, so a refused call
+  writes nothing. That download begins by deleting any `.part` sidecar
+  in the cache that has gone a day without a write. An interrupt or a
+  process that died mid-transfer leaves one behind, and no handler
+  removes it. A younger sidecar may belong to a download still running
+  in another session, so it is left alone. A `dest` of the caller’s
+  choosing behaves as before.
+- `citation("lexsync")` gives the DOI that CRAN assigned to the package,
+  <https://doi.org/10.32614/CRAN.package.lexsync>, with the CRAN page as
+  its URL. The 0.1.0 build on CRAN predates the DOI and gives the
+  repository’s address. The entry names CRAN as its publisher, and its
+  text version is the APA reference for software: author, year, title,
+  version, “\[Computer software\]”, CRAN and the DOI.
+- The tests no longer take another package’s sources for the lexsync
+  repository. CRAN’s Linux hosts check each package beside the unpacked
+  sources of the others, and the test holding the bundled templates to
+  the repository’s `templates/` directory found the unrelated
+  ‘templates’ package there and failed. A test that compares the package
+  with repository files now accepts a root only if it holds lexsync’s
+  own `DESCRIPTION` under `R_workflow/` and the Python package beside
+  it, and skips on CRAN.
+- Suggests now asks for testthat 3.1.8, the first release whose
+  `local_mocked_bindings()` can replace an imported function, as the
+  corpus download tests do with
+  [`download.file()`](https://rdrr.io/r/utils/download.file.html).
+
+## lexsync 0.1.0
+
+CRAN release: 2026-09-22
+
+- First release: multilingual corpus access, parallel multidimensional
+  matching, counterbalancing, item resampling, deterministic pseudoword
+  generation, and generation of hardware-timed PsychoPy, OpenSesame and
+  jsPsych experiments. The R and Python engines select byte-identical
+  stimuli, and every run ships a materials datasheet (provenance,
+  checksums, realised control) and a pre-registration template.
+- See the top-level `CHANGELOG.md` for the full, cross-language history
+  and the planned methodological roadmap.
+
+### Changes made before the release
+
+These notes follow the package through its development up to the
+release, so they describe each change against the state it replaced.
+
+- The package now declares `Depends: R (>= 4.0.0)`.
+  [`tools::R_user_dir`](https://rdrr.io/r/tools/userdir.html) does not
+  exist before 4.0.0, and
+  [`round()`](https://rdrr.io/r/base/Round.html)’s post-4.0 algorithm
+  shapes artefact bytes, so an older R would fail obscurely or write
+  different bytes without complaint.
+- The published median goes through the exact reductions.
+  [`describe_stimuli()`](https://pablobernabeu.github.io/lexsync/r/reference/describe_stimuli.md)
+  was the one reduction still on
+  [`stats::median`](https://rdrr.io/r/stats/median.html), which averages
+  the two middle values through
+  [`mean()`](https://rdrr.io/r/base/mean.html)’s long-double accumulator
+  while the Python engine reduced through numpy. Both engines now sort
+  and take the exact middle, with `(a + b) / 2` in plain double
+  arithmetic for even n, and regenerating every design moved no byte.
+  *Reproducibility and parity* claimed that every reduction shared one
+  compensated-summation algorithm, which the median never did, and now
+  describes the sort-and-middle rule beside it.
+- The dead half of the two-shortest-forms CSV guard now fires. Between
+  2^49 and 1e15 two one-decimal strings can round-trip to the same
+  double, and the R check derived its digit count from a 15-digit format
+  that never shows a fractional digit there, so R accepted values
+  (844424930131968.2 among them) that the Python writer refused. R now
+  refuses exactly the same values, and the change only adds refusals.
+- A condition without `define_by` selects identically in both engines.
+  This engine always fell back to the whole pool. The Python engine
+  crashed with a bare KeyError on the same design and now mirrors the
+  fallback, pinned by twin tests.
+- A pair design’s tolerance-window relaxation reaches the run log and
+  datasheet. The continuous-pairs selector’s re-expansion dropped the
+  audit in both engines, so a relaxed window left no trace outside the
+  console. No shipped pair design relaxes, so no committed artefact
+  changed.
+- `INTER_TRIGGER_S` is substituted through `%.17g` like its neighbours
+  in the generated PsychoPy script. It used
+  [`as.character()`](https://rdrr.io/r/base/character.html), whose
+  rendering of a non-integer quotient differs from Python’s
+  [`str()`](https://rdrr.io/r/utils/str.html). The shipped default still
+  renders “0.01”, so no committed experiment byte moved.
+- The counterbalancing hash keys convert to UTF-8 before hashing, as
+  `hash_unit()` always has, so a latin1-marked condition read from a
+  user’s CSV can no longer rank by different digests in the two engines.
+- The command-line wrapper reports which copy of the package it loaded.
+  `R_workflow/run_pipeline.R` prefers an installed lexsync over the
+  edited sources, so edits silently did nothing until a reinstall. It
+  now states the loaded copy and the remedy on stderr at startup.
+- The Shiny app writes its design YAML with LF endings through a binary
+  connection (the datasheet hashes that file into `design_sha256`, which
+  must not depend on the operating system), and its parity caption now
+  matches the keyed-hash guarantee: the engines produce byte-identical
+  stimuli and trial order, where the caption used to promise only the
+  stimuli. The Python engine’s twin fixes land in the same release: its
+  writer refuses 16-digit integer columns as this engine always has, its
+  scalar rounder passes an overflowing scale through, and
+  `run_pipeline(verbose = FALSE)` keeps its console silent.
+- A selection that cannot honour `n_per_condition` is now an error.
+  Every selector used to clip the request to the available pool and said
+  so at most through a verbose message, while the datasheet and the
+  generated Methods text kept stating the requested n. The new
+  `matching: shortfall` policy defaults to `error`, and `allow` accepts
+  the shrink. Its sibling `matching: on_insufficient_tolerance` (default
+  `relax`) can likewise turn the silent tolerance-window widening into a
+  refusal, and a relaxation that does happen is now recorded in the run
+  log and the datasheet (`selection.window_relaxations`), where before
+  it was only narrated to the console. No committed design experiences
+  either condition.
+- `joint` and `optimal` matching can no longer select the same word
+  twice. With overlapping condition windows a word could be paired with
+  itself at zero cost, or mirrored across two sets, appearing in both
+  conditions. Both matchers now track used words as the anchored matcher
+  always has, and every matcher asserts its output holds each word at
+  most once. Every committed design has disjoint conditions, and those
+  select identically, byte for byte.
+- The item-table loader refuses missing cells in both engines. A blank
+  `condition` reached Python’s hash-key guard as the string “nan” and
+  passed the very check built to refuse it, a blank `item` cell turned
+  numeric identifiers into “1.0”, and R failed on the same table with a
+  bare “missing value where TRUE/FALSE needed”. Missingness is now
+  checked before any coercion, `item` is read as text, empties after
+  trimming and duplicated item-and-condition rows are refused, and both
+  engines say the same thing.
+- Cohen’s d no longer reports perfect balance for two unequal constant
+  vectors. The standardised difference is undefined when the pooled SD
+  is zero and the means differ, so it is now reported as missing. The
+  old 0 with CI \[0, 0\] contradicted the TOST verdict on the same row.
+- The datasheet’s Methods prose follows the recorded verdicts. The claim
+  of being “within the 0.5-SD equivalence bound” was printed for any
+  controlled dimension with a confidence interval, even where the
+  datasheet’s own JSON recorded `equivalent: false`. The sentence is now
+  conditional on the stored verdicts, prints the signed worst difference
+  and the configurable bound, and the analysis note names the suggested
+  formula as `lme4` syntax, where it used to imply that `statsmodels`
+  accepts it. The datasheet also gains the SHA-256 of the design and
+  schema, the pairwise matchers’ candidate cap and whether it fired, the
+  equivalence bound tested against, and the `yaml`, `stringi` and
+  operating-system entries the environment record omitted.
+- A `continuous` block now works over a supplied pool, and two silent
+  table-mode gaps are refusals. `source: pool` reaches the continuous
+  selector (it previously fell through to the conditions matcher and
+  crashed). A continuous table without `members` is an error now, as is
+  `pool_filters` on a plain table design, where each used to do nothing
+  silently while the provenance recorded otherwise. Misspelt
+  `pool_filters` or `define_by` columns, duplicate condition names,
+  reversed or non-finite ranges, negative tolerances and non-integer n
+  are likewise refusals now.
+- Selection-path rounding goes through the shared decimal rule
+  (`.round_dp` and a new vectorised numpy twin), replacing a pairing of
+  R’s [`round()`](https://rdrr.io/r/base/Round.html) with numpy’s, two
+  rounders the project measured to disagree at boundaries. Regenerating
+  all 21 designs moved no stimulus, report or experiment byte. A custom
+  norm named in `match_on` now also reaches the descriptives,
+  comparisons and realised-control record, which previously listed only
+  the built-in dimensions.
+- A design file could execute code on the machine that ran it. A design
+  is meant to be shared, and the recipient runs it and then opens the
+  generated PsychoPy script, OpenSesame experiment or jsPsych page.
+  Stimulus text was always safe: it travels in the loop-table CSV the
+  experiment reads at run time. Design *metadata* was not. The name,
+  language label, font, parallel-port address and the column names on
+  jitter and feedback events were substituted straight into code and
+  markup positions, so a quote or an angle bracket there stopped being
+  text and became syntax, and a crafted design could run arbitrary code
+  on a lab machine or in the origin of a hosted browser study. Both
+  engines now validate these values, under one rule that leaves every
+  legitimate value byte-identical. A port address must be an address, a
+  column name must be an identifier, and a stated `language_tag` is
+  shape-checked before it is used. Escaping them correctly would have
+  taken three rules per engine. `.pyq()` escapes newlines now as well:
+  an `.osexp` is line-oriented, so a raw newline closed the
+  inline-script block and let the rest of the value start a new
+  top-level item. Pinned by `test-injection.R`. No generated artefact
+  changed. Adversarially attacking that fix then found four ways through
+  it, all now closed and pinned. The largest: a response event’s `keys`
+  were joined into OpenSesame’s `set allowed_responses "a;b"` with no
+  validation at all, and that is one line of a line-oriented format, so
+  a key holding a double quote closed the string, a newline ended the
+  line, and the rest of the value became new top-level items in the
+  experiment, including an `inline_script` whose body OpenSesame runs.
+  Keys are validated now. The shape guards were also anchored with `$`,
+  which in both Python’s `re` and R’s PCRE matches just before a final
+  newline, so a port address ending in one passed the check. They are
+  anchored at end-of-string now. A scalar `keys: space` or
+  `blocks: practice` was iterated character by character in Python and
+  kept whole in R, so one design gave two different allowed-response
+  lists and a block-restricted event ran everywhere in one engine and
+  nowhere in the other. And R’s HTML escape did not cover U+2028/U+2029,
+  which end a line in JavaScript but are not ASCII controls: Python
+  escaped them, R did not, so the same design produced different bytes
+  and R’s `<script>` was a syntax error before ES2019.
+- A browser experiment could score a feedback screen against the
+  previous trial’s keypress. The jsPsych feedback screen looked up “the
+  last row marked scoreable”, which is that trial’s response only when
+  the trial has one. An event may be restricted to a block, so a design
+  running the response event in one block and feedback in another leaves
+  a trial with no response row of its own, and the screen then reported
+  a verdict computed from an earlier trial’s key. Each trial’s rows now
+  carry its own identifier and the screen matches on it. The generated
+  HTML changed for all 21 designs. No stimulus selection changed.
+- A large number in a user’s own column was written differently by the
+  two engines.
+  [`write_csv_utf8()`](https://pablobernabeu.github.io/lexsync/r/reference/write_csv_utf8.md)
+  reproduced readr’s format for small magnitudes and left the top end
+  alone, since nothing lexsync computes reaches it. Nothing lexsync
+  computes does. A joined norm table, a supplied pool or an item table
+  carries whatever columns the user has, and those go straight into the
+  stimuli CSV, so the guarantee held for the shipped designs and failed
+  silently for the user’s own data. readr’s layout above 1e15 could not
+  be reproduced in Python, which writes 1.5e16 as `15e15`, the largest
+  double as `17976931348623157e292`, and the double nearest 5e22 as
+  `4.9999999999999996e+22`. Both engines now refuse such a value and
+  name the column. One engine accepting it would leave the two writing
+  different bytes. A value with two equally short decimal forms is
+  refused for the same reason. Everything verified to render
+  identically, across 465 values compared against readr’s own output,
+  writes as before.
+- A generated OpenSesame experiment with a `feedback` event or a
+  `blocks:` restriction would not run. The emitter wrote `unicode(...)`,
+  a Python 2 builtin that OpenSesame’s Python 3 inline workspace does
+  not provide, so the experiment died with `NameError` on the first
+  trial. It also passed `None` as a `var.get()` default, which
+  OpenSesame cannot distinguish from no default, so it raises where it
+  should return. Both are fixed, both spellings are now pinned by a
+  test, and a `feedback` event with no preceding `response` or
+  `question` is refused at generation time. Left to run time, that one
+  design error would surface as three different failures, one per
+  target.
+- Reported statistics are rounded by an arithmetic definition both
+  engines compute identically, because no pairing of built-ins agreed.
+  Measured over 210,000 values, including every three-decimal halfway
+  case in range, R’s [`round()`](https://rdrr.io/r/base/Round.html)
+  disagrees with Python’s builtin, Python’s builtin disagrees with
+  numpy’s, and even R’s `sprintf("%.3f")` disagrees with Python’s
+  `"%.3f"` on 274 of them. Some values move by one in the last published
+  digit. No selection changes.
+- A hash-key component that cannot be rendered identically in both
+  engines is now refused rather than hashed. A blank `condition` cell, a
+  routine data error neither reader rejects, rendered `"NA"` in R and
+  `"nan"` in Python, so the two engines produced different trial orders
+  from the same design, reproducibly and with nothing to signal it.
+  Booleans get a pinned spelling and are still accepted.
+- The overlap-cap centroid in the `joint` and `optimal` matchers goes
+  through the compensated reduction. The cap does fire on shipped
+  designs, so it decides which candidates reach matching. It was
+  verified to change no design’s selection.
+- `R CMD check --as-cran` is clean: 0 errors, 0 warnings, 1 note (the
+  standard new-submission note). Fixed on the way: three undocumented
+  arguments on
+  [`select_continuous_stimuli()`](https://pablobernabeu.github.io/lexsync/r/reference/select_continuous_stimuli.md),
+  an unqualified [`utils::head()`](https://rdrr.io/r/utils/head.html),
+  and the package’s only example, which called an unexported function
+  from inside `\dontrun{}` and so could never have worked if a user
+  copied it. The package now has executable, offline examples, and
+  `cran-comments.md` no longer misstates the check result.
+- Three factual corrections. The SUBTLEX-PT registry entry cited a DOI
+  that resolves to an unrelated psychometrics paper. The matching
+  vignette put Zipf 7 at a thousand occurrences per million where the
+  correct figure is ten thousand, contradicting its own lower anchor. A
+  design comment attributed “840-prime materials” to Rastle et
+  al. (2004), a figure that appears nowhere in that paper.
+- A design may declare `practice:` and `fillers:` item tables. Those
+  trials are presented but not analysed, so the stimuli file and the
+  reports are written from the main rows while the generated experiments
+  run every trial. Practice comes first. Fillers are interleaved with
+  the main trials, because a block of fillers at the end is not a filler
+  but a second block a participant can tell apart. A design declaring
+  neither is unaffected, down to not gaining a `block` column.
+- A `feedback` trial event, and a `blocks:` key that restricts any event
+  to named blocks. Together these confine feedback to practice, which is
+  the usual arrangement: feedback teaches the mapping, and would
+  contaminate the reaction times it is measuring. Implemented for
+  PsychoPy, OpenSesame and jsPsych alike. The PsychoPy runner now
+  returns the pressed key so it can be scored, and each runner pauses at
+  a block boundary.
+- The Python engine embedded a bare `NaN` in the generated jsPsych
+  experiment where a trial had no value for a field another block
+  supplies (a main-block trial in a design whose practice items carry an
+  `answer`). That is not valid JSON, and the R engine dropped the key
+  instead, so the two engines’ experiments differed. Both now drop it.
+- The generated artefacts were not byte-identical across the engines,
+  and the parity test could not see it. It read both CSVs back with a
+  parser and compared the values, under which `1` and `1.0` are the same
+  number. Thirteen of the 18 shipped designs differed byte for byte
+  while the gate stayed green. Three differences were serialisation (a
+  whole number written `1` and `1.0`, a boolean written `FALSE` and
+  `False`, a small value written `9e-4` and `0.0009`) and one was not:
+  two reported means differed in the last decimal published, because
+  numpy sums pairwise and R’s
+  [`mean()`](https://rdrr.io/r/base/mean.html) does not. Every reduction
+  in the package now uses one compensated-summation algorithm written
+  out in both engines, whose agreement follows from IEEE-754 and no
+  longer from measurement. The writers agree on every value, and the
+  artefacts are now compared as bytes. No R golden moved, because R’s
+  two-pass mean was already the correctly-rounded one.
+- A response key coded `f` was silently turned into `FALSE`. `readr`
+  reads a column whose values are all `f`, `t`, `T` or `F` as logical,
+  while pandas keeps the string, so an item table using the commonest
+  two-choice key pair had its correct answer corrupted in one engine.
+  Item tables now read the condition label and the paradigm’s presented
+  fields as text in both engines.
+- `jsonlite`’s default of four digits was truncating the datasheet: a
+  design declaring `tolerance_k: 0.1111111111111111` had it recorded as
+  `0.1111`, which does not reproduce the run the record exists to
+  describe. The JSON is now written at full display precision, and the
+  Python engine writes the same precision.
+- New paradigm `categorisation`: a category cue, then the word to judge
+  against it, with `answer` holding the correct response key so the data
+  are scoreable. Counterbalanced by Latin-square rotation, so a
+  participant never sees the same target twice.
+- `counterbalance.optimise` (off by default) assigns item sets to lists
+  so the lists are equated on the declared dimensions, where the old
+  deal went by set rank. The search is a deterministic integer descent
+  with a keyed-hash tie-break, so it uses no random number generator and
+  both engines produce the same assignment.
+  [`balance_lists()`](https://pablobernabeu.github.io/lexsync/r/reference/balance_lists.md)
+  is exported.
+- New item source `pool`: a supplied word list goes through the matcher
+  without having to masquerade as a corpus lexicon.
+  [`load_pool()`](https://pablobernabeu.github.io/lexsync/r/reference/load_pool.md)
+  is exported. The neighbourhood dimensions are computed against the
+  lexicon’s words, because a word’s neighbours are its neighbours in the
+  language.
+- A design may name norm tables in a `norms:` block. They are joined
+  onto the lexicon before the candidate pool is built, so a semantic
+  dimension the corpus does not carry (concreteness, age of acquisition,
+  valence) can be filtered on, matched on or spanned like any other. No
+  norm data is bundled. Every joined table is recorded in the materials
+  datasheet with its checksum and its per-column coverage, because a
+  norm table can supply the very variable a design manipulates.
+- Datasheet version 1.1. It adds `materials_source$norms` and, for a
+  pair-keyed design, a `relational` block naming the members, the pair
+  count, the member lexicon and its checksum, and the member-level
+  dimensions separately from the relational ones.
+  `selection$cross_engine` no longer reports “n/a (user-supplied items)”
+  for a pair-keyed continuous design: that design does perform a
+  selection, and it is byte-identical across engines.
+- [`merge_norms()`](https://pablobernabeu.github.io/lexsync/r/reference/merge_norms.md)
+  returns the lexicon with the norm columns appended, in the lexicon’s
+  own row *and column* order. It previously used
+  [`merge()`](https://rdrr.io/r/base/merge.html), which hoists the join
+  column to position 1 where pandas keeps the left frame’s order, so the
+  two engines disagreed on column order whenever `on` was not already
+  first. The join key is now case- and whitespace-folded on the
+  lexicon’s side too, where only the norm table’s was folded before: a
+  lexicon holding `Dog` used to match nothing and leave an all-`NA`
+  dimension. A norm column whose name already exists on the lexicon is
+  now an error. Renaming it to `frequency.x` / `frequency.y`, as
+  [`merge()`](https://rdrr.io/r/base/merge.html) did, left the matched
+  dimension under a name nothing looks for.
+- [`write_datasheet()`](https://pablobernabeu.github.io/lexsync/r/reference/write_datasheet.md)
+  and
+  [`write_run_log()`](https://pablobernabeu.github.io/lexsync/r/reference/write_run_log.md)
+  now write LF on every platform. They used a text-mode connection, so
+  on Windows the datasheet, its Markdown rendering and the Markdown run
+  log came out CRLF while the Python engine’s twins were LF. The
+  datasheet is the provenance record. Its bytes no longer depend on the
+  machine that built it.
+- [`add_pair_overlap()`](https://pablobernabeu.github.io/lexsync/r/reference/add_pair_overlap.md)
+  and
+  [`resolve_trial_timing()`](https://pablobernabeu.github.io/lexsync/r/reference/resolve_trial_timing.md)
+  are now exported in fact as well as in the documentation. Both were
+  marked for export and documented, but the `NAMESPACE` had not been
+  regenerated, so
+  [`library(lexsync)`](https://github.com/pablobernabeu/lexsync) did not
+  make them available.
+- The materials datasheet now reports the candidate-pool size per
+  condition (selection transparency, making item-selection bias
+  auditable) and a suggested crossed mixed-model formula that guards
+  against the language-as-fixed-effect fallacy.
+- Browser (jsPsych) experiments gain a welcome/instructions screen,
+  per-row item metadata (condition, item id, list), and a completion
+  screen that saves the collected data as a CSV download.
+- The realised-control report and datasheet gain a variance ratio per
+  dimension, a distributional balance check that complements Cohen’s d
+  and TOST.
+- Wuggy-style subsyllabic pseudoword generation (opt-in
+  `items.generation.method: subsyllabic`): whole onset/nucleus/coda
+  constituents are swapped for attested same-role, same-length
+  alternatives, preserving syllabic structure and length. Byte-identical
+  across engines, and the default letter-substitution generator is
+  unchanged.
+- Continuous (non-dichotomised) design mode: declare a `continuous`
+  block and
+  [`select_continuous_stimuli()`](https://pablobernabeu.github.io/lexsync/r/reference/select_continuous_stimuli.md)
+  spans a predictor’s range evenly while holding the controls
+  near-constant, with predictor-control correlations and a regression
+  suggested-model in the datasheet. Byte-identical across the R and
+  Python engines.
+- Two new matching methods: `mahalanobis` (a covariance-aware distance
+  that down-weights correlated dimensions) and `optimal` (a globally
+  optimal assignment for two-condition designs, using the suggested
+  `clue` package). Unlike the default methods, these use a covariance
+  inverse and an assignment solver, so the R and Python engines agree
+  closely but not byte-for-byte on them.
+- An unknown `matching.method`, and a candidate pool too small for the
+  requested `n_per_condition`, now raise an actionable error. Each used
+  to fall back silently, to a default method or to a short set. The
+  Python engine raises the same message, and code that relied on the old
+  fallback will now stop.
+- `stringi` is a new hard dependency (Imports). The canonical word key
+  is case-folded with ICU at the root locale, so the key no longer
+  depends on the machine’s locale and matches the Python engine byte for
+  byte. `shiny`, `bslib`, `DT` and `zip` are new Suggests, for the Shiny
+  app.
+- Ten functions are newly exported, matching the Python package’s public
+  surface:
+  [`PARADIGMS()`](https://pablobernabeu.github.io/lexsync/r/reference/PARADIGMS.md),
+  [`build_datasheet()`](https://pablobernabeu.github.io/lexsync/r/reference/build_datasheet.md),
+  [`build_lexdec_stimuli()`](https://pablobernabeu.github.io/lexsync/r/reference/build_lexdec_stimuli.md),
+  [`count_syllables()`](https://pablobernabeu.github.io/lexsync/r/reference/count_syllables.md),
+  [`generate_pseudowords()`](https://pablobernabeu.github.io/lexsync/r/reference/generate_pseudowords.md),
+  [`make_pseudoword()`](https://pablobernabeu.github.io/lexsync/r/reference/make_pseudoword.md),
+  [`methods_paragraph()`](https://pablobernabeu.github.io/lexsync/r/reference/methods_paragraph.md),
+  [`required_fields()`](https://pablobernabeu.github.io/lexsync/r/reference/required_fields.md),
+  [`resolve_events()`](https://pablobernabeu.github.io/lexsync/r/reference/resolve_events.md)
+  and
+  [`write_datasheet()`](https://pablobernabeu.github.io/lexsync/r/reference/write_datasheet.md).
+- [`tost_equiv()`](https://pablobernabeu.github.io/lexsync/r/reference/tost_equiv.md)
+  now defaults to `bound_d = 0.5`, the value the Python engine already
+  used. The R default was 0.4, so the equivalence bound is wider and a
+  comparison is easier to declare equivalent. Reported verdicts can
+  change for the same data.
+- [`describe_stimuli()`](https://pablobernabeu.github.io/lexsync/r/reference/describe_stimuli.md)
+  now orders rows by each group’s first appearance, matching pandas.
+  This changes the row order of generated descriptives.
+- OpenSesame experiments now present trials in the seeded
+  counterbalanced order. The order was previously randomised again at
+  run time, so what ran was not what the pipeline generated and
+  recorded.
+- Breaking change: trial order within each counterbalancing list now
+  comes from a seeded, keyed-hash shuffle shared with the Python engine.
+  Each row is ranked by the SHA-256 digest of
+  `seed|replicate|list|set|condition`, a tuple that identifies the trial
+  uniquely under either counterbalancing recipe, so the permutation is a
+  pure function of the design: byte-identical from both engines on any
+  platform, and different for every seed. Previously the order was drawn
+  from [`sample()`](https://rdrr.io/r/base/sample.html), which could
+  never match numpy’s generator for the same seed, so the trial lists
+  were the one engine-specific artefact. All 75 generated experiment
+  files across the 15 designs bundled at the time are now byte-identical
+  across the engines, and the parity gate now compares the `trial`
+  column of the stimuli CSVs. Stimulus selection, pairing and lists are
+  unchanged, but every design’s trial order changes relative to the
+  previous artefacts. The package no longer uses R’s random-number
+  generator at all, so a seeded run cannot perturb the calling script’s
+  random stream and there is no RNG state to save or restore.
+- [`merge_norms()`](https://pablobernabeu.github.io/lexsync/r/reference/merge_norms.md)
+  preserves the lexicon’s row order, and
+  [`participant_table()`](https://pablobernabeu.github.io/lexsync/r/reference/participant_table.md)
+  crosses factors in
+  [`expand.grid()`](https://rdrr.io/r/base/expand.grid.html) order in
+  both engines.
+- Datasheets record the tolerance windows and pseudoword generator that
+  ran, filter dimensions as the Python engine does, and report the
+  installed package version they were built by.
+- [`match_stimuli()`](https://pablobernabeu.github.io/lexsync/r/reference/match_stimuli.md)
+  raises where it used to re-pick an already-used row, when a relaxed
+  window re-admits candidates missing a matched dimension. Such a
+  candidate has no defined distance and is never assigned, yet it still
+  counted towards the pool-size guard. An NA-depleted pool could
+  therefore pass the guard and go on to emit the same word in several
+  sets.
+- [`match_stimuli()`](https://pablobernabeu.github.io/lexsync/r/reference/match_stimuli.md)
+  and
+  [`select_continuous_stimuli()`](https://pablobernabeu.github.io/lexsync/r/reference/select_continuous_stimuli.md)
+  no longer select an all-NA row when the tolerance window is NA (an
+  anchor of a single item gives `sd = NA`). An undecided comparison now
+  resolves to `FALSE`, as it does in Python, so the window is relaxed
+  and a real word is selected.
+- The generated PsychoPy script, OpenSesame experiment and jsPsych page
+  are now byte-identical to the Python engine’s, trial lists included
+  (see the keyed-hash shuffle entry above).
+- Selected stimuli are unchanged for all 15 designs bundled at the time.
+- Every vignette now turns console colour off and fixes the console
+  width while it renders. pkgdown passes the calling terminal’s colour
+  support into its build subprocess, so a coloured message or error
+  would otherwise reach the reader as escape sequences in the middle of
+  the text.

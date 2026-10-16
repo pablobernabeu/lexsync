@@ -1,0 +1,42 @@
+# Validate a metadata value interpolated into generated code or markup
+
+A design's name, language label and font are not stimuli. They do not
+travel in the loop table the experiment reads at run time; they are
+substituted straight into the PsychoPy script, the OpenSesame inline
+Python and the jsPsych HTML, so a quote or an angle bracket there stops
+being text and becomes syntax. A design file is meant to be shared and
+re-run by someone else, which is what makes an unvalidated one an
+executable payload as much as a configuration.
+
+## Usage
+
+``` r
+clean_meta(value, field = "value", max_len = 200L)
+```
+
+## Arguments
+
+- value:
+
+  A value coerced to a single string.
+
+- field:
+
+  Field name, for error messages.
+
+- max_len:
+
+  Maximum permitted length in characters.
+
+## Value
+
+The value as a plain string.
+
+## Details
+
+Refusing beats escaping. Escaping correctly would mean three different
+escapes for three targets in two engines, six places to get subtly
+wrong, and it would change the bytes the two engines write; refusing is
+one rule that leaves every legitimate value ("en_lexdec", "english",
+"Courier New", "SimHei") byte-identical. Mirrors the Python
+`clean_meta`.

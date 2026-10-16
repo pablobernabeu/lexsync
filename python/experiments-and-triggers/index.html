@@ -1,0 +1,2298 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Lexical optimisation and hardware-timed experiment generation. Select matched stimuli from a corpus in any of dozens of languages and generate the experiment that presents them.">
+      
+      
+        <meta name="author" content="Pablo Bernabeu">
+      
+      
+        <link rel="canonical" href="https://pablobernabeu.github.io/lexsync/python/experiments-and-triggers/">
+      
+      
+        <link rel="prev" href="../matching-and-designs/">
+      
+      
+        <link rel="next" href="../reproducibility-and-parity/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/favicon.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Experiments and triggers - lexsync (Python)</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,700,700i%7CJetBrains+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_markdown_exec_pyodide.css">
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../stylesheets/brand.css">
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="amber">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#experiments-and-triggers" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="lexsync (Python)" class="md-header__button md-logo" aria-label="lexsync (Python)" data-md-component="logo">
+      
+  <img src="../assets/logo.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            lexsync (Python)
+          </span>
+          <small class="mrd-version" title="Released version">0.1.1</small>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Experiments and triggers
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Demo link (added: not part of upstream header.html) -->
+    <a data-md-component="demo-link" href="https://pablobernabeu.github.io/lexsync/demos/en_lexdec_english.html" title="Open the demonstration experiment: a generated jsPsych lexical-decision task" class="md-header__button">Demo</a>
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/pablobernabeu/lexsync" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+    
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="amber"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="amber"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../getting-started/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Get started
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../api/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  API reference
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../matching-and-designs/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../changelog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Changelog
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../about/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  About
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="lexsync (Python)" class="md-nav__button md-logo" aria-label="lexsync (Python)" data-md-component="logo">
+      
+  <img src="../assets/logo.svg" alt="logo">
+
+    </a>
+    lexsync (Python)
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/pablobernabeu/lexsync" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Get started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../matching-and-designs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Matching and designs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Experiments and triggers
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Experiments and triggers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#a-trial-is-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A trial is data
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#when-a-response-is-collected" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When a response is collected
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#instructions-and-the-response-mapping" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Instructions and the response mapping
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#timing-that-varies-from-trial-to-trial" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Timing that varies from trial to trial
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-six-paradigms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The six paradigms
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-the-items-come-from" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where the items come from
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#practice-fillers-and-feedback" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Practice, fillers and feedback
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#counterbalancing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Counterbalancing
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Counterbalancing">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#trial-orders-and-runs-of-one-condition" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trial orders and runs of one condition
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#balanced-list-assignment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Balanced list assignment
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#triggers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Triggers
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Triggers">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-trigger-device" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The trigger device
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-three-targets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The three targets
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The three targets">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#psychopy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PsychoPy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#opensesame" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OpenSesame
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jspsych" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        jsPsych
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#checking-the-timing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Checking the timing
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#running-a-counterbalanced-experiment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Running a counterbalanced experiment
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reproducibility-and-parity/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reproducibility and parity
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../the-app/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The app
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../references/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    References
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../about/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    About
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#a-trial-is-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A trial is data
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#when-a-response-is-collected" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When a response is collected
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#instructions-and-the-response-mapping" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Instructions and the response mapping
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#timing-that-varies-from-trial-to-trial" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Timing that varies from trial to trial
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-six-paradigms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The six paradigms
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-the-items-come-from" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where the items come from
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#practice-fillers-and-feedback" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Practice, fillers and feedback
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#counterbalancing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Counterbalancing
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Counterbalancing">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#trial-orders-and-runs-of-one-condition" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trial orders and runs of one condition
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#balanced-list-assignment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Balanced list assignment
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#triggers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Triggers
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Triggers">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-trigger-device" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The trigger device
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-three-targets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The three targets
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The three targets">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#psychopy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PsychoPy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#opensesame" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OpenSesame
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jspsych" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        jsPsych
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#checking-the-timing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Checking the timing
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#running-a-counterbalanced-experiment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Running a counterbalanced experiment
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="experiments-and-triggers">Experiments and triggers<a class="headerlink" href="#experiments-and-triggers" title="Permanent link">&para;</a></h1>
+<p>Once a set of stimuli exists, something has to present it, on the right machine, at the right time,
+and in an EEG study it has to tell the amplifier when the stimulus appeared. lexsync writes that
+something. This guide covers the declarative trial model that makes one engine serve six paradigms
+and three presentation targets, how items are rotated across lists and blocked into practice and
+fillers, and where the trigger is written in each target and why the placement is the interesting
+part.</p>
+<h2 id="a-trial-is-data">A trial is data<a class="headerlink" href="#a-trial-is-data" title="Permanent link">&para;</a></h2>
+<p>The core idea is small. A trial is a list of events, and an event is a dictionary. Nothing about a
+paradigm is expressed as code in a backend, which is what allows a new paradigm to be a
+configuration change rather than three new renderers.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">lexsync</span>
+
+<span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">lexsync</span><span class="o">.</span><span class="n">resolve_events</span><span class="p">({</span><span class="s2">"paradigm"</span><span class="p">:</span> <span class="s2">"lexical_decision"</span><span class="p">}):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+</code></pre></div>
+<div class="result">
+<div class="language-text highlight"><pre><span></span><code>{'type': 'fixation', 'content': '+', 'duration_frames': 30}
+{'type': 'text', 'content': '{target}', 'duration_frames': 48, 'trigger': 'condition', 'onset_locked': True}
+{'type': 'response', 'keys': ['left', 'right'], 'timeout_ms': 2000}
+{'type': 'blank', 'duration_frames': 15}
+</code></pre></div>
+</div>
+<p>An event's <code>type</code> is one of <code>fixation</code>, <code>text</code>, <code>mask</code>, <code>blank</code>, <code>region_by_region</code>, <code>response</code>,
+<code>question</code> or <code>feedback</code>. Its <code>content</code> is either a literal, such as <code>"+"</code> or <code>"#####"</code>, or a field reference in
+braces, such as <code>"{target}"</code>, which is filled per trial from the loop table. <code>duration_ms</code> is the
+event's length in milliseconds, the unit all three targets present, so a design asks for the same
+interval wherever it runs, although each target delivers it differently (below). The PsychoPy script measures the display's refresh at start-up and
+converts it to the nearest whole number of flips. <code>duration_frames</code> is still accepted for designs
+written before that change and is converted at <code>presentation.assumed_refresh_hz</code>. <code>trigger</code> is a
+whole-number EEG code from 1 to 255, or the token <code>condition</code> or <code>item</code>, and <code>onset_locked</code> asks for
+it to be written on the event's onset flip.</p>
+<p>A text event's <code>case</code>, <code>upper</code> or <code>lower</code>, sets the letter case its text is shown in. The runners
+apply it as they show the text, with <code>str.upper()</code> and <code>str.lower()</code> in PsychoPy and OpenSesame and
+<code>toUpperCase()</code> and <code>toLowerCase()</code> in jsPsych, so the loop tables and the data files keep each item
+as it was written. lexsync never changes the case itself, because R's <code>toupper()</code> leaves "ß" as it
+is where Python and JavaScript give "SS", and the two engines must write the same files. A mask's
+<code>length_of</code> names fields of the trials, and its one-character content is repeated as many times as
+the longest of their values has characters, counted when the experiments are written:</p>
+<div class="language-yaml highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">mask</span>
+<span class="w">  </span><span class="nt">content</span><span class="p">:</span><span class="w"> </span><span class="s">'#'</span>
+<span class="w">  </span><span class="nt">length_of</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">prime</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">target</span><span class="p p-Indicator">]</span>
+<span class="w">  </span><span class="nt">duration_ms</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">500</span>
+</code></pre></div>
+<p>The count is in characters, not bytes, over every trial of every list, so each target and each list
+shows the same mask.</p>
+<p>Each target realises those durations in its own way. PsychoPy rounds them to whole flips at the
+measured refresh and locks the trigger to the flip. The generated OpenSesame experiment builds every
+canvas of a trial before the trial starts and times each event from the onset its display returns.
+It ends the event half a frame before its duration is up, so that the next display lands on the
+refresh that ends it. On a simulated display at 60, 120 and 144 Hz, the prime and the mask of the
+<code>priming</code> paradigm then last the flips the PsychoPy script gives them. Its 83 ms stimulus-onset
+asynchrony stays 83.3 ms at all three rates. A duration within a millisecond or so of halfway
+between two whole numbers of flips can still come out a flip longer or shorter than in PsychoPy.
+The experiment used to build each canvas while the trial ran and to sleep each event's full
+duration after a blocking 10 ms pulse, so every event overran its stated length. In the browser,
+timing varies with the machine and the browser, and primes of 33 to 50 ms are not reliably
+realised online. Whatever the target, verify the timing a study depends on with a photodiode, as
+<a href="#checking-the-timing">checking the timing</a> describes.</p>
+<p><code>resolve_events</code> returns a design's <code>events</code> list if it has one, and otherwise the default sequence
+of the paradigm it names, defaulting to <code>factorial</code>. Supplying <code>events</code> explicitly is how you build
+a trial the registry does not have.</p>
+<h2 id="when-a-response-is-collected">When a response is collected<a class="headerlink" href="#when-a-response-is-collected" title="Permanent link">&para;</a></h2>
+<p>A response event after a text event collects its key from that stimulus's onset. The stimulus stays
+on screen for its duration at most and a blank follows it. The window closes once the stimulus's
+duration and the response's <code>timeout_ms</code> have both passed, so the default lexical decision collects
+for 2,800 ms from the target's onset. A key pressed while the target is still visible counts, the
+first key ends the trial, and every target times the reaction from the target's onset.</p>
+<p>A design that asks the participant to wait, as a delayed-response EEG design does, keeps a window
+that opens once the stimulus has gone:</p>
+<div class="language-yaml highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">response</span>
+<span class="w">  </span><span class="nt">keys</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">f</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">j</span><span class="p p-Indicator">]</span>
+<span class="w">  </span><span class="nt">timeout_ms</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2000</span>
+<span class="w">  </span><span class="nt">from</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">offset</span>
+</code></pre></div>
+<p>A stimulus that should stay on screen for the whole window, as the <code>masked_priming</code> target does,
+takes the window's length as its duration, and its response a <code>timeout_ms</code> of 0.</p>
+<p>A response after any other event gets the same window by default, so one that follows a blank keeps
+the window it had, timed from the window's own onset. <code>from: onset</code> after such an event is refused,
+since a window from the onset opens with a text event and none comes right before it. The datasheet
+records each response window as <code>presentation.response_windows</code>, and its Methods text says when
+responses were collected.</p>
+<h2 id="instructions-and-the-response-mapping">Instructions and the response mapping<a class="headerlink" href="#instructions-and-the-response-mapping" title="Permanent link">&para;</a></h2>
+<p>Every generated experiment shows instructions and waits for the space bar before its first trial.
+The participant reads them at their own pace, and the experimenter can start the run when the
+participant is ready. A design gives its own text under <code>instructions</code>, which may hold line
+breaks:</p>
+<div class="language-yaml highlight"><pre><span></span><code><span class="nt">instructions</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">  </span><span class="no">You will see a string of letters.</span>
+<span class="w">  </span><span class="no">Press F if it is a real English word and J if it is not.</span>
+</code></pre></div>
+<p>The text is carried as data: JSON in the PsychoPy script and the jsPsych page, and an escaped
+literal in the OpenSesame script, so nothing in it can become code. A control character other than
+the line break is refused. Without the key, lexsync writes English instructions for the tasks it
+knows. A lexical decision names the keys for a word and a pseudoword. A categorisation says that
+its first key means yes and its second no, and a comprehension question says the same of its keys.
+Any other design is told only which keys to press, and its run log asks for instructions that say
+what each key means. The run log also notes a design in another language that gives no text of its
+own. The targets' own short messages, such as the prompt to press the space bar, are in English.</p>
+<p>A lexical decision maps word to its response event's first key and pseudoword to its second. The
+paradigm's events therefore map word to the left arrow key, and
+<code>config/design_en_lexdec_blocks.yaml</code>, whose events use f and j, maps word to f, as its practice
+table does. A design may give its own mapping, with keys its response event allows, and may rotate
+it across lists:</p>
+<div class="language-yaml highlight"><pre><span></span><code><span class="nt">response_mapping</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">word</span><span class="p">:</span><span class="w"> </span><span class="nv">j</span><span class="p p-Indicator">,</span><span class="nt"> pseudoword</span><span class="p">:</span><span class="w"> </span><span class="nv">f</span><span class="p p-Indicator">}</span>
+<span class="nt">rotate_mapping_by_list</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</code></pre></div>
+<p>Rotated, list <em>k</em> moves each key <em>k</em> - 1 places along the response event's keys, which with two keys
+swaps them in every even-numbered list, and each version's instructions name its own keys. lexsync
+refuses a mapping that names a key the response event does not allow. It also refuses one that
+gives no key for a condition whose trials name no answer, and one that names a condition no trial
+has.</p>
+<p><code>export_experiments</code> gives each trial its correct key in <code>answer</code> as it assigns the trigger codes,
+so every trial of a lexical decision can be scored. A practice or filler table keeps its own
+answers, and the run log notes any that the mapping contradicts, as a rotated mapping does in its
+even-numbered lists. The stimuli file does not change. jsPsych records a key by the browser's name
+for it, so the jsPsych page names each answer that way, <code>arrowleft</code> for <code>left</code>, and in every target
+a correct response equals its trial's answer. The datasheet records the mapping as
+<code>presentation.response_mapping</code>, and its Methods text says which key the participants pressed for
+which condition.</p>
+<h2 id="timing-that-varies-from-trial-to-trial">Timing that varies from trial to trial<a class="headerlink" href="#timing-that-varies-from-trial-to-trial" title="Permanent link">&para;</a></h2>
+<p>A duration need not be the same on every trial. An event may instead declare a
+<code>duration:</code> block, in one of two forms:</p>
+<div class="language-yaml highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">text</span>
+<span class="w">  </span><span class="nt">content</span><span class="p">:</span><span class="w"> </span><span class="s">'{prime}'</span>
+<span class="w">  </span><span class="nt">duration</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">from_column</span><span class="p">:</span><span class="w"> </span><span class="nv">prime_ms</span><span class="p p-Indicator">}</span><span class="w">          </span><span class="c1"># read per trial from the items</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">blank</span>
+<span class="w">  </span><span class="nt">duration</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">jitter</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">400</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">800</span><span class="p p-Indicator">],</span><span class="nt"> as</span><span class="p">:</span><span class="w"> </span><span class="nv">iti_ms</span><span class="p p-Indicator">}</span><span class="w"> </span><span class="c1"># drawn per trial, in milliseconds</span>
+</code></pre></div>
+<p>The two exist for different reasons. A duration read from a column is a
+manipulated variable. Here it is the prime's duration, which with the mask that
+follows sets the stimulus-onset asynchrony, the lever that separates automatic
+from strategic processing. It belongs in the item table and in the analysis. A
+jittered duration is not manipulated at all. It decorrelates the design matrix,
+as EEG and fMRI designs routinely require.</p>
+<p>Neither draws a random number. A jittered value is a uniform integer keyed on the
+seed, the column name, the list, the set and the condition, so both engines
+realise the same milliseconds and a rerun reproduces them. Naming the column in
+the key is what makes two jittered events draw independently, since without it
+they would share a single value.</p>
+<p>Either form writes the realised milliseconds into the stimuli table and the loop
+table, because timing that varies is a variable the analysis needs, not
+presentation detail. <code>config/design_en_priming_jitter.yaml</code> is a worked
+example carrying both. Its prime lasts <code>prime_ms</code> and a 33 ms mask follows, so its
+stimulus-onset asynchrony is <code>prime_ms</code> plus 33 ms.</p>
+<p>Every value read from a column must be a finite number of milliseconds, not negative. A blank or
+negative cell is refused, naming the column and the trial's set and condition. Left alone, it would
+give an experiment that stops at the blank or shows the stimulus for no time at all. Fractional
+milliseconds, such as the 33.333333 that an item table built on 60 Hz frames carries, are rounded
+once with the rounder both engines share and written back. The stimuli, the loop tables and all
+three targets then present the same whole milliseconds, and the run log counts the values rounded.
+A fixed <code>duration_ms</code> or <code>duration_frames</code> is checked the same way, and the lower bound of a jitter
+must not be negative.</p>
+<h2 id="the-six-paradigms">The six paradigms<a class="headerlink" href="#the-six-paradigms" title="Permanent link">&para;</a></h2>
+<p><code>PARADIGMS</code> is a plain dictionary. Each entry gives the fields the paradigm presents, its
+counterbalancing recipe and its default event sequence.</p>
+<table>
+<thead>
+<tr>
+<th>Paradigm</th>
+<th>Presents</th>
+<th>Counterbalancing</th>
+<th>The trial</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>factorial</code></td>
+<td><code>word</code></td>
+<td><code>factorial</code></td>
+<td>Fixation, the critical word carrying the onset-locked condition marker, response, blank.</td>
+</tr>
+<tr>
+<td><code>lexical_decision</code></td>
+<td><code>target</code></td>
+<td><code>factorial</code></td>
+<td>The same shape, with a generic target field so a real word and a pseudoword are interchangeable.</td>
+</tr>
+<tr>
+<td><code>priming</code></td>
+<td><code>prime</code>, <code>target</code></td>
+<td><code>latin_square_target</code></td>
+<td>Backward pattern-masked: fixation, a 50 ms prime with its own fixed marker, a 33 ms <code>#####</code> mask, then the target with the condition marker (an 83 ms stimulus-onset asynchrony at 60 Hz). There is no forward mask, and prime and target keep the item table's letter case.</td>
+</tr>
+<tr>
+<td><code>masked_priming</code></td>
+<td><code>prime</code>, <code>target</code></td>
+<td><code>latin_square_target</code></td>
+<td>A forward mask of hash marks for 500 ms, as many as the longest prime or target has characters, a lower-case prime for three frames (50 ms at 60 Hz) with its own fixed marker, then the upper-case target with the condition marker, on screen until the response or for 2,000 ms, and a 250 ms blank.</td>
+</tr>
+<tr>
+<td><code>self_paced_reading</code></td>
+<td><code>sentence</code>, <code>question</code></td>
+<td><code>latin_square_target</code></td>
+<td>Fixation, the sentence region by region with the critical region marked, then a yes/no comprehension question.</td>
+</tr>
+<tr>
+<td><code>categorisation</code></td>
+<td><code>target</code>, <code>category</code>, <code>answer</code></td>
+<td><code>latin_square_target</code></td>
+<td>Fixation, the category cue, then the word to judge against it with the condition marker, response, blank.</td>
+</tr>
+</tbody>
+</table>
+<p><code>masked_priming</code> is the procedure of <a href="../references/#forster-1984">Forster and Davis (1984)</a>.
+Without the forward mask, a prime of 50 ms is usually visible. The change of case keeps a related
+prime and its target from sharing their visual form, so that priming does not arise from the
+overlap of the two displays. <code>config/design_en_rastle_repro.yaml</code> uses it for the
+<a href="../references/#rastle-2004">Rastle, Davis and New (2004)</a> reproduction, a lexical decision whose
+nonword targets are fillers with the right arrow key as their answer, while its response mapping
+puts both priming conditions on the left. <code>config/design_en_andrews_repro.yaml</code> runs the
+<a href="../references/#andrews-1989">Andrews (1989)</a> reproduction as a lexical decision the same way, with
+one pseudoword per selected word. Both designs' comments say how the fillers were made and what
+still differs from the original studies.</p>
+<p><code>categorisation</code> is worth a paragraph, because what separates it from lexical decision is not the
+shape of the trial but where the question lives. The category cue is a trial event, shown afresh each
+time, since the category varies from trial to trial, and crossing one word with two cues is how a
+categorisation study separates a property of the word from the demands of the task. A robin is a bird
+quickly and an animal slowly, and only the question changed.</p>
+<p>Its <code>answer</code> field holds the key that is correct on the trial, so scoring is a string comparison
+against the recorded response with nothing to look up in whatever language the analysis is
+written in. Because the paradigm requires the field, the PsychoPy and OpenSesame targets can score
+each response against it, and the jsPsych data rows carry it beside the response. Its recipe is
+<code>latin_square_target</code> for the same reason a priming design uses one: each item carries both cues,
+and a factorial deal would show a participant the same target twice, turning the second
+presentation into a repetition-priming trial. A categorisation also needs 'no' trials, or pressing
+the yes key on every trial scores perfectly. <code>config/design_en_categorisation.yaml</code> is a worked
+example, whose 16 foils, nouns that do not belong to the category they appear under, are fillers
+with the answer j.</p>
+<p><code>required_fields</code> tells you what a design's items must carry: the paradigm's own fields, plus any
+extra field its events reference.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="nb">print</span><span class="p">(</span><span class="n">lexsync</span><span class="o">.</span><span class="n">required_fields</span><span class="p">({</span><span class="s2">"paradigm"</span><span class="p">:</span> <span class="s2">"priming"</span><span class="p">}))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">lexsync</span><span class="o">.</span><span class="n">required_fields</span><span class="p">({</span><span class="s2">"paradigm"</span><span class="p">:</span> <span class="s2">"self_paced_reading"</span><span class="p">}))</span>
+</code></pre></div>
+<div class="result">
+<div class="language-text highlight"><pre><span></span><code>['prime', 'target']
+['sentence', 'question']
+</code></pre></div>
+</div>
+<p>Adding a paradigm means adding an entry to <code>PARADIGMS</code> in both engines, with its event sequence, its
+fields and its recipe. Both backends then render it with no further code.</p>
+<h2 id="where-the-items-come-from">Where the items come from<a class="headerlink" href="#where-the-items-come-from" title="Permanent link">&para;</a></h2>
+<p>The corpus paradigms build their own items. Priming and self-paced reading cannot, because a prime,
+a target and a sentence with a marked critical region are editorial work, so those designs set
+<code>items.source: table</code> and point at a CSV.</p>
+<p><code>load_items</code> reads it. The table must carry an <code>item</code> identifier, a <code>condition</code> label and the
+paradigm's presented fields, and it is checked on the way in. Field values are validated against
+control characters and over-long strings, which is not paranoia about typos: the values are written
+into a loop table and an experiment script, and a stray newline in a stimulus would corrupt both.
+Commas and quotation marks pass through, because they go into a properly quoted CSV that the
+experiment reads at run time rather than into generated code. Items are then mapped to an integer
+<code>set</code> id in byte order, so that a table-sourced design counterbalances the same way as a
+corpus-sourced one, and the same way in both engines.</p>
+<p>The self-paced-reading design shows how a sentence carries its own structure: regions are delimited
+with <code>|</code> in the <code>sentence</code> field, and a <code>critical_region</code> column names the region that gets the
+marker.</p>
+<p>A third source is <code>items.source: pool</code>, which hands the matcher a candidate list of your own instead
+of a whole lexicon. It is described under <a href="../matching-and-designs/#supplied-item-pools">supplied item pools</a>,
+since what it changes is the selection rather than the trial.</p>
+<h2 id="practice-fillers-and-feedback">Practice, fillers and feedback<a class="headerlink" href="#practice-fillers-and-feedback" title="Permanent link">&para;</a></h2>
+<p>Everything above treats one frame as both the materials record and the thing that runs. That holds
+only while the two are the same trials, and they usually are not. Practice exists to settle the
+participant into the task and is discarded before analysis. Fillers exist to dilute the manipulation
+so the participant cannot guess it, and are likewise not analysed. Both have to reach the generated
+experiment, and neither belongs in the stimuli file, the descriptives or the realised control.</p>
+<p>The pipeline therefore splits. The stimuli CSV and the reports are written from the main rows, while
+the PsychoPy, OpenSesame and jsPsych experiments are generated from every presented trial. A <code>block</code>
+column marks which is which, and it appears only when a design declares the blocks, so a design
+without them keeps exactly the columns it had.</p>
+<div class="language-yaml highlight"><pre><span></span><code><span class="nt">practice</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">items/practice_en_lexdec.csv</span>
+<span class="nt">fillers</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">items/fillers_en_lexdec.csv</span>
+</code></pre></div>
+<p>Where each block goes is a methodological choice. Practice comes first, as its own run, ordered
+within itself by the seeded keyed hash, so every participant given a list meets the practice items in
+one fixed order. Fillers are
+interleaved with the main trials, because a block of fillers at the end is not a filler at all: it
+is a second block the participant can tell apart. They are merged in
+before the order is drawn, so one deterministic shuffle mixes them through, which does renumber the
+main trials. That is correct, since adding fillers changes the sequence and the stimuli file records
+where each item actually appeared. Both blocks appear in every list and neither is counterbalanced,
+because they carry no manipulation to rotate and every participant should get the same practice. In
+a resampled design, the copy of a list in each replicate is a presentation version of its own, and
+it gets both blocks too. The PsychoPy and jsPsych runners pause where the practice trials end and
+nowhere else, since a pause around a filler would set it apart.</p>
+<p>Each block's item table is read with the same validation as any other, and given a <code>set</code> range that
+cannot collide with the main items, which a naive read would not manage since practice item 1 and
+main item 1 would both be set 1. The counts and the tables' checksums go into the datasheet, because
+what the participant saw is part of the materials even when it is not part of the analysis.</p>
+<p>A <code>feedback</code> event scores the trial and shows the result. It reads the field named by <code>answer</code>,
+compares it as a string with the key the participant pressed, and displays <code>correct</code>, <code>incorrect</code> or
+<code>no_response</code> for <code>duration_ms</code>.</p>
+<div class="language-yaml highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">feedback</span>
+<span class="w">  </span><span class="nt">answer</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">answer</span>
+<span class="w">  </span><span class="nt">correct</span><span class="p">:</span><span class="w"> </span><span class="s">'Correct'</span>
+<span class="w">  </span><span class="nt">incorrect</span><span class="p">:</span><span class="w"> </span><span class="s">'Incorrect'</span>
+<span class="w">  </span><span class="nt">no_response</span><span class="p">:</span><span class="w"> </span><span class="s">'Too</span><span class="nv"> </span><span class="s">slow'</span>
+<span class="w">  </span><span class="nt">duration_ms</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">600</span>
+<span class="w">  </span><span class="nt">blocks</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">practice</span><span class="p p-Indicator">]</span>
+</code></pre></div>
+<p><code>blocks:</code> restricts an event to the named blocks, and this is its main use: feedback during practice
+confirms the mapping the instructions state, and would contaminate reaction times in the task
+itself. The restriction has to be expressed on the event because the event list is global to the
+design. Since a feedback event scores a keypress, something before it must have collected one. A
+design whose feedback event has no preceding <code>response</code> or <code>question</code> is refused when the
+experiment is generated. Left to run time, that one design error would surface as three different
+failures, one per target.
+<code>config/design_en_lexdec_blocks.yaml</code> puts all of this together.</p>
+<h2 id="counterbalancing">Counterbalancing<a class="headerlink" href="#counterbalancing" title="Permanent link">&para;</a></h2>
+<p><code>counterbalance</code> picks a recipe from the design's paradigm and applies it. A design's own <code>events</code>
+list has no say in the recipe, so a priming design that reads its prime's duration from the items
+keeps its Latin square. <code>counterbalance.recipe</code> names a recipe outright, <code>factorial</code> or
+<code>latin_square_target</code>, for a design that needs the other one. Trial order within each list comes
+from a keyed-hash shuffle seeded by <code>schema.seed</code>, and a <code>trial</code> column numbers the result.</p>
+<p>The rest of this page follows one small design through to its three exported experiments. It runs
+against the bundled lexicon, so the output shown is the output you will get.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">importlib.resources</span><span class="w"> </span><span class="kn">import</span> <span class="n">files</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">yaml</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">lexsync</span>
+
+<span class="n">data</span> <span class="o">=</span> <span class="n">files</span><span class="p">(</span><span class="s2">"lexsync"</span><span class="p">)</span> <span class="o">/</span> <span class="s2">"data"</span>
+<span class="n">schema</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">((</span><span class="n">data</span> <span class="o">/</span> <span class="s2">"schema.yaml"</span><span class="p">)</span><span class="o">.</span><span class="n">read_text</span><span class="p">(</span><span class="n">encoding</span><span class="o">=</span><span class="s2">"utf-8"</span><span class="p">))</span>
+<span class="n">lexicon</span> <span class="o">=</span> <span class="n">lexsync</span><span class="o">.</span><span class="n">load_lexicon</span><span class="p">(</span>
+    <span class="nb">str</span><span class="p">(</span><span class="n">data</span> <span class="o">/</span> <span class="s2">"en_example.csv"</span><span class="p">),</span> <span class="n">schema</span><span class="p">,</span> <span class="n">language</span><span class="o">=</span><span class="s2">"english"</span>
+<span class="p">)</span>
+
+<span class="n">design</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">"name"</span><span class="p">:</span> <span class="s2">"demo"</span><span class="p">,</span> <span class="s2">"language"</span><span class="p">:</span> <span class="s2">"english"</span><span class="p">,</span> <span class="s2">"n_per_condition"</span><span class="p">:</span> <span class="mi">6</span><span class="p">,</span>
+    <span class="s2">"pool_filters"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"length"</span><span class="p">:</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">8</span><span class="p">],</span> <span class="s2">"frequency"</span><span class="p">:</span> <span class="p">[</span><span class="mf">3.8</span><span class="p">,</span> <span class="mf">7.0</span><span class="p">]},</span>
+    <span class="s2">"conditions"</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"high_frequency"</span><span class="p">,</span> <span class="s2">"define_by"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"frequency"</span><span class="p">:</span> <span class="p">[</span><span class="mf">5.2</span><span class="p">,</span> <span class="mf">7.0</span><span class="p">]}},</span>
+        <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"low_frequency"</span><span class="p">,</span> <span class="s2">"define_by"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"frequency"</span><span class="p">:</span> <span class="p">[</span><span class="mf">3.8</span><span class="p">,</span> <span class="mf">4.4</span><span class="p">]}},</span>
+    <span class="p">],</span>
+    <span class="s2">"match_on"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"length"</span><span class="p">,</span> <span class="s2">"n_density"</span><span class="p">,</span> <span class="s2">"old20"</span><span class="p">],</span>
+    <span class="s2">"counterbalance"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"lists"</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span>
+    <span class="s2">"timing"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"fixation_frames"</span><span class="p">:</span> <span class="mi">30</span><span class="p">,</span> <span class="s2">"word_frames"</span><span class="p">:</span> <span class="mi">30</span><span class="p">,</span> <span class="s2">"isi_frames"</span><span class="p">:</span> <span class="mi">15</span><span class="p">},</span>
+<span class="p">}</span>
+
+<span class="n">pool</span> <span class="o">=</span> <span class="n">lexsync</span><span class="o">.</span><span class="n">build_pool</span><span class="p">(</span><span class="n">lexicon</span><span class="p">,</span> <span class="n">design</span><span class="p">[</span><span class="s2">"pool_filters"</span><span class="p">])</span>
+<span class="n">stimuli</span> <span class="o">=</span> <span class="n">lexsync</span><span class="o">.</span><span class="n">match_stimuli</span><span class="p">(</span><span class="n">pool</span><span class="p">,</span> <span class="n">design</span><span class="p">,</span> <span class="n">schema</span><span class="p">)</span>
+</code></pre></div>
+<div class="result"></div>
+<p><code>factorial</code> shows every matched item. With more than one list, matched sets are dealt to lists round
+robin by set index, so a list gets a balanced slice of the design rather than a contiguous block of
+it. More lists than item sets are refused, since the surplus lists would be empty.</p>
+<p><code>latin_square_target</code> is for the paired and sentence paradigms, where showing the same target twice
+in one list would ruin it. Each item contributes exactly one trial to each list, in a condition
+rotated by the list number, so no target repeats within a list. With <code>counterbalance.lists</code> unset,
+the number of lists equals the number of conditions, which is the fully counterbalanced case.</p>
+<p>The rotation is complete only when the lists and the item sets are multiples of the number of
+conditions. One list confounds item and condition, since every participant sees each item in the
+same condition. Two lists for three conditions show each item in only two of them, and nine items in
+two conditions leave each list with five trials in one condition and four in the other. The run log
+and the datasheet report such a rotation, and the Methods text calls it incomplete.
+<code>counterbalance.incomplete: error</code> refuses it instead, set in the design or, for every design, in the
+schema. The datasheet's <code>counterbalancing</code> record gives the recipe that ran, the lists the stimuli
+table holds, whether the rotation is complete and the trials each list gives each condition.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="n">stimuli</span> <span class="o">=</span> <span class="n">lexsync</span><span class="o">.</span><span class="n">counterbalance</span><span class="p">(</span><span class="n">stimuli</span><span class="p">,</span> <span class="n">design</span><span class="p">,</span> <span class="n">schema</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span>
+    <span class="n">stimuli</span><span class="p">[[</span><span class="s2">"trial"</span><span class="p">,</span> <span class="s2">"list"</span><span class="p">,</span> <span class="s2">"set"</span><span class="p">,</span> <span class="s2">"condition"</span><span class="p">,</span> <span class="s2">"word"</span><span class="p">]]</span>
+    <span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">to_string</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="p">)</span>
+</code></pre></div>
+<div class="result">
+<div class="language-text highlight"><pre><span></span><code> trial  list  set      condition     word
+     1     1    4 high_frequency     came
+     2     1    1 high_frequency  perfect
+     3     1    3 high_frequency remember
+</code></pre></div>
+</div>
+<p>A design with a <code>replicate</code> column, from <code>resample_stimuli</code>, is counterbalanced replicate by
+replicate, and trial order is numbered within each.</p>
+<h3 id="trial-orders-and-runs-of-one-condition">Trial orders and runs of one condition<a class="headerlink" href="#trial-orders-and-runs-of-one-condition" title="Permanent link">&para;</a></h3>
+<p>One seed gives each list one order, and every participant given that list meets it, so each item
+sits at the same serial position for all of them. The order also has runs of one condition as long
+as a uniform shuffle gives. Over seeds 1 to 1000 of a lexical decision with 60 words and 60
+pseudowords, the longest run had a median of 7 and a maximum of 21. A run of seven is seven trials
+in a row with the same correct key. Two keys change this, and both are off by default.</p>
+<div class="language-yaml highlight"><pre><span></span><code><span class="nt">counterbalance</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">lists</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span>
+<span class="w">  </span><span class="nt">max_run</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span>
+<span class="w">  </span><span class="nt">orders</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3</span>
+</code></pre></div>
+<p><code>max_run: k</code> caps every run of one condition at k trials, or of one value of the column <code>run_on</code>
+names, where a missing value counts as a value of its own. The repair keeps as much of the seeded
+order as the limit allows. Each step takes the earliest remaining trial in the seeded order that
+neither extends the current run beyond k nor leaves the rest of the list unable to keep the limit.
+This is the kind of sequence constraint that pseudorandomisation programs such as Mix impose
+(<a href="../references/#van-casteren-2006">van Casteren &amp; Davis, 2006</a>). The look-ahead matters. Without
+it, the repair ran out of trials near the end of 931 of 1,000 seeded orders of a list of 40 words
+and 80 pseudowords at k = 2, a limit that some order of that list keeps. With it, only a limit that
+no order can meet is refused, and the message gives the counts that rule it out, such as 80
+pseudoword trials against 40 others at k = 1. With fillers, the limit applies to the order they are
+interleaved in, and the practice trials keep it on their own.</p>
+<p><code>orders: m</code> writes m orders of each list into the loop tables, as <code>order_1</code> to <code>order_m</code>, each
+trial's position in each order. Order 1 is the seeded order, and orders 2 to m are ranked by the
+same digest with the order's number in the key, each repaired under <code>max_run</code>. The experiments
+choose an order by participant number. Participant <em>p</em> runs version <code>((p - 1) mod V) + 1</code> in order
+<code>(((p - 1) div V) mod m) + 1</code>. The participants given one version therefore meet its orders in
+turn, and a run without a participant number runs order 1. OpenSesame, whose loop presents its
+table in file order, gets one experiment per version and order. The orders travel inside the loop
+tables, which both engines write byte for byte, so the browser page needs no hashing of its own.
+The datasheet's <code>counterbalancing</code> record gives the limit, the longest run realised in each version
+and the number of orders, and the Methods text states them.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="n">limited</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="n">counterbalance</span><span class="o">=</span><span class="p">{</span><span class="s2">"lists"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">"max_run"</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">"orders"</span><span class="p">:</span> <span class="mi">2</span><span class="p">})</span>
+<span class="n">ordered</span> <span class="o">=</span> <span class="n">lexsync</span><span class="o">.</span><span class="n">counterbalance</span><span class="p">(</span><span class="n">stimuli</span><span class="p">,</span> <span class="n">limited</span><span class="p">,</span> <span class="n">schema</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span>
+    <span class="n">ordered</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s2">"order_2"</span><span class="p">)[[</span><span class="s2">"trial"</span><span class="p">,</span> <span class="s2">"order_1"</span><span class="p">,</span> <span class="s2">"order_2"</span><span class="p">,</span> <span class="s2">"condition"</span><span class="p">,</span> <span class="s2">"word"</span><span class="p">]]</span>
+    <span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">to_string</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="p">)</span>
+</code></pre></div>
+<div class="result">
+<div class="language-text highlight"><pre><span></span><code> trial  order_1  order_2      condition     word
+     7        7        1  low_frequency    nurse
+    11       11        2 high_frequency    years
+     1        1        3 high_frequency     came
+     9        9        4  low_frequency     wore
+     3        3        5  low_frequency     demo
+     4        4        6 high_frequency remember
+</code></pre></div>
+</div>
+<h3 id="balanced-list-assignment">Balanced list assignment<a class="headerlink" href="#balanced-list-assignment" title="Permanent link">&para;</a></h3>
+<p>The factorial deal sends set 1 to list 1, set 2 to list 2 and so on. That is reproducible, but it
+balances nothing: every <em>n</em>th set lands in the same list, so a dimension that happens to vary
+smoothly across sets is dealt out unevenly, and where each list goes to a different group of
+participants, the unevenness is confounded with the group.</p>
+<p><code>counterbalance.optimise</code> searches instead for an assignment whose lists have near-equal totals on
+the dimensions you name, by exchanging pairs of item sets between lists. List sizes are preserved,
+since a swap trades one set for another.</p>
+<div class="language-yaml highlight"><pre><span></span><code><span class="nt">counterbalance</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">lists</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">4</span>
+<span class="w">  </span><span class="nt">optimise</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">  </span><span class="nt">balance_on</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">length</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">n_density</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">old20</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">frequency</span><span class="p p-Indicator">]</span>
+</code></pre></div>
+<p><code>balance_on</code> defaults to <code>match_on</code>, and the example widens it deliberately. Frequency is the
+manipulated variable and so is not matched on, but it is manipulated <em>within</em> a list, since every
+list holds both conditions. Equating the lists on its total therefore costs the manipulation nothing
+and removes a difference between the participant groups who receive different lists. Naming only the
+matched dimensions leaves frequency dealt arbitrarily, and measurably so: on the shipped design the
+optimiser then improves the three named dimensions and makes frequency worse than the arbitrary deal
+had it. Balance what you want equated across lists, which is usually everything.</p>
+<p>This is a steepest descent to a local optimum, not a global search. What it guarantees is that no
+single exchange would improve matters further, and the datasheet records the imbalance before and
+after, so the improvement is checkable. The objective is all-integer and ties are broken by the
+seeded keyed hash, which keeps the two engines on the same assignment and stops list 1 being
+favoured for being numbered first.</p>
+<p>It is off by default, and stays off. Switching it on changes which items a participant sees, so it
+has to be a deliberate design decision. A package upgrade must never make that change for a study
+already running. It is refused on a Latin-square design, where every item already appears in every
+list and the lists are balanced on the items by construction. <code>balance_lists</code> runs the search alone
+if you want the assignment without applying it. <code>config/design_en_balanced_lists.yaml</code> is the worked
+example.</p>
+<p>Each dimension is counted in a unit of its own before the totals are compared. By default the unit
+is the dimension's mean, which suits ratio scales only, since a dimension then weighs in proportion
+to its SD over its mean and so depends on where its scale starts. Zipf frequency starts near 3, and
+on the shipped design it counts for least of the four dimensions. Written as Zipf - 3, it would move
+22 of the 40 item sets to another list. <code>counterbalance.scale: mad</code> counts each dimension's
+deviations from its mean in units of its mean absolute deviation. The values are rounded to
+hundredths first, so adding a constant that is a whole number of hundredths leaves the lists as they
+were. The default stays <code>mean</code> so that a study already running keeps its lists, and under <code>mad</code> the
+datasheet and the Methods paragraph name the scale.</p>
+<p><code>participant_table</code> allocates participants to the cells of any crossed factors, cycling through the
+grid so the allocation stays balanced whatever the participant count.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="nb">print</span><span class="p">(</span>
+    <span class="n">lexsync</span><span class="o">.</span><span class="n">participant_table</span><span class="p">(</span>
+        <span class="p">{</span><span class="s2">"list"</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="s2">"order"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"forward"</span><span class="p">,</span> <span class="s2">"reverse"</span><span class="p">]},</span> <span class="mi">4</span>
+    <span class="p">)</span>
+    <span class="o">.</span><span class="n">to_string</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="p">)</span>
+</code></pre></div>
+<div class="result">
+<div class="language-text highlight"><pre><span></span><code> list   order  participant
+    1 forward            1
+    2 forward            2
+    1 reverse            3
+    2 reverse            4
+</code></pre></div>
+</div>
+<p>The grid is crossed with the first factor varying fastest, matching R's <code>expand.grid</code>, so both
+engines put participant 3 in the same cell.</p>
+<div class="admonition note">
+<p class="admonition-title">Trial order is part of the parity contract</p>
+<p>The selection, the pairing, the condition assignment and the trial order are all byte-identical
+across the engines. The shuffle draws no random number, since R's and NumPy's generators could
+never agree on a permutation. Each trial is instead ranked by the SHA-256 digest of its seed,
+replicate, list, set and condition, so the order is a pure function of the design: the same
+bytes from either engine on any platform, a different order for every seed, and no systematic
+position effects across seeds.</p>
+</div>
+<h2 id="triggers">Triggers<a class="headerlink" href="#triggers" title="Permanent link">&para;</a></h2>
+<p><code>assign_triggers</code> gives each row two EEG codes in the 0–255 range a parallel port can carry. The
+condition marker starts at 101 and counts up per condition. The item marker starts at 40 and counts
+up in code-point order of the set labels. <code>export_experiments</code> calls it for you, so you only need it
+directly if you are exporting one target at a time.</p>
+<p>The condition codes follow the order given in the <code>conditions</code> argument, or the order of first
+appearance when there is none. The order of first appearance in a shuffled trial list depends on the
+seed, so an analysis that decodes the codes should not rely on it. <code>export_experiments</code> therefore
+passes the order of the design's <code>conditions</code> entries, and the pipeline does the same, adding any
+other condition in the order the item source lists it, such as the words before the pseudowords of a
+generated lexical decision. The first condition the design lists is always 101, whatever the seed.
+A condition missing from the given order takes the next free code, in code-point order of its label.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">lexsync.scripting</span><span class="w"> </span><span class="kn">import</span> <span class="n">assign_triggers</span>
+
+<span class="nb">print</span><span class="p">(</span>
+    <span class="n">assign_triggers</span><span class="p">(</span><span class="n">stimuli</span><span class="p">)[</span>
+        <span class="p">[</span><span class="s2">"word"</span><span class="p">,</span> <span class="s2">"condition"</span><span class="p">,</span> <span class="s2">"condition_trigger"</span><span class="p">,</span> <span class="s2">"item_trigger"</span><span class="p">]</span>
+    <span class="p">]</span>
+    <span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">to_string</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="p">)</span>
+</code></pre></div>
+<div class="result">
+<div class="language-text highlight"><pre><span></span><code>    word      condition  condition_trigger  item_trigger
+    came high_frequency                101            43
+ perfect high_frequency                101            40
+remember high_frequency                101            42
+</code></pre></div>
+</div>
+<p>The codes land in the loop table as <code>condition_trigger</code> and <code>item_trigger</code>, and the event's
+<code>trigger: condition</code> token is what binds one to the other:</p>
+<div class="language-text highlight"><pre><span></span><code>trial,list,set,condition,word,condition_trigger,item_trigger
+1,1,4,high_frequency,water,101,43
+2,1,1,high_frequency,knew,101,40
+3,1,3,high_frequency,fact,101,42
+</code></pre></div>
+<p>Code-point order is not numeric order once a design has ten sets or more. With sets 1 to 20, set 10
+is 41 and set 2 is 51. Decode an item code through the loop table, which pairs each trial's set with
+its code, and never from the label.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="n">twenty</span> <span class="o">=</span> <span class="n">assign_triggers</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">"condition"</span><span class="p">:</span> <span class="s2">"a"</span><span class="p">,</span> <span class="s2">"set"</span><span class="p">:</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">21</span><span class="p">)}))</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">twenty</span><span class="p">[</span><span class="s2">"set"</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span> <span class="n">twenty</span><span class="p">[</span><span class="s2">"item_trigger"</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">)))</span>
+</code></pre></div>
+<div class="result">
+<div class="language-text highlight"><pre><span></span><code>{1: 40, 2: 51, 3: 53, 4: 54, 5: 55, 6: 56, 7: 57, 8: 58, 9: 59, 10: 41, 11: 42, 12: 43, 13: 44, 14: 45, 15: 46, 16: 47, 17: 48, 18: 49, 19: 50, 20: 52}
+</code></pre></div>
+</div>
+<p>Item codes stay below 240, since a code is one byte and 254 and 255 mark the session. A design may
+send item codes together with condition codes, or with a code of its own from 40 to 239. Its item
+codes are then drawn from the codes those leave free, skipping 101 upwards and the design's own
+codes. Otherwise, sets 65 and 66 of a 70-set design would take 101 and 102, and an analysis that
+cuts its epochs at the condition codes would also catch two items. Such a design is refused when it has more item
+sets than free codes, unless the schema sets <code>triggers.allow_code_overlap: true</code>, which lets the
+item codes wrap and repeat within the free codes. Any other design keeps the codes it always had,
+wrapping at 200 values.</p>
+<p>A literal code must be a whole number from 1 to 255. Anything else, a misspelt token such as
+<code>conditon</code> included, is refused when the experiment is generated, with a message naming the event.
+A literal of 254 or 255, which the PsychoPy and OpenSesame experiments send when the session starts
+and ends, is reported then. One equal to a condition code the design sends is reported too, as is
+one within the range of the item codes it sends.</p>
+<p>The schema sets the hardware defaults: <code>triggers.parallel_address</code> (<code>0x0378</code>, a typical LPT1 base
+address) and <code>triggers.trigger_hold_ms</code> (50, comfortably above the 10 ms minimum recorders need to
+see). They describe the machine that runs the experiments, so a design does not set them, and
+neither do the device settings below. The older <code>triggers.reset_after_frames</code> is still accepted and
+converted. <code>triggers.inter_trigger_ms</code> held the self-paced reading critical-region code for 10 ms.
+That code is now held like every other, so the key is no longer used, and the run log says so when
+a schema sets it. <code>triggers.allow_code_overlap</code> is false, so a design whose item codes cannot all
+be kept apart from its other codes is refused.</p>
+<p>Every code is held for <code>trigger_hold_ms</code> from the onset it marks. The PsychoPy script converts the
+hold to the nearest whole number of flips at the refresh it measures, and never to fewer than the
+flips that cover 10 ms. It therefore does not shorten on a fast display. The OpenSesame experiment
+holds it in milliseconds, at least 10, and a code is reset by the first wait that reaches the end
+of its hold. A hold that ends while the experiment waits for the next refresh lasts until that
+display, up to a frame longer. One that ends after the last wait of a trial lasts until the next
+trial's first display. A code whose event is shorter than the hold stays on the port through
+the events after it and is reset when the hold is up. A one-flip prime therefore gets the same
+pulse as an 800 ms target, and a key that ends a stimulus early does not cut its code short. Only
+the next onset's code ends a code before its hold is up, with a 0 written just before the new
+code. Both laboratory targets send 254 just before the first trial and 255 just after the last,
+held the same way.</p>
+<h3 id="the-trigger-device">The trigger device<a class="headerlink" href="#the-trigger-device" title="Permanent link">&para;</a></h3>
+<p><code>triggers.backend</code> names the device both laboratory targets write the codes to. <code>parallel</code>, the
+default, is the port at <code>triggers.parallel_address</code>. <code>serial</code> writes each code as one byte to the
+device <code>triggers.serial_port</code> names, at <code>triggers.baudrate</code> bits per second, 115200 unless set:</p>
+<div class="language-yaml highlight"><pre><span></span><code><span class="nt">triggers</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">backend</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">serial</span>
+<span class="w">  </span><span class="nt">serial_port</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">COM3</span><span class="w">      </span><span class="c1"># /dev/ttyUSB0 on Linux, /dev/cu.usbserial-... on macOS</span>
+<span class="w">  </span><span class="nt">baudrate</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">115200</span><span class="w">       </span><span class="c1"># the rate the device's manual gives</span>
+</code></pre></div>
+<p>The port has to be named, and a serial backend without one is refused. The OpenSesame setup used
+to open the first serial port it found, which could be another device, and it reached that code
+only once the script had been edited by hand. A code is held and reset on a serial device as on a
+parallel port, with a 0 written when its hold is up. A serial line delays each code by an amount
+that varies from code to code, and a parallel port does not. A USB-serial adapter carries each
+byte in a USB transfer, scheduled in frames of a millisecond on a full-speed connection, and its
+driver adds a delay of its own. Adapters built on FTDI chips also hold data on its way to the
+computer until their latency timer runs out, 16 ms by default. That matters for a device that
+answers and for a response box on the same adapter. Measure the delay with a photodiode, as
+<a href="#checking-the-timing">checking the timing</a> describes, before a study relies on serial codes for
+its timing.</p>
+<p><code>triggers.mode</code> decides what happens when the device cannot be opened, as on a laptop with no
+parallel port. Under <code>auto</code>, the default, both targets print each code in the console, and a
+screen before any other tells the experimenter that no codes will be sent. Pressing C goes on
+without them, and escape stops the run. Every trial records the mode the run used, <code>hardware</code> or
+<code>mock</code>, as <code>trigger_mode</code> in the PsychoPy data file and as <code>lexsync_trigger_mode</code> in the OpenSesame
+log. Both targets used to print the codes and run on with no notice on screen, and only the
+OpenSesame log recorded that no code had reached the amplifier, in its <code>test_mode</code> column.
+<code>hardware</code> refuses to start without the device. The PsychoPy script stops before its window
+opens, and the OpenSesame experiment stops in its setup. <code>mock</code> prints the codes without trying
+the device, after the same notice.</p>
+<h2 id="the-three-targets">The three targets<a class="headerlink" href="#the-three-targets" title="Permanent link">&para;</a></h2>
+<p><code>export_experiments</code> writes all three from the same rendered event list and returns their paths,
+with every file it wrote, the tables the experiments read included, listed under <code>files</code>.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="c1"># illustrative: writes the experiment files into the working directory</span>
+<span class="n">paths</span> <span class="o">=</span> <span class="n">lexsync</span><span class="o">.</span><span class="n">export_experiments</span><span class="p">(</span>
+    <span class="n">stimuli</span><span class="p">,</span> <span class="n">design</span><span class="p">,</span> <span class="n">schema</span><span class="p">,</span> <span class="n">outdir</span><span class="o">=</span><span class="s2">"output/experiments"</span>
+<span class="p">)</span>
+<span class="c1"># {'psychopy': '.../demo_english_psychopy.py',</span>
+<span class="c1">#  'opensesame': '.../demo_english.osexp',</span>
+<span class="c1">#  'jspsych': '.../demo_english.html',</span>
+<span class="c1">#  'files': ['.../demo_english_psychopy.py', '.../demo_english.osexp',</span>
+<span class="c1">#            '.../demo_english.html', '.../demo_english_psychopy.csv',</span>
+<span class="c1">#            '.../demo_english_opensesame.csv', '.../demo_english_opensesame_text.csv']}</span>
+</code></pre></div>
+<p>Generation imports neither PsychoPy nor pyserial. It writes text. That is what lets the whole
+demonstration, and the test suite, reproduce on a machine with no laboratory hardware attached.</p>
+<p>Two schema settings shape the display. <code>presentation.text_height_px</code>, a whole number from 8 to 400
+and 48 by default, is the height of the stimulus text in pixels in all three targets. The
+OpenSesame experiment drew its text 32 pixels high, where the other two used 48. In OpenSesame,
+the setting is the experiment's <code>font_size</code>, which every screen uses, the instructions included.
+<code>presentation.fullscreen</code>, true by default, runs the PsychoPy script full screen, as PsychoPy's
+advice on reducing dropped frames recommends. With false, the script opens a 1280 × 1024 window,
+the window it always opened before. OpenSesame takes full screen from the mode it is launched in.</p>
+<h3 id="psychopy">PsychoPy<a class="headerlink" href="#psychopy" title="Permanent link">&para;</a></h3>
+<p>The PsychoPy export (<a href="../references/#peirce-2019">Peirce et al., 2019</a>) is where the methodological
+argument for lexsync lives. The script reads its stimulus text as data from the conditions CSV
+beside it, and interprets an <code>EVENTS</code> list embedded as JSON, so one interpreter serves every
+paradigm.</p>
+<p>The trigger is written on the exact buffer flip on which the stimulus first appears, and reset on
+the flip that ends its hold:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="c1"># illustrative: an excerpt of the generated script, needing a PsychoPy window and port</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">send_code</span><span class="p">(</span><span class="n">win</span><span class="p">,</span> <span class="n">port</span><span class="p">,</span> <span class="n">code</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Write ``code`` to the port on the next flip, the onset it marks, and hold it</span>
+<span class="sd">    there for TRIGGER_HOLD_FRAMES flip intervals."""</span>
+    <span class="k">if</span> <span class="n">PULSE</span><span class="p">[</span><span class="s2">"flips"</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">win</span><span class="o">.</span><span class="n">callOnFlip</span><span class="p">(</span><span class="n">PULSE</span><span class="p">[</span><span class="s2">"port"</span><span class="p">]</span><span class="o">.</span><span class="n">setData</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">win</span><span class="o">.</span><span class="n">callOnFlip</span><span class="p">(</span><span class="n">port</span><span class="o">.</span><span class="n">setData</span><span class="p">,</span> <span class="n">code</span><span class="p">)</span>
+    <span class="n">PULSE</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">port</span><span class="o">=</span><span class="n">port</span><span class="p">,</span> <span class="n">flips</span><span class="o">=</span><span class="n">TRIGGER_HOLD_FRAMES</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">count_flip</span><span class="p">(</span><span class="n">win</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Count a flip against the code on the port, and queue its reset on the flip that</span>
+<span class="sd">    ends the hold, so that the reset is as flip-locked as the onset."""</span>
+    <span class="k">if</span> <span class="n">PULSE</span><span class="p">[</span><span class="s2">"flips"</span><span class="p">]:</span>
+        <span class="n">PULSE</span><span class="p">[</span><span class="s2">"flips"</span><span class="p">]</span> <span class="o">-=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">PULSE</span><span class="p">[</span><span class="s2">"flips"</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">win</span><span class="o">.</span><span class="n">callOnFlip</span><span class="p">(</span><span class="n">PULSE</span><span class="p">[</span><span class="s2">"port"</span><span class="p">]</span><span class="o">.</span><span class="n">setData</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+</code></pre></div>
+<p><code>win.callOnFlip</code> queues the port write against the next flip, so the code goes out with the photons
+rather than from a later component that merely runs soon afterwards. The common alternative, sending
+the trigger from a separate sequence-ordered item, inherits whatever jitter sits between that item
+and the flip. Every flip of every event counts the hold down, and the reset is queued the same way,
+one flip before the hold expires, so that it lands on the flip that ends it. When the stimulus is
+shorter than the hold, that flip comes in a later event. The pause between blocks waits without
+flipping, so it first holds out the rest of the hold with <code>core.wait</code>, and so do the session
+markers. <code>TRIGGER_HOLD_FRAMES</code> is computed at start-up from <code>TRIGGER_HOLD_MS</code> and the measured
+refresh rate. It is the hold rounded to whole flips, and never fewer than the flips that cover
+10 ms. That keeps a declared hold meaning the same interval on a 60 Hz and a 144 Hz display.</p>
+<p>Keys come from PsychoPy's <code>keyboard</code> module. A stimulus that collects its response passes its keys,
+and <code>open_window</code> queues the reset of the keyboard's clock and the clearing of its queue on the same
+onset flip as the trigger. The keyboard is polled after every flip, the first key ends the stimulus,
+and its <code>rt</code> runs from the onset. A window kept with <code>from: offset</code>, each self-paced reading region
+and each question open on their own first flip in the same way. Before the first trial, the script
+shows the version's instructions and waits for the space bar. Escape there ends the run before a
+data file is opened.</p>
+<p>Each run writes a data file under <code>data/</code> beside the script, named
+<code>&lt;base&gt;_p&lt;participant&gt;_v&lt;version&gt;_&lt;date&gt;-&lt;time&gt;.csv</code>, without the <code>_p</code> part when no participant
+number is given. It holds one row per trial, written as the trial ends, so a run stopped with escape
+leaves a valid file of the trials it completed. A row gives the participant, the version, the
+replicate and the list, then the trial's own fields and trigger codes, then what the trial
+recorded. <code>response</code>, <code>rt_ms</code> and <code>timed_out</code> hold the key, its reaction time in milliseconds and
+whether the window closed without one. The reaction time runs from the onset of the stimulus the key
+answers, or from the opening of a window kept with <code>from: offset</code>. <code>correct</code> says whether the key
+was the trial's <code>answer</code>. It is 0 after a timeout and empty when the trial names no answer. In a
+design without a response event, the question's key is the one scored. <code>region_rts_ms</code> holds each
+self-paced reading region's time, joined by <code>|</code>, and <code>question_response</code> and <code>question_rt_ms</code> the
+question's key and reaction time. Near its end, the row gives the measured <code>refresh_hz</code> and
+<code>trigger_mode</code>, which is <code>hardware</code> when the codes went to the device and <code>mock</code> when they were
+printed. It ends with <code>event_flips</code> and <code>event_onsets_ms</code>: the flips each event took and the time
+of its first flip from the trial's first, joined by <code>|</code> in event order. A stimulus that collects
+its response counts the blank after it as well, up to the key or the close of the window. The
+realised durations can be checked against the declared ones there.</p>
+<p>Stimulus text is never interpolated into the script, only read from the CSV at run time, so nothing
+in a stimulus can become code. When the trigger device cannot be opened, on a development laptop,
+on macOS or in continuous integration, the script follows <code>triggers.mode</code>, as
+<a href="#the-trigger-device">the trigger device</a> describes. By default, a mock port prints the codes and
+the script still runs, after a notice that says so. The test suite exercises exactly that: a
+mock-PsychoPy harness runs the generated script and asserts that the onset trigger is flip-locked.
+It also checks that a key pressed while the target is shown is recorded with its reaction time from
+the onset, and that every committed script writes one data row per trial. It runs each trigger
+mode with and without a port, and a serial device that receives each code as one byte. With the
+display simulated at 60, 144 and 240 Hz, it also checks every code each committed script sends,
+the session markers included. Each must last at least 10 ms and lie within half a flip of the
+hold, unless the next onset ends it.</p>
+<h3 id="opensesame">OpenSesame<a class="headerlink" href="#opensesame" title="Permanent link">&para;</a></h3>
+<p>The <code>.osexp</code> is generated block by block rather than from a template, and the result is a normal
+OpenSesame experiment (<a href="../references/#mathot-2012">Mathôt et al., 2012</a>): a trigger-setup inline
+script, one inline script per event, a sequence and a loop.</p>
+<div class="language-text highlight"><pre><span></span><code>define inline_script lexsync_e1
+    set description "Show the stimulus and collect the response from its onset"
+    ___prepare__
+    _lexsync_c_e1 = Canvas()
+    _lexsync_c_e1.text(_lexsync_row()[u'word'])
+    _lexsync_c_e1_blank = Canvas()
+    __end__
+    ___run__
+    _t0 = _lexsync_c_e1.show()
+    var.onset_time = _t0
+    _lexsync_onset(int(var.get(u'condition_trigger', _eval=False)), _t0)
+    _kb = Keyboard(keylist=[u'left', u'right'])
+    _kb.flush()
+    _key, _t = _lexsync_key(_kb, _t0 + 500 - _LEXSYNC_HALF_FRAME)
+    if _key is None:
+        _lexsync_c_e1_blank.show()
+        _key, _t = _lexsync_key(_kb, _t0 + 500 + 2000)
+    var.response = _key
+    var.response_time = u'' if _key is None else _t - _t0
+    var.timed_out = 1 if _key is None else 0
+    _want = str(_lexsync_row().get(u'answer', u'')).strip()
+    _got = u'' if _key is None else str(_key).strip()
+    var.correct = (1 if _got == _want else 0) if _want else u''
+</code></pre></div>
+<p>OpenSesame prepares every item of a sequence before it runs any, so each script builds its canvases
+in its prepare phase. Nothing is then built between one display and the next while the trial runs.
+Between trials, the logger and the next trial's prepare phase run while the last display stays up,
+so a trial's last event lasts a little longer than its duration. Each canvas is named after its
+script, because all inline scripts share one workspace, and a shared name would show the canvas
+prepared last. <code>Canvas.show()</code> blocks until the flip and returns its timestamp, so the trigger goes
+out immediately after the onset it marks, and every wait is timed from that onset. The word and its
+response window are one script. The keyboard is flushed once the trigger is out and polled until
+half a frame before the word's 500 ms are up, so that the blank lands on the refresh that ends
+them. It is then polled over the blank until the window closes. The response time is taken from
+the word's onset. The script computes <code>correct</code> from the trial's <code>answer</code> itself. OpenSesame's own
+<code>correct_response</code> is not used, since its variable syntax differs between 3.3 and 4.x.</p>
+<p>The setup script measures the display's frame period once, as the median interval between 20
+flips, and logs it as <code>lexsync_frame_ms</code>. When the measurement fails, as it does on a backend
+without a blocking flip, it takes the period from <code>presentation.assumed_refresh_hz</code>. It also
+defines the helpers the event scripts call. <code>_lexsync_onset</code> sends a code, <code>_lexsync_wait</code> sleeps
+until a time measured from an onset, and <code>_lexsync_key</code> polls the keyboard until one. Each resets a
+code on the way once its hold is up, so a code is held for <code>trigger_hold_ms</code> whether its event is
+longer or shorter. The legacy clock the experiment selects counts whole milliseconds, so the waits
+are kept to the millisecond, and so is a hold that ends during one. Two scripts around the loop
+send the session markers, <code>lexsync_session_start</code> with 254 and <code>lexsync_session_end</code> with 255. The
+trigger device writes a code and returns. It used to hold each code for a fixed 10 ms before
+returning. That lengthened every triggered event, and the schema's hold went unused. A test in the
+suite runs the generated scripts with the display simulated at 60, 120 and 144 Hz. It checks that
+the priming experiment's prime and mask last the flips the PsychoPy script gives them, and that
+every code lasts the hold.</p>
+<p>The setup block opens the device <code>triggers.backend</code> names, the parallel port or the serial port
+<code>triggers.serial_port</code>, and follows <code>triggers.mode</code> when it cannot. Under <code>auto</code>, it falls back to
+a printing stub, so the experiment opens and runs on a machine with no trigger hardware. An inline
+script after it, <code>lexsync_trigger_notice</code>, then says so before any other screen and waits for C.
+Under <code>hardware</code>, the setup stops the experiment. The setup used to set the backend to parallel on
+the line before its serial branch, so a serial device needed the script edited by hand. That
+branch then took the first serial port it found. Every trial logs <code>lexsync_trigger_mode</code>, and
+<code>test_mode</code> is still <code>yes</code> when the codes are printed. OpenSesame takes full screen or a window
+from the mode it is launched in, whatever the generated file's <code>fullscreen</code> line says.</p>
+<p>The word in that script does not come from OpenSesame's variable store, because OpenSesame
+evaluates what a loop table puts there. In both versions, a cell holding <code>[=...]</code> runs as Python,
+and so does one holding a single <code>{</code> in OpenSesame 4.x, where it is read as an f-string, or starting
+with <code>=</code> in 3.3. Both versions also retype a word such as <code>nan</code> or <code>007</code>, and 4.x shows <code>True</code> as 1.
+In 4.x, <code>infinity</code> and <code>nan</code>, both in the English lexicon, stop the session. An item table passed
+between laboratories could otherwise run code on the machine that presents it.</p>
+<p>The loop table, <code>&lt;base&gt;_opensesame.csv</code>, therefore holds numbers only: <code>lexsync_row</code>, the trial's
+position in loop order, with <code>lexsync_trial</code>, <code>lexsync_list</code>, <code>lexsync_set</code>, the trigger codes,
+<code>critical_region</code> and any per-trial duration. The prefix matters because OpenSesame 4 makes every
+loop column a global of the inline scripts, where <code>list</code> and <code>set</code> would shadow Python's built-in
+functions of those names. The presented text, <code>condition</code>, <code>block</code> and <code>answer</code> are in a companion
+file, <code>&lt;base&gt;_opensesame_text.csv</code>, which the setup script reads with Python's <code>csv</code> module, and
+each script looks up its trial's row by <code>lexsync_row</code>. Copy both files with the experiment. A value
+in a numeric column that is not a plain number is refused when the experiment is generated. The
+feedback script reads the response without evaluation, so a timeout shows <code>no_response</code> in both
+versions. These rules were checked against the sources of OpenSesame 3.3.14 and 4.1.20.</p>
+<p>Two details in the generated file are deliberate. The loop is set to <code>sequential</code>, because
+OpenSesame's default is random, which would discard the seeded trial order the CSV is sorted by and
+put this target out of step with the other two. A response kept after the stimulus with
+<code>from: offset</code> is a <code>keyboard_response</code> preceded by a blank canvas. A <code>keyboard_response</code> draws
+nothing, so the preceding stimulus would otherwise stay on screen for the whole response window
+instead of offsetting at its stated duration. It runs none of lexsync's code either, so the script
+that shows the blank first holds out a code still held. After a stimulus shorter than the hold, the
+window therefore opens when the hold is up, and <code>response_time</code>, which OpenSesame times from the
+item's start, runs from there. A script after it records <code>timed_out</code> and <code>correct</code>.
+Before the loop, an inline script, <code>lexsync_instructions</code>, shows the instructions and waits for the
+space bar, and escape there stops the session. OpenSesame's canvas reads a subset of HTML, so the
+script writes the text with <code>&amp;</code>, <code>&lt;</code> and <code>&gt;</code> escaped and each line break as <code>&lt;br /&gt;</code>.
+A structural validator in the test suite checks the generated file's blocks and references. A second
+test runs its scripts under an emulation of each version's variable store, on item text that
+OpenSesame would otherwise evaluate.</p>
+<p>OpenSesame writes nothing to its log file without a logger item, so every trial ends with one,
+<code>lexsync_logger</code>, which writes every variable. Self-paced reading sets <code>lexsync_region_rts</code>, each
+region's reading time joined by <code>|</code>, and a question sets <code>question_response</code> and <code>question_rt</code>. Each
+trial starts by clearing the response variables, so a block that skips a response event cannot log
+the previous trial's key. Before the logger, a script copies the trial's <code>condition</code>, <code>block</code> and
+<code>answer</code> from the text table into <code>lexsync_condition</code>, <code>lexsync_block</code> and <code>lexsync_answer</code>. Both
+versions' loggers write a variable without evaluating it.</p>
+<h3 id="jspsych">jsPsych<a class="headerlink" href="#jspsych" title="Permanent link">&para;</a></h3>
+<p>The browser export is a single HTML file carrying the same rendered events and the trial data
+inline. It opens with a welcome screen that shows the instructions and waits for the space bar.
+It attaches each item's design fields to every recorded row and ends by saving the collected data
+as a CSV download, so a generated experiment gathers usable data with no server behind it. The
+jsPsych library and its stylesheet load from a content delivery
+network, so the first run needs an internet connection. Each of the three files is loaded with
+Subresource Integrity, its SHA-384 and <code>crossorigin="anonymous"</code>, so the browser refuses a copy
+that differs from the published release. A page that collects participants' responses therefore
+runs only the code it was written with. To run offline, point the tags at downloaded copies and
+serve the folder over http, or remove each tag's <code>integrity</code> and <code>crossorigin</code> attributes. A
+browser refuses the CORS request that a page opened from a <code>file://</code> address would make for a
+local copy, so it could not check the hash. A target and its response window are one
+jsPsych trial, recorded with <code>lexsync_event</code> set to <code>target</code>. It accepts the response keys from the
+target's onset, shows the target for its duration and runs on for the timeout. The first key ends
+it, so its <code>rt</code> is timed from the target's onset.</p>
+<p>Two things are handled on the way out. Event-model key names are mapped to browser key names, so
+<code>left</code> becomes <code>arrowleft</code> and <code>space</code> becomes a literal space, in the events and in each trial's
+<code>answer</code>, since jsPsych records the key pressed by that name. The design's free-text <code>language</code>
+label is mapped to a BCP 47 tag for the <code>lang</code> attribute, falling back to <code>und</code> rather than emitting
+<code>lang="english"</code>, which no user agent can resolve. A design may state <code>language_tag</code> outright.</p>
+<div class="admonition note">
+<p class="admonition-title">The browser target records triggers, it does not send them</p>
+<p>A browser cannot drive a parallel port. Onset triggers are written into each trial's recorded
+data, which is enough to reconstruct the design offline but not to synchronise an amplifier.
+Online EEG synchronisation needs WebSerial, LSL or a photodiode. The two laboratory targets are
+where the hardware timing lives.</p>
+</div>
+<p>Every worked design in the repository is published as one of these files, which is what the Demo
+link in the header opens.</p>
+<h3 id="checking-the-timing">Checking the timing<a class="headerlink" href="#checking-the-timing" title="Permanent link">&para;</a></h3>
+<p>The durations above are what the generated code asks for, and what the test suite's simulated
+displays confirm. A real display adds delays no software can see, such as an LCD's input lag. A
+study whose effect depends on a duration or an onset should therefore be measured on the machine
+that will run it. A photodiode on the screen, recorded by the same amplifier as the trigger port,
+measures the display and the triggers on one clock.</p>
+<ol>
+<li>Tape the photodiode over the place where the critical stimulus appears. White text on a black
+   background drives most diodes. A small stimulus, such as a fixation cross, may need a white
+   patch drawn with it for the pilot.</li>
+<li>Run a pilot session on the laboratory machine, at the refresh rate and in the screen mode of
+   the study, and record the diode and the trigger channel together. With
+   <code>triggers.mode: hardware</code>, neither the pilot nor the study can start without the trigger
+   device.</li>
+<li>For each trial, measure the time from the trigger's onset to the diode's rise. It should be
+   nearly constant. Its mean is the display's lag, which includes the time the screen takes to
+   draw down to the diode and, on an LCD, an input lag that can exceed 10 ms. The analysis can
+   subtract it. Its spread is the jitter an ERP average will carry.</li>
+<li>Measure each critical stimulus from the diode's rise to its fall and compare it with the
+   flips its duration asks for at that refresh rate: a 50 ms prime is three flips at 60 Hz and
+   seven, 48.6 ms, at 144 Hz.</li>
+<li>Measure the trigger pulses. Each should last about <code>trigger_hold_ms</code>, 50 ms by default, unless
+   the next onset ends it sooner, and 254 should come before the first trial and 255 after the
+   last.</li>
+<li>Measure again after any change to the machine, the display, its refresh rate or the
+   presentation software.</li>
+</ol>
+<h2 id="running-a-counterbalanced-experiment">Running a counterbalanced experiment<a class="headerlink" href="#running-a-counterbalanced-experiment" title="Permanent link">&para;</a></h2>
+<p>A design with more than one list, or with resampled item sets, has several presentation versions.
+A version is one (replicate, list) pair of the presented trials, and the versions are numbered from 1
+in that order, so in a design without replicates version <em>k</em> is list <em>k</em>. Each participant is
+presented one version. Presenting them all would show each target of a Latin square in every
+condition, which is the repetition the rotation exists to prevent, and every item sample of a
+resampled design. Participant <em>p</em> runs version <code>((p - 1) mod V) + 1</code> of the <em>V</em> versions, the rule
+<code>participant_table</code> allocates by. Participants 1 to 4 of a two-list design therefore run lists 1, 2,
+1 and 2. <code>lexsync.scripting.presentation_versions</code> lists the versions of a set of trials, and every
+generated experiment carries the same list.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="c1"># illustrative: the versions of a counterbalanced two-list design</span>
+<span class="n">lexsync</span><span class="o">.</span><span class="n">scripting</span><span class="o">.</span><span class="n">presentation_versions</span><span class="p">(</span><span class="n">stimuli</span><span class="p">)</span>
+<span class="c1"># [{'version': 1, 'replicate': 1, 'list': 1, 'n_trials': 12},</span>
+<span class="c1">#  {'version': 2, 'replicate': 1, 'list': 2, 'n_trials': 12}]</span>
+</code></pre></div>
+<p>The PsychoPy script runs the participant's version when launched as
+<code>python &lt;base&gt;_psychopy.py --participant 3</code>. <code>--version 2</code> runs a version outright, and so does
+<code>--list 2</code> in a design without replicates. Launched with none of these, the script asks for the
+participant number and the version in a dialogue, where a blank version takes the participant's by
+the rule. A version the script does not have stops the run, with a message, before any window
+opens.</p>
+<p>The jsPsych page reads the same choice from its address: <code>page.html?participant=3</code>,
+<code>?version=2</code>, or <code>?list=2</code> without replicates, each a whole number from 1. A page with more than
+one version, opened with none of these, shows a screen saying how to open it and runs nothing. A
+static page cannot count its participants, so a study recruited online without participant numbers
+hands out one <code>?version=k</code> link per version. The welcome screen counts the trials of the version,
+every data row carries the participant, the version, the list and the replicate, and the data file
+is named <code>&lt;title&gt;_p&lt;participant&gt;_v&lt;version&gt;.csv</code>.</p>
+<p>The OpenSesame target writes one experiment per version, <code>&lt;base&gt;_list&lt;k&gt;.osexp</code>, or
+<code>&lt;base&gt;_rep&lt;r&gt;_list&lt;k&gt;.osexp</code> when the versions span several replicates. Each has its own loop and
+text tables, holding only that version's trials, and the experimenter opens the participant's. At
+start-up, each experiment compares the subject number OpenSesame asks for with its own version.
+When that participant would normally run another one, it says so and waits for a key. Space goes on
+with this file, and escape stops the session. A design with one version keeps <code>&lt;base&gt;.osexp</code>. The
+check runs once, before the loop, so the experiment needs no run-if condition, a syntax that differs
+between OpenSesame 3.3 and 4.x.</p>
+<p>The datasheet records the number of versions as <code>counterbalancing.versions</code> and the rule as
+<code>counterbalancing.assignment</code>, and its Methods text says that each participant was presented one
+version. Its artefact list and the run log name every file <code>export_experiments</code> wrote, the loop and
+text tables included, since those hold the trial order and the trigger codes the experiments
+present. The loop tables keep each version's trials together, ordered by replicate, list and trial.
+They carry <code>replicate</code> when the design has one. Item codes are allocated by set, so in a resampled
+design an item code identifies an item only within its replicate, which the <code>replicate</code> column
+tells apart.</p>
+<p>With <code>counterbalance.orders: m</code> (see <a href="#trial-orders-and-runs-of-one-condition">Trial orders and runs of one
+condition</a>), each version also has m trial orders.
+Participant <em>p</em> runs order <code>(((p - 1) div V) mod m) + 1</code>. In a two-list design with two orders,
+participants 1 and 2 run lists 1 and 2 in order 1, participants 3 and 4 run them in order 2, and
+participant 5 starts the cycle again. The
+PsychoPy script and the jsPsych page sort the version's trials by the participant's order, and a
+run without a participant number presents order 1. Their data rows then carry the order, and their
+<code>trial</code> column numbers the trials as presented. The OpenSesame target writes one experiment per
+version and order, <code>&lt;base&gt;_list&lt;k&gt;_order&lt;j&gt;.osexp</code>, whose check compares the order as well as the
+version, and every trial logs <code>lexsync_order</code>.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../matching-and-designs/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Matching and designs">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Matching and designs
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../reproducibility-and-parity/" class="md-footer__link md-footer__link--next" aria-label="Next: Reproducibility and parity">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Reproducibility and parity
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      <span class="mrd-footer-badges"> <a href="https://pypi.org/project/lexsync/"><img src="https://img.shields.io/pypi/v/lexsync" alt="PyPI"></a> <a href="https://github.com/pablobernabeu/lexsync/actions/workflows/python-tests.yaml"><img src="https://github.com/pablobernabeu/lexsync/actions/workflows/python-tests.yaml/badge.svg" alt="python-tests"></a> <a href="https://lifecycle.r-lib.org/articles/stages.html#experimental"><img src="https://img.shields.io/badge/lifecycle-experimental-orange.svg" alt="Lifecycle: experimental"></a> <a href="https://opensource.org/license/MIT"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT"></a> </span> Developed by <a href="https://pablobernabeu.github.io">Pablo Bernabeu</a>. Open, reproducible research software in R and Python. Released under the <a href="https://pablobernabeu.github.io/lexsync/python/licence/">MIT licence</a>.
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.indexes", "navigation.top", "navigation.footer", "toc.follow", "content.code.copy", "search.suggest", "search.highlight"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": "0.1.1"}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="../assets/_markdown_exec_pyodide.js"></script>
+      
+    
+  </body>
+</html>
