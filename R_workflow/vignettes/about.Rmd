@@ -32,7 +32,8 @@ assigned to the package.
 
 > Bernabeu, P. (2026). lexsync: Lexical optimisation and hardware-timed
 > experiment generation. R package version
-> `r packageVersion("lexsync")`. <https://doi.org/10.32614/CRAN.package.lexsync>
+> `r packageVersion("lexsync")`. Comprehensive R Archive Network (CRAN).
+> <https://doi.org/10.32614/CRAN.package.lexsync>
 
 ```{r bibtex, echo = FALSE, results = "asis"}
 # Build the BibTeX entry from the installed version so it never drifts, then
@@ -45,6 +46,7 @@ bib <- paste(
   "  title  = {{lexsync}: Lexical optimisation and hardware-timed experiment generation},",
   "  author = {Pablo Bernabeu},",
   "  year   = {2026},",
+  "  publisher = {Comprehensive R Archive Network (CRAN)},",
   sprintf("  note   = {R package version %s},", ver),
   "  doi    = {10.32614/CRAN.package.lexsync},",
   "  url    = {https://CRAN.R-project.org/package=lexsync},",

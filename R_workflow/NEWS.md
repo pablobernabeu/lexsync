@@ -253,6 +253,12 @@
   package's identifiers, marked with the package they name. `citation("lexsync")`
   is unchanged and gives the CRAN DOI.
 
+* `citation("lexsync")` names its publisher in full, "Comprehensive R Archive
+  Network (CRAN)", where it said "CRAN", and the About page's reference and
+  BibTeX entry and the R reference in `codemeta.json` now name it too. Every
+  reference across the package family and the author's website now names CRAN
+  in the same words.
+
 * The CRAN DOI and the Zenodo DOI are shown as full links on the website and in
   the README. The README gains a badge for the DOI CRAN assigned, for GitHub and
   CRAN, which the home page leaves out of its sidebar, where the DOI is already

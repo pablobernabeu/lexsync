@@ -61,7 +61,7 @@
     }
   ],
   "citation": [
-    "Bernabeu, P. (2026). lexsync: Lexical optimisation and hardware-timed experiment generation. R package version 0.1.1. https://doi.org/10.32614/CRAN.package.lexsync",
+    "Bernabeu, P. (2026). lexsync: Lexical optimisation and hardware-timed experiment generation. R package version 0.1.1. Comprehensive R Archive Network (CRAN). https://doi.org/10.32614/CRAN.package.lexsync",
     "Bernabeu, P. (2026). lexsync: Lexical optimisation and hardware-timed experiment generation. Python package version 0.1.1. https://doi.org/10.5281/zenodo.22906962"
   ],
   "readme": "https://github.com/pablobernabeu/lexsync/blob/main/README.md",
