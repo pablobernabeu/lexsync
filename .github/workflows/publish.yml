@@ -155,7 +155,7 @@ jobs:
       # different code, and this is the one job in the repository holding a
       # credential that can publish under the project's name. The version is kept
       # in the trailing comment so the pin can still be read and updated.
-      - uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33  # v1.14.2
+      - uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086  # v1.14.3
         with:
           packages-dir: python_workflow/dist/
           skip-existing: true
