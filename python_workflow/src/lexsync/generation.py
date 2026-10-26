@@ -456,10 +456,12 @@ _EXCLUDE_MESSAGE = ("lexsync: items.generation.exclude must list file paths or r
 def _registry_entry(name: str):
     """The registry's `corpora` entry for a bare name, or None.
 
-    A registry that cannot be found or read leaves the name to be read as a path.
+    A ``LEXSYNC_REGISTRY`` that names a missing file is refused, and a registry that
+    cannot otherwise be found or read leaves the name to be read as a path.
     """
     if not _REGISTRY_NAME.fullmatch(name):
         return None
+    _corpora._registry_env()
     try:
         with open(_corpora._registry_path(None), encoding="utf-8") as handle:
             reg = yaml.safe_load(handle) or {}

@@ -10,6 +10,7 @@ import csv
 import hashlib
 import json
 import os
+import re
 
 import pandas as pd
 import pytest
@@ -138,6 +139,21 @@ def test_a_registry_name_without_a_cached_corpus_is_refused_with_the_fetch_hint(
     assert got["forms"] == ["crier", "pall"]
     assert got["records"] == [{"source": "subtlex_us", "sha256": _sha256(cached),
                                "n_forms": 2}]
+
+
+def test_a_registry_name_with_a_missing_registry_setting_is_refused(tmp_path, monkeypatch):
+    # A LEXSYNC_REGISTRY that names a missing file is refused by name, even with the
+    # corpus in the cache, and the entry is neither read as a path nor read from
+    # another registry.
+    monkeypatch.setattr(corpora, "cache_dir", lambda: str(tmp_path / "cache"))
+    (tmp_path / "cache").mkdir()
+    (tmp_path / "cache" / "subtlex_esp.csv").write_bytes(b"word,freq_zipf\nhola,5\n")
+    missing = str(tmp_path / "no_such_registry.yaml")
+    monkeypatch.setenv("LEXSYNC_REGISTRY", missing)
+    message = re.escape(
+        f"lexsync: registry not found: '{missing}' (the LEXSYNC_REGISTRY environment variable).")
+    with pytest.raises(FileNotFoundError, match=message):
+        _read_known_forms(["subtlex_esp"])
 
 
 def _in_letters(words):

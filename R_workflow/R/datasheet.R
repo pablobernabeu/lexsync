@@ -158,7 +158,8 @@ DATASHEET_VERSION <- "1.2"
 # file must lie in lexsync's cache, and its name less `.csv` must name a corpus in the
 # registry, or be `<language>_wordfreq` for a language the wordfreq connector lists.
 # Those are the names fetch_corpus() gives what it fetches, the second in the Python
-# engine only. Mirrors _registry_citation in datasheet.py.
+# engine only. A lexsync.registry option that names a missing file is refused. Mirrors
+# _registry_citation in datasheet.py.
 .registry_citation <- function(path) {
   name <- .file_name(path)
   if (!endsWith(name, ".csv")) return(NULL)
@@ -167,6 +168,7 @@ DATASHEET_VERSION <- "1.2"
     if (identical(.Platform$OS.type, "windows")) tolower(p) else p
   }
   if (!identical(where(dirname(path)), where(path.expand(lexsync_cache_dir())))) return(NULL)
+  .registry_option()
   reg <- tryCatch(.read_yaml_utf8(default_registry_path()), error = function(e) NULL)
   if (!.is_mapping(reg)) return(NULL)
   stem <- sub("\\.csv$", "", name)
@@ -1804,8 +1806,7 @@ write_datasheet <- function(ds, json_path, md_path) {
   # reproduce the run the record exists to describe. Most fields survived only because
   # they are rounded to four places deliberately (see .r4). NA means R's full display
   # precision, 15 significant digits, which the Python engine also writes. jsonlite
-  # 1.8.5 and 1.8.6 write 17 instead, so a datasheet written with either of them
-  # differs from the Python engine's.
+  # 1.8.5 and 1.8.6 write 17 instead, so DESCRIPTION requires jsonlite 1.8.7 or later.
   write_lines_lf(jsonlite::toJSON(ds, auto_unbox = TRUE, pretty = TRUE,
                                   null = "null", na = "null", digits = NA), json_path)
   write_lines_lf(render_datasheet_md(ds), md_path)

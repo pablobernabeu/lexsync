@@ -11,9 +11,11 @@ test-lexicon-provenance.R holds the R engine to the same tests, by the same name
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 
 import pandas as pd
+import pytest
 import yaml
 from helper_repo import repo_path
 
@@ -165,6 +167,22 @@ def test_a_registry_corpus_in_the_cache_is_credited_by_its_citation(tmp_path, mo
     mine = cache / "mine.csv"
     mine.write_bytes(body)
     assert _lexicon_provenance(str(mine)) == f"a user-supplied lexicon (mine.csv, sha256 {sha})"
+
+
+def test_a_cached_corpus_with_a_missing_registry_setting_is_refused(tmp_path, monkeypatch):
+    # A LEXSYNC_REGISTRY that names a missing file is refused by name, and the corpus
+    # is not credited as the user's own.
+    cache = tmp_path / "cache"
+    cache.mkdir()
+    monkeypatch.setattr(corpora, "cache_dir", lambda: str(cache))
+    cached = cache / "subtlex_esp.csv"
+    cached.write_bytes(b"word,freq_zipf\nhola,5\n")
+    missing = str(tmp_path / "no_such_registry.yaml")
+    monkeypatch.setenv("LEXSYNC_REGISTRY", missing)
+    message = re.escape(
+        f"lexsync: registry not found: '{missing}' (the LEXSYNC_REGISTRY environment variable).")
+    with pytest.raises(FileNotFoundError, match=message):
+        _lexicon_provenance(str(cached))
 
 
 def test_a_lexicon_that_cannot_be_read_is_still_the_users_own(tmp_path):

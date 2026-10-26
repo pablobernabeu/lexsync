@@ -173,6 +173,27 @@ test_that("a_registry_corpus_in_the_cache_is_credited_by_its_citation", {
                    sprintf("a user-supplied lexicon (mine.csv, sha256 %s)", sha))
 })
 
+test_that("a_cached_corpus_with_a_missing_registry_setting_is_refused", {
+  # A lexsync.registry option that names a missing file is refused by name, and the
+  # corpus is not credited as the user's own.
+  tmp <- tempfile("lexsync-cache-")
+  old <- Sys.getenv("R_USER_CACHE_DIR", unset = NA)
+  old_opt <- options(lexsync.registry = file.path(tmp, "no_such_registry.yaml"))
+  on.exit({
+    options(old_opt)
+    if (is.na(old)) Sys.unsetenv("R_USER_CACHE_DIR") else Sys.setenv(R_USER_CACHE_DIR = old)
+    unlink(tmp, recursive = TRUE)
+  })
+  Sys.setenv(R_USER_CACHE_DIR = tmp)
+  cache <- lexsync_cache_dir()
+  dir.create(cache, recursive = TRUE)
+  cached <- file.path(cache, "subtlex_esp.csv")
+  writeBin(charToRaw("word,freq_zipf\nhola,5\n"), cached)
+  msg <- sprintf("lexsync: registry not found: '%s' (the lexsync.registry option).",
+                 file.path(tmp, "no_such_registry.yaml"))
+  expect_error(.lexicon_provenance(cached), msg, fixed = TRUE)
+})
+
 test_that("a_lexicon_that_cannot_be_read_is_still_the_users_own", {
   missing <- file.path(tempfile("provenance_"), "missing.csv")
   expect_identical(.lexicon_provenance(missing), "a user-supplied lexicon (missing.csv)")

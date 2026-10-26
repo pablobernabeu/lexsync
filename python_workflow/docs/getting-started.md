@@ -84,8 +84,8 @@ print(lexsync.list_corpora().to_string(index=False))
 `list_corpora` reads the corpus registry. It looks for `corpora/registry.yaml` relative to the
 working directory first, then one level up, then falls back to the copy bundled inside the package,
 so it answers whether or not you are standing in a clone. Setting `LEXSYNC_REGISTRY` to an existing
-file makes it read that file instead. A path that does not exist is passed over without a warning,
-and the usual search continues.
+file makes it read that file instead. A path that does not exist is refused with an error that names
+the variable and the path.
 
 ## The command line
 

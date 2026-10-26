@@ -543,9 +543,9 @@ no function signature changes.
   `run_pipeline` and `run_all` say what they return and write. Cross-references no
   longer show a literal `:func:`, and the arguments of `design_stem`, `validate_design`
   and `export_opensesame` and the example of `assign_triggers` render as tables and
-  code. The `--help` of `lexsync run`, `lexsync corpora` and `lexsync fetch` describes
-  every argument. The registry bundled with each package says what an entry's `sha256`
-  does.
+  code. The `--help` of `lexsync` and of `lexsync run`, `lexsync corpora` and
+  `lexsync fetch` describes every argument. The registry bundled with each package says
+  what an entry's `sha256` does.
 - The notes on the OpenSesame templates, which both packages install, describe the
   generated experiment as it is written. They name the loop table and its columns, give
   the text table's fields for every paradigm and the file name of every experiment, and
@@ -600,8 +600,7 @@ no function signature changes.
   app guide says that a self-paced reading
   table needs a `question` column, and the matching guide gives the worked example of
   a published study's tolerance windows, with González Alonso et al. (2025) on the
-  references page. The getting-started guide says that a `LEXSYNC_REGISTRY` naming a
-  file that does not exist is passed over without a warning. The API reference says
+  references page. The API reference says
   which dimensions a lexicon supplies, names
   the objects reached through `lexsync.corpora` and `lexsync.paths`, and shows
   `run_pipeline` as a function. The README passes the counterbalanced stimuli to
@@ -656,6 +655,20 @@ no function signature changes.
   Python engine searched the caller's path first and then the usual places, so a misspelt
   path read another registry and reported its corpora under the path given, and the R
   engine stopped with a connection error.
+- `list_corpora`, `fetch_corpus` and `normalise_lexicon` with an `entry` given by name
+  refuse a `LEXSYNC_REGISTRY` environment variable in Python, or a `lexsync.registry`
+  option in R, that names a file that does not exist, with a message that names the
+  setting and the path. `items.generation.exclude` refuses it when an entry may be a
+  registry corpus name, and so does the datasheet when it credits a corpus
+  `fetch_corpus` put in the cache. Both engines passed over such a file without a
+  warning and read the next registry they found, so a misspelt or stale setting listed,
+  fetched, excluded and credited another registry's corpora. The getting-started guide,
+  the R help page of `list_corpora` and the Python docstrings of `list_corpora` and
+  `fetch_corpus` describe the refusal.
+- The R package requires jsonlite 1.8.7 or later. jsonlite 1.8.5 and 1.8.6 write 17
+  significant digits for `digits = NA`, so a datasheet written with either of them
+  differed from the Python engine's, which writes 15. Output with any other release is
+  unchanged.
 - `resample.n_sets`, and the `n_sets` argument of `resample_stimuli`, must be a whole
   number of at least 1, the rule `n_per_condition` follows, and both engines refuse
   anything else before a stimulus is selected. A fractional count was truncated in

@@ -214,7 +214,8 @@ def _registry_citation(path):
 
     The file must lie in lexsync's cache, and its name less `.csv` must name a corpus
     in the registry, or be ``<language>_wordfreq`` for a language the wordfreq
-    connector lists. Those are the names fetch_corpus gives what it fetches. Mirrors
+    connector lists. Those are the names fetch_corpus gives what it fetches. A
+    ``LEXSYNC_REGISTRY`` that names a missing file is refused. Mirrors
     .registry_citation in datasheet.R.
     """
     name = _file_name(path)
@@ -223,8 +224,12 @@ def _registry_citation(path):
     try:
         here = os.path.normcase(os.path.realpath(os.path.dirname(os.path.abspath(path))))
         cache = os.path.normcase(os.path.realpath(_corpora.cache_dir()))
-        if here != cache:
-            return None
+    except (OSError, ValueError):
+        return None
+    if here != cache:
+        return None
+    _corpora._registry_env()
+    try:
         with open(_corpora._registry_path(None), encoding="utf-8") as handle:
             reg = yaml.safe_load(handle)
     except (OSError, ValueError, yaml.YAMLError):
@@ -1885,8 +1890,8 @@ def _at_15_significant_digits(o):
     records disagreed on any value that had not already been rounded on the way in.
     A `tolerance_k` of 1/9 was written to 16 digits here and 15 there, so a reader
     diffing the two records saw a difference that meant nothing. jsonlite 1.8.5 and
-    1.8.6 write 17 digits for ``digits = NA``, so an R datasheet written with either of
-    them differs from this one.
+    1.8.6 write 17 digits for ``digits = NA``, so the R package requires jsonlite 1.8.7
+    or later.
 
     Fifteen digits is ample for a provenance record: every value in it either came from
     a human-written design file or was deliberately rounded to four places. The design
@@ -1905,12 +1910,11 @@ def write_datasheet(ds: dict, json_path: str, md_path: str) -> tuple:
     """Write a datasheet from ``build_datasheet`` as JSON and as Markdown.
 
     The JSON at ``json_path`` has its keys sorted, an indent of 2 and every float
-    rounded to 15 significant digits, the precision the R engine writes with any
-    jsonlite release but 1.8.5 and 1.8.6. The Markdown at ``md_path`` renders the
-    record, its Methods paragraph and the pre-registration template. Both files are
-    UTF-8 with LF line endings. The directory of ``json_path`` is created when it is
-    missing, but the directory of ``md_path`` must already exist. Returns
-    ``(json_path, md_path)``.
+    rounded to 15 significant digits, the precision the R engine writes. The Markdown
+    at ``md_path`` renders the record, its Methods paragraph and the pre-registration
+    template. Both files are UTF-8 with LF line endings. The directory of ``json_path``
+    is created when it is missing, but the directory of ``md_path`` must already exist.
+    Returns ``(json_path, md_path)``.
     """
     import os
     os.makedirs(os.path.dirname(json_path) or ".", exist_ok=True)

@@ -23,16 +23,31 @@ from .io_utils import _exact_sum, _fmt_g, _type_column, read_csv_utf8, sha256_fi
 from .querying import _check_zipf_range, _fold_words, _nfc, _require_numbers, _zipf_from_permillion
 
 
+def _registry_env() -> str | None:
+    # The file LEXSYNC_REGISTRY names, or None when the variable is unset or empty. A
+    # file that does not exist is an error, as a registry_path is, so a misspelt or
+    # stale value never falls through to the next registry. generation._registry_entry
+    # and datasheet._registry_citation, which treat an unreadable registry as absent,
+    # call this first and refuse such a value too. Mirrors .registry_option in
+    # R_workflow/R/corpora.R.
+    env = os.environ.get("LEXSYNC_REGISTRY")
+    if env and not os.path.exists(env):
+        raise FileNotFoundError(
+            f"lexsync: registry not found: '{env}' (the LEXSYNC_REGISTRY environment variable).")
+    return env or None
+
+
 def _registry_path(registry_path: str | None = None) -> str:
     # A path the caller names is read on its own, and one that does not exist is an
     # error, so a misspelt or stale path never falls through to the checkout's registry
-    # or the bundled one. Mirrors .registry_path in R_workflow/R/corpora.R.
+    # or the bundled one. The same holds for the file LEXSYNC_REGISTRY names. Mirrors
+    # .registry_path and default_registry_path in R_workflow/R/corpora.R.
     if registry_path is not None:
         if not os.path.exists(registry_path):
             raise FileNotFoundError(f"lexsync: registry not found: '{registry_path}'.")
         return registry_path
     candidates = [
-        os.environ.get("LEXSYNC_REGISTRY"),
+        _registry_env(),
         os.path.join("corpora", "registry.yaml"),
         os.path.join("..", "corpora", "registry.yaml"),
         os.path.join(os.path.dirname(__file__), "data", "registry.yaml"),
@@ -47,16 +62,18 @@ def list_corpora(registry_path: str | None = None) -> pd.DataFrame:
     """The corpus registry as a table.
 
     Reads the registry at ``registry_path``, which must exist when given. Left as None,
-    the registry is the first found of the file the environment variable
-    ``LEXSYNC_REGISTRY`` names, ``corpora/registry.yaml`` in the working directory,
-    ``../corpora/registry.yaml`` and the copy bundled with the package.
+    the registry is the file the environment variable ``LEXSYNC_REGISTRY`` names, which
+    must exist. With the variable unset or empty, it is the first found of
+    ``corpora/registry.yaml`` in the working directory, ``../corpora/registry.yaml`` and
+    the copy bundled with the package.
 
     Returns a DataFrame with one row per entry under ``corpora`` in the registry and the
     columns ``name``, ``language``, ``iso``, ``status``, ``connector`` (``openlexicon``
     when the entry names none) and ``citation``. The language codes of the wordfreq
     connector are not listed, and ``fetch_corpus`` takes them by code.
 
-    Raises FileNotFoundError when a named registry does not exist or none is found.
+    Raises FileNotFoundError when the registry ``registry_path`` or ``LEXSYNC_REGISTRY``
+    names does not exist, or when none is found.
     Mirrors list_corpora in R_workflow/R/corpora.R, whose search reads the
     ``lexsync.registry`` option in place of the environment variable.
     """
@@ -426,7 +443,8 @@ def fetch_corpus(name: str, registry_path: str | None = None, n_words: int = 100
     is renamed into the cache only after the size cap, the markup sniff, any registered
     sha256 and the normalisation have all passed. A refusal of the registry entry, a
     failed transfer and a checksum mismatch name the registry file read. A
-    `registry_path` that does not exist is refused.
+    `registry_path` that does not exist is refused. Left as None, the registry is found
+    as ``list_corpora`` describes.
 
     The file lands in ``cache_dir`` as ``<name>.csv``, or ``<name>_wordfreq.csv`` for
     a lexicon the wordfreq connector builds, and its path is returned. The cache

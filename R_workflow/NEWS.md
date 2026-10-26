@@ -105,6 +105,20 @@
   lexsync's own message, not the connection error `file()` gave. The Python twin read
   whichever registry its search found next.
 
+* `list_corpora()`, `fetch_corpus()` and `normalise_lexicon()` with an `entry` given by
+  name refuse a `lexsync.registry` option that names a file that does not exist, with a
+  message that names the option and the path. `items.generation.exclude` refuses it when
+  an entry may be a registry corpus name, and so does `build_datasheet()` when it
+  credits a corpus `fetch_corpus()` put in the cache. Such a file was passed over
+  without a warning, and the next registry found was read in its place, so a misspelt or
+  stale option listed, fetched, excluded and credited another registry's corpora. The
+  Python engine refuses a `LEXSYNC_REGISTRY` environment variable in the same way.
+
+* lexsync requires jsonlite 1.8.7 or later. jsonlite 1.8.5 and 1.8.6 write 17
+  significant digits for `digits = NA`, so a datasheet written with either of them
+  differed from the Python engine's, which writes 15. Output with any other release is
+  unchanged.
+
 * `resample_stimuli()` and `validate_design()` refuse a `resample.n_sets` that is not a
   whole number of at least 1, the rule `n_per_condition` follows. A fractional count was
   truncated in silence, a logical or a quoted number was taken as a count, and zero gave

@@ -615,6 +615,25 @@ def test_a_registry_path_that_does_not_exist_is_refused(tmp_path):
         list_corpora(missing)
 
 
+def test_a_lexsync_registry_naming_a_missing_file_is_refused(tmp_path, monkeypatch):
+    """The file LEXSYNC_REGISTRY names is read on its own as well, so a misspelt or
+    stale value is refused by name and cannot fall through to the checkout's registry
+    or the bundled one. An empty value leaves the search as it is, and an explicit
+    registry_path is read whatever the variable says. Pinned identically in
+    test-corpora.R, with the lexsync.registry option."""
+    missing = str(tmp_path / "no_such_registry.yaml")
+    monkeypatch.setenv("LEXSYNC_REGISTRY", missing)
+    message = re.escape(
+        f"lexsync: registry not found: '{missing}' (the LEXSYNC_REGISTRY environment variable).")
+    with pytest.raises(FileNotFoundError, match=message):
+        list_corpora()
+    with pytest.raises(FileNotFoundError, match=message):
+        fetch_corpus("subtlex_esp")
+    assert len(list_corpora(_registry_path())) > 0
+    monkeypatch.setenv("LEXSYNC_REGISTRY", "")
+    assert len(list_corpora()) > 0
+
+
 # Pins the same contract as "lexsync_cache_clear takes a name literally" in the R
 # engine's test-corpora.R, where unlink() once expanded "*" and emptied the
 # cache. A name names one corpus's files, and a directory that happens to carry

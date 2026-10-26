@@ -8,11 +8,10 @@ list_corpora(registry_path = NULL)
 }
 \arguments{
 \item{registry_path}{Optional path to \code{registry.yaml}. A path that does not exist
-is refused. \code{NULL} (the default) takes \code{getOption("lexsync.registry")} when it
-names a file that exists, and passes over one that does not without a warning. It
-then takes the first that exists of \code{corpora/registry.yaml} and
-\code{../corpora/registry.yaml} relative to the working directory, and last the copy
-bundled with the package,
+is refused. \code{NULL} (the default) takes the file \code{getOption("lexsync.registry")}
+names, which must exist. With the option unset or empty, it takes the first that
+exists of \code{corpora/registry.yaml} and \code{../corpora/registry.yaml} relative to the
+working directory, and last the copy bundled with the package,
 \code{system.file("extdata", "registry.yaml", package = "lexsync")}.}
 }
 \value{

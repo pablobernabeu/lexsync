@@ -2230,9 +2230,8 @@ export_jspsych <- function(stimuli, design, schema, outdir, base = NULL) {
     # Each double to 15 significant digits, the digits the Python engine writes
     # (_fifteen_digits in scripting.py). The default of four decimal places would write
     # 33.3333 for an item table's 33.333333, where Python writes every digit, so the two
-    # engines' pages would differ. I(15), not digits = NA, which jsonlite 1.8.5 and 1.8.6
-    # wrote to 17 digits; I(15) is "%.15g" in every version, and DESCRIPTION sets no
-    # floor on jsonlite.
+    # engines' pages would differ. I(15) writes "%.15g", the digits that digits = NA also
+    # gives in the jsonlite releases DESCRIPTION allows.
     TRIALS_JSON = .json_html(jsonlite::toJSON(trials, dataframe = "rows", digits = I(15))),
     VERSIONS_JSON = .json_html(jsonlite::toJSON(versions, auto_unbox = TRUE)),
     ORDERS = as.character(.n_orders(stimuli)),

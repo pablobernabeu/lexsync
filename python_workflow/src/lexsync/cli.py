@@ -35,10 +35,13 @@ def main(argv=None) -> None:
         prog="lexsync",
         description="lexsync: lexical optimisation and hardware-timed experiment generation",
     )
-    parser.add_argument("--version", action="version", version="lexsync " + _version())
+    parser.add_argument("--version", action="version", version="lexsync " + _version(),
+                        help="show the installed lexsync's version ('unknown' when it is not "
+                             "installed) and exit")
     parser.add_argument("--traceback", action="store_true",
                         help="show the full Python traceback when a command fails")
-    sub = parser.add_subparsers(dest="command")
+    sub = parser.add_subparsers(dest="command",
+                                help="the command to run (with none, this help is printed)")
 
     run = sub.add_parser("run", help="run one design, or all designs in --config-dir")
     run.add_argument("design", nargs="?", help="path to a design YAML (omit to run all)")

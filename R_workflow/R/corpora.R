@@ -135,11 +135,26 @@ lexsync_cache_clear <- function(name = NULL) {
 # Mirrors _STALE_PART_SECONDS in python_workflow/src/lexsync/corpora.py.
 .stale_part_seconds <- function() 24 * 60 * 60
 
+# The file the lexsync.registry option names, or "" when the option is unset or empty.
+# A file that does not exist is refused, as a registry_path is, so a misspelt or stale
+# option never falls through to the next registry. .registry_entry() and
+# .registry_citation(), which treat an unreadable registry as absent, call this first
+# and refuse such an option too. Mirrors _registry_env() in
+# python_workflow/src/lexsync/corpora.py.
+.registry_option <- function() {
+  opt <- getOption("lexsync.registry", "")
+  if (nzchar(opt) && !file.exists(opt)) {
+    stop(sprintf("lexsync: registry not found: '%s' (the lexsync.registry option).", opt),
+         call. = FALSE)
+  }
+  opt
+}
+
 #' Locate the corpus registry
 #' @keywords internal
 default_registry_path <- function() {
   cand <- c(
-    getOption("lexsync.registry", ""),
+    .registry_option(),
     file.path("corpora", "registry.yaml"),
     file.path("..", "corpora", "registry.yaml"),
     system.file("extdata", "registry.yaml", package = "lexsync")
@@ -166,11 +181,10 @@ default_registry_path <- function() {
 #' List the corpora known to the registry
 #'
 #' @param registry_path Optional path to `registry.yaml`. A path that does not exist
-#'   is refused. `NULL` (the default) takes `getOption("lexsync.registry")` when it
-#'   names a file that exists, and passes over one that does not without a warning. It
-#'   then takes the first that exists of `corpora/registry.yaml` and
-#'   `../corpora/registry.yaml` relative to the working directory, and last the copy
-#'   bundled with the package,
+#'   is refused. `NULL` (the default) takes the file `getOption("lexsync.registry")`
+#'   names, which must exist. With the option unset or empty, it takes the first that
+#'   exists of `corpora/registry.yaml` and `../corpora/registry.yaml` relative to the
+#'   working directory, and last the copy bundled with the package,
 #'   `system.file("extdata", "registry.yaml", package = "lexsync")`.
 #' @return A data frame with one row per entry under `corpora` in the registry and the
 #'   columns `name`, `language` (the language's name), `iso` (its code), `status`

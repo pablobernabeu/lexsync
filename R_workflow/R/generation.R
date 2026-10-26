@@ -492,10 +492,12 @@ build_lexdec_stimuli <- function(pool, n, reference_words = NULL, method = "lett
 .EXCLUDE_MESSAGE <- paste("lexsync: items.generation.exclude must list file paths or",
                           "registry corpus names.")
 
-# The registry's `corpora` entry for a bare name, or NULL. A registry that cannot be
-# found or read leaves the name to be read as a path.
+# The registry's `corpora` entry for a bare name, or NULL. A lexsync.registry option
+# that names a missing file is refused, and a registry that cannot otherwise be found
+# or read leaves the name to be read as a path.
 .registry_entry <- function(name) {
   if (!grepl(.REGISTRY_NAME, name, perl = TRUE)) return(NULL)
+  .registry_option()
   reg <- tryCatch(.read_yaml_utf8(default_registry_path()), error = function(e) NULL)
   entry <- reg[["corpora"]][[name]]
   if (is.list(entry)) entry else NULL
