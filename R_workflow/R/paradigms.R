@@ -7,22 +7,34 @@
 
 #' The paradigm registry: default event sequences and required fields
 #'
-#' Each event is a list with `type` (fixation | text | mask | blank |
-#' region_by_region | response | question | feedback), `content` (a literal or a
-#' `{field}` reference), an optional `trigger` (a whole-number EEG code from 1 to 255
-#' or the token "condition"/"item"), `onset_locked`, response `keys`/`timeout_ms`, a
-#' response's `from` (where its window opens: "onset", with the text event before it,
-#' which is the default after a text event, or "offset", once that has gone), a text
-#' event's `case` ("upper" or "lower", applied by the runners as they show the text), a
-#' mask's `length_of` (the fields whose longest text, in characters, sets how often its
-#' one-character content is repeated), and an optional `blocks` restricting the event to
-#' named blocks.
+#' Each event is a list with a `type` (fixation | text | mask | blank |
+#' region_by_region | response | question | feedback) and the keys its type reads.
+#' `content` is a literal or a `{field}` reference. An event's length, where it has
+#' one, is `duration_ms`, or `duration_frames` converted at the schema's
+#' `presentation.assumed_refresh_hz`, and a fixation, text, mask or blank event may
+#' instead take a per-trial `duration` block (`from_column`, or `jitter` with an
+#' optional `as`, see [resolve_trial_timing()]). A fixation, text or mask event takes an
+#' optional `trigger` (a whole-number EEG code from 1 to 255 or the token
+#' "condition"/"item"). A response takes `keys`, `timeout_ms` and `from` (where its
+#' window opens: "onset", with the text event before it, which is the default after a
+#' text event, or "offset", once that has gone), and a question takes `keys` and
+#' `timeout_ms`. A text event takes `case` ("upper" or "lower", applied by the runners
+#' as they show the text), and a mask takes `length_of` (the fields whose longest text,
+#' in characters, sets how often its one-character content is repeated). A
+#' region-by-region event takes `sep` (the region separator in its content, `"|"` by
+#' default), `advance` (the key that shows the next region, `"space"` by default) and
+#' `critical_region_trigger` (a code as for `trigger`, sent at the region the item's
+#' `critical_region` names). A feedback event takes `answer` (the field holding the
+#' correct key, `"answer"` by default) and its texts `correct`, `incorrect` and
+#' `no_response`. Any event may take `blocks`, restricting it to named blocks. Every
+#' event's `trigger` is written on that event's onset flip, and `onset_locked`, which
+#' the built-in paradigms set, is accepted but does not change this.
 #'
 #' `priming` is backward-masked: a 50 ms prime, a 33 ms `#####` mask and the target,
-#' with no forward mask and the item table's letter case. `masked_priming` follows
-#' Forster and Davis (1984): a forward mask of hash marks for 500 ms, a lower-case prime
-#' for three frames and an upper-case target that stays on until the response or for
-#' 2,000 ms.
+#' with no forward mask and the item table's letter case. `masked_priming` has the
+#' arrangement of Forster and Davis (1984): a forward mask of hash marks, a brief
+#' lower-case prime and an upper-case target. Its defaults show the mask for 500 ms, the
+#' prime for three frames and the target until the response or for 2,000 ms.
 #'
 #' @references Forster, K. I., & Davis, C. (1984). Repetition priming and frequency
 #'   attenuation in lexical access. *Journal of Experimental Psychology: Learning,
@@ -82,10 +94,11 @@ PARADIGMS <- list(
       list(type = "blank", duration_frames = 15L)
     )
   ),
-  # Masked priming as Forster and Davis (1984) introduced it: a forward mask of hash
-  # marks for 500 ms, the prime in lower case for 3 frames (50 ms at 60 Hz) and the
-  # target in upper case, which masks the prime and stays on until the response or for
-  # 2,000 ms. Without the forward mask, a prime this brief is usually visible. The mask
+  # Masked priming in the arrangement of Forster and Davis (1984): a forward mask of
+  # hash marks, a brief prime in lower case and the target in upper case, which masks
+  # the prime. The durations are lexsync's defaults: the mask for 500 ms, the prime for
+  # 3 frames (50 ms at 60 Hz) and the target until the response or for 2,000 ms.
+  # Without the forward mask, a prime this brief is usually visible. The mask
   # has as many marks as the longest prime or target has characters, counted when the
   # experiments are written. The runners apply the case as they show the text, since
   # R's toupper() leaves the German sharp s as it is and Python's gives "SS". The

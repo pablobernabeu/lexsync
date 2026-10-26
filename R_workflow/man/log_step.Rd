@@ -19,3 +19,10 @@ The updated run-log object.
 \description{
 Append a step to a run log
 }
+\details{
+While the option \code{lexsync.verbose} is \code{TRUE}, its default, the message is
+also printed to the console as \verb{[lexsync] <message>} with \code{cat()}, so
+\code{suppressMessages()} does not silence it. Set \code{options(lexsync.verbose = FALSE)}
+to keep it quiet. \code{\link[=run_pipeline]{run_pipeline()}} sets the option from its \code{verbose} argument for
+the length of the run and restores it afterwards.
+}

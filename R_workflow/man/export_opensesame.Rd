@@ -24,11 +24,12 @@ invisibly.
 \description{
 Writes \verb{<base>.osexp} and the two tables it reads. Its loop runs over
 \verb{<base>_opensesame.csv}, which holds numbers only: \code{lexsync_row} (the trial's
-position in loop order, from 1), \code{lexsync_trial}, \code{lexsync_list}, \code{lexsync_set},
-the trigger codes, \code{critical_region} and any per-trial duration. The presented
-text, \code{condition}, \code{block} and \code{answer} are in \verb{<base>_opensesame_text.csv}, which
-the inline scripts read with Python's \code{csv} module, so OpenSesame never evaluates
-them. Copy both tables with the experiment.
+position in loop order, from 1), \code{lexsync_trial}, \code{lexsync_list}, \code{replicate} in a
+resampled design, \code{lexsync_set}, the trigger codes, \code{critical_region} and any
+per-trial duration. The presented text, \code{condition}, \code{block}, \code{answer} and, with
+\code{counterbalance.orders}, \code{order_1} to \code{order_m} are in
+\verb{<base>_opensesame_text.csv}, which the inline scripts read with Python's \code{csv}
+module, so OpenSesame never evaluates them. Copy both tables with the experiment.
 }
 \details{
 Before the loop, an inline script, \code{lexsync_instructions}, shows the design's
@@ -36,9 +37,11 @@ Before the loop, an inline script, \code{lexsync_instructions}, shows the design
 is logged. A response after a text event is collected by that event's
 script from the stimulus's onset, which sets \code{response}, \code{response_time},
 \code{timed_out} and \code{correct}. A response kept after the stimulus with \code{from: offset} is
-a keyboard_response, and a script after it sets \code{timed_out} and \code{correct}.
-Self-paced reading sets \code{lexsync_region_rts} and a question \code{question_response} and
-\code{question_rt}. A script clears these as each trial starts, another copies the
+a keyboard_response, and a script after it sets \code{timed_out} and \code{correct}. Such a
+response cannot be restricted to \code{blocks}: a design that restricts one is refused
+here, although the PsychoPy and jsPsych targets accept it. Self-paced reading sets
+\code{lexsync_region_rts} and a question \code{question_response} and \code{question_rt}. A script
+clears these as each trial starts, another copies the
 trial's labels into \code{lexsync_condition}, \code{lexsync_block} and \code{lexsync_answer}, and a
 logger item ends the trial.
 
@@ -57,8 +60,8 @@ with \code{triggers.backend: serial}, as single bytes to \code{triggers.serial_p
 \code{triggers.baudrate}. When that device cannot be opened, \code{triggers.mode: auto} prints
 the codes instead. An inline script, \code{lexsync_trigger_notice}, then says so before
 any other screen and waits for the C key. \code{hardware} stops the experiment there, and
-\code{mock} prints the codes without trying the device. Every trial logs
-\code{lexsync_trigger_mode}, \code{hardware} or \code{mock}. Text is drawn
+\code{mock} prints the codes without trying the device, after the same notice. Every
+trial logs \code{lexsync_trigger_mode}, \code{hardware} or \code{mock}. Text is drawn
 \code{presentation.text_height_px} pixels high, OpenSesame's \code{font_size}, and OpenSesame
 takes full screen from the mode it is launched in.
 

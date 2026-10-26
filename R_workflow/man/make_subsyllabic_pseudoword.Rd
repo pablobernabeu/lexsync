@@ -6,11 +6,25 @@
 \usage{
 make_subsyllabic_pseudoword(word, inv, bigrams, lexset, usedset)
 }
+\arguments{
+\item{word}{The base word.}
+
+\item{inv}{The constituent inventory, from \code{\link[=build_constituent_inventory]{build_constituent_inventory()}}.}
+
+\item{bigrams, lexset, usedset}{As for \code{\link[=make_pseudoword]{make_pseudoword()}}.}
+}
+\value{
+A single pseudoword string, or \code{NULL}.
+}
 \description{
-Up to ceil(2k/3) constituents (codas and nuclei before onsets) are each replaced
-by an attested constituent of the same role and length, keeping every bigram legal
-and the form a novel non-word; length is preserved. Returns NULL if no legal swap
-exists (the caller falls back to letter substitution). Mirrors
+The word is split with \code{\link[=segment_subsyllabic]{segment_subsyllabic()}} into k constituents. A constituent
+is eligible when the reference attests at least two forms of its role and length.
+The first ceil(2k/3) eligible constituents, codas first, then nuclei, then onsets,
+each in word order, are tried one at a time: each is replaced by the attested form of
+the same role and length that keeps every bigram legal and the form a novel
+non-word and has the highest summed bigram count, ties broken by byte order, and is
+left as it is when there is none. Length is preserved. Returns NULL when no
+constituent was replaced (the caller falls back to letter substitution). Mirrors
 make_subsyllabic_pseudoword in generation.py.
 }
 \keyword{internal}

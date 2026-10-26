@@ -38,9 +38,9 @@ def resolve_schema(schema_path=None, design_path=None, config_dir=None) -> tuple
       ``schema.yaml`` in the design's own directory;
     - in both cases, last, the copy bundled with the package.
 
-    The first candidate in each list is the default these entry points had before,
-    so a call that worked then reads the same file now. Whenever no schema was named,
-    the chosen path is printed to stderr as "lexsync: using the schema at '<path>'".
+    Each list starts with the file that earlier releases read, so a call that relied on
+    it still reads the same schema. Whenever no schema was named, the chosen path is
+    printed to stderr as "lexsync: using the schema at '<path>'".
 
     ``origin`` is one of "named", "config_dir", "working_directory",
     "design_directory" or "bundled".

@@ -11,7 +11,10 @@ write_run_log(log, md_path, jsonl_path = NULL)
 
 \item{md_path}{Output path for the Markdown log.}
 
-\item{jsonl_path}{Optional output path for the JSON Lines log.}
+\item{jsonl_path}{Optional output path for the JSON Lines log: one JSON object per
+step, with its \code{time}, \code{message} and \code{data} (\code{null} for a step without details).
+The run's name, engine, times and metadata are in the Markdown log only. Unlike
+\code{md_path}'s, its directory is not created.}
 }
 \value{
 \code{md_path}, invisibly.

@@ -19,6 +19,12 @@ def _now() -> str:
 
 
 def new_run_log(name: str, meta: dict | None = None) -> dict:
+    """Start a run log.
+
+    Returns a dict holding the run's ``name``, its ``started`` time (local ISO 8601, to
+    the second), the ``engine`` (``Python <version>``), ``meta`` (empty when None) and
+    an empty list of ``steps``, which ``log_step`` and ``log_artefact`` append to.
+    """
     return {
         "name": name,
         "started": _now(),
@@ -29,9 +35,9 @@ def new_run_log(name: str, meta: dict | None = None) -> dict:
 
 
 # The console-narration gate, mirroring the R engine's options(lexsync.verbose):
-# run_pipeline sets it from its `verbose` argument, so an embedding front end
-# (the Streamlit app runs with verbose=False) gets a silent console while every
-# step is still recorded on the log itself.
+# run_pipeline sets it from its `verbose` argument, so a caller that passes
+# verbose=False gets a silent console while every step is still recorded on the
+# log itself.
 _VERBOSE = True
 
 
@@ -50,6 +56,13 @@ def set_verbose(flag: bool) -> None:
 
 
 def log_step(log: dict, message: str, data: dict | None = None) -> dict:
+    """Append a step to ``log`` in place and return ``log``.
+
+    The step is ``{"time", "message", "data"}``, with the current time and ``data``
+    None when it is not given. ``[lexsync] <message>`` is also printed unless
+    ``lexsync.logging.set_verbose(False)`` has silenced the console, as
+    ``run_pipeline(verbose=False)`` does.
+    """
     log["steps"].append({"time": _now(), "message": message, "data": data})
     if _VERBOSE:
         print(f"[lexsync] {message}")
@@ -57,11 +70,25 @@ def log_step(log: dict, message: str, data: dict | None = None) -> dict:
 
 
 def log_artefact(log: dict, path: str, rows=None) -> dict:
+    """Log a written file as a step and return ``log``.
+
+    The step's message is ``wrote '<file name>'`` and its data ``{"path", "rows",
+    "md5"}``: ``rows`` as given (None by default) and the file's MD5 digest, None when
+    the file does not exist.
+    """
     return log_step(log, f"wrote '{os.path.basename(path)}'",
                     {"path": path, "rows": rows, "md5": hash_file(path)})
 
 
 def write_run_log(log: dict, md_path: str, jsonl_path: str | None = None) -> str:
+    """Write ``log`` as Markdown to ``md_path`` and return ``md_path``.
+
+    The directory of ``md_path`` is created when it is missing. The file holds the
+    engine, the start and finish times, the ``meta`` entries under "Run metadata" when
+    there are any, and each step with its data. Given ``jsonl_path``, the steps alone
+    are also written there as JSON Lines, one step per line. Both files are UTF-8 with
+    LF line endings.
+    """
     os.makedirs(os.path.dirname(md_path) or ".", exist_ok=True)
     lines = [
         f"# lexsync run log: {log['name']}", "",

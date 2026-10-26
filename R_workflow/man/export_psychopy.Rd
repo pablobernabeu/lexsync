@@ -60,6 +60,6 @@ high, 48 by default. It writes the codes to the parallel port at
 when that device cannot be opened. Under \code{auto}, the script prints the codes instead
 and, before the instructions, shows a notice that the experimenter dismisses with the
 C key. Under \code{hardware}, it stops before its window opens, and under \code{mock} it prints
-the codes without trying the device. The data file's \code{trigger_mode} column records
-\code{hardware} or \code{mock}.
+the codes without trying the device, after the same notice. The data file's
+\code{trigger_mode} column records \code{hardware} or \code{mock}.
 }

@@ -9,7 +9,8 @@ balance_check(stimuli, columns)
 \arguments{
 \item{stimuli}{A stimuli data frame.}
 
-\item{columns}{Columns whose level counts should be equal.}
+\item{columns}{Columns whose level counts should be equal. A name the stimuli do
+not carry is skipped without a warning, so check the names first.}
 }
 \value{
 A character vector of human-readable balance warnings (empty if none).

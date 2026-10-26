@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
-"""A no-hardware parallel-port stand-in.
+"""A no-hardware stand-in for the trigger device.
 
-The generated PsychoPy script embeds its own copy of this class so that it is
-self-contained. This standalone module is provided for testing and for users
-who wish to import a shared mock. It mirrors the small slice of the PsychoPy
-``parallel.ParallelPort`` interface that lexsync relies on (``setData``).
+It mirrors the small slice of the PsychoPy ``parallel.ParallelPort`` interface that
+lexsync relies on (``setData``). By default it prints each code, and with
+``record=True`` it keeps each code in ``log`` instead, for checking a script's codes
+in a test of your own. The generated PsychoPy script does not import it: it defines
+a smaller ``MockPort`` of its own, which only prints, so that it is self-contained.
 """
 
 

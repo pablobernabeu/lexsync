@@ -124,7 +124,7 @@ The DOI that CRAN assigned to the package is
 <https://doi.org/10.32614/CRAN.package.lexsync>, and it covers every version.
 The 0.1.0 release on CRAN was built before the DOI
 existed, so the reference it prints gives the repository's address and no DOI.
-The development version and later releases print the DOI.
+Version 0.1.1 and later print the DOI.
 
 The repository also ships a
 [`CITATION.cff`](https://github.com/pablobernabeu/lexsync/blob/main/CITATION.cff),

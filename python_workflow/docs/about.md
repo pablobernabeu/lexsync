@@ -32,11 +32,10 @@ The reference for the current version of the Python package is:
      differently by design. The R reference gives the DOI that CRAN assigned to the R package, and
      this one the Zenodo concept DOI, for the reason the paragraph after the block sets out.
 
-     The version used to be written out by hand three times on this page, in the reference, in the
-     `note` field of the BibTeX entry and percent-encoded inside the download URI. That is how a page
-     in this family fell a whole minor version behind its release without anyone noticing. All three
-     copies now come from the installed package, so they can no longer disagree with each other or
-     with the release. Two copies stay out of reach of the block below, because neither file can run
+     The version appears three times on this page, in the reference, in the `note` field of the
+     BibTeX entry and percent-encoded inside the download URI, and all three come from the installed
+     package, so they cannot disagree with each other or with the release. Two other copies of the
+     version stay out of reach of the block below, because neither file can run
      code, and both still have to be bumped by hand when a release is cut: the `extra.version` chip
      in mkdocs.yml and the `version` field in CITATION.cff.
 

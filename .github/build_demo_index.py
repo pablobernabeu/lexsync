@@ -35,7 +35,7 @@ PARADIGM_LABELS = {
     "lexical_decision": "Lexical decision",
     "factorial_word": "Factorial word contrast",
     # The `priming` paradigm has no forward mask, so its trials are backward-masked
-    # priming, and only `masked_priming` follows Forster and Davis (1984).
+    # priming, and only `masked_priming` has the arrangement of Forster and Davis (1984).
     "priming": "Backward-masked priming",
     "masked_priming": "Masked priming",
     "self_paced_reading": "Self-paced reading",
@@ -101,7 +101,7 @@ def collect() -> list[dict[str, str]]:
             continue
         paradigm = design.get("paradigm", "")
         # Only some designs declare a paradigm; the rest take the factorial word
-        # contrast the schema defaults to, unless they span a predictor instead.
+        # contrast both engines default to, unless they span a predictor instead.
         # Stating that is better than an empty chip.
         if paradigm:
             label = PARADIGM_LABELS.get(paradigm)

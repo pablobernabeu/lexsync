@@ -9,12 +9,17 @@ make_pseudoword(word, bigrams, lexset, usedset, alphabet = NULL)
 \arguments{
 \item{word}{The base word to derive the pseudoword from.}
 
-\item{bigrams}{Named integer vector of bigram counts, from \code{\link[=bigram_counts]{bigram_counts()}}.}
+\item{bigrams}{Named integer vector of bigram counts: one element for each pair
+of adjacent characters in the reference words, named by the pair and holding
+the number of times it occurs. A candidate is legal only when every one of its
+bigrams is among the names.}
 
 \item{lexset}{Environment used as a set of the real word forms a pseudoword
-must avoid.}
+must avoid: each form is the name of a variable in it, whatever its value.}
 
-\item{usedset}{Environment used as a set of the pseudowords already taken.}
+\item{usedset}{Environment used as a set of the pseudowords already taken, in
+the same way. The function only reads it, so a caller generating several
+pseudowords assigns each result into it.}
 
 \item{alphabet}{Character vector of the letters substituted in, in UTF-8 byte
 order. The default, \code{NULL}, takes the letters of the bigram table's names,
@@ -28,4 +33,9 @@ A single pseudoword string, or \code{NULL} if no legal candidate exists.
 Searches single-letter substitutions first, then two-letter substitutions;
 candidates are ranked by summed bigram frequency with a byte-order tie-break,
 so the choice is deterministic and identical across engines.
+}
+\details{
+\code{\link[=generate_pseudowords]{generate_pseudowords()}} builds \code{bigrams} and \code{lexset} from a reference word
+list and \code{usedset} from the pseudowords it generates, and is the function for
+ordinary use.
 }

@@ -8,10 +8,20 @@ list_corpora(registry_path = NULL)
 }
 \arguments{
 \item{registry_path}{Optional path to \code{registry.yaml}. A path that does not exist
-is refused.}
+is refused. \code{NULL} (the default) takes \code{getOption("lexsync.registry")} when it
+names a file that exists, and passes over one that does not without a warning. It
+then takes the first that exists of \code{corpora/registry.yaml} and
+\code{../corpora/registry.yaml} relative to the working directory, and last the copy
+bundled with the package,
+\code{system.file("extdata", "registry.yaml", package = "lexsync")}.}
 }
 \value{
-A data frame describing each registered corpus.
+A data frame with one row per entry under \code{corpora} in the registry and the
+columns \code{name}, \code{language} (the language's name), \code{iso} (its code), \code{status}
+(\code{validated}, \code{supported}, \code{manual} or \code{listed}, as the registry's header defines
+them), \code{connector} (\code{"openlexicon"} when the entry names none) and \code{citation}. The
+wordfreq connector and its languages have no row, and each entry's licence is in
+the registry file, not in the data frame.
 }
 \description{
 List the corpora known to the registry

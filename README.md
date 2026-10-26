@@ -109,7 +109,7 @@ language you work in.
 In R:
 
 ```bash
-Rscript -e "install.packages(c('readr','yaml','stringdist','stringi','jsonlite','digest'))"
+Rscript -e "chooseCRANmirror(ind = 1); install.packages(c('readr','yaml','stringdist','stringi','jsonlite','digest'))"
 # from the repository root:
 Rscript R_workflow/run_pipeline.R             # runs the demonstrations
 # or, once installed (choose an output path):
@@ -126,7 +126,15 @@ python python_workflow/run_pipeline.py        # runs the demonstrations
 
 The R line above installs that package's required dependencies. One matching method,
 `optimal`, additionally needs `clue` for its assignment solver. The Python engine
-reaches the same solver through `scipy`, which it requires anyway.
+solves the same assignment problem with `scipy`'s `linear_sum_assignment`, and `scipy`
+is a dependency it requires anyway.
+
+`R_workflow/run_pipeline.R` runs the installed lexsync when there is one and the
+sources under `R_workflow/R` otherwise, and its start-up message says which. A release
+installed from CRAN can predate this checkout's designs and select differently, so
+install the checkout's package
+(`install.packages("R_workflow", repos = NULL, type = "source")`) or remove the
+installed one before running the demonstrations.
 
 To install the packages themselves rather than run them from a checkout, see
 [`R_workflow/README.md`](R_workflow/README.md) and
@@ -183,10 +191,14 @@ SHA-256 and normalises it the same way. SUBTLEX-US is the first such entry, so
 for the wordfreq languages are built by the Python package only. `lexsync fetch
 <language> --n-words <N>` derives one into a user cache (10,000 forms unless told
 otherwise), and the R package can read the result as an ordinary corpus but
-cannot build one itself. The committed `corpora/derived/` lexica were built with
+cannot build one itself. The committed `en.csv`, `es.csv` and `zh.csv` in
+`corpora/derived/` were built with
 `python corpora/fetch_corpora.py --languages en es --n-words 30000` and, for
-Chinese, `--languages zh --n-words 20000`. Every corpus is cited, with its licence
-and retrieval date, in `corpora/ATTRIBUTION.md`. The bundled corpora are a fixed,
+Chinese, `--languages zh --n-words 20000`. `--screen-en` builds `en_v2.csv` from
+`en.csv` and a SUBTLEX-US copy whose checksum it verifies, `--known-forms en es`
+writes the known-form lists and `corpora/build_es_gender.py` derives `es_gender.csv`
+from `es.csv`. Every committed corpus is cited, with its licence and retrieval date,
+in `corpora/ATTRIBUTION.md`. The bundled corpora are a fixed,
 checksummed snapshot, so the demonstrations reproduce with no download.
 'wordfreq' itself was frozen in 2024, giving a stable snapshot of usage through
 roughly 2021, which keeps fetched corpora reproducible where a live source would
@@ -194,24 +206,37 @@ let them drift.
 
 ## Extending lexsync
 
-Each extension point is a pair of parallel edits, one in each engine, and the rest of
-the pipeline picks the addition up without further change.
+Each extension point is a set of parallel edits, the same in each engine.
 
 To add a paradigm, add an entry to the `PARADIGMS` registry in
 `R_workflow/R/paradigms.R` and `python_workflow/src/lexsync/paradigms.py`, giving its
 default trial-event sequence, required fields and counterbalancing recipe. Both
-backends then render it with no further code.
+backends then render it with no further code. Both suites pin a digest of the
+registry (`python_workflow/tests/test_masked_priming.py` and
+`R_workflow/tests/testthat/test-masked-priming.R`), so update it in both.
 
-To add a lexical dimension, add the computation in `R_workflow/R/querying.R` and
-`python_workflow/src/lexsync/querying.py`, alongside `add_neighbourhood()` and
-`add_bigram_frequency()`, then list it under `dimensions` in `config/schema.yaml`.
+To add a lexical dimension computed against the reference lexicon, add the
+computation in `R_workflow/R/querying.R` and `python_workflow/src/lexsync/querying.py`,
+alongside `add_neighbourhood()` and `add_bigram_frequency()`, and have the pipeline
+derive it through `.DERIVED_DIMS` and `.derive_dims()` in `R_workflow/R/run_pipeline.R`
+and `DERIVED_DIMS` and `_derive_dims()` in `python_workflow/src/lexsync/run_pipeline.py`.
+A corpus or pool design that matches on the dimension or defines a condition by it
+reports it, and adding it to `.REPORT_DIMS` and `REPORT_DIMS` beside them puts it in
+the report of every matched corpus or pool design whose stimuli carry it. Then list it,
+with its unit, under `dimensions` in `config/schema.yaml` and in its two bundled copies,
+`R_workflow/inst/extdata/schema.yaml` and `python_workflow/src/lexsync/data/schema.yaml`,
+which must stay byte-identical to it. Every committed datasheet records the schema's
+SHA-256, so regenerate `output/` with both engines. A dimension that comes from a norm
+table needs no code: name the table under a design's `norms`.
 
 To add a presentation target, add an `export_<target>()` function in
 `R_workflow/R/scripting.R` and `python_workflow/src/lexsync/scripting.py` that walks
-the same rendered event list.
+the same rendered event list, and call it from `export_experiments()` in both files.
 
-Adding a corpus is a registry entry in `corpora/registry.yaml`, and making it
-downloadable needs a delimited-file URL and its SHA-256.
+Adding a corpus is a registry entry in `corpora/registry.yaml` and in the copies the
+packages bundle, `R_workflow/inst/extdata/registry.yaml` and
+`python_workflow/src/lexsync/data/registry.yaml`, which they read outside a checkout.
+Making it downloadable needs a delimited-file URL and its SHA-256.
 
 ## Tests and continuous integration
 
@@ -266,10 +291,10 @@ select byte-identical stimuli across the two engines. See
 ## Roadmap
 
 lexsync sits within an established ecosystem of stimulus tools: LexOPS, Match, SOS
-and LIBRA for matching, and Wuggy for pseudowords. The roadmap drawn from that
-initial competitor and literature review is now delivered, covering covariance-aware
-and optimal matching, a distributional balance diagnostic, continuous designs and
-Wuggy-style pseudowords. Further norm dimensions (concreteness, age of acquisition, English
+and LIBRA for matching, and Wuggy for pseudowords. Beside them it offers
+covariance-aware and optimal matching, a distributional balance diagnostic,
+continuous designs and Wuggy-style pseudowords. Further norm dimensions
+(concreteness, age of acquisition, English
 Lexicon Project behavioural measures) are supported today through the `merge_norms`
 connector, which joins any word-keyed norm table so the matcher can equate on it.
 Future directions (tracked in `CHANGELOG.md`) are more bundled languages and, should
@@ -310,10 +335,6 @@ inputs and every step that ran.
 
 ## References
 
-Gu, X. S., & Rosenbaum, P. R. (1993). Comparison of multivariate matching methods:
-Structures, distances, and algorithms. *Journal of Computational and Graphical
-Statistics*, *2*(4), 405–420. https://doi.org/10.1080/10618600.1993.10474623
-
 Keuleers, E., & Brysbaert, M. (2010). Wuggy: A multilingual pseudoword generator.
 *Behavior Research Methods*, *42*(3), 627–633. https://doi.org/10.3758/BRM.42.3.627
 
@@ -330,3 +351,7 @@ Rubin, D. B. (1980). Bias reduction using Mahalanobis-metric matching. *Biometri
 
 Stuart, E. A. (2010). Matching methods for causal inference: A review and a look
 forward. *Statistical Science*, *25*(1), 1–21. https://doi.org/10.1214/09-STS313
+
+Volgenant, A. (2004). Solving the *k*-cardinality assignment problem by
+transformation. *European Journal of Operational Research*, *157*(2), 322–331.
+https://doi.org/10.1016/S0377-2217(03)00205-4

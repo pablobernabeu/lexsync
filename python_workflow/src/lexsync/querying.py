@@ -22,17 +22,15 @@ from .io_utils import _NUMERIC_CELL, _fmt_g, _round_dp, clean_field, read_csv_ut
 # decomposed (NFD) and stripped of its combining marks, so every accented vowel counts
 # as its base letter. That covers the Latin-1 vowels, those of Latin Extended-A and -B
 # (ą ę ě ő ű ă ǎ and the rest) and the Vietnamese vowels of Latin Extended Additional.
-# Four vowel letters do not decompose and are named: æ, ø, dotless ı and œ. The class
-# used to list 26 precomposed Latin-1 vowels without æ, so Polish, Czech, Hungarian,
-# Romanian, Turkish, Danish and Norwegian words were undercounted.
+# Four vowel letters do not decompose and are named: æ, ø, dotless ı and œ.
 #
 # The estimate is defined only for words written wholly in Latin script. That is
 # taken as four ranges of code points: U+0001-U+024F (ASCII to Latin Extended-B),
 # U+02B0-U+036F (spacing modifier letters and combining marks), U+1E00-U+1EFF (Latin
 # Extended Additional) and U+2000-U+206F (general punctuation, such as a typographic
-# apostrophe). Any other code point makes it missing. A Chinese, Russian or Greek
-# word used to count 0 syllables, and a design matching on n_syllables then reported
-# perfect balance. Testing code-point ranges keeps the result independent of the
+# apostrophe). Any other code point makes it missing, so a Chinese, Russian or Greek
+# word has no estimate rather than 0 syllables, which would report perfect balance on
+# n_syllables. Testing code-point ranges keeps the result independent of the
 # engines' Unicode tables, and Unicode's stability policy fixes a character's
 # canonical decomposition once it is encoded.
 #
@@ -104,10 +102,10 @@ def _nfc(s):
 
     A precomposed letter such as U+00F3 and the base letter followed by a combining
     accent are canonically equivalent, but they compare unequal and differ in length.
-    Unnormalised, the two spellings of one word were two candidates, which the matcher
-    could place in opposite conditions of one matched set, and a norm or member join
-    missed whichever spelling the lexicon did not use. Applied after trimming and
-    case-folding, because case mapping does not guarantee normalised output. Mirrors
+    Unnormalised, the two spellings of one word would be two candidates, which the
+    matcher could place in opposite conditions of one matched set, and a norm or member
+    join would miss whichever spelling the lexicon did not use. Applied after trimming
+    and case-folding, because case mapping does not guarantee normalised output. Mirrors
     .nfc in R_workflow/R/querying.R, which calls ICU through stringi; the two agree on
     every character assigned in both engines' Unicode versions.
     """
@@ -152,10 +150,10 @@ def _require_numbers(col: pd.Series, name: str) -> None:
     """Refuse a lexicon column that the shared CSV rule did not read as numbers.
 
     A value such as "1,000" leaves the whole column text under that rule. pandas' float
-    conversion then failed with its own message here, while the R engine took
-    as.numeric()'s NA with a warning, so the refusal is spelled out, naming the first
-    value that is not a plain decimal number. Mirrors .require_numbers in
-    R_workflow/R/querying.R.
+    conversion would then fail with its own message here, and the R engine's
+    as.numeric() would give NA with a warning, so both engines refuse the column,
+    naming the first value that is not a plain decimal number. Mirrors
+    .require_numbers in R_workflow/R/querying.R.
     """
     if pd.api.types.is_numeric_dtype(col) and not pd.api.types.is_bool_dtype(col):
         return
@@ -245,6 +243,17 @@ def _zipf_derivation(frame: pd.DataFrame):
 
 def load_lexicon(path: str, schema: dict, language: str | None = None) -> pd.DataFrame:
     """Load a derived lexicon and give it the inexpensive dimensions.
+
+    ``schema`` is the parsed global schema. The file must carry the columns its
+    ``lexicon_schema.required`` lists (``word`` and ``freq_zipf`` in the shipped schema),
+    and ``dimensions.frequency.column`` names the frequency column, ``freq_zipf`` by
+    default, which must hold plain decimal numbers. Rows missing a word or a frequency,
+    or whose word is blank once trimmed, are dropped, and a lexicon left with no row is
+    refused. The rows are sorted by the UTF-8 bytes of ``word`` and gain ``id`` (1 to n
+    in that order), ``length`` (in code points), ``n_syllables`` (NaN outside the Latin
+    script, see ``count_syllables``), ``frequency`` (the frequency column as floats)
+    and, when ``language`` is given, a ``language`` column holding it. Every other
+    column of the file is kept.
 
     ``word`` is trimmed, lower-cased and normalised to Unicode NFC, and duplicates are
     then removed, keeping the first row in file order. When normalisation changed or
@@ -354,6 +363,9 @@ def load_pool(path: str, schema: dict, lexicon=None, language=None) -> dict:
     ``reference_member`` column on whichever of the two supplies the reference keeps
     only the rows it marks 1.
 
+    A ``path`` with a ``..`` component is refused. Give it from the working directory,
+    or as an absolute path.
+
     Returns ``{"pool": DataFrame, "reference": list}``. Words are trimmed, lower-cased
     and normalised to Unicode NFC as in ``load_lexicon``, and the pool carries the same
     ``attrs["input_normalisation"]`` record when that changed or merged any word of
@@ -429,9 +441,12 @@ def load_pool(path: str, schema: dict, lexicon=None, language=None) -> dict:
 def add_bigram_frequency(df: pd.DataFrame, reference=None) -> pd.DataFrame:
     """Mean bigram probability (type-based, non-positional), a phonotactic-probability proxy.
 
-    For each word, the mean over its adjacent letter bigrams of the corpus bigram
-    probability (count divided by the total bigram count). Computed from integer
-    counts and rounded, so it is identical in the R and Python engines.
+    Returns a copy of ``df`` with a ``bigram_freq`` column: for each word, the mean over
+    its adjacent letter bigrams of the bigram's probability among the words of
+    ``reference`` (its count divided by the total bigram count), rounded to nine places,
+    and 0 for a word shorter than two characters. ``reference`` defaults to the words of
+    ``df``. Pass the full lexicon's words instead. Computed from integer counts, so it
+    is identical in the R and Python engines.
     """
     ref = [str(w) for w in (reference if reference is not None else df["word"].tolist())]
     counts: dict[str, int] = {}
@@ -482,16 +497,19 @@ def merge_norms(lexicon: pd.DataFrame, norms, on: str = "word", columns=None) ->
     disambiguates a colliding column name with ``.x``/``.y`` and pandas with
     ``_x``/``_y``, and either way a dimension the design matches on disappears under
     a name nothing looks for; and R's ``merge(sort = FALSE)`` leaves the row order
-    unspecified. A positional lookup has none of those degrees of freedom. A
-    colliding name is now an error instead.
+    unspecified. A positional lookup has none of those degrees of freedom. A norm
+    column whose name the lexicon already has is refused.
 
-    The key is trimmed, case-folded and normalised to NFC on *both* sides. Only the
-    norm table's side was trimmed and case-folded before, so a lexicon holding
-    ``Dog`` matched nothing and the design carried on with an all-``NaN`` dimension.
-    Because both engines agreed on that wrong answer, no parity test could have
-    caught it. The lexicon's
-    own spelling is preserved rather than folded in place: ``word`` is the
-    byte-order tie-break behind every selection, so the join must not rewrite it.
+    ``on`` names the join column, ``word`` by default, which both tables must carry, and
+    ``columns`` the norm columns to add, every column but ``on`` when not given. A
+    ``columns`` entry the norm table lacks is refused.
+
+    The key is trimmed, case-folded and normalised to NFC on *both* sides, so a
+    lexicon holding ``Dog`` matches a norm row for ``dog``. The lexicon's own spelling
+    is preserved rather than folded in place: ``word`` is the byte-order tie-break
+    behind every selection, so the join must not rewrite it. A norm row with a missing
+    key is dropped, a key listed twice takes its first row, and a word the table lacks
+    gets NaN.
 
     Mirrors merge_norms in R_workflow/R/querying.R.
     """
@@ -733,13 +751,23 @@ _NEIGHBOURHOOD_CHUNK = 1000
 def add_neighbourhood(df: pd.DataFrame, reference=None, n_old: int = 20) -> pd.DataFrame:
     """Coltheart's N (same-length, single substitution) and OLD20 for each word.
 
-    The Levenshtein distances to the reference come from one rapidfuzz distance matrix
-    per block of rows, which took 0.9 s for 500 words against the 30,000-word English
-    lexicon where the word-by-word loop it replaces took 19 s. Between two forms of the same
-    length a distance of 1 is a single substitution, so N counts the same-length
-    reference words at distance 1, as the Hamming distance did. The distances are
-    integers, so N and OLD20 are the values the loop gave and the R engine gives.
+    Returns a copy of ``df`` with ``n_density``, the number of words in ``reference``
+    of the same length at Levenshtein distance 1, and ``old20``, the mean Levenshtein
+    distance to the ``n_old`` nearest words of ``reference`` other than the word itself.
+    With fewer than ``n_old`` such words, it is the mean over those there are, and NaN
+    when there are none. The column is named ``old20`` whatever ``n_old`` is.
+    ``reference`` defaults to the words of ``df``, and a word it lists twice counts
+    once. Pass the full lexicon instead, since a word's neighbours do not stop existing
+    because a design excluded them. Distances count code points, and both engines give
+    the same values.
     """
+    # The Levenshtein distances to the reference come from one rapidfuzz distance
+    # matrix per block of rows, which takes 0.9 s for 500 words against the
+    # 30,000-word English lexicon where a word-by-word loop takes 19 s. Between two
+    # forms of the same length a distance of 1 is a single substitution, so N counts
+    # the same-length reference words at distance 1, as the R engine's Hamming distance
+    # does. The distances are integers, so N and OLD20 are the values the R engine
+    # gives.
     words = df["word"].astype(str).tolist()
     ref = list(dict.fromkeys(str(w) for w in (reference if reference is not None else words)))
     ref_len = np.array([len(w) for w in ref])
@@ -763,6 +791,17 @@ def add_neighbourhood(df: pd.DataFrame, reference=None, n_old: int = 20) -> pd.D
 
 
 
+# Both engines return identical values, and the reasons are worth stating because
+# they are the constraints on any future relational dimension. The core is an
+# integer edit distance, and rapidfuzz's Levenshtein.distance and
+# stringdist(method = "lv") agree exactly, including on decomposed Unicode and
+# CJK, which is the same cross-library agreement add_neighbourhood already
+# stakes old20 on. Length is counted in code points, len() and R's nchar()
+# default, never in bytes. The arithmetic uses only - and /, which IEEE-754
+# mandates be correctly rounded, and the result is rounded to nine decimal places,
+# the constant used everywhere else in the package. A degenerate pair of two empty
+# forms returns 0 rather than 0/0, because a NaN would be sorted and compared and
+# would then drop the row from one engine's control window but not the other's.
 def add_pair_overlap(df: pd.DataFrame, prime: str = "prime",
                      target: str = "target") -> pd.DataFrame:
     """Orthographic overlap between the two members of each pair.
@@ -773,18 +812,11 @@ def add_pair_overlap(df: pd.DataFrame, prime: str = "prime",
     control in a priming design: a related pair that also shares letters confounds
     semantic relatedness with orthographic similarity.
 
-    Both engines return identical values, and the reasons are worth stating because
-    they are the constraints on any future relational dimension. The core is an
-    integer edit distance, and rapidfuzz's ``Levenshtein.distance`` and
-    ``stringdist(method = "lv")`` agree exactly, including on decomposed Unicode and
-    CJK, which is the same cross-library agreement ``add_neighbourhood`` already
-    stakes ``old20`` on. Length is counted in code points, ``len()`` and R's
-    ``nchar()`` default, never in bytes. The arithmetic uses only ``-`` and ``/``,
-    which IEEE-754 mandates be correctly rounded, and the result is rounded to nine
-    decimal places, the constant used everywhere else in the package. A degenerate
-    pair of two empty forms returns 0 rather than ``0/0``, because a NaN would be
-    sorted and compared and would then drop the row from one engine's control window
-    but not the other's.
+    The forms are trimmed, lower-cased and normalised to Unicode NFC before they are
+    compared, as ``load_lexicon`` does to a lexicon's words, so ``Dog`` and ``dog`` are
+    at distance 0. Length is counted in code points. ``pair.overlap`` is rounded to nine
+    decimal places, and a pair of two empty forms gives 0. Both engines return
+    identical values.
     """
     for col in (prime, target):
         if col not in df.columns:
@@ -810,6 +842,9 @@ def load_items(path: str, required_fields) -> pd.DataFrame:
     The item id, the condition and the presented fields are normalised to Unicode
     NFC. When that changed any cell, ``attrs["input_normalisation"]`` holds
     ``{"changed", "collapsed"}``, with ``collapsed`` always 0 since no row is removed.
+
+    A ``path`` with a ``..`` component is refused. Give it from the working directory,
+    or as an absolute path.
     """
     parts = str(path).replace("\\", "/").split("/")
     if ".." in parts:

@@ -62,16 +62,14 @@ from .scripting import (
 
 # 1.1 added `materials_source["norms"]` (the design's joined norm tables, with their
 # checksums and per-column coverage) and, for a pair-keyed design, a `relational`
-# block plus an honest `selection["cross_engine"]`. Both were required by the rule
-# that anything affecting item selection is recorded here: a norm table can carry the
-# manipulated variable itself, and the pair path performs a real selection that the
-# record used to describe as "n/a (user-supplied items)".
+# block and a `selection["cross_engine"]` that states the pair path's guarantee. Both
+# follow the rule that anything affecting item selection is recorded here: a norm
+# table can carry the manipulated variable itself, and the pair path performs a real
+# selection.
 #
 # 1.2 records the counterbalancing that ran. Each later field of 1.2 adds a line here.
-#   counterbalancing.recipe     the recipe counterbalance() applied (1.1 inferred it
-#                               from the item source)
-#   counterbalancing.lists      the lists the stimuli table holds (1.1 copied
-#                               counterbalance.lists, with a default of 1)
+#   counterbalancing.recipe     the recipe counterbalance() applied
+#   counterbalancing.lists      the number of lists the stimuli table holds
 #   counterbalancing.complete   whether a Latin-square rotation is complete
 #   counterbalancing.issues     what leaves it incomplete
 #   counterbalancing.cells      the trials per list and condition
@@ -80,12 +78,13 @@ from .scripting import (
 #                                             it changed something
 #   selection.incomplete_dropped  the candidates each condition lost for missing a
 #                               matched dimension, present only when it lost any
-#   counterbalancing.versions   the presentation versions, one per (replicate, list)
+#   counterbalancing.versions   the number of presentation versions, one per
+#                               (replicate, list) pair
 #   counterbalancing.assignment the rule that gives each participant one version
 #   selection.neighbourhood_reference.applied_to
 #                               the derived columns a supplied reference_words list
-#                               recomputed. The record is now written only when one
-#                               ran.
+#                               recomputed. selection.neighbourhood_reference is written
+#                               only when a recomputation ran.
 #   selection["generation_exclude"]   the known-form lists a generated pseudoword was
 #                                     checked against ({source, sha256, n_forms} each),
 #                                     present only when the design names any
@@ -95,13 +94,13 @@ from .scripting import (
 #   presentation.response_windows  each response event's window, {event, from,
 #                               window_ms}; window_ms is null, with duration_column and
 #                               timeout_ms, when the stimulus's duration varies by trial
-#                               (analysis.response now says where a reaction time starts)
+#                               (with a window, analysis.response says where a reaction
+#                               time starts)
 #   materials_source["exclusions"]    the design's exclude_words ({path, sha256,
 #                                     n_listed, n_removed}), present only when the
 #                                     design has the key
 #   materials_source["provenance"]    for a corpus or generated design, the credit of
-#                                     the lexicon read (see _lexicon_provenance).
-#                                     Earlier records credited wordfreq for any file.
+#                                     the lexicon read (see _lexicon_provenance)
 #   reproducibility.schema_path   the schema file the run read, in POSIX form
 #   realised_control[].condition, realised_control[].reference
 #                               the pair a row compares. Every pair is reported, the
@@ -109,7 +108,6 @@ from .scripting import (
 #   realised_control[].mean_diff  the reference mean minus the condition mean, in the
 #                               dimension's own unit
 #   realised_control[].role     manipulated, controlled or uncontrolled for the pair
-#                               (1.1 wrote "manipulated/free" for every unmatched row)
 #   realised_control[].sd, .sd_ratio, .window_low, .window_high
 #                               a continuous design's realised SDs, set against an even
 #                               spread (the predictor) or the pool (a control), and each
@@ -117,7 +115,7 @@ from .scripting import (
 #   items.n_per_condition_realised  the items each condition holds, as {condition, n},
 #                               or {replicate, condition, n} for resampled sets
 #   design.n_per_condition      the request the selector applied, its default when the
-#                               design gives none (1.1 copied the design's key, or null)
+#                               design gives none
 #   presentation.response_mapping  the key each condition takes, {conditions, keys,
 #                               rotate_by_list, source}, present only when a mapping
 #                               applies: the design's own or a lexical decision's default
@@ -145,9 +143,8 @@ _GENERATION_LABELS = {
 }
 
 # What the Methods paragraph says of the balance optimiser's scale, keyed by
-# counterbalance.scale. The default, mean, adds nothing, so its sentence reads as it
-# did before the option. Kept character-for-character identical to
-# .BALANCE_SCALE_NOTES in datasheet.R.
+# counterbalance.scale. The default, mean, adds nothing. Kept character-for-character
+# identical to .BALANCE_SCALE_NOTES in datasheet.R.
 _BALANCE_SCALE_NOTES = {
     "mad": (" on each dimension's deviations from its mean, in units of its mean "
             "absolute deviation"),
@@ -256,9 +253,9 @@ def _lexicon_provenance(path) -> str:
     fetch_corpus put in the cache is credited by
     the registry's citation. Any other file is the user's own and is named by its file
     name and the first twelve hexadecimal digits of its SHA-256, which
-    ``materials_source["sha256"]`` holds in full. Every lexicon used to be credited to
-    wordfreq, so a study selecting from SUBTLEX-US, or from a lexicon of its own, would
-    have cited the wrong corpus. Mirrors .lexicon_provenance in datasheet.R.
+    ``materials_source["sha256"]`` holds in full. A study selecting from SUBTLEX-US, or
+    from a lexicon of its own, therefore does not cite wordfreq. Mirrors
+    .lexicon_provenance in datasheet.R.
     """
     if not path:
         return "a user-supplied lexicon"
@@ -318,11 +315,11 @@ def _cross_engine(method, source: str, selected: bool = False) -> str:
     assignment solver whose last bits differ between the two linear-algebra
     backends (see matching.py).
 
-    ``selected`` distinguishes the two things an item table can now mean. A plain
-    table design does no selection, so there is nothing for the engines to agree on
-    and "n/a" is the whole story. A pair-keyed continuous design selects over that
-    table, and that selection was measured to be byte-identical, so answering "n/a"
-    there understated the guarantee on the one path where a reader most needs it.
+    ``selected`` distinguishes the two things an item table can mean. A plain table
+    design does no selection, so there is nothing for the engines to agree on and
+    "n/a" is the whole story. A pair-keyed continuous design selects over that table,
+    and that selection was measured to be byte-identical, so answering "n/a" there
+    would understate the guarantee on the one path where a reader most needs it.
     """
     if source == "table" and not selected:
         return "n/a (user-supplied items)"
@@ -541,9 +538,8 @@ def _requested_n(design: dict, source: str, is_continuous: bool):
     """The items per condition the selector was asked for: the design's
     ``n_per_condition``, else the default of the selector that ran, the matcher's,
     the continuous selector's or the generator's. An item table without a continuous
-    block selects nothing, so it has a request only when the design states one. The
-    record used to copy the design's key, and gave null when a design left the number
-    to the matcher. Mirrors .requested_n in datasheet.R.
+    block selects nothing, so it has a request only when the design states one.
+    Mirrors .requested_n in datasheet.R.
     """
     if is_continuous:
         default = N_DEFAULT_CONTINUOUS
@@ -710,6 +706,16 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
     lexicon that ``source_path`` names. A lexicon lexsync ships is credited by its
     source, a corpus fetched into the cache by the registry's citation, and any other
     file by its file name and checksum (see ``_lexicon_provenance``).
+
+    ``report`` is the realised-control report, the result of ``match_report`` or, for a
+    continuous design, ``match_report_continuous``. Its ``comparisons`` rows become
+    ``realised_control``, which stays empty when ``report`` is None. ``seed`` is
+    recorded as ``reproducibility.seed``. ``engine`` names the engine in
+    ``reproducibility.versions``, which for ``"python"``, the default, also records the
+    Python, pandas, numpy, scipy, rapidfuzz and pyyaml versions. ``blocks`` (optional)
+    is the ``report`` entry of the result of ``lexsync.blocks.add_blocks``, the
+    per-block trial counts and item-table checksums, and is recorded as
+    ``counterbalancing["blocks"]`` when given.
 
     ``candidate_pool`` (optional) is a list of ``{"condition", "n_candidates"}``
     recording how many items satisfied each condition's window before matching,
@@ -947,7 +953,7 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
             "n_values": int(zipf_derivation["n_values"]),
             "near_boundary": int(zipf_derivation["near_boundary"])}
 
-    # A corpus design draws on every schema dimension, and so does a pair-keyed
+    # A corpus or pool design draws on every schema dimension, and so does a pair-keyed
     # design: every lexicon dimension is joined onto each member. A generate or plain
     # table design reports only the ones it controlled, so the record does not claim
     # dimensions that played no part in the selection.
@@ -960,9 +966,8 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
     dims = {d: schema_dims[d] for d in schema_dims if all_dims or d in controlled}
 
     # The recipe comes from the resolver counterbalance() dispatches on, and the lists
-    # from the table. The record used to infer the recipe from the item source and to
-    # copy counterbalance.lists with a default of 1, though a Latin square without
-    # that key deals one list per condition.
+    # from the table, since a Latin square without counterbalance.lists deals one list
+    # per condition.
     recipe = _recipe(design)
     check = (counterbalance_check if counterbalance_check is not None
              else _counterbalance_check(stimuli, design, recipe))
@@ -988,8 +993,7 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
     # explanation.
     if blocks:
         counterbalancing["blocks"] = blocks
-    # The run limit and the trial orders, recorded only when the design sets them, so a
-    # design without either keeps the record it had.
+    # The run limit and the trial orders, recorded only when the design sets them.
     if trial_order is None:
         trial_order = _trial_order_record(stimuli, design)
     if trial_order.get("max_run"):
@@ -1143,9 +1147,9 @@ def _fmt_tost_p(p) -> str:
     """The TOST p as the Markdown shows it.
 
     Four places, the precision the comparisons report stores, through _fmt_dp like
-    every other number. It was printed raw, so this engine wrote 0.0009 and 1.0 where
-    R wrote 9e-04 and 1. A p that rounds to zero at four places is shown as the bound
-    it is below. Mirrors .fmt_tost_p in datasheet.R.
+    every other number. Printed raw, it would read 0.0009 and 1.0 here and 9e-04 and 1
+    in R. A p that rounds to zero at four places is shown as the bound it is below.
+    Mirrors .fmt_tost_p in datasheet.R.
     """
     s = _fmt_dp(p, 4)
     return "< 0.0001" if s == "0.0000" else s
@@ -1216,8 +1220,7 @@ def _recipe_label(cb: dict) -> str:
 
 def _ci_pct(alpha) -> str:
     """The confidence level of the interval beside a TOST at ``alpha``, 1 - 2 * alpha,
-    as a percentage: "90" at .05 and "99" at .005. The text and the table said 90%
-    whatever the schema's alpha. Mirrors .ci_pct in datasheet.R."""
+    as a percentage: "90" at .05 and "99" at .005. Mirrors .ci_pct in datasheet.R."""
     return _fmt_g((1 - 2 * float(alpha)) * 100)
 
 
@@ -1233,9 +1236,10 @@ def _tost_min_n(bound_d, alpha):
     a bound of 0.5 and an alpha of .05. The left side falls as n grows, so the search
     doubles n until the test can pass and then bisects, ``lo`` never passing and ``hi``
     always passing. It stops at the largest n_per_condition the engines accept, where
-    R's integers end. Without that stop, a bound below about 5e-5 SD gave R an NA, which
-    stopped its Methods text, and a smaller one a bisection that never ended, because
-    doubles that large cannot hold the midpoint. Mirrors .tost_min_n in datasheet.R.
+    R's integers end. Without that stop, a bound below about 5e-5 SD would give R an NA,
+    which would stop its Methods text, and a smaller one a bisection that never ends,
+    because doubles that large cannot hold the midpoint. Mirrors .tost_min_n in
+    datasheet.R.
     """
     try:
         bound, a = float(bound_d), float(alpha)
@@ -1465,9 +1469,9 @@ def _bands_note(ds, rows) -> str:
     the predictor's ranks, k from the resolved tolerance_k with the matcher's default of
     2, and each realised SD is set against the pool's. That first selection follows the
     pool's distribution of the predictor, so it is not called an even spread, the phrase
-    the text keeps for values spaced evenly over the span. The text used to call the
-    controls near-constant, though the windows only trim their tails and a relaxation
-    drops them. Mirrors .bands_note in datasheet.R.
+    the text keeps for values spaced evenly over the span. Nor are the controls called
+    near-constant, since the windows only trim their tails and a relaxation drops them.
+    Mirrors .bands_note in datasheet.R.
     """
     sel = ds.get("selection") or {}
     controls = list(sel.get("controls") or [])
@@ -1524,7 +1528,8 @@ def methods_paragraph(ds: dict) -> str:
     d = ds["design"]
     src = ds["materials_source"]["type"]
     # The first letter raised and the rest as written, as the R twin writes it.
-    # str.capitalize() lowered the rest, so 'British English' became 'British english'.
+    # str.capitalize() would lower the rest, turning 'British English' into
+    # 'British english'.
     lang = d["language"][:1].upper() + d["language"][1:]
     sel = ds.get("selection") or {}
     lo, hi = _realised_range(ds)
@@ -1665,10 +1670,10 @@ def _transparency_note(ds: dict) -> str:
     """How the selection was made, as the Markdown's transparency section states it.
 
     Selection reads no seed, so the note names what it does depend on, and how exact
-    ties were broken when the record gives the rule. It used to call the selection
-    deterministic given the seed and free of item-selection bias, though the
-    spelling tie-break skewed tied conditions towards early-alphabet words. Mirrors
-    .transparency_note in datasheet.R.
+    ties were broken when the record gives the rule. It does not call the selection
+    free of item-selection bias, since the spelling tie-break of tie_break: bytes skews
+    tied conditions towards early-alphabet words. Mirrors .transparency_note in
+    datasheet.R.
     """
     rule = ((ds.get("selection") or {}).get("tie_break") or {}).get("rule")
     if rule == "hash":
@@ -1733,8 +1738,8 @@ def render_datasheet_md(ds: dict) -> str:
         f"- **Cross-engine determinism:** {ds['selection'].get('cross_engine', 'byte-identical')}",
         f"- **Counterbalancing:** {ds['counterbalancing']['recipe']}, "
         f"{ds['counterbalancing']['lists']} list(s)"]
-    # Said only where there is a choice to make, so a single-version record reads as
-    # it always has.
+    # Said only where there is a choice to make, so a single-version record has no such
+    # line.
     if (ds["counterbalancing"].get("versions") or 1) > 1:
         lines.append(f"- **Presentation versions:** {ds['counterbalancing']['versions']}, "
                      f"assigned as {ds['counterbalancing']['assignment']}")
@@ -1754,8 +1759,11 @@ def render_datasheet_md(ds: dict) -> str:
         f"- **Seed:** {ds['reproducibility']['seed']}  |  **Versions:** "
         + ", ".join(f"{k} {v}" for k, v in ds["reproducibility"]["versions"].items()), ""]
     # Norm tables, with their checksums and coverage. A dimension covering only part of
-    # the lexicon matters to a reader: the uncovered rows carry NaN and are dropped by
-    # the tolerance windows, so coverage is part of how the pool was defined.
+    # the lexicon matters to a reader: an uncovered row carries NaN, so a pool filter or
+    # a condition's define_by on the dimension drops it, and when the dimension is
+    # matched (or, in a continuous design, is the predictor or a control) the row is
+    # excluded before anything is selected and counted in selection.incomplete_dropped.
+    # Coverage is therefore part of how the pool was defined.
     nrm = (ds.get("materials_source") or {}).get("norms")
     if nrm:
         lines += ["## Joined norms", "",
@@ -1835,7 +1843,7 @@ def render_datasheet_md(ds: dict) -> str:
         lines.append("")
     elif ds["realised_control"]:
         # Each row names its pair and gives the raw difference, and the interval is
-        # labelled by the schema's alpha: the table said 90% whatever alpha was.
+        # labelled by the schema's alpha (see _ci_pct).
         pct = _ci_pct((ds.get("equivalence") or {}).get("alpha", 0.05))
         lines += ["## Realised control", "",
                   "Each row compares a condition with its reference. The raw difference and "
@@ -1848,7 +1856,7 @@ def render_datasheet_md(ds: dict) -> str:
             # "--", not an em dash: the R renderer's placeholder, kept identical.
             # An undefined d (unequal constants) reaches every one of these cells, and a
             # record written before the pair was recorded reaches the first two. A
-            # condition with one item has no TOST verdict either, which printed as None.
+            # condition with one item has no TOST verdict either.
             ci = (f"[{_fmt_dp(r['ci_low'], 2)}, {_fmt_dp(r['ci_high'], 2)}]"
                   if r.get("ci_low") is not None else "--")
             pair = [("--" if r.get(k) is None else r[k]) for k in ("condition", "reference")]
@@ -1876,7 +1884,9 @@ def _at_15_significant_digits(o):
     display precision and the closest common ground. Without this the two engines'
     records disagreed on any value that had not already been rounded on the way in.
     A `tolerance_k` of 1/9 was written to 16 digits here and 15 there, so a reader
-    diffing the two records saw a difference that meant nothing.
+    diffing the two records saw a difference that meant nothing. jsonlite 1.8.5 and
+    1.8.6 write 17 digits for ``digits = NA``, so an R datasheet written with either of
+    them differs from this one.
 
     Fifteen digits is ample for a provenance record: every value in it either came from
     a human-written design file or was deliberately rounded to four places. The design
@@ -1892,6 +1902,16 @@ def _at_15_significant_digits(o):
 
 
 def write_datasheet(ds: dict, json_path: str, md_path: str) -> tuple:
+    """Write a datasheet from ``build_datasheet`` as JSON and as Markdown.
+
+    The JSON at ``json_path`` has its keys sorted, an indent of 2 and every float
+    rounded to 15 significant digits, the precision the R engine writes with any
+    jsonlite release but 1.8.5 and 1.8.6. The Markdown at ``md_path`` renders the
+    record, its Methods paragraph and the pre-registration template. Both files are
+    UTF-8 with LF line endings. The directory of ``json_path`` is created when it is
+    missing, but the directory of ``md_path`` must already exist. Returns
+    ``(json_path, md_path)``.
+    """
     import os
     os.makedirs(os.path.dirname(json_path) or ".", exist_ok=True)
     with open(json_path, "w", encoding="utf-8", newline="\n") as handle:

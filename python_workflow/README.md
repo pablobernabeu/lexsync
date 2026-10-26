@@ -139,9 +139,7 @@ stim = lexsync.match_stimuli(pool, design, schema)
 stim = lexsync.counterbalance(stim, design, schema)
 
 report = lexsync.match_report(stim, ["length", "frequency", "n_density", "old20"], schema)
-lexsync.export_experiments(
-    lexsync.scripting.assign_triggers(stim), design, schema, "output/experiments"
-)
+lexsync.export_experiments(stim, design, schema, "output/experiments")
 ```
 
 The same operations are available from the command line, which runs a whole

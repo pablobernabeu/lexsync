@@ -6,7 +6,24 @@
 \usage{
 generate_pseudowords_subsyllabic(base_words, reference_words, exclude = NULL)
 }
+\arguments{
+\item{base_words}{Character vector of words to derive pseudowords from.}
+
+\item{reference_words}{Character vector (typically the full lexicon) that
+supplies the bigram statistics and the real word forms to avoid.}
+
+\item{exclude}{Optional character vector of further word forms no pseudoword
+may equal, such as low-frequency words the reference lacks. They are trimmed,
+lower-cased and put in Unicode NFC, as a lexicon's words are, and play no part
+in the bigram statistics.}
+}
+\value{
+A data frame with columns \code{base_word} and \code{pseudoword}, in the order of
+\code{base_words}. A base word for which neither generator finds a form is an error.
+}
 \description{
+The base words are taken in byte order, each given \code{\link[=make_subsyllabic_pseudoword]{make_subsyllabic_pseudoword()}}'s
+form or, when it has none, \code{\link[=make_pseudoword]{make_pseudoword()}}'s, and no two share a pseudoword.
 \code{exclude} is as for \code{\link[=generate_pseudowords]{generate_pseudowords()}}, and so are the letters of the
 letter-substitution fallback and the refusal of a logographic base word.
 }

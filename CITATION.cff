@@ -9,9 +9,10 @@ abstract: >-
   generation and the automated generation of hardware-timed PsychoPy,
   OpenSesame and jsPsych experiment scripts for EEG/ERP and browser-based
   research. The MIT licence covers the source code; the bundled example lexica
-  are derived from wordfreq (Speer, 2022) and are distributed under
-  CC BY-SA 4.0, with the terms and the attribution they require in LICENSE-DATA
-  and corpora/ATTRIBUTION.md.
+  are derived from wordfreq (Speer, 2022), the English one's rows chosen by
+  SUBTLEX-US (Brysbaert & New, 2009), and are distributed under CC BY-SA 4.0,
+  with the terms and the attribution they require in LICENSE-DATA and
+  corpora/ATTRIBUTION.md.
 type: software
 authors:
   - family-names: Bernabeu

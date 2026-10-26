@@ -1,5 +1,88 @@
 # lexsync (development version)
 
+* The help pages describe more functions as they behave. `match_stimuli()` describes
+  the four matching methods, and `resample_stimuli()` says that its selections match
+  the Python engine's under `standardised_euclidean` and `joint` only.
+  `select_continuous_stimuli()` gives its default of 60 items and the matching
+  policies it reads, and `counterbalance()` says that a Latin square keeps one row per
+  item set in each list. `describe_stimuli()` and `build_lexdec_stimuli()` name every
+  column they return. `list_corpora()` and `fetch_corpus()` say how the registry is
+  found, `list_corpora()` which columns it returns and `fetch_corpus()` which
+  refusals name the registry, and `run_pipeline()` says what a run returns and
+  writes. `log_step()` says that each step is printed unless
+  `options(lexsync.verbose = FALSE)` is set, `merge_norms()` which of two norm rows
+  sharing a key is used, `participant_table()` the rule it assigns participants by
+  and `PARADIGMS` every event key, among them `onset_locked`, which changes nothing.
+  `make_pseudoword()` describes the bigram counts and the two sets of forms it
+  takes, which `generate_pseudowords()` builds for ordinary use.
+  `variance_ratio()` says when the ratio is missing, `add_pair_overlap()`
+  that the forms are lower-cased and normalised to NFC before they are compared and
+  `balance_check()` that a column the stimuli lack is skipped. `load_pool()` and
+  `load_items()` say that a path with a `..` component is refused, `validate_design()`
+  where a `counterbalance.run_on` naming no column is refused and
+  `resolve_trial_timing()` how a `duration:` block is written. `export_opensesame()`
+  says that the loop table carries `replicate` in a resampled design and that a
+  response collected from the offset is refused when it is restricted to blocks.
+  Eight pages that cite works in author-year form give the references in full. The
+  registry installed with the package says what an entry's `sha256` does.
+
+* The help pages of `export_psychopy()` and `export_opensesame()` say that
+  `triggers.mode: mock` shows the same notice as a trigger device that cannot be
+  opened, and that of `export_opensesame()` that the text table carries the
+  trial-order columns `order_1` to `order_m`. The notes on the OpenSesame templates
+  installed with the package describe the generated experiment's tables, file names,
+  trigger notice and timing as they are, and give the full reference of the study they are modelled on.
+
+* The vignettes correct several descriptions. A pool filter is an
+  inclusive range when its value is a pair of numbers, whatever the column, as the
+  help page of `build_pool()` now says, and only a direct call of `build_pool()`
+  skips a filter naming a column the frame lacks: `run_pipeline()` refuses such a
+  `pool_filters` key unless it names a dimension the pipeline derives, and
+  `match_stimuli()` such a `define_by` key. A design written
+  for lexsync 0.1 selects what it selected on `en.csv` once it sets
+  `matching.tie_break: bytes`, unless it uses `optimal` or its pool holds
+  candidates without a matched value. `standardised_euclidean` is
+  the one default method, and it and `joint` carry the cross-engine guarantee. The
+  pseudoword generators substitute among the letters the reference words attest,
+  accented letters included, and refuse a logographic script. Of the bundled
+  lexica, only the English example is screened. A design with one version and
+  several trial orders gets one OpenSesame experiment per order, and each trial
+  order of a list has its own practice order. A duration may be given in frames as
+  well as in milliseconds, as several registered paradigms give theirs. The
+  vignette examples of `merge_norms()` and of the `conditions` argument of
+  `assign_triggers()` show what they describe, and the References vignette lists
+  Duchon et al. (2013), which a design configuration cites.
+
+* The vignettes and the help page of `export_jspsych()` correct further
+  descriptions. A design that gives neither `n_per_condition` nor `n_per_cell`,
+  which is read in its place, takes 20 items per condition when it is matched, 60
+  when it is continuous and 40 words with their pseudowords when it generates them,
+  and the schema holds no item count. The `timing` keys reach every fixation, every
+  text event whose `trigger` is `condition` and every blank, and a duration given in
+  both units is read in milliseconds. A balanced list assignment stops at
+  `counterbalance.max_passes`, 500 passes by default, when it has not reached a local
+  optimum first. Only the Markdown run log carries the run metadata, and the JSON
+  Lines log holds the steps. The parity gate's identity columns are given for each
+  kind of design, and the jsPsych page loads its keyboard-response plugin from the
+  CDN as well as the library and stylesheet. `inst/COPYRIGHTS` says that `en_v2.csv`
+  marks the forms SUBTLEX-US lacks or seldom writes in lower case instead of leaving
+  them out, and the References vignette drops Hansen and Klopfer (2006), which no
+  page cites.
+
+* The citation footer credits SUBTLEX-US, which chose the English example
+  lexicon's rows, and says that each corpus's retrieval date is in the repository's
+  `corpora/ATTRIBUTION.md`. `inst/COPYRIGHTS` says that a fetched corpus's licence is
+  recorded in its registry entry and that `list_corpora()` reports its citation.
+  The README says that 0.1.1 and later print the DOI, and the reference index
+  describes the corpus functions and continuous designs as they work.
+
+* The help page of `build_datasheet()` says why the candidate-pool sizes are
+  recorded, citing Forster (2000) and Simmons et al. (2011). The Getting started and
+  app vignettes list the works they cite, and the app vignette gives the frequency k
+  of González Alonso et al. (2025) as 0.1111111111111111, since 0.111 gives a window
+  narrower than a ninth of a standard deviation. The SUBTLEX credits in
+  `inst/COPYRIGHTS` give each article's title.
+
 * Design, schema and registry files are read as UTF-8 whatever the session's character
   type. `yaml::read_yaml()` converted each file to the session's encoding, so under the C
   locale, as in a container or a batch job without a UTF-8 locale, a file stopped at its
@@ -85,9 +168,10 @@
   in, and the practice trials keep it on their own. The datasheet records the limit and
   the longest run realised in each presentation version as `counterbalancing$max_run`,
   a field of datasheet format 1.2, and the Methods text states it, citing van Casteren
-  and Davis (2006). The shipped designs hold runs of up to eleven trials of one
-  condition, and the lexical decisions up to seven consecutive trials with the same
-  correct key. Both new keys are off by default, so no shipped design changes.
+  and Davis (2006). The shipped designs with more than one condition hold runs of up
+  to eleven trials of one condition, and the lexical decisions up to nine consecutive
+  trials with the same correct key. Both new keys are off by default, so no shipped
+  design changes.
 
 * `counterbalance.orders: m` gives each list m trial orders. `counterbalance()` adds
   `order_1` to `order_m`, each trial's position in each order, to the stimuli and the
@@ -107,8 +191,10 @@
   table or OpenSesame experiment moves.
 
 * The documentation said that practice trials are shuffled so that participants meet
-  them in different orders. Every participant given a list meets them in one fixed
-  order, as the design intends, and the text now says so.
+  them in different orders. Every participant given a list and trial order meets
+  them in one fixed order, as the design intends, and the text now says so. With
+  `counterbalance.orders: m`, each of a list's m orders has its own practice order,
+  still before the main trials.
 
 * `counterbalance.scale: mad` balances lists on each dimension's deviations from its
   mean in units of its mean absolute deviation, so a dimension's weight no longer
@@ -134,7 +220,8 @@
 * `normalise_lexicon()` turns a delimited corpus file into a lexicon `load_lexicon()`
   reads. It applies a column map, reads tab-separated files, derives Zipf values from
   frequencies per million (Zipf = log10(per million) + 3) and writes `word` and
-  `freq_zipf`, with `freq_permillion` and `pos` when the file has them. Words are
+  `freq_zipf`, with `freq_permillion` when Zipf was derived from it and `pos` when
+  the file has one. Words are
   lower-cased and put in NFC, and a form listed more than once keeps its first row or,
   under a registry entry's `duplicates: sum`, the sum of its rows' frequencies, as
   Lexique needs. A message counts the derived values that lay within 1e-9 of a
@@ -144,11 +231,10 @@
   1.2. `fetch_corpus("subtlex_us")` downloads SUBTLEX-US from openlexicon, checks its
   SHA-256 and normalises it in either engine. No registered corpus could be fetched
   before. An entry may also name a `derived` file, a lexicon already normalised, which
-  is fetched in its place. The registry header describes this route where it said
-  that the column maps were not yet applied. Lexique 3.83 stays a listed entry: the
-  manual confirms that it splits a homograph's frequency between rows, so the entry
-  records `duplicates: sum`, but the forms its film corpus never attests carry a
-  frequency of 0, which has no Zipf value.
+  is fetched in its place. The registry header describes this route. Lexique 3.83
+  stays a listed entry: the manual confirms that it splits a homograph's frequency
+  between rows, so the entry records `duplicates: sum`, but the forms its film corpus
+  never attests carry a frequency of 0, which has no Zipf value.
 
 * `load_lexicon()` refuses Zipf values outside 0 to 9, which are frequencies per
   million in the wrong column. A log count such as SUBTLEX-US's `Lg10WF` lies inside
@@ -161,10 +247,11 @@
   built by the Python package (`lexsync fetch fr`) and read here with
   `load_lexicon()`, where the refusal said the language was not in the registry.
 
-* A `masked_priming` paradigm presents a forward mask of hash marks for 500 ms, a
-  lower-case prime for three frames and an upper-case target that stays until the
-  response, the procedure of Forster and Davis (1984). Without a forward mask, a
-  prime this brief is usually visible. The target collects its response from its
+* A `masked_priming` paradigm presents a forward mask of hash marks, a lower-case
+  prime and an upper-case target, the arrangement of Forster and Davis (1984). Its
+  defaults show the mask for 500 ms, the prime for three frames and the target until
+  the response. Without a forward mask, a prime this brief is usually visible. The
+  target collects its response from its
   onset and stays on screen for the whole 2,000 ms window. A text event's
   `case: upper` or `case: lower` is applied by the runners when they display it,
   with `str.upper()` and `str.lower()` in PsychoPy and OpenSesame and
@@ -225,7 +312,7 @@
   `presentation$response_mapping`, a field of datasheet format 1.2, and its Methods
   text says which key the participants pressed for which condition. The schema's
   comments describe the three keys. Every demonstration's experiments, datasheets and
-  run logs change, and the loop tables of the three lexical decisions carry an answer
+  run logs change, and the loop tables of the generated lexical decisions carry an answer
   on every trial. The twin-edge cases `mapping_rotated` and `instructions_text` pin
   both engines to one outcome. No design selects different items.
 
@@ -410,7 +497,7 @@
   also joined each entry of a `norms:` block written as a mapping of named entries,
   such as `conc: {path: norms.csv}`, which the Python engine refused. Both engines
   now refuse it and name `conc` as an unknown key. The datasheet still records the
-  key as `on`. The schema's comment now shows `join_on:`. The 42 committed
+  key as `on`. The schema's comment now shows `join_on:`. The committed
   datasheets record the schema's SHA-256 and the run logs record each datasheet's
   MD5, so both are regenerated. No stimulus, report table or experiment changes.
   The twin-edge case `norms_on_bare` pins the join on `lemma`.
@@ -429,7 +516,7 @@
   whose names begin with a dot or underscore. `run_all()` refuses two designs that
   would write the same files, such as `en-lexdec` and `en_lexdec`.
 
-* The schema gains comments on the key check and on a `null` tolerance, so the 42
+* The schema gains comments on the key check and on a `null` tolerance, so the
   committed datasheets, which record its SHA-256, and the run logs, which record
   the datasheets' MD5, are regenerated. No stimulus, report table or experiment
   changes.
@@ -507,7 +594,9 @@
   saves `<title>_v1.csv`. The OpenSesame target writes one experiment per version
   (`<base>_list<k>.osexp`, or `<base>_rep<r>_list<k>.osexp` with replicates), each
   with its own tables, and each warns when the subject number belongs to another
-  version. A design with one list and no replicates keeps its file names.
+  version. A design with one list and no replicates keeps its file names unless
+  `counterbalance.orders` is above 1, which adds `_order<j>` to every experiment's
+  name (`<base>_order<j>.osexp` for a design with one version).
   `export_experiments()` lists every file it wrote as `files`, beside the three paths
   it returned before, so `unlist()` of its result now holds each script twice. The
   exporters refuse a `list` or `replicate` value that is not a whole number, read by
@@ -562,15 +651,15 @@
   `generate_pseudowords()` and `build_lexdec_stimuli()` take the list as
   `exclude`. The repository's `corpora/fetch_corpora.py --known-forms` writes
   wordfreq's fuller word lists for this purpose (289,023 English and 334,625
-  Spanish forms), and neither package ships them. No shipped design uses the key
-  yet, so no stimulus moves. The schema's comments describe it, so the 42
-  committed datasheets, which record the schema's SHA-256, and their run logs are
-  regenerated.
+  Spanish forms), and neither package ships them. The generated lexical-decision
+  demonstrations name wordfreq's lists under the key, as the entries below on the
+  screened English demonstrations and on accented letters describe. The schema's
+  comments describe it, so the committed datasheets, which record the schema's
+  SHA-256, and their run logs are regenerated.
 
 * A generated lexical-decision design reports the number of words the generator
-  could use. It reported the band before the a-z filter, 8,305 words where 6,937
-  were eligible in a Spanish band of length 4-7 and Zipf 3.5-6. The English
-  demonstrations' counts do not change, since their bands hold only a-z words.
+  could use, where it reported the whole band. The English demonstrations' counts
+  do not change, since their bands hold only a-z words.
 
 * Lexical-decision generation works with accented letters. The generators'
   alphabet is the set of letters the reference lexicon attests, in UTF-8 byte
@@ -597,16 +686,17 @@
   selections. `hash` breaks them by a keyed SHA-256 of each word
   (salt `lexsync-tie-v1`), which favours no part of the alphabet and does not
   depend on the seed. Ties decide most picks because lengths and neighbourhood
-  counts are whole numbers and frequencies have two decimals. In `en_freqcontrast`,
-  71 of the 80 anchored picks had another candidate at the chosen distance, and
-  breaking them by spelling filled conditions with early-alphabet words. In its
-  low-frequency condition, 61% of the words began with a or b, against 13% of the
-  candidates, and in `en_ndensity`'s dense condition and the `en_andrews_repro`
-  low-frequency cells every word did, an initial-letter confound the
-  realised-control report cannot see. Under `hash`, the low-frequency share fell to
-  12.5% and the dense share to 17.5%, against 13% and 12% among the candidates,
-  and Cohen's d on every matched dimension of every shipped matched design was
-  unchanged. The rule decides the anchored picks, the order of tied pairs in
+  counts are whole numbers and frequencies have two decimals. In `en_freqcontrast` on
+  `en.csv`, which the 0.1 demonstrations read, 71 of the 80 anchored picks had
+  another candidate at the chosen distance, and breaking them by spelling filled
+  conditions with early-alphabet words. In its low-frequency condition, 61% of the
+  words began with a or b, against 13% of the candidates, and in `en_ndensity`'s
+  dense condition and the `en_andrews_repro` low-frequency cells every word did, an
+  initial-letter confound the realised-control report cannot see. Under `hash`, on
+  the same lexicon, the low-frequency share fell to 12.5% and the dense share to
+  17.5%, against 13% and 12% among the candidates, and Cohen's d on every matched
+  dimension of every shipped matched design was unchanged. The rule decides the
+  anchored picks, the order of tied pairs in
   `joint` and `optimal` matching and the rows tied at their candidate cap. The even
   spreads that pick the anchor's items and a continuous design's items keep the
   byte order. Under either rule, `standardised_euclidean` and `joint` select
@@ -677,11 +767,14 @@
   no longer count as neighbours (`cat` has 21 where `en.csv` gives 32), and
   `n_density_raw` and `old20_raw` keep the old values. Filter with
   `pool_filters: {nonstandard: [0, 0]}`.
-  `en.csv` is unchanged, so designs that must reproduce earlier selections keep
-  working. The repository's `corpora/fetch_corpora.py --screen-en` rebuilds the
-  file byte for byte from a SUBTLEX-US copy whose checksum it verifies, and
+  `en.csv` is unchanged, so a design that must reproduce an earlier selection keeps
+  working with `matching.tie_break: bytes`, unless it uses `optimal` or its pool holds
+  candidates without a matched value. The repository's
+  `corpora/fetch_corpora.py --screen-en` rebuilds the file byte for byte from a
+  SUBTLEX-US copy whose checksum it verifies, and
   `corpora/ATTRIBUTION.md` and `LICENSE-DATA` credit SUBTLEX-US as its direct
-  source. This is repository data, and the package example slices follow later.
+  source. This is repository data, and the package's English example slice is drawn
+  from it, as the entry on `inst/extdata/en_example.csv` describes.
 
 * A design can exclude words with `exclude_words`, a list or a file with one word
   per line, applied before the pool filters and recorded in the datasheet with
@@ -702,7 +795,7 @@
   LF, and the credit for `en_v2.csv` states its screening rule. The shipped
   designs' credits do not change, and the twin-edge case
   `user_lexicon_provenance` pins both engines. The schema's comments describe the
-  new key and columns, so the 42 committed datasheets, which record the schema's
+  new key and columns, so the committed datasheets, which record the schema's
   SHA-256, and their run logs are regenerated. No stimulus, report table or
   experiment changes.
 
@@ -715,15 +808,12 @@
   holding them constant, which the 0.1.0 entry for
   `select_continuous_stimuli()` misstated. It also says that generated
   pseudowords are more bigram-typical than their base words, that the `priming`
-  paradigm is backward-masked, that `en_rastle_repro` and `en_andrews_repro`
-  reproduce item selection and not a lexical-decision task, and how each
-  presentation target times its events.
+  paradigm is backward-masked and how each presentation target times its events.
 
 * The corpus registry no longer maps `freq_zipf` to the SUBTLEX-US and
   SUBTLEX-DE log-count columns or to a column that the Chinese SUBTLEX file does
-  not contain. It says that its column maps are not yet applied and that no
-  entry can yet be downloaded by `fetch_corpus()`, and DESCRIPTION names what
-  the corpus access covers in place of calling it many-language.
+  not contain, and DESCRIPTION names what the corpus access covers in place of
+  calling it many-language.
 
 * The documentation of `cohens_d_ci()` and `tost_equiv()` cites Sassenhagen and
   Alday (2016) and Lakens (2017) for what they argue, and calls the 0.5 bound a
@@ -801,7 +891,7 @@
   base word of each pseudoword and the edit distance from it, as the `base` and
   `edit_distance` columns `build_lexdec_stimuli()` now returns. Its pseudowords
   were more bigram-typical than their words (d about -1.5 in `en_lexdec`), which
-  no report showed. The reports, datasheets and run logs of the three
+  no report showed. The reports, datasheets and run logs of the generated
   lexical-decision demonstrations change and their stimuli gain the two columns,
   while no pseudoword, trial order or experiment changes.
 
@@ -809,7 +899,7 @@
   values spread evenly over its range, each control's SD against the pool's, and
   the control windows (`sd`, `sd_ratio`, `window_low` and `window_high`). An even
   spread has a predictor ratio of 1 whatever its size. In `en_freqcontinuous`, the
-  frequency SD is 0.60 of that of an even spread. `select_continuous_stimuli()`
+  frequency SD is 0.59 of that of an even spread. `select_continuous_stimuli()`
   records the windows and the pool's SDs as the `control_windows` entry of its
   `"audit"` attribute. `match_report_continuous()` reads them there, or takes them
   as `audit`, and the datasheet's continuous entries gain the four fields, in
@@ -903,7 +993,7 @@
   the screen marks, mostly names and acronyms. Examples and tests that use it give
   different numbers: in the quick start, frequency separates the conditions by
   d = 4.84, where it gave 5.92. The datasheet credits the slice as screened against
-  SUBTLEX-US, and `LICENSE.note` and the repository's `LICENSE-DATA` credit
+  SUBTLEX-US, and `inst/COPYRIGHTS` and the repository's `LICENSE-DATA` credit
   SUBTLEX-US as a direct source of it. The repository's
   `corpora/fetch_corpora.py --slice-en` rebuilds it from the committed
   `en_v2.csv`, as `--screen-en` now does too. The script writes the slices with LF
@@ -962,7 +1052,7 @@
   the marker stream did not once both kinds were sent. The OpenSesame
   snippet `inline_send_triggers.py` sends only the condition code at the word's
   onset. It sent the item code first, whose 10 ms pulse delayed the condition code.
-  The schema's comments describe the new key, so the 42 committed datasheets, which
+  The schema's comments describe the new key, so the committed datasheets, which
   record the schema's SHA-256, and their run logs are regenerated. No stimulus,
   report table or experiment changes. The twin-edge case `trigger_typo` pins the
   refusal in both engines.
@@ -983,7 +1073,7 @@
   ignored, without delaying any display. A response kept after the stimulus with
   `from: offset` opens its window once a code still held has been reset, since
   OpenSesame's `keyboard_response` runs none of lexsync's code. The experiment also
-  sends the 254 and 255 session markers, as the PsychoPy script does. The 32
+  sends the 254 and 255 session markers, as the PsychoPy script does. The
   committed `.osexp` files change, and so do the datasheets and run logs that
   record their checksums. No stimulus moves.
 
@@ -1000,7 +1090,7 @@
   10 ms, which is accepted and no longer used: `validate_design()` returns a note
   for the run log when a schema sets it, and the shipped schema no longer does. A
   literal code of 254 or 255 is reported as a code both laboratory targets send.
-  The 21 committed PsychoPy scripts change, and the datasheets and run logs are
+  The committed PsychoPy scripts change, and the datasheets and run logs are
   regenerated. No stimulus moves.
 
 * The generated PsychoPy experiment runs full screen (`presentation.fullscreen`,

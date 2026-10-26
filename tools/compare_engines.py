@@ -18,6 +18,14 @@ Both engines come from this checkout: R through pkgload::load_all("R_workflow") 
 Python from python_workflow/src. The Rscript executable is taken from the
 LEXSYNC_RSCRIPT environment variable, or from PATH. The tool lists every differing
 file and exits 1 on any difference or error, 0 when the engines agree.
+
+With --keep DIR the outputs stay in DIR, which is created if need be. Each job gets
+one folder there, named after its design folder (config by default) or, for a
+twin-edge case, twin_edge__<case>. It holds the R engine's artefacts in R/ and the
+Python engine's in py/, with R.error or py.error beside them when an engine failed.
+The R script the tool runs, run_engines.R, is written into DIR itself. A folder
+already in DIR with a job's name is deleted first, so give DIR a directory of its
+own: given the repository root, the default run deletes config/ itself.
 """
 from __future__ import annotations
 
@@ -143,7 +151,8 @@ def main(argv=None) -> int:
                         help="design folders or twin-edge case folders to compare "
                              "(default: config and parity/twin_edge)")
     parser.add_argument("--keep", metavar="DIR",
-                        help="write the two engines' outputs here and keep them")
+                        help="keep the two engines' outputs in this directory, one folder "
+                             "per job, deleting any folder of the same name already there")
     args = parser.parse_args(argv)
     dirs = [Path(d) for d in (args.config or [REPO / "config", twin_edge.CASES_DIR])]
     jobs = [job for d in dirs for job in jobs_for(d)]

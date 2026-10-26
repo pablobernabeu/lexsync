@@ -58,7 +58,10 @@ read as a set of allowed values. A set of numbers is compared with a numeric col
 Any other set is compared as text, the cells and the values written as the R engine writes them,
 so `true` matches TRUE in a logical column and never 1 in a 0/1 column. Rows missing the filtered
 column are dropped, and a filter naming a column the lexicon does not have is skipped without
-complaint.
+complaint. A design's filters are checked first: `run_pipeline` refuses a `pool_filters` key that
+names neither a column of the lexicon, counting any columns its `norms:` tables add, nor a dimension
+it derives (`n_density`, `old20` or `bigram_freq`), and `match_stimuli` refuses a `define_by` key
+the pool lacks.
 
 ```python exec="1" source="material-block" result="text" session="matching"
 pool = lexsync.build_pool(lexicon, {"length": [3, 8], "frequency": [3.8, 7.0]})
@@ -121,7 +124,10 @@ refuses the key, since its items are already a selection of your own. The datash
 list as `materials_source.exclusions`, with its checksum, the number of words it lists and the
 number of candidates it removed, and the Methods paragraph reports the removal.
 
-`en.csv` keeps its bytes, so a design written for lexsync 0.1 selects what it selected. The English
+`en.csv` keeps its bytes, so a design written for lexsync 0.1 selects what it selected once it sets
+`matching.tie_break: bytes` ([How matching works](#how-matching-works)), unless it uses the `optimal`
+method, whose selections differ from those of lexsync 0.1 under either rule, or its pool holds
+candidates that lack a matched value, which are now left out. The English
 demonstrations read `en_v2.csv` with the filter above. Their `exclude_words` file,
 `config/exclude_en_demo.txt`, leaves out the taboo words and the forms that pass the screen without
 being standard English words, such as abbreviations that subtitles write in lower case (`mph`,
@@ -141,8 +147,8 @@ its checksum.
 Narrowing a whole lexicon is the right way round when any word of the language will do. It is the
 wrong way round when the candidate set is itself a research decision: a list from a previous study,
 from a norming session, or one restricted to a semantic category that no lexical filter can express.
-Such a list used to have to masquerade as a lexicon, which meant inventing a `freq_zipf` column for
-it, or else skip matching entirely by going in as `items.source: table`.
+Loaded as a lexicon, such a list would need an invented `freq_zipf` column, and, given as
+`items.source: table`, it would skip matching.
 
 `items.source: pool` takes the list as it is.
 
@@ -173,8 +179,8 @@ example.
 
 A priming study's theoretical variable is a property of the *pair*, such as distributional
 similarity or associative strength, while its nuisance variables are properties of each *member*:
-frequency, length, neighbourhood. A design could previously have matching, or its own item table,
-but not both, so a relational design had to be assembled by hand.
+frequency, length, neighbourhood. A relational design therefore needs matching and its own item
+table at once.
 
 `items.members` promotes an ordinary item table to a pair-keyed one.
 
@@ -280,8 +286,7 @@ A vowel counts whatever its accent, since the word is decomposed and its diacrit
 Polish będę, Turkish kız, Czech dům and Vietnamese một count 2, 1, 1 and 1. The estimate is
 defined for Latin orthographies only: a word holding a character outside the Latin script returns
 `None`, and its `n_syllables` is NaN. `run_pipeline` refuses a design that refers to `n_syllables`
-when such a word passes the other filters the lexicon can answer. Every Chinese, Russian or Greek
-word used to count 0 syllables, and a design matched on them reported perfect balance.
+when such a word passes the other filters the lexicon can answer.
 [Reproducibility and parity](reproducibility-and-parity.md) gives the exact letters and code points.
 
 The set of dimensions is not closed. `merge_norms` left-joins any word-keyed norm table, which is
@@ -318,9 +323,9 @@ pool_filters:
 match_on: [length, concreteness]
 ```
 
-The join key is written `join_on`. This page used to write it `on:`, which YAML reads as the
-boolean true, so the join used `word` whatever the entry named. A bare `on:` is now read as the join
-key, with a note in the run log, and any other key in an entry is refused.
+The join key is written `join_on`, because YAML reads a bare `on` as the boolean true. A bare
+`on:` is read as the join key all the same, with a note in the run log, and any other key in an
+entry is refused.
 
 lexsync ships no norm data: licences vary, and the citation is yours to honour. What it does do is
 record what you joined. Every table appears in the materials datasheet with its checksum and its
@@ -405,6 +410,11 @@ it defaults to `error` deliberately, because a smaller set changes the design th
 design that can live with fewer sets says so with `shortfall: allow`. The datasheet then records
 the items each condition holds, and the methods paragraph states them beside the request. Either
 key may be overridden under the design's own `matching:` block, exactly as `tolerance_k` may be.
+
+Windows are the place to reproduce a published study's stated criteria.
+`config/design_es_gender_repro.yaml` sets `tolerance_k` to `0.111...` for `frequency`, the window of
+the mean plus or minus SD/9 that [González Alonso et al. (2025)](references.md#gonzalez-alonso-2025)
+used, and to 2 for `length`, the mean plus or minus 2 SD.
 
 ### The four methods
 
@@ -752,8 +762,8 @@ their words: in `en_lexdec` the difference is *d* = -0.97 (90% CI [-1.29, -0.65]
 
 A pseudoword is a non-word only relative to the reference words, so a real word too rare for the
 lexicon can still come out as one. The bundled English and Spanish lexica stop at Zipf 2.95 and
-3.11, and the English demonstrations produced crier and pall this way until they named the list
-below. `exclude` names further known word forms that no pseudoword may equal. They are trimmed,
+3.11, and with the English lexicon alone the generators can produce real words such as crier and
+pall. `exclude` names further known word forms that no pseudoword may equal. They are trimmed,
 lower-cased and put in NFC like the lexicon's words, and they take no part in the bigram
 statistics. In a design the list goes under `items.generation.exclude`, and each entry is a file
 with one form per line, a CSV file with a `word` column, or a registry corpus already fetched into

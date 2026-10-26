@@ -18,11 +18,15 @@ counterbalance(stimuli, design, schema, list_of_set = NULL)
 \item{list_of_set}{Optional named integer vector mapping each \code{set} to a list,
 from \code{\link[=balance_lists]{balance_lists()}}. Supplied by the pipeline when
 \code{counterbalance.optimise} is on; when \code{NULL} the factorial recipe deals sets to
-lists by rank as before.}
+lists by rank: the first set to list 1, the second to list 2 and so on, cycling.}
 }
 \value{
-\code{stimuli} with added \code{list} and \code{trial} columns, and the order columns
-when there is more than one order.
+The trials, sorted by replicate, list and trial, with \code{list} and \code{trial}
+columns added, and \code{order_1} to \code{order_m} when there is more than one order. Under
+the factorial recipe, every row of \code{stimuli} appears once, in the list its set is
+dealt to. Under the Latin square, each list holds one row per item set, in the
+condition the rotation gives that set in that list, so the result has one row per
+set per list and not every row of \code{stimuli}.
 }
 \description{
 The recipe is \code{counterbalance.recipe} when the design names one, and otherwise

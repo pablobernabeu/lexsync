@@ -28,9 +28,9 @@ constituents.
 
 The letters a generator substitutes are those the reference words attest, so a
 Spanish lexicon lends it á, é, í, ó, ú, ü and ñ. A word can serve as a base word when
-every character in it is such a letter. The generators were defined for a to z alone,
-which left out 16.5% of a typical Spanish band (1,368 of 8,305 words, among them 261
-preterites in -ó) and never produced an accented pseudoword. A word in a logographic
+every character in it is such a letter. Restricted to a to z, the generators would
+leave out 16.5% of a typical Spanish band (1,368 of 8,305 words, among them 261
+preterites in -ó) and never produce an accented pseudoword. A word in a logographic
 script is refused.
 """
 from __future__ import annotations
@@ -95,7 +95,12 @@ _ROLE_ORDER = {"coda": 0, "nucleus": 1, "onset": 2}
 
 
 def bigram_counts(words) -> dict:
-    """Integer counts of adjacent letter bigrams across a word list."""
+    """Integer counts of adjacent character bigrams across a word list.
+
+    Every pair of adjacent characters in every word is counted, each occurrence once
+    and as written: case is kept, and a hyphen, an apostrophe or a digit forms bigrams
+    as a letter does. Returns a dict holding one count per distinct bigram, keyed by it.
+    """
     counts: dict[str, int] = {}
     for w in words:
         w = str(w)
@@ -222,8 +227,10 @@ def _is_vowel_letter(ch: str) -> bool:
 def segment_subsyllabic(word) -> list:
     """Split a word into ordered ``(role, text)`` subsyllabic constituents.
 
-    Nuclei are the maximal runs of vowels, a vowel being a letter whose base letter
-    is in the syllable estimate's vowel class, so an accented vowel counts. The
+    Nuclei are the maximal runs of vowels in the lower-cased word, a vowel being a
+    letter whose base letter, once its accents are set aside, is a, e, i, o, u or y, or
+    ae (U+00E6), o with stroke (U+00F8), dotless i (U+0131) or oe (U+0153), the
+    syllable estimate's vowel class. The
     consonants before the first nucleus form the first onset, those after the last
     nucleus the final coda, and a consonant run *between* two nuclei is split at its
     midpoint (``floor(m/2)`` to the left coda, the rest to the right onset).
@@ -277,14 +284,16 @@ def build_constituent_inventory(reference_words) -> dict:
 def make_subsyllabic_pseudoword(word, inv, bigrams, lexicon, used):
     """A pseudoword built by swapping whole subsyllabic constituents.
 
-    Up to ``ceil(2k/3)`` of the word's ``k`` constituents (codas and nuclei before
-    onsets) are each replaced, one at a time, by an attested constituent of the
-    same role and length, keeping every letter bigram legal and the form a novel
-    non-word. Each swap preserves length, so the whole form does. Returns ``None``
-    if no legal swap is possible (the caller then falls back to letter
-    substitution), so structure is respected without ever failing to produce a
-    pseudoword. The winning replacement is the most bigram-plausible with a
-    byte-order tie-break, so the two engines agree.
+    The word is split with ``segment_subsyllabic`` into ``k`` constituents. A
+    constituent is eligible when the reference attests at least two forms of its role
+    and length. The first ``ceil(2k/3)`` eligible constituents, codas first, then
+    nuclei, then onsets, each in word order, are tried one at a time: each is replaced
+    by the attested form of the same role and length that keeps every bigram legal and
+    the form a novel non-word and has the highest summed bigram count, ties broken by
+    byte order, and is left as it is when there is none. Each swap preserves length,
+    so the whole form does. Returns ``None`` when no constituent was replaced (the
+    caller then falls back to letter substitution). The byte-order tie-break makes
+    the two engines agree.
     """
     segs = segment_subsyllabic(word)
     if not any(role == "nucleus" for role, _ in segs):
@@ -327,8 +336,9 @@ def generate_pseudowords_subsyllabic(base_words, reference_words,
 
     Base words are processed in byte order so the ``used`` set evolves identically
     across engines; a base word with no legal subsyllabic swap falls back to the
-    letter-substitution generator, so every word yields a pseudoword. ``exclude``
-    is as for :func:`generate_pseudowords`, and so are the fallback's letters and
+    letter-substitution generator, and one for which neither generator finds a form
+    raises ValueError. No two base words share a pseudoword. ``exclude``
+    is as for ``generate_pseudowords``, and so are the fallback's letters and
     the refusal of a logographic base word.
     """
     base = [str(w) for w in base_words]
@@ -371,6 +381,13 @@ def build_lexdec_stimuli(pool: pd.DataFrame, n: int, reference_words=None,
                          method: str = "letter_substitution", exclude=None) -> pd.DataFrame:
     """Assemble a word-vs-pseudoword lexical-decision set from a candidate pool.
 
+    ``n`` is the number of real words to draw, each paired with one pseudoword, and
+    the eligible pool may supply fewer (see below). ``method`` chooses the generator:
+    ``letter_substitution``, the default, as in ``generate_pseudowords``, or
+    ``subsyllabic``, which swaps whole onset, nucleus and coda constituents for attested
+    alternatives of the same role and length and falls back to letter substitution for
+    a word with no legal swap. Any other value raises ValueError.
+
     Real words are drawn by an even spread across the byte-ordered pool (the same
     deterministic device as the matcher's anchor), then a length-matched
     pseudoword is generated for each. The pool is first filtered to the words
@@ -381,11 +398,13 @@ def build_lexdec_stimuli(pool: pd.DataFrame, n: int, reference_words=None,
     supplies the letters, the bigram statistics and the real-word list a
     pseudoword must avoid; it falls back to the pool when not given. ``exclude``
     (optional) lists further known word forms a pseudoword must not equal, which
-    the reference may lack. The presented string is the ``target`` column;
-    conditions are ``word`` and ``pseudoword`` and ``set`` pairs them. ``base``
-    gives the word each pseudoword was made from, a word's own form for a word, and
-    ``edit_distance`` the Levenshtein distance from ``target`` to ``base``, 0 for a
-    word.
+    the reference may lack. The result has the columns ``target`` (the presented
+    string), ``word`` (the same form), ``condition`` (``word`` or ``pseudoword``),
+    ``length`` (the base word's ``length`` from ``pool``, which its pseudoword
+    shares), ``set`` (pairing each word with its pseudoword), ``base`` (the word each
+    pseudoword was made from, and a word's own form for a word) and ``edit_distance``
+    (the Levenshtein distance from ``target`` to ``base``, 0 for a word). The word
+    rows come first, then the pseudowords in the same order.
     """
     pool = (pool.assign(_k=pool["word"].map(lambda w: w.encode("utf-8")))
             .sort_values("_k").drop(columns="_k").reset_index(drop=True))

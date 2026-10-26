@@ -1,10 +1,18 @@
-# scripting.R -- export finalised, hardware-timed experiment scripts. Both targets
-# render the same declarative trial-event sequence (see paradigms.R), so a new
-# paradigm requires only a configuration change rather than new backend code. The PsychoPy script reads
-# stimulus text as data from the conditions file and interprets an embedded EVENTS
-# list; the OpenSesame .osexp is generated block by block. Generation imports
-# neither psychopy nor pyserial: it only writes text. Mirrors scripting.py.
+# scripting.R -- export finalised experiments: hardware-timed PsychoPy and OpenSesame
+# scripts and a jsPsych page. All three targets render the same declarative trial-event
+# sequence (see paradigms.R), so a new paradigm requires only a configuration change
+# rather than new backend code. The PsychoPy script reads stimulus text as data from
+# the conditions file and interprets an embedded EVENTS list; the OpenSesame .osexp is
+# generated block by block. The jsPsych page embeds the events and the trials as JSON.
+# Generation imports neither psychopy nor pyserial: it only writes text. Mirrors
+# scripting.py.
 
+# A template is read from the first of these that holds it: the directory that the
+# option lexsync.templates names, the copy installed with the package, then templates/
+# and ../templates/ relative to the working directory. A template found through the
+# option replaces the bundled one in every PsychoPy and jsPsych export, so it changes
+# the generated experiments and the checksums their datasheets record. Mirrors
+# find_template in scripting.py.
 #' Locate a bundled template file
 #' @keywords internal
 find_template <- function(relpath) {
@@ -28,18 +36,19 @@ find_template <- function(relpath) {
 #' the code-point order of the set labels, so with sets 1 to 20, set 10 is 41 and set
 #' 2 is 51. Decode an item code through the loop table, not from the set's label. The
 #' item range holds 200 codes (an 8-bit-port constraint), so past 200 sets the codes
-#' wrap and repeat, and a runtime notice says so.
+#' wrap and repeat, and a message says so.
 #'
 #' `events`, the design's event list, says which codes the experiment sends. When it
 #' sends item codes together with condition codes, or with a code of its own from 40
 #' to 239, the item codes skip 101 to 100 + k, the codes of the k conditions, and the
-#' design's own codes, so that no item takes a code that marks something else. Sets
-#' 65 and 66 of a 70-set design took 101 and 102, the condition codes. A design with
-#' more item sets than free codes is then refused, unless `schema` sets
-#' `triggers.allow_code_overlap: true`, which lets the item codes wrap and repeat
-#' within the free codes. Every other design, and a call without `events`, gets the
-#' item codes it had before. Each trigger in `events` is checked as
-#' [render_events()] checks it.
+#' design's own codes, so that no item takes a code that marks something else.
+#' Without the skip, sets 65 and 66 of a 70-set design would take 101 and 102, the
+#' condition codes. With it, a design with more item sets than free codes is refused,
+#' unless `schema` sets `triggers.allow_code_overlap: true`, which lets the item
+#' codes wrap and repeat within the free codes. Every other design, and a call
+#' without `events`, takes the item codes described above, from 40 upwards in
+#' code-point order of the set labels, wrapping and repeating past 200 sets. Each
+#' trigger in `events` is checked as [render_events()] checks it.
 #'
 #' A notice is given for a code of the design's own that the stream already uses for
 #' something else: 254 or 255, which the PsychoPy and OpenSesame experiments send when
@@ -230,10 +239,10 @@ assign_triggers <- function(stimuli, conditions = NULL, events = NULL, schema = 
 # trigger is the token "condition" or "item", or a whole number from 1 to 255, written
 # as a number or as a string of digits. Anything else is refused, naming the event by
 # `index`, its place in the design counted from 1, and the `key` the value came from.
-# as.integer() took 20.5 as 20 and let 300, 0 or -5 reach the port, which keeps only
-# the low byte. It turned a misspelt token such as "conditon" into NA, which reached the
-# OpenSesame experiment as send_trigger(NA), while the Python engine stopped. Must match
-# _trigger_spec in scripting.py.
+# as.integer() would take 20.5 as 20 and let 300, 0 or -5 reach the port, which keeps
+# only the low byte, and would turn a misspelt token such as "conditon" into NA, which
+# would reach the OpenSesame experiment as send_trigger(NA). Must match _trigger_spec in
+# scripting.py.
 #' @keywords internal
 trigger_spec <- function(value, index = NULL, key = "trigger") {
   if (is.null(value)) return(NULL)
@@ -330,14 +339,15 @@ trigger_spec <- function(value, index = NULL, key = "trigger") {
 # both engines evaluate the same two IEEE-754 operations on the same doubles:
 # `frames * 1000 / hz`, never `frames * (1000 / hz)`, which is a different
 # computation and agrees with the first only by accident of the divisor.
-# Must stay identical to .frames_to_ms in python_workflow/src/lexsync/scripting.py.
+# Must stay identical to _frames_to_ms in python_workflow/src/lexsync/scripting.py.
 #' @keywords internal
 frames_to_ms <- function(frames, hz) {
   as.integer(round(as.numeric(frames) * 1000 / as.numeric(hz)))
 }
 
-# The refresh rate a design's frame counts were authored for. Only ever used to
-# convert `*_frames` to milliseconds; it is not the rate the experiment runs at.
+# The refresh rate a design's frame counts were authored for. It converts `*_frames` to
+# milliseconds, and the PsychoPy script and the OpenSesame setup fall back on it when
+# they cannot measure the display. Otherwise it is not the rate the experiment runs at.
 #' @keywords internal
 .refresh_hz <- function(schema) {
   hz <- (schema[["presentation"]] %||% list())[["assumed_refresh_hz"]] %||% 60
@@ -355,11 +365,10 @@ frames_to_ms <- function(frames, hz) {
 
 # How long the onset code is held before it is reset to 0, in milliseconds.
 #
-# `reset_after_frames: N` is still accepted, but converting it needs care: the old
-# implementation queued the reset on flip N and callOnFlip runs on the FOLLOWING
-# flip, so the code was actually held for N + 1 flip intervals. Converting N
-# directly would silently shorten every trigger by one frame, so the +1 is part of
-# the compatibility contract, not an off-by-one.
+# `reset_after_frames: N` is read as a hold of N + 1 flip intervals: the key names the
+# flip on which a callOnFlip reset is queued, and callOnFlip runs on the FOLLOWING
+# flip. It is converted as N + 1 frames at presentation.assumed_refresh_hz, and the +1
+# is not an off-by-one: converting N would shorten every trigger by one frame.
 # Must stay identical to _trigger_hold_ms in python_workflow/src/lexsync/scripting.py.
 #' @keywords internal
 .trigger_hold_ms <- function(schema) {
@@ -430,12 +439,12 @@ frames_to_ms <- function(frames, hz) {
 # The trigger device the laboratory targets write to, and what they do without it.
 # `mode` is triggers.mode: "auto" prints the codes when the device cannot be opened and
 # says so before the first trial, "hardware" stops instead, and "mock" prints them
-# without trying the device. `backend` is triggers.backend: the parallel port at
-# triggers.parallel_address, or "serial", which writes each code as one byte to
-# triggers.serial_port at triggers.baudrate (115200 by default). A serial backend must
-# name its port. Taking the first port found could send the codes to another device.
-# The port is checked whatever the backend, since the PsychoPy script carries it either
-# way. Must match _trigger_settings in scripting.py.
+# without trying the device, after the same notice. `backend` is triggers.backend: the
+# parallel port at triggers.parallel_address, or "serial", which writes each code as
+# one byte to triggers.serial_port at triggers.baudrate (115200 by default). A serial
+# backend must name its port. Taking the first port found could send the codes to
+# another device. The port is checked whatever the backend, since the PsychoPy script
+# carries it either way. Must match _trigger_settings in scripting.py.
 .trigger_settings <- function(schema) {
   triggers <- schema[["triggers"]] %||% list()
   mode <- .one_of(triggers[["mode"]], "triggers.mode", .TRIGGER_MODES)
@@ -482,9 +491,8 @@ frames_to_ms <- function(frames, hz) {
 }
 
 # A duration the design fixes, checked: a finite number, not negative. `what` names the
-# value in the refusal, as in "event 2 has duration_ms" or "timing.word_ms is". A
-# negative value reached the OpenSesame experiment as clock.sleep(-50), and a NaN as
-# clock.sleep(NA). Must match _fixed_duration in scripting.py.
+# value in the refusal, as in "event 2 has duration_ms" or "timing.word_ms is". Must
+# match _fixed_duration in scripting.py.
 .fixed_duration <- function(value, what) {
   number <- .as_duration(value)
   if (is.na(number) || !is.finite(number) || number < 0) {
@@ -500,7 +508,7 @@ frames_to_ms <- function(frames, hz) {
 # `duration_frames` if a design carries both. Either must be a finite number, not
 # negative, or the event is refused, named by `index`, its place in the design counted
 # from 1. A fractional `duration_ms` is rounded with .round_dp, as a duration read from
-# the items is. as.integer() truncated it, so 33.7 ms was presented as 33. The
+# the items is. as.integer() would truncate it, so 33.7 ms would be presented as 33. The
 # overrides come from the design's `timing` block, which .render_each() has already
 # checked. Must match _event_ms in scripting.py.
 #' @keywords internal
@@ -550,11 +558,11 @@ frames_to_ms <- function(frames, hz) {
 
 # An event's response keys, validated. OpenSesame writes them into
 # `set allowed_responses "a;b"`, one line of a line-oriented format, so a key holding a
-# quote closed the string and a newline ended the line -- and the rest became new
-# top-level items in the experiment, including an inline_script whose body runs.
+# quote would close the string and a newline end the line -- and the rest would become
+# new top-level items in the experiment, including an inline_script whose body runs.
 # A YAML boolean is refused before that. Both engines read an unquoted yes, no, true,
-# false, on or off as a boolean. as.character() then made the key TRUE here, and the
-# Python engine wrote True, so neither experiment could register a response. Each key
+# false, on or off as a boolean. as.character() would then make the key TRUE here, and
+# the Python engine write True, so neither experiment could register a response. Each key
 # is tested on its own, since unlist() would turn TRUE beside a text key into "TRUE".
 # Must match _keys_of in scripting.py.
 #' @keywords internal
@@ -578,14 +586,18 @@ frames_to_ms <- function(frames, hz) {
 #' written into the stimuli table as well as the generated script, because timing
 #' that varies is a variable the analysis needs, not presentation detail.
 #'
+#' An event declares it as `duration: {from_column: <column>}`, to read each trial's
+#' milliseconds from an item column, or as `duration: {jitter: [lo, hi], as: <column>}`,
+#' to draw a whole number of milliseconds from `lo` to `hi`, both included, into the
+#' column `as` names (`event<i>_ms` by default, `i` counting the design's events from
+#' 1). The draw is keyed on the seed, the column, the list, the set and the condition.
+#'
 #' Every value read from a column must be a finite number of milliseconds, not
 #' negative. The first that is not, a blank cell included, is refused, naming the
-#' column and the trial's set and condition. A blank or negative value used to reach
-#' the experiments, where OpenSesame and PsychoPy stopped at the blank and jsPsych
-#' ended the trial at once. When a column holds fractional milliseconds, each of its
-#' values is rounded once with the rounder both engines share and written back, so the
-#' stimuli, the loop tables and every target carry the same whole milliseconds. A
-#' column of whole numbers is left as it is.
+#' column and the trial's set and condition. When a column holds fractional
+#' milliseconds, each of its values is rounded once with the rounder both engines share
+#' and written back, so the stimuli, the loop tables and every target carry the same
+#' whole milliseconds. A column of whole numbers is left as it is.
 #'
 #' @param stimuli A counterbalanced stimuli data frame.
 #' @param design A parsed design configuration.
@@ -668,21 +680,53 @@ resolve_trial_timing <- function(stimuli, design, schema) {
 
 #' Translate paradigm events into backend-neutral rendering dictionaries
 #'
-#' Durations are emitted as whole milliseconds (`ms`), the unit every backend
+#' A fixation, text or mask event's `trigger` and a region-by-region event's
+#' `critical_region_trigger` (rendered as `crit_trigger`) must be the token
+#' `"condition"` or `"item"`, rendered as `"@condition_trigger"` or `"@item_trigger"`,
+#' or a whole number from 1 to 255, written as a number or as a string of digits and
+#' rendered as an integer. Any other value is refused, naming the event by its place in
+#' `events`, counted from 1.
+#'
+#' `timing` sets durations by event type, in place of an event's own `duration_ms` or
+#' `duration_frames` but not of a `duration:` block: `fixation_ms` or `fixation_frames`
+#' every fixation, `word_ms` or `word_frames` every text event whose trigger is
+#' `"condition"` and `isi_ms` or `isi_frames` every blank. Any other `timing` key is
+#' refused. So is a duration that is not a finite number of at least 0, whether a
+#' `timing` value or an event's own `duration_ms` or `duration_frames` where it is used.
+#'
+#' Other design errors refused here include an unknown event type, a feedback event
+#' with no response or question event before it, `case` on an event that is not a text
+#' event and `length_of` on one that is not a mask. A response is refused when its
+#' `from` is other than `onset` or `offset`, or when it is collected from the onset of
+#' an event that is not a text event or that runs in other `blocks`.
+#'
+#' A fixed duration is emitted as whole milliseconds (`ms`), the unit every backend
 #' consumes: OpenSesame and jsPsych schedule it directly, and the PsychoPy script
 #' converts it back into whole flips against the refresh rate it measures at
-#' start-up.
+#' start-up. A duration read from the items or jittered (a `duration:` block) is
+#' emitted as `ms_column`, the loop-table column holding each trial's milliseconds. A
+#' response or question event's `timeout` is in seconds, rounded to three places.
 #'
 #' A response collected from the onset of the text event before it (see
 #' `.response_from()`) is rendered with that event, as its `respond` entry (`keys`
-#' and `timeout`). The text keeps `ms` as its longest display time, and the window
-#' runs from its onset for `ms` plus the timeout, so the total window is the one the
-#' two events had. A response collected from the offset stays an event of its own.
-#' Keys are rendered as lists, which jsonlite writes as arrays even for one key.
+#' and `timeout`). The text keeps its `ms` (or `ms_column`) as its longest display
+#' time, and the window runs from its onset for `ms` plus the timeout, so the total
+#' window is the one the two events had. A response collected from the offset stays an
+#' event of its own. Keys are rendered as lists, which jsonlite writes as arrays even
+#' for one key.
 #'
 #' A text event's `case` is carried as it is, for the runners to apply. A mask's
 #' `length_of` is carried too, with the one character to repeat as its `text`, and the
 #' exporters write the mask out for their trials (see `.sized_masks()`).
+#' @param events The design's event list, as [resolve_events()] returns it.
+#' @param timing The design's `timing` block, a named list. `NULL` or an empty list
+#'   overrides nothing.
+#' @param hz The refresh rate, in Hz, at which `*_frames` durations are converted to
+#'   milliseconds. The exporters pass the schema's `presentation.assumed_refresh_hz`,
+#'   60 when it is absent.
+#' @return A list of rendered events, one per event of `events`, except that a response
+#'   collected from the onset of the text event before it is merged into that event as
+#'   its `respond` entry.
 #' @keywords internal
 render_events <- function(events, timing, hz = 60) {
   rendered <- .render_each(events, timing, hz)
@@ -712,9 +756,8 @@ render_events <- function(events, timing, hz = 60) {
 # key pressed while that stimulus is on screen counts and the reaction time runs from
 # its onset. From "offset", it opens when the stimulus has gone, for a design that asks
 # the participant to wait. A design says which with `from:`, and without it a response
-# after a text event is collected from the onset and any other from the offset, so a
-# response after a blank keeps the window it had. Must match _response_from in
-# scripting.py.
+# after a text event is collected from the onset and any other from the offset. Must
+# match _response_from in scripting.py.
 .response_from <- function(events, i) {
   ev <- events[[i]]
   prev <- if (i > 1L) events[[i - 1L]] else NULL
@@ -736,9 +779,9 @@ render_events <- function(events, timing, hz = 60) {
 }
 
 # A rendered timeout, in seconds, as the whole milliseconds the design declared.
-# Rounded through .round_dp. as.integer() truncated 1.001 * 1000, which is
-# 1000.9999999999999 in binary floating point, so a declared 1,001 ms was written as
-# 1,000, and 95 of the whole-millisecond values from 1 to 10,000 came out one short.
+# Rounded through .round_dp. as.integer() would truncate 1.001 * 1000, which is
+# 1000.9999999999999 in binary floating point, writing a declared 1,001 ms as 1,000, and
+# 95 of the whole-millisecond values from 1 to 10,000 would come out one short.
 # Must match _whole_ms in scripting.py.
 .whole_ms <- function(seconds) as.integer(.round_dp(as.numeric(seconds) * 1000, 0))
 
@@ -776,10 +819,10 @@ render_events <- function(events, timing, hz = 60) {
 # Each event rendered on its own, before a response joins its stimulus.
 .render_each <- function(events, timing, hz) {
   timing <- timing %||% list()
-  # A design's timing block was previously read key by key, so a typo such as
-  # `fixation_frame` was silently ignored and the event kept a default duration.
-  # Reject an unknown key instead: a mistimed experiment is not recoverable after
-  # the data are collected. Must list the same names as scripting.py.
+  # An unknown timing key, such as the typo `fixation_frame`, is refused rather than
+  # ignored, which would leave the event at its default duration: a mistimed
+  # experiment is not recoverable after the data are collected. Must list the same
+  # names as scripting.py.
   known <- c("fixation_ms", "word_ms", "isi_ms",
              "fixation_frames", "word_frames", "isi_frames")
   unknown <- setdiff(names(timing), known)
@@ -801,10 +844,9 @@ render_events <- function(events, timing, hz = 60) {
   isi_ms <- checked[["isi_ms"]];      isi <- checked[["isi_frames"]]
   out <- list()
   # A feedback event scores the key the participant pressed, so something must have
-  # collected one first. With no preceding response or question the OpenSesame runner
-  # raises on the unset variable, PsychoPy compares against None and jsPsych finds no
-  # scored row -- three different confusing failures at run time, for one design error
-  # that is obvious here.
+  # collected one first. With no preceding response or question, every target would
+  # show the no-response message on every trial, which surfaces only at run time, for
+  # one design error that is obvious here.
   seen_response <- FALSE
   for (i in seq_along(events)) {
     ty <- events[[i]][["type"]]
@@ -831,7 +873,7 @@ render_events <- function(events, timing, hz = 60) {
       f <- content_field(ev[["content"]])
       if (!is.null(f)) r$field <- f else r$text <- as.character(ev[["content"]] %||% "")
       if (!is.null(ev[["length_of"]])) r$length_of <- .length_of(ev, i)
-      # The overrides are type-keyed, as before: `fixation_*` reaches every
+      # The overrides are type-keyed: `fixation_*` reaches every
       # fixation and `word_*` only a text event whose trigger is "condition",
       # which is why a priming prime (trigger 20) keeps its own duration.
       is_word <- t == "text" && identical(ev[["trigger"]], "condition")
@@ -864,8 +906,8 @@ render_events <- function(events, timing, hz = 60) {
       if (!is.null(spec)) r$crit_trigger <- spec
     } else if (t == "response") {
       # A list, which jsonlite writes as an array even for one key, as the Python
-      # engine writes it. A character vector of one became a bare string, and the
-      # PsychoPy runner then split "space" into five one-letter keys.
+      # engine writes it. A character vector of one would become a bare string, and the
+      # PsychoPy runner would split "space" into five one-letter keys.
       r$keys <- as.list(.keys_of(ev, c("left", "right")))
       # .round_dp, not round(): the timeout is written into experiment files both
       # engines emit as the same bytes, and the two languages' own rounders
@@ -909,15 +951,25 @@ render_events <- function(events, timing, hz = 60) {
   cols
 }
 
-#' Per-trial table carrying exactly the fields the events reference
+#' Per-trial table of the columns the experiments read
+#'
+#' The columns are those of `stimuli`, where present, in this order: `trial`, `list`,
+#' `replicate`, `block`, `set`, `condition`, `order_1` to `order_m` (with two or more
+#' orders), the fields the events' content references ([referenced_fields()]), or
+#' `word` when `events` is `NULL`, the per-trial duration columns the events read,
+#' `critical_region`, `answer`, `condition_trigger` and `item_trigger`. Every other
+#' column of `stimuli` is left out.
 #'
 #' The rows are in presentation order within each version: by replicate when the
 #' table has one, then by list, then by trial. `trial` restarts at 1 in every list
-#' and in every replicate, so ordering on it alone interleaved the versions. The
+#' and in every replicate, so ordering on it alone would interleave the versions. The
 #' sort is stable, so rows that tie keep their incoming order and the two engines
 #' write the same table. A design with `counterbalance.orders` carries `order_1` to
 #' `order_m` after the columns that place a trial, each trial's position in each
 #' order, which the experiments sort a version by.
+#' @param stimuli The trials, a data frame.
+#' @param events The design's event list, as [resolve_events()] returns it, or `NULL`.
+#' @return A data frame with those columns, in that row order, its row names reset.
 #' @keywords internal
 loop_table <- function(stimuli, events = NULL) {
   fields <- if (!is.null(events)) referenced_fields(events) else
@@ -928,9 +980,8 @@ loop_table <- function(stimuli, events = NULL) {
   # `block` travels with the trials because the runners need it: it is what an
   # event's `blocks:` restriction is matched against, and what a runner watches to
   # know a block boundary has been reached. Absent unless the design declares a
-  # practice or filler block, so no existing loop table gains a column. `replicate`,
-  # present only in a resampled design, is what tells its item samples apart, since
-  # each is numbered from trial 1 and set 1.
+  # practice or filler block. `replicate`, present only in a resampled design, is what
+  # tells its item samples apart, since each is numbered from trial 1 and set 1.
   order_cols <- c("trial", "list", "replicate", "block", "set", "condition",
                   .order_columns(stimuli), fields, ms_cols, "critical_region", "answer",
                   "condition_trigger", "item_trigger")
@@ -986,8 +1037,9 @@ loop_table <- function(stimuli, events = NULL) {
 # version 2 the next, and so on. A table without a `replicate` column is one replicate,
 # numbered 1, and one without `list` is one list. Participant p runs version
 # ((p - 1) mod V) + 1 of V unless another is chosen at launch, the rule
-# participant_table() allocates by. Every generated experiment carries this list, and
-# export_opensesame() writes one experiment per version when there is more than one.
+# participant_table() allocates by. The PsychoPy script and the jsPsych page carry this
+# list. An OpenSesame experiment holds one version, and export_opensesame() writes one
+# experiment per version and trial order when a design has more than one of either.
 # Returns a list of list(version, replicate, list, n_trials). Mirrors
 # presentation_versions in scripting.py.
 .presentation_versions <- function(stimuli) {
@@ -1142,8 +1194,8 @@ loop_table <- function(stimuli, events = NULL) {
 #' when that device cannot be opened. Under `auto`, the script prints the codes instead
 #' and, before the instructions, shows a notice that the experimenter dismisses with the
 #' C key. Under `hardware`, it stops before its window opens, and under `mock` it prints
-#' the codes without trying the device. The data file's `trigger_mode` column records
-#' `hardware` or `mock`.
+#' the codes without trying the device, after the same notice. The data file's
+#' `trigger_mode` column records `hardware` or `mock`.
 #'
 #' @param stimuli Stimuli with trigger columns (see [assign_triggers()]).
 #' @param design A parsed design configuration.
@@ -1209,10 +1261,11 @@ export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
 # ---- OpenSesame code generation ------------------------------------------
 
 .pyq <- function(s) {
-  # A newline had to be escaped as well as the backslash and the quote. An .osexp is a
+  # A newline is escaped as well as the backslash and the quote. An .osexp is a
   # line-oriented format whose inline scripts are delimited by their own lines, so a raw
-  # newline in a value did not merely break the literal: it closed the script block and
-  # let the rest of the value start a new top-level item in the emitted experiment.
+  # newline in a value would not merely break the literal: it would close the script
+  # block and let the rest of the value start a new top-level item in the emitted
+  # experiment.
   s <- gsub("\\", "\\\\", s, fixed = TRUE)
   s <- gsub("'", "\\'", s, fixed = TRUE)
   s <- gsub("\n", "\\n", s, fixed = TRUE)
@@ -1260,12 +1313,12 @@ export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
 
 # The Python that OpenSesame's inline_script actually runs.
 #
-# Two spellings here are forced by OpenSesame's runtime and were both wrong at first:
+# Two spellings here are forced by OpenSesame's runtime:
 #
 # `str`, never `unicode`. OpenSesame 3.3 and later run inline scripts in a Python 3
 # workspace and inject only a fixed set of globals (exp, var, pool, items, clock, log
-# and a small API); `unicode` is a Python 2 builtin and is not among them, so every
-# emitted guard and feedback script died with NameError on the first trial.
+# and a small API); `unicode` is a Python 2 builtin and is not among them, so a guard or
+# feedback script using it would die with NameError on the first trial.
 #
 # `var.get(name, u'')`, never `var.get(name, None)`. OpenSesame's var_store.get ends
 # `elif default is not None: val = default / else: raise VariableDoesNotExist(var)`, so
@@ -1341,7 +1394,7 @@ export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
     sprintf("%d", as.integer(ev[["ms"]] %||% 0L))
   # The event ends half a frame before its duration is up. The next show() then waits
   # for the refresh that ends the duration, and lands on it, where sleeping the whole
-  # duration made it miss that refresh and wait for the next (OpenSesame's Timing
+  # duration would make it miss that refresh and wait for the next (OpenSesame's Timing
   # manual advises asking for slightly less than the interval wanted).
   end <- sprintf("_t0 + %s - _LEXSYNC_HALF_FRAME", ms)
   trig <- .trigger_expr(ev[["trigger"]])
@@ -1523,9 +1576,9 @@ export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
 
 # The setup's lines that measure the display and time the events and their codes.
 #
-# The frame period is measured once, as the median interval between 20 flips of a blank
-# canvas. A median outside 1 to 50 ms, a refresh rate outside 20 to 1000 Hz, is a failed
-# measurement, such as a backend without a blocking flip gives, and
+# The frame period is measured once, as the median of the 20 intervals between 21 flips
+# of a blank canvas. A median outside 1 to 50 ms, a refresh rate outside 20 to 1000 Hz,
+# is a failed measurement, such as a backend without a blocking flip gives, and
 # presentation.assumed_refresh_hz stands in for it. The period is logged as
 # lexsync_frame_ms. An event ends half a period before its duration is up (see
 # .osexp_event_block).
@@ -1592,14 +1645,13 @@ export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
 
 # The setup's lines that open the trigger device, as triggers.mode and triggers.backend
 # ask (see .trigger_settings). Only the configured backend's branch is written, and a
-# serial device is opened by the name the schema gives. The setup used to set the backend
-# to parallel on the line before a serial branch that took the first serial port it
+# serial device is opened by the name the schema gives, never as the first serial port
 # found. When the device cannot be opened, "hardware" stops the experiment before
-# anything is shown, and "auto" falls back to printing the codes. `_lexsync_no_codes` is
-# left holding the reason no codes will be sent, or None when they go to the device, for
-# the notice (.osexp_trigger_notice). `lexsync_trigger_mode`, which the logger writes
-# with every trial, says "hardware" or "mock", and `test_mode` says "yes" with the mock,
-# as it did. Must match _osexp_trigger_device in scripting.py.
+# anything is shown, and "auto" falls back to printing the codes. `_lexsync_no_codes`
+# is left holding the reason no codes will be sent, or None when they go to the device,
+# for the notice (.osexp_trigger_notice). `lexsync_trigger_mode`, which the logger
+# writes with every trial, says "hardware" or "mock", and `test_mode` says "yes" when
+# the codes are printed instead. Must match _osexp_trigger_device in scripting.py.
 .osexp_trigger_device <- function(settings, address) {
   if (identical(settings$backend, "serial")) {
     record <- "var.trigger_backend = u'serial'"
@@ -1774,15 +1826,19 @@ export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
 #'
 #' @param design A parsed design configuration.
 #' @param conditions_file File name of the loop table.
-#' @param schema The parsed global schema (trigger settings).
-#' @param rendered Rendered events, from [render_events()].
+#' @param schema The parsed global schema: its trigger settings,
+#'   `presentation.text_height_px` and `presentation.assumed_refresh_hz`, the rate the
+#'   frame period falls back to when the start-up measurement fails.
+#' @param rendered Rendered events, from [render_events()], with each `length_of` mask
+#'   already written out for the trials, as the exporters do. A mask that still carries
+#'   `length_of` shows its single character.
 #' @param font The font family OpenSesame draws text in.
 #' @param text_file File name of the companion text table. `NULL` (the default) puts
 #'   `_text` before the `.csv` of `conditions_file`.
 #' @param version,n_versions The experiment is version `version` of `n_versions`. With
-#'   more than one version, it checks OpenSesame's subject number against its own before
-#'   the loop and warns when the participant would normally run another. `NULL` (the
-#'   default) marks a design with one version, which needs no check.
+#'   more than one version, or more than one order, it checks OpenSesame's subject
+#'   number against its own before the loop and warns when the participant would
+#'   normally run another. `NULL` (the default) writes no check.
 #' @param instructions The text the experiment shows before the loop, waiting for the
 #'   space bar. `NULL` (the default) takes list 1's, the design's own `instructions` or
 #'   lexsync's for its task.
@@ -1794,7 +1850,10 @@ export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
 #'   device the schema names, measures the frame period and defines the helpers that
 #'   time the events and hold their codes. A notice follows it when no codes will be
 #'   sent, and the session markers 254 and 255 are sent just before and after the loop.
-#'   Every text is drawn at `presentation.text_height_px`.
+#'   Every text is drawn at `presentation.text_height_px`. A `response` event collected
+#'   from the offset, which becomes a keyboard_response, is refused when it carries
+#'   `blocks`, since the block restriction is applied only within lexsync's inline
+#'   scripts. Restrict a feedback or stimulus event instead.
 #' @keywords internal
 build_osexp <- function(design, conditions_file, schema, rendered, font = "mono",
                         text_file = NULL, version = NULL, n_versions = NULL,
@@ -1818,9 +1877,9 @@ build_osexp <- function(design, conditions_file, schema, rendered, font = "mono"
     "    _LEXSYNC_ROWS = {int(_r[u'lexsync_row']): _r for _r in _csv.DictReader(_f)}",
     "def _lexsync_row():",
     "    return _LEXSYNC_ROWS[int(var.get(u'lexsync_row', _eval=False))]",
-    # The device writes a code and returns. The scripts reset it when its hold is up
-    # (see .osexp_timing). It used to sleep 10 ms and reset the code itself, so every
-    # triggered event overran by those 10 ms and the schema's hold was ignored.
+    # The device writes a code and returns, and the scripts reset it when its hold is up
+    # (see .osexp_timing). Sleeping 10 ms and resetting the code itself would make every
+    # triggered event overrun by those 10 ms and ignore the schema's hold.
     .osexp_trigger_device(.trigger_settings(schema), addr),
     .osexp_timing(schema)
   )
@@ -1907,20 +1966,23 @@ build_osexp <- function(design, conditions_file, schema, rendered, font = "mono"
 #'
 #' Writes `<base>.osexp` and the two tables it reads. Its loop runs over
 #' `<base>_opensesame.csv`, which holds numbers only: `lexsync_row` (the trial's
-#' position in loop order, from 1), `lexsync_trial`, `lexsync_list`, `lexsync_set`,
-#' the trigger codes, `critical_region` and any per-trial duration. The presented
-#' text, `condition`, `block` and `answer` are in `<base>_opensesame_text.csv`, which
-#' the inline scripts read with Python's `csv` module, so OpenSesame never evaluates
-#' them. Copy both tables with the experiment.
+#' position in loop order, from 1), `lexsync_trial`, `lexsync_list`, `replicate` in a
+#' resampled design, `lexsync_set`, the trigger codes, `critical_region` and any
+#' per-trial duration. The presented text, `condition`, `block`, `answer` and, with
+#' `counterbalance.orders`, `order_1` to `order_m` are in
+#' `<base>_opensesame_text.csv`, which the inline scripts read with Python's `csv`
+#' module, so OpenSesame never evaluates them. Copy both tables with the experiment.
 #'
 #' Before the loop, an inline script, `lexsync_instructions`, shows the design's
 #' `instructions`, or lexsync's for its task, and waits for the space bar. Every trial
 #' is logged. A response after a text event is collected by that event's
 #' script from the stimulus's onset, which sets `response`, `response_time`,
 #' `timed_out` and `correct`. A response kept after the stimulus with `from: offset` is
-#' a keyboard_response, and a script after it sets `timed_out` and `correct`.
-#' Self-paced reading sets `lexsync_region_rts` and a question `question_response` and
-#' `question_rt`. A script clears these as each trial starts, another copies the
+#' a keyboard_response, and a script after it sets `timed_out` and `correct`. Such a
+#' response cannot be restricted to `blocks`: a design that restricts one is refused
+#' here, although the PsychoPy and jsPsych targets accept it. Self-paced reading sets
+#' `lexsync_region_rts` and a question `question_response` and `question_rt`. A script
+#' clears these as each trial starts, another copies the
 #' trial's labels into `lexsync_condition`, `lexsync_block` and `lexsync_answer`, and a
 #' logger item ends the trial.
 #'
@@ -1939,8 +2001,8 @@ build_osexp <- function(design, conditions_file, schema, rendered, font = "mono"
 #' `triggers.baudrate`. When that device cannot be opened, `triggers.mode: auto` prints
 #' the codes instead. An inline script, `lexsync_trigger_notice`, then says so before
 #' any other screen and waits for the C key. `hardware` stops the experiment there, and
-#' `mock` prints the codes without trying the device. Every trial logs
-#' `lexsync_trigger_mode`, `hardware` or `mock`. Text is drawn
+#' `mock` prints the codes without trying the device, after the same notice. Every
+#' trial logs `lexsync_trigger_mode`, `hardware` or `mock`. Text is drawn
 #' `presentation.text_height_px` pixels high, OpenSesame's `font_size`, and OpenSesame
 #' takes full screen from the mode it is launched in.
 #'
@@ -1987,7 +2049,7 @@ export_opensesame <- function(stimuli, design, schema, outdir, base = NULL) {
   texts <- .instruction_texts(design, versions)
   n_orders <- .n_orders(stimuli)
   parts <- if (length(versions) <= 1L && n_orders == 1L) {
-    # One version keeps the file names an experiment has always had.
+    # One version, in one order, is written under the bare stem.
     list(list(stem = base, rows = stimuli, version = NULL,
               instructions = if (length(texts)) texts[[1]] else NULL, order = 1L))
   } else {
@@ -2034,8 +2096,10 @@ export_opensesame <- function(stimuli, design, schema, outdir, base = NULL) {
   list(experiments = experiments, tables = tables)
 }
 
-# BCP 47 tags for the human-readable language labels the designs carry, covering the
-# languages the corpus connectors derive lexica for (corpora/fetch_corpora.py).
+# BCP 47 tags for some human-readable language labels the designs carry: those of the
+# lexica lexsync ships and a few other European languages. Any other label that is not
+# itself tag-shaped becomes "und" (see .language_tag), so a design in another language
+# states `language_tag`.
 .BCP47_TAGS <- c(english = "en", spanish = "es", french = "fr", german = "de",
                  dutch = "nl", italian = "it", portuguese = "pt",
                  chinese = "zh", `chinese (mandarin)` = "zh")
@@ -2046,9 +2110,10 @@ export_opensesame <- function(stimuli, design, schema, outdir, base = NULL) {
 # "en-GB") is taken as given. Anything else becomes "und" (BCP 47 "undetermined"):
 # registered, and unlike lang="english" resolvable by a validator or a screen reader.
 .language_tag <- function(design) {
-  # The shape check applies to a STATED tag too. It used to be returned verbatim, so
-  # `language_tag: 'en"><script>...'` reached the lang attribute of the generated HTML
-  # intact -- the one input to this function that an attacker would actually choose.
+  # The shape check applies to a STATED tag too: returned verbatim,
+  # `language_tag: 'en"><script>...'` would reach the lang attribute of the generated
+  # HTML intact, and it is the one input to this function that an attacker would
+  # actually choose.
   tag <- trimws(as.character(design[["language_tag"]] %||% ""))
   if (nzchar(tag)) {
     return(if (grepl("^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$", tag, perl = TRUE)) tag else "und")
@@ -2104,8 +2169,8 @@ export_opensesame <- function(stimuli, design, schema, outdir, base = NULL) {
   s <- gsub("&", "\\u0026", s, fixed = TRUE)
   # U+2028 and U+2029 terminate a line in JavaScript but are not ASCII controls, so
   # clean_field passes them, and a raw one inside a <script> string literal is a
-  # SyntaxError before ES2019. The Python twin escaped them and this did not, so the
-  # same design produced different bytes from the two engines. Written as escape
+  # SyntaxError before ES2019. The Python twin escapes them too, so the two engines
+  # write the same bytes. Written as escape
   # sequences rather than literal characters so this file stays pure ASCII.
   s <- gsub("\u2028", "\\u2028", s, fixed = TRUE)
   gsub("\u2029", "\\u2029", s, fixed = TRUE)
@@ -2114,10 +2179,11 @@ export_opensesame <- function(stimuli, design, schema, outdir, base = NULL) {
 #' Export a browser-runnable jsPsych experiment
 #'
 #' The rendered events and the trial data are embedded in one HTML file, so anyone
-#' can reproduce the procedure online from the same materials. The jsPsych library
-#' and stylesheet are loaded from a CDN, so the machine running the file needs an
-#' internet connection; the trial data are embedded and the responses are saved
-#' locally, so no server is required either to run it or to collect them. Each of the
+#' can reproduce the procedure online from the same materials. The jsPsych library,
+#' its keyboard-response plugin and its stylesheet are loaded from a CDN, so the
+#' machine running the file needs an internet connection; the trial data are
+#' embedded and the responses are saved locally, so no server is required either to
+#' run it or to collect them. Each of the
 #' three files carries its SHA-384 as Subresource Integrity, so a browser refuses a copy
 #' that differs from the published release. Stimuli are drawn
 #' `presentation.text_height_px` pixels high, 48 by default. Onset
@@ -2162,9 +2228,9 @@ export_jspsych <- function(stimuli, design, schema, outdir, base = NULL) {
     TEXT_HEIGHT_PX = as.character(.text_height_px(schema)),
     EVENTS_JSON = .json_html(jsonlite::toJSON(rendered, auto_unbox = TRUE)),
     # Each double to 15 significant digits, the digits the Python engine writes
-    # (_fifteen_digits in scripting.py). The default of four decimal places wrote
-    # 33.3333 for an item table's 33.333333, where Python wrote every digit, so the two
-    # engines' pages differed. I(15), not digits = NA, which jsonlite 1.8.5 and 1.8.6
+    # (_fifteen_digits in scripting.py). The default of four decimal places would write
+    # 33.3333 for an item table's 33.333333, where Python writes every digit, so the two
+    # engines' pages would differ. I(15), not digits = NA, which jsonlite 1.8.5 and 1.8.6
     # wrote to 17 digits; I(15) is "%.15g" in every version, and DESCRIPTION sets no
     # floor on jsonlite.
     TRIALS_JSON = .json_html(jsonlite::toJSON(trials, dataframe = "rows", digits = I(15))),

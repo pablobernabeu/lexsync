@@ -17,7 +17,12 @@ select_continuous_stimuli(
 \arguments{
 \item{pool}{A candidate pool with the predictor and control dimensions present.}
 
-\item{design}{A parsed design configuration carrying a \code{continuous} block.}
+\item{design}{A parsed design configuration carrying a \code{continuous} block
+(\code{predictor} and \code{controls}). The number of items is \code{n_per_condition}, else
+\code{n_per_cell}, and either must be a whole number of at least 1. It is 60 when
+neither key is given. \code{tolerance_k}, \code{shortfall} and \code{on_insufficient_tolerance}
+are read from its \code{matching} block with the schema as fallback, as for
+\code{\link[=match_stimuli]{match_stimuli()}}, and a relaxed window widens to the whole complete pool.}
 
 \item{schema}{The parsed global schema (tolerance windows).}
 
@@ -71,4 +76,14 @@ window the first pass set (\code{low}, \code{high}) and the SD of the complete p
 (\code{pool_sd}), which \code{\link[=match_report_continuous]{match_report_continuous()}} sets the realised SD against. A
 relaxed window is recorded as computed, and the relaxation in
 \code{window_relaxations}.
+}
+\references{
+Kuperman, V. (2015). Virtual experiments in megastudies: A case study of
+language and emotion. \emph{Quarterly Journal of Experimental Psychology, 68}(8),
+1693-1710. \doi{10.1080/17470218.2014.989865}
+
+Liben-Nowell, D., Strand, J., Sharp, A., Wexler, T., & Woods, K. (2019). The
+danger of testing by selecting controlled subsets, with applications to
+spoken-word recognition. \emph{Journal of Cognition, 2}(1), Article 2.
+\doi{10.5334/joc.51}
 }

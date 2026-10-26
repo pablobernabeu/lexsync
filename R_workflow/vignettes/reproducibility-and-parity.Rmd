@@ -68,20 +68,17 @@ they are paired and the order they are presented in, so the generated experiment
 are byte-identical in full. The only exceptions are the `mahalanobis` and
 `optimal` matching methods.
 
-'Byte-identical' is meant literally, and stating it that way turned out to matter. The
-parity test originally read both engines' stimuli files back with a CSV parser and
-compared the values, under which `1` and `1.0` are the same number. On that test 13 of
-the shipped designs passed while differing byte for byte. Three of the differences were
-serialisation: a whole number written `1` by one writer and `1.0` by the other, a boolean
-written `FALSE` and `False`, and a small value written `9e-4` and `0.0009`. One was not:
-two reported means differed in the last decimal published, because one engine's
-summation was pairwise and the other's was not. Every sum in the package now goes through
+'Byte-identical' is meant literally, and the artefacts are compared as bytes. A
+comparison of parsed values would treat `1` and `1.0`, `FALSE` and `False`, or `9e-4`
+and `0.0009` as equal although the files differ. Means need the same care, since two
+engines that sum in different orders, one pairwise and one not, can publish means that
+differ in the last decimal. Every sum in the package therefore goes through
 a single compensated-summation algorithm written out in both engines, whose agreement
 follows from IEEE-754 requiring addition and subtraction to be correctly rounded, and the
 mean, variance and standard deviation are built on it. The median sorts and takes the
 middle value, or the plain-double average of the two middle values when the count is
 even, which keeps it clear of the long-double accumulator that `stats::median()` reaches
-by way of `mean()`. The artefacts are now compared as bytes.
+by way of `mean()`.
 
 Two files sit outside the claim by design, because each records the engine that produced
 it: the materials datasheet names its engine and that engine's package versions, and the
@@ -113,7 +110,7 @@ positions along the whole range, and every later item is determined by a
 distance. A seeded RNG would not help here, because R's Mersenne-Twister stream
 and NumPy's are different streams: the same seed gives different draws, so any
 sampling step would break parity by construction. Determinism through absence is
-the only option that survives two languages, and it now extends to trial order,
+the only option that survives two languages, and it extends to trial order,
 whose shuffle is described below.
 
 ```{r even-spread}
@@ -212,11 +209,9 @@ pool is smaller than the requested n and the rounding produces a repeated index.
 
 ### Trial order: a seeded shuffle without a generator
 
-Trial order used to be the honest exception. Each engine drew the order from its
-own seeded generator, R's Mersenne-Twister against NumPy's PCG64, and the same
-seed could not give the same permutation, so an order was reproducible within an
-engine and different between the engines. That exception is retired. Order is now
-decided by a keyed hash: each row of a list is ranked by the SHA-256 digest of
+Trial order cannot come from a seeded generator either, since R's
+Mersenne-Twister and NumPy's PCG64 give different permutations from one seed.
+Order is decided by a keyed hash: each row of a list is ranked by the SHA-256 digest of
 `seed|replicate|list|set|condition`, a tuple that identifies the trial uniquely
 under either counterbalancing recipe. Distinct inputs to SHA-256 behave as
 independent uniform draws, so sorting rows by their digests realises a seeded
@@ -233,26 +228,25 @@ same <- counterbalance(match_stimuli(pool, design, schema), design, schema)
 identical(stim$trial, same$trial)
 ```
 
-The order is still randomised in the sense a study needs: an item's properties
+The order is randomised in the sense a study needs: an item's properties
 bear no systematic relation to its position, and a different seed gives a
-different order. What changed is that the permutation is engine-invariant, so it
-now sits inside the cross-engine contract, and the guarantee reaches the
+different order. The permutation is engine-invariant, so it
+sits inside the cross-engine contract, and the guarantee reaches the
 generated experiments whole: for every shipped design, the PsychoPy script, the
 OpenSesame file, the jsPsych page and the three CSV tables that the PsychoPy and
 OpenSesame experiments read are byte-identical across the engines.
 
 One detail matters to anyone embedding `lexsync` in a longer script:
-counterbalancing no longer touches the random number generator at all, since
+counterbalancing does not touch the random number generator at all, since
 nothing in the package consults one, so calling it cannot disturb the stream your
 own code is drawing from.
 
 ## The CSV input contract
 
 Both engines read a lexicon, a norm table, a supplied pool or an item table by
-one rule. Each reads every cell as text and converts it itself. readr and pandas
-guess types by different heuristics, and the guesses used to disagree: a padded
-category made the Python engine refuse a design this engine ran, and a column of
-`T` and `F` was written `FALSE` here and `F` there.
+one rule. Each reads every cell as text and converts it itself, because readr and
+pandas guess types by different heuristics: left to them, a padded category or a
+column of `T` and `F` would be read differently by the two engines.
 
 Header names and cells are trimmed of spaces, tabs, carriage returns and line
 feeds. After trimming, an empty cell and `NA` (quoted or not) are missing, and
@@ -312,8 +306,8 @@ included, and a supplied reference list are normalised as read. A precomposed
 character such as `é` and its decomposed counterpart, the base letter followed
 by a combining accent, are therefore one character, and a lexicon that mixes
 the two conventions holds each word once, in the first row the file gives it.
-Before this, the two spellings were two words of different lengths, and the
-matcher could place them in opposite conditions of one matched set. When
+Unnormalised, the two spellings would be two words of different lengths, which the
+matcher could place in opposite conditions of one matched set. When
 normalisation rewrites or merges anything, the run log says how many forms it
 rewrote and how many duplicates it removed, and the datasheet records the two
 counts as `materials_source$input_normalisation`. Input already in NFC, the form
@@ -326,7 +320,8 @@ on some Linux builds, the system's ICU, which may implement another version, and
 Python's `unicodedata` follows the interpreter (Unicode 15.1 in Python 3.13).
 
 The syllable estimator and the pseudoword generators carry a narrower contract
-still. Both are orthographic approximations defined for Latin orthographies.
+still. Both are orthographic approximations. The estimator is defined for Latin
+orthographies, and the generators for alphabetic scripts.
 `count_syllables()` decomposes a word (NFD), sets its combining marks aside and
 counts the maximal runs of the letters a, e, i, o, u, y, ae (U+00E6), o with
 stroke (U+00F8), dotless i (U+0131) and oe (U+0153), so a vowel counts whatever
@@ -338,10 +333,10 @@ estimate. Its `n_syllables` is `NA` in R and NaN in Python, and
 `run_pipeline()` refuses a design that refers to `n_syllables` while its pool
 holds such a word. The test is on code-point ranges, which keeps the two engines
 independent of their Unicode tables, and the same stability policy fixes the
-decompositions. This vignette said before that the class covered the
-Latin-1 vowels, but it lacked U+00E6, and every Chinese, Russian or Greek word
-counted 0 syllables. The pseudoword generators build their candidates from
-lower-case a to z. The shipped Chinese design matches on `length`, `n_density`
+decompositions. The pseudoword generators substitute among the letters the
+reference words attest, in UTF-8 byte order, so a Spanish lexicon lends them its
+accented vowels and `ñ`. They refuse a word in a logographic script such as
+Chinese. The shipped Chinese design matches on `length`, `n_density`
 and `old20` for these reasons.
 
 ## File names
@@ -353,9 +348,8 @@ two designs with Chinese names, both in `chinese`, would write the same files, t
 second overwriting the first. Whenever the name or the language holds a non-ASCII
 character, the stem therefore ends in an underscore and the first eight
 hexadecimal digits of the SHA-256 of the NFC-normalised text `name|language`, such
-as `chinese_14aadfa7`. A name and language with no ASCII letter or digit at all,
-which used to give file names beginning with an underscore or a dot, get those
-eight digits alone. Normalising to NFC here keeps a precomposed and a decomposed spelling of one
+as `chinese_14aadfa7`. A name and language with no ASCII letter or digit at all
+get those eight digits alone. Normalising to NFC here keeps a precomposed and a decomposed spelling of one
 name on one stem. Names in plain ASCII are unaffected. `run_all()` also computes
 every design's stem before it runs any, and refuses two designs that would write
 the same files, such as `en-lexdec` and `en_lexdec`.
@@ -384,7 +378,7 @@ same one.
 Neither is a bug that a determined engineer could fix. Guaranteeing them would
 mean shipping a bit-exact matrix inverse and a tie-canonical assignment solver in
 both languages, which is a large amount of numerical code to maintain for a modest
-gain. The chosen trade-off is to keep the byte-identical methods as the defaults,
+gain. The chosen trade-off is to keep a byte-identical method as the default,
 document the exception, and record it per run.
 
 ```{r cross-engine}
@@ -400,9 +394,10 @@ maha_ds$selection$cross_engine
 ```
 
 Every datasheet carries this field, so a reader of the record does not have to
-know the rule. It reads `byte-identical` for the default methods and
-`approximate (platform linear algebra)` for these two, and the generated methods
-paragraph adds a sentence stating the caveat in prose when it applies. The
+know the rule. It reads `byte-identical` for `standardised_euclidean` and `joint`, and
+`approximate (platform linear algebra)` for `mahalanobis` and `optimal`. The
+generated methods paragraph adds a sentence stating the caveat in prose when it
+applies. The
 constraint also shapes the roadmap: a covariance-aware distance might well be
 the better default, and it stays optional precisely because it cannot carry the
 guarantee.
@@ -440,8 +435,15 @@ matching methods, continuous selection, both pseudoword generators, resampling,
 priming and self-paced reading, three languages including a logographic script,
 and three reproductions of published designs.
 
-The comparison is on identity columns: the word or target, the condition and the
-`set` index. Including `set` is what gives the test teeth, since without it the
+The comparison is on identity columns. For a design that selects its own items,
+they are the word or target, the condition and the `set` index, and for one that
+reads an item table, they are the list, the `set` index, the condition and the
+item's presented fields. A case adds the columns it exists to pin: `list` for
+balanced lists, `replicate` for resampled sets, `trial` for practice and filler
+blocks, the realised `prime_ms` and `iti_ms` for jittered timing, the joined member
+and pair columns for the pair-keyed design, the looked-up dimensions for a
+supplied pool, `prime_type` for the masked-priming reproduction and `answer` for
+categorisation. Including `set` is what gives the test teeth, since without it the
 engines could select the same items and pair them differently and still pass.
 Having matched on those, the test then checks every other shared column, so the
 `trial` position and the dimensions each engine computes at run time
@@ -656,8 +658,10 @@ the equivalence verdict on every dimension, any balance warning, and an entry pe
 file written with its MD5. The experiments' loop and text tables are among them,
 and the stimuli and report tables are logged with their row counts too. A design
 or schema key that lexsync does not read is noted there as well, since it changed
-nothing about the run. Both a Markdown log and a JSON Lines log are emitted, the
-latter so that a run can be checked by a script. The MD5 here is a
+nothing about the run. Both a Markdown log and a JSON Lines log are emitted. The
+Markdown log alone carries the run metadata, such as the seed and the schema path,
+and the JSON Lines log holds the steps, one object per line, so that a run can be
+checked by a script. The MD5 here is a
 content fingerprint for spotting drift between runs, whereas the datasheet's
 SHA-256 is the stronger one that belongs in a permanent record.
 
@@ -673,15 +677,18 @@ Two habits make that work. Pin the corpus, since a selection is only reproducibl
 against a fixed lexicon, which is why the bundled corpora are a checksummed
 snapshot and why the `wordfreq` connector draws on a package frozen in 2024, whose
 data is a stable snapshot of usage through roughly 2021. And where cross-engine
-reproducibility matters, prefer the default matching methods, since they are the
-ones that carry the guarantee.
+reproducibility matters, prefer `standardised_euclidean`, the default, or `joint`,
+since they are the methods that carry the guarantee.
 
-A reproducible lexicon is not a screened one. The bundled lexica are the most
-frequent forms `wordfreq` returns, so they hold proper names, acronyms and other
-forms that are not words of the language, and N and OLD20 are computed over them.
-Their share differs between frequency bands, which can confound a frequency
-contrast. The repository's `corpora/derived/en_v2.csv` marks such forms in the
-English lexicon, and [What the derived lexica
+A reproducible lexicon is not a screened one. The repository's
+`corpora/derived/en.csv`, `es.csv` and `zh.csv` hold the most frequent forms
+`wordfreq` returns, so they include proper names, acronyms and other forms that are
+not words of the language, and N and OLD20 are computed over them. Their share
+differs between frequency bands, which can confound a frequency contrast.
+`corpora/derived/en_v2.csv` marks such forms in the English lexicon and counts N
+and OLD20 among the others only. The package's English example holds only forms
+that `en_v2.csv` leaves unmarked, while its Spanish and Chinese examples are slices
+of `es.csv` and `zh.csv` and are not screened. [What the derived lexica
 contain](https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md#what-the-derived-lexica-contain)
 says what to check in a selection.
 

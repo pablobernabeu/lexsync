@@ -2,11 +2,19 @@
 % Please edit documentation in R/generation.R
 \name{bigram_counts}
 \alias{bigram_counts}
-\title{Integer counts of adjacent letter bigrams across a word list}
+\title{Integer counts of adjacent character bigrams across a word list}
 \usage{
 bigram_counts(words)
 }
+\arguments{
+\item{words}{Character vector of words, typically the whole reference lexicon.}
+}
+\value{
+A named integer vector with one count per distinct bigram, named by it.
+}
 \description{
-Integer counts of adjacent letter bigrams across a word list
+Every pair of adjacent characters in every word is counted, each occurrence once and
+as written: case is kept, and a hyphen, an apostrophe or a digit forms bigrams as a
+letter does.
 }
 \keyword{internal}

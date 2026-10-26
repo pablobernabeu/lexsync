@@ -9,7 +9,9 @@ load_lexicon(path, schema, language = NULL)
 \arguments{
 \item{path}{Path to a derived lexicon CSV.}
 
-\item{schema}{The parsed schema (see \code{config/schema.yaml}).}
+\item{schema}{The parsed schema, such as
+\code{yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))}. Its
+\code{dimensions$frequency$column} names the frequency column.}
 
 \item{language}{Optional language label to record in a \code{language} column.}
 }

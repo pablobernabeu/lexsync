@@ -23,9 +23,9 @@
 #
 # The letters a generator substitutes are those the reference words attest, so a Spanish
 # lexicon lends it its accented vowels and n with a tilde. A word can serve as a base
-# word when every character in it is such a letter. The generators were defined for a
-# to z alone, which left out 16.5% of a typical Spanish band (1,368 of 8,305 words,
-# among them 261 preterites ending in an accented o) and never produced an accented
+# word when every character in it is such a letter. Restricted to a to z, the
+# generators would leave out 16.5% of a typical Spanish band (1,368 of 8,305 words,
+# among them 261 preterites ending in an accented o) and never produce an accented
 # pseudoword. A word in a logographic script is refused.
 
 # A word holding a character from one of these ranges is written in a logographic
@@ -100,7 +100,14 @@
            envir = new.env(hash = TRUE, parent = emptyenv()))
 }
 
-#' Integer counts of adjacent letter bigrams across a word list
+#' Integer counts of adjacent character bigrams across a word list
+#'
+#' Every pair of adjacent characters in every word is counted, each occurrence once and
+#' as written: case is kept, and a hyphen, an apostrophe or a digit forms bigrams as a
+#' letter does.
+#'
+#' @param words Character vector of words, typically the whole reference lexicon.
+#' @return A named integer vector with one count per distinct bigram, named by it.
 #' @keywords internal
 bigram_counts <- function(words) {
   words <- as.character(words)
@@ -132,11 +139,20 @@ bigram_counts <- function(words) {
 #' candidates are ranked by summed bigram frequency with a byte-order tie-break,
 #' so the choice is deterministic and identical across engines.
 #'
+#' [generate_pseudowords()] builds `bigrams` and `lexset` from a reference word
+#' list and `usedset` from the pseudowords it generates, and is the function for
+#' ordinary use.
+#'
 #' @param word The base word to derive the pseudoword from.
-#' @param bigrams Named integer vector of bigram counts, from [bigram_counts()].
+#' @param bigrams Named integer vector of bigram counts: one element for each pair
+#'   of adjacent characters in the reference words, named by the pair and holding
+#'   the number of times it occurs. A candidate is legal only when every one of its
+#'   bigrams is among the names.
 #' @param lexset Environment used as a set of the real word forms a pseudoword
-#'   must avoid.
-#' @param usedset Environment used as a set of the pseudowords already taken.
+#'   must avoid: each form is the name of a variable in it, whatever its value.
+#' @param usedset Environment used as a set of the pseudowords already taken, in
+#'   the same way. The function only reads it, so a caller generating several
+#'   pseudowords assigns each result into it.
 #' @param alphabet Character vector of the letters substituted in, in UTF-8 byte
 #'   order. The default, `NULL`, takes the letters of the bigram table's names,
 #'   which hold every letter a legal candidate of two letters or more can use.
@@ -229,8 +245,10 @@ generate_pseudowords <- function(base_words, reference_words, exclude = NULL) {
 
 #' Split a word into ordered (role, text) subsyllabic constituents
 #'
-#' Nuclei are the maximal runs of vowels, a vowel being a letter whose base letter is
-#' in the vowel class of [count_syllables()], so an accented vowel counts. Consonants
+#' Nuclei are the maximal runs of vowels in the lower-cased word, a vowel being a
+#' letter whose base letter, once its accents are set aside, is a, e, i, o, u or y, or
+#' ae (U+00E6), o with stroke (U+00F8), dotless i (U+0131) or oe (U+0153), the vowel
+#' class of [count_syllables()]. Consonants
 #' before the first nucleus form the first onset, those after the last nucleus the
 #' final coda, and a consonant run between two nuclei is split at its midpoint
 #' (floor(m/2) to the left coda). Segmentation is on characters, so accented letters
@@ -238,6 +256,10 @@ generate_pseudowords <- function(base_words, reference_words, exclude = NULL) {
 #' letter (a hyphen, an apostrophe, a digit) or with no vowel, such as a Cyrillic word,
 #' returns an empty list, and the caller falls back to letter substitution. Mirrors
 #' segment_subsyllabic in generation.py.
+#' @param word A single word.
+#' @return A list of `list(role, text)` in word order, `role` being `"onset"`,
+#'   `"nucleus"` or `"coda"` and `text` lower case, or an empty list when the word
+#'   cannot be segmented.
 #' @keywords internal
 segment_subsyllabic <- function(word) {
   w <- .lower_invariant(word)
@@ -272,6 +294,10 @@ segment_subsyllabic <- function(word) {
 }
 
 #' Attested subsyllabic constituents keyed by "role|length" with integer counts
+#' @param reference_words Character vector of reference words.
+#' @return An environment whose names are "role|length" keys, such as "onset|2", each
+#'   holding a named integer vector counting every attested constituent of that role
+#'   and length.
 #' @keywords internal
 build_constituent_inventory <- function(reference_words) {
   inv <- new.env(hash = TRUE, parent = emptyenv())
@@ -288,11 +314,20 @@ build_constituent_inventory <- function(reference_words) {
 
 #' A pseudoword built by swapping whole subsyllabic constituents
 #'
-#' Up to ceil(2k/3) constituents (codas and nuclei before onsets) are each replaced
-#' by an attested constituent of the same role and length, keeping every bigram legal
-#' and the form a novel non-word; length is preserved. Returns NULL if no legal swap
-#' exists (the caller falls back to letter substitution). Mirrors
+#' The word is split with [segment_subsyllabic()] into k constituents. A constituent
+#' is eligible when the reference attests at least two forms of its role and length.
+#' The first ceil(2k/3) eligible constituents, codas first, then nuclei, then onsets,
+#' each in word order, are tried one at a time: each is replaced by the attested form of
+#' the same role and length that keeps every bigram legal and the form a novel
+#' non-word and has the highest summed bigram count, ties broken by byte order, and is
+#' left as it is when there is none. Length is preserved. Returns NULL when no
+#' constituent was replaced (the caller falls back to letter substitution). Mirrors
 #' make_subsyllabic_pseudoword in generation.py.
+#'
+#' @param word The base word.
+#' @param inv The constituent inventory, from [build_constituent_inventory()].
+#' @param bigrams,lexset,usedset As for [make_pseudoword()].
+#' @return A single pseudoword string, or `NULL`.
 #' @keywords internal
 make_subsyllabic_pseudoword <- function(word, inv, bigrams, lexset, usedset) {
   segs <- segment_subsyllabic(word)
@@ -338,8 +373,13 @@ make_subsyllabic_pseudoword <- function(word, inv, bigrams, lexset, usedset) {
 
 #' A subsyllabic pseudoword for each base word (with letter-substitution fallback)
 #'
+#' The base words are taken in byte order, each given [make_subsyllabic_pseudoword()]'s
+#' form or, when it has none, [make_pseudoword()]'s, and no two share a pseudoword.
 #' `exclude` is as for [generate_pseudowords()], and so are the letters of the
 #' letter-substitution fallback and the refusal of a logographic base word.
+#' @inheritParams generate_pseudowords
+#' @return A data frame with columns `base_word` and `pseudoword`, in the order of
+#'   `base_words`. A base word for which neither generator finds a form is an error.
 #' @keywords internal
 generate_pseudowords_subsyllabic <- function(base_words, reference_words, exclude = NULL) {
   base <- as.character(base_words)
@@ -384,10 +424,15 @@ generate_pseudowords_subsyllabic <- function(base_words, reference_words, exclud
 #' @param exclude Optional character vector of further known word forms a
 #'   pseudoword must not equal, which the reference may lack; see
 #'   [generate_pseudowords()].
-#' @return A stimulus data frame with `target`, `condition` and `set` columns.
-#'   `base` gives the word each pseudoword was made from, a word's own form for a
-#'   word, and `edit_distance` the Levenshtein distance from `target` to `base`, 0
-#'   for a word.
+#' @return A stimulus data frame with the columns `target`, `word` (the same form),
+#'   `condition` (`word` or `pseudoword`), `length` (the base word's `length` from
+#'   `pool`, which its pseudoword shares), `set` (pairing each word with its
+#'   pseudoword), `base` (the word each pseudoword was made from, and a word's own form
+#'   for a word) and `edit_distance` (the Levenshtein distance from `target` to `base`,
+#'   0 for a word). The word rows come first, then the pseudowords in the same order.
+#' @references Keuleers, E., & Brysbaert, M. (2010). Wuggy: A multilingual pseudoword
+#'   generator. *Behavior Research Methods, 42*(3), 627-633.
+#'   \doi{10.3758/BRM.42.3.627}
 #' @export
 build_lexdec_stimuli <- function(pool, n, reference_words = NULL, method = "letter_substitution",
                                  exclude = NULL) {

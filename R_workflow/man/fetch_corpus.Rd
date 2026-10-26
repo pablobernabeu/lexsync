@@ -10,7 +10,8 @@ fetch_corpus(name, registry_path = NULL, dest = NULL)
 \item{name}{A corpus name present in the registry.}
 
 \item{registry_path}{Optional path to \code{registry.yaml}. A path that does not exist
-is refused.}
+is refused. \code{NULL} (the default) finds the registry as \code{\link[=list_corpora]{list_corpora()}}
+describes.}
 
 \item{dest}{Optional destination file; defaults to \verb{<name>.csv} in
 \code{\link[=lexsync_cache_dir]{lexsync_cache_dir()}}.}
@@ -31,9 +32,14 @@ converted by \code{\link[=normalise_lexicon]{normalise_lexicon()}} with the entr
 \code{fetch_corpus("subtlex_us")} caches SUBTLEX-US as a lexicon. The URL's scheme is
 checked first. The transfer then lands in a sidecar file that is renamed into
 place only after the size cap, the markup sniff, any \code{sha256} the registry entry
-carries and the normalisation have all passed. Every refusal names the registry
-file it read. The download is recorded so it can be cited; consult
-\code{\link[=list_corpora]{list_corpora()}} for the citation.
+carries and the normalisation have all passed. A refusal of the registry entry, a
+failed transfer and a checksum mismatch name the registry file read. On success, a
+message gives the corpus's citation, which \code{\link[=list_corpora]{list_corpora()}} also lists, and a run
+that reads the file from the cache credits that citation in its datasheet (see
+\code{\link[=build_datasheet]{build_datasheet()}}). The transfer uses \code{\link[utils:download.file]{utils::download.file()}}, so it is subject
+to \code{getOption("timeout")}, 60 seconds by default, which is often too short for a
+large file. Raise it, for example with \code{options(timeout = 600)}, before fetching a
+large corpus.
 
 The lexica of the wordfreq connector's languages are built by the Python package
 (\verb{lexsync fetch fr}), and this package reads the result with \code{\link[=load_lexicon]{load_lexicon()}}. A

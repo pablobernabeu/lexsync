@@ -16,9 +16,9 @@
 }
 \description{
 A value such as "1,000" leaves the whole column text under that rule. \code{as.numeric()}
-would then turn it into \code{NA} with a warning, while the Python engine failed inside
-pandas' float conversion, so the refusal is spelled out, naming the first value that
-is not a plain decimal number. Mirrors \verb{_require_numbers} in
+would then turn it into \code{NA} with a warning, and pandas' float conversion would fail
+in the Python engine, so both engines refuse the column here, naming the first value
+that is not a plain decimal number. Mirrors \verb{_require_numbers} in
 python_workflow/src/lexsync/querying.py.
 }
 \keyword{internal}

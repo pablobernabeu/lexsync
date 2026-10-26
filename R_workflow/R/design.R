@@ -1,14 +1,12 @@
 # design.R -- check a design and its schema before anything is selected or written.
 #
-# A design file is read key by key all over the package, so a key it misspells is not
-# an error anywhere: `n_per_conditon: 8` left the design on the default twenty items
-# per condition and nothing said so. Metadata were checked only at export, after the
-# stimuli and both reports were on disk, and a missing `name` failed differently in
-# each engine. This file holds the vocabulary of keys lexsync reads and the checks
-# that run_pipeline() applies right after reading the configuration, so a design that
-# cannot be honoured is refused before the output directory is touched, with one
-# message in both engines. It also resolves the three values each selector used to
-# resolve by its own rule: the number of items per condition, the tolerance windows
+# A design file is read key by key all over the package, so a key it misspells, such
+# as `n_per_conditon: 8`, would otherwise be ignored and leave the design on the
+# default twenty items per condition. This file holds the vocabulary of keys lexsync
+# reads and the checks that run_pipeline() applies right after reading the
+# configuration, so a design that cannot be honoured is refused before the output
+# directory is touched, with one message in both engines. It also resolves, by one
+# rule for every selector, the number of items per condition, the tolerance windows
 # and the file stem every artefact is named after. Mirrors
 # python_workflow/src/lexsync/design.py.
 
@@ -188,7 +186,7 @@
 # Refuses a value other than true or false for a design key that takes one. NULL
 # passes, since the key may be left out. The engines would read any other value
 # differently, this one with isTRUE() and the Python engine by truthiness, so
-# `optimise: n` or `1` balanced the lists in Python only. Must stay identical to
+# `optimise: n` or `1` would balance the lists in Python only. Must stay identical to
 # _require_bool in design.py.
 .require_bool <- function(value, key) {
   if (!is.null(value) && !(is.logical(value) && length(value) == 1L && !is.na(value))) {
@@ -209,10 +207,10 @@
 # The number of items per condition, by one rule everywhere: `n_per_condition`, then
 # `n_per_cell`, then `default`, each taken when it is present. A present value must
 # be a whole number of at least 1, written as 4 or 4.0, and comes back as an integer.
-# The finiteness test matters: trunc(Inf) equals Inf, so an infinite request once
-# passed the whole-number test here and selected the whole pool. The upper bound is
-# where as.integer() would give NA. `default` may be NULL, for a caller that only
-# checks. Must stay identical to _resolve_n in design.py.
+# The finiteness test matters: trunc(Inf) equals Inf, so without it an infinite
+# request would pass the whole-number test here and select the whole pool. The upper
+# bound is where as.integer() would give NA. `default` may be NULL, for a caller that
+# only checks. Must stay identical to _resolve_n in design.py.
 .resolve_n <- function(design, default) {
   n <- design[["n_per_condition"]] %||% design[["n_per_cell"]]
   if (is.null(n)) return(default)
@@ -224,9 +222,9 @@
 }
 
 # The number of resampled sets as an integer, by the rule .resolve_n applies: a whole
-# number of at least 1, written as 3 or 3.0. A fractional count was truncated in
-# silence, a logical or a quoted number was taken as a count, and zero gave an empty
-# selection here and pandas' 'No objects to concatenate' in Python. Must stay
+# number of at least 1, written as 3 or 3.0. A fractional count, a logical, a quoted
+# number and zero are refused rather than truncated, taken as a count, or left to give
+# an empty selection here and pandas' 'No objects to concatenate' in Python. Must stay
 # identical to _check_n_sets in design.py.
 .check_n_sets <- function(n_sets) {
   if (!is.numeric(n_sets) || length(n_sets) != 1L || !is.finite(n_sets) || n_sets < 1 ||
@@ -275,9 +273,7 @@
 # condition's `define_by` keys, the `pool_filters` keys, the continuous predictor and
 # controls, and `counterbalance.balance_on`, in that order and without repeats. The
 # pipeline derives any of `n_density`, `old20` and `bigram_freq` in this list that the
-# lexicon lacks. Only `match_on` used to trigger the derivation, so a design that
-# manipulated, filtered on or regressed on a derived dimension stopped with "absent
-# from the pool". Must stay identical to _referenced_dimensions in design.py.
+# lexicon lacks. Must stay identical to _referenced_dimensions in design.py.
 .referenced_dimensions <- function(design) {
   as_names <- function(x) as.character(unlist(x, use.names = FALSE))
   out <- as_names(design[["match_on"]])
@@ -407,7 +403,10 @@ design_stem <- function(design) {
 #' or `resample.n_sets` that is not a whole number of at least 1, a
 #' `counterbalance.optimise` that is not true or false, a `counterbalance.scale` other than `mean` or `mad`, a
 #' `counterbalance.max_run` or `counterbalance.orders` that is not a whole number of at
-#' least 1, and a `counterbalance.run_on` that is not the name of a column. It refuses
+#' least 1, and a `counterbalance.run_on` that is not a single non-empty text value.
+#' It does not see the trials, so a `run_on` that names no column of them is refused
+#' when `counterbalance.max_run` is applied to the trial order, by [counterbalance()]
+#' or, in a design with fillers, when [run_pipeline()] interleaves them. It refuses
 #' a name, language
 #' or font that cannot be written into the generated experiments, a trigger port that
 #' is not an address, and an event list the renderer refuses, such as one with an
@@ -428,8 +427,8 @@ design_stem <- function(design) {
 #' Any other key lexsync does not read is not refused yet. It is returned as a note,
 #' which [run_pipeline()] writes into the run log, and a later release will refuse
 #' it. `description` and keys beginning `x_` are annotations and are never noted. A
-#' schema that still sets `triggers.inter_trigger_ms`, which no longer does anything,
-#' gets a note too.
+#' schema that sets `triggers.inter_trigger_ms`, which lexsync ignores, gets a note
+#' too.
 #'
 #' The experiments' instructions and response mapping are checked here too. It refuses
 #' `instructions` that are not text, are empty or hold a control character other than a
@@ -452,9 +451,9 @@ validate_design <- function(design, schema) {
   }
   notes <- c(.check_keys(design, .DESIGN_KEYS, "design"),
              .check_keys(schema, .SCHEMA_KEYS, "schema"))
-  # The key held the self-paced reading critical-region code, which is now held for
-  # trigger_hold_ms like every other code. A schema written for an earlier release still
-  # sets it, so it is accepted and noted. Must match validate_design in design.py.
+  # lexsync does not read the key: the self-paced reading critical-region code is held
+  # for trigger_hold_ms like every other code. A schema written for an earlier release
+  # may set it, so it is accepted and noted. Must match validate_design in design.py.
   triggers <- schema[["triggers"]]
   if (.is_mapping(triggers) && !is.null(triggers[["inter_trigger_ms"]])) {
     notes <- c(notes, paste("lexsync: triggers.inter_trigger_ms is no longer used; the",

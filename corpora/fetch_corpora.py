@@ -10,8 +10,8 @@ Usage:
 
 This ingestion step writes:
   corpora/derived/<lang>.csv                          full derived lexicon
-  R_workflow/inst/extdata/<lang>_example.csv          bundled slice (length 3-9)
-  python_workflow/src/lexsync/data/<lang>_example.csv bundled slice (length 3-9)
+  R_workflow/inst/extdata/<lang>_example.csv          bundled slice (length 3-9, or 2-3 for zh)
+  python_workflow/src/lexsync/data/<lang>_example.csv bundled slice (length 3-9, or 2-3 for zh)
 and (re)writes corpora/ATTRIBUTION.md. With --known-forms it writes
   corpora/derived/<lang>_known_forms.txt              every known form, one per line
 instead, for a design's items.generation.exclude, and with --screen-en
@@ -23,9 +23,10 @@ first list: they are drawn from the forms en_v2.csv keeps, by --screen-en or by
 
 The orthographic-neighbourhood variables (Coltheart's N and OLD20) are computed
 openly here with rapidfuzz and stored in the derived files, so both the R and
-Python pipelines read identical, inspectable values. The standalone
-add_neighbourhood()/compute_dimensions() functions remain available for users
-who supply their own raw lexica.
+Python pipelines read identical, inspectable values. For a lexicon without them,
+add_neighbourhood() in either package computes the two variables, and
+run_pipeline() derives them when a design refers to them and the lexicon lacks
+them.
 
 wordfreq blends up to eight domains of text per language, among them subtitle
 corpora that draw in part on the SUBTLEX family. Its code is Apache-2.0 and its
@@ -86,7 +87,8 @@ WORD_RE = {
 }
 # Word-length bounds (in characters) for the full lexicon and for the bundled
 # example slice. Chinese words are short: two-character words dominate the
-# language, so the demonstration draws on two- and three-character words.
+# language, so the Chinese lexicon and its slice keep two- and three-character
+# words, and the demonstration design keeps only the two-character ones.
 LEN_BOUNDS = {"default": (2, 15), "zh": (2, 3)}
 SLICE_LEN = {"default": (3, 9), "zh": (2, 3)}
 
@@ -527,18 +529,24 @@ def write_attribution(fresh_dates: dict[str, str]) -> None:
         "\nwordfreq's terms require that work derived from it credit the SUBTLEX authors\n"
         "and keep it clear that SUBTLEX is freely available data. The lists it carries\n"
         "are:\n\n"
-        "- Brysbaert, M., & New, B. (2009). SUBTLEX-US. Behavior Research Methods, "
+        "- Brysbaert, M., & New, B. (2009). Moving beyond Kučera and Francis: A critical "
+        "evaluation of current word frequency norms and the introduction of a new and "
+        "improved word frequency measure for American English. Behavior Research Methods, "
         "41(4), 977-990. https://doi.org/10.3758/BRM.41.4.977\n"
         "- van Heuven, W. J. B., Mandera, P., Keuleers, E., & Brysbaert, M. (2014). "
-        "SUBTLEX-UK. Quarterly Journal of Experimental Psychology, 67(6), 1176-1190. "
+        "SUBTLEX-UK: A new and improved word frequency database for British English. "
+        "Quarterly Journal of Experimental Psychology, 67(6), 1176-1190. "
         "https://doi.org/10.1080/17470218.2013.850521\n"
-        "- Cai, Q., & Brysbaert, M. (2010). SUBTLEX-CH. PLoS ONE, 5(6), e10729. "
+        "- Cai, Q., & Brysbaert, M. (2010). SUBTLEX-CH: Chinese word and character "
+        "frequencies based on film subtitles. PLoS ONE, 5(6), e10729. "
         "https://doi.org/10.1371/journal.pone.0010729\n"
         "- Brysbaert, M., Buchmeier, M., Conrad, M., Jacobs, A. M., Bölte, J., & "
-        "Böhl, A. (2011). SUBTLEX-DE. Experimental Psychology, 58(5), 412-424. "
-        "https://doi.org/10.1027/1618-3169/a000123\n"
-        "- Keuleers, E., Brysbaert, M., & New, B. (2010). SUBTLEX-NL. Behavior "
-        "Research Methods, 42(3), 643-650. https://doi.org/10.3758/BRM.42.3.643\n"
+        "Böhl, A. (2011). The word frequency effect: A review of recent developments "
+        "and implications for the choice of frequency estimates in German. Experimental "
+        "Psychology, 58(5), 412-424. https://doi.org/10.1027/1618-3169/a000123\n"
+        "- Keuleers, E., Brysbaert, M., & New, B. (2010). SUBTLEX-NL: A new measure for "
+        "Dutch word frequency based on film subtitles. Behavior Research Methods, 42(3), "
+        "643-650. https://doi.org/10.3758/BRM.42.3.643\n"
         "\n- See corpora/registry.yaml for the curated, individually citable "
         "SUBTLEX/openlexicon corpora that lexsync supports as separate resources. "
         + registry_note
@@ -550,7 +558,8 @@ def write_attribution(fresh_dates: dict[str, str]) -> None:
 def main() -> None:
     ap = argparse.ArgumentParser(description="Build lexsync derived lexica.")
     ap.add_argument("--languages", nargs="+", default=None,
-                    help="lexica to build (default: en es, unless --known-forms is given)")
+                    help="lexica to build (default: en es, unless --known-forms, --screen-en "
+                         "or --slice-en is given)")
     ap.add_argument("--n-words", type=int, default=10000)
     ap.add_argument("--known-forms", nargs="+", default=[], metavar="LANG",
                     help="write corpora/derived/<lang>_known_forms.txt for these languages")

@@ -24,10 +24,9 @@ from .querying import _check_zipf_range, _fold_words, _nfc, _require_numbers, _z
 
 
 def _registry_path(registry_path: str | None = None) -> str:
-    # A path the caller names is read on its own. As the first place searched, a
-    # misspelt or stale one fell through to the checkout's registry or the bundled one,
-    # and every corpus reported came from that other file. Mirrors .registry_path in
-    # R_workflow/R/corpora.R.
+    # A path the caller names is read on its own, and one that does not exist is an
+    # error, so a misspelt or stale path never falls through to the checkout's registry
+    # or the bundled one. Mirrors .registry_path in R_workflow/R/corpora.R.
     if registry_path is not None:
         if not os.path.exists(registry_path):
             raise FileNotFoundError(f"lexsync: registry not found: '{registry_path}'.")
@@ -45,6 +44,22 @@ def _registry_path(registry_path: str | None = None) -> str:
 
 
 def list_corpora(registry_path: str | None = None) -> pd.DataFrame:
+    """The corpus registry as a table.
+
+    Reads the registry at ``registry_path``, which must exist when given. Left as None,
+    the registry is the first found of the file the environment variable
+    ``LEXSYNC_REGISTRY`` names, ``corpora/registry.yaml`` in the working directory,
+    ``../corpora/registry.yaml`` and the copy bundled with the package.
+
+    Returns a DataFrame with one row per entry under ``corpora`` in the registry and the
+    columns ``name``, ``language``, ``iso``, ``status``, ``connector`` (``openlexicon``
+    when the entry names none) and ``citation``. The language codes of the wordfreq
+    connector are not listed, and ``fetch_corpus`` takes them by code.
+
+    Raises FileNotFoundError when a named registry does not exist or none is found.
+    Mirrors list_corpora in R_workflow/R/corpora.R, whose search reads the
+    ``lexsync.registry`` option in place of the environment variable.
+    """
     with open(_registry_path(registry_path), encoding="utf-8") as handle:
         reg = yaml.safe_load(handle)
     rows = []
@@ -76,7 +91,7 @@ def _check_corpus_name(name) -> None:
 def cache_dir() -> str:
     """Per-user cache directory for fetched corpora.
 
-    Where :func:`fetch_corpus` puts what it fetches, and the only place the
+    Where ``fetch_corpus`` puts what it fetches, and the only place the
     package writes to without being handed a path. This function only reports
     the path. The directory is created by the first fetch into it, so until then
     it does not exist.
@@ -86,7 +101,7 @@ def cache_dir() -> str:
     large corpora can reach a few hundred megabytes. Each fetch into the cache
     first deletes any partial download that an interrupted transfer left there
     more than a day earlier, and fetching a corpus again replaces the earlier
-    copy. Fetched corpora otherwise stay until :func:`cache_clear` removes them,
+    copy. Fetched corpora otherwise stay until ``cache_clear`` removes them,
     one corpus at a time or all together. Nothing kept there is irreplaceable, so
     the next call downloads afresh. The R twin documents the same contract in
     lexsync_cache_dir.Rd; only the location differs, since R uses
@@ -98,13 +113,13 @@ def cache_dir() -> str:
 def cache_clear(name: str | None = None) -> list[str]:
     """Remove fetched corpora from the cache.
 
-    Deletes what :func:`fetch_corpus` put in :func:`cache_dir`. Given a `name`,
+    Deletes what ``fetch_corpus`` put in ``cache_dir``. Given a `name`,
     that is the corpus's ``<name>.csv``, any ``<name>.csv.part`` that an
     interrupted download left behind and the ``<name>_wordfreq.csv`` lexicon the
     wordfreq connector builds. With `name` left as None it is the whole cache
     directory, and the ``~/.lexsync`` directory above it once nothing else is left
     there. A corpus needed again is fetched afresh by the next
-    :func:`fetch_corpus` call. Mirrors lexsync_cache_clear() in
+    ``fetch_corpus`` call. Mirrors lexsync_cache_clear() in
     R_workflow/R/corpora.R, whose engine has no wordfreq connector and so no
     ``_wordfreq.csv`` to remove.
 
@@ -276,7 +291,7 @@ def build_wordfreq_lexicon(language: str, n_words: int = 10000,
     # this is what `lexsync fetch fr` reaches, and the README advertises that command:
     # unguarded, a default install answers it with a bare ModuleNotFoundError nine
     # frames down, which names the missing module and no way to get it. Everything
-    # else in this module answers a failure with the remedy, and so does this now.
+    # else in this module answers a failure with the remedy, and so does this.
     # The R twin has no counterpart here: Connector B is Python-only, and R/corpora.R
     # reads its pre-derived output as an ordinary lexicon.
     try:
@@ -308,8 +323,8 @@ def build_wordfreq_lexicon(language: str, n_words: int = 10000,
                        "language": language, "source": "wordfreq"})
     df = df[df.freq_zipf > 0].sort_values("word").reset_index(drop=True)
     if len(df) < n_words:
-        # A short lexicon thins every frequency band a design draws on, and a Hindi one
-        # used to come back with 3,207 of the 10,000 forms asked for, and nothing said so.
+        # A short lexicon thins every frequency band a design draws on, so a shortfall is
+        # reported.
         message = (f"lexsync: wordfreq supplied only {len(df)} forms for '{language}' "
                    f"that pass the letter filter (n_words was {n_words}).")
         if strict:
@@ -405,21 +420,23 @@ def fetch_corpus(name: str, registry_path: str | None = None, n_words: int = 100
     For any other name the registry entry's file is downloaded, once its URL's scheme
     has been checked. An entry's ``derived`` file, a lexicon already normalised, is
     fetched when it has one and cached as it arrives. Otherwise its ``openlexicon``
-    file is fetched and converted by :func:`normalise_lexicon` with the entry's
+    file is fetched and converted by ``normalise_lexicon`` with the entry's
     ``columns`` and ``duplicates``, so ``fetch_corpus("subtlex_us")`` caches a lexicon
-    that :func:`lexsync.load_lexicon` reads. The transfer lands in a sidecar file that
+    that ``lexsync.load_lexicon`` reads. The transfer lands in a sidecar file that
     is renamed into the cache only after the size cap, the markup sniff, any registered
-    sha256 and the normalisation have all passed. Every refusal names the registry
-    file it read. A `registry_path` that does not exist is refused.
+    sha256 and the normalisation have all passed. A refusal of the registry entry, a
+    failed transfer and a checksum mismatch name the registry file read. A
+    `registry_path` that does not exist is refused.
 
-    The file lands in :func:`cache_dir`. The cache directory is created only once
-    the registry entry and its URL have been accepted, or the wordfreq lexicon
-    built, so a refused call writes nothing. Each fetch into the cache begins by
-    deleting any ``.part`` sidecar that an interrupted transfer left there more
-    than a day earlier. The cache persists between sessions, and one corpus may
-    reach the 200 MB download cap, so several of them add up. :func:`cache_clear`
-    removes one corpus or the whole cache, and the next call fetches the corpus
-    again.
+    The file lands in ``cache_dir`` as ``<name>.csv``, or ``<name>_wordfreq.csv`` for
+    a lexicon the wordfreq connector builds, and its path is returned. The cache
+    directory is created only once the registry entry and its URL have been accepted,
+    or the wordfreq lexicon built, so a refused call writes nothing. Each fetch into
+    the cache begins by deleting any ``.part`` sidecar that an interrupted transfer
+    left there more than a day earlier. The cache persists between sessions, and one
+    corpus may reach the 200 MB download cap, so several of them add up.
+    ``cache_clear`` removes one corpus or the whole cache, and the next call fetches
+    the corpus again.
     """
     _check_corpus_name(name)
     reg_path, reg = _read_registry(registry_path)
@@ -681,7 +698,7 @@ def normalise_lexicon(path: str, columns=None, entry=None, delimiter=None,
     ``columns`` maps lexsync's column names to the file's, as a registry entry's
     ``columns`` does: ``word``, one of ``freq_zipf`` and ``freq_permillion``, and
     optionally ``pos``. ``entry`` is a registry entry, or the name of one in the
-    registry lexsync finds by default (see :func:`list_corpora`), and supplies the map
+    registry lexsync finds by default (see ``list_corpora``), and supplies the map
     when ``columns`` is None and the ``duplicates`` rule. Without a map the file's own
     ``word``, ``freq_zipf`` or ``freq_permillion``, and ``pos`` columns are read.
 

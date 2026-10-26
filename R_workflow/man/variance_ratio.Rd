@@ -10,7 +10,10 @@ variance_ratio(cond, ref)
 \item{cond, ref}{Numeric vectors (condition and reference).}
 }
 \value{
-The variance ratio, or \code{NA} when a variance is undefined.
+The variance ratio. Missing values are dropped first. The ratio is \code{NA} when
+either vector has fewer than two non-missing values, or when the reference's
+variance is zero and the condition's is not. It is 1 when both variances are
+zero.
 }
 \description{
 The ratio of a condition's variance to the reference's, complementing the
@@ -21,4 +24,13 @@ heuristic flags ratios outside roughly 0.5 to 2.
 }
 \examples{
 variance_ratio(c(1, 2, 3, 4), c(1, 2, 3, 8))
+}
+\references{
+Armstrong, B. C., Watson, C. E., & Plaut, D. C. (2012). SOS! An
+algorithm and software for the stochastic optimization of stimuli. \emph{Behavior
+Research Methods, 44}(3), 675-705. \doi{10.3758/s13428-011-0182-9}
+
+Austin, P. C. (2009). Balance diagnostics for comparing the distribution of
+baseline covariates between treatment groups in propensity-score matched
+samples. \emph{Statistics in Medicine, 28}(25), 3083-3107. \doi{10.1002/sim.3697}
 }

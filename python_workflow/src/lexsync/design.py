@@ -1,17 +1,15 @@
 """Check a design and its schema before anything is selected or written.
 
 Mirrors R_workflow/R/design.R. A design file is read key by key all over the
-package, so a key it misspells is not an error anywhere: ``n_per_conditon: 8``
-left the design on the default twenty items per condition and nothing said so.
-Metadata were checked only at export, after the stimuli and both reports were on
-disk, and a missing ``name`` failed differently in each engine. This module holds
-the vocabulary of keys lexsync reads and the checks that ``run_pipeline`` applies
-right after reading the configuration, so a design that cannot be honoured is
-refused before the output directory is touched, with one message in both engines.
+package, so a key it misspells, such as ``n_per_conditon: 8``, would otherwise be
+ignored and leave the design on the default twenty items per condition. This module
+holds the vocabulary of keys lexsync reads (``DESIGN_KEYS`` and ``SCHEMA_KEYS``) and
+the checks that ``run_pipeline`` applies right after reading the configuration, so a
+design that cannot be honoured is refused before the output directory is touched,
+with one message in both engines.
 
-It also resolves the three values that each selector used to resolve by its own
-rule: the number of items per condition, the tolerance windows and the file stem
-every artefact is named after.
+It also resolves, by one rule for every selector, the number of items per condition,
+the tolerance windows and the file stem every artefact is named after.
 """
 from __future__ import annotations
 
@@ -234,8 +232,8 @@ def _require_bool(value, key: str):
 
     None passes, since the key may be left out. The engines would read any other value
     differently, R with isTRUE() and this engine by truthiness, so `optimise: n` or `1`
-    balanced the lists here only. Must stay identical to .require_bool in
-    R_workflow/R/design.R.
+    would balance the lists in this engine only. Must stay identical to .require_bool
+    in R_workflow/R/design.R.
     """
     if value is not None and not isinstance(value, bool):
         raise ValueError(f"lexsync: {key} must be true or false.")
@@ -254,12 +252,12 @@ def _resolve_n(design: dict, default):
     """The number of items per condition, by one rule everywhere.
 
     `n_per_condition`, then `n_per_cell`, then `default`, each taken when it is
-    present, not when it is truthy: `or` read a configured 0 as absent and fell
-    through to the next key or to the selector's default. A present value must be a
-    whole number of at least 1, written as 4 or 4.0, and comes back as an int, which
-    numpy's linspace needs. The finiteness test matters: R's trunc(Inf) equals Inf,
-    so an infinite request once passed the whole-number test there and selected the
-    whole pool. `default` may be None, for a caller that only checks.
+    present, not when it is truthy, so a configured 0 is refused rather than read as
+    absent. A present value must be a whole number of at least 1, written as 4 or 4.0,
+    and comes back as an int, which numpy's linspace needs. The finiteness test
+    matters: R's trunc(Inf) equals Inf, so without it an infinite request would pass
+    the whole-number test there and select the whole pool. `default` may be None, for
+    a caller that only checks.
     Must stay identical to .resolve_n in R_workflow/R/design.R.
     """
     n = design.get("n_per_condition")
@@ -276,10 +274,10 @@ def _resolve_n(design: dict, default):
 def _check_n_sets(n_sets) -> int:
     """The number of resampled sets as an int, by the rule :func:`_resolve_n` applies.
 
-    A whole number of at least 1, written as 3 or 3.0. A fractional count was truncated
-    in silence, a boolean or a quoted number was taken as a count, and zero gave
-    pandas' 'No objects to concatenate' here and an empty selection in R. Must stay
-    identical to .check_n_sets in R_workflow/R/design.R.
+    A whole number of at least 1, written as 3 or 3.0. A fractional count, a boolean, a
+    quoted number and zero are refused rather than truncated, taken as a count, or left
+    to fail with pandas' 'No objects to concatenate' here and an empty selection in R.
+    Must stay identical to .check_n_sets in R_workflow/R/design.R.
     """
     if (isinstance(n_sets, bool) or not isinstance(n_sets, numbers.Real)
             or not math.isfinite(n_sets) or n_sets < 1 or n_sets != int(n_sets)
@@ -341,9 +339,7 @@ def _referenced_dimensions(design: dict) -> list:
     ``pool_filters`` keys, the continuous predictor and controls, and
     ``counterbalance.balance_on``, in that order and without repeats. The pipeline
     derives any of ``n_density``, ``old20`` and ``bigram_freq`` in this list that the
-    lexicon lacks. Only ``match_on`` used to trigger the derivation, so a design that
-    manipulated, filtered on or regressed on a derived dimension stopped with "absent
-    from the pool". Must stay identical to .referenced_dimensions in
+    lexicon lacks. Must stay identical to .referenced_dimensions in
     R_workflow/R/design.R.
     """
     names = _names(design.get("match_on"))
@@ -377,14 +373,10 @@ def design_stem(design: dict) -> str:
     hold no letter or digit at all is refused. Mirrors design_stem() in
     R_workflow/R/design.R.
 
-    Parameters
-    ----------
-    design : dict
-        A parsed design configuration.
+    Args:
+        design: A parsed design configuration.
 
-    Returns
-    -------
-    str
+    Returns:
         The file stem, such as ``en_lexdec_english`` or ``chinese_14aadfa7``.
     """
     name, language = _name_and_language(design)
@@ -475,8 +467,11 @@ def validate_design(design: dict, schema: dict) -> list:
     ``counterbalance.optimise`` that is not true or false, a ``counterbalance.scale``
     other than ``mean`` or ``mad``, a ``counterbalance.max_run`` or
     ``counterbalance.orders`` that is not a whole number of at least 1, and a
-    ``counterbalance.run_on`` that is not the name of a column. It refuses a name,
-    language or font that cannot be written into the generated experiments, a
+    ``counterbalance.run_on`` that is not a single non-empty text value. It does not
+    see the trials, so a ``run_on`` that names no column of them is refused when
+    ``counterbalance.max_run`` is applied to the trial order, by ``counterbalance``
+    or, in a design with fillers, when ``run_pipeline`` interleaves them. It refuses a
+    name, language or font that cannot be written into the generated experiments, a
     trigger port that is not an address, and an event list the renderer refuses, such
     as one with an unknown timing key, a bad response key or a response key that
     YAML reads as a boolean (an unquoted ``yes``, ``no``, ``on`` or ``off``). It
@@ -495,8 +490,8 @@ def validate_design(design: dict, schema: dict) -> list:
     Any other key lexsync does not read is not refused yet. It is returned as a note,
     which ``run_pipeline`` writes into the run log, and a later release will refuse
     it. ``description`` and keys beginning ``x_`` are annotations and are never
-    noted. A schema that still sets ``triggers.inter_trigger_ms``, which no longer
-    does anything, gets a note too.
+    noted. A schema that sets ``triggers.inter_trigger_ms``, which lexsync ignores,
+    gets a note too.
 
     The experiments' instructions and response mapping are checked here too. It
     refuses ``instructions`` that are not text, are empty or hold a control character
@@ -505,18 +500,14 @@ def validate_design(design: dict, schema: dict) -> list:
     with no response event. And it refuses a ``rotate_mapping_by_list`` that is not
     true or false, or that has no mapping to rotate.
 
-    Parameters
-    ----------
-    design : dict
-        A parsed design configuration.
-    schema : dict
-        The parsed global schema.
+    Args:
+        design: A parsed design configuration.
+        schema: The parsed global schema.
 
-    Returns
-    -------
-    list of str
-        The notes on unknown keys, in the order the keys were written, then the note
-        on ``triggers.inter_trigger_ms``; empty when there are none.
+    Returns:
+        A list of the notes on unknown keys, in the order the keys were written, then
+            the note on ``triggers.inter_trigger_ms``. The list is empty when there are
+            none.
     """
     # Imported here: scripting names its files through design_stem, and counterbalancing
     # quotes values through _shown, so a module-level import would be circular.
@@ -535,9 +526,9 @@ def validate_design(design: dict, schema: dict) -> list:
         raise ValueError("lexsync: a design must be a mapping of keys to values.")
     notes = (_check_keys(design, DESIGN_KEYS, "design")
              + _check_keys(schema, SCHEMA_KEYS, "schema"))
-    # The key held the self-paced reading critical-region code, which is now held for
-    # trigger_hold_ms like every other code. A schema written for an earlier release
-    # still sets it, so it is accepted and noted.
+    # lexsync does not read the key: the self-paced reading critical-region code is held
+    # for trigger_hold_ms like every other code. A schema written for an earlier release
+    # may set it, so it is accepted and noted.
     triggers = schema.get("triggers")
     if isinstance(triggers, dict) and triggers.get("inter_trigger_ms") is not None:
         notes.append("lexsync: triggers.inter_trigger_ms is no longer used; the "

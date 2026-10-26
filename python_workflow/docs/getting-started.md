@@ -83,8 +83,9 @@ print(lexsync.list_corpora().to_string(index=False))
 
 `list_corpora` reads the corpus registry. It looks for `corpora/registry.yaml` relative to the
 working directory first, then one level up, then falls back to the copy bundled inside the package,
-so it answers whether or not you are standing in a clone. Setting `LEXSYNC_REGISTRY` overrides the
-search.
+so it answers whether or not you are standing in a clone. Setting `LEXSYNC_REGISTRY` to an existing
+file makes it read that file instead. A path that does not exist is passed over without a warning,
+and the usual search continues.
 
 ## The command line
 
@@ -120,8 +121,8 @@ flag is left out, the schema is resolved in order. Running every design, `lexsyn
 `schema.yaml` in `--config-dir` and then `config/schema.yaml` in the working directory. Running one
 design, it reads `config/schema.yaml` in the working directory and then `schema.yaml` beside the
 design. Either way the copy bundled with the package comes last, and a line on standard error names
-the file chosen. The run log records it as `schema_path` and the datasheet as
-`reproducibility.schema_path`. `run_pipeline()` and `run_all()` resolve a schema they are not given
+the file chosen. The Markdown run log records it as `schema_path` among its run metadata, and the
+datasheet as `reproducibility.schema_path`. `run_pipeline()` and `run_all()` resolve a schema they are not given
 in the same way, through `lexsync.paths.resolve_schema`.
 
 A failing command prints lexsync's own message to standard error and exits with status 1.
@@ -164,9 +165,9 @@ SUBTLEX-US's `Lg10WF` lies inside that range, so it has to be converted all the 
 
 A wordfreq lexicon holds the language's most frequent forms that are spelt with letters, 10,000 of
 them unless `fetch_corpus` is given another `n_words` or `lexsync fetch` another `--n-words`. The
-lexica committed under `corpora/derived/` hold more: they were built with `python
-corpora/fetch_corpora.py --languages en es --n-words 30000` and, for Chinese, `--languages zh
---n-words 20000`. Each form is lower-cased and put in Unicode
+`en.csv`, `es.csv` and `zh.csv` committed under `corpora/derived/` hold more: they were built
+with `python corpora/fetch_corpora.py --languages en es --n-words 30000` and, for Chinese,
+`--languages zh --n-words 20000`. Each form is lower-cased and put in Unicode
 NFC. Combining marks are part of the spelling, so the vowel signs and viramas of Hindi and Bengali
 are kept, and so is the zero-width non-joiner that Persian spells many words with. A Ukrainian
 word may also hold an apostrophe between two letters, as п'ять does, and a Catalan word a middle dot
@@ -183,8 +184,8 @@ refuses a design that refers to it when such a word passes the design's other fi
 
 ## Anatomy of a design
 
-A design is a YAML file. `config/schema.yaml` holds everything global and every numeric default,
-while the design holds what is specific to the study. Both are read identically by the R and Python
+A design is a YAML file. `config/schema.yaml` holds everything global, including the matching
+defaults, while the design holds what is specific to the study. Both are read identically by the R and Python
 packages, which is what lets a design travel. Here is the English frequency contrast in full, from
 `config/design_en_freqcontrast.yaml`:
 
@@ -241,8 +242,8 @@ form the lexical-decision designs use, since they also need to say where the ite
 | `pool` | A candidate word list of your own, matched over as if it were a pool. | `items.path`, normally `items.lexicon` |
 
 `pool_filters` narrows the lexicon to the candidates a design will consider at all. Each key is a
-column and each value a `[min, max]` range for a numeric column, or a set of allowed values for a
-categorical one. This is a step that matters. The matcher never reads `pool_filters` itself, so a
+column, and each value is a `[min, max]` range when it is a pair of numbers, or a set of allowed
+values otherwise. This is a step that matters. The matcher never reads `pool_filters` itself, so a
 script that omits `build_pool` matches over the entire lexicon and quietly ignores the design's
 bands. Here `nonstandard: [0, 0]` keeps the forms the screened lexicon leaves unmarked, and
 `exclude_words` leaves out the words a file lists, as
@@ -256,9 +257,11 @@ a `continuous` block and dispense with conditions altogether, which
 [Matching and designs](matching-and-designs.md) covers.
 
 `match_on` lists the dimensions to equate across conditions, and a design that matches its
-conditions must name at least one. `n_per_condition` is how many items you want in each, a whole number written as
+conditions must name at least one. `n_per_condition` is how many items you want in each, a whole number of at least 1 written as
 `80` or `80.0`. Both are the heart of the design, and both are discussed at length in the matching
-guide.
+guide. `n_per_cell` is read in place of `n_per_condition` when that is absent. A design that gives
+neither takes 20 items per condition when it is matched, 60 items when it is continuous and 40
+words, each with a pseudoword, when it generates its items.
 
 `matching` overrides the schema defaults for this design alone. `matching.method` picks one of the
 four methods, and `matching.tolerance_k` sets the half-width, in standard deviations, of the
@@ -268,10 +271,14 @@ published study's exact windows.
 `counterbalance.lists` sets the number of lists, and `counterbalance.optimise` asks for an assignment
 whose lists are equated on the item dimensions, where the plain deal goes by set rank. `practice` and
 `fillers` each name an item table whose trials run but are not analysed. `timing` overrides the fixation, critical-word and
-inter-stimulus durations in milliseconds (`fixation_ms`, `word_ms`, `isi_ms`), the older
-`*_frames` forms still being accepted and converted at `presentation.assumed_refresh_hz`. `font` overrides
-the presentation font, which matters for a non-Latin script: `config/design_zh_freqcontrast.yaml`
-sets `SimHei`, because the Latin default has no glyphs for Han characters.
+inter-stimulus durations, in milliseconds (`fixation_ms`, `word_ms`, `isi_ms`) or in frames
+(`fixation_frames`, `word_frames`, `isi_frames`), as the design above does. Frames are converted at
+`presentation.assumed_refresh_hz`, and a `*_ms` key wins over its `*_frames` counterpart. The
+fixation keys set every fixation event, the word keys every text event whose `trigger` is
+`condition` and the inter-stimulus keys every blank, though not an event that takes a per-trial
+`duration` block. `font` overrides the presentation font, which matters for a non-Latin script:
+`config/design_zh_freqcontrast.yaml` sets `SimHei`, because the Latin default has no glyphs for
+Han characters.
 
 `paradigm` names one of the six registered paradigms and inherits its trial-event sequence and its
 counterbalancing recipe. Omitting it gives `factorial`. A design may instead supply an explicit
@@ -285,8 +292,8 @@ Before it reads a lexicon or writes a file, `run_pipeline` checks the design and
 engines. Every key is looked up in the vocabulary of keys lexsync reads at its level, which
 `lexsync.design` holds as `DESIGN_KEYS` and `SCHEMA_KEYS`. A key one edit from a known key of up to
 five characters, or two edits from a longer one, is taken for a typo. It is refused with the key it
-was probably meant to be. `n_per_conditon: 8` now stops with
-`unknown design key 'n_per_conditon' (did you mean 'n_per_condition'?)`, where it used to leave
+was probably meant to be. `n_per_conditon: 8` stops with
+`unknown design key 'n_per_conditon' (did you mean 'n_per_condition'?)` instead of leaving
 the design on the default of twenty items. Any other unknown key is noted in the run log and
 otherwise ignored, and a later release will refuse it. Notes and comments therefore belong in `description` or in a key beginning `x_`, which
 are never checked.
@@ -296,8 +303,7 @@ code such as `'no'`, which YAML reads as false) and an `n_per_condition` that is
 of at least 1. It refuses a name, language or font that cannot be written safely into the
 generated experiments, a trigger port that is not an address, and an unknown timing key or
 malformed response key. Last, it refuses a condition name that is not text or appears twice, and a
-corpus or pool design with conditions but no `match_on`. These used to surface at export, after the stimuli and
-reports had been written, or at a different point in each engine.
+corpus or pool design with conditions but no `match_on`.
 
 ### The schema
 
@@ -317,7 +323,8 @@ because whole-number lengths and neighbourhood counts make ties decide most pick
 default, gives a tie to the smaller keyed SHA-256 of the word, which favours no part of the
 alphabet. `bytes` gives it to the spelling that sorts first, as lexsync 0.1 did, and reproduces that
 version's selections, but it fills a condition decided by ties with early-alphabet words. Under
-either rule, the two default methods give the same selection in the two engines without an RNG
+either rule, `standardised_euclidean`, the default, and `joint` give the same selection in the two
+engines without an RNG
 ([Matching and designs](matching-and-designs.md#how-matching-works)).
 
 A copy of the schema and of a small English, Spanish and Chinese lexicon is bundled inside the

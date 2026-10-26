@@ -20,7 +20,9 @@ the item tables' checksums, or \code{NULL} when the design declares no extra blo
 \code{normalisation} (\code{list(changed, collapsed)}, what Unicode NFC normalisation did to
 the practice and filler tables; see \code{\link[=load_items]{load_items()}}). Trials are numbered from 1
 within each list, or within each (replicate, list) pair of a resampled design, and
-the counts are per list or pair. \code{counterbalance.max_run} applies to the main and
+the counts are per list or pair: the filler and practice counts are the rows of
+their tables, which every list or pair receives, and the main block's count is that
+of the first list or pair. \code{counterbalance.max_run} applies to the main and
 filler trials together and to the practice trials on their own. With
 \code{counterbalance.orders: m}, \code{order_1} to \code{order_m} give each trial's position in
 each order, the practice trials first in every one.

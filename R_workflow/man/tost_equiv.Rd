@@ -26,3 +26,8 @@ supports equivalence within +/- \code{bound_d} standard deviations. A
 non-significant difference test is not itself evidence of equivalence, hence
 TOST is reported alongside the standardised mean difference (Lakens, 2017).
 }
+\references{
+Lakens, D. (2017). Equivalence tests: A practical primer for \emph{t} tests,
+correlations, and meta-analyses. \emph{Social Psychological and Personality Science,
+8}(4), 355-362. \doi{10.1177/1948550617697177}
+}

@@ -167,7 +167,7 @@ articles:
 # materials. lexsync-package is absent by design: roxygen marks it internal.
 reference:
 - title: Corpora and lexica
-  desc: Reach a word-frequency corpus in any registered language, and read it in.
+  desc: List the registered corpora, download one whose registry entry names a delimited file, turn a corpus file into a lexicon and read it in.
   contents:
   - list_corpora
   - fetch_corpus
@@ -192,7 +192,7 @@ reference:
   - match_stimuli
   - resample_stimuli
 - title: Continuous designs
-  desc: Span a predictor instead of dichotomising it, holding the control dimensions constant.
+  desc: Spread items over a predictor's ranks instead of dichotomising it, with tolerance windows that trim the tails of the controls.
   contents:
   - select_continuous_stimuli
   - match_report_continuous

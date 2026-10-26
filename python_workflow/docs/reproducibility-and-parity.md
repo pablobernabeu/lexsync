@@ -98,11 +98,8 @@ the 22 worked designs. One place they could drift is the event JSON embedded in 
 jsonlite pads no separators and drops a whole number's fractional part, serialising a 2000 ms
 timeout as `2` rather than `2.0`. Python is the side that conforms.
 
-The other place is trial order, which until recently was the one artefact the engines could not
-share. Each shuffled with its own seeded generator, R with `sample()` and Python with NumPy's
-PCG64, and the same seed could not give the same permutation, so the loop tables, and the `TRIALS`
-array the browser experiment embeds, used to differ. Both engines now order the trials of a list by
-a keyed hash instead: each row is ranked by the SHA-256 digest of
+The other place is trial order. R's `sample()` and NumPy's PCG64 generator cannot give the same
+permutation from the same seed, so both engines order the trials of a list by a keyed hash instead: each row is ranked by the SHA-256 digest of
 `seed|replicate|list|set|condition`, a tuple that identifies the trial uniquely under either
 counterbalancing recipe. Distinct inputs to SHA-256 behave as independent uniform draws, so
 ordering by the digest realises a seeded random permutation, but as a pure function of the design.
@@ -154,8 +151,8 @@ id, condition and presented fields of an item table, practice and filler tables 
 supplied reference list are normalised as read. A precomposed character such as é and its
 decomposed counterpart, the base letter followed by a combining accent, are therefore one
 character, and a lexicon that mixes the two conventions holds each word once, in the first row the
-file gives it. Before this, the two spellings were two words of different lengths, and the
-matcher could place them in opposite conditions of one matched set. When normalisation rewrites or
+file gives it. Unnormalised, the two spellings would be two words of different lengths, which the
+matcher could place in opposite conditions of one matched set. When normalisation rewrites or
 merges anything, the run log says how many forms it rewrote and how many duplicates it removed, and
 the datasheet records the two counts as `materials_source.input_normalisation`. Input already in
 NFC, the form most corpora distribute, leaves no trace.
@@ -167,7 +164,8 @@ uses the ICU it bundles or, on some Linux builds, the system's ICU, which may im
 version.
 
 The syllable estimator and the pseudoword generators carry a narrower contract still. Both are
-orthographic approximations defined for Latin orthographies. `count_syllables` decomposes a word
+orthographic approximations. The estimator is defined for Latin orthographies, and the generators
+for alphabetic scripts. `count_syllables` decomposes a word
 (NFD), sets its combining marks aside and counts the maximal runs of the letters a, e, i, o, u, y,
 æ, ø, dotless ı and œ, so a vowel counts whatever its accent, in Polish, Czech, Hungarian,
 Romanian, Turkish and Vietnamese as in English or Spanish. Hiatus (`idea` counts 2) and the Czech
@@ -176,9 +174,9 @@ points U+0001-U+024F, U+02B0-U+036F, U+1E00-U+1EFF and U+2000-U+206F gets no est
 `n_syllables` is NA in R and NaN in Python, and `run_pipeline` refuses a design that refers to
 `n_syllables` while its pool holds such a word. The test is on code-point ranges, which keeps the two
 engines independent of their Unicode tables, and the same stability policy fixes the decompositions.
-This page said before that the class covered the Latin-1 vowels, but it lacked æ, and every
-Chinese, Russian or Greek word counted 0 syllables. The pseudoword generators build their
-candidates from lower-case a to z. The shipped Chinese design matches on `length`, `n_density` and
+The pseudoword generators substitute among the letters the reference words attest, in UTF-8 byte
+order, so a Spanish lexicon lends them its accented vowels and ñ. They refuse a word in a
+logographic script such as Chinese. The shipped Chinese design matches on `length`, `n_density` and
 `old20` for these reasons.
 
 ## File names
@@ -190,9 +188,9 @@ would write the same files, the second overwriting the first. Whenever the name 
 holds a non-ASCII character, the stem therefore ends in an underscore and the first eight
 hexadecimal digits of the SHA-256 of the NFC-normalised text `name|language`. The two designs
 above write `chinese_14aadfa7` and `chinese_444a1c5f`. A name and language with no ASCII letter or
-digit at all, which used to give file names beginning with an underscore or a dot, get the eight
-digits alone, such as `e525cb84`. Normalising to NFC here keeps a precomposed and a decomposed
-spelling of one name on one stem. Names in plain ASCII are unaffected. `run_all` also computes every design's stem before it runs any, and refuses two
+digit at all get the eight digits alone, such as `e525cb84`. Normalising to NFC here keeps a
+precomposed and a decomposed spelling of one name on one stem. Names in plain ASCII are unaffected.
+`run_all` also computes every design's stem before it runs any, and refuses two
 designs that would write the same files, such as `en-lexdec` and `en_lexdec`.
 
 ## Where it stops
@@ -207,8 +205,8 @@ while `optimal` tends to select an equally optimal but different set, which is a
 reasonable thing for an optimal matcher to do when several assignments share the minimum. Neither is
 guaranteed byte-for-byte, and each run's datasheet records which case applies.
 
-This is why neither is the default, despite both being defensible improvements on it. The roadmap
-says as much: a covariance-aware distance is promoted to the default only if a determinism-safe
+This is why neither is the default, despite both being defensible improvements on it.
+[The roadmap](https://github.com/pablobernabeu/lexsync#roadmap) says as much: a covariance-aware distance is promoted to the default only if a determinism-safe
 implementation is found. The guarantee is a hard constraint on which algorithms can be adopted, not
 a nice property that the current defaults happen to have.
 
@@ -232,10 +230,8 @@ records it as `materials_source.zipf_derivation` in its datasheet and in its run
 entry's `derived` file, a lexicon normalised once and checksummed, lets both engines read the same
 bytes and leaves no such step at all.
 
-Trial order is no longer on this list. Earlier versions drew it from each engine's own seeded
-generator, reproducible within an engine, given `schema.seed`, and never across the two. The
-keyed-hash shuffle retired that exception: the permutation is part of the byte-identical surface,
-and the parity suite compares the `trial` column along with everything else.
+Trial order is not on this list: the keyed-hash shuffle makes the permutation part of the
+byte-identical surface, and the parity suite compares the `trial` column along with everything else.
 
 Corpus versions are not magic. A design pins the lexicon file it reads, and the bundled corpora are
 a fixed, checksummed snapshot, so the demonstrations reproduce with no download. The optional
@@ -244,11 +240,14 @@ wordfreq connector is pinned to its frozen 3.x line, a stable snapshot of usage 
 corpus from a URL that changes and lexsync cannot help you. The datasheet's SHA-256 of the
 source file will at least tell you that it changed.
 
-A reproducible lexicon is not a screened one. The bundled lexica are the most frequent forms
-wordfreq returns, so they hold proper names, acronyms and other forms that are not words of the
-language, and N and OLD20 are computed over them. Their share differs between frequency bands, which
-can confound a frequency contrast. The repository's `corpora/derived/en_v2.csv` marks such forms in
-the English lexicon, and [What the derived lexica
+A reproducible lexicon is not a screened one. The repository's `corpora/derived/en.csv`, `es.csv`
+and `zh.csv` hold the most frequent forms wordfreq returns, so they include proper names, acronyms
+and other forms that are not words of the language, and N and OLD20 are computed over them. Their
+share differs between frequency bands, which can confound a frequency contrast.
+`corpora/derived/en_v2.csv` marks such forms in the English lexicon and counts N and OLD20 among
+the others only. The package's English example holds only forms that `en_v2.csv` leaves unmarked,
+while its Spanish and Chinese examples are slices of `es.csv` and `zh.csv` and are not screened.
+[What the derived lexica
 contain](https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md#what-the-derived-lexica-contain)
 says what to check in a selection.
 
@@ -262,12 +261,17 @@ self-paced reading and three reproductions of published designs.
 
 Each case regenerates the Python selection and compares it against the committed R reference in
 `output/stimuli/<base>_stimuli_R.csv`. The comparison is exact and it has two parts. The identity
-columns, which are `word` or `target`, `condition` and `set`, must match as a set of rows. `set` is
-in there deliberately: it records which item was matched to which, and without it the test would
+columns must match as a set of rows. For a design that selects its own items, they are `word` or
+`target`, `condition` and `set`, and for one that reads an item table, they are `list`, `set`,
+`condition` and the item's presented fields, such as `prime` and `target` or `sentence`. A case adds
+the columns it exists to pin: `list` for balanced lists, `replicate` for resampled sets, `trial` for
+practice and filler blocks, the realised `prime_ms` and `iti_ms` for jittered timing, the joined
+member and pair columns for the pair-keyed design, the looked-up dimensions for a supplied pool,
+`prime_type` for the masked-priming reproduction and `answer` for categorisation. `set` is in there
+deliberately: it records which item was matched to which, and without it the test would
 place no constraint on the pairing at all. Then every other shared column is compared value by
 value, because the dimensions each engine computes at run time end up in the stimuli CSV and must
-agree too. `trial` is among them, now that the keyed-hash shuffle has brought order inside the
-contract.
+agree too. `trial` is among them, since the keyed-hash shuffle brings order inside the contract.
 
 Continuous integration closes the loopholes that would let this pass without meaning anything.
 `LEXSYNC_REQUIRE_PARITY=1` turns the graceful skip into a failure, so a job meant to run both
@@ -444,8 +448,9 @@ runlog.log_step(log, "loaded lexicon", {"words": 3000})
 runlog.write_run_log(log, "run_log.md", "run_log.jsonl")
 ```
 
-The Markdown log is for reading afterwards and the JSON Lines log is for anything that needs to
-parse it. Between the two of them, plus the datasheet's checksums and the design file, a run is
+The Markdown log is for reading afterwards, and it alone carries the run metadata, such as the seed
+and the schema path. The JSON Lines log holds the steps, one object per line, for anything that
+needs to parse them. Between the two of them, plus the datasheet's checksums and the design file, a run is
 reconstructible from its own output.
 
 ## Reproducing the demonstrations

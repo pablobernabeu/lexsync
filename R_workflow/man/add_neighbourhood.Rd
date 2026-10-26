@@ -9,18 +9,27 @@ add_neighbourhood(df, reference = df$word, n_old = 20L)
 \arguments{
 \item{df}{A data frame with a \code{word} column.}
 
-\item{reference}{A character vector of reference words.}
+\item{reference}{A character vector of reference words, \code{df$word} by default.
+Duplicates count once.}
 
-\item{n_old}{Neighbourhood size for OLD (default 20).}
+\item{n_old}{Neighbourhood size for OLD (default 20). The column is named \code{old20}
+whatever its value.}
 }
 \value{
-\code{df} with added integer \code{n_density} and numeric \code{old20} columns.
+\code{df} with added integer \code{n_density} and numeric \code{old20} columns. A word with
+fewer than \code{n_old} other words in the reference has the mean over those it has, and
+\code{old20} is \code{NA} for a word with none.
 }
 \description{
 \code{n_density} is Coltheart's N: the number of reference words of the same
 length differing by a single letter substitution (Hamming distance 1).
-\code{old20} is the mean Levenshtein distance to the 20 nearest reference words
-(Yarkoni et al., 2008). Both are computed against \code{reference}, which
+\code{old20} is the mean Levenshtein distance to the \code{n_old} (default 20) nearest other
+reference words (Yarkoni et al., 2008). Both are computed against \code{reference}, which
 should be a large word list (typically the whole lexicon), not just the
 experimental pool.
+}
+\references{
+Yarkoni, T., Balota, D., & Yap, M. (2008). Moving beyond Coltheart's N:
+A new measure of orthographic similarity. \emph{Psychonomic Bulletin & Review, 15}(5),
+971-979. \doi{10.3758/PBR.15.5.971}
 }

@@ -14,13 +14,13 @@
 # ---- One CSV reading rule, shared by both engines ----------------------------
 #
 # readr and pandas each guess a column's type by their own heuristics, and the two
-# disagreed on ordinary input. readr trimmed fields and headers and pandas trimmed
-# nothing, so a padded category made the Python engine refuse a design this engine ran.
-# readr guessed types from the first 1,000 rows, read T and F as logical, "1,000" as a
-# number and ISO dates as dates, so a pass-through column was written `FALSE` here and
-# `F` by the Python engine. Both engines therefore read every cell as text and convert
-# it here, by one rule written out in each. Must stay identical to read_csv_utf8 and
-# _type_column in python_workflow/src/lexsync/io_utils.py.
+# disagree on ordinary input. readr trims fields and headers and pandas trims nothing,
+# so a padded category would make the Python engine refuse a design this engine runs.
+# readr guesses types from the first 1,000 rows and reads T and F as logical, "1,000"
+# as a number and ISO dates as dates, so a pass-through column would be written
+# `FALSE` here and `F` by the Python engine. Both engines therefore read every cell as
+# text and convert it here, by one rule written out in each. Must stay identical to
+# read_csv_utf8 and _type_column in python_workflow/src/lexsync/io_utils.py.
 #
 # The characters trimmed from every header name and cell: the ASCII whitespace readr's
 # trim_ws removed. A no-break space is data in both engines.
@@ -329,6 +329,12 @@ read_csv_utf8 <- function(path, as_character = character(0), delim = ",") {
 
 #' Refuse a value the two engines could not write identically
 #'
+#' A double column (an integer column passes) is refused, naming the column and the
+#' value, when a finite value's magnitude is 1e15 or more, where readr's number layout
+#' cannot be reproduced in Python, or when a value that is not a whole number lies
+#' between 2^49 and 1e15 and has two equally short decimal forms, of which the two
+#' writers pick opposite ones.
+#'
 #' Nothing lexsync computes reaches these magnitudes (frequencies are Zipf values under
 #' 8, counts and durations under 1e6), but a joined norm table, a supplied pool
 #' or an item table may carry any column the user likes, and those columns go straight
@@ -420,10 +426,10 @@ write_lines_lf <- function(x, path) {
 # A sum, mean, variance and median that give the same bits in the R and Python
 # engines.
 #
-# This is not pedantry; it was a live bug. Two designs' reported means differed between
-# the engines in the last decimal place the descriptives publish, 1.448 from R against
-# 1.447 from numpy, because R's mean() uses a two-pass long-double algorithm while
-# numpy sums pairwise, and the true value happened to sit on a rounding boundary.
+# This is not pedantry. R's mean() uses a two-pass long-double algorithm while numpy
+# sums pairwise, so a mean whose true value sits on a rounding boundary can differ
+# between the engines in the last decimal place the descriptives publish (1.448 against
+# 1.447).
 # Summing 20000 identical doubles was measured to give three different answers across
 # R's sum(), math.fsum, numpy's pairwise sum and a naive loop, so no language's
 # built-in reduction can be relied on for a cross-engine artefact.
@@ -432,7 +438,7 @@ write_lines_lf <- function(x, path) {
 # arithmetic in both engines. Every operation is +, -, abs or a comparison, and
 # IEEE-754 requires + and - to be correctly rounded, so the two engines execute the
 # same sequence of exactly-specified operations and cannot disagree. That is an
-# argument. Relying on R's long-double accumulator amounted only to a measurement.
+# argument. Relying on R's long-double accumulator would amount only to a measurement.
 # Mirrors io_utils.py.
 
 #' @keywords internal
@@ -614,15 +620,13 @@ sha256_file <- function(path) {
 
 # Is this design a continuous (non-dichotomised) selection?
 #
-# One predicate, where there were four copies of the same expression. It was repeated
-# verbatim in run_pipeline.R, datasheet.R and both Python twins, which is how a
-# `continuous:` block under `items.source: table` came to be silently inert in all
-# four places at once. `pool` belongs in the allowed set because run_pipeline's
-# corpus/pool branch handles continuous selection generically; leaving it out sent a
-# continuous design over a supplied pool to the conditions matcher, which then failed
-# with a different obscure error in each engine. `generate` stays excluded
-# deliberately: a continuous block there would push a word/pseudoword frame into the
-# selector.
+# One predicate for every caller in this engine, mirrored by _is_continuous in the
+# Python engine, so a `continuous:` block cannot be honoured in one place and silently
+# inert in another. `pool` belongs in the allowed set because run_pipeline's
+# corpus/pool branch handles continuous selection generically; leaving it out would
+# send a continuous design over a supplied pool to the conditions matcher. `generate`
+# is refused deliberately: a continuous block there would push a word/pseudoword
+# frame into the selector.
 # Must stay identical to _is_continuous in python_workflow/src/lexsync/io_utils.py.
 #' @keywords internal
 .is_continuous <- function(design) {
@@ -642,7 +646,7 @@ sha256_file <- function(path) {
 # become the escape text "<c3><a9>". A Python str carries no mark and is always hashed
 # as the UTF-8 of its code points. An unmarked string that is valid UTF-8 is therefore
 # taken to be UTF-8, the encoding lexsync reads every input in, and anything else is
-# converted from its mark or from the session's encoding as before.
+# converted from its mark or from the session's encoding.
 #' @keywords internal
 .as_utf8 <- function(x) {
   x <- as.character(x)
@@ -733,13 +737,16 @@ hash_int_range <- function(key, lo, hi) {
   as.integer(lo + floor(hash_unit(key) * (hi - lo + 1)))
 }
 
-#' Build a short, filesystem-safe slug
+#' Build a filesystem-safe slug
 #'
-#' Keeps generated file names short and space-free, which avoids the Windows
-#' `MAX_PATH` limit inside deeply nested, cloud-synced directories.
+#' Joins the fragments with underscores, turns every run of characters other than
+#' ASCII letters and digits into one underscore, trims underscores from both ends and
+#' lower-cases the result without regard to the locale. The slug carries no spaces or
+#' punctuation, but its length is not limited: long fragments give a long slug.
 #'
 #' @param ... Character fragments to join.
-#' @return A lower-case, underscore-separated slug.
+#' @return A lower-case, underscore-separated slug of ASCII letters and digits, empty
+#'   when the fragments hold none.
 #' @keywords internal
 slugify <- function(...) {
   s <- paste(c(...), collapse = "_")
@@ -753,11 +760,11 @@ slugify <- function(...) {
 }
 
 # YAML 1.1 lists y, Y, n and N among its booleans. yaml::read_yaml() follows it, while
-# PyYAML, the Python engine's reader, keeps the four as text. `keys: [y, n]` therefore
-# gave this engine the keys TRUE and FALSE and the Python engine y and n, and a mapping
-# key `n:` became the name "FALSE". These handlers keep the four as text. The other
-# spellings yaml resolves to a boolean, such as yes, off and True, stay booleans to
-# both readers. Mirrors read_config in io_utils.py.
+# PyYAML, the Python engine's reader, keeps the four as text. `keys: [y, n]` would
+# therefore give this engine the keys TRUE and FALSE and the Python engine y and n, and
+# a mapping key `n:` would become the name "FALSE". These handlers keep the four as
+# text. The other spellings yaml resolves to a boolean, such as yes, off and True, stay
+# booleans to both readers. Mirrors read_config in io_utils.py.
 .YAML_BOOL_HANDLERS <- list(
   "bool#yes" = function(x) if (x %in% c("y", "Y")) x else TRUE,
   "bool#no" = function(x) if (x %in% c("n", "N")) x else FALSE
@@ -765,15 +772,15 @@ slugify <- function(...) {
 
 # Parse a YAML file as UTF-8 whatever the session locale. yaml::read_yaml() reads
 # through a connection that converts the text to the session's encoding, which under
-# the C locale is ASCII, so the text ended at the first accented letter: a design came
-# back holding the keys before it, with a warning, and the bundled registry, whose
-# citations carry accents, failed to parse. A file that is not UTF-8 was cut short in
-# the same way in any locale, where the Python engine refuses it. The bytes are read
-# as they are, as .read_utf8_lines() reads a word list, so the locale plays no part: a
-# byte-order mark is dropped, and text that is not UTF-8 or holds a NUL is refused.
-# libyaml takes LF, CRLF and CR as line breaks, and a block scalar that ends the file
-# keeps its final line break, as PyYAML keeps it and read_yaml() did not, since it
-# joined the lines without the last line feed. The parser is the one read_yaml()
+# the C locale is ASCII, so the text would end at the first accented letter: a design
+# would come back holding the keys before it, with a warning, and the bundled registry,
+# whose citations carry accents, would fail to parse. A file that is not UTF-8 would be
+# cut short in the same way in any locale, where the Python engine refuses it. The bytes
+# are read as they are, as .read_utf8_lines() reads a word list, so the locale plays no
+# part: a byte-order mark is dropped, and text that is not UTF-8 or holds a NUL is
+# refused. libyaml takes LF, CRLF and CR as line breaks, and a block scalar that ends
+# the file keeps its final line break, as PyYAML keeps it and read_yaml() does not,
+# since it joins the lines without the last line feed. The parser is the one read_yaml()
 # calls, so a repeated mapping key is still refused. `...` goes to yaml::yaml.load(),
 # as `handlers` from read_config().
 #' @importFrom yaml yaml.load
@@ -846,7 +853,7 @@ clean_field <- function(value, field = "field", max_len = 1000L) {
 #   $               begins a JavaScript template substitution
 .UNSAFE_META <- "['\"\\\\`<>&{};$]"
 # \z and not $: in PCRE (and in Python's re) `$` also matches just BEFORE a final
-# newline, so a value ending in one satisfied a `$`-anchored shape check and carried
+# newline, so a value ending in one would satisfy a `$`-anchored shape check and carry
 # that newline into a line-oriented .osexp, splitting the inline script it landed in.
 # Anchoring at end-of-string is the whole guard here.
 .PORT_SHAPE <- "^(0[xX][0-9A-Fa-f]{1,8}|[0-9]{1,10})\\z"

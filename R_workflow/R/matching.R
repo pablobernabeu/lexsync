@@ -5,7 +5,7 @@
 # generator is used, the R and Python engines return identical selections from
 # identical input.
 #
-# Cross-engine determinism: the default methods (standardised_euclidean, joint) are
+# Cross-engine determinism: standardised_euclidean (the default) and joint are
 # byte-identical across the R and Python engines. The optional mahalanobis and
 # optimal methods are the exception, because they use a covariance-matrix inverse and
 # a linear-assignment solver whose last bits differ between the two linear-algebra
@@ -154,10 +154,25 @@
 
 #' Match stimuli across conditions on several lexical dimensions
 #'
-#' The first condition is the anchor; its items are chosen by an even spread
-#' across the sorted candidate subpool. Every other condition is then matched to
-#' the anchor item by item, on the `match_on` dimensions, using standardised
-#' Euclidean distance under a tolerance window derived from the anchor.
+#' Under the default method, the first condition is the anchor; its items are chosen
+#' by an even spread across the sorted candidate subpool. Every other condition is
+#' then matched to the anchor item by item, on the `match_on` dimensions, using
+#' standardised Euclidean distance under a tolerance window derived from the anchor.
+#'
+#' `method`, read from the design's `matching` block with the schema as fallback,
+#' chooses the matcher. `"standardised_euclidean"` (the default) is the anchored
+#' procedure above. `"mahalanobis"` is the same procedure with distances weighted by
+#' the inverse of the pool's correlation matrix, which, with two or more matched
+#' dimensions, needs at least k + 2 pool rows complete on the k dimensions.
+#' `"joint"` and `"optimal"` need exactly two conditions. They drop the anchor and
+#' pair the two conditions' candidates directly: `joint` takes the cheapest disjoint
+#' pairs first, and `optimal` takes the `n` pairs of least summed distance (exactly so
+#' for disjoint conditions) and needs the 'clue' package. Neither consults
+#' `tolerance_k` or `on_insufficient_tolerance`, and each first keeps at most 1,200
+#' candidates per condition, those nearest the other condition's centroid.
+#' `standardised_euclidean` and `joint` select the same stimuli in the R and Python
+#' engines. `mahalanobis` and `optimal` agree closely but not byte for byte, and
+#' `optimal` may return a different set of pairs with the same summed distance.
 #'
 #' Two policies govern degraded selections, each read from the design's
 #' `matching` block with the schema as fallback: `shortfall` (`"error"`, the
@@ -273,12 +288,12 @@ match_stimuli <- function(pool, design, schema, verbose = FALSE) {
   }
 
   # A candidate missing a matched dimension has no distance to any counterpart, so
-  # whatever a method did with it, the tie-break decided. The anchored path paired
-  # such an anchor with the byte-first word in its window, or re-picked a used
-  # candidate. Joint matching took it once the complete pairs ran out, and optimal
-  # matching handed the missing cost to a solver that refused it. Every method
-  # therefore starts from the rows complete on match_on, and the count excluded per
-  # condition goes into the audit for the run log and the datasheet.
+  # the match would not decide what happens to it. The anchored path would pair such
+  # an anchor with the first candidate in tie-break order, joint matching would take
+  # it once the complete pairs ran out, and optimal matching would hand the missing
+  # cost to a solver that refuses it. Every method therefore starts from the rows
+  # complete on match_on, and the count excluded per condition goes into the audit
+  # for the run log and the datasheet.
   incomplete <- list()
   for (i in seq_along(subpools)) {
     sp <- subpools[[i]]
@@ -420,9 +435,9 @@ match_stimuli <- function(pool, design, schema, verbose = FALSE) {
       } else {
         dvec <- .round_dp(sqrt(pmax(rowSums((delta %*% metric) * delta), 0)), 9)
       }
-      # Only unused candidates compete. Giving a used one an infinite distance was not
-      # enough, because order() ranks a missing distance after infinity and an anchor
-      # without a value then re-picked a used candidate. order()'s na.last default
+      # Only unused candidates compete. An infinite distance for a used one would not be
+      # enough, because order() ranks a missing distance after infinity, so an anchor
+      # without a value could re-pick a used candidate. order()'s na.last default
       # still ranks a missing distance last, as the Python engine does.
       free <- which(!used)
       best <- free[order(dvec[free], tie_keys[free], cand_f$id[free],
@@ -528,8 +543,8 @@ match_joint <- function(subpools, cond_names, match_on, center, scale_, n, cap =
 .maha_metric <- function(z_pool, ridge = 1e-6) {
   if (ncol(z_pool) == 1L) return(matrix(1, 1, 1))
   # cor() under its default use = "everything" returns NA for every pair involving a
-  # column with a missing value, and zeroing that NA used to drop the dimension's
-  # whole row and column, so a partially covering norm entered the distance as an
+  # column with a missing value, and zeroing that NA would drop the dimension's
+  # whole row and column, entering a partially covering norm in the distance as an
   # independent term. The rows complete on every dimension are the cases the matcher
   # can score at all, since match_stimuli excludes the others before it selects.
   # Below k + 1 rows the k-by-k sample correlation matrix is singular, and the guard
@@ -614,6 +629,15 @@ match_joint <- function(subpools, cond_names, match_on, center, scale_, n, cap =
 #' words not yet used, until `n` pairs are found or no further pair exists. The
 #' selection is then no longer guaranteed to have the least summed distance. For
 #' disjoint conditions, one solve suffices.
+#'
+#' @references Gu, X. S., & Rosenbaum, P. R. (1993). Comparison of multivariate
+#'   matching methods: Structures, distances, and algorithms. *Journal of
+#'   Computational and Graphical Statistics, 2*(4), 405-420.
+#'   \doi{10.1080/10618600.1993.10474623}
+#'
+#'   Volgenant, A. (2004). Solving the *k*-cardinality assignment problem by
+#'   transformation. *European Journal of Operational Research, 157*(2), 322-331.
+#'   \doi{10.1016/S0377-2217(03)00205-4}
 #'
 #' @keywords internal
 match_optimal <- function(subpools, cond_names, match_on, center, scale_, n, cap = .PAIRWISE_CAP,
@@ -713,8 +737,22 @@ match_optimal <- function(subpools, cond_names, match_on, center, scale_, n, cap
 #' relaxed window is recorded as computed, and the relaxation in
 #' `window_relaxations`.
 #'
+#' @references Kuperman, V. (2015). Virtual experiments in megastudies: A case study of
+#'   language and emotion. *Quarterly Journal of Experimental Psychology, 68*(8),
+#'   1693-1710. \doi{10.1080/17470218.2014.989865}
+#'
+#'   Liben-Nowell, D., Strand, J., Sharp, A., Wexler, T., & Woods, K. (2019). The
+#'   danger of testing by selecting controlled subsets, with applications to
+#'   spoken-word recognition. *Journal of Cognition, 2*(1), Article 2.
+#'   \doi{10.5334/joc.51}
+#'
 #' @param pool A candidate pool with the predictor and control dimensions present.
-#' @param design A parsed design configuration carrying a `continuous` block.
+#' @param design A parsed design configuration carrying a `continuous` block
+#'   (`predictor` and `controls`). The number of items is `n_per_condition`, else
+#'   `n_per_cell`, and either must be a whole number of at least 1. It is 60 when
+#'   neither key is given. `tolerance_k`, `shortfall` and `on_insufficient_tolerance`
+#'   are read from its `matching` block with the schema as fallback, as for
+#'   [match_stimuli()], and a relaxed window widens to the whole complete pool.
 #' @param schema The parsed global schema (tolerance windows).
 #' @param verbose Logical; report a window relaxation.
 #' @param key Column used as the selection unit and the byte-order tie-break, by
@@ -773,9 +811,9 @@ select_continuous_stimuli <- function(pool, design, schema, verbose = FALSE,
          call. = FALSE)
   }
   # A row missing the predictor sorts last and the even spread always takes the last
-  # row, so such rows were selected and then analysed without their predictor. A row
-  # missing a control fails every window but comes back when the window relaxes to the
-  # whole pool. Both are excluded before the first pass.
+  # row, so such rows would be selected and then analysed without their predictor. A row
+  # missing a control would fail every window but come back when the window relaxes to
+  # the whole pool. Both are excluded before the first pass.
   complete <- stats::complete.cases(pool[, c(predictor, controls), drop = FALSE])
   n_drop <- sum(!complete)
   incomplete <- list()
@@ -860,8 +898,15 @@ select_continuous_stimuli <- function(pool, design, schema, verbose = FALSE,
 #' items of earlier replicates removed, so no item is reused. This lets a study
 #' treat its items as a random factor (running different item samples across
 #' participant groups, or showing an effect holds across samples) instead of treating
-#' them as a fixed set (Clark, 1973; Yarkoni, 2022). Deterministic and identical to the
-#' Python engine.
+#' them as a fixed set (Clark, 1973; Yarkoni, 2022). Deterministic, and identical to the
+#' Python engine under the `standardised_euclidean` and `joint` methods.
+#'
+#' @references Clark, H. H. (1973). The language-as-fixed-effect fallacy: A critique of
+#'   language statistics in psychological research. *Journal of Verbal Learning and
+#'   Verbal Behavior, 12*(4), 335-359. \doi{10.1016/S0022-5371(73)80014-3}
+#'
+#'   Yarkoni, T. (2022). The generalizability crisis. *Behavioral and Brain Sciences,
+#'   45*, Article e1. \doi{10.1017/S0140525X20001685}
 #'
 #' @param pool A candidate pool with the `match_on` dimensions present.
 #' @param design A parsed design configuration.

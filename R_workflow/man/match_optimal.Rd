@@ -41,4 +41,14 @@ words not yet used, until \code{n} pairs are found or no further pair exists. Th
 selection is then no longer guaranteed to have the least summed distance. For
 disjoint conditions, one solve suffices.
 }
+\references{
+Gu, X. S., & Rosenbaum, P. R. (1993). Comparison of multivariate
+matching methods: Structures, distances, and algorithms. \emph{Journal of
+Computational and Graphical Statistics, 2}(4), 405-420.
+\doi{10.1080/10618600.1993.10474623}
+
+Volgenant, A. (2004). Solving the \emph{k}-cardinality assignment problem by
+transformation. \emph{European Journal of Operational Research, 157}(2), 322-331.
+\doi{10.1016/S0377-2217(03)00205-4}
+}
 \keyword{internal}

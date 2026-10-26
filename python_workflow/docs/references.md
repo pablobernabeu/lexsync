@@ -64,6 +64,12 @@ Forster, K. I., & Davis, C. (1984). Repetition priming and frequency attenuation
 <https://doi.org/10.1037/0278-7393.10.4.680>
 { #forster-1984 }
 
+González Alonso, J., Bernabeu, P., Silva, G., DeLuca, V., Poch, C., Ivanova, I., & Rothman, J.
+(2025). Starting from the very beginning: Unraveling third language (L3) development with
+longitudinal data from artificial language learning and EEG. *International Journal of
+Multilingualism*, *22*(1), 119–142. <https://doi.org/10.1080/14790718.2024.2415993>
+{ #gonzalez-alonso-2025 }
+
 Gu, X. S., & Rosenbaum, P. R. (1993). Comparison of multivariate matching methods: Structures,
 distances, and algorithms. *Journal of Computational and Graphical Statistics*, *2*(4), 405–420.
 <https://doi.org/10.1080/10618600.1993.10474623>

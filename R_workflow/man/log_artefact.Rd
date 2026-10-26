@@ -19,3 +19,7 @@ The updated run-log object.
 \description{
 Record a written artefact (path, rows, fingerprint) in the log
 }
+\details{
+The step is added with \code{\link[=log_step]{log_step()}}, so it is printed to the console as
+\verb{[lexsync] wrote '<file>'} while the option \code{lexsync.verbose} is \code{TRUE}.
+}

@@ -30,6 +30,14 @@ Each replicate is an independent, fully matched set drawn from the pool with the
 items of earlier replicates removed, so no item is reused. This lets a study
 treat its items as a random factor (running different item samples across
 participant groups, or showing an effect holds across samples) instead of treating
-them as a fixed set (Clark, 1973; Yarkoni, 2022). Deterministic and identical to the
-Python engine.
+them as a fixed set (Clark, 1973; Yarkoni, 2022). Deterministic, and identical to the
+Python engine under the \code{standardised_euclidean} and \code{joint} methods.
+}
+\references{
+Clark, H. H. (1973). The language-as-fixed-effect fallacy: A critique of
+language statistics in psychological research. \emph{Journal of Verbal Learning and
+Verbal Behavior, 12}(4), 335-359. \doi{10.1016/S0022-5371(73)80014-3}
+
+Yarkoni, T. (2022). The generalizability crisis. \emph{Behavioral and Brain Sciences,
+45}, Article e1. \doi{10.1017/S0140525X20001685}
 }

@@ -158,10 +158,10 @@ wordfreq's terms require that work derived from it credit the SUBTLEX authors
 and keep it clear that SUBTLEX is freely available data. The lists it carries
 are:
 
-- Brysbaert, M., & New, B. (2009). SUBTLEX-US. Behavior Research Methods, 41(4), 977-990. https://doi.org/10.3758/BRM.41.4.977
-- van Heuven, W. J. B., Mandera, P., Keuleers, E., & Brysbaert, M. (2014). SUBTLEX-UK. Quarterly Journal of Experimental Psychology, 67(6), 1176-1190. https://doi.org/10.1080/17470218.2013.850521
-- Cai, Q., & Brysbaert, M. (2010). SUBTLEX-CH. PLoS ONE, 5(6), e10729. https://doi.org/10.1371/journal.pone.0010729
-- Brysbaert, M., Buchmeier, M., Conrad, M., Jacobs, A. M., Bölte, J., & Böhl, A. (2011). SUBTLEX-DE. Experimental Psychology, 58(5), 412-424. https://doi.org/10.1027/1618-3169/a000123
-- Keuleers, E., Brysbaert, M., & New, B. (2010). SUBTLEX-NL. Behavior Research Methods, 42(3), 643-650. https://doi.org/10.3758/BRM.42.3.643
+- Brysbaert, M., & New, B. (2009). Moving beyond Kučera and Francis: A critical evaluation of current word frequency norms and the introduction of a new and improved word frequency measure for American English. Behavior Research Methods, 41(4), 977-990. https://doi.org/10.3758/BRM.41.4.977
+- van Heuven, W. J. B., Mandera, P., Keuleers, E., & Brysbaert, M. (2014). SUBTLEX-UK: A new and improved word frequency database for British English. Quarterly Journal of Experimental Psychology, 67(6), 1176-1190. https://doi.org/10.1080/17470218.2013.850521
+- Cai, Q., & Brysbaert, M. (2010). SUBTLEX-CH: Chinese word and character frequencies based on film subtitles. PLoS ONE, 5(6), e10729. https://doi.org/10.1371/journal.pone.0010729
+- Brysbaert, M., Buchmeier, M., Conrad, M., Jacobs, A. M., Bölte, J., & Böhl, A. (2011). The word frequency effect: A review of recent developments and implications for the choice of frequency estimates in German. Experimental Psychology, 58(5), 412-424. https://doi.org/10.1027/1618-3169/a000123
+- Keuleers, E., Brysbaert, M., & New, B. (2010). SUBTLEX-NL: A new measure for Dutch word frequency based on film subtitles. Behavior Research Methods, 42(3), 643-650. https://doi.org/10.3758/BRM.42.3.643
 
 - See corpora/registry.yaml for the curated, individually citable SUBTLEX/openlexicon corpora that lexsync supports as separate resources. Those are loaded directly by a user, and none of them is the source of anything bundled here except SUBTLEX-US, which supplies the screening columns of `en_v2.csv` and chose the rows of the packages' English example slices.

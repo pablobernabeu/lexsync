@@ -153,9 +153,8 @@ default_registry_path <- function() {
 }
 
 # The registry a call reads. A path the caller names is read on its own, so a missing
-# one is refused by name, not with the connection error file() gives. The Python twin
-# fell through to another registry in that case. Mirrors _registry_path() in
-# python_workflow/src/lexsync/corpora.py.
+# one is refused by name, not with the connection error file() gives. Mirrors
+# _registry_path() in python_workflow/src/lexsync/corpora.py.
 .registry_path <- function(registry_path = NULL) {
   if (is.null(registry_path)) return(default_registry_path())
   if (!file.exists(registry_path)) {
@@ -167,8 +166,18 @@ default_registry_path <- function() {
 #' List the corpora known to the registry
 #'
 #' @param registry_path Optional path to `registry.yaml`. A path that does not exist
-#'   is refused.
-#' @return A data frame describing each registered corpus.
+#'   is refused. `NULL` (the default) takes `getOption("lexsync.registry")` when it
+#'   names a file that exists, and passes over one that does not without a warning. It
+#'   then takes the first that exists of `corpora/registry.yaml` and
+#'   `../corpora/registry.yaml` relative to the working directory, and last the copy
+#'   bundled with the package,
+#'   `system.file("extdata", "registry.yaml", package = "lexsync")`.
+#' @return A data frame with one row per entry under `corpora` in the registry and the
+#'   columns `name`, `language` (the language's name), `iso` (its code), `status`
+#'   (`validated`, `supported`, `manual` or `listed`, as the registry's header defines
+#'   them), `connector` (`"openlexicon"` when the entry names none) and `citation`. The
+#'   wordfreq connector and its languages have no row, and each entry's licence is in
+#'   the registry file, not in the data frame.
 #' @export
 list_corpora <- function(registry_path = NULL) {
   reg <- .read_yaml_utf8(.registry_path(registry_path))
@@ -256,9 +265,14 @@ list_corpora <- function(registry_path = NULL) {
 #' `fetch_corpus("subtlex_us")` caches SUBTLEX-US as a lexicon. The URL's scheme is
 #' checked first. The transfer then lands in a sidecar file that is renamed into
 #' place only after the size cap, the markup sniff, any `sha256` the registry entry
-#' carries and the normalisation have all passed. Every refusal names the registry
-#' file it read. The download is recorded so it can be cited; consult
-#' [list_corpora()] for the citation.
+#' carries and the normalisation have all passed. A refusal of the registry entry, a
+#' failed transfer and a checksum mismatch name the registry file read. On success, a
+#' message gives the corpus's citation, which [list_corpora()] also lists, and a run
+#' that reads the file from the cache credits that citation in its datasheet (see
+#' [build_datasheet()]). The transfer uses [utils::download.file()], so it is subject
+#' to `getOption("timeout")`, 60 seconds by default, which is often too short for a
+#' large file. Raise it, for example with `options(timeout = 600)`, before fetching a
+#' large corpus.
 #'
 #' The lexica of the wordfreq connector's languages are built by the Python package
 #' (`lexsync fetch fr`), and this package reads the result with [load_lexicon()]. A
@@ -278,7 +292,8 @@ list_corpora <- function(registry_path = NULL) {
 #'
 #' @param name A corpus name present in the registry.
 #' @param registry_path Optional path to `registry.yaml`. A path that does not exist
-#'   is refused.
+#'   is refused. `NULL` (the default) finds the registry as [list_corpora()]
+#'   describes.
 #' @param dest Optional destination file; defaults to `<name>.csv` in
 #'   [lexsync_cache_dir()].
 #' @return The path to the downloaded file, invisibly.

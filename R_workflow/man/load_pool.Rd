@@ -7,7 +7,8 @@
 load_pool(path, schema, lexicon = NULL, language = NULL)
 }
 \arguments{
-\item{path}{Path to a UTF-8 CSV with at least a \code{word} column.}
+\item{path}{Path to a UTF-8 CSV with at least a \code{word} column. A path with a \code{..}
+component is refused. Give it from the working directory, or as an absolute path.}
 
 \item{schema}{The parsed schema (used when a lexicon is loaded).}
 

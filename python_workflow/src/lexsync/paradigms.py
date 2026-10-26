@@ -8,20 +8,29 @@ matter of configuration.
 
 An *event* is a small dictionary::
 
-    {type, content, duration_frames|duration_ms, trigger, onset_locked, keys, timeout_ms,
-     from, case, length_of}
+    {type, content, duration_frames|duration_ms|duration, trigger, onset_locked, keys,
+     timeout_ms, from, case, length_of, sep, advance, critical_region_trigger, answer,
+     correct, incorrect, no_response}
 
 ``type``     one of fixation | text | mask | blank | region_by_region | response |
              question | feedback
 ``content``  a literal ("+", "#####") or a field reference ("{target}", "{sentence}")
-``trigger``  a whole-number EEG code from 1 to 255, or the token "condition" / "item"
-``onset_locked``  write the trigger on the event's verified onset flip
+``duration``  a per-trial duration, {from_column: <column>} or
+             {jitter: [low, high], as: <column>}
+``trigger``  a whole-number EEG code from 1 to 255, or the token "condition" / "item",
+             written on the event's onset flip
+``onset_locked``  accepted, but it does not change when the trigger is written
 ``from``     where a response's window opens: "onset", with the text event before it
              (the default after a text event), or "offset", once that has gone
 ``case``     a text event's letter case on screen, "upper" or "lower", applied by the
              runners as they show the text
 ``length_of``  a mask's fields: its one-character content is repeated to the length,
              in characters, of the longest of these fields among the trials
+``sep``, ``advance``, ``critical_region_trigger``  a region_by_region event's region
+             delimiter ("|"), advance key ("space") and critical-region code, given as
+             ``trigger`` is
+``answer``, ``correct``, ``incorrect``, ``no_response``  a feedback event's answer
+             field and its three messages
 ``blocks``   restrict the event to the named blocks (see blocks.add_blocks)
 
 This module is pure data and small helpers, identical in the R and Python
@@ -32,7 +41,8 @@ from __future__ import annotations
 
 import re
 
-# Default frame durations (at 60 Hz) and response timeout, overridable per design.
+# Default frame counts (at 60 Hz) of the fixation, the critical word and the blank,
+# which a design's `timing` block (fixation_*, word_*, isi_*) overrides.
 _FIX = 30
 _WORD = 48
 _ISI = 15
@@ -83,12 +93,13 @@ PARADIGMS = {
             {"type": "blank", "duration_frames": _ISI},
         ],
     },
-    # Masked priming as Forster and Davis (1984) introduced it: a forward mask of hash
-    # marks for 500 ms, the prime in lower case for 3 frames (50 ms at 60 Hz) and the
-    # target in upper case, which masks the prime and stays on until the response or
-    # for 2,000 ms. Without the forward mask, a prime this brief is usually visible. The
-    # mask has as many marks as the longest prime or target has characters, counted
-    # when the experiments are written. The runners apply the case as they show the
+    # Masked priming in the arrangement of Forster and Davis (1984): a forward mask of
+    # hash marks, a brief prime in lower case and the target in upper case, which masks
+    # the prime. The durations are lexsync's defaults: the mask for 500 ms, the prime for
+    # 3 frames (50 ms at 60 Hz) and the target until the response or for 2,000 ms.
+    # Without the forward mask, a prime this brief is usually visible. The mask has as
+    # many marks as the longest prime or target has characters, counted when the
+    # experiments are written. The runners apply the case as they show the
     # text, since R's toupper() leaves the German sharp s as it is and Python's gives
     # "SS". The target's response is collected from its onset, and its display lasts the
     # whole window, so the timeout after the display is 0.
@@ -150,6 +161,17 @@ PARADIGMS = {
         ],
     },
 }
+"""The registered paradigms, keyed by name: ``factorial``, ``lexical_decision``,
+``priming``, ``masked_priming``, ``categorisation`` and ``self_paced_reading``.
+
+Each entry holds three keys. ``stimulus_fields`` lists the trial fields the paradigm
+requires, which ``required_fields`` returns with any field the design's events add.
+``counterbalance`` is the recipe, ``factorial`` or ``latin_square_target``, that
+``counterbalance`` applies unless the design names ``counterbalance.recipe``.
+``events`` is the default trial-event sequence that ``resolve_events`` returns when the
+design gives no ``events``. The guide Experiments and triggers describes the event keys
+and each paradigm's trial.
+"""
 
 _FIELD_RE = re.compile(r"\{([A-Za-z_][A-Za-z0-9_]*)\}")
 

@@ -6,9 +6,19 @@
 \usage{
 segment_subsyllabic(word)
 }
+\arguments{
+\item{word}{A single word.}
+}
+\value{
+A list of \code{list(role, text)} in word order, \code{role} being \code{"onset"},
+\code{"nucleus"} or \code{"coda"} and \code{text} lower case, or an empty list when the word
+cannot be segmented.
+}
 \description{
-Nuclei are the maximal runs of vowels, a vowel being a letter whose base letter is
-in the vowel class of \code{\link[=count_syllables]{count_syllables()}}, so an accented vowel counts. Consonants
+Nuclei are the maximal runs of vowels in the lower-cased word, a vowel being a
+letter whose base letter, once its accents are set aside, is a, e, i, o, u or y, or
+ae (U+00E6), o with stroke (U+00F8), dotless i (U+0131) or oe (U+0153), the vowel
+class of \code{\link[=count_syllables]{count_syllables()}}. Consonants
 before the first nucleus form the first onset, those after the last nucleus the
 final coda, and a consonant run between two nuclei is split at its midpoint
 (floor(m/2) to the left coda). Segmentation is on characters, so accented letters

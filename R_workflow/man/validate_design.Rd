@@ -25,7 +25,10 @@ missing, empty or non-text \code{name} or \code{language}, an \code{n_per_condit
 or \code{resample.n_sets} that is not a whole number of at least 1, a
 \code{counterbalance.optimise} that is not true or false, a \code{counterbalance.scale} other than \code{mean} or \code{mad}, a
 \code{counterbalance.max_run} or \code{counterbalance.orders} that is not a whole number of at
-least 1, and a \code{counterbalance.run_on} that is not the name of a column. It refuses
+least 1, and a \code{counterbalance.run_on} that is not a single non-empty text value.
+It does not see the trials, so a \code{run_on} that names no column of them is refused
+when \code{counterbalance.max_run} is applied to the trial order, by \code{\link[=counterbalance]{counterbalance()}}
+or, in a design with fillers, when \code{\link[=run_pipeline]{run_pipeline()}} interleaves them. It refuses
 a name, language
 or font that cannot be written into the generated experiments, a trigger port that
 is not an address, and an event list the renderer refuses, such as one with an
@@ -47,8 +50,8 @@ names.
 Any other key lexsync does not read is not refused yet. It is returned as a note,
 which \code{\link[=run_pipeline]{run_pipeline()}} writes into the run log, and a later release will refuse
 it. \code{description} and keys beginning \code{x_} are annotations and are never noted. A
-schema that still sets \code{triggers.inter_trigger_ms}, which no longer does anything,
-gets a note too.
+schema that sets \code{triggers.inter_trigger_ms}, which lexsync ignores, gets a note
+too.
 
 The experiments' instructions and response mapping are checked here too. It refuses
 \code{instructions} that are not text, are empty or hold a control character other than a

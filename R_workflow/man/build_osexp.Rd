@@ -23,9 +23,13 @@ build_osexp(
 
 \item{conditions_file}{File name of the loop table.}
 
-\item{schema}{The parsed global schema (trigger settings).}
+\item{schema}{The parsed global schema: its trigger settings,
+\code{presentation.text_height_px} and \code{presentation.assumed_refresh_hz}, the rate the
+frame period falls back to when the start-up measurement fails.}
 
-\item{rendered}{Rendered events, from \code{\link[=render_events]{render_events()}}.}
+\item{rendered}{Rendered events, from \code{\link[=render_events]{render_events()}}, with each \code{length_of} mask
+already written out for the trials, as the exporters do. A mask that still carries
+\code{length_of} shows its single character.}
 
 \item{font}{The font family OpenSesame draws text in.}
 
@@ -33,9 +37,9 @@ build_osexp(
 \verb{_text} before the \code{.csv} of \code{conditions_file}.}
 
 \item{version, n_versions}{The experiment is version \code{version} of \code{n_versions}. With
-more than one version, it checks OpenSesame's subject number against its own before
-the loop and warns when the participant would normally run another. \code{NULL} (the
-default) marks a design with one version, which needs no check.}
+more than one version, or more than one order, it checks OpenSesame's subject
+number against its own before the loop and warns when the participant would
+normally run another. \code{NULL} (the default) writes no check.}
 
 \item{instructions}{The text the experiment shows before the loop, waiting for the
 space bar. \code{NULL} (the default) takes list 1's, the design's own \code{instructions} or
@@ -51,7 +55,10 @@ trial's responses and ends with a logger item. The setup script opens the trigge
 device the schema names, measures the frame period and defines the helpers that
 time the events and hold their codes. A notice follows it when no codes will be
 sent, and the session markers 254 and 255 are sent just before and after the loop.
-Every text is drawn at \code{presentation.text_height_px}.
+Every text is drawn at \code{presentation.text_height_px}. A \code{response} event collected
+from the offset, which becomes a keyboard_response, is refused when it carries
+\code{blocks}, since the block restriction is applied only within lexsync's inline
+scripts. Restrict a feedback or stimulus event instead.
 }
 \description{
 The loop table and its companion text table are both looked up through OpenSesame's

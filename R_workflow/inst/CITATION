@@ -29,9 +29,10 @@ bibentry(
 
 citFooter(
   "Please cite the corpus as well as the software. The bundled example lexica ",
-  "are derived from wordfreq (Speer, 2022) and carry CC BY-SA 4.0; the terms, ",
-  "the credit they require and each corpus's retrieval date are in the ",
-  "COPYRIGHTS file installed with the package and at ",
+  "are derived from wordfreq (Speer, 2022), the English one screened against ",
+  "SUBTLEX-US (Brysbaert & New, 2009), and carry CC BY-SA 4.0. The terms and ",
+  "the credit they require are in the COPYRIGHTS file installed with the ",
+  "package, and each corpus's retrieval date is at ",
   "https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md. ",
   "Every run's datasheet records the source file it read and its SHA-256."
 )

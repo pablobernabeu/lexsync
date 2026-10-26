@@ -9,7 +9,8 @@ validate_lexicon(df, schema)
 \arguments{
 \item{df}{A candidate lexicon data frame.}
 
-\item{schema}{The parsed schema (see \code{config/schema.yaml}).}
+\item{schema}{The parsed schema, such as
+\code{yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))}.}
 }
 \value{
 \code{TRUE}, invisibly; stops with an informative error otherwise.

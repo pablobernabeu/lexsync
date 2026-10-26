@@ -114,8 +114,8 @@ target-version = "py310"
 # scripts, which the host runs with Canvas, var, clock and send_trigger already
 # in the namespace, and PsychoPy templates whose ALL_CAPS placeholders are
 # substituted before anything executes. Linting them as importable Python
-# reports every one of those as an undefined name -- 22 of them, which is every
-# F finding this package has -- and each is a false positive by construction.
+# reports every one of those as an undefined name, which is every F finding
+# this package has, and each is a false positive by construction.
 # They are held to their own standard instead: tests/test_templates.py and the R
 # twin pin all three copies byte-identical to templates/ at the repository root.
 extend-exclude = ["src/lexsync/templates"]
@@ -127,21 +127,19 @@ extend-exclude = ["src/lexsync/templates"]
 #
 # F, E9 and B: the rules that catch bugs rather than style. Undefined names,
 # unused imports and variables, redefined functions, f-strings missing their
-# placeholders, syntax errors, and the bugbear set. This package had no linter at
-# all, so these came first and the file passes them, which means from here it can
-# only go red for a real regression.
+# placeholders, syntax errors, and the bugbear set. The package passes them, so
+# a failure on them marks a real regression.
 #
-# B905 was the reason B was worth enabling. Every zip() in this package pairs
+# B905 is the main reason B is enabled. Every zip() in this package pairs
 # sequences that are equal in length by construction -- columns of one frame,
-# or a list built from the thing it is zipped against -- so each now says
+# or a list built from the thing it is zipped against -- so each says
 # strict=True. That is a no-op while the invariant holds and an exception the
 # moment it stops holding, which matters most in counterbalancing.py and
 # scripting.py, where the zipped values build the hash keys behind the
 # deterministic shuffle and the jitter. Silent truncation there would not raise;
-# it would quietly deal a different experiment. Adding it changed no output:
-# the suite and a full pipeline run over 242 artefacts are byte-identical.
+# it would quietly deal a different experiment.
 #
-# E, W, I and UP are enforced too, so this package is now held to the same set
+# E, W, I and UP are enforced too, so the package answers to the same rule set
 # as its four siblings. Three rules are turned off, each because the thing it
 # objects to is carrying meaning rather than costing anything:
 #
@@ -174,7 +172,7 @@ packages = ["src/lexsync"]
 #
 # tests is here because the sdist is what conda-forge, Debian and Nix build from,
 # and a packager who receives no suite can do nothing more than import the module
-# and hope. The 38 files it adds include the tests that pin values the R twin
+# and hope. The files it adds include the tests that pin values the R twin
 # computes, many of them bit for bit, and those are the only check a build from
 # the sdist gets that this engine still agrees with R. That agreement is
 # precisely what a rebuild on an unfamiliar platform might disturb. The

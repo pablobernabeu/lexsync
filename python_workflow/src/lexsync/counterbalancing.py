@@ -34,12 +34,11 @@ def _recipe(design: dict) -> str:
     """The recipe counterbalance() applies to a design.
 
     ``counterbalance.recipe`` when the design names one, else the recipe of the
-    paradigm it names, else ``factorial``. An ``events`` list has no say in it. It
-    used to switch the recipe to ``factorial``. A priming design that read its
-    prime's duration from the items then showed every target in both conditions of
-    each list, the repetition the paradigm's Latin square exists to prevent. The
-    datasheet takes its recipe from here too, so the record names the recipe that
-    ran. Mirrors .cb_recipe in R_workflow/R/counterbalancing.R.
+    paradigm it names, else ``factorial``. An ``events`` list has no say in it, so a
+    priming design that reads its prime's duration from the items keeps the paradigm's
+    Latin square, which shows no target in both conditions of a list. The datasheet
+    takes its recipe from here too, so the record names the recipe that ran. Mirrors
+    .cb_recipe in R_workflow/R/counterbalancing.R.
     """
     # Read on presence, as R's %||% reads it, so an empty string is refused like any
     # other unknown name and never falls through to the paradigm.
@@ -176,9 +175,10 @@ def _check_incomplete(check: dict, policy: str) -> None:
 def _order_ranks(df: pd.DataFrame, seed, order: int = 1) -> list:
     """Each row's SHA-256 rank in trial order ``order`` of its list.
 
-    Order 1 hashes "seed|replicate|list|set|condition", the key every order had before
-    counterbalance.orders existed, so a design with one order keeps its order. Order j
-    from 2 hashes "seed|order<j>|replicate|list|set|condition". Mirrors .order_ranks in
+    Order 1 hashes "seed|replicate|list|set|condition", the key _shuffle_deterministic
+    ranks by, so a design's first order is the order it has without
+    counterbalance.orders. Order j from 2 hashes
+    "seed|order<j>|replicate|list|set|condition". Mirrors .order_ranks in
     R_workflow/R/counterbalancing.R.
     """
     rep = df["replicate"] if "replicate" in df.columns else [0] * len(df)
@@ -187,8 +187,7 @@ def _order_ranks(df: pd.DataFrame, seed, order: int = 1) -> list:
     # stringification is where the two engines silently part company: R renders
     # the double 42 as "42" and Python as "42.0", and a pandas column is promoted
     # to float64 by a single missing value, which would change every digest, every
-    # trial order and every generated artefact with nothing to signal it. The
-    # values are integers today, so this changes no output; it removes a trap.
+    # trial order and every generated artefact with nothing to signal it.
     return [hashlib.sha256("|".join(
                 head + [_key_part(r), _key_part(l), _key_part(s), _key_part(c)]
             ).encode("utf-8")).hexdigest()
@@ -204,7 +203,7 @@ def _shuffle_deterministic(df: pd.DataFrame, seed) -> pd.DataFrame:
     realises a seeded random permutation, but as a pure function of the design: the
     same bytes from the R and Python engines on any platform, and a different order
     for every seed. R's sample() and numpy's PCG64 could never agree on a
-    permutation, which used to be the one engine-specific artefact in an otherwise
+    permutation, so a generator-based shuffle would be engine-specific in an otherwise
     byte-identical pipeline. The replicate term keeps independently counterbalanced
     item sets from sharing one permutation pattern.
     """
@@ -397,8 +396,10 @@ def _order_trials(df: pd.DataFrame, seed, settings: dict, unit: str,
 
 def _longest_runs(trials: pd.DataFrame, run_on: str, orders: int) -> int:
     """The longest run of one ``run_on`` value in a version's presented trials, over
-    every order. A pause separates the practice trials from the rest, so a run does not
-    continue across it."""
+    every order. The PsychoPy and jsPsych experiments pause after the practice trials,
+    so a run is counted as ending there. The OpenSesame experiment runs every trial in
+    one loop without a pause, so there a run can continue from the practice trials into
+    the main ones."""
     if run_on not in trials.columns or not len(trials):
         return 0
     best = 0
@@ -480,10 +481,10 @@ def _trial_order_record(presented: pd.DataFrame, design: dict) -> dict:
 #
 # Under the mean scale the constant is 1000 times the 100 that `unit` already carries,
 # so a value at the dimension's mean quantises to 1000, a milli-unit of the mean. That
-# factor is not cosmetic: at 1000 here, a value at the mean quantised to 10, which left
-# only about ten distinguishable levels across a dimension's whole range, and
-# imbalances smaller than a tenth of the mean were invisible to the objective. The
-# search then traded away a dimension it could not see in order to improve one it
+# factor is not cosmetic: with 1000 here, a value at the mean would quantise to 10,
+# leaving about ten distinguishable levels across a dimension's whole range, so
+# imbalances smaller than a tenth of the mean would be invisible to the objective and
+# the search would trade away a dimension it could not see in order to improve one it
 # could. Under the mad scale the deviation and the unit are both in hundredths, so a
 # deviation of one mean absolute deviation quantises to 100000.
 BALANCE_UNIT_SCALE = 100000
@@ -498,10 +499,8 @@ BALANCE_MAX_MAGNITUDE = 2 ** 50
 # refused, and the error names it.
 BALANCE_SCALES = ("mean", "mad")
 
-# What the report's cost is counted in, under each scale. The mean scale's wording is
-# that of every release before counterbalance.scale, so a record of the default reads
-# as it did. Must stay identical to .BALANCE_COST_UNITS in
-# R_workflow/R/counterbalancing.R.
+# What the report's cost is counted in, under each scale. Must stay identical to
+# .BALANCE_COST_UNITS in R_workflow/R/counterbalancing.R.
 _BALANCE_COST_UNITS = {
     "mean": ("summed absolute deviation of each list's dimension total from its fair "
              "share, in milli-units of the dimension's mean, scaled by the number of "
@@ -515,8 +514,7 @@ _BALANCE_COST_UNITS = {
 def _balance_scale(design: dict) -> str:
     """The scale balance_lists() quantises each dimension on.
 
-    ``counterbalance.scale`` when the design names one, else ``mean``, the rule of
-    every release before the option, so a design that names no scale keeps its lists.
+    ``counterbalance.scale`` when the design names one, else ``mean``.
     Read on presence, as R's %||% reads it, so the two engines refuse the same values.
     validate_design() calls this too, so an unknown scale is refused before anything
     is selected. Mirrors .balance_scale in R_workflow/R/counterbalancing.R.
@@ -778,8 +776,7 @@ def balance_lists(stimuli: pd.DataFrame, design: dict, schema: dict) -> dict:
         "max_passes_reached": hit_bound,
         "cost_unit": _BALANCE_COST_UNITS[scale],
     }
-    # Recorded only off the default, so the record of a design that names no scale
-    # reads as it did before the option. Its cost_unit names the mean.
+    # Recorded only off the default: under the default, cost_unit names the mean.
     if scale != "mean":
         report["scale"] = scale
     return {"list_of_set": {s: int(a) for s, a in zip(sets, assign, strict=True)},
@@ -798,7 +795,8 @@ def counterbalance(stimuli: pd.DataFrame, design: dict, schema: dict,
 
     ``list_of_set`` optionally maps each ``set`` to a list, from ``balance_lists``.
     The pipeline supplies it when ``counterbalance.optimise`` is on. Without it, the
-    factorial recipe deals sets to lists by rank.
+    factorial recipe deals sets to lists by rank: the first set to list 1, the second
+    to list 2 and so on, cycling.
 
     Each list's trials are ordered by the seeded keyed hash. ``counterbalance.max_run``
     repairs that order so that no run of one ``counterbalance.run_on`` value (by default
@@ -808,8 +806,12 @@ def counterbalance(stimuli: pd.DataFrame, design: dict, schema: dict,
     each trial's position in each of m orders of its list, ``order_1`` being the order
     ``trial`` gives.
 
-    Returns ``stimuli`` with added ``list`` and ``trial`` columns, and the order columns
-    when there is more than one order. Mirrors counterbalance() in
+    Returns the trials, sorted by replicate, list and trial, with ``list`` and
+    ``trial`` columns added, and ``order_1`` to ``order_m`` when there is more than one
+    order. Under the factorial recipe, every row of ``stimuli`` appears once, in the list
+    its set is dealt to. Under the Latin square, each list holds one row per item set,
+    in the condition the rotation gives that set in that list, so the result has one
+    row per set per list and not every row of ``stimuli``. Mirrors counterbalance() in
     R_workflow/R/counterbalancing.R.
     """
     _trial_order_settings(design)
@@ -911,6 +913,19 @@ def counterbalance_latin_square(stimuli: pd.DataFrame, design: dict, schema: dic
 
 
 def participant_table(factors: dict, n_participants: int) -> pd.DataFrame:
+    """Allocate participants to the cells of fully crossed factors.
+
+    ``factors`` maps each factor's name to its levels. The cells are every
+    combination of the levels, ordered with the first factor varying fastest, as R's
+    ``expand.grid()`` orders them, and participant ``p`` takes cell
+    ``((p - 1) mod C) + 1`` of the ``C`` cells. The allocation therefore cycles through
+    the grid, and the cells' counts are equal when ``n_participants`` is a multiple of
+    ``C`` and otherwise differ by one.
+
+    Returns a DataFrame with one row per participant: a column per factor and a
+    ``participant`` column numbered from 1. Mirrors participant_table in
+    R_workflow/R/counterbalancing.R.
+    """
     keys = list(factors.keys())
     # R's expand.grid() varies the first factor fastest, itertools.product the
     # last; cross the reversed keys and unreverse each cell so a participant
