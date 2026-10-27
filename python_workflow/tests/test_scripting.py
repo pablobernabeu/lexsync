@@ -120,6 +120,17 @@ def test_psychopy_export_is_frame_locked(schema, tmp_path):
     assert "{{" not in text  # all placeholders substituted
 
 
+def test_onset_locked_false_is_accepted_and_noted(schema):
+    # Every event's trigger is written on its onset flip. test-scripting.R asserts the same.
+    design = {"name": "t", "language": "english",
+              "events": [{"type": "fixation", "onset_locked": False}]}
+    assert validate_design(design, schema) == [
+        "lexsync: events[].onset_locked: false changes nothing, since every event's trigger "
+        "is written on its onset flip."]
+    design["events"][0]["onset_locked"] = True
+    assert validate_design(design, schema) == []
+
+
 def test_inter_trigger_ms_is_accepted_and_no_longer_used(schema, tmp_path):
     # The self-paced reading critical-region code was held for inter_trigger_ms, 10 ms,
     # where every other code is held for trigger_hold_ms, and nothing else read the key.

@@ -12,6 +12,9 @@ no function signature changes.
 
 ### Added
 
+- `validate_design` notes an event that sets `onset_locked: false`, in both engines, since
+  every event's trigger is written on its onset flip and the setting changes nothing. No
+  shipped design sets it to false.
 - `counterbalance.max_run` caps runs of one condition, or of one value of any column named
   in `counterbalance.run_on`, in the trial order, in both engines. `counterbalance`
   repairs the seeded order deterministically, taking at each step the earliest trial in it

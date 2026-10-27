@@ -112,6 +112,18 @@ test_that("PsychoPy export is frame-locked and OpenSesame export is internally c
   expect_true(all(runs %in% defs))                 # every run resolves to a definition
 })
 
+test_that("onset_locked: false is accepted and noted, since it changes nothing", {
+  # Every event's trigger is written on its onset flip. test_scripting.py asserts the same.
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  design <- list(name = "t", language = "english",
+                 events = list(list(type = "fixation", onset_locked = FALSE)))
+  expect_identical(validate_design(design, schema), paste(
+    "lexsync: events[].onset_locked: false changes nothing, since every event's trigger",
+    "is written on its onset flip."))
+  design$events[[1]]$onset_locked <- TRUE
+  expect_identical(validate_design(design, schema), character(0))
+})
+
 test_that("inter_trigger_ms is accepted and no longer used", {
   # The self-paced reading critical-region code was held for inter_trigger_ms, 10 ms,
   # where every other code is held for trigger_hold_ms, and nothing else read the key.

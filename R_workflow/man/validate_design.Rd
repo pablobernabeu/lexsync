@@ -13,7 +13,8 @@ validate_design(design, schema)
 }
 \value{
 A character vector of notes on unknown keys, in the order the keys were
-written, then the note on \code{triggers.inter_trigger_ms}; empty when there are none.
+written, then the notes on \code{triggers.inter_trigger_ms} and on an event's
+\code{onset_locked: false}; empty when there are none.
 }
 \description{
 \code{\link[=run_pipeline]{run_pipeline()}} calls this right after reading the two files, so a design that

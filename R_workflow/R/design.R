@@ -440,7 +440,8 @@ design_stem <- function(design) {
 #' @param design A parsed design configuration.
 #' @param schema The parsed global schema.
 #' @return A character vector of notes on unknown keys, in the order the keys were
-#'   written, then the note on `triggers.inter_trigger_ms`; empty when there are none.
+#'   written, then the notes on `triggers.inter_trigger_ms` and on an event's
+#'   `onset_locked: false`; empty when there are none.
 #' @examples
 #' validate_design(list(name = "demo", language = "english", x_note = "pilot"), list())
 #' @export
@@ -459,6 +460,14 @@ validate_design <- function(design, schema) {
     notes <- c(notes, paste("lexsync: triggers.inter_trigger_ms is no longer used; the",
                             "self-paced reading critical-region code is held for",
                             "triggers.trigger_hold_ms, as every other code is."))
+  }
+  # Every event's trigger is written on its onset flip, so onset_locked: false cannot be
+  # honoured and is noted. Must match validate_design in design.py.
+  events <- design[["events"]]
+  if (is.list(events) && any(vapply(events, function(e) .is_mapping(e) &&
+                                      isFALSE(e[["onset_locked"]]), logical(1)))) {
+    notes <- c(notes, paste("lexsync: events[].onset_locked: false changes nothing, since",
+                            "every event's trigger is written on its onset flip."))
   }
   .name_and_language(design)
   .resolve_n(design, NULL)

@@ -506,8 +506,8 @@ def validate_design(design: dict, schema: dict) -> list:
 
     Returns:
         A list of the notes on unknown keys, in the order the keys were written, then
-            the note on ``triggers.inter_trigger_ms``. The list is empty when there are
-            none.
+            the notes on ``triggers.inter_trigger_ms`` and on an event's
+            ``onset_locked: false``. The list is empty when there are none.
     """
     # Imported here: scripting names its files through design_stem, and counterbalancing
     # quotes values through _shown, so a module-level import would be circular.
@@ -534,6 +534,13 @@ def validate_design(design: dict, schema: dict) -> list:
         notes.append("lexsync: triggers.inter_trigger_ms is no longer used; the "
                      "self-paced reading critical-region code is held for "
                      "triggers.trigger_hold_ms, as every other code is.")
+    # Every event's trigger is written on its onset flip, so onset_locked: false cannot be
+    # honoured and is noted.
+    events = design.get("events")
+    if isinstance(events, list) and any(isinstance(e, dict) and e.get("onset_locked") is False
+                                        for e in events):
+        notes.append("lexsync: events[].onset_locked: false changes nothing, since every "
+                     "event's trigger is written on its onset flip.")
     _name_and_language(design)
     _resolve_n(design, None)
     resample = design.get("resample")

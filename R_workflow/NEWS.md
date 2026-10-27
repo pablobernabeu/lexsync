@@ -1,5 +1,8 @@
 # lexsync (development version)
 
+* `validate_design()` notes an event that sets `onset_locked: false`, since every
+  event's trigger is written on its onset flip and the setting changes nothing.
+
 * The help pages describe more functions as they behave. `match_stimuli()` describes
   the four matching methods, and `resample_stimuli()` says that its selections match
   the Python engine's under `standardised_euclidean` and `joint` only.
