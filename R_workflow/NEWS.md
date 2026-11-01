@@ -157,7 +157,8 @@
   number or an unquoted `no` is refused, where a design with `name: 2026` or
   `language: no` ran and named its files after 2026 or `false`.
 * A design whose `name` and `language` both hold only ASCII punctuation and
-  spaces is refused, where it ran and named its files with a leading underscore.
+  spaces is refused, where it ran and wrote files named only by their suffix,
+  such as `_stimuli_R.csv` and a hidden `.osexp` and `.html`.
 * lexsync requires jsonlite 1.8.7 or later, since 1.8.5 and 1.8.6 write
   datasheets that differ from the Python engine's.
 * Matching refuses a condition left without a candidate complete on the matched
@@ -320,10 +321,10 @@
   four places, with `< 0.0001` for one that rounds to zero.
 * A generated design's datasheet counts only the words the generator can use,
   where it counted the whole band.
-* A design whose name or language has non-ASCII characters writes its files
-  under a stem with an eight-character checksum suffix, given by
-  `design_stem()`, where two Chinese-named designs could overwrite each other's
-  files.
+* A design whose name or language has non-ASCII characters writes files under
+  a stem ending in an eight-character checksum, given by `design_stem()`, where
+  Chinese-named designs could overwrite each other's files and wholly non-ASCII
+  ones wrote hidden `.osexp` and `.html` files.
 * The apps' download bundles hold the outputs under `output/`, where they sat at
   the archive's root, and reproduce their own record without local paths. The
   PsychoPy and OpenSesame downloads are zip archives holding the tables those
@@ -344,9 +345,9 @@
   `reference_words` given for a generate or table design, which the datasheet no
   longer records as applied.
 * The run log notes a design in another language without its own `instructions`,
-  a design whose instructions can only name its keys, practice or filler answers
-  the response mapping contradicts and trials the lexical-decision default
-  leaves without an answer.
+  one whose instructions can only name its keys, a practice or filler answer the
+  response mapping contradicts and a trial the lexical-decision default leaves
+  without an answer.
 * lexsync reports a literal trigger code of 254 or 255, which the laboratory
   targets send as session markers, or one that equals a condition code or lies
   within the range of item codes the design sends.
@@ -354,9 +355,9 @@
   it kept four decimal places.
 * The datasheet records paths with forward slashes, where Windows paths kept
   their backslashes.
-* A literal block that ends a design, schema or registry file keeps its final
-  line break, as in the Python engine, so a `description` written that way ends
-  with one in the datasheet.
+* A block scalar (`|` or `>`) that ends a design, schema or registry file keeps
+  its final line break, as in the Python engine, so a `description` written that
+  way ends with one in the datasheet.
 
 ## New features
 
@@ -466,8 +467,8 @@
   with an error.
 * Both apps' exported command lines quote the design file's name and run in
   `cmd.exe` and Windows PowerShell.
-* The Streamlit app's exported R line passes the `outdir` that `run_pipeline()`
-  requires.
+* The Streamlit app's exported `Rscript` command passes the `outdir` that
+  `run_pipeline()` requires.
 * lexsync installs the licence notice for its CC BY-SA lexica as `COPYRIGHTS`,
   so binary installations carry it.
 
@@ -516,8 +517,8 @@
   under `standardised_euclidean` and `joint`.
 * The documentation calls the 0.5 equivalence bound a convention, where the
   schema and the help page of `tost_equiv()` credited it to Lakens (2017), and
-  the quick start in the README and the Get started vignette uses 60 items per
-  condition, where it used 15, too few for any varying dimension to pass the
+  the quick starts in the README and the Get started vignette use 60 items per
+  condition, where they used 15, too few for any varying dimension to pass the
   equivalence test.
 * The corpus registry no longer gives the SUBTLEX-US and SUBTLEX-DE log-count
   columns, or a SUBTLEX-CH column that does not exist, as the source of
