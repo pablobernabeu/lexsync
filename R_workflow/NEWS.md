@@ -321,10 +321,10 @@
   four places, with `< 0.0001` for one that rounds to zero.
 * A generated design's datasheet counts only the words the generator can use,
   where it counted the whole band.
-* A design whose name or language has non-ASCII characters writes files under
-  a stem ending in an eight-character checksum, given by `design_stem()`, where
-  Chinese-named designs could overwrite each other's files and wholly non-ASCII
-  ones wrote hidden `.osexp` and `.html` files.
+* A design whose name or language has non-ASCII characters gets a file stem
+  ending in an eight-character checksum, given by `design_stem()`, where
+  Chinese-named designs could share a stem and one with no ASCII letter or digit
+  in either wrote hidden `.osexp` and `.html` files.
 * The apps' download bundles hold the outputs under `output/`, where they sat at
   the archive's root, and reproduce their own record without local paths. The
   PsychoPy and OpenSesame downloads are zip archives holding the tables those
@@ -345,9 +345,9 @@
   `reference_words` given for a generate or table design, which the datasheet no
   longer records as applied.
 * The run log notes a design in another language without its own `instructions`,
-  one whose instructions can only name its keys, a practice or filler answer the
-  response mapping contradicts and a trial the lexical-decision default leaves
-  without an answer.
+  a design whose instructions can only name its keys, a practice or filler
+  answer the response mapping contradicts and a trial the lexical-decision
+  default leaves without an answer.
 * lexsync reports a literal trigger code of 254 or 255, which the laboratory
   targets send as session markers, or one that equals a condition code or lies
   within the range of item codes the design sends.
