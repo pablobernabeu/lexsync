@@ -34,10 +34,11 @@ no 'Days since last update' NOTE.>
   tarball, with stand-in 'templates' and 'config' packages and a README beside
   the check directory, as CRAN's Linux hosts have the sources of other packages
   there.
-* GitHub Actions, run <run id> on <date>, at commit <commit> on the main
-  branch, the commit this tarball was built from. Each leg ran
-  `R CMD check --as-cran --no-manual` beside the same stand-in neighbours,
-  without the CRAN incoming checks, which r-lib/actions turns off:
+* GitHub Actions, run <run id> on <date>, on pull request #22 at commit
+  <commit>. That commit differs from this submission only in cran-comments.md,
+  which is not in the tarball. Each leg ran `R CMD check --as-cran --no-manual`
+  beside the same stand-in neighbours, without the CRAN incoming checks, which
+  r-lib/actions turns off:
   * macos-latest, R release
   * windows-latest, R release and R-devel
   * ubuntu-latest, R-devel, R release and R oldrel-1
