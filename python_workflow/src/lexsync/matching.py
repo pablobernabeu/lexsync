@@ -6,8 +6,8 @@ The same standardisation (sample SD), the same even-spread anchor selection and
 the same tie-break order are used as in R, so the two engines return matching
 selections from identical input.
 
-Cross-engine determinism. The default methods (``standardised_euclidean`` and
-``joint``) use no floating-point operation whose last bit differs across
+Cross-engine determinism. ``standardised_euclidean`` (the default) and ``joint``
+use no floating-point operation whose last bit differs across
 platforms, so the R and Python engines select byte-identical stimuli. The
 optional ``mahalanobis`` and ``optimal`` methods are the exception: they rely on
 a covariance-matrix inverse and a linear-assignment solver respectively, whose
@@ -24,12 +24,11 @@ import numpy as np
 import pandas as pd
 
 # The z-scoring centre and scale go through the reproducible reductions, not numpy's.
-# The difference could not have changed a selection, for a structural reason: a distance
+# The difference would not change a selection, for a structural reason: a distance
 # is computed between z-VECTORS, so a shift in the centre cancels in the difference, a
 # change of scale is a monotone rescaling that cannot reorder candidates, and the
 # distances are rounded to nine places on top of that. That argument is weaker than
-# identity by construction, which is what the package claims, and switching these was
-# verified to change no design's selection.
+# identity by construction, which is what the package claims.
 from .design import (
     N_DEFAULT_CONTINUOUS,
     N_DEFAULT_MATCHED,
@@ -299,8 +298,8 @@ def _maha_metric(z_pool: np.ndarray, ridge: float = 1e-6) -> np.ndarray:
     if z_pool.shape[1] == 1:
         return np.array([[1.0]])
     # np.corrcoef returns NaN for every pair involving a column with a missing
-    # value, and zeroing that NaN used to drop the dimension's whole row and column,
-    # so a partially covering norm entered the distance as an independent term. The
+    # value, and zeroing that NaN would drop the dimension's whole row and column,
+    # entering a partially covering norm in the distance as an independent term. The
     # rows complete on every dimension are the cases the matcher can score at all,
     # since match_stimuli excludes the others before it selects. Below k + 1 rows the
     # k-by-k sample correlation matrix is singular, and the guard asks for one row
@@ -484,6 +483,17 @@ def match_stimuli(pool: pd.DataFrame, design: dict, schema: dict, verbose: bool 
     reproduces lexsync 0.1. The rule also orders the tied pairs of ``joint`` and
     ``optimal`` and the tied rows at their candidate cap. The anchor's even spread
     keeps its byte-order tie-break under both rules.
+
+    ``matching.method``, read in the same way and ``standardised_euclidean`` by
+    default, is one of ``standardised_euclidean``, ``joint``, ``mahalanobis`` and
+    ``optimal`` (see the guide Matching and designs). ``joint`` and ``optimal`` need
+    exactly two conditions, and any other method name raises ValueError. ``verbose``
+    prints how many candidates each condition drops for a missing dimension, an anchor
+    condition that yields fewer items than requested, and each tolerance window relaxed.
+
+    Returns the selected rows of ``pool`` with a ``condition`` column and a ``set``
+    column that numbers the matched sets from 1, each condition holding one row per
+    set, with ``attrs["audit"]`` when a window was relaxed or a candidate dropped.
     """
     conditions = design.get("conditions")
     if not conditions:
@@ -550,12 +560,12 @@ def match_stimuli(pool: pd.DataFrame, design: dict, schema: dict, verbose: bool 
                          f"conditions, got {len(conditions)}.")
 
     # A candidate missing a matched dimension has no distance to any counterpart, so
-    # whatever a method did with it, the tie-break decided. The anchored path paired
-    # such an anchor with the byte-first word in its window, or re-picked a used
-    # candidate. Joint matching took it once the complete pairs ran out, and optimal
-    # matching handed the missing cost to a solver that refused it. Every method
-    # therefore starts from the rows complete on match_on, and the count excluded per
-    # condition goes into the audit for the run log and the datasheet.
+    # the match would not decide what happens to it. The anchored path would pair such
+    # an anchor with the first candidate in tie-break order, joint matching would take
+    # it once the complete pairs ran out, and optimal matching would hand the missing
+    # cost to a solver that refuses it. Every method therefore starts from the rows
+    # complete on match_on, and the count excluded per condition goes into the audit
+    # for the run log and the datasheet.
     incomplete = []
     for i, sp in enumerate(subpools):
         complete = sp[match_on].notna().all(axis=1).to_numpy()
@@ -681,9 +691,9 @@ def match_stimuli(pool: pd.DataFrame, design: dict, schema: dict, verbose: bool 
                 dvec = _round_dp_vec(np.sqrt((delta ** 2).sum(axis=1)), 9)
             else:
                 dvec = _round_dp_vec(np.sqrt(np.maximum((delta @ metric * delta).sum(axis=1), 0.0)), 9)
-            # Only unused candidates compete. Giving a used one an infinite distance
-            # was not enough, because a missing distance ranks after infinity and an
-            # anchor without a value then re-picked a used candidate.
+            # Only unused candidates compete. An infinite distance for a used one would
+            # not be enough, because a missing distance ranks after infinity, so an
+            # anchor without a value could re-pick a used candidate.
             free = np.flatnonzero(~used)
             # A NaN distance still ranks last, as R's order(na.last = TRUE) ranks it: a
             # bare min() over NaN keeps whichever row it saw first, which would make the
@@ -729,6 +739,12 @@ def select_continuous_stimuli(pool: pd.DataFrame, design: dict, schema: dict,
     that window; a second even spread over the filtered pool is the selection.
     There is no per-item matching and no random number generator.
 
+    The number of items is ``n_per_condition``, else ``n_per_cell``, and either must be
+    a whole number of at least 1. It is 60 when neither key is given. ``tolerance_k``,
+    ``shortfall`` and ``on_insufficient_tolerance`` are read from the design's
+    ``matching`` block with the schema as fallback, as for ``match_stimuli``, and a
+    relaxed window widens to the whole complete pool.
+
     The design is checked before anything is selected, so a design that cannot be
     honoured raises ``ValueError`` outright. ``continuous.controls`` must be non-empty
     and must not name the predictor, ``match_on`` must name exactly the same dimensions
@@ -742,7 +758,7 @@ def select_continuous_stimuli(pool: pd.DataFrame, design: dict, schema: dict,
 
     ``attrs["audit"]["control_windows"]`` records, for each control, the window the
     first pass set (``low``, ``high``) and the SD of the complete pool (``pool_sd``),
-    which :func:`match_report_continuous` sets the realised SD against. A relaxed
+    which ``match_report_continuous`` sets the realised SD against. A relaxed
     window is recorded as computed, and the relaxation in ``window_relaxations``.
 
     Returns the selected stimuli. Unless ``label`` is ``None`` the ``condition``
@@ -780,9 +796,9 @@ def select_continuous_stimuli(pool: pd.DataFrame, design: dict, schema: dict,
                              f"tolerances must be zero or positive.")
 
     # A row missing the predictor sorts last and the even spread always takes the
-    # last row, so such rows were selected and then analysed without their
-    # predictor. A row missing a control fails every window but comes back when the
-    # window relaxes to the whole pool. Both are excluded before the first pass.
+    # last row, so such rows would be selected and then analysed without their
+    # predictor. A row missing a control would fail every window but come back when
+    # the window relaxes to the whole pool. Both are excluded before the first pass.
     complete = pool[[predictor] + controls].notna().all(axis=1).to_numpy()
     n_drop = int((~complete).sum())
     incomplete = []
@@ -867,11 +883,12 @@ def resample_stimuli(pool: pd.DataFrame, design: dict, schema: dict,
     study treat its items as a random factor (running different item samples
     across participant groups, or showing an effect holds across samples) instead
     of treating them as a fixed set (Clark, 1973; Yarkoni, 2022). Deterministic: the
-    matcher is deterministic and the used-item set evolves identically across engines.
+    matcher is deterministic and, under the ``standardised_euclidean`` and ``joint``
+    methods, the used-item set evolves identically across engines.
 
     The first replicate draws on the whole pool, so its count of the candidates
     excluded for a missing matched value is the one recorded in
-    ``attrs["audit"]["incomplete_dropped"]``, as :func:`match_stimuli` records it.
+    ``attrs["audit"]["incomplete_dropped"]``, as ``match_stimuli`` records it.
     A relaxed tolerance window inside a replicate is not recorded: it reaches the
     console under ``verbose`` but not the run log or the datasheet.
 

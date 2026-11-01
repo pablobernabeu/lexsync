@@ -28,7 +28,7 @@ The guides and the function reference pages cite published work throughout, and
 this page carries the full entries so that every citation on the site resolves.
 Each guide also lists the works it cites at its own foot, and this page gathers
 those lists together with the works cited only in the function documentation and
-in the design configurations that ship with the package. Every entry carries a
+in the design configurations of the repository's `config/` directory. Every entry carries a
 DOI wherever the work has one, and any work cited on both sites reads the same
 here as on the [Python twin's reference
 page](https://pablobernabeu.github.io/lexsync/python/references/). The
@@ -81,6 +81,10 @@ Coltheart, M., Davelaar, E., Jonasson, J. T., & Besner, D. (1977). Access to the
 internal lexicon. In S. Dornic (Ed.), *Attention and Performance VI*
 (pp. 535–555). Erlbaum.
 
+Duchon, A., Perea, M., Sebastián-Gallés, N., Martí, A., & Carreiras, M. (2013).
+EsPal: One-stop shopping for Spanish word properties. *Behavior Research
+Methods*, *45*(4), 1246–1258. https://doi.org/10.3758/s13428-013-0326-1
+
 Forster, K. I. (2000). The potential for experimenter bias effects in word
 recognition experiments. *Memory & Cognition*, *28*(7), 1109–1115.
 https://doi.org/10.3758/BF03211812
@@ -99,10 +103,6 @@ Gu, X. S., & Rosenbaum, P. R. (1993). Comparison of multivariate matching
 methods: Structures, distances, and algorithms. *Journal of Computational and
 Graphical Statistics*, *2*(4), 405–420.
 https://doi.org/10.1080/10618600.1993.10474623
-
-Hansen, B. B., & Klopfer, S. O. (2006). Optimal full matching and related designs
-via network flows. *Journal of Computational and Graphical Statistics*, *15*(3),
-609–627. https://doi.org/10.1198/106186006X137047
 
 Hedges, L. V., & Olkin, I. (1985). *Statistical methods for meta-analysis*.
 Academic Press. https://doi.org/10.1016/C2009-0-03396-0

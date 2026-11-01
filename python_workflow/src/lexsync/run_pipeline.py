@@ -1,10 +1,12 @@
 """The orchestrator. Mirrors R_workflow/R/run_pipeline.R.
 
-For each design it obtains stimuli from the configured item source (a corpus
-matched on lexical dimensions, generated pseudowords for lexical decision, or an
-item table for priming and self-paced reading), then counterbalances, writes any
-match-quality report and the run log, and exports the PsychoPy and OpenSesame
-scripts from the design's trial-event sequence. run_all loops over every design.
+For each design it obtains stimuli from the configured item source (a corpus or a
+supplied pool matched on lexical dimensions, generated pseudowords for lexical
+decision, or an item table such as those of the priming, self-paced reading and
+categorisation designs), then counterbalances, writes the stimuli, any
+realised-control report, the materials datasheet and the run log, and exports the
+PsychoPy, OpenSesame and jsPsych experiments from the design's trial-event sequence.
+run_all loops over every design.
 """
 from __future__ import annotations
 
@@ -79,8 +81,8 @@ DERIVED_DIMS = ("n_density", "old20", "bigram_freq")
 
 # The dimensions a corpus or pool design's realised-control report covers whenever the
 # stimuli carry them, ahead of the ones the design names. A report of match_on alone
-# left uncontrolled confounds unreported: en_ndensity's dense words had fewer estimated
-# syllables than its sparse ones (d = -0.83).
+# would leave uncontrolled confounds unreported: en_ndensity's dense words have fewer
+# estimated syllables than its sparse ones (d = -0.53).
 REPORT_DIMS = ("length", "frequency", "n_density", "old20", "n_syllables", "bigram_freq")
 
 # A generated lexical decision's report: length, which every pseudoword shares with its
@@ -222,7 +224,7 @@ def run_pipeline(design_path: str, schema_path: str | None = None, outdir: str =
     Args:
         design_path: Path to a design configuration (YAML).
         schema_path: The schema to read. Left as None, it is resolved by
-            :func:`lexsync.paths.resolve_schema`: ``config/schema.yaml`` in the
+            ``lexsync.paths.resolve_schema``: ``config/schema.yaml`` in the
             working directory, then ``schema.yaml`` beside the design, then the copy
             bundled with the package, with a line on stderr naming the file chosen.
             A named schema that does not exist is an error. The path used is recorded
@@ -243,7 +245,15 @@ def run_pipeline(design_path: str, schema_path: str | None = None, outdir: str =
         verbose: Whether to print progress.
 
     Returns:
-        A mapping of the output paths written.
+        A dict of output paths with the keys ``stimuli``, ``descriptives``,
+            ``comparisons``, ``experiments`` and ``log``. ``descriptives`` and
+            ``comparisons`` are None for an item-table design that makes no continuous
+            selection, which has no realised-control report. ``experiments`` is the
+            dict ``export_experiments`` returns, and ``log`` is the Markdown run log.
+            The datasheet is also written to ``reports`` as ``<stem>_datasheet_py.json``
+            and ``<stem>_datasheet_py.md``, and the run log's JSON Lines copy as
+            ``<stem>_run_log_py.jsonl``, where ``<stem>`` is ``design_stem`` of the
+            design.
     """
     runlog.set_verbose(verbose)
     # The design first, so a mistyped design path is reported on its own and not
@@ -353,7 +363,7 @@ def run_pipeline(design_path: str, schema_path: str | None = None, outdir: str =
     # A lexicon carrying freq_permillion, as normalise_lexicon writes one, gets a record
     # of how many of its rates put Zipf within 1e-9 of a rounding boundary, the one
     # place the two engines' log10 could have derived a different value. Every lexicon
-    # lexsync ships lacks the column, so their runs log and record nothing new.
+    # lexsync ships lacks the column, so their runs log and record nothing here.
     def note_zipf_derivation(frame):
         record = _zipf_derivation(frame)
         if record is not None:
@@ -598,8 +608,7 @@ def run_pipeline(design_path: str, schema_path: str | None = None, outdir: str =
                 verdict = "equivalent" if cr["equivalent"] else "not shown equivalent"
                 lo, hi = cr["d_ci_low"], cr["d_ci_high"]
                 # A missing d or p is None or NaN and prints "NA", as R's sprintf()
-                # prints it, and a missing interval is left out, as in R. Formatting
-                # None raised a TypeError when a condition had a single item.
+                # prints it, and a missing interval is left out, as in R.
                 ci = f" [{lo:.2f}, {hi:.2f}]" if (_present(lo) and _present(hi)) else ""
                 d = f"{cr['cohens_d']:.2f}" if _present(cr["cohens_d"]) else "NA"
                 p = cr["tost_p"] if _present(cr["tost_p"]) else "NA"
@@ -652,7 +661,7 @@ def run_pipeline(design_path: str, schema_path: str | None = None, outdir: str =
     tally(blk["normalisation"])
     # Logged here, once the practice and filler tables have been read too, and only when
     # normalising changed something, so a run over NFC input, every shipped design
-    # included, writes the same log and datasheet as before.
+    # included, logs no normalisation step and records no input_normalisation.
     input_normalisation = _nfc_record(nfc_total["changed"], nfc_total["collapsed"])
     if input_normalisation:
         runlog.log_step(log, "normalised %d word form(s) to NFC; %d duplicate(s) removed"
@@ -785,9 +794,15 @@ def run_pipeline(design_path: str, schema_path: str | None = None, outdir: str =
 
 
 def run_all(config_dir="config", schema_path=None, outdir="output", verbose=True) -> dict:
-    """Run every ``design_*.yaml`` in ``config_dir`` and return each design's paths.
+    """Run every design in ``config_dir`` and return each design's paths.
 
-    ``schema_path`` left as None is resolved by :func:`lexsync.paths.resolve_schema`:
+    The designs are the files ``design_*.yaml`` and ``design_*.yml`` in ``config_dir``,
+    run in sorted order and writing under ``outdir``. The result maps each design's file
+    name to what ``run_pipeline`` returned for it, and ``verbose`` is passed to each
+    run. A folder without designs raises FileNotFoundError, and two designs that would
+    write the same files raise ValueError before any design runs.
+
+    ``schema_path`` left as None is resolved by ``lexsync.paths.resolve_schema``:
     ``<config_dir>/schema.yaml``, then ``config/schema.yaml`` in the working
     directory, then the copy bundled with the package, with a line on stderr naming
     the file chosen. A named schema that does not exist is an error, raised before
@@ -801,8 +816,8 @@ def run_all(config_dir="config", schema_path=None, outdir="output", verbose=True
         raise FileNotFoundError(f"lexsync: no design_*.yaml files in '{config_dir}'.")
     # Two designs with one stem write the same files, and the second would overwrite
     # the first's without a word, so every stem is checked before any design runs.
-    # `en-lexdec` and `en_lexdec` collide this way, as names differing only outside
-    # ASCII did before design_stem gave them a checksum.
+    # `en-lexdec` and `en_lexdec` collide this way. Names differing only outside ASCII
+    # do not, since design_stem gives them a checksum.
     stems: dict = {}
     for design in designs:
         stem = design_stem(read_config(design))

@@ -31,7 +31,7 @@ Imports:
     yaml,
     stringdist,
     stringi,
-    jsonlite,
+    jsonlite (>= 1.8.7),
     digest,
     stats,
     tools,

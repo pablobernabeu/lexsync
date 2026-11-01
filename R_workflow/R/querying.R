@@ -5,7 +5,8 @@
 #' Validate a lexicon against the schema column contract
 #'
 #' @param df A candidate lexicon data frame.
-#' @param schema The parsed schema (see `config/schema.yaml`).
+#' @param schema The parsed schema, such as
+#'   `yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))`.
 #' @return `TRUE`, invisibly; stops with an informative error otherwise.
 #' @keywords internal
 validate_lexicon <- function(df, schema) {
@@ -65,11 +66,11 @@ validate_lexicon <- function(df, schema) {
 #'
 #' A precomposed letter such as U+00F3 and the base letter followed by a combining
 #' accent are canonically equivalent, but they compare unequal and differ in
-#' length. Unnormalised, the two spellings of one word were two candidates, which
-#' the matcher could place in opposite conditions of one matched set, and a norm
-#' or member join missed whichever spelling the lexicon did not use. Applied after
-#' [.trim_invariant()] and [.lower_invariant()], because case mapping does not
-#' guarantee normalised output. ICU (through stringi) and Python's `unicodedata`
+#' length. Unnormalised, the two spellings of one word would be two candidates,
+#' which the matcher could place in opposite conditions of one matched set, and a
+#' norm or member join would miss whichever spelling the lexicon did not use.
+#' Applied after [.trim_invariant()] and [.lower_invariant()], because case mapping
+#' does not guarantee normalised output. ICU (through stringi) and Python's `unicodedata`
 #' agree on every character assigned in both engines' Unicode versions. Mirrors
 #' `_nfc` in python_workflow/src/lexsync/querying.py.
 #'
@@ -105,17 +106,15 @@ validate_lexicon <- function(df, schema) {
 # as its base letter. That covers the Latin-1 vowels, those of Latin Extended-A and -B
 # and the Vietnamese vowels of Latin Extended Additional. Four vowel letters do not
 # decompose and are named: ae (U+00E6), o with stroke (U+00F8), dotless i (U+0131)
-# and oe (U+0153). The class used to list 26 precomposed Latin-1 vowels without
-# U+00E6, so Polish, Czech, Hungarian, Romanian, Turkish, Danish and Norwegian words
-# were undercounted.
+# and oe (U+0153).
 #
 # The estimate is defined only for words written wholly in Latin script. That is
 # taken as four ranges of code points: U+0001-U+024F (ASCII to Latin Extended-B),
 # U+02B0-U+036F (spacing modifier letters and combining marks), U+1E00-U+1EFF (Latin
 # Extended Additional) and U+2000-U+206F (general punctuation, such as a typographic
-# apostrophe). Any other code point makes it NA. A Chinese, Russian or Greek word
-# used to count 0 syllables, and a design matching on n_syllables then reported
-# perfect balance. Testing code-point ranges keeps the result independent of the
+# apostrophe). Any other code point makes it NA, so a Chinese, Russian or Greek word
+# has no estimate rather than 0 syllables, which would report perfect balance on
+# n_syllables. Testing code-point ranges keeps the result independent of the
 # engines' Unicode tables, and Unicode's stability policy fixes a character's
 # canonical decomposition once it is encoded.
 #
@@ -159,9 +158,9 @@ count_syllables <- function(word) {
 #' Refuse a lexicon column that the shared CSV rule did not read as numbers
 #'
 #' A value such as "1,000" leaves the whole column text under that rule. `as.numeric()`
-#' would then turn it into `NA` with a warning, while the Python engine failed inside
-#' pandas' float conversion, so the refusal is spelled out, naming the first value that
-#' is not a plain decimal number. Mirrors `_require_numbers` in
+#' would then turn it into `NA` with a warning, and pandas' float conversion would fail
+#' in the Python engine, so both engines refuse the column here, naming the first value
+#' that is not a plain decimal number. Mirrors `_require_numbers` in
 #' python_workflow/src/lexsync/querying.py.
 #'
 #' @param x The column.
@@ -252,7 +251,9 @@ count_syllables <- function(word) {
 #' and must still be converted, since it reads about 1.3 below Zipf.
 #'
 #' @param path Path to a derived lexicon CSV.
-#' @param schema The parsed schema (see `config/schema.yaml`).
+#' @param schema The parsed schema, such as
+#'   `yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))`. Its
+#'   `dimensions$frequency$column` names the frequency column.
 #' @param language Optional language label to record in a `language` column.
 #' @return A data frame with at least `word`, `length`, `n_syllables`,
 #'   `frequency` and `id`, plus the frequency column the schema names (by default
@@ -310,15 +311,23 @@ load_lexicon <- function(path, schema, language = NULL) {
 #'
 #' `n_density` is Coltheart's N: the number of reference words of the same
 #' length differing by a single letter substitution (Hamming distance 1).
-#' `old20` is the mean Levenshtein distance to the 20 nearest reference words
-#' (Yarkoni et al., 2008). Both are computed against `reference`, which
+#' `old20` is the mean Levenshtein distance to the `n_old` (default 20) nearest other
+#' reference words (Yarkoni et al., 2008). Both are computed against `reference`, which
 #' should be a large word list (typically the whole lexicon), not just the
 #' experimental pool.
 #'
+#' @references Yarkoni, T., Balota, D., & Yap, M. (2008). Moving beyond Coltheart's N:
+#'   A new measure of orthographic similarity. *Psychonomic Bulletin & Review, 15*(5),
+#'   971-979. \doi{10.3758/PBR.15.5.971}
+#'
 #' @param df A data frame with a `word` column.
-#' @param reference A character vector of reference words.
-#' @param n_old Neighbourhood size for OLD (default 20).
-#' @return `df` with added integer `n_density` and numeric `old20` columns.
+#' @param reference A character vector of reference words, `df$word` by default.
+#'   Duplicates count once.
+#' @param n_old Neighbourhood size for OLD (default 20). The column is named `old20`
+#'   whatever its value.
+#' @return `df` with added integer `n_density` and numeric `old20` columns. A word with
+#'   fewer than `n_old` other words in the reference has the mean over those it has, and
+#'   `old20` is `NA` for a word with none.
 #' @importFrom stringdist stringdist
 #' @export
 add_neighbourhood <- function(df, reference = df$word, n_old = 20L) {
@@ -348,6 +357,17 @@ add_neighbourhood <- function(df, reference = df$word, n_old = 20L) {
   df
 }
 
+# Both engines return identical values, and the reasons are worth stating because
+# they are the constraints on any future relational dimension. The core is an
+# integer edit distance, and stringdist(method = "lv") and rapidfuzz's
+# Levenshtein.distance agree exactly, including on decomposed Unicode and CJK,
+# which is the same cross-library agreement add_neighbourhood() already stakes
+# old20 on. Length is counted in code points, nchar()'s default and Python's len(),
+# never in bytes. The arithmetic uses only - and /, which IEEE-754 mandates be
+# correctly rounded, and the result is rounded to nine decimal places, the constant
+# used everywhere else in the package. A degenerate pair of two empty forms returns 0
+# rather than 0/0, because a NaN would be sorted and compared and would then drop the
+# row from one engine's control window but not the other's.
 #' Orthographic overlap between the two members of each pair
 #'
 #' Adds two columns. `pair.lev` is the Levenshtein distance between the pair's two
@@ -356,17 +376,11 @@ add_neighbourhood <- function(df, reference = df$word, n_old = 20L) {
 #' priming design: a related pair that also shares letters confounds semantic
 #' relatedness with orthographic similarity.
 #'
-#' Both engines return identical values, and the reasons are worth stating because
-#' they are the constraints on any future relational dimension. The core is an
-#' integer edit distance, and `stringdist(method = "lv")` and rapidfuzz's
-#' `Levenshtein.distance` agree exactly, including on decomposed Unicode and CJK,
-#' which is the same cross-library agreement `add_neighbourhood()` already stakes
-#' `old20` on. Length is counted in code points, `nchar()`'s default and Python's
-#' `len()`, never in bytes. The arithmetic uses only `-` and `/`, which IEEE-754
-#' mandates be correctly rounded, and the result is rounded to nine decimal places,
-#' the constant used everywhere else in the package. A degenerate pair of two empty
-#' forms returns 0 rather than `0/0`, because a NaN would be sorted and compared and
-#' would then drop the row from one engine's control window but not the other's.
+#' The forms are trimmed, lower-cased and normalised to Unicode NFC before they are
+#' compared, as [load_lexicon()] does to a lexicon's words, so `Dog` and `dog` are at
+#' distance 0. Length is counted in code points. `pair.overlap` is rounded to nine
+#' decimal places, and a pair of two empty forms gives 0. Both engines return
+#' identical values.
 #'
 #' @param df A pair table.
 #' @param prime,target Column names holding the two orthographic forms.
@@ -442,18 +456,19 @@ add_bigram_frequency <- function(df, reference = NULL) {
 #' and either way a dimension the design matches on disappears under a name
 #' nothing looks for; and `merge(sort = FALSE)` leaves the row order unspecified, so
 #' x's order is not carried through. A positional lookup has none of those degrees of
-#' freedom: the output is the input plus columns, in both engines. A colliding
-#' name is now an error instead.
+#' freedom: the output is the input plus columns, in both engines. A norm column
+#' whose name the lexicon already has is refused.
 #'
-#' The key is trimmed, case-folded and normalised to NFC on *both* sides. Only the
-#' norm table's side was trimmed and case-folded before, so a lexicon holding `Dog`
-#' matched nothing and the design carried on with an all-`NA` dimension. Because both engines agreed on that wrong
-#' answer, no parity test could have caught it. The lexicon's own spelling is
+#' The key is trimmed, case-folded and normalised to NFC on *both* sides, so a
+#' lexicon holding `Dog` matches a norm row for `dog`. The lexicon's own spelling is
 #' preserved rather than folded in place: `word` is the byte-order tie-break behind
-#' every selection, so the join must not rewrite it.
+#' every selection, so the join must not rewrite it. A missing key never matches, and
+#' when two rows of the norm table share a key once it is normalised, the first of
+#' them is used.
 #'
 #' @param lexicon A lexicon data frame.
-#' @param norms A data frame or the path to a CSV with a word column and norms.
+#' @param norms A data frame, or the path to a UTF-8 CSV, holding the `on` column and
+#'   the norm columns.
 #' @param on The join column (default "word").
 #' @param columns Optional norm columns to keep.
 #' @return `lexicon` with the norm columns appended, in the lexicon's own row and
@@ -725,7 +740,8 @@ merge_norms <- function(lexicon, norms, on = "word", columns = NULL) {
 #' `reference_member` column on whichever of the two supplies the reference keeps
 #' only the rows it marks 1.
 #'
-#' @param path Path to a UTF-8 CSV with at least a `word` column.
+#' @param path Path to a UTF-8 CSV with at least a `word` column. A path with a `..`
+#'   component is refused. Give it from the working directory, or as an absolute path.
 #' @param schema The parsed schema (used when a lexicon is loaded).
 #' @param lexicon Optional path to a derived lexicon to draw dimensions from.
 #' @param language Optional language label recorded in a `language` column.
@@ -810,7 +826,8 @@ load_pool <- function(path, schema, lexicon = NULL, language = NULL) {
 #' NFC. When that changed any cell, the attribute `input_normalisation` holds
 #' `list(changed, collapsed)`, with `collapsed` always 0 since no row is removed.
 #'
-#' @param path Path to a UTF-8 CSV item table.
+#' @param path Path to a UTF-8 CSV item table. A path with a `..` component is
+#'   refused. Give it from the working directory, or as an absolute path.
 #' @param required_fields Character vector of presented fields the paradigm needs.
 #' @return A data frame with `set`, `condition` and the item fields.
 #' @export
@@ -883,8 +900,10 @@ load_items <- function(path, required_fields) {
 #' for a condition's `define_by`, and the pair selector for both.
 #'
 #' @param lexicon A lexicon data frame.
-#' @param filters A named list mapping columns to either a numeric `c(min, max)`
-#'   range or a vector of permitted values.
+#' @param filters A named list mapping columns to filters. A numeric vector of two
+#'   values is an inclusive range, `c(min, max)`, and any other vector a set of
+#'   permitted values, compared as text. To permit exactly two numbers, write them as
+#'   text, as in `c("1", "3")`.
 #' @return The filtered lexicon, with row names dropped. A row missing the filtered
 #'   column is dropped under either kind of filter, and a range with a reversed or
 #'   non-finite bound is an error rather than an empty pool.

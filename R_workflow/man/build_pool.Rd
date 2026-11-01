@@ -9,8 +9,10 @@ build_pool(lexicon, filters = NULL)
 \arguments{
 \item{lexicon}{A lexicon data frame.}
 
-\item{filters}{A named list mapping columns to either a numeric \code{c(min, max)}
-range or a vector of permitted values.}
+\item{filters}{A named list mapping columns to filters. A numeric vector of two
+values is an inclusive range, \code{c(min, max)}, and any other vector a set of
+permitted values, compared as text. To permit exactly two numbers, write them as
+text, as in \code{c("1", "3")}.}
 }
 \value{
 The filtered lexicon, with row names dropped. A row missing the filtered

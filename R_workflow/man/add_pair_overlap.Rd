@@ -22,15 +22,9 @@ priming design: a related pair that also shares letters confounds semantic
 relatedness with orthographic similarity.
 }
 \details{
-Both engines return identical values, and the reasons are worth stating because
-they are the constraints on any future relational dimension. The core is an
-integer edit distance, and \code{stringdist(method = "lv")} and rapidfuzz's
-\code{Levenshtein.distance} agree exactly, including on decomposed Unicode and CJK,
-which is the same cross-library agreement \code{add_neighbourhood()} already stakes
-\code{old20} on. Length is counted in code points, \code{nchar()}'s default and Python's
-\code{len()}, never in bytes. The arithmetic uses only \code{-} and \code{/}, which IEEE-754
-mandates be correctly rounded, and the result is rounded to nine decimal places,
-the constant used everywhere else in the package. A degenerate pair of two empty
-forms returns 0 rather than \code{0/0}, because a NaN would be sorted and compared and
-would then drop the row from one engine's control window but not the other's.
+The forms are trimmed, lower-cased and normalised to Unicode NFC before they are
+compared, as \code{\link[=load_lexicon]{load_lexicon()}} does to a lexicon's words, so \code{Dog} and \code{dog} are at
+distance 0. Length is counted in code points. \code{pair.overlap} is rounded to nine
+decimal places, and a pair of two empty forms gives 0. Both engines return
+identical values.
 }

@@ -9,7 +9,8 @@ merge_norms(lexicon, norms, on = "word", columns = NULL)
 \arguments{
 \item{lexicon}{A lexicon data frame.}
 
-\item{norms}{A data frame or the path to a CSV with a word column and norms.}
+\item{norms}{A data frame, or the path to a UTF-8 CSV, holding the \code{on} column and
+the norm columns.}
 
 \item{on}{The join column (default "word").}
 
@@ -35,13 +36,13 @@ disambiguates a colliding column name with \code{.x}/\code{.y} and pandas with \
 and either way a dimension the design matches on disappears under a name
 nothing looks for; and \code{merge(sort = FALSE)} leaves the row order unspecified, so
 x's order is not carried through. A positional lookup has none of those degrees of
-freedom: the output is the input plus columns, in both engines. A colliding
-name is now an error instead.
+freedom: the output is the input plus columns, in both engines. A norm column
+whose name the lexicon already has is refused.
 
-The key is trimmed, case-folded and normalised to NFC on \emph{both} sides. Only the
-norm table's side was trimmed and case-folded before, so a lexicon holding \code{Dog}
-matched nothing and the design carried on with an all-\code{NA} dimension. Because both engines agreed on that wrong
-answer, no parity test could have caught it. The lexicon's own spelling is
+The key is trimmed, case-folded and normalised to NFC on \emph{both} sides, so a
+lexicon holding \code{Dog} matches a norm row for \code{dog}. The lexicon's own spelling is
 preserved rather than folded in place: \code{word} is the byte-order tie-break behind
-every selection, so the join must not rewrite it.
+every selection, so the join must not rewrite it. A missing key never matches, and
+when two rows of the norm table share a key once it is normalised, the first of
+them is used.
 }

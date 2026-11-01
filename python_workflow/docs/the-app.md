@@ -99,8 +99,9 @@ standard deviations of the band a candidate must fall inside. It is collapsed by
 the schema already carries a sensible default for every dimension, and a zero there leaves that
 default alone, where you might expect it to pin the window to nothing. Reproducing the exact
 window of a published study is the usual reason to touch the panel at all, and the panel itself
-gives the worked example that [Matching and designs](matching-and-designs.md) discusses, a
-frequency k of 0.111 for a band of the mean plus or minus a ninth of a standard deviation.
+gives the worked example that [Matching and designs](matching-and-designs.md#how-matching-works) discusses, a
+frequency k of 0.1111111111111111 for a band of the mean plus or minus a ninth of a standard
+deviation.
 
 ### Lexical decision
 
@@ -108,7 +109,7 @@ A lexical-decision design takes the same lexicon and pool filters and then asks 
 of items per condition, words and pseudowords being equal in number, and for the generator.
 `letter_substitution`, the engine default, changes as few single letters as it can while keeping
 every bigram attested. `subsyllabic` swaps whole onset, nucleus and coda constituents in the manner
-of Wuggy (Keuleers & Brysbaert, 2010). Both are deterministic, so the pseudowords are the same ones
+of Wuggy ([Keuleers & Brysbaert, 2010](references.md#keuleers-2010)). Both are deterministic, so the pseudowords are the same ones
 the package would generate from a script.
 
 ### Priming and self-paced reading
@@ -116,9 +117,10 @@ the package would generate from a script.
 These two paradigms read prepared items instead of selecting any, so no corpus and no matching
 are involved. The app offers the bundled example table for the paradigm,
 `items/priming_pairs_en.csv` or `items/spr_sentences_en.csv`, and shows its first rows. Clearing
-that checkbox uploads a table of your own instead, and the uploader states the columns the paradigm
-requires, which are `item`, `condition`, `prime` and `target` for priming, and `item`, `condition`,
-`sentence` with its regions split by `|`, and `critical_region` for self-paced reading. Either way
+that checkbox uploads a table of your own instead. A priming table needs `item`, `condition`,
+`prime` and `target`, and a self-paced reading table needs `item`, `condition`, `question` and
+`sentence`, with its regions split by `|`, and may add `critical_region` to give the number of the
+region that carries the condition marker. Either way
 the design needs only the number of counterbalancing lists.
 
 ## Running it

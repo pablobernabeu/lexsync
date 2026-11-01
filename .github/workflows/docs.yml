@@ -40,7 +40,8 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      # Pandoc renders the vignette, which pkgdown turns into the Articles tab.
+      # Pandoc renders the vignettes, from which pkgdown builds the Get started page,
+      # the Articles menu and the About page.
       - uses: r-lib/actions/setup-pandoc@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05  # v2.14.0
       - uses: r-lib/actions/setup-r@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05  # v2.14.0
         with:

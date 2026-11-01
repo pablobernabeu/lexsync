@@ -24,12 +24,27 @@ A data frame of selected stimuli with a \code{condition} label and a \code{set}
 index pairing matched items across conditions.
 }
 \description{
-The first condition is the anchor; its items are chosen by an even spread
-across the sorted candidate subpool. Every other condition is then matched to
-the anchor item by item, on the \code{match_on} dimensions, using standardised
-Euclidean distance under a tolerance window derived from the anchor.
+Under the default method, the first condition is the anchor; its items are chosen
+by an even spread across the sorted candidate subpool. Every other condition is
+then matched to the anchor item by item, on the \code{match_on} dimensions, using
+standardised Euclidean distance under a tolerance window derived from the anchor.
 }
 \details{
+\code{method}, read from the design's \code{matching} block with the schema as fallback,
+chooses the matcher. \code{"standardised_euclidean"} (the default) is the anchored
+procedure above. \code{"mahalanobis"} is the same procedure with distances weighted by
+the inverse of the pool's correlation matrix, which, with two or more matched
+dimensions, needs at least k + 2 pool rows complete on the k dimensions.
+\code{"joint"} and \code{"optimal"} need exactly two conditions. They drop the anchor and
+pair the two conditions' candidates directly: \code{joint} takes the cheapest disjoint
+pairs first, and \code{optimal} takes the \code{n} pairs of least summed distance (exactly so
+for disjoint conditions) and needs the 'clue' package. Neither consults
+\code{tolerance_k} or \code{on_insufficient_tolerance}, and each first keeps at most 1,200
+candidates per condition, those nearest the other condition's centroid.
+\code{standardised_euclidean} and \code{joint} select the same stimuli in the R and Python
+engines. \code{mahalanobis} and \code{optimal} agree closely but not byte for byte, and
+\code{optimal} may return a different set of pairs with the same summed distance.
+
 Two policies govern degraded selections, each read from the design's
 \code{matching} block with the schema as fallback: \code{shortfall} (\code{"error"}, the
 default, refuses to return fewer sets than requested; \code{"allow"} accepts the

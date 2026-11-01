@@ -1,14 +1,10 @@
 # Build and publish the Python package to PyPI through trusted publishing
 # (OIDC), so no API token is ever stored in the repository.
 #
-# One-time setup on PyPI: add this repository as a pending publisher for the
-# lexsync project (owner "pablobernabeu", repository "lexsync", workflow file
-# "publish.yml", environment "pypi"). The first upload creates the project and
-# makes the publisher permanent. Until then a pending publisher does not reserve
-# the name, and PyPI deletes it if it is still unused 30 days after it was
-# added, so add it shortly before the release that will use it. If it has
-# lapsed, the upload fails with "invalid-publisher": add it again and re-run the
-# failed publish job.
+# This workflow is the lexsync project's trusted publisher on PyPI (owner
+# "pablobernabeu", repository "lexsync", workflow file "publish.yml", environment
+# "pypi"). Renaming this file or the environment makes uploads fail with
+# "invalid-publisher" until the publisher on PyPI is updated to match.
 #
 # The workflow runs when a GitHub release is published. The manual trigger lets
 # a version reach PyPI from its tag before the GitHub release is published, so
@@ -49,8 +45,7 @@ jobs:
       # A version number can never be reused on PyPI. Uploading 0.1.0 from a
       # release tagged v0.1.1 burns 0.1.0 permanently, and the only remedy is to
       # yank it and move on to the next number, so the mismatch is caught here
-      # before anything is built rather than after it is public. None of the four
-      # sibling packages has this check; lexsync is where it starts.
+      # before anything is built rather than after it is public.
       #
       # The tag reaches the script through the environment rather than being
       # interpolated into the shell command, because a release tag is

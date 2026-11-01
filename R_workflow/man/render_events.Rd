@@ -6,19 +6,57 @@
 \usage{
 render_events(events, timing, hz = 60)
 }
+\arguments{
+\item{events}{The design's event list, as \code{\link[=resolve_events]{resolve_events()}} returns it.}
+
+\item{timing}{The design's \code{timing} block, a named list. \code{NULL} or an empty list
+overrides nothing.}
+
+\item{hz}{The refresh rate, in Hz, at which \verb{*_frames} durations are converted to
+milliseconds. The exporters pass the schema's \code{presentation.assumed_refresh_hz},
+60 when it is absent.}
+}
+\value{
+A list of rendered events, one per event of \code{events}, except that a response
+collected from the onset of the text event before it is merged into that event as
+its \code{respond} entry.
+}
 \description{
-Durations are emitted as whole milliseconds (\code{ms}), the unit every backend
-consumes: OpenSesame and jsPsych schedule it directly, and the PsychoPy script
-converts it back into whole flips against the refresh rate it measures at
-start-up.
+A fixation, text or mask event's \code{trigger} and a region-by-region event's
+\code{critical_region_trigger} (rendered as \code{crit_trigger}) must be the token
+\code{"condition"} or \code{"item"}, rendered as \code{"@condition_trigger"} or \code{"@item_trigger"},
+or a whole number from 1 to 255, written as a number or as a string of digits and
+rendered as an integer. Any other value is refused, naming the event by its place in
+\code{events}, counted from 1.
 }
 \details{
+\code{timing} sets durations by event type, in place of an event's own \code{duration_ms} or
+\code{duration_frames} but not of a \verb{duration:} block: \code{fixation_ms} or \code{fixation_frames}
+every fixation, \code{word_ms} or \code{word_frames} every text event whose trigger is
+\code{"condition"} and \code{isi_ms} or \code{isi_frames} every blank. Any other \code{timing} key is
+refused. So is a duration that is not a finite number of at least 0, whether a
+\code{timing} value or an event's own \code{duration_ms} or \code{duration_frames} where it is used.
+
+Other design errors refused here include an unknown event type, a feedback event
+with no response or question event before it, \code{case} on an event that is not a text
+event and \code{length_of} on one that is not a mask. A response is refused when its
+\code{from} is other than \code{onset} or \code{offset}, or when it is collected from the onset of
+an event that is not a text event or that runs in other \code{blocks}.
+
+A fixed duration is emitted as whole milliseconds (\code{ms}), the unit every backend
+consumes: OpenSesame and jsPsych schedule it directly, and the PsychoPy script
+converts it back into whole flips against the refresh rate it measures at
+start-up. A duration read from the items or jittered (a \verb{duration:} block) is
+emitted as \code{ms_column}, the loop-table column holding each trial's milliseconds. A
+response or question event's \code{timeout} is in seconds, rounded to three places.
+
 A response collected from the onset of the text event before it (see
 \code{.response_from()}) is rendered with that event, as its \code{respond} entry (\code{keys}
-and \code{timeout}). The text keeps \code{ms} as its longest display time, and the window
-runs from its onset for \code{ms} plus the timeout, so the total window is the one the
-two events had. A response collected from the offset stays an event of its own.
-Keys are rendered as lists, which jsonlite writes as arrays even for one key.
+and \code{timeout}). The text keeps its \code{ms} (or \code{ms_column}) as its longest display
+time, and the window runs from its onset for \code{ms} plus the timeout, so the total
+window is the one the two events had. A response collected from the offset stays an
+event of its own. Keys are rendered as lists, which jsonlite writes as arrays even
+for one key.
 
 A text event's \code{case} is carried as it is, for the runners to apply. A mask's
 \code{length_of} is carried too, with the one character to repeat as its \code{text}, and the

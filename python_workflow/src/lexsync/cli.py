@@ -35,10 +35,13 @@ def main(argv=None) -> None:
         prog="lexsync",
         description="lexsync: lexical optimisation and hardware-timed experiment generation",
     )
-    parser.add_argument("--version", action="version", version="lexsync " + _version())
+    parser.add_argument("--version", action="version", version="lexsync " + _version(),
+                        help="show the installed lexsync's version ('unknown' when it is not "
+                             "installed) and exit")
     parser.add_argument("--traceback", action="store_true",
                         help="show the full Python traceback when a command fails")
-    sub = parser.add_subparsers(dest="command")
+    sub = parser.add_subparsers(dest="command",
+                                help="the command to run (with none, this help is printed)")
 
     run = sub.add_parser("run", help="run one design, or all designs in --config-dir")
     run.add_argument("design", nargs="?", help="path to a design YAML (omit to run all)")
@@ -47,16 +50,22 @@ def main(argv=None) -> None:
     # beside the designs before the bundled copy is used.
     run.add_argument("--schema", default=None,
                      help="path to the schema YAML (default: resolved, see the docs)")
-    run.add_argument("--config-dir", default="config")
-    run.add_argument("--outdir", default="output")
+    run.add_argument("--config-dir", default="config",
+                     help="used only when no design is named: the folder whose design_*.yaml "
+                          "and design_*.yml files run and whose schema.yaml is tried first "
+                          "(default: config)")
+    run.add_argument("--outdir", default="output",
+                     help="root of the written stimuli/, reports/ and experiments/ (default: output)")
 
     corpora = sub.add_parser("corpora", help="corpus registry operations")
-    corpora.add_argument("action", choices=["list"])
+    corpora.add_argument("action", choices=["list"], help="list: print the corpus registry as a table")
 
-    fetch = sub.add_parser("fetch", help="fetch a corpus by registry name or language code")
-    fetch.add_argument("name")
+    fetch = sub.add_parser("fetch", help="fetch a corpus by registry name or language code into the "
+                                         "cache and print its path")
+    fetch.add_argument("name", help="a registry corpus name, or a language code the wordfreq connector "
+                                    "builds a lexicon for")
     # The committed lexica were built with 30,000 forms (20,000 for zh) by
-    # corpora/fetch_corpora.py. The default stays 10,000, as before.
+    # corpora/fetch_corpora.py. The default is 10,000.
     fetch.add_argument("--n-words", type=_positive_int, default=10000,
                        help="forms in a lexicon the wordfreq connector builds (default 10000)")
 

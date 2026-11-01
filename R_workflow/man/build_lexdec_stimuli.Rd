@@ -29,10 +29,12 @@ pseudoword must not equal, which the reference may lack; see
 \code{\link[=generate_pseudowords]{generate_pseudowords()}}.}
 }
 \value{
-A stimulus data frame with \code{target}, \code{condition} and \code{set} columns.
-\code{base} gives the word each pseudoword was made from, a word's own form for a
-word, and \code{edit_distance} the Levenshtein distance from \code{target} to \code{base}, 0
-for a word.
+A stimulus data frame with the columns \code{target}, \code{word} (the same form),
+\code{condition} (\code{word} or \code{pseudoword}), \code{length} (the base word's \code{length} from
+\code{pool}, which its pseudoword shares), \code{set} (pairing each word with its
+pseudoword), \code{base} (the word each pseudoword was made from, and a word's own form
+for a word) and \code{edit_distance} (the Levenshtein distance from \code{target} to \code{base},
+0 for a word). The word rows come first, then the pseudowords in the same order.
 }
 \description{
 Real words are drawn by an even spread across the byte-ordered pool, then a
@@ -44,4 +46,9 @@ logographic script is refused. \code{reference_words} (the full lexicon) supplie
 the letters, the bigram statistics and the real-word list a pseudoword must
 avoid. The presented string is the \code{target} column; conditions are \code{word} and
 \code{pseudoword} and \code{set} pairs them.
+}
+\references{
+Keuleers, E., & Brysbaert, M. (2010). Wuggy: A multilingual pseudoword
+generator. \emph{Behavior Research Methods, 42}(3), 627-633.
+\doi{10.3758/BRM.42.3.627}
 }

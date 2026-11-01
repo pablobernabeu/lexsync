@@ -2,14 +2,30 @@
 % Please edit documentation in R/scripting.R
 \name{loop_table}
 \alias{loop_table}
-\title{Per-trial table carrying exactly the fields the events reference}
+\title{Per-trial table of the columns the experiments read}
 \usage{
 loop_table(stimuli, events = NULL)
 }
+\arguments{
+\item{stimuli}{The trials, a data frame.}
+
+\item{events}{The design's event list, as \code{\link[=resolve_events]{resolve_events()}} returns it, or \code{NULL}.}
+}
+\value{
+A data frame with those columns, in that row order, its row names reset.
+}
 \description{
+The columns are those of \code{stimuli}, where present, in this order: \code{trial}, \code{list},
+\code{replicate}, \code{block}, \code{set}, \code{condition}, \code{order_1} to \code{order_m} (with two or more
+orders), the fields the events' content references (\code{\link[=referenced_fields]{referenced_fields()}}), or
+\code{word} when \code{events} is \code{NULL}, the per-trial duration columns the events read,
+\code{critical_region}, \code{answer}, \code{condition_trigger} and \code{item_trigger}. Every other
+column of \code{stimuli} is left out.
+}
+\details{
 The rows are in presentation order within each version: by replicate when the
 table has one, then by list, then by trial. \code{trial} restarts at 1 in every list
-and in every replicate, so ordering on it alone interleaved the versions. The
+and in every replicate, so ordering on it alone would interleave the versions. The
 sort is stable, so rows that tie keep their incoming order and the two engines
 write the same table. A design with \code{counterbalance.orders} carries \code{order_1} to
 \code{order_m} after the columns that place a trial, each trial's position in each

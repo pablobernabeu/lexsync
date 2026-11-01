@@ -16,9 +16,9 @@
 # that carries the rest. Mirrors the note in validation.py.
 
 # Refuse a grouping column or a dimension the stimuli do not carry. The reports are
-# exported for use on a selection of one's own, where a misspelt dimension gave a table
-# of missing values with n of 0, which looked complete, and the Python twin a bare
-# KeyError. Mirrors _require_columns in validation.py.
+# exported for use on a selection of one's own, where a misspelt dimension would
+# otherwise give a table of missing values with n of 0, which looks complete, and the
+# Python twin a bare KeyError. Mirrors _require_columns in validation.py.
 .require_columns <- function(stimuli, dims, by = NULL) {
   if (!is.null(by) && !by %in% names(stimuli)) {
     stop(sprintf("lexsync: grouping column '%s' is not a column of the stimuli.", by),
@@ -40,7 +40,10 @@
 #' @param stimuli A stimuli data frame.
 #' @param dims Character vector of dimension columns.
 #' @param by Grouping column (default `"condition"`).
-#' @return A long data frame with n, mean, sd, min, median and max per group.
+#' @return A long data frame with one row per group and dimension, the groups in order
+#'   of first appearance. Its columns are `group`, `dimension`, `n` (the non-missing
+#'   values), `mean`, `sd`, `min`, `median` and `max`, the last five rounded to three
+#'   decimal places. A value that is not a number counts as missing.
 #' @export
 describe_stimuli <- function(stimuli, dims, by = "condition") {
   .require_columns(stimuli, dims, by)
@@ -96,8 +99,8 @@ describe_stimuli <- function(stimuli, dims, by = "condition") {
 cohens_d <- function(x, y) {
   x <- x[!is.na(x)]; y <- y[!is.na(y)]
   nx <- length(x); ny <- length(y)
-  # Undefined, not 0: a frequency contrast of 6.5 against 3.9 Zipf with one item a
-  # side was reported as a perfect balance.
+  # Undefined, not 0, or a frequency contrast of 6.5 against 3.9 Zipf with one item a
+  # side would read as a perfect balance.
   if (nx < 2 || ny < 2) return(NA_real_)
   sp <- sqrt(((nx - 1) * .exact_var(x) + (ny - 1) * .exact_var(y)) / (nx + ny - 2))
   if (is.na(sp) || sp == 0) {
@@ -133,6 +136,20 @@ cohens_d <- function(x, y) {
 #' implies, and when a control's limit lies close to the bound, `tost_p` gives the
 #' verdict.
 #'
+#' @references Borenstein, M., Hedges, L. V., Higgins, J. P. T., & Rothstein, H. R.
+#'   (2009). *Introduction to meta-analysis*. Wiley. \doi{10.1002/9780470743386}
+#'
+#'   Hedges, L. V., & Olkin, I. (1985). *Statistical methods for meta-analysis*.
+#'   Academic Press. \doi{10.1016/C2009-0-03396-0}
+#'
+#'   Lakens, D. (2017). Equivalence tests: A practical primer for *t* tests,
+#'   correlations, and meta-analyses. *Social Psychological and Personality Science,
+#'   8*(4), 355-362. \doi{10.1177/1948550617697177}
+#'
+#'   Sassenhagen, J., & Alday, P. M. (2016). A common misapplication of statistical
+#'   inference: Nuisance control with null-hypothesis significance tests. *Brain and
+#'   Language, 162*, 42-45. \doi{10.1016/j.bandl.2016.08.001}
+#'
 #' @param x,y Numeric vectors.
 #' @param alpha Significance level matching the TOST (default 0.05).
 #' @return A list with `d`, `ci_low` and `ci_high`, all three `NA` when either
@@ -155,7 +172,7 @@ cohens_d_ci <- function(x, y, alpha = 0.05) {
   d <- diff / sp
   # Large-sample variance of d: 1/nx + 1/ny + d^2 / (2 * (nx + ny)) (Hedges &
   # Olkin, 1985; Borenstein et al., 2009, eq. 4.20). Without the d^2 term the
-  # interval treated the pooled SD as known, which gave a manipulated dimension
+  # interval would treat the pooled SD as known, giving a manipulated dimension
   # with d = 5.6 and 40 items a side a margin of 0.37 in place of 0.83. Written
   # with d * d, not d^2, and summed in the same order as validation.py, so both
   # engines round every step identically.
@@ -170,6 +187,10 @@ cohens_d_ci <- function(x, y, alpha = 0.05) {
 #' supports equivalence within +/- `bound_d` standard deviations. A
 #' non-significant difference test is not itself evidence of equivalence, hence
 #' TOST is reported alongside the standardised mean difference (Lakens, 2017).
+#'
+#' @references Lakens, D. (2017). Equivalence tests: A practical primer for *t* tests,
+#'   correlations, and meta-analyses. *Social Psychological and Personality Science,
+#'   8*(4), 355-362. \doi{10.1177/1948550617697177}
 #'
 #' @param x,y Numeric vectors.
 #' @param bound_d Smallest effect size of interest (Cohen's d); defaults to the
@@ -213,8 +234,19 @@ tost_equiv <- function(x, y, bound_d = 0.5, alpha = 0.05) {
 #' (Armstrong et al., 2012; Austin, 2009). A ratio near 1 is balanced; a common
 #' heuristic flags ratios outside roughly 0.5 to 2.
 #'
+#' @references Armstrong, B. C., Watson, C. E., & Plaut, D. C. (2012). SOS! An
+#'   algorithm and software for the stochastic optimization of stimuli. *Behavior
+#'   Research Methods, 44*(3), 675-705. \doi{10.3758/s13428-011-0182-9}
+#'
+#'   Austin, P. C. (2009). Balance diagnostics for comparing the distribution of
+#'   baseline covariates between treatment groups in propensity-score matched
+#'   samples. *Statistics in Medicine, 28*(25), 3083-3107. \doi{10.1002/sim.3697}
+#'
 #' @param cond,ref Numeric vectors (condition and reference).
-#' @return The variance ratio, or `NA` when a variance is undefined.
+#' @return The variance ratio. Missing values are dropped first. The ratio is `NA` when
+#'   either vector has fewer than two non-missing values, or when the reference's
+#'   variance is zero and the condition's is not. It is 1 when both variances are
+#'   zero.
 #' @examples
 #' variance_ratio(c(1, 2, 3, 4), c(1, 2, 3, 8))
 #' @export
@@ -229,7 +261,8 @@ variance_ratio <- function(cond, ref) {
 #' Check that the levels of given columns occur equally often
 #'
 #' @param stimuli A stimuli data frame.
-#' @param columns Columns whose level counts should be equal.
+#' @param columns Columns whose level counts should be equal. A name the stimuli do
+#'   not carry is skipped without a warning, so check the names first.
 #' @return A character vector of human-readable balance warnings (empty if none).
 #' @export
 balance_check <- function(stimuli, columns) {
@@ -344,12 +377,12 @@ match_report <- function(stimuli, dims, schema, roles = NULL) {
 }
 
 # The comparisons frame a single-condition design produces: the columns, no rows.
-# rbind() of an empty list returns NULL, which run_pipeline's seq_len(nrow(...)) loop
-# then died on with "argument must be coercible to non-negative integer", naming
-# neither the design nor the cause, while the Python engine went on and wrote a
-# comparisons CSV with no header at all. Naming the columns here gives both engines
-# the same header-only file and the same empty loop. `mean_diff` and `role` follow the
-# columns a 0.1 reader already knows.
+# rbind() of an empty list returns NULL, on which run_pipeline's seq_len(nrow(...))
+# loop would stop with "argument must be coercible to non-negative integer", naming
+# neither the design nor the cause, and the Python engine would write a comparisons
+# CSV with no header at all. Naming the columns here gives both engines the same
+# header-only file and the same empty loop. `mean_diff` and `role` follow the columns
+# a 0.1 reader already knows.
 # Must list the same columns, in the same order, as _COMPARISON_COLUMNS in
 # python_workflow/src/lexsync/validation.py.
 #' @keywords internal

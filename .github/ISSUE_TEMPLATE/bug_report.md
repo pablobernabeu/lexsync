@@ -17,6 +17,12 @@ key or token) into an issue. Replace it with a placeholder.
 # your example here (R reprex or Python snippet)
 ```
 
+**Design and run log**
+If the problem came up in a pipeline run, paste the design YAML, and paste or
+attach the run log the run wrote to the `reports/` folder of its output directory,
+the file ending `_run_log_R.md` from R or `_run_log_py.md` from Python. Between
+them they pin the inputs and every step that ran.
+
 **Environment**
 <details>
 

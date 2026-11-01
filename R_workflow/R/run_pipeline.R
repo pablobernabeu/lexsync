@@ -1,8 +1,9 @@
 # run_pipeline.R -- the orchestrator. For each design it loads a lexicon, builds
 # the candidate pool, computes any missing dimensions, matches stimuli across
-# conditions, counterbalances, writes the descriptive-statistics report and the
-# run log, and exports the PsychoPy and OpenSesame scripts. run_all() loops over
-# every design configuration, automating the work across languages and designs.
+# conditions, counterbalances, writes the stimuli file, the descriptives and
+# comparisons reports, the materials datasheet and the run log, and exports the
+# PsychoPy, OpenSesame and jsPsych experiments. run_all() loops over every design
+# configuration, automating the work across languages and designs.
 
 # The dimensions lexsync derives from the forms when a lexicon lacks them, in the
 # order add_neighbourhood() and add_bigram_frequency() add them.
@@ -10,8 +11,8 @@
 
 # The dimensions a corpus or pool design's realised-control report covers whenever the
 # stimuli carry them, ahead of the ones the design names. A report of match_on alone
-# left uncontrolled confounds unreported: en_ndensity's dense words had fewer estimated
-# syllables than its sparse ones (d = -0.83).
+# would leave uncontrolled confounds unreported: en_ndensity's dense words have fewer
+# estimated syllables than its sparse ones (d = -0.53).
 .REPORT_DIMS <- c("length", "frequency", "n_density", "old20", "n_syllables", "bigram_freq")
 
 # A generated lexical decision's report: length, which every pseudoword shares with its
@@ -142,7 +143,16 @@
 #'   Its words are normalised to Unicode NFC before use, like every other text key
 #'   the pipeline reads.
 #' @param verbose Logical; print progress.
-#' @return A named list of output paths, invisibly.
+#' @return Invisibly, a named list. `stimuli` is the path of
+#'   `stimuli/<stem>_stimuli_R.csv` under `outdir`. `descriptives` and `comparisons`
+#'   are the paths of `reports/<stem>_descriptives_R.csv` and
+#'   `reports/<stem>_comparisons_R.csv`, both `NULL` for an item table without a
+#'   continuous selection, which has no match report. `experiments` is the list
+#'   [export_experiments()] returns, and `log` is the path of
+#'   `reports/<stem>_run_log_R.md`. The run also writes the JSON Lines log
+#'   `reports/<stem>_run_log_R.jsonl` and the datasheet `reports/<stem>_datasheet_R.json`
+#'   and `reports/<stem>_datasheet_R.md`, which the list does not name. `<stem>` is
+#'   [design_stem()] of the design.
 #' @export
 run_pipeline <- function(design_path, schema_path = NULL,
                          outdir = NULL, reference_words = NULL, verbose = TRUE) {
@@ -261,7 +271,7 @@ run_pipeline <- function(design_path, schema_path = NULL,
   # A lexicon carrying freq_permillion, as normalise_lexicon() writes one, gets a
   # record of how many of its rates put Zipf within 1e-9 of a rounding boundary, the
   # one place the two engines' log10 could have derived a different value. Every
-  # lexicon lexsync ships lacks the column, so their runs log and record nothing new.
+  # lexicon lexsync ships lacks the column, so their runs log and record nothing here.
   note_zipf_derivation <- function(frame, log) {
     record <- .zipf_derivation(frame)
     zipf_derivation <<- record
@@ -570,7 +580,7 @@ run_pipeline <- function(design_path, schema_path = NULL,
   tally(blk$normalisation)
   # Logged here, once the practice and filler tables have been read too, and only when
   # normalising changed something, so a run over NFC input, every shipped design
-  # included, writes the same log and datasheet as before.
+  # included, logs no normalisation step and records no input_normalisation.
   input_normalisation <- .nfc_record(nfc_total[["changed"]], nfc_total[["collapsed"]])
   if (!is.null(input_normalisation)) {
     log <- log_step(log, sprintf("normalised %d word form(s) to NFC; %d duplicate(s) removed",
@@ -728,8 +738,8 @@ run_all <- function(config_dir = "config", schema_path = NULL,
   if (!length(designs)) stop(sprintf("lexsync: no design_*.yaml files in '%s'.", config_dir), call. = FALSE)
   # Two designs with one stem write the same files, and the second would overwrite the
   # first's without a word, so every stem is checked before any design runs.
-  # `en-lexdec` and `en_lexdec` collide this way, as names differing only outside ASCII
-  # did before design_stem() gave them a checksum.
+  # `en-lexdec` and `en_lexdec` collide this way. Names differing only outside ASCII
+  # do not, since design_stem() gives them a checksum.
   stems <- character(0)
   for (d in designs) {
     stem <- design_stem(read_config(d))

@@ -62,8 +62,9 @@ output/experiments/data/
 /.audit_findings.txt
 
 # --- Credentials -----------------------------------------------------------
-# Publishing to PyPI gives lexsync a credential of its own for the first time.
-# Twine reads an upload token from .pypirc in plaintext. It looks in the home
+# publish.yml uploads to PyPI by trusted publishing and needs no token, but a
+# manual upload with twine does. Twine reads an upload token from .pypirc in
+# plaintext. It looks in the home
 # directory by default, but --config-file will take one from anywhere, and a copy
 # made for a single upload is the kind that gets left behind. Nothing else listed
 # here is expected to exist. Those patterns are defensive: the repository is

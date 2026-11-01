@@ -26,7 +26,9 @@
 # mixes them through. That does renumber the main trials, which is correct: adding
 # fillers changes the sequence, and the stimuli file records where each item actually
 # appeared. counterbalance.max_run applies to this interleaved order and, separately,
-# to the practice order, since a pause separates the two.
+# to the practice order, since the PsychoPy and jsPsych experiments pause between the
+# two. The OpenSesame experiment runs every trial in one loop without a pause, so there
+# a run can continue from the practice trials into the main ones.
 #
 # Both blocks appear in EVERY list. They are not counterbalanced, because they carry no
 # manipulation to rotate; every participant should get the same practice. In a resampled
@@ -86,7 +88,9 @@
 #'   `normalisation` (`list(changed, collapsed)`, what Unicode NFC normalisation did to
 #'   the practice and filler tables; see [load_items()]). Trials are numbered from 1
 #'   within each list, or within each (replicate, list) pair of a resampled design, and
-#'   the counts are per list or pair. `counterbalance.max_run` applies to the main and
+#'   the counts are per list or pair: the filler and practice counts are the rows of
+#'   their tables, which every list or pair receives, and the main block's count is that
+#'   of the first list or pair. `counterbalance.max_run` applies to the main and
 #'   filler trials together and to the practice trials on their own. With
 #'   `counterbalance.orders: m`, `order_1` to `order_m` give each trial's position in
 #'   each order, the practice trials first in every one.
@@ -95,8 +99,8 @@
   practice_cfg <- design[["practice"]]
   filler_cfg <- design[["fillers"]]
   if (is.null(practice_cfg) && is.null(filler_cfg)) {
-    # No block column at all: a design that declares none must keep the columns it had,
-    # so adding this feature moves no existing artefact.
+    # No block column at all: a design that declares neither block keeps the columns it
+    # was given.
     return(list(presented = stimuli, report = NULL,
                 normalisation = list(changed = 0L, collapsed = 0L)))
   }
@@ -104,8 +108,9 @@
   stimuli$block <- .BLOCK_MAIN
   if (is.null(stimuli$list)) stimuli$list <- 1L
   # The unit the blocks are added to is a presentation version: a list, or in a
-  # resampled design a (replicate, list) pair. Added per list, the practice and filler
-  # rows carried no replicate, so only the first replicate's version presented them.
+  # resampled design a (replicate, list) pair. Added per list alone, the practice and
+  # filler rows would carry no replicate, and only the first replicate's version would
+  # present them.
   by_replicate <- "replicate" %in% names(stimuli)
   units <- if (by_replicate) unique(stimuli[c("replicate", "list")]) else
     data.frame(list = sort(unique(stimuli$list)))

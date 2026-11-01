@@ -15,9 +15,9 @@
 # designs (`config_dir` given), <config_dir>/schema.yaml and then config/schema.yaml
 # in the working directory; for a single design, config/schema.yaml in the working
 # directory and then schema.yaml in the design's own directory; in both cases, last,
-# the bundled copy. The first candidate in each list is the default these functions
-# had before, so a call that worked then reads the same file now. Whenever no schema
-# was named, message() reports the path chosen. The run log and the datasheet record
+# the bundled copy. Each list starts with the file that earlier releases read, so a
+# call that relied on it still reads the same schema. Whenever no schema was named,
+# message() reports the path chosen. The run log and the datasheet record
 # it as well, for a caller whose messages are suppressed.
 #
 # `origin` is one of "named", "config_dir", "working_directory", "design_directory"

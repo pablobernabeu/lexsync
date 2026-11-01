@@ -835,8 +835,9 @@ if paradigm == "factorial":
                                       "so items can be treated as a random factor.")
     matching = {"method": method}
     with st.expander("Advanced: per-dimension tolerance windows (mean ± k·SD)"):
-        st.caption("Override the schema defaults; e.g. frequency 0.111 reproduces the "
-                   "mean ± SD/9 window of González Alonso et al. (2025).")
+        st.caption("Override the schema defaults; e.g. frequency 0.1111111111111111 (one "
+                   "ninth) reproduces the mean ± SD/9 window of González Alonso et al. "
+                   "(2025). Zero leaves the schema default for that dimension in place.")
         tol = positive_tolerances({
             d: st.number_input(f"k for {DIM_LABEL[d]}", 0.0, 10.0, 0.0, step=0.05, key=f"tol_{d}")
             for d in design["match_on"]

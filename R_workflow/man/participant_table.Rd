@@ -12,12 +12,16 @@ participant_table(factors, n_participants)
 \item{n_participants}{Number of participants to allocate.}
 }
 \value{
-A data frame with one row per participant.
+A data frame with one row per participant: one column per factor, then
+\code{participant}.
 }
 \description{
-Crosses the supplied counterbalancing factors and replicates the cells to
-cover \code{n_participants}, generalising the \code{expand.grid()} + replication pattern
-of the original workflow's \code{participant_parameters.R}.
+Crosses the factors with \code{expand.grid()}, whose first factor varies fastest, and
+gives participant p row ((p - 1) mod n) + 1 of the n crossed cells, cycling through
+the cells as often as \code{n_participants} needs.
+\code{participant_table(list(version = 1:V, order = 1:m), N)} therefore reproduces the
+version and order a generated experiment assigns participant p when none is chosen
+at launch.
 }
 \examples{
 participant_table(list(list = 1:2, order = c("a", "b")), 6)

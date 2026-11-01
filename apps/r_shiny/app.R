@@ -683,9 +683,9 @@ server <- function(input, output, session) {
       open = FALSE,
       accordion_panel(
         "Advanced: per-dimension tolerance windows (mean ± k·SD)",
-        helpText("Override the schema defaults; e.g. frequency 0.111 reproduces the ",
-                 "mean ± SD/9 window of González Alonso et al. (2025). Zero leaves the ",
-                 "schema default for that dimension in place."),
+        helpText("Override the schema defaults; e.g. frequency 0.1111111111111111 (one ",
+                 "ninth) reproduces the mean ± SD/9 window of González Alonso et al. ",
+                 "(2025). Zero leaves the schema default for that dimension in place."),
         lapply(dims, function(d)
           numericInput(paste0("tol_", d), sprintf("k for %s", DIM_LABEL[[d]]),
                        0, 0, 10, 0.05))

@@ -25,6 +25,11 @@ new_run_log <- function(name, meta = list()) {
 #' @param message A short description of the step.
 #' @param data An optional named list of step details.
 #' @return The updated run-log object.
+#' @details While the option `lexsync.verbose` is `TRUE`, its default, the message is
+#'   also printed to the console as `[lexsync] <message>` with `cat()`, so
+#'   `suppressMessages()` does not silence it. Set `options(lexsync.verbose = FALSE)`
+#'   to keep it quiet. [run_pipeline()] sets the option from its `verbose` argument for
+#'   the length of the run and restores it afterwards.
 #' @export
 log_step <- function(log, message, data = NULL) {
   log$steps[[length(log$steps) + 1]] <- list(
@@ -42,6 +47,8 @@ log_step <- function(log, message, data = NULL) {
 #' @param path A file path that has just been written.
 #' @param rows Optional row count.
 #' @return The updated run-log object.
+#' @details The step is added with [log_step()], so it is printed to the console as
+#'   `[lexsync] wrote '<file>'` while the option `lexsync.verbose` is `TRUE`.
 #' @export
 log_artefact <- function(log, path, rows = NA_integer_) {
   log_step(log, sprintf("wrote '%s'", basename(path)),
@@ -52,7 +59,10 @@ log_artefact <- function(log, path, rows = NA_integer_) {
 #'
 #' @param log A run-log object.
 #' @param md_path Output path for the Markdown log.
-#' @param jsonl_path Optional output path for the JSON Lines log.
+#' @param jsonl_path Optional output path for the JSON Lines log: one JSON object per
+#'   step, with its `time`, `message` and `data` (`null` for a step without details).
+#'   The run's name, engine, times and metadata are in the Markdown log only. Unlike
+#'   `md_path`'s, its directory is not created.
 #' @return `md_path`, invisibly.
 #' @importFrom jsonlite toJSON
 #' @export

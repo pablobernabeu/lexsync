@@ -16,7 +16,8 @@ cite is listed in full on the [references page](references.md).
 Languages are supplied through a corpus registry, so reaching a new one takes a registry entry and
 no code. These functions find a corpus, download it into a per-user cache that can be cleared
 again, turn a corpus file in its publisher's layout into a lexicon, and read a derived lexicon or a
-prepared item table into the frame everything else expects.
+prepared item table into the frame everything else expects. `build_wordfreq_lexicon`, `cache_dir`
+and `cache_clear` are reached through `lexsync.corpora`.
 
 ::: lexsync.list_corpora
 
@@ -40,8 +41,9 @@ prepared item table into the frame everything else expects.
 
 ## Lexical dimensions
 
-Two dimensions arrive with the lexicon and the rest are derived from the orthographic forms. Derive
-them before matching, and compute the neighbourhood measures against the full lexicon rather than the
+Frequency arrives with the lexicon, and the lexica lexsync distributes carry N and OLD20 as well.
+Length and the syllable estimate are derived from the forms at load time, and the functions below
+derive the rest. Derive them before matching, and compute the neighbourhood measures against the full lexicon rather than the
 pool, since a word's neighbours do not stop existing because a design excluded them.
 
 ::: lexsync.add_neighbourhood
@@ -174,9 +176,10 @@ designs. `validate_design` is the check `run_pipeline` applies before anything i
 written, and `design_stem` gives the stem every written file is named after. The logging functions
 are reached as `lexsync.logging.*`, which does not shadow the standard library's `logging` for
 absolute imports. All three entry points choose the schema through
-`lexsync.paths.resolve_schema`.
+`lexsync.paths.resolve_schema`, and `lexsync.paths.bundled_schema` gives the path of the copy shipped
+with the package.
 
-::: lexsync.run_pipeline
+::: lexsync.run_pipeline.run_pipeline
 
 ::: lexsync.run_all
 

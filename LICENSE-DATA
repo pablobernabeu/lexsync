@@ -4,8 +4,10 @@ Data licensing for lexsync
 The MIT License in LICENSE covers the lexsync *source code* only: the R package
 under R_workflow/ and the Python package under python_workflow/. The lexical
 corpora that lexsync bundles or fetches are NOT covered by it; they are
-independent works with their own terms, summarised here and documented per
-corpus, with full citations and retrieval dates, in 'corpora/ATTRIBUTION.md'.
+independent works with their own terms, summarised here. The bundled ones,
+among them those under 'corpora/derived/', are documented per corpus, with full citations and retrieval
+dates, in 'corpora/ATTRIBUTION.md', and the registry records the licence and
+citation of each fetched one.
 
 Bundled derivatives
 -------------------
@@ -13,10 +15,12 @@ The small example slices shipped inside the packages
 ('R_workflow/inst/extdata/' and 'python_workflow/src/lexsync/data/') and the
 fuller derived corpora under 'corpora/derived/' are built from the 'wordfreq'
 package by 'corpora/fetch_corpora.py', which is the only ingestion path that
-produced them. Every row of every derived file records this in its 'source'
-column. lexsync adds the orthographic-neighbourhood variables (Coltheart's N
-and OLD20) and standardises the columns; the frequencies themselves are
-wordfreq's.
+produced them. One of them, 'es_gender.csv', is then derived from 'es.csv' by
+'corpora/build_es_gender.py'. Every row of every derived lexicon names wordfreq
+in its 'source' column. The known-form lists ('<lang>_known_forms.txt') hold one
+form per line and have no columns. lexsync adds the orthographic-neighbourhood
+variables (Coltheart's N and OLD20) and standardises the columns; the
+frequencies themselves are wordfreq's.
 
 wordfreq distributes its code and its data under different terms. The code is
 under the Apache License 2.0, and the data files, which are what lexsync
@@ -76,9 +80,13 @@ frequency provenance, should read wordfreq's own account of its sources first.
 
 Fetched corpora
 ---------------
-Corpora retrieved on demand via the registry ('corpora/registry.yaml') are not
-redistributed in this repository. Each carries its own licence and citation,
-recorded in the registry and written to 'corpora/ATTRIBUTION.md' at fetch time.
+Corpora retrieved on demand via the registry ('corpora/registry.yaml'), with
+fetch_corpus() or 'lexsync fetch', are downloaded to the user's cache (or, in R,
+to a file the caller names with 'dest') and are not redistributed in this
+repository. Each carries its own licence and citation, recorded in the
+registry. fetch_corpus() reports the citation when it fetches a corpus,
+list_corpora() returns it and the datasheet of a run that reads the file from
+lexsync's cache credits the corpus by that citation.
 Lexica derived through the optional 'wordfreq' connector carry the same terms
 as the bundled derivatives above, since they come from the same source.
 

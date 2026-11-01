@@ -653,3 +653,19 @@ test_that("a registry_path that does not exist is refused", {
   expect_error(fetch_corpus("subtlex_esp", registry_path = missing),
                "lexsync: registry not found", fixed = TRUE)
 })
+
+# The file the lexsync.registry option names is read on its own as well, so a misspelt
+# or stale option is refused by name and cannot fall through to the checkout's registry
+# or the bundled one. An empty option leaves the search as it is, and an explicit
+# registry_path is read whatever the option says. Pinned identically in
+# test_corpora.py, with LEXSYNC_REGISTRY.
+test_that("a lexsync.registry option naming a missing file is refused", {
+  missing <- file.path(tempdir(), "no_such_registry.yaml")
+  old <- options(lexsync.registry = missing); on.exit(options(old))
+  msg <- sprintf("lexsync: registry not found: '%s' (the lexsync.registry option).", missing)
+  expect_error(list_corpora(), msg, fixed = TRUE)
+  expect_error(fetch_corpus("subtlex_esp"), msg, fixed = TRUE)
+  expect_gt(nrow(list_corpora(registry_path())), 0L)
+  options(lexsync.registry = "")
+  expect_gt(nrow(list_corpora()), 0L)
+})

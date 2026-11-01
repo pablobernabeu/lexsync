@@ -22,23 +22,35 @@ default trial sequence, required item fields, and counterbalancing rule
 inherited by a design that names that paradigm.
 }
 \description{
-Each event is a list with \code{type} (fixation | text | mask | blank |
-region_by_region | response | question | feedback), \code{content} (a literal or a
-\code{{field}} reference), an optional \code{trigger} (a whole-number EEG code from 1 to 255
-or the token "condition"/"item"), \code{onset_locked}, response \code{keys}/\code{timeout_ms}, a
-response's \code{from} (where its window opens: "onset", with the text event before it,
-which is the default after a text event, or "offset", once that has gone), a text
-event's \code{case} ("upper" or "lower", applied by the runners as they show the text), a
-mask's \code{length_of} (the fields whose longest text, in characters, sets how often its
-one-character content is repeated), and an optional \code{blocks} restricting the event to
-named blocks.
+Each event is a list with a \code{type} (fixation | text | mask | blank |
+region_by_region | response | question | feedback) and the keys its type reads.
+\code{content} is a literal or a \code{{field}} reference. An event's length, where it has
+one, is \code{duration_ms}, or \code{duration_frames} converted at the schema's
+\code{presentation.assumed_refresh_hz}, and a fixation, text, mask or blank event may
+instead take a per-trial \code{duration} block (\code{from_column}, or \code{jitter} with an
+optional \code{as}, see \code{\link[=resolve_trial_timing]{resolve_trial_timing()}}). A fixation, text or mask event takes an
+optional \code{trigger} (a whole-number EEG code from 1 to 255 or the token
+"condition"/"item"). A response takes \code{keys}, \code{timeout_ms} and \code{from} (where its
+window opens: "onset", with the text event before it, which is the default after a
+text event, or "offset", once that has gone), and a question takes \code{keys} and
+\code{timeout_ms}. A text event takes \code{case} ("upper" or "lower", applied by the runners
+as they show the text), and a mask takes \code{length_of} (the fields whose longest text,
+in characters, sets how often its one-character content is repeated). A
+region-by-region event takes \code{sep} (the region separator in its content, \code{"|"} by
+default), \code{advance} (the key that shows the next region, \code{"space"} by default) and
+\code{critical_region_trigger} (a code as for \code{trigger}, sent at the region the item's
+\code{critical_region} names). A feedback event takes \code{answer} (the field holding the
+correct key, \code{"answer"} by default) and its texts \code{correct}, \code{incorrect} and
+\code{no_response}. Any event may take \code{blocks}, restricting it to named blocks. Every
+event's \code{trigger} is written on that event's onset flip, and \code{onset_locked}, which
+the built-in paradigms set, is accepted but does not change this.
 }
 \details{
 \code{priming} is backward-masked: a 50 ms prime, a 33 ms \verb{#####} mask and the target,
-with no forward mask and the item table's letter case. \code{masked_priming} follows
-Forster and Davis (1984): a forward mask of hash marks for 500 ms, a lower-case prime
-for three frames and an upper-case target that stays on until the response or for
-2,000 ms.
+with no forward mask and the item table's letter case. \code{masked_priming} has the
+arrangement of Forster and Davis (1984): a forward mask of hash marks, a brief
+lower-case prime and an upper-case target. Its defaults show the mask for 500 ms, the
+prime for three frames and the target until the response or for 2,000 ms.
 }
 \references{
 Forster, K. I., & Davis, C. (1984). Repetition priming and frequency

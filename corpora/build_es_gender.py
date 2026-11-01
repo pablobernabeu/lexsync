@@ -9,10 +9,9 @@ This writes ``corpora/derived/es_gender.csv``, the lexicon behind the
 demonstration that reproduces the gender-assignment design of González Alonso et
 al. (2025), configured in ``config/design_es_gender_repro.yaml``.
 
-The file was previously produced ad hoc and committed with no script to
-regenerate it, which left the only worked design in the repository whose input
-could not be rebuilt from its source. This reconstructs it from
-``corpora/derived/es.csv`` and reproduces the committed file exactly.
+It rebuilds the file from ``corpora/derived/es.csv`` and reproduces the committed
+file exactly, so that the file can follow any rebuild of ``es.csv``.
+``--check`` confirms that it still does.
 
 What it does
 ------------
@@ -61,7 +60,8 @@ ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "corpora" / "derived" / "es.csv"
 TARGET = ROOT / "corpora" / "derived" / "es_gender.csv"
 
-# Word-length bounds in characters, matching the bundled example slices.
+# Word-length bounds in characters. They are wider than the Spanish example slice's
+# 3 to 9, and the committed es_gender.csv was built with them.
 MIN_LEN, MAX_LEN = 3, 12
 
 # See the module docstring: -endo is deliberately broader than the gerund ending.

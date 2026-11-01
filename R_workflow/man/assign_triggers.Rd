@@ -30,19 +30,20 @@ Adds \code{condition_trigger} (101, 102, ... per condition) and \code{item_trigg
 the code-point order of the set labels, so with sets 1 to 20, set 10 is 41 and set
 2 is 51. Decode an item code through the loop table, not from the set's label. The
 item range holds 200 codes (an 8-bit-port constraint), so past 200 sets the codes
-wrap and repeat, and a runtime notice says so.
+wrap and repeat, and a message says so.
 }
 \details{
 \code{events}, the design's event list, says which codes the experiment sends. When it
 sends item codes together with condition codes, or with a code of its own from 40
 to 239, the item codes skip 101 to 100 + k, the codes of the k conditions, and the
-design's own codes, so that no item takes a code that marks something else. Sets
-65 and 66 of a 70-set design took 101 and 102, the condition codes. A design with
-more item sets than free codes is then refused, unless \code{schema} sets
-\code{triggers.allow_code_overlap: true}, which lets the item codes wrap and repeat
-within the free codes. Every other design, and a call without \code{events}, gets the
-item codes it had before. Each trigger in \code{events} is checked as
-\code{\link[=render_events]{render_events()}} checks it.
+design's own codes, so that no item takes a code that marks something else.
+Without the skip, sets 65 and 66 of a 70-set design would take 101 and 102, the
+condition codes. With it, a design with more item sets than free codes is refused,
+unless \code{schema} sets \code{triggers.allow_code_overlap: true}, which lets the item
+codes wrap and repeat within the free codes. Every other design, and a call
+without \code{events}, takes the item codes described above, from 40 upwards in
+code-point order of the set labels, wrapping and repeating past 200 sets. Each
+trigger in \code{events} is checked as \code{\link[=render_events]{render_events()}} checks it.
 
 A notice is given for a code of the design's own that the stream already uses for
 something else: 254 or 255, which the PsychoPy and OpenSesame experiments send when

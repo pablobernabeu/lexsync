@@ -20,13 +20,13 @@ import yaml
 # ---- One CSV reading rule, shared by both engines ----------------------------
 #
 # pandas and readr each guess a column's type by their own heuristics, and the two
-# disagreed on ordinary input. readr trimmed fields and headers and pandas trimmed
-# nothing, so a padded category made this engine refuse a design the R engine ran.
-# readr guessed types from the first 1,000 rows, read T and F as logical, "1,000" as a
-# number and ISO dates as dates, so a pass-through column was written `F` by one engine
-# and `FALSE` by the other. Both engines therefore read every cell as text and convert
-# it here, by one rule written out in each. Must stay identical to read_csv_utf8 and
-# .type_column in R_workflow/R/io_utils.R.
+# disagree on ordinary input. readr trims fields and headers and pandas trims nothing,
+# so a padded category would make this engine refuse a design the R engine runs.
+# readr guesses types from the first 1,000 rows and reads T and F as logical, "1,000"
+# as a number and ISO dates as dates, so a pass-through column would be written `F`
+# by one engine and `FALSE` by the other. Both engines therefore read every cell as
+# text and convert it here, by one rule written out in each. Must stay identical to
+# read_csv_utf8 and .type_column in R_workflow/R/io_utils.R.
 #
 # The characters trimmed from every header name and cell: the ASCII whitespace readr's
 # trim_ws removed. A no-break space is data in both engines.
@@ -205,10 +205,9 @@ def _shortest_digits_ambiguous(v: float) -> bool:
 def _readr_cell(v):
     """One cell rendered as readr renders it.
 
-    pandas and readr agree on almost every value, and the three places they do not
-    agree were all silently breaking the package's central claim that the two engines
-    write identical artefacts. A byte comparison of all 18 shipped designs found 589
-    cells of the first kind, 56 of the second and 8 of the third.
+    pandas and readr agree on almost every value, and each of the three places they do
+    not would silently break the package's central claim that the two engines write
+    identical artefacts.
 
     A whole-number double. readr writes the shortest representation that round-trips,
     so 1.0 becomes "1"; pandas writes repr(), which keeps the ".0".
@@ -218,8 +217,8 @@ def _readr_cell(v):
     pandas reads either form back correctly.
 
     A value below 1e-3. readr switches to scientific notation there and pandas does
-    not, so a p-value of 0.0009 was written "9e-4" by one engine and "0.0009" by the
-    other. The 1e-3 threshold is measured, not assumed: readr 2.2.0 writes 0.001,
+    not, so a p-value of 0.0009 would be written "9e-4" by one engine and "0.0009" by
+    the other. The 1e-3 threshold is measured, not assumed: readr 2.2.0 writes 0.001,
     0.0011, 0.0012, 0.0099 and 0.00999 in fixed notation and 0.00099, 0.0009999,
     1e-4, 1.2e-4, 2.5e-5 and 9.99999e-4 in scientific.
 
@@ -231,8 +230,8 @@ def _readr_cell(v):
     that range (frequencies are Zipf values under 8, counts and durations under 1e6),
     but a joined norm table, a supplied pool or an item table may carry any column the
     user likes, and those columns are written straight into the stimuli CSV. Leaving the
-    range unhandled meant the guarantee held for the shipped designs, which the
-    byte-parity test covers, and failed silently for the user's own data, which nothing
+    range unhandled would mean the guarantee holds for the shipped designs, which the
+    byte-parity test covers, and fails silently for the user's own data, which nothing
     covers. An error naming the value is the honest outcome.
 
     Missing values become the empty string, matching ``readr::write_csv(na = "")``.
@@ -282,8 +281,8 @@ def write_csv_utf8(x: pd.DataFrame, path: str) -> str:
     # two engines to one convention.
     #
     # Cells are rendered through _readr_cell first, then written as text, because
-    # pandas' own float and bool formatting differs from readr's in two ways that made
-    # the two engines' CSVs differ byte for byte (see _readr_cell). Converting to
+    # pandas' own float and bool formatting differs from readr's in two ways that would
+    # make the two engines' CSVs differ byte for byte (see _readr_cell). Converting to
     # strings here and letting the csv writer quote them keeps pandas' quoting and
     # escaping, which already match readr's.
     os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
@@ -297,10 +296,9 @@ def write_csv_utf8(x: pd.DataFrame, path: str) -> str:
 # A sum, mean, variance and median that give the same bits in the R and Python
 # engines.
 #
-# This is not pedantry; it was a live bug. Two designs' reported means differed between
-# the engines in the last decimal place the descriptives publish, 1.448 from R against
-# 1.447 from numpy, because numpy sums pairwise while R's mean() uses a two-pass
-# long-double algorithm, and the true value happened to sit on a rounding boundary.
+# This is not pedantry. numpy sums pairwise while R's mean() uses a two-pass
+# long-double algorithm, so a value on a rounding boundary can publish as 1.448 from
+# R and 1.447 from numpy in the last decimal place the descriptives publish.
 # Summing 20000 identical doubles was measured to give three different answers across
 # R's sum(), math.fsum, numpy's pairwise sum and a naive loop, so no language's
 # built-in reduction can be relied on for a cross-engine artefact.
@@ -309,7 +307,7 @@ def write_csv_utf8(x: pd.DataFrame, path: str) -> str:
 # arithmetic in both engines. Every operation is +, -, abs or a comparison, and
 # IEEE-754 requires + and - to be correctly rounded, so the two engines execute the
 # same sequence of exactly-specified operations and cannot disagree. That is an
-# argument. Relying on numpy's pairwise ordering amounted only to a measurement.
+# argument. Relying on numpy's pairwise ordering would amount only to a measurement.
 #
 # math.fsum would also be exactly rounded, but it is not what the R engine can run:
 # the point is that BOTH engines execute this same algorithm. Mirrors io_utils.R.
@@ -537,14 +535,12 @@ def sha256_file(path: str):
 def _is_continuous(design: dict) -> bool:
     """Is this design a continuous (non-dichotomised) selection?
 
-    One predicate, where there were four copies of the same expression. It was repeated
-    verbatim in run_pipeline.py, datasheet.py and both R twins, which is how a
-    ``continuous:`` block under ``items.source: table`` came to be silently inert in
-    all four places at once. ``pool`` belongs in the allowed set because
-    run_pipeline's corpus/pool branch handles continuous selection generically;
-    leaving it out sent a continuous design over a supplied pool to the conditions
-    matcher, which then failed with a different obscure error in each engine.
-    ``generate`` stays excluded deliberately: a continuous block there would push a
+    One predicate for every caller in this engine, mirrored by .is_continuous in the R
+    engine, so a ``continuous:`` block cannot be honoured in one place and silently
+    inert in another. ``pool`` belongs in the allowed set because run_pipeline's
+    corpus/pool branch handles continuous selection generically; leaving it out would
+    send a continuous design over a supplied pool to the conditions matcher.
+    ``generate`` is refused deliberately: a continuous block there would push a
     word/pseudoword frame into the selector. Must stay identical to .is_continuous
     in R_workflow/R/io_utils.R.
     """
@@ -633,7 +629,14 @@ def hash_int_range(key: str, lo: int, hi: int) -> int:
     return lo + int(math.floor(hash_unit(key) * (hi - lo + 1)))
 
 def slugify(*parts) -> str:
-    """Short, filesystem-safe slug; keeps generated names within MAX_PATH."""
+    """Build a filesystem-safe slug.
+
+    Joins the parts with underscores, turns every run of characters other than ASCII
+    letters and digits into one underscore, trims underscores from both ends and
+    lower-cases the result. The slug carries no spaces or punctuation, but its length
+    is not limited: long parts give a long slug. It is empty when the parts hold no
+    ASCII letter or digit.
+    """
     s = "_".join(str(p) for p in parts)
     s = re.sub(r"[^A-Za-z0-9]+", "_", s)
     s = re.sub(r"_+", "_", s)

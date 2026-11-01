@@ -2,7 +2,7 @@
 % Please edit documentation in R/io_utils.R
 \name{slugify}
 \alias{slugify}
-\title{Build a short, filesystem-safe slug}
+\title{Build a filesystem-safe slug}
 \usage{
 slugify(...)
 }
@@ -10,10 +10,13 @@ slugify(...)
 \item{...}{Character fragments to join.}
 }
 \value{
-A lower-case, underscore-separated slug.
+A lower-case, underscore-separated slug of ASCII letters and digits, empty
+when the fragments hold none.
 }
 \description{
-Keeps generated file names short and space-free, which avoids the Windows
-\code{MAX_PATH} limit inside deeply nested, cloud-synced directories.
+Joins the fragments with underscores, turns every run of characters other than
+ASCII letters and digits into one underscore, trims underscores from both ends and
+lower-cases the result without regard to the locale. The slug carries no spaces or
+punctuation, but its length is not limited: long fragments give a long slug.
 }
 \keyword{internal}

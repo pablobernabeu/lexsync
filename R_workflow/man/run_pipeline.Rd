@@ -41,7 +41,16 @@ the pipeline reads.}
 \item{verbose}{Logical; print progress.}
 }
 \value{
-A named list of output paths, invisibly.
+Invisibly, a named list. \code{stimuli} is the path of
+\verb{stimuli/<stem>_stimuli_R.csv} under \code{outdir}. \code{descriptives} and \code{comparisons}
+are the paths of \verb{reports/<stem>_descriptives_R.csv} and
+\verb{reports/<stem>_comparisons_R.csv}, both \code{NULL} for an item table without a
+continuous selection, which has no match report. \code{experiments} is the list
+\code{\link[=export_experiments]{export_experiments()}} returns, and \code{log} is the path of
+\verb{reports/<stem>_run_log_R.md}. The run also writes the JSON Lines log
+\verb{reports/<stem>_run_log_R.jsonl} and the datasheet \verb{reports/<stem>_datasheet_R.json}
+and \verb{reports/<stem>_datasheet_R.md}, which the list does not name. \verb{<stem>} is
+\code{\link[=design_stem]{design_stem()}} of the design.
 }
 \description{
 A design may refer to a derived dimension (\code{n_density}, \code{old20}, \code{bigram_freq}) in

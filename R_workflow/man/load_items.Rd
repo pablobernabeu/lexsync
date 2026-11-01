@@ -7,7 +7,8 @@
 load_items(path, required_fields)
 }
 \arguments{
-\item{path}{Path to a UTF-8 CSV item table.}
+\item{path}{Path to a UTF-8 CSV item table. A path with a \code{..} component is
+refused. Give it from the working directory, or as an absolute path.}
 
 \item{required_fields}{Character vector of presented fields the paradigm needs.}
 }

@@ -39,3 +39,18 @@ difference, so the interval is slightly wider than the one its decision
 implies, and when a control's limit lies close to the bound, \code{tost_p} gives the
 verdict.
 }
+\references{
+Borenstein, M., Hedges, L. V., Higgins, J. P. T., & Rothstein, H. R.
+(2009). \emph{Introduction to meta-analysis}. Wiley. \doi{10.1002/9780470743386}
+
+Hedges, L. V., & Olkin, I. (1985). \emph{Statistical methods for meta-analysis}.
+Academic Press. \doi{10.1016/C2009-0-03396-0}
+
+Lakens, D. (2017). Equivalence tests: A practical primer for \emph{t} tests,
+correlations, and meta-analyses. \emph{Social Psychological and Personality Science,
+8}(4), 355-362. \doi{10.1177/1948550617697177}
+
+Sassenhagen, J., & Alday, P. M. (2016). A common misapplication of statistical
+inference: Nuisance control with null-hypothesis significance tests. \emph{Brain and
+Language, 162}, 42-45. \doi{10.1016/j.bandl.2016.08.001}
+}

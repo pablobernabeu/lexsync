@@ -25,7 +25,9 @@ are merged into each list before the order is drawn, so one deterministic shuffl
 them through. That does renumber the main trials, which is correct: adding fillers
 changes the sequence, and the stimuli file records where each item actually appeared.
 ``counterbalance.max_run`` applies to this interleaved order and, separately, to the
-practice order, since a pause separates the two.
+practice order, since the PsychoPy and jsPsych experiments pause between the two. The
+OpenSesame experiment runs every trial in one loop without a pause, so there a run can
+continue from the practice trials into the main ones.
 
 Both blocks appear in EVERY list. They are not counterbalanced, because they carry no
 manipulation to rotate; every participant should get the same practice. In a resampled
@@ -105,7 +107,9 @@ def add_blocks(stimuli: pd.DataFrame, design: dict, schema: dict) -> dict:
     design declares no extra block; and ``{"changed", "collapsed"}``, what Unicode NFC
     normalisation did to the practice and filler tables (see ``load_items``). Trials are
     numbered from 1 within each list, or within each (replicate, list) pair of a
-    resampled design, and the counts are per list or pair. ``counterbalance.max_run``
+    resampled design, and the counts are per list or pair: the filler and practice
+    counts are the rows of their tables, which every list or pair receives, and the
+    main block's count is that of the first list or pair. ``counterbalance.max_run``
     applies to the main and filler trials together and to the practice trials on their
     own. With ``counterbalance.orders: m``, ``order_1`` to ``order_m`` give each trial's
     position in each order, the practice trials first in every one.
@@ -113,8 +117,8 @@ def add_blocks(stimuli: pd.DataFrame, design: dict, schema: dict) -> dict:
     practice_cfg = design.get("practice")
     filler_cfg = design.get("fillers")
     if not practice_cfg and not filler_cfg:
-        # No block column at all: a design that declares none must keep the columns it
-        # had, so adding this feature moves no existing artefact.
+        # No block column at all: a design that declares neither block keeps the
+        # columns it was given.
         return {"presented": stimuli, "report": None,
                 "normalisation": {"changed": 0, "collapsed": 0}}
 

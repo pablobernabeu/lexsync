@@ -22,10 +22,11 @@ The path to the generated \code{.html}, invisibly.
 }
 \description{
 The rendered events and the trial data are embedded in one HTML file, so anyone
-can reproduce the procedure online from the same materials. The jsPsych library
-and stylesheet are loaded from a CDN, so the machine running the file needs an
-internet connection; the trial data are embedded and the responses are saved
-locally, so no server is required either to run it or to collect them. Each of the
+can reproduce the procedure online from the same materials. The jsPsych library,
+its keyboard-response plugin and its stylesheet are loaded from a CDN, so the
+machine running the file needs an internet connection; the trial data are
+embedded and the responses are saved locally, so no server is required either to
+run it or to collect them. Each of the
 three files carries its SHA-384 as Subresource Integrity, so a browser refuses a copy
 that differs from the published release. Stimuli are drawn
 \code{presentation.text_height_px} pixels high, 48 by default. Onset

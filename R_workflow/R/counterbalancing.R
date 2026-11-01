@@ -1,5 +1,5 @@
 # counterbalancing.R -- assign stimuli to presentation lists and orders, and build
-# participant counterbalancing tables. Two recipes: the original `factorial` one
+# participant counterbalancing tables. Two recipes: the `factorial` one
 # (every matched item shown, lists split the matched sets) and
 # `latin_square_target` for paired/sentence paradigms (each item appears once per
 # list in one rotated condition, so a target is never repeated within a list). The
@@ -17,10 +17,9 @@
 
 # The recipe counterbalance() applies to a design: counterbalance.recipe when the
 # design names one, else the recipe of the paradigm it names, else factorial. An
-# `events` list has no say in it. It used to switch the recipe to factorial. A
-# priming design that read its prime's duration from the items then showed every
-# target in both conditions of each list, the repetition the paradigm's Latin square
-# exists to prevent. The datasheet takes its recipe from here too, so the record
+# `events` list has no say in it, so a priming design that reads its prime's duration
+# from the items keeps the Latin square that stops a target appearing in both
+# conditions of a list. The datasheet takes its recipe from here too, so the record
 # names the recipe that ran. Mirrors _recipe in counterbalancing.py.
 .cb_recipe <- function(design) {
   named <- design[["counterbalance"]][["recipe"]]
@@ -165,8 +164,8 @@
 # draws, so ordering by the digest realises a seeded random permutation, but as a
 # pure function of the design: the same bytes from the R and Python engines on any
 # platform, no generator state to save or restore, and a different order for every
-# seed. R's own sample() and numpy's PCG64 could never agree on a permutation,
-# which used to be the one engine-specific artefact in an otherwise byte-identical
+# seed. R's own sample() and numpy's PCG64 could never agree on a permutation, so a
+# generator-based shuffle would be engine-specific in an otherwise byte-identical
 # pipeline. The replicate term keeps independently counterbalanced item sets from
 # sharing one permutation pattern.
 .shuffle_deterministic <- function(df, seed) {
@@ -176,8 +175,8 @@
 }
 
 # Each row's SHA-256 rank in trial order `order` of its list. Order 1 hashes
-# "seed|replicate|list|set|condition", the key every order had before
-# counterbalance.orders existed, so a design with one order keeps its order. Order j
+# "seed|replicate|list|set|condition", the key .shuffle_deterministic() uses, so a
+# design's first order is the order it has without counterbalance.orders. Order j
 # from 2 hashes "seed|order<j>|replicate|list|set|condition". Mirrors _order_ranks in
 # counterbalancing.py.
 .order_ranks <- function(df, seed, order = 1L) {
@@ -188,13 +187,12 @@
   # stringification is where the two engines silently part company: R renders the
   # double 42 as "42" and Python as "42.0", and a pandas column is promoted to
   # float64 by a single missing value, which would change every digest, every
-  # trial order and every generated artefact with nothing to signal it. The
-  # values are integers today, so this changes no output; it removes a trap.
+  # trial order and every generated artefact with nothing to signal it.
   # digest(serialize = FALSE) hashes the stored bytes, and .key_part() hands back
   # every text component UTF-8-marked, so the pasted key is the UTF-8 the Python
-  # engine hashes in any locale. Wrapping the pasted key in enc2utf8() was not
-  # enough: under the C locale paste() had already turned a latin1 condition into
-  # escape text (see .as_utf8).
+  # engine hashes in any locale. Wrapping the pasted key in enc2utf8() would not be
+  # enough: under the C locale paste() turns a latin1 condition into escape text
+  # first (see .as_utf8).
   key <- paste(head, .key_part(rep_id), .key_part(df$list),
                .key_part(df$set), .key_part(df$condition), sep = "|")
   vapply(key, function(k) digest::digest(k, algo = "sha256", serialize = FALSE),
@@ -393,8 +391,10 @@
 }
 
 # The longest run of one run_on value in a version's presented trials, over every
-# order. A pause separates the practice trials from the rest, so a run does not
-# continue across it.
+# order. The PsychoPy and jsPsych experiments pause after the practice trials, so a run
+# is counted as ending there. The OpenSesame experiment runs every trial in one loop
+# without a pause, so there a run can continue from the practice trials into the main
+# ones.
 .longest_runs <- function(trials, run_on, orders) {
   if (!run_on %in% names(trials) || !nrow(trials)) return(0L)
   best <- 0L
@@ -470,10 +470,10 @@
 #
 # Under the mean scale the constant is 1000 times the 100 that `unit` already
 # carries, so a value at the dimension's mean quantises to 1000, a milli-unit of the
-# mean. That factor is not cosmetic: at 1000 here, a value at the mean quantised to
-# 10, which left only about ten distinguishable levels across a dimension's whole
-# range, and imbalances smaller than a tenth of the mean were invisible to the
-# objective. The search then traded away a dimension it could not see in order to
+# mean. That factor is not cosmetic: with 1000 here, a value at the mean would
+# quantise to 10, leaving about ten distinguishable levels across a dimension's whole
+# range, so imbalances smaller than a tenth of the mean would be invisible to the
+# objective and the search would trade away a dimension it could not see in order to
 # improve one it could. Under the mad scale the deviation and the unit are both in
 # hundredths, so a deviation of one mean absolute deviation quantises to 100000.
 .BALANCE_UNIT_SCALE <- 100000L
@@ -490,9 +490,8 @@
 # refused, and the error names it.
 .BALANCE_SCALES <- c("mean", "mad")
 
-# What the report's cost is counted in, under each scale. The mean scale's wording is
-# that of every release before counterbalance.scale, so a record of the default reads
-# as it did. Must stay identical to _BALANCE_COST_UNITS in counterbalancing.py.
+# What the report's cost is counted in, under each scale. Must stay identical to
+# _BALANCE_COST_UNITS in counterbalancing.py.
 .BALANCE_COST_UNITS <- c(
   mean = paste("summed absolute deviation of each list's dimension total from its fair",
                "share, in milli-units of the dimension's mean, scaled by the number of",
@@ -503,10 +502,9 @@
 )
 
 # The scale balance_lists() quantises each dimension on: counterbalance.scale when the
-# design names one, else "mean", the rule of every release before the option, so a
-# design that names no scale keeps its lists. %||% takes any value that is present, as
-# the Python twin does, so the two engines refuse the same values. validate_design()
-# calls this too, so an unknown scale is refused before anything is selected. Mirrors
+# design names one, else "mean". %||% takes any value that is present, as the Python
+# twin does, so the two engines refuse the same values. validate_design() calls this
+# too, so an unknown scale is refused before anything is selected. Mirrors
 # _balance_scale in counterbalancing.py.
 .balance_scale <- function(design) {
   val <- design[["counterbalance"]][["scale"]]
@@ -775,8 +773,7 @@ balance_lists <- function(stimuli, design, schema) {
   report <- list(dimensions = as.list(dims), cost_before = cost0, cost_after = cost,
                  n_swaps = n_swaps, max_passes_reached = hit_bound,
                  cost_unit = .BALANCE_COST_UNITS[[scale]])
-  # Recorded only off the default, so the record of a design that names no scale reads
-  # as it did before the option. Its cost_unit names the mean.
+  # Recorded only off the default: under the default, cost_unit names the mean.
   if (!identical(scale, "mean")) report$scale <- scale
   list(list_of_set = stats::setNames(as.integer(assign), as.character(sets)),
        report = report)
@@ -805,9 +802,13 @@ balance_lists <- function(stimuli, design, schema) {
 #' @param list_of_set Optional named integer vector mapping each `set` to a list,
 #'   from [balance_lists()]. Supplied by the pipeline when
 #'   `counterbalance.optimise` is on; when `NULL` the factorial recipe deals sets to
-#'   lists by rank as before.
-#' @return `stimuli` with added `list` and `trial` columns, and the order columns
-#'   when there is more than one order.
+#'   lists by rank: the first set to list 1, the second to list 2 and so on, cycling.
+#' @return The trials, sorted by replicate, list and trial, with `list` and `trial`
+#'   columns added, and `order_1` to `order_m` when there is more than one order. Under
+#'   the factorial recipe, every row of `stimuli` appears once, in the list its set is
+#'   dealt to. Under the Latin square, each list holds one row per item set, in the
+#'   condition the rotation gives that set in that list, so the result has one row per
+#'   set per list and not every row of `stimuli`.
 #' @export
 counterbalance <- function(stimuli, design, schema, list_of_set = NULL) {
   .trial_order_settings(design)
@@ -929,13 +930,17 @@ counterbalance_latin_square <- function(stimuli, design, schema) {
 
 #' Build a participant counterbalancing table
 #'
-#' Crosses the supplied counterbalancing factors and replicates the cells to
-#' cover `n_participants`, generalising the `expand.grid()` + replication pattern
-#' of the original workflow's `participant_parameters.R`.
+#' Crosses the factors with `expand.grid()`, whose first factor varies fastest, and
+#' gives participant p row ((p - 1) mod n) + 1 of the n crossed cells, cycling through
+#' the cells as often as `n_participants` needs.
+#' `participant_table(list(version = 1:V, order = 1:m), N)` therefore reproduces the
+#' version and order a generated experiment assigns participant p when none is chosen
+#' at launch.
 #'
 #' @param factors A named list of factors, each a vector of levels.
 #' @param n_participants Number of participants to allocate.
-#' @return A data frame with one row per participant.
+#' @return A data frame with one row per participant: one column per factor, then
+#'   `participant`.
 #' @examples
 #' participant_table(list(list = 1:2, order = c("a", "b")), 6)
 #' @export

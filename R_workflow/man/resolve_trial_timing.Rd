@@ -27,12 +27,16 @@ written into the stimuli table as well as the generated script, because timing
 that varies is a variable the analysis needs, not presentation detail.
 }
 \details{
+An event declares it as \verb{duration: \{from_column: <column>\}}, to read each trial's
+milliseconds from an item column, or as \verb{duration: \{jitter: [lo, hi], as: <column>\}},
+to draw a whole number of milliseconds from \code{lo} to \code{hi}, both included, into the
+column \code{as} names (\verb{event<i>_ms} by default, \code{i} counting the design's events from
+1). The draw is keyed on the seed, the column, the list, the set and the condition.
+
 Every value read from a column must be a finite number of milliseconds, not
 negative. The first that is not, a blank cell included, is refused, naming the
-column and the trial's set and condition. A blank or negative value used to reach
-the experiments, where OpenSesame and PsychoPy stopped at the blank and jsPsych
-ended the trial at once. When a column holds fractional milliseconds, each of its
-values is rounded once with the rounder both engines share and written back, so the
-stimuli, the loop tables and every target carry the same whole milliseconds. A
-column of whole numbers is left as it is.
+column and the trial's set and condition. When a column holds fractional
+milliseconds, each of its values is rounded once with the rounder both engines share
+and written back, so the stimuli, the loop tables and every target carry the same
+whole milliseconds. A column of whole numbers is left as it is.
 }

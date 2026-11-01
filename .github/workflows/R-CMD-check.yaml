@@ -1,5 +1,5 @@
 # R CMD check for the lexsync R package (in R_workflow/), on the platforms and R
-# versions CRAN tests on. Addresses the cross-platform gap once the repo is pushed.
+# versions CRAN tests on.
 name: R-CMD-check
 
 on:

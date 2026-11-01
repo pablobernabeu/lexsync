@@ -34,8 +34,9 @@ build_datasheet(
 
 \item{schema}{The parsed global schema (\code{schema.yaml}).}
 
-\item{report}{Match report data frame, from \code{\link[=match_report]{match_report()}} or
-\code{\link[=match_report_continuous]{match_report_continuous()}}, or \code{NULL} for generated or tabled items.}
+\item{report}{The match report, the list of \code{descriptives} and \code{comparisons} data
+frames that \code{\link[=match_report]{match_report()}} or \code{\link[=match_report_continuous]{match_report_continuous()}} returns, or \code{NULL}
+when the design has none, as for an item table without a continuous selection.}
 
 \item{stimuli}{The selected stimulus data frame.}
 
@@ -53,7 +54,9 @@ three experiment paths of a result that has no \code{files}.}
 
 \item{candidate_pool}{Optional list of per-condition candidate-pool sizes
 (\code{list(condition, n_candidates)}) recording how many items satisfied each
-condition's window before matching; reported for selection transparency.}
+condition's window before matching, the size of the discretionary pool the
+selection drew from, reported so that item-selection bias is auditable
+(Forster, 2000; Simmons et al., 2011).}
 
 \item{norms}{Optional list of norm-table provenance records, from the design's
 \verb{norms:} block (see the pipeline). Each names a file, its sha256, the join key
@@ -143,4 +146,14 @@ the items each condition holds in \code{stimuli}, per replicate for resampled se
 a selection that fell short of the request under \code{shortfall: allow} shows it. The
 suggested analysis keys its by-item slope on the recipe that ran and adds a matched
 design's matched dimensions that vary among its items as covariates.
+}
+\references{
+Forster, K. I. (2000). The potential for experimenter bias effects in word
+recognition experiments. \emph{Memory & Cognition, 28}(7), 1109-1115.
+\doi{10.3758/BF03211812}
+
+Simmons, J. P., Nelson, L. D., & Simonsohn, U. (2011). False-positive psychology:
+Undisclosed flexibility in data collection and analysis allows presenting anything
+as significant. \emph{Psychological Science, 22}(11), 1359-1366.
+\doi{10.1177/0956797611417632}
 }

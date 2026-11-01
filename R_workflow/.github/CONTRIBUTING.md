@@ -22,7 +22,12 @@ lexsync is one repository holding two packages that must behave identically. The
 R package is in `R_workflow/`, the Python package in `python_workflow/`, and the
 design configurations, corpora, item tables and generated output they share sit at
 the root. The experiment templates exist in three copies, one canonical set under
-`templates/` and a mirror inside each package. Keep all three byte-identical.
+`templates/` and a mirror inside each package, and so does the schema:
+`config/schema.yaml`, `R_workflow/inst/extdata/schema.yaml` and
+`python_workflow/src/lexsync/data/schema.yaml`. Keep each set byte-identical, as
+both test suites check. This guide has a mirror too, below a header comment in
+`R_workflow/.github/CONTRIBUTING.md`, from which the R site builds its page, so
+keep the two identical.
 
 ## Setting up for development
 
@@ -38,6 +43,9 @@ devtools::check("R_workflow")
 # Python, from python_workflow/
 pip install -e ".[dev]"
 pytest
+pip install ruff
+ruff check .
+pip install mkdocs-material "mkdocstrings[python]" markdown-exec
 mkdocs build --strict
 ```
 
@@ -45,6 +53,10 @@ Running `Rscript R_workflow/run_pipeline.R` and `python python_workflow/run_pipe
 regenerates every artefact under `output/`. Run both, and commit the result of
 both together: the two engines write the same experiment files, so regenerating
 with only one leaves the repository in a state where they disagree.
+`R_workflow/run_pipeline.R` runs the installed lexsync when one is installed, and
+its start-up message says which copy it loaded. After editing `R_workflow/R/`,
+reinstall the package with the `install.packages()` call above before
+regenerating. The Python wrapper always runs `python_workflow/src`.
 
 Regenerate outputs only from a checkout whose files have the repository's line
 endings, which `.gitattributes` sets to LF. Each datasheet records the SHA-256 of
@@ -85,10 +97,23 @@ Base your work on `main` and keep the change focused. Every feature needs a
 cross-engine regression test that would fail if the two engines diverged. Add it
 to both `R_workflow/tests/testthat/` and `python_workflow/tests/`, and prefer a
 shared golden digest computed independently in each, so the two suites fail
-together. Update `config/schema.yaml` and the design YAMLs in step with any
-configuration change. Continuous integration checks both engines on every push,
-including a parity job that regenerates the Python output and compares it to the
-committed R reference.
+together. Update the three copies of the schema and the design YAMLs in step with
+any configuration change. Every committed datasheet records the SHA-256 of the
+schema and of its design, so any edit to either, a comment included, means
+regenerating `output/` with both engines. Record the change under Unreleased in
+`CHANGELOG.md`, which covers both engines, and in `R_workflow/NEWS.md` when it
+affects the R package.
+
+Continuous integration checks both engines on every push. Its parity job
+regenerates the R reference and fails if it drifted from the committed one, and
+compares the Python stimuli with it. It then runs both engines over `config/` and
+over the twin-edge cases and requires every artefact except the per-engine
+datasheets and run logs to match byte for byte. `python tools/compare_engines.py`
+makes those whole-tree comparisons locally (it needs `Rscript` with pkgload and
+the R package's dependencies). An edge case both engines must handle alike
+belongs under `parity/twin_edge/`. `python tools/twin_edge.py --update <case>`
+writes its pinned files from the Python engine, and the R suite's
+`test-twin-edge.R` checks that the R engine reproduces them.
 
 <!-- The Code of Conduct link is absolute on purpose. pkgdown builds a page only
 from a file at the R package root, and only this guide is mirrored there, so a

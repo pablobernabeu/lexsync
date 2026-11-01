@@ -108,7 +108,7 @@ plugins:
           options:
             show_root_heading: true
             docstring_style: google
-            # api.md groups 47 objects under eleven h2 sections, mirroring the R
+            # api.md groups its objects under eleven h2 sections, mirroring the R
             # package's reference index. At mkdocstrings' default level the object
             # headings would also be h2, flattening the table of contents into one
             # list in which no object shows which group it belongs to.
@@ -140,7 +140,7 @@ markdown_extensions:
         - .
         - ..
 
-# Build with:  pip install mkdocs-material "mkdocstrings[python]" && mkdocs build
+# Build with:  pip install -e . mkdocs-material "mkdocstrings[python]" markdown-exec && mkdocs build --strict
 
 # The released version shown beside the title in the header (updated on release).
 # It tracks pyproject.toml's version, and the R package is released in lockstep.

@@ -115,6 +115,26 @@ test_that("a_registry_name_without_a_cached_corpus_is_refused_with_the_fetch_hin
                                           n_forms = 2L)))
 })
 
+test_that("a_registry_name_with_a_missing_registry_setting_is_refused", {
+  # A lexsync.registry option that names a missing file is refused by name, even with
+  # the corpus in the cache, and the entry is neither read as a path nor read from
+  # another registry.
+  tmp <- tempfile("lexsync-cache-")
+  old <- Sys.getenv("R_USER_CACHE_DIR", unset = NA)
+  old_opt <- options(lexsync.registry = file.path(tmp, "no_such_registry.yaml"))
+  on.exit({
+    options(old_opt)
+    if (is.na(old)) Sys.unsetenv("R_USER_CACHE_DIR") else Sys.setenv(R_USER_CACHE_DIR = old)
+    unlink(tmp, recursive = TRUE)
+  })
+  Sys.setenv(R_USER_CACHE_DIR = tmp)
+  dir.create(lexsync_cache_dir(), recursive = TRUE)
+  ge_write("word,freq_zipf\nhola,5\n", file.path(lexsync_cache_dir(), "subtlex_esp.csv"))
+  msg <- sprintf("lexsync: registry not found: '%s' (the lexsync.registry option).",
+                 file.path(tmp, "no_such_registry.yaml"))
+  expect_error(.read_known_forms(list("subtlex_esp")), msg, fixed = TRUE)
+})
+
 # How many of the words are written wholly in letters, by ICU's letter class.
 ge_in_letters <- function(words) sum(stringi::stri_detect_regex(words, "^\\p{L}+$"), na.rm = TRUE)
 

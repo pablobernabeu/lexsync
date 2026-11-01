@@ -24,8 +24,8 @@ import pandas as pd
 from scipy import stats
 
 # Every reduction in this module goes through these rather than through numpy or
-# pandas. Two designs' reported means used to differ between the engines in the last
-# published decimal because numpy sums pairwise and R's mean() does not; see io_utils.
+# pandas: numpy sums pairwise and R's mean() does not, which can put the engines'
+# reported means apart in the last published decimal; see io_utils.
 from .io_utils import _exact_mean, _exact_median, _exact_sd, _exact_sum, _exact_var, _round_dp
 
 
@@ -33,8 +33,8 @@ def _require_columns(stimuli: pd.DataFrame, dims, by=None) -> None:
     """Refuse a grouping column or a dimension the stimuli do not carry.
 
     The reports are exported for use on a selection of one's own, where a misspelt
-    name gave a bare KeyError here and, in R, a table of missing values that looked
-    complete. Mirrors .require_columns in R_workflow/R/validation.R.
+    name would otherwise give a bare KeyError here and, in R, a table of missing values
+    that looks complete. Mirrors .require_columns in R_workflow/R/validation.R.
     """
     if by is not None and by not in stimuli.columns:
         raise ValueError(f"lexsync: grouping column '{by}' is not a column of the stimuli.")
@@ -46,9 +46,11 @@ def _require_columns(stimuli: pd.DataFrame, dims, by=None) -> None:
 def describe_stimuli(stimuli: pd.DataFrame, dims, by: str = "condition") -> pd.DataFrame:
     """Per-group descriptive statistics for several dimensions.
 
-    One row per group of ``by``, in order of first appearance, and dimension, with
-    ``n``, ``mean``, ``sd``, ``min``, ``median`` and ``max``. A grouping column or a
-    dimension the stimuli do not carry is refused. Mirrors describe_stimuli in
+    One row per group of ``by``, in order of first appearance, and dimension, with the
+    columns ``group``, ``dimension``, ``n`` (the non-missing values), ``mean``, ``sd``,
+    ``min``, ``median`` and ``max``, the last five rounded to three decimal places. A
+    value that is not a number counts as missing. A grouping column or a dimension the
+    stimuli do not carry is refused. Mirrors describe_stimuli in
     R_workflow/R/validation.R.
     """
     _require_columns(stimuli, dims, by)
@@ -84,8 +86,8 @@ def cohens_d(x, y):
     x = x[~np.isnan(x)]; y = y[~np.isnan(y)]
     nx, ny = len(x), len(y)
     if nx < 2 or ny < 2:
-        # Undefined, not 0: a frequency contrast of 6.5 against 3.9 Zipf with one item
-        # a side was reported as a perfect balance.
+        # Undefined, not 0, or a frequency contrast of 6.5 against 3.9 Zipf with one
+        # item a side would read as a perfect balance.
         return None
     sp = math.sqrt(((nx - 1) * _exact_var(x) + (ny - 1) * _exact_var(y)) / (nx + ny - 2))
     if sp == 0 or math.isnan(sp):
@@ -125,7 +127,7 @@ def cohens_d_ci(x, y, alpha: float = 0.05) -> dict:
     close to the bound, ``tost_p`` gives the verdict.
 
     The estimate and both limits are ``None`` when either sample has fewer than two
-    values, as :func:`cohens_d` is.
+    values, as ``cohens_d`` is.
     """
     x = np.asarray(x, dtype=float); y = np.asarray(y, dtype=float)
     x = x[~np.isnan(x)]; y = y[~np.isnan(y)]
@@ -144,7 +146,7 @@ def cohens_d_ci(x, y, alpha: float = 0.05) -> dict:
     d = diff / sp
     # Large-sample variance of d: 1/nx + 1/ny + d**2 / (2 * (nx + ny)) (Hedges &
     # Olkin, 1985; Borenstein et al., 2009, eq. 4.20). Without the d**2 term the
-    # interval treated the pooled SD as known, which gave a manipulated dimension
+    # interval would treat the pooled SD as known, giving a manipulated dimension
     # with d = 5.6 and 40 items a side a margin of 0.37 in place of 0.83. Written
     # with d * d, not d ** 2, and summed in the same order as validation.R, so both
     # engines round every step identically.
@@ -154,6 +156,17 @@ def cohens_d_ci(x, y, alpha: float = 0.05) -> dict:
 
 
 def tost_equiv(x, y, bound_d: float = 0.5, alpha: float = 0.05) -> dict:
+    """Two one-sided tests (TOST) of the equivalence of ``x`` and ``y``.
+
+    The equivalence bound is ``bound_d`` pooled standard deviations. Each test is a
+    Student t test, on ``nx + ny - 2`` degrees of freedom, of the raw mean difference
+    against plus or minus that bound (Lakens, 2017). Missing values are dropped.
+
+    Returns ``{"p", "equivalent"}``: ``p`` is the larger of the two one-sided
+    p-values and ``equivalent`` is ``p < alpha``. With fewer than two values on either
+    side, ``p`` is NaN and ``equivalent`` None. Two constant samples are equivalent
+    (``p`` 0) when they share the constant and not (``p`` 1) otherwise.
+    """
     x = np.asarray(x, dtype=float); y = np.asarray(y, dtype=float)
     x = x[~np.isnan(x)]; y = y[~np.isnan(y)]
     nx, ny = len(x), len(y)
@@ -184,7 +197,9 @@ def variance_ratio(cond, ref):
     Two conditions can share a mean yet differ in spread and still confound, which
     a mean-based statistic misses (Armstrong, Watson & Plaut, 2012; Austin, 2009).
     A ratio near 1 is balanced; a common heuristic flags ratios outside about
-    [0.5, 2] as unequal spread. Returns ``None`` when a variance is undefined.
+    [0.5, 2] as unequal spread. Missing values are dropped first. Returns ``None``
+    when either array has fewer than two non-missing values, or when the reference's
+    variance is zero and the condition's is not, and 1.0 when both variances are zero.
     """
     cond = np.asarray(cond, dtype=float); ref = np.asarray(ref, dtype=float)
     cond = cond[~np.isnan(cond)]; ref = ref[~np.isnan(ref)]
@@ -197,6 +212,13 @@ def variance_ratio(cond, ref):
 
 
 def balance_check(stimuli: pd.DataFrame, columns) -> list:
+    """The columns whose values are unequally represented among the stimuli.
+
+    ``columns`` is a column name or a list of them, and a column the stimuli lack is
+    skipped. Returns one message per unbalanced column, such as
+    ``"Column 'condition' is unbalanced: a=3, b=2"``, and an empty list when every
+    column is balanced.
+    """
     if isinstance(columns, str):
         columns = [columns]
     issues = []
@@ -212,9 +234,9 @@ def balance_check(stimuli: pd.DataFrame, columns) -> list:
 
 # The columns of the comparisons frame, needed explicitly for the single-condition
 # case where there is nothing to compare against the anchor. A DataFrame built from
-# no rows carries no columns either, and wrote a comparisons CSV with no header at
-# all, while the R engine's rbind() over an empty list returned NULL and killed the
-# pipeline's reporting loop with a message that named neither the design nor the
+# no rows carries no columns, so the comparisons CSV would have no header at all, and
+# the R engine's rbind() over an empty list returns NULL, on which the pipeline's
+# reporting loop would stop with a message that names neither the design nor the
 # cause. `mean_diff` and `role` follow the columns a 0.1 reader already knows. Must
 # list the same columns, in the same order, as .empty_comparisons in
 # R_workflow/R/validation.R.
@@ -347,7 +369,7 @@ def _ratio(a, b):
 def match_report_continuous(stimuli, predictor, controls, schema, audit=None) -> dict:
     """Realised-control report for a continuous design.
 
-    Returns the same ``{descriptives, comparisons}`` shape as :func:`match_report`,
+    Returns the same ``{descriptives, comparisons}`` shape as ``match_report``,
     so the pipeline and datasheet stay uniform, but the comparisons describe a
     continuous predictor instead of a between-condition contrast: the predictor's
     realised span and, for each control, its Pearson correlation with the predictor

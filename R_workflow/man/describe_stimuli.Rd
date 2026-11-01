@@ -14,7 +14,10 @@ describe_stimuli(stimuli, dims, by = "condition")
 \item{by}{Grouping column (default \code{"condition"}).}
 }
 \value{
-A long data frame with n, mean, sd, min, median and max per group.
+A long data frame with one row per group and dimension, the groups in order
+of first appearance. Its columns are \code{group}, \code{dimension}, \code{n} (the non-missing
+values), \code{mean}, \code{sd}, \code{min}, \code{median} and \code{max}, the last five rounded to three
+decimal places. A value that is not a number counts as missing.
 }
 \description{
 A grouping column or a dimension the stimuli do not carry is refused.
