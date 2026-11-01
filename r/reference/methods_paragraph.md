@@ -1,0 +1,37 @@
+# A ready-to-adapt methods paragraph rendered from a datasheet
+
+Every number in the paragraph is printed by lexsync's own formatter,
+rounded half away from zero from the value the datasheet stores, so the
+R and Python engines write the same text from the same record, a record
+read back from its JSON included.
+
+## Usage
+
+``` r
+methods_paragraph(ds)
+```
+
+## Arguments
+
+- ds:
+
+  A datasheet list, from
+  [`build_datasheet()`](https://pablobernabeu.github.io/lexsync/r/reference/build_datasheet.md).
+
+## Value
+
+A single character string describing the materials procedure.
+
+## Details
+
+The paragraph states the items each condition holds, and the request
+beside them when they fell short of it. It describes the realised
+control before testing it: the largest difference on a matched dimension
+in that dimension's unit, with Cohen's d and its interval, then the two
+one-sided tests, which it says cannot pass when every condition holds
+fewer items than the bound needs, then, largest first, up to five
+comparisons of an uncontrolled dimension whose \|d\| exceeds the bound.
+Every interval is labelled by the schema's alpha. A continuous design's
+paragraph gives the predictor's spread, the control windows and the
+controls' realised spread. When a response mapping applies, the
+paragraph says which key the participants pressed for which condition.
