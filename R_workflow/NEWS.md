@@ -178,8 +178,8 @@
   from 40 to 239, and has more item sets than the codes left free is refused
   unless the schema sets `triggers.allow_code_overlap: true`.
 * A duration, fixed or read from an item column, must be present, finite and not
-  negative, as must a jitter's lower bound, where a blank or negative duration
-  stopped the experiment or showed the stimulus for no time.
+  negative, as must the lower bound of a jitter, where a blank or negative
+  duration stopped the experiment or showed the stimulus for no time.
 * The exporters refuse a `list` or `replicate` that is not a whole number, and
   `export_opensesame()` refuses a non-numeric value in a numeric loop column.
 * A response event after a text event must share that event's `blocks` unless it
