@@ -10,6 +10,8 @@ no function signature changes.
 
 ## [Unreleased]
 
+## [0.2.0] - Unreleased
+
 ### Upgrading from 0.1.1
 
 #### Changed results
@@ -335,6 +337,12 @@ no function signature changes.
   place pauses, where they paused before and after every filler. A design whose
   only blocks are practice, filler and main trials pauses once, where the
   practice trials end.
+- The OpenSesame experiment pauses after the practice trials until the space
+  bar is pressed, as the PsychoPy and jsPsych experiments do, where it ran on
+  without a pause. Escape at the pause stops the session.
+- The jsPsych pause after the practice trials reads 'End of the practice
+  trials' and 'Press the space bar to begin.', as the PsychoPy pause does,
+  where it read 'End of practice' and asked for the space bar to continue.
 - The Methods paragraph describes the realised control by its largest matched
   difference and then the equivalence tests, where it judged the control on the
   tests alone, and names large uncontrolled differences.
@@ -356,6 +364,9 @@ no function signature changes.
   default applied when the design gives no count, where it was null.
 - The datasheet's artefact list and the run log include the loop and text
   tables.
+- The schema and the PsychoPy and jsPsych templates carry corrected comments,
+  so every datasheet made with the bundled schema records a new schema digest,
+  and every generated PsychoPy script and jsPsych page differs in its comments.
 - The datasheet's realised-control entries give each dimension's role as
   manipulated, controlled or uncontrolled, where every unmatched dimension was
   'manipulated/free', and the Markdown table adds each row's pair and raw
@@ -578,6 +589,14 @@ no function signature changes.
 - The schema's comments and the Python experiments guide say that the trigger
   settings, and the presentation settings other than `font`, apply to every
   design run with the schema, where they said that a design could override them.
+- The README and the schema's comments describe `joint` matching as greedy
+  pairing, closest pairs first, where they called it 'optimal-greedy'. The
+  schema places the tolerance window around the anchor condition's selected
+  items and says that `joint` and `optimal` apply none.
+- The schema's comments say that `presentation.font` sets the font of the
+  PsychoPy experiment and the jsPsych page and that OpenSesame reads
+  `presentation.opensesame_font`, where they said that `font` served PsychoPy
+  and OpenSesame.
 - The getting-started guides say that the `timing` keys reach every fixation,
   every text event whose `trigger` is `condition` and every blank, but not an
   event with a per-trial `duration` block, where they named only the fixation,
@@ -1322,6 +1341,7 @@ it replaced.
   jsPsych library loads from a CDN, so the machine running the file needs an
   internet connection.
 
-[Unreleased]: https://github.com/pablobernabeu/lexsync/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/pablobernabeu/lexsync/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/pablobernabeu/lexsync/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/pablobernabeu/lexsync/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/pablobernabeu/lexsync/releases/tag/v0.1.0

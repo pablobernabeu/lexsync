@@ -72,7 +72,7 @@ jobs:
           if os.environ["REF_TYPE"] != "tag":
               sys.exit(
                   "This workflow publishes only from a release tag. Start a manual run "
-                  "on the tag (gh workflow run publish.yml --ref v0.1.1), not on a branch."
+                  "on the tag (gh workflow run publish.yml --ref v0.2.0), not on a branch."
               )
           tag = os.environ["REF_NAME"].removeprefix("v")
           with open("pyproject.toml", "rb") as f:

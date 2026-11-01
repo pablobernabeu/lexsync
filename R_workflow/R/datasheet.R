@@ -212,7 +212,7 @@ DATASHEET_VERSION <- "1.2"
 .versions_R <- function(engine) {
   v <- list(engine = engine,
             lexsync = tryCatch(as.character(utils::packageVersion("lexsync")),
-                               error = function(e) "0.1.1"),
+                               error = function(e) "0.2.0"),
             R = paste(R.version$major, R.version$minor, sep = "."))
   for (p in c("readr", "stringdist", "jsonlite", "digest", "yaml", "stringi")) {
     pv <- tryCatch(as.character(utils::packageVersion(p)), error = function(e) NULL)
