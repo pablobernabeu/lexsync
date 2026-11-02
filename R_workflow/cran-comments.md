@@ -22,27 +22,33 @@ There are three new exports, `validate_design()`, `normalise_lexicon()` and
 
 ## R CMD check results
 
-<errors> errors | <warnings> warnings | <notes> notes
-
-<Paste the status line of the local check below and explain every NOTE here.
-More than a month has passed since 0.1.1, so the incoming check should report
-no 'Days since last update' NOTE.>
+0 errors | 0 warnings | 0 notes
 
 ## Test environments
 
-* Local: Windows 11, R 4.6.1, on <date>. `R CMD check --as-cran` on the built
-  tarball, with stand-in 'templates' and 'config' packages and a README beside
-  the check directory, as CRAN's Linux hosts have the sources of other packages
-  there.
-* GitHub Actions, run <run id> on <date>, on pull request #22 at commit
-  <commit>. That commit differs from this submission only in cran-comments.md,
-  which is not in the tarball. Each leg ran `R CMD check --as-cran --no-manual`
-  beside the same stand-in neighbours, without the CRAN incoming checks, which
-  r-lib/actions turns off:
-  * macos-latest, R release
-  * windows-latest, R release and R-devel
-  * ubuntu-latest, R-devel, R release and R oldrel-1
-* <Optional: win-builder, R-devel, on <date>, with its status.>
+GitHub Actions, run 41530503240 on 2026-11-02, on pull request #22 at commit
+62543ef. That commit differs from this submission only in cran-comments.md,
+which .Rbuildignore keeps out of the tarball. Each leg built the tarball with
+`--no-manual` and ran `R CMD check --as-cran --no-manual` on it beside
+stand-in 'templates' and 'config' packages and a README, since CRAN's Linux
+hosts check each package beside the sources of others. The legs ran without
+the CRAN incoming checks, which r-lib/actions turns off. Each leg ended with
+'Status: OK':
+
+* ubuntu-latest (Ubuntu 24.04.5 LTS), R 4.6.2
+* ubuntu-latest (Ubuntu 24.04.5 LTS), R-devel (2026-10-31 r90820)
+* ubuntu-latest (Ubuntu 24.04.5 LTS), R 4.5.3
+* windows-latest (Windows Server 2022 x64 (build 26100), x86_64-w64-mingw32),
+  R 4.6.2
+* windows-latest (Windows Server 2022 x64 (build 26100), x86_64-w64-mingw32),
+  R-devel (2026-11-01 r90825 ucrt)
+* macos-latest (macOS Tahoe 26.6.2, aarch64-apple-darwin23), R 4.6.2
+
+The test suite passed in every leg, with no failures or warnings. Eighty-four
+tests skip everywhere, because they read files of the repository that R CMD
+check cannot reach, such as the Shiny app, the demonstration designs and the
+committed outputs. One more skips on Linux, where the runner cannot switch to
+a Turkish locale.
 
 ## Notes for the reviewer
 
@@ -105,6 +111,4 @@ alike, is MIT.
 
 ## Downstream dependencies
 
-<State the result of
-`tools::package_dependencies('lexsync', reverse = TRUE, db = available.packages())`.
-If it lists none: There are no reverse dependencies on CRAN.>
+There are no reverse dependencies on CRAN.
