@@ -19,7 +19,7 @@
     },
     {
       "file": "output/experiments/en_richdim_english_psychopy.py",
-      "sha256": "517580251f966d8408fc95507bbd5a8c04f926e1a0325069575bc7d531ddd299"
+      "sha256": "66976894985c5bd15ee1bf6f51419ffc84f7a87c66f8a86b154b436712e529aa"
     },
     {
       "file": "output/experiments/en_richdim_english.osexp",
@@ -27,7 +27,7 @@
     },
     {
       "file": "output/experiments/en_richdim_english.html",
-      "sha256": "92533830b77238607a843edd29952f4b05b86510d932f8f8e6066e6ebdc81493"
+      "sha256": "5055a9e2ae6c146b8b37f288590aab557d87131f41534ed6508278ae49a431ee"
     },
     {
       "file": "output/experiments/en_richdim_english_psychopy.csv",
@@ -232,11 +232,11 @@
   "reproducibility": {
     "design_sha256": "a46f5222c481512959ff91e40e2360a67d1a33f60b477b0518727e22bf6b5489",
     "schema_path": "config/schema.yaml",
-    "schema_sha256": "4698d37f5d396b00272c32ccd46a7529bd1f4dc5af70cd0b2746ae09aba2baf7",
+    "schema_sha256": "f864de85d931f4c471c22488c7df4deaa4bcff7a5cb50b4151e22f443c557af8",
     "seed": 2026,
     "versions": {
       "engine": "python",
-      "lexsync": "0.1.1",
+      "lexsync": "0.2.0",
       "numpy": "2.3.2",
       "os": "Windows AMD64",
       "pandas": "2.3.2",
