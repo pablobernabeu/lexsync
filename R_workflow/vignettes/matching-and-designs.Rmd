@@ -319,9 +319,9 @@ items:
 
 The list needs only a `word` column. Length and the syllable estimate are derived
 from the form, and `items.lexicon` supplies the rest, frequency above all, by
-lookup. A word the lexicon does not have raises a hard error, because the
-tolerance windows drop rows with missing values silently and the pool would then
-be smaller than it appears to be.
+lookup. A word the lexicon does not have raises a hard error, because a word
+missing a value would be left out of the candidates and the pool would then be
+smaller than it appears to be.
 
 One subtlety would quietly invalidate the controls if it went the other way.
 `n_density` and `old20` are properties of a word in its *language*, not among the

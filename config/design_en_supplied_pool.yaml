@@ -5,15 +5,17 @@
 # narrow it with `pool_filters`. That is the right way round when any word of the
 # language will do. It is the wrong way round when the candidate set is itself a
 # research decision: a list from a previous study, from a norming session, or one
-# restricted to a semantic category that no lexical filter can express. Such a list used
-# to have to masquerade as a lexicon, which meant inventing a `freq_zipf` column for it,
-# or else skip matching entirely by going in as `items.source: table`.
+# restricted to a semantic category that no lexical filter can express. Such a list
+# is matched with no `freq_zipf` column invented to make it a lexicon, and without
+# going in as `items.source: table`, which skips matching.
 #
 # `items.source: pool` takes the list as it is. It needs only a `word` column; length and
 # the syllable estimate are derived from the form, and `items.lexicon` supplies the rest
 # (frequency, neighbourhood density, OLD20) by lookup. A word the lexicon does not have
-# is a hard error rather than a missing value, because the tolerance windows drop rows
-# with missing values silently and the pool would then be smaller than it appears.
+# is a hard error rather than a missing value, because a word missing a value would be
+# left out of the candidates and the pool would then be smaller than it appears. A
+# missing frequency would put the word outside both conditions' ranges, and matching
+# excludes a candidate missing a matched dimension, with a note in the run log.
 #
 # One subtlety is worth stating because getting it wrong would quietly invalidate the
 # controls. `n_density` and `old20` are properties of a word in its LANGUAGE, not among

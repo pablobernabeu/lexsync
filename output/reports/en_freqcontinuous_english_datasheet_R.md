@@ -12,7 +12,7 @@
 - **Cross-engine determinism:** byte-identical
 - **Counterbalancing:** factorial, 1 list(s)
 - **Items:** 80 rows across 1 conditions (continuous)
-- **Seed:** 2026  |  **Versions:** engine R, lexsync 0.1.1, R 4.6.1, readr 2.2.0, stringdist 0.9.17, jsonlite 2.0.0, digest 0.6.39, yaml 2.3.12, stringi 1.8.7, os Windows x86-64
+- **Seed:** 2026  |  **Versions:** engine R, lexsync 0.2.0, R 4.6.1, readr 2.2.0, stringdist 0.9.17, jsonlite 2.0.0, digest 0.6.39, yaml 2.3.12, stringi 1.8.7, os Windows x86-64
 
 ## Counterbalanced lists
 
@@ -41,7 +41,7 @@
 
 ## Methods paragraph
 
-80 English items were selected to span frequency (a span of 3.05 and an SD of 0.53, 0.59 times that of an even spread over the span), for analysis by regression or a mixed model rather than a between-condition contrast (Kuperman, 2015; Liben-Nowell et al., 2019). The controls were banded within windows of the mean ± 1.5 SD of an initial selection spread over the ranks of frequency (length 3.99 to 8.13, n_density -2.52 to 7.54 and old20 1.29 to 2.91), and their realised SDs were 0.76, 0.41 and 0.68 of the pool's. The largest predictor-control correlation was |r| = 0.301. An exclusion list (exclude_en_demo.txt) removed 53 words from the candidates before selection. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. Responses were collected from target onset until 2800 ms after it, and a response ended the trial. The selection is deterministic and reproducible (lexsync 0.1.1), and the seed (2026) fixes the trial order.
+80 English items were selected to span frequency (a span of 3.05 and an SD of 0.53, 0.59 times that of an even spread over the span), for analysis by regression or a mixed model rather than a between-condition contrast (Kuperman, 2015; Liben-Nowell et al., 2019). The controls were banded within windows of the mean ± 1.5 SD of an initial selection spread over the ranks of frequency (length 3.99 to 8.13, n_density -2.52 to 7.54 and old20 1.29 to 2.91), and their realised SDs were 0.76, 0.41 and 0.68 of the pool's. The largest predictor-control correlation was |r| = 0.301. An exclusion list (exclude_en_demo.txt) removed 53 words from the candidates before selection. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. Responses were collected from target onset until 2800 ms after it, and a response ended the trial. The selection is deterministic and reproducible (lexsync 0.2.0), and the seed (2026) fixes the trial order.
 
 ## Pre-registration template
 
@@ -61,7 +61,7 @@
 - Paradigm: factorial
 
 ### Materials (from the lexsync datasheet)
-80 English items were selected to span frequency (a span of 3.05 and an SD of 0.53, 0.59 times that of an even spread over the span), for analysis by regression or a mixed model rather than a between-condition contrast (Kuperman, 2015; Liben-Nowell et al., 2019). The controls were banded within windows of the mean ± 1.5 SD of an initial selection spread over the ranks of frequency (length 3.99 to 8.13, n_density -2.52 to 7.54 and old20 1.29 to 2.91), and their realised SDs were 0.76, 0.41 and 0.68 of the pool's. The largest predictor-control correlation was |r| = 0.301. An exclusion list (exclude_en_demo.txt) removed 53 words from the candidates before selection. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. Responses were collected from target onset until 2800 ms after it, and a response ended the trial. The selection is deterministic and reproducible (lexsync 0.1.1), and the seed (2026) fixes the trial order.
+80 English items were selected to span frequency (a span of 3.05 and an SD of 0.53, 0.59 times that of an even spread over the span), for analysis by regression or a mixed model rather than a between-condition contrast (Kuperman, 2015; Liben-Nowell et al., 2019). The controls were banded within windows of the mean ± 1.5 SD of an initial selection spread over the ranks of frequency (length 3.99 to 8.13, n_density -2.52 to 7.54 and old20 1.29 to 2.91), and their realised SDs were 0.76, 0.41 and 0.68 of the pool's. The largest predictor-control correlation was |r| = 0.301. An exclusion list (exclude_en_demo.txt) removed 53 words from the candidates before selection. Materials were counterbalanced into 1 list(s) (a factorial split) and generated for PsychoPy, OpenSesame and jsPsych. Responses were collected from target onset until 2800 ms after it, and a response ended the trial. The selection is deterministic and reproducible (lexsync 0.2.0), and the seed (2026) fixes the trial order.
 
 ### Sampling plan
 - Sample size and justification:

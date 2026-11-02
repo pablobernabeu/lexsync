@@ -251,8 +251,8 @@ Ubuntu under the previous release, and the Python tests on Python 3.10–3.14.
 
 Four matching methods are available, set with `matching.method` in a design: the
 default `standardised_euclidean` (greedy nearest-neighbour on z-scored
-dimensions), `joint` (optimal-greedy pairing for a two-condition design),
-`mahalanobis` (a covariance-aware distance that down-weights correlated
+dimensions), `joint` (greedy pairing for a two-condition design, closest pairs
+first), `mahalanobis` (a covariance-aware distance that down-weights correlated
 dimensions; Rubin, 1980; Stuart, 2010) and `optimal` (the n pairs of least
 summed distance for two conditions, solved exactly as a padded assignment
 problem; Volgenant, 2004). The R and Python engines

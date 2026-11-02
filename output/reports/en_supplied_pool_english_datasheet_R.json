@@ -221,7 +221,7 @@
     "seed": 2026,
     "versions": {
       "engine": "R",
-      "lexsync": "0.1.1",
+      "lexsync": "0.2.0",
       "R": "4.6.1",
       "readr": "2.2.0",
       "stringdist": "0.9.17",
@@ -231,9 +231,9 @@
       "stringi": "1.8.7",
       "os": "Windows x86-64"
     },
-    "design_sha256": "96e3f168d678f74002536a44ebe9d2577155affe83c7fd6751bf73e3ff057af7",
+    "design_sha256": "a018aa28030de9064b50480e4523b7656ad0e1ecfd43ba9d24529ae2dba64f99",
     "schema_path": "config/schema.yaml",
-    "schema_sha256": "4698d37f5d396b00272c32ccd46a7529bd1f4dc5af70cd0b2746ae09aba2baf7"
+    "schema_sha256": "f864de85d931f4c471c22488c7df4deaa4bcff7a5cb50b4151e22f443c557af8"
   },
   "artifacts": [
     {
@@ -250,7 +250,7 @@
     },
     {
       "file": "output/experiments/en_supplied_pool_english_psychopy.py",
-      "sha256": "408c16ce709dadfbaca1636bf820ad2181a22182fd4a7e9d8cfd9a720bb7aac2"
+      "sha256": "5fbf36819259bb98c1cf768d63076aed4b29f0b2f8c5267f7441f6675f349fe4"
     },
     {
       "file": "output/experiments/en_supplied_pool_english.osexp",
@@ -258,7 +258,7 @@
     },
     {
       "file": "output/experiments/en_supplied_pool_english.html",
-      "sha256": "4456af1a2035bfdc5399d9c4e0bd9e9bcddf85516ccc54833549237407f17775"
+      "sha256": "7b1d3df001c28b9b0bceee9e6fdae25abdd47f91bd5c481bc35dbb6e43dd89fb"
     },
     {
       "file": "output/experiments/en_supplied_pool_english_psychopy.csv",

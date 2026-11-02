@@ -377,11 +377,11 @@ def trigger_hold_frames(hz):
 
     The hold is rounded to the nearest flip, so the pulse lies within half a flip of
     TRIGGER_HOLD_MS. It is never shorter than one flip, nor than the flips that cover
-    MIN_TRIGGER_HOLD_MS, the recorder minimum, rounded up: rounding that floor to the
-    nearest flip held a code for 6.9 ms (one flip) at 144 Hz and 8.3 ms (two) at
+    MIN_TRIGGER_HOLD_MS, the recorder minimum, rounded up: rounded to the nearest flip,
+    that floor would hold a code for 6.9 ms (one flip) at 144 Hz and 8.3 ms (two) at
     240 Hz. Rounding the hold itself up would lengthen the default 50 ms hold at 144 Hz
-    from seven flips to eight. Expressing the hold in milliseconds is what makes the floor
-    meaningful: as a frame count it silently shortened with the refresh.
+    from seven flips to eight. The hold and the floor are given in milliseconds because
+    a count of flips would shorten as the refresh rate rises.
     """
     hold = int(round(float(TRIGGER_HOLD_MS) * float(hz) / 1000.0))
     floor = int(math.ceil(float(MIN_TRIGGER_HOLD_MS) * float(hz) / 1000.0))
@@ -501,7 +501,7 @@ def show_frames(win, stim, frames, port, trigger, shown, keys=None):
 
     The code goes out on the onset flip and is held for TRIGGER_HOLD_FRAMES flips (see
     send_code), into the events that follow when this one is shorter. A code cleared
-    with the event's last flip lasted no time at all on a one-flip event. With
+    with the event's last flip would last no time at all on a one-flip event. With
     ``keys``, a response window opens on the onset flip, the keys are polled after
     every flip and the first one ends the stimulus and is returned. A key does not cut
     the code short.
@@ -677,8 +677,7 @@ def run_event(win, port, text_stim, ev, trial):
             text_stim.text = region
             trig = resolve_trigger(ev.get("crit_trigger"), trial) if i == crit else None
             if trig is not None:
-                # Held for the hold like every other code. It was cleared after
-                # inter_trigger_ms, 10 ms, while the region waited.
+                # Held for the hold like every other code.
                 send_code(win, port, trig)
             # Each region is timed from the flip that shows it.
             open_window(win)
@@ -856,8 +855,8 @@ def main():
     path, handle = open_data_file(participant, version)
     print("[lexsync] recording to %s" % path)
 
-    # The session markers are held for the hold too. Each was cleared by the statement
-    # after its flip, so it lasted no time at all.
+    # The session markers are held for the hold too. A marker cleared by the statement
+    # after its flip would last no time at all.
     send_marker(win, port, BLOCK_START_TRIGGER)
 
     with handle:

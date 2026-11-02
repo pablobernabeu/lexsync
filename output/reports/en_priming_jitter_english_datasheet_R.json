@@ -94,7 +94,7 @@
     "seed": 2026,
     "versions": {
       "engine": "R",
-      "lexsync": "0.1.1",
+      "lexsync": "0.2.0",
       "R": "4.6.1",
       "readr": "2.2.0",
       "stringdist": "0.9.17",
@@ -106,7 +106,7 @@
     },
     "design_sha256": "d3e01a766c834148f6f16b192c892a3c04edb74e71d0b68955e1f5ae8c99fd90",
     "schema_path": "config/schema.yaml",
-    "schema_sha256": "4698d37f5d396b00272c32ccd46a7529bd1f4dc5af70cd0b2746ae09aba2baf7"
+    "schema_sha256": "f864de85d931f4c471c22488c7df4deaa4bcff7a5cb50b4151e22f443c557af8"
   },
   "artifacts": [
     {
@@ -115,7 +115,7 @@
     },
     {
       "file": "output/experiments/en_priming_jitter_english_psychopy.py",
-      "sha256": "cc753bb5d58c9bb5c1c886c31c2f59077c28d31d08c51af4aee24011ecbe604a"
+      "sha256": "b9f006ae8dd05849f1447e0803c2a5859217991bd8bc092bf64bc9543c139e2a"
     },
     {
       "file": "output/experiments/en_priming_jitter_english_list1.osexp",
@@ -127,7 +127,7 @@
     },
     {
       "file": "output/experiments/en_priming_jitter_english.html",
-      "sha256": "f057a1505a859247133aea01c9a6bea40bf9be9cca90762fc9932c5b2184c1c9"
+      "sha256": "57774fa8f466a0cfec41f8880f0a94220e46348d0197ec1da4087ff32e5681d8"
     },
     {
       "file": "output/experiments/en_priming_jitter_english_psychopy.csv",

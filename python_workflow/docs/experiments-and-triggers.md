@@ -295,8 +295,8 @@ main trials. That is correct, since adding fillers changes the sequence and the 
 where each item actually appeared. Both blocks appear in every list and neither is counterbalanced,
 because they carry no manipulation to rotate and every participant should get the same practice. In
 a resampled design, the copy of a list in each replicate is a presentation version of its own, and
-it gets both blocks too. The PsychoPy and jsPsych runners pause where the practice trials end and
-nowhere else, since a pause around a filler would set it apart.
+it gets both blocks too. The PsychoPy, OpenSesame and jsPsych experiments pause where the practice
+trials end and nowhere else, since a pause around a filler would set it apart.
 
 Each block's item table is read with the same validation as any other, and given a `set` range that
 cannot collide with the main items, which a naive read would not manage since practice item 1 and
@@ -843,6 +843,10 @@ item's start, runs from there. A script after it records `timed_out` and `correc
 Before the loop, an inline script, `lexsync_instructions`, shows the instructions and waits for the
 space bar, and escape there stops the session. OpenSesame's canvas reads a subset of HTML, so the
 script writes the text with `&`, `<` and `>` escaped and each line break as `<br />`.
+In a design with practice trials, an inline script, `lexsync_block_break`, opens every trial, and
+on the first trial after the practice trials it says that they have ended and waits for the space
+bar, as the PsychoPy and jsPsych experiments do. It reads each trial's block from the text table,
+so the experiment needs no run-if condition, a syntax that differs between OpenSesame 3.3 and 4.x.
 A structural validator in the test suite checks the generated file's blocks and references. A second
 test runs its scripts under an emulation of each version's variable store, on item text that
 OpenSesame would otherwise evaluate.
@@ -850,10 +854,10 @@ OpenSesame would otherwise evaluate.
 OpenSesame writes nothing to its log file without a logger item, so every trial ends with one,
 `lexsync_logger`, which writes every variable. Self-paced reading sets `lexsync_region_rts`, each
 region's reading time joined by `|`, and a question sets `question_response` and `question_rt`. Each
-trial starts by clearing the response variables, so a block that skips a response event cannot log
-the previous trial's key. Before the logger, a script copies the trial's `condition`, `block` and
-`answer` from the text table into `lexsync_condition`, `lexsync_block` and `lexsync_answer`. Both
-versions' loggers write a variable without evaluating it.
+trial clears the response variables before its first event, so a block that skips a response event
+cannot log the previous trial's key. Before the logger, a script copies the trial's `condition`,
+`block` and `answer` from the text table into `lexsync_condition`, `lexsync_block` and
+`lexsync_answer`. Both versions' loggers write a variable without evaluating it.
 
 ### jsPsych
 

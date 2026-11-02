@@ -24,8 +24,8 @@
     "https://spdx.org/licenses/MIT.html",
     "https://spdx.org/licenses/CC-BY-SA-4.0.html"
   ],
-  "version": "0.1.1",
-  "softwareVersion": "0.1.1",
+  "version": "0.2.0",
+  "softwareVersion": "0.2.0",
   "developmentStatus": "active",
   "dateCreated": "2026-06-07",
   "datePublished": "2026-09-22",
@@ -61,8 +61,8 @@
     }
   ],
   "citation": [
-    "Bernabeu, P. (2026). lexsync: Lexical optimisation and hardware-timed experiment generation. R package version 0.1.1. Comprehensive R Archive Network (CRAN). https://doi.org/10.32614/CRAN.package.lexsync",
-    "Bernabeu, P. (2026). lexsync: Lexical optimisation and hardware-timed experiment generation. Python package version 0.1.1. https://doi.org/10.5281/zenodo.22906962"
+    "Bernabeu, P. (2026). lexsync: Lexical optimisation and hardware-timed experiment generation. R package version 0.2.0. Comprehensive R Archive Network (CRAN). https://doi.org/10.32614/CRAN.package.lexsync",
+    "Bernabeu, P. (2026). lexsync: Lexical optimisation and hardware-timed experiment generation. Python package version 0.2.0. https://doi.org/10.5281/zenodo.22906962"
   ],
   "readme": "https://github.com/pablobernabeu/lexsync/blob/main/README.md",
   "issueTracker": "https://github.com/pablobernabeu/lexsync/issues",

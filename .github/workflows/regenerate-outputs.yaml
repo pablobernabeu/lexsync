@@ -1,0 +1,211 @@
+name: regenerate-outputs
+
+# Regenerates output/ with both engines, in the environment the committed
+# datasheets record: Windows, R 4.6.1 with the R package versions below, and
+# Python 3.13.7 with the pins in python_workflow/requirements.txt. It rewrites the
+# expected files of the twin-edge cases it is told to, runs both test suites and
+# the engine comparisons on the result, pushes the result to the branch as a
+# separate commit and starts the CI workflows on that commit, because a push made
+# with GITHUB_TOKEN starts none.
+#
+# It runs when the last commit of a push to a branch other than main has
+# '[regenerate outputs]' in its message. A line 'Twin-edge cases: <case> ...' in
+# that message names the cases whose expected files should be rewritten. The
+# other cases keep their pins, so both suites still check them. It can also be
+# started by hand on a branch other than main. It never pushes to main.
+
+on:
+  push:
+    branches-ignore: [main, master]
+  workflow_dispatch:
+    inputs:
+      twin_edge_cases:
+        description: 'Twin-edge cases whose expected files to rewrite, separated by spaces'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: regenerate-outputs-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  regenerate:
+    if: >-
+      github.ref_name != 'main' && github.ref_name != 'master' &&
+      (github.event_name == 'workflow_dispatch' ||
+       contains(github.event.head_commit.message, '[regenerate outputs]'))
+    runs-on: windows-2025
+    timeout-minutes: 150
+    defaults:
+      run:
+        shell: bash
+    env:
+      R_VERSION: '4.6.1'
+      PYTHON_VERSION: '3.13.7'
+      # The versions the R datasheets record, also pinned in the install step.
+      R_PINS: 'readr=2.2.0 stringdist=0.9.17 jsonlite=2.0.0 digest=0.6.39 yaml=2.3.12 stringi=1.8.7'
+    steps:
+      - uses: actions/checkout@v7
+
+      # Every datasheet records the SHA-256 of the files the run read and wrote,
+      # so a CRLF checkout would record digests that no LF checkout reproduces.
+      - name: Check that the checkout has LF line endings
+        run: |
+          git ls-files --eol config/schema.yaml
+          git ls-files --eol config/schema.yaml | grep -q 'w/lf'
+
+      - name: Read the twin-edge cases to rewrite
+        env:
+          MESSAGE: ${{ github.event.head_commit.message }}
+          INPUT_CASES: ${{ inputs.twin_edge_cases }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ]; then
+            cases="$INPUT_CASES"
+          else
+            cases=$(printf '%s\n' "$MESSAGE" | sed -n 's/^Twin-edge cases: *//p' | head -n 1)
+          fi
+          cases=$(printf '%s' "$cases" | tr -d '\r')
+          echo "Twin-edge cases to rewrite: ${cases:-none}"
+          echo "TWIN_EDGE_CASES=$cases" >> "$GITHUB_ENV"
+
+      - uses: r-lib/actions/setup-r@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05  # v2.14.0
+        with:
+          r-version: ${{ env.R_VERSION }}
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05  # v2.14.0
+        with:
+          working-directory: R_workflow
+          extra-packages: |
+            any::testthat
+            local::.
+            readr@2.2.0
+            stringdist@0.9.17
+            jsonlite@2.0.0
+            digest@0.6.39
+            yaml@2.3.12
+            stringi@1.8.7
+
+      - name: Check the R environment
+        shell: Rscript {0}
+        run: |
+          cat(R.version.string, "\n")
+          stopifnot(identical(paste(R.version$major, R.version$minor, sep = "."), Sys.getenv("R_VERSION")))
+          pins <- strsplit(strsplit(Sys.getenv("R_PINS"), " ")[[1]], "=")
+          for (p in pins) {
+            have <- format(packageVersion(p[1]))
+            cat(p[1], have, "\n")
+            if (have != p[2]) stop(p[1], " is ", have, ", not ", p[2])
+          }
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install the pinned Python environment
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r python_workflow/requirements.txt
+          python -m pip install -c python_workflow/requirements.txt -e "python_workflow[dev]"
+          python --version
+          python -m pip freeze | grep -iE '^(pandas|numpy|scipy|rapidfuzz|PyYAML)=='
+
+      # The Python datasheets record the version importlib.metadata reports, so
+      # a stale installed distribution would make them name the wrong release.
+      - name: Check that both engines report the version in DESCRIPTION
+        run: |
+          want=$(sed -n 's/^Version: *//p' R_workflow/DESCRIPTION | tr -d '\r')
+          have_py=$(python -c "import importlib.metadata as m; print(m.version('lexsync'))" | tr -d '\r')
+          have_r=$(Rscript -e 'cat(format(packageVersion("lexsync")))' | tr -d '\r')
+          echo "DESCRIPTION $want, Python $have_py, R $have_r"
+          test "$have_py" = "$want" && test "$have_r" = "$want"
+
+      # R first, then Python, never at the same time: both write the same
+      # experiment files.
+      - name: Regenerate with the R engine
+        run: Rscript R_workflow/run_pipeline.R
+
+      - name: Regenerate with the Python engine
+        run: python python_workflow/run_pipeline.py
+
+      - name: Rewrite the named twin-edge expectations
+        if: env.TWIN_EDGE_CASES != ''
+        run: python tools/twin_edge.py --update $TWIN_EDGE_CASES
+
+      - name: Fail if a selection changed
+        run: |
+          out=$(git status --porcelain --untracked-files=all -- output/stimuli ':(glob)parity/twin_edge/*/expected/stimuli/**')
+          test -z "$out" || { echo "$out"; echo '::error::a selection changed'; exit 1; }
+
+      - name: Check what the datasheets record
+        run: |
+          python - <<'EOF'
+          import collections, glob, json, os, re
+          want = re.search(r"^Version: *(\S+)", open("R_workflow/DESCRIPTION", encoding="utf-8").read(), re.M).group(1)
+          r_pins = dict(p.split("=") for p in os.environ["R_PINS"].split())
+          designs = len(glob.glob("config/design_*.yaml"))
+          expected = {("R", want, os.environ["R_VERSION"], "Windows x86-64"): designs,
+                      ("python", want, os.environ["PYTHON_VERSION"], "Windows AMD64"): designs}
+          seen = collections.Counter()
+          for path in glob.glob("output/reports/*_datasheet_*.json"):
+              v = json.load(open(path, encoding="utf-8"))["reproducibility"]["versions"]
+              seen[(v["engine"], v["lexsync"], v.get("R") or v.get("python"), v["os"])] += 1
+              if v["engine"] == "R":
+                  assert {k: v.get(k) for k in r_pins} == r_pins, (path, v)
+          for path in glob.glob("output/reports/*_datasheet_*.md"):
+              assert f"lexsync {want}" in open(path, encoding="utf-8").read(), path
+          print(dict(seen))
+          assert dict(seen) == expected, expected
+          EOF
+
+      - name: Run the R suite from the source tree
+        shell: Rscript {0}
+        run: |
+          res <- as.data.frame(testthat::test_local("R_workflow", reporter = "summary", stop_on_failure = FALSE))
+          cat(sprintf("FAIL %d | WARN %d | SKIP %d | PASS %d\n", sum(res$failed), sum(res$warning), sum(res$skipped), sum(res$passed)))
+          if (sum(res$failed) > 0) stop("R test failures")
+          if (sum(res$warning) > 0) stop("R test warnings, such as a partial match by $")
+
+      - name: Run the Python suite
+        working-directory: python_workflow
+        run: python -m pytest -q
+
+      - name: Compare the engines on the demonstration designs
+        run: python tools/compare_engines.py
+
+      - name: Compare the engines on the twin-edge cases
+        run: python tools/compare_engines.py --config parity/twin_edge
+
+      - name: Commit and push the regenerated outputs
+        run: |
+          stray=$(git status --porcelain --untracked-files=all | cut -c4- | grep -v -E '^(output/(experiments|reports)/|parity/twin_edge/[^/]+/expected/)' || true)
+          test -z "$stray" || { echo "$stray"; echo '::error::files outside output/ and the twin-edge expectations changed'; exit 1; }
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git status --short | cut -c4- | cut -d/ -f1-2 | sort | uniq -c
+          if git diff --cached --quiet; then echo "Nothing changed."; exit 0; fi
+          git commit -q -F - <<EOF
+          Regenerate the outputs with R ${R_VERSION} and Python ${PYTHON_VERSION} on Windows
+
+          The regenerate-outputs workflow wrote this commit from ${GITHUB_SHA}
+          (run ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}).
+          Both engines regenerated every demonstration design. Rewritten
+          twin-edge cases: ${TWIN_EDGE_CASES:-none}. Both test suites and the
+          engine comparisons passed on the result.
+          EOF
+          git push origin "HEAD:refs/heads/${GITHUB_REF_NAME}"
+
+      - name: Start CI on the regenerated commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          failed=0
+          for wf in R-CMD-check.yaml python-tests.yaml test-coverage.yaml doi-display.yaml; do
+            gh workflow run "$wf" --ref "${GITHUB_REF_NAME}" || { echo "::error::could not start $wf"; failed=1; }
+          done
+          exit $failed

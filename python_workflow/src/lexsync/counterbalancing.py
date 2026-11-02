@@ -396,10 +396,8 @@ def _order_trials(df: pd.DataFrame, seed, settings: dict, unit: str,
 
 def _longest_runs(trials: pd.DataFrame, run_on: str, orders: int) -> int:
     """The longest run of one ``run_on`` value in a version's presented trials, over
-    every order. The PsychoPy and jsPsych experiments pause after the practice trials,
-    so a run is counted as ending there. The OpenSesame experiment runs every trial in
-    one loop without a pause, so there a run can continue from the practice trials into
-    the main ones."""
+    every order. The PsychoPy, OpenSesame and jsPsych experiments pause after the
+    practice trials, so a run is counted as ending there."""
     if run_on not in trials.columns or not len(trials):
         return 0
     best = 0

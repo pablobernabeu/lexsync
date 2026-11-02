@@ -19,7 +19,7 @@
     },
     {
       "file": "output/experiments/en_lexdec_wuggy_english_psychopy.py",
-      "sha256": "52921efd0a9c1488cebe31eedeee84cafcdfb8d58ae938cbd22f70d447a91055"
+      "sha256": "38a6bc54173972fe966d7b60f224a0627474d2b4d1851fb8877bc17b182870ae"
     },
     {
       "file": "output/experiments/en_lexdec_wuggy_english.osexp",
@@ -27,7 +27,7 @@
     },
     {
       "file": "output/experiments/en_lexdec_wuggy_english.html",
-      "sha256": "5e543c4f525606e51a14eb91e76e21ccd6e7a68503aed0125c5ab0686c85891f"
+      "sha256": "c967b23798d0a7f3bbeb3cabeb4cfa35fd3a89cfb48515d198f24bfbe55c63b3"
     },
     {
       "file": "output/experiments/en_lexdec_wuggy_english_psychopy.csv",
@@ -193,11 +193,11 @@
   "reproducibility": {
     "design_sha256": "d2bb8d6fb28ecd2df0610cc1c224f40168c6e90044e95d94d145f5a81646712e",
     "schema_path": "config/schema.yaml",
-    "schema_sha256": "4698d37f5d396b00272c32ccd46a7529bd1f4dc5af70cd0b2746ae09aba2baf7",
+    "schema_sha256": "f864de85d931f4c471c22488c7df4deaa4bcff7a5cb50b4151e22f443c557af8",
     "seed": 2026,
     "versions": {
       "engine": "python",
-      "lexsync": "0.1.1",
+      "lexsync": "0.2.0",
       "numpy": "2.3.2",
       "os": "Windows AMD64",
       "pandas": "2.3.2",

@@ -66,14 +66,18 @@ Before the loop, an inline script, `lexsync_instructions`, shows the design's
 the space bar. The participant reads them at their own pace, and escape there
 stops the session. The text is written into the script with `&`, `<` and `>`
 escaped and each line break as `<br />`, because OpenSesame's canvas reads a
-subset of HTML. The generated setup opens the trigger device the schema names,
-the parallel port or a named serial port. When it cannot, or when
-`triggers.mode: mock` tells it not to try, an inline script before the
-instructions, `lexsync_trigger_notice`, says that no trigger codes will be sent
-and waits for C, and escape there stops the session. Under
-`triggers.mode: hardware`, a device that cannot be opened stops the experiment
-instead, before anything is shown. Every trial logs `lexsync_trigger_mode`:
-`hardware` when the codes go to the device, `mock` when they are printed.
+subset of HTML. In a design with practice trials, an inline script,
+`lexsync_block_break`, opens every trial, and on the first trial after the
+practice trials it says that they have ended and waits for the space bar, as
+the PsychoPy and jsPsych experiments do. Escape there stops the session. The
+generated setup opens the trigger device the schema names, the parallel port or
+a named serial port. When it cannot, or when `triggers.mode: mock` tells it not
+to try, an inline script before the instructions, `lexsync_trigger_notice`,
+says that no trigger codes will be sent and waits for C, and escape there stops
+the session. Under `triggers.mode: hardware`, a device that cannot be opened
+stops the experiment instead, before anything is shown. Every trial logs
+`lexsync_trigger_mode`: `hardware` when the codes go to the device, `mock` when
+they are printed.
 
 A response after a text event is collected by that event's own script, from
 the stimulus's onset. The keyboard is flushed as the stimulus appears and polled
@@ -85,8 +89,8 @@ response that a design keeps after the stimulus with `from: offset` is a
 and `correct`. Self-paced reading sets `lexsync_region_rts`, each region's
 reading time joined by `|`, and a question sets `question_response`,
 `question_rt` and, in a design with no response event, `correct` (the answer
-scored against the trial's `answer`). Each trial starts by clearing these,
-copies its `condition`, `block` and `answer` into `lexsync_condition`,
+scored against the trial's `answer`). Each trial clears these before its first
+event, copies its `condition`, `block` and `answer` into `lexsync_condition`,
 `lexsync_block` and `lexsync_answer`, and ends with a logger item,
 `lexsync_logger`, which writes every variable to OpenSesame's log file.
 
