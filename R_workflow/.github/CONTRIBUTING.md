@@ -63,11 +63,14 @@ endings, which `.gitattributes` sets to LF. Each datasheet records the SHA-256 o
 the files the run read and wrote. A copy converted to CRLF puts a digest in it
 that no checkout reproduces, and the digest tests in both suites then fail.
 
-`.github/workflows/regenerate-outputs.yaml` does the same on a Windows runner, in the
-environment the committed datasheets record, checks the result with both suites and
-commits it to the branch. A commit whose message contains `[regenerate outputs]`,
-pushed to a branch other than main, starts it. Once the workflow is on main, it can
-also be started by hand on such a branch from the Actions tab.
+`.github/workflows/regenerate-outputs.yaml` runs both pipelines on a Windows runner,
+in the environment the committed datasheets record, rewrites the expected files of
+the twin-edge cases it is told to, checks the result with both suites and the
+engine comparisons and pushes it to the branch as a separate commit, on which it
+then starts CI. It runs when the last commit of a push to a branch other than main
+has `[regenerate outputs]` in its message. A line `Twin-edge cases: <case> ...` in
+the same message names the cases whose expected files change. Once the workflow is
+on main, it can also be started by hand from the Actions tab.
 
 ## The one convention that governs everything
 
