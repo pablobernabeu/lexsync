@@ -101,7 +101,9 @@ jobs:
 
       - name: Update the twin-edge expectations
         run: |
-          python tools/twin_edge.py --update $(python tools/twin_edge.py --list | cut -d: -f1)
+          # Only cases whose outcome is 'artefacts' have expected files: a refusal
+          # case pins the refusal in its expect.yaml, which --update leaves alone.
+          python tools/twin_edge.py --update $(python tools/twin_edge.py --list | awk -F': ' '$2 == "artefacts" {print $1}')
 
       - name: Fail if a selection changed
         run: git diff --exit-code -- output/stimuli/
