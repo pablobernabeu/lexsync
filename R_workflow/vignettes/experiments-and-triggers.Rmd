@@ -601,8 +601,9 @@ records where each item actually appeared. Both blocks appear in every list and
 neither is counterbalanced, because they carry no manipulation to rotate and
 every participant should get the same practice. In a resampled design, the copy
 of a list in each replicate is a presentation version of its own, and it gets both
-blocks too. The PsychoPy and jsPsych runners pause where the practice trials end
-and nowhere else, since a pause around a filler would set it apart.
+blocks too. The PsychoPy, OpenSesame and jsPsych experiments pause where the
+practice trials end and nowhere else, since a pause around a filler would set it
+apart.
 
 Each block's item table is read with the same validation as any other, and given a
 `set` range that cannot collide with the main items, which a naive read would not
@@ -756,14 +757,18 @@ shows the blank first holds out a code still held. After a stimulus shorter than
 hold, the window therefore opens when the hold is up, and `response_time`, which
 OpenSesame times from the item's start, runs from there.
 Self-paced reading sets `lexsync_region_rts` and a question `question_response` and
-`question_rt`. Each trial starts by clearing these, and before the logger a script
-copies the trial's `condition`, `block` and `answer` from the text table into
-`lexsync_condition`, `lexsync_block` and `lexsync_answer`. Both versions' loggers
-write a variable without evaluating it. Before the loop, an inline script,
+`question_rt`. Each trial clears these before its first event, and before the logger
+a script copies the trial's `condition`, `block` and `answer` from the text table
+into `lexsync_condition`, `lexsync_block` and `lexsync_answer`. Both versions'
+loggers write a variable without evaluating it. Before the loop, an inline script,
 `lexsync_instructions`, shows the instructions and waits for the space bar, and
 escape there stops the session. OpenSesame's canvas reads a subset of HTML, so the
 script writes the text with `&`, `<` and `>` escaped and each line break as
-`<br />`.
+`<br />`. In a design with practice trials, an inline script, `lexsync_block_break`,
+opens every trial, and on the first trial after the practice trials it says that
+they have ended and waits for the space bar, as the PsychoPy and jsPsych experiments
+do. It reads each trial's block from the text table, so the experiment needs no
+run-if condition, a syntax that differs between OpenSesame 3.3 and 4.x.
 
 jsPsych is the browser target. A browser cannot address a parallel port, so the
 trigger codes go into each trial's data and no marker leaves the machine. That

@@ -1,7 +1,10 @@
 # lexsync global schema and defaults
 # ---------------------------------------------------------------------------
-# Every numeric constant lives here (and in the per-design configs), so adding a
-# language or a design needs a configuration file, not a change to the code.
+# The settings that a laboratory or a design is expected to change live here (and in
+# the per-design configs), so adding a language or a design needs a configuration
+# file, not a change to the code. Constants that belong to the method, such as the
+# cap of 1,200 candidates per condition in joint and optimal matching and the ranges
+# of the trigger codes, are set in the code of both engines.
 # This file is read identically by the R package and the Python package.
 #
 # The keys below, and the keys of a design, are checked before anything is selected
@@ -128,7 +131,7 @@ matching:
   method: standardised_euclidean
   # method options:
   #   standardised_euclidean  greedy nearest-neighbour on z-scored dimensions (default)
-  #   joint                   optimal-greedy pairing for a two-condition design
+  #   joint                   greedy pairing for two conditions, closest pairs first
   #   mahalanobis             covariance-aware distance; down-weights correlated dimensions
   #   optimal                 the n pairs of least summed distance, for two conditions
   #                           (an exact padded assignment; Volgenant, 2004)
@@ -136,8 +139,10 @@ matching:
   # engines; mahalanobis and optimal use a covariance inverse / assignment solver,
   # so the two engines agree closely but not byte-for-byte.
   # Stage 1, tolerance pre-filter: keep candidates within mean +/- k * SD of the
-  # target condition on each dimension. This generalises the original workflow's
-  # mean +/- SD/9 (frequency) and mean +/- 2*SD (letters) windows. A dimension
+  # anchor (first) condition's selected items on each dimension. This generalises
+  # the original workflow's mean +/- SD/9 (frequency) and mean +/- 2*SD (letters)
+  # windows. A continuous design takes its windows from an even spread over the
+  # pool, and joint and optimal matching apply no tolerance window. A dimension
   # without an entry takes k = 2. A design's own matching: tolerance_k: overrides
   # these per dimension, merged as R's modifyList() merges two lists. A null here is
   # dropped, and a null in the design deletes this file's value for that dimension,
@@ -256,7 +261,7 @@ matching:
 counterbalance:
   incomplete: allow   # what to do with an incomplete Latin-square rotation: allow | error
 
-# ---- Equivalence testing (reported in the descriptives) -------------------
+# ---- Equivalence testing (reported in the comparisons) --------------------
 # Equivalence is assessed by two one-sided tests (TOST), fixed in validation.py /
 # validation.R; only the bound and alpha below are configurable.
 # Sassenhagen and Alday (2016) point out that tests on the selected stimuli concern
@@ -277,24 +282,23 @@ equivalence:
 # describe the machine that runs the experiments, so a design does not set them.
 triggers:
   parallel_address: '0x0378'   # typical LPT1 base address
-  # How long the onset code is held before it is reset to 0, in milliseconds.
+  # How long the onset code is held before it is reset to 0, in milliseconds. A
+  # count of flips would shorten as the refresh rate rises: three flips last 50 ms
+  # at 60 Hz and 8.3 ms at 360 Hz, below the 10 ms minimum most recorders need to
+  # register a pulse. The default of 50 ms is three flips at 60 Hz.
   #
-  # This was `reset_after_frames: 2`, documented as '~33 ms at 60 Hz'. It was
-  # neither: the reset is queued on one flip and executes on the next, so the code
-  # was actually held across three flip intervals, 50 ms at 60 Hz. And being a
-  # frame count it scaled with the display, falling to 12.5 ms at 240 Hz and 8.3 ms
-  # at 360 Hz, below the 10 ms minimum most recorders need to register a pulse.
+  # The generated PsychoPy script converts it to the nearest whole number of flips
+  # at the refresh it measures, and never to fewer than the flips that cover 10 ms.
+  # The OpenSesame experiment holds it in milliseconds, at least 10, and resets it
+  # at the first wait that reaches the end of the hold. A code is held for the whole
+  # hold even when its event is shorter, through the events after it, unless the
+  # next onset's code replaces it first.
   #
-  # 50 ms preserves exactly what the package has always done at 60 Hz, now stated
-  # honestly and in a unit that does not move. The generated PsychoPy script converts
-  # it to the nearest whole number of flips at the refresh it measures, and never to
-  # fewer than the flips that cover 10 ms. The OpenSesame experiment holds it in
-  # milliseconds, at least 10, and resets it at the first wait that reaches the end
-  # of the hold. A code is held for the whole hold even when its event is shorter,
-  # through the events after it, unless the next onset's code replaces it first.
-  # `reset_after_frames` is still accepted and converted at
-  # presentation.assumed_refresh_hz. `inter_trigger_ms`, which held the self-paced
-  # reading critical-region code, is accepted and no longer used.
+  # A schema may give `reset_after_frames: N` in place of this key. It is read as a
+  # hold of N + 1 flips at presentation.assumed_refresh_hz, because the reset it
+  # names is queued on the Nth flip and takes effect on the next. `inter_trigger_ms`
+  # is accepted and ignored, with a note in the run log, since the self-paced
+  # reading critical-region code is held for trigger_hold_ms like every other code.
   trigger_hold_ms: 50
   # A design's own trigger codes are whole numbers from 1 to 255, checked when the
   # experiment is generated. Item codes run from 40 in code-point order of the set
@@ -325,9 +329,12 @@ triggers:
   mode: auto
 
 # ---- Presentation defaults (a design may set its own font) ----------------
-# The word font used by the generated PsychoPy and OpenSesame experiments. The
-# default is a fixed-width Latin font; set a glyph-complete font per design for
-# non-Latin scripts (for example 'SimHei' for Chinese; see design_zh_*.yaml).
+# The word font. The generated PsychoPy experiment and the jsPsych page use `font`,
+# the page as its CSS font-family with the browser's monospace font as fallback, and
+# the OpenSesame experiment uses `opensesame_font`. A design's own `font` replaces
+# both. The defaults are fixed-width fonts for Latin script, so a design in another
+# script sets a glyph-complete font of its own (for example 'SimHei' for Chinese, as
+# in design_zh_freqcontrast.yaml).
 presentation:
   font: 'Courier New'
   opensesame_font: 'mono'      # OpenSesame font_family token (space-free)
@@ -339,12 +346,11 @@ presentation:
   # timing. With false, it opens a 1280 x 1024 window. OpenSesame takes full screen
   # from the mode it is launched in.
   fullscreen: true
-  # Event durations are canonically MILLISECONDS. A design may still declare a
-  # duration in frames (`duration_frames`, and `fixation_frames` / `word_frames` /
-  # `isi_frames` in a design's `timing:` block), which is converted to
-  # milliseconds at load time using the rate below, so designs written before the
-  # millisecond migration keep working unchanged. Set it to the rate those frame
-  # counts were authored for.
+  # Event durations are canonically MILLISECONDS. A duration may also be given in
+  # frames (`duration_frames`, and `fixation_frames` / `word_frames` / `isi_frames`
+  # in a design's `timing:` block), as several registered paradigms give theirs,
+  # and is converted to milliseconds at load time using the rate below. Set it to
+  # the rate those frame counts were authored for.
   #
   # This is NOT the rate the experiment runs at. The generated PsychoPy script
   # measures the display's actual refresh at start-up and converts milliseconds

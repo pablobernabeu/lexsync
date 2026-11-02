@@ -729,8 +729,8 @@ merge_norms <- function(lexicon, norms, on = "word", columns = NULL) {
 #' from the form. Everything else is either supplied on the list itself or looked up:
 #' with `lexicon` given, the corpus dimensions (frequency above all) are joined for
 #' those words, and a word the lexicon does not have is a hard error rather than an
-#' `NA`, because the tolerance windows drop `NA` rows silently and the pool would
-#' then be smaller than the user believes it is.
+#' `NA`, because a word missing a value would be left out of the candidates and the
+#' pool would then be smaller than the user believes it is.
 #'
 #' The returned `reference` matters as much as the pool. `n_density` and `old20` are
 #' properties of a word in its *language*, not among the handful of words a study

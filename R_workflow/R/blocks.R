@@ -26,9 +26,8 @@
 # mixes them through. That does renumber the main trials, which is correct: adding
 # fillers changes the sequence, and the stimuli file records where each item actually
 # appeared. counterbalance.max_run applies to this interleaved order and, separately,
-# to the practice order, since the PsychoPy and jsPsych experiments pause between the
-# two. The OpenSesame experiment runs every trial in one loop without a pause, so there
-# a run can continue from the practice trials into the main ones.
+# to the practice order, since the PsychoPy, OpenSesame and jsPsych experiments pause
+# between the two.
 #
 # Both blocks appear in EVERY list. They are not counterbalanced, because they carry no
 # manipulation to rotate; every participant should get the same practice. In a resampled

@@ -391,10 +391,8 @@
 }
 
 # The longest run of one run_on value in a version's presented trials, over every
-# order. The PsychoPy and jsPsych experiments pause after the practice trials, so a run
-# is counted as ending there. The OpenSesame experiment runs every trial in one loop
-# without a pause, so there a run can continue from the practice trials into the main
-# ones.
+# order. The PsychoPy, OpenSesame and jsPsych experiments pause after the practice
+# trials, so a run is counted as ending there.
 .longest_runs <- function(trials, run_on, orders) {
   if (!run_on %in% names(trials) || !nrow(trials)) return(0L)
   best <- 0L
