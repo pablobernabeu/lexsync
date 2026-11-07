@@ -6,16 +6,16 @@ report what the matching achieved, generate the experiment, and write down the p
 groups are the same ones the [R package's reference index](https://pablobernabeu.github.io/lexsync/r/reference/)
 uses, so a name can be found in the same place on either site.
 
-Everything listed under a group heading is importable straight from `lexsync`, with a handful of
+Everything listed under a group heading is importable directly from `lexsync`, with a handful of
 exceptions that are noted where they appear and are reached through their own module. Guides with
 worked examples are linked from the [home page](index.md), and the published work that these entries
 cite is listed in full on the [references page](references.md).
 
 ## Corpora and lexica
 
-Languages are supplied through a corpus registry, so reaching a new one takes a registry entry and
-no code. These functions find a corpus, download it into a per-user cache that can be cleared
-again, turn a corpus file in its publisher's layout into a lexicon, and read a derived lexicon or a
+Languages are supplied through a corpus registry, so adding a language takes a registry entry and
+no code. These functions find a corpus, download it into a per-user cache that can be cleared,
+turn a corpus file in its publisher's layout into a lexicon, and read a derived lexicon or a
 prepared item table into the frame everything else expects. `build_wordfreq_lexicon`, `cache_dir`
 and `cache_clear` are reached through `lexsync.corpora`.
 
@@ -41,7 +41,7 @@ and `cache_clear` are reached through `lexsync.corpora`.
 
 ## Lexical dimensions
 
-Frequency arrives with the lexicon, and the lexica lexsync distributes carry N and OLD20 as well.
+The lexicon supplies frequency, and the lexica lexsync distributes carry N and OLD20 as well.
 Length and the syllable estimate are derived from the forms at load time, and the functions below
 derive the rest. Derive them before matching, and compute the neighbourhood measures against the full lexicon rather than the
 pool, since a word's neighbours do not stop existing because a design excluded them.
@@ -56,9 +56,8 @@ pool, since a word's neighbours do not stop existing because a design excluded t
 
 ## Pools and matching
 
-The pool is the set of candidates a design will consider at all, and the matcher works only on what
-it is given. `match_stimuli` never reads a design's `pool_filters`, so `build_pool` is a required
-step.
+The pool is the set of candidates a design considers, and `match_stimuli` works only on the pool it
+is given. It never reads a design's `pool_filters`, so `build_pool` is a required step.
 
 ::: lexsync.build_pool
 
@@ -70,7 +69,8 @@ step.
 
 Dichotomising a continuous predictor costs power and can introduce selection artefacts. A design may
 instead spread its items over the predictor's ranks, following the pool's distribution, while
-tolerance windows trim the tails of its controls, and be analysed by regression or a mixed model.
+tolerance windows trim the tails of its controls. Such a design may then be analysed by regression
+or a mixed model.
 
 ::: lexsync.select_continuous_stimuli
 
@@ -78,9 +78,9 @@ tolerance windows trim the tails of its controls, and be analysed by regression 
 
 ## Pseudoword generation
 
-Non-words are generated deterministically, with no sampling anywhere, preserving length exactly
-and keeping every letter bigram attested in the corpus. Both methods select byte-identical stimuli
-in the R and Python engines.
+Pseudowords are generated deterministically, with no sampling, preserving length exactly and keeping
+every letter bigram attested in the corpus. Both generation methods that `build_lexdec_stimuli`
+offers select byte-identical stimuli in the R and Python engines.
 
 ::: lexsync.generate_pseudowords
 
@@ -90,9 +90,9 @@ in the R and Python engines.
 
 ## Paradigms and trial events
 
-A trial is a list of event dictionaries rather than backend code, which is what lets one engine serve
-six paradigms and three presentation targets. A design either names a paradigm and inherits its
-event sequence, or supplies its own `events`.
+A trial is a list of event dictionaries, independent of any presentation backend, so one engine
+serves six paradigms and three presentation targets. A design either names a paradigm and inherits
+its event sequence, or supplies its own `events`.
 
 ::: lexsync.PARADIGMS
 
@@ -104,11 +104,12 @@ event sequence, or supplies its own `events`.
 
 ## Counterbalancing
 
-Two recipes are available, and the paradigm chooses between them unless the design names one in
-`counterbalance.recipe`. A design's own `events` do not change the choice. Trial order comes from a
-seeded, keyed-hash shuffle, a pure function of the design with no generator behind it, so the same
-seed gives the same order in both engines. `balance_lists` is the optional search for a list assignment
-whose lists are equated on the item dimensions, where the plain deal goes by set rank.
+Two recipes are available, and the paradigm determines which applies unless the design names one in
+`counterbalance.recipe`. A design's own `events` do not change the choice. Trial order comes from
+a seeded, keyed-hash shuffle. The shuffle is a pure function of the design and uses no random-number
+generator, so the same seed gives the same order in both engines. `balance_lists` is the optional
+search for a list assignment whose lists are equated on the item dimensions. It replaces the default
+deal of sets to lists by set rank.
 
 ::: lexsync.counterbalance
 
@@ -119,7 +120,7 @@ whose lists are equated on the item dimensions, where the plain deal goes by set
 ## Validation and equivalence
 
 A matched design claims that its controls do not differ, and a non-significant test of difference
-does not establish that. These functions report the realised control instead: the standardised
+does not establish that. These functions report the realised control: the standardised
 difference with its interval, an equivalence test against a declared bound, and the variance ratio
 that a mean-based statistic would miss.
 
@@ -159,7 +160,7 @@ it for you. Each participant is presented one presentation version of a design, 
 
 ## Materials datasheet
 
-The datasheet is the provenance record that travels with a stimulus set: where the items came from,
+The datasheet is the provenance record that accompanies a stimulus set: where the items came from,
 how they were selected, the realised control, the candidate-pool sizes, the checksums and the
 versions. `run_pipeline` builds and writes one for every run.
 
@@ -171,13 +172,13 @@ versions. `run_pipeline` builds and writes one for every run.
 
 ## Pipeline and logging
 
-`run_pipeline` is the orchestrator behind `lexsync run`, and `run_all` loops it over a directory of
-designs. `validate_design` is the check `run_pipeline` applies before anything is selected or
-written, and `design_stem` gives the stem every written file is named after. The logging functions
-are reached as `lexsync.logging.*`, which does not shadow the standard library's `logging` for
-absolute imports. All three entry points choose the schema through
-`lexsync.paths.resolve_schema`, and `lexsync.paths.bundled_schema` gives the path of the copy shipped
-with the package.
+`run_pipeline` runs the lexsync pipeline for one design, and `run_all` calls it for each design in
+a directory. Every design that `lexsync run` processes goes through `run_pipeline`. These three
+entry points choose the schema through `lexsync.paths.resolve_schema`, and
+`lexsync.paths.bundled_schema` gives the path of the copy bundled with the package. `validate_design`
+is the check `run_pipeline` applies before anything is selected or written, and `design_stem` gives
+the stem every written file is named after. The logging functions are reached as
+`lexsync.logging.*`, which does not shadow the standard library's `logging` for absolute imports.
 
 ::: lexsync.run_pipeline.run_pipeline
 

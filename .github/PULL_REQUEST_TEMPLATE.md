@@ -1,9 +1,10 @@
 <!-- Thank you for contributing to lexsync. -->
 
-**What does this change do?**
+### What does this change do?
+
 A short description, and a link to the issue it addresses if there is one.
 
-**Checklist**
+### Checklist
 
 R package (`R_workflow/`):
 
@@ -21,4 +22,4 @@ Both:
 
 - [ ] Behaviour changes are made in both engines, with a cross-engine regression test in each suite, and `python tools/compare_engines.py` reports that the engines agree.
 - [ ] Documentation, `CHANGELOG.md` and `R_workflow/NEWS.md` are updated where relevant.
-- [ ] No secret (API key, token) appears anywhere in the diff.
+- [ ] No secret, such as an API key or token, appears anywhere in the diff.

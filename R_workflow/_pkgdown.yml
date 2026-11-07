@@ -197,7 +197,7 @@ reference:
   - select_continuous_stimuli
   - match_report_continuous
 - title: Pseudoword generation
-  desc: Deterministic non-words, and the lexical-decision sets built from them.
+  desc: Deterministic pseudowords, and the lexical-decision sets built from them.
   contents:
   - generate_pseudowords
   - make_pseudoword
@@ -234,13 +234,13 @@ reference:
   - export_jspsych
   - assign_triggers
 - title: Materials datasheet
-  desc: The provenance, checksums and realised control that travel with a stimulus set.
+  desc: The provenance, checksums and realised control that accompany a stimulus set.
   contents:
   - build_datasheet
   - write_datasheet
   - methods_paragraph
 - title: Pipeline and logging
-  desc: Check a design, run it end to end, and log every step and artefact as it is written.
+  desc: Check a design, run it through the pipeline and log every step and artefact as it is written.
   contents:
   - run_pipeline
   - run_all

@@ -1,11 +1,11 @@
 # References
 
-The guides and the API reference cite published work throughout, and this page carries the full
-entries so that every citation on the site resolves. Each citation in the guides links to the entry
-below, and each entry carries a DOI wherever the work has one. The R package lists the same works at
-the foot of each vignette that cites them. The lexical corpora that lexsync reads are attributed
-separately, in `corpora/ATTRIBUTION.md` and in the corpus registry, since their licences travel with
-the derived data rather than with the software.
+The guides and the API reference cite published work, and this page gives the full entry for every
+citation on the site. Each citation in the guides links to its entry below. Every entry carries a
+DOI wherever the work has one. The R package lists the same works at the foot of each vignette that
+cites them. The lexical corpora that lexsync reads are attributed separately, in
+`corpora/ATTRIBUTION.md` and in the corpus registry, since their licences apply to the derived data
+and not to the software.
 
 Andrews, S. (1989). Frequency and neighborhood effects on lexical access: Activation or search?
 *Journal of Experimental Psychology: Learning, Memory, and Cognition*, *15*(5), 802–814.

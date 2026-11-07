@@ -1,26 +1,25 @@
 # lexsync web applications
 
-Two browser front-ends for lexsync, one per language, mirroring the dual-language
-package. Each assembles a design through the interface, runs the same verified
+This directory holds two browser front-ends for lexsync, one for each language.
+Each lets a researcher assemble a design through the interface. It runs the same
 pipeline that the package and command line use, displays the matched stimuli, the
-realised-control report and the materials datasheet, and exports the reproducible
-R, Python and command-line code that reproduces the operation. The applications are
-front-ends only: every result they show is produced by the installed lexsync
-package, and the design they build is an ordinary YAML configuration file. Under
-the deterministic matching methods, which include the default, the two engines
-select byte-identical stimuli, so a design built in either application runs the
-same way in either ecosystem.
+realised-control report and the materials datasheet, and exports the R, Python and
+command-line code that reproduces the operation. Every result the applications show
+is produced by the installed lexsync package, and the design they build is an
+ordinary YAML configuration file. Under the deterministic matching methods, which
+include the default, the two engines select byte-identical stimuli, so a design
+built in either application runs the same way in either ecosystem.
 
-Both cover the corpus-matching workflow (conditions defined by numeric windows or by
-a categorical column, including full 2 × 2 cells), the lexical-decision paradigm with
-generated pseudowords, and the item-table paradigms (priming and self-paced
-reading), along with the four matching methods (standardised Euclidean, joint,
-Mahalanobis and optimal), per-dimension tolerance windows, counterbalancing and item
-resampling.
+Both cover the corpus-matching workflow, with conditions defined by numeric windows
+or by a categorical column, including the cells of a 2 × 2 design. They also cover
+the lexical-decision paradigm with generated pseudowords and the item-table
+paradigms for priming and self-paced reading. Each offers the four matching methods
+(standardised Euclidean, joint, Mahalanobis and optimal), per-dimension tolerance
+windows, counterbalancing and item resampling.
 
 ## Python (Streamlit)
 
-Requirements: `lexsync` and `streamlit` 1.49 or later. The first of the three
+The app requires `lexsync` and `streamlit` 1.49 or later. The first of the three
 commands below installs lexsync from this checkout, the second installs Streamlit
 and the third starts the app.
 
@@ -34,9 +33,9 @@ The app opens at <http://localhost:8501>.
 
 ## R (Shiny)
 
-Requirements: the `lexsync` package and `shiny`, `bslib`, `DT`. The downloads also
-want `zip`. Without it the app falls back to an external zip tool, and refuses the
-download when none is on the path.
+The app requires the `lexsync` package and `shiny`, `bslib` and `DT`. Its downloads
+also use `zip`. Without it, the app falls back to an external zip tool, and the
+download fails with an error when none is on the path.
 
 ```r
 install.packages(c("shiny", "bslib", "DT", "zip"))
@@ -68,11 +67,12 @@ The app opens at <http://localhost:8502>.
 - Each application runs that code in a temporary folder laid out like its download:
   the design, `config/schema.yaml`, the lexicon or item table at the path the design
   names, and the outputs under `output/`. The Download tab archives that folder, so
-  the datasheet in it checksums the design beside it, names no path outside it, and
-  the exported code reruns in the unzipped folder. The PsychoPy and OpenSesame
-  downloads are archives holding each experiment with the tables it loads.
+  the datasheet in the archive checksums the design beside it and names no path
+  outside the folder, and the exported code reruns in the unzipped folder. The
+  PsychoPy and OpenSesame downloads are archives holding each experiment with the
+  tables it loads.
 - The `standardised_euclidean` and `joint` methods select byte-identical stimuli in
   both engines. `mahalanobis` and `optimal` use a covariance inverse or an assignment
-  solver, so the two engines agree closely but not byte-for-byte, and both the
-  reproducible-code panel and the datasheet tab report which case applies, from the
-  run's datasheet. The `optimal` method needs the R `clue` package.
+  solver, so the two engines agree closely but not byte-for-byte. The
+  reproducible-code panel and the datasheet tab report which case applies, as
+  recorded in the run's datasheet. The `optimal` method needs the R `clue` package.

@@ -19,12 +19,11 @@ carry hardware triggers injected at stimulus onset for EEG/ERP synchronisation,
 and the browser target is a single shareable HTML file.
 
 This is the feature-parity twin of [the R
-package](https://pablobernabeu.github.io/lexsync/r/) of the same name, which
-offers the same workflow in R. The two engines select byte-identical stimuli
-under the deterministic matching methods, and are built from one repository and
-released under one version.
+package](https://pablobernabeu.github.io/lexsync/r/) of the same name. The two
+are built from one repository and released under one version, and their engines
+select byte-identical stimuli under the deterministic matching methods.
 
-Documentation, including the guides and the full API reference, is at
+Documentation, including the guides and the API reference, is at
 <https://pablobernabeu.github.io/lexsync/python/>.
 
 ## Install
@@ -36,12 +35,12 @@ pip install lexsync
 ```
 
 The `corpora` extra adds the 'wordfreq' connector, which builds lexica for thirty
-registered languages (wordfreq covers 42) through a single dependency, and the
-`experiment` extra adds 'PsychoPy' and 'pyserial'. Note that the `experiment` extra is needed only to run
-a generated experiment on hardware, never to generate one. PsychoPy currently
-supports Python 3.10 to 3.12, so on a newer interpreter that extra stops with a
-message naming psychopy, while the rest of the package installs on any supported
-version. [Getting
+registered languages ('wordfreq' covers 42) through a single dependency, and the
+`experiment` extra adds 'PsychoPy' and 'pyserial'. The `experiment` extra is
+needed only to run a generated experiment on hardware, not to generate one.
+'PsychoPy' currently supports Python 3.10 to 3.12. On a newer interpreter,
+installing that extra fails with a message naming psychopy, while the rest of the
+package installs on any supported version. [Getting
 started](https://pablobernabeu.github.io/lexsync/python/getting-started/)
 explains why and suggests an interpreter for hardware work. An extra goes in
 brackets after the package name:
@@ -99,13 +98,13 @@ report = lexsync.match_report(
 print(report["comparisons"].to_string(index=False))
 ```
 
-The report is the point of the exercise, because it measures what the matching
-achieved. Frequency, the manipulation, separates the conditions by nearly five
-standard deviations, while each control dimension passes a two one-sided tests
-procedure against a bound of *d* = 0.5, so it is shown to be equivalent and not
-merely to have escaped a significance test. The [Matching and designs
+The report measures what the matching achieved. Frequency, the manipulation,
+separates the conditions by nearly five standard deviations. Each control
+dimension passes a two one-sided tests procedure against a bound of *d* = 0.5, so
+it is shown to be equivalent rather than merely failing to differ significantly.
+The [Matching and designs
 guide](https://pablobernabeu.github.io/lexsync/python/matching-and-designs/)
-reads the report column by column.
+explains the report column by column.
 
 ## Use
 
@@ -142,9 +141,9 @@ report = lexsync.match_report(stim, ["length", "frequency", "n_density", "old20"
 lexsync.export_experiments(stim, design, schema, "output/experiments")
 ```
 
-The same operations are available from the command line, which runs a whole
-design end to end (again from the root of the clone), lists the registered
-corpora and derives a new lexicon:
+The same operations are available from the command line. The first command below
+runs a whole design, again from the root of the clone, and the other two list the
+registered corpora and derive a new lexicon:
 
 ```bash
 lexsync run config/design_en_freqcontrast.yaml
@@ -152,24 +151,24 @@ lexsync corpora list
 lexsync fetch fr            # build a French lexicon via wordfreq
 ```
 
-Outside a clone, name the schema with `--schema` or leave it out. `lexsync run` then
-looks for `schema.yaml` beside the designs and falls back to the copy bundled with
-the package, and it says on standard error which file it used. A command that fails
-prints lexsync's message and exits with status 1, and `lexsync --traceback run ...`
-shows the Python traceback as well.
+Outside a clone, name the schema with `--schema` or leave it out. When it is left
+out, `lexsync run` looks for `schema.yaml` beside the designs and falls back to the
+copy bundled with the package. It reports on standard error which file it used. A
+command that fails prints lexsync's message and exits with status 1, and
+`lexsync --traceback run ...` shows the Python traceback as well.
 
 ## Citation
 
 Cite the software. The authoritative record is
 [`CITATION.cff`](https://github.com/pablobernabeu/lexsync/blob/main/CITATION.cff)
 at the root of the repository, which GitHub renders into several formats through
-its 'Cite this repository' button. The [About
-page](https://pablobernabeu.github.io/lexsync/python/about/) carries a formatted
-reference for this package, which gives its version and the concept DOI of the
-Zenodo archive, <https://doi.org/10.5281/zenodo.22906962>,
-since PyPI assigns no DOI. `CITATION.cff` describes both packages, so it gives
-the same DOI and lists each package's identifiers, among them the DOI that CRAN
-assigned to the R package. A manuscript describing lexsync is in preparation.
+its 'Cite this repository' button. PyPI assigns no DOI, so the formatted
+reference for this package on the [About
+page](https://pablobernabeu.github.io/lexsync/python/about/) gives its version and
+the concept DOI of the Zenodo archive, <https://doi.org/10.5281/zenodo.22906962>.
+`CITATION.cff` describes both packages, so it gives the same DOI and lists each
+package's identifiers, among them the DOI that CRAN assigned to the R package. A
+manuscript describing lexsync is in preparation.
 
 Cite the corpus as well as the software. The corpora are third-party work with
 their own terms, and each is credited, with its licence and retrieval date, in
@@ -177,22 +176,20 @@ their own terms, and each is credited, with its licence and retrieval date, in
 
 ## Licence
 
-MIT for the code. The bundled corpus derivatives are not covered by it. The
-three example lexica, installed as `lexsync/data/en_example.csv`,
-`lexsync/data/es_example.csv` and `lexsync/data/zh_example.csv`, are derived from
-'wordfreq', the English one screened against SUBTLEX-US, and are released under
-CC BY-SA 4.0, which asks anyone who
-redistributes them to credit the corpus authors, say that changes were made and
-keep the same terms on any adaptation. `LICENSE.note` states this inside the
-distribution itself, alongside `LICENSE`, so the terms travel with the installed
-package. The repository keeps the fuller record, including the retrieval date
-and checksum of every derived file, in
+MIT for the code. The bundled corpus derivatives are released under CC BY-SA 4.0
+instead. They are the three example lexica installed as
+`lexsync/data/en_example.csv`, `lexsync/data/es_example.csv` and
+`lexsync/data/zh_example.csv`, derived from 'wordfreq' and, for English, screened
+against SUBTLEX-US. CC BY-SA 4.0 asks anyone who redistributes them to credit the
+corpus authors, say that changes were made and keep the same terms on any
+adaptation. `LICENSE.note`, installed alongside `LICENSE`, states these terms
+inside the distribution. The repository keeps the fuller record, including the
+retrieval date and checksum of every derived file, in
 [`LICENSE-DATA`](https://github.com/pablobernabeu/lexsync/blob/main/LICENSE-DATA).
 
 ## Contributing
 
 Issues and pull requests are welcome, on the [issue
 tracker](https://github.com/pablobernabeu/lexsync/issues) of the repository that
-holds both twins. A report that includes the design YAML and the run log is one
-someone can act on, since between them they pin the inputs and every step that
-ran.
+holds both twins. A report that includes the design YAML and the run log can be
+acted on, because together they record the inputs and every step that ran.

@@ -1,10 +1,9 @@
 # Getting started
 
-This page covers the three things you need before any of the rest is useful: getting the package
-installed with the right extras, driving it from the command line, and reading a design file. The
-design file is where nearly all of the work happens. Almost nothing about a study is expressed in
-Python code, which is deliberate, because a YAML file can be attached to a pre-registration and
-handed to someone running the other engine.
+This page covers what the other guides assume: installing the package with the right extras, using
+it from the command line and reading a design file. Nearly all of the work happens in the design
+file and almost nothing in Python code, because a YAML file can be attached to a pre-registration
+and handed to someone running the other engine.
 
 ## Install
 
@@ -20,7 +19,7 @@ pip install "lexsync[corpora]"
 pip install "lexsync[corpora,experiment]"
 ```
 
-The development version comes straight from the repository, where the Python package sits in the
+The development version comes from the repository, where the Python package sits in the
 `python_workflow/` subdirectory:
 
 ```bash
@@ -51,26 +50,25 @@ early on.
 | `experiment` | `psychopy>=2024.1`, `pyserial>=3.5` | Running a generated laboratory experiment on hardware. |
 | `dev` | `pytest`, `build`, `twine`, `streamlit` | The test suite, including the tests that cover the Streamlit app. |
 
-The `experiment` extra deserves emphasis because it is easy to assume otherwise. It is needed only
-to *run* a generated experiment, never to generate one. Script generation imports neither PsychoPy
-nor pyserial. It writes text. The whole demonstration therefore reproduces on a laptop with no
-parallel port, no EEG amplifier and no PsychoPy installation, and the test suite runs the same way
-in continuous integration.
+The `experiment` extra is needed only to run a generated experiment, not to generate one. Script
+generation writes text and imports neither PsychoPy nor pyserial. The whole demonstration therefore
+reproduces on a laptop with no parallel port, no EEG amplifier and no PsychoPy installation, and the
+test suite runs the same way in continuous integration.
 
 The floor on PsychoPy is there because the extra tracks PsychoPy's own supported range of Python
 versions, which trails the newest interpreter by a release or two. PsychoPy currently declares 3.10
-up to 3.12, so on Python 3.13 there is nothing for pip to install and it stops with a message naming
-psychopy. That is the intended outcome. Without the floor pip would keep looking further back until
-it reached a 2022 release whose dependencies no longer build, and the install would die part-way
-through a compilation having installed nothing. On Windows with Python 3.12 the resolve succeeds,
+up to 3.12, so on Python 3.13 pip finds nothing to install and stops, as intended, with a message
+naming psychopy. Without the floor, pip would keep looking further back until it reached a 2022
+release whose dependencies no longer build, and the install would fail part-way through a
+compilation having installed nothing. On Windows with Python 3.12, dependency resolution succeeds,
 but pyWinhook, which PsychoPy requires there, publishes no wheel for that version and is built from
-source, so swig has to be on the path. Python 3.11 avoids both and is the easiest interpreter to use
-for hardware work. None of this touches the rest of the package, which runs on any version from 3.10
-onwards.
+source, so swig has to be on the path. Python 3.11 avoids both problems and is the easiest
+interpreter to use for hardware work. The rest of the package is unaffected and runs on any version
+from 3.10 onwards.
 
-The `corpora` extra pins wordfreq to its frozen 3.x line, which is a stable snapshot of language
-usage through roughly 2021. That is deliberate. A lexicon derived from a live, drifting source
-would quietly stop reproducing.
+The `corpora` extra pins wordfreq to its frozen 3.x line, a stable snapshot of language usage
+through roughly 2021. The pin is there because a lexicon derived from a source that is still being
+updated would stop reproducing without warning.
 
 ### Check that it worked
 
@@ -83,9 +81,8 @@ print(lexsync.list_corpora().to_string(index=False))
 
 `list_corpora` reads the corpus registry. It looks for `corpora/registry.yaml` relative to the
 working directory first, then one level up, then falls back to the copy bundled inside the package,
-so it answers whether or not you are standing in a clone. Setting `LEXSYNC_REGISTRY` to an existing
-file makes it read that file instead. A path that does not exist is refused with an error that names
-the variable and the path.
+so it also works outside a clone. Setting `LEXSYNC_REGISTRY` to an existing file makes it read that
+file instead. A path that does not exist raises an error that names the variable and the path.
 
 ## The command line
 
@@ -101,10 +98,10 @@ lexsync fetch fr --n-words 30000                  # the same, with 30,000 forms
 lexsync fetch subtlex_us                          # download and normalise SUBTLEX-US
 ```
 
-`lexsync run` is the orchestrator. It reads the schema and the design, loads the lexicon, derives
-whatever dimensions the design matches on, selects and counterbalances the items, then writes the
-stimuli, the realised-control report, the materials datasheet, the run log and the three experiment
-scripts. Its flags:
+`lexsync run` reads the schema and the design, loads the lexicon, derives whatever dimensions the
+design matches on, selects and counterbalances the items, then writes the stimuli, the
+realised-control report, the materials datasheet, the run log and the three experiment scripts. It
+takes these flags:
 
 | Flag | Default | Meaning |
 | --- | --- | --- |
@@ -112,18 +109,18 @@ scripts. Its flags:
 | `--config-dir` | `config` | Where to look for designs when no design is named. |
 | `--outdir` | `output` | Root of the written artefacts (`stimuli/`, `reports/`, `experiments/`). |
 
-Paths in a design are resolved relative to the working directory, so run these from the root of a
-clone. With no design argument, `lexsync run` globs `design_*.yaml` and `design_*.yml` from
+Paths in a design are resolved relative to the working directory, so run the commands from the root
+of a clone. With no design argument, `lexsync run` globs `design_*.yaml` and `design_*.yml` from
 `--config-dir`, sorts them and runs each in turn.
 
 A schema named with `--schema` is used as given, and one that does not exist is an error. When the
 flag is left out, the schema is resolved in order. Running every design, `lexsync run` reads
 `schema.yaml` in `--config-dir` and then `config/schema.yaml` in the working directory. Running one
 design, it reads `config/schema.yaml` in the working directory and then `schema.yaml` beside the
-design. Either way the copy bundled with the package comes last, and a line on standard error names
+design. Either way, the copy bundled with the package comes last, and a line on standard error names
 the file chosen. The Markdown run log records it as `schema_path` among its run metadata, and the
-datasheet as `reproducibility.schema_path`. `run_pipeline()` and `run_all()` resolve a schema they are not given
-in the same way, through `lexsync.paths.resolve_schema`.
+datasheet as `reproducibility.schema_path`. `run_pipeline()` and `run_all()` resolve a schema they
+are not given in the same way, through `lexsync.paths.resolve_schema`.
 
 A failing command prints lexsync's own message to standard error and exits with status 1.
 `lexsync --traceback run ...` shows the Python traceback as well. A mistyped flag exits with
@@ -132,16 +129,17 @@ argparse's usage status, 2.
 `lexsync corpora list` prints the registry as a table of name, language, ISO code, status,
 connector and citation. `lexsync fetch` takes either a registry entry name or a language code. If
 the name is one of the thirty language codes registered for the wordfreq connector, a lexicon is
-built with wordfreq and cached under `~/.lexsync/cache`. Otherwise the registered delimited file is
+built with wordfreq and cached under `~/.lexsync/cache`. Otherwise, the registered delimited file is
 downloaded there, checked against the SHA-256 the registry records and normalised into a lexicon,
-as `normalise_lexicon` does below. Either way the path is printed and the citation for the source
-goes to standard output with it. A name holding `/`, `\` or `:` is refused, since it becomes the
-cached file's name, and every refusal names the registry file it read. The cache persists between
-sessions. `lexsync.corpora.cache_clear("fr")` removes one corpus from it, and `cache_clear()` with
-no name removes the whole cache. Building a wordfreq lexicon is Python-only. The R package can read
-the result as an ordinary corpus but cannot build one, so an R laboratory reaches the wider
-language set through lexica derived here. Registered corpora fetched from R go to a separate cache
-under `tools::R_user_dir("lexsync", "cache")`, which `lexsync_cache_clear()` empties.
+as `normalise_lexicon` does below. Either way, the path is printed and the citation for the source
+goes to standard output with it. A name holding `/`, `\` or `:` is rejected, since it becomes the
+cached file's name, and every error message names the registry file that was read.
+
+The cache persists between sessions. `lexsync.corpora.cache_clear("fr")` removes one corpus from it,
+and `cache_clear()` with no name removes the whole cache. Registered corpora fetched from R go to a
+separate cache under `tools::R_user_dir("lexsync", "cache")`, which `lexsync_cache_clear()` empties.
+The R package can read a wordfreq lexicon as an ordinary corpus but cannot build one, so an R
+laboratory obtains the wider language set from lexica derived with the Python package.
 
 A corpus file downloaded by hand, such as SUBTLEX-UK from its own page, is made into a lexicon by
 `normalise_lexicon`, which both packages export:
@@ -152,42 +150,43 @@ lexsync.normalise_lexicon("SUBTLEX-UK.txt", entry="subtlex_uk", out="subtlex_uk.
 ```
 
 It reads a tab- or comma-separated file and takes the column names from the registry entry's
-`columns` map (or from `columns=`). A frequency per million is converted with Zipf =
+`columns` map or from `columns=`. A frequency per million is converted with Zipf =
 log10(per million) + 3, rounded to three places, and the words are lower-cased and put in NFC. A
 form listed twice is resolved by the entry's `duplicates` rule: the first row by default, or the
 sum of its rates per million, which Lexique needs because it splits a homograph's frequency
-between its rows. A rate of 0 has no Zipf value and is refused. The line it prints counts the Zipf
+between its rows. A rate of 0 has no Zipf value and is rejected. The line it prints counts the Zipf
 values that lay within 1e-9 of a rounding boundary, the one step at which the two packages'
-`log10` could round a value apart. The count is expected to be 0, and a run over the lexicon
-records it in its run log and datasheet. `load_lexicon` refuses a `freq_zipf` column with values
+`log10` could round a value differently. The count is expected to be 0, and a run over the lexicon
+records it in its run log and datasheet. `load_lexicon` rejects a `freq_zipf` column with values
 outside 0 to 9, which are frequencies per million under the wrong name. A log count such as
 SUBTLEX-US's `Lg10WF` lies inside that range, so it has to be converted all the same.
 
 A wordfreq lexicon holds the language's most frequent forms that are spelt with letters, 10,000 of
 them unless `fetch_corpus` is given another `n_words` or `lexsync fetch` another `--n-words`. The
-`en.csv`, `es.csv` and `zh.csv` committed under `corpora/derived/` hold more: they were built
+`en.csv`, `es.csv` and `zh.csv` committed under `corpora/derived/` hold more. They were built
 with `python corpora/fetch_corpora.py --languages en es --n-words 30000` and, for Chinese,
-`--languages zh --n-words 20000`. Each form is lower-cased and put in Unicode
-NFC. Combining marks are part of the spelling, so the vowel signs and viramas of Hindi and Bengali
-are kept, and so is the zero-width non-joiner that Persian spells many words with. A Ukrainian
-word may also hold an apostrophe between two letters, as п'ять does, and a Catalan word a middle dot
-between two l's, as pel·lícula does. No other punctuation mark and no digit is part of a spelling,
-so English contractions and French elisions stay out. When fewer forms pass than were requested, a
-line on standard output says so. `fetch_corpus(..., strict=True)` raises an error at
-such a shortfall, and `exclude_latin=True` drops every form holding a Latin letter, such as the
-English tokens of a Hindi list.
+`--languages zh --n-words 20000`.
+
+Each form is lower-cased and put in Unicode NFC. Combining marks are part of the spelling, so the
+vowel signs and viramas of Hindi and Bengali are kept, and so is the zero-width non-joiner that
+Persian spells many words with. A Ukrainian word may also hold an apostrophe between two letters, as
+п'ять does, and a Catalan word a middle dot between two l's, as pel·lícula does. No other
+punctuation mark and no digit is part of a spelling, so English contractions and French elisions are
+left out. When fewer forms pass than were requested, a line on standard output says so.
+`fetch_corpus(..., strict=True)` raises an error at such a shortfall, and `exclude_latin=True` drops
+every form holding a Latin letter, such as the English tokens of a Hindi list.
 
 Length, N and OLD20 count code points in both packages. A vowel sign, a virama or a zero-width
 non-joiner is therefore a character of its own, which adds one to the word's length and takes one
 edit to change. `n_syllables` is missing for every word outside the Latin script, and `run_pipeline`
-refuses a design that refers to it when such a word passes the design's other filters.
+rejects a design that refers to it when such a word passes the design's other filters.
 
 ## Anatomy of a design
 
 A design is a YAML file. `config/schema.yaml` holds everything global, including the matching
-defaults, while the design holds what is specific to the study. Both are read identically by the R and Python
-packages, which is what lets a design travel. Here is the English frequency contrast in full, from
-`config/design_en_freqcontrast.yaml`:
+defaults, while the design holds what is specific to the study. The R and Python packages read both
+files identically. The repository's English frequency contrast,
+`config/design_en_freqcontrast.yaml`, reads in full:
 
 ```yaml
 name: en_freqcontrast
@@ -220,19 +219,19 @@ timing:
 
 ### The keys
 
-`name` and `language` are required, and together they form the slug that every written file is
+`name` and `language` are required, and together they form the stem that every written file is
 named after. `en_freqcontrast` plus `english` becomes `en_freqcontrast_english`, and from that come
 `en_freqcontrast_english_stimuli_py.csv`, `en_freqcontrast_english.osexp` and the rest. A name or
 language holding a character outside ASCII also adds an eight-character checksum to the stem, as
 [Reproducibility and parity](reproducibility-and-parity.md) explains. `language` is a free-text
 label rather than a code, because it is what the experiment displays. When the browser target needs
-a real BCP 47 tag it maps the common labels and falls back to `und`, or you can state
-`language_tag` outright.
+a BCP 47 tag, it maps the common labels and falls back to `und`, or you can state `language_tag`
+outright.
 
 `lexicon` names the derived corpus to read. It may also be written as `items.lexicon`, which is the
-form the lexical-decision designs use, since they also need to say where the items come from.
+form the lexical-decision designs use, since they also have to say where the items come from.
 
-`items` selects the source of the stimuli, and there are four of them:
+`items` selects where the stimuli come from, and there are four sources.
 
 | `items.source` | Where stimuli come from | Also needs |
 | --- | --- | --- |
@@ -241,94 +240,98 @@ form the lexical-decision designs use, since they also need to say where the ite
 | `table` | A CSV of prepared items (prime-target pairs, sentences). | `items.path` |
 | `pool` | A candidate word list of your own, matched over as if it were a pool. | `items.path`, normally `items.lexicon` |
 
-`pool_filters` narrows the lexicon to the candidates a design will consider at all. Each key is a
-column, and each value is a `[min, max]` range when it is a pair of numbers, or a set of allowed
-values otherwise. This is a step that matters. The matcher never reads `pool_filters` itself, so a
-script that omits `build_pool` matches over the entire lexicon and quietly ignores the design's
-bands. Here `nonstandard: [0, 0]` keeps the forms the screened lexicon leaves unmarked, and
+`pool_filters` narrows the lexicon to the candidates the design will consider at all. Each key is a
+column, and each value is an inclusive `[min, max]` range when it is a pair of numbers, or a set of
+permitted values otherwise. `match_stimuli` never reads `pool_filters` itself, so a script that
+skips `build_pool` matches over the whole lexicon and ignores the design's pool filters without
+warning. Here, `nonstandard: [0, 0]` keeps the forms the screened lexicon leaves unmarked, and
 `exclude_words` leaves out the words a file lists, as
 [Matching and designs](matching-and-designs.md#choosing-and-screening-a-lexicon) explains.
 
-`conditions` is a list, each with a `name` and a `define_by` block that carves the condition out of
-the pool by the same filter syntax. Two conditions make a contrast. Four make the 2 × 2 that
-`config/design_en_andrews_repro.yaml` uses to reproduce
+`conditions` is a list, each entry with a `name` and a `define_by` block that narrows the pool to
+the condition's candidates by the same filter syntax. Two conditions make a contrast. Four make the
+2 × 2 that `config/design_en_andrews_repro.yaml` uses to reproduce
 [Andrews (1989)](references.md#andrews-1989). A design may instead declare
 a `continuous` block and dispense with conditions altogether, which
 [Matching and designs](matching-and-designs.md) covers.
 
 `match_on` lists the dimensions to equate across conditions, and a design that matches its
-conditions must name at least one. `n_per_condition` is how many items you want in each, a whole number of at least 1 written as
-`80` or `80.0`. Both are the heart of the design, and both are discussed at length in the matching
-guide. `n_per_cell` is read in place of `n_per_condition` when that is absent. A design that gives
-neither takes 20 items per condition when it is matched, 60 items when it is continuous and 40
-words, each with a pseudoword, when it generates its items.
+conditions must name at least one. `n_per_condition` is how many items each condition should hold,
+a whole number of at least 1 written as `80` or `80.0`. `n_per_cell` is read in place of
+`n_per_condition` when that is absent. A design that gives neither takes 20 items per condition when
+it is matched, 60 items when it is continuous and 40 words, each with a pseudoword, when it
+generates its items. `match_on` and `n_per_condition` are covered at length in
+[Matching and designs](matching-and-designs.md).
 
 `matching` overrides the schema defaults for this design alone. `matching.method` picks one of the
 four methods, and `matching.tolerance_k` sets the half-width, in standard deviations, of the
 tolerance window on each dimension. Overriding a single dimension is common when reproducing a
 published study's exact windows.
 
-`counterbalance.lists` sets the number of lists, and `counterbalance.optimise` asks for an assignment
-whose lists are equated on the item dimensions, where the plain deal goes by set rank. `practice` and
-`fillers` each name an item table whose trials run but are not analysed. `timing` overrides the fixation, critical-word and
-inter-stimulus durations, in milliseconds (`fixation_ms`, `word_ms`, `isi_ms`) or in frames
-(`fixation_frames`, `word_frames`, `isi_frames`), as the design above does. Frames are converted at
-`presentation.assumed_refresh_hz`, and a `*_ms` key wins over its `*_frames` counterpart. The
-fixation keys set every fixation event, the word keys every text event whose `trigger` is
-`condition` and the inter-stimulus keys every blank, though not an event that takes a per-trial
-`duration` block. `font` overrides the presentation font, which matters for a non-Latin script:
+`counterbalance.lists` sets the number of lists, and `counterbalance.optimise` replaces the deal by
+set rank with an assignment whose lists are equated on the item dimensions. `practice` and
+`fillers` each name an item table whose trials are presented but not analysed.
+
+`timing` overrides the fixation, critical-word and inter-stimulus durations. Milliseconds are
+canonical (`fixation_ms`, `word_ms`, `isi_ms`), so a design means the same interval on any display.
+Frames (`fixation_frames`, `word_frames`, `isi_frames`) are also accepted and are converted on load
+at the schema's `presentation.assumed_refresh_hz`. The 30 frames in the design above therefore
+become the 500 ms they were written for. A `*_ms` key takes precedence over its `*_frames`
+counterpart. The fixation keys set every fixation event, the word keys every text event whose
+`trigger` is `condition` and the inter-stimulus keys every blank, though not an event that takes a
+per-trial `duration` block.
+
+`font` overrides the presentation font, which matters for a non-Latin script.
 `config/design_zh_freqcontrast.yaml` sets `SimHei`, because the Latin default has no glyphs for
 Han characters.
 
-`paradigm` names one of the six registered paradigms and inherits its trial-event sequence and its
-counterbalancing recipe. Omitting it gives `factorial`. A design may instead supply an explicit
-`events` list and describe its own trial. Both routes are covered in
+`paradigm` names one of the six registered paradigms, whose trial-event sequence and
+counterbalancing recipe the design inherits. Omitting it gives `factorial`. A design may instead
+supply an explicit `events` list and describe its own trial. Both approaches are covered in
 [Experiments and triggers](experiments-and-triggers.md).
 
 ### What is checked before a run
 
 Before it reads a lexicon or writes a file, `run_pipeline` checks the design and the schema with
-`validate_design`, and a design that cannot be honoured is refused with the same message in both
-engines. Every key is looked up in the vocabulary of keys lexsync reads at its level, which
+`validate_design`. When a design cannot be honoured, the run stops with the same error message in
+both engines. Every key is looked up in the vocabulary of keys lexsync reads at its level, which
 `lexsync.design` holds as `DESIGN_KEYS` and `SCHEMA_KEYS`. A key one edit from a known key of up to
-five characters, or two edits from a longer one, is taken for a typo. It is refused with the key it
-was probably meant to be. `n_per_conditon: 8` stops with
+five characters, or two edits from a longer one, is taken for a typo, and the error names the key it
+was probably meant to be. `n_per_conditon: 8` stops the run with
 `unknown design key 'n_per_conditon' (did you mean 'n_per_condition'?)` instead of leaving
 the design on the default of twenty items. Any other unknown key is noted in the run log and
-otherwise ignored, and a later release will refuse it. Notes and comments therefore belong in `description` or in a key beginning `x_`, which
-are never checked.
+otherwise ignored, and a later release will reject it. Notes and comments therefore belong in
+`description` or in a key beginning `x_`, which are never checked.
 
-The same step checks the values. It refuses a missing or non-text `name` or `language` (quote a
-code such as `'no'`, which YAML reads as false) and an `n_per_condition` that is not a whole number
-of at least 1. It refuses a name, language or font that cannot be written safely into the
-generated experiments, a trigger port that is not an address, and an unknown timing key or
-malformed response key. Last, it refuses a condition name that is not text or appears twice, and a
-corpus or pool design with conditions but no `match_on`.
+The same step checks the values. It rejects a missing or non-text `name` or `language` and an
+`n_per_condition` that is not a whole number of at least 1. A `language` written as a code such as
+`'no'` must be quoted, because YAML otherwise reads it as false. The step also rejects a name,
+language or font that cannot be written safely into the generated experiments, a trigger port that
+is not an address, and an unknown timing key or malformed response key. Last, it rejects a condition
+name that is not text or appears twice, and a corpus or pool design with conditions but no
+`match_on`.
 
 ### The schema
 
-`config/schema.yaml` is the other half, and it is worth reading once. It fixes the seed, states the
-column contract that a derived lexicon must satisfy (`word` and `freq_zipf` are required), declares
-the six lexical dimensions and how each is obtained, and sets the defaults a design may override:
-the matching method, the per-dimension tolerance windows, the equivalence bound and alpha, the
-parallel-port address and trigger timing, and the presentation fonts. A schema holding only the
-seed and the column contract is enough, since every other block falls back to the defaults the code
-carries.
+`config/schema.yaml` is worth reading once. It fixes the seed, states the column contract that a
+derived lexicon must satisfy (`word` and `freq_zipf` are required), declares the six lexical
+dimensions and how each is obtained, and sets the defaults a design may override: the matching
+method, the per-dimension tolerance windows, the equivalence bound and alpha, the parallel-port
+address and trigger timing, and the presentation fonts. The equivalence test is fixed as two
+one-sided tests, and only its bound and alpha are settings. A schema holding only the seed and the
+column contract is enough, since every other block falls back to the defaults the code carries.
 
-One thing in it is deliberately not configurable. Equivalence is assessed by two one-sided tests,
-and only the bound and alpha are settings.
-
-The rule that breaks exact ties in the matcher is a setting, `matching.tie_break`, and it matters,
-because whole-number lengths and neighbourhood counts make ties decide most picks. `hash`, the
-default, gives a tie to the smaller keyed SHA-256 of the word, which favours no part of the
-alphabet. `bytes` gives it to the spelling that sorts first, as lexsync 0.1 did, and reproduces that
-version's selections, but it fills a condition decided by ties with early-alphabet words. Under
-either rule, `standardised_euclidean`, the default, and `joint` give the same selection in the two
-engines without an RNG
-([Matching and designs](matching-and-designs.md#how-matching-works)).
+The rule that breaks exact ties in the matcher is a setting, `matching.tie_break`. It matters because
+whole-number lengths and neighbourhood counts make ties decide most picks. `hash`, the default,
+gives a tie to the smaller keyed SHA-256 of the word, which favours no part of the alphabet. `bytes`
+gives it to the spelling that sorts first, as lexsync 0.1 did, and reproduces that version's
+selections, but it fills a condition decided by ties with early-alphabet words. Under either rule,
+`joint` and the default method, `standardised_euclidean`, give the same selection in the two
+engines without an RNG, as [Matching and designs](matching-and-designs.md#how-matching-works)
+explains.
 
 A copy of the schema and of a small English, Spanish and Chinese lexicon is bundled inside the
-installed package, which is how the examples throughout these guides run without a clone:
+installed package, so the examples throughout these guides run without a clone:
 
 ```python exec="1" source="material-block" result="text" session="getting-started"
 from importlib.resources import files
@@ -340,15 +343,14 @@ schema = yaml.safe_load((data / "schema.yaml").read_text(encoding="utf-8"))
 print(sorted(p.name for p in data.iterdir()))
 ```
 
-The bundled lexica are 3000-word slices meant for examples and tests. The full derived corpora live
-in `corpora/derived/` in the repository, and that is what the worked designs read.
+The bundled lexica are 3000-word slices meant for examples and tests. The larger derived corpora are
+in `corpora/derived/` in the repository, and the worked designs read those.
 
 ## What a run writes
 
-Running a design produces more than a stimulus list. Under `--outdir` you get the counterbalanced
-stimuli, the descriptives and comparisons that make up the realised-control report, a materials
-datasheet in both JSON and Markdown, a run log in both Markdown and JSON Lines, and the three
-experiment scripts with their loop tables.
+Under `--outdir`, a run writes the counterbalanced stimuli, the descriptives and comparisons that
+make up the realised-control report, a materials datasheet in JSON and Markdown, a run log in
+Markdown and JSON Lines, and the three experiment scripts with their loop tables.
 
 ```python
 # illustrative: needs a clone with config/, and writes files under output/
@@ -360,8 +362,8 @@ print(paths["experiments"]["jspsych"])
 ```
 
 The Python engine suffixes its stimuli and reports with `_py`, so an R run and a Python run of the
-same design leave both selections side by side in one directory rather than overwriting each other.
-That is not a filing convenience. `output/stimuli/en_freqcontrast_english_stimuli_R.csv` is the
-committed reference that the parity test regenerates the Python selection against. The experiment
-scripts are the exception and carry no engine suffix, because the two engines emit the same bytes
-there and a byte-for-byte diff of that directory is itself a continuous-integration step.
+same design leave both selections side by side in one directory.
+`output/stimuli/en_freqcontrast_english_stimuli_R.csv` is the committed reference that the parity
+test regenerates the Python selection against. The experiment scripts carry no engine suffix,
+because the two engines emit the same bytes there and a byte-for-byte diff of that directory is a
+continuous-integration step.
