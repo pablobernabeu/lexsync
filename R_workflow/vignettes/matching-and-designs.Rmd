@@ -26,22 +26,21 @@ knitr::opts_chunk$set(
 
 Choosing stimuli is a constrained selection problem. One lexical property is
 manipulated, several others must not vary with it, and the words that satisfy
-every constraint at once are a small and awkward subset of the language. This
-vignette covers how `lexsync` states those constraints and how it resolves them:
-the dimensions it computes, the filters that narrow a lexicon to a candidate
-pool, the four matching methods and the situations each one suits, the tolerance
+every constraint at once are a small subset of the language. This vignette
+covers how `lexsync` states those constraints and how it resolves them: the
+dimensions it computes, the filters that narrow a lexicon to a candidate pool,
+the four matching methods and the situations each one suits, the tolerance
 windows that bound an acceptable match, the continuous alternative to a matched
-dichotomy, and the report that tells you what control the selection actually
-achieved.
+dichotomy, and the report that tells you what control the selection achieved.
 
-Everything below runs on the English example lexicon bundled with the package, a
-3000-word slice that needs no download. It is cut from the screened English
-lexicon. The screen leaves out the forms SUBTLEX-US lacks or writes with a capital
-in more than 90% of their uses, such as proper names and acronyms. The slice's N
-and OLD20 count only the forms it keeps. Taboo words and some abbreviations pass
-the screen, and a lexicon of your own is taken as given.
-[Choosing and screening a lexicon](#choosing-and-screening-a-lexicon) below says
-what such forms do to a selection and how to screen them out.
+The code in this vignette runs on the English example lexicon bundled with the
+package, a 3000-word slice that needs no download. It is cut from the screened
+English lexicon. The screen leaves out the forms SUBTLEX-US lacks or writes with
+a capital in more than 90% of their uses, such as proper names and acronyms. The
+slice's N and OLD20 count only the forms it keeps. Taboo words and some
+abbreviations pass the screen, and [Choosing and screening a
+lexicon](#choosing-and-screening-a-lexicon) below says what such forms do to a
+selection and how to screen them out. A lexicon of your own is taken as given.
 
 ```{r setup}
 library(lexsync)
@@ -61,8 +60,8 @@ head(
 ## The lexical dimensions
 
 A dimension is any numeric column the matcher can equate. `lexsync` distinguishes
-those read straight from the lexicon file from those computed from the
-orthographic form at load time, and the schema records the distinction along with
+those read straight from the lexicon file from those derived from the
+orthographic form, and the schema records the distinction along with
 each dimension's unit. Units matter when reading a report: a raw difference of 1
 means one letter on `length` but a factor of ten in corpus occurrence on
 `frequency`, which is why the comparisons are standardised.
@@ -81,61 +80,63 @@ knitr::kable(data.frame(
 value read from the lexicon's `freq_zipf` column, a log-scaled measure on which
 roughly 1 is a word occurring once per hundred million tokens and 7 a word
 occurring ten thousand times per million. The value is the base-10 logarithm of
-the frequency per billion words (van Heuven et al., 2014). It is
-preferred to raw counts because it is linear in the log space in which frequency
-effects are approximately linear, and because it is comparable across corpora of
-different sizes. `n_density` is Coltheart's N, the count of same-length words
-differing by one letter substitution (Coltheart et al., 1977). `old20` is the
-mean Levenshtein distance to the twenty nearest words in the reference set, which
-unlike Coltheart's N is defined for long words, where substitution neighbours run
-out (Yarkoni et al., 2008). A larger OLD20 means a more isolated word, so it runs
-in the opposite direction to `n_density`.
+the frequency per billion words (van Heuven et al., 2014). It is preferred to raw
+counts because frequency effects are approximately linear on its log scale and
+because it is comparable across corpora of different sizes. `n_density` is
+Coltheart's N, the count of same-length words differing by one letter
+substitution (Coltheart et al., 1977). `old20` is the mean Levenshtein distance
+to the twenty nearest words in the reference set, which unlike Coltheart's N is
+defined for long words, where substitution neighbours run out (Yarkoni et al.,
+2008). A larger OLD20 means a more isolated word, so it runs in the opposite
+direction to `n_density`.
 
-`n_syllables` also arrives at load time, counting maximal runs of vowels, an
-orthographic estimate with no pronunciation model behind it. Only
-`bigram_freq` is computed on request, by `add_bigram_frequency()`: it is the mean
-corpus probability of a word's adjacent letter bigrams, standing proxy for
-phonotactic probability.
+Like `length`, `n_syllables` is derived at load time. It counts maximal runs of
+vowels, an orthographic estimate with no pronunciation model behind it. No
+lexicon lexsync distributes carries `bigram_freq`, so it is computed on request,
+by `add_bigram_frequency()`. It is the mean corpus probability of a word's
+adjacent letter bigrams, a proxy for phonotactic probability.
 
 ```{r syllables}
 count_syllables(c("cat", "table", "rhythm", "being", "chocolate"))
 ```
 
-The estimate is worth its caveat, and the errors run in both directions. It
-handles `rhythm` because `y` is treated as a vowel letter. It undercounts
-`being`, whose `ei` is one run of vowel letters spanning two nuclei, and it
-overcounts `chocolate`, whose silent final `e` forms a run of its own. The
-measure is adequate for equating two conditions on gross syllabic complexity and
-it is not a substitute for a pronunciation dictionary.
+The estimate errs in both directions. It undercounts `being`, whose `ei` is one
+run of vowel letters spanning two nuclei, and overcounts `chocolate`, whose
+silent final `e` forms a run of its own. It handles `rhythm` because `y` is
+treated as a vowel letter. The measure is adequate for equating two conditions
+on gross syllabic complexity, but it is not a substitute for a pronunciation
+dictionary.
 
-A vowel counts whatever its accent, since the word is decomposed and its
-diacritics set aside, so the vowels of Polish, Czech, Hungarian, Romanian,
-Turkish and Vietnamese count as those of English do. The estimate is defined for
-Latin orthographies only: a word holding a character outside the Latin script
-gets `NA`. `run_pipeline()` refuses a design that refers to `n_syllables` when
-such a word passes the other filters the lexicon can answer. The reproducibility
-vignette gives the exact letters and code points.
+Accented vowels count, because the word is decomposed and its diacritics set
+aside. The vowels of Polish, Czech, Hungarian, Romanian, Turkish and Vietnamese
+therefore count as those of English do. The estimate is defined for Latin
+orthographies only: a word holding a character outside the Latin script gets
+`NA`. `run_pipeline()` stops with an error when a design refers to
+`n_syllables` and such a word passes the other filters on the lexicon's columns.
+The reproducibility vignette gives the exact letters and code points.
 
 ### Computing dimensions on a pool
 
-The bundled lexicon arrives with `n_density` and `old20` already present, but
-neighbourhood measures depend on the reference set they are computed against, so
-a lexicon derived elsewhere may need them recomputed. `add_neighbourhood()` does
-that. Both measures are quadratic in the size of the reference set, which is why
-the pipeline computes them on the pool alone, and why the reference should still
-be the whole lexicon: a word's neighbours are its neighbours in the language,
-not among the handful of words that survived your filters.
+The bundled lexicon already carries `n_density` and `old20`, but neighbourhood
+measures depend on the reference set they are computed against, so a lexicon
+derived elsewhere may need them recomputed. `add_neighbourhood()` does that.
+Both measures are quadratic in the size of the reference set, so the pipeline
+computes them for the pool alone. The reference should still be the whole
+lexicon, because a word's neighbours are its neighbours in the language, not
+among the handful of words that passed your filters.
 
 `run_pipeline()` computes `n_density`, `old20` and `bigram_freq` for a lexicon
 that lacks them whenever the design refers to them, in `match_on`, a condition's
 `define_by`, `pool_filters`, a continuous predictor or control, or
-`counterbalance.balance_on`. A filter on a derived dimension waits until it is
-computed, after the others have shrunk the pool. A lexicon can name the words
-that make up the reference with a `reference_member` column (1 for a member, 0
-otherwise). The `reference_words` argument recomputes N and OLD20, and
-`bigram_freq` where the lexicon carries it or the design uses it, against a list
-of your own, overriding the lexicon's columns. The datasheet then records the list with the columns it
-was applied to.
+`counterbalance.balance_on`. A filter on a derived dimension is applied once the
+dimension is computed, after the other filters have narrowed the pool.
+
+A lexicon can name the words that make up the reference with a
+`reference_member` column (1 for a member, 0 otherwise). The `reference_words`
+argument recomputes N and OLD20 against a list of your own, together with
+`bigram_freq` where the lexicon carries it or the design uses it. The recomputed
+values replace the lexicon's columns, and the datasheet records the list with
+the columns it was applied to.
 
 ```{r neighbourhood}
 sample_words <- lex[lex$word %in% c("apple", "boat", "dog", "rhythm"), ]
@@ -144,10 +145,11 @@ add_neighbourhood(
 )[, c("word", "n_density", "old20")]
 ```
 
-`add_bigram_frequency()` works the same way, and `merge_norms()` joins any
-word-keyed norm table, which is how dimensions the corpus does not carry
-(concreteness, age of acquisition, behavioural measures from a megastudy) become
-matchable. Once a column is present, the matcher treats it like any other.
+`add_bigram_frequency()` works the same way. `merge_norms()` joins any
+word-keyed norm table. Dimensions the corpus does not carry, such as
+concreteness, age of acquisition or behavioural measures from a megastudy,
+become matchable this way. Once a column is present, the matcher treats it like
+any other.
 
 ```{r norms}
 aoa <- data.frame(word = c("apple", "boat", "dog"), aoa = c(3.1, 3.0, 3.4))
@@ -156,13 +158,13 @@ merged[merged$word %in% aoa$word, c("word", "frequency", "aoa")]
 ```
 
 The join is case- and whitespace-insensitive on both sides, keeps the lexicon's
-own row and column order, and refuses a norm column whose name already exists on
-the lexicon. A silent rename would be the worst available outcome: it leaves the
-dimension the design matches on under a name nothing looks for.
+own row and column order, and stops with an error on a norm column whose name
+already exists on the lexicon. A silent rename would leave the dimension the
+design matches on under a name the design does not refer to.
 
-In a design you do not call this yourself. Name the tables in a `norms:` block and
-the pipeline joins them before the pool is built, so a norm column can be filtered
-on, matched on or spanned like any other dimension.
+In a design, you do not call this yourself. Name the tables in a `norms:` block
+and the pipeline joins them before the pool is built, so a norm column can be
+filtered on, matched on or spanned like any other dimension.
 
 ```yaml
 norms:
@@ -177,23 +179,23 @@ match_on: [length, concreteness]
 
 The join key is written `join_on`, because YAML reads a bare `on` as the boolean
 true. A bare `on:` is read as the join key all the same, with a note in the run
-log, and any other key in an entry is refused.
+log, and any other key in an entry is an error.
 
-lexsync ships no norm data: licences vary, and the citation is yours to honour.
-What it does do is record what you joined. Every table appears in the materials
-datasheet with its checksum and its per-column coverage, because a norm table can
-supply the very variable a design manipulates, and a selection over columns of
-unstated origin is not reproducible from the record that exists to make it so.
-Coverage is recorded for a related reason: a word the table does not cover gets a
-missing value. A filter on the column drops it, and the matcher excludes it before
-selecting whenever the column is a matched dimension, a continuous predictor or a
-control. The run log and the datasheet count those exclusions per condition.
+lexsync distributes no norm data, because licences vary and the citation is
+yours to honour. Every table you join appears in the materials datasheet with
+its checksum and its per-column coverage. The table is recorded because it can
+supply the variable a design manipulates, and a selection over columns of
+unstated origin cannot be reproduced from the datasheet. Coverage is recorded
+because a word the table does not cover gets a missing value. A filter on the
+column drops it, and the matcher excludes it before selecting whenever the
+column is a matched dimension, a continuous predictor or a control. The run log
+and the datasheet count those exclusions per condition.
 
 ## Pool filters
 
 A pool filter narrows the lexicon before any matching happens. It states what
-counts as an eligible word at all, independently of condition, and it is the
-right place for constraints you would apply to every item in the study.
+counts as an eligible word, independently of condition, and it is the right
+place for constraints you would apply to every item in the study.
 
 ```{r pool}
 pool_filters <- list(length = c(3, 7), frequency = c(3.8, 7.0))
@@ -204,21 +206,21 @@ c(lexicon = nrow(lex), pool = nrow(pool))
 A numeric pair is read as an inclusive range. Any other vector is read as a set of
 permitted values, so `list(pos = c("noun", "verb"))` would keep nouns and verbs
 if the lexicon carried a `pos` column. Rows missing a value on a filtered column
-are always dropped. Called directly, `build_pool()` skips a filter naming a column
-the frame does not have, because it filters lexica, supplied pools and pair
-tables, which carry different columns. A misspelt key passed to it directly
-therefore silently widens the pool. The filters a design names are checked first.
-`run_pipeline()` refuses a `pool_filters` key that names neither a column of the
-lexicon, counting any columns its `norms:` tables add, nor a dimension the
-pipeline derives (`n_density`, `old20` or `bigram_freq`), and `match_stimuli()`
-refuses a `define_by` key the pool lacks, so a misspelt key in a design stops the
-run.
+are always dropped.
+
+Called directly, `build_pool()` skips a filter naming a column the frame does
+not have, because it filters lexica, supplied pools and pair tables, which carry
+different columns. A misspelt key therefore silently widens the pool. In a
+design, the filters are checked first and a misspelt key stops the run.
+`run_pipeline()` stops with an error on a `pool_filters` key that names neither
+a column of the lexicon, counting any columns its `norms:` tables add, nor a
+dimension the pipeline derives (`n_density`, `old20` or `bigram_freq`).
+`match_stimuli()` does the same on a `define_by` key the pool lacks.
 
 Filtering is a separate step from matching. `match_stimuli()` reads a design's
 `conditions` and `match_on` fields but never its `pool_filters`, so passing a raw
-lexicon where a pool was intended silently widens the selection, with no error to
-warn you. The pipeline calls `build_pool()` first and the examples here do the
-same.
+lexicon where a pool was intended silently widens the selection. The pipeline
+calls `build_pool()` first and the examples here do the same.
 
 ## Choosing and screening a lexicon
 
@@ -227,7 +229,7 @@ wordfreq gives for a language, and wordfreq lists names, acronyms and internet
 forms beside words. Such forms enter a selection unevenly across conditions: when
 the `en_andrews_repro` demonstration read `en.csv`, they made up 24 of its 36
 low-frequency items and none of its 36 high-frequency ones. N and OLD20 count
-them as neighbours too, so that `cat` has 32 neighbours in `en.csv`, among them
+them as neighbours too, so `cat` has 32 neighbours in `en.csv`, among them
 `caa`, `cbt` and `cdt`.
 
 `corpora/derived/en_v2.csv` screens the English lexicon against SUBTLEX-US
@@ -247,16 +249,16 @@ pool_filters:
   nonstandard: [0, 0]
 ```
 
-The threshold is low on purpose. A capital at the start of a sentence pulls
-ordinary words down, so even `what`, `how`, `why`, `maybe`, `okay` and `yes`
-begin with a lower-case letter in under half their uses. A filter such as
-`lowercase_share: [0.5, 1]` would drop them all. Even at 0.10 the flag marks the
-days of the week, the months other than `march` and `may`, most nationality
-words, `god`, `ok` and `tv`. It also marks every form the 2009 corpus lacks,
-such as `selfie`, `emoji` and `covid`. A design that needs some of those can
-leave the flag unfiltered and remove what it does not want by name. A range
-filter on `lowercase_share` would also drop every form SUBTLEX-US lacks, whose
-share is empty.
+The threshold is low because a capital at the start of a sentence lowers the
+lower-case share of ordinary words too. Even `what`, `how`, `why`, `maybe`,
+`okay` and `yes` begin with a lower-case letter in under half their uses, and a
+filter such as `lowercase_share: [0.5, 1]` would drop them all. At 0.10, the
+flag still marks the days of the week, the months other than `march` and `may`,
+most nationality words, `god`, `ok` and `tv`. It also marks every form the 2009
+corpus lacks, such as `selfie`, `emoji` and `covid`. A design that needs some of
+those can leave the flag unfiltered and remove what it does not want by name. A
+range filter on `lowercase_share` would also drop every form SUBTLEX-US lacks,
+whose share is empty.
 
 `exclude_words` removes words by name. It lists them in the design, or names a
 UTF-8 file with one word per line, in which blank lines and lines beginning `#`
@@ -268,47 +270,47 @@ exclude_words: [adams, dubai, espn]
 ```
 
 The words are trimmed, lower-cased and put in NFC, as a lexicon's words are.
-They leave the candidates of a corpus, pool or generated design after any
-`norms:` join and before the pool filters. The neighbourhood reference still
-counts them, and a generated pseudoword still may not equal one, because an
-excluded word is still a word of the language. A design with an item table
-refuses the key, since its items are already a selection of your own. The
-datasheet records the list as `materials_source$exclusions`, with its checksum,
-the number of words it lists and the number of candidates it removed, and the
-Methods paragraph reports the removal.
+They are removed from the candidates of a corpus, pool or generated design after
+any `norms:` join and before the pool filters. The neighbourhood reference still
+counts them, and a generated pseudoword may not equal one, because an excluded
+word remains a word of the language. In a design with an item table,
+`exclude_words` is an error, since its items are already a selection of your
+own. The datasheet records the list as `materials_source$exclusions`, with its
+checksum, the number of words it lists and the number of candidates it removed,
+and the Methods paragraph reports the removal.
 
-`en.csv` keeps its bytes, so a design written for lexsync 0.1 selects what it
-selected once it sets `matching.tie_break: bytes` (see [Ties between equally close
-candidates](#ties-between-equally-close-candidates) below), unless it uses the
-`optimal` method, whose selections differ from those of lexsync 0.1 under either
-rule, or its pool holds candidates that lack a matched value, which are now left
-out. The English demonstrations read `en_v2.csv` with the filter above.
-Their `exclude_words` file, `config/exclude_en_demo.txt`, leaves out the taboo
-words and the forms that pass the screen without being standard English words,
-such as abbreviations that subtitles write in lower case (`mph`, `msg`). Its
-header states the criteria, and the list was made by reading what the
-demonstrations selected. Spanish and Chinese have no screened lexicon, because no
-source of letter case or known words with a verified licence exists for them.
-Read a selection in either language before a study runs, and leave out what you
-find with `exclude_words`.
+The English demonstrations read `en_v2.csv` with the filter above. Their
+`exclude_words` file, `config/exclude_en_demo.txt`, leaves out the taboo words
+and the forms that pass the screen without being standard English words, such
+as abbreviations that subtitles write in lower case (`mph`, `msg`). Its header
+states the criteria, and the list was made by reading what the demonstrations
+selected. Spanish and Chinese have no screened lexicon, because no source of
+letter case or known words with a verified licence exists for them. Read a
+selection in either language before a study runs, and leave out what you find
+with `exclude_words`.
+
+`en.csv` is unchanged byte for byte, so a design written for lexsync 0.1 selects
+what it selected once it sets `matching.tie_break: bytes` (see [Ties between
+equally close candidates](#ties-between-equally-close-candidates) below). The
+exceptions are a design that uses the `optimal` method, whose selections differ
+from those of lexsync 0.1 under either rule, and a design whose pool holds
+candidates that lack a matched value, which are now left out.
 
 The datasheet credits the lexicon a corpus or generated design read. A lexicon
-lexsync ships is credited to wordfreq, and `en_v2.csv` and the English example
-slice drawn from it to wordfreq screened against SUBTLEX-US, with the rule. A
-corpus that `fetch_corpus()` put in the cache is credited by the registry's
-citation, and any other file by its name and the first twelve digits of its
-checksum.
+lexsync distributes is credited to wordfreq. `en_v2.csv` and the English example
+slice drawn from it are credited to wordfreq screened against SUBTLEX-US, with
+the screening rule. A corpus that `fetch_corpus()` put in the cache is credited
+by the registry's citation, and any other file by its name and the first twelve
+digits of its checksum.
 
 ## Supplied item pools
 
-Narrowing a whole lexicon is the right way round when any word of the language
-will do. It is the wrong way round when the candidate set is itself a research
-decision: a list from a previous study, from a norming session, or one restricted
-to a semantic category that no lexical filter can express. Loaded as a lexicon,
-such a list would need an invented `freq_zipf` column, and, given as
-`items.source: table`, it would skip matching.
-
-`items.source: pool` takes the list as it is.
+Narrowing a whole lexicon suits a study in which any word of the language will
+do, but not one in which the candidate set is itself a research decision: a list
+from a previous study, from a norming session, or one restricted to a semantic
+category that no lexical filter can express. Loaded as a lexicon, such a list
+would need an invented `freq_zipf` column. Given as `items.source: table`, it
+would skip matching. `items.source: pool` takes the list as it is.
 
 ```yaml
 items:
@@ -319,21 +321,21 @@ items:
 
 The list needs only a `word` column. Length and the syllable estimate are derived
 from the form, and `items.lexicon` supplies the rest, frequency above all, by
-lookup. A word the lexicon does not have raises a hard error, because the
-tolerance windows drop rows with missing values silently and the pool would then
-be smaller than it appears to be.
+lookup. A word the lexicon does not have raises an error, because a word missing
+a value would be left out of the candidates and the pool would then be smaller
+than it appears to be.
 
-One subtlety would quietly invalidate the controls if it went the other way.
-`n_density` and `old20` are properties of a word in its *language*, not among the
-131 words of a supplied list, so they are computed against the lexicon's words. A
-supplied pool with no lexicon falls back to itself, which is why one is given
-above. `load_pool()` returns both parts of that, the pool and the reference word
-list, if you call it directly outside a design.
+`n_density` and `old20` are properties of a word in its *language*, so they are
+computed against the lexicon's words. Computed against the 131 words of a
+supplied list, they would invalidate the controls without warning. Without a
+lexicon, the supplied pool is its own reference, which is why the example above
+gives one. Called directly outside a design, `load_pool()` returns both the pool
+and the reference word list.
 
-Everything downstream is unchanged: the same conditions, the same `match_on`, the
-same report, the same datasheet. What differs is only where the candidates came
-from, and the datasheet records the list's checksum so that stays answerable
-later. `design_en_supplied_pool.yaml` is a worked example.
+The conditions, `match_on`, the report and the datasheet work as they do for a
+pool narrowed from a lexicon. Only the source of the candidates differs, and the
+datasheet records the list's checksum. `design_en_supplied_pool.yaml` is a worked
+example.
 
 ## Relational designs, where the item is a pair
 
@@ -354,12 +356,11 @@ items:
 ```
 
 Each member's word-level norms are joined from the lexicon and prefixed, giving
-`prime.frequency`, `target.length` and so on. The member name leads and the
-dimension follows, for a reason specific to R: `prime.frequency` is safe because
-`df$prime` still exact-matches the bare `prime` column, whereas
-`frequency.prime` would be a partial-matching hazard. Those prefixed names are
-usable wherever a dimension is: in `pool_filters`, in `match_on`, as a
-`continuous` predictor or as a control.
+`prime.frequency`, `target.length` and so on. The member name comes first
+because of partial matching in R. `prime.frequency` is safe, since `df$prime`
+still exact-matches the bare `prime` column, whereas `frequency.prime` would
+risk a partial match. Those prefixed names are usable wherever a dimension is:
+in `pool_filters`, in `match_on`, as a `continuous` predictor or as a control.
 
 `pair.lev` is the Levenshtein distance between the two members and `pair.overlap`
 is `1 - pair.lev / length of the longer form`, a normalised orthographic
@@ -370,8 +371,8 @@ shares letters confounds semantic relatedness with orthographic similarity. The
 pipeline adds both automatically when the two members are named `prime` and
 `target`. Under any other member names, call `add_pair_overlap()` on the item
 table yourself. A predictor that cannot be computed from the forms alone, such as
-cosine similarity or forward associative strength, arrives as an extra column on
-the item table and is used like any other.
+cosine similarity or forward associative strength, is supplied as an extra
+column on the item table and is used like any other.
 
 ```yaml
 n_per_condition: 8                  # counts PAIRS: 8 pairs, 16 rows, 8 per list
@@ -385,33 +386,34 @@ match_on: [target.length, pair.overlap]
 ```
 
 Two rules follow from the item being a pair. A filter applies to a pair only if
-*every* one of its rows passes, and selection runs over one row per pair, the
-`anchor_condition`, defaulting to the byte-first condition, with the result
-re-expanded afterwards so every condition row of every chosen pair survives.
-Neither is an optimisation. A filter on `prime.frequency` applied row by row would
-keep a pair's related row and drop its unrelated one, leaving a set the
-Latin-square counterbalancer cannot complete. Only a dimension that varies within
-the pair can split it that way, which the prime-level and pair-level ones do and
-the target-level ones do not, since the target is the same word in both rows.
+*every* one of its rows passes. Selection runs over one row per pair, the row of
+the `anchor_condition`, which defaults to the byte-first condition. The result
+is then re-expanded to every condition row of every chosen pair. Both rules keep
+each pair whole. A filter on `prime.frequency` applied row by row would keep a
+pair's related row and drop its unrelated one, leaving a set the Latin-square
+counterbalancer cannot complete. Only a dimension that varies within the pair
+can split it that way. Prime-level and pair-level dimensions do, and
+target-level ones do not, since the target is the same word in both rows.
 
 A member name may not be one of `word`, `id`, `set`, `list`, `trial`, `condition`,
 `replicate` or `item`, which the engines read directly, and a design using one is
-refused. The datasheet gains a `relational` block recording the members, the pair
-count, the member lexicon and its checksum, and the member-level dimensions
-separately from the relational ones. `design_en_priming_continuous.yaml` is the
-worked example, and its own comments go further into why each rule is there.
+rejected with an error. The datasheet gains a `relational` block recording the
+members, the pair count, the member lexicon and its checksum, and the
+member-level dimensions separately from the relational ones.
+`design_en_priming_continuous.yaml` is the worked example, and its own comments
+go further into why each rule is there.
 
 ## Conditions, the anchor and matched sets
 
 A condition is a named region of the pool, given by `define_by`, which is read
 exactly as `pool_filters` is. The first condition listed is the anchor. Its items
 are chosen by an even spread across the sorted candidate subpool, so the anchor
-covers the whole of its region on the manipulated dimension and does not cluster
-at one end. Every later condition is then matched to the anchor item by item, and
-the `set` column records the pairing. The matching needs at least one dimension in
-`match_on`. Without one, every candidate lies at distance zero from every anchor
-and the tie-break alone would choose the words, so a design with
-conditions and no `match_on`, or an empty one, is refused before anything is
+covers the whole of its region on the manipulated dimension. Every later
+condition is then matched to the anchor item by item, and the `set` column
+records the pairing. The matching needs at least one dimension in `match_on`.
+Without one, every candidate lies at distance zero from every anchor and the
+tie-break alone would choose the words, so a design with conditions and no
+`match_on`, or an empty one, is rejected with an error before anything is
 selected.
 
 ```{r design}
@@ -444,24 +446,22 @@ distribution is whatever matching to that anchor produces.
 The method is set with `matching.method` in a design, or left to the schema
 default. All four minimise a distance in standardised space, computed by
 z-scoring each `match_on` dimension against the whole pool, so that a letter and a
-Zipf unit become comparable. They differ in what they minimise it over. A
-candidate missing any `match_on` dimension has no place in that space, so every
-method starts from the rows complete on all of them. The run log and the
-datasheet count what each condition lost.
+Zipf unit become comparable. A candidate missing any `match_on` dimension has no
+place in that space, so every method starts from the rows complete on all of
+them. The run log and the datasheet count what each condition lost. The methods
+differ in what they minimise the distance over.
 
-`standardised_euclidean`, the default, walks the anchor items in order and gives
+`standardised_euclidean`, the default, takes the anchor items in order and gives
 each one its nearest unused counterpart, greedily. Because the anchor is selected
-before any matching happens, it preserves the anchor's even spread exactly. Being
-anchored, it generalises past two conditions, as `mahalanobis` does, while `joint`
-and `optimal` score cross-condition pairs and are refused with any number of
-conditions but two.
+before any matching happens, it preserves the anchor's even spread exactly. Like
+`mahalanobis`, it is anchored and so handles more than two conditions.
 
-`joint` abandons the anchor. It scores every cross-condition pair, then takes the
+`joint` uses no anchor. It scores every cross-condition pair, then takes the
 best-matched pairs in ascending order of distance until it has enough, so an item
-with no good counterpart is simply never selected. This equates the controls more
+with no good counterpart is never selected. This equates the controls more
 tightly than per-anchor matching when the manipulation is confounded with a
-control, and the price is that the manipulated dimension's realised distribution
-is no longer under your control. It requires exactly two conditions.
+control, but the design then no longer determines the manipulated dimension's
+realised distribution. It requires exactly two conditions.
 
 `mahalanobis` replaces the Euclidean metric with one weighted by the inverse of
 the pool's correlation matrix, so that dimensions sharing variance are not
@@ -475,25 +475,27 @@ rows.
 round(cor(pool[, c("length", "n_density", "old20")]), 2)
 ```
 
-Length, neighbourhood density and OLD20 are far from independent here. Under a
-plain Euclidean metric, matching on all three counts the shared
-length-neighbourhood variance three times over and lets an independent dimension
-drift. Mahalanobis distance discounts that overlap (Rubin, 1980; Stuart, 2010).
+Length, neighbourhood density and OLD20 are strongly correlated in this pool.
+Under a plain Euclidean metric, matching on all three counts the shared
+length-neighbourhood variance three times over and matches an independent
+dimension less closely. Mahalanobis distance discounts that overlap (Rubin, 1980;
+Stuart, 2010).
 
 `optimal` keeps the Euclidean metric and selects the *n* disjoint pairs whose
 summed distance is smallest. Choosing *n* pairs from two pools is the
 *k*-cardinality assignment problem, which lexsync solves exactly by padding the
 cost matrix with dummy rows and columns until every optimal assignment uses
-exactly *n* real pairs (Volgenant, 2004). Greedy matching can spend the one good
+exactly *n* real pairs (Volgenant, 2004). Greedy matching can use up the one good
 counterpart of a hard item on an easy item that had alternatives. Optimal
 matching cannot, although on the pools tested `joint` came within a few per cent
 of the optimum. Gu and Rosenbaum (1993) compared optimal and greedy pair matching
 of every treated unit, a related problem, and found optimal matching no better
-at balancing the covariates. When the conditions overlap, a word cannot be paired
-with itself or used twice. A pair lost that way is replaced by solving again over
-the unused words, and the selection is then no longer guaranteed to have the
-least summed distance. The method requires exactly two conditions and the `clue`
-package.
+at balancing the covariates.
+
+When the conditions overlap, a word cannot be paired with itself or used twice.
+A pair lost that way is replaced by solving again over the unused words, and the
+selection is then no longer guaranteed to have the least summed distance.
+`optimal` requires exactly two conditions and the `clue` package.
 
 ```{r methods}
 methods <- c("standardised_euclidean", "joint", "mahalanobis")
@@ -520,51 +522,50 @@ summarise_method <- function(method) {
 do.call(rbind, lapply(methods, summarise_method))
 ```
 
-The comparison rewards a careful reading, and it is a good illustration of why a
-standardised difference should not be read as an effect size on its own. The two
-pairing methods drive the control differences to zero, because a free choice
-over all pairs can find counterparts that match exactly on all three dimensions.
-The pool holds far more exact matches than the design needs, so each method's
-rule for choosing among them decides the rest. `joint` takes them in tie-break
-order, and those pairs turn out to cluster in frequency: its standardised
-frequency separation is the largest of the four, yet its raw separation in Zipf
-units is the smallest. Both facts have one cause, the clustering, which shrinks
-the SD of the high condition and so shrinks the pooled SD that `freq_d` divides
-by. A narrower manipulation can raise `d`. `optimal` finds pairs just as exact,
-but its assignment solver chooses among them by its own internal order, and here
-the high condition keeps more of its spread.
+The comparison shows why a standardised difference should not be read as an
+effect size on its own. The two pairing methods reduce the control differences
+to zero, because a free choice over all pairs can find counterparts that match
+exactly on all three dimensions. The pool holds far more exact matches than the
+design needs, so each method's rule for choosing among them decides the rest.
+`joint` takes them in tie-break order, and those pairs cluster in frequency. Its
+standardised frequency separation is the largest of the four, yet its raw
+separation in Zipf units is the smallest. Both follow from the clustering, which
+shrinks the SD of the high condition and with it the pooled SD that `freq_d`
+divides by. A narrower manipulation can therefore raise `d`. `optimal` finds
+equally exact pairs, but its assignment solver chooses among them by its own
+internal order, and here the high condition keeps more of its spread.
 
-Whether that is a gain depends on the study. The anchor methods keep the high
-condition spread across its whole band by construction, which supports a claim
-about the band rather than about a cluster inside it, and it is variance you may
-want if the manipulation is later modelled as continuous. The pairing methods
-guarantee exact control of the nuisance dimensions where the pool allows it, but
-how much of the band they keep depends on which of the exact matches they take.
-These numbers describe this pool and this design. The point is how to make the
-comparison, not which method wins.
+Whether that is a gain depends on the study. The anchored methods keep the high
+condition spread across its whole band by construction. That supports a claim
+about the band rather than about a cluster inside it, and the spread is variance
+you may want if the manipulation is later modelled as continuous. The pairing
+methods guarantee exact control of the nuisance dimensions where the pool allows
+it, but how much of the band they keep depends on which of the exact matches
+they take. These numbers describe this pool and this design. The example shows
+how to compare the methods, not which one is best.
 
 ### The parity caveat on two methods
 
 The R and Python engines select byte-identical stimuli under
 `standardised_euclidean` and `joint`. They do not guarantee it under
-`mahalanobis` or `optimal`. Both of the latter route the distance through an
-operation whose last bits are decided by the platform's linear-algebra
-implementation, a covariance-matrix inverse in one case and an assignment solver
-in the other, and once two candidate distances differ in their final bits the
-tie-break that would otherwise make the engines agree never fires. `mahalanobis`
-usually still agrees exactly, and `optimal` often selects an equally-optimal but
-different set. Each run's datasheet records which case applies, under
-`selection.cross_engine`. If cross-engine reproducibility is a requirement of
-your project, `standardised_euclidean` and `joint` are the methods that carry the
-guarantee. The
-reproducibility vignette sets out why the exception cannot simply be engineered
-away.
+`mahalanobis` or `optimal`. `mahalanobis` weights the distances by the inverse
+of the pool's correlation matrix, and the last bits of that inverse depend on
+the platform's linear-algebra implementation. Once two candidate distances
+differ in their final bits, the tie-break that would otherwise make the engines
+agree is never reached. `optimal` passes the distances to an assignment solver,
+and where several assignments have the same summed distance,
+`clue::solve_LSAP()` and SciPy's solver can return different ones.
+`mahalanobis` usually still agrees exactly, and `optimal` often selects an
+equally optimal but different set. Each run's datasheet records which case
+applies, under `selection.cross_engine`. If your project requires cross-engine
+reproducibility, use `standardised_euclidean` or `joint`. The reproducibility
+vignette explains why the exception remains.
 
 ### Ties between equally close candidates
 
 Lengths and neighbourhood counts are whole numbers and frequencies carry two
 decimals, so candidates often lie at exactly the same distance from an anchor.
-When `en_freqcontrast` read the unscreened English corpus, `en.csv`, 71 of its 80
+When `en_freqcontrast` read the unscreened English lexicon, `en.csv`, 71 of its 80
 anchored picks had another candidate at the chosen distance, and the tie-break
 chose the word. `matching.tie_break` sets the rule, in a design or in the schema.
 Under `bytes`, the rule of lexsync 0.1, a tie goes to the word whose UTF-8 bytes
@@ -594,11 +595,11 @@ round(c(vapply(by_rule, function(s) initial_share(s$word[s$condition == "low"]),
         candidates = initial_share(low_candidates$word)), 2)
 ```
 
-On this small pool, the share says little. With 20 items it moves by chance
+On this small pool, the share says little. With 20 items, it moves by chance
 under either rule, and here it falls below the candidates' share under `hash`.
-The skew shows plainly at the size of a full lexicon, as the `en_freqcontrast`
-figures above do. Only the picks that ties decided can change, and here the
-matched differences do not move.
+The skew is clear at the size of a whole lexicon, as the `en_freqcontrast`
+figures above show. Only the picks that ties decided can change, and here the
+matched differences stay the same.
 
 ```{r ties-control}
 sapply(by_rule, function(s) {
@@ -608,35 +609,41 @@ sapply(by_rule, function(s) {
 ```
 
 Under either rule, `standardised_euclidean` and `joint` give the same selection
-in the two engines, and `bytes` reproduces the selections of lexsync 0.1. The even
-spreads that pick the anchor's items and a continuous design's items keep the
-byte order under both rules.
+in the two engines, and `bytes` reproduces the selections of lexsync 0.1 except
+under `optimal` or where the pool holds candidates that lack a matched value. The
+even spreads that pick the anchor's items and a continuous design's items keep
+the byte order under both rules.
 
 ## Tolerance windows
 
 Matching by distance alone will always return the nearest available candidate,
-however far away it is. The tolerance window is the guard against that. Before
-the distance ranking, each later condition's candidates are filtered to those
-lying within the anchor's mean plus or minus *k* standard deviations on every
-matched dimension, with *k* set per dimension.
+however far away it is. The tolerance window limits how far away that candidate
+can be. Before the distance ranking, each later condition's candidates are
+filtered to those lying within the anchor's mean plus or minus *k* standard
+deviations on every matched dimension, with *k* set per dimension.
 
 ```{r tolerance}
 str(schema$matching$tolerance_k)
 ```
 
 Smaller *k* is stricter. The default of 2.0 on the orthographic dimensions is
-permissive, admitting most of a normal distribution, and it is meant as a backstop
-against a wild counterpart. The distance ranking within the window is what does
-the work of control. A design tightens the window per dimension, and only the
-named dimensions are overridden. A dimension the schema does not list takes *k* = 2.
-The design's values are merged over the schema's by `modifyList()`. A `null` in
-the schema is ignored, and a `null` in the design removes the schema's value for
-that dimension, so either leaves *k* at 2.
+permissive, admitting most of a normal distribution, and it is meant only to
+exclude an extreme counterpart. The control comes from the distance ranking
+within the window.
 
-The window belongs to the anchored path, so it is what `standardised_euclidean`
-and `mahalanobis` apply. `joint` and `optimal` score cross-condition pairs
-directly and never read `tolerance_k` at all, which is worth knowing before
-tightening a window and finding the selection unmoved.
+A design tightens the window per dimension, and only the named dimensions are
+overridden. A dimension the schema does not list takes *k* = 2. The design's
+values are merged over the schema's by `modifyList()`. A `null` in the schema is
+ignored, and a `null` in the design removes the schema's value for that
+dimension, so either leaves *k* at 2.
+
+Tolerance windows apply to the anchored methods, `standardised_euclidean` and
+`mahalanobis`, which derive them from the anchor, and to continuous designs,
+which derive them from an even spread over the pool's ranks on the predictor.
+`joint` and `optimal` never build an anchor and never read `tolerance_k`, so
+tightening a window leaves their selection unchanged. Both instead cap each
+subpool to the 1200 candidates nearest the other condition's centroid before
+pairing, which bounds the cost of scoring every pair.
 
 ```{r tolerance-override}
 tight <- design
@@ -645,12 +652,12 @@ tight_stim <- match_stimuli(pool, tight, schema, verbose = TRUE)
 round(match_report(tight_stim, "old20", schema)$comparisons$cohens_d, 3)
 ```
 
-There is a behaviour here that will bite you if you do not know it. If a window
-leaves a condition with fewer candidates than there are anchor items, the matcher
-neither fails nor returns a short set. It relaxes that condition's window and
-carries on. Tightening the window past what the pool can supply therefore looks
-exactly like a window that was never set, and under the default policy
-`verbose = TRUE` is the only thing that tells you which happened.
+If a window leaves a condition with fewer candidates than there are anchor items,
+the matcher neither fails nor returns a short set. It relaxes that condition's
+window and carries on. Tightening the window past what the pool can supply
+therefore looks exactly like a window that was never set. Under the default
+policy, only `verbose = TRUE` and the result's `"audit"` attribute, which the
+pipeline writes to the run log and the datasheet, tell you which happened.
 
 ```{r tolerance-relaxed}
 too_tight <- design
@@ -658,55 +665,49 @@ too_tight$matching <- list(tolerance_k = list(old20 = 0.05))
 relaxed_stim <- match_stimuli(pool, too_tight, schema, verbose = TRUE)
 ```
 
-Two details of the relaxation matter. It is per condition and it is
-all-or-nothing: the fallback drops that condition's windows on *every* matched
-dimension at once, not merely the one that proved unsatisfiable, so an
-over-tightened `old20` also discards the `length` and `n_density` windows for
-that condition. And it does not degrade the match as much as you might fear,
-because the distance ranking still runs over the whole subpool and still prefers
-near counterparts. Only when the relaxed subpool is still too small does the
-matcher stop, with an error naming the condition and the counts.
+The relaxation is per condition and all-or-nothing. It drops that condition's
+windows on *every* matched dimension at once, not only the one that proved
+unsatisfiable, so an over-tightened `old20` also discards the `length` and
+`n_density` windows for that condition. The match degrades less than this might
+suggest, because the distance ranking still runs over the whole subpool and
+still prefers near counterparts. If the relaxed subpool is still too small, the
+matcher stops with an error naming the condition and the counts.
 
-Both behaviours are policies, and the schema's `matching` block names them.
-`on_insufficient_tolerance` governs the fallback just described. Its default of
-`relax` keeps the behaviour above, while `error` makes the matcher refuse and say
-so, which is the honest setting when the window is itself the criterion,
-as it is when reproducing a published study's stated windows. `shortfall`
-governs what happens when fewer sets than `n_per_condition` can be selected at
-all, and it defaults to `error` deliberately, because a smaller set changes the
-design that was planned. A design that can live with fewer sets says so with
+The schema's `matching` block sets two policies. `on_insufficient_tolerance`
+governs the relaxation. Its default of `relax` keeps the behaviour above. Under
+`error`, the matcher stops with an error, which suits a design whose window is
+itself the criterion, as it is when reproducing a published study's stated
+windows. `shortfall` governs what happens when fewer sets than `n_per_condition`
+can be selected, and it defaults to `error` because a smaller set changes the
+design that was planned. A design that accepts fewer sets says so with
 `shortfall: allow`. The datasheet then records the items each condition holds,
-and the methods paragraph states them beside the request. Either key may be
-overridden under the design's own `matching:` block, exactly as `tolerance_k` was
-overridden above.
+and the Methods paragraph states them beside the request. Under the anchored
+methods, the policy applies to the anchor, and a later condition with fewer
+candidates than the anchor has items stops the run under either setting. Either
+key may be overridden under the design's own `matching:` block, as `tolerance_k`
+was overridden above.
 
-Windows are the place to reproduce a published study's stated criteria. The
-repository's `config/design_es_gender_repro.yaml` sets `tolerance_k` to `0.111...` for
-`frequency`, the window of the mean plus or minus SD/9 that González Alonso et al.
-(2025) used, and to 2 for `length`, the mean plus or minus 2 SD.
-
-One asymmetry is worth knowing. Tolerance windows are derived from the anchor, so
-they apply to the anchor-based methods, `standardised_euclidean` and
-`mahalanobis`, and to continuous designs. `joint` and `optimal` never build an
-anchor and never consult `tolerance_k`. Both instead cap each subpool to the 1200
-candidates nearest the other condition's centroid before pairing, which bounds
-the cost of scoring every pair.
+The repository's `config/design_es_gender_repro.yaml` reproduces the windows of
+a published study. It sets `tolerance_k` to `0.111...` for `frequency`, the
+window of the mean plus or minus SD/9 that González Alonso et al. (2025) used,
+and to 2 for `length`, the mean plus or minus 2 SD.
 
 ## Continuous designs
 
-A matched dichotomy is not the only way to study a graded property, and for a
-property like frequency it is often not the best one. Splitting a continuum into
-a high and a low band discards the variation within each band, spends statistical
-power to do it, and leaves the estimate dependent on where the split was placed.
-The selection can also manufacture its own artefacts: Liben-Nowell et al. (2019)
-show that choosing a controlled subset from a large candidate set can produce an
-apparent effect from a set where none exists, because the selection is itself a
-search over the space of possible item sets. Kuperman (2015) makes the
-constructive case, that a megastudy's variation can be used directly by sampling
-across a predictor's range and modelling it.
+A matched dichotomy is one way to study a graded property, and for a property
+like frequency it is often not the best one. Splitting a continuum into a high
+and a low band discards the variation within each band, costs statistical power
+and leaves the estimate dependent on where the split was placed. The selection
+can also create its own artefacts. Liben-Nowell et al. (2019) show that
+choosing a controlled subset from a large candidate set can produce an apparent
+effect from a set where none exists, because the selection is itself a search
+over the space of possible item sets. Kuperman (2015) argues that a megastudy's
+variation can be used directly by sampling across a predictor's range and
+modelling it.
 
 A `continuous` block does that. Rather than conditions, it names one predictor to
-span and the controls to hold still, and the two must agree with `match_on`.
+span and at least one control. `match_on` must equal `continuous.controls`, and
+the predictor must not appear among the controls.
 
 ```{r continuous}
 cont_design <- list(
@@ -727,11 +728,11 @@ range(cont$frequency)
 ```
 
 Selection runs in two passes. An even spread over the pool's ranks on the
-predictor defines the control windows from its own distribution, the pool is
-filtered to those windows, and a second even spread over the ranks of what
-survives is the selection. Because the spread is over ranks and not values, the
-selection follows the pool's distribution of the predictor. In the
-`en_freqcontinuous` demonstration its quantiles lie within 0.06 of the pool's,
+predictor defines the control windows from its own distribution. The pool is
+filtered to those windows, and a second even spread over the ranks of the
+filtered pool is the selection. Because the spread is over ranks and not
+values, the selection follows the pool's distribution of the predictor. In the
+`en_freqcontinuous` demonstration, its quantiles lie within 0.06 of the pool's,
 and 95% of the items fall in the lower half of the frequency range, since
 frequent words are rare in any lexicon. The windows trim the controls' tails
 without holding the controls constant, so how far each control is still
@@ -747,34 +748,37 @@ cont_report$comparisons
 
 The report is read differently from a matched one. `predictor_span` is the
 realised range of the predictor in the selected set and should be wide, since it
-is the variation the regression has to work with. Each control's `pearson_r` is its correlation
-with the predictor and should be near zero, since a control that still correlates
-with the predictor is still a confound. Tightening `tolerance_k` does not reliably
-lower those correlations. In `en_freqcontinuous`, k = 1.0 gives a correlation of
-0.070 between frequency and `n_density`, against 0.301 at k = 1.5, but on the
-unscreened `en.csv` it gave 0.213 against -0.049. At k = 0.25 only 30 items fall
-within the windows, fewer than the 80 the design needs, so the selector relaxes
-them to the whole pool. A control that stays correlated belongs in the model as a
-covariate.
+is the variation the regression has to work with. Each control's `pearson_r` is
+its correlation with the predictor and should be near zero, since a control that
+still correlates with the predictor is still a confound. A control that stays
+correlated belongs in the model as a covariate.
+
+Tightening `tolerance_k` does not reliably lower those correlations. In
+`en_freqcontinuous`, *k* = 1.0 gives a correlation of 0.070 between frequency
+and `n_density`, against 0.301 at *k* = 1.5, but on the unscreened `en.csv` it
+gave 0.213 against -0.049. At *k* = 0.25, only 30 items fall within the windows,
+fewer than the 80 the design needs, so the selector relaxes them to the whole
+pool.
 
 Each row also gives the dimension's realised SD as `sd`. For the predictor,
 `sd_ratio` sets it against the SD of as many values spaced evenly over the same
 range. That SD is `(max - min) * sqrt(n * (n + 1) / 12) / (n - 1)`, which
-approaches `(max - min) / sqrt(12)` as n grows, so an even spread has a ratio of 1
-at any size. A ratio below 1 means the items bunch together more than an even spread
-would: `en_freqcontinuous` has 0.59, an SD of 0.53 against 0.90. A ratio above 1
-means they gather towards the ends of the range. For a control, `sd_ratio` sets
-the realised SD against the SD of the pool the selector drew from, and
-`window_low` and `window_high` give the window its first pass set. In
-`en_freqcontinuous`, length keeps 0.76 of the pool's SD, so the window trims the
-tails of a control and leaves much of its spread. The windows come from the
-`"audit"` attribute `select_continuous_stimuli()` attaches to its result, which
-`match_report_continuous()` reads unless it is given one as `audit`. A window that
-held too few items and was widened to the whole pool is recorded in the
-datasheet's `window_relaxations`.
+approaches `(max - min) / sqrt(12)` as n grows, so an even spread has a ratio of
+1 at any size. A ratio below 1 means the items bunch together more than an even
+spread would, and a ratio above 1 means they gather towards the ends of the
+range. `en_freqcontinuous` has a ratio of 0.59, an SD of 0.53 against 0.90.
+
+For a control, `sd_ratio` sets the realised SD against the SD of the pool the
+selector drew from, and `window_low` and `window_high` give the window that the
+first pass set. In `en_freqcontinuous`, length keeps 0.76 of the pool's SD, so
+the window trims the tails of a control and leaves much of its spread. The
+windows come from the `"audit"` attribute `select_continuous_stimuli()` attaches
+to its result, which `match_report_continuous()` reads unless it is given one as
+`audit`. A window that held too few items and was widened to the whole pool is
+recorded in the datasheet's `window_relaxations`.
 
 The datasheet for a continuous design reports the span, the correlations and a
-suggested regression model in which the controls enter as covariates. Its methods
+suggested regression model in which the controls enter as covariates. Its Methods
 paragraph sets the predictor's SD against that of an even spread, gives each
 control's window and its realised SD against the pool's, and says when the windows
 were widened.
@@ -800,7 +804,7 @@ against the anchor come first, and every further pair follows in condition order
 with the earlier condition of the pair named in `reference`. A 2 x 2 design such
 as `en_andrews_repro` therefore shows the contrasts within each factor, such as
 its two low-frequency cells, beside the three against its first cell. The rows
-carry the statistics that answer whether the matching worked.
+carry the statistics for judging whether the matching worked.
 
 ```{r report-comp}
 knitr::kable(
@@ -829,10 +833,10 @@ almost zero. Reporting the interval keeps the dependence on set size visible,
 where a bare 'no significant difference' hides it.
 
 `var_ratio` is the condition's variance over the reference's. Two conditions can
-share a mean and still confound if one is far more spread out than the other,
-which every mean-based statistic misses, so this is the distributional check. A
-ratio near 1 is balanced and a common heuristic flags ratios outside roughly 0.5
-to 2. See `?variance_ratio` for the sources behind that heuristic.
+share a mean and still confound if one is far more spread out than the other, a
+difference that no mean-based statistic shows. A ratio near 1 is balanced and a
+common heuristic flags ratios outside roughly 0.5 to 2. See `?variance_ratio`
+for the sources behind that heuristic.
 
 `mean_diff` is the same contrast in the dimension's own unit: the reference mean
 minus the condition mean, in letters, Zipf units, neighbours or syllables, to
@@ -849,65 +853,67 @@ design and passes them to `match_report()` as `roles`, a function of the row's
 condition, reference and dimension. Called without it, as above, `match_report()`
 leaves `role` as `NA`.
 
-The pipeline reports every dimension lexsync knows for the items, whether or not
+The pipeline reports every dimension lexsync has for the items, whether or not
 the design matches on it. Length, frequency, N, OLD20, syllables and bigram
 frequency come first, then the matched dimensions, every `define_by` dimension and
 every joined norm column, so a norm that defines the conditions appears as the
-manipulated dimension it is. Bigram frequency is computed for the report when the stimuli
-lack it, which leaves the stimuli file and the selection as they were. A dimension
-with no numeric value among the items, such as `n_syllables` for Chinese words, is
-left out. The uncontrolled rows are where a confound shows. In `en_ndensity`, the
-dense words have fewer estimated syllables than the sparse ones (d = -0.53, 90% CI
-[-0.79, -0.26]), which a report of the matched dimensions alone could not reveal.
+manipulated dimension it is. When the stimuli lack bigram frequency, it is
+computed for the report alone, and the stimuli file and the selection stay as
+they were. A dimension with no numeric value among the items, such as
+`n_syllables` for Chinese words, is left out. The uncontrolled rows are where a
+confound shows. In `en_ndensity`, the dense words have fewer estimated syllables
+than the sparse ones (d = -0.53, 90% CI [-0.79, -0.26]), which a report of the
+matched dimensions alone could not reveal.
 
-`tost_p` and `equivalent` are the two one-sided tests. A conventional
-non-significant difference test is not evidence of equivalence, because failing
-to reject a null is not the same as supporting it, and the failure is easiest to
-achieve with few items and noisy measures. TOST inverts this by testing against
-an explicit bound: the reported p is the larger of two one-sided p-values against
-a difference of plus or minus `bound_d` pooled SDs, and a value below alpha
-supports equivalence within that bound (Lakens, 2017). The bound and alpha are
-the schema's, so the verdict is only as meaningful as the bound you chose.
+`tost_p` and `equivalent` come from the two one-sided tests (TOST). A
+non-significant result from a conventional difference test is not evidence of
+equivalence, because failing to reject a null is not the same as supporting it,
+and the failure is easiest to achieve with few items and noisy measures. TOST
+inverts this by testing against an explicit bound. The reported p is the larger
+of two one-sided p-values against a difference of plus or minus `bound_d` pooled
+SDs, and a value below alpha supports equivalence within that bound (Lakens,
+2017). The bound and alpha are the schema's, so the verdict is only as
+meaningful as the bound you chose.
 
 ```{r equivalence-settings}
 str(schema$equivalence)
 ```
 
-A bound of 0.5 SD is the schema default and it is a convention rather than a
-finding. It is not a default of Lakens (2017), who asks for the bound to be
-justified for the study at hand. Half a standard deviation is a permissive bound
-for a nuisance dimension in a design where that dimension has a strong effect on
-the response. A study that cares about a particular confound should set a bound
-it can defend. The verdict also depends on the number of items: at a bound of 0.5
-and an alpha of .05, no dimension that varies can pass with fewer than 23 items
-per condition, even when the conditions are identical.
+The schema's default bound of 0.5 SD is a convention. Lakens (2017) does not
+propose it as a default and asks for the bound to be justified for the study at
+hand. Half a standard deviation is a permissive bound for a nuisance dimension
+in a design where that dimension has a strong effect on the response. If a
+particular confound matters to your study, set a bound you can defend. The
+verdict also depends on the number of items: at a bound of 0.5 and an alpha
+of .05, no dimension that varies can pass with fewer than 23 items per
+condition, even when the conditions are identical.
 
-The 90% interval is the 1 - 2 x alpha interval so that it goes with the TOST
-decision at alpha: the test
-declares equivalence when the interval falls inside the bounds, and the interval
-and the verdict are two readings of nearly the same thing. They are not quite
-identical, because TOST tests the raw mean difference while the interval also
-allows for the sampling error of the pooled SD. For a control near zero the two
-agree to well within the published rounding. For a limit close to the bound,
-`tost_p` is the verdict.
+The 90% interval is the 1 - 2 x alpha interval, which corresponds to the TOST
+decision at alpha. The test declares equivalence when the interval falls inside
+the bounds, so the interval and the verdict are two readings of nearly the same
+thing. They differ slightly, because TOST tests the raw mean difference while
+the interval also allows for the sampling error of the pooled SD. For a control
+near zero, the two agree to well within the published rounding. For a limit
+close to the bound, `tost_p` is the verdict.
 
-Both statistics treat the selected items as a sample from a larger population,
-which they are not. Sassenhagen and Alday (2016) point out that a test on stimuli
-concerns a closed population (the items you chose). They recommend describing the
-stimuli, which the descriptives do, and entering potential confounds in the
-analysis as covariates.
+The interval and the two one-sided tests treat the selected items as a sample
+from a larger population, which they are not. Sassenhagen and Alday (2016) point
+out that a test on stimuli concerns a closed population, the items you chose.
+They recommend describing the stimuli, which the descriptives do, and entering
+potential confounds in the analysis as covariates.
 
-The datasheet's methods paragraph follows that advice. It describes the realised
+The datasheet's Methods paragraph follows that advice. It describes the realised
 control first: the largest difference on a matched dimension, in that dimension's
-unit, with d and its interval. The interval is labelled by the schema's alpha, 90%
-at .05 and 99% at .005. Raw differences in different units cannot be ranked against
-each other, so the largest is the one with the largest |d|. The two one-sided tests come
-second, as a check, with the number of matched comparisons they supported. When
-every condition holds fewer items than the bound needs, the paragraph says that no
-dimension that varies can pass, however well matched. It then names, largest first,
-up to five comparisons of a dimension the design did not control whose |d| exceeds
-the bound, such as the syllable difference in `en_ndensity`, or says that none
-does. The suggested model enters the matched dimensions as centred covariates.
+unit, with d and its interval. Raw differences in different units cannot be
+ranked against each other, so the largest is the one with the largest |d|. The
+interval is labelled by the schema's alpha, 90% at .05 and 99% at .005. The two
+one-sided tests come second, as a check, with the number of matched comparisons
+they supported. When every condition holds fewer items than the bound needs, the
+paragraph adds that no dimension that varies can pass, however well matched.
+Last, it names, largest first, up to five comparisons of a dimension the design
+did not control whose |d| exceeds the bound, such as the syllable difference in
+`en_ndensity`, or says that none does. The suggested model enters the matched
+dimensions as centred covariates.
 
 The individual statistics are exported and can be called directly on any two
 vectors.
@@ -920,9 +926,9 @@ str(tost_equiv(high, low, bound_d = 0.5))
 round(variance_ratio(low, high), 3)
 ```
 
-`balance_check()` is the last piece and answers a different question: whether the
-levels of a column occur equally often. It returns human-readable warnings and an
-empty vector when all is well, and the pipeline logs whatever it returns.
+`balance_check()` answers a different question, whether the levels of a column
+occur equally often. It returns human-readable warnings and an empty vector when
+all is well, and the pipeline logs whatever it returns.
 
 ```{r balance}
 balance_check(stim, "condition")
@@ -945,10 +951,10 @@ head(stim_lexdec[, c("target", "condition", "length", "set")], 4)
 ```
 
 The presented string is `target`, the conditions are `word` and `pseudoword`, and
-`set` pairs each word with its non-word twin. `reference_words` should be the full
-lexicon: it supplies the bigram statistics and the list of real forms a pseudoword
-must avoid, and it defaults to the pool when omitted, which is rarely what you
-want.
+`set` pairs each word with its non-word twin. `reference_words` should be the
+whole lexicon: it supplies the bigram statistics and the list of real forms a
+pseudoword must avoid, and it defaults to the pool when omitted, which is rarely
+what you want.
 
 Two methods are available, chosen per design under `items.generation.method`.
 
@@ -956,7 +962,7 @@ Two methods are available, chosen per design under `items.generation.method`.
 three constraints: every resulting bigram must be attested in the corpus, the form
 must not be in the reference list or already generated, and the length must be
 preserved exactly. Single substitutions are searched first, then pairs as a
-fallback. Among the legal candidates the most bigram-typical wins, with a
+fallback. Among the legal candidates, the most bigram-typical wins, with a
 byte-order tie-break.
 
 `subsyllabic` splits each word into onset, nucleus and coda constituents and swaps
@@ -968,9 +974,9 @@ no legal swap falls back to letter substitution, so every word yields a
 pseudoword. It is a deterministic orthographic approximation of Wuggy (Keuleers
 & Brysbaert, 2010), and it differs from Wuggy in more than the phonological
 model. Wuggy matches the template's transition frequencies, matches letter length
-by default and has orthographic modules for several languages, and by default it
-keeps two thirds of the segments where lexsync replaces up to two thirds. What
-lexsync gains is cross-engine reproducibility.
+by default and has orthographic modules for several languages. By default, it
+also keeps two thirds of the segments, where lexsync replaces up to two thirds.
+In return, lexsync gains cross-engine reproducibility.
 
 ```{r subsyllabic}
 sub_stim <- build_lexdec_stimuli(
@@ -987,36 +993,33 @@ merge(
 In both methods, the scoring picks the most bigram-typical candidate and does not
 match the base word, so the pseudowords come out more bigram-typical than their
 words. The difference in mean bigram probability is about d = -1.0, words minus
-pseudowords, in `en_lexdec` and `en_lexdec_wuggy` alike. Read the generated forms
-before a study runs.
+pseudowords, in `en_lexdec` and `en_lexdec_wuggy` alike.
 
 Both generators process base words in byte order, so the set of already-used
 pseudowords evolves identically in the two engines and both select byte-identical
-stimuli. Their alphabet is derived from the reference. It is the set of letters the
-reference words attest, in UTF-8 byte order, so a Spanish lexicon lends them `á`,
-`é`, `í`, `ó`, `ú`, `ü` and `ñ`, which one word in six carries in a typical Spanish
-band.
+stimuli. Their alphabet is the set of letters the reference words attest, in
+UTF-8 byte order, so a Spanish lexicon gives them `á`, `é`, `í`, `ó`, `ú`, `ü`
+and `ñ`, which one word in six carries in a typical Spanish band.
 `build_lexdec_stimuli()` keeps the pool's words written wholly in those letters,
 and a generated design's datasheet counts these words in the band as its
 candidates. A word with a hyphen, an apostrophe or a digit is left out. The
 subsyllabic segmenter takes its nuclei from the vowels of the syllable estimate,
 whatever their accent, and a word without one, such as a Russian or Greek word,
-goes down the letter-substitution path. Chinese is refused, since Unicode counts
-its characters as letters but a form made by swapping one character for another
-is of unknown validity as a pseudoword. In the Spanish demonstration,
-`design_es_lexdec.yaml`, 8 of the 60 words and 4 of the pseudowords hold a letter
-outside a to z, and the pseudowords are checked against wordfreq's Spanish word
-list.
+is handled by letter substitution. Chinese words are rejected with an error,
+since Unicode counts their characters as letters but a form made by swapping one
+character for another is of unknown validity as a pseudoword. In the Spanish
+demonstration, `design_es_lexdec.yaml`, 8 of the 60 words and 4 of the
+pseudowords hold a letter outside a to z, and the pseudowords are checked
+against wordfreq's Spanish word list.
 
 The stimuli give each pseudoword its `base` word and its `edit_distance` from it,
 the Levenshtein distance, and give a word its own form and 0. A generated design's
 report compares the words with their pseudowords on length, which they share by
 construction, and on bigram frequency, N and OLD20, which the generator does not
-hold. The report marks length as controlled and the other three as uncontrolled,
-and it computes those three against the lexicon on a copy of the stimuli. Since
-the most bigram-plausible candidate wins, the pseudowords tend to be more
-bigram-typical than their words: in `en_lexdec` the difference is d = -0.97 (90%
-CI [-1.29, -0.65]).
+hold constant. The report marks length as controlled and the other three as
+uncontrolled, and it computes those three against the lexicon on a copy of the
+stimuli. In `en_lexdec`, the bigram-frequency difference between the words and
+their pseudowords is d = -0.97 (90% CI [-1.29, -0.65]).
 
 A pseudoword is a non-word only relative to the reference words, so a real word
 too rare for the lexicon can still come out as one. The bundled English and
@@ -1024,8 +1027,8 @@ Spanish lexica stop at Zipf 2.95 and 3.11, and with the English lexicon alone th
 generators can produce real words such as crier and pall. `exclude` names further
 known word forms that no pseudoword may equal. They are trimmed, lower-cased and
 put in NFC like the lexicon's words, and they take no part in the bigram
-statistics. In a design the list goes under `items.generation.exclude`, and each
-entry is a file with one form per line, a CSV file with a `word` column, or a
+statistics. In a design, the list goes under `items.generation.exclude`, and each
+entry is a file with one form per line, a CSV file with a `word` column or a
 registry corpus already fetched into the cache:
 
 ```yaml
@@ -1037,31 +1040,32 @@ items:
 ```
 
 Each file must be UTF-8 text, and no form in a one-form-per-line file may hold a
-tab, a comma or a semicolon. Such a file is a table whose rows would each be kept
-whole as a form that matches nothing, so it is refused. The datasheet records
+tab, a comma or a semicolon. A file in which any form holds one of these
+characters is a table. Each of its rows would be kept whole as a form that
+matches nothing, so the file is rejected with an error. The datasheet records
 each list with its checksum and the number of forms it holds, and the Methods
 paragraph names it. In the lexsync repository,
 `python corpora/fetch_corpora.py --known-forms en es` writes wordfreq's fuller
 lists to `corpora/derived/` (289,023 English and 334,625 Spanish forms at Zipf 1.0
-or above). They are not shipped in the package.
+or above). They are not included in the package.
 
-A long list costs the pseudowords some of their form. The generators' only check
+A long list makes ill-formed pseudowords more likely. The generators' only check
 on form is that each letter pair occurs somewhere in the lexicon, so with fewer
-candidates left the most bigram-typical one can be ill-formed. In the English
+candidates left, the most bigram-typical one can be ill-formed. In the English
 demonstrations, 13 of the 140 pseudowords are ill-formed, among them fdes, gngs
 and ntena. Each lacks a vowel or opens or closes on a letter pair that opens or
 closes no screened English word of three letters or more with a vowel. Without
 the list, the same designs give 5 such pseudowords. Read the generated forms
 before a study runs.
 
-`generate_pseudowords()` and `make_pseudoword()` are available directly if you
-want the forms without the lexical-decision scaffolding around them.
+`generate_pseudowords()` and `make_pseudoword()` can be called directly if you
+want the forms without a lexical-decision stimulus set.
 
 ```{r pseudowords}
 generate_pseudowords(c("house", "table"), lex$word)
 ```
 
-In a design this is `items.source: generate`, with the method under
+In a design, this is `items.source: generate`, with the method under
 `items.generation.method`. `design_en_lexdec.yaml` and `design_en_lexdec_wuggy.yaml`
 are the worked examples of the two methods, and `design_en_lexdec_blocks.yaml`
 adds practice and filler blocks to the same generated set.
@@ -1072,10 +1076,9 @@ A matched set is one sample from the language, and an analysis that treats its
 items as fixed generalises to those items rather than to the language they were
 drawn from (Clark, 1973; Yarkoni, 2022). Crossed random effects are the standard
 answer, and the datasheet suggests a model that includes them. `resample_stimuli()`
-supports the stronger move of drawing several fully matched sets that share no
-items, each one an independent sample, which lets a study run different item
-samples across participant groups or show that an effect survives the change of
-materials.
+draws several matched sets that share no items, each one an independent sample.
+A study can then run different item samples across participant groups or show
+that an effect survives the change of materials.
 
 ```{r resample}
 reps <- resample_stimuli(pool, design, schema, n_sets = 2)
@@ -1087,9 +1090,9 @@ length(intersect(
 ```
 
 Each replicate is matched independently against the pool with the earlier
-replicates' items removed, so the sets are disjoint by construction. Later
-replicates draw from a depleted pool, which means match quality can degrade
-across replicates. The report will show it if it does.
+replicates' items removed, so the sets are disjoint by construction. Because
+later replicates draw from a depleted pool, match quality can degrade across
+replicates, and the report shows it if it does.
 
 ## References
 

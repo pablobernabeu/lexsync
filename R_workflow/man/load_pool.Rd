@@ -35,8 +35,8 @@ The list needs only a \code{word} column. Length and the syllable estimate are d
 from the form. Everything else is either supplied on the list itself or looked up:
 with \code{lexicon} given, the corpus dimensions (frequency above all) are joined for
 those words, and a word the lexicon does not have is a hard error rather than an
-\code{NA}, because the tolerance windows drop \code{NA} rows silently and the pool would
-then be smaller than the user believes it is.
+\code{NA}, because a word missing a value would be left out of the candidates and the
+pool would then be smaller than the user believes it is.
 
 The returned \code{reference} matters as much as the pool. \code{n_density} and \code{old20} are
 properties of a word in its \emph{language}, not among the handful of words a study

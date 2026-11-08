@@ -9,12 +9,13 @@ selections from identical input.
 Cross-engine determinism. ``standardised_euclidean`` (the default) and ``joint``
 use no floating-point operation whose last bit differs across
 platforms, so the R and Python engines select byte-identical stimuli. The
-optional ``mahalanobis`` and ``optimal`` methods are the exception: they rely on
-a covariance-matrix inverse and a linear-assignment solver respectively, whose
-last-bit results differ between the R and Python linear-algebra backends (the
-LAPACK build behind the matrix inverse, and the assignment algorithm itself). The
-two engines therefore agree closely but are not guaranteed byte-for-byte on those
-two methods.
+optional ``mahalanobis`` and ``optimal`` methods are the exception. The last bits
+of the inverse of the pool's correlation matrix depend on the LAPACK build behind
+the matrix inverse, which can differ between R and NumPy. The two
+linear-assignment solvers are given the same costs, rounded to nine decimal
+places, but can choose differently among assignments of equal cost. The two
+engines therefore agree closely but are not guaranteed byte-for-byte on those two
+methods.
 """
 from __future__ import annotations
 

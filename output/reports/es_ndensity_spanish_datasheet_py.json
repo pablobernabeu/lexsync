@@ -19,7 +19,7 @@
     },
     {
       "file": "output/experiments/es_ndensity_spanish_psychopy.py",
-      "sha256": "359cea3394849ee8ce939b5452212d0533b80bfefdfc3a57bdf155cfbff432f2"
+      "sha256": "223b7425584abe1dafbb80009304fe2f218bb13014a80bcb721154fbe8efb470"
     },
     {
       "file": "output/experiments/es_ndensity_spanish.osexp",
@@ -27,7 +27,7 @@
     },
     {
       "file": "output/experiments/es_ndensity_spanish.html",
-      "sha256": "ce9022c6a3c1cfe79d20a36e4cad4f9407ec3421af0869429a99be1577976a53"
+      "sha256": "c8325d6c86b6763fe3ef5ede8d4b7aabf48bd545c04bd8917ba9ff5f657c137f"
     },
     {
       "file": "output/experiments/es_ndensity_spanish_psychopy.csv",
@@ -226,11 +226,11 @@
   "reproducibility": {
     "design_sha256": "d72b9e8c0e26a2faba2f39023b4f00d44cfe6a922d136d7b07d110025b69c608",
     "schema_path": "config/schema.yaml",
-    "schema_sha256": "4698d37f5d396b00272c32ccd46a7529bd1f4dc5af70cd0b2746ae09aba2baf7",
+    "schema_sha256": "f864de85d931f4c471c22488c7df4deaa4bcff7a5cb50b4151e22f443c557af8",
     "seed": 2026,
     "versions": {
       "engine": "python",
-      "lexsync": "0.1.1",
+      "lexsync": "0.2.0",
       "numpy": "2.3.2",
       "os": "Windows AMD64",
       "pandas": "2.3.2",

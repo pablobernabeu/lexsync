@@ -7,6 +7,9 @@ on:
     branches: [main, master]
   pull_request:
     branches: [main, master]
+  # regenerate-outputs.yaml starts this on the commit it pushes, which a push
+  # made with GITHUB_TOKEN would not.
+  workflow_dispatch:
 
 permissions:
   contents: read

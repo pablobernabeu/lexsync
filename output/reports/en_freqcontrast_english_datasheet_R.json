@@ -225,7 +225,7 @@
     "seed": 2026,
     "versions": {
       "engine": "R",
-      "lexsync": "0.1.1",
+      "lexsync": "0.2.0",
       "R": "4.6.1",
       "readr": "2.2.0",
       "stringdist": "0.9.17",
@@ -237,7 +237,7 @@
     },
     "design_sha256": "3b0ad7a1e1cd3214c0a31fc64e7b800aca65068c9f58f833aa943ce37a71e621",
     "schema_path": "config/schema.yaml",
-    "schema_sha256": "4698d37f5d396b00272c32ccd46a7529bd1f4dc5af70cd0b2746ae09aba2baf7"
+    "schema_sha256": "f864de85d931f4c471c22488c7df4deaa4bcff7a5cb50b4151e22f443c557af8"
   },
   "artifacts": [
     {
@@ -254,7 +254,7 @@
     },
     {
       "file": "output/experiments/en_freqcontrast_english_psychopy.py",
-      "sha256": "8bf6b0a78c1763e9b8b999ffa8df7e2e3fcf0c77abe7c36ee2d5fff85388a754"
+      "sha256": "0c8b580b0ac640731c9079e51def373b2eca412829b73c27b39cbe794c2d98f3"
     },
     {
       "file": "output/experiments/en_freqcontrast_english.osexp",
@@ -262,7 +262,7 @@
     },
     {
       "file": "output/experiments/en_freqcontrast_english.html",
-      "sha256": "e7dd9707928e8b9b75ae3d33d5eaba088362d9658a2daff1269393d73513761c"
+      "sha256": "a8b174bdb69d46f59c156bfd685da593b9a064748dd4a7e4e42de6fe9d3747df"
     },
     {
       "file": "output/experiments/en_freqcontrast_english_psychopy.csv",

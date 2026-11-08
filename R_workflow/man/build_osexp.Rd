@@ -15,7 +15,8 @@ build_osexp(
   n_versions = NULL,
   instructions = NULL,
   order = 1L,
-  n_orders = 1L
+  n_orders = 1L,
+  pause = FALSE
 )
 }
 \arguments{
@@ -48,17 +49,23 @@ lexsync's for its task.}
 \item{order, n_orders}{The experiment presents trial order \code{order} of \code{n_orders}.
 With more than one order, the check compares the participant's order too, and the
 experiment sets \code{lexsync_order}, which every trial logs.}
+
+\item{pause}{Whether the experiment pauses where the practice trials end.
+\code{\link[=export_opensesame]{export_opensesame()}} passes \code{TRUE} for trials that hold practice trials and trials
+of another block. An inline script, \code{lexsync_block_break}, then opens every trial,
+and on the first trial after the practice trials it shows "End of the practice
+trials." and waits for the space bar. \code{FALSE} (the default) writes no such script.}
 }
 \value{
-The experiment's text, one string. Each trial starts by clearing the last
-trial's responses and ends with a logger item. The setup script opens the trigger
-device the schema names, measures the frame period and defines the helpers that
-time the events and hold their codes. A notice follows it when no codes will be
-sent, and the session markers 254 and 255 are sent just before and after the loop.
-Every text is drawn at \code{presentation.text_height_px}. A \code{response} event collected
-from the offset, which becomes a keyboard_response, is refused when it carries
-\code{blocks}, since the block restriction is applied only within lexsync's inline
-scripts. Restrict a feedback or stimulus event instead.
+The experiment's text, one string. Each trial opens with the pause when there
+is one. It then clears the last trial's responses and ends with a logger item. The
+setup script opens the trigger device the schema names, measures the frame period
+and defines the helpers that time the events and hold their codes. A notice follows
+it when no codes will be sent, and the session markers 254 and 255 are sent just
+before and after the loop. Every text is drawn at \code{presentation.text_height_px}. A
+\code{response} event collected from the offset, which becomes a keyboard_response, is
+refused when it carries \code{blocks}, since the block restriction is applied only
+within lexsync's inline scripts. Restrict a feedback or stimulus event instead.
 }
 \description{
 The loop table and its companion text table are both looked up through OpenSesame's

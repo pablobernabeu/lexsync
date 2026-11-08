@@ -33,17 +33,21 @@ module, so OpenSesame never evaluates them. Copy both tables with the experiment
 }
 \details{
 Before the loop, an inline script, \code{lexsync_instructions}, shows the design's
-\code{instructions}, or lexsync's for its task, and waits for the space bar. Every trial
-is logged. A response after a text event is collected by that event's
-script from the stimulus's onset, which sets \code{response}, \code{response_time},
-\code{timed_out} and \code{correct}. A response kept after the stimulus with \code{from: offset} is
-a keyboard_response, and a script after it sets \code{timed_out} and \code{correct}. Such a
-response cannot be restricted to \code{blocks}: a design that restricts one is refused
-here, although the PsychoPy and jsPsych targets accept it. Self-paced reading sets
-\code{lexsync_region_rts} and a question \code{question_response} and \code{question_rt}. A script
-clears these as each trial starts, another copies the
-trial's labels into \code{lexsync_condition}, \code{lexsync_block} and \code{lexsync_answer}, and a
-logger item ends the trial.
+\code{instructions}, or lexsync's for its task, and waits for the space bar. When the
+trials hold practice trials and trials of another block, the experiment pauses where
+the practice trials end, as the PsychoPy and jsPsych experiments do. An inline
+script, \code{lexsync_block_break}, opens every trial, and on the first trial after the
+practice trials it shows "End of the practice trials." and waits for the space bar.
+Escape there stops the session. Every trial is logged. A response after a text event
+is collected by that event's script from the stimulus's onset, which sets \code{response},
+\code{response_time}, \code{timed_out} and \code{correct}. A response kept after the stimulus with
+\code{from: offset} is a keyboard_response, and a script after it sets \code{timed_out} and
+\code{correct}. Such a response cannot be restricted to \code{blocks}: a design that restricts
+one is refused here, although the PsychoPy and jsPsych targets accept it. Self-paced
+reading sets \code{lexsync_region_rts} and a question \code{question_response} and
+\code{question_rt}. A script clears these before each trial's first event, another copies
+the trial's labels into \code{lexsync_condition}, \code{lexsync_block} and \code{lexsync_answer},
+and a logger item ends the trial.
 
 Every canvas a trial shows is built before the trial runs, in the prepare phase of its
 script, and each event is timed from the onset its display returns. An event ends

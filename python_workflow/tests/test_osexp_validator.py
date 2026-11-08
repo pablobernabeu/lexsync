@@ -691,6 +691,97 @@ def test_every_shipped_experiment_shows_its_instructions_before_the_loop():
         assert keyboards == [(["space", "escape"], None)], path
 
 
+def _practice_stim(blocks=("practice", "practice", "main", "filler", "main")):
+    """Two practice trials and then the main trials with a filler among them, in the
+    order the pipeline presents them, or the same trials in the blocks given (None for
+    no block column)."""
+    stim = pd.DataFrame({
+        "word": ["tree", "trel", "cat", "plok", "dog"],
+        "condition": ["word", "pseudoword", "word", "pseudoword", "word"],
+        "set": [4, 5, 1, 3, 2], "list": [1] * 5, "trial": [1, 2, 3, 4, 5],
+        "answer": ["f", "j", "f", "j", "f"]})
+    if blocks is not None:
+        stim["block"] = list(blocks)
+    return assign_triggers(stim)
+
+
+def _practice_design():
+    return {"name": "pause", "language": "english", "events": [
+        {"type": "fixation", "content": "+", "duration_ms": 500},
+        {"type": "text", "content": "{word}", "duration_ms": 300, "trigger": "condition"},
+        {"type": "response", "keys": ["f", "j"], "timeout_ms": 2000}]}
+
+
+_PAUSE = "End of the practice trials.<br /><br />Press the space bar to begin."
+
+
+@pytest.mark.parametrize("version", ["3.3", "4.x"])
+def test_the_experiment_pauses_once_where_the_practice_trials_end(version, schema, tmp_path,
+                                                                 monkeypatch):
+    # The OpenSesame experiment pauses after the practice trials, as the PsychoPy script
+    # and the jsPsych page do. A script runs first in every trial and, on the first trial
+    # after the practice trials, says that they are over and waits for the space bar.
+    # test-scripting.R pins the same lines.
+    monkeypatch.setattr(ctypes, "windll", None, raising=False)
+    path = export_opensesame(_practice_stim(), _practice_design(), schema, str(tmp_path))
+    with open(path, encoding="utf-8") as handle:
+        text = handle.read()
+    assert validate_osexp(text)
+    items = _items(text)
+    assert _sequence(items, "lexsync_trial")[:2] == ["lexsync_block_break",
+                                                     "lexsync_trial_start"]
+    assert items["lexsync_block_break"]["___prepare__"] == []
+    # The second practice word is answered 10 ms after its onset, so its code is still
+    # held when the trial ends. The pause waits for a key of its own, here the space bar.
+    presses = [("f", 400.0), ("j", 10.0), ("space", 1000.0)] + [("f", 400.0)] * 3
+    shown, sent, _, logged = _run(path, version, presses)
+    words = [t for name, t, _ in shown if name in ("lexsync_e1", "lexsync_block_break")
+             and t is not None]
+    assert words == ["tree", "trel", _PAUSE, "cat", "plok", "dog"]
+    # The code is held out, and reset, before the pause appears.
+    (pause_at,) = [at for name, _, at in shown if name == "lexsync_block_break"]
+    trel_at = next(at for _, t, at in shown if t == "trel")
+    assert pause_at == pytest.approx(trel_at + 50.0)
+    assert [(name, code) for name, code, at in sent if at <= pause_at][-1] == (
+        "lexsync_block_break", 0)
+    # Every trial is logged, and the pause adds no row.
+    assert [row["lexsync_block"] for row in logged] == ["practice", "practice", "main",
+                                                        "filler", "main"]
+    assert [row["response"] for row in logged] == ["f", "j", "f", "f", "f"]
+    # A filler first after the practice trials gets the pause too, as in PsychoPy.
+    filler_first = export_opensesame(_practice_stim(("practice", "practice", "filler",
+                                                     "main", "main")),
+                                     _practice_design(), schema, str(tmp_path))
+    shown, _, _, _ = _run(filler_first, version, presses)
+    words = [t for name, t, _ in shown if name in ("lexsync_e1", "lexsync_block_break")
+             and t is not None]
+    assert words == ["tree", "trel", _PAUSE, "cat", "plok", "dog"]
+    # Escape at the pause stops the session.
+    with pytest.raises(RuntimeError, match="stopped at the pause after the practice trials"):
+        _run(path, version, [("f", 400.0), ("j", 400.0), ("escape", 500.0)])
+
+
+def test_trials_without_practice_and_main_trials_get_no_pause(schema, tmp_path):
+    # Without a block column, with fillers but no practice trials and with practice
+    # trials alone, the experiment has no pause and the same bytes. With the pause, it
+    # differs only by the pause's script and the line that runs it.
+    def osexp(blocks):
+        path = export_opensesame(_practice_stim(blocks), _practice_design(), schema,
+                                 str(tmp_path))
+        with open(path, encoding="utf-8") as handle:
+            return handle.read().splitlines()
+
+    plain = osexp(None)
+    assert not any("lexsync_block_break" in line for line in plain)
+    for blocks in (["main", "main", "main", "filler", "main"], ["practice"] * 5):
+        assert osexp(blocks) == plain, blocks
+    paused = osexp(("practice", "practice", "main", "filler", "main"))
+    at = paused.index("define inline_script lexsync_block_break")
+    end = paused.index("", at)
+    drop = set(range(at, end + 1)) | {paused.index("\trun lexsync_block_break always")}
+    assert [line for i, line in enumerate(paused) if i not in drop] == plain
+
+
 def test_opensesame_timeouts_are_written_in_whole_milliseconds_as_declared(schema, tmp_path):
     # 1.001 s times 1000 is 1000.9999999999999 in binary floating point, so int() wrote
     # a declared 1,001 ms as 1,000: 95 of the whole-millisecond timeouts from 1 to 10,000
@@ -724,7 +815,14 @@ def test_every_shipped_experiment_logs_each_trial():
         assert items["lexsync_logger"]["type"] == "logger", path
         assert "set auto_log yes" in items["lexsync_logger"]["lines"], path
         runs = _trial_runs(text.splitlines())
-        assert runs[0] == "lexsync_trial_start", path
+        # The pause after the practice trials opens each trial of an experiment whose
+        # trials hold practice trials and others, and the trial then clears the last
+        # one's responses.
+        with open(path[:-len(".osexp")] + "_opensesame_text.csv", newline="",
+                  encoding="utf-8") as handle:
+            blocks = {row.get("block") for row in csv.DictReader(handle)}
+        opening = ["lexsync_block_break"] if "practice" in blocks and len(blocks) > 1 else []
+        assert runs[:len(opening) + 1] == opening + ["lexsync_trial_start"], path
         assert runs[-2:] == ["lexsync_record", "lexsync_logger"], path
         # Every shipped response follows its target, so none waits for the target to go.
         assert not [name for name, item in items.items()

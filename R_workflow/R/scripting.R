@@ -1551,7 +1551,8 @@ export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
   stop(sprintf("lexsync: unknown event type '%s'.", t), call. = FALSE)
 }
 
-# The inline script that opens every trial by clearing what the last one recorded.
+# The inline script that clears what the last trial recorded before the trial's first
+# event.
 # OpenSesame keeps a variable from one trial to the next, so a response event that does
 # not run in a block would otherwise leave the previous trial's key in the log and for
 # the feedback. Must match _osexp_trial_start in scripting.py.
@@ -1818,6 +1819,39 @@ export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
                 body)
 }
 
+# The inline script that pauses after the practice trials, as the PsychoPy and jsPsych
+# experiments do. It runs first in every trial and shows its screen on a trial that is
+# not a practice trial when the row before it in loop order is one, so the screen
+# appears once, where the practice trials end, whether a main trial or a filler comes
+# next. The blocks are read from the companion table, as the block guard reads them, so
+# the experiment needs no run-if condition, a syntax that differs between OpenSesame 3.3
+# and 4.x. The wait for the key runs none of the code that resets a trigger, so a code
+# still held is held out first. Space goes on with the trial, and escape stops the
+# session. Must match _osexp_block_break in scripting.py.
+.osexp_block_break <- function() {
+  body <- c(
+    "_previous = _LEXSYNC_ROWS.get(int(var.get(u'lexsync_row', _eval=False)) - 1, {})",
+    paste0("if _previous.get(u'block') == u'practice' and ",
+           "_lexsync_row().get(u'block') != u'practice':"),
+    "    _lexsync_end_hold()",
+    "    c = Canvas()",
+    "    c.text(u'End of the practice trials.<br /><br />Press the space bar to begin.')",
+    "    c.show()",
+    "    _key, _t = Keyboard(keylist=[u'space', u'escape'], timeout=None).get_key()",
+    "    if _key == u'escape':",
+    "        raise RuntimeError(u'lexsync: stopped at the pause after the practice trials.')")
+  .inline_block("lexsync_block_break", "Pause after the practice trials", body)
+}
+
+# Whether a version's trials hold practice trials and trials of another block, the
+# trials whose experiment pauses where the practice trials end. Must match
+# _practice_ends in scripting.py.
+.practice_ends <- function(rows) {
+  if (!"block" %in% names(rows)) return(FALSE)
+  practice <- rows$block %in% "practice"
+  any(practice) && !all(practice)
+}
+
 #' Build a complete plain-text OpenSesame experiment from rendered events
 #'
 #' The loop table and its companion text table are both looked up through OpenSesame's
@@ -1845,19 +1879,24 @@ export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
 #' @param order,n_orders The experiment presents trial order `order` of `n_orders`.
 #'   With more than one order, the check compares the participant's order too, and the
 #'   experiment sets `lexsync_order`, which every trial logs.
-#' @return The experiment's text, one string. Each trial starts by clearing the last
-#'   trial's responses and ends with a logger item. The setup script opens the trigger
-#'   device the schema names, measures the frame period and defines the helpers that
-#'   time the events and hold their codes. A notice follows it when no codes will be
-#'   sent, and the session markers 254 and 255 are sent just before and after the loop.
-#'   Every text is drawn at `presentation.text_height_px`. A `response` event collected
-#'   from the offset, which becomes a keyboard_response, is refused when it carries
-#'   `blocks`, since the block restriction is applied only within lexsync's inline
-#'   scripts. Restrict a feedback or stimulus event instead.
+#' @param pause Whether the experiment pauses where the practice trials end.
+#'   [export_opensesame()] passes `TRUE` for trials that hold practice trials and trials
+#'   of another block. An inline script, `lexsync_block_break`, then opens every trial,
+#'   and on the first trial after the practice trials it shows "End of the practice
+#'   trials." and waits for the space bar. `FALSE` (the default) writes no such script.
+#' @return The experiment's text, one string. Each trial opens with the pause when there
+#'   is one. It then clears the last trial's responses and ends with a logger item. The
+#'   setup script opens the trigger device the schema names, measures the frame period
+#'   and defines the helpers that time the events and hold their codes. A notice follows
+#'   it when no codes will be sent, and the session markers 254 and 255 are sent just
+#'   before and after the loop. Every text is drawn at `presentation.text_height_px`. A
+#'   `response` event collected from the offset, which becomes a keyboard_response, is
+#'   refused when it carries `blocks`, since the block restriction is applied only
+#'   within lexsync's inline scripts. Restrict a feedback or stimulus event instead.
 #' @keywords internal
 build_osexp <- function(design, conditions_file, schema, rendered, font = "mono",
                         text_file = NULL, version = NULL, n_versions = NULL,
-                        instructions = NULL, order = 1L, n_orders = 1L) {
+                        instructions = NULL, order = 1L, n_orders = 1L, pause = FALSE) {
   instructions <- instructions %||% .instructions(design, .response_mapping(design))
   addr <- clean_port(schema[["triggers"]][["parallel_address"]] %||% "0x378")
   design_name <- clean_meta(design[["name"]], "the design's `name`")
@@ -1891,7 +1930,10 @@ build_osexp <- function(design, conditions_file, schema, rendered, font = "mono"
     else if (identical(ev[["type"]], "question")) "question" else NA_character_
   }
   has_response <- any(vapply(rendered, collects, character(1)) %in% "response")
-  event_blocks <- .osexp_trial_start(); run_names <- "lexsync_trial_start"
+  # The pause after the practice trials opens every trial and shows its screen on the
+  # first trial after them (see .osexp_block_break).
+  event_blocks <- c(if (isTRUE(pause)) .osexp_block_break(), .osexp_trial_start())
+  run_names <- c(if (isTRUE(pause)) "lexsync_block_break", "lexsync_trial_start")
   last <- "response"
   for (i in seq_along(rendered)) {
     kind <- collects(rendered[[i]])
@@ -1974,17 +2016,21 @@ build_osexp <- function(design, conditions_file, schema, rendered, font = "mono"
 #' module, so OpenSesame never evaluates them. Copy both tables with the experiment.
 #'
 #' Before the loop, an inline script, `lexsync_instructions`, shows the design's
-#' `instructions`, or lexsync's for its task, and waits for the space bar. Every trial
-#' is logged. A response after a text event is collected by that event's
-#' script from the stimulus's onset, which sets `response`, `response_time`,
-#' `timed_out` and `correct`. A response kept after the stimulus with `from: offset` is
-#' a keyboard_response, and a script after it sets `timed_out` and `correct`. Such a
-#' response cannot be restricted to `blocks`: a design that restricts one is refused
-#' here, although the PsychoPy and jsPsych targets accept it. Self-paced reading sets
-#' `lexsync_region_rts` and a question `question_response` and `question_rt`. A script
-#' clears these as each trial starts, another copies the
-#' trial's labels into `lexsync_condition`, `lexsync_block` and `lexsync_answer`, and a
-#' logger item ends the trial.
+#' `instructions`, or lexsync's for its task, and waits for the space bar. When the
+#' trials hold practice trials and trials of another block, the experiment pauses where
+#' the practice trials end, as the PsychoPy and jsPsych experiments do. An inline
+#' script, `lexsync_block_break`, opens every trial, and on the first trial after the
+#' practice trials it shows "End of the practice trials." and waits for the space bar.
+#' Escape there stops the session. Every trial is logged. A response after a text event
+#' is collected by that event's script from the stimulus's onset, which sets `response`,
+#' `response_time`, `timed_out` and `correct`. A response kept after the stimulus with
+#' `from: offset` is a keyboard_response, and a script after it sets `timed_out` and
+#' `correct`. Such a response cannot be restricted to `blocks`: a design that restricts
+#' one is refused here, although the PsychoPy and jsPsych targets accept it. Self-paced
+#' reading sets `lexsync_region_rts` and a question `question_response` and
+#' `question_rt`. A script clears these before each trial's first event, another copies
+#' the trial's labels into `lexsync_condition`, `lexsync_block` and `lexsync_answer`,
+#' and a logger item ends the trial.
 #'
 #' Every canvas a trial shows is built before the trial runs, in the prepare phase of its
 #' script, and each event is timed from the onset its display returns. An event ends
@@ -2081,7 +2127,7 @@ export_opensesame <- function(stimuli, design, schema, outdir, base = NULL) {
                              text_file = text_name, version = p[["version"]],
                              n_versions = length(versions),
                              instructions = p[["instructions"]], order = p[["order"]],
-                             n_orders = n_orders))
+                             n_orders = n_orders, pause = .practice_ends(p[["rows"]])))
   })
   experiments <- character(0)
   tables <- character(0)

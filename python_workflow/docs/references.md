@@ -1,11 +1,10 @@
 # References
 
-The guides and the API reference cite published work throughout, and this page carries the full
-entries so that every citation on the site resolves. Each citation in the guides links to the entry
-below, and each entry carries a DOI wherever the work has one. The R package lists the same works at
-the foot of each vignette that cites them. The lexical corpora that lexsync reads are attributed
-separately, in `corpora/ATTRIBUTION.md` and in the corpus registry, since their licences travel with
-the derived data rather than with the software.
+The guides and the API reference cite published work, and this page gives the full entry for every
+citation on the site. Each citation in the guides links to its entry below. Every entry carries a
+DOI wherever the work has one. Each R vignette lists the works it cites at its own foot. The lexical
+corpora that lexsync reads are attributed separately, in `corpora/ATTRIBUTION.md` and in the corpus
+registry, since their licences apply to the derived data and not to the software.
 
 Andrews, S. (1989). Frequency and neighborhood effects on lexical access: Activation or search?
 *Journal of Experimental Psychology: Learning, Memory, and Cognition*, *15*(5), 802–814.
@@ -162,6 +161,13 @@ Psychology*, *67*(6), 1176–1190. <https://doi.org/10.1080/17470218.2013.850521
 Volgenant, A. (2004). Solving the *k*-cardinality assignment problem by transformation. *European
 Journal of Operational Research*, *157*(2), 322–331. <https://doi.org/10.1016/S0377-2217(03)00205-4>
 { #volgenant-2004 }
+
+Wilkinson, M. D., Dumontier, M., Aalbersberg, IJ. J., Appleton, G., Axton, M., Baak, A., Blomberg,
+N., Boiten, J.-W., da Silva Santos, L. B., Bourne, P. E., Bouwman, J., Brookes, A. J., Clark, T.,
+Crosas, M., Dillo, I., Dumon, O., Edmunds, S., Evelo, C. T., Finkers, R., … Mons, B. (2016). The
+FAIR Guiding Principles for scientific data management and stewardship. *Scientific Data*, *3*,
+Article 160018. <https://doi.org/10.1038/sdata.2016.18>
+{ #wilkinson-2016 }
 
 Yarkoni, T. (2022). The generalizability crisis. *Behavioral and Brain Sciences*, *45*, Article e1.
 <https://doi.org/10.1017/S0140525X20001685>

@@ -719,8 +719,10 @@ server <- function(input, output, session) {
       d$matching <- list(method = input$method)
       tol <- tolerance_k()
       if (length(tol)) d$matching$tolerance_k <- tol
-      if (!is.null(input$nsets) && input$nsets >= 2) d$resample <- list(n_sets = as.integer(input$nsets))
-      d$counterbalance <- list(lists = as.integer(input$lists))
+      # A cleared box arrives as NA and, like 0, leaves resampling off.
+      if (isTRUE(input$nsets >= 2)) d$resample <- list(n_sets = as.integer(input$nsets))
+      # A cleared box arrives as NA and falls back to the box's default.
+      d$counterbalance <- list(lists = if (isTRUE(input$lists >= 1)) as.integer(input$lists) else 1L)
     } else if (p == "lexical_decision") {
       d$paradigm <- "lexical_decision"
       d$items <- list(source = "generate")
@@ -733,7 +735,8 @@ server <- function(input, output, session) {
       ex <- if (p == "priming") "priming_pairs_en.csv" else "spr_sentences_en.csv"
       items_abs <- file.path(ITEMS_DIR, ex)
       d$items <- list(source = "table", path = paste0("items/", ex))
-      d$counterbalance <- list(lists = as.integer(input$lists))
+      # A cleared box arrives as NA and falls back to the box's default.
+      d$counterbalance <- list(lists = if (isTRUE(input$lists >= 1)) as.integer(input$lists) else 2L)
     }
     list(design = d, lexicon_abs = lexicon_abs, items_abs = items_abs)
   }

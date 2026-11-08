@@ -5,8 +5,8 @@
 # This is the design class the pair-keyed item model exists for. A priming study's
 # theoretical variable is a property of the PAIR (distributional similarity,
 # associative strength), while its nuisance variables are properties of each MEMBER
-# (frequency, length, neighbourhood). Until now a design could have matching or its
-# own item table but never both, so a relational design had to be assembled by hand.
+# (frequency, length, neighbourhood). A pair-keyed item table with a `continuous`
+# block lets one design both carry its own items and select among them.
 #
 # Three things are worth reading in the block below.
 #

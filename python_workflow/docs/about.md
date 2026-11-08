@@ -1,24 +1,24 @@
 # About
 
 lexsync is a cross-platform toolkit for psycholinguistics. It selects stimuli matched or controlled
-across several lexical dimensions, counterbalances them, and generates the experiment that presents
-them, with EEG triggers bound to stimulus onset on the laboratory targets. It ships as two
+across several lexical dimensions, counterbalances them and generates the experiment that presents
+them, with EEG triggers bound to stimulus onset on the laboratory targets. It is distributed as two
 structurally identical packages, one for R and one for Python, and the two select byte-identical
 stimuli under the deterministic matching methods.
 
 ## What it is for
 
-The tools in this area are capable but fragmented. Stimulus-control packages such as LexOPS, LIBRA
+Existing tools each cover part of the workflow. Stimulus-control packages such as LexOPS, LIBRA
 and LASTU match words but stop before the experiment exists. Experiment builders such as PsychoPy
 and OpenSesame present stimuli but do not match them. The R and Python ecosystems rarely meet, and
-most matching tools target a single language. lexsync spans the whole path, from a many-language
+most matching tools target a single language. lexsync covers the workflow from a many-language
 corpus through parallel multidimensional matching and counterbalancing to flip-locked experiment
-scripts, identically in both languages.
+scripts, identically in R and Python.
 
-Beyond matching, it treats the stimulus set as a research artefact rather than a by-product. Each run
-emits a materials datasheet carrying its provenance, its checksums, the realised control with an
-effect size, a confidence interval and an equivalence test, and a pre-registration skeleton. A
-design is therefore something a reader can rerun.
+lexsync also treats the stimulus set as a research artefact. Each run writes a materials datasheet
+that contains its provenance, its checksums, the realised control with an effect size, a confidence
+interval and an equivalence test, and a pre-registration skeleton. A reader can therefore rerun the
+design.
 
 ## How to cite
 
@@ -95,27 +95,28 @@ function lexsyncCopyBibtex(btn) {
 }
 </script>
 
-A manuscript describing lexsync is in preparation, under the title *lexsync: A cross-platform
-pipeline for multidimensional lexical optimisation and hardware-timed experiment generation*. It is
-unpublished and has no venue as yet. Once it is accepted, `CITATION.cff` will name it as the
-preferred citation, and until then the software reference above is the one to use. It gives the
-Zenodo concept DOI, which archives every release of the repository and so covers the Python
-package, since PyPI assigns no DOI. The R package's reference gives the DOI that CRAN assigned to
-it, <https://doi.org/10.32614/CRAN.package.lexsync>, which resolves
-to that package's page. `CITATION.cff` describes both packages, so it gives the Zenodo DOI and
-lists each package's identifiers.
+The reference above gives the Zenodo concept DOI because PyPI assigns no DOI. The Zenodo archive
+holds every release of the repository, so this DOI covers the Python package. The R package's
+reference gives the DOI that CRAN assigned to it, <https://doi.org/10.32614/CRAN.package.lexsync>,
+which resolves to that package's page. Because `CITATION.cff` describes both packages, it gives the
+Zenodo concept DOI and lists each package's identifiers.
 
-Cite the corpus as well. The software citation covers the tool, not the data it drew your items
-from, and the corpora are third-party work with their own terms. Every one is cited, with its
-licence and retrieval date, in
-[`corpora/ATTRIBUTION.md`](https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md),
-and each run's datasheet records which source file it read and its SHA-256.
+A manuscript describing lexsync is in preparation, under the title *lexsync: A cross-platform
+pipeline for multidimensional lexical optimisation and hardware-timed experiment generation*. It
+has no venue as yet. Once it is accepted, `CITATION.cff` will name it as the preferred citation,
+and until then the software reference above is the one to use.
+
+Cite the corpus as well. The software citation covers the tool, not the data your items came from.
+The corpora are third-party work with terms of their own, and every one is credited, with its
+licence and its retrieval date, in
+[`corpora/ATTRIBUTION.md`](https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md).
+Each run's materials datasheet records the source file the run read and its SHA-256.
 
 ## The developer
 
 lexsync is developed by [Pablo Bernabeu](https://pablobernabeu.github.io), a researcher in the
 Department of Education at the University of Oxford, with hands-on experience of behavioural
-experiments, EEG, corpus analysis, computational modelling and statistics. He develops open,
+experiments, EEG, corpus analysis, computational modelling and statistics. He develops open and
 reproducible research software in R and Python, and is a Fellow of the Software Sustainability
 Institute. His [ORCID record](https://orcid.org/0000-0003-1083-2460) lists his other work.
 
@@ -130,12 +131,11 @@ one version number.
 [The R package](https://pablobernabeu.github.io/lexsync/r/){ .md-button }
 [Source on GitHub](https://github.com/pablobernabeu/lexsync){ .md-button }
 
-Two browser front-ends also live in the repository, a Streamlit app over the Python engine and a
+The repository also holds two browser front-ends, a Streamlit app over the Python engine and a
 Shiny app over the R engine. Each lets a researcher assemble a design without writing code and then
-exports the configuration and the one-line R, Python and command-line code that reproduces the run,
-so what the interface yields is a shareable artefact a reader can retrace. Both call their engine
-directly and need a local install, so neither is published beside this site. [The app](the-app.md)
-walks through the Streamlit one control by control, and
+exports the configuration and the one-line R, Python and command-line code that reproduces the run.
+Both call their engine directly and need a local install, so neither is published beside this site.
+[The app](the-app.md) walks through the Streamlit one control by control, and
 [`apps/README.md`](https://github.com/pablobernabeu/lexsync/blob/main/apps/README.md) covers
 launching either of them.
 
@@ -146,20 +146,21 @@ are not covered by it. See [Licence](licence.md) for the text and the distinctio
 
 ## Versioning and archival
 
-lexsync follows semantic versioning, and each release is tagged on GitHub, with the R and the Python
-package carrying the same version. The R package is on
+lexsync follows semantic versioning, and the R and Python packages share one version number. Each
+release is tagged on GitHub. The R package is on
 [CRAN](https://CRAN.R-project.org/package=lexsync), which keeps the source of every version it
 publishes and gave the package the DOI mentioned above. The Python package is on
-[PyPI](https://pypi.org/project/lexsync/). Zenodo archives every GitHub release, which carries both
-packages, and its concept DOI, <https://doi.org/10.5281/zenodo.22906962>, always resolves to the latest one. The
-reference above cites it and names the version, so it identifies the release as well. The
-[changelog](changelog.md) records what changed in each release.
+[PyPI](https://pypi.org/project/lexsync/). Zenodo archives every GitHub release, and each release
+carries both packages. Zenodo's concept DOI, <https://doi.org/10.5281/zenodo.22906962>, always
+resolves to the latest release. Because the reference above gives the version number as well as
+this DOI, it identifies the release. The [changelog](changelog.md) records what changed in each
+release.
 
 ## Contributing and support
 
 Bug reports and feature requests belong on the
 [issue tracker](https://github.com/pablobernabeu/lexsync/issues). A report that includes the design
-YAML and the run log is one someone can act on, since between them they pin the inputs and every step
-that ran. The [contributing guide](https://github.com/pablobernabeu/lexsync/blob/main/.github/CONTRIBUTING.md) describes the development setup for both
+YAML and the run log is one someone can act on, since between them they record the inputs and every
+step that ran. The [contributing guide](https://github.com/pablobernabeu/lexsync/blob/main/.github/CONTRIBUTING.md) describes the development setup for both
 engines and the parity rule that governs every change, and everyone taking part is asked to honour
 the [Code of Conduct](https://github.com/pablobernabeu/lexsync/blob/main/.github/CODE_OF_CONDUCT.md).

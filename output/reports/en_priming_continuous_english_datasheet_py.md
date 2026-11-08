@@ -12,7 +12,7 @@
 - **Counterbalancing:** latin_square_target, 2 list(s)
 - **Presentation versions:** 2, assigned as version = ((participant - 1) mod 2) + 1 unless a version is given at launch
 - **Items:** 16 rows across 2 conditions (related, unrelated)
-- **Seed:** 2026  |  **Versions:** engine python, lexsync 0.1.1, python 3.13.7, pandas 2.3.2, numpy 2.3.2, scipy 1.17.1, rapidfuzz 3.14.5, pyyaml 6.0.3, os Windows AMD64
+- **Seed:** 2026  |  **Versions:** engine python, lexsync 0.2.0, python 3.13.7, pandas 2.3.2, numpy 2.3.2, scipy 1.17.1, rapidfuzz 3.14.5, pyyaml 6.0.3, os Windows AMD64
 
 ## Counterbalanced lists
 
@@ -46,7 +46,7 @@
 
 ## Methods paragraph
 
-8 English prime-target pairs were selected to span target.frequency (a span of 1.45 and an SD of 0.47, 0.93 times that of an even spread over the span), for analysis by regression or a mixed model rather than a between-condition contrast (Kuperman, 2015; Liben-Nowell et al., 2019). The controls were banded within windows of the mean ± 1.5 SD of an initial selection spread over the ranks of target.frequency (target.length 2.42 to 5.08 and pair.overlap -0.16 to 0.46), and their realised SDs were 0.89 and 0.57 of the pool's. The largest predictor-control correlation was |r| = 0.292. Materials were counterbalanced into 2 list(s) (a Latin-square rotation) and generated for PsychoPy, OpenSesame and jsPsych. Each participant was presented one of the 2 lists, assigned in rotation by participant number. Responses were collected from target onset until 2800 ms after it, and a response ended the trial. The selection is deterministic and reproducible (lexsync 0.1.1), and the seed (2026) fixes the trial order.
+8 English prime-target pairs were selected to span target.frequency (a span of 1.45 and an SD of 0.47, 0.93 times that of an even spread over the span), for analysis by regression or a mixed model rather than a between-condition contrast (Kuperman, 2015; Liben-Nowell et al., 2019). The controls were banded within windows of the mean ± 1.5 SD of an initial selection spread over the ranks of target.frequency (target.length 2.42 to 5.08 and pair.overlap -0.16 to 0.46), and their realised SDs were 0.89 and 0.57 of the pool's. The largest predictor-control correlation was |r| = 0.292. Materials were counterbalanced into 2 list(s) (a Latin-square rotation) and generated for PsychoPy, OpenSesame and jsPsych. Each participant was presented one of the 2 lists, assigned in rotation by participant number. Responses were collected from target onset until 2800 ms after it, and a response ended the trial. The selection is deterministic and reproducible (lexsync 0.2.0), and the seed (2026) fixes the trial order.
 
 ## Pre-registration template
 
@@ -66,7 +66,7 @@
 - Paradigm: priming
 
 ### Materials (from the lexsync datasheet)
-8 English prime-target pairs were selected to span target.frequency (a span of 1.45 and an SD of 0.47, 0.93 times that of an even spread over the span), for analysis by regression or a mixed model rather than a between-condition contrast (Kuperman, 2015; Liben-Nowell et al., 2019). The controls were banded within windows of the mean ± 1.5 SD of an initial selection spread over the ranks of target.frequency (target.length 2.42 to 5.08 and pair.overlap -0.16 to 0.46), and their realised SDs were 0.89 and 0.57 of the pool's. The largest predictor-control correlation was |r| = 0.292. Materials were counterbalanced into 2 list(s) (a Latin-square rotation) and generated for PsychoPy, OpenSesame and jsPsych. Each participant was presented one of the 2 lists, assigned in rotation by participant number. Responses were collected from target onset until 2800 ms after it, and a response ended the trial. The selection is deterministic and reproducible (lexsync 0.1.1), and the seed (2026) fixes the trial order.
+8 English prime-target pairs were selected to span target.frequency (a span of 1.45 and an SD of 0.47, 0.93 times that of an even spread over the span), for analysis by regression or a mixed model rather than a between-condition contrast (Kuperman, 2015; Liben-Nowell et al., 2019). The controls were banded within windows of the mean ± 1.5 SD of an initial selection spread over the ranks of target.frequency (target.length 2.42 to 5.08 and pair.overlap -0.16 to 0.46), and their realised SDs were 0.89 and 0.57 of the pool's. The largest predictor-control correlation was |r| = 0.292. Materials were counterbalanced into 2 list(s) (a Latin-square rotation) and generated for PsychoPy, OpenSesame and jsPsych. Each participant was presented one of the 2 lists, assigned in rotation by participant number. Responses were collected from target onset until 2800 ms after it, and a response ended the trial. The selection is deterministic and reproducible (lexsync 0.2.0), and the seed (2026) fixes the trial order.
 
 ### Sampling plan
 - Sample size and justification:

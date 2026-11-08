@@ -51,4 +51,4 @@ __all__ = [
     "build_datasheet", "methods_paragraph", "write_datasheet",
     "run_pipeline", "run_all", "validate_design", "design_stem",
 ]
-__version__ = "0.1.1"
+__version__ = "0.2.0"

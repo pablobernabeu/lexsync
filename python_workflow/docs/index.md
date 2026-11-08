@@ -4,40 +4,42 @@ Lexical optimisation and hardware-timed experiment generation.
 { .mrd-tagline }
 
 lexsync builds psycholinguistic stimulus sets and the experiments that present
-them. Give it a word-frequency corpus in any of dozens of languages and a short
-design file, and it selects items matched in parallel across several lexical
+them. Given a word-frequency corpus in any of dozens of languages and a short
+design file, it selects items matched in parallel across several lexical
 dimensions, counterbalances them across conditions and lists, and writes the
 experiment that runs them on PsychoPy, OpenSesame or in the browser through
-jsPsych, with EEG triggers bound to the flip on which the stimulus appears. A
-trial is described declaratively, so factorial word studies, lexical decision with
-generated pseudowords, priming, self-paced reading and cued categorisation all come
-out of the same engine and the same configuration file, as do the practice and
-filler blocks that run but are not analysed.
+jsPsych. The two laboratory targets carry EEG triggers bound to the buffer flip on
+which the stimulus appears. A trial is described declaratively, as a sequence of
+events. Factorial word contrasts, lexical decision with generated pseudowords,
+priming, self-paced reading and cued categorisation therefore all come from the
+same engine and the same configuration file, as do the practice and filler blocks
+that run but are not analysed.
 
 This is the feature-parity twin of [the R package](https://pablobernabeu.github.io/lexsync/r/) of
-the same name, which offers the same workflow in R. The two are documented separately but built
-from one repository and released under one version.
+the same name. The two are documented separately but built from one repository and released under
+one version.
 
 [Get started](getting-started.md){ .md-button .md-button--primary }
 [API reference](api.md){ .md-button }
 
 ## The two engines produce the same experiment
 
-The R and Python engines produce byte-identical output: the same stimuli, and the
-same generated experiment down to the trial order. Nothing in the package draws a
-random number, so neither the platform's locale nor the last bit of a
-floating-point sum can change what comes out. A laboratory can run the R package
-and a collaborator the Python one, and the materials will agree rather than merely
-resemble each other. Continuous integration checks this on 22 worked designs
-across English, Spanish and Mandarin Chinese.
+Under the deterministic matching methods, which include the default, the R and
+Python engines produce byte-identical output: the same stimuli, and the same
+generated experiment down to the trial order. Nothing in the package draws a random
+number. Neither the platform's locale nor the last bit of a floating-point sum can
+change what comes out. A laboratory can run the R package and a collaborator the
+Python one, and the materials are identical. Continuous integration checks this on
+22 worked designs across English, Spanish and Mandarin Chinese.
 
-Two matching methods are a documented exception: `mahalanobis` and `optimal`
-rely on a covariance-matrix inverse and an assignment solver whose last bits
-differ between the two linear-algebra backends, so there the engines select
-equivalent sets, with byte identity no longer guaranteed. Each run's materials
-datasheet records which case applies.
+The `mahalanobis` and `optimal` matching methods are a documented exception. The
+last bits of the inverse of the pool's correlation matrix can differ between the
+two linear-algebra backends, and the two assignment solvers can choose differently
+among assignments of equal cost, so the engines select equivalent sets without a
+guarantee of byte identity. Each run's materials datasheet records which case
+applies.
 [Reproducibility and parity](reproducibility-and-parity.md) sets out what the
-guarantee promises, how it is enforced and where it stops.
+guarantee promises, how it is enforced and where it does not apply.
 
 ## Install
 
@@ -47,23 +49,23 @@ pip install lexsync
 
 The `corpora` extra adds the wordfreq connector, which derives a lexicon for a language that is not
 bundled. The `experiment` extra adds PsychoPy and pyserial, and it is needed only to run a generated
-experiment on hardware. Generating one needs neither of them, only the core dependencies. An extra
-goes in brackets after the package name:
+experiment on hardware. Generating one needs only the core dependencies. An extra goes in brackets
+after the package name:
 
 ```bash
 pip install "lexsync[corpora]"
 pip install "lexsync[corpora,experiment]"
 ```
 
-The development version comes straight from the repository, where the Python package sits in the
+The development version comes from the repository, where the Python package sits in the
 `python_workflow/` subdirectory:
 
 ```bash
 pip install "git+https://github.com/pablobernabeu/lexsync.git#subdirectory=python_workflow"
 ```
 
-See [Getting started](getting-started.md) for what each extra carries, including the interpreters
-PsychoPy supports, and for the clone-based install that the 22 worked designs expect.
+See [Getting started](getting-started.md) for what each extra installs, including the interpreters
+PsychoPy supports, and for the clone-based install that the 22 worked designs need.
 
 ## Sixty seconds
 
@@ -107,12 +109,11 @@ report = lexsync.match_report(
 print(report["comparisons"].to_string(index=False))
 ```
 
-The report is the point of the exercise, because it measures what the matching
-achieved. Frequency, the manipulation,
+The report measures what the matching achieved. Frequency, the manipulation,
 separates the conditions by nearly five standard deviations. Each control dimension
 passes a two one-sided tests procedure against a bound of *d* = 0.5, so it is
 shown to be equivalent rather than merely failing to differ significantly.
-[Matching and designs](matching-and-designs.md) reads the report column by
+[Matching and designs](matching-and-designs.md) explains the report column by
 column.
 
 Adding the experiment is two more calls. `counterbalance` assigns lists and a seeded trial order,
@@ -134,21 +135,21 @@ print(sorted(os.path.basename(p) for p in paths["files"]))
 ['sixty_seconds_english.html', 'sixty_seconds_english.osexp', 'sixty_seconds_english_opensesame.csv', 'sixty_seconds_english_opensesame_text.csv', 'sixty_seconds_english_psychopy.csv', 'sixty_seconds_english_psychopy.py']
 ```
 
-The jsPsych file is self-contained apart from the library itself, so opening it in
+The jsPsych file is self-contained apart from the jsPsych library, so opening it in
 a browser runs the experiment. Every worked design in the repository is published
 that way, and the Demo link in the header opens the generated lexical-decision
 task. All 22 are listed at
 [the demos index](https://pablobernabeu.github.io/lexsync/demos/), including cued
 categorisation, a lexical decision carrying practice and filler blocks, relational
-priming over pairs, and a Mandarin Chinese contrast on a logographic script. A design
+priming over pairs and a Mandarin Chinese contrast on a logographic script. A design
 with several counterbalancing versions has a link for each.
 
 ## Where to go next
 
 [Getting started](getting-started.md) covers installation, the command-line
-interface and the anatomy of a design file, which is where most of the work is
-done. From there the first three guides follow the arc of a study, and the fourth
-covers the same ground without any code.
+interface and the structure of a design file, which is where most of the work is
+done. From there, the first three guides follow the stages of a study, and the
+fourth covers the same stages without any code.
 
 - [Matching and designs](matching-and-designs.md): the pool, whether drawn from a
   lexicon or supplied as a list of your own, the four matching methods, the
@@ -159,7 +160,7 @@ covers the same ground without any code.
   three presentation targets, including where the EEG trigger is written and why
   that placement matters.
 - [Reproducibility and parity](reproducibility-and-parity.md): what the
-  byte-identical guarantee promises, how it is enforced, and the materials
+  byte-identical guarantee promises, how it is enforced and the materials
   datasheet that carries a set's provenance.
 - [The app](the-app.md): the Streamlit front-end in the repository, which
   assembles a design through a browser tab, runs this same pipeline and exports the

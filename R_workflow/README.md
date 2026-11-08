@@ -15,16 +15,16 @@ dimensions, counterbalances them across conditions and lists, and writes the
 experiment that runs them on 'PsychoPy', 'OpenSesame' or in the browser through
 'jsPsych'. The two laboratory targets carry electroencephalography triggers
 bound to the buffer flip on which the stimulus appears. A trial is described
-declaratively, as a sequence of events, so factorial word contrasts, lexical
+declaratively, as a sequence of events. Factorial word contrasts, lexical
 decision with generated pseudowords, priming, self-paced reading and cued
-categorisation all come out of the same engine and the same configuration file,
-as do the practice and filler blocks that run but are not analysed.
+categorisation therefore all come from the same engine and the same
+configuration file, as do the practice and filler blocks that run but are not
+analysed.
 
 This is the feature-parity twin of [the Python
-package](https://pablobernabeu.github.io/lexsync/python/) of the same name, which
-offers the same workflow in Python. The two engines select byte-identical
-stimuli under the deterministic matching methods, and are built from one
-repository and released under one version.
+package](https://pablobernabeu.github.io/lexsync/python/) of the same name. The
+two are built from one repository and released under one version, and their
+engines select byte-identical stimuli under the deterministic matching methods.
 
 ## Installation
 
@@ -79,7 +79,7 @@ stim <- match_stimuli(pool, design, schema)
 match_report(stim, c("length", "frequency", "n_density", "old20"), schema)
 ```
 
-Showing equivalence needs enough items: at the default bound and alpha no
+Showing equivalence needs enough items. At the default bound and alpha, no
 dimension that varies can pass with fewer than 23 items per condition.
 
 The [Get started](https://pablobernabeu.github.io/lexsync/r/articles/lexsync.html)
@@ -97,22 +97,21 @@ Two browser front-ends in the repository's `apps/` directory let a researcher
 assemble a design without writing code, run the pipeline and read the matched
 stimuli, the realised-control report and the materials datasheet. A Shiny app
 wraps this package and a Streamlit app wraps the Python twin. Each exports the
-design configuration and the code that reproduces the run, so the interface
-yields shareable artefacts rather than results you cannot retrace. Both call their
+design configuration and the code that reproduces the run. Both call their
 engine directly and so need a local install. [The
 app](https://pablobernabeu.github.io/lexsync/r/articles/the-app.html) walks
 through the Shiny one control by control, and
 [`apps/README.md`](https://github.com/pablobernabeu/lexsync/blob/main/apps/README.md)
 covers launching either of them.
 
-Every worked design in the repository also ships as a browser experiment, and
-these are published beside the documentation. The [lexical-decision
-demonstration](https://pablobernabeu.github.io/lexsync/demos/en_lexdec_english.html)
-is a single HTML file, self-contained apart from the jsPsych library it loads from
-a CDN, written by the same pipeline that emits the PsychoPy and OpenSesame
-scripts. All 22 are listed at [the demos
+Every worked design in the repository is also published beside the
+documentation as a browser experiment. All 22 are listed at [the demos
 index](https://pablobernabeu.github.io/lexsync/demos/), and a design with several
-counterbalancing versions has a link for each.
+counterbalancing versions has a link for each. The [lexical-decision
+demonstration](https://pablobernabeu.github.io/lexsync/demos/en_lexdec_english.html)
+is a single HTML file written by the same pipeline as the 'PsychoPy' and
+'OpenSesame' scripts. It is self-contained apart from the 'jsPsych' library,
+which it loads from a CDN.
 
 ## Citation
 
@@ -126,12 +125,12 @@ The 0.1.0 release on CRAN was built before the DOI
 existed, so the reference it prints gives the repository's address and no DOI.
 Version 0.1.1 and later print the DOI.
 
-The repository also ships a
+The repository also holds a
 [`CITATION.cff`](https://github.com/pablobernabeu/lexsync/blob/main/CITATION.cff),
-which drives GitHub's 'Cite this repository' button. It describes both packages,
-so it gives the Zenodo concept DOI, which archives every GitHub release of both,
-and lists each package's identifiers, the DOI above among them. A manuscript
-describing lexsync is in preparation.
+which GitHub uses for its 'Cite this repository' button. It describes both
+packages, so it gives the concept DOI of the Zenodo archive that holds every
+GitHub release of both. It also lists each package's identifiers, the DOI above
+among them. A manuscript describing lexsync is in preparation.
 
 Cite the corpus as well as the software. The corpora are third-party work with
 their own terms, and each is credited, with its licence and retrieval date, in
@@ -139,14 +138,13 @@ their own terms, and each is credited, with its licence and retrieval date, in
 
 ## Licence
 
-MIT. The bundled corpus derivatives are not covered by it: they are released
-under CC BY-SA 4.0, as recorded in
+MIT. The bundled corpus derivatives are released under CC BY-SA 4.0 instead,
+as recorded in
 [`LICENSE-DATA`](https://github.com/pablobernabeu/lexsync/blob/main/LICENSE-DATA).
 
 ## Contributing
 
 Issues and pull requests are welcome, on the [issue
 tracker](https://github.com/pablobernabeu/lexsync/issues) of the repository that
-holds both twins. A report that includes the design YAML and the run log is one
-someone can act on, since between them they pin the inputs and every step that
-ran.
+holds both twins. A report that includes the design YAML and the run log can be
+acted on, because together they record the inputs and every step that ran.

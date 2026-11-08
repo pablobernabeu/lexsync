@@ -10,6 +10,8 @@ no function signature changes.
 
 ## [Unreleased]
 
+## [0.2.0] - Unreleased
+
 ### Upgrading from 0.1.1
 
 #### Changed results
@@ -335,6 +337,12 @@ no function signature changes.
   place pauses, where they paused before and after every filler. A design whose
   only blocks are practice, filler and main trials pauses once, where the
   practice trials end.
+- The OpenSesame experiment pauses after the practice trials until the space
+  bar is pressed, as the PsychoPy and jsPsych experiments do, where it ran on
+  without a pause. Escape at the pause stops the session.
+- The jsPsych pause after the practice trials reads 'End of the practice
+  trials' and 'Press the space bar to begin.', as the PsychoPy pause does,
+  where it read 'End of practice' and asked for the space bar to continue.
 - The Methods paragraph describes the realised control by its largest matched
   difference and then the equivalence tests, where it judged the control on the
   tests alone, and names large uncontrolled differences.
@@ -356,6 +364,9 @@ no function signature changes.
   default applied when the design gives no count, where it was null.
 - The datasheet's artefact list and the run log include the loop and text
   tables.
+- The schema and the PsychoPy and jsPsych templates carry corrected comments,
+  so every datasheet made with the bundled schema records a new schema digest,
+  and every generated PsychoPy script and jsPsych page differs in its comments.
 - The datasheet's realised-control entries give each dimension's role as
   manipulated, controlled or uncontrolled, where every unmatched dimension was
   'manipulated/free', and the Markdown table adds each row's pair and raw
@@ -540,6 +551,12 @@ no function signature changes.
   `cmd.exe` and Windows PowerShell.
 - The Streamlit app's exported `Rscript` command passes the `outdir` that
   `run_pipeline` requires.
+- The Shiny app reads an emptied 'Resampled disjoint sets' box as 0, where
+  pressing Run ended the session, and an emptied 'Counterbalancing lists' box as
+  the box's default, where the run stopped with an unexplained error.
+- The Streamlit app's item-table uploader for self-paced reading names the
+  required `question` column and marks `critical_region` as optional, where it
+  named `critical_region` and left out `question`.
 - The R package installs the licence notice for its CC BY-SA lexica as
   `COPYRIGHTS`, so binary installations carry it.
 
@@ -578,6 +595,14 @@ no function signature changes.
 - The schema's comments and the Python experiments guide say that the trigger
   settings, and the presentation settings other than `font`, apply to every
   design run with the schema, where they said that a design could override them.
+- The README and the schema's comments describe `joint` matching as greedy
+  pairing, closest pairs first, where they called it 'optimal-greedy'. The
+  schema places the tolerance window around the anchor condition's selected
+  items and says that `joint` and `optimal` apply none.
+- The schema's comments say that `presentation.font` sets the font of the
+  PsychoPy experiment and the jsPsych page and that OpenSesame reads
+  `presentation.opensesame_font`, where they said that `font` served PsychoPy
+  and OpenSesame.
 - The getting-started guides say that the `timing` keys reach every fixation,
   every text event whose `trigger` is `condition` and every blank, but not an
   event with a per-trial `duration` block, where they named only the fixation,
@@ -600,6 +625,16 @@ no function signature changes.
 - The app guides and both apps' tolerance panels give the frequency k of
   González Alonso et al. (2025) as 0.1111111111111111, since 0.111 gives a
   window narrower than a ninth of a standard deviation.
+- The README, the R Get started vignette and the Python home page and
+  reproducibility guide say that, under `mahalanobis`, the last bits of the
+  inverse of the pool's correlation matrix can differ between the engines and
+  that, under `optimal`, the two assignment solvers can choose differently
+  among assignments of equal cost, where they said that a covariance inverse
+  and an assignment solver differed in their last bits.
+- The getting-started guides say that a `pool` design needs `match_on` and
+  either `conditions` or a `continuous` block, as a `corpus` design does, where
+  the R vignette left out the `continuous` block and the Python guide named
+  none of these keys.
 
 ## [0.1.1] - 2026-09-25
 
@@ -1322,6 +1357,7 @@ it replaced.
   jsPsych library loads from a CDN, so the machine running the file needs an
   internet connection.
 
-[Unreleased]: https://github.com/pablobernabeu/lexsync/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/pablobernabeu/lexsync/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/pablobernabeu/lexsync/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/pablobernabeu/lexsync/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/pablobernabeu/lexsync/releases/tag/v0.1.0
