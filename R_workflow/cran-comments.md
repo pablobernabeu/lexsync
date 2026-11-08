@@ -26,8 +26,8 @@ There are three new exports, `validate_design()`, `normalise_lexicon()` and
 
 ## Test environments
 
-GitHub Actions, run 41530503240 on 2026-11-02, on pull request #22 at commit
-62543ef. That commit differs from this submission only in cran-comments.md,
+GitHub Actions, run 42428820643 on 2026-11-08, on pull request #22 at commit
+f916d63. That commit differs from this submission only in cran-comments.md,
 which .Rbuildignore keeps out of the tarball. Each leg built the tarball with
 `--no-manual` and ran `R CMD check --as-cran --no-manual` on it beside
 stand-in 'templates' and 'config' packages and a README, since CRAN's Linux
@@ -36,15 +36,15 @@ the CRAN incoming checks, which r-lib/actions turns off. Each leg ended with
 'Status: OK':
 
 * ubuntu-latest (Ubuntu 24.04.5 LTS), R 4.6.2
-* ubuntu-latest (Ubuntu 24.04.5 LTS), R-devel (2026-10-31 r90820)
+* ubuntu-latest (Ubuntu 24.04.5 LTS), R-devel (2026-11-06 r90845)
 * ubuntu-latest (Ubuntu 24.04.5 LTS), R 4.5.3
 * windows-latest (Windows Server 2022 x64 (build 26100), x86_64-w64-mingw32),
   R 4.6.2
 * windows-latest (Windows Server 2022 x64 (build 26100), x86_64-w64-mingw32),
-  R-devel (2026-11-01 r90825 ucrt)
-* macos-latest (macOS Tahoe 26.6.2, aarch64-apple-darwin23), R 4.6.2
+  R-devel (2026-11-06 r90845 ucrt)
+* macos-latest (macOS Tahoe 26.7.2, aarch64-apple-darwin23), R 4.6.2
 
-The test suite passed in every leg, with no failures or warnings. Eighty-four
+The test suite passed in every leg, with no failures or warnings. Eighty-six
 tests skip everywhere, because they read files of the repository that R CMD
 check cannot reach, such as the Shiny app, the demonstration designs and the
 committed outputs. One more skips on Linux, where the runner cannot switch to
