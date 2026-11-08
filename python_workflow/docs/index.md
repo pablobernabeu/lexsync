@@ -24,19 +24,20 @@ one version.
 
 ## The two engines produce the same experiment
 
-The R and Python engines produce byte-identical output: the same stimuli, and the
-same generated experiment down to the trial order. Nothing in the package draws a
-random number, so neither the platform's locale nor the last bit of a
-floating-point sum can change what comes out. A laboratory can run the R package
-and a collaborator the Python one, and the materials are identical. Continuous
-integration checks this on 22 worked designs across English, Spanish and Mandarin
-Chinese.
+Under the deterministic matching methods, which include the default, the R and
+Python engines produce byte-identical output: the same stimuli, and the same
+generated experiment down to the trial order. Nothing in the package draws a random
+number. Neither the platform's locale nor the last bit of a floating-point sum can
+change what comes out. A laboratory can run the R package and a collaborator the
+Python one, and the materials are identical. Continuous integration checks this on
+22 worked designs across English, Spanish and Mandarin Chinese.
 
-The `mahalanobis` and `optimal` matching methods are a documented exception. They
-rely on a covariance-matrix inverse and an assignment solver whose last bits
-differ between the two linear-algebra backends, so the engines select equivalent
-sets without a guarantee of byte identity. Each run's materials datasheet records
-which case applies.
+The `mahalanobis` and `optimal` matching methods are a documented exception. The
+last bits of the inverse of the pool's correlation matrix can differ between the
+two linear-algebra backends, and the two assignment solvers can choose differently
+among assignments of equal cost, so the engines select equivalent sets without a
+guarantee of byte identity. Each run's materials datasheet records which case
+applies.
 [Reproducibility and parity](reproducibility-and-parity.md) sets out what the
 guarantee promises, how it is enforced and where it does not apply.
 

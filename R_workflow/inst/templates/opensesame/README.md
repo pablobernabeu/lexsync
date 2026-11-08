@@ -1,9 +1,10 @@
 # OpenSesame templates
 
-lexsync generates a plain-text OpenSesame experiment (`.osexp`) for each design.
-The generator, the function `export_opensesame` in the `scripting` module, builds
-the file programmatically so that its tab-sensitive structure is always valid. It
-is modelled on a working experiment from González Alonso et al. (2025).
+lexsync generates a plain-text OpenSesame experiment (`.osexp`) for each
+presentation version and trial order of a design, as described below. The
+generator, the function `export_opensesame` in the `scripting` module, builds
+each file programmatically so that its tab-sensitive structure is always valid.
+It is modelled on a working experiment from González Alonso et al. (2025).
 
 The two Python snippets here follow the trigger code that the generated `.osexp`
 builds inline, with the differences noted below. They are provided separately so

@@ -159,11 +159,11 @@ A stimulus that should stay on screen for the whole window, as the
 response a `timeout_ms` of 0.
 
 By default, a response after any other event is collected from the offset, so one
-that follows a blank keeps the window it had, timed from the window's own onset.
-`from: onset` after such an event is rejected, since a window from the onset opens
-with a text event and none comes right before it. The datasheet records each
-response window as `presentation$response_windows`, and its Methods text says when
-responses were collected.
+that follows a blank opens its window after the blank and times the reaction from
+the window's own onset. `from: onset` after such an event is rejected, since a
+window from the onset opens with a text event and none comes right before it. The
+datasheet records each response window as `presentation$response_windows`, and its
+Methods text says when responses were collected.
 
 ### Instructions and the response mapping
 
@@ -185,11 +185,13 @@ control character other than the line break is rejected.
 When a design gives no `instructions`, lexsync writes English instructions that
 depend on the task. For a lexical decision, they name the keys for a word and a
 pseudoword. For a categorisation, they say that the first key means yes and the
-second no, and they say the same of a comprehension question's keys. In any other
-design, the factorial one here among them, they say only which keys to press, and
-the run log asks for instructions that say what each key means. The run log also
-notes a design in another language that gives no text of its own. The targets' own
-short messages, such as the prompt to press the space bar, are in English.
+second no, and for a comprehension question, they say the same of its keys. For
+self-paced reading, they name the key that shows the next region. In any other
+design with a response event, the factorial one here among them, they say only which
+keys to press, and the run log asks for instructions that say what each key means.
+The run log also notes a design in another language that gives no text of its own.
+The targets' own short messages, such as the prompt to press the space bar, are in
+English.
 
 A lexical decision maps word to its response event's first key and pseudoword to
 its second. The paradigm's events therefore map word to the left arrow key, and
@@ -240,11 +242,12 @@ required_fields(list(paradigm = "priming"))
 required_fields(list(paradigm = "self_paced_reading"))
 ```
 
-Presented strings are always carried as data. Each target writes a trial table and
-reads the strings from it at run time, and they are never interpolated into generated
-code. An apostrophe in a stimulus therefore cannot break a generated script.
-`load_items()` also rejects control characters and over-long values in the fields
-a paradigm presents.
+Presented strings are always carried as data. PsychoPy and OpenSesame read them at
+run time from CSV tables written beside the experiment, and the jsPsych page carries
+its trial table as escaped JSON, so nothing in a string can become code. An
+apostrophe in a stimulus therefore cannot break a generated script. `load_items()`
+also rejects control characters and over-long values in the fields a paradigm
+presents.
 
 ### Triggers on an event
 
@@ -533,10 +536,10 @@ the manipulated variable and so is not matched on, but it is manipulated *within
 a list, since every list holds both conditions. Equating the lists on its total
 therefore costs the manipulation nothing and removes a difference between the
 participant groups who receive different lists. Naming only the matched dimensions
-leaves frequency dealt arbitrarily. In `design_en_balanced_lists.yaml`, the
-optimiser then improves the three named dimensions and makes frequency worse than
-the arbitrary deal had it. Balance what you want equated across lists, which is
-usually everything.
+leaves frequency dealt arbitrarily. If `design_en_balanced_lists.yaml` named only
+those three, the optimiser would improve them and make frequency worse than the
+arbitrary deal had it. Balance what you want equated across lists, which is usually
+everything.
 
 The optimiser's search is a steepest descent to a local optimum, not a global
 search. It guarantees that no single exchange would improve matters further, unless
@@ -785,14 +788,14 @@ the word's onset, shows the word for its duration and runs on for the timeout. T
 first key ends it, and its `rt` is timed from the word's onset.
 
 The jsPsych library, its keyboard-response plugin and its stylesheet load from a
-CDN, so the first run needs an internet connection. Each of the three files is
-loaded with Subresource Integrity, its SHA-384 and `crossorigin="anonymous"`, so
-the browser will not load a copy that differs from the published release. A page
-that collects participants' responses therefore runs only the code it was written
-with. To run offline, point the tags at downloaded copies and serve the folder over
-http, or remove each tag's `integrity` and `crossorigin` attributes. A browser
-blocks the CORS request that a page opened from a `file://` address would make for
-a local copy, so it could not check the hash.
+CDN, so the machine that runs the page needs an internet connection. Each of the
+three files is loaded with Subresource Integrity, its SHA-384 and
+`crossorigin="anonymous"`, so the browser will not load a copy that differs from the
+published release. A page that collects participants' responses therefore runs only
+the code it was written with. To run offline, point the tags at downloaded copies
+and either serve the folder over http or remove each tag's `integrity` and
+`crossorigin` attributes. A browser blocks the CORS request that a page opened from
+a `file://` address would make for a local copy, so it could not check the hash.
 
 Two details of the generated files keep the three targets consistent. The
 OpenSesame loop is written as `sequential`, because its default is random, which
@@ -852,7 +855,8 @@ version's trials, and the experimenter opens the participant's. At start-up, eac
 experiment compares the subject number OpenSesame asks for with its own version.
 When that participant would normally run another one, it says so and waits for a
 key. Space goes on with this file, and escape stops the session. The check runs
-once, before the loop, so the experiment needs no run-if condition.
+once, before the loop, so the experiment needs no run-if condition, a syntax that
+differs between OpenSesame 3.3 and 4.x.
 
 The datasheet records the number of versions as `counterbalancing$versions` and
 the rule as `counterbalancing$assignment`, and its Methods text says that each
@@ -892,7 +896,7 @@ The generated PsychoPy script never sends a trigger from the drawing sequence.
 It registers the write with the window, to be executed on the next flip:
 
 ```
-win.callOnFlip(port.setData, trigger)
+win.callOnFlip(port.setData, code)
 ```
 
 `callOnFlip` defers the call until the flip that puts the stimulus on screen, so

@@ -91,7 +91,7 @@ without formatting it explicitly, since R renders `42.0` as `42` and Python as
 share, as the corpora do.
 
 The other conventions are British spelling in prose, durations declared in
-milliseconds, and tests that run offline against the bundled example lexicons.
+milliseconds and tests that run offline against the bundled example lexicons.
 `devtools::check("R_workflow")` and continuous integration run a spelling test on
 the R package's help pages, vignettes, README and NEWS. CRAN and a plain
 `R CMD check` skip it. The test fails on any word found neither in the British

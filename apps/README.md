@@ -73,6 +73,7 @@ The app opens at <http://localhost:8502>.
   tables it loads.
 - The `standardised_euclidean` and `joint` methods select byte-identical stimuli in
   both engines. `mahalanobis` and `optimal` use a covariance inverse or an assignment
-  solver, so the two engines agree closely but not byte-for-byte. The
-  reproducible-code panel and the datasheet tab report which case applies, as
-  recorded in the run's datasheet. The `optimal` method needs the R `clue` package.
+  solver, so the two engines agree closely but are not guaranteed to agree
+  byte-for-byte. The reproducible-code panel and the datasheet tab report which case
+  applies, as recorded in the run's datasheet. The `optimal` method needs the R
+  `clue` package.

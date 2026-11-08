@@ -59,9 +59,9 @@ distance last, as R's `order(na.last = TRUE)` does.
 CSV input is read by one rule in both engines. Each engine reads every cell as text and converts it
 itself, because pandas and readr guess types by different heuristics. Header names and cells are
 trimmed of spaces, tabs, carriage returns and line feeds. After trimming, an empty cell and `NA`,
-quoted or not, are missing. Every other word is a value, `null`, `nan`, `none` and `true`
-included, which pandas would otherwise have dropped as missing. A column is numeric only when every
-value is a plain decimal number, with an optional sign, point and exponent and no thousands
+quoted or not, are missing. Every other word is a value, `null`, `nan` and `None` included, which
+pandas would otherwise have read as missing (`None` from pandas 2.0). A column is numeric only when
+every value is a plain decimal number, with an optional sign, point and exponent and no thousands
 separators. It is logical only when every value is TRUE or FALSE in upper, lower or title case, so
 `T` and `F` stay text. Any other column is text, a column of dates included. The columns a paradigm
 presents, and an item table's `item` and `condition`, are always text. A header that names a column
@@ -198,12 +198,14 @@ such as `en-lexdec` and `en_lexdec`.
 
 ## Where it stops
 
-`mahalanobis` and `optimal` are the two exceptions. The first inverts a covariance matrix and the
-second solves a linear assignment problem. Those are the two places where the R and Python
-linear-algebra backends differ in their last bits, and the assignment solver's tie handling differs
-outright. The engines agree closely. `mahalanobis` usually still agrees exactly, while `optimal`
-tends to select a different, equally optimal set when several assignments share the minimum.
-Neither is guaranteed byte-for-byte, and each run's datasheet records which case applies.
+`mahalanobis` and `optimal` are the two exceptions. The first inverts the pool's correlation matrix,
+and the last bits of that inverse depend on the linear-algebra backend, which need not be the same
+in R and Python. The second solves a linear assignment problem over distances rounded to nine
+decimal places, so both engines give their solvers the same costs, but the two solvers can choose
+differently among assignments of equal cost. The engines agree closely. `mahalanobis` usually still
+agrees exactly, while `optimal` tends to select a different, equally optimal set when several
+assignments share the minimum. Neither is guaranteed byte-for-byte, and each run's datasheet records
+which case applies.
 
 The guarantee is a hard constraint on which algorithms can be adopted. For this reason, neither
 method is the default, although both are defensible improvements on it. According to
@@ -272,14 +274,15 @@ dimensions each engine computes at run time are written to the stimuli CSV and m
 
 Three details in continuous integration keep the parity gate from passing vacuously.
 `LEXSYNC_REQUIRE_PARITY=1` turns a skip into a failure, so a job meant to run both engines cannot
-pass by quietly skipping. `git diff --exit-code -- output/stimuli/` runs before the parity suite,
-because otherwise the gate would only ever compare Python against a reference that Python itself
-had just rewritten. A final step runs each engine over every design into a directory of its own and
-compares the two trees with `diff -r`. Both engines write the generated experiments to the same
-paths, so a diff against the committed tree would only ever compare the last engine to run against
-itself. Only the two per-engine provenance records, the datasheet and the run log, are excluded
-from that comparison. This step fails the build when any generated artefact differs between the
-engines.
+pass by quietly skipping. The R references are regenerated and then checked with
+`git diff --exit-code -- output/stimuli/` before the parity suite runs, so an R-engine regression
+fails the build. Without that step, the gate would only ever compare Python against the committed
+snapshot, which an R-engine regression leaves unchanged. A final step runs each engine over every
+design into a directory of its own and compares the two trees with `diff -r`. Both engines write
+the generated experiments to the same paths, so a diff against the committed tree would only ever
+compare the last engine to run against itself. Only the two per-engine provenance records, the
+datasheet and the run log, are excluded from that comparison. This step fails the build when any
+generated artefact differs between the engines.
 
 The worked designs have clean inputs: every cell is in NFC, none is padded and the norms cover every
 word. The gate therefore never runs the code that handles padded fields, missing values or unusual
@@ -292,13 +295,13 @@ the error the design must raise.
 
 `tests/test_twin_edge.py` and the R suite's `test-twin-edge.R` each check their own engine against
 every case. CI also runs `tools/compare_engines.py --config parity/twin_edge`, which compares the
-two engines on the same cases. Run without arguments, `python tools/compare_engines.py` repeats the
-whole-tree comparison on your own machine, Windows included. It finds Rscript on the `PATH` or
-through `LEXSYNC_RSCRIPT`. To add a case, create its folder with `design.yaml` and `expect.yaml`
-and write `expected/` with `python tools/twin_edge.py --update <case>`. Read the files it writes to
-confirm they are right, then run the R suite, which checks that the R engine writes the same bytes.
-A fix for an input defect adds its case in the same commit, so that no commit leaves the gate
-failing.
+two engines on every artefacts case. Run without arguments, `python tools/compare_engines.py`
+repeats the whole-tree comparison on your own machine, Windows included. It finds Rscript on the
+`PATH` or through `LEXSYNC_RSCRIPT`. To add a case, create its folder with `design.yaml` and
+`expect.yaml` and write `expected/` with `python tools/twin_edge.py --update <case>`. Read the files
+it writes to confirm they are right, then run the R suite, which checks that the R engine writes the
+same bytes. A fix for an input defect adds its case in the same commit, so that no commit leaves the
+gate failing.
 
 The rest of the suite covers parts that would otherwise need hardware to test: a mock-PsychoPy
 harness that runs the generated script and asserts the onset trigger is flip-locked, a structural
@@ -311,6 +314,8 @@ Windows, and the Python tests run on Python 3.10 to 3.14.
 Every run writes a datasheet, in JSON for machines and Markdown for people. It is the record that
 accompanies a set, and it exists because the reproducibility literature keeps calling for one
 ([Bochynska et al., 2023](references.md#bochynska-2023); [Roettger, 2019](references.md#roettger-2019)).
+A datasheet is the FAIR-style record of one selection
+([Wilkinson et al., 2016](references.md#wilkinson-2016)).
 
 ```python
 # illustrative: needs a clone's config directory and writes the run into the working tree
@@ -338,7 +343,7 @@ committed datasheet for the English frequency contrast:
 - **Seed:** 2026  |  **Versions:** engine python, lexsync 0.2.0, python 3.13.7, pandas 2.3.2, numpy 2.3.2, scipy 1.17.1, …
 ```
 
-`Cross-engine determinism` is the caveat from the previous section, recorded once per run. A design
+`Cross-engine determinism` is the caveat from 'Where it stops', recorded once per run. A design
 that uses `mahalanobis` or `optimal` says so here, in the record that accompanies the materials.
 
 The 'Selection transparency' section records how many items satisfied each condition's window

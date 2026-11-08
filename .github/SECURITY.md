@@ -40,12 +40,12 @@ experiment, whose loop table holds numbers only, reads them with Python's `csv`
 module from the text table beside it. The jsPsych page holds them as JSON with
 `<`, `>` and `&` escaped. The design's instructions are carried as data too, as
 JSON in the PsychoPy script and the jsPsych page and as an escaped string literal
-in the OpenSesame script. A design's name, language label and font, the
-parallel-port address and serial device name, and the column names on jitter and
-feedback events reach a code position as written. This metadata is validated
-before it is written into a generated file. A value that could end a string
-literal or open a tag raises an error that names the field. Both engines apply the
-same rule, and `test_injection.py` and `test-injection.R` check it.
+in the OpenSesame script. A design's name, language label, font and response
+keys, the parallel-port address and serial device name, and the column names on
+jitter and feedback events reach a code position as written. This metadata is
+validated before it is written into a generated file. A value that could end a
+string literal or open a tag raises an error that names the field. Both engines
+apply the same rule, and `test_injection.py` and `test-injection.R` check it.
 
 Even so, read a design before you run it, as you would a script. If you find a
 value that reaches a generated file without being checked, report it to the

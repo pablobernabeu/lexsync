@@ -27,8 +27,8 @@ lexicon = lexsync.load_lexicon(
 
 `load_lexicon` reads a derived corpus and checks its columns against the schema, which requires
 `word` and `freq_zipf` and nothing else. It drops rows with a missing word or frequency, lower-cases
-and strips the rest, and removes duplicates. Then it sorts the table by the UTF-8 bytes of the word
-and numbers the rows from one.
+and strips the rest, puts them in NFC and removes duplicates. Then it sorts the table by the UTF-8
+bytes of the word and numbers the rows from one.
 
 Everything after loading follows the order of that sort, including the `id` column, which is the
 last tie-break in the matcher. Unlike a platform's collation, byte order does not vary, so the
@@ -138,18 +138,18 @@ lexsync 0.1 under either rule, and a design whose pool holds candidates that lac
 which are now left out.
 
 The datasheet credits the lexicon a corpus or generated design read. A lexicon lexsync distributes
-is credited to wordfreq, and `en_v2.csv` and the English example slice drawn from it to wordfreq
-screened against SUBTLEX-US, with the rule. A corpus that `fetch_corpus` put in the cache is
-credited by the registry's citation, and any other file by its name and the first twelve digits of
-its checksum.
+is credited to wordfreq. `en_v2.csv` and the English example slice drawn from it are credited to
+wordfreq screened against SUBTLEX-US, with the screening rule. A corpus that `fetch_corpus` put in
+the cache is credited by the registry's citation, and any other file by its name and the first
+twelve digits of its checksum.
 
 ## Supplied item pools
 
-Narrowing a whole lexicon is the right way round when any word of the language will do. It is the
-wrong way round when the candidate set is itself a research decision: a list from a previous study,
-from a norming session, or one restricted to a semantic category that no lexical filter can express.
-Loaded as a lexicon, such a list would need an invented `freq_zipf` column, and, given as
-`items.source: table`, it would skip matching. `items.source: pool` takes the list as it is.
+Narrowing a whole lexicon suits a study in which any word of the language will do, but not one in
+which the candidate set is itself a research decision: a list from a previous study, from a norming
+session, or one restricted to a semantic category that no lexical filter can express. Loaded as a
+lexicon, such a list would need an invented `freq_zipf` column. Given as `items.source: table`, it
+would skip matching. `items.source: pool` takes the list as it is.
 
 ```yaml
 items:
@@ -160,8 +160,8 @@ items:
 
 The list needs only a `word` column. Length and the syllable estimate are derived from the form, and
 `items.lexicon` supplies the rest, frequency above all, by lookup. A word the lexicon does not have
-is an error, because a word missing a value would be left out of the candidates and the pool would
-then be smaller than it appears to be.
+raises an error, because a word missing a value would be left out of the candidates and the pool
+would then be smaller than it appears to be.
 
 `n_density` and `old20` are properties of a word in its *language*, so they are computed against
 the lexicon's words. Computed against the 131 words of a supplied list, they would invalidate the
@@ -241,7 +241,8 @@ Six dimensions are declared in the schema. Three come from `load_lexicon`: `leng
 `n_syllables`, derived from the form, and `frequency`, read from the column the schema names.
 `n_density` and `old20` are carried by every corpus lexsync distributes, so they too are usually
 present at load time, and `add_neighbourhood` computes them only for a lexicon that lacks them.
-`bigram_freq` is the one dimension that always needs a separate call.
+No corpus lexsync distributes carries `bigram_freq`, so a script computes it with a separate call to
+`add_bigram_frequency`.
 
 | Dimension | Unit | Where it comes from |
 | --- | --- | --- |
@@ -386,9 +387,10 @@ the word. The salt is fixed, so the rule does not depend on the seed, and the di
 of the alphabet. On `en.csv`, the low-frequency share fell to 12.5% and the dense share to 17.5%,
 against 13% and 12% among the candidates, while Cohen's *d* on every matched dimension of every
 matched demonstration design was unchanged. Under either rule, `standardised_euclidean` and `joint`
-give the same selection in the two engines, and `bytes` reproduces the selections of lexsync 0.1.
-The even spreads that pick the anchor's items and a continuous design's items keep the byte order
-under both rules.
+give the same selection in the two engines, and `bytes` reproduces the selections of lexsync 0.1
+except under `optimal` or where the pool holds candidates that lack a matched value. The even
+spreads that pick the anchor's items and a continuous design's items keep the byte order under both
+rules.
 
 ```yaml
 matching:
@@ -407,8 +409,9 @@ reproducing a published study's stated windows. `shortfall` governs what happens
 than `n_per_condition` can be selected, and it defaults to `error` because a smaller set changes the
 design that was planned. A design that accepts fewer sets says so with `shortfall: allow`. The
 datasheet then records the items each condition holds, and the Methods paragraph states them beside
-the request. Either key may be overridden under the design's own `matching:` block, as
-`tolerance_k` may be.
+the request. Under the anchored methods, the policy applies to the anchor, and a later condition
+with fewer candidates than the anchor has items raises an error under either setting. Either key may
+be overridden under the design's own `matching:` block, as `tolerance_k` may be.
 
 `config/design_es_gender_repro.yaml` reproduces a published study's stated criteria. It sets
 `tolerance_k` to `0.111...` for `frequency`, the window of the mean plus or minus SD/9 that
@@ -455,11 +458,11 @@ replaced by solving again over the unused words, and the selection is then no lo
 have the least summed distance.
 
 `mahalanobis` and `optimal` are not guaranteed to select byte-identical stimuli in the two engines.
-A matrix inverse and an assignment solver are the two places where the R and Python linear-algebra
-backends can disagree in their last bits, and the two engines' assignment solvers also handle ties
-differently. The engines agree closely, and `mahalanobis` usually agrees exactly, whereas `optimal`
-tends to select an equally optimal but different set. Each run's datasheet records which case
-applies.
+The matrix inverse that `mahalanobis` uses can differ in its last bits between the R and Python
+linear-algebra backends. Where several assignments have the same summed distance, the assignment
+solvers that `optimal` uses in the two engines can return different ones. The engines agree
+closely, and `mahalanobis` usually agrees exactly, whereas `optimal` tends to select an equally
+optimal but different set. Each run's datasheet records which case applies.
 
 Comparing the methods on the same pool shows how little separates them when the pool is generous.
 
@@ -485,11 +488,12 @@ for method in ["standardised_euclidean", "joint", "mahalanobis", "optimal"]:
 ```
 
 `joint` and `optimal` reach exact equality on all three controls here, because a pool of this size
-contains, for most anchor words, a low-frequency counterpart with the same length, neighbourhood
-count and OLD20. `standardised_euclidean` and `mahalanobis` leave a standardised difference in the
-second decimal place. None of these differences would matter to a result. `standardised_euclidean`
-remains the default because it is byte-identical across engines and handles more than two
-conditions. lexsync adopts an algorithm as the default only if it keeps the byte-identity guarantee.
+contains, for most high-frequency words, a low-frequency counterpart with the same length,
+neighbourhood count and OLD20. `standardised_euclidean` and `mahalanobis` leave a standardised
+difference in the second decimal place. None of these differences would matter to a result.
+`standardised_euclidean` remains the default because it is byte-identical across engines and
+handles more than two conditions. lexsync adopts an algorithm as the default only if it keeps the
+byte-identity guarantee.
 
 ## Reading the realised control
 
@@ -571,15 +575,15 @@ describing the stimuli, which the descriptives do, and entering potential confou
 as covariates.
 
 The datasheet's Methods paragraph follows that advice. It describes the realised control first: the
-largest difference on a matched dimension, in that dimension's unit, with *d* and its interval. The
-interval is labelled by the schema's alpha, 90% at .05 and 99% at .005. Raw differences in different
-units cannot be ranked against each other, so the largest is the one with the largest |*d*|. The two
-one-sided tests come second, as a check, with the number of matched comparisons they supported. When
-every condition holds fewer items than the bound needs, the paragraph says that no dimension that
-varies can pass, however well matched. It then names, largest first, up to five comparisons of a
-dimension the design did not control whose |*d*| exceeds the bound, such as the syllable difference
-in `en_ndensity`, or says that none does. The suggested model enters the matched dimensions as
-centred covariates.
+largest difference on a matched dimension, in that dimension's unit, with *d* and its interval. Raw
+differences in different units cannot be ranked against each other, so the largest is the one with
+the largest |*d*|. The interval is labelled by the schema's alpha, 90% at .05 and 99% at .005. The
+two one-sided tests come second, as a check, with the number of matched comparisons they supported.
+When every condition holds fewer items than the bound needs, the paragraph adds that no dimension
+that varies can pass, however well matched. Last, it names, largest first, up to five comparisons of
+a dimension the design did not control whose |*d*| exceeds the bound, such as the syllable
+difference in `en_ndensity`, or says that none does. The suggested model enters the matched
+dimensions as centred covariates.
 
 Two further functions describe a selection. `describe_stimuli` gives the descriptives alone, grouped
 by any column you like, `condition` included. `balance_check` reports columns whose value counts
@@ -632,19 +636,19 @@ any lexicon. The windows trim the controls' tails without holding the controls c
 but its comparisons describe a predictor. The predictor's realised span replaces the effect size,
 and each control's Pearson correlation with the predictor replaces the equivalence verdict. These
 correlations are the figures to report. Here, at *k* = 1.5, the correlations of the three controls
-lie between −0.248 and 0.069. A control that stays correlated belongs in the model as a covariate.
+lie between -0.248 and 0.069. A control that stays correlated belongs in the model as a covariate.
 
 Tightening *k* does not reliably lower the correlations. In `en_freqcontinuous`, *k* = 1.0 gives
 *r* = 0.070 between frequency and `n_density`, against 0.301 at *k* = 1.5, but on the unscreened
-`en.csv` it gave 0.213 against −0.049. At *k* = 0.25, only 30 items fall within the windows, fewer
+`en.csv` it gave 0.213 against -0.049. At *k* = 0.25, only 30 items fall within the windows, fewer
 than the 80 the design needs, so the selector relaxes them to the whole pool.
 
 Each row also gives the dimension's realised SD as `sd`. For the predictor, `sd_ratio` sets it
 against the SD of as many values spaced evenly over the same range. That SD is
 `(max - min) * sqrt(n * (n + 1) / 12) / (n - 1)`, which approaches `(max - min) / sqrt(12)` as *n*
 grows, so an even spread has a ratio of 1 at any size. A ratio below 1 means the items bunch
-together more than an even spread would: `en_freqcontinuous` has 0.59, an SD of 0.53 against 0.90.
-A ratio above 1 means they gather towards the ends of the range.
+together more than an even spread would, and a ratio above 1 means they gather towards the ends of
+the range. `en_freqcontinuous` has a ratio of 0.59, an SD of 0.53 against 0.90.
 
 For a control, `sd_ratio` sets the realised SD against the SD of the pool the selector drew from,
 and `window_low` and `window_high` give the window that the first pass set. In `en_freqcontinuous`,
@@ -708,7 +712,7 @@ print(
 ```
 
 The presented string is `target`, the conditions are `word` and `pseudoword`, and `set` pairs each
-word with its non-word twin. `reference_words` should be the full lexicon: it supplies the bigram
+word with its non-word twin. `reference_words` should be the whole lexicon: it supplies the bigram
 statistics and the list of real forms a pseudoword must avoid, and it defaults to the pool when
 omitted, which is rarely what you want.
 
@@ -728,8 +732,8 @@ length, and a word with no legal swap falls back to letter substitution, so ever
 pseudoword. It is a deterministic orthographic approximation of Wuggy
 ([Keuleers & Brysbaert, 2010](references.md#keuleers-2010)), and it differs from Wuggy in more than
 the phonological model. Wuggy matches the template's transition frequencies, matches letter length
-by default and has orthographic modules for several languages, and by default it keeps two thirds of
-the segments where lexsync replaces up to two thirds. In return, lexsync gains cross-engine
+by default and has orthographic modules for several languages. By default, it also keeps two thirds
+of the segments, where lexsync replaces up to two thirds. In return, lexsync gains cross-engine
 reproducibility.
 
 ```python exec="1" source="material-block" session="matching"
@@ -739,7 +743,7 @@ subsyllabic = lexsync.build_lexdec_stimuli(
 
 In both methods, the scoring picks the most bigram-typical candidate and does not match the base word,
 so the pseudowords come out more bigram-typical than their words. The difference in mean bigram
-probability is about *d* = −1.0, words minus pseudowords, in `en_lexdec` and `en_lexdec_wuggy` alike.
+probability is about *d* = -1.0, words minus pseudowords, in `en_lexdec` and `en_lexdec_wuggy` alike.
 
 Both generators process base words in byte order, so the set of already-used pseudowords evolves
 identically in the two engines and both select byte-identical stimuli. Their alphabet is the set of
@@ -759,9 +763,9 @@ form made by swapping one character for another is of unknown validity as a pseu
 The stimuli give each pseudoword its `base` word and its `edit_distance` from it, the Levenshtein
 distance, and give a word its own form and 0. A generated design's report compares the words with
 their pseudowords on length, which they share by construction, and on bigram frequency, N and
-OLD20, which the generator does not hold. The report marks length as controlled and the other
-three as uncontrolled, and it computes those three against the lexicon on a copy of the stimuli.
-In `en_lexdec`, the bigram-frequency difference between the words and their pseudowords is
+OLD20, which the generator does not hold constant. The report marks length as controlled and the
+other three as uncontrolled, and it computes those three against the lexicon on a copy of the
+stimuli. In `en_lexdec`, the bigram-frequency difference between the words and their pseudowords is
 *d* = -0.97 (90% CI [-1.29, -0.65]).
 
 A pseudoword is a non-word only relative to the reference words, so a real word too rare for the
@@ -782,12 +786,12 @@ items:
 ```
 
 Each file must be UTF-8 text, and no form in a one-form-per-line file may hold a tab, a comma or a
-semicolon. Such a file is a table whose rows would each be kept whole as a form that matches nothing,
-so it is rejected with an error. The datasheet records each list with its checksum and the number of
-forms it holds, and the Methods paragraph names it. In the repository,
-`python corpora/fetch_corpora.py --known-forms en es` writes wordfreq's fuller lists to
-`corpora/derived/` (289,023 English and 334,625 Spanish forms at Zipf 1.0 or above). They are not
-distributed with the package.
+semicolon. A file in which any form holds one of these characters is a table. Each of its rows would
+be kept whole as a form that matches nothing, so the file is rejected with an error. The datasheet
+records each list with its checksum and the number of forms it holds, and the Methods paragraph
+names it. In the repository, `python corpora/fetch_corpora.py --known-forms en es` writes wordfreq's
+fuller lists to `corpora/derived/` (289,023 English and 334,625 Spanish forms at Zipf 1.0 or above).
+They are not included in the package.
 
 A long list makes ill-formed pseudowords more likely. The generators' only check on form is that
 each letter pair occurs somewhere in the lexicon, so with fewer candidates left, the most
@@ -796,8 +800,8 @@ ill-formed, among them fdes, gngs and ntena. Each lacks a vowel or opens or clos
 that opens or closes no screened English word of three letters or more with a vowel. Without the
 list, the same designs give 5 such pseudowords. Read the generated forms before a study runs.
 
-`generate_pseudowords` and `make_pseudoword` are available directly if you want the pseudowords
-without building lexical-decision stimuli.
+`generate_pseudowords` and `make_pseudoword` can be called directly if you want the forms without a
+lexical-decision stimulus set.
 
 ```python exec="1" source="material-block" result="text" session="matching"
 pairs = lexsync.generate_pseudowords(

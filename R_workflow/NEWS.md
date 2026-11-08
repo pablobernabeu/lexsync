@@ -478,6 +478,9 @@
   `cmd.exe` and Windows PowerShell.
 * The Streamlit app's exported `Rscript` command passes the `outdir` that
   `run_pipeline()` requires.
+* The Shiny app reads an emptied 'Resampled disjoint sets' box as 0, where
+  pressing Run ended the session, and an emptied 'Counterbalancing lists' box as
+  the box's default, where the run stopped with an unexplained error.
 * lexsync installs the licence notice for its CC BY-SA lexica as `COPYRIGHTS`,
   so binary installations carry it.
 
@@ -543,6 +546,14 @@
 * The app vignette and both apps' tolerance panels give the frequency k of
   González Alonso et al. (2025) as 0.1111111111111111, since 0.111 gives a
   window narrower than a ninth of a standard deviation.
+* The Get started vignette says that, under `mahalanobis`, the last bits of the
+  inverse of the pool's correlation matrix can differ between the engines and
+  that, under `optimal`, the two assignment solvers can choose differently among
+  assignments of equal cost, where it said that a covariance inverse and an
+  assignment solver differed in their last bits.
+* The Get started vignette says that a `pool` design needs `match_on` and either
+  `conditions` or a `continuous` block, as a `corpus` design does, where it left
+  out the `continuous` block.
 
 # lexsync 0.1.1
 

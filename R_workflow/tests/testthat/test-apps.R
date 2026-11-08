@@ -680,3 +680,30 @@ test_that("the app opens on the screened lexicon", {
     expect_null(build_design()$design$pool_filters$nonstandard)
   })
 })
+
+test_that("a cleared 'Resampled disjoint sets' box leaves resampling off", {
+  e <- app_env()
+  # Shiny sends a cleared numeric box as NA, and build_design() stopped on NA >= 2
+  # with 'missing value where TRUE/FALSE needed', outside any tryCatch(), so pressing
+  # Run ended the session. The run below stops at staging, at the missing lexicon.
+  e$CORPORA <- stats::setNames("nowhere/en_v2.csv", "en_v2")
+  shiny::testServer(e$server, {
+    factorial_inputs(session, nsets = NA)
+    expect_null(build_design()$design$resample)
+    session$setInputs(run = 1)
+    expect_identical(bundle()$error, "Cannot copy 'nowhere/en_v2.csv' into the bundle.")
+    factorial_inputs(session, nsets = 3)
+    expect_identical(build_design()$design$resample, list(n_sets = 3L))
+  })
+})
+
+test_that("a cleared 'Counterbalancing lists' box falls back to the box's default", {
+  e <- app_env()
+  e$CORPORA <- stats::setNames("nowhere/en_v2.csv", "en_v2")
+  shiny::testServer(e$server, {
+    factorial_inputs(session, lists = NA)
+    expect_identical(build_design()$design$counterbalance, list(lists = 1L))
+    factorial_inputs(session, lists = 3)
+    expect_identical(build_design()$design$counterbalance, list(lists = 3L))
+  })
+})

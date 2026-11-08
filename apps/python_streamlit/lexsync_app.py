@@ -879,7 +879,8 @@ elif paradigm in ("priming", "self_paced_reading"):
         design["items"] = {"source": "table", "path": f"items/{default_item}"}
         st.dataframe(pd.read_csv(example).head(8), width="stretch")
     else:
-        req = "item, condition, prime, target" if paradigm == "priming" else "item, condition, sentence (regions split by |), critical_region"
+        req = ("item, condition, prime, target" if paradigm == "priming" else
+               "item, condition, sentence (regions split by |), question, critical_region (optional)")
         up = st.file_uploader(f"Item table CSV ({req})", type=["csv"])
         if up is not None:
             items_abs = received_upload(up)

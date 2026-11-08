@@ -108,8 +108,9 @@ Two recipes are available, and the paradigm determines which applies unless the 
 `counterbalance.recipe`. A design's own `events` do not change the choice. Trial order comes from
 a seeded, keyed-hash shuffle. The shuffle is a pure function of the design and uses no random-number
 generator, so the same seed gives the same order in both engines. `balance_lists` is the optional
-search for a list assignment whose lists are equated on the item dimensions. It replaces the default
-deal of sets to lists by set rank.
+search for a list assignment whose lists are equated on the item dimensions. It replaces the
+factorial recipe's default deal of sets to lists by set rank, and it raises an error for a
+Latin-square design, where every item already appears in every list.
 
 ::: lexsync.counterbalance
 
@@ -141,10 +142,10 @@ that a mean-based statistic would miss.
 ## Experiment generation
 
 All three targets are rendered from the same event list. Generation imports neither PsychoPy nor
-pyserial, so it needs no laboratory hardware. The `experiment` extra is for running the result.
-`assign_triggers` is reached as `lexsync.scripting.assign_triggers`, and `export_experiments` calls
-it for you. Each participant is presented one presentation version of a design, and
-`lexsync.scripting.presentation_versions` lists them.
+pyserial and only writes text, so it needs no laboratory hardware. The `experiment` extra is for
+running the result. `assign_triggers` is reached as `lexsync.scripting.assign_triggers`, and
+`export_experiments` calls it for you. Each participant is presented one presentation version of a
+design, and `lexsync.scripting.presentation_versions` lists them.
 
 ::: lexsync.export_experiments
 

@@ -373,6 +373,27 @@ def test_both_apps_word_the_item_table_notice_alike():
         assert notice in re.sub(r'"\s*,?\s*"', "", src), path
 
 
+# The columns the Streamlit item-table uploader names for each paradigm. The Shiny
+# app offers only the bundled example tables, so it names none.
+ITEM_TABLE_COLUMNS = {
+    "priming": "item, condition, prime, target",
+    "self_paced_reading": ("item, condition, sentence (regions split by |), question, "
+                           "critical_region (optional)"),
+}
+
+
+def test_the_item_table_uploader_names_the_required_columns():
+    """The self-paced reading uploader named critical_region, which a table may leave
+    out, and left out question, which the engines require."""
+    from lexsync.paradigms import required_fields
+
+    joined = _joined_sources()[APP_PATH]
+    for paradigm, columns in ITEM_TABLE_COLUMNS.items():
+        assert columns in joined, paradigm
+        required = [c.split(" (")[0] for c in columns.split(", ") if not c.endswith("(optional)")]
+        assert required == ["item", "condition"] + required_fields({"paradigm": paradigm}), paradigm
+
+
 def _joined_sources():
     """Both apps' sources with string literals split across lines joined, so an
     assertion sees the sentence a reader of the app sees."""

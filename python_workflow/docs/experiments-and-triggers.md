@@ -8,9 +8,9 @@ fillers, and where each target writes the trigger and why.
 
 ## A trial is data
 
-A trial is a list of events, and an event is a dictionary. No paradigm is written as code in the
-backends that render the three targets, so a new paradigm is a change of configuration and needs no
-new renderer.
+A trial is a list of events, and an event is a dictionary. No paradigm's event sequence is written
+as code in the backends that render the three targets, so a new paradigm is a change of
+configuration and needs no new renderer.
 
 ```python exec="1" source="material-block" result="text" session="experiments"
 import lexsync
@@ -88,11 +88,11 @@ that opens once the stimulus has gone:
 A stimulus that should stay on screen for the whole window, as the `masked_priming` target does,
 takes the window's length as its duration, and its response a `timeout_ms` of 0.
 
-A response after any other event gets the same window by default, so one that follows a blank keeps
-the window it had, timed from the window's own onset. `from: onset` after such an event is an error,
-since a window from the onset opens with a text event and none comes right before it. The datasheet
-records each response window as `presentation.response_windows`, and its Methods text says when
-responses were collected.
+By default, a response after any other event is collected from the offset, so one that follows a
+blank opens its window after the blank and times the reaction from the window's own onset.
+`from: onset` after such an event is rejected, since a window from the onset opens with a text event
+and none comes right before it. The datasheet records each response window as
+`presentation.response_windows`, and its Methods text says when responses were collected.
 
 ## Instructions and the response mapping
 
@@ -109,13 +109,14 @@ instructions: |
 
 The text is carried as data: JSON in the PsychoPy script and the jsPsych page, and an escaped
 literal in the OpenSesame script, so nothing in it can become code. A control character other than
-the line break is an error. When a design gives no `instructions`, lexsync writes English
-instructions that depend on the task. A lexical decision names the keys for a word and a pseudoword.
-A categorisation says that its first key means yes and its second no, and a comprehension question
-says the same of its keys. For any other design, the instructions say only which keys to press, and
-the run log asks for instructions that say what each key means. The run log also notes a design in
-another language that gives no text of its own. The targets' own short messages, such as the prompt
-to press the space bar, are in English.
+the line break is rejected. When a design gives no `instructions`, lexsync writes English
+instructions that depend on the task. For a lexical decision, they name the keys for a word and a
+pseudoword. For a categorisation, they say that the first key means yes and the second no, and for a
+comprehension question, they say the same of its keys. For self-paced reading, they name the key
+that shows the next region. In any other design with a response event, they say only which keys to
+press, and the run log asks for instructions that say what each key means. The run log also notes a
+design in another language that gives no text of its own. The targets' own short messages, such as
+the prompt to press the space bar, are in English.
 
 A lexical decision maps word to its response event's first key and pseudoword to its second. The
 paradigm's events therefore map word to the left arrow key, and
@@ -130,8 +131,8 @@ rotate_mapping_by_list: true
 
 Rotated, list *k* moves each key *k* - 1 places along the response event's keys, which with two keys
 swaps them in every even-numbered list, and each version's instructions name its own keys. A
-mapping is an error if it names a key the response event does not allow or a condition no trial
-has. It is also an error if it gives no key for a condition whose trials name no answer.
+mapping is rejected if it names a key the response event does not allow or a condition no trial
+has. It is also rejected if it gives no key for a condition whose trials name no answer.
 
 `export_experiments` gives each trial its correct key in `answer` as it assigns the trigger codes,
 so every trial of a lexical decision can be scored. A practice or filler table keeps its own
@@ -174,7 +175,7 @@ worked example carrying both. Its prime lasts `prime_ms` and a 33 ms mask follow
 so its stimulus-onset asynchrony is `prime_ms` plus 33 ms.
 
 Every value read from a column must be a finite number of milliseconds, not negative. A blank or
-negative cell is an error, with a message naming the column and the trial's set and condition. Left
+negative cell is rejected with a message naming the column and the trial's set and condition. Left
 alone, it would give an experiment that stops at the blank or shows the stimulus for no time at all.
 Fractional milliseconds, such as the 33.333333 that an item table built on 60 Hz frames carries, are
 rounded once with the rounder both engines share and written back. The stimuli, the loop tables and
@@ -244,11 +245,11 @@ a target and a sentence with a marked critical region are editorial work. Those 
 
 `load_items` reads and checks it. The table must carry an `item` identifier, a `condition` label and
 the paradigm's presented fields. Field values are checked for control characters and over-long
-strings, because the values are written into a loop table and an experiment script, and a stray
-newline in a stimulus would corrupt both. Commas and quotation marks pass through, because they go
-into a quoted CSV that the experiment reads at run time rather than into generated code. Items are
-then mapped to an integer `set` id in byte order, so that a table-sourced design counterbalances the
-same way as a corpus-sourced one, and the same way in both engines.
+strings, so that a crafted item cannot corrupt the tables the experiments read or the jsPsych page.
+Commas and quotation marks pass through, because they go into a quoted CSV that the experiment reads
+at run time, or into the escaped JSON of the jsPsych page, rather than into generated code. Items
+are then mapped to an integer `set` id in byte order, so that a table-sourced design counterbalances
+the same way as a corpus-sourced one, and the same way in both engines.
 
 In a self-paced-reading design, a sentence carries its own structure. Regions are delimited with `|`
 in the `sentence` field, and a `critical_region` column gives the number, counted from 1, of the
@@ -319,7 +320,7 @@ where it confirms the mapping the instructions state. In the task itself, feedba
 contaminate reaction times. The restriction has to be expressed on the event because the event list
 is global to the design.
 
-A feedback event scores a keypress, so one with no preceding `response` or `question` is an error
+A feedback event scores a keypress, so one with no preceding `response` or `question` is rejected
 when the experiment is generated. Left to run time, the error would appear as a different failure in
 each of the three targets. `config/design_en_lexdec_blocks.yaml` combines practice, fillers and
 feedback.
@@ -365,8 +366,9 @@ stimuli = lexsync.match_stimuli(pool, design, schema)
 ```
 
 `factorial` shows every matched item. With more than one list, matched sets are dealt to lists round
-robin by set index, so a list gets a balanced slice of the design rather than a contiguous block of
-it. More lists than item sets are an error, since the surplus lists would be empty.
+robin by set index, so each list takes every *n*th set, where *n* is the number of lists, rather
+than a contiguous block of them. A design with more lists than item sets is rejected, since the
+surplus lists would be empty.
 
 `latin_square_target` is for the paired and sentence paradigms, where the same target must not
 appear twice in one list. Each item contributes exactly one trial to each list, in a condition
@@ -379,7 +381,7 @@ same condition. Two lists for three conditions show each item in only two of the
 two conditions leave each list with five trials in one condition and four in the other. The run log
 and the datasheet report such a rotation, and the Methods text calls it incomplete. With
 `counterbalance.incomplete: error` in the design, or in the schema for every design, such a rotation
-is an error. The datasheet's `counterbalancing` record gives the recipe that ran, the lists the
+is rejected. The datasheet's `counterbalancing` record gives the recipe that ran, the lists the
 stimuli table holds, whether the rotation is complete and the trials each list gives each
 condition.
 
@@ -418,7 +420,7 @@ This is the kind of sequence constraint that pseudorandomisation programs such a
 ([van Casteren & Davis, 2006](references.md#van-casteren-2006)). Without the look-ahead, the repair
 ran out of trials near the end of 931 of 1,000 seeded orders of a list of 40 words and 80
 pseudowords at k = 2, a limit that some order of that list keeps. With it, only a limit that no
-order can meet is an error, and the message gives the counts that rule it out, such as 80
+order can meet is rejected, and the message gives the counts that rule it out, such as 80
 pseudoword trials against 40 others at k = 1. With fillers, the limit applies to the order they are
 interleaved in, and the practice trials keep it on their own.
 
@@ -465,8 +467,8 @@ counterbalance:
 variable and so is not matched on, but it is manipulated *within* a list, since every list holds
 both conditions. Equating the lists on its total therefore costs the manipulation nothing and
 removes a difference between the participant groups who receive different lists. Naming only the
-matched dimensions leaves frequency dealt arbitrarily. In `config/design_en_balanced_lists.yaml`,
-the optimiser then improves the three named dimensions and makes frequency worse than the arbitrary
+matched dimensions leaves frequency dealt arbitrarily. If `config/design_en_balanced_lists.yaml`
+named only those three, the optimiser would improve them and make frequency worse than the arbitrary
 deal had it. Balance what you want equated across lists, which is usually everything.
 
 This is a steepest descent to a local optimum, not a global search. It guarantees that no single
@@ -478,7 +480,7 @@ the two engines on the same assignment and stops list 1 being favoured for being
 
 It is off by default, and the default will not change. Switching it on changes which items a
 participant sees, so it has to be a design decision, and a package upgrade must never make that
-change for a study already running. It is an error on a Latin-square design, where every item
+change for a study already running. It is rejected on a Latin-square design, where every item
 already appears in every list and the lists are balanced on the items by construction.
 `balance_lists` runs the search alone if you want the assignment without applying it.
 `config/design_en_balanced_lists.yaml` is the worked example.
@@ -570,20 +572,20 @@ Item codes stay below 240, since a code is one byte and 254 and 255 mark the ses
 send item codes together with condition codes, or with a code of its own from 40 to 239. Its item
 codes are then drawn from the codes those leave free, skipping 101 upwards and the design's own
 codes. Otherwise, sets 65 and 66 of a 70-set design would take 101 and 102, and an analysis that
-cuts its epochs at the condition codes would also catch two items. In such a design, more item sets
-than free codes are an error, unless the schema sets `triggers.allow_code_overlap: true`, which lets
-the item codes wrap and repeat within the free codes. Any other design takes its item codes from 40
-upwards, in code-point order of the set labels, wrapping at 200 values.
+cuts its epochs at the condition codes would also catch two items. Such a design is rejected when it
+has more item sets than free codes, unless the schema sets `triggers.allow_code_overlap: true`,
+which lets the item codes wrap and repeat within the free codes. Any other design takes its item
+codes from 40 upwards, in code-point order of the set labels, wrapping at 200 values.
 
 A literal code must be a whole number from 1 to 255. Anything else, a misspelt token such as
-`conditon` included, is an error when the experiment is generated, with a message naming the event.
+`conditon` included, is rejected when the experiment is generated, with a message naming the event.
 A literal of 254 or 255, which the PsychoPy and OpenSesame experiments send when the session starts
 and ends, is reported then. One equal to a condition code the design sends is reported too, as is
 one within the range of the item codes it sends.
 
 The schema sets the hardware defaults: `triggers.parallel_address` (`0x0378`, a typical LPT1 base
-address) and `triggers.trigger_hold_ms` (50, above the 10 ms minimum recorders need to register a
-pulse). They describe the machine that runs the experiments, so a design does not set them, and
+address) and `triggers.trigger_hold_ms` (50, above the 10 ms minimum most recorders need to register
+a pulse). They describe the machine that runs the experiments, so a design does not set them, and
 neither do the device settings below. `triggers.reset_after_frames: N`, read only when
 `triggers.trigger_hold_ms` is not set, gives a hold of N + 1 frames at
 `presentation.assumed_refresh_hz`. `triggers.inter_trigger_ms` is accepted but not used, since the
@@ -617,7 +619,7 @@ triggers:
   baudrate: 115200       # the rate the device's manual gives
 ```
 
-A serial backend without `triggers.serial_port` is an error. A code is held and reset on a serial
+A serial backend without `triggers.serial_port` is rejected. A code is held and reset on a serial
 device as on a parallel port, with a 0 written when its hold is up. A serial line delays each code
 by an amount that varies from code to code, and a parallel port does not. A USB-serial adapter
 carries each byte in a USB transfer, scheduled in frames of a millisecond on a full-speed
@@ -679,7 +681,13 @@ flip that ends its hold:
 # illustrative: an excerpt of the generated script, needing a PsychoPy window and port
 def send_code(win, port, code):
     """Write ``code`` to the port on the next flip, the onset it marks, and hold it
-    there for TRIGGER_HOLD_FRAMES flip intervals."""
+    there for TRIGGER_HOLD_FRAMES flip intervals.
+
+    The flips count the hold down (see count_flip), so a code outlives an event
+    shorter than the hold and is reset in the events after it, on the flip that ends
+    the hold. A code still held from an earlier onset ends on this one's flip, with a
+    0 written just before the new code.
+    """
     if PULSE["flips"] > 1:
         win.callOnFlip(PULSE["port"].setData, 0)
     win.callOnFlip(port.setData, code)
@@ -704,7 +712,8 @@ before the hold expires, so that it takes effect on the flip that ends the hold.
 is shorter than the hold, that flip comes in a later event. The pause between blocks waits without
 flipping, so it first waits out the rest of the hold with `core.wait`, as the session markers do.
 `TRIGGER_HOLD_FRAMES` is computed at start-up from `TRIGGER_HOLD_MS` and the measured refresh rate.
-It is the hold rounded to whole flips, and never fewer than the flips that cover 10 ms.
+It is the hold rounded to whole flips, and never fewer than the flips that cover 10 ms. A declared
+hold therefore lasts about the same time on a 60 Hz and a 144 Hz display.
 
 Keys come from PsychoPy's `keyboard` module. A stimulus that collects its response passes its keys,
 and `open_window` queues the reset of the keyboard's clock and the clearing of its queue on the same
@@ -826,7 +835,7 @@ loop column a global of the inline scripts, where `list` and `set` would shadow 
 functions of those names. The presented text, `condition`, `block` and `answer` are in a companion
 file, `<base>_opensesame_text.csv`, which the setup script reads with Python's `csv` module, and
 each script looks up its trial's row by `lexsync_row`. Copy both files with the experiment. A value
-in a numeric column that is not a plain number is an error when the experiment is generated. The
+in a numeric column that is not a plain number is rejected when the experiment is generated. The
 feedback script reads the response without evaluation, so a timeout shows `no_response` in both
 versions. These rules were checked against the sources of OpenSesame 3.3.14 and 4.1.20.
 
@@ -867,13 +876,13 @@ It attaches each item's design fields to every recorded row and ends by saving t
 as a CSV download, so it needs no server.
 
 The jsPsych library, its keyboard-response plugin and its stylesheet load from a content delivery
-network, so the first run needs an internet connection. Each of the three files is loaded with
-Subresource Integrity, its SHA-384 and `crossorigin="anonymous"`, so the browser will not run a
-copy that differs from the published release. A page that collects participants' responses
-therefore runs only the code it was written with. To run offline, point the tags at downloaded
-copies and serve the folder over http, or remove each tag's `integrity` and `crossorigin`
-attributes. A browser blocks the CORS request that a page opened from a `file://` address would make
-for a local copy, so it cannot check the hash.
+network, so the machine that runs the page needs an internet connection. Each of the three files is
+loaded with Subresource Integrity, its SHA-384 and `crossorigin="anonymous"`, so the browser will
+not load a copy that differs from the published release. A page that collects participants'
+responses therefore runs only the code it was written with. To run offline, point the tags at
+downloaded copies and either serve the folder over http or remove each tag's `integrity` and
+`crossorigin` attributes. A browser blocks the CORS request that a page opened from a `file://`
+address would make for a local copy, so it could not check the hash.
 
 A target and its response window are one jsPsych trial, recorded with `lexsync_event` set to
 `target`. It accepts the response keys from the target's onset, shows the target for its duration
@@ -964,7 +973,7 @@ only that version's trials, and the experimenter opens the participant's. At sta
 experiment compares the subject number OpenSesame asks for with its own version. When that
 participant would normally run another one, it says so and waits for a key. Space goes on with this
 file, and escape stops the session. The check runs once, before the loop, so the experiment needs
-no run-if condition.
+no run-if condition, a syntax that differs between OpenSesame 3.3 and 4.x.
 
 The datasheet records the number of versions as `counterbalancing.versions` and the rule as
 `counterbalancing.assignment`, and its Methods text says that each participant was presented one

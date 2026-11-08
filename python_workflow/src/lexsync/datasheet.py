@@ -316,9 +316,10 @@ def _cross_engine(method, source: str, selected: bool = False) -> str:
     """Whether the R and Python engines select byte-identical materials.
 
     The deterministic methods are byte-identical; ``mahalanobis`` and ``optimal``
-    are the exception, because they use a covariance-matrix inverse and an
-    assignment solver whose last bits differ between the two linear-algebra
-    backends (see matching.py).
+    are the exception, because the last bits of the inverse of the pool's
+    correlation matrix depend on the linear-algebra backend, and the two assignment
+    solvers can choose differently among assignments of equal cost (see
+    matching.py).
 
     ``selected`` distinguishes the two things an item table can mean. A plain table
     design does no selection, so there is nothing for the engines to agree on and

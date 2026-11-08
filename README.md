@@ -255,9 +255,10 @@ summed distance for two conditions by solving a padded assignment problem exactl
 
 The R and Python engines select byte-identical stimuli for `standardised_euclidean`
 and `joint`. The `mahalanobis` and `optimal` methods are not guaranteed
-byte-identical across engines, because they use a covariance-matrix inverse and an
-assignment solver whose last bits can differ between the two linear-algebra
-backends. `mahalanobis` usually still agrees exactly, while `optimal` selects an
+byte-identical across engines. The last bits of the inverse of the pool's
+correlation matrix can differ between the two linear-algebra backends, and the two
+assignment solvers can choose differently among assignments of equal cost.
+`mahalanobis` usually still agrees exactly, while `optimal` selects an
 equally-optimal but often different set. Each run's datasheet records which case
 applies.
 
@@ -295,10 +296,10 @@ concreteness, age of acquisition and English Lexicon Project behavioural measure
 are supported today through the `merge_norms` connector, which joins any word-keyed
 norm table so the matcher can equate on it.
 
-Future directions, tracked in `CHANGELOG.md`, are more bundled languages and, should
-a determinism-safe implementation be found, promoting a covariance-aware distance to
-the default. The cross-engine byte-identical guarantee for the deterministic methods
-is a hard constraint on which algorithms can be adopted as defaults.
+Future directions are more bundled languages and, should a determinism-safe
+implementation be found, promoting a covariance-aware distance to the default. The
+cross-engine byte-identical guarantee for the deterministic methods is a hard
+constraint on which algorithms can be adopted as defaults.
 
 ## Citation
 

@@ -60,8 +60,8 @@ head(
 ## The lexical dimensions
 
 A dimension is any numeric column the matcher can equate. `lexsync` distinguishes
-those read straight from the lexicon file from those computed from the
-orthographic form at load time, and the schema records the distinction along with
+those read straight from the lexicon file from those derived from the
+orthographic form, and the schema records the distinction along with
 each dimension's unit. Units matter when reading a report: a raw difference of 1
 means one letter on `length` but a factor of ten in corpus occurrence on
 `frequency`, which is why the comparisons are standardised.
@@ -90,11 +90,11 @@ defined for long words, where substitution neighbours run out (Yarkoni et al.,
 2008). A larger OLD20 means a more isolated word, so it runs in the opposite
 direction to `n_density`.
 
-`n_syllables` is also derived at load time. It counts maximal runs of vowels, an
-orthographic estimate with no pronunciation model behind it. Only `bigram_freq`
-is computed on request, by `add_bigram_frequency()`. It is the mean corpus
-probability of a word's adjacent letter bigrams, a proxy for phonotactic
-probability.
+Like `length`, `n_syllables` is derived at load time. It counts maximal runs of
+vowels, an orthographic estimate with no pronunciation model behind it. No
+lexicon lexsync distributes carries `bigram_freq`, so it is computed on request,
+by `add_bigram_frequency()`. It is the mean corpus probability of a word's
+adjacent letter bigrams, a proxy for phonotactic probability.
 
 ```{r syllables}
 count_syllables(c("cat", "table", "rhythm", "being", "chocolate"))
@@ -160,7 +160,7 @@ merged[merged$word %in% aoa$word, c("word", "frequency", "aoa")]
 The join is case- and whitespace-insensitive on both sides, keeps the lexicon's
 own row and column order, and stops with an error on a norm column whose name
 already exists on the lexicon. A silent rename would leave the dimension the
-design matches on under a name the design does not use.
+design matches on under a name the design does not refer to.
 
 In a design, you do not call this yourself. Name the tables in a `norms:` block
 and the pipeline joins them before the pool is built, so a norm column can be
@@ -279,13 +279,6 @@ own. The datasheet records the list as `materials_source$exclusions`, with its
 checksum, the number of words it lists and the number of candidates it removed,
 and the Methods paragraph reports the removal.
 
-`en.csv` is unchanged byte for byte, so a design written for lexsync 0.1 selects
-what it selected once it sets `matching.tie_break: bytes` (see [Ties between
-equally close candidates](#ties-between-equally-close-candidates) below). The
-exceptions are a design that uses the `optimal` method, whose selections differ
-from those of lexsync 0.1 under either rule, and a design whose pool holds
-candidates that lack a matched value, which are now left out.
-
 The English demonstrations read `en_v2.csv` with the filter above. Their
 `exclude_words` file, `config/exclude_en_demo.txt`, leaves out the taboo words
 and the forms that pass the screen without being standard English words, such
@@ -295,6 +288,13 @@ selected. Spanish and Chinese have no screened lexicon, because no source of
 letter case or known words with a verified licence exists for them. Read a
 selection in either language before a study runs, and leave out what you find
 with `exclude_words`.
+
+`en.csv` is unchanged byte for byte, so a design written for lexsync 0.1 selects
+what it selected once it sets `matching.tie_break: bytes` (see [Ties between
+equally close candidates](#ties-between-equally-close-candidates) below). The
+exceptions are a design that uses the `optimal` method, whose selections differ
+from those of lexsync 0.1 under either rule, and a design whose pool holds
+candidates that lack a matched value, which are now left out.
 
 The datasheet credits the lexicon a corpus or generated design read. A lexicon
 lexsync distributes is credited to wordfreq. `en_v2.csv` and the English example
@@ -333,8 +333,9 @@ gives one. Called directly outside a design, `load_pool()` returns both the pool
 and the reference word list.
 
 The conditions, `match_on`, the report and the datasheet work as they do for a
-pool narrowed from a lexicon, and the datasheet also records the list's
-checksum. `design_en_supplied_pool.yaml` is a worked example.
+pool narrowed from a lexicon. Only the source of the candidates differs, and the
+datasheet records the list's checksum. `design_en_supplied_pool.yaml` is a worked
+example.
 
 ## Relational designs, where the item is a pair
 
@@ -547,11 +548,13 @@ how to compare the methods, not which one is best.
 
 The R and Python engines select byte-identical stimuli under
 `standardised_euclidean` and `joint`. They do not guarantee it under
-`mahalanobis` or `optimal`. Both of these pass the distances through an
-operation whose last bits depend on the platform's linear-algebra
-implementation, a covariance-matrix inverse for `mahalanobis` and an assignment
-solver for `optimal`. Once two candidate distances differ in their final bits,
-the tie-break that would otherwise make the engines agree is never reached.
+`mahalanobis` or `optimal`. `mahalanobis` weights the distances by the inverse
+of the pool's correlation matrix, and the last bits of that inverse depend on
+the platform's linear-algebra implementation. Once two candidate distances
+differ in their final bits, the tie-break that would otherwise make the engines
+agree is never reached. `optimal` passes the distances to an assignment solver,
+and where several assignments have the same summed distance,
+`clue::solve_LSAP()` and SciPy's solver can return different ones.
 `mahalanobis` usually still agrees exactly, and `optimal` often selects an
 equally optimal but different set. Each run's datasheet records which case
 applies, under `selection.cross_engine`. If your project requires cross-engine
@@ -606,9 +609,10 @@ sapply(by_rule, function(s) {
 ```
 
 Under either rule, `standardised_euclidean` and `joint` give the same selection
-in the two engines, and `bytes` reproduces the selections of lexsync 0.1. The even
-spreads that pick the anchor's items and a continuous design's items keep the
-byte order under both rules.
+in the two engines, and `bytes` reproduces the selections of lexsync 0.1 except
+under `optimal` or where the pool holds candidates that lack a matched value. The
+even spreads that pick the anchor's items and a continuous design's items keep
+the byte order under both rules.
 
 ## Tolerance windows
 
@@ -633,8 +637,9 @@ values are merged over the schema's by `modifyList()`. A `null` in the schema is
 ignored, and a `null` in the design removes the schema's value for that
 dimension, so either leaves *k* at 2.
 
-Tolerance windows are derived from the anchor, so they apply to the anchored
-methods, `standardised_euclidean` and `mahalanobis`, and to continuous designs.
+Tolerance windows apply to the anchored methods, `standardised_euclidean` and
+`mahalanobis`, which derive them from the anchor, and to continuous designs,
+which derive them from an even spread over the pool's ranks on the predictor.
 `joint` and `optimal` never build an anchor and never read `tolerance_k`, so
 tightening a window leaves their selection unchanged. Both instead cap each
 subpool to the 1200 candidates nearest the other condition's centroid before
@@ -650,8 +655,9 @@ round(match_report(tight_stim, "old20", schema)$comparisons$cohens_d, 3)
 If a window leaves a condition with fewer candidates than there are anchor items,
 the matcher neither fails nor returns a short set. It relaxes that condition's
 window and carries on. Tightening the window past what the pool can supply
-therefore looks exactly like a window that was never set, and under the default
-policy `verbose = TRUE` is the only thing that tells you which happened.
+therefore looks exactly like a window that was never set. Under the default
+policy, only `verbose = TRUE` and the result's `"audit"` attribute, which the
+pipeline writes to the run log and the datasheet, tell you which happened.
 
 ```{r tolerance-relaxed}
 too_tight <- design
@@ -675,9 +681,11 @@ windows. `shortfall` governs what happens when fewer sets than `n_per_condition`
 can be selected, and it defaults to `error` because a smaller set changes the
 design that was planned. A design that accepts fewer sets says so with
 `shortfall: allow`. The datasheet then records the items each condition holds,
-and the Methods paragraph states them beside the request. Either key may be
-overridden under the design's own `matching:` block, as `tolerance_k` was
-overridden above.
+and the Methods paragraph states them beside the request. Under the anchored
+methods, the policy applies to the anchor, and a later condition with fewer
+candidates than the anchor has items stops the run under either setting. Either
+key may be overridden under the design's own `matching:` block, as `tolerance_k`
+was overridden above.
 
 The repository's `config/design_es_gender_repro.yaml` reproduces the windows of
 a published study. It sets `tolerance_k` to `0.111...` for `frequency`, the
@@ -698,7 +706,8 @@ variation can be used directly by sampling across a predictor's range and
 modelling it.
 
 A `continuous` block does that. Rather than conditions, it names one predictor to
-span and the controls to hold still, and the two must agree with `match_on`.
+span and at least one control. `match_on` must equal `continuous.controls`, and
+the predictor must not appear among the controls.
 
 ```{r continuous}
 cont_design <- list(
@@ -844,7 +853,7 @@ design and passes them to `match_report()` as `roles`, a function of the row's
 condition, reference and dimension. Called without it, as above, `match_report()`
 leaves `role` as `NA`.
 
-The pipeline reports every dimension available for the items, whether or not
+The pipeline reports every dimension lexsync has for the items, whether or not
 the design matches on it. Length, frequency, N, OLD20, syllables and bigram
 frequency come first, then the matched dimensions, every `define_by` dimension and
 every joined norm column, so a norm that defines the conditions appears as the
@@ -887,11 +896,11 @@ the interval also allows for the sampling error of the pooled SD. For a control
 near zero, the two agree to well within the published rounding. For a limit
 close to the bound, `tost_p` is the verdict.
 
-Both statistics treat the selected items as a sample from a larger population,
-which they are not. Sassenhagen and Alday (2016) point out that a test on stimuli
-concerns a closed population, the items you chose. They recommend describing the
-stimuli, which the descriptives do, and entering potential confounds in the
-analysis as covariates.
+The interval and the two one-sided tests treat the selected items as a sample
+from a larger population, which they are not. Sassenhagen and Alday (2016) point
+out that a test on stimuli concerns a closed population, the items you chose.
+They recommend describing the stimuli, which the descriptives do, and entering
+potential confounds in the analysis as covariates.
 
 The datasheet's Methods paragraph follows that advice. It describes the realised
 control first: the largest difference on a matched dimension, in that dimension's
@@ -984,8 +993,7 @@ merge(
 In both methods, the scoring picks the most bigram-typical candidate and does not
 match the base word, so the pseudowords come out more bigram-typical than their
 words. The difference in mean bigram probability is about d = -1.0, words minus
-pseudowords, in `en_lexdec` and `en_lexdec_wuggy` alike. Read the generated forms
-before a study runs.
+pseudowords, in `en_lexdec` and `en_lexdec_wuggy` alike.
 
 Both generators process base words in byte order, so the set of already-used
 pseudowords evolves identically in the two engines and both select byte-identical
@@ -1043,7 +1051,7 @@ or above). They are not included in the package.
 
 A long list makes ill-formed pseudowords more likely. The generators' only check
 on form is that each letter pair occurs somewhere in the lexicon, so with fewer
-candidates left the most bigram-typical one can be ill-formed. In the English
+candidates left, the most bigram-typical one can be ill-formed. In the English
 demonstrations, 13 of the 140 pseudowords are ill-formed, among them fdes, gngs
 and ntena. Each lacks a vowel or opens or closes on a letter pair that opens or
 closes no screened English word of three letters or more with a vowel. Without

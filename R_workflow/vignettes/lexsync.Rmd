@@ -35,8 +35,9 @@ select byte-identical stimuli from the same lexicon and design. The engines agre
 because every ordering is by byte and every tie is broken by a rule both apply.
 This holds for the default method, `standardised_euclidean`, and for `joint`. The
 optional `mahalanobis` and `optimal` methods are equivalent but not
-byte-identical, because a covariance inverse and an assignment solver differ in
-their last bits between the two engines.
+byte-identical. The last bits of the inverse of the pool's correlation matrix can
+differ between the two engines, and their assignment solvers can choose
+differently among assignments of equal cost.
 
 The package is on [CRAN](https://CRAN.R-project.org/package=lexsync), and the
 [README](https://pablobernabeu.github.io/lexsync/r/index.html#installation)
@@ -145,7 +146,7 @@ also have to say where the items come from.
 | `corpus` (the default) | Words selected from the lexicon by matching or by spanning a predictor. | `lexicon`, `conditions` or `continuous`, `match_on` |
 | `generate` | Real words plus a deterministically generated pseudoword for each. | `lexicon`, optionally `items.generation.method` |
 | `table` | A CSV of prepared items (prime-target pairs, sentences). Add `items.members` to make it pair-keyed. | `items.path` |
-| `pool` | A candidate word list of your own, matched over as if it were a pool. | `items.path`, normally `items.lexicon`, plus `conditions` and `match_on` as for `corpus` |
+| `pool` | A candidate word list of your own, matched over as if it were a pool. | `items.path`, normally `items.lexicon`, plus `match_on` and either `conditions` or `continuous`, as for `corpus` |
 
 `pool_filters` narrows the lexicon to the candidates the design will consider at
 all. Each key is a column, and each value is an inclusive `[min, max]` range when

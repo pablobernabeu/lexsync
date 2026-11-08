@@ -551,6 +551,12 @@ no function signature changes.
   `cmd.exe` and Windows PowerShell.
 - The Streamlit app's exported `Rscript` command passes the `outdir` that
   `run_pipeline` requires.
+- The Shiny app reads an emptied 'Resampled disjoint sets' box as 0, where
+  pressing Run ended the session, and an emptied 'Counterbalancing lists' box as
+  the box's default, where the run stopped with an unexplained error.
+- The Streamlit app's item-table uploader for self-paced reading names the
+  required `question` column and marks `critical_region` as optional, where it
+  named `critical_region` and left out `question`.
 - The R package installs the licence notice for its CC BY-SA lexica as
   `COPYRIGHTS`, so binary installations carry it.
 
@@ -619,6 +625,16 @@ no function signature changes.
 - The app guides and both apps' tolerance panels give the frequency k of
   González Alonso et al. (2025) as 0.1111111111111111, since 0.111 gives a
   window narrower than a ninth of a standard deviation.
+- The README, the R Get started vignette and the Python home page and
+  reproducibility guide say that, under `mahalanobis`, the last bits of the
+  inverse of the pool's correlation matrix can differ between the engines and
+  that, under `optimal`, the two assignment solvers can choose differently
+  among assignments of equal cost, where they said that a covariance inverse
+  and an assignment solver differed in their last bits.
+- The getting-started guides say that a `pool` design needs `match_on` and
+  either `conditions` or a `continuous` block, as a `corpus` design does, where
+  the R vignette left out the `continuous` block and the Python guide named
+  none of these keys.
 
 ## [0.1.1] - 2026-09-25
 

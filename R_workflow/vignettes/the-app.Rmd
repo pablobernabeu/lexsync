@@ -39,8 +39,9 @@ it, and the code is shown but not evaluated.
 
 The app is not part of the package. It is kept in the repository, under
 `apps/r_shiny`, beside the corpora and the example item tables that it reads, so
-launch it from a clone. The interface needs shiny, bslib and DT, and the
-downloads need zip. All four are listed in the package's `Suggests`.
+launch it from a clone. The interface needs shiny, bslib and DT. The downloads
+use the zip package or, where it is not installed, a zip tool on the path or
+named by `R_ZIPCMD`. All four packages are listed in the package's `Suggests`.
 
 ```{r}
 install.packages(c("shiny", "bslib", "DT", "zip"))
@@ -120,8 +121,8 @@ sets how many stimuli each condition should hold. 'Matching method' offers the
 four methods the engine implements, `standardised_euclidean`, `joint`,
 `mahalanobis` and `optimal`, and the note beneath it says that the last two agree
 only closely between the engines. 'Resampled disjoint sets' draws several matched
-sets that share no item, which lets items be treated as a random factor. Zero
-switches it off. 'Match on' picks the dimensions to equate across conditions,
+sets that share no item, which lets items be treated as a random factor. Zero or
+one switches it off. 'Match on' picks the dimensions to equate across conditions,
 from length, frequency, neighbourhood N, OLD20, syllable count and bigram
 frequency. A warning appears beneath it when it names a dimension whose windows
 differ between conditions, because matching on a dimension the conditions

@@ -132,8 +132,9 @@ the name is one of the thirty language codes registered for the wordfreq connect
 built with wordfreq and cached under `~/.lexsync/cache`. Otherwise, the registered delimited file is
 downloaded there, checked against the SHA-256 the registry records and normalised into a lexicon,
 as `normalise_lexicon` does below. Either way, the path is printed and the citation for the source
-goes to standard output with it. A name holding `/`, `\` or `:` is rejected, since it becomes the
-cached file's name, and every error message names the registry file that was read.
+goes to standard output with it. A name holding `/`, `\` or `:` is rejected before the registry is
+read, since it becomes the cached file's name. The error raised for a missing or unusable registry
+entry, a failed transfer or a checksum mismatch names the registry file that was read.
 
 The cache persists between sessions. `lexsync.corpora.cache_clear("fr")` removes one corpus from it,
 and `cache_clear()` with no name removes the whole cache. Registered corpora fetched from R go to a
@@ -237,8 +238,8 @@ form the lexical-decision designs use, since they also have to say where the ite
 | --- | --- | --- |
 | `corpus` (the default) | Words selected from the lexicon by matching or by spanning a predictor. | `lexicon`, `conditions` or `continuous`, `match_on` |
 | `generate` | Real words plus a deterministically generated pseudoword for each. | `lexicon`, optionally `items.generation.method` |
-| `table` | A CSV of prepared items (prime-target pairs, sentences). | `items.path` |
-| `pool` | A candidate word list of your own, matched over as if it were a pool. | `items.path`, normally `items.lexicon` |
+| `table` | A CSV of prepared items (prime-target pairs, sentences). Add `items.members` to make it pair-keyed. | `items.path` |
+| `pool` | A candidate word list of your own, matched over as if it were a pool. | `items.path`, normally `items.lexicon`, plus `match_on` and either `conditions` or `continuous`, as for `corpus` |
 
 `pool_filters` narrows the lexicon to the candidates the design will consider at all. Each key is a
 column, and each value is an inclusive `[min, max]` range when it is a pair of numbers, or a set of
@@ -321,14 +322,14 @@ address and trigger timing, and the presentation fonts. The equivalence test is 
 one-sided tests, and only its bound and alpha are settings. A schema holding only the seed and the
 column contract is enough, since every other block falls back to the defaults the code carries.
 
-The rule that breaks exact ties in the matcher is a setting, `matching.tie_break`. It matters because
-whole-number lengths and neighbourhood counts make ties decide most picks. `hash`, the default,
-gives a tie to the smaller keyed SHA-256 of the word, which favours no part of the alphabet. `bytes`
-gives it to the spelling that sorts first, as lexsync 0.1 did, and reproduces that version's
-selections, but it fills a condition decided by ties with early-alphabet words. Under either rule,
-`joint` and the default method, `standardised_euclidean`, give the same selection in the two
-engines without an RNG, as [Matching and designs](matching-and-designs.md#how-matching-works)
-explains.
+The rule that breaks exact ties in the matcher is a setting, `matching.tie_break`. It matters
+because whole-number lengths and neighbourhood counts make ties decide most picks. `hash`, the
+default, gives a tie to the smaller keyed SHA-256 of the word, which favours no part of the
+alphabet. `bytes` gives it to the spelling that sorts first, as lexsync 0.1 did, and reproduces that
+version's selections, but it fills a condition decided by ties with early-alphabet words. Under
+either rule, `joint` and the default method, `standardised_euclidean`, give the same selection in
+the two engines without an RNG, as [Matching and
+designs](matching-and-designs.md#how-matching-works) explains.
 
 A copy of the schema and of a small English, Spanish and Chinese lexicon is bundled inside the
 installed package, so the examples throughout these guides run without a clone:

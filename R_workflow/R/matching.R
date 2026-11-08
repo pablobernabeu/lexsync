@@ -7,9 +7,11 @@
 #
 # Cross-engine determinism: standardised_euclidean (the default) and joint are
 # byte-identical across the R and Python engines. The optional mahalanobis and
-# optimal methods are the exception, because they use a covariance-matrix inverse and
-# a linear-assignment solver whose last bits differ between the two linear-algebra
-# backends, so those two agree closely but not byte-for-byte.
+# optimal methods are the exception. The last bits of the inverse of the pool's
+# correlation matrix depend on the linear-algebra backend, and the two assignment
+# solvers, given the same costs rounded to nine decimal places, can choose differently
+# among assignments of equal cost. Those two methods agree closely but not
+# byte-for-byte.
 
 # Candidate cap for the pairwise (joint, optimal) matchers. The datasheet reports
 # whether the cap fired, so the literal lives in one place per engine.

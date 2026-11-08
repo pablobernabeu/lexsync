@@ -87,8 +87,8 @@ A window that every condition shares only narrows the pool and draws no warning.
 chosen, the app says so and keeps 'Run design' disabled. 'Matching method' offers the four methods
 the engine implements, `standardised_euclidean`, `joint`, `mahalanobis` and `optimal`, and its help
 says that the last two agree only closely between the engines. 'Resampled disjoint sets' draws
-several matched sets that share no item, which lets items be treated as a random factor. Zero
-switches it off. 'Counterbalancing lists' sets how many lists the items are rotated across.
+several matched sets that share no item, which lets items be treated as a random factor. Zero or
+one switches it off. 'Counterbalancing lists' sets how many lists the items are rotated across.
 
 The advanced panel underneath holds one tolerance window per matched dimension, the half-width in
 standard deviations of the band a candidate must fall inside. It is collapsed by default because

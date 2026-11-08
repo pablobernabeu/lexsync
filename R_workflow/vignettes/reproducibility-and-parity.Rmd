@@ -133,9 +133,9 @@ produces a repeated index.
 
 Sorting is by byte order everywhere. R's default string sort is locale-collated.
 A French locale, a C locale and a Windows locale can order the same words
-differently, and any of those orders would differ from Python's, which sorts by
-code point. Every sort on the selection path therefore passes `method = "radix"`,
-which sorts by bytes.
+differently, so a locale-collated order cannot be relied on to match Python's,
+which sorts by code point. Every sort on the selection path therefore passes
+`method = "radix"`, which sorts by bytes.
 
 ```{r radix}
 words <- c("zebra", "Apple", "apple", "Zebra")
@@ -449,10 +449,11 @@ reference output is absent, since the Python package can be installed on its
 own. CI sets `LEXSYNC_REQUIRE_PARITY=1` to turn those skips into failures, so a
 job meant to run both engines cannot pass by quietly skipping. The R references
 are regenerated and then checked with `git diff --exit-code`, so an R-engine
-regression fails the build. Without that step, the comparison would run against a
-stale snapshot that the regression matches. The R suite is also run once from
-the source tree with a check that nothing skipped, because the repository-coupled
-tests skip silently when run from an installed copy.
+regression fails the build. Without that step, the comparison would run against
+the committed snapshot, which an R-engine regression leaves unchanged. The R
+suite is also run once from the source tree with a check that nothing skipped,
+because the repository-coupled tests skip silently when run from an installed
+copy.
 
 The worked designs have clean inputs: every cell is in NFC, none is padded and
 the norms cover every word. The gate therefore never runs the code that handles
@@ -467,9 +468,11 @@ must raise.
 
 The R suite's `test-twin-edge.R` and the Python suite's `test_twin_edge.py` each
 check their own engine against every case. CI also runs
-`tools/compare_engines.py`, which compares the two engines on the same cases and
-repeats the whole-tree comparison on any machine. To add a case, create its
-folder with `design.yaml` and `expect.yaml` and write `expected/` with
+`tools/compare_engines.py --config parity/twin_edge`, which compares the two
+engines on every artefacts case. Run without arguments,
+`python tools/compare_engines.py` repeats the whole-tree comparison on any
+machine. To add a case, create its folder with `design.yaml` and `expect.yaml`
+and write `expected/` with
 `python tools/twin_edge.py --update <case>`. Read the files it writes to confirm
 they are right, then run the R suite, which checks that the R engine writes the
 same bytes. A fix for an input defect adds its case in the same commit, so that

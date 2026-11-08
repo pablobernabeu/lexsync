@@ -225,8 +225,8 @@ DATASHEET_VERSION <- "1.2"
 
 # Whether the R and Python engines select byte-identical materials. The
 # deterministic methods are byte-identical; mahalanobis and optimal are the
-# exception (covariance inverse / assignment solver; see matching.R). Mirrors
-# datasheet.py.
+# exception (the inverse of the pool's correlation matrix / the assignment solver's
+# choice among assignments of equal cost; see matching.R). Mirrors datasheet.py.
 #
 # `selected` distinguishes the two things an item table can mean. A plain table
 # design does no selection, so there is nothing for the engines to agree on and "n/a"
