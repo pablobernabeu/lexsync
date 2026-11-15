@@ -27,8 +27,8 @@ There are three new exports, `validate_design()`, `normalise_lexicon()` and
 
 ## Test environments
 
-GitHub Actions, run 43723122481 on 2026-11-15, on pull request #22 at commit
-f54a4ca. That commit differs from this submission only in cran-comments.md,
+GitHub Actions, run 43737517315 on 2026-11-15, on pull request #22 at commit
+80b3887. That commit differs from this submission only in cran-comments.md,
 which .Rbuildignore keeps out of the tarball. Each leg built the tarball with
 `--no-manual` and ran `R CMD check --as-cran --no-manual` on it beside
 stand-in 'templates' and 'config' packages and a README, since CRAN's Linux
@@ -37,7 +37,7 @@ the CRAN incoming checks, which r-lib/actions turns off. Each leg ended with
 'Status: OK':
 
 * ubuntu-latest (Ubuntu 26.04.1 LTS), R 4.6.2
-* ubuntu-latest (Ubuntu 26.04.1 LTS), R-devel (2026-11-14 r90890)
+* ubuntu-latest (Ubuntu 26.04.1 LTS), R-devel (2026-11-13 r90888)
 * ubuntu-latest (Ubuntu 26.04.1 LTS), R 4.5.3
 * windows-latest (Windows Server 2022 x64 (build 26100), x86_64-w64-mingw32),
   R 4.6.2
@@ -51,11 +51,13 @@ check cannot reach, such as the Shiny app, the demonstration designs and the
 committed outputs. One more skips on Linux, where the runner cannot switch to
 a Turkish locale.
 
-The same run passed the test suite from the sources, with no failures or
-warnings, in two more settings. On R 4.1.3, the oldest R the package supports,
-with only its strong dependencies installed, 40 tests skipped for want of
-clue or shiny and one for the Turkish locale. On the Linux R-devel leg, in an
-ISO-8859-15 (Latin-9) locale with NOT_CRAN unset, 82 tests skipped.
+The same run also used R 4.1.3 (the package requires R 4.1.0 or later), with
+its strong dependencies, testthat and pkgload installed and no other suggested
+package. The package installed there, and the test suite passed from the
+sources with no failures or warnings. Forty tests skipped for want of clue or
+shiny and one for the Turkish locale. On the Linux R-devel leg, the test suite
+passed again from the sources in an ISO-8859-15 (Latin-9) locale with NOT_CRAN
+unset, and 82 tests skipped.
 
 ## Notes for the reviewer
 
@@ -69,7 +71,8 @@ ISO-8859-15 (Latin-9) locale with NOT_CRAN unset, 82 tests skipped.
   downloads there, fetching a corpus again replaces the earlier copy and
   `lexsync_cache_clear()` removes one corpus or the whole cache.
   `?lexsync_cache_dir`, `?lexsync_cache_clear` and `?fetch_corpus` say where
-  the cache lives, that it persists between sessions and how large it can grow.
+  the cache is kept, that it persists between sessions and how large it can
+  grow.
 * Examples are executable and offline. They read only files bundled in
   `inst/extdata`, located with `system.file()`, and write only under
   `tempdir()`. The example for `lexsync_cache_clear()` points
