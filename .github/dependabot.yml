@@ -19,6 +19,21 @@ updates:
       prefix: "deps"
     labels:
       - "dependencies"
+    # requirements.txt pins the environment that every committed datasheet in
+    # output/reports records, and tests/test_metadata.py checks the pins against
+    # the datasheets. The pins can move only together with a regeneration of
+    # output/, so a pull request that bumps one of them alone cannot be merged,
+    # which is why #19 was closed. wordfreq stays on the 3.x line that
+    # pyproject.toml caps it to, so only its major releases are left out. The
+    # floors in pyproject.toml are raised by hand when the code needs it.
+    ignore:
+      - dependency-name: "pandas"
+      - dependency-name: "numpy"
+      - dependency-name: "scipy"
+      - dependency-name: "rapidfuzz"
+      - dependency-name: "PyYAML"
+      - dependency-name: "wordfreq"
+        update-types: ["version-update:semver-major"]
 
   # The R package's dependencies are not tracked here: Dependabot does not follow
   # CRAN. They are watched at runtime by the continuous-integration checks.
