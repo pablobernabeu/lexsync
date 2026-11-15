@@ -241,7 +241,9 @@ The `pytest` suite includes a mock-'PsychoPy' harness that checks the onset trig
 is flip-locked, a structural validator for the generated 'OpenSesame' experiment and
 an R-versus-Python parity test. GitHub Actions run `R CMD check` on Ubuntu, macOS
 and Windows under the current R release, on Ubuntu and Windows under R-devel and on
-Ubuntu under the previous release. They run the Python tests on Python 3.10–3.14.
+Ubuntu under the previous release. They also run the R tests on R 4.1, the oldest R the
+package supports, and in a Latin-9 locale, and they run the Python tests on Python 3.10
+to 3.15.
 
 ## Matching methods
 

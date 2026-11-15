@@ -50,8 +50,7 @@ def describe_stimuli(stimuli: pd.DataFrame, dims, by: str = "condition") -> pd.D
     columns ``group``, ``dimension``, ``n`` (the non-missing values), ``mean``, ``sd``,
     ``min``, ``median`` and ``max``, the last five rounded to three decimal places. A
     value that is not a number counts as missing. A grouping column or a dimension the
-    stimuli do not carry is refused. Mirrors describe_stimuli in
-    R_workflow/R/validation.R.
+    stimuli do not carry is refused.
     """
     _require_columns(stimuli, dims, by)
     rows = []
@@ -75,12 +74,11 @@ def describe_stimuli(stimuli: pd.DataFrame, dims, by: str = "condition") -> pd.D
 
 
 def cohens_d(x, y):
-    """Cohen's *d*, the pooled-SD standardised mean difference of ``x`` and ``y``.
+    """Cohen's d, the pooled-SD standardised mean difference of ``x`` and ``y``.
 
     ``None`` when either sample has fewer than two values, since one value has no
     spread and the pooled SD is then undefined, and when the pooled SD is zero but
-    the means differ. Two samples of one shared constant give 0. Mirrors cohens_d in
-    R_workflow/R/validation.R.
+    the means differ. Two samples of one shared constant give 0.
     """
     x = np.asarray(x, dtype=float); y = np.asarray(y, dtype=float)
     x = x[~np.isnan(x)]; y = y[~np.isnan(y)]
@@ -100,27 +98,27 @@ def cohens_d(x, y):
 
 
 def cohens_d_ci(x, y, alpha: float = 0.05) -> dict:
-    """Cohen's *d* with a confidence interval, complementing the TOST verdict.
+    """Cohen's d with a confidence interval, complementing the TOST verdict.
 
     The interval is the ``(1 - 2 * alpha)`` confidence interval for the
     standardised mean difference, so ``alpha = 0.05`` gives the 90% interval that
     goes with a two one-sided tests (TOST) decision at the .05 level (Lakens,
-    2017). Reporting the interval, rather than only a binary "equivalent / not"
-    verdict, makes the realised imbalance and its sampling uncertainty explicit and
-    keeps the dependence on the number of items visible: with few items the
-    interval is wide, whatever the point estimate. The upper limit of the interval
+    2017). Reporting the interval, rather than only a verdict of equivalent or not,
+    makes the realised imbalance and its sampling uncertainty explicit and keeps the
+    dependence on the number of items visible. With few items, the interval is wide,
+    whatever the point estimate. The upper limit of the interval
     on ``|d|`` is the largest imbalance still consistent with the stimuli. Both the
     interval and the TOST treat the selected items as a sample, although a test on
     stimuli concerns a closed population. Sassenhagen and Alday (2016) recommend
     describing the stimuli and entering potential confounds in the analysis as
     covariates.
 
-    The limits are ``d +/- t * SE(d)``, where ``t`` is the Student *t* quantile on
+    The limits are ``d +/- t * SE(d)``, where ``t`` is the Student t quantile on
     ``nx + ny - 2`` degrees of freedom and ``SE(d)`` is the large-sample standard
-    error of *d*, ``sqrt(1/nx + 1/ny + d**2 / (2 * (nx + ny)))`` (Hedges & Olkin,
+    error of d, ``sqrt(1/nx + 1/ny + d**2 / (2 * (nx + ny)))`` (Hedges & Olkin,
     1985; Borenstein et al., 2009, eq. 4.20). The ``d**2`` term carries the
     sampling error of the pooled standard deviation. It is negligible for a
-    well-matched control, where *d* is near zero, but it dominates for a
+    well-matched control, where d is near zero, but it dominates for a
     manipulated dimension and can more than double the width of that
     interval. TOST tests the raw mean difference, so the interval is slightly
     wider than the one its decision implies, and when a control's limit lies
@@ -196,7 +194,7 @@ def variance_ratio(cond, ref):
 
     Two conditions can share a mean yet differ in spread and still confound, which
     a mean-based statistic misses (Armstrong, Watson & Plaut, 2012; Austin, 2009).
-    A ratio near 1 is balanced; a common heuristic flags ratios outside about
+    A ratio near 1 is balanced. A common heuristic flags ratios outside about
     [0.5, 2] as unequal spread. Missing values are dropped first. Returns ``None``
     when either array has fewer than two non-missing values, or when the reference's
     variance is zero and the condition's is not, and 1.0 when both variances are zero.
@@ -290,7 +288,7 @@ def match_report(stimuli: pd.DataFrame, dims, schema: dict, roles=None) -> dict:
     ``reference`` and the later one in ``condition``. The signed statistics run from
     the reference to the other condition: ``cohens_d``, ``d_ci_low`` and ``d_ci_high``
     are the reference mean minus the ``condition`` mean, in pooled standard
-    deviations, so a positive *d* means the reference scores higher. ``mean_diff`` is
+    deviations, so a positive d means the reference scores higher. ``mean_diff`` is
     the same difference in the dimension's own unit, to three places. ``var_ratio``
     is the other way up, the ``condition`` variance over the reference variance.
 
@@ -373,8 +371,8 @@ def match_report_continuous(stimuli, predictor, controls, schema, audit=None) ->
     so the pipeline and datasheet stay uniform, but the comparisons describe a
     continuous predictor instead of a between-condition contrast: the predictor's
     realised span and, for each control, its Pearson correlation with the predictor
-    (near zero when the control is held constant). The set is meant for regression /
-    mixed-model analysis, not equivalence tests.
+    (near zero when the control is held constant). The set is meant for analysis by
+    regression or mixed models, not by equivalence tests.
 
     ``sd`` is each dimension's realised SD. For the predictor, ``sd_ratio`` sets it
     against the SD of as many values spaced evenly over the same range,

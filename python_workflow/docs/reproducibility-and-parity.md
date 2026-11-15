@@ -307,7 +307,7 @@ The rest of the suite covers parts that would otherwise need hardware to test: a
 harness that runs the generated script and asserts the onset trigger is flip-locked, a structural
 validator for the generated OpenSesame experiment, and checks that the jsPsych export is well
 formed and escapes HTML in stimulus data. The R package runs `R CMD check` on Ubuntu, macOS and
-Windows, and the Python tests run on Python 3.10 to 3.14.
+Windows, and the Python tests run on Python 3.10 to 3.15.
 
 ## The materials datasheet
 

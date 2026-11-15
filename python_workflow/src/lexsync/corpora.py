@@ -74,8 +74,6 @@ def list_corpora(registry_path: str | None = None) -> pd.DataFrame:
 
     Raises FileNotFoundError when the registry ``registry_path`` or ``LEXSYNC_REGISTRY``
     names does not exist, or when none is found.
-    Mirrors list_corpora in R_workflow/R/corpora.R, whose search reads the
-    ``lexsync.registry`` option in place of the environment variable.
     """
     with open(_registry_path(registry_path), encoding="utf-8") as handle:
         reg = yaml.safe_load(handle)
@@ -108,8 +106,8 @@ def _check_corpus_name(name) -> None:
 def cache_dir() -> str:
     """Per-user cache directory for fetched corpora.
 
-    Where ``fetch_corpus`` puts what it fetches, and the only place the
-    package writes to without being handed a path. This function only reports
+    The directory where ``fetch_corpus`` puts what it fetches, and the only place
+    the package writes to without being handed a path. This function only reports
     the path. The directory is created by the first fetch into it, so until then
     it does not exist.
 
@@ -120,9 +118,7 @@ def cache_dir() -> str:
     more than a day earlier, and fetching a corpus again replaces the earlier
     copy. Fetched corpora otherwise stay until ``cache_clear`` removes them,
     one corpus at a time or all together. Nothing kept there is irreplaceable, so
-    the next call downloads afresh. The R twin documents the same contract in
-    lexsync_cache_dir.Rd; only the location differs, since R uses
-    tools::R_user_dir.
+    the next call downloads afresh.
     """
     return os.path.join(os.path.expanduser("~"), ".lexsync", "cache")
 
@@ -133,16 +129,14 @@ def cache_clear(name: str | None = None) -> list[str]:
     Deletes what ``fetch_corpus`` put in ``cache_dir``. Given a `name`,
     that is the corpus's ``<name>.csv``, any ``<name>.csv.part`` that an
     interrupted download left behind and the ``<name>_wordfreq.csv`` lexicon the
-    wordfreq connector builds. With `name` left as None it is the whole cache
+    wordfreq connector builds. With `name` left as None, it is the whole cache
     directory, and the ``~/.lexsync`` directory above it once nothing else is left
     there. A corpus needed again is fetched afresh by the next
-    ``fetch_corpus`` call. Mirrors lexsync_cache_clear() in
-    R_workflow/R/corpora.R, whose engine has no wordfreq connector and so no
-    ``_wordfreq.csv`` to remove.
+    ``fetch_corpus`` call.
 
     Returns the paths of the files removed, empty when there was nothing to
-    remove. Raises OSError, naming them, when files survive the attempt (one held
-    open on Windows, say).
+    remove. Raises OSError, naming them, when files survive the attempt (such as a
+    file held open on Windows).
     """
     cache = cache_dir()
     if name is None:
@@ -434,23 +428,24 @@ def fetch_corpus(name: str, registry_path: str | None = None, n_words: int = 100
     three arguments apply to the wordfreq connector only, and
     ``lexsync.corpora.build_wordfreq_lexicon`` gives the rule in full.
 
-    For any other name the registry entry's file is downloaded, once its URL's scheme
+    For any other name, the registry entry's file is downloaded, once its URL's scheme
     has been checked. An entry's ``derived`` file, a lexicon already normalised, is
-    fetched when it has one and cached as it arrives. Otherwise its ``openlexicon``
+    fetched when it has one and cached as it arrives. Otherwise, its ``openlexicon``
     file is fetched and converted by ``normalise_lexicon`` with the entry's
     ``columns`` and ``duplicates``, so ``fetch_corpus("subtlex_us")`` caches a lexicon
-    that ``lexsync.load_lexicon`` reads. The transfer lands in a sidecar file that
-    is renamed into the cache only after the size cap, the markup sniff, any registered
-    sha256 and the normalisation have all passed. A refusal of the registry entry, a
+    that ``lexsync.load_lexicon`` reads. The download is written to a ``.part`` file
+    first, which is renamed into the cache only after the file has passed the size
+    limit, the check that it is not an HTML or XML page, any registered sha256 and the
+    normalisation. A refusal of the registry entry, a
     failed transfer and a checksum mismatch name the registry file read. A
     `registry_path` that does not exist is refused. Left as None, the registry is found
     as ``list_corpora`` describes.
 
-    The file lands in ``cache_dir`` as ``<name>.csv``, or ``<name>_wordfreq.csv`` for
+    The file is written to ``cache_dir`` as ``<name>.csv``, or ``<name>_wordfreq.csv`` for
     a lexicon the wordfreq connector builds, and its path is returned. The cache
     directory is created only once the registry entry and its URL have been accepted,
     or the wordfreq lexicon built, so a refused call writes nothing. Each fetch into
-    the cache begins by deleting any ``.part`` sidecar that an interrupted transfer
+    the cache begins by deleting any ``.part`` file that an interrupted transfer
     left there more than a day earlier. The cache persists between sessions, and one
     corpus may reach the 200 MB download cap, so several of them add up.
     ``cache_clear`` removes one corpus or the whole cache, and the next call fetches
@@ -708,17 +703,17 @@ def normalise_lexicon(path: str, columns=None, entry=None, delimiter=None,
                       out: str | None = None) -> pd.DataFrame:
     """Turn a corpus file in its publisher's layout into a lexicon load_lexicon reads.
 
-    Reads a tab- or comma-separated file. ``delimiter`` names the separator, "," or
-    "\\t". Left as None, it is taken from the extension (.tsv and .tab are tab, .csv is
+    Reads a tab- or comma-separated file. ``delimiter`` names the separator, ``","``
+    or ``"\\t"``. Left as None, it is taken from the extension (.tsv and .tab are tab, .csv is
     comma) and otherwise from the header line, which is tab-separated when it holds a
     tab. A tab-separated file is read with no quoting.
 
     ``columns`` maps lexsync's column names to the file's, as a registry entry's
-    ``columns`` does: ``word``, one of ``freq_zipf`` and ``freq_permillion``, and
-    optionally ``pos``. ``entry`` is a registry entry, or the name of one in the
+    ``columns`` does: ``word``, either ``freq_zipf`` or ``freq_permillion`` and,
+    optionally, ``pos``. ``entry`` is a registry entry, or the name of one in the
     registry lexsync finds by default (see ``list_corpora``), and supplies the map
-    when ``columns`` is None and the ``duplicates`` rule. Without a map the file's own
-    ``word``, ``freq_zipf`` or ``freq_permillion``, and ``pos`` columns are read.
+    when ``columns`` is None and the ``duplicates`` rule. Without a map, the file's own
+    columns of those names are read.
 
     Words are trimmed, lower-cased and put in Unicode NFC, as load_lexicon keys them,
     and rows missing a word or a frequency are dropped. A form that then appears more
@@ -726,7 +721,7 @@ def normalise_lexicon(path: str, columns=None, entry=None, delimiter=None,
     row in file order, and ``sum`` adds its rows' frequencies per million, as Lexique
     needs, since it splits a homograph's frequency between its rows. Frequencies per
     million are converted with Zipf = log10(per million) + 3, rounded to three places
-    by lexsync's shared rounder. A value of 0 or below has no Zipf value and is
+    by lexsync's own rounding function. A value of 0 or below has no Zipf value and is
     refused. Zipf values read as they are must lie between 0 and 9.
 
     The lexicon has the columns ``word``, ``freq_zipf``, then ``freq_permillion`` when
@@ -734,12 +729,11 @@ def normalise_lexicon(path: str, columns=None, entry=None, delimiter=None,
     order of ``word``. With ``out`` it is also written there, comma-separated with LF
     line endings. A line on standard output gives the number of forms, and for derived
     Zipf values the number that lay within 1e-9 of a rounding boundary after scaling.
-    That is the only step at which the two engines' log10 could round a value apart,
-    and the count is expected to be 0. ``attrs["normalisation"]`` holds ``{"n_read",
-    "n_forms", "n_merged", "duplicates", "zipf_derived", "near_boundary"}``, and a run
-    over the lexicon records the boundary count in its run log and datasheet.
-
-    Mirrors normalise_lexicon in R_workflow/R/corpora.R, which writes the same bytes.
+    That is the only step at which a last-bit difference between log10
+    implementations could change a rounded value, and the count is expected to be 0.
+    ``attrs["normalisation"]`` holds ``{"n_read", "n_forms", "n_merged", "duplicates",
+    "zipf_derived", "near_boundary"}``, and a run over the lexicon records the boundary
+    count in its run log and datasheet.
     """
     frame, message = _normalise(path, columns, entry, delimiter, os.path.basename(str(path)))
     print(message)

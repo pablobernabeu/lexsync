@@ -652,12 +652,12 @@ def balance_lists(stimuli: pd.DataFrame, design: dict, schema: dict) -> dict:
     declared dimension, by steepest-descent pairwise swaps between lists. List sizes
     are preserved, because a swap exchanges one set for another.
 
-    The search is deterministic and identical in the R and Python engines: the
-    objective is all-integer (see the notes in this module), the descent takes the
-    single best swap each pass, and ties are broken by the seeded keyed hash rather
-    than by position, so no list is favoured by being numbered first. Because the cost
-    is a non-negative integer that strictly decreases, the search terminates;
-    ``max_passes`` bounds it anyway and the report says whether the bound was reached.
+    The search is deterministic. The objective is all-integer, the descent takes the
+    single best swap in each pass and ties are broken by the seeded keyed hash, not by
+    position, so no list is favoured by being numbered first. Because the cost is a
+    non-negative integer that strictly decreases, the search terminates.
+    ``max_passes`` bounds it all the same, and the report says whether the bound was
+    reached.
 
     ``counterbalance.scale`` sets each dimension's unit. ``mean``, the default,
     divides by the dimension's mean, which suits ratio scales only. ``mad`` balances
@@ -672,8 +672,8 @@ def balance_lists(stimuli: pd.DataFrame, design: dict, schema: dict) -> dict:
     lists leaves no pair of lists to exchange sets between. A design with no resolvable
     balance dimension is refused, as is one naming a dimension the stimuli do not carry,
     and the message names the columns. The last refusal is arithmetic: the search stops
-    if the integer objective would leave the range a double represents exactly, since
-    past that point the two engines could disagree.
+    if the integer objective would leave the range that a double represents exactly,
+    beyond which its comparisons would no longer be exact.
 
     Returns ``{"list_of_set": {set: list}, "report": {...}}``.
     """
@@ -793,7 +793,7 @@ def counterbalance(stimuli: pd.DataFrame, design: dict, schema: dict,
 
     ``list_of_set`` optionally maps each ``set`` to a list, from ``balance_lists``.
     The pipeline supplies it when ``counterbalance.optimise`` is on. Without it, the
-    factorial recipe deals sets to lists by rank: the first set to list 1, the second
+    factorial recipe deals sets to lists by rank, the first set to list 1, the second
     to list 2 and so on, cycling.
 
     Each list's trials are ordered by the seeded keyed hash. ``counterbalance.max_run``
@@ -809,8 +809,7 @@ def counterbalance(stimuli: pd.DataFrame, design: dict, schema: dict,
     order. Under the factorial recipe, every row of ``stimuli`` appears once, in the list
     its set is dealt to. Under the Latin square, each list holds one row per item set,
     in the condition the rotation gives that set in that list, so the result has one
-    row per set per list and not every row of ``stimuli``. Mirrors counterbalance() in
-    R_workflow/R/counterbalancing.R.
+    row per set per list and not every row of ``stimuli``.
     """
     _trial_order_settings(design)
     # Resampled designs counterbalance each replicate (an independent item set)
@@ -921,8 +920,7 @@ def participant_table(factors: dict, n_participants: int) -> pd.DataFrame:
     ``C`` and otherwise differ by one.
 
     Returns a DataFrame with one row per participant: a column per factor and a
-    ``participant`` column numbered from 1. Mirrors participant_table in
-    R_workflow/R/counterbalancing.R.
+    ``participant`` column numbered from 1.
     """
     keys = list(factors.keys())
     # R's expand.grid() varies the first factor fastest, itertools.product the

@@ -312,7 +312,7 @@ def assign_triggers(stimuli: pd.DataFrame, conditions=None, events=None,
     ``item_trigger`` numbers the item sets from 40, in code-point order of their
     labels, so with sets 1 to 20, set 10 is 41 and set 2 is 51. Decode an item code
     through the loop table, not from the set's label. The item range holds 200 codes
-    (an 8-bit-port constraint), so past 200 sets the codes wrap and repeat, and a
+    (a limit of an 8-bit port), so past 200 sets the codes wrap and repeat, and a
     printed notice says so.
 
     ``events``, the design's event list, says which codes the experiment sends. When
@@ -320,26 +320,27 @@ def assign_triggers(stimuli: pd.DataFrame, conditions=None, events=None,
     40 to 239, the item codes skip 101 to 100 + k, the codes of the k conditions, and
     the design's own codes, so that no item takes a code that marks something else.
     Without the skip, sets 65 and 66 of a 70-set design would take 101 and 102, the
-    condition codes. With it, a design with more item sets than free codes is refused, unless
-    ``schema`` sets ``triggers.allow_code_overlap: true``, which lets the item codes
+    condition codes. With it, a design with more item sets than free codes is
+    refused, unless ``schema`` sets ``triggers.allow_code_overlap: true``, which lets
+    the item codes
     wrap and repeat within the free codes. Every other design, and a call without
     ``events``, takes the item codes described above, from 40 upwards in code-point
     order of the set labels, wrapping and repeating past 200 sets. Each trigger in
     ``events`` is checked as ``render_events`` checks it.
 
     A notice is printed for a code of the design's own that the stream already uses
-    for something else: 254 or 255, which the PsychoPy and OpenSesame experiments send
-    when the session starts and ends, a condition code the design sends, or a code
+    for something else: 254 or 255 (which the PsychoPy and OpenSesame experiments send
+    when the session starts and ends), a condition code the design sends or a code
     within the range of the item codes it sends.
 
     The condition codes follow ``conditions`` when it is given: its first entry is
-    101, its second 102, and so on, whether or not every entry occurs in
+    101, its second 102 and so on, whether or not every entry occurs in
     ``stimuli``, so the same condition keeps the same code in a subset such as a
     practice block. A condition present in ``stimuli`` but missing from
     ``conditions`` takes the next free codes, in code-point order of its label.
-    Either way the mapping depends only on the labels, never on the row order.
+    Either way, the mapping depends only on the labels, never on the row order.
     Without ``conditions``, the codes follow the order in which the conditions
-    first appear in ``stimuli``, as in lexsync 0.1.0. On a shuffled trial list that
+    first appear in ``stimuli``, as in lexsync 0.1.0. On a shuffled trial list, that
     order comes from the shuffle, so a different seed can swap two conditions'
     codes. ``export_experiments`` passes the design's order, and the pipeline
     passes the order of the design's ``conditions``, followed by any other
@@ -640,10 +641,10 @@ def resolve_trial_timing(stimuli: pd.DataFrame, design: dict, schema: dict) -> p
     """Realise per-trial event durations onto the stimuli table.
 
     An event may declare a duration that varies from trial to trial, either read
-    from an item column or drawn from a range. A drawn value is a pure function of
-    the keyed hash, so both engines realise the same milliseconds, and it is
-    written into the stimuli table as well as the generated script, because timing
-    that varies is a variable the analysis needs, not presentation detail.
+    from an item column or drawn from a range. A drawn value is determined by the
+    keyed hash alone, so every run gives the same milliseconds. It is written into the
+    stimuli table as well as the generated script, because timing that varies is a
+    variable the analysis needs.
 
     An event declares it as ``duration: {from_column: <column>}``, to read each
     trial's milliseconds from an item column, or as
@@ -655,8 +656,8 @@ def resolve_trial_timing(stimuli: pd.DataFrame, design: dict, schema: dict) -> p
     Every value read from a column must be a finite number of milliseconds, not
     negative. The first that is not, a blank cell included, is refused, naming the
     column and the trial's set and condition. When a column holds fractional
-    milliseconds, each of its values is rounded once with the rounder both engines
-    share and written back, so the stimuli, the loop tables and every target carry the
+    milliseconds, each of its values is rounded once, by lexsync's own rounding
+    function, and written back, so the stimuli, the loop tables and every target carry the
     same whole milliseconds. A column of whole numbers is left as it is. Each column
     rounded is recorded in the returned frame's ``attrs["duration_rounding"]``, as one
     ``{"event", "column", "n_rounded"}`` entry, which run_pipeline writes into the run
@@ -1077,13 +1078,13 @@ def presentation_versions(stimuli: pd.DataFrame) -> list:
 
     A version is one (replicate, list) pair of the trials, and each participant is
     presented one version. Version 1 is the first pair in (replicate, list) order,
-    version 2 the next, and so on. A table without a ``replicate`` column is one
+    version 2 the next and so on. A table without a ``replicate`` column is one
     replicate, numbered 1, and one without ``list`` is one list. Participant ``p`` runs
     version ``((p - 1) mod V) + 1`` of ``V`` unless another is chosen at launch, the
     rule ``participant_table`` allocates by. The PsychoPy script and the jsPsych page
     carry this list. An OpenSesame experiment holds one version, and
     ``export_opensesame`` writes one experiment per version and trial order when a design
-    has more than one of either. Mirrors .presentation_versions in scripting.R.
+    has more than one of either.
 
     Args:
         stimuli: The presented trials, with the ``list`` (and any ``replicate``)
@@ -1179,13 +1180,14 @@ def export_psychopy(stimuli: pd.DataFrame, design: dict, schema: dict, outdir: s
 
     The conditions file, ``<base>_psychopy.csv``, holds every presentation version
     (see ``presentation_versions``), and the script presents one per run: the
-    version given by ``--version`` (or ``--list`` when there are no replicates), else
-    the participant's by the rule ``((participant - 1) mod V) + 1`` from
-    ``--participant``, else what a start-up dialogue asks for. A version the script does
-    not have stops the run with a message. With ``counterbalance.orders: m`` the
-    conditions file holds each trial's position in each of m orders, and the script
-    presents the version in order ``(((participant - 1) div V) mod m) + 1``, or in order 1
-    without a participant number. The data file then records the order.
+    version given by ``--version`` (or ``--list`` when there are no replicates),
+    otherwise the participant's, by the rule ``((participant - 1) mod V) + 1`` from
+    ``--participant``, and otherwise the one a start-up dialogue asks for. A version the
+    script does not have stops the run with a message. With
+    ``counterbalance.orders: m``, the conditions file holds each trial's position in
+    each of m orders, and the script presents the version in order
+    ``(((participant - 1) div V) mod m) + 1``, or in order 1 without a participant
+    number. The data file then records the order.
 
     Before the first trial, the script shows the version's instructions, the design's
     ``instructions`` or lexsync's for its task, and waits for the space bar, which also
@@ -1198,7 +1200,7 @@ def export_psychopy(stimuli: pd.DataFrame, design: dict, schema: dict, outdir: s
     and trigger codes, the response and its reaction time from the onset of the
     stimulus it answers, whether the window closed without one, whether the key was
     the trial's ``answer``, the self-paced reading times, the question's response and
-    reaction time, the measured refresh rate, the trigger mode the run used, and each
+    reaction time, the measured refresh rate, the trigger mode the run used and each
     event's realised flips and onset.
 
     Each trigger code goes out on its stimulus's first flip and is held for
@@ -1215,13 +1217,14 @@ def export_psychopy(stimuli: pd.DataFrame, design: dict, schema: dict, outdir: s
     happens when that device cannot be opened. Under ``auto``, the script prints the
     codes instead and, before the instructions, shows a notice that the experimenter
     dismisses with the C key. Under ``hardware``, it stops before its window opens, and
-    under ``mock`` it prints the codes without trying the device, after the same
+    under ``mock``, it prints the codes without trying the device, after the same
     notice. The data file's ``trigger_mode`` column records ``hardware`` or ``mock``.
 
     Args:
         stimuli: Stimuli with trigger columns (see ``assign_triggers``).
         design: A parsed design configuration.
-        schema: The parsed global schema (trigger and presentation settings).
+        schema: The parsed global schema, which gives the trigger and presentation
+            settings.
         outdir: Output directory.
         base: Optional file-name stem, by default the design's ``design_stem``.
 
@@ -2048,7 +2051,7 @@ def export_opensesame(stimuli, design, schema, outdir, base=None) -> str:
     trials hold practice trials and trials of another block, the experiment pauses where
     the practice trials end, as the PsychoPy and jsPsych experiments do. An inline
     script, ``lexsync_block_break``, opens every trial, and on the first trial after the
-    practice trials it shows "End of the practice trials." and waits for the space bar.
+    practice trials, it shows 'End of the practice trials.' and waits for the space bar.
     Escape there stops the session. Every trial is logged. A response after a text event
     is collected by that event's script from the stimulus's onset, which sets
     ``response``, ``response_time``, ``timed_out`` and ``correct``. A response kept
@@ -2063,7 +2066,7 @@ def export_opensesame(stimuli, design, schema, outdir, base=None) -> str:
 
     Every canvas a trial shows is built before the trial runs, in the prepare phase of
     its script, and each event is timed from the onset its display returns. An event
-    ends half a frame before its duration is up, so that the next display lands on
+    ends half a frame before its duration is up, so that the next display is shown on
     the refresh that ends it. The frame period is measured at start-up and logged as
     ``lexsync_frame_ms``, with ``presentation.assumed_refresh_hz`` as the fallback when
     the measurement fails. Each trigger code is held for ``triggers.trigger_hold_ms``,
@@ -2093,8 +2096,8 @@ def export_opensesame(stimuli, design, schema, outdir, base=None) -> str:
     logs, and a check that compares the participant's order too, order
     ``(((p - 1) div V) mod m) + 1``. ``export_experiments`` lists every file written.
 
-    OpenSesame evaluates the cells of a loop table: in 4.x a cell holding ``{`` runs as
-    a Python f-string, and in 3.3 a cell starting with ``=`` or holding ``[=...]`` runs
+    OpenSesame evaluates the cells of a loop table: in 4.x, a cell holding ``{`` runs as
+    a Python f-string, and in 3.3, a cell starting with ``=`` or holding ``[=...]`` runs
     as Python. A value in a numeric column that is not a plain number is therefore
     refused, naming the column. An empty cell passes. These rules were checked against
     the sources of OpenSesame 3.3.14 and 4.1.20.
@@ -2103,7 +2106,8 @@ def export_opensesame(stimuli, design, schema, outdir, base=None) -> str:
         stimuli (pandas.DataFrame): Stimuli with trigger columns (see
             ``lexsync.scripting.assign_triggers``).
         design (dict): A parsed design configuration.
-        schema (dict): The parsed global schema (trigger and presentation settings).
+        schema (dict): The parsed global schema, which gives the trigger and
+            presentation settings.
         outdir (str): Output directory.
         base (str, optional): File-name stem, by default
             ``lexsync.design.design_stem(design)``, built from the design's name and
@@ -2301,30 +2305,31 @@ def export_jspsych(stimuli, design, schema, outdir, base=None) -> str:
     The same rendered events and the trial data are embedded in one HTML file, so
     anyone can reproduce the exact procedure online from the same materials. The
     jsPsych library, its keyboard-response plugin and its stylesheet are loaded from a
-    CDN, so the machine running the file needs an internet connection; the trial data
+    CDN, so the machine running the file needs an internet connection. The trial data
     are embedded and the responses are saved locally, so no server is required either
-    to run it or to collect them.
-    Each of the three files carries its SHA-384 as Subresource Integrity, so a browser
-    refuses a copy that differs from the published release. Stimuli are drawn
-    ``presentation.text_height_px`` pixels high, 48 by default.
-    Onset triggers are recorded in each trial's data (a browser cannot drive a
-    parallel port); online EEG synchronisation needs WebSerial/LSL or a photodiode.
-    A stimulus that collects its response is one trial, recorded as ``target``: it
-    accepts the keys from its onset, shows the stimulus for its duration and stays
-    open for the timeout after it, a key ends it, and ``rt`` runs from the onset.
+    to run it or to collect them. Each of the three files carries its SHA-384 as
+    Subresource Integrity, so a browser refuses a copy that differs from the published
+    release. Stimuli are drawn ``presentation.text_height_px`` pixels high, 48 by
+    default. Onset triggers are recorded in each trial's data, since a browser cannot
+    drive a parallel port. Online EEG synchronisation needs WebSerial, Lab Streaming
+    Layer or a photodiode. A stimulus that collects its response is one trial,
+    recorded as ``target``. It accepts the keys from its onset, shows the stimulus for
+    its duration and stays open for the timeout after it. A key ends it, and ``rt``
+    runs from the onset.
 
     The page embeds every presentation version (see ``presentation_versions``) and
     runs one, named in its address: ``?version=K``, ``?list=K`` when there are no
     replicates, or ``?participant=N``, whose version is ``((N - 1) mod V) + 1``. A page
     with more than one version, opened with none of these, shows a screen naming them
-    and runs nothing. With ``counterbalance.orders: m`` the page presents the version in
-    order ``(((N - 1) div V) mod m) + 1``, or in order 1 without a participant number,
-    and every data row carries the order. Its welcome screen shows the version's instructions, the design's
-    ``instructions`` or lexsync's for its task, and waits for the space bar. The data
-    rows carry the participant, the version, the list and the replicate, and the data
-    file is named after the participant and the version. The page names the keys as the
-    browser does, ``arrowleft`` for ``left``, in its events and in each trial's
-    ``answer``, so a recorded response can be compared with the answer as it stands.
+    and runs nothing. With ``counterbalance.orders: m``, the page presents the version
+    in order ``(((N - 1) div V) mod m) + 1``, or in order 1 without a participant
+    number, and every data row carries the order. Its welcome screen shows the
+    version's instructions, the design's ``instructions`` or lexsync's for its task,
+    and waits for the space bar. The data rows carry the participant, the version, the
+    list and the replicate, and the data file is named after the participant and the
+    version. The page names the keys as the browser does (``arrowleft`` for ``left``)
+    in its events and in each trial's ``answer``, so a recorded response can be
+    compared with the answer as it stands.
     """
     base = base or design_stem(design)
     events = resolve_events(design)
@@ -2708,14 +2713,14 @@ def _design_condition_names(design) -> list | None:
 
 
 def export_experiments(stimuli, design, schema, outdir, base=None, conditions=None) -> dict:
-    """Write every presentation target (PsychoPy, OpenSesame, jsPsych).
+    """Write every presentation target (PsychoPy, OpenSesame and jsPsych).
 
     Assigns the EEG trigger codes with ``assign_triggers`` and then writes each
     target. The condition codes follow ``conditions``, which defaults to the order
     of the design's ``conditions`` entries, so in a design that declares its
-    conditions the first is 101, the second 102, and so on, whatever order the
-    counterbalanced trials put them in. A design with no ``conditions`` block (a
-    generated lexical decision, an item table) falls back to the order of first
+    conditions the first is 101, the second 102 and so on, whatever order the
+    counterbalanced trials put them in. A design with no ``conditions`` block (such as
+    a generated lexical decision or an item table) falls back to the order of first
     appearance, unless ``conditions`` is given. ``assign_triggers`` is given the
     design's events and the schema, so the item codes of a design that sends them
     alongside other codes are kept apart from those codes, and a code of the design's
@@ -2724,7 +2729,7 @@ def export_experiments(stimuli, design, schema, outdir, base=None, conditions=No
     Each trial that names no ``answer`` of its own takes the key the design's response
     mapping gives its condition in its list, so the loop tables can score every trial.
     A lexical decision maps word to its response event's first key and pseudoword to
-    its second unless the design gives ``response_mapping``, and
+    its second, unless the design gives ``response_mapping``, and
     ``rotate_mapping_by_list: true`` rotates the keys across lists. A practice or filler
     trial keeps the answer its table gives. The stimuli passed in are not changed. Every
     target shows the design's ``instructions``, or lexsync's English instructions for its
@@ -2734,7 +2739,7 @@ def export_experiments(stimuli, design, schema, outdir, base=None, conditions=No
     experiment when a design has several, see ``export_opensesame``) and
     ``jspsych``. ``files`` lists every file written, in a fixed order: the PsychoPy
     script, each OpenSesame experiment in version order, the jsPsych page, the PsychoPy
-    conditions file, and then each OpenSesame experiment's loop table and text table.
+    conditions file and then each OpenSesame experiment's loop table and text table.
     """
     if conditions is None:
         conditions = _design_condition_names(design)

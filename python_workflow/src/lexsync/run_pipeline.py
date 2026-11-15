@@ -196,9 +196,9 @@ def run_pipeline(design_path: str, schema_path: str | None = None, outdir: str =
                  reference_words: list | str | None = None, verbose: bool = True) -> dict:
     """Run the lexsync pipeline for one design.
 
-    A design may refer to a derived dimension (``n_density``, ``old20``,
-    ``bigram_freq``) in ``match_on``, a condition's ``define_by``, ``pool_filters``,
-    a continuous predictor or control, or ``counterbalance.balance_on``. When the
+    A design may refer to a derived dimension (``n_density``, ``old20`` or
+    ``bigram_freq``) in ``match_on``, ``pool_filters``, ``counterbalance.balance_on``,
+    a condition's ``define_by`` or a continuous predictor or control. When the
     lexicon lacks it, the pipeline computes it on the pool against the neighbourhood
     reference, after the filters the lexicon can answer and before those on the
     derived dimension.
@@ -232,7 +232,7 @@ def run_pipeline(design_path: str, schema_path: str | None = None, outdir: str =
         outdir: Output directory, in which the subdirectories ``stimuli``,
             ``reports`` and ``experiments`` are created.
         reference_words: Optional list of words to compute the derived dimensions
-            against. By default they are computed against the lexicon, or against
+            against. By default, they are computed against the lexicon, or against
             its rows marked 1 in a ``reference_member`` column. For a corpus or pool
             design, a supplied list recomputes ``n_density`` and ``old20``, and
             ``bigram_freq`` when the lexicon carries it or the design refers to it,

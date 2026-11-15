@@ -459,17 +459,17 @@ def _match_optimal(subpools, cond_names, match_on, center, scale, n, cap=PAIRWIS
 def match_stimuli(pool: pd.DataFrame, design: dict, schema: dict, verbose: bool = False) -> pd.DataFrame:
     """Match stimuli across conditions on the ``match_on`` dimensions.
 
-    Two policies govern degraded selections, each read from the design's
-    ``matching`` block with the schema as fallback: ``shortfall`` ("error", the
-    default, refuses to return fewer sets than requested; "allow" accepts the
-    shrink) and ``on_insufficient_tolerance`` ("relax", the default, widens an
-    undersupplied tolerance window to the full condition subpool and records the
-    relaxation in ``out.attrs["audit"]``; "error" refuses instead).
+    Two policies, each read from the design's ``matching`` block with the schema as
+    fallback, govern a selection that cannot be made in full. Under ``shortfall``,
+    ``"error"``, the default, refuses to return fewer sets than requested, and
+    ``"allow"`` accepts fewer. Under ``on_insufficient_tolerance``, ``"relax"``, the
+    default, widens an undersupplied tolerance window to the full condition subpool and
+    records the relaxation in ``out.attrs["audit"]``, and ``"error"`` refuses instead.
 
     ``match_on`` must name at least one dimension. The number of items per
-    condition is ``n_per_condition``, else ``n_per_cell``, else 20, and must be a
-    whole number of at least 1. A ``null`` tolerance is read as R's ``modifyList()``
-    reads it (see the schema's ``tolerance_k`` comment).
+    condition is ``n_per_condition``, or else ``n_per_cell``, or else 20, and must be
+    a whole number of at least 1. A ``null`` tolerance in the design deletes the
+    schema's value for that dimension, which then takes k = 2.
 
     A candidate missing any ``match_on`` dimension cannot be scored, so every
     method excludes it before selecting, and the number excluded per condition is
@@ -478,9 +478,9 @@ def match_stimuli(pool: pd.DataFrame, design: dict, schema: dict, verbose: bool 
     is refused.
 
     ``tie_break``, read in the same way, decides between candidates at exactly the same
-    rounded distance, which integer dimensions make common: "hash", the default,
+    rounded distance, which integer dimensions make common: ``"hash"``, the default,
     prefers the smaller SHA-256 of ``TIE_SALT``, a bar and the word, which favours no
-    part of the alphabet, and "bytes" prefers the spelling that sorts first and
+    part of the alphabet, and ``"bytes"`` prefers the spelling that sorts first and
     reproduces lexsync 0.1. The rule also orders the tied pairs of ``joint`` and
     ``optimal`` and the tied rows at their candidate cap. The anchor's even spread
     keeps its byte-order tie-break under both rules.
@@ -490,7 +490,7 @@ def match_stimuli(pool: pd.DataFrame, design: dict, schema: dict, verbose: bool 
     ``optimal`` (see the guide Matching and designs). ``joint`` and ``optimal`` need
     exactly two conditions, and any other method name raises ValueError. ``verbose``
     prints how many candidates each condition drops for a missing dimension, an anchor
-    condition that yields fewer items than requested, and each tolerance window relaxed.
+    condition that yields fewer items than requested and each tolerance window relaxed.
 
     Returns the selected rows of ``pool`` with a ``condition`` column and a ``set``
     column that numbers the matched sets from 1, each condition holding one row per
@@ -729,18 +729,17 @@ def select_continuous_stimuli(pool: pd.DataFrame, design: dict, schema: dict,
     The control dimensions are held within a tolerance band, which trims their
     tails without holding them constant, so read each control's correlation with
     the predictor in ``match_report_continuous`` before relying on it. Tightening
-    ``tolerance_k`` does not reliably lower those correlations. The set is analysed
-    by regression / mixed models rather than by between-condition contrasts, which
+    ``tolerance_k`` does not reliably lower those correlations. The set is meant for
+    analysis by regression or mixed models, not by contrasts between conditions, which
     avoids the loss of power and the selection artefacts of matched dichotomies
     (Kuperman, 2015; Liben-Nowell et al., 2019).
 
-    Two deterministic passes reuse the matcher's even-spread primitive, so the R
-    and Python engines select byte-identical stimuli: an even spread over the
-    predictor defines a tolerance window on each control; the pool is filtered to
-    that window; a second even spread over the filtered pool is the selection.
-    There is no per-item matching and no random number generator.
+    The selection takes two deterministic passes of the matcher's even spread. An even
+    spread over the predictor defines a tolerance window on each control, and the pool
+    is filtered to those windows. A second even spread over the filtered pool is the
+    selection. There is no per-item matching and no random number generator.
 
-    The number of items is ``n_per_condition``, else ``n_per_cell``, and either must be
+    The number of items is ``n_per_condition``, or else ``n_per_cell``, and either must be
     a whole number of at least 1. It is 60 when neither key is given. ``tolerance_k``,
     ``shortfall`` and ``on_insufficient_tolerance`` are read from the design's
     ``matching`` block with the schema as fallback, as for ``match_stimuli``, and a
@@ -762,9 +761,9 @@ def select_continuous_stimuli(pool: pd.DataFrame, design: dict, schema: dict,
     which ``match_report_continuous`` sets the realised SD against. A relaxed
     window is recorded as computed, and the relaxation in ``window_relaxations``.
 
-    Returns the selected stimuli. Unless ``label`` is ``None`` the ``condition``
-    column is set to it, ``continuous`` by default, and unless ``renumber_sets`` is
-    ``False`` the ``set`` column is renumbered ``1..n``.
+    Returns the selected stimuli. Unless ``label`` is ``None``, the ``condition``
+    column is set to it (``continuous`` by default), and unless ``renumber_sets`` is
+    ``False``, the ``set`` column is renumbered ``1..n``.
     """
     cfg = design["continuous"]
     predictor = cfg["predictor"]
@@ -881,11 +880,10 @@ def resample_stimuli(pool: pd.DataFrame, design: dict, schema: dict,
 
     Each replicate is an independent, fully matched set drawn from the pool with
     the items of earlier replicates removed, so no item is reused. This lets a
-    study treat its items as a random factor (running different item samples
-    across participant groups, or showing an effect holds across samples) instead
-    of treating them as a fixed set (Clark, 1973; Yarkoni, 2022). Deterministic: the
-    matcher is deterministic and, under the ``standardised_euclidean`` and ``joint``
-    methods, the used-item set evolves identically across engines.
+    study treat its items as a random factor (such as running different item samples
+    across participant groups or showing that an effect holds across samples) instead
+    of treating them as a fixed set (Clark, 1973; Yarkoni, 2022). The selection is
+    deterministic.
 
     The first replicate draws on the whole pool, so its count of the candidates
     excluded for a missing matched value is the one recorded in

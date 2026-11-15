@@ -210,7 +210,7 @@ def referenced_fields(events: list) -> list:
 
 
 def required_fields(design: dict) -> list:
-    """Trial fields a design needs present in its items (paradigm + events)."""
+    """The item fields a design needs, from its paradigm and its events."""
     name = design.get("paradigm", "factorial")
     base = list(get_paradigm(name)["stimulus_fields"]) if name in PARADIGMS else []
     for f in referenced_fields(resolve_events(design)):

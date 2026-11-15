@@ -18,8 +18,8 @@ _BUNDLED_CALL = "importlib.resources.files('lexsync') / 'data' / 'schema.yaml'"
 def bundled_schema() -> str:
     """The schema shipped inside the package.
 
-    It is byte-identical to the repository's config/schema.yaml (test_config.py
-    enforces the identity), so an installed package runs anywhere.
+    It is identical to the repository's ``config/schema.yaml``, so an installed
+    package runs anywhere.
     """
     from importlib.resources import files
     return str(files("lexsync") / "data" / "schema.yaml")
@@ -28,22 +28,22 @@ def bundled_schema() -> str:
 def resolve_schema(schema_path=None, design_path=None, config_dir=None) -> tuple:
     """Resolve the schema for a run, returning ``(path, origin)``.
 
-    A named ``schema_path`` is used as given and must exist; it is never replaced by
+    A named ``schema_path`` is used as given and must exist. It is never replaced by
     another file, since that would run a different schema from the one the caller
     chose. With no schema named, the candidates are tried in order:
 
-    - for a folder of designs (``config_dir`` given): ``<config_dir>/schema.yaml``,
-      then ``config/schema.yaml`` in the working directory;
-    - for a single design: ``config/schema.yaml`` in the working directory, then
-      ``schema.yaml`` in the design's own directory;
+    - for a folder of designs (``config_dir`` given), ``<config_dir>/schema.yaml``,
+      then ``config/schema.yaml`` in the working directory
+    - for a single design, ``config/schema.yaml`` in the working directory, then
+      ``schema.yaml`` in the design's own directory
     - in both cases, last, the copy bundled with the package.
 
     Each list starts with the file that earlier releases read, so a call that relied on
     it still reads the same schema. Whenever no schema was named, the chosen path is
-    printed to stderr as "lexsync: using the schema at '<path>'".
+    printed to stderr as ``lexsync: using the schema at '<path>'``.
 
-    ``origin`` is one of "named", "config_dir", "working_directory",
-    "design_directory" or "bundled".
+    ``origin`` is one of ``"named"``, ``"config_dir"``, ``"working_directory"``,
+    ``"design_directory"`` or ``"bundled"``.
     """
     if schema_path is not None:
         if not os.path.isfile(schema_path):

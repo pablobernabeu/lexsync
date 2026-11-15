@@ -526,6 +526,8 @@ no function signature changes.
 - The Shiny method selector carries the Streamlit app's note on `mahalanobis`
   and `optimal`, and each app removes a run's folder once the next run's results
   or an error replace its results.
+- The Python package declares support for Python 3.15, on which its tests pass on
+  Linux, macOS and Windows.
 
 ### Deprecated
 
