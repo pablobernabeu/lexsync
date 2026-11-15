@@ -5,7 +5,7 @@
 #' Null-coalescing operator
 #'
 #' Returns `a` unless it is `NULL`, in which case it returns `b`.
-#' @param a,b Values; `a` is returned unless `NULL`.
+#' @param a,b Values. `a` is returned unless it is `NULL`.
 #' @return `a` or `b`.
 #' @name grapes-or-or-grapes
 #' @keywords internal
@@ -268,8 +268,8 @@
 #'
 #' Every header name and cell is trimmed of spaces, tabs, carriage returns and line
 #' feeds. After trimming, an empty cell and `NA` (quoted or not) are missing, and
-#' every other word, `null`, `nan` and `none` included, is a value. Each column not named in
-#' `as_character` then takes its type from all of its values: numeric when every value
+#' every other word, `null`, `nan` and `none` included, is a value. Each column not
+#' named in `as_character` then takes its type from all of its values: numeric when every value
 #' is a plain decimal number (no thousands separators), logical when every value is
 #' TRUE or FALSE in upper, lower or title case, and text otherwise. Dates are never
 #' parsed. A UTF-8 byte-order mark is ignored.
@@ -280,7 +280,7 @@
 #'   as text.
 #' @param delim `","`, or a tab character for a tab-separated file, which is read with
 #'   no quoting, as tab-separated corpora such as SUBTLEX-US and Lexique are written: a
-#'   quotation mark there is part of the cell. Mirrors the Python twin's `delim`.
+#'   quotation mark there is part of the cell.
 #' @return A data frame (a tibble). An empty file gives one with no columns.
 #' @importFrom readr read_csv read_delim locale
 #' @keywords internal
@@ -339,7 +339,8 @@ read_csv_utf8 <- function(path, as_character = character(0), delim = ",") {
 #' 8, counts and durations under 1e6), but a joined norm table, a supplied pool
 #' or an item table may carry any column the user likes, and those columns go straight
 #' into the stimuli CSV. The guard lives in both engines so that each refuses the same
-#' design; one engine accepting what the other rejects is a difference of its own.
+#' design, since one engine accepting what the other rejects would be a difference of
+#' its own.
 #'
 #' @param x A data frame about to be written.
 #' @return `x`, invisibly, or an error.
@@ -387,7 +388,7 @@ read_csv_utf8 <- function(path, as_character = character(0), delim = ",") {
 #' Write a data frame to a BOM-free UTF-8 CSV file
 #'
 #' @param x A data frame.
-#' @param path Output path; parent directories are created as needed.
+#' @param path Output path. Parent directories are created as needed.
 #' @return `path`, invisibly.
 #' @details A value the two engines cannot render alike is refused, naming the column:
 #'   a magnitude at or above 1e15, where readr has three incompatible layouts and no
@@ -411,7 +412,7 @@ write_csv_utf8 <- function(x, path) {
 #' produced them. A binary connection writes the string as given.
 #'
 #' @param x A character vector of lines.
-#' @param path Output path; parent directories are created as needed.
+#' @param path Output path. Parent directories are created as needed.
 #' @return `path`, invisibly.
 #' @keywords internal
 write_lines_lf <- function(x, path) {
@@ -594,9 +595,9 @@ write_lines_lf <- function(x, path) {
 
 #' MD5 digest of a file, for provenance logging
 #'
-#' MD5 (from base \pkg{tools}) is used as a lightweight content fingerprint; it
-#' is a provenance aid, not a security measure. The Python package uses the same
-#' algorithm so that run logs are comparable across engines.
+#' MD5 (from base \pkg{tools}) is used as a lightweight content fingerprint. It is
+#' a provenance aid, not a security measure. The Python package uses the same
+#' algorithm, so the run logs of the two engines can be compared.
 #'
 #' @param path File path.
 #' @return A hex digest string, or `NA` when the file is absent.
@@ -816,14 +817,13 @@ read_config <- function(path) {
 
 #' Validate a single stimulus value for safe inclusion in generated files
 #'
-#' Rejects control characters (including tab/newline) and over-long strings, so a
+#' Rejects control characters (including tab and newline) and over-long strings, so a
 #' crafted item cannot corrupt the generated loop table or experiment scripts.
 #' Commas, quotation marks, braces and brackets are allowed. Presented strings are
 #' written as data into a properly quoted CSV the experiment reads at run time,
 #' never interpolated into generated code, and no target evaluates them.
 #' OpenSesame, which evaluates the cells of its loop table, reads stimulus text
-#' from a companion table with Python's `csv` module. Mirrors the Python
-#' `clean_field`.
+#' from a companion table with Python's `csv` module.
 #'
 #' @param value A value coerced to a single string.
 #' @param field Field name, for error messages.
@@ -868,18 +868,18 @@ clean_field <- function(value, field = "field", max_len = 1000L) {
 
 #' Validate a metadata value interpolated into generated code or markup
 #'
-#' A design's name, language label and font are not stimuli. They do not travel in the
-#' loop table the experiment reads at run time; they are substituted straight into the
+#' A design's name, language label and font are not stimuli. They are not in the loop
+#' table the experiment reads at run time. They are substituted straight into the
 #' PsychoPy script, the OpenSesame inline Python and the jsPsych HTML, so a quote or an
-#' angle bracket there stops being text and becomes syntax. A design file is meant to be
-#' shared and re-run by someone else, which is what makes an unvalidated one an
-#' executable payload as much as a configuration.
+#' angle bracket there would be read as code, not text. A design file is meant to be
+#' shared and re-run by someone else, so an unvalidated one could carry code as well as
+#' configuration.
 #'
-#' Refusing beats escaping. Escaping correctly would mean three different escapes for
-#' three targets in two engines, six places to get subtly wrong, and it would change the
-#' bytes the two engines write; refusing is one rule that leaves every legitimate value
-#' ("en_lexdec", "english", "Courier New", "SimHei") byte-identical. Mirrors the Python
-#' `clean_meta`.
+#' Such a value is refused, not escaped. Escaping correctly would need three different
+#' escapes for three targets in two engines, six places to get wrong, and it would
+#' change the bytes the two engines write. Refusing is one rule that leaves every
+#' legitimate value (such as `en_lexdec`, `english`, `Courier New` or `SimHei`)
+#' unchanged.
 #'
 #' @param value A value coerced to a single string.
 #' @param field Field name, for error messages.
@@ -925,8 +925,7 @@ clean_port <- function(value, field = "triggers.parallel_address") {
 #' Validate a serial device name, which is written into the experiments as text
 #'
 #' The name is not escaped on its way into the generated code, so a quote or a line
-#' break in it would end the string it lands in. Mirrors the Python
-#' `clean_serial_port`.
+#' break in it would end the string it is written into.
 #'
 #' @param value The device name, such as `"COM3"` or `"/dev/ttyUSB0"`.
 #' @param field Field name, for error messages.

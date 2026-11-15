@@ -21,10 +21,9 @@ ae (U+00E6), o with stroke (U+00F8), dotless i (U+0131) or oe (U+0153), the vowe
 class of \code{\link[=count_syllables]{count_syllables()}}. Consonants
 before the first nucleus form the first onset, those after the last nucleus the
 final coda, and a consonant run between two nuclei is split at its midpoint
-(floor(m/2) to the left coda). Segmentation is on characters, so accented letters
-are handled identically in the two engines. A word with a character that is not a
-letter (a hyphen, an apostrophe, a digit) or with no vowel, such as a Cyrillic word,
-returns an empty list, and the caller falls back to letter substitution. Mirrors
-segment_subsyllabic in generation.py.
+(floor(m/2) to the left coda). Segmentation works on characters rather than bytes,
+so an accented letter is one letter. A word with a character that is not a letter
+(such as a hyphen, an apostrophe or a digit) or with no vowel, such as a Cyrillic
+word, returns an empty list, and the caller falls back to letter substitution.
 }
 \keyword{internal}

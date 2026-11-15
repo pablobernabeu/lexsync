@@ -302,8 +302,7 @@
 #' first eight hexadecimal digits of the SHA-256 of the NFC-normalised UTF-8 text
 #' `name|language`. An empty slug is replaced by those eight digits. NFC keeps a
 #' precomposed and a decomposed accented letter on one stem. A design whose name and
-#' language hold no letter or digit at all is refused. Mirrors `design_stem()` in the
-#' Python package.
+#' language hold no letter or digit at all is refused.
 #'
 #' @param design A parsed design configuration.
 #' @return The file stem, such as `"en_lexdec_english"` or `"chinese_14aadfa7"`.
@@ -395,32 +394,31 @@ design_stem <- function(design) {
 #' Check a design and its schema before anything is selected or written
 #'
 #' [run_pipeline()] calls this right after reading the two files, so a design that
-#' cannot be honoured is refused before any output exists, with the same message in
-#' both engines. It first refuses a key within one or two edits of a key lexsync
+#' cannot be honoured is refused before any output exists. It first refuses a key within one or two edits of a key lexsync
 #' reads at that level, naming the key it was probably meant to be (one edit for a
 #' known key of up to five characters, two for a longer one). It then refuses a
 #' missing, empty or non-text `name` or `language`, an `n_per_condition`, `n_per_cell`
 #' or `resample.n_sets` that is not a whole number of at least 1, a
-#' `counterbalance.optimise` that is not true or false, a `counterbalance.scale` other than `mean` or `mad`, a
-#' `counterbalance.max_run` or `counterbalance.orders` that is not a whole number of at
-#' least 1, and a `counterbalance.run_on` that is not a single non-empty text value.
+#' `counterbalance.optimise` that is not true or false, a `counterbalance.scale`
+#' other than `mean` or `mad`, a `counterbalance.max_run` or
+#' `counterbalance.orders` that is not a whole number of at least 1 and a
+#' `counterbalance.run_on` that is not a single non-empty text value.
 #' It does not see the trials, so a `run_on` that names no column of them is refused
 #' when `counterbalance.max_run` is applied to the trial order, by [counterbalance()]
 #' or, in a design with fillers, when [run_pipeline()] interleaves them. It refuses
-#' a name, language
-#' or font that cannot be written into the generated experiments, a trigger port that
-#' is not an address, and an event list the renderer refuses, such as one with an
+#' a name, language or font that cannot be written into the generated experiments, a
+#' trigger port that is not an address and an event list the renderer refuses, such
+#' as one with an
 #' unknown timing key, a bad response key or a response key that YAML reads as a
 #' boolean (an unquoted `yes`, `no`, `on` or `off`). It refuses a
 #' `presentation.fullscreen` that is not true or false and a
 #' `presentation.text_height_px` that is not a whole number from 8 to 400. It refuses a
 #' `triggers.mode` other than `auto`, `hardware` or `mock`, a `triggers.backend` other
-#' than `parallel` or `serial`, and a `triggers.baudrate` that is not a positive whole
+#' than `parallel` or `serial` and a `triggers.baudrate` that is not a positive whole
 #' number. A serial backend needs a `triggers.serial_port`, with a name the experiments
-#' can carry. Last, it refuses a condition
-#' without a name, with a name that is not text or with a repeated name, a corpus or
-#' pool design with conditions but no `match_on`, and a name and language that leave
-#' no file stem. It also refuses an `exclude_words` that is neither a list of words
+#' can carry. Last, it refuses a condition without a name, with a name that is not
+#' text or with a repeated name, a corpus or pool design with conditions but no
+#' `match_on` and a name and language that leave no file stem. It also refuses an `exclude_words` that is neither a list of words
 #' nor a mapping whose `path` names a file, and one that a design with an item table
 #' names.
 #'
@@ -434,14 +432,14 @@ design_stem <- function(design) {
 #' `instructions` that are not text, are empty or hold a control character other than a
 #' line break. It refuses a `response_mapping` that is not a mapping of conditions to
 #' single keys, names a key the response event does not allow, or comes with no response
-#' event. And it refuses a `rotate_mapping_by_list` that is not true or false, or that
-#' has no mapping to rotate.
+#' event. It also refuses a `rotate_mapping_by_list` that is not true or false or
+#' that has no mapping to rotate.
 #'
 #' @param design A parsed design configuration.
 #' @param schema The parsed global schema.
 #' @return A character vector of notes on unknown keys, in the order the keys were
 #'   written, then the notes on `triggers.inter_trigger_ms` and on an event's
-#'   `onset_locked: false`; empty when there are none.
+#'   `onset_locked: false`. It is empty when there are none.
 #' @examples
 #' validate_design(list(name = "demo", language = "english", x_note = "pilot"), list())
 #' @export

@@ -17,13 +17,12 @@ clean_field(value, field = "field", max_len = 1000L)
 The value as a plain string.
 }
 \description{
-Rejects control characters (including tab/newline) and over-long strings, so a
+Rejects control characters (including tab and newline) and over-long strings, so a
 crafted item cannot corrupt the generated loop table or experiment scripts.
 Commas, quotation marks, braces and brackets are allowed. Presented strings are
 written as data into a properly quoted CSV the experiment reads at run time,
 never interpolated into generated code, and no target evaluates them.
 OpenSesame, which evaluates the cells of its loop table, reads stimulus text
-from a companion table with Python's \code{csv} module. Mirrors the Python
-\code{clean_field}.
+from a companion table with Python's \code{csv} module.
 }
 \keyword{internal}

@@ -119,7 +119,7 @@ cohens_d <- function(x, y) {
 #' TOST decision at the .05 level (Lakens, 2017). Reporting the interval, rather
 #' than only a binary verdict, makes the realised imbalance and its sampling
 #' uncertainty explicit, and keeps the dependence on the number of items visible.
-#' With few items the interval is wide, whatever the point estimate. Both the
+#' With few items, the interval is wide, whatever the point estimate. Both the
 #' interval and the TOST treat the selected items as a sample, although a test on
 #' stimuli concerns a closed population. Sassenhagen and Alday (2016) recommend
 #' describing the stimuli and entering potential confounds in the analysis as
@@ -183,18 +183,18 @@ cohens_d_ci <- function(x, y, alpha = 0.05) {
 
 #' Two one-sided tests (TOST) of equivalence on a Cohen's d bound
 #'
-#' Reports the larger of the two one-sided p-values; a value below `alpha`
+#' Reports the larger of the two one-sided p-values. A value below `alpha`
 #' supports equivalence within +/- `bound_d` standard deviations. A
-#' non-significant difference test is not itself evidence of equivalence, hence
-#' TOST is reported alongside the standardised mean difference (Lakens, 2017).
+#' non-significant difference test is not itself evidence of equivalence, so TOST
+#' is reported alongside the standardised mean difference (Lakens, 2017).
 #'
 #' @references Lakens, D. (2017). Equivalence tests: A practical primer for *t* tests,
 #'   correlations, and meta-analyses. *Social Psychological and Personality Science,
 #'   8*(4), 355-362. \doi{10.1177/1948550617697177}
 #'
 #' @param x,y Numeric vectors.
-#' @param bound_d Smallest effect size of interest (Cohen's d); defaults to the
-#'   schema value of 0.5. That value is a convention and not a default of Lakens
+#' @param bound_d Smallest effect size of interest (Cohen's d). It defaults to 0.5,
+#'   the schema's value. That value is a convention and not a default of Lakens
 #'   (2017), who asks for the bound to be justified for the study. At 0.5 and
 #'   alpha .05, no dimension that varies can pass with fewer than 23 items per
 #'   condition, even when the conditions are identical.
@@ -231,7 +231,7 @@ tost_equiv <- function(x, y, bound_d = 0.5, alpha = 0.05) {
 #' The ratio of a condition's variance to the reference's, complementing the
 #' mean-based Cohen's d and TOST. Two conditions can share a mean yet differ in
 #' spread and still confound, which a mean-based statistic misses
-#' (Armstrong et al., 2012; Austin, 2009). A ratio near 1 is balanced; a common
+#' (Armstrong et al., 2012; Austin, 2009). A ratio near 1 is balanced. A common
 #' heuristic flags ratios outside roughly 0.5 to 2.
 #'
 #' @references Armstrong, B. C., Watson, C. E., & Plaut, D. C. (2012). SOS! An
@@ -318,7 +318,7 @@ balance_check <- function(stimuli, columns) {
 #'
 #' @param stimuli A matched-stimuli data frame (must contain `condition`).
 #' @param dims Dimensions to summarise and compare.
-#' @param schema The parsed global schema (equivalence settings).
+#' @param schema The parsed global schema, which gives the equivalence settings.
 #' @param roles Optional function of `condition`, `reference` and `dimension` that
 #'   returns the row's `role`: `"manipulated"` when the design sets the two
 #'   conditions apart on the dimension, `"controlled"` when it matches them on it
@@ -413,10 +413,10 @@ match_report <- function(stimuli, dims, schema, roles = NULL) {
 
 #' Realised-control report for a continuous design
 #'
-#' Returns the same list shape as [match_report()] (`descriptives` + `comparisons`),
-#' but the comparisons describe a continuous predictor: its realised span and, for
-#' each control, the Pearson correlation with the predictor (near zero when the
-#' control is held constant). Mirrors match_report_continuous in validation.py.
+#' Returns the same list shape as [match_report()] (`descriptives` and
+#' `comparisons`), but the comparisons describe a continuous predictor: its realised
+#' span and, for each control, the Pearson correlation with the predictor (near zero
+#' when the control is held constant).
 #'
 #' `sd` is each dimension's realised SD. For the predictor, `sd_ratio` sets it
 #' against the SD of as many values spaced evenly over the same range,
@@ -428,7 +428,7 @@ match_report <- function(stimuli, dims, schema, roles = NULL) {
 #' `window_low` and `window_high` give the window the selector banded it to, before
 #' any relaxation. Both come from `audit`, the selector's record.
 #'
-#' @param stimuli A stimuli data frame (a single "continuous" group).
+#' @param stimuli A stimuli data frame (a single `continuous` group).
 #' @param predictor The spanned predictor dimension.
 #' @param controls Character vector of control dimensions.
 #' @param schema The parsed global schema.

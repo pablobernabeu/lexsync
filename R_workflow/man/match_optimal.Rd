@@ -34,7 +34,7 @@ solver returns differs between \code{clue::solve_LSAP()} and SciPy's
 necessarily on the items. The pairs are numbered by cost, then by the tie-break
 rank of each word.
 
-When the conditions overlap, a word can sit in both subpools, and the solve may
+When the conditions overlap, a word can be in both subpools, and the solve may
 pair it with itself or use one pair in both directions (x with y and y with x).
 Those pairs are dropped, and the places left are filled by solving again over the
 words not yet used, until \code{n} pairs are found or no further pair exists. The

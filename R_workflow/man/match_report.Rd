@@ -11,7 +11,7 @@ match_report(stimuli, dims, schema, roles = NULL)
 
 \item{dims}{Dimensions to summarise and compare.}
 
-\item{schema}{The parsed global schema (equivalence settings).}
+\item{schema}{The parsed global schema, which gives the equivalence settings.}
 
 \item{roles}{Optional function of \code{condition}, \code{reference} and \code{dimension} that
 returns the row's \code{role}: \code{"manipulated"} when the design sets the two

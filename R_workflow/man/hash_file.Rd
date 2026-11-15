@@ -13,8 +13,8 @@ hash_file(path)
 A hex digest string, or \code{NA} when the file is absent.
 }
 \description{
-MD5 (from base \pkg{tools}) is used as a lightweight content fingerprint; it
-is a provenance aid, not a security measure. The Python package uses the same
-algorithm so that run logs are comparable across engines.
+MD5 (from base \pkg{tools}) is used as a lightweight content fingerprint. It is
+a provenance aid, not a security measure. The Python package uses the same
+algorithm, so the run logs of the two engines can be compared.
 }
 \keyword{internal}

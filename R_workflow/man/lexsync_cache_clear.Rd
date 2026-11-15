@@ -17,7 +17,7 @@ there was nothing to remove.
 \description{
 Deletes what \code{\link[=fetch_corpus]{fetch_corpus()}} put in \code{\link[=lexsync_cache_dir]{lexsync_cache_dir()}}. Given a \code{name},
 that is the corpus's \verb{<name>.csv} and any \verb{<name>.csv.part} that an
-interrupted download left behind. With \code{name} left \code{NULL} it is the whole
+interrupted download left behind. With \code{name} left \code{NULL}, it is the whole
 cache directory. A corpus needed again is downloaded afresh by the next
 \code{\link[=fetch_corpus]{fetch_corpus()}} call. A file that \code{\link[=fetch_corpus]{fetch_corpus()}} wrote to a \code{dest} of the
 caller's choosing is not in the cache, and is never touched.

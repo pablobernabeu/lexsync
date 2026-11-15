@@ -10,7 +10,7 @@
 \item{x}{A character vector, or a vector coercible to one.}
 }
 \value{
-A character vector, trimmed; \code{NA} is preserved.
+A character vector, trimmed. \code{NA} is preserved.
 }
 \description{
 Base R's \code{trimws()} removes only space, tab, carriage return and line feed,
@@ -18,7 +18,7 @@ leaving a no-break space, a form feed or an ideographic space in place, where
 Python's \code{str.strip()} removes all of them. \code{word} is the canonical key
 behind every byte-order tie-break, so a lexicon padded with any of those
 characters would otherwise key, sort and number differently in the two
-engines. As with \code{\link[=.lower_invariant]{.lower_invariant()}}, the fix is to pin R to Python's
-Unicode semantics.
+engines. As in \code{\link[=.lower_invariant]{.lower_invariant()}}, R follows Python's Unicode definition
+here.
 }
 \keyword{internal}

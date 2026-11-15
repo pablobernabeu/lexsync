@@ -24,28 +24,28 @@ neither key is given. \code{tolerance_k}, \code{shortfall} and \code{on_insuffic
 are read from its \code{matching} block with the schema as fallback, as for
 \code{\link[=match_stimuli]{match_stimuli()}}, and a relaxed window widens to the whole complete pool.}
 
-\item{schema}{The parsed global schema (tolerance windows).}
+\item{schema}{The parsed global schema, which gives the tolerance windows.}
 
-\item{verbose}{Logical; report a window relaxation.}
+\item{verbose}{Whether to report a window relaxation.}
 
 \item{key}{Column used as the selection unit and the byte-order tie-break, by
-default \code{"word"}. The pair-keyed path passes \code{"set"}: after a pair table is
-collapsed to one row per item set there is no \code{word} column, and \code{set} is unique
-per row, integer, and already derived deterministically.}
+default \code{"word"}. Pair designs pass \code{"set"}. Once a pair table is collapsed to
+one row per item set, there is no \code{word} column, and \code{set} is an integer that is
+unique per row and already derived deterministically.}
 
 \item{label}{Value written into the result's \code{condition} column, or \code{NULL} to leave
-the existing conditions alone. The pair path passes \code{NULL}, because its rows
-already carry the design's own conditions and overwriting them would destroy the
-contrast the design exists to test.}
+the existing conditions alone. Pair designs pass \code{NULL}, because their rows
+already carry the design's own conditions, and overwriting them would remove the
+contrast the design tests.}
 
-\item{renumber_sets}{Logical; renumber the selected rows \verb{1..n}. The pair path
-passes \code{FALSE}, because its \code{set} ids have to survive selection for the result to
-be re-expanded back to the full pair table.}
+\item{renumber_sets}{Whether to renumber the selected rows \verb{1..n}. Pair designs
+pass \code{FALSE}, because their \code{set} ids must be kept for the result to be expanded
+back to the full pair table.}
 }
 \value{
-A data frame of the selected stimuli. Unless \code{label} is \code{NULL} the
-\code{condition} column is set to it, \code{"continuous"} by default, and unless
-\code{renumber_sets} is \code{FALSE} the \code{set} column is renumbered \verb{1..n}.
+A data frame of the selected stimuli. Unless \code{label} is \code{NULL}, the
+\code{condition} column is set to it (\code{"continuous"} by default), and unless
+\code{renumber_sets} is \code{FALSE}, the \code{set} column is renumbered \verb{1..n}.
 }
 \description{
 Instead of dichotomising the predictor into conditions and matching, items are
@@ -54,11 +54,10 @@ the pool's distribution of the predictor and does not cover its range evenly.
 The control dimensions are held within a tolerance band, which trims their
 tails without holding them constant, so read each control's correlation with
 the predictor in \code{\link[=match_report_continuous]{match_report_continuous()}} before relying on it. Tightening
-\code{tolerance_k} does not reliably lower those correlations. The set is analysed
-by regression / mixed models rather than between-condition contrasts
-(Kuperman, 2015; Liben-Nowell et al., 2019). Two deterministic even-spread
-passes make the R and Python engines select byte-identical stimuli. Mirrors
-select_continuous_stimuli in matching.py.
+\code{tolerance_k} does not reliably lower those correlations. The set is meant for
+analysis by regression or mixed models, not by contrasts between conditions
+(Kuperman, 2015; Liben-Nowell et al., 2019). The selection is made by two
+deterministic even-spread passes.
 }
 \details{
 The design is checked before anything is selected, so a design that cannot be

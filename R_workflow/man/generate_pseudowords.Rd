@@ -2,7 +2,7 @@
 % Please edit documentation in R/generation.R
 \name{generate_pseudowords}
 \alias{generate_pseudowords}
-\title{A length-matched pseudoword for each base word (byte-order processing)}
+\title{A length-matched pseudoword for each base word, taken in byte order}
 \usage{
 generate_pseudowords(base_words, reference_words, exclude = NULL)
 }
@@ -21,7 +21,7 @@ in the bigram statistics.}
 A data frame with columns \code{base_word} and \code{pseudoword}.
 }
 \description{
-A length-matched pseudoword for each base word (byte-order processing)
+A length-matched pseudoword for each base word, taken in byte order
 }
 \details{
 The letters substituted in are those the reference words attest, so a

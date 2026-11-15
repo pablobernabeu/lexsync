@@ -53,8 +53,8 @@ experiment sets \code{lexsync_order}, which every trial logs.}
 \item{pause}{Whether the experiment pauses where the practice trials end.
 \code{\link[=export_opensesame]{export_opensesame()}} passes \code{TRUE} for trials that hold practice trials and trials
 of another block. An inline script, \code{lexsync_block_break}, then opens every trial,
-and on the first trial after the practice trials it shows "End of the practice
-trials." and waits for the space bar. \code{FALSE} (the default) writes no such script.}
+and on the first trial after the practice trials, it shows 'End of the practice
+trials.' and waits for the space bar. \code{FALSE} (the default) writes no such script.}
 }
 \value{
 The experiment's text, one string. Each trial opens with the pause when there
@@ -69,7 +69,6 @@ within lexsync's inline scripts. Restrict a feedback or stimulus event instead.
 }
 \description{
 The loop table and its companion text table are both looked up through OpenSesame's
-file pool, which also searches the experiment's own folder. Mirrors \code{build_osexp}
-in the Python engine.
+file pool, which also searches the experiment's own folder.
 }
 \keyword{internal}

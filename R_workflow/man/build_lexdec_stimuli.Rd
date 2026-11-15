@@ -2,7 +2,7 @@
 % Please edit documentation in R/generation.R
 \name{build_lexdec_stimuli}
 \alias{build_lexdec_stimuli}
-\title{Assemble a word-vs-pseudoword lexical-decision set from a candidate pool}
+\title{Assemble a lexical-decision set of words and pseudowords from a candidate pool}
 \usage{
 build_lexdec_stimuli(
   pool,
@@ -13,19 +13,20 @@ build_lexdec_stimuli(
 )
 }
 \arguments{
-\item{pool}{Data frame of candidate words, e.g. from \code{\link[=build_pool]{build_pool()}}.}
+\item{pool}{Data frame of candidate words, such as the one \code{\link[=build_pool]{build_pool()}} returns.}
 
 \item{n}{Number of real words to select.}
 
 \item{reference_words}{Character vector supplying the letters, the bigram
-statistics and the real word forms a pseudoword must avoid; defaults to the
+statistics and the real word forms a pseudoword must avoid. It defaults to the
 pool's words.}
 
 \item{method}{Pseudoword generator: \code{"letter_substitution"} (default) or
-\code{"subsyllabic"} (Wuggy-style; Keuleers & Brysbaert, 2010).}
+\code{"subsyllabic"}, which swaps subsyllabic constituents as Wuggy does (Keuleers &
+Brysbaert, 2010).}
 
 \item{exclude}{Optional character vector of further known word forms a
-pseudoword must not equal, which the reference may lack; see
+pseudoword must not equal, which the reference may lack, as for
 \code{\link[=generate_pseudowords]{generate_pseudowords()}}.}
 }
 \value{
@@ -40,12 +41,12 @@ for a word) and \code{edit_distance} (the Levenshtein distance from \code{target
 Real words are drawn by an even spread across the byte-ordered pool, then a
 length-matched pseudoword is generated for each. The pool is first filtered to
 the words written wholly in letters the reference attests, which the generators
-substitute among, so the eligible pool can be smaller than the request; the
-pipeline's shortfall policy then decides whether that errors. A pool word in a
-logographic script is refused. \code{reference_words} (the full lexicon) supplies
+substitute among, so the eligible pool can be smaller than the request. The
+pipeline's shortfall policy then decides whether that is an error. A pool word in
+a logographic script is refused. \code{reference_words} (the full lexicon) supplies
 the letters, the bigram statistics and the real-word list a pseudoword must
-avoid. The presented string is the \code{target} column; conditions are \code{word} and
-\code{pseudoword} and \code{set} pairs them.
+avoid. The presented string is the \code{target} column. The conditions are \code{word} and
+\code{pseudoword}, and \code{set} pairs them.
 }
 \references{
 Keuleers, E., & Brysbaert, M. (2010). Wuggy: A multilingual pseudoword

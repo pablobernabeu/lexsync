@@ -19,7 +19,7 @@ zero.
 The ratio of a condition's variance to the reference's, complementing the
 mean-based Cohen's d and TOST. Two conditions can share a mean yet differ in
 spread and still confound, which a mean-based statistic misses
-(Armstrong et al., 2012; Austin, 2009). A ratio near 1 is balanced; a common
+(Armstrong et al., 2012; Austin, 2009). A ratio near 1 is balanced. A common
 heuristic flags ratios outside roughly 0.5 to 2.
 }
 \examples{

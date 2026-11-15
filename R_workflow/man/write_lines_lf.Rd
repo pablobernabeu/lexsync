@@ -9,7 +9,7 @@ write_lines_lf(x, path)
 \arguments{
 \item{x}{A character vector of lines.}
 
-\item{path}{Output path; parent directories are created as needed.}
+\item{path}{Output path. Parent directories are created as needed.}
 }
 \value{
 \code{path}, invisibly.

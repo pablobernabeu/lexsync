@@ -612,35 +612,35 @@ DATASHEET_VERSION <- "1.2"
 #'   when the design has none, as for an item table without a continuous selection.
 #' @param stimuli The selected stimulus data frame.
 #' @param source_path Path of the lexicon or item table the stimuli came from.
-#' @param artifacts Named list of the artifact paths written for the design:
+#' @param artifacts Named list of the artefact paths written for the design:
 #'   `stimuli`, `descriptives`, `comparisons` and `experiments`, the result of
 #'   [export_experiments()]. Each file is recorded with its sha256: the three tables,
 #'   then every file in `experiments$files`, the loop and text tables included, or the
 #'   three experiment paths of a result that has no `files`.
 #' @param seed The integer seed recorded for the counterbalanced trial order.
-#' @param engine Engine label recorded in the record (default `"R"`).
+#' @param engine Engine label for the record (default `"R"`).
 #' @param candidate_pool Optional list of per-condition candidate-pool sizes
-#'   (`list(condition, n_candidates)`) recording how many items satisfied each
-#'   condition's window before matching, the size of the discretionary pool the
-#'   selection drew from, reported so that item-selection bias is auditable
-#'   (Forster, 2000; Simmons et al., 2011).
+#'   (`list(condition, n_candidates)`): how many items satisfied each condition's
+#'   window before matching, that is, the size of the pool the selection drew from.
+#'   It is recorded so that item-selection bias can be audited (Forster, 2000;
+#'   Simmons et al., 2011).
 #' @param norms Optional list of norm-table provenance records, from the design's
-#'   `norms:` block (see the pipeline). Each names a file, its sha256, the join key
+#'   `norms:` block. Each names a file, its sha256, the join key
 #'   and the per-column coverage. Recorded because a norm table can supply the very
 #'   variable a design manipulates, so a record that omitted it would describe a
 #'   selection over columns of unstated origin.
 #' @param balance Optional balance-optimiser report, from [balance_lists()].
 #'   Recorded because it decides which items each participant sees.
-#' @param blocks Optional practice/filler block report. Recorded because those
+#' @param blocks Optional report of the practice and filler blocks. Recorded because those
 #'   trials are presented but not analysed, so the presented and analysed counts
 #'   differ and the record must say why.
 #' @param design_path,schema_path Optional paths of the design and schema files
-#'   the run read; when given, their sha256 checksums complete the
+#'   the run read. When given, their sha256 checksums complete the
 #'   reproducibility record, because those two files decide everything the seed
 #'   does not. The schema's path is recorded too, in POSIX form, since an unnamed
 #'   schema is chosen from several candidates.
-#' @param selection_audit Optional matcher audit record; its `window_relaxations`
-#'   entries are recorded because a relaxed window changes what "matched" means
+#' @param selection_audit Optional matcher audit record. Its `window_relaxations`
+#'   entries are recorded because a relaxed window changes what 'matched' means
 #'   for that condition. Its `incomplete_dropped` entries (`list(condition, n)`)
 #'   count the candidates excluded for missing a matched dimension, which
 #'   `candidate_pool` still includes. They are recorded because the selection drew
@@ -674,8 +674,9 @@ DATASHEET_VERSION <- "1.2"
 #' @param zipf_derivation Optional `list(n_values, near_boundary)` for a lexicon
 #'   carrying `freq_permillion`, as [normalise_lexicon()] writes one: how many positive
 #'   rates it holds, and how many put Zipf = log10(per million) + 3 within 1e-9 of a
-#'   three-place rounding boundary, where the two engines' `log10` could round a
-#'   derived value apart. Recorded as `materials_source$zipf_derivation`.
+#'   three-place rounding boundary, where a last-bit difference between `log10`
+#'   implementations could change the rounded value. Recorded as
+#'   `materials_source$zipf_derivation`.
 #' @param trial_order Optional record of the trial-order settings on the presented
 #'   trials, which the pipeline passes. Without it, the record is taken from `stimuli`.
 #'   It gives `counterbalancing$max_run` (`list(k, run_on, longest)`, the longest run
@@ -687,10 +688,11 @@ DATASHEET_VERSION <- "1.2"
 #'   source, a corpus fetched into the cache by the registry's citation, and any other
 #'   file by its file name and checksum.
 #'
-#'   `design$n_per_condition` is the request the selector applied, the selector's
-#'   default when the design gives none, and `items$n_per_condition_realised` counts
-#'   the items each condition holds in `stimuli`, per replicate for resampled sets, so
-#'   a selection that fell short of the request under `shortfall: allow` shows it. The
+#'   `design$n_per_condition` is the request the selector applied, which is the
+#'   selector's default when the design gives none. `items$n_per_condition_realised`
+#'   counts the items each condition holds in `stimuli`, per replicate for resampled
+#'   sets, so a selection that fell short of the request under `shortfall: allow`
+#'   shows it. The
 #'   suggested analysis keys its by-item slope on the recipe that ran and adds a matched
 #'   design's matched dimensions that vary among its items as covariates.
 #' @references Forster, K. I. (2000). The potential for experimenter bias effects in word
@@ -1399,9 +1401,8 @@ build_datasheet <- function(design, schema, report, stimuli, source_path, artifa
 #' A ready-to-adapt methods paragraph rendered from a datasheet
 #'
 #' Every number in the paragraph is printed by lexsync's own formatter, rounded
-#' half away from zero from the value the datasheet stores, so the R and Python
-#' engines write the same text from the same record, a record read back from its
-#' JSON included.
+#' half away from zero from the value the datasheet stores, so a record read back
+#' from its JSON gives the same text.
 #'
 #' The paragraph states the items each condition holds, and the request beside them
 #' when they fell short of it. It describes the realised control before testing it:

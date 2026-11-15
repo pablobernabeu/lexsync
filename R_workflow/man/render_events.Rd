@@ -58,7 +58,7 @@ window is the one the two events had. A response collected from the offset stays
 event of its own. Keys are rendered as lists, which jsonlite writes as arrays even
 for one key.
 
-A text event's \code{case} is carried as it is, for the runners to apply. A mask's
+A text event's \code{case} is carried as it is, for the experiments to apply. A mask's
 \code{length_of} is carried too, with the one character to repeat as its \code{text}, and the
 exporters write the mask out for their trials (see \code{.sized_masks()}).
 }

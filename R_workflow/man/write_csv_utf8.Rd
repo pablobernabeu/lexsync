@@ -9,7 +9,7 @@ write_csv_utf8(x, path)
 \arguments{
 \item{x}{A data frame.}
 
-\item{path}{Output path; parent directories are created as needed.}
+\item{path}{Output path. Parent directories are created as needed.}
 }
 \value{
 \code{path}, invisibly.

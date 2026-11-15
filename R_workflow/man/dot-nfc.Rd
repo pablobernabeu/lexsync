@@ -10,7 +10,7 @@
 \item{x}{A character vector, or a vector coercible to one.}
 }
 \value{
-A character vector in NFC; \code{NA} is preserved.
+A character vector in NFC. \code{NA} is preserved.
 }
 \description{
 A precomposed letter such as U+00F3 and the base letter followed by a combining
@@ -20,7 +20,6 @@ which the matcher could place in opposite conditions of one matched set, and a
 norm or member join would miss whichever spelling the lexicon did not use.
 Applied after \code{\link[=.trim_invariant]{.trim_invariant()}} and \code{\link[=.lower_invariant]{.lower_invariant()}}, because case mapping
 does not guarantee normalised output. ICU (through stringi) and Python's \code{unicodedata}
-agree on every character assigned in both engines' Unicode versions. Mirrors
-\verb{_nfc} in python_workflow/src/lexsync/querying.py.
+agree on every character assigned in both engines' Unicode versions.
 }
 \keyword{internal}

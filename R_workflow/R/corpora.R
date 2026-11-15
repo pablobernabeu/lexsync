@@ -52,7 +52,7 @@ lexsync_cache_dir <- function() {
 #'
 #' Deletes what [fetch_corpus()] put in [lexsync_cache_dir()]. Given a `name`,
 #' that is the corpus's `<name>.csv` and any `<name>.csv.part` that an
-#' interrupted download left behind. With `name` left `NULL` it is the whole
+#' interrupted download left behind. With `name` left `NULL`, it is the whole
 #' cache directory. A corpus needed again is downloaded afresh by the next
 #' [fetch_corpus()] call. A file that [fetch_corpus()] wrote to a `dest` of the
 #' caller's choosing is not in the cache, and is never touched.
@@ -274,12 +274,13 @@ list_corpora <- function(registry_path = NULL) {
 #' becomes the cached file's name.
 #'
 #' An entry's `derived` file, a lexicon already normalised, is fetched when it has
-#' one and cached as it arrives. Otherwise its `openlexicon` file is fetched and
+#' one and cached as it arrives. Otherwise, its `openlexicon` file is fetched and
 #' converted by [normalise_lexicon()] with the entry's `columns` and `duplicates`, so
 #' `fetch_corpus("subtlex_us")` caches SUBTLEX-US as a lexicon. The URL's scheme is
-#' checked first. The transfer then lands in a sidecar file that is renamed into
-#' place only after the size cap, the markup sniff, any `sha256` the registry entry
-#' carries and the normalisation have all passed. A refusal of the registry entry, a
+#' checked first. The download is then written to a `.part` file beside the
+#' destination, which is renamed to the destination only after the file has passed
+#' the size limit, the check that it is not an HTML or XML page, any `sha256` the
+#' registry entry gives and the normalisation. A refusal of the registry entry, a
 #' failed transfer and a checksum mismatch name the registry file read. On success, a
 #' message gives the corpus's citation, which [list_corpora()] also lists, and a run
 #' that reads the file from the cache credits that citation in its datasheet (see
@@ -292,23 +293,23 @@ list_corpora <- function(registry_path = NULL) {
 #' (`lexsync fetch fr`), and this package reads the result with [load_lexicon()]. A
 #' wordfreq language code given here is refused with that explanation.
 #'
-#' The file lands in [lexsync_cache_dir()] unless `dest` names somewhere else.
+#' The file is written to [lexsync_cache_dir()] unless `dest` names another path.
 #' The cache directory is created only once the registry entry and its URL have
 #' been accepted, so a refused call writes nothing. A download to the default
-#' destination begins by deleting any `.part` sidecar in the cache that an
+#' destination begins by deleting any `.part` file in the cache that an
 #' interrupted transfer left there more than a day earlier. The cache persists
 #' between sessions, and one corpus may reach the 200 MB download cap, so several
 #' of them add up. [lexsync_cache_clear()] removes one corpus or the whole cache,
 #' and the next call downloads the corpus again. A `dest` the caller names, inside
 #' the cache or not, is used as given. Its directory must already exist, no
-#' sidecar is swept, and the only file beside it that lexsync writes or deletes is
-#' the `<dest>.part` sidecar of the download itself.
+#' `.part` file is deleted, and the only file beside it that lexsync writes or
+#' deletes is the `<dest>.part` file of the download itself.
 #'
 #' @param name A corpus name present in the registry.
 #' @param registry_path Optional path to `registry.yaml`. A path that does not exist
 #'   is refused. `NULL` (the default) finds the registry as [list_corpora()]
 #'   describes.
-#' @param dest Optional destination file; defaults to `<name>.csv` in
+#' @param dest Optional destination file. It defaults to `<name>.csv` in
 #'   [lexsync_cache_dir()].
 #' @return The path to the downloaded file, invisibly.
 #' @importFrom utils download.file
@@ -572,20 +573,19 @@ fetch_corpus <- function(name, registry_path = NULL, dest = NULL) {
 #' default) keeps the first row in file order, and `"sum"` adds its rows' frequencies
 #' per million, as Lexique needs, since it splits a homograph's frequency between its
 #' rows. Frequencies per million are converted with Zipf = log10(per million) + 3,
-#' rounded to three places by lexsync's shared rounder. A value of 0 or below has no
+#' rounded to three places by lexsync's own rounding function. A value of 0 or below has no
 #' Zipf value and is refused. Zipf values read as they are must lie between 0 and 9.
 #'
 #' A message gives the number of forms and, for derived Zipf values, the number that
 #' lay within 1e-9 of a rounding boundary after scaling. That is the only step at which
-#' the two engines' `log10` could round a value apart, and the count is expected to be
-#' 0. A run over the lexicon records the count in its run log and datasheet.
+#' a last-bit difference between `log10` implementations could change a rounded value,
+#' and the count is expected to be 0. A run over the lexicon records the count in its run log and datasheet.
 #'
 #' @param path Path to the corpus file.
 #' @param columns Optional named list mapping lexsync's column names to the file's, as
-#'   a registry entry's `columns` does: `word`, one of `freq_zipf` and
-#'   `freq_permillion`, and optionally `pos`. Without a map, the entry's is used, and
-#'   without either the file's own `word`, `freq_zipf` or `freq_permillion`, and `pos`
-#'   columns are read.
+#'   a registry entry's `columns` does: `word`, either `freq_zipf` or
+#'   `freq_permillion` and, optionally, `pos`. Without a map, the entry's is used.
+#'   Without either, the file's own columns of those names are read.
 #' @param entry Optional registry entry, as a list, or the name of one in the
 #'   registry lexsync finds by default (see [list_corpora()]). It supplies the map
 #'   when `columns` is `NULL`, and the `duplicates` rule.

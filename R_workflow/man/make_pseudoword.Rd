@@ -30,9 +30,9 @@ which hold every letter a legal candidate of two letters or more can use.
 A single pseudoword string, or \code{NULL} if no legal candidate exists.
 }
 \description{
-Searches single-letter substitutions first, then two-letter substitutions;
-candidates are ranked by summed bigram frequency with a byte-order tie-break,
-so the choice is deterministic and identical across engines.
+Searches single-letter substitutions first, then two-letter substitutions.
+Candidates are ranked by summed bigram frequency with a byte-order tie-break, so
+the choice is deterministic.
 }
 \details{
 \code{\link[=generate_pseudowords]{generate_pseudowords()}} builds \code{bigrams} and \code{lexset} from a reference word

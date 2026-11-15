@@ -2,7 +2,7 @@
 % Please edit documentation in R/scripting.R
 \name{export_experiments}
 \alias{export_experiments}
-\title{Export all presentation targets (PsychoPy, OpenSesame, jsPsych)}
+\title{Export all presentation targets (PsychoPy, OpenSesame and jsPsych)}
 \usage{
 export_experiments(
   stimuli,
@@ -18,11 +18,12 @@ export_experiments(
 
 \item{design}{A parsed design configuration.}
 
-\item{schema}{The parsed global schema (trigger and presentation settings).}
+\item{schema}{The parsed global schema, which gives the trigger and presentation
+settings.}
 
 \item{outdir}{Output directory.}
 
-\item{base}{Optional file-name stem. By default the design's \code{\link[=design_stem]{design_stem()}}.}
+\item{base}{Optional file-name stem, by default the design's \code{\link[=design_stem]{design_stem()}}.}
 
 \item{conditions}{Optional character vector of condition labels in the order
 that assigns their trigger codes (see \code{\link[=assign_triggers]{assign_triggers()}}). \code{NULL} (the
@@ -33,15 +34,15 @@ A named list of generated file paths: \code{psychopy}, \code{opensesame} (versio
 experiment when a design has several, see \code{\link[=export_opensesame]{export_opensesame()}}) and \code{jspsych}.
 \code{files} lists every file written, in a fixed order: the PsychoPy script, each
 OpenSesame experiment in version order, the jsPsych page, the PsychoPy conditions
-file, and then each OpenSesame experiment's loop table and text table.
+file and then each OpenSesame experiment's loop table and text table.
 }
 \description{
 Assigns the EEG trigger codes with \code{\link[=assign_triggers]{assign_triggers()}} and then writes each
 target. The condition codes follow \code{conditions}, which defaults to the order of
 the design's \code{conditions} entries, so in a design that declares its conditions
-the first is 101, the second 102, and so on, whatever order the counterbalanced
-trials put them in. A design with no \code{conditions} block (a generated lexical
-decision, an item table) falls back to the order of first appearance, unless
+the first is 101, the second 102 and so on, whatever order the counterbalanced
+trials put them in. A design with no \code{conditions} block (such as a generated
+lexical decision or an item table) falls back to the order of first appearance, unless
 \code{conditions} is given. \code{\link[=assign_triggers]{assign_triggers()}} is given the design's events and the
 schema, so the item codes of a design that sends them alongside other codes are
 kept apart from those codes, and a code of the design's own that the stream
@@ -51,7 +52,7 @@ already uses is reported.
 Each trial that names no \code{answer} of its own takes the key the design's response
 mapping gives its condition in its list, so the loop tables can score every trial.
 A lexical decision maps word to its response event's first key and pseudoword to
-its second unless the design gives \code{response_mapping}, and
+its second, unless the design gives \code{response_mapping}, and
 \code{rotate_mapping_by_list: true} rotates the keys across lists. A practice or filler
 trial keeps the answer its table gives. The stimuli passed in are not changed. Every
 target shows the design's \code{instructions}, or lexsync's English instructions for its

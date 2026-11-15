@@ -23,12 +23,12 @@ the file chosen. A named schema that does not exist is an error. The path used
 is recorded in the run log and in the datasheet's
 \code{reproducibility$schema_path}.}
 
-\item{outdir}{Output directory supplied by the caller (subdirectories
-\code{stimuli}, \code{reports}, \code{experiments} are created). It must be supplied;
-lexsync does not choose a default output location.}
+\item{outdir}{Output directory, in which the subdirectories \code{stimuli}, \code{reports}
+and \code{experiments} are created. It must be supplied, as lexsync does not choose
+a default output location.}
 
 \item{reference_words}{Optional character vector of words to compute the derived
-dimensions against. By default they are computed against the lexicon, or
+dimensions against. By default, they are computed against the lexicon, or
 against its rows marked 1 in a \code{reference_member} column. For a corpus or pool
 design, a supplied list recomputes \code{n_density} and \code{old20}, and \code{bigram_freq}
 when the lexicon carries it or the design refers to it, overriding the
@@ -38,7 +38,7 @@ the run log says so. A list that is empty or holds a missing value is refused.
 Its words are normalised to Unicode NFC before use, like every other text key
 the pipeline reads.}
 
-\item{verbose}{Logical; print progress.}
+\item{verbose}{Whether to print progress.}
 }
 \value{
 Invisibly, a named list. \code{stimuli} is the path of
@@ -53,9 +53,9 @@ and \verb{reports/<stem>_datasheet_R.md}, which the list does not name. \verb{<s
 \code{\link[=design_stem]{design_stem()}} of the design.
 }
 \description{
-A design may refer to a derived dimension (\code{n_density}, \code{old20}, \code{bigram_freq}) in
-\code{match_on}, a condition's \code{define_by}, \code{pool_filters}, a continuous predictor or
-control, or \code{counterbalance.balance_on}. When the lexicon lacks it, the pipeline
+A design may refer to a derived dimension (\code{n_density}, \code{old20} or \code{bigram_freq})
+in \code{match_on}, \code{pool_filters}, \code{counterbalance.balance_on}, a condition's
+\code{define_by} or a continuous predictor or control. When the lexicon lacks it, the pipeline
 computes it on the pool against the neighbourhood reference, after the filters the
 lexicon can answer and before those on the derived dimension.
 }

@@ -21,10 +21,10 @@ working directory, then the copy bundled with the package,
 the file chosen. A named schema that does not exist is an error, raised before
 any design runs.}
 
-\item{outdir}{Output directory supplied by the caller. It must be supplied;
-lexsync does not choose a default output location.}
+\item{outdir}{Output directory. It must be supplied, as lexsync does not choose a
+default output location.}
 
-\item{verbose}{Logical; print progress.}
+\item{verbose}{Whether to print progress.}
 }
 \value{
 A named list of per-design results, invisibly.

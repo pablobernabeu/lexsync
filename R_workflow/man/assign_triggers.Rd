@@ -24,12 +24,13 @@ the item codes as for a design that sends no other code beside them.}
 \code{stimuli} with trigger columns added.
 }
 \description{
-Adds \code{condition_trigger} (101, 102, ... per condition) and \code{item_trigger}
-(40-239 per item/\code{set}). Events reference these by the tokens "condition" and
-"item", or carry their own codes, whole numbers from 1 to 255. Item codes follow
+Adds \code{condition_trigger} (101, 102 and so on, one per condition) and
+\code{item_trigger} (40 to 239, one per item \code{set}). Events refer to these by the
+tokens \code{condition} and \code{item}, or carry their own codes, whole numbers from 1 to
+255. Item codes follow
 the code-point order of the set labels, so with sets 1 to 20, set 10 is 41 and set
 2 is 51. Decode an item code through the loop table, not from the set's label. The
-item range holds 200 codes (an 8-bit-port constraint), so past 200 sets the codes
+item range holds 200 codes (a limit of an 8-bit port), so past 200 sets the codes
 wrap and repeat, and a message says so.
 }
 \details{
@@ -46,8 +47,8 @@ code-point order of the set labels, wrapping and repeating past 200 sets. Each
 trigger in \code{events} is checked as \code{\link[=render_events]{render_events()}} checks it.
 
 A notice is given for a code of the design's own that the stream already uses for
-something else: 254 or 255, which the PsychoPy and OpenSesame experiments send when
-the session starts and ends, a condition code the design sends, or a code within the
+something else: 254 or 255 (which the PsychoPy and OpenSesame experiments send when
+the session starts and ends), a condition code the design sends or a code within the
 range of the item codes it sends.
 
 The condition codes follow \code{conditions} when it is given: its first entry is
@@ -55,9 +56,9 @@ The condition codes follow \code{conditions} when it is given: its first entry i
 \code{stimuli}, so the same condition keeps the same code in a subset such as a
 practice block. A condition present in \code{stimuli} but missing from
 \code{conditions} takes the next free codes, in code-point order of its label.
-Either way the mapping depends only on the labels, never on the row order.
+Either way, the mapping depends only on the labels, never on the row order.
 Without \code{conditions}, the codes follow the order in which the conditions first
-appear in \code{stimuli}, as in lexsync 0.1.0. On a shuffled trial list that order
+appear in \code{stimuli}, as in lexsync 0.1.0. On a shuffled trial list, that order
 comes from the shuffle, so a different seed can swap two conditions' codes.
 \code{\link[=export_experiments]{export_experiments()}} passes the design's order, and the pipeline passes the
 order of the design's \code{conditions}, followed by any other condition in the

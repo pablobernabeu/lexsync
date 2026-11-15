@@ -8,7 +8,7 @@
 \description{
 \if{html}{\figure{logo.svg}{options: style='float: right' alt='logo' width='120'}}
 
-A cross-platform toolkit that unifies lexical-corpus access (bundled English, Spanish and Mandarin lexica and a registry of citable corpora), parallel multidimensional stimulus matching, deterministic pseudoword generation, counterbalancing and the automated generation of experiments from a declarative trial-event model, for 'PsychoPy', 'OpenSesame' and the browser ('jsPsych'). The laboratory targets bind electroencephalography onset triggers to the stimulus flip. It is the R member of a dual-language pair with a structurally identical 'Python' package. Several paradigms (factorial word contrasts, lexical decision, priming, self-paced reading and cued categorisation) are supported, and each design is accompanied by a machine- and human-readable materials datasheet for reproducibility.
+A cross-platform toolkit for lexical-corpus access (bundled English, Spanish and Mandarin lexica and a registry of citable corpora), the matching of stimuli on several dimensions at once, deterministic pseudoword generation, counterbalancing and the automated generation of experiments from a declarative trial-event model, for 'PsychoPy', 'OpenSesame' and the browser ('jsPsych'). The laboratory targets send electroencephalography onset triggers on the screen refresh that shows the stimulus. Several paradigms are supported (factorial word contrasts, lexical decision, priming, self-paced reading and cued categorisation), and each design is accompanied by a materials datasheet, readable by machines and people, for reproducibility. A 'Python' package of the same name has the same structure and functions.
 }
 \seealso{
 Useful links:

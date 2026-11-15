@@ -7,7 +7,7 @@
 #' @param df A candidate lexicon data frame.
 #' @param schema The parsed schema, such as
 #'   `yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))`.
-#' @return `TRUE`, invisibly; stops with an informative error otherwise.
+#' @return `TRUE`, invisibly, or an informative error.
 #' @keywords internal
 validate_lexicon <- function(df, schema) {
   required <- unlist(schema[["lexicon_schema"]][["required"]], use.names = FALSE)
@@ -21,18 +21,18 @@ validate_lexicon <- function(df, schema) {
 
 #' Lower-case a character vector under the Unicode default case mapping
 #'
-#' Base R's `tolower()` hands case mapping to the C library, so it is both
-#' locale- and platform-dependent (see `?chartr`): under a C or 8-bit locale it
-#' leaves accented capitals uncased, and even under a UTF-8 locale it applies
-#' only the simple mappings, rendering Greek final sigma as U+03C3 and dropping
-#' the dot of U+0130. Python's `str.lower()` always applies the Unicode default
-#' *full* mapping, giving U+03C2 and i + U+0307 respectively. `word` is the
-#' canonical key behind every byte-order tie-break, so the engines must fold
-#' case identically; pinning ICU to the root locale ("und") reproduces Python's
-#' mapping exactly and removes the ambient locale from the result.
+#' Base R's `tolower()` leaves case mapping to the C library, so it depends on the
+#' locale and the platform (see `?chartr`). Under a C or 8-bit locale, it leaves
+#' accented capitals uncased, and even under a UTF-8 locale, it applies only the
+#' simple mappings, rendering Greek final sigma as U+03C3 and dropping the dot of
+#' U+0130. Python's `str.lower()` always applies the Unicode default full mapping,
+#' giving U+03C2 and i + U+0307 respectively. `word` is the canonical key behind
+#' every byte-order tie-break, so the engines must fold case identically. ICU set to
+#' the root locale (`und`) reproduces Python's mapping exactly and makes the result
+#' independent of the session's locale.
 #'
 #' @param x A character vector, or a vector coercible to one.
-#' @return A character vector, lower-cased; `NA` is preserved.
+#' @return A character vector, lower-cased. `NA` is preserved.
 #' @keywords internal
 .lower_invariant <- function(x) {
   stringi::stri_trans_tolower(as.character(x), locale = "und")
@@ -52,11 +52,11 @@ validate_lexicon <- function(df, schema) {
 #' Python's `str.strip()` removes all of them. `word` is the canonical key
 #' behind every byte-order tie-break, so a lexicon padded with any of those
 #' characters would otherwise key, sort and number differently in the two
-#' engines. As with [.lower_invariant()], the fix is to pin R to Python's
-#' Unicode semantics.
+#' engines. As in [.lower_invariant()], R follows Python's Unicode definition
+#' here.
 #'
 #' @param x A character vector, or a vector coercible to one.
-#' @return A character vector, trimmed; `NA` is preserved.
+#' @return A character vector, trimmed. `NA` is preserved.
 #' @keywords internal
 .trim_invariant <- function(x) {
   stringi::stri_trim_both(as.character(x), pattern = .WHITESPACE)
@@ -71,11 +71,10 @@ validate_lexicon <- function(df, schema) {
 #' norm or member join would miss whichever spelling the lexicon did not use.
 #' Applied after [.trim_invariant()] and [.lower_invariant()], because case mapping
 #' does not guarantee normalised output. ICU (through stringi) and Python's `unicodedata`
-#' agree on every character assigned in both engines' Unicode versions. Mirrors
-#' `_nfc` in python_workflow/src/lexsync/querying.py.
+#' agree on every character assigned in both engines' Unicode versions.
 #'
 #' @param x A character vector, or a vector coercible to one.
-#' @return A character vector in NFC; `NA` is preserved.
+#' @return A character vector in NFC. `NA` is preserved.
 #' @keywords internal
 .nfc <- function(x) {
   stringi::stri_trans_nfc(as.character(x))
@@ -157,11 +156,10 @@ count_syllables <- function(word) {
 
 #' Refuse a lexicon column that the shared CSV rule did not read as numbers
 #'
-#' A value such as "1,000" leaves the whole column text under that rule. `as.numeric()`
+#' A value such as '1,000' leaves the whole column text under that rule. `as.numeric()`
 #' would then turn it into `NA` with a warning, and pandas' float conversion would fail
 #' in the Python engine, so both engines refuse the column here, naming the first value
-#' that is not a plain decimal number. Mirrors `_require_numbers` in
-#' python_workflow/src/lexsync/querying.py.
+#' that is not a plain decimal number.
 #'
 #' @param x The column.
 #' @param name Its name, for the message.
@@ -258,7 +256,7 @@ count_syllables <- function(word) {
 #' @return A data frame with at least `word`, `length`, `n_syllables`,
 #'   `frequency` and `id`, plus the frequency column the schema names (by default
 #'   `freq_zipf`) and every other column the file carried. Rows are in byte order
-#'   of `word` and `id` numbers them from 1. When normalisation changed or merged
+#'   of `word`, and `id` numbers them from 1. When normalisation changed or merged
 #'   any word, the attribute `input_normalisation` holds `list(changed, collapsed)`:
 #'   the words it rewrote and the duplicate rows it removed.
 #' @examples
@@ -379,8 +377,7 @@ add_neighbourhood <- function(df, reference = df$word, n_old = 20L) {
 #' The forms are trimmed, lower-cased and normalised to Unicode NFC before they are
 #' compared, as [load_lexicon()] does to a lexicon's words, so `Dog` and `dog` are at
 #' distance 0. Length is counted in code points. `pair.overlap` is rounded to nine
-#' decimal places, and a pair of two empty forms gives 0. Both engines return
-#' identical values.
+#' decimal places, and a pair of two empty forms gives 0.
 #'
 #' @param df A pair table.
 #' @param prime,target Column names holding the two orthographic forms.
@@ -405,8 +402,8 @@ add_pair_overlap <- function(df, prime = "prime", target = "target") {
 #' Mean bigram probability (type-based, non-positional), a phonotactic-probability proxy
 #'
 #' For each word, the mean over its adjacent letter bigrams of the corpus bigram
-#' probability (count divided by the total bigram count). Computed from integer
-#' counts and rounded, so it is identical in the R and Python engines.
+#' probability (count divided by the total bigram count). It is computed from
+#' integer counts and then rounded.
 #'
 #' @param df A data frame with a `word` column.
 #' @param reference A character vector of reference words (defaults to `df$word`).
@@ -440,26 +437,17 @@ add_bigram_frequency <- function(df, reference = NULL) {
 # equal to itself.
 .norm_key <- function(x) .nfc(.lower_invariant(.trim_invariant(x)))
 
-#' Left-join a norm table (e.g. concreteness, age of acquisition, valence)
+#' Left-join a norm table (such as concreteness, age of acquisition or valence)
 #'
-#' The connector for semantic dimensions: the norm data themselves are fetched
-#' separately (licensing varies), then merged here so the matcher can equate on
-#' them. The join is deterministic and identical across engines.
+#' Norm data, such as semantic dimensions, are fetched separately, since their
+#' licences vary, and joined here so that the matcher can equate on them. The join
+#' is deterministic.
 #'
-#' The result is the lexicon itself with the norm columns appended, and the key is
-#' looked up positionally rather than through `merge()`. That is what makes the two
-#' engines agree by construction, with nothing to repair afterwards, because `merge()`
-#' and `pandas.merge` were measured to diverge in three ways, each of them silent:
-#' R hoists the `by` column to position 1 while pandas keeps the left frame's
-#' order, so the column order differed whenever `on` was not already first; R
-#' disambiguates a colliding column name with `.x`/`.y` and pandas with `_x`/`_y`,
-#' and either way a dimension the design matches on disappears under a name
-#' nothing looks for; and `merge(sort = FALSE)` leaves the row order unspecified, so
-#' x's order is not carried through. A positional lookup has none of those degrees of
-#' freedom: the output is the input plus columns, in both engines. A norm column
-#' whose name the lexicon already has is refused.
+#' The result is the lexicon itself with the norm columns appended, so no lexicon
+#' column is moved or renamed and no row is reordered. A norm column whose name the
+#' lexicon already has is refused.
 #'
-#' The key is trimmed, case-folded and normalised to NFC on *both* sides, so a
+#' The key is trimmed, case-folded and normalised to NFC on both sides, so a
 #' lexicon holding `Dog` matches a norm row for `dog`. The lexicon's own spelling is
 #' preserved rather than folded in place: `word` is the byte-order tie-break behind
 #' every selection, so the join must not rewrite it. A missing key never matches, and
@@ -469,7 +457,7 @@ add_bigram_frequency <- function(df, reference = NULL) {
 #' @param lexicon A lexicon data frame.
 #' @param norms A data frame, or the path to a UTF-8 CSV, holding the `on` column and
 #'   the norm columns.
-#' @param on The join column (default "word").
+#' @param on The join column (default `"word"`).
 #' @param columns Optional norm columns to keep.
 #' @return `lexicon` with the norm columns appended, in the lexicon's own row and
 #'   column order. Rows with no matching norm get `NA`.
@@ -720,23 +708,23 @@ merge_norms <- function(lexicon, norms, on = "word", columns = NULL) {
 
 #' Load a supplied candidate pool of words and give it the matcher's dimensions
 #'
-#' A researcher who already has a curated word list (from a previous study, a norming
-#' session, a colleague) should not have to dress it up as a corpus lexicon
-#' to get lexsync's matching, validation and datasheet. This reads such a list and
-#' returns something the matcher accepts.
+#' A curated word list, such as one from a previous study, a norming session or a
+#' colleague, can be matched, validated and documented without first being made into
+#' a corpus lexicon. This function reads such a list and returns a pool the matcher
+#' accepts.
 #'
 #' The list needs only a `word` column. Length and the syllable estimate are derived
-#' from the form. Everything else is either supplied on the list itself or looked up:
-#' with `lexicon` given, the corpus dimensions (frequency above all) are joined for
-#' those words, and a word the lexicon does not have is a hard error rather than an
-#' `NA`, because a word missing a value would be left out of the candidates and the
-#' pool would then be smaller than the user believes it is.
+#' from the form. Every other dimension is either supplied on the list itself or
+#' looked up. With `lexicon` given, the corpus dimensions (frequency above all) are
+#' joined for those words, and a word the lexicon does not have is an error rather
+#' than an `NA`, because a word missing a value would be left out of the candidates
+#' and the pool would then be smaller than the user believes it is.
 #'
-#' The returned `reference` matters as much as the pool. `n_density` and `old20` are
-#' properties of a word in its *language*, not among the handful of words a study
-#' happens to use, so computing them against a 200-word supplied list would give
-#' numbers that mean nothing. When a lexicon is given, the reference is the lexicon's
-#' words; only without one does it fall back to the pool itself. A
+#' The returned `reference` matters as much as the pool. `n_density` and `old20`
+#' describe a word within its language, not within the few words a study uses, so
+#' computing them against a 200-word supplied list would give meaningless numbers.
+#' When a lexicon is given, the reference is the lexicon's words. Without one, it is
+#' the pool itself. A
 #' `reference_member` column on whichever of the two supplies the reference keeps
 #' only the rows it marks 1.
 #'
@@ -815,13 +803,13 @@ load_pool <- function(path, schema, lexicon = NULL, language = NULL) {
   list(pool = df, reference = reference)
 }
 
-#' Load a paradigm item table (prime-target pairs, sentences, ...)
+#' Load a paradigm item table (such as prime-target pairs or sentences)
 #'
 #' The table must carry an `item` identifier, a `condition` label and the
-#' paradigm's presented fields. Field values are validated (no control
-#' characters; bounded length) so a crafted item cannot corrupt the generated
-#' loop table or scripts. Items are mapped to a deterministic integer `set` id
-#' (byte order), so counterbalancing matches the corpus path and the two engines.
+#' paradigm's presented fields. Field values are validated (no control characters
+#' and a bounded length), so a crafted item cannot corrupt the generated loop table
+#' or scripts. Items are mapped to deterministic integer `set` ids in byte order, so
+#' counterbalancing works as it does for a corpus design.
 #' The item id, the condition and the presented fields are normalised to Unicode
 #' NFC. When that changed any cell, the attribute `input_normalisation` holds
 #' `list(changed, collapsed)`, with `collapsed` always 0 since no row is removed.

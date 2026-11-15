@@ -25,24 +25,24 @@ trimmed, lower-cased and normalised to Unicode NFC as in \code{\link[=load_lexic
 merged any word of the pool or the lexicon.
 }
 \description{
-A researcher who already has a curated word list (from a previous study, a norming
-session, a colleague) should not have to dress it up as a corpus lexicon
-to get lexsync's matching, validation and datasheet. This reads such a list and
-returns something the matcher accepts.
+A curated word list, such as one from a previous study, a norming session or a
+colleague, can be matched, validated and documented without first being made into
+a corpus lexicon. This function reads such a list and returns a pool the matcher
+accepts.
 }
 \details{
 The list needs only a \code{word} column. Length and the syllable estimate are derived
-from the form. Everything else is either supplied on the list itself or looked up:
-with \code{lexicon} given, the corpus dimensions (frequency above all) are joined for
-those words, and a word the lexicon does not have is a hard error rather than an
-\code{NA}, because a word missing a value would be left out of the candidates and the
-pool would then be smaller than the user believes it is.
+from the form. Every other dimension is either supplied on the list itself or
+looked up. With \code{lexicon} given, the corpus dimensions (frequency above all) are
+joined for those words, and a word the lexicon does not have is an error rather
+than an \code{NA}, because a word missing a value would be left out of the candidates
+and the pool would then be smaller than the user believes it is.
 
-The returned \code{reference} matters as much as the pool. \code{n_density} and \code{old20} are
-properties of a word in its \emph{language}, not among the handful of words a study
-happens to use, so computing them against a 200-word supplied list would give
-numbers that mean nothing. When a lexicon is given, the reference is the lexicon's
-words; only without one does it fall back to the pool itself. A
+The returned \code{reference} matters as much as the pool. \code{n_density} and \code{old20}
+describe a word within its language, not within the few words a study uses, so
+computing them against a 200-word supplied list would give meaningless numbers.
+When a lexicon is given, the reference is the lexicon's words. Without one, it is
+the pool itself. A
 \code{reference_member} column on whichever of the two supplies the reference keeps
 only the rows it marks 1.
 }

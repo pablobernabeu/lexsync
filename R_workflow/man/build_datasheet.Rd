@@ -42,7 +42,7 @@ when the design has none, as for an item table without a continuous selection.}
 
 \item{source_path}{Path of the lexicon or item table the stimuli came from.}
 
-\item{artifacts}{Named list of the artifact paths written for the design:
+\item{artifacts}{Named list of the artefact paths written for the design:
 \code{stimuli}, \code{descriptives}, \code{comparisons} and \code{experiments}, the result of
 \code{\link[=export_experiments]{export_experiments()}}. Each file is recorded with its sha256: the three tables,
 then every file in \code{experiments$files}, the loop and text tables included, or the
@@ -50,16 +50,16 @@ three experiment paths of a result that has no \code{files}.}
 
 \item{seed}{The integer seed recorded for the counterbalanced trial order.}
 
-\item{engine}{Engine label recorded in the record (default \code{"R"}).}
+\item{engine}{Engine label for the record (default \code{"R"}).}
 
 \item{candidate_pool}{Optional list of per-condition candidate-pool sizes
-(\code{list(condition, n_candidates)}) recording how many items satisfied each
-condition's window before matching, the size of the discretionary pool the
-selection drew from, reported so that item-selection bias is auditable
-(Forster, 2000; Simmons et al., 2011).}
+(\code{list(condition, n_candidates)}): how many items satisfied each condition's
+window before matching, that is, the size of the pool the selection drew from.
+It is recorded so that item-selection bias can be audited (Forster, 2000;
+Simmons et al., 2011).}
 
 \item{norms}{Optional list of norm-table provenance records, from the design's
-\verb{norms:} block (see the pipeline). Each names a file, its sha256, the join key
+\verb{norms:} block. Each names a file, its sha256, the join key
 and the per-column coverage. Recorded because a norm table can supply the very
 variable a design manipulates, so a record that omitted it would describe a
 selection over columns of unstated origin.}
@@ -67,18 +67,18 @@ selection over columns of unstated origin.}
 \item{balance}{Optional balance-optimiser report, from \code{\link[=balance_lists]{balance_lists()}}.
 Recorded because it decides which items each participant sees.}
 
-\item{blocks}{Optional practice/filler block report. Recorded because those
+\item{blocks}{Optional report of the practice and filler blocks. Recorded because those
 trials are presented but not analysed, so the presented and analysed counts
 differ and the record must say why.}
 
 \item{design_path, schema_path}{Optional paths of the design and schema files
-the run read; when given, their sha256 checksums complete the
+the run read. When given, their sha256 checksums complete the
 reproducibility record, because those two files decide everything the seed
 does not. The schema's path is recorded too, in POSIX form, since an unnamed
 schema is chosen from several candidates.}
 
-\item{selection_audit}{Optional matcher audit record; its \code{window_relaxations}
-entries are recorded because a relaxed window changes what "matched" means
+\item{selection_audit}{Optional matcher audit record. Its \code{window_relaxations}
+entries are recorded because a relaxed window changes what 'matched' means
 for that condition. Its \code{incomplete_dropped} entries (\code{list(condition, n)})
 count the candidates excluded for missing a matched dimension, which
 \code{candidate_pool} still includes. They are recorded because the selection drew
@@ -118,8 +118,9 @@ selection could draw.}
 \item{zipf_derivation}{Optional \code{list(n_values, near_boundary)} for a lexicon
 carrying \code{freq_permillion}, as \code{\link[=normalise_lexicon]{normalise_lexicon()}} writes one: how many positive
 rates it holds, and how many put Zipf = log10(per million) + 3 within 1e-9 of a
-three-place rounding boundary, where the two engines' \code{log10} could round a
-derived value apart. Recorded as \code{materials_source$zipf_derivation}.}
+three-place rounding boundary, where a last-bit difference between \code{log10}
+implementations could change the rounded value. Recorded as
+\code{materials_source$zipf_derivation}.}
 
 \item{trial_order}{Optional record of the trial-order settings on the presented
 trials, which the pipeline passes. Without it, the record is taken from \code{stimuli}.
@@ -140,10 +141,11 @@ lexicon that \code{source_path} names. A lexicon lexsync ships is credited by it
 source, a corpus fetched into the cache by the registry's citation, and any other
 file by its file name and checksum.
 
-\code{design$n_per_condition} is the request the selector applied, the selector's
-default when the design gives none, and \code{items$n_per_condition_realised} counts
-the items each condition holds in \code{stimuli}, per replicate for resampled sets, so
-a selection that fell short of the request under \code{shortfall: allow} shows it. The
+\code{design$n_per_condition} is the request the selector applied, which is the
+selector's default when the design gives none. \code{items$n_per_condition_realised}
+counts the items each condition holds in \code{stimuli}, per replicate for resampled
+sets, so a selection that fell short of the request under \code{shortfall: allow}
+shows it. The
 suggested analysis keys its by-item slope on the recipe that ran and adds a matched
 design's matched dimensions that vary among its items as covariates.
 }

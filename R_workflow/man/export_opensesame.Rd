@@ -11,11 +11,12 @@ export_opensesame(stimuli, design, schema, outdir, base = NULL)
 
 \item{design}{A parsed design configuration.}
 
-\item{schema}{The parsed global schema (trigger and presentation settings).}
+\item{schema}{The parsed global schema, which gives the trigger and presentation
+settings.}
 
 \item{outdir}{Output directory.}
 
-\item{base}{Optional file-name stem. By default the design's \code{\link[=design_stem]{design_stem()}}.}
+\item{base}{Optional file-name stem, by default the design's \code{\link[=design_stem]{design_stem()}}.}
 }
 \value{
 The path to the generated \code{.osexp}, version 1's when there are several,
@@ -37,7 +38,7 @@ Before the loop, an inline script, \code{lexsync_instructions}, shows the design
 trials hold practice trials and trials of another block, the experiment pauses where
 the practice trials end, as the PsychoPy and jsPsych experiments do. An inline
 script, \code{lexsync_block_break}, opens every trial, and on the first trial after the
-practice trials it shows "End of the practice trials." and waits for the space bar.
+practice trials, it shows 'End of the practice trials.' and waits for the space bar.
 Escape there stops the session. Every trial is logged. A response after a text event
 is collected by that event's script from the stimulus's onset, which sets \code{response},
 \code{response_time}, \code{timed_out} and \code{correct}. A response kept after the stimulus with
@@ -51,8 +52,8 @@ and a logger item ends the trial.
 
 Every canvas a trial shows is built before the trial runs, in the prepare phase of its
 script, and each event is timed from the onset its display returns. An event ends
-half a frame before its duration is up, so that the next display lands on the refresh
-that ends it. The frame period is measured at start-up and logged as
+half a frame before its duration is up, so that the next display is shown on the
+refresh that ends it. The frame period is measured at start-up and logged as
 \code{lexsync_frame_ms}, with \code{presentation.assumed_refresh_hz} as the fallback when the
 measurement fails. Each trigger code is held for \code{triggers.trigger_hold_ms}, at least
 10 ms, through the events after it when its own is shorter, unless the next onset's
@@ -81,8 +82,8 @@ with tables sorted by its order, a \code{lexsync_order} variable that every tria
 and a check that compares the participant's order too, order
 \verb{(((p - 1) div V) mod m) + 1}. \code{\link[=export_experiments]{export_experiments()}} lists every file written.
 
-OpenSesame evaluates the cells of a loop table: in 4.x a cell holding \verb{\{} runs as a
-Python f-string, and in 3.3 a cell starting with \code{=} or holding \verb{[=...]} runs as
+OpenSesame evaluates the cells of a loop table: in 4.x, a cell holding \verb{\{} runs as a
+Python f-string, and in 3.3, a cell starting with \code{=} or holding \verb{[=...]} runs as
 Python. A value in a numeric column that is not a plain number is therefore
 refused, naming the column. An empty cell passes. These rules were checked against
 the sources of OpenSesame 3.3.14 and 4.1.20.

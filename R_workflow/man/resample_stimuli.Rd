@@ -15,7 +15,7 @@ resample_stimuli(pool, design, schema, n_sets, verbose = FALSE)
 
 \item{n_sets}{Number of disjoint matched sets to draw, a whole number of at least 1.}
 
-\item{verbose}{Logical; passed to \code{\link[=match_stimuli]{match_stimuli()}}.}
+\item{verbose}{Passed to \code{\link[=match_stimuli]{match_stimuli()}}.}
 }
 \value{
 A data frame of matched stimuli with an added \code{replicate} column. The
@@ -28,10 +28,10 @@ console under \code{verbose} but not the run log or the datasheet.
 \description{
 Each replicate is an independent, fully matched set drawn from the pool with the
 items of earlier replicates removed, so no item is reused. This lets a study
-treat its items as a random factor (running different item samples across
-participant groups, or showing an effect holds across samples) instead of treating
-them as a fixed set (Clark, 1973; Yarkoni, 2022). Deterministic, and identical to the
-Python engine under the \code{standardised_euclidean} and \code{joint} methods.
+treat its items as a random factor (such as running different item samples across
+participant groups or showing that an effect holds across samples) instead of
+treating them as a fixed set (Clark, 1973; Yarkoni, 2022). The selection is
+deterministic.
 }
 \references{
 Clark, H. H. (1973). The language-as-fixed-effect fallacy: A critique of

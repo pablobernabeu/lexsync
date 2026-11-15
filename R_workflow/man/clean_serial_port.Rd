@@ -16,7 +16,6 @@ The value as a plain string.
 }
 \description{
 The name is not escaped on its way into the generated code, so a quote or a line
-break in it would end the string it lands in. Mirrors the Python
-\code{clean_serial_port}.
+break in it would end the string it is written into.
 }
 \keyword{internal}
