@@ -9,7 +9,7 @@ what to do when dichotomising a predictor is unsuitable.
 The examples run against the lexicon bundled with the package, so you can paste them into a session
 and get the output shown. Only the norm-merging sketch needs a file of your own.
 
-```python exec="1" source="material-block" session="matching"
+```python exec="1" source="block" session="matching"
 from importlib.resources import files
 
 import yaml
@@ -39,7 +39,7 @@ Three columns are derived at load time: `length` in characters, `n_syllables` fr
 `frequency`, a copy of the column that the schema's `dimensions.frequency.column` names, by default
 `freq_zipf`.
 
-```python exec="1" source="material-block" result="text" session="matching"
+```python exec="1" source="block" result="text" session="matching"
 print(lexicon.head(3).to_string(index=False))
 ```
 
@@ -63,7 +63,7 @@ neither a column of the lexicon, counting any columns its `norms:` tables add, n
 derives (`n_density`, `old20` or `bigram_freq`). `match_stimuli` raises an error on a `define_by`
 key the pool lacks.
 
-```python exec="1" source="material-block" result="text" session="matching"
+```python exec="1" source="block" result="text" session="matching"
 pool = lexsync.build_pool(lexicon, {"length": [3, 8], "frequency": [3.8, 7.0]})
 print(len(pool))
 ```
@@ -275,7 +275,7 @@ in the two engines to the last decimal place.
 `count_syllables` estimates the number of syllables from maximal runs of Latin vowels, an
 orthographic approximation with no pronunciation model behind it.
 
-```python exec="1" source="material-block" result="text" session="matching"
+```python exec="1" source="block" result="text" session="matching"
 print(
     [lexsync.count_syllables(w) for w in ["cat", "banana", "strength", "idea"]]
 )
@@ -466,7 +466,7 @@ optimal but different set. Each run's datasheet records which case applies.
 
 Comparing the methods on the same pool shows how little separates them when the pool is generous.
 
-```python exec="1" source="material-block" result="text" session="matching"
+```python exec="1" source="block" result="text" session="matching"
 pool = lexsync.build_pool(lexicon, {"length": [4, 8], "frequency": [3.5, 7.0]})
 design = {
     "name": "methods", "language": "english", "n_per_condition": 40,
@@ -505,7 +505,7 @@ earlier condition of the pair named in `reference`. A 2 x 2 design such as `en_a
 therefore shows the contrasts within each factor, such as its two low-frequency cells, beside the
 three against its first cell.
 
-```python exec="1" source="material-block" result="text" session="matching"
+```python exec="1" source="block" result="text" session="matching"
 stimuli = lexsync.match_stimuli(pool, design, schema)
 report = lexsync.match_report(
     stimuli, ["length", "frequency", "n_density", "old20"], schema
@@ -589,7 +589,7 @@ Two further functions describe a selection. `describe_stimuli` gives the descrip
 by any column you like, `condition` included. `balance_check` reports columns whose value counts
 are unequal, and the pipeline uses it to record an unbalanced condition in the run log.
 
-```python exec="1" source="material-block" result="text" session="matching"
+```python exec="1" source="block" result="text" session="matching"
 print(lexsync.balance_check(stimuli, "condition"))    # empty when balanced
 ```
 
@@ -601,7 +601,7 @@ and can introduce selection artefacts ([Kuperman, 2015](references.md#kuperman-2
 mixed model, a design can replace its `conditions` with a `continuous` block. The design then
 selects a set that spreads over the predictor's ranks while windows trim the controls' tails.
 
-```python exec="1" source="material-block" result="text" session="matching"
+```python exec="1" source="block" result="text" session="matching"
 design = {
     "name": "continuous", "language": "english", "n_per_condition": 60,
     "continuous": {
@@ -670,7 +670,7 @@ over-generalises ([Clark, 1973](references.md#clark-1973);
 independently matched sets from one pool, so a study can run a different sample per participant
 group, or show that an effect survives a change of items.
 
-```python exec="1" source="material-block" result="text" session="matching"
+```python exec="1" source="block" result="text" session="matching"
 pool = lexsync.build_pool(lexicon, {"length": [4, 8], "frequency": [3.5, 7.0]})
 design = {
     "name": "resample", "language": "english", "n_per_condition": 20,
@@ -700,7 +700,7 @@ Lexical decision needs non-words, and the difficulty is that they must be orthog
 plausible without being real. `build_lexdec_stimuli` draws real words by an even spread across the
 byte-ordered pool, then generates a length-matched pseudoword for each.
 
-```python exec="1" source="material-block" result="text" session="matching"
+```python exec="1" source="block" result="text" session="matching"
 pool = lexsync.build_pool(lexicon, {"length": [4, 7], "frequency": [3.5, 6.0]})
 stimuli = lexsync.build_lexdec_stimuli(
     pool, n=8, reference_words=lexicon["word"].tolist()
@@ -736,7 +736,7 @@ by default and has orthographic modules for several languages. By default, it al
 of the segments, where lexsync replaces up to two thirds. In return, lexsync gains cross-engine
 reproducibility.
 
-```python exec="1" source="material-block" session="matching"
+```python exec="1" source="block" session="matching"
 subsyllabic = lexsync.build_lexdec_stimuli(
     pool, n=8, reference_words=lexicon["word"].tolist(), method="subsyllabic")
 ```
@@ -803,7 +803,7 @@ list, the same designs give 5 such pseudowords. Read the generated forms before 
 `generate_pseudowords` and `make_pseudoword` can be called directly if you want the forms without a
 lexical-decision stimulus set.
 
-```python exec="1" source="material-block" result="text" session="matching"
+```python exec="1" source="block" result="text" session="matching"
 pairs = lexsync.generate_pseudowords(
     ["house", "table"], lexicon["word"].tolist()
 )

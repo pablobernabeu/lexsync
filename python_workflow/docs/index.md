@@ -74,7 +74,7 @@ example below runs immediately after installation, with no corpus to download an
 configure. It contrasts high- with low-frequency words while equating them, item by item, on length,
 orthographic neighbourhood density and OLD20.
 
-```python exec="1" source="material-block" result="text" session="index"
+```python exec="1" source="block" result="text" session="index"
 from importlib.resources import files
 
 import yaml

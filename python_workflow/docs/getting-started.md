@@ -72,7 +72,7 @@ updated would stop reproducing without warning.
 
 ### Check that it worked
 
-```python exec="1" source="material-block" result="text" session="getting-started"
+```python exec="1" source="block" result="text" session="getting-started"
 import lexsync
 
 print(lexsync.__version__)
@@ -334,7 +334,7 @@ designs](matching-and-designs.md#how-matching-works) explains.
 A copy of the schema and of a small English, Spanish and Chinese lexicon is bundled inside the
 installed package, so the examples throughout these guides run without a clone:
 
-```python exec="1" source="material-block" result="text" session="getting-started"
+```python exec="1" source="block" result="text" session="getting-started"
 from importlib.resources import files
 
 import yaml

@@ -12,7 +12,7 @@ A trial is a list of events, and an event is a dictionary. No paradigm's event s
 as code in the backends that render the three targets, so a new paradigm is a change of
 configuration and needs no new renderer.
 
-```python exec="1" source="material-block" result="text" session="experiments"
+```python exec="1" source="block" result="text" session="experiments"
 import lexsync
 
 for event in lexsync.resolve_events({"paradigm": "lexical_decision"}):
@@ -229,7 +229,7 @@ nouns that do not belong to the category they appear under, are fillers with the
 `required_fields` lists what a design's items must carry: the paradigm's own fields, plus any extra
 field its events reference.
 
-```python exec="1" source="material-block" result="text" session="experiments"
+```python exec="1" source="block" result="text" session="experiments"
 print(lexsync.required_fields({"paradigm": "priming"}))
 print(lexsync.required_fields({"paradigm": "self_paced_reading"}))
 ```
@@ -336,7 +336,7 @@ from a keyed-hash shuffle seeded by `schema.seed`, and a `trial` column numbers 
 The remaining examples follow one small design through to its three exported experiments. The
 design runs against the bundled lexicon, so the output shown is the output you will get.
 
-```python exec="1" source="material-block" session="experiments"
+```python exec="1" source="block" session="experiments"
 from importlib.resources import files
 
 import yaml
@@ -385,7 +385,7 @@ is rejected. The datasheet's `counterbalancing` record gives the recipe that ran
 stimuli table holds, whether the rotation is complete and the trials each list gives each
 condition.
 
-```python exec="1" source="material-block" result="text" session="experiments"
+```python exec="1" source="block" result="text" session="experiments"
 stimuli = lexsync.counterbalance(stimuli, design, schema)
 print(
     stimuli[["trial", "list", "set", "condition", "word"]]
@@ -435,7 +435,7 @@ tables, which both engines write byte for byte, so the browser page needs no has
 The datasheet's `counterbalancing` record gives the limit, the longest run realised in each version
 and the number of orders, and the Methods text states them.
 
-```python exec="1" source="material-block" result="text" session="experiments"
+```python exec="1" source="block" result="text" session="experiments"
 limited = dict(design, counterbalance={"lists": 1, "max_run": 2, "orders": 2})
 ordered = lexsync.counterbalance(stimuli, limited, schema)
 print(
@@ -499,7 +499,7 @@ under `mad` the datasheet and the Methods text name the scale.
 grid, so the cells' counts are equal when the participant count is a multiple of the number of cells
 and otherwise differ by one.
 
-```python exec="1" source="material-block" result="text" session="experiments"
+```python exec="1" source="block" result="text" session="experiments"
 print(
     lexsync.participant_table(
         {"list": [1, 2], "order": ["forward", "reverse"]}, 4
@@ -535,7 +535,7 @@ condition in the order the item source lists it, such as the words before the ps
 generated lexical decision. Under every seed, the first condition the design lists is 101. A
 condition missing from the given order takes the next free code, in code-point order of its label.
 
-```python exec="1" source="material-block" result="text" session="experiments"
+```python exec="1" source="block" result="text" session="experiments"
 from lexsync.scripting import assign_triggers
 
 print(
@@ -561,7 +561,7 @@ Code-point order is not numeric order once a design has ten sets or more. With s
 is 41 and set 2 is 51. Decode an item code through the loop table, which pairs each trial's set with
 its code, and never from the label.
 
-```python exec="1" source="material-block" result="text" session="experiments"
+```python exec="1" source="block" result="text" session="experiments"
 import pandas as pd
 
 twenty = assign_triggers(pd.DataFrame({"condition": "a", "set": range(1, 21)}))
