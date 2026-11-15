@@ -36,7 +36,7 @@ jobs:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       R_KEEP_PKG_SOURCE: yes
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
 
       - uses: r-lib/actions/setup-pandoc@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05  # v2.14.0
 
@@ -73,26 +73,48 @@ jobs:
           upload-snapshots: true
           args: 'c("--no-manual", "--as-cran")'
 
+      # Every leg above runs in a UTF-8 locale. CRAN's checks also run in
+      # other locales, such as Latin-9 (en_US.iso885915), where a string not
+      # marked as UTF-8 is read as Latin-9, which no UTF-8 leg can show. So the
+      # Linux R-devel leg runs the tests once more from the sources in that
+      # locale, with NOT_CRAN unset, as CRAN runs them. The first line of the R
+      # code stops the step if the locale did not take.
+      - name: Tests in a Latin-9 locale
+        if: runner.os == 'Linux' && matrix.config.r == 'devel'
+        shell: bash
+        run: |
+          sudo localedef -i en_US -f ISO-8859-15 en_US.iso885915
+          env -u NOT_CRAN LANG=en_US.iso885915 LC_ALL=en_US.iso885915 Rscript -e '
+            stopifnot(identical(l10n_info()$codeset, "ISO-8859-15"))
+            pkgload::load_all("R_workflow", quiet = TRUE)
+            invisible(testthat::test_dir("R_workflow/tests/testthat", stop_on_failure = TRUE))
+          '
+
   # roxygen2 rewrites NAMESPACE only when the file still carries its header, so a
   # NAMESPACE that has lost that line is skipped in silence and an added @export
   # never reaches the committed file. The test suite cannot see that happen:
   # testthat runs inside the package namespace, where an unexported function is
-  # just as visible as an exported one. This job is the only check that would.
+  # just as visible as an exported one. roxygen2 also writes the help pages in
+  # man/ from the roxygen comments, and CRAN builds the manual from the committed
+  # files, so a comment edited without devtools::document() never reaches a user.
+  # Regenerating both and comparing them with the committed files is the only
+  # check that sees either.
   #
-  # It gates NAMESPACE and nothing else. Rd formatting churns between roxygen2
-  # releases, so gating man/ as well would make the job red on version drift far
-  # more often than on a stale file, and a flaky gate stops being read.
+  # roxygen2 is pinned below, and the job stops if DESCRIPTION records another
+  # version, so a roxygen2 release cannot turn this job red with no change to the
+  # sources. The help is regenerated in a UTF-8 locale, as on a developer's
+  # machine.
   #
-  # It also sits outside the matrix above. Regenerating the same file on six
+  # It sits outside the matrix above. Regenerating the same files on six
   # platforms is waste, and a failure inside the matrix would read as a platform
-  # problem rather than as a file someone forgot to regenerate.
+  # problem rather than as files someone forgot to regenerate.
   namespace:
     runs-on: ubuntu-latest
-    name: NAMESPACE is current
+    name: NAMESPACE and man/ are current
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
 
       - uses: r-lib/actions/setup-r@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05  # v2.14.0
         with:
@@ -116,8 +138,8 @@ jobs:
           cat("roxygen2 ", installed, "\n", sep = "")
 
           desc <- read.dcf("R_workflow/DESCRIPTION")
-          # roxygen2 8 records the generating version under Config/roxygen2/version;
-          # 7 and earlier wrote RoxygenNote. Accept whichever field is present.
+          # roxygen2 8 records the generating version under Config/roxygen2/version,
+          # and 7 and earlier wrote RoxygenNote. Accept whichever field is present.
           field <- intersect(c("Config/roxygen2/version", "RoxygenNote"), colnames(desc))
           if (length(field) > 0) {
             recorded <- unname(desc[1, field[1]])
@@ -147,12 +169,60 @@ jobs:
             quit(status = 1)
           }
 
-      - name: Regenerate NAMESPACE
-        run: Rscript -e 'roxygen2::roxygenise("R_workflow", roclets = "namespace")'
+      - name: Regenerate NAMESPACE and man/ from the roxygen comments
+        shell: Rscript {0}
+        env:
+          LANG: C.UTF-8
+          LC_ALL: C.UTF-8
+        run: roxygen2::roxygenise("R_workflow", roclets = c("namespace", "rd"))
 
-      - name: Fail if the committed NAMESPACE is stale
+      # The diff and any new Rd file are printed to the log, so that the change
+      # can be read from the run without downloading anything.
+      - name: Fail if the committed NAMESPACE or man/ is stale
         run: |
-          if ! git diff --exit-code -- R_workflow/NAMESPACE; then
-            echo "::error file=R_workflow/NAMESPACE::R_workflow/NAMESPACE does not match the @export and @importFrom tags in R_workflow/R/. The diff above is what roxygen2 would write. Run devtools::document(\"R_workflow\") and commit R_workflow/NAMESPACE."
+          changes=$(git status --porcelain --untracked-files=all -- R_workflow/NAMESPACE R_workflow/man)
+          if [ -z "$changes" ]; then
+            echo 'R_workflow/NAMESPACE and R_workflow/man are current.'
+          else
+            echo "$changes"
+            git --no-pager diff -- R_workflow/NAMESPACE R_workflow/man
+            git ls-files --others --exclude-standard -- R_workflow/man | while read -r f; do
+              echo "New file $f:"
+              cat "$f"
+            done
+            echo "::error file=R_workflow/NAMESPACE::R_workflow/NAMESPACE or R_workflow/man does not match the roxygen comments in R_workflow/R/. The diff above is what roxygen2 would write. Run devtools::document(\"R_workflow\") and commit R_workflow/NAMESPACE and R_workflow/man."
             exit 1
           fi
+
+  # DESCRIPTION declares `R (>= 4.0.0)`, and the matrix above reaches down only to
+  # oldrel-1. This job runs the test suite on R 4.0 itself, with the hard
+  # dependencies as CRAN serves them today. It is not a second `--as-cran` check:
+  # it tests that the package installs and runs on the oldest R it supports, not
+  # that it passes CRAN's checks there. Suggests are not part of that promise, so
+  # they are left out, and the tests that need one skip themselves.
+  r-minimum:
+    name: R (declared minimum, 4.0)
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+
+      - uses: r-lib/actions/setup-r@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05  # v2.14.0
+        with:
+          r-version: '4.0'
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05  # v2.14.0
+        with:
+          dependencies: '"hard"'
+          extra-packages: any::testthat, any::pkgload
+          working-directory: R_workflow
+
+      - name: Tests
+        shell: Rscript {0}
+        run: |
+          cat(R.version.string, "\n")
+          pkgload::load_all("R_workflow", quiet = TRUE)
+          res <- testthat::test_dir("R_workflow/tests/testthat", stop_on_failure = TRUE)
+          invisible(res)

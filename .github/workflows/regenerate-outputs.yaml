@@ -49,7 +49,7 @@ jobs:
       # The versions the R datasheets record, also pinned in the install step.
       R_PINS: 'readr=2.2.0 stringdist=0.9.17 jsonlite=2.0.0 digest=0.6.39 yaml=2.3.12 stringi=1.8.7'
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
 
       # Every datasheet records the SHA-256 of the files the run read and wrote,
       # so a CRLF checkout would record digests that no LF checkout reproduces.
@@ -102,7 +102,7 @@ jobs:
             if (have != p[2]) stop(p[1], " is ", have, ", not ", p[2])
           }
 
-      - uses: actions/setup-python@v7
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
