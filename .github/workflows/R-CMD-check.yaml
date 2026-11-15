@@ -194,14 +194,16 @@ jobs:
             exit 1
           fi
 
-  # The matrix above reaches down only to oldrel-1. This job runs the test suite on
-  # R 4.1, the oldest R the package supports, with the hard dependencies as CRAN
-  # serves them today. It is not a second `--as-cran` check: it tests that the
-  # package installs and runs on that R, not that it passes CRAN's checks there.
-  # Suggests are not part of that promise, so they are left out, and the tests
-  # that need one skip themselves. DESCRIPTION declared R 4.0.0 until this job
-  # showed that current releases of readr, a hard dependency, and of testthat need
-  # R 4.1 (run 43721438825 on 6e62be5).
+  # The matrix above reaches down only to oldrel-1. This job tests R 4.1, the
+  # oldest R the package supports, with the hard dependencies as CRAN serves them
+  # today. It installs the package, which parses the help pages and byte-compiles
+  # and lazy-loads the code on that R, then runs the test suite from the sources.
+  # It is not a second `--as-cran` check, so it does not show that the package
+  # passes CRAN's checks there. Suggests are not part of the promise DESCRIPTION
+  # makes, so they are left out, and the tests that need one skip themselves.
+  # DESCRIPTION declared R 4.0.0 until this job showed that current releases of
+  # readr, a hard dependency, and of testthat need R 4.1 (run 43721438825 on
+  # 6e62be5).
   r-minimum:
     name: R (declared minimum, 4.1)
     runs-on: ubuntu-latest
@@ -220,6 +222,9 @@ jobs:
           dependencies: '"hard"'
           extra-packages: any::testthat, any::pkgload
           working-directory: R_workflow
+
+      - name: Install the package
+        run: R CMD INSTALL R_workflow
 
       - name: Tests
         shell: Rscript {0}
