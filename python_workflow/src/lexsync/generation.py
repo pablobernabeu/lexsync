@@ -189,11 +189,12 @@ def _known_set(reference_words, exclude) -> set:
 def generate_pseudowords(base_words, reference_words, exclude=None) -> pd.DataFrame:
     """A length-matched pseudoword for each base word.
 
-    Base words are processed in byte order, so the result does not depend on the
-    order in which they are given. The letters substituted in are those the reference words attest.
-    ``exclude`` (optional) lists further word forms no pseudoword may equal, such as
-    a list of low-frequency words the reference lacks. A base word in a logographic
-    script is refused. Returns a frame with ``base_word`` and ``pseudoword``.
+    Base words are processed in byte order, so the pseudoword each one receives does
+    not depend on the order in which they are given. The letters substituted in are
+    those the reference words attest. ``exclude`` (optional) lists further word forms
+    no pseudoword may equal, such as a list of low-frequency words the reference
+    lacks. A base word in a logographic script is refused. Returns a frame with
+    ``base_word`` and ``pseudoword``, in the order of ``base_words``.
     """
     base = [str(w) for w in base_words]
     _refuse_logographic(base)

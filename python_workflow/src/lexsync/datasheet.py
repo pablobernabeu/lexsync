@@ -710,8 +710,8 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
 
     For a corpus or generated design, ``materials_source["provenance"]`` credits the
     lexicon that ``source_path`` names. A lexicon lexsync ships is credited by its
-    source, a corpus fetched into the cache by the registry's citation, and any other
-    file by its file name and checksum.
+    source. A corpus fetched into the cache is credited by the registry's citation,
+    and any other file by its file name and checksum.
 
     ``report`` is the realised-control report, the result of ``match_report`` or, for a
     continuous design, ``match_report_continuous``. Its ``comparisons`` rows become

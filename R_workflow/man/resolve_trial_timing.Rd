@@ -22,9 +22,9 @@ which \code{\link[=run_pipeline]{run_pipeline()}} writes into the run log.
 \description{
 An event may declare a duration that varies from trial to trial, either read
 from an item column or drawn from a range. A drawn value is determined by the
-keyed hash alone, so every run gives the same milliseconds. It is written into the
-stimuli table as well as the generated script, because timing that varies is a
-variable the analysis needs.
+keyed hash alone, so a run with the same seed and design gives the same
+milliseconds. It is written into the stimuli table as well as the generated
+script, because timing that varies is a variable the analysis needs.
 }
 \details{
 An event declares it as \verb{duration: \{from_column: <column>\}}, to read each trial's

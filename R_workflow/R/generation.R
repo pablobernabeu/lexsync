@@ -196,7 +196,10 @@ make_pseudoword <- function(word, bigrams, lexset, usedset, alphabet = NULL) {
   cands[order(-scores, cands, method = "radix")[1]]
 }
 
-#' A length-matched pseudoword for each base word, taken in byte order
+#' A length-matched pseudoword for each base word
+#'
+#' The base words are processed in byte order, so the pseudoword each one receives
+#' does not depend on the order in which they are given.
 #'
 #' @param base_words Character vector of words to derive pseudowords from.
 #' @param reference_words Character vector (typically the full lexicon) that
@@ -208,7 +211,8 @@ make_pseudoword <- function(word, bigrams, lexset, usedset, alphabet = NULL) {
 #' @details The letters substituted in are those the reference words attest, so a
 #'   Spanish reference lends the generator its accented vowels. A base word in a
 #'   logographic script, such as Chinese, is refused.
-#' @return A data frame with columns `base_word` and `pseudoword`.
+#' @return A data frame with columns `base_word` and `pseudoword`, in the order of
+#'   `base_words`.
 #' @export
 generate_pseudowords <- function(base_words, reference_words, exclude = NULL) {
   base <- as.character(base_words)

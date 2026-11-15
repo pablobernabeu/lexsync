@@ -52,7 +52,7 @@ the session starts and ends), a condition code the design sends or a code within
 range of the item codes it sends.
 
 The condition codes follow \code{conditions} when it is given: its first entry is
-101, its second 102, and so on, whether or not every entry occurs in
+101, its second 102 and so on, whether or not every entry occurs in
 \code{stimuli}, so the same condition keeps the same code in a subset such as a
 practice block. A condition present in \code{stimuli} but missing from
 \code{conditions} takes the next free codes, in code-point order of its label.

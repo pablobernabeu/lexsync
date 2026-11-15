@@ -61,7 +61,7 @@ lexsync_cache_dir <- function() {
 #'   default) to remove the whole cache.
 #' @return The paths of the files removed, invisibly. The vector is empty when
 #'   there was nothing to remove.
-#' @seealso [lexsync_cache_dir()] for where the cache lives.
+#' @seealso [lexsync_cache_dir()] for the location of the cache.
 #' @examples
 #' # A throwaway cache stands in for yours, so running this leaves your own alone.
 #' local({

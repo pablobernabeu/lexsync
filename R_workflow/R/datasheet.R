@@ -685,8 +685,8 @@ DATASHEET_VERSION <- "1.2"
 #'   order.
 #' @details For a corpus or generated design, `materials_source$provenance` credits the
 #'   lexicon that `source_path` names. A lexicon lexsync ships is credited by its
-#'   source, a corpus fetched into the cache by the registry's citation, and any other
-#'   file by its file name and checksum.
+#'   source. A corpus fetched into the cache is credited by the registry's citation,
+#'   and any other file by its file name and checksum.
 #'
 #'   `design$n_per_condition` is the request the selector applied, which is the
 #'   selector's default when the design gives none. `items$n_per_condition_realised`

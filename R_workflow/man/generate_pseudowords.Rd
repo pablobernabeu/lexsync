@@ -2,7 +2,7 @@
 % Please edit documentation in R/generation.R
 \name{generate_pseudowords}
 \alias{generate_pseudowords}
-\title{A length-matched pseudoword for each base word, taken in byte order}
+\title{A length-matched pseudoword for each base word}
 \usage{
 generate_pseudowords(base_words, reference_words, exclude = NULL)
 }
@@ -18,10 +18,12 @@ lower-cased and put in Unicode NFC, as a lexicon's words are, and play no part
 in the bigram statistics.}
 }
 \value{
-A data frame with columns \code{base_word} and \code{pseudoword}.
+A data frame with columns \code{base_word} and \code{pseudoword}, in the order of
+\code{base_words}.
 }
 \description{
-A length-matched pseudoword for each base word, taken in byte order
+The base words are processed in byte order, so the pseudoword each one receives
+does not depend on the order in which they are given.
 }
 \details{
 The letters substituted in are those the reference words attest, so a

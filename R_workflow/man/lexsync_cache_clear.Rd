@@ -45,5 +45,5 @@ local({
 })
 }
 \seealso{
-\code{\link[=lexsync_cache_dir]{lexsync_cache_dir()}} for where the cache lives.
+\code{\link[=lexsync_cache_dir]{lexsync_cache_dir()}} for the location of the cache.
 }

@@ -57,7 +57,7 @@ find_template <- function(relpath) {
 #' range of the item codes it sends.
 #'
 #' The condition codes follow `conditions` when it is given: its first entry is
-#' 101, its second 102, and so on, whether or not every entry occurs in
+#' 101, its second 102 and so on, whether or not every entry occurs in
 #' `stimuli`, so the same condition keeps the same code in a subset such as a
 #' practice block. A condition present in `stimuli` but missing from
 #' `conditions` takes the next free codes, in code-point order of its label.
@@ -583,9 +583,9 @@ frames_to_ms <- function(frames, hz) {
 #'
 #' An event may declare a duration that varies from trial to trial, either read
 #' from an item column or drawn from a range. A drawn value is determined by the
-#' keyed hash alone, so every run gives the same milliseconds. It is written into the
-#' stimuli table as well as the generated script, because timing that varies is a
-#' variable the analysis needs.
+#' keyed hash alone, so a run with the same seed and design gives the same
+#' milliseconds. It is written into the stimuli table as well as the generated
+#' script, because timing that varies is a variable the analysis needs.
 #'
 #' An event declares it as `duration: {from_column: <column>}`, to read each trial's
 #' milliseconds from an item column, or as `duration: {jitter: [lo, hi], as: <column>}`,

@@ -338,7 +338,7 @@ read_csv_utf8 <- function(path, as_character = character(0), delim = ",") {
 #' Nothing lexsync computes reaches these magnitudes (frequencies are Zipf values under
 #' 8, counts and durations under 1e6), but a joined norm table, a supplied pool
 #' or an item table may carry any column the user likes, and those columns go straight
-#' into the stimuli CSV. The guard lives in both engines so that each refuses the same
+#' into the stimuli CSV. Both engines apply this check, so that each refuses the same
 #' design, since one engine accepting what the other rejects would be a difference of
 #' its own.
 #'
