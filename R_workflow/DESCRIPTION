@@ -25,9 +25,9 @@ Copyright: The MIT licence covers the source code only. The example lexica
 Encoding: UTF-8
 Language: en-GB
 Depends:
-    R (>= 4.0.0)
+    R (>= 4.1.0)
 Imports:
-    readr,
+    readr (>= 2.0.0),
     yaml,
     stringdist,
     stringi,

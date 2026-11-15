@@ -197,6 +197,10 @@ no function signature changes.
   such as `_stimuli_py.csv` and a hidden `.osexp` and `.html`.
 - The R package requires jsonlite 1.8.7 or later, since 1.8.5 and 1.8.6 write
   datasheets that differ from the Python engine's.
+- The R package requires R 4.1.0 or later, where it declared 4.0.0, since
+  current releases of readr need R 4.1. It also requires readr 2.0.0 or later,
+  the first release whose `read_csv()` takes the `show_col_types` argument that
+  lexsync passes.
 - The Streamlit app needs Streamlit 1.49 or later.
 - The Python package's `requirements.txt` pins pandas 2.3.2 and numpy 2.3.2,
   which produced the committed demonstrations, where it pinned 3.0.3 and 2.4.6,

@@ -194,14 +194,16 @@ jobs:
             exit 1
           fi
 
-  # DESCRIPTION declares `R (>= 4.0.0)`, and the matrix above reaches down only to
-  # oldrel-1. This job runs the test suite on R 4.0 itself, with the hard
-  # dependencies as CRAN serves them today. It is not a second `--as-cran` check:
-  # it tests that the package installs and runs on the oldest R it supports, not
-  # that it passes CRAN's checks there. Suggests are not part of that promise, so
-  # they are left out, and the tests that need one skip themselves.
+  # The matrix above reaches down only to oldrel-1. This job runs the test suite on
+  # R 4.1, the oldest R the package supports, with the hard dependencies as CRAN
+  # serves them today. It is not a second `--as-cran` check: it tests that the
+  # package installs and runs on that R, not that it passes CRAN's checks there.
+  # Suggests are not part of that promise, so they are left out, and the tests
+  # that need one skip themselves. DESCRIPTION declared R 4.0.0 until this job
+  # showed that current releases of readr, a hard dependency, and of testthat need
+  # R 4.1 (run 43721438825 on 6e62be5).
   r-minimum:
-    name: R (declared minimum, 4.0)
+    name: R (declared minimum, 4.1)
     runs-on: ubuntu-latest
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
@@ -210,7 +212,7 @@ jobs:
 
       - uses: r-lib/actions/setup-r@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05  # v2.14.0
         with:
-          r-version: '4.0'
+          r-version: '4.1'
           use-public-rspm: true
 
       - uses: r-lib/actions/setup-r-dependencies@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05  # v2.14.0

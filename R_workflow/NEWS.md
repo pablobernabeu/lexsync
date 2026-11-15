@@ -161,6 +161,10 @@
   such as `_stimuli_R.csv` and a hidden `.osexp` and `.html`.
 * lexsync requires jsonlite 1.8.7 or later, since 1.8.5 and 1.8.6 write
   datasheets that differ from the Python engine's.
+* lexsync requires R 4.1.0 or later, where it declared 4.0.0, since current
+  releases of readr need R 4.1. It also requires readr 2.0.0 or later, the first
+  release whose `read_csv()` takes the `show_col_types` argument that lexsync
+  passes.
 * Matching refuses a condition left without a candidate complete on the matched
   dimensions, and `mahalanobis` refuses a pool with fewer than k + 2 complete
   rows for k dimensions.
