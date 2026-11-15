@@ -12,10 +12,11 @@ and matching leaves out candidates that lack a matched value. The generated
 experiments present one counterbalancing version to each participant, and the
 PsychoPy and OpenSesame experiments record each response. Some input that 0.1.1
 accepted is refused, such as a probable typo in a design key or a trigger code
-outside 1 to 255. The package also requires jsonlite 1.8.7 or later, where it
-named no minimum. NEWS.md lists each of these changes under 'Upgrading from the
-previous release (0.1.1)', in three parts: 'Changed results', 'Changed
-interface' and 'Changed output'.
+outside 1 to 255. The package requires R 4.1.0 or later, where it declared
+4.0.0, since current releases of readr need R 4.1. It also requires readr 2.0.0
+and jsonlite 1.8.7 or later, where it named no minimum. NEWS.md lists each of
+these changes under 'Upgrading from the previous release (0.1.1)', in three
+parts: 'Changed results', 'Changed interface' and 'Changed output'.
 
 There are three new exports, `validate_design()`, `normalise_lexicon()` and
 `design_stem()`. No export is removed.
@@ -26,8 +27,8 @@ There are three new exports, `validate_design()`, `normalise_lexicon()` and
 
 ## Test environments
 
-GitHub Actions, run 42428820643 on 2026-11-08, on pull request #22 at commit
-f916d63. That commit differs from this submission only in cran-comments.md,
+GitHub Actions, run 43723122481 on 2026-11-15, on pull request #22 at commit
+f54a4ca. That commit differs from this submission only in cran-comments.md,
 which .Rbuildignore keeps out of the tarball. Each leg built the tarball with
 `--no-manual` and ran `R CMD check --as-cran --no-manual` on it beside
 stand-in 'templates' and 'config' packages and a README, since CRAN's Linux
@@ -35,13 +36,13 @@ hosts check each package beside the sources of others. The legs ran without
 the CRAN incoming checks, which r-lib/actions turns off. Each leg ended with
 'Status: OK':
 
-* ubuntu-latest (Ubuntu 24.04.5 LTS), R 4.6.2
-* ubuntu-latest (Ubuntu 24.04.5 LTS), R-devel (2026-11-06 r90845)
-* ubuntu-latest (Ubuntu 24.04.5 LTS), R 4.5.3
+* ubuntu-latest (Ubuntu 26.04.1 LTS), R 4.6.2
+* ubuntu-latest (Ubuntu 26.04.1 LTS), R-devel (2026-11-14 r90890)
+* ubuntu-latest (Ubuntu 26.04.1 LTS), R 4.5.3
 * windows-latest (Windows Server 2022 x64 (build 26100), x86_64-w64-mingw32),
   R 4.6.2
 * windows-latest (Windows Server 2022 x64 (build 26100), x86_64-w64-mingw32),
-  R-devel (2026-11-06 r90845 ucrt)
+  R-devel (2026-11-14 r90890 ucrt)
 * macos-latest (macOS Tahoe 26.7.2, aarch64-apple-darwin23), R 4.6.2
 
 The test suite passed in every leg, with no failures or warnings. Eighty-six
@@ -49,6 +50,12 @@ tests skip everywhere, because they read files of the repository that R CMD
 check cannot reach, such as the Shiny app, the demonstration designs and the
 committed outputs. One more skips on Linux, where the runner cannot switch to
 a Turkish locale.
+
+The same run passed the test suite from the sources, with no failures or
+warnings, in two more settings. On R 4.1.3, the oldest R the package supports,
+with only its strong dependencies installed, 40 tests skipped for want of
+clue or shiny and one for the Turkish locale. On the Linux R-devel leg, in an
+ISO-8859-15 (Latin-9) locale with NOT_CRAN unset, 82 tests skipped.
 
 ## Notes for the reviewer
 
