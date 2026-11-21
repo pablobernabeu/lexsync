@@ -312,9 +312,12 @@ Windows, and the Python tests run on Python 3.10 to 3.15.
 ## The materials datasheet
 
 Every run writes a datasheet, in JSON for machines and Markdown for people. It is the record that
-accompanies a set, and it exists because the reproducibility literature keeps calling for one
-([Bochynska et al., 2023](references.md#bochynska-2023); [Roettger, 2019](references.md#roettger-2019)).
-A datasheet is the FAIR-style record of one selection
+accompanies a set, and it exists because the reproducibility literature in linguistics keeps finding
+the same gap. Materials are described but rarely deposited in a form that permits reuse or
+verification ([Bochynska et al., 2023](references.md#bochynska-2023)), and undisclosed researcher
+degrees of freedom in data analysis inflate false positives
+([Roettger, 2019](references.md#roettger-2019)). A datasheet supplies the machine-readable
+metadata, licence and provenance that the FAIR principles ask to accompany data
 ([Wilkinson et al., 2016](references.md#wilkinson-2016)).
 
 ```python

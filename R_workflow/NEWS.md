@@ -558,6 +558,18 @@
 * The Get started vignette says that a `pool` design needs `match_on` and either
   `conditions` or a `continuous` block, as a `corpus` design does, where it left
   out the `continuous` block.
+* Citations were checked against their published records. The corpus registry
+  restores the diacritics in two surnames of the SUBTLEX-PT authors, gives the
+  deposited title of wordfreq and cites the 2025 SUBTLEX-IT preprint by
+  Brysbaert et al., where it cited a 2015 work for which no record could be
+  found. `variance_ratio()` and the matching vignette credit the 0.5 to 2
+  heuristic to Rubin (2001), as cited in Stuart (2010), where the vignette
+  pointed to sources that do not give it. The matching vignette says that OLD20
+  stays informative for long words, where it said that Coltheart's N is
+  undefined for them. The reproducibility vignette cites Roettger (2019) for
+  researcher degrees of freedom in data analysis, where it cited him on
+  preparing materials, and describes the datasheet by the metadata, licence and
+  provenance it supplies, where it called it a FAIR-style record.
 
 # lexsync 0.1.1
 

@@ -85,10 +85,10 @@ counts because frequency effects are approximately linear on its log scale and
 because it is comparable across corpora of different sizes. `n_density` is
 Coltheart's N, the count of same-length words differing by one letter
 substitution (Coltheart et al., 1977). `old20` is the mean Levenshtein distance
-to the twenty nearest words in the reference set, which unlike Coltheart's N is
-defined for long words, where substitution neighbours run out (Yarkoni et al.,
-2008). A larger OLD20 means a more isolated word, so it runs in the opposite
-direction to `n_density`.
+to the twenty nearest words in the reference set, which, unlike Coltheart's N,
+stays informative for long words, where substitution neighbours run out (Yarkoni
+et al., 2008). A larger OLD20 means a more isolated word, so it runs in the
+opposite direction to `n_density`.
 
 Like `length`, `n_syllables` is derived at load time. It counts maximal runs of
 vowels, an orthographic estimate with no pronunciation model behind it. No
@@ -835,8 +835,8 @@ where a bare 'no significant difference' hides it.
 `var_ratio` is the condition's variance over the reference's. Two conditions can
 share a mean and still confound if one is far more spread out than the other, a
 difference that no mean-based statistic shows. A ratio near 1 is balanced and a
-common heuristic flags ratios outside roughly 0.5 to 2. See `?variance_ratio`
-for the sources behind that heuristic.
+common heuristic flags ratios outside 0.5 to 2 (Rubin, 2001, as cited in Stuart,
+2010).
 
 `mean_diff` is the same contrast in the dimension's own unit: the reference mean
 minus the condition mean, in letters, Zipf units, neighbours or syllables, to

@@ -4,9 +4,8 @@ A *materials datasheet* is a machine- and human-readable provenance record for a
 design. It records where the items came from, how they were selected, matched and
 counterbalanced, the realised control, and the seeds, versions and checksums needed
 to reproduce them exactly. It is the shareable materials record whose scarcity
-motivates lexsync (Bochynska et al., 2023; Roettger, 2019). The
-module also emits an auto-filled Methods paragraph and a pre-registration
-skeleton. Mirrors R_workflow/R/datasheet.R.
+motivates lexsync (Bochynska et al., 2023). The module also emits an auto-filled
+Methods paragraph and a pre-registration skeleton. Mirrors R_workflow/R/datasheet.R.
 """
 from __future__ import annotations
 

@@ -484,9 +484,10 @@ Each run emits a datasheet in two forms, a JSON record for machines and a
 Markdown rendering for people. It exists because the reproducibility literature
 in linguistics keeps finding the same gap. Materials are described but rarely
 deposited in a form that permits reuse or verification (Bochynska et al., 2023),
-and the degrees of freedom in preparing them are large enough to matter
-(Roettger, 2019). A datasheet is the FAIR-style record of one selection
-(Wilkinson et al., 2016).
+and undisclosed researcher degrees of freedom in data analysis inflate false
+positives (Roettger, 2019). A datasheet supplies the machine-readable metadata,
+licence and provenance that the FAIR principles ask to accompany data (Wilkinson
+et al., 2016).
 
 ```{r datasheet}
 out <- file.path(tempdir(), "lexsync_repro")

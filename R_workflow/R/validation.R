@@ -232,7 +232,8 @@ tost_equiv <- function(x, y, bound_d = 0.5, alpha = 0.05) {
 #' mean-based Cohen's d and TOST. Two conditions can share a mean yet differ in
 #' spread and still confound, which a mean-based statistic misses
 #' (Armstrong et al., 2012; Austin, 2009). A ratio near 1 is balanced. A common
-#' heuristic flags ratios outside roughly 0.5 to 2.
+#' heuristic flags ratios outside 0.5 to 2 (Rubin, 2001, as cited in Stuart,
+#' 2010).
 #'
 #' @references Armstrong, B. C., Watson, C. E., & Plaut, D. C. (2012). SOS! An
 #'   algorithm and software for the stochastic optimization of stimuli. *Behavior
@@ -241,6 +242,9 @@ tost_equiv <- function(x, y, bound_d = 0.5, alpha = 0.05) {
 #'   Austin, P. C. (2009). Balance diagnostics for comparing the distribution of
 #'   baseline covariates between treatment groups in propensity-score matched
 #'   samples. *Statistics in Medicine, 28*(25), 3083-3107. \doi{10.1002/sim.3697}
+#'
+#'   Stuart, E. A. (2010). Matching methods for causal inference: A review and a
+#'   look forward. *Statistical Science, 25*(1), 1-21. \doi{10.1214/09-STS313}
 #'
 #' @param cond,ref Numeric vectors (condition and reference).
 #' @return The variance ratio. Missing values are dropped first. The ratio is `NA` when

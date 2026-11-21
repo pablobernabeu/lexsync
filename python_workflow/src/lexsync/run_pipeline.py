@@ -737,8 +737,9 @@ def run_pipeline(design_path: str, schema_path: str | None = None, outdir: str =
         runlog.log_artefact(log, path)
 
     # A materials datasheet (machine + human readable) and a pre-registration
-    # template: the shareable provenance record the reproducibility literature asks
-    # for (Bochynska et al., 2023; Roettger, 2019).
+    # template: a shareable provenance record, as the reproducibility literature
+    # recommends sharing materials (Bochynska et al., 2023) and reporting analytic
+    # decisions transparently (Roettger, 2019).
     source_path = items_cfg.get("path") or items_cfg.get("lexicon") or design.get("lexicon")
     artifacts = {"stimuli": stim_path, "descriptives": desc_path,
                  "comparisons": comp_path, "experiments": exps}

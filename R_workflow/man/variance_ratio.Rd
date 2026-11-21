@@ -20,7 +20,8 @@ The ratio of a condition's variance to the reference's, complementing the
 mean-based Cohen's d and TOST. Two conditions can share a mean yet differ in
 spread and still confound, which a mean-based statistic misses
 (Armstrong et al., 2012; Austin, 2009). A ratio near 1 is balanced. A common
-heuristic flags ratios outside roughly 0.5 to 2.
+heuristic flags ratios outside 0.5 to 2 (Rubin, 2001, as cited in Stuart,
+2010).
 }
 \examples{
 variance_ratio(c(1, 2, 3, 4), c(1, 2, 3, 8))
@@ -33,4 +34,7 @@ Research Methods, 44}(3), 675-705. \doi{10.3758/s13428-011-0182-9}
 Austin, P. C. (2009). Balance diagnostics for comparing the distribution of
 baseline covariates between treatment groups in propensity-score matched
 samples. \emph{Statistics in Medicine, 28}(25), 3083-3107. \doi{10.1002/sim.3697}
+
+Stuart, E. A. (2010). Matching methods for causal inference: A review and a
+look forward. \emph{Statistical Science, 25}(1), 1-21. \doi{10.1214/09-STS313}
 }

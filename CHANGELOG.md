@@ -641,6 +641,22 @@ no function signature changes.
   either `conditions` or a `continuous` block, as a `corpus` design does, where
   the R vignette left out the `continuous` block and the Python guide named
   none of these keys.
+- Citations were checked against their published records. The three copies of
+  the corpus registry restore the diacritics in two surnames of the SUBTLEX-PT
+  authors, give the deposited title of wordfreq and cite the 2025 SUBTLEX-IT
+  preprint by Brysbaert et al., where they cited a 2015 work for which no record
+  could be found. `variance_ratio` and the R matching vignette credit the
+  0.5 to 2 heuristic to Rubin (2001), as cited in Stuart (2010), where the
+  vignette pointed to sources that do not give it, and the Python docstring cites
+  Armstrong et al. (2012) in the APA form. The R matching vignette says that
+  OLD20 stays informative for long words, where it said that Coltheart's N is
+  undefined for them. The reproducibility guides and the code comments cite
+  Roettger (2019) only on data analysis, where they cited him on preparing
+  materials or as calling for a materials record, and the guides describe the
+  datasheet by the metadata, licence and provenance it supplies, where they
+  called it a FAIR-style record. `corpora/ATTRIBUTION.md` dates the freezing of
+  wordfreq's data to June 2024 and gives its author's three reasons, where it
+  said that the package was retired in September 2024 for one reason.
 
 ## [0.1.1] - 2026-09-25
 

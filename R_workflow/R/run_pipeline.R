@@ -658,8 +658,9 @@ run_pipeline <- function(design_path, schema_path = NULL,
   for (p in exps[["files"]]) log <- log_artefact(log, p)
 
   # A materials datasheet (machine + human readable) and a pre-registration
-  # template: the shareable provenance record the reproducibility literature asks
-  # for (Bochynska et al., 2023; Roettger, 2019).
+  # template: a shareable provenance record, as the reproducibility literature
+  # recommends sharing materials (Bochynska et al., 2023) and reporting analytic
+  # decisions transparently (Roettger, 2019).
   source_path <- items_cfg[["path"]] %||% items_cfg[["lexicon"]] %||% design[["lexicon"]]
   artifacts <- list(stimuli = stim_path, descriptives = desc_path,
                     comparisons = comp_path, experiments = exps)

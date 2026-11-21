@@ -3,7 +3,7 @@
 # they were selected and matched, the realised control, how they were
 # counterbalanced, and the seeds, versions and checksums needed to reproduce them
 # exactly. The shareable materials record whose scarcity motivates lexsync
-# (Bochynska et al., 2023; Roettger, 2019). Mirrors datasheet.py.
+# (Bochynska et al., 2023). Mirrors datasheet.py.
 
 # 1.1 added `materials_source$norms` (the design's joined norm tables, with their
 # checksums and per-column coverage) and, for a pair-keyed design, a `relational`

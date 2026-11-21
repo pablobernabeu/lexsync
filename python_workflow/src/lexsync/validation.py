@@ -193,11 +193,12 @@ def variance_ratio(cond, ref):
     balance check that complements the mean-based Cohen's d and TOST.
 
     Two conditions can share a mean yet differ in spread and still confound, which
-    a mean-based statistic misses (Armstrong, Watson & Plaut, 2012; Austin, 2009).
-    A ratio near 1 is balanced. A common heuristic flags ratios outside about
-    [0.5, 2] as unequal spread. Missing values are dropped first. Returns ``None``
-    when either array has fewer than two non-missing values, or when the reference's
-    variance is zero and the condition's is not, and 1.0 when both variances are zero.
+    a mean-based statistic misses (Armstrong et al., 2012; Austin, 2009).
+    A ratio near 1 is balanced. A common heuristic flags ratios outside [0.5, 2] as
+    unequal spread (Rubin, 2001, as cited in Stuart, 2010). Missing values are dropped
+    first. Returns ``None`` when either array has fewer than two non-missing values,
+    or when the reference's variance is zero and the condition's is not, and 1.0 when
+    both variances are zero.
     """
     cond = np.asarray(cond, dtype=float); ref = np.asarray(ref, dtype=float)
     cond = cond[~np.isnan(cond)]; ref = ref[~np.isnan(ref)]
