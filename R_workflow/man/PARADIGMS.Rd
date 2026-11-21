@@ -5,36 +5,36 @@
 \title{The paradigm registry: default event sequences and required fields}
 \format{
 A named list with one entry per paradigm (\code{factorial},
-\code{lexical_decision}, \code{priming}, \code{masked_priming}, \code{categorisation},
-\code{self_paced_reading}), each holding
-\code{stimulus_fields}, a \code{counterbalance} recipe and an \code{events} list.
+\code{lexical_decision}, \code{priming}, \code{masked_priming}, \code{categorisation} and
+\code{self_paced_reading}), each holding \code{stimulus_fields}, a \code{counterbalance}
+recipe and an \code{events} list.
 }
 \usage{
 PARADIGMS
 }
 \value{
-A plain named list (class \code{"list"}; no package-specific class) of
-built-in paradigm specifications. Each element contains \code{stimulus_fields},
-a character vector naming required item-table fields; \code{counterbalance}, a
-character scalar naming the counterbalancing recipe; and \code{events}, an
-ordered list of event-specification lists. The selected entry supplies the
-default trial sequence, required item fields, and counterbalancing rule
-inherited by a design that names that paradigm.
+A plain named list of the built-in paradigm specifications, with no class
+of its own. In each element, \code{stimulus_fields} is a character vector naming the
+required item-table fields, \code{counterbalance} is a character scalar naming the
+counterbalancing recipe and \code{events} is an ordered list of event
+specifications. A design that names a paradigm inherits its trial sequence,
+required item fields and counterbalancing rule from that entry.
 }
 \description{
-Each event is a list with a \code{type} (fixation | text | mask | blank |
-region_by_region | response | question | feedback) and the keys its type reads.
+Each event is a list with a \code{type} (\code{fixation}, \code{text}, \code{mask}, \code{blank},
+\code{region_by_region}, \code{response}, \code{question} or \code{feedback}) and the keys its type
+reads.
 \code{content} is a literal or a \code{{field}} reference. An event's length, where it has
 one, is \code{duration_ms}, or \code{duration_frames} converted at the schema's
 \code{presentation.assumed_refresh_hz}, and a fixation, text, mask or blank event may
 instead take a per-trial \code{duration} block (\code{from_column}, or \code{jitter} with an
-optional \code{as}, see \code{\link[=resolve_trial_timing]{resolve_trial_timing()}}). A fixation, text or mask event takes an
-optional \code{trigger} (a whole-number EEG code from 1 to 255 or the token
-"condition"/"item"). A response takes \code{keys}, \code{timeout_ms} and \code{from} (where its
-window opens: "onset", with the text event before it, which is the default after a
-text event, or "offset", once that has gone), and a question takes \code{keys} and
-\code{timeout_ms}. A text event takes \code{case} ("upper" or "lower", applied by the runners
-as they show the text), and a mask takes \code{length_of} (the fields whose longest text,
+optional \code{as}, as \code{\link[=resolve_trial_timing]{resolve_trial_timing()}} describes). A fixation, text or mask
+event takes an optional \code{trigger} (a whole-number EEG code from 1 to 255 or the
+token \code{condition} or \code{item}). A response takes \code{keys}, \code{timeout_ms} and \code{from}
+(where its window opens: \code{onset}, with the text event before it, which is the
+default after a text event, or \code{offset}, once that has gone), and a question takes
+\code{keys} and \code{timeout_ms}. A text event takes \code{case} (\code{upper} or \code{lower}, which the
+experiments apply as they show the text), and a mask takes \code{length_of} (the fields whose longest text,
 in characters, sets how often its one-character content is repeated). A
 region-by-region event takes \code{sep} (the region separator in its content, \code{"|"} by
 default), \code{advance} (the key that shows the next region, \code{"space"} by default) and

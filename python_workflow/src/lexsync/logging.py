@@ -84,7 +84,7 @@ def write_run_log(log: dict, md_path: str, jsonl_path: str | None = None) -> str
     """Write ``log`` as Markdown to ``md_path`` and return ``md_path``.
 
     The directory of ``md_path`` is created when it is missing. The file holds the
-    engine, the start and finish times, the ``meta`` entries under "Run metadata" when
+    engine, the start and finish times, the ``meta`` entries under 'Run metadata' when
     there are any, and each step with its data. Given ``jsonl_path``, the steps alone
     are also written there as JSON Lines, one step per line. Both files are UTF-8 with
     LF line endings.

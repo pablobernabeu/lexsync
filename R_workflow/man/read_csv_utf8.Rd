@@ -15,7 +15,7 @@ as text.}
 
 \item{delim}{\code{","}, or a tab character for a tab-separated file, which is read with
 no quoting, as tab-separated corpora such as SUBTLEX-US and Lexique are written: a
-quotation mark there is part of the cell. Mirrors the Python twin's \code{delim}.}
+quotation mark there is part of the cell.}
 }
 \value{
 A data frame (a tibble). An empty file gives one with no columns.
@@ -23,8 +23,8 @@ A data frame (a tibble). An empty file gives one with no columns.
 \description{
 Every header name and cell is trimmed of spaces, tabs, carriage returns and line
 feeds. After trimming, an empty cell and \code{NA} (quoted or not) are missing, and
-every other word, \code{null}, \code{nan} and \code{none} included, is a value. Each column not named in
-\code{as_character} then takes its type from all of its values: numeric when every value
+every other word, \code{null}, \code{nan} and \code{none} included, is a value. Each column not
+named in \code{as_character} then takes its type from all of its values: numeric when every value
 is a plain decimal number (no thousands separators), logical when every value is
 TRUE or FALSE in upper, lower or title case, and text otherwise. Dates are never
 parsed. A UTF-8 byte-order mark is ignored.

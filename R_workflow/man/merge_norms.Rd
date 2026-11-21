@@ -2,7 +2,7 @@
 % Please edit documentation in R/querying.R
 \name{merge_norms}
 \alias{merge_norms}
-\title{Left-join a norm table (e.g. concreteness, age of acquisition, valence)}
+\title{Left-join a norm table (such as concreteness, age of acquisition or valence)}
 \usage{
 merge_norms(lexicon, norms, on = "word", columns = NULL)
 }
@@ -12,7 +12,7 @@ merge_norms(lexicon, norms, on = "word", columns = NULL)
 \item{norms}{A data frame, or the path to a UTF-8 CSV, holding the \code{on} column and
 the norm columns.}
 
-\item{on}{The join column (default "word").}
+\item{on}{The join column (default \code{"word"}).}
 
 \item{columns}{Optional norm columns to keep.}
 }
@@ -21,25 +21,16 @@ the norm columns.}
 column order. Rows with no matching norm get \code{NA}.
 }
 \description{
-The connector for semantic dimensions: the norm data themselves are fetched
-separately (licensing varies), then merged here so the matcher can equate on
-them. The join is deterministic and identical across engines.
+Norm data, such as semantic dimensions, are fetched separately, since their
+licences vary, and joined here so that the matcher can equate on them. The join
+is deterministic.
 }
 \details{
-The result is the lexicon itself with the norm columns appended, and the key is
-looked up positionally rather than through \code{merge()}. That is what makes the two
-engines agree by construction, with nothing to repair afterwards, because \code{merge()}
-and \code{pandas.merge} were measured to diverge in three ways, each of them silent:
-R hoists the \code{by} column to position 1 while pandas keeps the left frame's
-order, so the column order differed whenever \code{on} was not already first; R
-disambiguates a colliding column name with \code{.x}/\code{.y} and pandas with \verb{_x}/\verb{_y},
-and either way a dimension the design matches on disappears under a name
-nothing looks for; and \code{merge(sort = FALSE)} leaves the row order unspecified, so
-x's order is not carried through. A positional lookup has none of those degrees of
-freedom: the output is the input plus columns, in both engines. A norm column
-whose name the lexicon already has is refused.
+The result is the lexicon itself with the norm columns appended, so no lexicon
+column is moved or renamed and no row is reordered. A norm column whose name the
+lexicon already has is refused.
 
-The key is trimmed, case-folded and normalised to NFC on \emph{both} sides, so a
+The key is trimmed, case-folded and normalised to NFC on both sides, so a
 lexicon holding \code{Dog} matches a norm row for \code{dog}. The lexicon's own spelling is
 preserved rather than folded in place: \code{word} is the byte-order tie-break behind
 every selection, so the join must not rewrite it. A missing key never matches, and

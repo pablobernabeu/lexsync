@@ -24,18 +24,17 @@ knitr::opts_chunk$set(
 # alike. The fixed width keeps printed output inside the documentation column.
 ```
 
-The guides and the function reference pages cite published work throughout, and
-this page carries the full entries so that every citation on the site resolves.
-Each guide also lists the works it cites at its own foot, and this page gathers
-those lists together with the works cited only in the function documentation and
-in the design configurations of the repository's `config/` directory. Every entry carries a
-DOI wherever the work has one, and any work cited on both sites reads the same
-here as on the [Python twin's reference
+The guides and the function reference pages cite published work, and this page
+gives the full entry for every citation on the site. Besides the works each
+guide lists at its own foot, the page includes those cited only in the function
+documentation and in the design configurations of the repository's `config/`
+directory. Every entry carries a DOI wherever the work has one, and any work
+cited on both sites reads the same here as on the [Python twin's reference
 page](https://pablobernabeu.github.io/lexsync/python/references/). The
 lexical corpora that lexsync reads are attributed separately, in
 [`corpora/ATTRIBUTION.md`](https://github.com/pablobernabeu/lexsync/blob/main/corpora/ATTRIBUTION.md)
-and in the corpus registry, since their licences travel with the derived data
-rather than with the software.
+and in the corpus registry, since their licences apply to the derived data and
+not to the software.
 
 ::: {.references}
 Andrews, S. (1989). Frequency and neighborhood effects on lexical access:

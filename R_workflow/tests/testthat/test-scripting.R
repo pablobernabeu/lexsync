@@ -687,6 +687,47 @@ test_that("the experimenter is told when no codes will be sent", {
            "trigger codes would be sent.')")))
 })
 
+test_that("the OpenSesame experiment pauses where the practice trials end", {
+  # The PsychoPy script and the jsPsych page pause after the practice trials, and the
+  # OpenSesame experiment ran every trial in one loop without a pause. A script now opens
+  # every trial and, on the first trial after the practice trials, says that they are
+  # over and waits for the space bar. test_osexp_validator.py runs it under both
+  # versions' variable stores.
+  schema <- yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))
+  out <- tempfile("lexsync"); dir.create(out)
+  on.exit(unlink(out, recursive = TRUE), add = TRUE)
+  osexp_of <- function(block) {
+    stim <- make_stim()
+    stim$block <- block
+    readLines(export_opensesame(stim, list(name = "t", language = "english"), schema, out),
+              warn = FALSE)
+  }
+  os <- osexp_of(c("practice", "main", "filler", "main"))
+  expect_identical(trial_runs(os)[1:2], c("lexsync_block_break", "lexsync_trial_start"))
+  expect_identical(script_phase(os, "lexsync_block_break", "prepare"), character(0))
+  expect_identical(run_phase(os, "lexsync_block_break"), c(
+    "_previous = _LEXSYNC_ROWS.get(int(var.get(u'lexsync_row', _eval=False)) - 1, {})",
+    paste0("if _previous.get(u'block') == u'practice' and ",
+           "_lexsync_row().get(u'block') != u'practice':"),
+    "    _lexsync_end_hold()",
+    "    c = Canvas()",
+    "    c.text(u'End of the practice trials.<br /><br />Press the space bar to begin.')",
+    "    c.show()",
+    "    _key, _t = Keyboard(keylist=[u'space', u'escape'], timeout=None).get_key()",
+    "    if _key == u'escape':",
+    "        raise RuntimeError(u'lexsync: stopped at the pause after the practice trials.')"))
+  # Without a block column, with fillers but no practice trials and with practice trials
+  # alone, the experiment has no pause and the same bytes. With the pause, it differs
+  # only by the pause's script and the line that runs it.
+  plain <- osexp_of(NULL)
+  expect_false(any(grepl("lexsync_block_break", plain, fixed = TRUE)))
+  expect_identical(osexp_of(c("main", "filler", "main", "main")), plain)
+  expect_identical(osexp_of(rep("practice", 4L)), plain)
+  at <- match("define inline_script lexsync_block_break", os)
+  end <- at + match("", os[at:length(os)]) - 1L
+  expect_identical(os[-c(at:end, match("\trun lexsync_block_break always", os))], plain)
+})
+
 test_that("the PsychoPy script holds every code for the hold, the markers included", {
   # The 254 and 255 markers were cleared by the statement after their flip, a code on an
   # event shorter than the hold was cleared as soon as the event's last flip returned,

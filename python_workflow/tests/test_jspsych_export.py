@@ -343,7 +343,8 @@ def test_fillers_run_with_the_main_trials_and_only_the_practice_ends_in_a_pause(
                      ("target", "map"), ("target", "dop")]
     pause = [s for s, d in zip(run["stimuli"], run["data"], strict=True)
              if d.get("lexsync_event") == "block_break"]
-    assert len(pause) == 1 and "<h1>End of practice</h1>" in pause[0]
+    assert len(pause) == 1 and "<h1>End of the practice trials</h1>" in pause[0]
+    assert "Press the space bar to begin." in pause[0]
 
 
 @pytest.mark.skipif(NODE is None, reason="node is not installed")

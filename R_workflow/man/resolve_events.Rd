@@ -2,7 +2,7 @@
 % Please edit documentation in R/paradigms.R
 \name{resolve_events}
 \alias{resolve_events}
-\title{The design's trial event list: its own \code{events}, else its paradigm's}
+\title{The trial events of a design: its own \code{events}, or else its paradigm's}
 \usage{
 resolve_events(design)
 }
@@ -13,7 +13,7 @@ resolve_events(design)
 The list of trial events the design presents.
 }
 \description{
-The design's trial event list: its own \code{events}, else its paradigm's
+The trial events of a design: its own \code{events}, or else its paradigm's
 }
 \examples{
 vapply(resolve_events(list(paradigm = "lexical_decision")),

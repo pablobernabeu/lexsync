@@ -7,24 +7,25 @@
 match_stimuli(pool, design, schema, verbose = FALSE)
 }
 \arguments{
-\item{pool}{A lexicon/pool with all \code{match_on} dimensions present (see
+\item{pool}{A lexicon or pool with every \code{match_on} dimension present (see
 \code{\link[=add_neighbourhood]{add_neighbourhood()}}).}
 
-\item{design}{A parsed design configuration (conditions, \code{match_on},
-\code{n_per_condition}/\code{n_per_cell}). \code{match_on} must name at least one dimension,
-and the number of items is a whole number of at least 1, 20 when neither key is
-given.}
+\item{design}{A parsed design configuration (conditions, \code{match_on} and
+\code{n_per_condition} or \code{n_per_cell}). \code{match_on} must name at least one
+dimension. The number of items must be a whole number of at least 1 and is 20
+when neither key is given.}
 
-\item{schema}{The parsed global schema (tolerances live here).}
+\item{schema}{The parsed global schema, which holds the tolerances.}
 
-\item{verbose}{Logical; report tolerance relaxations and a shrunk anchor.}
+\item{verbose}{Whether to report tolerance relaxations and an anchor set smaller
+than requested.}
 }
 \value{
 A data frame of selected stimuli with a \code{condition} label and a \code{set}
 index pairing matched items across conditions.
 }
 \description{
-Under the default method, the first condition is the anchor; its items are chosen
+Under the default method, the first condition is the anchor. Its items are chosen
 by an even spread across the sorted candidate subpool. Every other condition is
 then matched to the anchor item by item, on the \code{match_on} dimensions, using
 standardised Euclidean distance under a tolerance window derived from the anchor.
@@ -41,16 +42,17 @@ pairs first, and \code{optimal} takes the \code{n} pairs of least summed distanc
 for disjoint conditions) and needs the 'clue' package. Neither consults
 \code{tolerance_k} or \code{on_insufficient_tolerance}, and each first keeps at most 1,200
 candidates per condition, those nearest the other condition's centroid.
-\code{standardised_euclidean} and \code{joint} select the same stimuli in the R and Python
-engines. \code{mahalanobis} and \code{optimal} agree closely but not byte for byte, and
-\code{optimal} may return a different set of pairs with the same summed distance.
+The Python package selects the same stimuli under \code{standardised_euclidean} and
+\code{joint}. Under \code{mahalanobis} and \code{optimal}, the two agree closely but not byte for
+byte, and \code{optimal} may return a different set of pairs with the same summed
+distance.
 
-Two policies govern degraded selections, each read from the design's
-\code{matching} block with the schema as fallback: \code{shortfall} (\code{"error"}, the
-default, refuses to return fewer sets than requested; \code{"allow"} accepts the
-shrink) and \code{on_insufficient_tolerance} (\code{"relax"}, the default, widens an
+Two policies, each read from the design's \code{matching} block with the schema as
+fallback, govern a selection that cannot be made in full. Under \code{shortfall},
+\code{"error"}, the default, refuses to return fewer sets than requested, and \code{"allow"}
+accepts fewer. Under \code{on_insufficient_tolerance}, \code{"relax"}, the default, widens an
 undersupplied tolerance window to the full condition subpool and records the
-relaxation in an \code{"audit"} attribute; \code{"error"} refuses instead).
+relaxation in an \code{"audit"} attribute, and \code{"error"} refuses instead.
 
 A candidate missing any \code{match_on} dimension cannot be scored, so every method
 excludes it before selecting, and the number excluded per condition is recorded

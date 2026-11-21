@@ -2,7 +2,7 @@
 % Please edit documentation in R/paradigms.R
 \name{required_fields}
 \alias{required_fields}
-\title{Trial fields a design needs present in its items (paradigm + events)}
+\title{The item fields a design needs, from its paradigm and its events}
 \usage{
 required_fields(design)
 }
@@ -13,7 +13,7 @@ required_fields(design)
 Character vector of the item fields the design's trials reference.
 }
 \description{
-Trial fields a design needs present in its items (paradigm + events)
+The item fields a design needs, from its paradigm and its events
 }
 \examples{
 required_fields(list(paradigm = "categorisation"))

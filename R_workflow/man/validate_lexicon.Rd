@@ -13,7 +13,7 @@ validate_lexicon(df, schema)
 \code{yaml::read_yaml(system.file("extdata", "schema.yaml", package = "lexsync"))}.}
 }
 \value{
-\code{TRUE}, invisibly; stops with an informative error otherwise.
+\code{TRUE}, invisibly, or an informative error.
 }
 \description{
 Validate a lexicon against the schema column contract

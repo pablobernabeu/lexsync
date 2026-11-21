@@ -4,9 +4,8 @@ A *materials datasheet* is a machine- and human-readable provenance record for a
 design. It records where the items came from, how they were selected, matched and
 counterbalanced, the realised control, and the seeds, versions and checksums needed
 to reproduce them exactly. It is the shareable materials record whose scarcity
-motivates lexsync (Bochynska et al., 2023; Roettger, 2019). The
-module also emits an auto-filled Methods paragraph and a pre-registration
-skeleton. Mirrors R_workflow/R/datasheet.R.
+motivates lexsync (Bochynska et al., 2023). The module also emits an auto-filled
+Methods paragraph and a pre-registration skeleton. Mirrors R_workflow/R/datasheet.R.
 """
 from __future__ import annotations
 
@@ -316,9 +315,10 @@ def _cross_engine(method, source: str, selected: bool = False) -> str:
     """Whether the R and Python engines select byte-identical materials.
 
     The deterministic methods are byte-identical; ``mahalanobis`` and ``optimal``
-    are the exception, because they use a covariance-matrix inverse and an
-    assignment solver whose last bits differ between the two linear-algebra
-    backends (see matching.py).
+    are the exception, because the last bits of the inverse of the pool's
+    correlation matrix depend on the linear-algebra backend, and the two assignment
+    solvers can choose differently among assignments of equal cost (see
+    matching.py).
 
     ``selected`` distinguishes the two things an item table can mean. A plain table
     design does no selection, so there is nothing for the engines to agree on and
@@ -709,8 +709,8 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
 
     For a corpus or generated design, ``materials_source["provenance"]`` credits the
     lexicon that ``source_path`` names. A lexicon lexsync ships is credited by its
-    source, a corpus fetched into the cache by the registry's citation, and any other
-    file by its file name and checksum (see ``_lexicon_provenance``).
+    source. A corpus fetched into the cache is credited by the registry's citation,
+    and any other file by its file name and checksum.
 
     ``report`` is the realised-control report, the result of ``match_report`` or, for a
     continuous design, ``match_report_continuous``. Its ``comparisons`` rows become
@@ -723,9 +723,9 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
     ``counterbalancing["blocks"]`` when given.
 
     ``candidate_pool`` (optional) is a list of ``{"condition", "n_candidates"}``
-    recording how many items satisfied each condition's window before matching,
-    the size of the discretionary pool the selection drew from, reported so that
-    item-selection bias is auditable (Forster, 2000; Simmons et al., 2011).
+    records: how many items satisfied each condition's window before matching, that
+    is, the size of the pool the selection drew from. It is recorded so that
+    item-selection bias can be audited (Forster, 2000; Simmons et al., 2011).
 
     ``norms`` (optional) is a list of norm-table provenance records from the design's
     ``norms:`` block. Each names a file, its sha256, the join key and the per-column
@@ -736,15 +736,15 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
     ``balance`` (optional) is the balance-optimiser report from ``balance_lists``.
     Recorded because it decides which items each participant sees.
 
-    ``design_path`` / ``schema_path`` (optional) are the design and schema files the
-    run read; when given, their sha256 checksums complete the reproducibility
+    ``design_path`` and ``schema_path`` (optional) are the design and schema files the
+    run read. When given, their sha256 checksums complete the reproducibility
     record, because those two files decide everything the seed does not. The
     schema's path is recorded too, in POSIX form, since an unnamed schema is chosen
     from several candidates.
 
-    ``selection_audit`` (optional) is the matcher's audit record; its
+    ``selection_audit`` (optional) is the matcher's audit record. Its
     ``window_relaxations`` entries are recorded because a relaxed window changes
-    what "matched" means for that condition. Its ``incomplete_dropped`` entries
+    what 'matched' means for that condition. Its ``incomplete_dropped`` entries
     (``{"condition", "n"}``) count the candidates excluded for missing a matched
     dimension, which ``candidate_pool`` still includes. They are recorded because
     the selection drew on a smaller pool than the window holds.
@@ -756,7 +756,7 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
     ``counterbalance_check`` (optional) is the pipeline's ``counterbalance_check``
     report on the counterbalanced table. Without it, the check is run here on
     ``stimuli``. The record gives the recipe that ran and the lists the table holds,
-    or for a table without a ``list`` column the lists counterbalance() would deal. It
+    or for a table without a ``list`` column the lists ``counterbalance`` would deal. It
     says whether a Latin-square rotation is complete and counts the trials per list
     and condition. It also gives the presentation versions, one per (replicate, list)
     pair, and the rule that assigns each participant one of them.
@@ -767,7 +767,7 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
     pipeline does only when either count is above zero, because a merged spelling
     changes the candidate pool.
 
-    ``artifacts`` names the files written for the design: ``stimuli``,
+    ``artifacts`` names the artefacts written for the design: ``stimuli``,
     ``descriptives``, ``comparisons`` and ``experiments``, the result of
     ``export_experiments``. Each file is recorded with its sha256: the three tables,
     then every file in ``experiments["files"]``, the loop and text tables included,
@@ -780,7 +780,7 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
 
     ``exclusions`` (optional, corpus, pool and generated designs) records the design's
     ``exclude_words`` as ``{"path", "sha256", "n_listed", "n_removed"}``. It gives the
-    file, or "inline" for a list in the design, its checksum, the number of distinct
+    file, or ``inline`` for a list in the design, its checksum, the number of distinct
     words it lists and the number of candidates it removed. Recorded as
     ``materials_source["exclusions"]``, because the words decide which candidates the
     selection could draw.
@@ -788,8 +788,9 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
     ``zipf_derivation`` (optional) is ``{"n_values", "near_boundary"}`` for a lexicon
     carrying ``freq_permillion``, as ``normalise_lexicon`` writes one: how many positive
     rates it holds, and how many put Zipf = log10(per million) + 3 within 1e-9 of a
-    three-place rounding boundary, where the two engines' log10 could round a derived
-    value apart. Recorded as ``materials_source["zipf_derivation"]``.
+    three-place rounding boundary, where a last-bit difference between log10
+    implementations could change the rounded value. Recorded as
+    ``materials_source["zipf_derivation"]``.
 
     ``trial_order`` (optional) is the trial-order record of the presented trials, which
     the pipeline passes. Without it, the record is taken from ``stimuli``. It gives
@@ -798,8 +799,8 @@ def build_datasheet(design, schema, report, stimuli, source_path, artifacts,
     ``counterbalancing["orders"]`` (``{"m", "rule"}``) when it asks for more than one
     trial order.
 
-    ``design["n_per_condition"]`` is the request the selector applied, the selector's
-    default when the design gives none, and ``items["n_per_condition_realised"]``
+    ``design["n_per_condition"]`` is the request the selector applied, which is the
+    selector's default when the design gives none. ``items["n_per_condition_realised"]``
     counts the items each condition holds in ``stimuli``, per replicate for resampled
     sets, so a selection that fell short of the request under ``shortfall: allow``
     shows it. The suggested analysis keys its by-item slope on the recipe that ran and
@@ -1516,19 +1517,17 @@ def methods_paragraph(ds: dict) -> str:
     """A ready-to-adapt Methods paragraph rendered from a datasheet.
 
     Every number in the paragraph is printed by lexsync's own formatter, rounded
-    half away from zero from the value the datasheet stores, so the R and Python
-    engines write the same text from the same record, a record read back from its
-    JSON included.
+    half away from zero from the value the datasheet stores, so a record read back
+    from its JSON gives the same text.
 
     It states the items each condition holds, and the request beside them when they
     fell short of it. The realised control is described before it is tested: the
     largest difference on a matched dimension in that dimension's unit, with d and its
     interval, then the equivalence tests, then, largest first, up to five comparisons of
-    an uncontrolled dimension whose |d| exceeds the bound (see _control_note). Every
-    interval is labelled by the schema's alpha. A continuous design gives the predictor's
-    spread and the control windows (see _bands_note). When a response mapping applies, it
-    says which key the participants pressed for which condition (see _mapping_note).
-    Mirrors methods_paragraph in datasheet.R.
+    an uncontrolled dimension whose |d| exceeds the bound. Every interval is labelled
+    by the schema's alpha. A continuous design gives the predictor's spread and the
+    control windows. When a response mapping applies, it says which key the
+    participants pressed for which condition.
     """
     d = ds["design"]
     src = ds["materials_source"]["type"]
@@ -1910,7 +1909,7 @@ def write_datasheet(ds: dict, json_path: str, md_path: str) -> tuple:
     """Write a datasheet from ``build_datasheet`` as JSON and as Markdown.
 
     The JSON at ``json_path`` has its keys sorted, an indent of 2 and every float
-    rounded to 15 significant digits, the precision the R engine writes. The Markdown
+    rounded to 15 significant digits. The Markdown
     at ``md_path`` renders the record, its Methods paragraph and the pre-registration
     template. Both files are UTF-8 with LF line endings. The directory of ``json_path``
     is created when it is missing, but the directory of ``md_path`` must already exist.

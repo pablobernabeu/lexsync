@@ -8,7 +8,7 @@
 a \%||\% b
 }
 \arguments{
-\item{a, b}{Values; \code{a} is returned unless \code{NULL}.}
+\item{a, b}{Values. \code{a} is returned unless it is \code{NULL}.}
 }
 \value{
 \code{a} or \code{b}.

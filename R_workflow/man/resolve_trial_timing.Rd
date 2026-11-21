@@ -11,7 +11,7 @@ resolve_trial_timing(stimuli, design, schema)
 
 \item{design}{A parsed design configuration.}
 
-\item{schema}{The parsed global schema (provides the seed).}
+\item{schema}{The parsed global schema, which provides the seed.}
 }
 \value{
 \code{stimuli} with one integer column per jittered event, and every column of
@@ -21,10 +21,10 @@ which \code{\link[=run_pipeline]{run_pipeline()}} writes into the run log.
 }
 \description{
 An event may declare a duration that varies from trial to trial, either read
-from an item column or drawn from a range. A drawn value is a pure function of
-the keyed hash, so both engines realise the same milliseconds, and it is
-written into the stimuli table as well as the generated script, because timing
-that varies is a variable the analysis needs, not presentation detail.
+from an item column or drawn from a range. A drawn value is determined by the
+keyed hash alone, so a run with the same seed and design gives the same
+milliseconds. It is written into the stimuli table as well as the generated
+script, because timing that varies is a variable the analysis needs.
 }
 \details{
 An event declares it as \verb{duration: \{from_column: <column>\}}, to read each trial's
@@ -36,7 +36,7 @@ column \code{as} names (\verb{event<i>_ms} by default, \code{i} counting the des
 Every value read from a column must be a finite number of milliseconds, not
 negative. The first that is not, a blank cell included, is refused, naming the
 column and the trial's set and condition. When a column holds fractional
-milliseconds, each of its values is rounded once with the rounder both engines share
-and written back, so the stimuli, the loop tables and every target carry the same
-whole milliseconds. A column of whole numbers is left as it is.
+milliseconds, each of its values is rounded once, by lexsync's own rounding
+function, and written back, so the stimuli, the loop tables and every target carry
+the same whole milliseconds. A column of whole numbers is left as it is.
 }

@@ -19,7 +19,7 @@
     },
     {
       "file": "output/experiments/es_freqcontrast_spanish_psychopy.py",
-      "sha256": "4ef42041ce6bd14a730b6dc0c8416c51a169fa979977c7dbb3093af44c8be25a"
+      "sha256": "0fe438b31b72627f80ffca7bae26faa3a076a1930de298d774f14aeeeb6cf7ae"
     },
     {
       "file": "output/experiments/es_freqcontrast_spanish.osexp",
@@ -27,7 +27,7 @@
     },
     {
       "file": "output/experiments/es_freqcontrast_spanish.html",
-      "sha256": "45fb5b85c02ff04f8e14ed9b98f6c91a1a75a8cb247344de37c1fb7f0b34f447"
+      "sha256": "f270ed5a025cb4ebe60a7dcfa0c3a255a3459d5f9c579b0719bb860507eeb373"
     },
     {
       "file": "output/experiments/es_freqcontrast_spanish_psychopy.csv",
@@ -226,11 +226,11 @@
   "reproducibility": {
     "design_sha256": "08428e5f090244fb55490364bcbc218561e71a8fca325d0497f1a36c1c0b1580",
     "schema_path": "config/schema.yaml",
-    "schema_sha256": "4698d37f5d396b00272c32ccd46a7529bd1f4dc5af70cd0b2746ae09aba2baf7",
+    "schema_sha256": "f864de85d931f4c471c22488c7df4deaa4bcff7a5cb50b4151e22f443c557af8",
     "seed": 2026,
     "versions": {
       "engine": "python",
-      "lexsync": "0.1.1",
+      "lexsync": "0.2.0",
       "numpy": "2.3.2",
       "os": "Windows AMD64",
       "pandas": "2.3.2",

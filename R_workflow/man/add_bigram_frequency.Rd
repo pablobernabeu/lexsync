@@ -16,6 +16,6 @@ add_bigram_frequency(df, reference = NULL)
 }
 \description{
 For each word, the mean over its adjacent letter bigrams of the corpus bigram
-probability (count divided by the total bigram count). Computed from integer
-counts and rounded, so it is identical in the R and Python engines.
+probability (count divided by the total bigram count). It is computed from
+integer counts and then rounded.
 }

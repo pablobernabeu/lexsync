@@ -25,6 +25,5 @@ relatedness with orthographic similarity.
 The forms are trimmed, lower-cased and normalised to Unicode NFC before they are
 compared, as \code{\link[=load_lexicon]{load_lexicon()}} does to a lexicon's words, so \code{Dog} and \code{dog} are at
 distance 0. Length is counted in code points. \code{pair.overlap} is rounded to nine
-decimal places, and a pair of two empty forms gives 0. Both engines return
-identical values.
+decimal places, and a pair of two empty forms gives 0.
 }

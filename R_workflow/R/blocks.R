@@ -26,9 +26,8 @@
 # mixes them through. That does renumber the main trials, which is correct: adding
 # fillers changes the sequence, and the stimuli file records where each item actually
 # appeared. counterbalance.max_run applies to this interleaved order and, separately,
-# to the practice order, since the PsychoPy and jsPsych experiments pause between the
-# two. The OpenSesame experiment runs every trial in one loop without a pause, so there
-# a run can continue from the practice trials into the main ones.
+# to the practice order, since the PsychoPy, OpenSesame and jsPsych experiments pause
+# between the two.
 #
 # Both blocks appear in EVERY list. They are not counterbalanced, because they carry no
 # manipulation to rotate; every participant should get the same practice. In a resampled
@@ -80,13 +79,13 @@
 #' Assemble the presented trial sequence from the main, filler and practice blocks
 #'
 #' @param stimuli The counterbalanced main stimuli (with `list` and `trial`).
-#' @param design A parsed design configuration; reads `practice` and `fillers`.
-#' @param schema The parsed global schema (provides the seed).
+#' @param design A parsed design configuration. Its `practice` and `fillers` are read.
+#' @param schema The parsed global schema, which provides the seed.
 #' @return A list with `presented` (every trial the experiment runs, in order, with a
 #'   `block` column when more than one block exists), `report` (per-block counts and
 #'   the item tables' checksums, or `NULL` when the design declares no extra block) and
 #'   `normalisation` (`list(changed, collapsed)`, what Unicode NFC normalisation did to
-#'   the practice and filler tables; see [load_items()]). Trials are numbered from 1
+#'   the practice and filler tables, as [load_items()] describes). Trials are numbered from 1
 #'   within each list, or within each (replicate, list) pair of a resampled design, and
 #'   the counts are per list or pair: the filler and practice counts are the rows of
 #'   their tables, which every list or pair receives, and the main block's count is that

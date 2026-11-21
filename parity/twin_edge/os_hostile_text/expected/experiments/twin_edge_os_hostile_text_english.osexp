@@ -151,6 +151,21 @@ define inline_script lexsync_session_end
 	_lexsync_marker(255)
 	__end__
 
+define inline_script lexsync_block_break
+	set description "Pause after the practice trials"
+	set _prepare ""
+	___run__
+	_previous = _LEXSYNC_ROWS.get(int(var.get(u'lexsync_row', _eval=False)) - 1, {})
+	if _previous.get(u'block') == u'practice' and _lexsync_row().get(u'block') != u'practice':
+	    _lexsync_end_hold()
+	    c = Canvas()
+	    c.text(u'End of the practice trials.<br /><br />Press the space bar to begin.')
+	    c.show()
+	    _key, _t = Keyboard(keylist=[u'space', u'escape'], timeout=None).get_key()
+	    if _key == u'escape':
+	        raise RuntimeError(u'lexsync: stopped at the pause after the practice trials.')
+	__end__
+
 define inline_script lexsync_trial_start
 	set description "Clear the previous trial's responses"
 	set _prepare ""
@@ -319,6 +334,7 @@ define logger lexsync_logger
 define sequence lexsync_trial
 	set flush_keyboard yes
 	set description "One trial: the paradigm event sequence"
+	run lexsync_block_break always
 	run lexsync_trial_start always
 	run lexsync_e0 always
 	run lexsync_e1 always

@@ -172,7 +172,7 @@
     "seed": 2026,
     "versions": {
       "engine": "R",
-      "lexsync": "0.1.1",
+      "lexsync": "0.2.0",
       "R": "4.6.1",
       "readr": "2.2.0",
       "stringdist": "0.9.17",
@@ -184,7 +184,7 @@
     },
     "design_sha256": "69aaf532ff7741f1cdbd7aec1366d49699f3b1dacc768b3a62a0659db4481386",
     "schema_path": "config/schema.yaml",
-    "schema_sha256": "4698d37f5d396b00272c32ccd46a7529bd1f4dc5af70cd0b2746ae09aba2baf7"
+    "schema_sha256": "f864de85d931f4c471c22488c7df4deaa4bcff7a5cb50b4151e22f443c557af8"
   },
   "artifacts": [
     {
@@ -201,7 +201,7 @@
     },
     {
       "file": "output/experiments/es_lexdec_spanish_psychopy.py",
-      "sha256": "24f8dcacef2e70576d2e4bbeb73045d920cc295c1d590fa1df0e8e96fce9f282"
+      "sha256": "f79830f2c3c4d7b80f8187e8727e1ef2c19d958fadf83b47984aafaaa0b4fe60"
     },
     {
       "file": "output/experiments/es_lexdec_spanish.osexp",
@@ -209,7 +209,7 @@
     },
     {
       "file": "output/experiments/es_lexdec_spanish.html",
-      "sha256": "807767ec5627302dbeee06d508c763e5d7e71bf4f4095c8d1c76479a65bc7b37"
+      "sha256": "72c0a36d805b361eff8302eacfe75f90645e1c90beeb60b4a78bf45a6af07346"
     },
     {
       "file": "output/experiments/es_lexdec_spanish_psychopy.csv",

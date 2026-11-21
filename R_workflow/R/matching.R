@@ -7,9 +7,11 @@
 #
 # Cross-engine determinism: standardised_euclidean (the default) and joint are
 # byte-identical across the R and Python engines. The optional mahalanobis and
-# optimal methods are the exception, because they use a covariance-matrix inverse and
-# a linear-assignment solver whose last bits differ between the two linear-algebra
-# backends, so those two agree closely but not byte-for-byte.
+# optimal methods are the exception. The last bits of the inverse of the pool's
+# correlation matrix depend on the linear-algebra backend, and the two assignment
+# solvers, given the same costs rounded to nine decimal places, can choose differently
+# among assignments of equal cost. Those two methods agree closely but not
+# byte-for-byte.
 
 # Candidate cap for the pairwise (joint, optimal) matchers. The datasheet reports
 # whether the cap fired, so the literal lives in one place per engine.
@@ -154,7 +156,7 @@
 
 #' Match stimuli across conditions on several lexical dimensions
 #'
-#' Under the default method, the first condition is the anchor; its items are chosen
+#' Under the default method, the first condition is the anchor. Its items are chosen
 #' by an even spread across the sorted candidate subpool. Every other condition is
 #' then matched to the anchor item by item, on the `match_on` dimensions, using
 #' standardised Euclidean distance under a tolerance window derived from the anchor.
@@ -170,16 +172,17 @@
 #' for disjoint conditions) and needs the 'clue' package. Neither consults
 #' `tolerance_k` or `on_insufficient_tolerance`, and each first keeps at most 1,200
 #' candidates per condition, those nearest the other condition's centroid.
-#' `standardised_euclidean` and `joint` select the same stimuli in the R and Python
-#' engines. `mahalanobis` and `optimal` agree closely but not byte for byte, and
-#' `optimal` may return a different set of pairs with the same summed distance.
+#' The Python package selects the same stimuli under `standardised_euclidean` and
+#' `joint`. Under `mahalanobis` and `optimal`, the two agree closely but not byte for
+#' byte, and `optimal` may return a different set of pairs with the same summed
+#' distance.
 #'
-#' Two policies govern degraded selections, each read from the design's
-#' `matching` block with the schema as fallback: `shortfall` (`"error"`, the
-#' default, refuses to return fewer sets than requested; `"allow"` accepts the
-#' shrink) and `on_insufficient_tolerance` (`"relax"`, the default, widens an
+#' Two policies, each read from the design's `matching` block with the schema as
+#' fallback, govern a selection that cannot be made in full. Under `shortfall`,
+#' `"error"`, the default, refuses to return fewer sets than requested, and `"allow"`
+#' accepts fewer. Under `on_insufficient_tolerance`, `"relax"`, the default, widens an
 #' undersupplied tolerance window to the full condition subpool and records the
-#' relaxation in an `"audit"` attribute; `"error"` refuses instead).
+#' relaxation in an `"audit"` attribute, and `"error"` refuses instead.
 #'
 #' A candidate missing any `match_on` dimension cannot be scored, so every method
 #' excludes it before selecting, and the number excluded per condition is recorded
@@ -195,14 +198,15 @@
 #' `optimal` and the tied rows at their candidate cap. The anchor's even spread keeps
 #' its byte-order tie-break under both rules.
 #'
-#' @param pool A lexicon/pool with all `match_on` dimensions present (see
+#' @param pool A lexicon or pool with every `match_on` dimension present (see
 #'   [add_neighbourhood()]).
-#' @param design A parsed design configuration (conditions, `match_on`,
-#'   `n_per_condition`/`n_per_cell`). `match_on` must name at least one dimension,
-#'   and the number of items is a whole number of at least 1, 20 when neither key is
-#'   given.
-#' @param schema The parsed global schema (tolerances live here).
-#' @param verbose Logical; report tolerance relaxations and a shrunk anchor.
+#' @param design A parsed design configuration (conditions, `match_on` and
+#'   `n_per_condition` or `n_per_cell`). `match_on` must name at least one
+#'   dimension. The number of items must be a whole number of at least 1 and is 20
+#'   when neither key is given.
+#' @param schema The parsed global schema, which holds the tolerances.
+#' @param verbose Whether to report tolerance relaxations and an anchor set smaller
+#'   than requested.
 #' @return A data frame of selected stimuli with a `condition` label and a `set`
 #'   index pairing matched items across conditions.
 #' @export
@@ -473,8 +477,8 @@ match_stimuli <- function(pool, design, schema, verbose = FALSE) {
 #' Selects the `n` best-matched pairs across the two conditions, keeping only
 #' items that have a good counterpart. This equates the control dimensions more
 #' tightly than per-anchor matching when the manipulation is confounded with them
-#' (for example neighbourhood density with word length). Deterministic and
-#' identical to the Python engine (rounded costs). Pairs of equal cost are taken in
+#' (for example neighbourhood density with word length). The costs are rounded, so
+#' the Python engine selects the same pairs. Pairs of equal cost are taken in
 #' row order, which under `tie_break = "hash"` is the hash rank of each word, and the
 #' same rule breaks ties at the cap.
 #'
@@ -623,7 +627,7 @@ match_joint <- function(subpools, cond_names, match_on, center, scale_, n, cap =
 #' necessarily on the items. The pairs are numbered by cost, then by the tie-break
 #' rank of each word.
 #'
-#' When the conditions overlap, a word can sit in both subpools, and the solve may
+#' When the conditions overlap, a word can be in both subpools, and the solve may
 #' pair it with itself or use one pair in both directions (x with y and y with x).
 #' Those pairs are dropped, and the places left are filled by solving again over the
 #' words not yet used, until `n` pairs are found or no further pair exists. The
@@ -715,11 +719,10 @@ match_optimal <- function(subpools, cond_names, match_on, center, scale_, n, cap
 #' The control dimensions are held within a tolerance band, which trims their
 #' tails without holding them constant, so read each control's correlation with
 #' the predictor in [match_report_continuous()] before relying on it. Tightening
-#' `tolerance_k` does not reliably lower those correlations. The set is analysed
-#' by regression / mixed models rather than between-condition contrasts
-#' (Kuperman, 2015; Liben-Nowell et al., 2019). Two deterministic even-spread
-#' passes make the R and Python engines select byte-identical stimuli. Mirrors
-#' select_continuous_stimuli in matching.py.
+#' `tolerance_k` does not reliably lower those correlations. The set is meant for
+#' analysis by regression or mixed models, not by contrasts between conditions
+#' (Kuperman, 2015; Liben-Nowell et al., 2019). The selection is made by two
+#' deterministic even-spread passes.
 #'
 #' The design is checked before anything is selected, so a design that cannot be
 #' honoured is refused outright. `continuous.controls` must be non-empty and must not
@@ -753,22 +756,22 @@ match_optimal <- function(subpools, cond_names, match_on, center, scale_, n, cap
 #'   neither key is given. `tolerance_k`, `shortfall` and `on_insufficient_tolerance`
 #'   are read from its `matching` block with the schema as fallback, as for
 #'   [match_stimuli()], and a relaxed window widens to the whole complete pool.
-#' @param schema The parsed global schema (tolerance windows).
-#' @param verbose Logical; report a window relaxation.
+#' @param schema The parsed global schema, which gives the tolerance windows.
+#' @param verbose Whether to report a window relaxation.
 #' @param key Column used as the selection unit and the byte-order tie-break, by
-#'   default `"word"`. The pair-keyed path passes `"set"`: after a pair table is
-#'   collapsed to one row per item set there is no `word` column, and `set` is unique
-#'   per row, integer, and already derived deterministically.
+#'   default `"word"`. Pair designs pass `"set"`. Once a pair table is collapsed to
+#'   one row per item set, there is no `word` column, and `set` is an integer that is
+#'   unique per row and already derived deterministically.
 #' @param label Value written into the result's `condition` column, or `NULL` to leave
-#'   the existing conditions alone. The pair path passes `NULL`, because its rows
-#'   already carry the design's own conditions and overwriting them would destroy the
-#'   contrast the design exists to test.
-#' @param renumber_sets Logical; renumber the selected rows `1..n`. The pair path
-#'   passes `FALSE`, because its `set` ids have to survive selection for the result to
-#'   be re-expanded back to the full pair table.
-#' @return A data frame of the selected stimuli. Unless `label` is `NULL` the
-#'   `condition` column is set to it, `"continuous"` by default, and unless
-#'   `renumber_sets` is `FALSE` the `set` column is renumbered `1..n`.
+#'   the existing conditions alone. Pair designs pass `NULL`, because their rows
+#'   already carry the design's own conditions, and overwriting them would remove the
+#'   contrast the design tests.
+#' @param renumber_sets Whether to renumber the selected rows `1..n`. Pair designs
+#'   pass `FALSE`, because their `set` ids must be kept for the result to be expanded
+#'   back to the full pair table.
+#' @return A data frame of the selected stimuli. Unless `label` is `NULL`, the
+#'   `condition` column is set to it (`"continuous"` by default), and unless
+#'   `renumber_sets` is `FALSE`, the `set` column is renumbered `1..n`.
 #' @export
 select_continuous_stimuli <- function(pool, design, schema, verbose = FALSE,
                                       key = "word", label = "continuous",
@@ -896,10 +899,10 @@ select_continuous_stimuli <- function(pool, design, schema, verbose = FALSE,
 #'
 #' Each replicate is an independent, fully matched set drawn from the pool with the
 #' items of earlier replicates removed, so no item is reused. This lets a study
-#' treat its items as a random factor (running different item samples across
-#' participant groups, or showing an effect holds across samples) instead of treating
-#' them as a fixed set (Clark, 1973; Yarkoni, 2022). Deterministic, and identical to the
-#' Python engine under the `standardised_euclidean` and `joint` methods.
+#' treat its items as a random factor (such as running different item samples across
+#' participant groups or showing that an effect holds across samples) instead of
+#' treating them as a fixed set (Clark, 1973; Yarkoni, 2022). The selection is
+#' deterministic.
 #'
 #' @references Clark, H. H. (1973). The language-as-fixed-effect fallacy: A critique of
 #'   language statistics in psychological research. *Journal of Verbal Learning and
@@ -912,7 +915,7 @@ select_continuous_stimuli <- function(pool, design, schema, verbose = FALSE,
 #' @param design A parsed design configuration.
 #' @param schema The parsed global schema.
 #' @param n_sets Number of disjoint matched sets to draw, a whole number of at least 1.
-#' @param verbose Logical; passed to [match_stimuli()].
+#' @param verbose Passed to [match_stimuli()].
 #' @return A data frame of matched stimuli with an added `replicate` column. The
 #'   first replicate draws on the whole pool, so its count of the candidates
 #'   excluded for a missing matched value is the one recorded in the `"audit"`

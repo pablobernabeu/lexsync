@@ -251,10 +251,11 @@
         type: jsPsychHtmlKeyboardResponse,
         stimulus: "<div class='lexsync-note'>"
           + (thisRun === "main"
-             ? "<h1>End of practice</h1><p>The practice trials are over. The task itself "
-               + "begins now.</p>"
-             : "<h1>Pause</h1><p>Take a short break if you need one.</p>")
-          + "<p class='go'>Press the space bar to continue.</p></div>",
+             ? "<h1>End of the practice trials</h1>"
+               + "<p class='go'>Press the space bar to begin.</p>"
+             : "<h1>Pause</h1><p>Take a short break if you need one.</p>"
+               + "<p class='go'>Press the space bar to continue.</p>")
+          + "</div>",
         choices: [" "],
         data: { lexsync_event: "block_break", block: thisRun }
       });
@@ -292,7 +293,7 @@
         // The stimulus collects its own response, from its onset: it is shown for its
         // duration at most, the trial runs on for the timeout after it, and a key ends
         // the trial. jsPsych times rt from the onset. lexsync_scored lets a feedback
-        // screen find this row, as it found the separate response row.
+        // screen find this row, as it finds the row of a separate response event.
         const ms = ev.ms_column ? Number(trial[ev.ms_column]) : (ev.ms || 0);
         timeline.push({
           type: jsPsychHtmlKeyboardResponse,

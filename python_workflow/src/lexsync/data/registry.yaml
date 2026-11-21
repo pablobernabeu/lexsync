@@ -124,8 +124,8 @@ corpora:
     connector: openlexicon
     status: listed
     licence: 'CC BY-SA 4.0 (Brysbaert terms)'
-    citation_key: crepaldi2015subtlexit
-    citation: 'Crepaldi, Amenta, Mandera, Keuleers & Brysbaert (2015). SUBTLEX-IT. (verify on ingestion).'
+    citation_key: brysbaert2025subtlexit
+    citation: 'Brysbaert, Amenta, Mandera, Crepaldi & Keuleers (2025). SUBTLEX-IT: Word frequency estimates for Italian based on movie subtitles [Preprint]. OSF. https://osf.io/zg7sc'
     columns: { word: 'spelling', freq_zipf: 'zipf' }
 
   subtlex_ch:
@@ -154,7 +154,7 @@ corpora:
     status: listed
     licence: 'CC BY-SA 4.0 (Brysbaert terms)'
     citation_key: soares2015subtlexpt
-    citation: 'Soares, Machado, Costa, Iriarte, Simoes, de Almeida, Comesana & Perea (2015). On the advantages of word frequency and contextual diversity measures extracted from subtitles: The case of Portuguese. Quarterly Journal of Experimental Psychology, 68(4), 680-696. doi:10.1080/17470218.2014.964271'
+    citation: 'Soares, Machado, Costa, Iriarte, Simões, de Almeida, Comesaña & Perea (2015). On the advantages of word frequency and contextual diversity measures extracted from subtitles: The case of Portuguese. Quarterly Journal of Experimental Psychology, 68(4), 680-696. doi:10.1080/17470218.2014.964271'
     columns: { word: 'word', freq_zipf: 'zipf' }
 
 # Connector B: one dependency, many languages.
@@ -173,5 +173,5 @@ wordfreq_connector:
   # https://github.com/pablobernabeu/lexsync/blob/main/LICENSE-DATA
   licence: 'Apache-2.0 (package code); CC BY-SA 4.0 (data files)'
   citation_key: speer2022wordfreq
-  citation: 'Speer (2022). rspeer/wordfreq v3.0. Zenodo. doi:10.5281/zenodo.7199437'
+  citation: 'Speer (2022). rspeer/wordfreq: v3.0. Zenodo. doi:10.5281/zenodo.7199437'
   languages: [en, es, fr, de, nl, it, pt, pl, el, ru, uk, ar, fa, he, hi, bn, zh, ja, ko, id, ms, tr, sv, nb, da, fi, cs, ro, hu, ca]

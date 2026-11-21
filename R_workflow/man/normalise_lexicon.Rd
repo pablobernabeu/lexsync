@@ -16,10 +16,9 @@ normalise_lexicon(
 \item{path}{Path to the corpus file.}
 
 \item{columns}{Optional named list mapping lexsync's column names to the file's, as
-a registry entry's \code{columns} does: \code{word}, one of \code{freq_zipf} and
-\code{freq_permillion}, and optionally \code{pos}. Without a map, the entry's is used, and
-without either the file's own \code{word}, \code{freq_zipf} or \code{freq_permillion}, and \code{pos}
-columns are read.}
+a registry entry's \code{columns} does: \code{word}, either \code{freq_zipf} or
+\code{freq_permillion} and, optionally, \code{pos}. Without a map, the entry's is used.
+Without either, the file's own columns of those names are read.}
 
 \item{entry}{Optional registry entry, as a list, or the name of one in the
 registry lexsync finds by default (see \code{\link[=list_corpora]{list_corpora()}}). It supplies the map
@@ -51,13 +50,13 @@ more than once is resolved by the entry's \code{duplicates} rule: \code{"first"}
 default) keeps the first row in file order, and \code{"sum"} adds its rows' frequencies
 per million, as Lexique needs, since it splits a homograph's frequency between its
 rows. Frequencies per million are converted with Zipf = log10(per million) + 3,
-rounded to three places by lexsync's shared rounder. A value of 0 or below has no
+rounded to three places by lexsync's own rounding function. A value of 0 or below has no
 Zipf value and is refused. Zipf values read as they are must lie between 0 and 9.
 
 A message gives the number of forms and, for derived Zipf values, the number that
 lay within 1e-9 of a rounding boundary after scaling. That is the only step at which
-the two engines' \code{log10} could round a value apart, and the count is expected to be
-0. A run over the lexicon records the count in its run log and datasheet.
+a last-bit difference between \code{log10} implementations could change a rounded value,
+and the count is expected to be 0. A run over the lexicon records the count in its run log and datasheet.
 }
 \examples{
 # A SUBTLEX-US-like table, written to a temporary file.

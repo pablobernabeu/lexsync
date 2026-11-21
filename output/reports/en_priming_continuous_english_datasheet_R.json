@@ -195,7 +195,7 @@
     "seed": 2026,
     "versions": {
       "engine": "R",
-      "lexsync": "0.1.1",
+      "lexsync": "0.2.0",
       "R": "4.6.1",
       "readr": "2.2.0",
       "stringdist": "0.9.17",
@@ -205,9 +205,9 @@
       "stringi": "1.8.7",
       "os": "Windows x86-64"
     },
-    "design_sha256": "dc211a70b9c1ba03dd207dcdf117be3096514e37f328fe09a76f0fd83e98285e",
+    "design_sha256": "73028c0853572752ffc7b9090ae2408aeec2e4759011d1ab4e2b1dca34bfa527",
     "schema_path": "config/schema.yaml",
-    "schema_sha256": "4698d37f5d396b00272c32ccd46a7529bd1f4dc5af70cd0b2746ae09aba2baf7"
+    "schema_sha256": "f864de85d931f4c471c22488c7df4deaa4bcff7a5cb50b4151e22f443c557af8"
   },
   "artifacts": [
     {
@@ -224,7 +224,7 @@
     },
     {
       "file": "output/experiments/en_priming_continuous_english_psychopy.py",
-      "sha256": "50e309eec905b68da58a107d4e8e72c09663efc39edc394464db263e4ce66e92"
+      "sha256": "9c23c37cb90867716dde673a23966f0508d9a314c99d0101000921f05e598efc"
     },
     {
       "file": "output/experiments/en_priming_continuous_english_list1.osexp",
@@ -236,7 +236,7 @@
     },
     {
       "file": "output/experiments/en_priming_continuous_english.html",
-      "sha256": "e5d2614c91eb63ab1f246852ffb32329776d42904efff4b124388db6ad33be80"
+      "sha256": "2f4ad0bbc473570be123d60528a119117d04c88c6067daf0dc07ffa65fca9bbb"
     },
     {
       "file": "output/experiments/en_priming_continuous_english_psychopy.csv",

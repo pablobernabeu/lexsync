@@ -1,4 +1,4 @@
-# lexsync (development version)
+# lexsync 0.2.0
 
 ## Upgrading from the previous release (0.1.1)
 
@@ -161,6 +161,10 @@
   such as `_stimuli_R.csv` and a hidden `.osexp` and `.html`.
 * lexsync requires jsonlite 1.8.7 or later, since 1.8.5 and 1.8.6 write
   datasheets that differ from the Python engine's.
+* lexsync requires R 4.1.0 or later, where it declared 4.0.0, since current
+  releases of readr need R 4.1. It also requires readr 2.0.0 or later, the first
+  release whose `read_csv()` takes the `show_col_types` argument that lexsync
+  passes.
 * Matching refuses a condition left without a candidate complete on the matched
   dimensions, and `mahalanobis` refuses a pool with fewer than k + 2 complete
   rows for k dimensions.
@@ -289,6 +293,12 @@
   place pauses, where they paused before and after every filler. A design whose
   only blocks are practice, filler and main trials pauses once, where the
   practice trials end.
+* The OpenSesame experiment pauses after the practice trials until the space
+  bar is pressed, as the PsychoPy and jsPsych experiments do, where it ran on
+  without a pause. Escape at the pause stops the session.
+* The jsPsych pause after the practice trials reads 'End of the practice
+  trials' and 'Press the space bar to begin.', as the PsychoPy pause does,
+  where it read 'End of practice' and asked for the space bar to continue.
 * The Methods paragraph describes the realised control by its largest matched
   difference and then the equivalence tests, where it judged the control on the
   tests alone, and names large uncontrolled differences.
@@ -310,6 +320,9 @@
   default applied when the design gives no count, where it was null.
 * The datasheet's artefact list and the run log include the loop and text
   tables.
+* The schema and the PsychoPy and jsPsych templates carry corrected comments,
+  so every datasheet made with the bundled schema records a new schema digest,
+  and every generated PsychoPy script and jsPsych page differs in its comments.
 * The datasheet's realised-control entries give each dimension's role as
   manipulated, controlled or uncontrolled, where every unmatched dimension was
   'manipulated/free', and the Markdown table adds each row's pair and raw
@@ -469,6 +482,9 @@
   `cmd.exe` and Windows PowerShell.
 * The Streamlit app's exported `Rscript` command passes the `outdir` that
   `run_pipeline()` requires.
+* The Shiny app reads an emptied 'Resampled disjoint sets' box as 0, where
+  pressing Run ended the session, and an emptied 'Counterbalancing lists' box as
+  the box's default, where the run stopped with an unexplained error.
 * lexsync installs the licence notice for its CC BY-SA lexica as `COPYRIGHTS`,
   so binary installations carry it.
 
@@ -505,6 +521,14 @@
 * The schema's comments say that the trigger settings, and the presentation
   settings other than `font`, apply to every design run with the schema, where
   they said that a design could override them.
+* The schema's comments describe `joint` matching as greedy pairing, closest
+  pairs first, where they called it 'optimal-greedy'. The schema places the
+  tolerance window around the anchor condition's selected items and says that
+  `joint` and `optimal` apply none.
+* The schema's comments say that `presentation.font` sets the font of the
+  PsychoPy experiment and the jsPsych page and that OpenSesame reads
+  `presentation.opensesame_font`, where they said that `font` served PsychoPy
+  and OpenSesame.
 * The Get started vignette says that the `timing` keys reach every fixation,
   every text event whose `trigger` is `condition` and every blank, but not an
   event with a per-trial `duration` block, where it named only the fixation,
@@ -526,6 +550,26 @@
 * The app vignette and both apps' tolerance panels give the frequency k of
   González Alonso et al. (2025) as 0.1111111111111111, since 0.111 gives a
   window narrower than a ninth of a standard deviation.
+* The Get started vignette says that, under `mahalanobis`, the last bits of the
+  inverse of the pool's correlation matrix can differ between the engines and
+  that, under `optimal`, the two assignment solvers can choose differently among
+  assignments of equal cost, where it said that a covariance inverse and an
+  assignment solver differed in their last bits.
+* The Get started vignette says that a `pool` design needs `match_on` and either
+  `conditions` or a `continuous` block, as a `corpus` design does, where it left
+  out the `continuous` block.
+* Citations were checked against their published records. The corpus registry
+  restores the diacritics in two surnames of the SUBTLEX-PT authors, gives the
+  deposited title of wordfreq and cites the 2025 SUBTLEX-IT preprint by
+  Brysbaert et al., where it cited a 2015 work for which no record could be
+  found. `variance_ratio()` and the matching vignette credit the 0.5 to 2
+  heuristic to Rubin (2001), as cited in Stuart (2010), where the vignette
+  pointed to sources that do not give it. The matching vignette says that OLD20
+  stays informative for long words, where it said that Coltheart's N is
+  undefined for them. The reproducibility vignette cites Roettger (2019) for
+  researcher degrees of freedom in data analysis, where it cited him on
+  preparing materials, and describes the datasheet by the metadata, licence and
+  provenance it supplies, where it called it a FAIR-style record.
 
 # lexsync 0.1.1
 

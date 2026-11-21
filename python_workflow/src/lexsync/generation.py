@@ -122,9 +122,9 @@ def make_pseudoword(word: str, bigrams: dict, lexicon: set, used: set,
                     alphabet=None) -> str | None:
     """The most bigram-plausible legal non-word at the smallest edit distance.
 
-    Searches single-letter substitutions first, then two-letter substitutions;
-    candidates are ranked by summed bigram frequency with a byte-order tie-break,
-    so the choice is deterministic and identical across engines. ``alphabet`` lists
+    Searches single-letter substitutions first, then two-letter substitutions.
+    Candidates are ranked by summed bigram frequency with a byte-order tie-break, so
+    the choice is deterministic. ``alphabet`` lists
     the letters substituted in, in UTF-8 byte order. It defaults to the letters of
     the bigram table, which hold every letter a legal candidate of two letters or
     more can use. The generators pass the letters of the whole reference.
@@ -189,11 +189,12 @@ def _known_set(reference_words, exclude) -> set:
 def generate_pseudowords(base_words, reference_words, exclude=None) -> pd.DataFrame:
     """A length-matched pseudoword for each base word.
 
-    Base words are processed in byte order so the ``used`` set evolves identically
-    across engines. The letters substituted in are those the reference words attest.
-    ``exclude`` (optional) lists further word forms no pseudoword may equal, such as
-    a list of low-frequency words the reference lacks. A base word in a logographic
-    script is refused. Returns a frame with ``base_word`` and ``pseudoword``.
+    Base words are processed in byte order, so the pseudoword each one receives does
+    not depend on the order in which they are given. The letters substituted in are
+    those the reference words attest. ``exclude`` (optional) lists further word forms
+    no pseudoword may equal, such as a list of low-frequency words the reference
+    lacks. A base word in a logographic script is refused. Returns a frame with
+    ``base_word`` and ``pseudoword``, in the order of ``base_words``.
     """
     base = [str(w) for w in base_words]
     _refuse_logographic(base)
@@ -379,7 +380,7 @@ def _lexdec_eligible(pool: pd.DataFrame, reference_words=None) -> pd.DataFrame:
 
 def build_lexdec_stimuli(pool: pd.DataFrame, n: int, reference_words=None,
                          method: str = "letter_substitution", exclude=None) -> pd.DataFrame:
-    """Assemble a word-vs-pseudoword lexical-decision set from a candidate pool.
+    """Assemble a lexical-decision set of words and pseudowords from a candidate pool.
 
     ``n`` is the number of real words to draw, each paired with one pseudoword, and
     the eligible pool may supply fewer (see below). ``method`` chooses the generator:
@@ -389,14 +390,14 @@ def build_lexdec_stimuli(pool: pd.DataFrame, n: int, reference_words=None,
     a word with no legal swap. Any other value raises ValueError.
 
     Real words are drawn by an even spread across the byte-ordered pool (the same
-    deterministic device as the matcher's anchor), then a length-matched
+    deterministic method as the matcher's anchor), then a length-matched
     pseudoword is generated for each. The pool is first filtered to the words
     written wholly in letters the reference attests, which the generators
-    substitute among, so the eligible pool can be smaller than the request; the
-    pipeline's shortfall policy then decides whether that errors. A pool word in a
-    logographic script is refused. ``reference_words`` (the full lexicon)
+    substitute among, so the eligible pool can be smaller than the request. The
+    pipeline's shortfall policy then decides whether that is an error. A pool word in
+    a logographic script is refused. ``reference_words`` (the full lexicon)
     supplies the letters, the bigram statistics and the real-word list a
-    pseudoword must avoid; it falls back to the pool when not given. ``exclude``
+    pseudoword must avoid. It falls back to the pool when not given. ``exclude``
     (optional) lists further known word forms a pseudoword must not equal, which
     the reference may lack. The result has the columns ``target`` (the presented
     string), ``word`` (the same form), ``condition`` (``word`` or ``pseudoword``),

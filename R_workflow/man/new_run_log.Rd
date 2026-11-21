@@ -9,7 +9,7 @@ new_run_log(name, meta = list())
 \arguments{
 \item{name}{A label for the run.}
 
-\item{meta}{A named list of run-level metadata (seed, versions, ...).}
+\item{meta}{A named list of run-level metadata, such as the seed and the versions.}
 }
 \value{
 A run-log object (a list).
