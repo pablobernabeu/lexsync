@@ -27,8 +27,8 @@ There are three new exports, `validate_design()`, `normalise_lexicon()` and
 
 ## Test environments
 
-GitHub Actions, run 43737517315 on 2026-11-15, on pull request #22 at commit
-80b3887. That commit differs from this submission only in cran-comments.md,
+GitHub Actions, run 44941991932 on 2026-11-21, on pull request #22 at commit
+7cfc7ec. That commit differs from this submission only in cran-comments.md,
 which .Rbuildignore keeps out of the tarball. Each leg built the tarball with
 `--no-manual` and ran `R CMD check --as-cran --no-manual` on it beside
 stand-in 'templates' and 'config' packages and a README, since CRAN's Linux
@@ -37,12 +37,12 @@ the CRAN incoming checks, which r-lib/actions turns off. Each leg ended with
 'Status: OK':
 
 * ubuntu-latest (Ubuntu 26.04.1 LTS), R 4.6.2
-* ubuntu-latest (Ubuntu 26.04.1 LTS), R-devel (2026-11-13 r90888)
+* ubuntu-latest (Ubuntu 26.04.1 LTS), R-devel (2026-11-20 r90953)
 * ubuntu-latest (Ubuntu 26.04.1 LTS), R 4.5.3
 * windows-latest (Windows Server 2022 x64 (build 26100), x86_64-w64-mingw32),
   R 4.6.2
 * windows-latest (Windows Server 2022 x64 (build 26100), x86_64-w64-mingw32),
-  R-devel (2026-11-14 r90890 ucrt)
+  R-devel (2026-11-17 r90926 ucrt)
 * macos-latest (macOS Tahoe 26.7.2, aarch64-apple-darwin23), R 4.6.2
 
 The test suite passed in every leg, with no failures or warnings. Eighty-six
