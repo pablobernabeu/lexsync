@@ -543,8 +543,8 @@ when the conditions are identical.
 and two conditions can share a mean while differing in spread, which still confounds
 ([Armstrong et al., 2012](references.md#armstrong-2012);
 [Austin, 2009](references.md#austin-2009)). A ratio near 1 is balanced, and a common heuristic
-treats anything outside roughly [0.5, 2] as unequal spread. The ratio is `None` when a variance is
-undefined.
+treats anything outside [0.5, 2] as unequal spread (Rubin, 2001, as cited in
+[Stuart, 2010](references.md#stuart-2010)). The ratio is `None` when a variance is undefined.
 
 `mean_diff` is the same contrast in the dimension's own unit: the reference mean minus the
 condition mean, in letters, Zipf units, neighbours or syllables, to three places. It is defined
