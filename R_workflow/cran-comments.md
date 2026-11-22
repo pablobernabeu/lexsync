@@ -25,6 +25,18 @@ There are three new exports, `validate_design()`, `normalise_lexicon()` and
 
 0 errors | 0 warnings | 0 notes
 
+CRAN's incoming checks of this submission gave one NOTE, which neither the
+legs below nor the cran-tarball run showed, since neither turned on the
+incoming spelling check:
+
+    Possibly misspelled words in DESCRIPTION:
+      citable (8:60)
+      lexica (8:35)
+
+Both words are spelled correctly. 'lexica' is the plural of 'lexicon', and
+'citable' means 'that can be cited'. CRAN published 0.2.0 on 2026-11-22. A
+later submission should explain the NOTE here.
+
 ## Test environments
 
 GitHub Actions, run 44941991932 on 2026-11-21, on pull request #22 at commit
