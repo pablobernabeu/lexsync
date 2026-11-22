@@ -14,7 +14,7 @@ balance_lists(stimuli, design, schema)
 predictor and controls), \code{counterbalance.max_passes} and \code{counterbalance.scale}
 (\code{mean} or \code{mad}, defaulting to \code{mean}).}
 
-\item{schema}{The parsed global schema (provides the seed).}
+\item{schema}{The parsed global schema, which provides the seed.}
 }
 \value{
 A list with \code{list_of_set} (a named integer vector mapping each set to a
@@ -29,12 +29,11 @@ declared dimension, by steepest-descent pairwise swaps between lists. List sizes
 are preserved, because a swap exchanges one set for another.
 }
 \details{
-The search is deterministic and identical in the R and Python engines: the
-objective is all-integer (see the notes in this file), the descent takes the single
-best swap each pass, and ties are broken by the seeded keyed hash rather than by
+The search is deterministic. The objective is all-integer, the descent takes the
+single best swap in each pass and ties are broken by the seeded keyed hash, not by
 position, so no list is favoured by being numbered first. Because the cost is a
-non-negative integer that strictly decreases, the search terminates; \code{max_passes}
-bounds it anyway and the report says whether the bound was reached.
+non-negative integer that strictly decreases, the search terminates. \code{max_passes}
+bounds it all the same, and the report says whether the bound was reached.
 
 \code{counterbalance.scale} sets each dimension's unit. \code{mean}, the default, divides by
 the dimension's mean, which suits ratio scales only. \code{mad} balances deviations from
@@ -49,6 +48,6 @@ every list there, so there is nothing left to equate, and fewer than two lists
 leaves no pair of lists to exchange sets between. A design with no resolvable
 balance dimension is refused, as is one naming a dimension the stimuli do not
 carry, and the message names the columns. The last refusal is arithmetic: the
-search stops if the integer objective would leave the range a double represents
-exactly, since past that point the two engines could disagree.
+search stops if the integer objective would leave the range that a double
+represents exactly, beyond which its comparisons would no longer be exact.
 }

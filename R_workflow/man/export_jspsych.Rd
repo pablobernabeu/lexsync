@@ -11,11 +11,12 @@ export_jspsych(stimuli, design, schema, outdir, base = NULL)
 
 \item{design}{A parsed design configuration.}
 
-\item{schema}{The parsed global schema (trigger and presentation settings).}
+\item{schema}{The parsed global schema, which gives the trigger and presentation
+settings.}
 
 \item{outdir}{Output directory.}
 
-\item{base}{Optional file-name stem. By default the design's \code{\link[=design_stem]{design_stem()}}.}
+\item{base}{Optional file-name stem, by default the design's \code{\link[=design_stem]{design_stem()}}.}
 }
 \value{
 The path to the generated \code{.html}, invisibly.
@@ -24,29 +25,27 @@ The path to the generated \code{.html}, invisibly.
 The rendered events and the trial data are embedded in one HTML file, so anyone
 can reproduce the procedure online from the same materials. The jsPsych library,
 its keyboard-response plugin and its stylesheet are loaded from a CDN, so the
-machine running the file needs an internet connection; the trial data are
-embedded and the responses are saved locally, so no server is required either to
-run it or to collect them. Each of the
-three files carries its SHA-384 as Subresource Integrity, so a browser refuses a copy
-that differs from the published release. Stimuli are drawn
-\code{presentation.text_height_px} pixels high, 48 by default. Onset
+machine running the file needs an internet connection. The trial data are embedded
+and the responses are saved locally, so no server is required either to run it or
+to collect them. Each of the three files carries its SHA-384 as Subresource
+Integrity, so a browser refuses a copy that differs from the published release.
+Stimuli are drawn \code{presentation.text_height_px} pixels high, 48 by default. Onset
 triggers are recorded in each trial's data (a browser cannot drive a parallel
-port). A stimulus that collects its response is one trial, recorded as \code{target}:
-it accepts the keys from its onset, shows the stimulus for its duration and stays
-open for the timeout after it, a key ends it, and \code{rt} runs from the onset.
+port). A stimulus that collects its response is one trial, recorded as \code{target}.
+It accepts the keys from its onset, shows the stimulus for its duration and stays
+open for the timeout after it. A key ends it, and \code{rt} runs from the onset.
 }
 \details{
 The page embeds every presentation version of the design, one per (replicate,
 list) pair, and runs one, named in its address: \code{?version=K}, \code{?list=K} when there
 are no replicates, or \code{?participant=N}, whose version is \verb{((N - 1) mod V) + 1}. A
 page with more than one version, opened with none of these, shows a screen naming
-them and runs nothing. With \code{counterbalance.orders: m} the page presents the version
-in order \verb{(((N - 1) div V) mod m) + 1}, or in order 1 without a participant number,
-and every data row carries the order. Its welcome screen shows the version's
-instructions, the
-design's \code{instructions} or lexsync's for its task, and waits for the space bar. The
-data rows carry the participant, the version, the list and the replicate, and the
-data file is named after the participant and the version. The page names the keys
-as the browser does, \code{arrowleft} for \code{left}, in its events and in each trial's
-\code{answer}, so a recorded response can be compared with the answer as it stands.
+them and runs nothing. With \code{counterbalance.orders: m}, the page presents the
+version in order \verb{(((N - 1) div V) mod m) + 1}, or in order 1 without a participant
+number, and every data row carries the order. Its welcome screen shows the
+version's instructions, the design's \code{instructions} or lexsync's for its task, and
+waits for the space bar. The data rows carry the participant, the version, the list
+and the replicate, and the data file is named after the participant and the
+version. The page names the keys as the browser does (\code{arrowleft} for \code{left}) in
+its events and in each trial's \code{answer}, so a recorded response can be compared with the answer as it stands.
 }

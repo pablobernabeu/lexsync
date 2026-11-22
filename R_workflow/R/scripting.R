@@ -30,12 +30,13 @@ find_template <- function(relpath) {
 
 #' Assign EEG trigger codes to stimuli
 #'
-#' Adds `condition_trigger` (101, 102, ... per condition) and `item_trigger`
-#' (40-239 per item/`set`). Events reference these by the tokens "condition" and
-#' "item", or carry their own codes, whole numbers from 1 to 255. Item codes follow
+#' Adds `condition_trigger` (101, 102 and so on, one per condition) and
+#' `item_trigger` (40 to 239, one per item `set`). Events refer to these by the
+#' tokens `condition` and `item`, or carry their own codes, whole numbers from 1 to
+#' 255. Item codes follow
 #' the code-point order of the set labels, so with sets 1 to 20, set 10 is 41 and set
 #' 2 is 51. Decode an item code through the loop table, not from the set's label. The
-#' item range holds 200 codes (an 8-bit-port constraint), so past 200 sets the codes
+#' item range holds 200 codes (a limit of an 8-bit port), so past 200 sets the codes
 #' wrap and repeat, and a message says so.
 #'
 #' `events`, the design's event list, says which codes the experiment sends. When it
@@ -51,18 +52,18 @@ find_template <- function(relpath) {
 #' trigger in `events` is checked as [render_events()] checks it.
 #'
 #' A notice is given for a code of the design's own that the stream already uses for
-#' something else: 254 or 255, which the PsychoPy and OpenSesame experiments send when
-#' the session starts and ends, a condition code the design sends, or a code within the
+#' something else: 254 or 255 (which the PsychoPy and OpenSesame experiments send when
+#' the session starts and ends), a condition code the design sends or a code within the
 #' range of the item codes it sends.
 #'
 #' The condition codes follow `conditions` when it is given: its first entry is
-#' 101, its second 102, and so on, whether or not every entry occurs in
+#' 101, its second 102 and so on, whether or not every entry occurs in
 #' `stimuli`, so the same condition keeps the same code in a subset such as a
 #' practice block. A condition present in `stimuli` but missing from
 #' `conditions` takes the next free codes, in code-point order of its label.
-#' Either way the mapping depends only on the labels, never on the row order.
+#' Either way, the mapping depends only on the labels, never on the row order.
 #' Without `conditions`, the codes follow the order in which the conditions first
-#' appear in `stimuli`, as in lexsync 0.1.0. On a shuffled trial list that order
+#' appear in `stimuli`, as in lexsync 0.1.0. On a shuffled trial list, that order
 #' comes from the shuffle, so a different seed can swap two conditions' codes.
 #' [export_experiments()] passes the design's order, and the pipeline passes the
 #' order of the design's `conditions`, followed by any other condition in the
@@ -581,10 +582,10 @@ frames_to_ms <- function(frames, hz) {
 #' Realise per-trial event durations onto the stimuli table
 #'
 #' An event may declare a duration that varies from trial to trial, either read
-#' from an item column or drawn from a range. A drawn value is a pure function of
-#' the keyed hash, so both engines realise the same milliseconds, and it is
-#' written into the stimuli table as well as the generated script, because timing
-#' that varies is a variable the analysis needs, not presentation detail.
+#' from an item column or drawn from a range. A drawn value is determined by the
+#' keyed hash alone, so a run with the same seed and design gives the same
+#' milliseconds. It is written into the stimuli table as well as the generated
+#' script, because timing that varies is a variable the analysis needs.
 #'
 #' An event declares it as `duration: {from_column: <column>}`, to read each trial's
 #' milliseconds from an item column, or as `duration: {jitter: [lo, hi], as: <column>}`,
@@ -595,13 +596,13 @@ frames_to_ms <- function(frames, hz) {
 #' Every value read from a column must be a finite number of milliseconds, not
 #' negative. The first that is not, a blank cell included, is refused, naming the
 #' column and the trial's set and condition. When a column holds fractional
-#' milliseconds, each of its values is rounded once with the rounder both engines share
-#' and written back, so the stimuli, the loop tables and every target carry the same
-#' whole milliseconds. A column of whole numbers is left as it is.
+#' milliseconds, each of its values is rounded once, by lexsync's own rounding
+#' function, and written back, so the stimuli, the loop tables and every target carry
+#' the same whole milliseconds. A column of whole numbers is left as it is.
 #'
 #' @param stimuli A counterbalanced stimuli data frame.
 #' @param design A parsed design configuration.
-#' @param schema The parsed global schema (provides the seed).
+#' @param schema The parsed global schema, which provides the seed.
 #' @return `stimuli` with one integer column per jittered event, and every column of
 #'   fractional milliseconds rounded. Each column rounded is recorded in the
 #'   `"duration_rounding"` attribute, as one `list(event, column, n_rounded)` entry,
@@ -715,7 +716,7 @@ resolve_trial_timing <- function(stimuli, design, schema) {
 #' event of its own. Keys are rendered as lists, which jsonlite writes as arrays even
 #' for one key.
 #'
-#' A text event's `case` is carried as it is, for the runners to apply. A mask's
+#' A text event's `case` is carried as it is, for the experiments to apply. A mask's
 #' `length_of` is carried too, with the one character to repeat as its `text`, and the
 #' exporters write the mask out for their trials (see `.sized_masks()`).
 #' @param events The design's event list, as [resolve_events()] returns it.
@@ -1158,11 +1159,11 @@ loop_table <- function(stimuli, events = NULL) {
 #'
 #' The conditions file, `<base>_psychopy.csv`, holds every presentation version of
 #' the design, one per (replicate, list) pair, and the script presents one per run:
-#' the version given by `--version` (or `--list` when there are no replicates), else
-#' the participant's by the rule `((participant - 1) mod V) + 1` from
-#' `--participant`, else what a start-up dialogue asks for. A version the script does
-#' not have stops the run with a message. With `counterbalance.orders: m` the
-#' conditions file holds each trial's position in each of m orders, and the script
+#' the version given by `--version` (or `--list` when there are no replicates),
+#' otherwise the participant's, by the rule `((participant - 1) mod V) + 1` from
+#' `--participant`, and otherwise the one a start-up dialogue asks for. A version the
+#' script does not have stops the run with a message. With `counterbalance.orders: m`,
+#' the conditions file holds each trial's position in each of m orders, and the script
 #' presents the version in order `(((participant - 1) div V) mod m) + 1`, or in order 1
 #' without a participant number. The data file then records the order.
 #'
@@ -1177,7 +1178,7 @@ loop_table <- function(stimuli, events = NULL) {
 #' trigger codes, the response and its reaction time from the onset of the stimulus it
 #' answers, whether the window closed without one, whether the key was the trial's
 #' `answer`, the self-paced reading times, the question's response and reaction time,
-#' the measured refresh rate, the trigger mode the run used, and each event's realised
+#' the measured refresh rate, the trigger mode the run used and each event's realised
 #' flips and onset.
 #'
 #' Each trigger code goes out on its stimulus's first flip and is held for
@@ -1193,15 +1194,16 @@ loop_table <- function(stimuli, events = NULL) {
 #' `triggers.serial_port` at `triggers.baudrate`. `triggers.mode` decides what happens
 #' when that device cannot be opened. Under `auto`, the script prints the codes instead
 #' and, before the instructions, shows a notice that the experimenter dismisses with the
-#' C key. Under `hardware`, it stops before its window opens, and under `mock` it prints
+#' C key. Under `hardware`, it stops before its window opens, and under `mock`, it prints
 #' the codes without trying the device, after the same notice. The data file's
 #' `trigger_mode` column records `hardware` or `mock`.
 #'
 #' @param stimuli Stimuli with trigger columns (see [assign_triggers()]).
 #' @param design A parsed design configuration.
-#' @param schema The parsed global schema (trigger and presentation settings).
+#' @param schema The parsed global schema, which gives the trigger and presentation
+#'   settings.
 #' @param outdir Output directory.
-#' @param base Optional file-name stem. By default the design's [design_stem()].
+#' @param base Optional file-name stem, by default the design's [design_stem()].
 #' @return The path to the generated `.py`, invisibly.
 #' @importFrom jsonlite toJSON
 #' @export
@@ -1551,7 +1553,8 @@ export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
   stop(sprintf("lexsync: unknown event type '%s'.", t), call. = FALSE)
 }
 
-# The inline script that opens every trial by clearing what the last one recorded.
+# The inline script that clears what the last trial recorded before the trial's first
+# event.
 # OpenSesame keeps a variable from one trial to the next, so a response event that does
 # not run in a block would otherwise leave the previous trial's key in the log and for
 # the feedback. Must match _osexp_trial_start in scripting.py.
@@ -1818,11 +1821,43 @@ export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
                 body)
 }
 
+# The inline script that pauses after the practice trials, as the PsychoPy and jsPsych
+# experiments do. It runs first in every trial and shows its screen on a trial that is
+# not a practice trial when the row before it in loop order is one, so the screen
+# appears once, where the practice trials end, whether a main trial or a filler comes
+# next. The blocks are read from the companion table, as the block guard reads them, so
+# the experiment needs no run-if condition, a syntax that differs between OpenSesame 3.3
+# and 4.x. The wait for the key runs none of the code that resets a trigger, so a code
+# still held is held out first. Space goes on with the trial, and escape stops the
+# session. Must match _osexp_block_break in scripting.py.
+.osexp_block_break <- function() {
+  body <- c(
+    "_previous = _LEXSYNC_ROWS.get(int(var.get(u'lexsync_row', _eval=False)) - 1, {})",
+    paste0("if _previous.get(u'block') == u'practice' and ",
+           "_lexsync_row().get(u'block') != u'practice':"),
+    "    _lexsync_end_hold()",
+    "    c = Canvas()",
+    "    c.text(u'End of the practice trials.<br /><br />Press the space bar to begin.')",
+    "    c.show()",
+    "    _key, _t = Keyboard(keylist=[u'space', u'escape'], timeout=None).get_key()",
+    "    if _key == u'escape':",
+    "        raise RuntimeError(u'lexsync: stopped at the pause after the practice trials.')")
+  .inline_block("lexsync_block_break", "Pause after the practice trials", body)
+}
+
+# Whether a version's trials hold practice trials and trials of another block, the
+# trials whose experiment pauses where the practice trials end. Must match
+# _practice_ends in scripting.py.
+.practice_ends <- function(rows) {
+  if (!"block" %in% names(rows)) return(FALSE)
+  practice <- rows$block %in% "practice"
+  any(practice) && !all(practice)
+}
+
 #' Build a complete plain-text OpenSesame experiment from rendered events
 #'
 #' The loop table and its companion text table are both looked up through OpenSesame's
-#' file pool, which also searches the experiment's own folder. Mirrors `build_osexp`
-#' in the Python engine.
+#' file pool, which also searches the experiment's own folder.
 #'
 #' @param design A parsed design configuration.
 #' @param conditions_file File name of the loop table.
@@ -1845,19 +1880,24 @@ export_psychopy <- function(stimuli, design, schema, outdir, base = NULL) {
 #' @param order,n_orders The experiment presents trial order `order` of `n_orders`.
 #'   With more than one order, the check compares the participant's order too, and the
 #'   experiment sets `lexsync_order`, which every trial logs.
-#' @return The experiment's text, one string. Each trial starts by clearing the last
-#'   trial's responses and ends with a logger item. The setup script opens the trigger
-#'   device the schema names, measures the frame period and defines the helpers that
-#'   time the events and hold their codes. A notice follows it when no codes will be
-#'   sent, and the session markers 254 and 255 are sent just before and after the loop.
-#'   Every text is drawn at `presentation.text_height_px`. A `response` event collected
-#'   from the offset, which becomes a keyboard_response, is refused when it carries
-#'   `blocks`, since the block restriction is applied only within lexsync's inline
-#'   scripts. Restrict a feedback or stimulus event instead.
+#' @param pause Whether the experiment pauses where the practice trials end.
+#'   [export_opensesame()] passes `TRUE` for trials that hold practice trials and trials
+#'   of another block. An inline script, `lexsync_block_break`, then opens every trial,
+#'   and on the first trial after the practice trials, it shows 'End of the practice
+#'   trials.' and waits for the space bar. `FALSE` (the default) writes no such script.
+#' @return The experiment's text, one string. Each trial opens with the pause when there
+#'   is one. It then clears the last trial's responses and ends with a logger item. The
+#'   setup script opens the trigger device the schema names, measures the frame period
+#'   and defines the helpers that time the events and hold their codes. A notice follows
+#'   it when no codes will be sent, and the session markers 254 and 255 are sent just
+#'   before and after the loop. Every text is drawn at `presentation.text_height_px`. A
+#'   `response` event collected from the offset, which becomes a keyboard_response, is
+#'   refused when it carries `blocks`, since the block restriction is applied only
+#'   within lexsync's inline scripts. Restrict a feedback or stimulus event instead.
 #' @keywords internal
 build_osexp <- function(design, conditions_file, schema, rendered, font = "mono",
                         text_file = NULL, version = NULL, n_versions = NULL,
-                        instructions = NULL, order = 1L, n_orders = 1L) {
+                        instructions = NULL, order = 1L, n_orders = 1L, pause = FALSE) {
   instructions <- instructions %||% .instructions(design, .response_mapping(design))
   addr <- clean_port(schema[["triggers"]][["parallel_address"]] %||% "0x378")
   design_name <- clean_meta(design[["name"]], "the design's `name`")
@@ -1891,7 +1931,10 @@ build_osexp <- function(design, conditions_file, schema, rendered, font = "mono"
     else if (identical(ev[["type"]], "question")) "question" else NA_character_
   }
   has_response <- any(vapply(rendered, collects, character(1)) %in% "response")
-  event_blocks <- .osexp_trial_start(); run_names <- "lexsync_trial_start"
+  # The pause after the practice trials opens every trial and shows its screen on the
+  # first trial after them (see .osexp_block_break).
+  event_blocks <- c(if (isTRUE(pause)) .osexp_block_break(), .osexp_trial_start())
+  run_names <- c(if (isTRUE(pause)) "lexsync_block_break", "lexsync_trial_start")
   last <- "response"
   for (i in seq_along(rendered)) {
     kind <- collects(rendered[[i]])
@@ -1974,22 +2017,26 @@ build_osexp <- function(design, conditions_file, schema, rendered, font = "mono"
 #' module, so OpenSesame never evaluates them. Copy both tables with the experiment.
 #'
 #' Before the loop, an inline script, `lexsync_instructions`, shows the design's
-#' `instructions`, or lexsync's for its task, and waits for the space bar. Every trial
-#' is logged. A response after a text event is collected by that event's
-#' script from the stimulus's onset, which sets `response`, `response_time`,
-#' `timed_out` and `correct`. A response kept after the stimulus with `from: offset` is
-#' a keyboard_response, and a script after it sets `timed_out` and `correct`. Such a
-#' response cannot be restricted to `blocks`: a design that restricts one is refused
-#' here, although the PsychoPy and jsPsych targets accept it. Self-paced reading sets
-#' `lexsync_region_rts` and a question `question_response` and `question_rt`. A script
-#' clears these as each trial starts, another copies the
-#' trial's labels into `lexsync_condition`, `lexsync_block` and `lexsync_answer`, and a
-#' logger item ends the trial.
+#' `instructions`, or lexsync's for its task, and waits for the space bar. When the
+#' trials hold practice trials and trials of another block, the experiment pauses where
+#' the practice trials end, as the PsychoPy and jsPsych experiments do. An inline
+#' script, `lexsync_block_break`, opens every trial, and on the first trial after the
+#' practice trials, it shows 'End of the practice trials.' and waits for the space bar.
+#' Escape there stops the session. Every trial is logged. A response after a text event
+#' is collected by that event's script from the stimulus's onset, which sets `response`,
+#' `response_time`, `timed_out` and `correct`. A response kept after the stimulus with
+#' `from: offset` is a keyboard_response, and a script after it sets `timed_out` and
+#' `correct`. Such a response cannot be restricted to `blocks`: a design that restricts
+#' one is refused here, although the PsychoPy and jsPsych targets accept it. Self-paced
+#' reading sets `lexsync_region_rts` and a question `question_response` and
+#' `question_rt`. A script clears these before each trial's first event, another copies
+#' the trial's labels into `lexsync_condition`, `lexsync_block` and `lexsync_answer`,
+#' and a logger item ends the trial.
 #'
 #' Every canvas a trial shows is built before the trial runs, in the prepare phase of its
 #' script, and each event is timed from the onset its display returns. An event ends
-#' half a frame before its duration is up, so that the next display lands on the refresh
-#' that ends it. The frame period is measured at start-up and logged as
+#' half a frame before its duration is up, so that the next display is shown on the
+#' refresh that ends it. The frame period is measured at start-up and logged as
 #' `lexsync_frame_ms`, with `presentation.assumed_refresh_hz` as the fallback when the
 #' measurement fails. Each trigger code is held for `triggers.trigger_hold_ms`, at least
 #' 10 ms, through the events after it when its own is shorter, unless the next onset's
@@ -2018,8 +2065,8 @@ build_osexp <- function(design, conditions_file, schema, rendered, font = "mono"
 #' and a check that compares the participant's order too, order
 #' `(((p - 1) div V) mod m) + 1`. [export_experiments()] lists every file written.
 #'
-#' OpenSesame evaluates the cells of a loop table: in 4.x a cell holding `{` runs as a
-#' Python f-string, and in 3.3 a cell starting with `=` or holding `[=...]` runs as
+#' OpenSesame evaluates the cells of a loop table: in 4.x, a cell holding `{` runs as a
+#' Python f-string, and in 3.3, a cell starting with `=` or holding `[=...]` runs as
 #' Python. A value in a numeric column that is not a plain number is therefore
 #' refused, naming the column. An empty cell passes. These rules were checked against
 #' the sources of OpenSesame 3.3.14 and 4.1.20.
@@ -2081,7 +2128,7 @@ export_opensesame <- function(stimuli, design, schema, outdir, base = NULL) {
                              text_file = text_name, version = p[["version"]],
                              n_versions = length(versions),
                              instructions = p[["instructions"]], order = p[["order"]],
-                             n_orders = n_orders))
+                             n_orders = n_orders, pause = .practice_ends(p[["rows"]])))
   })
   experiments <- character(0)
   tables <- character(0)
@@ -2181,30 +2228,28 @@ export_opensesame <- function(stimuli, design, schema, outdir, base = NULL) {
 #' The rendered events and the trial data are embedded in one HTML file, so anyone
 #' can reproduce the procedure online from the same materials. The jsPsych library,
 #' its keyboard-response plugin and its stylesheet are loaded from a CDN, so the
-#' machine running the file needs an internet connection; the trial data are
-#' embedded and the responses are saved locally, so no server is required either to
-#' run it or to collect them. Each of the
-#' three files carries its SHA-384 as Subresource Integrity, so a browser refuses a copy
-#' that differs from the published release. Stimuli are drawn
-#' `presentation.text_height_px` pixels high, 48 by default. Onset
+#' machine running the file needs an internet connection. The trial data are embedded
+#' and the responses are saved locally, so no server is required either to run it or
+#' to collect them. Each of the three files carries its SHA-384 as Subresource
+#' Integrity, so a browser refuses a copy that differs from the published release.
+#' Stimuli are drawn `presentation.text_height_px` pixels high, 48 by default. Onset
 #' triggers are recorded in each trial's data (a browser cannot drive a parallel
-#' port). A stimulus that collects its response is one trial, recorded as `target`:
-#' it accepts the keys from its onset, shows the stimulus for its duration and stays
-#' open for the timeout after it, a key ends it, and `rt` runs from the onset.
+#' port). A stimulus that collects its response is one trial, recorded as `target`.
+#' It accepts the keys from its onset, shows the stimulus for its duration and stays
+#' open for the timeout after it. A key ends it, and `rt` runs from the onset.
 #'
 #' The page embeds every presentation version of the design, one per (replicate,
 #' list) pair, and runs one, named in its address: `?version=K`, `?list=K` when there
 #' are no replicates, or `?participant=N`, whose version is `((N - 1) mod V) + 1`. A
 #' page with more than one version, opened with none of these, shows a screen naming
-#' them and runs nothing. With `counterbalance.orders: m` the page presents the version
-#' in order `(((N - 1) div V) mod m) + 1`, or in order 1 without a participant number,
-#' and every data row carries the order. Its welcome screen shows the version's
-#' instructions, the
-#' design's `instructions` or lexsync's for its task, and waits for the space bar. The
-#' data rows carry the participant, the version, the list and the replicate, and the
-#' data file is named after the participant and the version. The page names the keys
-#' as the browser does, `arrowleft` for `left`, in its events and in each trial's
-#' `answer`, so a recorded response can be compared with the answer as it stands.
+#' them and runs nothing. With `counterbalance.orders: m`, the page presents the
+#' version in order `(((N - 1) div V) mod m) + 1`, or in order 1 without a participant
+#' number, and every data row carries the order. Its welcome screen shows the
+#' version's instructions, the design's `instructions` or lexsync's for its task, and
+#' waits for the space bar. The data rows carry the participant, the version, the list
+#' and the replicate, and the data file is named after the participant and the
+#' version. The page names the keys as the browser does (`arrowleft` for `left`) in
+#' its events and in each trial's `answer`, so a recorded response can be compared with the answer as it stands.
 #'
 #' @inheritParams export_psychopy
 #' @return The path to the generated `.html`, invisibly.
@@ -2600,14 +2645,14 @@ export_jspsych <- function(stimuli, design, schema, outdir, base = NULL) {
   list(stimuli = stimuli, notes = notes)
 }
 
-#' Export all presentation targets (PsychoPy, OpenSesame, jsPsych)
+#' Export all presentation targets (PsychoPy, OpenSesame and jsPsych)
 #'
 #' Assigns the EEG trigger codes with [assign_triggers()] and then writes each
 #' target. The condition codes follow `conditions`, which defaults to the order of
 #' the design's `conditions` entries, so in a design that declares its conditions
-#' the first is 101, the second 102, and so on, whatever order the counterbalanced
-#' trials put them in. A design with no `conditions` block (a generated lexical
-#' decision, an item table) falls back to the order of first appearance, unless
+#' the first is 101, the second 102 and so on, whatever order the counterbalanced
+#' trials put them in. A design with no `conditions` block (such as a generated
+#' lexical decision or an item table) falls back to the order of first appearance, unless
 #' `conditions` is given. [assign_triggers()] is given the design's events and the
 #' schema, so the item codes of a design that sends them alongside other codes are
 #' kept apart from those codes, and a code of the design's own that the stream
@@ -2616,7 +2661,7 @@ export_jspsych <- function(stimuli, design, schema, outdir, base = NULL) {
 #' Each trial that names no `answer` of its own takes the key the design's response
 #' mapping gives its condition in its list, so the loop tables can score every trial.
 #' A lexical decision maps word to its response event's first key and pseudoword to
-#' its second unless the design gives `response_mapping`, and
+#' its second, unless the design gives `response_mapping`, and
 #' `rotate_mapping_by_list: true` rotates the keys across lists. A practice or filler
 #' trial keeps the answer its table gives. The stimuli passed in are not changed. Every
 #' target shows the design's `instructions`, or lexsync's English instructions for its
@@ -2630,7 +2675,7 @@ export_jspsych <- function(stimuli, design, schema, outdir, base = NULL) {
 #'   experiment when a design has several, see [export_opensesame()]) and `jspsych`.
 #'   `files` lists every file written, in a fixed order: the PsychoPy script, each
 #'   OpenSesame experiment in version order, the jsPsych page, the PsychoPy conditions
-#'   file, and then each OpenSesame experiment's loop table and text table.
+#'   file and then each OpenSesame experiment's loop table and text table.
 #' @export
 export_experiments <- function(stimuli, design, schema, outdir, base = NULL,
                                conditions = NULL) {

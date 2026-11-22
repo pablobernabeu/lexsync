@@ -57,7 +57,6 @@ def count_syllables(word):
     Returns ``None`` for a missing value and for a word holding a character outside
     the Latin script (Chinese, Cyrillic or Greek, for example), where the estimate is
     undefined. ``load_lexicon`` and ``load_pool`` then leave ``n_syllables`` NaN.
-    Mirrors count_syllables in R_workflow/R/querying.R.
     """
     # pd.isna covers None, NaN of any float width, pd.NA and NaT, which str() would
     # otherwise turn into a word ("<NA>" counts one syllable).
@@ -263,8 +262,7 @@ def load_lexicon(path: str, schema: dict, language: str | None = None) -> pd.Dat
     A ``freq_zipf`` value outside 0 to 9 is refused: it is almost always a frequency per
     million in the wrong column (convert it with ``normalise_lexicon``). A log count such
     as SUBTLEX-US's ``Lg10WF``, log10(count + 1) and at most 6.33, passes the check and
-    must still be converted, since it reads about 1.3 below Zipf. Mirrors load_lexicon
-    in R_workflow/R/querying.R.
+    must still be converted, since it reads about 1.3 below Zipf.
     """
     df = read_csv_utf8(path)
     validate_lexicon(df, schema)
@@ -343,23 +341,23 @@ def _neighbourhood_reference(lex: pd.DataFrame) -> list:
 def load_pool(path: str, schema: dict, lexicon=None, language=None) -> dict:
     """Load a supplied candidate pool of words and give it the matcher's dimensions.
 
-    A researcher who already has a curated word list (from a previous study, a norming
-    session, a colleague) should not have to dress it up as a corpus lexicon
-    to get lexsync's matching, validation and datasheet. This reads such a list and
-    returns something the matcher accepts.
+    A curated word list, such as one from a previous study, a norming session or a
+    colleague, can be matched, validated and documented without first being made into
+    a corpus lexicon. This function reads such a list and returns a pool the matcher
+    accepts.
 
     The list needs only a ``word`` column. Length and the syllable estimate are derived
-    from the form. Everything else is either supplied on the list itself or looked up:
-    with ``lexicon`` given, the corpus dimensions (frequency above all) are joined for
-    those words, and a word the lexicon does not have is a hard error rather than a
-    NaN, because the tolerance windows drop missing rows silently and the pool would
-    then be smaller than the user believes it is.
+    from the form. Every other dimension is either supplied on the list itself or
+    looked up. With ``lexicon`` given, the corpus dimensions (frequency above all) are
+    joined for those words, and a word the lexicon does not have is an error rather
+    than a NaN, because a word missing a value would be left out of the candidates and
+    the pool would then be smaller than the user believes it is.
 
     The returned ``reference`` matters as much as the pool. ``n_density`` and ``old20``
-    are properties of a word in its *language*, not among the handful of words a study
-    happens to use, so computing them against a 200-word supplied list would give
-    numbers that mean nothing. When a lexicon is given, the reference is the lexicon's
-    words; only without one does it fall back to the pool itself. A
+    describe a word within its language, not within the few words a study uses, so
+    computing them against a 200-word supplied list would give meaningless numbers.
+    When a lexicon is given, the reference is the lexicon's words. Without one, it is
+    the pool itself. A
     ``reference_member`` column on whichever of the two supplies the reference keeps
     only the rows it marks 1.
 
@@ -369,7 +367,7 @@ def load_pool(path: str, schema: dict, lexicon=None, language=None) -> dict:
     Returns ``{"pool": DataFrame, "reference": list}``. Words are trimmed, lower-cased
     and normalised to Unicode NFC as in ``load_lexicon``, and the pool carries the same
     ``attrs["input_normalisation"]`` record when that changed or merged any word of
-    the pool or the lexicon. Mirrors load_pool in R_workflow/R/querying.R.
+    the pool or the lexicon.
     """
     if ".." in str(path).replace("\\", "/").split("/"):
         raise ValueError("lexsync: pool path must not contain '..'.")
@@ -445,8 +443,7 @@ def add_bigram_frequency(df: pd.DataFrame, reference=None) -> pd.DataFrame:
     its adjacent letter bigrams of the bigram's probability among the words of
     ``reference`` (its count divided by the total bigram count), rounded to nine places,
     and 0 for a word shorter than two characters. ``reference`` defaults to the words of
-    ``df``. Pass the full lexicon's words instead. Computed from integer counts, so it
-    is identical in the R and Python engines.
+    ``df``. Pass the full lexicon's words instead. It is computed from integer counts.
     """
     ref = [str(w) for w in (reference if reference is not None else df["word"].tolist())]
     counts: dict[str, int] = {}
@@ -481,37 +478,27 @@ def _norm_key(x) -> pd.Series:
 
 
 def merge_norms(lexicon: pd.DataFrame, norms, on: str = "word", columns=None) -> pd.DataFrame:
-    """Left-join a norm table (e.g. concreteness, age of acquisition, valence).
+    """Left-join a norm table (such as concreteness, age of acquisition or valence).
 
     ``norms`` is a data frame or the path to a CSV with a word column and one or
-    more norm columns. This is the connector for semantic dimensions: the norm data
-    themselves are fetched separately (licensing varies), then merged here so the
-    matcher can equate on them.
+    more norm columns. Norm data, such as semantic dimensions, are fetched
+    separately, since their licences vary, and joined here so that the matcher can
+    equate on them.
 
-    The result is the lexicon itself with the norm columns appended, and the key is
-    looked up positionally rather than through ``merge``. That is what makes the two
-    engines agree by construction, with nothing to repair afterwards, because ``merge``
-    and R's ``merge()`` were measured to diverge in three ways, each of them silent:
-    R hoists the ``by`` column to position 1 while pandas keeps the left frame's
-    order, so the column order differed whenever ``on`` was not already first; R
-    disambiguates a colliding column name with ``.x``/``.y`` and pandas with
-    ``_x``/``_y``, and either way a dimension the design matches on disappears under
-    a name nothing looks for; and R's ``merge(sort = FALSE)`` leaves the row order
-    unspecified. A positional lookup has none of those degrees of freedom. A norm
-    column whose name the lexicon already has is refused.
+    The result is the lexicon itself with the norm columns appended, so no lexicon
+    column is moved or renamed and no row is reordered. A norm column whose name the
+    lexicon already has is refused.
 
     ``on`` names the join column, ``word`` by default, which both tables must carry, and
     ``columns`` the norm columns to add, every column but ``on`` when not given. A
     ``columns`` entry the norm table lacks is refused.
 
-    The key is trimmed, case-folded and normalised to NFC on *both* sides, so a
+    The key is trimmed, case-folded and normalised to NFC on both sides, so a
     lexicon holding ``Dog`` matches a norm row for ``dog``. The lexicon's own spelling
     is preserved rather than folded in place: ``word`` is the byte-order tie-break
     behind every selection, so the join must not rewrite it. A norm row with a missing
     key is dropped, a key listed twice takes its first row, and a word the table lacks
     gets NaN.
-
-    Mirrors merge_norms in R_workflow/R/querying.R.
     """
     n = norms if isinstance(norms, pd.DataFrame) else read_csv_utf8(norms)
     if on not in lexicon.columns:
@@ -758,8 +745,7 @@ def add_neighbourhood(df: pd.DataFrame, reference=None, n_old: int = 20) -> pd.D
     when there are none. The column is named ``old20`` whatever ``n_old`` is.
     ``reference`` defaults to the words of ``df``, and a word it lists twice counts
     once. Pass the full lexicon instead, since a word's neighbours do not stop existing
-    because a design excluded them. Distances count code points, and both engines give
-    the same values.
+    because a design excluded them. Distances count code points.
     """
     # The Levenshtein distances to the reference come from one rapidfuzz distance
     # matrix per block of rows, which takes 0.9 s for 500 words against the
@@ -815,8 +801,7 @@ def add_pair_overlap(df: pd.DataFrame, prime: str = "prime",
     The forms are trimmed, lower-cased and normalised to Unicode NFC before they are
     compared, as ``load_lexicon`` does to a lexicon's words, so ``Dog`` and ``dog`` are
     at distance 0. Length is counted in code points. ``pair.overlap`` is rounded to nine
-    decimal places, and a pair of two empty forms gives 0. Both engines return
-    identical values.
+    decimal places, and a pair of two empty forms gives 0.
     """
     for col in (prime, target):
         if col not in df.columns:
@@ -832,13 +817,13 @@ def add_pair_overlap(df: pd.DataFrame, prime: str = "prime",
     return out
 
 def load_items(path: str, required_fields) -> pd.DataFrame:
-    """Load a paradigm item table (prime-target pairs, sentences, …).
+    """Load a paradigm item table (such as prime-target pairs or sentences).
 
     The table must carry an ``item`` identifier, a ``condition`` label and the
-    paradigm's presented fields. Field values are validated (no control
-    characters; bounded length) so a crafted item cannot corrupt the generated
-    loop table or scripts. Items are mapped to a deterministic integer ``set`` id
-    (byte order) so counterbalancing matches the corpus path and the two engines.
+    paradigm's presented fields. Field values are validated (no control characters
+    and a bounded length), so a crafted item cannot corrupt the generated loop table
+    or scripts. Items are mapped to deterministic integer ``set`` ids in byte order, so
+    counterbalancing works as it does for a corpus design.
     The item id, the condition and the presented fields are normalised to Unicode
     NFC. When that changed any cell, ``attrs["input_normalisation"]`` holds
     ``{"changed", "collapsed"}``, with ``collapsed`` always 0 since no row is removed.
@@ -941,11 +926,11 @@ def build_pool(lexicon: pd.DataFrame, filters: dict | None = None) -> pd.DataFra
 
     Two numbers make a range, and a boolean is not a number, so YAML's
     ``[true, false]`` is a list of permitted values. A list of numbers is compared
-    with a numeric column as numbers, and any other list as text, the cells and the
-    values written as R's as.character() writes them (see _r_text). A filter of 1
-    therefore keeps the 1.0 cells of a 0/1 column that a missing value has made
-    float. As in the R engine, ``[true, false]`` keeps both values of a logical
-    column and no row of a 0/1 column.
+    with a numeric column as numbers, and any other list as text, with the cells and
+    the values written as R's ``as.character()`` writes them. A filter of 1 therefore
+    keeps the 1.0 cells of a column of 0s and 1s that a missing value has made float.
+    ``[true, false]`` keeps both values of a logical column and no row of a column of
+    0s and 1s.
 
     A filter naming a column the frame does not have is silently skipped, because the
     same function filters lexica, supplied pools and pair tables, and those carry
@@ -953,8 +938,7 @@ def build_pool(lexicon: pd.DataFrame, filters: dict | None = None) -> pd.DataFra
     selection, so every caller that takes its filters from a design checks the names
     against the frame first: ``run_pipeline`` for ``pool_filters``,
     ``match_stimuli`` for a condition's ``define_by``, and
-    ``select_continuous_pairs`` for both. Mirrors build_pool in
-    R_workflow/R/querying.R.
+    ``select_continuous_pairs`` for both.
     """
     df = lexicon
     if filters:

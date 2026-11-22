@@ -13,7 +13,7 @@ match_report_continuous(
 )
 }
 \arguments{
-\item{stimuli}{A stimuli data frame (a single "continuous" group).}
+\item{stimuli}{A stimuli data frame (a single \code{continuous} group).}
 
 \item{predictor}{The spanned predictor dimension.}
 
@@ -30,10 +30,10 @@ and window are \code{NA}.}
 A list with \code{descriptives} and \code{comparisons} data frames.
 }
 \description{
-Returns the same list shape as \code{\link[=match_report]{match_report()}} (\code{descriptives} + \code{comparisons}),
-but the comparisons describe a continuous predictor: its realised span and, for
-each control, the Pearson correlation with the predictor (near zero when the
-control is held constant). Mirrors match_report_continuous in validation.py.
+Returns the same list shape as \code{\link[=match_report]{match_report()}} (\code{descriptives} and
+\code{comparisons}), but the comparisons describe a continuous predictor: its realised
+span and, for each control, the Pearson correlation with the predictor (near zero
+when the control is held constant).
 }
 \details{
 \code{sd} is each dimension's realised SD. For the predictor, \code{sd_ratio} sets it

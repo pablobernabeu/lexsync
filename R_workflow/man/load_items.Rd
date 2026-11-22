@@ -2,7 +2,7 @@
 % Please edit documentation in R/querying.R
 \name{load_items}
 \alias{load_items}
-\title{Load a paradigm item table (prime-target pairs, sentences, ...)}
+\title{Load a paradigm item table (such as prime-target pairs or sentences)}
 \usage{
 load_items(path, required_fields)
 }
@@ -17,10 +17,10 @@ A data frame with \code{set}, \code{condition} and the item fields.
 }
 \description{
 The table must carry an \code{item} identifier, a \code{condition} label and the
-paradigm's presented fields. Field values are validated (no control
-characters; bounded length) so a crafted item cannot corrupt the generated
-loop table or scripts. Items are mapped to a deterministic integer \code{set} id
-(byte order), so counterbalancing matches the corpus path and the two engines.
+paradigm's presented fields. Field values are validated (no control characters
+and a bounded length), so a crafted item cannot corrupt the generated loop table
+or scripts. Items are mapped to deterministic integer \code{set} ids in byte order, so
+counterbalancing works as it does for a corpus design.
 The item id, the condition and the presented fields are normalised to Unicode
 NFC. When that changed any cell, the attribute \code{input_normalisation} holds
 \code{list(changed, collapsed)}, with \code{collapsed} always 0 since no row is removed.

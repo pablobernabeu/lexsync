@@ -9,8 +9,8 @@ tost_equiv(x, y, bound_d = 0.5, alpha = 0.05)
 \arguments{
 \item{x, y}{Numeric vectors.}
 
-\item{bound_d}{Smallest effect size of interest (Cohen's d); defaults to the
-schema value of 0.5. That value is a convention and not a default of Lakens
+\item{bound_d}{Smallest effect size of interest (Cohen's d). It defaults to 0.5,
+the schema's value. That value is a convention and not a default of Lakens
 (2017), who asks for the bound to be justified for the study. At 0.5 and
 alpha .05, no dimension that varies can pass with fewer than 23 items per
 condition, even when the conditions are identical.}
@@ -21,10 +21,10 @@ condition, even when the conditions are identical.}
 A list with \code{p} and logical \code{equivalent}.
 }
 \description{
-Reports the larger of the two one-sided p-values; a value below \code{alpha}
+Reports the larger of the two one-sided p-values. A value below \code{alpha}
 supports equivalence within +/- \code{bound_d} standard deviations. A
-non-significant difference test is not itself evidence of equivalence, hence
-TOST is reported alongside the standardised mean difference (Lakens, 2017).
+non-significant difference test is not itself evidence of equivalence, so TOST
+is reported alongside the standardised mean difference (Lakens, 2017).
 }
 \references{
 Lakens, D. (2017). Equivalence tests: A practical primer for \emph{t} tests,

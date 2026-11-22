@@ -13,12 +13,13 @@ counterbalance(stimuli, design, schema, list_of_set = NULL)
 \code{counterbalance.recipe}, \code{counterbalance.lists}, \code{counterbalance.max_run},
 \code{counterbalance.run_on}, \code{counterbalance.orders} and \code{fillers}.}
 
-\item{schema}{The parsed global schema (provides the seed).}
+\item{schema}{The parsed global schema, which provides the seed.}
 
 \item{list_of_set}{Optional named integer vector mapping each \code{set} to a list,
-from \code{\link[=balance_lists]{balance_lists()}}. Supplied by the pipeline when
-\code{counterbalance.optimise} is on; when \code{NULL} the factorial recipe deals sets to
-lists by rank: the first set to list 1, the second to list 2 and so on, cycling.}
+from \code{\link[=balance_lists]{balance_lists()}}. The pipeline supplies it when
+\code{counterbalance.optimise} is on. When it is \code{NULL}, the factorial recipe deals
+sets to lists by rank, the first set to list 1, the second to list 2 and so on,
+cycling.}
 }
 \value{
 The trials, sorted by replicate, list and trial, with \code{list} and \code{trial}

@@ -19,7 +19,7 @@ load_lexicon(path, schema, language = NULL)
 A data frame with at least \code{word}, \code{length}, \code{n_syllables},
 \code{frequency} and \code{id}, plus the frequency column the schema names (by default
 \code{freq_zipf}) and every other column the file carried. Rows are in byte order
-of \code{word} and \code{id} numbers them from 1. When normalisation changed or merged
+of \code{word}, and \code{id} numbers them from 1. When normalisation changed or merged
 any word, the attribute \code{input_normalisation} holds \code{list(changed, collapsed)}:
 the words it rewrote and the duplicate rows it removed.
 }

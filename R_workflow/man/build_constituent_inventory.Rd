@@ -2,7 +2,7 @@
 % Please edit documentation in R/generation.R
 \name{build_constituent_inventory}
 \alias{build_constituent_inventory}
-\title{Attested subsyllabic constituents keyed by "role|length" with integer counts}
+\title{Attested subsyllabic constituents keyed by \code{role|length} with integer counts}
 \usage{
 build_constituent_inventory(reference_words)
 }
@@ -10,11 +10,11 @@ build_constituent_inventory(reference_words)
 \item{reference_words}{Character vector of reference words.}
 }
 \value{
-An environment whose names are "role|length" keys, such as "onset|2", each
+An environment whose names are \code{role|length} keys, such as \code{onset|2}, each
 holding a named integer vector counting every attested constituent of that role
 and length.
 }
 \description{
-Attested subsyllabic constituents keyed by "role|length" with integer counts
+Attested subsyllabic constituents keyed by \code{role|length} with integer counts
 }
 \keyword{internal}

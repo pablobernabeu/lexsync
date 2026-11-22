@@ -19,7 +19,7 @@
     },
     {
       "file": "output/experiments/en_andrews_repro_english_psychopy.py",
-      "sha256": "4aca91e0b7dfcc8753de450fbcab72af1057523520dbd5a7bdc92a4ccc0cfe50"
+      "sha256": "9d7b183588b06dcdec190a78e000c72f8ac0cd68546d8ca4480f0433e9725d3d"
     },
     {
       "file": "output/experiments/en_andrews_repro_english.osexp",
@@ -27,7 +27,7 @@
     },
     {
       "file": "output/experiments/en_andrews_repro_english.html",
-      "sha256": "bc1c96fcfa92273dcbde0d221fc4a35b6a1ecc54e3d0bca675e3d1743d017496"
+      "sha256": "40a8c205a42946c47b13e3ca469be16a1afee262500ab52b0e293ec94b602f33"
     },
     {
       "file": "output/experiments/en_andrews_repro_english_psychopy.csv",
@@ -672,11 +672,11 @@
   "reproducibility": {
     "design_sha256": "2bf820c7ea24d1871745b37c4dd0f0d3633ae232e7c2bf41b35e2fdb1a244afa",
     "schema_path": "config/schema.yaml",
-    "schema_sha256": "4698d37f5d396b00272c32ccd46a7529bd1f4dc5af70cd0b2746ae09aba2baf7",
+    "schema_sha256": "f864de85d931f4c471c22488c7df4deaa4bcff7a5cb50b4151e22f443c557af8",
     "seed": 2026,
     "versions": {
       "engine": "python",
-      "lexsync": "0.1.1",
+      "lexsync": "0.2.0",
       "numpy": "2.3.2",
       "os": "Windows AMD64",
       "pandas": "2.3.2",

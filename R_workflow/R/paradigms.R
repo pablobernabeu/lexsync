@@ -7,19 +7,20 @@
 
 #' The paradigm registry: default event sequences and required fields
 #'
-#' Each event is a list with a `type` (fixation | text | mask | blank |
-#' region_by_region | response | question | feedback) and the keys its type reads.
+#' Each event is a list with a `type` (`fixation`, `text`, `mask`, `blank`,
+#' `region_by_region`, `response`, `question` or `feedback`) and the keys its type
+#' reads.
 #' `content` is a literal or a `{field}` reference. An event's length, where it has
 #' one, is `duration_ms`, or `duration_frames` converted at the schema's
 #' `presentation.assumed_refresh_hz`, and a fixation, text, mask or blank event may
 #' instead take a per-trial `duration` block (`from_column`, or `jitter` with an
-#' optional `as`, see [resolve_trial_timing()]). A fixation, text or mask event takes an
-#' optional `trigger` (a whole-number EEG code from 1 to 255 or the token
-#' "condition"/"item"). A response takes `keys`, `timeout_ms` and `from` (where its
-#' window opens: "onset", with the text event before it, which is the default after a
-#' text event, or "offset", once that has gone), and a question takes `keys` and
-#' `timeout_ms`. A text event takes `case` ("upper" or "lower", applied by the runners
-#' as they show the text), and a mask takes `length_of` (the fields whose longest text,
+#' optional `as`, as [resolve_trial_timing()] describes). A fixation, text or mask
+#' event takes an optional `trigger` (a whole-number EEG code from 1 to 255 or the
+#' token `condition` or `item`). A response takes `keys`, `timeout_ms` and `from`
+#' (where its window opens: `onset`, with the text event before it, which is the
+#' default after a text event, or `offset`, once that has gone), and a question takes
+#' `keys` and `timeout_ms`. A text event takes `case` (`upper` or `lower`, which the
+#' experiments apply as they show the text), and a mask takes `length_of` (the fields whose longest text,
 #' in characters, sets how often its one-character content is repeated). A
 #' region-by-region event takes `sep` (the region separator in its content, `"|"` by
 #' default), `advance` (the key that shows the next region, `"space"` by default) and
@@ -41,16 +42,15 @@
 #'   Memory, and Cognition, 10*(4), 680-698. \doi{10.1037/0278-7393.10.4.680}
 #'
 #' @format A named list with one entry per paradigm (`factorial`,
-#'   `lexical_decision`, `priming`, `masked_priming`, `categorisation`,
-#'   `self_paced_reading`), each holding
-#'   `stimulus_fields`, a `counterbalance` recipe and an `events` list.
-#' @return A plain named list (class `"list"`; no package-specific class) of
-#'   built-in paradigm specifications. Each element contains `stimulus_fields`,
-#'   a character vector naming required item-table fields; `counterbalance`, a
-#'   character scalar naming the counterbalancing recipe; and `events`, an
-#'   ordered list of event-specification lists. The selected entry supplies the
-#'   default trial sequence, required item fields, and counterbalancing rule
-#'   inherited by a design that names that paradigm.
+#'   `lexical_decision`, `priming`, `masked_priming`, `categorisation` and
+#'   `self_paced_reading`), each holding `stimulus_fields`, a `counterbalance`
+#'   recipe and an `events` list.
+#' @return A plain named list of the built-in paradigm specifications, with no class
+#'   of its own. In each element, `stimulus_fields` is a character vector naming the
+#'   required item-table fields, `counterbalance` is a character scalar naming the
+#'   counterbalancing recipe and `events` is an ordered list of event
+#'   specifications. A design that names a paradigm inherits its trial sequence,
+#'   required item fields and counterbalancing rule from that entry.
 #' @export
 PARADIGMS <- list(
   factorial = list(
@@ -169,7 +169,7 @@ get_paradigm <- function(name) {
   PARADIGMS[[name]]
 }
 
-#' The design's trial event list: its own `events`, else its paradigm's
+#' The trial events of a design: its own `events`, or else its paradigm's
 #'
 #' @param design A parsed design list.
 #' @return The list of trial events the design presents.
@@ -201,7 +201,7 @@ referenced_fields <- function(events) {
   fields
 }
 
-#' Trial fields a design needs present in its items (paradigm + events)
+#' The item fields a design needs, from its paradigm and its events
 #'
 #' @param design A parsed design list.
 #' @return Character vector of the item fields the design's trials reference.

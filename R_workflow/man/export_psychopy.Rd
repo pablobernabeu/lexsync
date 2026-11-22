@@ -11,11 +11,12 @@ export_psychopy(stimuli, design, schema, outdir, base = NULL)
 
 \item{design}{A parsed design configuration.}
 
-\item{schema}{The parsed global schema (trigger and presentation settings).}
+\item{schema}{The parsed global schema, which gives the trigger and presentation
+settings.}
 
 \item{outdir}{Output directory.}
 
-\item{base}{Optional file-name stem. By default the design's \code{\link[=design_stem]{design_stem()}}.}
+\item{base}{Optional file-name stem, by default the design's \code{\link[=design_stem]{design_stem()}}.}
 }
 \value{
 The path to the generated \code{.py}, invisibly.
@@ -23,11 +24,11 @@ The path to the generated \code{.py}, invisibly.
 \description{
 The conditions file, \verb{<base>_psychopy.csv}, holds every presentation version of
 the design, one per (replicate, list) pair, and the script presents one per run:
-the version given by \code{--version} (or \code{--list} when there are no replicates), else
-the participant's by the rule \verb{((participant - 1) mod V) + 1} from
-\code{--participant}, else what a start-up dialogue asks for. A version the script does
-not have stops the run with a message. With \code{counterbalance.orders: m} the
-conditions file holds each trial's position in each of m orders, and the script
+the version given by \code{--version} (or \code{--list} when there are no replicates),
+otherwise the participant's, by the rule \verb{((participant - 1) mod V) + 1} from
+\code{--participant}, and otherwise the one a start-up dialogue asks for. A version the
+script does not have stops the run with a message. With \code{counterbalance.orders: m},
+the conditions file holds each trial's position in each of m orders, and the script
 presents the version in order \verb{(((participant - 1) div V) mod m) + 1}, or in order 1
 without a participant number. The data file then records the order.
 }
@@ -43,7 +44,7 @@ trial, each written as its trial ends. A row holds the run, the trial's fields a
 trigger codes, the response and its reaction time from the onset of the stimulus it
 answers, whether the window closed without one, whether the key was the trial's
 \code{answer}, the self-paced reading times, the question's response and reaction time,
-the measured refresh rate, the trigger mode the run used, and each event's realised
+the measured refresh rate, the trigger mode the run used and each event's realised
 flips and onset.
 
 Each trigger code goes out on its stimulus's first flip and is held for
@@ -59,7 +60,7 @@ high, 48 by default. It writes the codes to the parallel port at
 \code{triggers.serial_port} at \code{triggers.baudrate}. \code{triggers.mode} decides what happens
 when that device cannot be opened. Under \code{auto}, the script prints the codes instead
 and, before the instructions, shows a notice that the experimenter dismisses with the
-C key. Under \code{hardware}, it stops before its window opens, and under \code{mock} it prints
+C key. Under \code{hardware}, it stops before its window opens, and under \code{mock}, it prints
 the codes without trying the device, after the same notice. The data file's
 \code{trigger_mode} column records \code{hardware} or \code{mock}.
 }

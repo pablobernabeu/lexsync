@@ -19,8 +19,8 @@ match_joint(
 Selects the \code{n} best-matched pairs across the two conditions, keeping only
 items that have a good counterpart. This equates the control dimensions more
 tightly than per-anchor matching when the manipulation is confounded with them
-(for example neighbourhood density with word length). Deterministic and
-identical to the Python engine (rounded costs). Pairs of equal cost are taken in
+(for example neighbourhood density with word length). The costs are rounded, so
+the Python engine selects the same pairs. Pairs of equal cost are taken in
 row order, which under \code{tie_break = "hash"} is the hash rank of each word, and the
 same rule breaks ties at the cap.
 }

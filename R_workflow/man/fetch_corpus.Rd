@@ -13,7 +13,7 @@ fetch_corpus(name, registry_path = NULL, dest = NULL)
 is refused. \code{NULL} (the default) finds the registry as \code{\link[=list_corpora]{list_corpora()}}
 describes.}
 
-\item{dest}{Optional destination file; defaults to \verb{<name>.csv} in
+\item{dest}{Optional destination file. It defaults to \verb{<name>.csv} in
 \code{\link[=lexsync_cache_dir]{lexsync_cache_dir()}}.}
 }
 \value{
@@ -27,12 +27,13 @@ becomes the cached file's name.
 }
 \details{
 An entry's \code{derived} file, a lexicon already normalised, is fetched when it has
-one and cached as it arrives. Otherwise its \code{openlexicon} file is fetched and
+one and cached as it arrives. Otherwise, its \code{openlexicon} file is fetched and
 converted by \code{\link[=normalise_lexicon]{normalise_lexicon()}} with the entry's \code{columns} and \code{duplicates}, so
 \code{fetch_corpus("subtlex_us")} caches SUBTLEX-US as a lexicon. The URL's scheme is
-checked first. The transfer then lands in a sidecar file that is renamed into
-place only after the size cap, the markup sniff, any \code{sha256} the registry entry
-carries and the normalisation have all passed. A refusal of the registry entry, a
+checked first. The download is then written to a \code{.part} file beside the
+destination, which is renamed to the destination only after the file has passed
+the size limit, the check that it is not an HTML or XML page, any \code{sha256} the
+registry entry gives and the normalisation. A refusal of the registry entry, a
 failed transfer and a checksum mismatch name the registry file read. On success, a
 message gives the corpus's citation, which \code{\link[=list_corpora]{list_corpora()}} also lists, and a run
 that reads the file from the cache credits that citation in its datasheet (see
@@ -45,15 +46,15 @@ The lexica of the wordfreq connector's languages are built by the Python package
 (\verb{lexsync fetch fr}), and this package reads the result with \code{\link[=load_lexicon]{load_lexicon()}}. A
 wordfreq language code given here is refused with that explanation.
 
-The file lands in \code{\link[=lexsync_cache_dir]{lexsync_cache_dir()}} unless \code{dest} names somewhere else.
+The file is written to \code{\link[=lexsync_cache_dir]{lexsync_cache_dir()}} unless \code{dest} names another path.
 The cache directory is created only once the registry entry and its URL have
 been accepted, so a refused call writes nothing. A download to the default
-destination begins by deleting any \code{.part} sidecar in the cache that an
+destination begins by deleting any \code{.part} file in the cache that an
 interrupted transfer left there more than a day earlier. The cache persists
 between sessions, and one corpus may reach the 200 MB download cap, so several
 of them add up. \code{\link[=lexsync_cache_clear]{lexsync_cache_clear()}} removes one corpus or the whole cache,
 and the next call downloads the corpus again. A \code{dest} the caller names, inside
 the cache or not, is used as given. Its directory must already exist, no
-sidecar is swept, and the only file beside it that lexsync writes or deletes is
-the \verb{<dest>.part} sidecar of the download itself.
+\code{.part} file is deleted, and the only file beside it that lexsync writes or
+deletes is the \verb{<dest>.part} file of the download itself.
 }

@@ -6,28 +6,27 @@ byte-identical below this comment, as templates/ and schema.yaml already are. --
 
 # Contributing to lexsync
 
-Thank you for considering a contribution. Issues and pull requests are both
-welcome, whether they fix a bug, improve the documentation or add a feature.
+Thank you for considering a contribution. Issues and pull requests are welcome,
+whether they fix a bug, improve the documentation or add a feature.
 
 ## Reporting a problem or suggesting a feature
 
 Please open an issue at <https://github.com/pablobernabeu/lexsync/issues>. For a
-bug, the design YAML and the run log from `output/reports/` are the two things
-that make a report actionable, since between them they pin the inputs and every
-step that ran.
+bug, include the design YAML and the run log from `output/reports/`, which
+between them record the inputs and every step that ran.
 
 ## The layout
 
 lexsync is one repository holding two packages that must behave identically. The
 R package is in `R_workflow/`, the Python package in `python_workflow/`, and the
 design configurations, corpora, item tables and generated output they share sit at
-the root. The experiment templates exist in three copies, one canonical set under
-`templates/` and a mirror inside each package, and so does the schema:
-`config/schema.yaml`, `R_workflow/inst/extdata/schema.yaml` and
+the root. The experiment templates exist in three copies, a canonical set under
+`templates/` and a mirror inside each package. The schema also exists in three
+copies: `config/schema.yaml`, `R_workflow/inst/extdata/schema.yaml` and
 `python_workflow/src/lexsync/data/schema.yaml`. Keep each set byte-identical, as
-both test suites check. This guide has a mirror too, below a header comment in
-`R_workflow/.github/CONTRIBUTING.md`, from which the R site builds its page, so
-keep the two identical.
+both test suites check. This guide has a mirror too, in
+`R_workflow/.github/CONTRIBUTING.md` below a header comment. The R site builds its
+page from that copy, so keep the two identical.
 
 ## Setting up for development
 
@@ -50,9 +49,10 @@ mkdocs build --strict
 ```
 
 Running `Rscript R_workflow/run_pipeline.R` and `python python_workflow/run_pipeline.py`
-regenerates every artefact under `output/`. Run both, and commit the result of
-both together: the two engines write the same experiment files, so regenerating
-with only one leaves the repository in a state where they disagree.
+regenerates every artefact under `output/`. Run both and commit their results
+together. The two engines write the same experiment files, so regenerating with
+only one leaves the repository in a state where they disagree.
+
 `R_workflow/run_pipeline.R` runs the installed lexsync when one is installed, and
 its start-up message says which copy it loaded. After editing `R_workflow/R/`,
 reinstall the package with the `install.packages()` call above before
@@ -63,33 +63,41 @@ endings, which `.gitattributes` sets to LF. Each datasheet records the SHA-256 o
 the files the run read and wrote. A copy converted to CRLF puts a digest in it
 that no checkout reproduces, and the digest tests in both suites then fail.
 
-## The one convention that governs everything
+`.github/workflows/regenerate-outputs.yaml` runs both pipelines on a Windows runner,
+in the environment the committed datasheets record, and rewrites the expected files
+of the requested twin-edge cases. It checks the result with both suites and the
+engine comparisons, pushes it to the branch as a separate commit and starts CI on
+that commit. It runs when the last commit of a push to a branch other than main
+has `[regenerate outputs]` in its message. A line `Twin-edge cases: <case> ...` in
+the same message names the cases whose expected files change. Once the workflow is
+on main, it can also be started by hand from the Actions tab.
 
-The two engines must produce byte-identical artefacts, and nothing may draw a
-random number. Anything that looks stochastic, such as trial order, is a pure
-function of a keyed SHA-256 digest and the seed. The point of the rule is that a
-laboratory can run the R package while a collaborator runs the Python one, and the
-two of them end up with the same materials down to the byte.
+## Conventions
+
+The main convention is that the two engines must produce byte-identical artefacts
+and that nothing may draw a random number. Anything that looks stochastic, such as
+trial order, is a pure function of a keyed SHA-256 digest and the seed. The point
+of the convention is that a laboratory can run the R package while a collaborator
+runs the Python one, and the two obtain the same materials, byte for byte.
 
 That rules out several ordinary things. Do not call `sample()`,
 `numpy.random` or any generator. Do not let a floating-point comparison decide an
 outcome without rounding first and breaking ties explicitly, because R and Python
-disagree in the last bits: their `exp`, `log` and `**` differ by one unit in the
+disagree in the last bits. Their `exp`, `log` and `**` differ by one unit in the
 last place, and `sum()`, `numpy.sum` and a hand-written loop give three different
 answers over the same doubles. Do not interpolate a number into a hash key
 without formatting it explicitly, since R renders `42.0` as `42` and Python as
 `42.0`. When in doubt, compute the value once and read it from a file both engines
 share, as the corpora do.
 
-Other conventions: British spelling in prose, durations declared in milliseconds,
-and tests that run offline against the bundled example lexicons.
-
+The other conventions are British spelling in prose, durations declared in
+milliseconds and tests that run offline against the bundled example lexicons.
 `devtools::check("R_workflow")` and continuous integration run a spelling test on
-the R package's help pages, vignettes, README and NEWS. It stops at any word found
-neither in the British English dictionary nor in `R_workflow/inst/WORDLIST`, and
+the R package's help pages, vignettes, README and NEWS. CRAN and a plain
+`R CMD check` skip it. The test fails on any word found neither in the British
+English dictionary nor in `R_workflow/inst/WORDLIST`, and
 `spelling::spell_check_package("R_workflow")` lists those words. Correct a
 misspelling where it occurs, and add a name or a term of art to the word list.
-CRAN and a plain `R CMD check` skip the test.
 
 ## Submitting a pull request
 
@@ -105,14 +113,14 @@ regenerating `output/` with both engines. Record the change under Unreleased in
 affects the R package.
 
 Continuous integration checks both engines on every push. Its parity job
-regenerates the R reference and fails if it drifted from the committed one, and
+regenerates the R reference, fails if it differs from the committed one and
 compares the Python stimuli with it. It then runs both engines over `config/` and
 over the twin-edge cases and requires every artefact except the per-engine
 datasheets and run logs to match byte for byte. `python tools/compare_engines.py`
-makes those whole-tree comparisons locally (it needs `Rscript` with pkgload and
-the R package's dependencies). An edge case both engines must handle alike
+makes those whole-tree comparisons locally. It needs `Rscript` with pkgload and
+the R package's dependencies. An edge case both engines must handle alike
 belongs under `parity/twin_edge/`. `python tools/twin_edge.py --update <case>`
-writes its pinned files from the Python engine, and the R suite's
+writes its expected files from the Python engine, and the R suite's
 `test-twin-edge.R` checks that the R engine reproduces them.
 
 <!-- The Code of Conduct link is absolute on purpose. pkgdown builds a page only
@@ -120,6 +128,6 @@ from a file at the R package root, and only this guide is mirrored there, so a
 relative CODE_OF_CONDUCT.html would 404 on the R site. An absolute URL resolves
 from GitHub, from the R site and from the Python site alike. -->
 
-By contributing you agree that your contribution is licensed under the same MIT
+By contributing, you agree that your contribution is licensed under the same MIT
 licence as the package, and that you will follow the
 [Code of Conduct](https://github.com/pablobernabeu/lexsync/blob/main/.github/CODE_OF_CONDUCT.md).

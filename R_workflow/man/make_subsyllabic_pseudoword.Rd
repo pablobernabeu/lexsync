@@ -19,12 +19,12 @@ A single pseudoword string, or \code{NULL}.
 \description{
 The word is split with \code{\link[=segment_subsyllabic]{segment_subsyllabic()}} into k constituents. A constituent
 is eligible when the reference attests at least two forms of its role and length.
-The first ceil(2k/3) eligible constituents, codas first, then nuclei, then onsets,
-each in word order, are tried one at a time: each is replaced by the attested form of
-the same role and length that keeps every bigram legal and the form a novel
-non-word and has the highest summed bigram count, ties broken by byte order, and is
-left as it is when there is none. Length is preserved. Returns NULL when no
-constituent was replaced (the caller falls back to letter substitution). Mirrors
-make_subsyllabic_pseudoword in generation.py.
+The first ceil(2k/3) eligible constituents (codas first, then nuclei, then onsets,
+each in word order) are tried one at a time. Each is replaced by the attested form
+of the same role and length with the highest summed bigram count among those that
+keep every bigram legal and the form a novel non-word, with ties broken by byte
+order. A constituent with no such form is left as it is. Length is preserved.
+Returns \code{NULL} when no constituent was replaced, and the caller then falls back to
+letter substitution.
 }
 \keyword{internal}

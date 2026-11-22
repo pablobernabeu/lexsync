@@ -17,18 +17,18 @@ clean_meta(value, field = "value", max_len = 200L)
 The value as a plain string.
 }
 \description{
-A design's name, language label and font are not stimuli. They do not travel in the
-loop table the experiment reads at run time; they are substituted straight into the
+A design's name, language label and font are not stimuli. They are not in the loop
+table the experiment reads at run time. They are substituted straight into the
 PsychoPy script, the OpenSesame inline Python and the jsPsych HTML, so a quote or an
-angle bracket there stops being text and becomes syntax. A design file is meant to be
-shared and re-run by someone else, which is what makes an unvalidated one an
-executable payload as much as a configuration.
+angle bracket there would be read as code, not text. A design file is meant to be
+shared and re-run by someone else, so an unvalidated one could carry code as well as
+configuration.
 }
 \details{
-Refusing beats escaping. Escaping correctly would mean three different escapes for
-three targets in two engines, six places to get subtly wrong, and it would change the
-bytes the two engines write; refusing is one rule that leaves every legitimate value
-("en_lexdec", "english", "Courier New", "SimHei") byte-identical. Mirrors the Python
-\code{clean_meta}.
+Such a value is refused, not escaped. Escaping correctly would need three different
+escapes for three targets in two engines, six places to get wrong, and it would
+change the bytes the two engines write. Refusing is one rule that leaves every
+legitimate value (such as \code{en_lexdec}, \code{english}, \verb{Courier New} or \code{SimHei})
+unchanged.
 }
 \keyword{internal}

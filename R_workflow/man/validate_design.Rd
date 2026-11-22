@@ -14,36 +14,35 @@ validate_design(design, schema)
 \value{
 A character vector of notes on unknown keys, in the order the keys were
 written, then the notes on \code{triggers.inter_trigger_ms} and on an event's
-\code{onset_locked: false}; empty when there are none.
+\code{onset_locked: false}. It is empty when there are none.
 }
 \description{
 \code{\link[=run_pipeline]{run_pipeline()}} calls this right after reading the two files, so a design that
-cannot be honoured is refused before any output exists, with the same message in
-both engines. It first refuses a key within one or two edits of a key lexsync
+cannot be honoured is refused before any output exists. It first refuses a key within one or two edits of a key lexsync
 reads at that level, naming the key it was probably meant to be (one edit for a
 known key of up to five characters, two for a longer one). It then refuses a
 missing, empty or non-text \code{name} or \code{language}, an \code{n_per_condition}, \code{n_per_cell}
 or \code{resample.n_sets} that is not a whole number of at least 1, a
-\code{counterbalance.optimise} that is not true or false, a \code{counterbalance.scale} other than \code{mean} or \code{mad}, a
-\code{counterbalance.max_run} or \code{counterbalance.orders} that is not a whole number of at
-least 1, and a \code{counterbalance.run_on} that is not a single non-empty text value.
+\code{counterbalance.optimise} that is not true or false, a \code{counterbalance.scale}
+other than \code{mean} or \code{mad}, a \code{counterbalance.max_run} or
+\code{counterbalance.orders} that is not a whole number of at least 1 and a
+\code{counterbalance.run_on} that is not a single non-empty text value.
 It does not see the trials, so a \code{run_on} that names no column of them is refused
 when \code{counterbalance.max_run} is applied to the trial order, by \code{\link[=counterbalance]{counterbalance()}}
 or, in a design with fillers, when \code{\link[=run_pipeline]{run_pipeline()}} interleaves them. It refuses
-a name, language
-or font that cannot be written into the generated experiments, a trigger port that
-is not an address, and an event list the renderer refuses, such as one with an
+a name, language or font that cannot be written into the generated experiments, a
+trigger port that is not an address and an event list the renderer refuses, such
+as one with an
 unknown timing key, a bad response key or a response key that YAML reads as a
 boolean (an unquoted \code{yes}, \code{no}, \code{on} or \code{off}). It refuses a
 \code{presentation.fullscreen} that is not true or false and a
 \code{presentation.text_height_px} that is not a whole number from 8 to 400. It refuses a
 \code{triggers.mode} other than \code{auto}, \code{hardware} or \code{mock}, a \code{triggers.backend} other
-than \code{parallel} or \code{serial}, and a \code{triggers.baudrate} that is not a positive whole
+than \code{parallel} or \code{serial} and a \code{triggers.baudrate} that is not a positive whole
 number. A serial backend needs a \code{triggers.serial_port}, with a name the experiments
-can carry. Last, it refuses a condition
-without a name, with a name that is not text or with a repeated name, a corpus or
-pool design with conditions but no \code{match_on}, and a name and language that leave
-no file stem. It also refuses an \code{exclude_words} that is neither a list of words
+can carry. Last, it refuses a condition without a name, with a name that is not
+text or with a repeated name, a corpus or pool design with conditions but no
+\code{match_on} and a name and language that leave no file stem. It also refuses an \code{exclude_words} that is neither a list of words
 nor a mapping whose \code{path} names a file, and one that a design with an item table
 names.
 }
@@ -58,8 +57,8 @@ The experiments' instructions and response mapping are checked here too. It refu
 \code{instructions} that are not text, are empty or hold a control character other than a
 line break. It refuses a \code{response_mapping} that is not a mapping of conditions to
 single keys, names a key the response event does not allow, or comes with no response
-event. And it refuses a \code{rotate_mapping_by_list} that is not true or false, or that
-has no mapping to rotate.
+event. It also refuses a \code{rotate_mapping_by_list} that is not true or false or
+that has no mapping to rotate.
 }
 \examples{
 validate_design(list(name = "demo", language = "english", x_note = "pilot"), list())

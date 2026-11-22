@@ -9,16 +9,16 @@
 \arguments{
 \item{stimuli}{The counterbalanced main stimuli (with \code{list} and \code{trial}).}
 
-\item{design}{A parsed design configuration; reads \code{practice} and \code{fillers}.}
+\item{design}{A parsed design configuration. Its \code{practice} and \code{fillers} are read.}
 
-\item{schema}{The parsed global schema (provides the seed).}
+\item{schema}{The parsed global schema, which provides the seed.}
 }
 \value{
 A list with \code{presented} (every trial the experiment runs, in order, with a
 \code{block} column when more than one block exists), \code{report} (per-block counts and
 the item tables' checksums, or \code{NULL} when the design declares no extra block) and
 \code{normalisation} (\code{list(changed, collapsed)}, what Unicode NFC normalisation did to
-the practice and filler tables; see \code{\link[=load_items]{load_items()}}). Trials are numbered from 1
+the practice and filler tables, as \code{\link[=load_items]{load_items()}} describes). Trials are numbered from 1
 within each list, or within each (replicate, list) pair of a resampled design, and
 the counts are per list or pair: the filler and practice counts are the rows of
 their tables, which every list or pair receives, and the main block's count is that

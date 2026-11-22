@@ -6,7 +6,7 @@
 #' Start a new run log
 #'
 #' @param name A label for the run.
-#' @param meta A named list of run-level metadata (seed, versions, ...).
+#' @param meta A named list of run-level metadata, such as the seed and the versions.
 #' @return A run-log object (a list).
 #' @export
 new_run_log <- function(name, meta = list()) {

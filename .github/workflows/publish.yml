@@ -14,7 +14,7 @@
 # branch.
 #
 # The test suite is not repeated here. python-tests.yaml already runs pytest
-# across five interpreters and three operating systems, builds the distribution,
+# across six interpreters and three operating systems, builds the distribution,
 # runs twine check over it and installs the wheel into a bare venv outside the
 # checkout on every push. Duplicating any of that at release time would only
 # create a second copy to keep in step with the first.
@@ -37,8 +37,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
         with:
           python-version: "3.12"
 
@@ -72,7 +72,7 @@ jobs:
           if os.environ["REF_TYPE"] != "tag":
               sys.exit(
                   "This workflow publishes only from a release tag. Start a manual run "
-                  "on the tag (gh workflow run publish.yml --ref v0.1.1), not on a branch."
+                  "on the tag (gh workflow run publish.yml --ref v0.2.0), not on a branch."
               )
           tag = os.environ["REF_NAME"].removeprefix("v")
           with open("pyproject.toml", "rb") as f:
@@ -103,7 +103,7 @@ jobs:
         run: |
           python -m pip install --upgrade twine
           python -m twine check dist/*
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
           name: dist
           path: python_workflow/dist/
@@ -125,7 +125,7 @@ jobs:
       # only because the download creates it. The artefact is unpacked under the
       # same path it was built at, so the directory is spelled the same way in
       # both jobs and a reader does not have to notice it moved.
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
         with:
           name: dist
           path: python_workflow/dist/
@@ -145,11 +145,11 @@ jobs:
       # number, but it cannot tell a second build of a number already on PyPI from
       # the first, so after a rebuild check the files on pypi.org.
       #
-      # Pinned to a commit rather than the v1.14.2 tag, on the same reasoning as
-      # the r-lib pins in python-tests.yaml. A tag can be moved to point at
-      # different code, and this is the one job in the repository holding a
-      # credential that can publish under the project's name. The version is kept
-      # in the trailing comment so the pin can still be read and updated.
+      # Every action in this workflow is pinned to a commit rather than a tag,
+      # as in the other workflows. A tag can be moved to point at different code,
+      # and this is the one job in the repository holding a credential that can
+      # publish under the project's name. The version is kept in the trailing
+      # comment so the pin can still be read and updated.
       - uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086  # v1.14.3
         with:
           packages-dir: python_workflow/dist/

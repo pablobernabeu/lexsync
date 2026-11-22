@@ -21,8 +21,7 @@ or the language holds a non-ASCII character, the stem therefore gains \verb{_} a
 first eight hexadecimal digits of the SHA-256 of the NFC-normalised UTF-8 text
 \code{name|language}. An empty slug is replaced by those eight digits. NFC keeps a
 precomposed and a decomposed accented letter on one stem. A design whose name and
-language hold no letter or digit at all is refused. Mirrors \code{design_stem()} in the
-Python package.
+language hold no letter or digit at all is refused.
 }
 \examples{
 design_stem(list(name = "en_lexdec", language = "english"))

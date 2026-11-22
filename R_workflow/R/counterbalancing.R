@@ -391,10 +391,8 @@
 }
 
 # The longest run of one run_on value in a version's presented trials, over every
-# order. The PsychoPy and jsPsych experiments pause after the practice trials, so a run
-# is counted as ending there. The OpenSesame experiment runs every trial in one loop
-# without a pause, so there a run can continue from the practice trials into the main
-# ones.
+# order. The PsychoPy, OpenSesame and jsPsych experiments pause after the practice
+# trials, so a run is counted as ending there.
 .longest_runs <- function(trials, run_on, orders) {
   if (!run_on %in% names(trials) || !nrow(trials)) return(0L)
   best <- 0L
@@ -634,12 +632,11 @@
 #' declared dimension, by steepest-descent pairwise swaps between lists. List sizes
 #' are preserved, because a swap exchanges one set for another.
 #'
-#' The search is deterministic and identical in the R and Python engines: the
-#' objective is all-integer (see the notes in this file), the descent takes the single
-#' best swap each pass, and ties are broken by the seeded keyed hash rather than by
+#' The search is deterministic. The objective is all-integer, the descent takes the
+#' single best swap in each pass and ties are broken by the seeded keyed hash, not by
 #' position, so no list is favoured by being numbered first. Because the cost is a
-#' non-negative integer that strictly decreases, the search terminates; `max_passes`
-#' bounds it anyway and the report says whether the bound was reached.
+#' non-negative integer that strictly decreases, the search terminates. `max_passes`
+#' bounds it all the same, and the report says whether the bound was reached.
 #'
 #' `counterbalance.scale` sets each dimension's unit. `mean`, the default, divides by
 #' the dimension's mean, which suits ratio scales only. `mad` balances deviations from
@@ -654,15 +651,15 @@
 #' leaves no pair of lists to exchange sets between. A design with no resolvable
 #' balance dimension is refused, as is one naming a dimension the stimuli do not
 #' carry, and the message names the columns. The last refusal is arithmetic: the
-#' search stops if the integer objective would leave the range a double represents
-#' exactly, since past that point the two engines could disagree.
+#' search stops if the integer objective would leave the range that a double
+#' represents exactly, beyond which its comparisons would no longer be exact.
 #'
 #' @param stimuli A stimuli data frame with a `set` column and the balance dimensions.
 #' @param design A parsed design configuration. Reads `counterbalance.lists`,
 #'   `counterbalance.balance_on` (defaulting to `match_on`, then to the continuous
 #'   predictor and controls), `counterbalance.max_passes` and `counterbalance.scale`
 #'   (`mean` or `mad`, defaulting to `mean`).
-#' @param schema The parsed global schema (provides the seed).
+#' @param schema The parsed global schema, which provides the seed.
 #' @return A list with `list_of_set` (a named integer vector mapping each set to a
 #'   list) and `report` (the dimensions, the integer cost before and after, the number
 #'   of swaps taken, whether the pass bound was reached, the unit the cost is counted
@@ -798,11 +795,12 @@ balance_lists <- function(stimuli, design, schema) {
 #' @param design A parsed design configuration. Reads `paradigm`,
 #'   `counterbalance.recipe`, `counterbalance.lists`, `counterbalance.max_run`,
 #'   `counterbalance.run_on`, `counterbalance.orders` and `fillers`.
-#' @param schema The parsed global schema (provides the seed).
+#' @param schema The parsed global schema, which provides the seed.
 #' @param list_of_set Optional named integer vector mapping each `set` to a list,
-#'   from [balance_lists()]. Supplied by the pipeline when
-#'   `counterbalance.optimise` is on; when `NULL` the factorial recipe deals sets to
-#'   lists by rank: the first set to list 1, the second to list 2 and so on, cycling.
+#'   from [balance_lists()]. The pipeline supplies it when
+#'   `counterbalance.optimise` is on. When it is `NULL`, the factorial recipe deals
+#'   sets to lists by rank, the first set to list 1, the second to list 2 and so on,
+#'   cycling.
 #' @return The trials, sorted by replicate, list and trial, with `list` and `trial`
 #'   columns added, and `order_1` to `order_m` when there is more than one order. Under
 #'   the factorial recipe, every row of `stimuli` appears once, in the list its set is
@@ -892,10 +890,10 @@ counterbalance_factorial <- function(stimuli, design, schema, list_of_set = NULL
 #' Each item (`set`) contributes exactly one trial to a list, so its target is
 #' never repeated within a list. The conditions are balanced when the lists and the
 #' item sets are both multiples of the number of conditions, and
-#' `.counterbalance_check()` reports a rotation that is not. With `lists` unset the
-#' number of lists equals the number of conditions. Mirrors the Python recipe
-#' (byte-order condition list, zero-based rotation), so the two engines assign the
-#' same condition to each item per list.
+#' `.counterbalance_check()` reports a rotation that is not. With `lists` unset, the
+#' number of lists equals the number of conditions. The conditions are sorted in byte
+#' order, and each list shifts the rotation by one, so list 1 gives the first item set
+#' the first condition.
 #' @keywords internal
 counterbalance_latin_square <- function(stimuli, design, schema) {
   seed <- schema[["seed"]] %||% 1L

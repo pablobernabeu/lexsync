@@ -14,9 +14,8 @@ A single character string describing the materials procedure.
 }
 \description{
 Every number in the paragraph is printed by lexsync's own formatter, rounded
-half away from zero from the value the datasheet stores, so the R and Python
-engines write the same text from the same record, a record read back from its
-JSON included.
+half away from zero from the value the datasheet stores, so a record read back
+from its JSON gives the same text.
 }
 \details{
 The paragraph states the items each condition holds, and the request beside them

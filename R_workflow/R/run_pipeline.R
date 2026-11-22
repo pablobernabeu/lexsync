@@ -97,9 +97,9 @@
 
 #' Run the lexsync pipeline for one design
 #'
-#' A design may refer to a derived dimension (`n_density`, `old20`, `bigram_freq`) in
-#' `match_on`, a condition's `define_by`, `pool_filters`, a continuous predictor or
-#' control, or `counterbalance.balance_on`. When the lexicon lacks it, the pipeline
+#' A design may refer to a derived dimension (`n_density`, `old20` or `bigram_freq`)
+#' in `match_on`, `pool_filters`, `counterbalance.balance_on`, a condition's
+#' `define_by` or a continuous predictor or control. When the lexicon lacks it, the pipeline
 #' computes it on the pool against the neighbourhood reference, after the filters the
 #' lexicon can answer and before those on the derived dimension.
 #'
@@ -129,11 +129,11 @@
 #'   the file chosen. A named schema that does not exist is an error. The path used
 #'   is recorded in the run log and in the datasheet's
 #'   `reproducibility$schema_path`.
-#' @param outdir Output directory supplied by the caller (subdirectories
-#'   `stimuli`, `reports`, `experiments` are created). It must be supplied;
-#'   lexsync does not choose a default output location.
+#' @param outdir Output directory, in which the subdirectories `stimuli`, `reports`
+#'   and `experiments` are created. It must be supplied, as lexsync does not choose
+#'   a default output location.
 #' @param reference_words Optional character vector of words to compute the derived
-#'   dimensions against. By default they are computed against the lexicon, or
+#'   dimensions against. By default, they are computed against the lexicon, or
 #'   against its rows marked 1 in a `reference_member` column. For a corpus or pool
 #'   design, a supplied list recomputes `n_density` and `old20`, and `bigram_freq`
 #'   when the lexicon carries it or the design refers to it, overriding the
@@ -142,7 +142,7 @@
 #'   the run log says so. A list that is empty or holds a missing value is refused.
 #'   Its words are normalised to Unicode NFC before use, like every other text key
 #'   the pipeline reads.
-#' @param verbose Logical; print progress.
+#' @param verbose Whether to print progress.
 #' @return Invisibly, a named list. `stimuli` is the path of
 #'   `stimuli/<stem>_stimuli_R.csv` under `outdir`. `descriptives` and `comparisons`
 #'   are the paths of `reports/<stem>_descriptives_R.csv` and
@@ -658,8 +658,9 @@ run_pipeline <- function(design_path, schema_path = NULL,
   for (p in exps[["files"]]) log <- log_artefact(log, p)
 
   # A materials datasheet (machine + human readable) and a pre-registration
-  # template: the shareable provenance record the reproducibility literature asks
-  # for (Bochynska et al., 2023; Roettger, 2019).
+  # template: a shareable provenance record, as the reproducibility literature
+  # recommends sharing materials (Bochynska et al., 2023) and reporting analytic
+  # decisions transparently (Roettger, 2019).
   source_path <- items_cfg[["path"]] %||% items_cfg[["lexicon"]] %||% design[["lexicon"]]
   artifacts <- list(stimuli = stim_path, descriptives = desc_path,
                     comparisons = comp_path, experiments = exps)
@@ -721,9 +722,9 @@ run_pipeline <- function(design_path, schema_path = NULL,
 #'   `system.file("extdata", "schema.yaml", package = "lexsync")`. A message names
 #'   the file chosen. A named schema that does not exist is an error, raised before
 #'   any design runs.
-#' @param outdir Output directory supplied by the caller. It must be supplied;
-#'   lexsync does not choose a default output location.
-#' @param verbose Logical; print progress.
+#' @param outdir Output directory. It must be supplied, as lexsync does not choose a
+#'   default output location.
+#' @param verbose Whether to print progress.
 #' @return A named list of per-design results, invisibly.
 #' @export
 run_all <- function(config_dir = "config", schema_path = NULL,

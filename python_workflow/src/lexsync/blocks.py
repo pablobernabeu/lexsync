@@ -1,41 +1,38 @@
-"""Practice and filler trials: rows that are PRESENTED but not ANALYSED.
+"""Practice and filler trials: rows that are presented but not analysed.
 
-Everything else in the package treats one frame as both the materials record and the
-thing the experiment runs. That works only while the two are the same set of trials, and
-they usually are not. A practice block exists to settle the participant into the task and
-is discarded before analysis; fillers exist to dilute the manipulation so it is less
-guessable, and are likewise not analysed. Both have to reach the generated experiment and
-neither belongs in the stimuli file, the descriptives or the realised control.
+Elsewhere in the package, one frame is both the materials record and the trials the
+experiment runs. That holds only while the two are the same set of trials, and they
+usually are not. A practice block lets the participant learn the task and is discarded
+before analysis. Fillers make the manipulation harder to guess and are not analysed
+either. Both have to reach the generated experiment, and neither belongs in the stimuli
+file, the descriptives or the realised control.
 
 The pipeline therefore splits after counterbalancing: the analysis artefacts are
-written from the main rows, and the experiment is generated from the presented rows. A ``block``
-column marks which is which, and it appears ONLY when a design declares one of these
-blocks -- a design without them keeps exactly the columns it had.
+written from the main rows, and the experiment is generated from the presented rows. A
+``block`` column marks which is which. It appears only when a design declares one of
+these blocks, so a design without them keeps exactly the columns it had.
 
-Where each block goes in the sequence is a methodological choice, not a convenience:
+Where each block goes in the sequence is a methodological choice.
 
 Practice comes first, as its own run of trials, because its purpose is to precede the
 task. It is ordered within itself by the seeded keyed hash, so every participant given a
-list meets the practice items in one fixed order. With ``counterbalance.orders`` each
+list meets the practice items in one fixed order. With ``counterbalance.orders``, each
 order of a list has its own practice order, still before the main trials.
 
-Fillers are INTERLEAVED with the main trials, not appended, because a block of fillers at
-the end is not a filler -- it is a second block that participants can tell apart. They
-are merged into each list before the order is drawn, so one deterministic shuffle mixes
-them through. That does renumber the main trials, which is correct: adding fillers
-changes the sequence, and the stimuli file records where each item actually appeared.
+Fillers are interleaved with the main trials, not appended, because participants can
+tell a block of fillers at the end from the main trials, which makes it a second block.
+They are merged into each list before the order is drawn, so one deterministic shuffle
+mixes them through. That renumbers the main trials, as it should: adding fillers
+changes the sequence, and the stimuli file records where each item appeared.
 ``counterbalance.max_run`` applies to this interleaved order and, separately, to the
-practice order, since the PsychoPy and jsPsych experiments pause between the two. The
-OpenSesame experiment runs every trial in one loop without a pause, so there a run can
-continue from the practice trials into the main ones.
+practice order, since the PsychoPy, OpenSesame and jsPsych experiments pause between
+the two.
 
-Both blocks appear in EVERY list. They are not counterbalanced, because they carry no
-manipulation to rotate; every participant should get the same practice. In a resampled
-design each replicate's copy of a list is a presentation version of its own, given to
-its own participants, so the blocks are added to every (replicate, list) pair, and the
-trials are numbered within it.
-
-Mirrors R_workflow/R/blocks.R.
+Both blocks appear in every list. They are not counterbalanced, because they carry no
+manipulation to rotate, and every participant should get the same practice. In a
+resampled design, each replicate's copy of a list is a presentation version of its own,
+given to its own participants, so the blocks are added to every (replicate, list) pair,
+and the trials are numbered within it.
 """
 from __future__ import annotations
 

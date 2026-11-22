@@ -1,8 +1,8 @@
 # lexsync run log: en_rastle_repro
 
 - Engine: R 4.6.1
-- Started: 2026-10-15 04:45:28.010834
-- Finished: 2026-10-15 04:45:28.849164
+- Started: 2026-11-02 21:28:55.615468
+- Finished: 2026-11-02 21:28:55.836143
 
 ## Run metadata
 
@@ -16,61 +16,61 @@
 
 ## Steps
 
-- **2026-10-15 04:45:28.018261**: loading items 'items/rastle_priming_en.csv'
-- **2026-10-15 04:45:28.043978**: loaded 12 items across 2 conditions
+- **2026-11-02 21:28:55.615853**: loading items 'items/rastle_priming_en.csv'
+- **2026-11-02 21:28:55.623089**: loaded 12 items across 2 conditions
     - conditions: related, unrelated
-- **2026-10-15 04:45:28.096034**: block 'main': 12 trial(s) per list
+- **2026-11-02 21:28:55.640779**: block 'main': 12 trial(s) per list
     - block: main
     - n_per_list: 12
-- **2026-10-15 04:45:28.100454**: block 'filler': 12 trial(s) per list, interleaved with the main trials by the seeded order
+- **2026-11-02 21:28:55.640942**: block 'filler': 12 trial(s) per list, interleaved with the main trials by the seeded order
     - block: filler
     - n_per_list: 12
-- **2026-10-15 04:45:28.10738**: presented 48 trial(s); 24 analysed
-- **2026-10-15 04:45:28.133352**: wrote 'en_rastle_repro_english_stimuli_R.csv'
+- **2026-11-02 21:28:55.641119**: presented 48 trial(s); 24 analysed
+- **2026-11-02 21:28:55.650143**: wrote 'en_rastle_repro_english_stimuli_R.csv'
     - path: output/stimuli/en_rastle_repro_english_stimuli_R.csv
     - rows: 24
     - md5: af1a7146a0fbf092e86b829df1c7defb
-- **2026-10-15 04:45:28.595865**: wrote 'en_rastle_repro_english_psychopy.py'
+- **2026-11-02 21:28:55.806706**: wrote 'en_rastle_repro_english_psychopy.py'
     - path: output/experiments/en_rastle_repro_english_psychopy.py
     - rows: NA
-    - md5: 4bb0963df5dd0d26c7c5398ad6768edc
-- **2026-10-15 04:45:28.609419**: wrote 'en_rastle_repro_english_list1.osexp'
+    - md5: 2a99ade7fe242295375f98cdef0c2ad1
+- **2026-11-02 21:28:55.807121**: wrote 'en_rastle_repro_english_list1.osexp'
     - path: output/experiments/en_rastle_repro_english_list1.osexp
     - rows: NA
     - md5: 46e6a74edc731d3397519a6d4251ee32
-- **2026-10-15 04:45:28.61964**: wrote 'en_rastle_repro_english_list2.osexp'
+- **2026-11-02 21:28:55.80744**: wrote 'en_rastle_repro_english_list2.osexp'
     - path: output/experiments/en_rastle_repro_english_list2.osexp
     - rows: NA
     - md5: 2efd3c3abf709e1b6b085c02bb2cc564
-- **2026-10-15 04:45:28.629533**: wrote 'en_rastle_repro_english.html'
+- **2026-11-02 21:28:55.807751**: wrote 'en_rastle_repro_english.html'
     - path: output/experiments/en_rastle_repro_english.html
     - rows: NA
-    - md5: ec3c0bffaf5f76cd3a09138e30ff1bc0
-- **2026-10-15 04:45:28.644201**: wrote 'en_rastle_repro_english_psychopy.csv'
+    - md5: e54211488917c53ce8ef5756bfbd6408
+- **2026-11-02 21:28:55.808118**: wrote 'en_rastle_repro_english_psychopy.csv'
     - path: output/experiments/en_rastle_repro_english_psychopy.csv
     - rows: NA
     - md5: 1c26588d7dde0a787c3dd14dda0f5587
-- **2026-10-15 04:45:28.655425**: wrote 'en_rastle_repro_english_list1_opensesame.csv'
+- **2026-11-02 21:28:55.808426**: wrote 'en_rastle_repro_english_list1_opensesame.csv'
     - path: output/experiments/en_rastle_repro_english_list1_opensesame.csv
     - rows: NA
     - md5: 8d85b8b239403c1ab99f7a688dceca66
-- **2026-10-15 04:45:28.663816**: wrote 'en_rastle_repro_english_list1_opensesame_text.csv'
+- **2026-11-02 21:28:55.808716**: wrote 'en_rastle_repro_english_list1_opensesame_text.csv'
     - path: output/experiments/en_rastle_repro_english_list1_opensesame_text.csv
     - rows: NA
     - md5: b5aded62a0bd02ba32b47c8fc3db154e
-- **2026-10-15 04:45:28.674041**: wrote 'en_rastle_repro_english_list2_opensesame.csv'
+- **2026-11-02 21:28:55.809004**: wrote 'en_rastle_repro_english_list2_opensesame.csv'
     - path: output/experiments/en_rastle_repro_english_list2_opensesame.csv
     - rows: NA
     - md5: 3ba4f86863e6a61c45667cbec601e2dd
-- **2026-10-15 04:45:28.682672**: wrote 'en_rastle_repro_english_list2_opensesame_text.csv'
+- **2026-11-02 21:28:55.809289**: wrote 'en_rastle_repro_english_list2_opensesame_text.csv'
     - path: output/experiments/en_rastle_repro_english_list2_opensesame_text.csv
     - rows: NA
     - md5: 9f26c370adefbf5f7a820d86fc05d7ab
-- **2026-10-15 04:45:28.82589**: wrote 'en_rastle_repro_english_datasheet_R.json'
+- **2026-11-02 21:28:55.835303**: wrote 'en_rastle_repro_english_datasheet_R.json'
     - path: output/reports/en_rastle_repro_english_datasheet_R.json
     - rows: NA
-    - md5: 4cb36fe1cf4c90fb6a555aa7d86dfa9d
-- **2026-10-15 04:45:28.83813**: wrote 'en_rastle_repro_english_datasheet_R.md'
+    - md5: 2ab494c1ec971d14aaf5d31db799c680
+- **2026-11-02 21:28:55.8356**: wrote 'en_rastle_repro_english_datasheet_R.md'
     - path: output/reports/en_rastle_repro_english_datasheet_R.md
     - rows: NA
-    - md5: b11db3b4b295b26df0698e9dbd352f6e
+    - md5: ab218eeb6cb7d67b2e43e36e2f6d577d

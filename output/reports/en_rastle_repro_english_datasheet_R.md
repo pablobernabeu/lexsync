@@ -12,7 +12,7 @@
 - **Counterbalancing:** latin_square_target, 2 list(s)
 - **Presentation versions:** 2, assigned as version = ((participant - 1) mod 2) + 1 unless a version is given at launch
 - **Items:** 24 rows across 2 conditions (related, unrelated)
-- **Seed:** 2026  |  **Versions:** engine R, lexsync 0.1.1, R 4.6.1, readr 2.2.0, stringdist 0.9.17, jsonlite 2.0.0, digest 0.6.39, yaml 2.3.12, stringi 1.8.7, os Windows x86-64
+- **Seed:** 2026  |  **Versions:** engine R, lexsync 0.2.0, R 4.6.1, readr 2.2.0, stringdist 0.9.17, jsonlite 2.0.0, digest 0.6.39, yaml 2.3.12, stringi 1.8.7, os Windows x86-64
 
 ## Counterbalanced lists
 
@@ -30,7 +30,7 @@
 
 ## Methods paragraph
 
-12 items were drawn from an item table for a masked_priming design (English). Materials were counterbalanced into 2 list(s) (a Latin-square rotation) and generated for PsychoPy, OpenSesame and jsPsych. Each participant was presented one of the 2 lists, assigned in rotation by participant number. Responses were collected from target onset until 2000 ms after it, and a response ended the trial. Participants pressed the left arrow key for related and unrelated trials. The selection is deterministic and reproducible (lexsync 0.1.1), and the seed (2026) fixes the trial order.
+12 items were drawn from an item table for a masked_priming design (English). Materials were counterbalanced into 2 list(s) (a Latin-square rotation) and generated for PsychoPy, OpenSesame and jsPsych. Each participant was presented one of the 2 lists, assigned in rotation by participant number. Responses were collected from target onset until 2000 ms after it, and a response ended the trial. Participants pressed the left arrow key for related and unrelated trials. The selection is deterministic and reproducible (lexsync 0.2.0), and the seed (2026) fixes the trial order.
 
 ## Pre-registration template
 
@@ -50,7 +50,7 @@
 - Paradigm: masked_priming
 
 ### Materials (from the lexsync datasheet)
-12 items were drawn from an item table for a masked_priming design (English). Materials were counterbalanced into 2 list(s) (a Latin-square rotation) and generated for PsychoPy, OpenSesame and jsPsych. Each participant was presented one of the 2 lists, assigned in rotation by participant number. Responses were collected from target onset until 2000 ms after it, and a response ended the trial. Participants pressed the left arrow key for related and unrelated trials. The selection is deterministic and reproducible (lexsync 0.1.1), and the seed (2026) fixes the trial order.
+12 items were drawn from an item table for a masked_priming design (English). Materials were counterbalanced into 2 list(s) (a Latin-square rotation) and generated for PsychoPy, OpenSesame and jsPsych. Each participant was presented one of the 2 lists, assigned in rotation by participant number. Responses were collected from target onset until 2000 ms after it, and a response ended the trial. Participants pressed the left arrow key for related and unrelated trials. The selection is deterministic and reproducible (lexsync 0.2.0), and the seed (2026) fixes the trial order.
 
 ### Sampling plan
 - Sample size and justification:
