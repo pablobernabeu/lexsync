@@ -1,0 +1,1347 @@
+# Experiments, paradigms and EEG triggers
+
+Once a stimulus set exists, it has to be presented in an experiment.
+`lexsync` generates that experiment from a declarative description of
+the trial. A trial is a list of events. Each event says what appears,
+for how long and whether a hardware trigger is sent at its onset, and
+each presentation target interprets that same list. One engine therefore
+serves several paradigms and three targets, and adding a paradigm means
+writing a new event list without changing the backends.
+
+This vignette covers the event model, the paradigm registry, the three
+targets and how they differ, the trigger timing that motivates the
+design, and how to add a paradigm. It runs on the bundled English
+example lexicon and writes everything to a temporary directory.
+
+``` r
+
+library(lexsync)
+schema <- yaml::read_yaml(
+  system.file("extdata", "schema.yaml", package = "lexsync")
+)
+lex <- load_lexicon(
+  system.file("extdata", "en_example.csv", package = "lexsync"),
+  schema, language = "english"
+)
+pool <- build_pool(lex, list(length = c(3, 7), frequency = c(3.8, 7.0)))
+
+design <- list(
+  name = "vignette_experiment", language = "english", n_per_condition = 12,
+  paradigm = "factorial",
+  conditions = list(
+    list(name = "high", define_by = list(frequency = c(5.2, 7.0))),
+    list(name = "low",  define_by = list(frequency = c(3.8, 4.4)))
+  ),
+  match_on = list("length", "n_density", "old20"),
+  counterbalance = list(lists = 1)
+)
+stim <- match_stimuli(pool, design, schema)
+stim <- counterbalance(stim, design, schema)
+head(stim[, c("trial", "list", "set", "condition", "word")], 3)
+```
+
+      trial list set condition   word
+    1     1    1   1       low iconic
+    2     2    1   7      high  black
+    3     3    1   4      high    buy
+
+## The trial-event model
+
+A design’s trial is a list of events. Each event is a plain list whose
+`type` selects the behaviour and whose remaining fields parameterise it.
+The factorial paradigm’s default sequence is a fixation cross, the word,
+a response window and a blank.
+
+``` r
+
+events <- resolve_events(design)
+str(events)
+```
+
+    List of 4
+     $ :List of 3
+      ..$ type           : chr "fixation"
+      ..$ content        : chr "+"
+      ..$ duration_frames: int 30
+     $ :List of 5
+      ..$ type           : chr "text"
+      ..$ content        : chr "{word}"
+      ..$ duration_frames: int 48
+      ..$ trigger        : chr "condition"
+      ..$ onset_locked   : logi TRUE
+     $ :List of 3
+      ..$ type      : chr "response"
+      ..$ keys      : chr [1:2] "left" "right"
+      ..$ timeout_ms: int 2000
+     $ :List of 2
+      ..$ type           : chr "blank"
+      ..$ duration_frames: int 15
+
+[`resolve_events()`](https://pablobernabeu.github.io/lexsync/r/reference/resolve_events.md)
+is the accessor the backends use. It returns a design’s own `events`
+list if it has one, and otherwise the default sequence of the design’s
+paradigm. The eight event types are `fixation`, `text`, `mask`, `blank`,
+`region_by_region`, `response`, `question` and `feedback`. `fixation`,
+`text` and `mask` draw something for the event’s duration, and `blank`
+draws nothing for it. `response` and `question` collect a keypress.
+`region_by_region` presents a segmented sentence one region at a time,
+advancing on a key. `feedback` scores the keypress just collected and
+reports it, and is described under ‘Practice, fillers and feedback’
+below.
+
+Durations are given in milliseconds, as `duration_ms`. That is the unit
+a methods section reports and the unit all three targets present, so a
+design asks for the same interval wherever it runs. How closely each
+target delivers it differs, as described below. A visual stimulus can
+still only appear on a refresh, so the PsychoPy script measures the
+display’s refresh rate when it starts and converts each duration into
+the nearest whole number of flips: 50 ms is three flips at 60 Hz and
+seven at 144 Hz. The trigger stays bound to the flip.
+
+The other two targets time their events differently. The generated
+OpenSesame experiment builds every canvas of a trial before the trial
+starts and times each event from the onset its display returns. It ends
+the event half a frame before its duration is up, so that the next
+display appears on the refresh that ends it. On a simulated display at
+60, 120 and 144 Hz, the prime and the mask of the `priming` paradigm
+then last the flips the PsychoPy script gives them. The paradigm’s 83 ms
+stimulus-onset asynchrony stays 83.3 ms at all three rates. A duration
+within a millisecond or so of halfway between two whole numbers of flips
+can still come out a flip longer or shorter than in PsychoPy. In the
+browser, timing varies with the machine and the browser, and primes of
+33 to 50 ms are not reliably realised online. Whatever the target,
+verify the timing a study depends on with a photodiode, as described
+under ‘Checking the timing’ below.
+
+A duration may also be given as `duration_frames`, as several registered
+paradigms give theirs, and an event that gives both uses `duration_ms`.
+A frame count is converted to milliseconds when the design loads, at
+`presentation.assumed_refresh_hz` in the schema, 60 by default. The
+count therefore refers to frames at that assumed rate and not at the
+rate the experiment runs at. The `timeout_ms` of a response window is
+always in milliseconds, because a response deadline is not tied to the
+refresh.
+
+A text event’s `case`, `upper` or `lower`, sets the letter case its text
+is shown in. The runners apply it as they show the text, with
+`str.upper()` and `str.lower()` in PsychoPy and OpenSesame and
+`toUpperCase()` and `toLowerCase()` in jsPsych, so the loop tables and
+the data files keep each item as it was written. lexsync never changes
+the case itself, because
+[`toupper()`](https://rdrr.io/r/base/chartr.html) leaves the German
+sharp s as it is where Python and JavaScript give ‘SS’, and the two
+engines must write the same files.
+
+A mask’s `length_of` names fields of the trials, and its one-character
+content is repeated as many times as the longest of their values has
+characters, counted when the experiments are written:
+
+``` yaml
+- type: mask
+  content: '#'
+  length_of: [prime, target]
+  duration_ms: 500
+```
+
+The count is in characters, not bytes, over every trial of every list,
+so each target and each list shows the same mask.
+
+### When a response is collected
+
+A response event after a text event collects its key from that
+stimulus’s onset. The stimulus stays on screen for its duration at most
+and a blank follows it. The window closes once the stimulus’s duration
+and the response’s `timeout_ms` have both passed, so the factorial
+design here collects for 2,800 ms from the word’s onset. A key pressed
+while the word is still visible counts, the first key ends the trial,
+and every target times the reaction from the word’s onset.
+
+A design that asks the participant to wait, as a delayed-response EEG
+design does, keeps a window that opens once the stimulus has gone:
+
+``` yaml
+- type: response
+  keys: [f, j]
+  timeout_ms: 2000
+  from: offset
+```
+
+A stimulus that should stay on screen for the whole window, as the
+`masked_priming` target does, takes the window’s length as its duration,
+and its response a `timeout_ms` of 0.
+
+By default, a response after any other event is collected from the
+offset, so one that follows a blank opens its window after the blank and
+times the reaction from the window’s own onset. `from: onset` after such
+an event is rejected, since a window from the onset opens with a text
+event and none comes right before it. The datasheet records each
+response window as `presentation$response_windows`, and its Methods text
+says when responses were collected.
+
+### Instructions and the response mapping
+
+Every generated experiment shows instructions and waits for the space
+bar before its first trial. The participant reads them at their own
+pace, and the experimenter can start the run when the participant is
+ready. A design gives its own text under `instructions`, which may hold
+line breaks:
+
+``` yaml
+instructions: |
+  You will see a string of letters.
+  Press F if it is a real English word and J if it is not.
+```
+
+The text is carried as data: JSON in the PsychoPy script and the jsPsych
+page, and an escaped literal in the OpenSesame script, so nothing in it
+can become code. A control character other than the line break is
+rejected.
+
+When a design gives no `instructions`, lexsync writes English
+instructions that depend on the task. For a lexical decision, they name
+the keys for a word and a pseudoword. For a categorisation, they say
+that the first key means yes and the second no, and for a comprehension
+question, they say the same of its keys. For self-paced reading, they
+name the key that shows the next region. In any other design with a
+response event, the factorial one here among them, they say only which
+keys to press, and the run log asks for instructions that say what each
+key means. The run log also notes a design in another language that
+gives no text of its own. The targets’ own short messages, such as the
+prompt to press the space bar, are in English.
+
+A lexical decision maps word to its response event’s first key and
+pseudoword to its second. The paradigm’s events therefore map word to
+the left arrow key, and `design_en_lexdec_blocks.yaml`, whose events use
+f and j, maps word to f, as its practice table does. A design may give
+its own mapping, with keys its response event allows, and may rotate it
+across lists:
+
+``` yaml
+response_mapping: {word: j, pseudoword: f}
+rotate_mapping_by_list: true
+```
+
+When the mapping is rotated, each key in list *k* moves *k* - 1 places
+along the response event’s keys, and each version’s instructions name
+its own keys. With two keys, the rotation swaps them in every
+even-numbered list. A mapping is rejected if it names a key the response
+event does not allow, if it gives no key for a condition whose trials
+name no answer, or if it names a condition no trial has.
+
+[`export_experiments()`](https://pablobernabeu.github.io/lexsync/r/reference/export_experiments.md)
+gives each trial its correct key in `answer` as it assigns the trigger
+codes, so every trial of a lexical decision can be scored. The stimuli
+file does not change. A practice or filler table keeps its own answers,
+and the run log notes any that the mapping contradicts, as a rotated
+mapping does in its even-numbered lists. jsPsych records a key by the
+browser’s name for it, so the jsPsych page names each answer that way,
+`arrowleft` for `left`, and in every target a correct response equals
+its trial’s answer. The datasheet records the mapping as
+`presentation$response_mapping`, and its Methods text says which key the
+participants pressed for which condition.
+
+### Content and field references
+
+An event’s `content` is either a literal or a reference to a column of
+the trial table. A reference is a single field name in braces, and it
+makes the event list a template that serves every trial in the design.
+
+``` r
+
+lapply(events[1:2], function(ev) ev$content)
+```
+
+    [[1]]
+    [1] "+"
+
+    [[2]]
+    [1] "{word}"
+
+The fixation event’s content is the literal `+`, which every trial
+shows. The text event’s content is `{word}`, so each trial shows its own
+row’s `word` column.
+[`required_fields()`](https://pablobernabeu.github.io/lexsync/r/reference/required_fields.md)
+resolves the references into the columns a design’s items must carry,
+and a design’s item table is validated against them before anything is
+generated.
+
+``` r
+
+required_fields(design)
+```
+
+    [1] "word"
+
+``` r
+
+required_fields(list(paradigm = "priming"))
+```
+
+    [1] "prime"  "target"
+
+``` r
+
+required_fields(list(paradigm = "self_paced_reading"))
+```
+
+    [1] "sentence" "question"
+
+Presented strings are always carried as data. PsychoPy and OpenSesame
+read them at run time from CSV tables written beside the experiment, and
+the jsPsych page carries its trial table as escaped JSON, so nothing in
+a string can become code. An apostrophe in a stimulus therefore cannot
+break a generated script.
+[`load_items()`](https://pablobernabeu.github.io/lexsync/r/reference/load_items.md)
+also rejects control characters and over-long values in the fields a
+paradigm presents.
+
+### Triggers on an event
+
+An event may carry a `trigger`. Three forms are accepted, and the form
+sets what the EEG marker means.
+
+``` r
+
+priming_events <- PARADIGMS$priming$events
+or_dash <- function(x) if (is.null(x)) "-" else as.character(x)
+data.frame(
+  type = vapply(priming_events, function(e) e$type, character(1)),
+  content = vapply(
+    priming_events, function(e) or_dash(e$content), character(1)
+  ),
+  trigger = vapply(priming_events, function(e) or_dash(e$trigger), character(1))
+)
+```
+
+          type  content   trigger
+    1 fixation        +         -
+    2     text  {prime}        20
+    3     mask    #####         -
+    4     text {target} condition
+    5 response        -         -
+    6    blank        -         -
+
+The literal integer 20 on the prime marks every prime with the same
+code, since what is being timestamped is the prime’s appearance. The
+token `"condition"` on the target resolves per trial to that trial’s
+condition code, which is the marker an ERP analysis will epoch on. The
+token `"item"` resolves to a per-item code. Events with no trigger send
+nothing.
+
+A literal code must be a whole number from 1 to 255, the values one byte
+on the port can carry. Anything else, a misspelt token such as
+`"conditon"` included, is rejected when the experiment is generated,
+with a message naming the event. A literal of 254 or 255, which the
+PsychoPy and OpenSesame experiments send when the session starts and
+ends, is reported then. One equal to a condition code the design sends
+is reported too, as is one within the range of the item codes it sends.
+
+The tokens are resolved by
+[`assign_triggers()`](https://pablobernabeu.github.io/lexsync/r/reference/assign_triggers.md),
+which computes the codes and adds them as columns.
+
+``` r
+
+trig <- assign_triggers(stim)
+unique(trig[, c("condition", "condition_trigger")])
+```
+
+      condition condition_trigger
+    1       low               101
+    2      high               102
+
+``` r
+
+range(trig$item_trigger)
+```
+
+    [1] 40 51
+
+Condition codes start at 101 and count up in order of first appearance,
+unless
+[`assign_triggers()`](https://pablobernabeu.github.io/lexsync/r/reference/assign_triggers.md)
+is given the order through its `conditions` argument. The order of first
+appearance in a shuffled trial list depends on the seed, so an analysis
+that decodes the codes should not rely on it.
+[`export_experiments()`](https://pablobernabeu.github.io/lexsync/r/reference/export_experiments.md)
+therefore passes the order of the design’s `conditions` entries. The
+pipeline does the same and adds any other condition in the order the
+item source lists it, such as the words before the pseudowords of a
+generated lexical decision. Under every seed, the first condition the
+design lists is 101.
+
+``` r
+
+unique(assign_triggers(stim, conditions = c("high", "low"))[
+  , c("condition", "condition_trigger")])
+```
+
+      condition condition_trigger
+    1       low               102
+    2      high               101
+
+Item codes run from 40 upwards in code-point order of the set labels,
+and once a design has ten sets or more, that order is not the numeric
+one. With sets 1 to 20, set 10 takes 41 and set 2 takes 51. Decode an
+item code through the loop table, which pairs each trial’s set with its
+code, and never from the label.
+
+``` r
+
+twenty <- assign_triggers(data.frame(condition = "a", set = 1:20))
+stats::setNames(twenty$item_trigger, twenty$set)
+```
+
+     1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 
+    40 51 53 54 55 56 57 58 59 41 42 43 44 45 46 47 48 49 50 52 
+
+Item codes stay below 240, since a code is one byte and 254 and 255 mark
+the session. A design may send item codes together with condition codes,
+or with a code of its own from 40 to 239. Its item codes are then drawn
+from the codes those leave free, skipping 101 upwards and the design’s
+own codes. Otherwise, sets 65 and 66 of a 70-set design would take 101
+and 102, and an analysis that cuts its epochs at the condition codes
+would also catch two items. Such a design is rejected when it has more
+item sets than free codes, unless the schema sets
+`triggers.allow_code_overlap: true`, which lets the item codes wrap and
+repeat within the free codes. Any other design takes its item codes from
+40 upwards, in code-point order of the set labels. They wrap at 200
+values, so a design with more than 200 item sets reuses item codes.
+
+### Timing that varies from trial to trial
+
+A duration need not be the same on every trial. An event may instead
+declare a `duration:` block, in one of two forms:
+
+``` yaml
+- type: text
+  content: '{prime}'
+  duration: {from_column: prime_ms}          # read per trial from the items
+- type: blank
+  duration: {jitter: [400, 800], as: iti_ms} # drawn per trial, in milliseconds
+```
+
+The two exist for different reasons. A duration read from a column is a
+manipulated variable. Here it is the prime’s duration, which with the
+mask that follows sets the stimulus-onset asynchrony, the variable
+manipulated to separate automatic from strategic processing. It belongs
+in the item table and in the analysis. A jittered duration is not
+manipulated and decorrelates the design matrix, as EEG and fMRI designs
+routinely require.
+
+Neither draws a random number. A jittered value is a uniform integer
+keyed on the seed, the column name, the list, the set and the condition,
+so both engines realise the same milliseconds and a rerun reproduces
+them. Because the column name is part of the key, two jittered events
+draw independently.
+
+Either form writes the realised milliseconds into the stimuli table and
+the loop table, since the analysis needs them.
+`config/design_en_priming_jitter.yaml` is a worked example carrying
+both. Its prime lasts `prime_ms` and a 33 ms mask follows, so its
+stimulus-onset asynchrony is `prime_ms` plus 33 ms.
+
+Every value read from a column must be a finite, non-negative number of
+milliseconds. A blank or negative cell is rejected with a message naming
+the column and the trial’s set and condition. Left alone, it would give
+an experiment that stops at the blank or shows the stimulus for no time
+at all. Fractional milliseconds, such as the 33.333333 that an item
+table built on 60 Hz frames carries, are rounded once with the rounder
+both engines share and written back. The stimuli, the loop tables and
+all three targets then present the same whole milliseconds, and the run
+log counts the values rounded. A fixed `duration_ms` or
+`duration_frames` is checked the same way, and the lower bound of a
+jitter must not be negative.
+
+## The paradigm registry
+
+A paradigm bundles a default event sequence with the fields it needs and
+the recipe for counterbalancing it. `PARADIGMS` is the registry, and it
+is exported, so it can be read to see what a design will inherit.
+
+``` r
+
+names(PARADIGMS)
+```
+
+    [1] "factorial"          "lexical_decision"   "priming"           
+    [4] "masked_priming"     "categorisation"     "self_paced_reading"
+
+``` r
+
+data.frame(
+  paradigm = names(PARADIGMS),
+  fields = vapply(
+    PARADIGMS,
+    function(p) paste(p$stimulus_fields, collapse = ", "),
+    character(1)
+  ),
+  counterbalance = vapply(
+    PARADIGMS, function(p) p$counterbalance, character(1)
+  ),
+  n_events = vapply(PARADIGMS, function(p) length(p$events), integer(1)),
+  row.names = NULL
+)
+```
+
+                paradigm                   fields      counterbalance n_events
+    1          factorial                     word           factorial        4
+    2   lexical_decision                   target           factorial        4
+    3            priming            prime, target latin_square_target        6
+    4     masked_priming            prime, target latin_square_target        5
+    5     categorisation target, category, answer latin_square_target        5
+    6 self_paced_reading       sentence, question latin_square_target        4
+
+`factorial` shows a matched word per trial. `lexical_decision` is the
+same shape but presents a `target`, which is a real word or a generated
+pseudoword. `priming` is backward pattern-masked: a 50 ms prime and a 33
+ms `#####` mask come before the target, so the stimulus-onset asynchrony
+is 83 ms at 60 Hz. There is no forward mask, and prime and target keep
+the item table’s letter case. `masked_priming` has the arrangement of
+Forster and Davis (1984): a forward mask of hash marks, a brief prime in
+lower case and the target in upper case. `self_paced_reading` replaces
+the word event with a region-by-region sentence and adds a comprehension
+question. `categorisation` shows a category cue and then the word to
+judge against it.
+
+In `masked_priming`, the mask has as many marks as the longest prime or
+target has characters. By default, lexsync shows it for 500 ms, the
+prime for three frames (50 ms at 60 Hz) and the target until the
+response or for 2,000 ms. Without the forward mask, a prime of 50 ms is
+usually visible. The change of case keeps a related prime and its target
+from sharing their visual form, so that priming does not arise from the
+overlap of the two displays.
+
+`design_en_rastle_repro.yaml` uses `masked_priming` for the Rastle,
+Davis and New (2004) reproduction. It is a lexical decision whose
+nonword targets are fillers with the right arrow key as their answer,
+and its response mapping puts both priming conditions on the left.
+`design_en_andrews_repro.yaml` runs the Andrews (1989) reproduction as a
+lexical decision the same way, with one pseudoword per selected word.
+Both designs’ comments say how the fillers were made and what still
+differs from the original studies.
+
+What separates `categorisation` from lexical decision is where the
+question is asked. The category cue is a trial event, shown afresh each
+time, since the category varies from trial to trial. Crossing one word
+with two cues is how a categorisation study separates a property of the
+word from the demands of the task. A robin is a bird quickly and an
+animal slowly, and only the question changed.
+
+The `answer` field of a categorisation holds the key that is correct on
+the trial, so scoring is a string comparison against the recorded
+response. Because the paradigm requires the field, the PsychoPy and
+OpenSesame targets can score each response against it, and the jsPsych
+data rows carry it beside the response. A categorisation also needs ‘no’
+trials, or pressing the yes key on every trial scores perfectly. In
+`design_en_categorisation.yaml`, 16 foils, nouns that do not belong to
+the category they appear under, are fillers with the answer j.
+
+Each paradigm’s `counterbalance` entry names one of two recipes. The
+factorial recipe shows every matched item and splits the matched sets
+across lists. Under it, a design with more lists than item sets is
+rejected, since the surplus lists would be empty. The Latin-square
+recipe exists because, in `priming`, `masked_priming`,
+`self_paced_reading` and `categorisation`, the same target appears in
+more than one condition. Showing a participant both the related and the
+unrelated version of one target would let them see the manipulation, and
+showing the same word under both category cues would turn the second
+presentation into a repetition-priming trial. The Latin square gives
+each item exactly one condition per list and rotates it across lists, so
+no target repeats within a list.
+
+``` r
+
+table(list = stim$list, condition = stim$condition)
+```
+
+        condition
+    list high low
+       1   12  12
+
+The paradigm decides the recipe whether or not a design lists its own
+events, so a priming design that reads its prime’s duration from the
+items keeps its Latin square. `counterbalance.recipe` names a recipe
+outright, `factorial` or `latin_square_target`, for a design that needs
+the other one.
+
+A Latin-square rotation is complete only when the lists and the item
+sets are multiples of the number of conditions. One list confounds item
+and condition, since every participant sees each item in the same
+condition. Two lists for three conditions show each item in only two of
+them, and nine items in two conditions leave each list with five trials
+in one condition and four in the other. The run log and the datasheet
+report such a rotation, and the Methods text calls it incomplete. With
+`counterbalance.incomplete: error` in the design, or in the schema for
+every design, such a rotation is rejected. The datasheet’s
+`counterbalancing` record gives the recipe that ran, the lists the
+stimuli table holds, whether the rotation is complete and the trials
+each list gives each condition.
+
+### Trial orders and runs of one condition
+
+One seed gives each list one order, and every participant given that
+list sees it, so each item sits at the same serial position for all of
+them. The order also has runs of one condition as long as a uniform
+shuffle gives. Over seeds 1 to 1000 of a lexical decision with 60 words
+and 60 pseudowords, the longest run had a median of 7 and a maximum of
+21. A run of seven is seven trials in a row with the same correct key.
+Two settings change this, and both are off by default.
+
+``` yaml
+counterbalance:
+  lists: 2
+  max_run: 2
+  orders: 3
+```
+
+`max_run: k` caps every run of one condition at k trials, or of one
+value of the column `run_on` names, where a missing value counts as a
+value of its own. This is the kind of sequence constraint that
+pseudorandomisation programs such as Mix impose (van Casteren & Davis,
+2006). The cap is applied by a repair of the seeded order that keeps as
+much of that order as the limit allows. Each step takes the earliest
+remaining trial in the seeded order that neither extends the current run
+beyond k nor leaves the rest of the list unable to keep the limit.
+Without this look-ahead, the repair ran out of trials near the end of
+931 of 1,000 seeded orders of a list of 40 words and 80 pseudowords at k
+= 2, a limit that some order of that list keeps. With it, only a limit
+that no order can meet is rejected, and the message gives the counts
+that rule it out, such as 80 pseudoword trials against 40 others at k
+= 1. With fillers, the limit applies to the order they are interleaved
+in, and the practice trials keep it on their own.
+
+`orders: m` writes m orders of each list into the loop tables, as
+`order_1` to `order_m`, each trial’s position in each order. Order 1 is
+the seeded order, and orders 2 to m are ranked by the same keyed hash
+with the order’s number in the key, each repaired under `max_run`. The
+experiments choose an order by participant number. Participant *p* runs
+version `((p - 1) mod V) + 1` in order `(((p - 1) div V) mod m) + 1`.
+The participants given one version therefore run its orders in turn, and
+a run without a participant number runs order 1. OpenSesame, whose loop
+presents its table in file order, gets one experiment per version and
+order. The orders are stored in the loop tables, which both engines
+write byte for byte, so the browser page needs no hashing of its own.
+The datasheet’s `counterbalancing` record gives the limit, the longest
+run realised in each version and the number of orders, and the Methods
+text states them.
+
+``` r
+
+limited <- utils::modifyList(design, list(counterbalance = list(lists = 1, max_run = 2,
+                                                                 orders = 2)))
+ordered <- counterbalance(stim, limited, schema)
+head(ordered[order(ordered$order_2), c("trial", "order_1", "order_2", "condition", "word")])
+```
+
+       trial order_1 order_2 condition   word
+    17    17      17       1       low varied
+    23    23      23       2      high    new
+    2      2       2       3      high  black
+    1      1       1       4       low iconic
+    11    11      11       5       low    ads
+    7      7       7       6      high series
+
+### Balanced list assignment
+
+The factorial deal sends set 1 to list 1, set 2 to list 2 and so on.
+That is reproducible, but it balances nothing. Every *n*th set goes to
+the same list, so a dimension that happens to vary smoothly across sets
+is dealt out unevenly. Where each list goes to a different group of
+participants, the unevenness is confounded with the group.
+
+`counterbalance.optimise` searches instead for an assignment whose lists
+have near-equal totals on the dimensions you name, by exchanging pairs
+of item sets between lists. List sizes are preserved, since a swap
+trades one set for another.
+
+``` yaml
+counterbalance:
+  lists: 4
+  optimise: true
+  balance_on: [length, n_density, old20, frequency]
+```
+
+`balance_on` defaults to `match_on`, and the example adds frequency.
+Frequency is the manipulated variable and so is not matched on, but it
+is manipulated *within* a list, since every list holds both conditions.
+Equating the lists on its total therefore costs the manipulation nothing
+and removes a difference between the participant groups who receive
+different lists. Naming only the matched dimensions leaves frequency
+dealt arbitrarily. If `design_en_balanced_lists.yaml` named only those
+three, the optimiser would improve them and make frequency worse than
+the arbitrary deal had it. Balance what you want equated across lists,
+which is usually everything.
+
+The optimiser’s search is a steepest descent to a local optimum, not a
+global search. It guarantees that no single exchange would improve
+matters further, unless `counterbalance.max_passes`, 500 passes by
+default, stops the search first. In that case, the datasheet and the run
+log say so, and a higher bound may balance the lists further. The
+datasheet records the imbalance before and after, so the improvement is
+checkable. The objective is all-integer and ties are broken by the
+seeded keyed hash, which keeps the two engines on the same assignment
+and stops list 1 being favoured for being numbered first.
+
+Optimisation is off by default, and the default will not change.
+Switching it on changes which items a participant sees, so the
+researcher has to choose it in the design. A package upgrade must never
+make that change for a study that is already running. It is rejected on
+a Latin-square design, where every item already appears in every list
+and the lists are balanced on the items by construction.
+[`balance_lists()`](https://pablobernabeu.github.io/lexsync/r/reference/balance_lists.md)
+runs the search alone if you want the assignment without applying it,
+and `design_en_balanced_lists.yaml` is the worked example.
+
+Each dimension is counted in a unit of its own before the totals are
+compared. By default, the unit is the dimension’s mean, which suits
+ratio scales only. A dimension then weighs in proportion to its SD over
+its mean, so its weight depends on where its scale starts. Zipf
+frequency starts near 3, and in `design_en_balanced_lists.yaml` it
+counts for least of the four dimensions. Rewriting it as Zipf - 3 would
+move 22 of the 40 item sets to another list. `counterbalance.scale: mad`
+counts each dimension’s deviations from its mean in units of its mean
+absolute deviation. The values are rounded to hundredths first, so
+adding a constant that is a whole number of hundredths leaves the lists
+as they were. The default stays `mean` so that a study already running
+keeps its lists, and under `mad` the datasheet and the Methods text name
+the scale.
+
+## Practice, fillers and feedback
+
+A single data frame can serve as the materials record and as the
+experiment’s trial list only while the two contain the same trials, and
+they usually do not. Practice exists to settle the participant into the
+task and is discarded before analysis. Fillers exist to dilute the
+manipulation so the participant cannot guess it, and are likewise not
+analysed. Both have to reach the generated experiment, and neither
+belongs in the stimuli file, the descriptives or the realised control.
+
+The pipeline therefore writes the stimuli CSV and the reports from the
+main rows and generates the PsychoPy, OpenSesame and jsPsych experiments
+from every presented trial. A `block` column marks which is which, and
+it appears only when a design declares the blocks.
+
+``` yaml
+practice:
+  path: items/practice_en_lexdec.csv
+fillers:
+  path: items/fillers_en_lexdec.csv
+```
+
+Where each block goes is a methodological choice. Practice comes first,
+as its own run, ordered within itself by the seeded keyed hash, so every
+participant given a list and trial order sees the practice items in one
+fixed order. Fillers are interleaved with the main trials, because a
+block of fillers at the end would be a second block the participant can
+tell apart. They are merged in before the order is drawn, so one
+deterministic shuffle mixes them through. This renumbers the main
+trials, since adding fillers changes the sequence, and the stimuli file
+records where each item appeared.
+
+Both blocks appear in every list and neither is counterbalanced, because
+they carry no manipulation to rotate and every participant should get
+the same practice. In a resampled design, the copy of a list in each
+replicate is a presentation version of its own, and it gets both blocks
+too. The PsychoPy, OpenSesame and jsPsych experiments pause where the
+practice trials end and nowhere else, since a pause around a filler
+would set it apart.
+
+Each block’s item table is read with the same validation as any other
+and given a `set` range that cannot collide with the main items. Without
+that range, practice item 1 and main item 1 would both be set 1. The
+counts and the tables’ checksums go into the datasheet, because what the
+participant saw is part of the materials even when it is not part of the
+analysis.
+
+A `feedback` event scores the trial and shows the result. It reads the
+field named by `answer`, compares it as a string with the key the
+participant pressed, and displays `correct`, `incorrect` or
+`no_response` for `duration_ms`.
+
+``` yaml
+- type: feedback
+  answer: answer
+  correct: 'Correct'
+  incorrect: 'Incorrect'
+  no_response: 'Too slow'
+  duration_ms: 600
+  blocks: [practice]
+```
+
+`blocks:` restricts an event to the named blocks. Its main use is to
+limit feedback to practice, where it confirms the mapping the
+instructions state. In the task itself, feedback would contaminate
+reaction times. The restriction has to be expressed on the event because
+the event list is global to the design. A feedback event scores a
+keypress, so a design whose feedback event has no preceding `response`
+or `question` is rejected when the experiment is generated. Left to run
+time, the error would appear as a different failure in each of the three
+targets. `design_en_lexdec_blocks.yaml` combines practice, fillers and
+feedback.
+
+## The three presentation targets
+
+All three exporters take the same rendered event list, so the procedure
+is the same in each. What differs is what each platform can do.
+
+``` r
+
+out <- file.path(tempdir(), "lexsync_experiment")
+dir.create(out, showWarnings = FALSE)
+files <- export_experiments(stim, design, schema, out)
+basename(unlist(files[c("psychopy", "opensesame", "jspsych")]))
+```
+
+    [1] "vignette_experiment_english_psychopy.py"
+    [2] "vignette_experiment_english.osexp"      
+    [3] "vignette_experiment_english.html"       
+
+[`export_experiments()`](https://pablobernabeu.github.io/lexsync/r/reference/export_experiments.md)
+calls
+[`assign_triggers()`](https://pablobernabeu.github.io/lexsync/r/reference/assign_triggers.md)
+first, then each exporter, and returns the three experiment scripts,
+with every file it wrote listed as `files`. The directory holds more
+than the scripts.
+
+``` r
+
+list.files(out)
+```
+
+    [1] "vignette_experiment_english_opensesame_text.csv"
+    [2] "vignette_experiment_english_opensesame.csv"     
+    [3] "vignette_experiment_english_psychopy.csv"       
+    [4] "vignette_experiment_english_psychopy.py"        
+    [5] "vignette_experiment_english.html"               
+    [6] "vignette_experiment_english.osexp"              
+
+PsychoPy and OpenSesame read their trials at run time from CSV tables
+written beside the scripts. PsychoPy has one table and OpenSesame two,
+since OpenSesame’s text is kept apart from its loop table, for the
+reason given below. The jsPsych target embeds its trials in the HTML,
+and that single file is enough to reproduce the procedure in a browser.
+
+Two schema settings shape the display. `presentation$text_height_px`, a
+whole number from 8 to 400 and 48 by default, is the height of the
+stimulus text in pixels in all three targets. In OpenSesame, the setting
+is the experiment’s `font_size`, which every screen uses, the
+instructions included. `presentation$fullscreen`, true by default, runs
+the PsychoPy script full screen, as PsychoPy’s advice on reducing
+dropped frames recommends. With false, the script opens a 1280 x 1024
+window. OpenSesame takes full screen or a window from the mode it is
+launched in, and the generated file’s `fullscreen` line has no effect.
+
+PsychoPy (Peirce et al., 2019) is the reference target. The generated
+script carries the event list as embedded JSON and interprets it, and it
+writes onset triggers to the parallel port, or to a serial device,
+locked to the flip. It is the target to use for EEG.
+
+The script reads keys from PsychoPy’s `keyboard` module. A response
+window opens on a flip, where the keyboard’s clock is reset and its
+queue cleared, so a reaction time runs from that flip and a key pressed
+before it does not count. Before the first trial, the script shows the
+version’s instructions and waits for the space bar. Escape there ends
+the run before a data file is opened.
+
+Each run writes a data file under `data/` beside the script, named
+`<base>_p<participant>_v<version>_<date>-<time>.csv`, without the `_p`
+part when no participant number is given. It holds one row per trial,
+written as the trial ends, so a run stopped with escape leaves a valid
+file of the trials it completed.
+
+A row gives the participant, the version, the replicate and the list,
+then the trial’s own fields and trigger codes, then what the trial
+recorded. `response`, `rt_ms` and `timed_out` hold the key, its reaction
+time in milliseconds and whether the window closed without one. The
+reaction time runs from the onset of the stimulus the key answers, or
+from the opening of a window kept with `from: offset`. `correct` says
+whether the key was the trial’s `answer`. It is 0 after a timeout and
+empty when the trial names no answer. In a design without a response
+event, the question’s key is the one scored. `region_rts_ms` holds each
+self-paced reading region’s time, joined by `|`, and `question_response`
+and `question_rt_ms` the question’s key and reaction time. Near its end,
+the row gives the measured `refresh_hz` and `trigger_mode`, which is
+`hardware` when the codes went to the device and `mock` when they were
+printed. It ends with `event_flips` and `event_onsets_ms`: the flips
+each event took and the time of its first flip relative to the trial’s
+first flip, joined by `|` in event order. A stimulus that collects its
+response counts the blank after it as well, up to the key or the close
+of the window. The realised durations can be checked against the
+declared ones there.
+
+OpenSesame (Mathôt et al., 2012) is generated as a plain-text `.osexp`,
+block by block, with each event becoming an inline script. Each script
+builds its canvases before the trial runs, in its prepare phase, and its
+event is timed from the onset its display returns. The experiment sends
+its triggers by a different method from PsychoPy’s. Its setup opens the
+device `triggers$backend` names, the parallel port or the serial port
+`triggers$serial_port`, and follows `triggers$mode` when it cannot open
+it. The method and these settings are described under ‘Trigger timing
+and the flip lock’ below. By default, the setup prints the codes and
+carries on, so the experiment still runs on a machine without the
+hardware, and an inline script after the setup,
+`lexsync_trigger_notice`, says so before any other screen.
+
+OpenSesame also evaluates what its loop table holds. In both versions, a
+cell holding `[=...]` runs as Python, and so does one holding a single
+`{` in OpenSesame 4.x, where it is read as an f-string, or starting with
+`=` in 3.3. Both versions retype a word such as `nan` or `007`, and 4.x
+shows `True` as 1. In 4.x, `infinity` and `nan`, both in the English
+lexicon, stop the session. Unchecked, an item table passed between
+laboratories could run code on the machine that presents it.
+
+The loop table, `vignette_experiment_english_opensesame.csv` here,
+therefore holds numbers only: `lexsync_row`, the trial’s position in
+loop order, with `lexsync_trial`, `lexsync_list`, `lexsync_set`, the
+trigger codes, `critical_region` and any per-trial duration. The prefix
+matters because OpenSesame 4 makes every loop column a global of the
+inline scripts, where `list` and `set` would shadow Python’s built-in
+functions of those names. The presented text, `condition`, `block` and
+`answer` are in `vignette_experiment_english_opensesame_text.csv`, which
+the setup script reads with Python’s `csv` module, and each script looks
+up its trial’s row by `lexsync_row`. Copy both files with the
+experiment. A value in a numeric column that is not a plain number is
+rejected when the experiment is generated. The feedback script reads the
+response without evaluation, so a timeout shows its `no_response` text
+in both versions. These rules were checked against the sources of
+OpenSesame 3.3.14 and 4.1.20.
+
+``` r
+
+opensesame_csv <- file.path(out, "vignette_experiment_english_opensesame.csv")
+names(read.csv(opensesame_csv))
+```
+
+    [1] "lexsync_row"       "lexsync_trial"     "lexsync_list"     
+    [4] "lexsync_set"       "condition_trigger" "item_trigger"     
+
+``` r
+
+names(read.csv(sub("\\.csv$", "_text.csv", opensesame_csv)))
+```
+
+    [1] "lexsync_row" "condition"   "word"       
+
+OpenSesame writes nothing to its log file without a logger item, so
+every trial ends with one, `lexsync_logger`, which writes every
+variable. The word and its response window are one inline script. It
+shows the word, sends the trigger, then flushes the keyboard and polls
+it while the word is shown and over a blank screen after it. It sets
+`response`, `response_time` (from the word’s onset), `timed_out` and
+`correct`, the last scored against the trial’s `answer` by the script
+itself. OpenSesame’s own `correct_response` is not used, since its
+variable syntax differs between 3.3 and 4.x.
+
+A response kept after the stimulus with `from: offset` is a
+`keyboard_response` after a blank screen, followed by a script that sets
+`timed_out` and `correct`. A `keyboard_response` runs none of lexsync’s
+code, so the script that shows the blank first waits until the hold of
+any code still on the port is up. After a stimulus shorter than the
+hold, the window therefore opens when the hold is up, and
+`response_time`, which OpenSesame times from the item’s start, runs from
+there.
+
+Self-paced reading sets `lexsync_region_rts`, and a question sets
+`question_response` and `question_rt`. Each trial clears these before
+its first event. Before the logger, a script copies the trial’s
+`condition`, `block` and `answer` from the text table into
+`lexsync_condition`, `lexsync_block` and `lexsync_answer`. Both
+versions’ loggers write a variable without evaluating it.
+
+Before the loop, an inline script, `lexsync_instructions`, shows the
+instructions and waits for the space bar, and escape there stops the
+session. OpenSesame’s canvas reads a subset of HTML, so the script
+writes the text with `&`, `<` and `>` escaped and each line break as
+`<br />`. In a design with practice trials, an inline script,
+`lexsync_block_break`, opens every trial. On the first trial after the
+practice trials, it says that they have ended and waits for the space
+bar, as the PsychoPy and jsPsych experiments do. It reads each trial’s
+block from the text table, so the experiment needs no run-if condition,
+a syntax that differs between OpenSesame 3.3 and 4.x.
+
+jsPsych is the browser target, suitable for behavioural work, piloting
+and sharing a procedure, though never for EEG. A browser cannot address
+a parallel port, so the trigger codes go into each trial’s data and no
+marker leaves the machine. The generated HTML embeds the events and the
+trials, opens with a welcome screen that shows the instructions and
+waits for the space bar, and saves responses locally, so no server is
+needed. The word and its response window are one jsPsych trial, recorded
+with `lexsync_event` set to `target`. It accepts the response keys from
+the word’s onset, shows the word for its duration and runs on for the
+timeout. The first key ends it, and its `rt` is timed from the word’s
+onset.
+
+The jsPsych library, its keyboard-response plugin and its stylesheet
+load from a CDN, so the machine that runs the page needs an internet
+connection. Each of the three files is loaded with Subresource
+Integrity, its SHA-384 and `crossorigin="anonymous"`, so the browser
+will not load a copy that differs from the published release. A page
+that collects participants’ responses therefore runs only the code it
+was written with. To run offline, point the tags at downloaded copies
+and either serve the folder over http or remove each tag’s `integrity`
+and `crossorigin` attributes. A browser blocks the CORS request that a
+page opened from a `file://` address would make for a local copy, so it
+could not check the hash.
+
+Two details of the generated files keep the three targets consistent.
+The OpenSesame loop is written as `sequential`, because its default is
+random, which would discard the seeded trial order and make the three
+targets present different sequences. That order is computed from the
+design by a keyed-hash shuffle and is identical in the R and Python
+engines. The jsPsych exporter maps the event model’s key names onto
+browser key names, so `left` becomes `arrowleft`.
+
+``` r
+
+psychopy_csv <- file.path(out, "vignette_experiment_english_psychopy.csv")
+names(read.csv(psychopy_csv))
+```
+
+    [1] "trial"             "list"              "set"              
+    [4] "condition"         "word"              "condition_trigger"
+    [7] "item_trigger"     
+
+The trial table carries exactly the columns the events reference plus
+the bookkeeping ones. A field no event mentions is not exported.
+
+## Running a counterbalanced experiment
+
+A design with more than one list, or with resampled item sets, has
+several presentation versions. A version is one (replicate, list) pair
+of the presented trials, and the versions are numbered from 1 in that
+order, so in a design without replicates version *k* is list *k*. Each
+participant is presented one version. Presenting them all would show
+every item sample of a resampled design, and would show each target of a
+Latin square in every condition, which is the repetition the rotation
+exists to prevent. Participant *p* runs version `((p - 1) mod V) + 1` of
+the *V* versions, the rule
+[`participant_table()`](https://pablobernabeu.github.io/lexsync/r/reference/participant_table.md)
+allocates by.
+
+``` r
+
+two <- utils::modifyList(design, list(name = "vignette_two_lists",
+                                      counterbalance = list(lists = 2)))
+two_files <- export_experiments(counterbalance(stim, two, schema), two, schema, out)
+basename(grep("\\.osexp$", two_files$files, value = TRUE))
+```
+
+    [1] "vignette_two_lists_english_list1.osexp"
+    [2] "vignette_two_lists_english_list2.osexp"
+
+``` r
+
+participant_table(list(list = 1:2), 4)
+```
+
+      list participant
+    1    1           1
+    2    2           2
+    3    1           3
+    4    2           4
+
+The PsychoPy script runs the participant’s version when launched as
+`python <base>_psychopy.py --participant 3`. `--version 2` runs a
+version outright, and so does `--list 2` in a design without replicates.
+Launched with none of these, the script asks for the participant number
+and the version in a dialogue. Leaving the version blank selects the
+participant’s version by the rule above. A version the script does not
+have stops the run, with a message, before any window opens.
+
+The jsPsych page reads the same choice from its address:
+`page.html?participant=3`, `?version=2` or, in a design without
+replicates, `?list=2`, each a whole number from 1. A page with more than
+one version, opened with none of these, shows a screen saying how to
+open it and runs nothing. A static page cannot count its participants,
+so a study recruited online without participant numbers hands out one
+`?version=k` link per version. The welcome screen counts the trials of
+the version, every data row carries the participant, the version, the
+list and the replicate, and the data file is named
+`<title>_p<participant>_v<version>.csv`.
+
+The OpenSesame target writes one experiment per version, as above:
+`<base>_list<k>.osexp`, or `<base>_rep<r>_list<k>.osexp` when the
+versions span several replicates. A design with one version and one
+trial order keeps `<base>.osexp`. Each experiment has its own loop and
+text tables, holding only that version’s trials, and the experimenter
+opens the participant’s. At start-up, each experiment compares the
+subject number OpenSesame asks for with its own version. When that
+participant would normally run another one, it says so and waits for a
+key. Space goes on with this file, and escape stops the session. The
+check runs once, before the loop, so the experiment needs no run-if
+condition, a syntax that differs between OpenSesame 3.3 and 4.x.
+
+The datasheet records the number of versions as
+`counterbalancing$versions` and the rule as
+`counterbalancing$assignment`, and its Methods text says that each
+participant was presented one version. Its artefact list and the run log
+name every file
+[`export_experiments()`](https://pablobernabeu.github.io/lexsync/r/reference/export_experiments.md)
+wrote, the loop and text tables included, since those hold the trial
+order and the trigger codes the experiments present. The loop tables
+keep each version’s trials together, ordered by replicate, list and
+trial. They carry `replicate` when the design has one. Item codes are
+allocated by set, so in a resampled design an item code identifies an
+item only within its replicate, which the `replicate` column tells
+apart.
+
+With `counterbalance.orders: m` (see ‘Trial orders and runs of one
+condition’ above), each version also has m trial orders. Participant *p*
+runs order `(((p - 1) div V) mod m) + 1`. In a two-list design with two
+orders, participants 1 and 2 run lists 1 and 2 in order 1, participants
+3 and 4 run them in order 2, and participant 5 starts the cycle again.
+The PsychoPy script and the jsPsych page sort the version’s trials by
+the participant’s order, and a run without a participant number presents
+order 1. Their data rows then carry the order, and their `trial` column
+numbers the trials as presented. The OpenSesame target writes one
+experiment per version and order, `<base>_list<k>_order<j>.osexp`, or
+`<base>_rep<r>_list<k>_order<j>.osexp` when the versions span several
+replicates and `<base>_order<j>.osexp` for a design with one version.
+Each experiment’s check compares the order as well as the version, and
+every trial logs `lexsync_order`.
+
+## Trigger timing and the flip lock
+
+The timing of the trigger is what justifies generating the experiment.
+An ERP is averaged over epochs cut around a marker, so the marker’s
+timing error propagates straight into the waveform. If the trigger is
+sent when the code decides to draw the stimulus rather than when the
+display shows it, the error is the interval between those two moments.
+That interval is up to one refresh, about 17 ms at 60 Hz, plus whatever
+the drawing code took, and it varies from trial to trial. A constant
+offset can be subtracted afterwards, but jitter cannot, and it smears
+the average and shrinks the component you are measuring.
+
+The generated PsychoPy script never sends a trigger from the drawing
+sequence. It registers the write with the window, to be executed on the
+next flip:
+
+    win.callOnFlip(port.setData, code)
+
+`callOnFlip` defers the call until the flip that puts the stimulus on
+screen, so the port write happens in the same operation that makes the
+stimulus visible. The Python package’s test suite checks this property
+of the generated code by driving the generated script against a mock
+PsychoPy window and a mock port and asserting that the trigger is bound
+to the flip.
+
+The reset is handled the same way. A recorder needs the line to return
+to zero before the next code, so the script counts the hold down flip by
+flip and queues a write of 0 on the flip that ends it. A code whose
+stimulus is shorter than the hold, such as a one-flip prime, stays on
+the port through the events that follow and is reset on that flip all
+the same. Only the next onset’s code ends it sooner, with a 0 written
+just before the new code. The session markers, 254 before the first
+trial and 255 after the last, are held the same way.
+
+``` r
+
+str(schema$triggers)
+```
+
+    List of 5
+     $ parallel_address  : chr "0x0378"
+     $ trigger_hold_ms   : int 50
+     $ allow_code_overlap: logi FALSE
+     $ backend           : chr "parallel"
+     $ mode              : chr "auto"
+
+`trigger_hold_ms` is 50, comfortably above the 10 ms minimum most
+recorders need to register a pulse. The script converts it to the
+nearest whole number of flips at the refresh it measures, and never to
+fewer than the flips that cover 10 ms. The pulse therefore stays about
+50 ms whether the display runs at 60 Hz or at 240 Hz, where a hold of
+three frames, 50 ms at 60 Hz, would last 12.5 ms.
+`reset_after_frames: N`, read only when `trigger_hold_ms` is not set,
+gives a hold of N + 1 frames at `presentation.assumed_refresh_hz`.
+`inter_trigger_ms` is accepted but not used, since the self-paced
+reading critical-region code is held like every other code, and the run
+log says so when a schema sets it. `parallel_address` is the LPT1 base
+address on a typical laboratory machine, and it is a schema value
+because it belongs to the machine, which will run many designs.
+`allow_code_overlap` is false, so a design whose item codes cannot all
+be kept apart from its other codes is rejected, as described under
+‘Triggers on an event’ above.
+
+`backend` names the device both laboratory targets write the codes to.
+`parallel`, the default, is the port at `parallel_address`. `serial`
+writes each code as one byte to the device that `serial_port` names, at
+`baudrate` bits per second, 115200 unless set. A schema for a serial
+device therefore adds `backend: serial`, the port as `serial_port: COM3`
+(`/dev/ttyUSB0` on Linux) and the rate the device’s manual gives. The
+port has to be named, and a serial backend without one is rejected. A
+code is held and reset on a serial device as on a parallel port, with a
+0 written when its hold is up.
+
+A serial line delays each code by an amount that varies from code to
+code, and a parallel port does not. A USB-serial adapter carries each
+byte in a USB transfer, scheduled in frames of a millisecond on a
+full-speed connection, and its driver adds a delay of its own. Adapters
+built on FTDI chips also hold data on its way to the computer until
+their latency timer runs out, 16 ms by default. That matters for a
+device that answers and for a response box on the same adapter. Measure
+the delay with a photodiode, as described under ‘Checking the timing’
+below.
+
+`mode` decides what happens when the device cannot be opened, as on a
+laptop with no parallel port. Under `auto`, the default, both targets
+print each code in the console, and a screen before any other tells the
+experimenter that no codes will be sent. Pressing C goes on without
+them, and escape stops the run. Under `hardware`, when the device cannot
+be opened, the PsychoPy script stops before its window opens and the
+OpenSesame experiment stops in its setup. `mock` prints the codes
+without trying the device, after the same notice. Every trial records
+the mode the run used, `hardware` or `mock`, as `trigger_mode` in the
+PsychoPy data file and as `lexsync_trigger_mode` in the OpenSesame log.
+
+OpenSesame has no `callOnFlip`, so the generated inline script sends the
+trigger on the line after the canvas is shown:
+
+    _t0 = _lexsync_c_e1.show()
+    var.onset_time = _t0
+    _lexsync_onset(int(var.get(u'condition_trigger', _eval=False)), _t0)
+
+`show()` blocks until the display refresh and returns at it, so the next
+statement runs immediately after the stimulus becomes visible. The
+canvas was built in the script’s prepare phase, before the trial
+started, so nothing delays the show. The residual offset is the few
+microseconds of the return and the port write, and it is constant rather
+than jittered. The method therefore comes close to the flip lock without
+matching it, which is why PsychoPy stays the reference target for EEG.
+
+`_lexsync_onset` notes when the code is due to be reset, and the waits
+after it reset the code once `trigger_hold_ms` has passed, in a later
+event when this one is shorter. The setup script measures the frame
+period at start-up and logs it as `lexsync_frame_ms`, and each event
+ends half a frame before its duration is up. OpenSesame’s legacy clock
+counts whole milliseconds, so the waits are kept to the millisecond, and
+so is a hold that ends during one. A hold that ends while the experiment
+waits for the next refresh lasts until that display, up to a frame
+longer. One that ends after the last wait of a trial lasts until the
+next trial’s first display. Between trials, the logger and the next
+trial’s prepare phase run while the last display stays up, so a trial’s
+last event lasts a little longer than its duration.
+
+Neither generation nor its tests import PsychoPy, pyserial or any port
+driver, since generation only writes text. The hardware is needed only
+to run an experiment, so the demonstration reproduces on a laptop.
+
+### Checking the timing
+
+The durations above are what the generated code asks for, and what the
+Python package’s tests confirm on simulated displays. A real display
+adds delays no software can detect, such as an LCD’s input lag. A study
+whose effect depends on a duration or an onset should therefore be
+measured on the machine that will run it. A photodiode on the screen,
+recorded by the same amplifier as the trigger port, measures the display
+and the triggers on one clock.
+
+1.  Tape the photodiode over the place where the critical stimulus
+    appears. White text on a black background drives most diodes. A
+    small stimulus, such as a fixation cross, may need a white patch
+    drawn with it for the pilot.
+2.  Run a pilot session on the laboratory machine, at the refresh rate
+    and in the screen mode of the study, and record the diode and the
+    trigger channel together. With `triggers.mode: hardware`, neither
+    the pilot nor the study can start without the trigger device.
+3.  For each trial, measure the time from the trigger’s onset to the
+    diode’s rise. It should be nearly constant. Its mean is the
+    display’s lag, which includes the time the screen takes to draw down
+    to the diode and, on an LCD, an input lag that can exceed 10 ms. The
+    analysis can subtract it. Its spread is the jitter an ERP average
+    will carry.
+4.  Measure each critical stimulus from the diode’s rise to its fall and
+    compare it with the flips its duration asks for at that refresh
+    rate: a 50 ms prime is three flips at 60 Hz and seven, 48.6 ms, at
+    144 Hz.
+5.  Measure the trigger pulses. Each should last about
+    `trigger_hold_ms`, 50 ms by default, unless the next onset ends it
+    sooner, and 254 should come before the first trial and 255 after the
+    last.
+6.  Measure again after any change to the machine, the display, its
+    refresh rate or the presentation software.
+
+## Adding a paradigm
+
+A design can override the event list outright, which needs no change to
+the package. The events below present a word twice with a mask between,
+which no registered paradigm does, and both `text` events are triggered
+so the recording can distinguish the two presentations.
+
+``` r
+
+custom <- design
+custom$name <- "vignette_custom"
+custom$events <- list(
+  list(type = "fixation", content = "+", duration_frames = 30L),
+  list(type = "text", content = "{word}", duration_frames = 12L,
+       trigger = 30L, onset_locked = TRUE),
+  list(type = "mask", content = "#####", duration_frames = 6L),
+  list(type = "text", content = "{word}", duration_frames = 48L,
+       trigger = "condition", onset_locked = TRUE),
+  list(type = "response", keys = c("left", "right"), timeout_ms = 2000L),
+  list(type = "blank", duration_frames = 15L)
+)
+required_fields(custom)
+```
+
+    [1] "word"
+
+``` r
+
+custom_files <- export_experiments(stim, custom, schema, out)
+basename(unlist(custom_files[c("psychopy", "opensesame", "jspsych")]))
+```
+
+    [1] "vignette_custom_english_psychopy.py" "vignette_custom_english.osexp"      
+    [3] "vignette_custom_english.html"       
+
+All three targets rendered the new sequence without a change to the
+backends, because each interprets the event list and no backend holds a
+paradigm’s event sequence. Declaring events changes only the trial. The
+counterbalancing recipe still follows the paradigm the design names,
+`factorial` here, and a design that names no paradigm counterbalances
+factorially.
+
+To register a paradigm for reuse across designs, add an entry to the
+`PARADIGMS` registry in `R/paradigms.R`, giving its `stimulus_fields`,
+its `counterbalance` recipe and its `events`, and add the matching entry
+to `python_workflow/src/lexsync/paradigms.py` so that the two engines
+keep the same registry. Designs can then name it. The registry is a
+plain named list and the entries above are the pattern to copy.
+
+To add a presentation target, write an `export_<target>()` that
+interprets the same rendered event list, and it will serve every
+paradigm.
+
+## References
+
+Andrews, S. (1989). Frequency and neighborhood effects on lexical
+access: Activation or search? *Journal of Experimental Psychology:
+Learning, Memory, and Cognition*, *15*(5), 802–814.
+<https://doi.org/10.1037/0278-7393.15.5.802>
+
+Forster, K. I., & Davis, C. (1984). Repetition priming and frequency
+attenuation in lexical access. *Journal of Experimental Psychology:
+Learning, Memory, and Cognition*, *10*(4), 680–698.
+<https://doi.org/10.1037/0278-7393.10.4.680>
+
+Mathôt, S., Schreij, D., & Theeuwes, J. (2012). OpenSesame: An
+open-source, graphical experiment builder for the social sciences.
+*Behavior Research Methods*, *44*(2), 314–324.
+<https://doi.org/10.3758/s13428-011-0168-7>
+
+Peirce, J., Gray, J. R., Simpson, S., MacAskill, M., Höchenberger, R.,
+Sogo, H., Kastman, E., & Lindeløv, J. K. (2019). PsychoPy2: Experiments
+in behavior made easy. *Behavior Research Methods*, *51*(1), 195–203.
+<https://doi.org/10.3758/s13428-018-01193-y>
+
+Rastle, K., Davis, M. H., & New, B. (2004). The broth in my brother’s
+brothel: Morpho-orthographic segmentation in visual word recognition.
+*Psychonomic Bulletin & Review*, *11*(6), 1090–1098.
+<https://doi.org/10.3758/BF03196742>
+
+van Casteren, M., & Davis, M. H. (2006). Mix, a program for
+pseudorandomization. *Behavior Research Methods*, *38*(4), 584–589.
+<https://doi.org/10.3758/BF03193889>
