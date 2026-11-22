@@ -10,7 +10,7 @@ no function signature changes.
 
 ## [Unreleased]
 
-## [0.2.0] - Unreleased
+## [0.2.0] - 2026-11-22
 
 ### Upgrading from 0.1.1
 

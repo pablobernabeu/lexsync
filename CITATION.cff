@@ -25,9 +25,9 @@ version: 0.2.0
 # package's gives the DOI CRAN assigned to it, and the Python package's gives
 # this one, since PyPI assigns no DOI.
 doi: 10.5281/zenodo.22906962
-# The packages are released in lockstep. This is the day 0.1.1 first became
-# public, on CRAN. PyPI published it on 2026-09-26.
-date-released: '2026-09-25'
+# The packages are released in lockstep. This is the day 0.2.0 first became
+# public, when CRAN published the R package and PyPI the Python package.
+date-released: '2026-11-22'
 # Each identifier, marked with the package it names. CFF's repository-artifact
 # holds a single address, which would favour one distribution, so CRAN and PyPI
 # are both listed here instead.
